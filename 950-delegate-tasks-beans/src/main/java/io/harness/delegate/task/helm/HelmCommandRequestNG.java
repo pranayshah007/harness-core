@@ -37,9 +37,10 @@ import io.harness.delegate.task.k8s.GcpK8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.ManifestDelegateConfig;
-import io.harness.delegate.task.mixin.HttpConnectionExecutionCapabilityGenerator;
+import io.harness.delegate.task.mixin.SocketConnectivityCapabilityGenerator;
 import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
+import io.harness.helm.HelmCommandType;
 import io.harness.k8s.model.HelmVersion;
 import io.harness.logging.LogCallback;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -73,6 +74,7 @@ public class HelmCommandRequestNG implements TaskParameters, ExecutionCapability
   private String ocPath;
   private String commandName;
   private boolean useLatestKubectlVersion;
+  private String gcpKeyPath;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
@@ -119,8 +121,13 @@ public class HelmCommandRequestNG implements TaskParameters, ExecutionCapability
           case HTTP_HELM:
             HttpHelmStoreDelegateConfig httpHelmStoreConfig =
                 (HttpHelmStoreDelegateConfig) helManifestConfig.getStoreDelegateConfig();
-            capabilities.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
-                httpHelmStoreConfig.getHttpHelmConnector().getHelmRepoUrl(), maskingEvaluator));
+            /*
+            We are henceforth using SocketConnectivityExecutionCapability instead of HttpConnectionExecutionCapability
+            this is to ensure that we don't fail Helm Repo Connector Validation in case the url returns 400
+            ref: https://harness.atlassian.net/browse/CDS-36189
+            */
+            SocketConnectivityCapabilityGenerator.addSocketConnectivityExecutionCapability(
+                httpHelmStoreConfig.getHttpHelmConnector().getHelmRepoUrl(), capabilities);
             capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
                 httpHelmStoreConfig.getEncryptedDataDetails(), maskingEvaluator));
             populateDelegateSelectorCapability(
@@ -170,6 +177,4 @@ public class HelmCommandRequestNG implements TaskParameters, ExecutionCapability
 
     return capabilities;
   }
-
-  public enum HelmCommandType { INSTALL, ROLLBACK, LIST_RELEASE, RELEASE_HISTORY }
 }

@@ -1,0 +1,100 @@
+// Copyright 2021 Harness Inc. All rights reserved.
+// Use of this source code is governed by the PolyForm Shield 1.0.0 license
+// that can be found in the licenses directory at the root of this repository, also available at
+// https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
+
+syntax = "proto3";
+
+package io.harness.pms.contracts.execution;
+
+option java_multiple_files = true;
+
+import "io/harness/pms/contracts/execution/tasks/task_request.proto";
+
+message ExecutableResponse {
+  oneof response {
+    AsyncExecutableResponse async = 1;
+    ChildExecutableResponse child = 2;
+    ChildrenExecutableResponse children = 3;
+    ChildChainExecutableResponse childChain = 4;
+    TaskExecutableResponse task = 5;
+    TaskChainExecutableResponse taskChain = 6;
+    SyncExecutableResponse sync = 7;
+    SkipTaskExecutableResponse skipTask = 8;
+  }
+}
+
+message SyncExecutableResponse {
+  repeated string logKeys = 1;
+  repeated string units = 2;
+}
+
+message AsyncExecutableResponse {
+  repeated string callbackIds = 1;
+  repeated string logKeys = 2;
+  repeated string units = 3;
+}
+
+message ChildExecutableResponse {
+  string childNodeId = 1;
+  repeated string logKeys = 2;
+  repeated string units = 3;
+}
+
+message ChildrenExecutableResponse {
+  message Child {
+    string childNodeId = 1;
+    StrategyMetadata strategyMetadata = 2;
+  }
+  repeated Child children = 1;
+  int64 maxConcurrency = 2;
+}
+
+message StrategyMetadata {
+  int32 currentIteration = 1;
+  int32 totalIterations = 2;
+  oneof metadata {
+    MatrixMetadata matrixMetadata = 3;
+    ForMetadata forMetadata = 4;
+  }
+}
+
+message ForMetadata {
+  string value = 1;
+  repeated string partition = 2;
+}
+
+message MatrixMetadata {
+  map<string, string> matrixValues = 1;
+  repeated int32 matrixCombination = 2;
+}
+
+message ChildChainExecutableResponse {
+  string nextChildId = 1;
+  string previousChildId = 2;
+  bytes passThroughData = 3;
+  bool lastLink = 4;
+  bool suspend = 6;
+}
+
+message TaskChainExecutableResponse {
+  string taskId = 1;
+  io.harness.pms.contracts.execution.tasks.TaskCategory taskCategory = 2;
+  bool chainEnd = 3;
+  bytes passThroughData = 4;
+  repeated string logKeys = 5;
+  repeated string units = 6;
+  string taskName = 7;
+}
+
+message TaskExecutableResponse {
+  string taskId = 1;
+  io.harness.pms.contracts.execution.tasks.TaskCategory taskCategory = 2;
+  repeated string logKeys = 3;
+  repeated string units = 4;
+  string taskName = 5;
+}
+
+message SkipTaskExecutableResponse {
+  string message = 1;
+}

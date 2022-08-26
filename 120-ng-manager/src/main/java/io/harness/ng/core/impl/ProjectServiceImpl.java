@@ -9,6 +9,7 @@ package io.harness.ng.core.impl;
 
 import static io.harness.NGCommonEntityConstants.MONGODB_ID;
 import static io.harness.NGConstants.DEFAULT_ORG_IDENTIFIER;
+import static io.harness.NGConstants.DEFAULT_PROJECT_IDENTIFIER;
 import static io.harness.NGConstants.DEFAULT_PROJECT_LEVEL_RESOURCE_GROUP_IDENTIFIER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.FeatureName.HARD_DELETE_ENTITIES;
@@ -41,12 +42,14 @@ import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
 import io.harness.beans.Scope.ScopeKeys;
 import io.harness.enforcement.client.annotation.FeatureRestrictionCheck;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.gitsync.common.service.YamlGitConfigService;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
@@ -130,13 +133,14 @@ public class ProjectServiceImpl implements ProjectService {
   private final ProjectInstrumentationHelper instrumentationHelper;
   private final YamlGitConfigService yamlGitConfigService;
   private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
+  private final FeatureFlagService featureFlagService;
 
   @Inject
   public ProjectServiceImpl(ProjectRepository projectRepository, OrganizationService organizationService,
       @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate, OutboxService outboxService,
       NgUserService ngUserService, AccessControlClient accessControlClient, ScopeAccessHelper scopeAccessHelper,
       ProjectInstrumentationHelper instrumentationHelper, YamlGitConfigService yamlGitConfigService,
-      NGFeatureFlagHelperService ngFeatureFlagHelperService) {
+      NGFeatureFlagHelperService ngFeatureFlagHelperService, FeatureFlagService featureFlagService) {
     this.projectRepository = projectRepository;
     this.organizationService = organizationService;
     this.transactionTemplate = transactionTemplate;
@@ -147,6 +151,7 @@ public class ProjectServiceImpl implements ProjectService {
     this.instrumentationHelper = instrumentationHelper;
     this.yamlGitConfigService = yamlGitConfigService;
     this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;
+    this.featureFlagService = featureFlagService;
   }
 
   @Override
@@ -181,6 +186,12 @@ public class ProjectServiceImpl implements ProjectService {
   }
 
   private void setupProject(Scope scope) {
+    if (featureFlagService.isGlobalEnabled(FeatureName.CREATE_DEFAULT_PROJECT)) {
+      if (DEFAULT_PROJECT_IDENTIFIER.equals(scope.getProjectIdentifier())) {
+        // Default project is a special case. That is handled by ng account setup service
+        return;
+      }
+    }
     String principalId = null;
     PrincipalType principalType = PrincipalType.USER;
     if (SourcePrincipalContextBuilder.getSourcePrincipal() != null
@@ -266,7 +277,7 @@ public class ProjectServiceImpl implements ProjectService {
   @DefaultOrganization
   public Optional<Project> get(
       String accountIdentifier, @OrgIdentifier String orgIdentifier, @ProjectIdentifier String projectIdentifier) {
-    return projectRepository.findByAccountIdentifierAndOrgIdentifierAndIdentifierAndDeletedNot(
+    return projectRepository.findByAccountIdentifierAndOrgIdentifierAndIdentifierIgnoreCaseAndDeletedNot(
         accountIdentifier, orgIdentifier, projectIdentifier, true);
   }
 
@@ -521,7 +532,7 @@ public class ProjectServiceImpl implements ProjectService {
       return criteria;
     }
 
-    if (projectFilterDTO.getOrgIdentifiers() != null) {
+    if (projectFilterDTO.getOrgIdentifiers() != null && isNotEmpty(projectFilterDTO.getOrgIdentifiers())) {
       criteria.and(ProjectKeys.orgIdentifier).in(projectFilterDTO.getOrgIdentifiers());
     }
 

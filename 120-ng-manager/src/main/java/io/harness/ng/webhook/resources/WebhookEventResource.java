@@ -55,6 +55,7 @@ public class WebhookEventResource {
     return ResponseDTO.newResponse(UpsertWebhookResponseDTO.builder()
                                        .status(upsertWebhookResponse.getStatus())
                                        .error(upsertWebhookResponse.getError())
+                                       .webhookResponse(upsertWebhookResponse.getWebhookResponse())
                                        .build());
   }
 }

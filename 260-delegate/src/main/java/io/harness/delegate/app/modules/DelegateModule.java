@@ -66,6 +66,12 @@ import io.harness.connector.service.git.NGGitService;
 import io.harness.connector.service.git.NGGitServiceImpl;
 import io.harness.connector.service.scm.ScmDelegateClient;
 import io.harness.connector.task.ConnectorValidationHandler;
+import io.harness.connector.task.NotSupportedValidationHandler;
+import io.harness.connector.task.artifactory.ArtifactoryValidationHandler;
+import io.harness.connector.task.aws.AwsValidationHandler;
+import io.harness.connector.task.azure.AzureValidationHandler;
+import io.harness.connector.task.docker.DockerValidationHandler;
+import io.harness.connector.task.gcp.GcpValidationTaskHandler;
 import io.harness.connector.task.git.GitValidationHandler;
 import io.harness.cvng.CVNGDataCollectionDelegateServiceImpl;
 import io.harness.cvng.K8InfoDataServiceImpl;
@@ -140,7 +146,6 @@ import io.harness.delegate.task.MicrosoftTeamsSenderDelegateTask;
 import io.harness.delegate.task.PagerDutySenderDelegateTask;
 import io.harness.delegate.task.SlackSenderDelegateTask;
 import io.harness.delegate.task.artifactory.ArtifactoryDelegateTask;
-import io.harness.delegate.task.artifactory.ArtifactoryValidationHandler;
 import io.harness.delegate.task.artifacts.ArtifactSourceDelegateRequest;
 import io.harness.delegate.task.artifacts.DelegateArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactDelegateRequest;
@@ -150,6 +155,9 @@ import io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifact
 import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.azure.AcrArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.azure.AcrArtifactTaskNG;
+import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.custom.CustomArtifactTaskHandler;
+import io.harness.delegate.task.artifacts.custom.CustomArtifactTaskNG;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactTaskNG;
@@ -167,9 +175,7 @@ import io.harness.delegate.task.artifacts.s3.S3ArtifactTaskNG;
 import io.harness.delegate.task.aws.AwsCodeCommitApiDelegateTask;
 import io.harness.delegate.task.aws.AwsCodeCommitDelegateTask;
 import io.harness.delegate.task.aws.AwsDelegateTask;
-import io.harness.delegate.task.aws.AwsValidationHandler;
 import io.harness.delegate.task.aws.S3FetchFilesTaskNG;
-import io.harness.delegate.task.azure.AzureValidationHandler;
 import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskParameters.AzureAppServiceTaskType;
 import io.harness.delegate.task.azure.appservice.webapp.AzureWebAppTaskNG;
 import io.harness.delegate.task.azure.appservice.webapp.handler.AzureWebAppFetchPreDeploymentDataRequestHandler;
@@ -181,6 +187,10 @@ import io.harness.delegate.task.azure.appservice.webapp.handler.AzureWebAppTraff
 import io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppRequestType;
 import io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppTaskRequest;
 import io.harness.delegate.task.azure.arm.AzureARMTaskParameters;
+import io.harness.delegate.task.azure.artifact.AzureArtifactDownloadService;
+import io.harness.delegate.task.azure.artifact.AzureArtifactDownloadServiceImpl;
+import io.harness.delegate.task.azure.exception.AzureAppServicesRuntimeExceptionHandler;
+import io.harness.delegate.task.azure.exception.AzureClientExceptionHandler;
 import io.harness.delegate.task.azure.resource.operation.AzureResourceProvider;
 import io.harness.delegate.task.cek8s.CEKubernetesTestConnectionDelegateTask;
 import io.harness.delegate.task.cek8s.CEKubernetesValidationHandler;
@@ -199,13 +209,11 @@ import io.harness.delegate.task.cloudformation.handlers.CloudformationCreateStac
 import io.harness.delegate.task.cloudformation.handlers.CloudformationDeleteStackTaskHandler;
 import io.harness.delegate.task.cvng.CVConnectorValidationHandler;
 import io.harness.delegate.task.docker.DockerTestConnectionDelegateTask;
-import io.harness.delegate.task.docker.DockerValidationHandler;
 import io.harness.delegate.task.executioncapability.BatchCapabilityCheckTask;
 import io.harness.delegate.task.gcp.GcpTask;
 import io.harness.delegate.task.gcp.GcpTaskType;
 import io.harness.delegate.task.gcp.taskHandlers.GcpListBucketsTaskHandler;
 import io.harness.delegate.task.gcp.taskHandlers.GcpListClustersTaskHandler;
-import io.harness.delegate.task.gcp.taskHandlers.GcpValidationTaskHandler;
 import io.harness.delegate.task.gcp.taskHandlers.TaskHandler;
 import io.harness.delegate.task.git.GitFetchTaskNG;
 import io.harness.delegate.task.git.NGGitCommandTask;
@@ -234,10 +242,12 @@ import io.harness.delegate.task.k8s.exception.KubernetesApiClientRuntimeExceptio
 import io.harness.delegate.task.k8s.exception.KubernetesApiExceptionHandler;
 import io.harness.delegate.task.k8s.exception.KubernetesCliRuntimeExceptionHandler;
 import io.harness.delegate.task.ldap.NGLdapGroupSearchTask;
+import io.harness.delegate.task.ldap.NGLdapGroupSyncTask;
 import io.harness.delegate.task.ldap.NGLdapValidateConnectionSettingTask;
 import io.harness.delegate.task.ldap.NGLdapValidateGroupQuerySettingTask;
 import io.harness.delegate.task.ldap.NGLdapValidateUserQuerySettingTask;
 import io.harness.delegate.task.manifests.CustomManifestFetchTask;
+import io.harness.delegate.task.manifests.CustomManifestFetchTaskNG;
 import io.harness.delegate.task.manifests.CustomManifestValuesFetchTask;
 import io.harness.delegate.task.nexus.NexusDelegateTask;
 import io.harness.delegate.task.nexus.NexusValidationHandler;
@@ -261,6 +271,7 @@ import io.harness.delegate.task.shell.ShellScriptTaskNG;
 import io.harness.delegate.task.shell.ssh.ArtifactCommandUnitHandler;
 import io.harness.delegate.task.shell.ssh.ArtifactoryCommandUnitHandler;
 import io.harness.delegate.task.shell.ssh.CommandHandler;
+import io.harness.delegate.task.shell.ssh.JenkinsArtifactCommandUnitHandler;
 import io.harness.delegate.task.shell.ssh.SshCleanupCommandHandler;
 import io.harness.delegate.task.shell.ssh.SshCopyCommandHandler;
 import io.harness.delegate.task.shell.ssh.SshInitCommandHandler;
@@ -284,13 +295,16 @@ import io.harness.delegate.utils.DecryptionHelperDelegate;
 import io.harness.delegatetasks.DeleteSecretTask;
 import io.harness.delegatetasks.EncryptSecretTask;
 import io.harness.delegatetasks.EncryptSecretTaskValidationHandler;
+import io.harness.delegatetasks.FetchCustomSecretTask;
 import io.harness.delegatetasks.FetchSecretTask;
 import io.harness.delegatetasks.NGAzureKeyVaultFetchEngineTask;
 import io.harness.delegatetasks.NGVaultFetchEngineTask;
 import io.harness.delegatetasks.NGVaultRenewalAppRoleTask;
 import io.harness.delegatetasks.NGVaultRenewalTask;
+import io.harness.delegatetasks.ResolveCustomSecretManagerConfigTask;
 import io.harness.delegatetasks.UpsertSecretTask;
 import io.harness.delegatetasks.UpsertSecretTaskValidationHandler;
+import io.harness.delegatetasks.ValidateCustomSecretManagerSecretReferenceTask;
 import io.harness.delegatetasks.ValidateSecretManagerConfigurationTask;
 import io.harness.delegatetasks.ValidateSecretReferenceTask;
 import io.harness.encryptors.CustomEncryptor;
@@ -306,6 +320,7 @@ import io.harness.encryptors.clients.GcpKmsEncryptor;
 import io.harness.encryptors.clients.GcpSecretsManagerEncryptor;
 import io.harness.encryptors.clients.HashicorpVaultEncryptor;
 import io.harness.encryptors.clients.LocalEncryptor;
+import io.harness.encryptors.clients.NGCustomSecretManagerEncryptor;
 import io.harness.exception.DelegateServiceDriverExceptionHandler;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.KeyManagerBuilderException;
@@ -1187,6 +1202,7 @@ public class DelegateModule extends AbstractModule {
     bind(AzureKubernetesClient.class).to(AzureKubernetesClientImpl.class);
     bind(ArtifactoryNgService.class).to(ArtifactoryNgServiceImpl.class);
     bind(AWSCloudformationClient.class).to(AWSCloudformationClientImpl.class);
+    bind(AzureArtifactDownloadService.class).to(AzureArtifactDownloadServiceImpl.class);
 
     // NG Delegate
     MapBinder<String, K8sRequestHandler> k8sTaskTypeToRequestHandler =
@@ -1251,6 +1267,13 @@ public class DelegateModule extends AbstractModule {
         .toInstance(JenkinsArtifactTaskHandler.class);
 
     MapBinder<Class<? extends ArtifactSourceDelegateRequest>, Class<? extends DelegateArtifactTaskHandler>>
+        customArtifactServiceMapBinder =
+            MapBinder.newMapBinder(binder(), new TypeLiteral<Class<? extends ArtifactSourceDelegateRequest>>() {},
+                new TypeLiteral<Class<? extends DelegateArtifactTaskHandler>>() {});
+    customArtifactServiceMapBinder.addBinding(CustomArtifactDelegateRequest.class)
+        .toInstance(CustomArtifactTaskHandler.class);
+
+    MapBinder<Class<? extends ArtifactSourceDelegateRequest>, Class<? extends DelegateArtifactTaskHandler>>
         nexusArtifactServiceMapBinder =
             MapBinder.newMapBinder(binder(), new TypeLiteral<Class<? extends ArtifactSourceDelegateRequest>>() {},
                 new TypeLiteral<Class<? extends DelegateArtifactTaskHandler>>() {});
@@ -1286,7 +1309,6 @@ public class DelegateModule extends AbstractModule {
 
     MapBinder<GcpTaskType, TaskHandler> gcpTaskTypeToTaskHandlerMap =
         MapBinder.newMapBinder(binder(), GcpTaskType.class, TaskHandler.class);
-    gcpTaskTypeToTaskHandlerMap.addBinding(GcpTaskType.VALIDATE).to(GcpValidationTaskHandler.class);
     gcpTaskTypeToTaskHandlerMap.addBinding(GcpTaskType.LIST_CLUSTERS).to(GcpListClustersTaskHandler.class);
     gcpTaskTypeToTaskHandlerMap.addBinding(GcpTaskType.LIST_BUCKETS).to(GcpListBucketsTaskHandler.class);
 
@@ -1379,6 +1401,7 @@ public class DelegateModule extends AbstractModule {
     MapBinder<String, ArtifactCommandUnitHandler> artifactCommandHandlers =
         MapBinder.newMapBinder(binder(), String.class, ArtifactCommandUnitHandler.class);
     artifactCommandHandlers.addBinding(SshWinRmArtifactType.ARTIFACTORY.name()).to(ArtifactoryCommandUnitHandler.class);
+    artifactCommandHandlers.addBinding(SshWinRmArtifactType.JENKINS.name()).to(JenkinsArtifactCommandUnitHandler.class);
 
     registerSecretManagementBindings();
     registerConnectorValidatorsBindings();
@@ -1489,6 +1512,8 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.NG_LDAP_TEST_CONN_SETTINGS).toInstance(NGLdapValidateConnectionSettingTask.class);
     mapBinder.addBinding(TaskType.NG_LDAP_TEST_USER_SETTINGS).toInstance(NGLdapValidateUserQuerySettingTask.class);
     mapBinder.addBinding(TaskType.NG_LDAP_TEST_GROUP_SETTINGS).toInstance(NGLdapValidateGroupQuerySettingTask.class);
+    mapBinder.addBinding(TaskType.NG_LDAP_SEARCH_GROUPS).toInstance(NGLdapGroupSearchTask.class);
+    mapBinder.addBinding(TaskType.NG_LDAP_GROUPS_SYNC).toInstance(NGLdapGroupSyncTask.class);
     mapBinder.addBinding(TaskType.APM_VALIDATE_CONNECTOR_TASK).toInstance(ServiceImplDelegateTask.class);
     mapBinder.addBinding(TaskType.CUSTOM_LOG_VALIDATE_CONNECTOR_TASK).toInstance(ServiceImplDelegateTask.class);
     mapBinder.addBinding(TaskType.APM_GET_TASK).toInstance(ServiceImplDelegateTask.class);
@@ -1586,10 +1611,13 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.NG_VAULT_RENEW_TOKEN).toInstance(NGVaultRenewalTask.class);
     mapBinder.addBinding(TaskType.NG_VAULT_RENEW_APP_ROLE_TOKEN).toInstance(NGVaultRenewalAppRoleTask.class);
     mapBinder.addBinding(TaskType.NG_VAULT_FETCHING_TASK).toInstance(NGVaultFetchEngineTask.class);
-    mapBinder.addBinding(TaskType.NG_LDAP_SEARCH_GROUPS).toInstance(NGLdapGroupSearchTask.class);
     mapBinder.addBinding(TaskType.NG_AZURE_VAULT_FETCH_ENGINES).toInstance(NGAzureKeyVaultFetchEngineTask.class);
     mapBinder.addBinding(TaskType.VALIDATE_SECRET_MANAGER_CONFIGURATION)
         .toInstance(ValidateSecretManagerConfigurationTask.class);
+    mapBinder.addBinding(TaskType.VALIDATE_CUSTOM_SECRET_MANAGER_SECRET_REFERENCE)
+        .toInstance(ValidateCustomSecretManagerSecretReferenceTask.class);
+    mapBinder.addBinding(TaskType.FETCH_CUSTOM_SECRET).toInstance(FetchCustomSecretTask.class);
+    mapBinder.addBinding(TaskType.RESOLVE_CUSTOM_SM_CONFIG).toInstance(ResolveCustomSecretManagerConfigTask.class);
 
     mapBinder.addBinding(TaskType.HOST_VALIDATION).toInstance(HostValidationTask.class);
     mapBinder.addBinding(TaskType.CONTAINER_ACTIVE_SERVICE_COUNTS).toInstance(ServiceImplDelegateTask.class);
@@ -1670,6 +1698,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.SHELL_SCRIPT_APPROVAL).toInstance(ShellScriptApprovalTask.class);
     mapBinder.addBinding(TaskType.CUSTOM_GET_BUILDS).toInstance(ServiceImplDelegateTask.class);
     mapBinder.addBinding(TaskType.CUSTOM_VALIDATE_ARTIFACT_STREAM).toInstance(ServiceImplDelegateTask.class);
+    mapBinder.addBinding(TaskType.CUSTOM_ARTIFACT_NG).toInstance(CustomArtifactTaskNG.class);
     mapBinder.addBinding(TaskType.SHELL_SCRIPT_PROVISION_TASK).toInstance(ShellScriptProvisionTask.class);
     mapBinder.addBinding(TaskType.SERVICENOW_ASYNC).toInstance(ServicenowTask.class);
     mapBinder.addBinding(TaskType.SERVICENOW_SYNC).toInstance(ServiceImplDelegateTask.class);
@@ -1691,6 +1720,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.RANCHER_RESOLVE_CLUSTERS).toInstance(RancherResolveClustersTask.class);
 
     // Add all NG tasks below this.
+    mapBinder.addBinding(TaskType.CUSTOM_MANIFEST_VALUES_FETCH_TASK_NG).toInstance(CustomManifestFetchTaskNG.class);
     mapBinder.addBinding(TaskType.GITOPS_TASK_NG).toInstance(NGGitOpsCommandTask.class);
     mapBinder.addBinding(TaskType.GCP_TASK).toInstance(GcpTask.class);
     mapBinder.addBinding(TaskType.VALIDATE_KUBERNETES_CONFIG).toInstance(KubernetesTestConnectionDelegateTask.class);
@@ -1805,6 +1835,12 @@ public class DelegateModule extends AbstractModule {
         .bind(CustomEncryptor.class)
         .annotatedWith(Names.named(Encryptors.CUSTOM_ENCRYPTOR.getName()))
         .to(CustomSecretsManagerEncryptor.class);
+
+    binder()
+        .bind(CustomEncryptor.class)
+        .annotatedWith(Names.named(Encryptors.CUSTOM_ENCRYPTOR_NG.getName()))
+        // Use ng encryptor
+        .to(NGCustomSecretManagerEncryptor.class);
   }
 
   private void registerConnectorValidatorsBindings() {
@@ -1874,6 +1910,8 @@ public class DelegateModule extends AbstractModule {
         .to(AzureValidationHandler.class);
     connectorTypeToConnectorValidationHandlerMap.addBinding(ConnectorType.AZURE_REPO.getDisplayName())
         .to(GitValidationHandler.class);
+    connectorTypeToConnectorValidationHandlerMap.addBinding(ConnectorType.CUSTOM_SECRET_MANAGER.getDisplayName())
+        .to(NotSupportedValidationHandler.class);
   }
 
   private void bindExceptionHandlers() {
@@ -1916,5 +1954,9 @@ public class DelegateModule extends AbstractModule {
         exception -> exceptionHandlerMapBinder.addBinding(exception).to(TerraformRuntimeExceptionHandler.class));
     KubernetesCliRuntimeExceptionHandler.exceptions().forEach(
         exception -> exceptionHandlerMapBinder.addBinding(exception).to(KubernetesCliRuntimeExceptionHandler.class));
+    AzureAppServicesRuntimeExceptionHandler.exceptions().forEach(
+        exception -> exceptionHandlerMapBinder.addBinding(exception).to(AzureAppServicesRuntimeExceptionHandler.class));
+    AzureClientExceptionHandler.exceptions().forEach(
+        exception -> exceptionHandlerMapBinder.addBinding(exception).to(AzureClientExceptionHandler.class));
   }
 }

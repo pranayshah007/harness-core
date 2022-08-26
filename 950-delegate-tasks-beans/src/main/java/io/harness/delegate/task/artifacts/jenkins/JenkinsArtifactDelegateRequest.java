@@ -8,6 +8,7 @@
 package io.harness.delegate.task.artifacts.jenkins;
 
 import static io.harness.delegate.beans.connector.ConnectorCapabilityBaseHelper.populateDelegateSelectorCapability;
+import static io.harness.delegate.task.artifacts.ArtifactSourceType.JENKINS;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -57,6 +58,7 @@ public class JenkinsArtifactDelegateRequest implements ArtifactSourceDelegateReq
   Map<String, String> jobParameter;
   boolean unstableStatusAsSuccess;
   boolean captureEnvironmentVariable;
+  boolean useConnectorUrlForJobExecution;
   private long timeout;
   private long startTs;
   List<String> delegateSelectors;
@@ -92,5 +94,10 @@ public class JenkinsArtifactDelegateRequest implements ArtifactSourceDelegateReq
                                                           : jenkinsConnectorDTO.getJenkinsUrl().concat("/"),
         maskingEvaluator));
     return capabilities;
+  }
+
+  @Override
+  public ArtifactSourceType getSourceType() {
+    return JENKINS;
   }
 }

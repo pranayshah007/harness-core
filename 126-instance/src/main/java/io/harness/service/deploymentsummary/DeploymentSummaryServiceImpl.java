@@ -10,6 +10,7 @@ package io.harness.service.deploymentsummary;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.dtos.DeploymentSummaryDTO;
+import io.harness.dtos.InfrastructureMappingDTO;
 import io.harness.entities.DeploymentSummary;
 import io.harness.mappers.DeploymentSummaryMapper;
 import io.harness.repositories.deploymentsummary.DeploymentSummaryRepository;
@@ -39,14 +40,25 @@ public class DeploymentSummaryServiceImpl implements DeploymentSummaryService {
   }
 
   @Override
-  public Optional<DeploymentSummaryDTO> getNthDeploymentSummaryFromNow(int N, String instanceSyncKey) {
+  public Optional<DeploymentSummaryDTO> getNthDeploymentSummaryFromNow(
+      int N, String instanceSyncKey, InfrastructureMappingDTO infrastructureMappingDTO) {
     Optional<DeploymentSummary> deploymentSummaryOptional =
-        deploymentSummaryRepository.fetchNthRecordFromNow(N, instanceSyncKey);
+        deploymentSummaryRepository.fetchNthRecordFromNow(N, instanceSyncKey, infrastructureMappingDTO);
     return deploymentSummaryOptional.map(DeploymentSummaryMapper::toDTO);
   }
 
   @Override
-  public Optional<DeploymentSummaryDTO> getLatestByInstanceKey(String instanceSyncKey) {
-    return getNthDeploymentSummaryFromNow(1, instanceSyncKey);
+  public Optional<DeploymentSummaryDTO> getLatestByInstanceKeyAndPipelineExecutionIdNot(
+      String instanceSyncKey, InfrastructureMappingDTO infrastructureMappingDTO, String pipelineExecutionId) {
+    Optional<DeploymentSummary> deploymentSummaryOptional =
+        deploymentSummaryRepository.fetchLatestByInstanceKeyAndPipelineExecutionIdNot(
+            instanceSyncKey, infrastructureMappingDTO, pipelineExecutionId);
+    return deploymentSummaryOptional.map(DeploymentSummaryMapper::toDTO);
+  }
+
+  @Override
+  public Optional<DeploymentSummaryDTO> getLatestByInstanceKey(
+      String instanceSyncKey, InfrastructureMappingDTO infrastructureMappingDTO) {
+    return getNthDeploymentSummaryFromNow(1, instanceSyncKey, infrastructureMappingDTO);
   }
 }

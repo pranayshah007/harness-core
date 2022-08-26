@@ -1,0 +1,24 @@
+// Copyright 2021 Harness Inc. All rights reserved.
+// Use of this source code is governed by the PolyForm Shield 1.0.0 license
+// that can be found in the licenses directory at the root of this repository, also available at
+// https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
+
+syntax = "proto3";
+
+package io.harness.pms.contracts.execution.failure;
+
+option java_multiple_files = true;
+
+enum FailureType {
+  UNKNOWN_FAILURE = 0;
+  DELEGATE_PROVISIONING_FAILURE = 1;
+  CONNECTIVITY_FAILURE = 2;
+  AUTHENTICATION_FAILURE = 3;
+  VERIFICATION_FAILURE = 4;
+  APPLICATION_FAILURE = 5;
+  AUTHORIZATION_FAILURE = 6;
+  TIMEOUT_FAILURE = 7;
+  SKIPPING_FAILURE = 8;
+  POLICY_EVALUATION_FAILURE = 9;
+  EXECUTION_INPUT_TIMEOUT_FAILURE = 10;
+}

@@ -11,6 +11,7 @@ import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SearchPageParams;
+import io.harness.filestore.dto.filter.FileStoreNodesFilterQueryPropertiesDTO;
 import io.harness.filestore.dto.filter.FilesFilterPropertiesDTO;
 import io.harness.filestore.dto.node.FileStoreNodeDTO;
 import io.harness.filestore.dto.node.FolderNodeDTO;
@@ -24,6 +25,7 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -44,11 +46,10 @@ public interface FileStoreService {
    *
    * @param fileDto the file DTO
    * @param content file content
-   * @param identifier file identifier
    * @return updated file DTO
    */
 
-  FileDTO update(@NotNull FileDTO fileDto, InputStream content, String identifier);
+  FileDTO update(@NotNull FileDTO fileDto, InputStream content);
 
   /**
    * Get the file or folder metadata not including content and children.
@@ -61,6 +62,12 @@ public interface FileStoreService {
    */
   Optional<FileDTO> get(
       @NotNull String accountIdentifier, String orgIdentifier, String projectIdentifier, @NotNull String identifier);
+
+  /**
+   * @param fileDTO  file DTO
+   * @return
+   */
+  Optional<FileDTO> get(@NotNull FileDTO fileDTO);
 
   /**
    * Get the file or folder metadata by path not including content and children.
@@ -137,10 +144,11 @@ public interface FileStoreService {
    * @param orgIdentifier the organization identifier
    * @param projectIdentifier the project identifier
    * @param folderNodeDTO the folder for which to return the list of nodes
+   * @param filterParams filter files and folder by params
    * @return the folder populated with nodes
    */
   FolderNodeDTO listFolderNodes(@NotNull String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      @NotNull FolderNodeDTO folderNodeDTO);
+      @NotNull FolderNodeDTO folderNodeDTO, @Nullable FileStoreNodesFilterQueryPropertiesDTO filterParams);
 
   /**
    * Get list of entities file is referenced by.

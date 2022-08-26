@@ -23,7 +23,6 @@ import static java.lang.String.format;
 import static java.time.Duration.ofSeconds;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cli.CliResponse;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.storeconfig.ArtifactoryStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
@@ -37,7 +36,9 @@ import io.harness.git.model.GitBaseRequest;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.PlanJsonLogOutputStream;
+import io.harness.logging.PlanLogOutputStream;
 import io.harness.terraform.TerraformHelperUtils;
+import io.harness.terraform.TerraformStepResponse;
 import io.harness.terraform.request.TerraformExecuteStepRequest;
 
 import com.google.inject.Inject;
@@ -119,7 +120,8 @@ public class TerraformApplyTaskHandler extends TerraformAbstractTaskHandler {
 
     File tfOutputsFile = Paths.get(scriptDirectory, format(TERRAFORM_VARIABLES_FILE_NAME, "output")).toFile();
 
-    try (PlanJsonLogOutputStream planJsonLogOutputStream = new PlanJsonLogOutputStream()) {
+    try (PlanJsonLogOutputStream planJsonLogOutputStream = new PlanJsonLogOutputStream();
+         PlanLogOutputStream planLogOutputStream = new PlanLogOutputStream()) {
       TerraformExecuteStepRequest terraformExecuteStepRequest =
           TerraformExecuteStepRequest.builder()
               .tfBackendConfigsFile(taskParameters.getBackendConfig() != null
@@ -137,17 +139,24 @@ public class TerraformApplyTaskHandler extends TerraformAbstractTaskHandler {
               .isSaveTerraformJson(taskParameters.isSaveTerraformStateJson())
               .logCallback(logCallback)
               .planJsonLogOutputStream(planJsonLogOutputStream)
+              .planLogOutputStream(planLogOutputStream)
+              .analyseTfPlanSummary(false) // this only temporary until the logic for NG is implemented - FF should be
+                                           // sent from manager side
               .timeoutInMillis(taskParameters.getTimeoutInMillis())
+              .useOptimizedTfPlan(taskParameters.isUseOptimizedTfPlan())
+              .accountId(taskParameters.getAccountId())
               .build();
 
-      CliResponse response = terraformBaseHelper.executeTerraformApplyStep(terraformExecuteStepRequest);
+      TerraformStepResponse terraformStepResponse =
+          terraformBaseHelper.executeTerraformApplyStep(terraformExecuteStepRequest);
 
       logCallback.saveExecutionLog(
           format("Waiting: [%s] seconds for resources to be ready", RESOURCE_READY_WAIT_TIME_SECONDS), INFO,
           CommandExecutionStatus.RUNNING);
       sleep(ofSeconds(RESOURCE_READY_WAIT_TIME_SECONDS));
 
-      logCallback.saveExecutionLog("Script execution finished with status: " + response.getCommandExecutionStatus(),
+      logCallback.saveExecutionLog("Script execution finished with status: "
+              + terraformStepResponse.getCliResponse().getCommandExecutionStatus(),
           INFO, CommandExecutionStatus.RUNNING);
 
       if (isNotEmpty(taskParameters.getVarFileInfos())) {

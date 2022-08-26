@@ -34,15 +34,15 @@ import org.hibernate.validator.constraints.NotBlank;
 @OwnedBy(HarnessTeam.PL)
 @TargetModule(HarnessModule._950_NG_AUTHENTICATION_SERVICE)
 public interface SSOService {
-  SSOConfig uploadOauthConfiguration(String accountId, String filter, Set<OauthProviderType> allowedProviders);
+  SSOConfig uploadSamlConfiguration(String accountId, InputStream inputStream, String displayName,
+      String groupMembershipAttr, Boolean authorizationEnabled, String logoutUrl, String entityIdentifier,
+      String samlProviderType, String clientId, char[] clientSecret, boolean isNGSSO);
 
-  SSOConfig uploadSamlConfiguration(@NotNull String accountId, @NotNull InputStream inputStream,
-      @NotNull String displayName, String groupMembershipAttr, @NotNull Boolean authorizationEnabled, String logoutUrl,
-      String entityIdentifier, String samlProviderType, String clientId, char[] clientSecret);
+  SSOConfig uploadOauthConfiguration(String accountId, String filter, Set<OauthProviderType> allowedProviders);
 
   SSOConfig updateSamlConfiguration(@NotNull String accountId, InputStream inputStream, String displayName,
       String groupMembershipAttr, @NotNull Boolean authorizationEnabled, String logoutUrl, String entityIdentifier,
-      String samlProviderType, String clientId, char[] clientSecret);
+      String samlProviderType, String clientId, char[] clientSecret, boolean isNGSSO);
 
   SSOConfig updateLogoutUrlSamlSettings(@NotNull String accountId, @NotNull String logoutUrl);
 
@@ -59,7 +59,8 @@ public interface SSOService {
 
   LdapSettings getLdapSettings(@NotBlank String accountId);
 
-  LdapSettingsWithEncryptedDataDetail getLdapSettingWithEncryptedDataDetail(@NotBlank String accountId);
+  LdapSettingsWithEncryptedDataDetail getLdapSettingWithEncryptedDataDetail(
+      @NotBlank String accountId, LdapSettings ldapSettings);
 
   LdapSettings deleteLdapSettings(@NotBlank String accountId);
 

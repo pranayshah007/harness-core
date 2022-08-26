@@ -15,10 +15,12 @@ import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.RAGHVENDRA;
+import static io.harness.rule.OwnerRule.SOURABH;
 import static io.harness.rule.OwnerRule.YOGESH;
 
 import static software.wings.beans.artifact.Artifact.Builder.anArtifact;
 import static software.wings.beans.container.Label.Builder.aLabel;
+import static software.wings.beans.infrastructure.instance.InstanceType.ECS_CONTAINER_INSTANCE;
 import static software.wings.beans.infrastructure.instance.InstanceType.KUBERNETES_CONTAINER_INSTANCE;
 import static software.wings.service.impl.instance.InstanceSyncTestConstants.ACCOUNT_ID;
 import static software.wings.service.impl.instance.InstanceSyncTestConstants.APP_ID;
@@ -44,6 +46,7 @@ import static software.wings.utils.WingsTestConstants.UUID;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
+import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
@@ -66,11 +69,11 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ArtifactMetadata;
 import io.harness.beans.EnvironmentType;
-import io.harness.beans.FeatureName;
 import io.harness.beans.PageResponse;
 import io.harness.category.element.UnitTests;
 import io.harness.container.ContainerInfo;
 import io.harness.delegate.task.helm.HelmChartInfo;
+import io.harness.exception.GeneralException;
 import io.harness.exception.runtime.NoInstancesException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.k8s.model.HarnessLabels;
@@ -81,6 +84,7 @@ import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
+import software.wings.api.AwsCodeDeployDeploymentInfo;
 import software.wings.api.ContainerDeploymentInfoWithLabels;
 import software.wings.api.ContainerDeploymentInfoWithNames;
 import software.wings.api.DeploymentInfo;
@@ -89,6 +93,7 @@ import software.wings.api.HelmSetupExecutionSummary;
 import software.wings.api.K8sDeploymentInfo;
 import software.wings.api.ondemandrollback.OnDemandRollbackInfo;
 import software.wings.beans.Application;
+import software.wings.beans.AwsInfrastructureMapping;
 import software.wings.beans.ContainerInfrastructureMapping;
 import software.wings.beans.DirectKubernetesInfrastructureMapping;
 import software.wings.beans.EcsInfrastructureMapping;
@@ -102,6 +107,7 @@ import software.wings.beans.artifact.Artifact;
 import software.wings.beans.container.Label;
 import software.wings.beans.infrastructure.instance.Instance;
 import software.wings.beans.infrastructure.instance.InstanceType;
+import software.wings.beans.infrastructure.instance.info.EcsContainerInfo;
 import software.wings.beans.infrastructure.instance.info.EcsContainerInfo.Builder;
 import software.wings.beans.infrastructure.instance.info.InstanceInfo;
 import software.wings.beans.infrastructure.instance.info.K8sContainerInfo;
@@ -110,6 +116,9 @@ import software.wings.beans.infrastructure.instance.info.KubernetesContainerInfo
 import software.wings.beans.infrastructure.instance.key.ContainerInstanceKey;
 import software.wings.beans.infrastructure.instance.key.HostInstanceKey;
 import software.wings.beans.infrastructure.instance.key.PodInstanceKey;
+import software.wings.beans.infrastructure.instance.key.deployment.ContainerDeploymentKey;
+import software.wings.beans.infrastructure.instance.key.deployment.DeploymentKey;
+import software.wings.beans.infrastructure.instance.key.deployment.K8sDeploymentKey;
 import software.wings.helpers.ext.k8s.response.K8sInstanceSyncResponse;
 import software.wings.helpers.ext.k8s.response.K8sTaskExecutionResponse;
 import software.wings.service.impl.ContainerMetadata;
@@ -128,10 +137,12 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -181,8 +192,6 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
         .get(any(), any(), anyBoolean());
 
     doReturn(Service.builder().name(SERVICE_NAME).build()).when(serviceResourceService).getWithDetails(any(), any());
-
-    doReturn(false).when(featureFlagService).isEnabled(FeatureName.KEEP_PT_AFTER_K8S_DOWNSCALE, ACCOUNT_ID);
   }
 
   private InfrastructureMapping getInframapping(String inframappingType) {
@@ -1769,9 +1778,10 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
                               .build())
             .build());
 
+    EcsContainerInfo containerInfo = Builder.anEcsContainerInfo().build();
     ContainerSyncResponse responseData;
     responseData = ContainerSyncResponse.builder()
-                       .containerInfoList(Collections.emptyList())
+                       .containerInfoList(Collections.singletonList(containerInfo))
                        .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                        .build();
     ContainerInfrastructureMapping infrastructureMapping;
@@ -1812,9 +1822,10 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
                               .build())
             .build());
 
+    EcsContainerInfo containerInfo = Builder.anEcsContainerInfo().build();
     ContainerSyncResponse responseData;
     responseData = ContainerSyncResponse.builder()
-                       .containerInfoList(Collections.emptyList())
+                       .containerInfoList(Collections.singletonList(containerInfo))
                        .controllerName("controllerName:0")
                        .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                        .build();
@@ -1828,7 +1839,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
     verify(instanceService, never()).delete(Sets.newHashSet(INSTANCE_2_ID));
 
     responseData = ContainerSyncResponse.builder()
-                       .containerInfoList(Collections.emptyList())
+                       .containerInfoList(Collections.singletonList(containerInfo))
                        .controllerName("controllerName:1")
                        .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                        .build();
@@ -2090,8 +2101,6 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
             createKubernetesContainerInstance("instance4", "releaseY", "namespaceX", null),
             createKubernetesContainerInstance("instance5", "releaseY", "namespaceY", null));
 
-    doReturn(true).when(featureFlagService).isEnabled(FeatureName.KEEP_PT_AFTER_K8S_DOWNSCALE, ACCOUNT_ID);
-
     // Ref: ContainerInstanceSyncPerpetualTaskClient#getPerpetualTaskData at 207, controllerName will be always empty
     // string when the actual value is null
     ContainerSyncResponse instanceSyncResponse =
@@ -2222,6 +2231,92 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
   }
 
   @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void shouldNotChangeInstancesFromPerpetualTaskIfResponseFromDelegateIsSameECS() throws Exception {
+    List<Instance> instancesInDb =
+        Arrays.asList(createECSInstance("instance1"), createECSInstance("instance2"), createECSInstance("instance3"));
+
+    ContainerSyncResponse instanceSyncResponse = containerSyncResponse("instance1", "instance2", "instance3");
+    assertSavedAndDeletedInstancesEcs(instancesInDb, instanceSyncResponse, emptyList(), emptyList());
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void shouldUpdateInstancesFromPerpetualTaskIfResponseFromDelegateIsNotSameECS() throws Exception {
+    List<Instance> instancesInDb =
+        Arrays.asList(createECSInstance("instance1"), createECSInstance("instance2"), createECSInstance("instance3"));
+
+    ContainerSyncResponse instanceSyncResponse = containerSyncResponse("instance4", "instance5", "instance6");
+    assertSavedAndDeletedInstancesEcs(instancesInDb, instanceSyncResponse,
+        asList("instance4", "instance5", "instance6"), asList("instance1", "instance2", "instance3"));
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void shouldUpdateInstancesFromPerpetualTaskIfResponseFromDelegateWithOneInstanceSameECS() throws Exception {
+    List<Instance> instancesInDb =
+        Arrays.asList(createECSInstance("instance1"), createECSInstance("instance2"), createECSInstance("instance3"));
+
+    ContainerSyncResponse instanceSyncResponse = containerSyncResponse("instance1", "instance5", "instance6");
+    assertSavedAndDeletedInstancesEcs(
+        instancesInDb, instanceSyncResponse, asList("instance5", "instance6"), asList("instance2", "instance3"));
+  }
+
+  @Test(expected = GeneralException.class)
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void shouldThrowExceptionOnUnsupportedInfraMapping() throws Exception {
+    AwsInfrastructureMapping awsInfrastructureMapping =
+        AwsInfrastructureMapping.Builder.anAwsInfrastructureMapping().build();
+    containerInstanceHandler.processInstanceSyncResponseFromPerpetualTask(awsInfrastructureMapping, null);
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void generateDeploymentKeyTestForContainerDeploymentInfoWithLabels() throws Exception {
+    List<Label> labelList = Arrays.asList(createLabel("l1"), createLabel("l2"));
+    DeploymentInfo deploymentInfo = ContainerDeploymentInfoWithLabels.builder()
+                                        .labels(new ArrayList<Label>(asList(createLabel("l1"), createLabel("l2"))))
+                                        .namespace("NS1")
+                                        .releaseName("RN1")
+                                        .build();
+    DeploymentKey deploymentKey = containerInstanceHandler.generateDeploymentKey(deploymentInfo);
+    ContainerDeploymentKey containerDeploymentKey = (ContainerDeploymentKey) deploymentKey;
+    assertThat(labelList).containsExactlyInAnyOrderElementsOf(containerDeploymentKey.getLabels());
+  }
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void generateDeploymentKeyTestForContainerDeploymentInfoWithNames() throws Exception {
+    DeploymentInfo deploymentInfo =
+        ContainerDeploymentInfoWithNames.builder().containerSvcName("service1").clusterName("cl1").build();
+    ContainerDeploymentKey containerDeploymentKey =
+        (ContainerDeploymentKey) containerInstanceHandler.generateDeploymentKey(deploymentInfo);
+    assertEquals("service1", containerDeploymentKey.getContainerServiceName());
+  }
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void generateDeploymentKeyTestForK8sDeployment() throws Exception {
+    DeploymentInfo deploymentInfo = K8sDeploymentInfo.builder().releaseName("Name1").clusterName("cl1").build();
+    K8sDeploymentKey k8sDeploymentKey =
+        (K8sDeploymentKey) containerInstanceHandler.generateDeploymentKey(deploymentInfo);
+    assertEquals("Name1", k8sDeploymentKey.getReleaseName());
+  }
+
+  @Test(expected = GeneralException.class)
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void generateDeploymentKeyTestUnsupportedTypeThrowsException() throws Exception {
+    DeploymentInfo deploymentInfo = AwsCodeDeployDeploymentInfo.builder().build();
+    containerInstanceHandler.generateDeploymentKey(deploymentInfo);
+  }
+
+  @Test
   @Owner(developers = ABOSII)
   @Category(UnitTests.class)
   public void shouldThrowNoInstancesExceptionInstancesExistsInDb() {
@@ -2229,7 +2324,6 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
         createK8sPodInstance("instance2", "releaseX", "namespaceX"));
 
     K8sInstanceSyncResponse instanceSyncResponse = creteK8sPodSyncResponseWith("releaseX", "namespaceX");
-    doReturn(true).when(featureFlagService).isEnabled(FeatureName.KEEP_PT_AFTER_K8S_DOWNSCALE, ACCOUNT_ID);
     assertThatThrownBy(()
                            -> assertSavedAndDeletedInstances(
                                instancesInDb, instanceSyncResponse, emptyList(), asList("instance1", "instance2")))
@@ -2241,7 +2335,6 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldThrowNoInstancesExceptionNOInstancesExistsInDb() {
     K8sInstanceSyncResponse instanceSyncResponse = creteK8sPodSyncResponseWith("releaseX", "namespaceX");
-    doReturn(true).when(featureFlagService).isEnabled(FeatureName.KEEP_PT_AFTER_K8S_DOWNSCALE, ACCOUNT_ID);
 
     assertThatThrownBy(
         () -> assertSavedAndDeletedInstances(emptyList(), instanceSyncResponse, emptyList(), emptyList()))
@@ -2260,7 +2353,6 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
                                              .isEcs(false)
                                              .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                                              .build();
-    doReturn(true).when(featureFlagService).isEnabled(FeatureName.KEEP_PT_AFTER_K8S_DOWNSCALE, ACCOUNT_ID);
 
     assertThatThrownBy(() -> assertSavedAndDeletedInstances(instancesInDb, syncResponse, emptyList(), emptyList()))
         .isInstanceOf(NoInstancesException.class);
@@ -2271,7 +2363,6 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldThrowNoInstancesExceptionForKubernetesContainerDeploymentNoInstancesInDb() {
     ContainerSyncResponse syncResponse = createContainerSyncResponseWith("release-name", "default", "controller");
-    doReturn(true).when(featureFlagService).isEnabled(FeatureName.KEEP_PT_AFTER_K8S_DOWNSCALE, ACCOUNT_ID);
 
     assertThatThrownBy(() -> assertSavedAndDeletedInstances(emptyList(), syncResponse, emptyList(), emptyList()))
         .isInstanceOf(NoInstancesException.class);
@@ -2283,7 +2374,6 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
   public void shouldAddInstancesFromContainerSyncEvenNoInstancesInDb() {
     ContainerSyncResponse syncResponse =
         createContainerSyncResponseWith("release-name", "default", "controller", "instance-1", "instance-2");
-    doReturn(true).when(featureFlagService).isEnabled(FeatureName.KEEP_PT_AFTER_K8S_DOWNSCALE, ACCOUNT_ID);
 
     assertSavedAndDeletedInstances(emptyList(), syncResponse, asList("instance-1", "instance-2"), emptyList());
   }
@@ -2385,6 +2475,44 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
     }
   }
 
+  private void assertSavedAndDeletedInstancesEcs(List<Instance> instancesInDb, ContainerSyncResponse syncResponse,
+      List<String> savedInstances, List<String> deletedInstances) throws Exception {
+    ContainerInfrastructureMapping infrastructureMapping =
+        EcsInfrastructureMapping.Builder.anEcsInfrastructureMapping()
+            .withAppId(APP_ID)
+            .withAccountId(ACCOUNT_ID)
+            .withInfraMappingType(InfrastructureMappingType.AWS_ECS.name())
+            .build();
+    infrastructureMapping.setUuid(UUID);
+
+    doReturn(instancesInDb).when(instanceService).getInstancesForAppAndInframappingNotRemovedFully(APP_ID, UUID);
+    Exception thrownException = null;
+
+    try {
+      containerInstanceHandler.processInstanceSyncResponseFromPerpetualTask(infrastructureMapping, syncResponse);
+    } catch (Exception e) {
+      thrownException = e;
+    }
+    ArgumentCaptor<Instance> savedInstancesCaptor = ArgumentCaptor.forClass(Instance.class);
+    ArgumentCaptor<Set<String>> deletedInstancesCaptor =
+        ArgumentCaptor.forClass((Class<Set<String>>) (Object) Set.class);
+
+    verify(instanceService, atLeast(0)).save(savedInstancesCaptor.capture());
+    verify(instanceService, atLeast(0)).delete(deletedInstancesCaptor.capture());
+    assertThat(savedInstancesCaptor.getAllValues()
+                   .stream()
+                   .map(Instance::getInstanceInfo)
+                   .map(EcsContainerInfo.class ::cast)
+                   .map(EcsContainerInfo::getTaskArn))
+        .containsExactlyInAnyOrderElementsOf(savedInstances);
+
+    assertThat(deletedInstancesCaptor.getAllValues().stream().flatMap(Set::stream).collect(Collectors.toList()))
+        .containsExactlyInAnyOrderElementsOf(deletedInstances);
+
+    if (thrownException != null) {
+      throw thrownException;
+    }
+  }
   private void assertSavedAndDeletedInstancesOnNewDeployment(DeploymentSummary deploymentSummary,
       List<Instance> instancesInDb, List<K8sPod> podList, List<String> savedInstances, List<String> deletedInstances,
       Artifact artifact) throws Exception {
@@ -2495,6 +2623,16 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
         .build();
   }
 
+  private Instance createECSInstance(String id) {
+    InstanceInfo instanceInfo = EcsContainerInfo.Builder.anEcsContainerInfo().withClusterName("cl1").build();
+    return Instance.builder()
+        .uuid(id)
+        .instanceType(ECS_CONTAINER_INSTANCE)
+        .lastWorkflowExecutionId("WFexec")
+        .containerInstanceKey(ContainerInstanceKey.builder().containerId(id).build())
+        .instanceInfo(instanceInfo)
+        .build();
+  }
   private Instance createKubernetesContainerInstance(String id, String releaseName, String namespace) {
     return createKubernetesContainerInstance(id, releaseName, namespace, null);
   }
@@ -2523,6 +2661,22 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
         .k8sPodInfoList(
             Arrays.stream(podIds).map(id -> createK8sPod(id, releaseName, namespace)).collect(Collectors.toList()))
         .build();
+  }
+  public Label createLabel(String name) {
+    return Label.Builder.aLabel().withName(name).build();
+  }
+  private ContainerSyncResponse containerSyncResponse(String... ids) {
+    List<EcsContainerInfo> list = new ArrayList<>();
+    for (String id : ids) {
+      EcsContainerInfo info = createECSInfo(id);
+      list.add(info);
+    }
+    LinkedList<software.wings.beans.infrastructure.instance.info.ContainerInfo> list1 = new LinkedList<>(list);
+    return ContainerSyncResponse.builder().isEcs(true).containerInfoList(list1).build();
+  }
+
+  private EcsContainerInfo createECSInfo(String id) {
+    return EcsContainerInfo.Builder.anEcsContainerInfo().withTaskArn(id).withClusterName("cl1").build();
   }
 
   private ContainerSyncResponse createContainerSyncResponseWith(

@@ -14,6 +14,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.audit.ResourceTypeConstants.DELEGATE;
 import static io.harness.audit.ResourceTypeConstants.DELEGATE_GROUPS;
 import static io.harness.audit.ResourceTypeConstants.DELEGATE_TOKEN;
+import static io.harness.audit.ResourceTypeConstants.NG_LOGIN_SETTINGS;
 import static io.harness.audit.ResourceTypeConstants.USER;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ORGANIZATION_ENTITY;
@@ -26,7 +27,6 @@ import io.harness.CgOrchestrationModule;
 import io.harness.SecretManagementCoreModule;
 import io.harness.accesscontrol.AccessControlAdminClientConfiguration;
 import io.harness.accesscontrol.AccessControlAdminClientModule;
-import io.harness.account.AccountClientModule;
 import io.harness.agent.AgentMtlsModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -146,6 +146,7 @@ import io.harness.governance.pipeline.service.evaluators.WorkflowStatusEvaluator
 import io.harness.grpc.DelegateServiceClassicGrpcClientModule;
 import io.harness.grpc.DelegateServiceDriverGrpcClientModule;
 import io.harness.instancesync.InstanceSyncResourceClientModule;
+import io.harness.instancesyncmonitoring.module.InstanceSyncMonitoringModule;
 import io.harness.invites.NgInviteClientModule;
 import io.harness.k8s.K8sGlobalConfigService;
 import io.harness.k8s.KubernetesContainerService;
@@ -259,6 +260,7 @@ import software.wings.beans.config.ArtifactoryConfig;
 import software.wings.beans.config.NexusConfig;
 import software.wings.beans.loginSettings.LoginSettingsService;
 import software.wings.beans.loginSettings.LoginSettingsServiceImpl;
+import software.wings.beans.loginSettings.outbox.LoginSettingsOutboxEventHandler;
 import software.wings.beans.security.UserGroup;
 import software.wings.beans.settings.azureartifacts.AzureArtifactsPATConfig;
 import software.wings.cloudprovider.aws.AwsClusterService;
@@ -931,8 +933,6 @@ public class WingsModule extends AbstractModule implements ServersModule {
     install(new EventsFrameworkModule(configuration.getEventsFrameworkConfiguration(),
         configuration.isEventsFrameworkAvailableInOnPrem(), StartupMode.DELEGATE_SERVICE.equals(startupMode)));
     install(FeatureFlagModule.getInstance());
-    install(new AccountClientModule(configuration.getManagerServiceHttpClientConfig(),
-        configuration.getPortal().getJwtManagerServiceSecret(), MANAGER.getServiceId()));
     install(AccessControlAdminClientModule.getInstance(
         AccessControlAdminClientConfiguration.builder()
             .accessControlServiceConfig(
@@ -1223,6 +1223,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     install(new ManagerCacheRegistrar());
     install(new FactoryModuleBuilder().implement(Jenkins.class, JenkinsImpl.class).build(JenkinsFactory.class));
     install(SecretManagementCoreModule.getInstance());
+    install(new InstanceSyncMonitoringModule());
     registerSecretManagementBindings();
 
     registerEventListeners();
@@ -1478,6 +1479,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     outboxEventHandlerMapBinder.addBinding(DELEGATE_TOKEN).to(DelegateOutboxEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(DELEGATE_GROUPS).to(DelegateOutboxEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(USER).to(UserEventHandler.class);
+    outboxEventHandlerMapBinder.addBinding(NG_LOGIN_SETTINGS).to(LoginSettingsOutboxEventHandler.class);
   }
 
   private void bindFeatures() {

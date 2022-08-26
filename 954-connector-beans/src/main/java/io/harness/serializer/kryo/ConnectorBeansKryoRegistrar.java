@@ -72,12 +72,13 @@ import io.harness.delegate.beans.connector.cek8s.CEKubernetesClusterConfigDTO;
 import io.harness.delegate.beans.connector.customhealthconnector.CustomHealthConnectorDTO;
 import io.harness.delegate.beans.connector.customhealthconnector.CustomHealthKeyAndValue;
 import io.harness.delegate.beans.connector.customhealthconnector.CustomHealthMethod;
+import io.harness.delegate.beans.connector.customsecretmanager.CustomSecretManagerConnectorDTO;
+import io.harness.delegate.beans.connector.customsecretmanager.TemplateLinkConfigForCustomSecretManager;
 import io.harness.delegate.beans.connector.datadog.DatadogConnectorDTO;
 import io.harness.delegate.beans.connector.docker.DockerAuthCredentialsDTO;
 import io.harness.delegate.beans.connector.docker.DockerAuthType;
 import io.harness.delegate.beans.connector.docker.DockerAuthenticationDTO;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
-import io.harness.delegate.beans.connector.docker.DockerRegistryProviderType;
 import io.harness.delegate.beans.connector.docker.DockerUserNamePasswordDTO;
 import io.harness.delegate.beans.connector.dynatrace.DynatraceConnectorDTO;
 import io.harness.delegate.beans.connector.errortracking.ErrorTrackingConnectorDTO;
@@ -254,7 +255,6 @@ public class ConnectorBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(AwsManualConfigSpecDTO.class, 19358);
     kryo.register(CrossAccountAccessDTO.class, 19362);
     kryo.register(ConnectorType.class, 19372);
-    kryo.register(DockerRegistryProviderType.class, 19434);
     kryo.register(GithubHttpCredentialsDTO.class, 19440);
     kryo.register(GithubHttpAuthenticationType.class, 19441);
     kryo.register(GithubUsernamePasswordDTO.class, 19442);
@@ -408,5 +408,7 @@ public class ConnectorBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(OciHelmConnectorDTO.class, 29134);
     kryo.register(OciHelmUsernamePasswordDTO.class, 29135);
     kryo.register(AzureRepoConnectionTypeDTO.class, 19854);
+    kryo.register(CustomSecretManagerConnectorDTO.class, 19875);
+    kryo.register(TemplateLinkConfigForCustomSecretManager.class, 19877);
   }
 }

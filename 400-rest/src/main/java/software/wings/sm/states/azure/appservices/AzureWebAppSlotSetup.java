@@ -431,10 +431,6 @@ public class AzureWebAppSlotSetup extends AbstractAzureAppServiceState {
       invalidFields.put("targetSlot", "Target slot cannot be the same as deployment slot");
     }
 
-    if (deploymentSlot != null && deploymentSlot.equals(appService)) {
-      invalidFields.put("deploymentSlot", "Deployment slot cannot be production slot");
-    }
-
     return invalidFields;
   }
 }

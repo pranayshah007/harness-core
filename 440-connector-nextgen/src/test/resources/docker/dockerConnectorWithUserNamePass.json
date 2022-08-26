@@ -21,7 +21,8 @@
           "usernameRef": null,
           "passwordRef": "account.dockerPassword"
         }
-      }
+      },
+      "executeOnDelegate": true
     }
   }
 }

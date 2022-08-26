@@ -80,17 +80,9 @@ aeriform("//300-cv-nextgen:module")
 
 aeriform("//300-cv-nextgen:tests")
 
-aeriform("//310-ci-manager:module")
-
-aeriform("//310-ci-manager:tests")
-
 aeriform("//315-sto-manager:module")
 
 aeriform("//315-sto-manager:tests")
-
-aeriform("//320-ci-execution:module")
-
-aeriform("//320-ci-execution:tests")
 
 aeriform("//323-sto-utilities:module")
 
@@ -100,9 +92,17 @@ aeriform("//325-sto-beans:module")
 
 aeriform("//325-sto-beans:tests")
 
-aeriform("//330-ci-beans:module")
+aeriform("//332-ci-manager/app:module")
 
-aeriform("//330-ci-beans:tests")
+aeriform("//332-ci-manager/app:tests")
+
+aeriform("//332-ci-manager/service:module")
+
+aeriform("//332-ci-manager/service:tests")
+
+aeriform("//332-ci-manager/contracts:module")
+
+aeriform("//332-ci-manager/contracts:tests")
 
 aeriform("//340-ce-nextgen:module")
 
@@ -182,10 +182,6 @@ aeriform("//490-ce-commons:module")
 
 aeriform("//490-ce-commons:tests")
 
-aeriform("//800-pipeline-service:module")
-
-aeriform("//800-pipeline-service:tests")
-
 aeriform("//815-cg-triggers:module")
 
 aeriform("//840-template-service:module")
@@ -208,19 +204,9 @@ aeriform("//878-ng-common-utilities:module")
 
 aeriform("//878-ng-common-utilities:tests")
 
-aeriform("//879-pms-sdk:module")
-
-aeriform("//879-pms-sdk:tests")
-
 aeriform("//880-pipeline-cd-commons:module")
 
 aeriform("//880-pipeline-cd-commons:tests")
-
-aeriform("//882-pms-sdk-core:module")
-
-aeriform("//882-pms-sdk-core:supporter-test")
-
-aeriform("//882-pms-sdk-core:tests")
 
 aeriform("//884-pms-commons:module")
 
@@ -270,7 +256,7 @@ aeriform("//930-ng-license-manager:tests")
 
 aeriform("//932-connector-task:module")
 
-aeriform("//933-scm-commons:module")
+aeriform("//933-ci-commons:module")
 
 aeriform("//935-analyser-service:module")
 
@@ -358,7 +344,7 @@ aeriform("//950-wait-engine:tests")
 
 aeriform("//951-cg-git-sync:module")
 
-aeriform("//951-debezium-service")
+aeriform("//debezium-service")
 
 aeriform("//952-debezium-engine")
 

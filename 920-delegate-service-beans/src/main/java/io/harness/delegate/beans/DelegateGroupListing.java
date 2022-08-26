@@ -35,6 +35,8 @@ public class DelegateGroupListing {
     private boolean activelyConnected;
     private String hostName;
     private boolean tokenActive;
+    private String version;
+    private long delegateExpirationTime;
     List<DelegateConnectionDetails> connections;
   }
 }

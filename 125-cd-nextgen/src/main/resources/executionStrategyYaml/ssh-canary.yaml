@@ -1,0 +1,25 @@
+failureStrategies:
+  - onFailure:
+      errors:
+        - AllErrors
+      action:
+        type: StageRollback
+spec:
+  execution:
+    steps:
+      - stepGroup:
+          identifier: Step_Group
+          name: "Step Group"
+          strategy:
+            repeat:
+              items: <+stage.output.hosts>
+              start: 0
+              end: 100
+              unit: Percentage
+          steps:
+            - step:
+                name: "Deploy"
+                identifier: Deploy
+                type: Command
+                timeout: 10m
+                spec: {}

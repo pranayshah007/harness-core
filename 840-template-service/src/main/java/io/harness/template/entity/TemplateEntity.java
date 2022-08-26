@@ -109,6 +109,7 @@ public class TemplateEntity
   @Wither @Setter @NonFinal StoreType storeType;
   @Wither @Setter @NonFinal String repo;
   @Wither @Setter @NonFinal String connectorRef;
+  @Wither @Setter @NonFinal String repoURL;
 
   @Override
   public String getAccountIdentifier() {
@@ -183,6 +184,12 @@ public class TemplateEntity
                  .fields(Arrays.asList(TemplateEntityKeys.accountId, TemplateEntityKeys.projectIdentifier,
                      TemplateEntityKeys.orgIdentifier, TemplateEntityKeys.isFromDefaultBranch))
                  .descSortField(TemplateEntityKeys.createdAt)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_repoURL_filePath")
+                 .field(TemplateEntityKeys.accountId)
+                 .field(TemplateEntityKeys.repoURL)
+                 .field(TemplateEntityKeys.filePath)
                  .build())
         .build();
   }

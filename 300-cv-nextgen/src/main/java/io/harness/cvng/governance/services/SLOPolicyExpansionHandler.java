@@ -13,11 +13,7 @@ import static io.harness.cvng.cdng.services.impl.CVNGStepUtils.STAGE_KEY;
 import static io.harness.cvng.cdng.services.impl.CVNGStepUtils.USE_FROM_STAGE_KEY;
 import static io.harness.cvng.core.beans.params.ServiceEnvironmentParams.builderWithProjectParams;
 import static io.harness.cvng.governance.beans.ExpansionKeysConstants.ENVIRONMENT_REF;
-import static io.harness.cvng.governance.beans.ExpansionKeysConstants.IDENTIFIER;
 import static io.harness.cvng.governance.beans.ExpansionKeysConstants.INFRASTRUCTURE;
-import static io.harness.cvng.governance.beans.ExpansionKeysConstants.SERVICE;
-import static io.harness.cvng.governance.beans.ExpansionKeysConstants.SERVICE_CONFIG;
-import static io.harness.cvng.governance.beans.ExpansionKeysConstants.SERVICE_REF;
 
 import io.harness.cvng.cdng.services.impl.CVNGStepUtils;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceResponse;
@@ -100,11 +96,8 @@ public class SLOPolicyExpansionHandler implements JsonExpansionHandler {
   }
 
   private String fetchServiceIdentifier(JsonNode fieldValue, ExpansionRequestMetadata metadata) {
-    if (Objects.nonNull(fieldValue.get(SERVICE_CONFIG).get(SERVICE_REF))) {
-      return fieldValue.get(SERVICE_CONFIG).get(SERVICE_REF).asText();
-    } else if (Objects.nonNull(fieldValue.get(SERVICE_CONFIG).get(SERVICE))
-        && Objects.nonNull(fieldValue.get(SERVICE_CONFIG).get(SERVICE).get(IDENTIFIER))) {
-      return fieldValue.get(SERVICE_CONFIG).get(SERVICE).get(IDENTIFIER).asText();
+    if (CVNGStepUtils.hasServiceIdentifier(fieldValue)) {
+      return CVNGStepUtils.getServiceRefNode(fieldValue).asText();
     } else {
       try {
         String useFromStageIdentifier =

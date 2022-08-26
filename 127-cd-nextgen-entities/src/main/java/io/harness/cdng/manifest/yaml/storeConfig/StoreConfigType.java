@@ -20,6 +20,7 @@ import java.util.Arrays;
 
 @OwnedBy(HarnessTeam.CDP)
 public enum StoreConfigType {
+  @JsonProperty(ManifestStoreType.CUSTOM_REMOTE) CUSTOM_REMOTE(ManifestStoreType.CUSTOM_REMOTE),
   @JsonProperty(ManifestStoreType.GIT) GIT(ManifestStoreType.GIT),
   @JsonProperty(ManifestStoreType.GITHUB) GITHUB(ManifestStoreType.GITHUB),
   @JsonProperty(ManifestStoreType.BITBUCKET) BITBUCKET(ManifestStoreType.BITBUCKET),

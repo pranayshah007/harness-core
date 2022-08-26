@@ -23,6 +23,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -34,11 +35,16 @@ import io.harness.delegate.task.azure.appservice.AzureAppServiceResourceUtilitie
 import io.harness.delegate.task.azure.appservice.deployment.AzureAppServiceDeploymentService;
 import io.harness.delegate.task.azure.appservice.deployment.context.AzureAppServiceDockerDeploymentContext;
 import io.harness.delegate.task.azure.appservice.webapp.AppServiceDeploymentProgress;
+import io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppInfraDelegateConfig;
 import io.harness.delegate.task.azure.appservice.webapp.ng.exception.AzureWebAppRollbackExceptionData;
 import io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppRollbackRequest;
 import io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppNGRollbackResponse;
 import io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppRequestResponse;
 import io.harness.delegate.task.azure.appservice.webapp.response.AzureAppDeploymentData;
+import io.harness.delegate.task.azure.artifact.AzureArtifactDownloadResponse;
+import io.harness.delegate.task.azure.artifact.AzureArtifactDownloadService;
+import io.harness.delegate.task.azure.artifact.AzureArtifactType;
+import io.harness.delegate.task.azure.artifact.AzurePackageArtifactConfig;
 import io.harness.delegate.task.azure.common.AzureAppServiceService;
 import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
 import io.harness.logging.LogCallback;
@@ -46,6 +52,7 @@ import io.harness.rule.Owner;
 
 import software.wings.delegatetasks.azure.AzureSecretHelper;
 
+import java.io.File;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Rule;
@@ -65,6 +72,7 @@ public class AzureWebAppRollbackRequestHandlerTest {
   @Mock private AzureLogCallbackProvider logCallbackProvider;
   @Mock private LogCallback mockLogCallback;
   @Mock private AzureSecretHelper azureSecretHelper;
+  @Mock private AzureArtifactDownloadService artifactDownloaderService;
 
   @InjectMocks AzureWebAppRollbackRequestHandler requestHandler;
 
@@ -91,6 +99,7 @@ public class AzureWebAppRollbackRequestHandlerTest {
             .preDeploymentData(AzureTestUtils.buildTestPreDeploymentData(AppServiceDeploymentProgress.DEPLOY_TO_SLOT))
             .infrastructure(AzureTestUtils.createTestWebAppInfraDelegateConfig())
             .timeoutIntervalInMin(10)
+            .azureArtifactType(AzureArtifactType.CONTAINER)
             .build();
 
     final List<AzureAppDeploymentData> deploymentDataList = singletonList(AzureAppDeploymentData.builder().build());
@@ -111,6 +120,108 @@ public class AzureWebAppRollbackRequestHandlerTest {
   }
 
   @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testExecutePackageArtifact() {
+    final AzureWebAppRollbackRequest request =
+        AzureWebAppRollbackRequest.builder()
+            .accountId("accountId")
+            .preDeploymentData(AzureTestUtils.buildTestPreDeploymentData(AppServiceDeploymentProgress.DEPLOY_TO_SLOT))
+            .infrastructure(AzureTestUtils.createTestWebAppInfraDelegateConfig())
+            .timeoutIntervalInMin(10)
+            .artifact(AzurePackageArtifactConfig.builder().build())
+            .azureArtifactType(AzureArtifactType.PACKAGE)
+            .build();
+
+    final List<AzureAppDeploymentData> deploymentDataList = singletonList(AzureAppDeploymentData.builder().build());
+    doReturn(deploymentDataList)
+        .when(azureAppServiceService)
+        .fetchDeploymentData(any(AzureWebClientContext.class), eq(DEPLOYMENT_SLOT));
+    doReturn(AzureArtifactDownloadResponse.builder().artifactFile(new File("")).build())
+        .when(artifactDownloaderService)
+        .download(any());
+
+    AzureWebAppRequestResponse requestResponse =
+        requestHandler.execute(request, AzureTestUtils.createTestAzureConfig(), logCallbackProvider);
+
+    assertThat(requestResponse).isInstanceOf(AzureWebAppNGRollbackResponse.class);
+    AzureWebAppNGRollbackResponse rollbackResponse = (AzureWebAppNGRollbackResponse) requestResponse;
+    assertThat(rollbackResponse.getAzureAppDeploymentData()).isSameAs(deploymentDataList);
+
+    verify(azureAppServiceResourceUtilities).toArtifactNgDownloadContext(any(), any(), any());
+    verify(artifactDownloaderService).download(any());
+    verify(azureAppServiceDeploymentService).deployPackage(any(), any());
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testExecutePackageArtifactNoArtifact() {
+    final AzureWebAppRollbackRequest request =
+        AzureWebAppRollbackRequest.builder()
+            .accountId("accountId")
+            .preDeploymentData(AzureTestUtils.buildTestPreDeploymentData(AppServiceDeploymentProgress.DEPLOY_TO_SLOT))
+            .infrastructure(AzureTestUtils.createTestWebAppInfraDelegateConfig())
+            .timeoutIntervalInMin(10)
+            .azureArtifactType(AzureArtifactType.PACKAGE)
+            .build();
+
+    final List<AzureAppDeploymentData> deploymentDataList = singletonList(AzureAppDeploymentData.builder().build());
+    doReturn(deploymentDataList)
+        .when(azureAppServiceService)
+        .fetchDeploymentData(any(AzureWebClientContext.class), eq(DEPLOYMENT_SLOT));
+    doReturn(AzureArtifactDownloadResponse.builder().artifactFile(new File("")).build())
+        .when(artifactDownloaderService)
+        .download(any());
+
+    AzureWebAppRequestResponse requestResponse =
+        requestHandler.execute(request, AzureTestUtils.createTestAzureConfig(), logCallbackProvider);
+
+    assertThat(requestResponse).isInstanceOf(AzureWebAppNGRollbackResponse.class);
+    AzureWebAppNGRollbackResponse rollbackResponse = (AzureWebAppNGRollbackResponse) requestResponse;
+    assertThat(rollbackResponse.getAzureAppDeploymentData()).isSameAs(deploymentDataList);
+
+    verify(azureAppServiceResourceUtilities, times(0)).toArtifactNgDownloadContext(any(), any(), any());
+    verify(artifactDownloaderService, times(0)).download(any());
+    verify(azureAppServiceDeploymentService, times(0)).deployPackage(any(), any());
+    verify(azureAppServiceResourceUtilities, times(0)).swapSlots(any(), any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testExecutePackageArtifactSlotsSwappedNoArtifact() {
+    final AzureWebAppRollbackRequest request =
+        AzureWebAppRollbackRequest.builder()
+            .accountId("accountId")
+            .preDeploymentData(AzureTestUtils.buildTestPreDeploymentData(AppServiceDeploymentProgress.SWAP_SLOT))
+            .infrastructure(AzureTestUtils.createTestWebAppInfraDelegateConfig())
+            .timeoutIntervalInMin(10)
+            .azureArtifactType(AzureArtifactType.PACKAGE)
+            .build();
+
+    final List<AzureAppDeploymentData> deploymentDataList = singletonList(AzureAppDeploymentData.builder().build());
+    doReturn(deploymentDataList)
+        .when(azureAppServiceService)
+        .fetchDeploymentData(any(AzureWebClientContext.class), eq(DEPLOYMENT_SLOT));
+    doReturn(AzureArtifactDownloadResponse.builder().artifactFile(new File("")).build())
+        .when(artifactDownloaderService)
+        .download(any());
+
+    AzureWebAppRequestResponse requestResponse =
+        requestHandler.execute(request, AzureTestUtils.createTestAzureConfig(), logCallbackProvider);
+
+    assertThat(requestResponse).isInstanceOf(AzureWebAppNGRollbackResponse.class);
+    AzureWebAppNGRollbackResponse rollbackResponse = (AzureWebAppNGRollbackResponse) requestResponse;
+    assertThat(rollbackResponse.getAzureAppDeploymentData()).isSameAs(deploymentDataList);
+
+    verify(azureAppServiceResourceUtilities, times(0)).toArtifactNgDownloadContext(any(), any(), any());
+    verify(artifactDownloaderService, times(0)).download(any());
+    verify(azureAppServiceDeploymentService, times(0)).deployPackage(any(), any());
+    verify(azureAppServiceResourceUtilities, times(1)).swapSlots(any(), any(), any(), any(), any());
+  }
+
+  @Test
   @Owner(developers = VLICA)
   @Category(UnitTests.class)
   public void testRollbackDeploymentAndTrafficShift() {
@@ -122,6 +233,7 @@ public class AzureWebAppRollbackRequestHandlerTest {
             .preDeploymentData(AzureTestUtils.buildTestPreDeploymentData(AppServiceDeploymentProgress.DEPLOY_TO_SLOT))
             .infrastructure(AzureTestUtils.createTestWebAppInfraDelegateConfig())
             .timeoutIntervalInMin(10)
+            .azureArtifactType(AzureArtifactType.CONTAINER)
             .build();
 
     AzureWebAppRequestResponse requestResponse =
@@ -143,6 +255,7 @@ public class AzureWebAppRollbackRequestHandlerTest {
             .preDeploymentData(AzureTestUtils.buildTestPreDeploymentData(AppServiceDeploymentProgress.SWAP_SLOT))
             .infrastructure(AzureTestUtils.createTestWebAppInfraDelegateConfig())
             .timeoutIntervalInMin(10)
+            .azureArtifactType(AzureArtifactType.CONTAINER)
             .build();
 
     AzureWebAppRequestResponse requestResponse =
@@ -150,6 +263,34 @@ public class AzureWebAppRollbackRequestHandlerTest {
 
     assertThat(requestResponse).isNotNull();
     verify(azureAppServiceDeploymentService)
+        .rerouteProductionSlotTraffic(any(), eq(DEPLOYMENT_SLOT), eq(TRAFFIC_WEIGHT), any());
+    verify(azureAppServiceResourceUtilities).swapSlots(any(), any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testNoRollbackSwapSlotsAndTrafficShiftWhenSlotIsProduction() {
+    AzureAppServicePreDeploymentData preDeploymentData =
+        AzureTestUtils.buildTestPreDeploymentData(AppServiceDeploymentProgress.SWAP_SLOT);
+    preDeploymentData.setSlotName("production");
+
+    AzureWebAppInfraDelegateConfig azureWebAppInfraDelegateConfig =
+        AzureTestUtils.createTestWebAppInfraDelegateConfig();
+    azureWebAppInfraDelegateConfig.setDeploymentSlot("production");
+    final AzureWebAppRollbackRequest request = AzureWebAppRollbackRequest.builder()
+                                                   .accountId("accountId")
+                                                   .preDeploymentData(preDeploymentData)
+                                                   .infrastructure(azureWebAppInfraDelegateConfig)
+                                                   .timeoutIntervalInMin(10)
+                                                   .azureArtifactType(AzureArtifactType.PACKAGE)
+                                                   .build();
+
+    AzureWebAppRequestResponse requestResponse =
+        requestHandler.execute(request, AzureTestUtils.createTestAzureConfig(), logCallbackProvider);
+
+    assertThat(requestResponse).isNotNull();
+    verify(azureAppServiceDeploymentService, times(0))
         .rerouteProductionSlotTraffic(any(), eq(DEPLOYMENT_SLOT), eq(TRAFFIC_WEIGHT), any());
     verify(azureAppServiceResourceUtilities).swapSlots(any(), any(), any(), any(), any());
   }
@@ -165,6 +306,7 @@ public class AzureWebAppRollbackRequestHandlerTest {
             .preDeploymentData(AzureTestUtils.buildTestPreDeploymentData(AppServiceDeploymentProgress.STOP_SLOT))
             .infrastructure(AzureTestUtils.createTestWebAppInfraDelegateConfig())
             .timeoutIntervalInMin(10)
+            .azureArtifactType(AzureArtifactType.CONTAINER)
             .build();
 
     AzureWebAppRequestResponse requestResponse =
@@ -192,6 +334,7 @@ public class AzureWebAppRollbackRequestHandlerTest {
             .preDeploymentData(AzureTestUtils.buildTestPreDeploymentData(AppServiceDeploymentProgress.DEPLOY_TO_SLOT))
             .infrastructure(AzureTestUtils.createTestWebAppInfraDelegateConfig())
             .timeoutIntervalInMin(10)
+            .azureArtifactType(AzureArtifactType.CONTAINER)
             .build();
 
     doThrow(new RuntimeException("Failed to fetch deployment data"))

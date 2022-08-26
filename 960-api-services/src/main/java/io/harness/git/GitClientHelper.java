@@ -195,7 +195,7 @@ public class GitClientHelper {
 
   public static boolean isBitBucketSAAS(String url) {
     String host = getGitSCM(url);
-    return host.equals("bitbucket.org") || host.equals("www.bitbucket.org");
+    return host.equals("bitbucket.org") || host.equals("www.bitbucket.org") || host.equals("api.bitbucket.org");
   }
 
   public static boolean isAzureRepoSAAS(String url) {
@@ -237,8 +237,35 @@ public class GitClientHelper {
       return "https://api.bitbucket.org/";
     } else {
       String domain = GitClientHelper.getGitSCM(url);
+      domain = fetchCustomBitbucketDomain(url, domain);
       return getHttpProtocolPrefix(url) + domain + "/";
     }
+  }
+
+  private static String fetchCustomBitbucketDomain(String url, String domain) {
+    final String SCM_SPLITTER = "/scm";
+    String[] splits = url.split(domain);
+    if (splits.length <= 1) {
+      // URL only contains the domain
+      return domain;
+    }
+
+    String scmString = splits[1];
+    if (!scmString.contains(SCM_SPLITTER)) {
+      // Remaining URL does not contain the custom splitter string
+      // Fallback to the original domain
+      return domain;
+    }
+
+    String[] endpointSplits = scmString.split(SCM_SPLITTER);
+    if (endpointSplits.length == 0) {
+      // URL does not have anything after the splitter
+      // as well as between domain and splitter
+      return domain;
+    }
+
+    String customEndpoint = endpointSplits[0];
+    return domain + customEndpoint;
   }
 
   public static String getAzureRepoApiURL(String url) {
@@ -510,11 +537,17 @@ public class GitClientHelper {
       throw new InvalidRequestException(
           format("Invalid repo url  %s,should start with either http:// , https:// , ssh:// or git@", url));
     }
+    if (url.startsWith("git@") && !url.contains(":")) {
+      throw new InvalidRequestException(
+          format("Invalid repo url  %s, valid ssh url formats are git@provider.com:username/repo, "
+                  + "ssh://provider.com/username/repo, "
+                  + "ssh://git@provider.com/username/repo",
+              url));
+    }
   }
 
-  public static String getCompleteUrlForAccountLevelAzureConnector(String url, String projectName, String repoName) {
-    String azureCompleteUrl = StringUtils.join(
-        StringUtils.stripEnd(url, PATH_SEPARATOR), PATH_SEPARATOR, StringUtils.stripStart(projectName, PATH_SEPARATOR));
+  public static String getCompleteUrlForProjectLevelAzureConnector(String url, String repoName) {
+    String azureCompleteUrl = StringUtils.join(StringUtils.stripEnd(url, PATH_SEPARATOR));
     if (GitClientHelper.isHTTPProtocol(azureCompleteUrl)) {
       azureCompleteUrl = StringUtils.join(azureCompleteUrl, AZURE_REPO_GIT_LABEL);
     } else if (GitClientHelper.isSSHProtocol(azureCompleteUrl)) {
@@ -532,38 +565,38 @@ public class GitClientHelper {
     return completeUrl.replaceFirst(AZURE_REPO_GIT_LABEL, PATH_SEPARATOR);
   }
 
-  public static String getCompleteHTTPUrlForGithub(String url) {
-    String scmGroup = getGitSCM(url);
-    String gitOwner = getGitOwner(url, true);
-    String gitRepo = getGitRepo(url);
+  public static String getCompleteHTTPUrlForGithub(String anyRepoUrl) {
+    String scmGroup = getGitSCM(anyRepoUrl);
+    String gitOwner = getGitOwner(anyRepoUrl, true);
+    String gitRepo = getGitRepo(anyRepoUrl);
     return StringUtils.join(HTTPS, COLON_SEPARATOR, PATH_SEPARATOR, PATH_SEPARATOR, scmGroup, PATH_SEPARATOR, gitOwner,
         PATH_SEPARATOR, gitRepo);
   }
 
-  public static String getCompleteHTTPUrlForBitbucketSaas(String url) {
-    String scmGroup = getGitSCM(url);
-    String gitOwner = getGitOwner(url, true);
-    String gitRepo = getGitRepo(url);
+  public static String getCompleteHTTPUrlForBitbucketSaas(String anyRepoUrl) {
+    String scmGroup = getGitSCM(anyRepoUrl);
+    String gitOwner = getGitOwner(anyRepoUrl, true);
+    String gitRepo = getGitRepo(anyRepoUrl);
     return StringUtils.join(HTTPS, COLON_SEPARATOR, PATH_SEPARATOR, PATH_SEPARATOR, scmGroup, PATH_SEPARATOR, gitOwner,
         PATH_SEPARATOR, gitRepo);
   }
 
-  public static String getCompleteHTTPUrlFromSSHUrlForBitbucketServer(String url) {
-    String scmGroup = getGitSCM(url);
-    String gitOwner = getGitOwner(url, true);
-    String gitRepo = getGitRepo(url);
+  public static String getCompleteHTTPUrlFromSSHUrlForBitbucketServer(String sshRepoUrl) {
+    String scmGroup = getGitSCM(sshRepoUrl);
+    String gitOwner = getGitOwner(sshRepoUrl, true);
+    String gitRepo = getGitRepo(sshRepoUrl);
     return StringUtils.join(HTTPS, COLON_SEPARATOR, PATH_SEPARATOR, PATH_SEPARATOR, scmGroup, PATH_SEPARATOR,
         BITBUCKET_SAAS_GIT_LABEL, PATH_SEPARATOR, gitOwner, PATH_SEPARATOR, gitRepo);
   }
 
-  public static String getCompleteHTTPRepoUrlForAzureRepoSaas(String url) {
+  public static String getCompleteHTTPRepoUrlForAzureRepoSaas(String anyRepoUrl) {
     final String AZURE_REPO_URL = "https://dev.azure.com";
-    String gitOwner = getGitOwner(url, true);
-    String gitRepoProject = getGitRepo(url);
+    String gitOwner = getGitOwner(anyRepoUrl, true);
+    String gitRepoProject = getGitRepo(anyRepoUrl);
     List<String> parts = Arrays.asList(gitRepoProject.split("/"));
     if (parts.size() < 2) {
       // as gitRepoProject should contain repo and project, there must be atleast two parts
-      throw new InvalidRequestException(String.format("Invalid Azure repoUrl [%s]", url));
+      throw new InvalidRequestException(String.format("Invalid Azure repoUrl [%s]", anyRepoUrl));
     }
     String gitRepo = parts.get(parts.size() - 1);
     String gitProject = parts.get(0);

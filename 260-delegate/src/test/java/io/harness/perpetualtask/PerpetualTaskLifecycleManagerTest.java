@@ -50,8 +50,10 @@ public class PerpetualTaskLifecycleManagerTest extends CategoryTest {
   @Captor private ArgumentCaptor<PerpetualTaskId> perpetualTaskIdArgumentCaptor;
   @Captor private ArgumentCaptor<Instant> instantArgumentCaptor;
   @Captor private ArgumentCaptor<PerpetualTaskResponse> perpetualTaskResponseArgumentCaptor;
+  @Captor private ArgumentCaptor<String> accountIdArgumentCaptor;
 
   private final String PERPETUAL_TASK_ID = "perpetualTaskId";
+  private final String ACCOUNT_ID = "test-account-id";
 
   @Mock private AtomicInteger currentlyExecutingPerpetualTasksCount;
 
@@ -76,7 +78,7 @@ public class PerpetualTaskLifecycleManagerTest extends CategoryTest {
     PerpetualTaskExecutionContext taskContext =
         PerpetualTaskExecutionContext.newBuilder().setTaskParams(params).build();
     perpetualTaskLifecycleManager = new PerpetualTaskLifecycleManager(perpetualTaskId, taskContext, factoryMap,
-        perpetualTaskServiceAgentClient, timeLimiter, currentlyExecutingPerpetualTasksCount);
+        perpetualTaskServiceAgentClient, timeLimiter, currentlyExecutingPerpetualTasksCount, ACCOUNT_ID);
   }
 
   @Test
@@ -89,7 +91,7 @@ public class PerpetualTaskLifecycleManagerTest extends CategoryTest {
     perpetualTaskLifecycleManager.call();
     verify(perpetualTaskServiceAgentClient)
         .heartbeat(perpetualTaskIdArgumentCaptor.capture(), instantArgumentCaptor.capture(),
-            perpetualTaskResponseArgumentCaptor.capture());
+            perpetualTaskResponseArgumentCaptor.capture(), accountIdArgumentCaptor.capture());
     assertThat(perpetualTaskIdArgumentCaptor.getValue().getId()).isEqualTo(PERPETUAL_TASK_ID);
     assertThat(perpetualTaskResponseArgumentCaptor.getValue()).isEqualTo(perpetualTaskResponse);
 
@@ -110,7 +112,7 @@ public class PerpetualTaskLifecycleManagerTest extends CategoryTest {
     perpetualTaskLifecycleManager.call();
     verify(perpetualTaskServiceAgentClient)
         .heartbeat(perpetualTaskIdArgumentCaptor.capture(), instantArgumentCaptor.capture(),
-            perpetualTaskResponseArgumentCaptor.capture());
+            perpetualTaskResponseArgumentCaptor.capture(), accountIdArgumentCaptor.capture());
     assertThat(perpetualTaskIdArgumentCaptor.getValue().getId()).isEqualTo(PERPETUAL_TASK_ID);
     assertThat(perpetualTaskResponseArgumentCaptor.getValue()).isEqualTo(perpetualTaskResponse);
 
@@ -129,7 +131,7 @@ public class PerpetualTaskLifecycleManagerTest extends CategoryTest {
     perpetualTaskLifecycleManager.call();
     verify(perpetualTaskServiceAgentClient)
         .heartbeat(perpetualTaskIdArgumentCaptor.capture(), instantArgumentCaptor.capture(),
-            perpetualTaskResponseArgumentCaptor.capture());
+            perpetualTaskResponseArgumentCaptor.capture(), accountIdArgumentCaptor.capture());
     assertThat(perpetualTaskIdArgumentCaptor.getValue().getId()).isEqualTo(PERPETUAL_TASK_ID);
     assertThat(perpetualTaskResponseArgumentCaptor.getValue()).isEqualTo(perpetualTaskResponse);
 

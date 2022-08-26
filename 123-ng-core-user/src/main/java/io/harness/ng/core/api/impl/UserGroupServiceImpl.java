@@ -9,13 +9,13 @@ package io.harness.ng.core.api.impl;
 
 import static io.harness.accesscontrol.principals.PrincipalType.USER_GROUP;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.beans.FeatureName.NG_ENABLE_LDAP_CHECK;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.GROUP;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_USERGROUP_PERMISSION;
 import static io.harness.ng.accesscontrol.PlatformResourceTypes.USERGROUP;
-import static io.harness.ng.core.user.UserMembershipUpdateSource.SYSTEM;
 import static io.harness.ng.core.usergroups.filter.UserGroupFilterType.INCLUDE_INHERITED_GROUPS;
 import static io.harness.ng.core.utils.UserGroupMapper.toDTO;
 import static io.harness.ng.core.utils.UserGroupMapper.toEntity;
@@ -26,7 +26,6 @@ import static io.harness.springdata.TransactionUtils.DEFAULT_TRANSACTION_RETRY_P
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.accesscontrol.AccessControlAdminClient;
@@ -42,6 +41,7 @@ import io.harness.accesscontrol.scopes.ScopeDTO;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.beans.ScopeLevel;
+import io.harness.data.structure.CollectionUtils;
 import io.harness.enforcement.client.annotation.FeatureRestrictionCheck;
 import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.eraro.ErrorCode;
@@ -60,7 +60,6 @@ import io.harness.ng.core.entities.NotificationSettingConfig;
 import io.harness.ng.core.events.UserGroupCreateEvent;
 import io.harness.ng.core.events.UserGroupDeleteEvent;
 import io.harness.ng.core.events.UserGroupUpdateEvent;
-import io.harness.ng.core.invites.dto.RoleBinding;
 import io.harness.ng.core.user.entities.UserGroup;
 import io.harness.ng.core.user.entities.UserGroup.UserGroupKeys;
 import io.harness.ng.core.user.remote.dto.LastAdminCheckFilter;
@@ -74,6 +73,7 @@ import io.harness.outbox.api.OutboxService;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.ng.core.spring.UserGroupRepository;
 import io.harness.user.remote.UserClient;
+import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.ScopeUtils;
 
 import software.wings.beans.sso.SSOSettings;
@@ -96,7 +96,6 @@ import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
-import org.apache.commons.lang3.StringUtils;
 import org.hibernate.validator.constraints.NotBlank;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
@@ -118,13 +117,14 @@ public class UserGroupServiceImpl implements UserGroupService {
   private final AccessControlClient accessControlClient;
   private final ScopeNameMapper scopeNameMapper;
   private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_TRANSACTION_RETRY_POLICY;
+  private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
 
   @Inject
   public UserGroupServiceImpl(UserGroupRepository userGroupRepository, UserClient userClient,
       OutboxService outboxService, @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate,
       NgUserService ngUserService, AuthSettingsManagerClient managerClient, LastAdminCheckService lastAdminCheckService,
       AccessControlAdminClient accessControlAdminClient, AccessControlClient accessControlClient,
-      ScopeNameMapper scopeNameMapper) {
+      ScopeNameMapper scopeNameMapper, NGFeatureFlagHelperService ngFeatureFlagHelperService) {
     this.userGroupRepository = userGroupRepository;
     this.outboxService = outboxService;
     this.transactionTemplate = transactionTemplate;
@@ -134,6 +134,7 @@ public class UserGroupServiceImpl implements UserGroupService {
     this.accessControlAdminClient = accessControlAdminClient;
     this.accessControlClient = accessControlClient;
     this.scopeNameMapper = scopeNameMapper;
+    this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;
   }
 
   @Override
@@ -141,6 +142,7 @@ public class UserGroupServiceImpl implements UserGroupService {
     try {
       UserGroup userGroup = toEntity(userGroupDTO);
       validate(userGroup);
+      sanitizeInternal(userGroup);
       return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
         UserGroup savedUserGroup = userGroupRepository.save(userGroup);
         outboxService.save(new UserGroupCreateEvent(userGroupDTO.getAccountIdentifier(), userGroupDTO));
@@ -151,43 +153,6 @@ public class UserGroupServiceImpl implements UserGroupService {
           String.format("Try using different user group identifier, [%s] cannot be used", userGroupDTO.getIdentifier()),
           USER_SRE, ex);
     }
-  }
-
-  private void addUsersOfGroupToScope(UserGroupDTO userGroupDTO, ScopeDTO scope) {
-    if (isNotEmpty(userGroupDTO.getUsers())) {
-      for (String userId : userGroupDTO.getUsers()) {
-        ngUserService.addUserToScope(userId,
-            Scope.builder()
-                .accountIdentifier(scope.getAccountIdentifier())
-                .orgIdentifier(scope.getOrgIdentifier())
-                .projectIdentifier(scope.getProjectIdentifier())
-                .build(),
-            singletonList(RoleBinding.builder().build()), emptyList(), SYSTEM);
-      }
-    }
-  }
-
-  @Override
-  public boolean copy(String accountIdentifier, String userGroupIdentifier, List<ScopeDTO> scopePairs) {
-    Optional<UserGroup> userGroupOptional = get(accountIdentifier, null, null, userGroupIdentifier);
-    if (!userGroupOptional.isPresent()) {
-      throw new InvalidRequestException("The user group doesnt exist at account level for copying");
-    }
-
-    UserGroupDTO userGroupDTO = toDTO(userGroupOptional.get());
-    for (ScopeDTO scope : scopePairs) {
-      if (StringUtils.isEmpty(scope.getAccountIdentifier()) || StringUtils.isEmpty(scope.getOrgIdentifier())) {
-        throw new InvalidRequestException("Invalid scope provided for copying user group " + userGroupIdentifier);
-      }
-      addUsersOfGroupToScope(userGroupDTO, scope);
-
-      log.info("Copying usergroup {} at scope {}", userGroupIdentifier, scope);
-      userGroupDTO.setOrgIdentifier(scope.getOrgIdentifier());
-      userGroupDTO.setProjectIdentifier(scope.getProjectIdentifier());
-      create(userGroupDTO);
-      log.info("Successfully copied usergroup {} at scope {}", userGroupIdentifier, scope);
-    }
-    return true;
   }
 
   @Override
@@ -218,6 +183,32 @@ public class UserGroupServiceImpl implements UserGroupService {
     userGroup.setId(savedUserGroup.getId());
     userGroup.setVersion(savedUserGroup.getVersion());
     return updateInternal(userGroup, toDTO(savedUserGroup));
+  }
+
+  @Override
+  public UserGroup updateWithCheckThatSCIMFieldsAreNotModified(UserGroupDTO userGroupDTO) {
+    UserGroup savedUserGroup = getOrThrow(userGroupDTO.getAccountIdentifier(), userGroupDTO.getOrgIdentifier(),
+        userGroupDTO.getProjectIdentifier(), userGroupDTO.getIdentifier());
+    checkIfSCIMFieldsAreNotUpdatedInExternallyManagedGroup(userGroupDTO, savedUserGroup);
+    return update(userGroupDTO);
+  }
+
+  private void checkIfSCIMFieldsAreNotUpdatedInExternallyManagedGroup(
+      UserGroupDTO toBeSavedUserGroup, UserGroup savedUserGroup) {
+    if (!isExternallyManaged(toBeSavedUserGroup.getAccountIdentifier(), toBeSavedUserGroup.getOrgIdentifier(),
+            toBeSavedUserGroup.getProjectIdentifier(), toBeSavedUserGroup.getIdentifier())) {
+      return;
+    }
+    List<String> newUsersToBeAdded = toBeSavedUserGroup.getUsers();
+    List<String> savedUsers = savedUserGroup.getUsers();
+    if (!CollectionUtils.isEqualCollection(newUsersToBeAdded, savedUsers)) {
+      throw new InvalidRequestException(
+          "Update is not supported for externally managed group " + toBeSavedUserGroup.getIdentifier());
+    }
+
+    if (!savedUserGroup.getName().equals(toBeSavedUserGroup.getName())) {
+      throw new InvalidRequestException("The name cannot be updated for externally managed group");
+    }
   }
 
   @Override
@@ -454,6 +445,7 @@ public class UserGroupServiceImpl implements UserGroupService {
   private UserGroup updateInternal(UserGroup newUserGroup, UserGroupDTO oldUserGroup) {
     log.info("[NGSamlUserGroupSync] Old User Group {}", oldUserGroup);
     validate(newUserGroup);
+    sanitizeInternal(newUserGroup);
     try {
       return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
         log.info("[NGSamlUserGroupSync] Saving new User group {}", newUserGroup);
@@ -474,53 +466,12 @@ public class UserGroupServiceImpl implements UserGroupService {
     if (userGroup.getNotificationConfigs() != null) {
       validateNotificationSettings(userGroup.getNotificationConfigs());
     }
-    if (userGroup.getUsers() != null) {
-      validateUsers(userGroup.getUsers());
-      validateScopeMembership(userGroup);
-    }
-  }
-
-  private void validateUsers(List<String> usersIds) {
-    Set<String> duplicates = getDuplicates(usersIds);
-    if (isNotEmpty(duplicates)) {
-      throw new InvalidArgumentsException(
-          String.format("Duplicate users %s provided in the user group", duplicates.toString()));
-    }
-  }
-
-  private static <T> Set<T> getDuplicates(Iterable<T> elements) {
-    Set<T> set = new HashSet<>();
-    Set<T> duplicates = new HashSet<>();
-    for (T element : elements) {
-      if (!set.add(element)) {
-        duplicates.add(element);
-      }
-    }
-    return duplicates;
-  }
-
-  private void validateScopeMembership(UserGroup userGroup) {
-    Scope scope = Scope.builder()
-                      .accountIdentifier(userGroup.getAccountIdentifier())
-                      .orgIdentifier(userGroup.getOrgIdentifier())
-                      .projectIdentifier(userGroup.getProjectIdentifier())
-                      .build();
-    List<String> userIds = ngUserService.listUserIds(scope);
-    Sets.SetView<String> invalidUserIds = Sets.difference(new HashSet<>(userGroup.getUsers()), new HashSet<>(userIds));
-    if (isNotEmpty(invalidUserIds)) {
-      throw new InvalidArgumentsException(getInvalidUserMessage(invalidUserIds));
-    }
   }
 
   private void validateFilter(UserGroupFilterDTO filter) {
     if (isNotEmpty(filter.getIdentifierFilter()) && isNotEmpty(filter.getDatabaseIdFilter())) {
       throw new InvalidArgumentsException("Both the database id filter and identifier filter cannot be provided");
     }
-  }
-
-  private String getInvalidUserMessage(Set<String> invalidUserIds) {
-    return String.format("The following user%s not valid: [%s]", invalidUserIds.size() > 1 ? "s are" : " is",
-        String.join(", ", invalidUserIds));
   }
 
   private void validateNotificationSettings(List<NotificationSettingConfig> notificationSettingConfigs) {
@@ -679,6 +630,14 @@ public class UserGroupServiceImpl implements UserGroupService {
   public UserGroup linkToSsoGroup(@NotBlank @AccountIdentifier String accountIdentifier, String orgIdentifier,
       String projectIdentifier, @NotBlank String userGroupIdentifier, @NotNull SSOType ssoType, @NotBlank String ssoId,
       @NotBlank String ssoGroupId, @NotBlank String ssoGroupName) {
+    boolean ngLdapEnabled = false;
+    if (SSOType.LDAP == ssoType) {
+      ngLdapEnabled = ngFeatureFlagHelperService.isEnabled(accountIdentifier, NG_ENABLE_LDAP_CHECK);
+      if (!ngLdapEnabled) {
+        throw new InvalidRequestException("Please enable feature flag NG_ENABLE_LDAP_CHECK for your account");
+      }
+    }
+
     UserGroup existingUserGroup = getOrThrow(accountIdentifier, orgIdentifier, projectIdentifier, userGroupIdentifier);
     UserGroupDTO oldUserGroup = (UserGroupDTO) HObjectMapper.clone(toDTO(existingUserGroup));
 
@@ -737,20 +696,30 @@ public class UserGroupServiceImpl implements UserGroupService {
   }
 
   @Override
-  public void sanitize(Scope scope, String identifier) {
+  public void sanitize(Scope scope, String userGroupIdentifier) {
     Optional<UserGroup> userGroupOptional =
-        get(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), identifier);
+        get(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), userGroupIdentifier);
     if (userGroupOptional.isPresent()) {
       UserGroup userGroup = userGroupOptional.get();
-      List<String> currentUserIds = userGroup.getUsers();
-      Set<String> uniqueUserIds = new HashSet<>(currentUserIds);
-
-      List<String> userIds = ngUserService.listUserIds(scope);
-      Set<String> invalidUserIds = new HashSet<>(Sets.difference(uniqueUserIds, new HashSet<>(userIds)));
-      uniqueUserIds.removeAll(invalidUserIds);
-      userGroup.setUsers(new ArrayList<>(uniqueUserIds));
-
+      sanitizeInternal(userGroup);
       userGroupRepository.save(userGroup);
     }
+  }
+
+  private void sanitizeInternal(UserGroup userGroup) {
+    if (userGroup.getUsers() != null) {
+      Set<String> uniqueUsers = new HashSet<>(userGroup.getUsers());
+      Set<String> invalidUsers = getAllInvalidUsers(
+          Scope.of(userGroup.getAccountIdentifier(), userGroup.getOrgIdentifier(), userGroup.getProjectIdentifier()),
+          uniqueUsers);
+      uniqueUsers.removeAll(invalidUsers);
+      userGroup.setUsers(new ArrayList<>(uniqueUsers));
+    }
+  }
+
+  private Set<String> getAllInvalidUsers(Scope scope, Set<String> currentUserIds) {
+    List<String> userIds = ngUserService.listUserIds(scope);
+    userIds = userIds == null ? new ArrayList<>() : userIds;
+    return new HashSet<>(Sets.difference(currentUserIds, new HashSet<>(userIds)));
   }
 }

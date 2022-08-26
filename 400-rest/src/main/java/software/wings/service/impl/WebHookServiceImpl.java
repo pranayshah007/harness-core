@@ -32,6 +32,7 @@ import io.harness.beans.DelegateTask;
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.FeatureName;
 import io.harness.beans.SecretUsageLog;
+import io.harness.beans.WorkflowType;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.TaskData;
 import io.harness.exception.ExceptionUtils;
@@ -127,13 +128,21 @@ public class WebHookServiceImpl implements WebHookService {
   }
 
   private String getUiUrl(
-      boolean isPipeline, String accountId, String appId, String envId, String workflowExecutionId) {
-    if (isPipeline) {
+      WorkflowType workflowType, String accountId, String appId, String envId, String workflowExecutionId) {
+    if (workflowType == PIPELINE) {
       return format("%s#/account/%s/app/%s/pipeline-execution/%s/workflow-execution/undefined/details", getBaseUrlUI(),
           accountId, appId, workflowExecutionId);
     } else {
       return format("%s#/account/%s/app/%s/env/%s/executions/%s/details", getBaseUrlUI(), accountId, appId, envId,
           workflowExecutionId);
+    }
+  }
+
+  private String getUiSetupUrl(WorkflowType workflowType, String accountId, String appId, String workflowId) {
+    if (workflowType == PIPELINE) {
+      return format("%s#/account/%s/app/%s/pipelines/%s/edit", getBaseUrlUI(), accountId, appId, workflowId);
+    } else {
+      return format("%s#/account/%s/app/%s/workflows/%s/details", getBaseUrlUI(), accountId, appId, workflowId);
     }
   }
 
@@ -706,8 +715,10 @@ public class WebHookServiceImpl implements WebHookService {
                                           .requestId(workflowExecution.getUuid())
                                           .status(workflowExecution.getStatus().name())
                                           .apiUrl(getApiUrl(accountId, appId, workflowExecution.getUuid()))
-                                          .uiUrl(getUiUrl(PIPELINE == workflowExecution.getWorkflowType(), accountId,
-                                              appId, workflowExecution.getEnvId(), workflowExecution.getUuid()))
+                                          .uiUrl(getUiUrl(workflowExecution.getWorkflowType(), accountId, appId,
+                                              workflowExecution.getEnvId(), workflowExecution.getUuid()))
+                                          .uiSetupUrl(getUiSetupUrl(workflowExecution.getWorkflowType(), accountId,
+                                              appId, workflowExecution.getWorkflowId()))
                                           .build();
 
     return prepareResponse(webHookResponse, Response.Status.OK);

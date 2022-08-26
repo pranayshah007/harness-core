@@ -8,6 +8,7 @@
 package io.harness.delegate.task.azure.appservice.webapp.ng.request;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.expression.Expression.ALLOW_SECRETS;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
@@ -16,18 +17,18 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
 import io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppInfraDelegateConfig;
+import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.Setter;
+import org.apache.commons.lang3.tuple.Pair;
 
 @OwnedBy(CDP)
 @NoArgsConstructor
@@ -35,7 +36,7 @@ import lombok.Setter;
 public abstract class AbstractWebAppTaskRequest implements AzureWebAppTaskRequest {
   @Getter @Setter @NonNull String accountId;
   @Getter @Setter private CommandUnitsProgress commandUnitsProgress;
-  @Getter private AzureWebAppInfraDelegateConfig infrastructure;
+  @Getter @Setter @Expression(ALLOW_SECRETS) private AzureWebAppInfraDelegateConfig infrastructure;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
@@ -52,18 +53,18 @@ public abstract class AbstractWebAppTaskRequest implements AzureWebAppTaskReques
   }
 
   @Override
-  public Map<DecryptableEntity, List<EncryptedDataDetail>> fetchDecryptionDetails() {
-    Map<DecryptableEntity, List<EncryptedDataDetail>> decryptionDetails = new LinkedHashMap<>();
+  public List<Pair<DecryptableEntity, List<EncryptedDataDetail>>> fetchDecryptionDetails() {
+    List<Pair<DecryptableEntity, List<EncryptedDataDetail>>> decryptionDetails = new ArrayList<>();
     if (infrastructure != null) {
-      infrastructure.getDecryptableEntities().forEach(
-          decryptableEntity -> decryptionDetails.put(decryptableEntity, infrastructure.getEncryptionDataDetails()));
+      infrastructure.getDecryptableEntities().forEach(decryptableEntity
+          -> decryptionDetails.add(Pair.of(decryptableEntity, infrastructure.getEncryptionDataDetails())));
     }
 
     populateDecryptionDetails(decryptionDetails);
     return decryptionDetails;
   }
 
-  protected void populateDecryptionDetails(Map<DecryptableEntity, List<EncryptedDataDetail>> decryptionDetails) {
+  protected void populateDecryptionDetails(List<Pair<DecryptableEntity, List<EncryptedDataDetail>>> decryptionDetails) {
     // used for request specific additional decryption details
   }
 

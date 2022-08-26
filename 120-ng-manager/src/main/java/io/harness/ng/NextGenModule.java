@@ -7,6 +7,7 @@
 
 package io.harness.ng;
 
+import static io.harness.AuthorizationServiceHeader.CHAOS_SERVICE;
 import static io.harness.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.audit.ResourceTypeConstants.API_KEY;
 import static io.harness.audit.ResourceTypeConstants.CONNECTOR;
@@ -18,6 +19,7 @@ import static io.harness.audit.ResourceTypeConstants.PROJECT;
 import static io.harness.audit.ResourceTypeConstants.SECRET;
 import static io.harness.audit.ResourceTypeConstants.SERVICE;
 import static io.harness.audit.ResourceTypeConstants.SERVICE_ACCOUNT;
+import static io.harness.audit.ResourceTypeConstants.SETTING;
 import static io.harness.audit.ResourceTypeConstants.TOKEN;
 import static io.harness.audit.ResourceTypeConstants.USER;
 import static io.harness.audit.ResourceTypeConstants.VARIABLE;
@@ -57,6 +59,7 @@ import io.harness.callback.DelegateCallback;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.callback.MongoDatabase;
 import io.harness.ccm.license.remote.CeLicenseClientModule;
+import io.harness.cd.license.CdLicenseUsageCgModule;
 import io.harness.cdng.NGModule;
 import io.harness.cdng.fileservice.FileServiceClient;
 import io.harness.cdng.fileservice.FileServiceClientFactory;
@@ -71,6 +74,7 @@ import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.DelegateAsyncTaskResponse;
 import io.harness.delegate.beans.DelegateSyncTaskResponse;
 import io.harness.delegate.beans.DelegateTaskProgressResponse;
+import io.harness.encryptors.CustomEncryptor;
 import io.harness.encryptors.Encryptors;
 import io.harness.encryptors.KmsEncryptor;
 import io.harness.encryptors.VaultEncryptor;
@@ -137,6 +141,7 @@ import io.harness.ng.core.api.impl.NGSecretServiceV2Impl;
 import io.harness.ng.core.api.impl.TokenServiceImpl;
 import io.harness.ng.core.api.impl.UserGroupServiceImpl;
 import io.harness.ng.core.delegate.client.DelegateNgManagerCgManagerClientModule;
+import io.harness.ng.core.encryptors.NGManagerCustomEncryptor;
 import io.harness.ng.core.encryptors.NGManagerKmsEncryptor;
 import io.harness.ng.core.encryptors.NGManagerVaultEncryptor;
 import io.harness.ng.core.entityactivity.event.EntityActivityCrudEventMessageListener;
@@ -219,6 +224,7 @@ import io.harness.ng.webhook.services.api.WebhookEventService;
 import io.harness.ng.webhook.services.api.WebhookService;
 import io.harness.ng.webhook.services.impl.WebhookEventProcessingServiceImpl;
 import io.harness.ng.webhook.services.impl.WebhookServiceImpl;
+import io.harness.ngsettings.outbox.SettingEventHandler;
 import io.harness.notification.module.NotificationClientModule;
 import io.harness.opaclient.OpaClientModule;
 import io.harness.outbox.TransactionOutboxModule;
@@ -541,6 +547,8 @@ public class NextGenModule extends AbstractModule {
     install(new GitSyncModule());
     install(new GitSyncConfigClientModule(appConfig.getNgManagerClientConfig(),
         appConfig.getNextGenConfig().getNgManagerServiceSecret(), NG_MANAGER.getServiceId()));
+    install(new CdLicenseUsageCgModule(appConfig.getManagerClientConfig(),
+        appConfig.getNextGenConfig().getManagerServiceSecret(), NG_MANAGER.getServiceId()));
     install(JooqModule.getInstance());
     install(new DefaultOrganizationModule());
     install(new NGAggregateModule());
@@ -630,6 +638,7 @@ public class NextGenModule extends AbstractModule {
             .addAll(ManagerRegistrars.springConverters)
             .build();
       }
+
       @Provides
       @Singleton
       List<YamlSchemaRootClass> yamlSchemaRootClasses() {
@@ -679,20 +688,19 @@ public class NextGenModule extends AbstractModule {
       }
     });
     install(new AbstractChaosModule() {
-      // todo: implement this
       @Override
       public ServiceHttpClientConfig chaosClientConfig() {
-        return null;
+        return appConfig.getChaosServiceClientConfig();
       }
 
       @Override
       public String serviceSecret() {
-        return null;
+        return appConfig.getNextGenConfig().getChaosServiceSecret();
       }
 
       @Override
       public String clientId() {
-        return null;
+        return CHAOS_SERVICE.name();
       }
     });
 
@@ -815,6 +823,11 @@ public class NextGenModule extends AbstractModule {
         .bind(KmsEncryptor.class)
         .annotatedWith(Names.named(Encryptors.GLOBAL_GCP_KMS_ENCRYPTOR.getName()))
         .to(GcpKmsEncryptor.class);
+
+    binder()
+        .bind(CustomEncryptor.class)
+        .annotatedWith(Names.named(Encryptors.CUSTOM_ENCRYPTOR_NG.getName()))
+        .to(NGManagerCustomEncryptor.class);
   }
 
   private void registerOutboxEventHandlers() {
@@ -834,6 +847,7 @@ public class NextGenModule extends AbstractModule {
     outboxEventHandlerMapBinder.addBinding(API_KEY).to(ApiKeyEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(TOKEN).to(TokenEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(VARIABLE).to(VariableEventHandler.class);
+    outboxEventHandlerMapBinder.addBinding(SETTING).to(SettingEventHandler.class);
   }
 
   private void registerEventsFrameworkMessageListeners() {

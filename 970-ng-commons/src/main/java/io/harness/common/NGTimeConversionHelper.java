@@ -12,6 +12,7 @@ import io.harness.exception.InvalidRequestException;
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
 import lombok.experimental.UtilityClass;
+import org.apache.commons.lang3.StringUtils;
 
 @UtilityClass
 public class NGTimeConversionHelper {
@@ -27,6 +28,7 @@ public class NGTimeConversionHelper {
   public long convertTimeStringToMilliseconds(String timeInString) {
     double result = 0;
     double currentValue = 0;
+    timeInString = timeInString.replaceAll("\\s", "");
     StringBuilder currentUnit = new StringBuilder();
     for (Character ch : timeInString.toCharArray()) {
       if (Character.isDigit(ch)) {
@@ -59,6 +61,13 @@ public class NGTimeConversionHelper {
     long timeInMilliSeconds = convertTimeStringToMilliseconds(timeInString);
     if (timeInMilliSeconds == 0) {
       throw new InvalidRequestException("timeInMilliSeconds cannot be 0");
+    }
+    return (int) (convertTimeStringToMilliseconds(timeInString) / 60000);
+  }
+
+  public int convertTimeStringToMinutesZeroAllowed(String timeInString) {
+    if (StringUtils.isEmpty(timeInString)) {
+      throw new InvalidRequestException(String.format("Given string  %s is null or empty", timeInString));
     }
     return (int) (convertTimeStringToMilliseconds(timeInString) / 60000);
   }

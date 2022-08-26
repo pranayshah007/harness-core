@@ -109,17 +109,6 @@ public class AdminAccountResourceTest extends CategoryTest {
   @Test
   @Owner(developers = HANTANG)
   @Category(UnitTests.class)
-  public void shouldEnableOrDisableCeAutoCollectK8sEvents() {
-    RESOURCES.client()
-        .target(format("/admin/accounts/%s/ceAutoCollectK8sEvents/?enable=%b", accountId, true))
-        .request()
-        .put(Entity.json(""), new GenericType<RestResponse<Boolean>>() {});
-    verify(adminAccountService).enableOrDisableCeK8sEventCollection(eq(accountId), eq(true));
-  }
-
-  @Test
-  @Owner(developers = HANTANG)
-  @Category(UnitTests.class)
   public void shouldUpdateCeLicense() {
     CeLicenseInfo ceLicenseInfo = CeLicenseInfo.builder().build();
     CeLicenseUpdateInfo ceLicenseUpdateInfo = CeLicenseUpdateInfo.builder().ceLicenseInfo(ceLicenseInfo).build();

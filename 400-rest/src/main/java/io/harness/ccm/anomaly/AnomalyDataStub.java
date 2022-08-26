@@ -14,6 +14,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.ccm.anomaly.entities.AnomalyEntity;
 import io.harness.ccm.anomaly.entities.TimeGranularity;
+import io.harness.ccm.commons.entities.anomaly.AnomalyData;
+import io.harness.ccm.commons.entities.anomaly.AnomalyFeedback;
+import io.harness.ccm.commons.entities.anomaly.EntityInfo;
 
 import software.wings.graphql.schema.type.aggregation.QLTimeFilter;
 import software.wings.graphql.schema.type.aggregation.QLTimeOperator;
@@ -85,6 +88,49 @@ public class AnomalyDataStub {
         .anomalyScore(12.34)
         .awsAccount("AWS_ACCOUNT")
         .timeGranularity(TimeGranularity.DAILY)
+        .build();
+  }
+
+  public static AnomalyData getAnomalyData() {
+    return AnomalyData.builder()
+        .id("5e974f98f369a6ed115bd046989a4ab08ed81148afbb6bad1f0986e73d7a0889")
+        .time(1659484800000L)
+        .anomalyRelativeTime("15 days ago")
+        .actualAmount(355.2)
+        .expectedAmount(115.01)
+        .anomalousSpend(240.19)
+        .anomalousSpendPercentage(208.83)
+        .resourceInfo("gcpProjectId/gcpProduct/gcpSkuDescription")
+        .resourceName(
+            "pr10406a87045145c3/MongoDB Inc. MongoDB Atlas/MongoDB Atlas - Elastic Billing Subscription Overage Atlas Credits")
+        .entity(EntityInfo.builder()
+                    .field("gcpSkuDescription")
+                    .clusterName("clusterName")
+                    .clusterId("cid")
+                    .namespace("namespace")
+                    .workloadName("workloadName")
+                    .workloadType("workloadType")
+                    .gcpProjectId("pr10406a87045145c3")
+                    .gcpProduct("MongoDB Inc. MongoDB Atlas")
+                    .gcpSKUId("B78C-2F71-A88E")
+                    .gcpSKUDescription("MongoDB Atlas - Elastic Billing Subscription Overage Atlas Credits")
+                    .awsUsageAccountId("awsUsageAccountId")
+                    .awsServiceCode("awsServiceCode")
+                    .awsInstancetype("awsInstanceType")
+                    .awsUsageType("awsUsageType")
+                    .azureSubscriptionGuid("azureSubscriptionGuid")
+                    .azureResourceGroup("azureResourceGroup")
+                    .azureMeterCategory("azureMeterCategory")
+                    .azureServiceName("azureServiceName")
+                    .azureInstanceId("azureInstanceId")
+                    .build())
+        .details("details")
+        .status("Open")
+        .statusRelativeTime("statusRelativeTime")
+        .comment("comment")
+        .cloudProvider("GCP")
+        .anomalyScore(1.1)
+        .userFeedback(AnomalyFeedback.TRUE_ANOMALY)
         .build();
   }
 

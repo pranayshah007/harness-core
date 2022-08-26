@@ -407,6 +407,9 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
     String delegateConfigurationId = delegateGroup != null ? delegateGroup.getDelegateConfigurationId() : null;
     String delegateGroupIdentifier = delegateGroup != null ? delegateGroup.getIdentifier() : null;
     Set<String> groupCustomSelectors = delegateGroup != null ? delegateGroup.getTags() : null;
+    long upgraderLastUpdated = delegateGroup != null ? delegateGroup.getUpgraderLastUpdated() : 0;
+    long groupExpirationTime = groupDelegates.stream().mapToLong(Delegate::getExpirationTime).max().orElse(0);
+    boolean immutableDelegate = isNotEmpty(groupDelegates) && groupDelegates.get(0).isImmutable();
 
     // pick any connected delegateId to check whether grpc is active or not
     AtomicReference<String> delegateId = new AtomicReference<>();
@@ -439,6 +442,8 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
                   .activelyConnected(isDelegateConnected)
                   .hostName(delegate.getHostName())
                   .tokenActive(isTokenActive)
+                  .delegateExpirationTime(delegate.getExpirationTime())
+                  .version(delegate.getVersion())
                   .build();
             })
             .collect(Collectors.toList());
@@ -455,6 +460,9 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
         .delegateGroupIdentifier(delegateGroupIdentifier)
         .delegateType(delegateType)
         .groupName(groupName)
+        .autoUpgrade(setAutoUpgrader(upgraderLastUpdated, immutableDelegate))
+        .upgraderLastUpdated(upgraderLastUpdated)
+        .delegateGroupExpirationTime(groupExpirationTime)
         .delegateDescription(delegateDescription)
         .delegateConfigurationId(delegateConfigurationId)
         .groupImplicitSelectors(retrieveDelegateGroupImplicitSelectors(delegateGroup))
@@ -465,7 +473,16 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
         .grpcActive(delegateId.get() == null || isGrpcActive(accountId, delegateId.get()))
         .activelyConnected(!connectivityStatus.equals(GROUP_STATUS_DISCONNECTED))
         .tokenActive(isDelegateTokenActiveAtGroupLevel.get())
+        .immutable(immutableDelegate)
         .build();
+  }
+
+  private boolean setAutoUpgrader(long upgraderLastUpdated, boolean immutableDelegate) {
+    // Auto Upgrade is on for legacy delegates.
+    if (!immutableDelegate) {
+      return true;
+    }
+    return TimeUnit.MILLISECONDS.toHours(System.currentTimeMillis() - upgraderLastUpdated) <= 1;
   }
 
   private boolean isGrpcActive(String accountId, String delegateId) {
@@ -737,7 +754,8 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
                                                    .asList();
     return allDelegateGroupList.stream()
         .filter(delegateGroup -> checkForDelegateGroupsHavingAllTags(delegateGroup, tags))
-        .map(delegateGroup -> DelegateGroupDTO.convertToDTO(delegateGroup, null))
+        .map(
+            delegateGroup -> DelegateGroupDTO.convertToDTO(delegateGroup, listDelegateGroupImplicitTags(delegateGroup)))
         .collect(Collectors.toList());
   }
 
@@ -779,8 +797,10 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
   }
 
   private boolean checkForDelegateGroupsHavingAllTags(DelegateGroup delegateGroup, DelegateGroupTags tags) {
-    Set<String> delegateGroupTags = delegateGroup.getTags();
-    delegateGroupTags.addAll(listDelegateGroupImplicitTags(delegateGroup));
+    Set<String> delegateGroupTags = listDelegateGroupImplicitTags(delegateGroup);
+    if (isNotEmpty(delegateGroup.getTags())) {
+      delegateGroupTags.addAll(delegateGroup.getTags());
+    }
     return delegateGroupTags.containsAll(tags.getTags());
   }
 

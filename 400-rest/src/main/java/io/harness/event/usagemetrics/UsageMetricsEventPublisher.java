@@ -11,6 +11,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static java.util.stream.Collectors.groupingBy;
 
+import io.harness.beans.WorkflowType;
 import io.harness.event.timeseries.processor.EventProcessor;
 import io.harness.queue.QueuePublisher;
 
@@ -20,6 +21,7 @@ import software.wings.beans.EnvSummary;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.artifact.Artifact;
 import software.wings.beans.infrastructure.instance.Instance;
+import software.wings.service.impl.WorkflowExecutionServiceHelper;
 import software.wings.service.impl.event.timeseries.TimeSeriesBatchEventInfo;
 import software.wings.service.impl.event.timeseries.TimeSeriesBatchEventInfo.DataPoint;
 import software.wings.service.impl.event.timeseries.TimeSeriesEventInfo;
@@ -97,6 +99,18 @@ public class UsageMetricsEventPublisher {
       stringData.put(EventProcessor.PARENT_EXECUTION, workflowExecution.getPipelineExecutionId());
     }
 
+    if (workflowExecution.getFailureDetails() != null) {
+      stringData.put(EventProcessor.FAILURE_DETAILS, workflowExecution.getFailureDetails());
+    }
+
+    if (workflowExecution.getFailedStepNames() != null) {
+      stringData.put(EventProcessor.FAILED_STEP_NAMES, workflowExecution.getFailedStepNames());
+    }
+
+    if (workflowExecution.getFailedStepTypes() != null) {
+      stringData.put(EventProcessor.FAILED_STEP_TYPES, workflowExecution.getFailedStepTypes());
+    }
+
     if (!Lists.isNullOrEmpty(workflowExecution.getArtifacts())) {
       listData.put(EventProcessor.ARTIFACT_LIST,
           workflowExecution.getArtifacts().stream().map(Artifact::getBuildNo).collect(Collectors.toList()));
@@ -122,6 +136,16 @@ public class UsageMetricsEventPublisher {
     }
     if (workflowExecution.getTriggeredBy() != null) {
       stringData.put(EventProcessor.TRIGGERED_BY, workflowExecution.getTriggeredBy().getUuid());
+    }
+    if (workflowExecution.getPipelineSummary() != null && workflowExecution.getPipelineSummary().getPipelineId() != null
+        && WorkflowType.ORCHESTRATION.equals(workflowExecution.getWorkflowType())) {
+      stringData.put(EventProcessor.PARENT_PIPELINE_ID, workflowExecution.getPipelineSummary().getPipelineId());
+    }
+
+    stringData.put(EventProcessor.CREATED_BY_TYPE, WorkflowExecutionServiceHelper.getCause(workflowExecution));
+
+    if (!Lists.isNullOrEmpty(workflowExecution.getWorkflowIds())) {
+      listData.put(EventProcessor.WORKFLOWS, workflowExecution.getWorkflowIds());
     }
     stringData.put(EventProcessor.ACCOUNTID, accountId);
     longData.put(EventProcessor.DURATION, workflowExecution.getDuration());

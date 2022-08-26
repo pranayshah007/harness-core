@@ -9,16 +9,22 @@ package io.harness.mappers.deploymentinfomapper;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.dtos.deploymentinfo.AwsSshWinrmDeploymentInfoDTO;
+import io.harness.dtos.deploymentinfo.AzureSshWinrmDeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.AzureWebAppDeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.K8sDeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.NativeHelmDeploymentInfoDTO;
+import io.harness.dtos.deploymentinfo.PdcDeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.ReferenceK8sPodInfoDTO;
 import io.harness.dtos.deploymentinfo.ServerlessAwsLambdaDeploymentInfoDTO;
+import io.harness.entities.deploymentinfo.AwsSshWinrmDeploymentInfo;
+import io.harness.entities.deploymentinfo.AzureSshWinrmDeploymentInfo;
 import io.harness.entities.deploymentinfo.AzureWebAppNGDeploymentInfo;
 import io.harness.entities.deploymentinfo.DeploymentInfo;
 import io.harness.entities.deploymentinfo.K8sDeploymentInfo;
 import io.harness.entities.deploymentinfo.NativeHelmDeploymentInfo;
+import io.harness.entities.deploymentinfo.PdcDeploymentInfo;
 import io.harness.entities.deploymentinfo.ReferenceK8sPodInfo;
 import io.harness.entities.deploymentinfo.ServerlessAwsLambdaDeploymentInfo;
 import io.harness.exception.InvalidRequestException;
@@ -39,6 +45,12 @@ public class DeploymentInfoMapper {
       return ServerlessAwsLambdaDeploymentInfoMapper.toDTO((ServerlessAwsLambdaDeploymentInfo) deploymentInfo);
     } else if (deploymentInfo instanceof AzureWebAppNGDeploymentInfo) {
       return AzureWebAppDeploymentInfoMapper.toDTO((AzureWebAppNGDeploymentInfo) deploymentInfo);
+    } else if (deploymentInfo instanceof PdcDeploymentInfo) {
+      return PdcDeploymentInfoMapper.toDTO((PdcDeploymentInfo) deploymentInfo);
+    } else if (deploymentInfo instanceof AzureSshWinrmDeploymentInfo) {
+      return AzureSshWinrmDeploymentInfoMapper.toDTO((AzureSshWinrmDeploymentInfo) deploymentInfo);
+    } else if (deploymentInfo instanceof AwsSshWinrmDeploymentInfo) {
+      return AwsSshWinrmDeploymentInfoMapper.toDTO((AwsSshWinrmDeploymentInfo) deploymentInfo);
     }
     throw new InvalidRequestException("No DeploymentInfoMapper toDTO found for deploymentInfo : {}" + deploymentInfo);
   }
@@ -54,6 +66,12 @@ public class DeploymentInfoMapper {
       return ServerlessAwsLambdaDeploymentInfoMapper.toEntity((ServerlessAwsLambdaDeploymentInfoDTO) deploymentInfoDTO);
     } else if (deploymentInfoDTO instanceof AzureWebAppDeploymentInfoDTO) {
       return AzureWebAppDeploymentInfoMapper.toEntity((AzureWebAppDeploymentInfoDTO) deploymentInfoDTO);
+    } else if (deploymentInfoDTO instanceof PdcDeploymentInfoDTO) {
+      return PdcDeploymentInfoMapper.toEntity((PdcDeploymentInfoDTO) deploymentInfoDTO);
+    } else if (deploymentInfoDTO instanceof AzureSshWinrmDeploymentInfoDTO) {
+      return AzureSshWinrmDeploymentInfoMapper.toEntity((AzureSshWinrmDeploymentInfoDTO) deploymentInfoDTO);
+    } else if (deploymentInfoDTO instanceof AwsSshWinrmDeploymentInfoDTO) {
+      return AwsSshWinrmDeploymentInfoMapper.toEntity((AwsSshWinrmDeploymentInfoDTO) deploymentInfoDTO);
     }
     throw new InvalidRequestException(
         "No DeploymentInfoMapper toEntity found for deploymentInfo : {}" + deploymentInfoDTO);

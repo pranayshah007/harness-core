@@ -7,6 +7,8 @@
 
 package io.harness.changehandlers;
 
+import static io.harness.changehandlers.AbstractChangeDataHandler.escapeSql;
+
 import io.harness.ChangeHandler;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -21,6 +23,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -36,6 +39,12 @@ public class PlanExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew implem
   @Inject private TimeScaleDBService timeScaleDBService;
   private static String SERVICE_STARTTS = "service_startts";
   private static String SERVICE_ENDTS = "service_endts";
+  // These set of keys we can use to populate data to 'artifact_image' in service_infra_info
+  private static List<String> artifactPathNameSet = Arrays.asList("imagePath", "artifactPath", "bucketName", "jobName");
+  // These set of keys we can use to populate data to 'tag' in service_infra_info.
+  // Passing artifactPath as both tag and artifact_image in case of ArtifactoryGenericArtifactSummary. Have put in end
+  // to avoid conflict for other ArtifactSummary
+  private static List<String> tagNameSet = Arrays.asList("tag", "version", "build", "artifactPath");
 
   @Override
   public boolean handleChange(ChangeEvent<?> changeEvent, String tableName, String[] fields) {
@@ -182,6 +191,12 @@ public class PlanExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew implem
             // projectIdentifier
             columnValueMapping.put("projectIdentifier", projectIdentifier);
 
+            // gitOpsEnabled
+            if (serviceInfoObject.get("gitOpsEnabled") != null) {
+              String gitOpsEnabled = serviceInfoObject.get("gitOpsEnabled").toString();
+              columnValueMapping.put("gitOpsEnabled", gitOpsEnabled);
+            }
+
             // deploymentType
             String deploymentType = serviceInfoObject.get("deploymentType").toString();
             columnValueMapping.put("deployment_type", deploymentType);
@@ -194,18 +209,21 @@ public class PlanExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew implem
               String imagePath = "";
               if (artifacts.get("primary") != null) {
                 DBObject primary = (DBObject) artifacts.get("primary");
-                if (primary.get("tag") != null || primary.get("version") != null) {
-                  tag = primary.get("tag") == null ? primary.get("version").toString() : primary.get("tag").toString();
-                  columnValueMapping.put("tag", tag);
-                } else {
-                  columnValueMapping.put("tag", "");
+
+                for (String tagName : tagNameSet) {
+                  if (primary.get(tagName) != null) {
+                    tag = primary.get(tagName).toString();
+                    break;
+                  }
                 }
-                if (primary.get("imagePath") != null) {
-                  imagePath = primary.get("imagePath").toString();
-                  columnValueMapping.put("artifact_image", imagePath);
-                } else {
-                  columnValueMapping.put("artifact_image", "");
+                for (String artifactPath : artifactPathNameSet) {
+                  if (primary.get(artifactPath) != null) {
+                    imagePath = primary.get(artifactPath).toString();
+                    break;
+                  }
                 }
+                columnValueMapping.put("tag", tag);
+                columnValueMapping.put("artifact_image", imagePath);
               }
             }
 
@@ -221,6 +239,19 @@ public class PlanExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew implem
                   && infraExecutionSummaryObject.get("identifier").toString().length() != 0) {
                 String envIdentifier = infraExecutionSummaryObject.get("identifier").toString();
                 columnValueMapping.put("env_id", envIdentifier);
+              }
+
+              if (infraExecutionSummaryObject.get("infrastructureIdentifier") != null
+                  && infraExecutionSummaryObject.get("infrastructureIdentifier").toString().length() != 0) {
+                String infrastructureIdentifier =
+                    infraExecutionSummaryObject.get("infrastructureIdentifier").toString();
+                columnValueMapping.put("infrastructureIdentifier", infrastructureIdentifier);
+              }
+
+              if (infraExecutionSummaryObject.get("infrastructureName") != null
+                  && infraExecutionSummaryObject.get("infrastructureName").toString().length() != 0) {
+                String infrastructureName = infraExecutionSummaryObject.get("infrastructureName").toString();
+                columnValueMapping.put("infrastructureName", infrastructureName);
               }
 
               if (infraExecutionSummaryObject.get("type") != null
@@ -291,7 +322,7 @@ public class PlanExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew implem
 
     if (!columnValueMappingForInsert.isEmpty()) {
       for (Map.Entry<String, String> entry : columnValueMappingForInsert.entrySet()) {
-        insertSQLBuilder.append(String.format("'%s',", entry.getValue()));
+        insertSQLBuilder.append(String.format("'%s',", escapeSql(entry.getValue())));
       }
     }
 
@@ -349,7 +380,8 @@ public class PlanExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew implem
 
     if (!columnValueMappingForSet.isEmpty()) {
       for (Map.Entry<String, String> entry : columnValueMappingForSet.entrySet()) {
-        updateQueryBuilder.append(String.format("%s=%s,", entry.getKey(), String.format("'%s'", entry.getValue())));
+        updateQueryBuilder.append(
+            String.format("%s=%s,", entry.getKey(), String.format("'%s'", escapeSql(entry.getValue()))));
       }
     }
 

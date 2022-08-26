@@ -209,8 +209,6 @@ public class CVNGStepTest extends CvNextGenTestBase {
   public void testExecuteAsync_createDemoActivityFFOn() throws IllegalAccessException {
     FeatureFlagService featureFlagService = mock(FeatureFlagService.class);
     when(featureFlagService.isFeatureFlagEnabled(eq(accountId), eq("CVNG_VERIFY_STEP_DEMO"))).thenReturn(true);
-    when(featureFlagService.isFeatureFlagEnabled(eq(accountId), eq("CVNG_VERIFY_STEP_TO_SINGLE_ACTIVITY")))
-        .thenReturn(true);
     FieldUtils.writeField(cvngStep, "featureFlagService", featureFlagService, true);
     Ambiance ambiance = getAmbiance("verify_dev");
     metricPackService.createDefaultMetricPackAndThresholds(accountId, orgIdentifier, projectIdentifier);
@@ -235,8 +233,6 @@ public class CVNGStepTest extends CvNextGenTestBase {
   public void testExecuteAsync_createDemoActivityFFOnAndSensitivityHigh() throws IllegalAccessException {
     FeatureFlagService featureFlagService = mock(FeatureFlagService.class);
     when(featureFlagService.isFeatureFlagEnabled(eq(accountId), eq("CVNG_VERIFY_STEP_DEMO"))).thenReturn(true);
-    when(featureFlagService.isFeatureFlagEnabled(eq(accountId), eq("CVNG_VERIFY_STEP_TO_SINGLE_ACTIVITY")))
-        .thenReturn(true);
     FieldUtils.writeField(cvngStep, "featureFlagService", featureFlagService, true);
     Ambiance ambiance = getAmbiance("verify_demo");
     metricPackService.createDefaultMetricPackAndThresholds(accountId, orgIdentifier, projectIdentifier);
@@ -263,8 +259,6 @@ public class CVNGStepTest extends CvNextGenTestBase {
   public void testExecuteAsync_createDemoActivityFFOnAndSensitivityMedium() throws IllegalAccessException {
     FeatureFlagService featureFlagService = mock(FeatureFlagService.class);
     when(featureFlagService.isFeatureFlagEnabled(eq(accountId), eq("CVNG_VERIFY_STEP_DEMO"))).thenReturn(true);
-    when(featureFlagService.isFeatureFlagEnabled(eq(accountId), eq("CVNG_VERIFY_STEP_TO_SINGLE_ACTIVITY")))
-        .thenReturn(true);
     FieldUtils.writeField(cvngStep, "featureFlagService", featureFlagService, true);
     Ambiance ambiance = getAmbiance("verify_demo");
     metricPackService.createDefaultMetricPackAndThresholds(accountId, orgIdentifier, projectIdentifier);

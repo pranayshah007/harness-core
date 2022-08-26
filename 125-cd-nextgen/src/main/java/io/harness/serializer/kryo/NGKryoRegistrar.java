@@ -15,8 +15,9 @@ import io.harness.cdng.artifact.bean.artifactsource.DockerArtifactSource;
 import io.harness.cdng.artifact.steps.ArtifactStepParameters;
 import io.harness.cdng.azure.webapp.ApplicationSettingsParameters;
 import io.harness.cdng.azure.webapp.ConnectionStringsParameters;
-import io.harness.cdng.azure.webapp.StartupScriptParameters;
+import io.harness.cdng.azure.webapp.StartupCommandParameters;
 import io.harness.cdng.configfile.steps.ConfigFileStepParameters;
+import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
 import io.harness.cdng.environment.yaml.EnvironmentYaml;
 import io.harness.cdng.gitops.CreatePRStepInfo;
 import io.harness.cdng.gitops.CreatePRStepParams;
@@ -24,7 +25,6 @@ import io.harness.cdng.gitops.MergePRStepInfo;
 import io.harness.cdng.gitops.MergePRStepParams;
 import io.harness.cdng.helm.HelmDeployStepInfo;
 import io.harness.cdng.helm.HelmDeployStepParams;
-import io.harness.cdng.helm.NativeHelmStepPassThroughData;
 import io.harness.cdng.helm.rollback.HelmRollbackStepInfo;
 import io.harness.cdng.helm.rollback.HelmRollbackStepParams;
 import io.harness.cdng.infra.InfrastructureDef;
@@ -55,6 +55,7 @@ import io.harness.cdng.k8s.K8sRollingStepParameters;
 import io.harness.cdng.k8s.K8sScaleStepInfo;
 import io.harness.cdng.k8s.K8sScaleStepParameter;
 import io.harness.cdng.k8s.K8sStepPassThroughData;
+import io.harness.cdng.k8s.beans.CustomFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.GitFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.HelmValuesFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.K8sExecutionPassThroughData;
@@ -65,6 +66,9 @@ import io.harness.cdng.pipeline.beans.DeploymentStageStepParameters;
 import io.harness.cdng.pipeline.beans.RollbackNode;
 import io.harness.cdng.pipeline.beans.RollbackOptionalChildChainStepParameters;
 import io.harness.cdng.pipeline.executions.CDAccountExecutionMetadata;
+import io.harness.cdng.provision.azure.AzureARMRollbackStepInfo;
+import io.harness.cdng.provision.azure.AzureCreateARMResourceStepInfo;
+import io.harness.cdng.provision.azure.AzureCreateBPStepInfo;
 import io.harness.cdng.provision.cloudformation.CloudformationCreateStackStepInfo;
 import io.harness.cdng.provision.cloudformation.CloudformationDeleteStackStepInfo;
 import io.harness.cdng.provision.cloudformation.CloudformationRollbackStepInfo;
@@ -85,6 +89,7 @@ import io.harness.cdng.ssh.CommandStepInfo;
 import io.harness.cdng.tasks.manifestFetch.step.ManifestFetchOutcome;
 import io.harness.cdng.tasks.manifestFetch.step.ManifestFetchParameters;
 import io.harness.serializer.KryoRegistrar;
+import io.harness.telemetry.beans.CdTelemetrySentStatus;
 
 import com.esotericsoftware.kryo.Kryo;
 
@@ -149,9 +154,9 @@ public class NGKryoRegistrar implements KryoRegistrar {
 
     kryo.register(HelmDeployStepInfo.class, 13001);
     kryo.register(HelmDeployStepParams.class, 13002);
-    kryo.register(NativeHelmStepPassThroughData.class, 13003);
     kryo.register(HelmRollbackStepInfo.class, 13004);
     kryo.register(HelmRollbackStepParams.class, 13005);
+    kryo.register(CdTelemetrySentStatus.class, 13006);
 
     kryo.register(K8sExecutionPassThroughData.class, 12546);
     kryo.register(CDAccountExecutionMetadata.class, 12550);
@@ -174,11 +179,16 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(CloudformationRollbackStepInfo.class, 12584);
     kryo.register(ConfigFileStepParameters.class, 12585);
     kryo.register(CommandStepInfo.class, 12600);
-    kryo.register(StartupScriptParameters.class, 12601);
+    kryo.register(StartupCommandParameters.class, 12601);
     kryo.register(ApplicationSettingsParameters.class, 12602);
     kryo.register(ConnectionStringsParameters.class, 12603);
     kryo.register(JenkinsBuildStepInfo.class, 12700);
     kryo.register(MergePRStepParams.class, 12604);
     kryo.register(MergePRStepInfo.class, 12605);
+    kryo.register(CustomFetchResponsePassThroughData.class, 12705);
+    kryo.register(ConfigFilesOutcome.class, 12608);
+    kryo.register(AzureCreateARMResourceStepInfo.class, 12609);
+    kryo.register(AzureCreateBPStepInfo.class, 12610);
+    kryo.register(AzureARMRollbackStepInfo.class, 12611);
   }
 }

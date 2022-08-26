@@ -115,6 +115,20 @@ public class InstallUtils {
     return mapBuilder.build();
   }
 
+  /**
+   * This method discovers the actual location of the tool which can be used for running task scripts.
+   * As soon as tool is discovered from locations in below order, we don't attempt other locations:
+   * <ol>
+   *     <li> Custom paths configured through environment variables like KUBECTL_PATH
+   *     <li> $PATH environment variable
+   *     <li> Default tool location (under ./client-tools/)
+   *     <li> Download the tool to the default tool location (if download is enabled)
+   * </ol>
+   * @param tool tool to install
+   * @param version tool version
+   * @param configuration delegate configuration to look for settings
+   * @return Path to the tool if discovered. null if there is no tool discovered
+   */
   private static Path installTool(
       final ClientTool tool, final ClientToolVersion version, final DelegateConfiguration configuration) {
     // 1. Check if custom path is configured for a tool (assume it's installed there)
@@ -123,14 +137,24 @@ public class InstallUtils {
       log.info("Custom {} is installed at {}", tool.getBinaryName(), customPathStr);
       return Paths.get(customPathStr).normalize().toAbsolutePath();
     }
-    // 2. Check if tool is already installed
+
+    // 2. Check if the tool is on $PATH (only for immutable delegate)
+    if (configuration.isImmutable()) {
+      final Path toolName = Paths.get(tool.getBinaryName());
+      if (runToolCommand(toolName, tool.getValidateCommandArgs())) {
+        log.info("{} Tool is found on $PATH", tool.getBinaryName());
+        return toolName;
+      }
+    }
+
+    // 3. Check if tool is already installed
     final Path versionedToolPath = getVersionedPath(tool, version);
     if (validateToolExists(versionedToolPath, tool)) {
       log.info("{} already installed at {}", tool.getBinaryName(), versionedToolPath);
       return versionedToolPath;
     }
 
-    // 3. Download the tool
+    // 4. Download the tool
     if (!configuration.isClientToolsDownloadDisabled()) {
       try {
         log.info("{} not found at {}. Installing.", tool.getBinaryName(), versionedToolPath);
@@ -229,12 +253,11 @@ public class InstallUtils {
   }
 
   private static boolean runToolCommand(final Path toolPath, final String script) {
-    final String binaryName = toolPath.getFileName().toString();
-    final String command = String.format("./%s %s", binaryName, script);
+    final String command = String.format("%s %s", toolPath, script);
     try {
-      return runCommand(toolPath.getParent(), command);
+      return runCommand(null, command);
     } catch (final Exception e) {
-      log.error("Failed running {} command: {}", binaryName, command, e);
+      log.error("Failed running {} command: {}", toolPath.getFileName(), command, e);
       return false;
     }
   }
@@ -243,7 +266,7 @@ public class InstallUtils {
       throws IOException, InterruptedException, TimeoutException {
     final ProcessExecutor processExecutor = new ProcessExecutor()
                                                 .timeout(5, TimeUnit.MINUTES)
-                                                .directory(dir.toFile())
+                                                .directory(dir != null ? dir.toFile() : null)
                                                 .command("/bin/bash", "-c", script)
                                                 .readOutput(true)
                                                 .redirectOutput(new LogOutputStream() {
@@ -258,6 +281,7 @@ public class InstallUtils {
                                                     log.error(line);
                                                   }
                                                 });
+
     final ProcessResult result = processExecutor.execute();
 
     if (result.getExitValue() == 0) {

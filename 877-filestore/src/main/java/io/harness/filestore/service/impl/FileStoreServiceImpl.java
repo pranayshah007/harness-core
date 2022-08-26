@@ -24,7 +24,7 @@ import static io.harness.filestore.utils.FileStoreUtils.nameChanged;
 import static io.harness.filestore.utils.FileStoreUtils.parentChanged;
 import static io.harness.filter.FilterType.FILESTORE;
 import static io.harness.repositories.FileStoreRepositoryCriteriaCreator.createCreateByAggregation;
-import static io.harness.repositories.FileStoreRepositoryCriteriaCreator.createCriteriaByScopeAndParentIdentifier;
+import static io.harness.repositories.FileStoreRepositoryCriteriaCreator.createCriteriaByScopeAndParentIdentifierAndNodesFilter;
 import static io.harness.repositories.FileStoreRepositoryCriteriaCreator.createFilesAndFoldersFilterCriteria;
 import static io.harness.repositories.FileStoreRepositoryCriteriaCreator.createFilesFilterCriteria;
 import static io.harness.repositories.FileStoreRepositoryCriteriaCreator.createSortByLastModifiedAtDesc;
@@ -42,6 +42,7 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.file.beans.NGBaseFile;
 import io.harness.filestore.FileStoreConfiguration;
+import io.harness.filestore.dto.filter.FileStoreNodesFilterQueryPropertiesDTO;
 import io.harness.filestore.dto.filter.FilesFilterPropertiesDTO;
 import io.harness.filestore.dto.mapper.EmbeddedUserDTOMapper;
 import io.harness.filestore.dto.mapper.FileDTOMapper;
@@ -77,6 +78,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -121,12 +123,12 @@ public class FileStoreServiceImpl implements FileStoreService {
   }
 
   @Override
-  public FileDTO update(@NotNull FileDTO fileDto, InputStream content, @NotNull String identifier) {
-    NGFile oldNGFile = findOrThrow(
-        fileDto.getAccountIdentifier(), fileDto.getOrgIdentifier(), fileDto.getProjectIdentifier(), identifier);
+  public FileDTO update(@NotNull FileDTO fileDto, InputStream content) {
+    NGFile oldNGFile = findOrThrow(fileDto.getAccountIdentifier(), fileDto.getOrgIdentifier(),
+        fileDto.getProjectIdentifier(), fileDto.getIdentifier());
     NGFile oldNGFileClone = (NGFile) HObjectMapper.clone(oldNGFile);
 
-    validateUpdateFileDto(fileDto, identifier);
+    validateUpdateFileDto(fileDto, oldNGFileClone);
 
     fileDto.setPath(createPath(fileDto));
     if (NGFileType.FOLDER.equals(oldNGFile.getType())) {
@@ -135,7 +137,7 @@ public class FileStoreServiceImpl implements FileStoreService {
 
     NGFile updatedNGFile = FileDTOMapper.updateNGFile(fileDto, oldNGFile);
     if (shouldStoreFileContent(content, updatedNGFile)) {
-      log.info("Start updating file in file system, identifier: {}", identifier);
+      log.info("Start updating file in file system, identifier: {}", fileDto.getIdentifier());
       saveFile(fileDto, updatedNGFile, content);
     }
 
@@ -153,6 +155,13 @@ public class FileStoreServiceImpl implements FileStoreService {
     }
 
     Optional<NGFile> ngFileOpt = find(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    return ngFileOpt.map(FileDTOMapper::getFileDTOFromNGFile);
+  }
+
+  @Override
+  public Optional<FileDTO> get(@NotNull FileDTO fileDTO) {
+    Optional<NGFile> ngFileOpt = find(fileDTO.getAccountIdentifier(), fileDTO.getOrgIdentifier(),
+        fileDTO.getProjectIdentifier(), fileDTO.getIdentifier());
     return ngFileOpt.map(FileDTOMapper::getFileDTOFromNGFile);
   }
 
@@ -258,9 +267,11 @@ public class FileStoreServiceImpl implements FileStoreService {
 
   @Override
   public FolderNodeDTO listFolderNodes(@NotNull String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, @NotNull FolderNodeDTO folderNodeDTO) {
+      String projectIdentifier, @NotNull FolderNodeDTO folderNodeDTO,
+      @Nullable FileStoreNodesFilterQueryPropertiesDTO filterParams) {
     FolderNodeDTO updatedFolderNode = fixFolderNode(accountIdentifier, orgIdentifier, projectIdentifier, folderNodeDTO);
-    return populateFolderNode(updatedFolderNode, accountIdentifier, orgIdentifier, projectIdentifier);
+    return populateFolderNode(
+        Scope.of(accountIdentifier, orgIdentifier, projectIdentifier), updatedFolderNode, filterParams);
   }
 
   @Override
@@ -421,9 +432,8 @@ public class FileStoreServiceImpl implements FileStoreService {
 
   // in the case when we need to return the whole folder structure, create recursion on this method
   private FolderNodeDTO populateFolderNode(
-      FolderNodeDTO folderNode, String accountIdentifier, String orgIdentifier, String projectIdentifier) {
-    List<FileStoreNodeDTO> fileStoreNodes =
-        listFolderChildren(accountIdentifier, orgIdentifier, projectIdentifier, folderNode.getIdentifier());
+      Scope scope, FolderNodeDTO folderNode, FileStoreNodesFilterQueryPropertiesDTO filterParams) {
+    List<FileStoreNodeDTO> fileStoreNodes = listFolderChildren(scope, folderNode.getIdentifier(), filterParams);
     for (FileStoreNodeDTO node : fileStoreNodes) {
       folderNode.addChild(node);
     }
@@ -431,9 +441,8 @@ public class FileStoreServiceImpl implements FileStoreService {
   }
 
   private List<FileStoreNodeDTO> listFolderChildren(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String folderIdentifier) {
-    return listFilesByParentIdentifierSortedByLastModifiedAt(
-        accountIdentifier, orgIdentifier, projectIdentifier, folderIdentifier)
+      Scope scope, String folderIdentifier, FileStoreNodesFilterQueryPropertiesDTO filterParams) {
+    return listAllByParentIdentifierFilteredByParamsAndSortedByLastModifiedAt(scope, folderIdentifier, filterParams)
         .stream()
         .filter(Objects::nonNull)
         .map(ngFile
@@ -442,11 +451,10 @@ public class FileStoreServiceImpl implements FileStoreService {
         .collect(Collectors.toList());
   }
 
-  private List<NGFile> listFilesByParentIdentifierSortedByLastModifiedAt(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String parentIdentifier) {
+  private List<NGFile> listAllByParentIdentifierFilteredByParamsAndSortedByLastModifiedAt(
+      Scope scope, String parentIdentifier, FileStoreNodesFilterQueryPropertiesDTO filterParams) {
     return fileStoreRepository.findAllAndSort(
-        createCriteriaByScopeAndParentIdentifier(
-            Scope.of(accountIdentifier, orgIdentifier, projectIdentifier), parentIdentifier),
+        createCriteriaByScopeAndParentIdentifierAndNodesFilter(scope, parentIdentifier, filterParams),
         createSortByLastModifiedAtDesc());
   }
 
@@ -515,13 +523,11 @@ public class FileStoreServiceImpl implements FileStoreService {
       throw new InvalidArgumentsException("Parent folder identifier is mandatory.");
     }
 
-    if (!parentFolderExists(fileDto)) {
-      throw new InvalidArgumentsException(
-          format("Parent folder with identifier [%s] does not exist", fileDto.getParentIdentifier()));
-    }
+    validateFileDto(fileDto);
   }
 
-  private void validateUpdateFileDto(FileDTO fileDto, String identifier) {
+  private void validateUpdateFileDto(FileDTO fileDto, NGFile oldNGFile) {
+    String identifier = fileDto.getIdentifier();
     if (isEmpty(identifier)) {
       throw new InvalidArgumentsException("File or folder identifier cannot be empty");
     }
@@ -532,9 +538,31 @@ public class FileStoreServiceImpl implements FileStoreService {
               fileDto.getParentIdentifier()));
     }
 
+    validateFileDto(fileDto);
+
+    // file usage is mandatory after first saving/updating to DB and not allowed to be updated
+    if (oldNGFile.getFileUsage() != null) {
+      if (fileDto.getFileUsage() == null) {
+        throw new InvalidArgumentsException(
+            format("File usage is required for already set usage, identifier [%s]", fileDto.getIdentifier()));
+      }
+
+      if (fileDto.getFileUsage() != null && oldNGFile.getFileUsage() != fileDto.getFileUsage()) {
+        throw new InvalidArgumentsException(
+            format("File usage cannot be updated, identifier [%s]", fileDto.getIdentifier()));
+      }
+    }
+  }
+  // common validation rules for creation and update
+  private void validateFileDto(FileDTO fileDto) {
     if (!parentFolderExists(fileDto)) {
       throw new InvalidArgumentsException(
           format("Parent folder with identifier [%s] does not exist", fileDto.getParentIdentifier()));
+    }
+
+    if (fileDto.getFileUsage() != null && fileDto.isFolder()) {
+      throw new InvalidArgumentsException(
+          format("File usage cannot be set for folder, identifier [%s]", fileDto.getIdentifier()));
     }
   }
 

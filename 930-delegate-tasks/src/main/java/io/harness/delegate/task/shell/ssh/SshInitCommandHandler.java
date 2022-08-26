@@ -13,6 +13,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.task.shell.SshInitCommandTemplates.EXECLAUNCHERV2_SH_FTL;
 import static io.harness.delegate.task.shell.SshInitCommandTemplates.TAILWRAPPERV2_SH_FTL;
 
+import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -28,15 +29,20 @@ import io.harness.delegate.task.ssh.ScriptCommandUnit;
 import io.harness.exception.CommandExecutionException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.LogLevel;
 import io.harness.shell.AbstractScriptExecutor;
+import io.harness.shell.ExecuteCommandResponse;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import freemarker.template.TemplateException;
 import java.io.IOException;
+import java.io.StringReader;
 import java.io.StringWriter;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Properties;
 import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(CDP)
@@ -45,14 +51,19 @@ public class SshInitCommandHandler implements CommandHandler {
   @Inject private SshScriptExecutorFactory sshScriptExecutorFactory;
 
   @Override
-  public CommandExecutionStatus handle(CommandTaskParameters parameters, NgCommandUnit commandUnit,
-      ILogStreamingTaskClient logStreamingTaskClient, CommandUnitsProgress commandUnitsProgress) {
+  public ExecuteCommandResponse handle(CommandTaskParameters parameters, NgCommandUnit commandUnit,
+      ILogStreamingTaskClient logStreamingTaskClient, CommandUnitsProgress commandUnitsProgress,
+      Map<String, Object> taskContext) {
     if (!(parameters instanceof SshCommandTaskParameters)) {
       throw new InvalidRequestException("Invalid task parameters submitted for command task.");
     }
 
     if (!(commandUnit instanceof NgInitCommandUnit)) {
       throw new InvalidRequestException("Invalid command unit specified for command task.");
+    }
+
+    if (taskContext == null) {
+      taskContext = new LinkedHashMap<>();
     }
 
     SshCommandTaskParameters sshCommandTaskParameters = (SshCommandTaskParameters) parameters;
@@ -72,12 +83,14 @@ public class SshInitCommandHandler implements CommandHandler {
             .build();
 
     AbstractScriptExecutor executor = sshScriptExecutorFactory.getExecutor(context);
-    return initAndGenerateScriptCommand(sshCommandTaskParameters, executor);
+    CommandExecutionStatus commandExecutionStatus =
+        initAndGenerateScriptCommand(sshCommandTaskParameters, executor, context, taskContext);
+    return ExecuteCommandResponse.builder().status(commandExecutionStatus).build();
   }
 
-  private CommandExecutionStatus initAndGenerateScriptCommand(
-      SshCommandTaskParameters taskParameters, AbstractScriptExecutor executor) {
-    CommandExecutionStatus status = runPreInitCommand(taskParameters, executor);
+  private CommandExecutionStatus initAndGenerateScriptCommand(SshCommandTaskParameters taskParameters,
+      AbstractScriptExecutor executor, SshExecutorFactoryContext context, Map<String, Object> taskContext) {
+    CommandExecutionStatus status = runPreInitCommand(taskParameters, executor, context, taskContext);
     if (!CommandExecutionStatus.SUCCESS.equals(status)) {
       return status;
     }
@@ -116,10 +129,34 @@ public class SshInitCommandHandler implements CommandHandler {
     }
   }
 
-  private CommandExecutionStatus runPreInitCommand(
-      SshCommandTaskParameters taskParameters, AbstractScriptExecutor executor) {
+  private CommandExecutionStatus runPreInitCommand(SshCommandTaskParameters taskParameters,
+      AbstractScriptExecutor executor, SshExecutorFactoryContext context, Map<String, Object> taskContext) {
     String cmd = String.format("mkdir -p %s", getExecutionStagingDir(taskParameters));
-    return executor.executeCommandString(cmd, true);
+    CommandExecutionStatus commandExecutionStatus = executor.executeCommandString(cmd, true);
+
+    StringBuffer envVariablesFromHost = new StringBuffer();
+    commandExecutionStatus = commandExecutionStatus == CommandExecutionStatus.SUCCESS
+        ? executor.executeCommandString("printenv", envVariablesFromHost)
+        : commandExecutionStatus;
+
+    Properties properties = new Properties();
+    try {
+      properties.load(new StringReader(envVariablesFromHost.toString().replaceAll("\\\\", "\\\\\\\\")));
+      Map<String, String> mapOfEnvVariablesFromHost =
+          properties.entrySet().stream().collect(toMap(o -> o.getKey().toString(), o -> o.getValue().toString()));
+      context.addEnvVariables(mapOfEnvVariablesFromHost);
+      context.addEnvVariables(taskParameters.getEnvironmentVariables());
+      taskContext.put(RESOLVED_ENV_VARIABLES_KEY, context.getEnvironmentVariables());
+
+    } catch (IOException e) {
+      throw new CommandExecutionException("Failed to process destination host env variables", e);
+    }
+
+    if (taskParameters.isExecuteOnDelegate()) {
+      executor.getLogCallback().saveExecutionLog(
+          "Command finished with status " + commandExecutionStatus, LogLevel.INFO, commandExecutionStatus);
+    }
+    return commandExecutionStatus;
   }
 
   private String generateExecLauncherV2Command(SshCommandTaskParameters taskParameters, ScriptCommandUnit commandUnit,

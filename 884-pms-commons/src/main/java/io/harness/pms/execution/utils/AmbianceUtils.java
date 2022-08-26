@@ -116,6 +116,15 @@ public class AmbianceUtils {
     return level == null || isEmpty(level.getIdentifier()) ? null : level.getIdentifier();
   }
 
+  public static String obtainStepGroupIdentifier(Ambiance ambiance) {
+    Level level = null;
+    Optional<Level> levelOptional = getStepGroupLevelFromAmbiance(ambiance);
+    if (levelOptional.isPresent()) {
+      level = levelOptional.get();
+    }
+    return level == null || isEmpty(level.getIdentifier()) ? null : level.getIdentifier();
+  }
+
   public static AutoLogContext autoLogContext(Ambiance ambiance) {
     return new AutoLogContext(logContextMap(ambiance), OVERRIDE_NESTS);
   }
@@ -198,6 +207,16 @@ public class AmbianceUtils {
     Optional<Level> stageLevel = Optional.empty();
     for (Level level : ambiance.getLevelsList()) {
       if (level.getStepType().getStepCategory() == StepCategory.STRATEGY) {
+        stageLevel = Optional.of(level);
+      }
+    }
+    return stageLevel;
+  }
+
+  public Optional<Level> getStepGroupLevelFromAmbiance(Ambiance ambiance) {
+    Optional<Level> stageLevel = Optional.empty();
+    for (Level level : ambiance.getLevelsList()) {
+      if (level.getStepType().getType().equals("STEP_GROUP")) {
         stageLevel = Optional.of(level);
       }
     }

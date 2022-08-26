@@ -18,7 +18,6 @@ java_library(
     ],
     deps = [
         "//:lombok",
-        "//800-pipeline-service/modules/pms-contracts:module",
         "//890-sm-core:module",
         "//930-ng-core-clients:module",
         "//940-feature-flag:module",
@@ -28,6 +27,7 @@ java_library(
         "//953-events-api:module",
         "//954-connector-beans:module",
         "//955-outbox-sdk:module",
+        "//958-migration-sdk:module",
         "//960-ng-core-beans:module",
         "//960-persistence:module",
         "//970-ng-commons:module",

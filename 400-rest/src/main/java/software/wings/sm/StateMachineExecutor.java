@@ -1590,9 +1590,15 @@ public class StateMachineExecutor implements StateInspectionListener {
           ? context.getStateExecutionData().getErrorMsg()
           : errorMsgBuilder.toString();
 
-      if (stateExecutionInstance.getStateParams() != null) {
-        MapperUtils.mapObject(stateExecutionInstance.getStateParams(), currentState);
+      try {
+        if (stateExecutionInstance.getStateParams() != null) {
+          MapperUtils.mapObject(stateExecutionInstance.getStateParams(), currentState);
+        }
+      } catch (org.modelmapper.MappingException e) {
+        log.error("Got model mapping exception during mapping the stateparams {}",
+            stateExecutionInstance.getStateParams(), e);
       }
+
       currentState.handleAbortEvent(context);
       if (!(isStepSupportingTimeout(stateExecutionInstance)
               && featureFlagService.isEnabled(TIMEOUT_FAILURE_SUPPORT, context.getAccountId())
@@ -2178,11 +2184,13 @@ public class StateMachineExecutor implements StateInspectionListener {
         wingsPersistence.createUpdateOperations(StateExecutionInstance.class);
 
     StateExecutionData stateExecutionData = stateExecutionMap.get(stateExecutionInstance.getDisplayName());
-    ops.addToSet("stateExecutionDataHistory", stateExecutionData);
-    stateExecutionInstance.getStateExecutionDataHistory().add(stateExecutionData);
+    if (stateExecutionData != null) {
+      ops.addToSet("stateExecutionDataHistory", stateExecutionData);
+      stateExecutionInstance.getStateExecutionDataHistory().add(stateExecutionData);
 
-    stateExecutionMap.remove(stateExecutionInstance.getDisplayName());
-    ops.set("stateExecutionMap", stateExecutionMap);
+      stateExecutionMap.remove(stateExecutionInstance.getDisplayName());
+      ops.set("stateExecutionMap", stateExecutionMap);
+    }
 
     List<ContextElement> notifyElements = new ArrayList<>();
     String prevInstanceId = stateExecutionInstance.getPrevInstanceId();
@@ -2219,13 +2227,13 @@ public class StateMachineExecutor implements StateInspectionListener {
                   .filter(StateExecutionInstanceKeys.appId, stateExecutionInstance.getAppId())
                   .filter(ID_KEY, stateExecutionInstance.getUuid())
                   .field(StateExecutionInstanceKeys.status)
-                  .in(asList(WAITING, FAILED, ERROR, EXPIRED));
+                  .in(asList(WAITING, FAILED, ERROR, EXPIRED, STARTING));
     } else {
       query = wingsPersistence.createQuery(StateExecutionInstance.class)
                   .filter(StateExecutionInstanceKeys.appId, stateExecutionInstance.getAppId())
                   .filter(ID_KEY, stateExecutionInstance.getUuid())
                   .field(StateExecutionInstanceKeys.status)
-                  .in(asList(WAITING, FAILED, ERROR));
+                  .in(asList(WAITING, FAILED, ERROR, STARTING));
     }
 
     UpdateResults updateResult = wingsPersistence.update(query, ops);

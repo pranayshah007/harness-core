@@ -16,6 +16,7 @@ import static io.harness.exception.WingsException.USER;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
+import static software.wings.security.PermissionAttribute.PermissionType.LOGGED_IN;
 import static software.wings.service.impl.security.SecretManagerImpl.ENCRYPTED_FIELD_MASK;
 import static software.wings.settings.SettingVariableTypes.GCP;
 
@@ -54,6 +55,8 @@ import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.helpers.ext.jenkins.JobDetails;
 import software.wings.security.PermissionAttribute.ResourceType;
 import software.wings.security.UsageRestrictions;
+import software.wings.security.annotations.ApiKeyAuthorized;
+import software.wings.security.annotations.AuthRule;
 import software.wings.security.annotations.Scope;
 import software.wings.service.impl.SettingServiceHelper;
 import software.wings.service.impl.security.auth.SettingAuthHandler;
@@ -109,11 +112,16 @@ import org.hibernate.validator.constraints.NotEmpty;
 @Consumes(APPLICATION_JSON)
 @Produces(APPLICATION_JSON)
 @Scope(ResourceType.SETTING)
+@AuthRule(permissionType = LOGGED_IN)
+@ApiKeyAuthorized(permissionType = LOGGED_IN)
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._360_CG_MANAGER)
 public class SettingResource {
   private static final String LIMIT = "" + Integer.MAX_VALUE;
   private static final String CUSTOM_MAX_LIMIT = "1200";
+  private static final String LARGE_PAGE_SIZE_LIMIT = "3000";
+
+  private static final String ENTITY_TYPE_APP_DEFAULTS = "APP_DEFAULTS";
 
   @Inject private SettingsService settingsService;
   @Inject private BuildSourceService buildSourceService;
@@ -174,12 +182,26 @@ public class SettingResource {
           Boolean.TRUE.equals(forUsageInNewApp));
     } else {
       if (featureFlagService.isEnabled(FeatureName.CUSTOM_MAX_PAGE_SIZE, accountId)) {
+        String baseLimit = CUSTOM_MAX_LIMIT;
+        /**
+         * We want to properly implement Paginated API call for Settings API but because of scoping logic, it
+         * is complex to solve.
+         */
+        if (featureFlagService.isEnabled(FeatureName.EXTRA_LARGE_PAGE_SIZE, accountId)) {
+          baseLimit = LARGE_PAGE_SIZE_LIMIT;
+        }
+
         String limit = PageRequest.UNLIMITED.equals(pageRequest.getLimit())
-            ? CUSTOM_MAX_LIMIT
-            : Integer.toString(Parser.asInt(pageRequest.getLimit(), Integer.parseInt(CUSTOM_MAX_LIMIT)));
+            ? baseLimit
+            : Integer.toString(Parser.asInt(pageRequest.getLimit(), Integer.parseInt(baseLimit)));
         pageRequest.setLimit(limit);
       }
-      result = settingsService.list(pageRequest, currentAppId, currentEnvId, Boolean.TRUE.equals(forUsageInNewApp));
+
+      if (ENTITY_TYPE_APP_DEFAULTS.equals(entityType)) {
+        result = settingsService.list(pageRequest, appId, accountId);
+      } else {
+        result = settingsService.list(pageRequest, currentAppId, currentEnvId, Boolean.TRUE.equals(forUsageInNewApp));
+      }
     }
     result.forEach(
         settingAttribute -> settingServiceHelper.updateSettingAttributeBeforeResponse(settingAttribute, true));

@@ -13,12 +13,15 @@ import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YamlNode;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
+import lombok.Getter;
 
 @Data
 @Builder
@@ -26,6 +29,11 @@ import lombok.Data;
 @OwnedBy(CDP)
 @RecasterAlias("io.harness.cdng.ssh.CopyCommandUnitSpec")
 public class CopyCommandUnitSpec implements CommandUnitBaseSpec {
+  @JsonProperty(YamlNode.UUID_FIELD_NAME)
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
+  @ApiModelProperty(hidden = true)
+  String uuid;
+
   @NotNull @ApiModelProperty(dataType = STRING_CLASSPATH) ParameterField<String> destinationPath;
   @NotNull CommandUnitSourceType sourceType;
   @Override

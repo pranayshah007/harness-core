@@ -220,6 +220,8 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
   private String SCRIPT_APPROVAL_JOB_GROUP = "SHELL_SCRIPT_APPROVAL_JOB";
   public static final String APPROVAL_STATE_TYPE_VARIABLE = "approvalStateType";
   public static final String USER_GROUPS_VARIABLE = "userGroups";
+  private static final Integer MAXIMUM_TIMEOUT = 2147400049;
+  private static final String TIMEOUT_PROPERTY_KEY = "timeoutMillis";
 
   @Getter @Setter ApprovalStateParams approvalStateParams;
   @Getter @Setter ApprovalStateType approvalStateType = USER_GROUP;
@@ -434,7 +436,25 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
     if (isDisabled && properties.get(EnvStateKeys.disableAssertion) == null) {
       properties.put(EnvStateKeys.disableAssertion, "true");
     }
+    validateProperties(properties);
     mapApprovalObject(properties, this);
+  }
+
+  private void validateProperties(Map<String, Object> properties) {
+    Object timeoutMillis = properties.get(TIMEOUT_PROPERTY_KEY);
+    if (timeoutMillis != null) {
+      try {
+        Integer timeoutMillisNumber = Integer.valueOf(timeoutMillis.toString());
+        if (timeoutMillisNumber > MAXIMUM_TIMEOUT) {
+          throw new InvalidRequestException("Value exceeded maximum timeout of 3w 3d 20h 30m.");
+        } else if (timeoutMillisNumber < 0) {
+          throw new InvalidRequestException("Timeout value should be positive");
+        }
+      } catch (NumberFormatException ex) {
+        throw new InvalidRequestException(
+            "Invalid value for timeoutMillis or value exceeded maximum timeout of 3w 3d 20h 30m.");
+      }
+    }
   }
 
   /*
@@ -467,7 +487,9 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
         if (workflowStandardParams.getWorkflowElement() == null) {
           workflowStandardParams.setWorkflowElement(WorkflowElement.builder().variables(workflowVariables).build());
         } else {
-          workflowStandardParams.getWorkflowElement().setVariables(workflowVariables);
+          Map<String, Object> allStepWorkflowVariables = workflowStandardParams.getWorkflowElement().getVariables();
+          allStepWorkflowVariables.putAll(workflowVariables);
+          workflowStandardParams.getWorkflowElement().setVariables(allStepWorkflowVariables);
         }
       }
     }
@@ -640,8 +662,6 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
               .stateExecutionData(executionData));
     }
 
-    // Create a cron job which polls JIRA for approval status
-    log.info("IssueId = {} while creating Jira polling Job", jiraApprovalParams.getIssueId());
     ApprovalPollingJobEntity approvalPollingJobEntity =
         ApprovalPollingJobEntity.builder()
             .accountId(app.getAccountId())
@@ -658,7 +678,11 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
             .workflowExecutionId(context.getWorkflowExecutionId())
             .build();
     try {
-      approvalPolingService.save(approvalPollingJobEntity);
+      // Create a cron job which polls JIRA for approval status
+
+      String id = approvalPolingService.save(approvalPollingJobEntity);
+      log.info("IssueId = {} while creating Jira polling Job. ApprovalPollingJobId: {}",
+          jiraApprovalParams.getIssueId(), id);
       return respondWithStatus(context, executionData, null,
           ExecutionResponse.builder()
               .async(true)

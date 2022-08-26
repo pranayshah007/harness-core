@@ -57,7 +57,7 @@ public class TemplateMergeServiceImpl implements TemplateMergeService {
   @Override
   public String getTemplateInputs(String accountId, String orgIdentifier, String projectIdentifier,
       String templateIdentifier, String versionLabel) {
-    Optional<TemplateEntity> optionalTemplateEntity = templateServiceHelper.getOrThrowExceptionIfInvalid(
+    Optional<TemplateEntity> optionalTemplateEntity = templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
         accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, false);
     if (!optionalTemplateEntity.isPresent()) {
       throw new NGTemplateException("Template to fetch template inputs does not exist.");

@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.delegate.resources;
 
 import static io.harness.annotations.dev.HarnessTeam.DEL;
@@ -21,6 +28,7 @@ import io.swagger.annotations.ApiOperation;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
 
@@ -38,7 +46,8 @@ public class TaskProgressResource {
   @ExceptionMetered
   @DelegateAuth
   @ApiOperation(value = "Send task progress", nickname = "sendTaskProgressUpdate")
-  public Response sendTaskProgressUpdate(SendTaskProgressRequest sendTaskProgressRequest) {
+  public Response sendTaskProgressUpdate(
+      SendTaskProgressRequest sendTaskProgressRequest, @QueryParam("accountId") String accountId) {
     SendTaskProgressResponse sendTaskProgressResponse = taskProgressService.sendTaskProgress(sendTaskProgressRequest);
     return Response.ok(sendTaskProgressResponse).build();
   }
@@ -49,7 +58,7 @@ public class TaskProgressResource {
   @ExceptionMetered
   @DelegateAuth
   @ApiOperation(value = "update task progress", nickname = "taskProgress")
-  public Response taskProgress(TaskProgressRequest taskProgressRequest) {
+  public Response taskProgress(TaskProgressRequest taskProgressRequest, @QueryParam("accountId") String accountId) {
     TaskProgressResponse taskProgressResponse = taskProgressService.taskProgress(taskProgressRequest);
     return Response.ok(taskProgressResponse).build();
   }
@@ -60,7 +69,8 @@ public class TaskProgressResource {
   @ExceptionMetered
   @DelegateAuth
   @ApiOperation(value = "Send task status", nickname = "sendTaskStatus")
-  public Response sendTaskStatus(SendTaskStatusRequest sendTaskStatusRequest) {
+  public Response sendTaskStatus(
+      SendTaskStatusRequest sendTaskStatusRequest, @QueryParam("accountId") String accountId) {
     SendTaskStatusResponse sendTaskStatusResponse = taskProgressService.sendTaskStatus(sendTaskStatusRequest);
     return Response.ok(sendTaskStatusResponse).build();
   }

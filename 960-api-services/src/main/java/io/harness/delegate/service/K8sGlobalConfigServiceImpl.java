@@ -13,8 +13,6 @@ import static io.harness.delegate.clienttools.ClientTool.HELM;
 import static io.harness.delegate.clienttools.ClientTool.KUBECTL;
 import static io.harness.delegate.clienttools.ClientTool.KUSTOMIZE;
 import static io.harness.delegate.clienttools.ClientTool.OC;
-import static io.harness.delegate.clienttools.ClientTool.SCM;
-import static io.harness.delegate.clienttools.InstallUtils.getPath;
 import static io.harness.k8s.model.HelmVersion.V2;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -27,7 +25,6 @@ import io.harness.delegate.clienttools.InstallUtils;
 import io.harness.delegate.clienttools.KubectlVersion;
 import io.harness.delegate.clienttools.KustomizeVersion;
 import io.harness.delegate.clienttools.OcVersion;
-import io.harness.delegate.clienttools.ScmVersion;
 import io.harness.exception.InvalidRequestException;
 import io.harness.k8s.K8sGlobalConfigService;
 import io.harness.k8s.model.HelmVersion;
@@ -44,12 +41,17 @@ import lombok.extern.slf4j.Slf4j;
 public class K8sGlobalConfigServiceImpl implements K8sGlobalConfigService {
   @Override
   public String getKubectlPath(boolean useNewKubectlVersion) {
-    return useNewKubectlVersion ? getPath(KUBECTL, KubectlVersion.V1_19) : getPath(KUBECTL, KubectlVersion.V1_13);
+    return useNewKubectlVersion ? getToolPath(KUBECTL, KubectlVersion.V1_19)
+                                : getToolPath(KUBECTL, KubectlVersion.V1_13);
   }
 
   @Override
   public String getGoTemplateClientPath() {
-    return InstallUtils.getPath(GO_TEMPLATE, GoTemplateVersion.V0_4);
+    try {
+      return getToolPath(GO_TEMPLATE, GoTemplateVersion.V0_4_1);
+    } catch (IllegalArgumentException e) {
+      return getToolPath(GO_TEMPLATE, GoTemplateVersion.V0_4);
+    }
   }
 
   /*
@@ -63,11 +65,11 @@ public class K8sGlobalConfigServiceImpl implements K8sGlobalConfigService {
     log.info("[HELM]: picked helm binary corresponding to version {}", helmVersion);
     switch (helmVersion) {
       case V2:
-        return InstallUtils.getPath(HELM, io.harness.delegate.clienttools.HelmVersion.V2);
+        return getToolPath(HELM, io.harness.delegate.clienttools.HelmVersion.V2);
       case V3:
-        return InstallUtils.getPath(HELM, io.harness.delegate.clienttools.HelmVersion.V3);
+        return getToolPath(HELM, io.harness.delegate.clienttools.HelmVersion.V3);
       case V380:
-        return InstallUtils.getPath(HELM, io.harness.delegate.clienttools.HelmVersion.V3_8);
+        return getToolPath(HELM, io.harness.delegate.clienttools.HelmVersion.V3_8);
       default:
         throw new InvalidRequestException("Unsupported Helm Version:" + helmVersion);
     }
@@ -76,26 +78,25 @@ public class K8sGlobalConfigServiceImpl implements K8sGlobalConfigService {
   @Override
   public String getChartMuseumPath(final boolean useLatestVersion) {
     if (useLatestVersion) {
-      return InstallUtils.getLatestVersionPath(CHARTMUSEUM);
+      return getToolPath(CHARTMUSEUM, CHARTMUSEUM.getLatestVersion());
     }
-    return InstallUtils.getPath(CHARTMUSEUM, ChartmuseumVersion.V0_8);
+    return getToolPath(CHARTMUSEUM, ChartmuseumVersion.V0_8);
   }
 
   @Override
   public String getOcPath() {
-    return InstallUtils.getPath(OC, OcVersion.V4_2);
+    return getToolPath(OC, OcVersion.V4_2);
   }
 
   @Override
   public String getKustomizePath(boolean useLatestVersion) {
     if (useLatestVersion) {
-      return InstallUtils.getLatestVersionPath(KUSTOMIZE);
+      return getToolPath(KUSTOMIZE, KUSTOMIZE.getLatestVersion());
     }
-    return InstallUtils.getPath(KUSTOMIZE, KustomizeVersion.V3);
+    return getToolPath(KUSTOMIZE, KustomizeVersion.V3);
   }
 
-  @Override
-  public String getScmPath() {
-    return InstallUtils.getPath(SCM, ScmVersion.DEFAULT);
+  private String getToolPath(ClientTool tool, ClientToolVersion version) {
+    return InstallUtils.getPath(tool, version);
   }
 }

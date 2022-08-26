@@ -17,16 +17,14 @@ directories:
   460-capability
   470-alert
   490-ce-commons
-  800-pipeline-service
+  pipeline-service
   platform-service
   865-cg-events
   867-polling-contracts
   870-cg-orchestration
   874-orchestration-delay
   878-ng-common-utilities
-  879-pms-sdk
   880-pipeline-cd-commons
-  882-pms-sdk-core
   884-pms-commons
   890-sm-core
   900-git-sync-sdk
@@ -107,7 +105,7 @@ derive_targets_from_directories: false
 
 targets:
   120-ng-manager:module
-  800-pipeline-service:module
+  pipeline-service/service:module
 
 
 import_run_configurations:

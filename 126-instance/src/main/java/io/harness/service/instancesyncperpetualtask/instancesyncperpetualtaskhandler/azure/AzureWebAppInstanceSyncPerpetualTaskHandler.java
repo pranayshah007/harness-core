@@ -10,6 +10,7 @@ package io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskha
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.azure.AzureEncryptionDetailsHelper;
 import io.harness.cdng.azure.AzureHelperService;
 import io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
@@ -43,6 +44,7 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @OwnedBy(HarnessTeam.CDP)
 public class AzureWebAppInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualTaskHandler {
+  @Inject private AzureEncryptionDetailsHelper azureEncryptionDetailsHelper;
   @Inject private AzureHelperService azureHelperService;
 
   @Override
@@ -114,7 +116,8 @@ public class AzureWebAppInstanceSyncPerpetualTaskHandler extends InstanceSyncPer
       InfrastructureMappingDTO infrastructureMappingDTO, AzureWebAppDeploymentInfoDTO deploymentInfoDTO,
       InfrastructureOutcome infrastructureOutcome) {
     AzureWebAppInfraDelegateConfig azureWebAppInfraDelegateConfig =
-        getAzureWebAppInfraDelegateConfig(infrastructureMappingDTO, infrastructureOutcome);
+        getAzureWebAppInfraDelegateConfig(infrastructureMappingDTO, infrastructureOutcome,
+            deploymentInfoDTO.getAppName(), deploymentInfoDTO.getSlotName());
 
     return AzureWebAppDeploymentReleaseData.builder()
         .appName(deploymentInfoDTO.getAppName())
@@ -126,13 +129,10 @@ public class AzureWebAppInstanceSyncPerpetualTaskHandler extends InstanceSyncPer
   }
 
   private AzureWebAppInfraDelegateConfig getAzureWebAppInfraDelegateConfig(
-      InfrastructureMappingDTO infrastructureMappingDTO, InfrastructureOutcome infrastructureOutcome) {
+      InfrastructureMappingDTO infrastructureMappingDTO, InfrastructureOutcome infrastructureOutcome, String appName,
+      String deploymentSlot) {
     BaseNGAccess baseNGAccess = getBaseNGAccess(infrastructureMappingDTO);
-    return getAzureWebAppInfraDelegateConfig(infrastructureOutcome, baseNGAccess);
-  }
 
-  private AzureWebAppInfraDelegateConfig getAzureWebAppInfraDelegateConfig(
-      InfrastructureOutcome infrastructureOutcome, BaseNGAccess baseNGAccess) {
     AzureWebAppInfrastructureOutcome azureWebAppInfrastructureOutcome =
         (AzureWebAppInfrastructureOutcome) infrastructureOutcome;
     IdentifierRef identifierRef =
@@ -142,11 +142,11 @@ public class AzureWebAppInstanceSyncPerpetualTaskHandler extends InstanceSyncPer
     AzureConnectorDTO connectorDTO = azureHelperService.getConnector(identifierRef);
 
     return AzureWebAppInfraDelegateConfig.builder()
-        .appName(azureWebAppInfrastructureOutcome.getWebApp())
-        .deploymentSlot(azureWebAppInfrastructureOutcome.getDeploymentSlot())
+        .appName(appName)
+        .deploymentSlot(deploymentSlot)
         .subscription(azureWebAppInfrastructureOutcome.getSubscription())
         .resourceGroup(azureWebAppInfrastructureOutcome.getResourceGroup())
-        .encryptionDataDetails(azureHelperService.getEncryptionDetails(connectorDTO, baseNGAccess))
+        .encryptionDataDetails(azureEncryptionDetailsHelper.getEncryptionDetails(connectorDTO, baseNGAccess))
         .azureConnectorDTO(connectorDTO)
         .build();
   }

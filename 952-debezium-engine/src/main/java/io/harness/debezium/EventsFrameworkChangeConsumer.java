@@ -15,6 +15,7 @@ import io.debezium.engine.ChangeEvent;
 import io.debezium.engine.DebeziumEngine;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.connect.source.SourceRecord;
 
@@ -25,33 +26,46 @@ public class EventsFrameworkChangeConsumer implements MongoCollectionChangeConsu
 
   private final String collectionName;
   private final DebeziumProducerFactory producerFactory;
+  private int cnt;
+  private long sleepInterval;
+  private long producingCountPerBatch;
+  private int redisStreamSize;
 
-  public EventsFrameworkChangeConsumer(String collectionName, DebeziumProducerFactory producerFactory) {
+  public EventsFrameworkChangeConsumer(long sleepInterval, String collectionName,
+      DebeziumProducerFactory producerFactory, long producingCountPerBatch, int redisStreamSize) {
     this.collectionName = collectionName;
     this.producerFactory = producerFactory;
+    this.sleepInterval = sleepInterval;
+    this.producingCountPerBatch = producingCountPerBatch;
+    this.redisStreamSize = redisStreamSize;
   }
 
   @Override
   public void handleBatch(List<ChangeEvent<String, String>> records,
       DebeziumEngine.RecordCommitter<ChangeEvent<String, String>> recordCommitter) throws InterruptedException {
     log.info("Handling a batch of {} records for collection {}", records.size(), collectionName);
-
     // Add the batch records to the stream(s)
     for (ChangeEvent<String, String> record : records) {
+      cnt++;
       Optional<OpType> opType = getOperationType(((EmbeddedEngineChangeEvent<String, String>) record).sourceRecord());
 
       DebeziumChangeEvent debeziumChangeEvent = DebeziumChangeEvent.newBuilder()
                                                     .setKey(getKeyOrDefault(record))
                                                     .setValue(getValueOrDefault(record))
                                                     .setOptype(opType.get().toString())
+                                                    .setTimestamp(System.currentTimeMillis())
                                                     .build();
 
-      Producer producer = producerFactory.get(record.destination());
+      Producer producer = producerFactory.get(record.destination(), redisStreamSize);
       producer.send(Message.newBuilder().setData(debeziumChangeEvent.toByteString()).build());
       try {
         recordCommitter.markProcessed(record);
       } catch (InterruptedException e) {
         log.error("Exception Occurred while marking record as committed", e);
+      }
+      if (cnt >= producingCountPerBatch) {
+        TimeUnit.SECONDS.sleep(sleepInterval);
+        cnt = 0;
       }
     }
     recordCommitter.markBatchFinished();

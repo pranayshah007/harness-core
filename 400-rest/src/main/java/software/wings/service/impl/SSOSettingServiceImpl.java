@@ -143,6 +143,18 @@ public class SSOSettingServiceImpl implements SSOSettingService {
   @Override
   @RestrictedApi(SamlFeature.class)
   public SamlSettings saveSamlSettings(@GetAccountId(SamlSettingsAccountIdExtractor.class) SamlSettings settings) {
+    return saveSSOSettingsInternal(settings);
+  }
+
+  // This function is meant to be called for ng sso settings, as the license check is already done in NG Service
+  @Override
+  public SamlSettings saveSamlSettingsWithoutCGLicenseCheck(
+      @GetAccountId(SamlSettingsAccountIdExtractor.class) SamlSettings settings) {
+    return saveSSOSettingsInternal(settings);
+  }
+
+  private SamlSettings saveSSOSettingsInternal(
+      @GetAccountId(SamlSettingsAccountIdExtractor.class) SamlSettings settings) {
     SamlSettings queriedSettings = getSamlSettingsByAccountId(settings.getAccountId());
     SamlSettings savedSettings;
     if (queriedSettings != null) {
@@ -271,7 +283,7 @@ public class SSOSettingServiceImpl implements SSOSettingService {
     if (featureFlagService.isEnabled(FeatureName.LDAP_SECRET_AUTH, settings.getAccountId())) {
       ssoServiceHelper.encryptLdapSecret(settings.getConnectionSettings(), secretManager, settings.getAccountId());
     }
-    settings.encryptLdapInlineSecret(secretManager);
+    settings.encryptLdapInlineSecret(secretManager, false);
     if (isEmpty(settings.getCronExpression())) {
       settings.setCronExpression(ldapSyncJobConfig.getDefaultCronExpression());
     }
@@ -308,7 +320,7 @@ public class SSOSettingServiceImpl implements SSOSettingService {
     if (featureFlagService.isEnabled(FeatureName.LDAP_SECRET_AUTH, settings.getAccountId())) {
       ssoServiceHelper.encryptLdapSecret(oldSettings.getConnectionSettings(), secretManager, settings.getAccountId());
     }
-    oldSettings.encryptLdapInlineSecret(secretManager);
+    oldSettings.encryptLdapInlineSecret(secretManager, false);
     oldSettings.setDefaultCronExpression(ldapSyncJobConfig.getDefaultCronExpression());
     oldSettings.setCronExpression(settings.getCronExpression());
     updateNextIterations(oldSettings);

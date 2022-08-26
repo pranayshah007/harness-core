@@ -68,6 +68,9 @@ public class VaultConnector extends Connector implements PersistentRegularIterab
   @Builder.Default Boolean useK8sAuth = Boolean.FALSE;
   String vaultK8sAuthRole;
   String serviceAccountTokenPath;
+  String k8sAuthEndpoint;
+
+  @Setter @NonFinal @Builder.Default Boolean renewAppRoleToken = Boolean.TRUE;
 
   public long getRenewedAt() {
     if (renewedAt == null) {
@@ -89,6 +92,17 @@ public class VaultConnector extends Connector implements PersistentRegularIterab
 
   public String getBasePath() {
     return Optional.ofNullable(basePath).filter(x -> !x.isEmpty()).orElse("/harness");
+  }
+
+  public String getK8sAuthEndpoint() {
+    if (!getUseK8sAuth()) {
+      return null;
+    }
+    return Optional.ofNullable(k8sAuthEndpoint).filter(x -> !x.isEmpty()).orElse("kubernetes");
+  }
+
+  public Boolean getRenewAppRoleToken() {
+    return renewAppRoleToken == null ? Boolean.TRUE : renewAppRoleToken;
   }
 
   @Override

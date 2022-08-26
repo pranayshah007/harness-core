@@ -214,6 +214,8 @@ public class ScriptSshExecutor extends AbstractScriptExecutor {
           config.getExecutionId(), config.getHost());
       saveExecutionLog(format("Retry connecting to %s ....", config.getHost()));
       return getExecuteCommandResponse(command, envVariablesToCollect, secretEnvVariablesToCollect, true);
+    } finally {
+      logCallback.dispatchLogs();
     }
   }
 
@@ -287,8 +289,6 @@ public class ScriptSshExecutor extends AbstractScriptExecutor {
 
           if (channel.isClosed()) {
             commandExecutionStatus = channel.getExitStatus() == 0 ? SUCCESS : FAILURE;
-            saveExecutionLog("Command finished with status " + commandExecutionStatus, commandExecutionStatus);
-
             if (commandExecutionStatus == SUCCESS && envVariablesFilename != null) {
               BufferedReader br = null;
               try {
@@ -311,6 +311,7 @@ public class ScriptSshExecutor extends AbstractScriptExecutor {
                 }
               }
             }
+            saveExecutionLog("Command finished with status " + commandExecutionStatus, commandExecutionStatus);
             executionDataBuilder.sweepingOutputEnvVariables(envVariablesMap);
             executeCommandResponseBuilder.status(commandExecutionStatus);
             executeCommandResponseBuilder.commandExecutionData(executionDataBuilder.build());
@@ -328,6 +329,7 @@ public class ScriptSshExecutor extends AbstractScriptExecutor {
       handleException(ex);
       log.error("ex-Session fetched in " + (System.currentTimeMillis() - start) / 1000);
       log.error("Command execution failed with error", ex);
+      saveExecutionLog("Command execution failed.", FAILURE);
       executionDataBuilder.sweepingOutputEnvVariables(envVariablesMap);
       executeCommandResponseBuilder.status(commandExecutionStatus);
       executeCommandResponseBuilder.commandExecutionData(executionDataBuilder.build());

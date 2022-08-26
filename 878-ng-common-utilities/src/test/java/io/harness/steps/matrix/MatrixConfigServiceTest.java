@@ -76,6 +76,6 @@ public class MatrixConfigServiceTest extends NGCommonUtilitiesTestBase {
     StrategyConfig strategyConfig = YamlUtils.read(strategyField.getNode().toString(), StrategyConfig.class);
 
     List<ChildrenExecutableResponse.Child> children = matrixConfigService.fetchChildren(strategyConfig, "childNodeId");
-    assertThat(children.size()).isEqualTo(27);
+    assertThat(children.size()).isEqualTo(24);
   }
 }

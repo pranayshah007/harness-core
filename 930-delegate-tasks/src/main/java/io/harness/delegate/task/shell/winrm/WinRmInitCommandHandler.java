@@ -27,11 +27,13 @@ import io.harness.delegate.task.winrm.WinRmSessionConfig;
 import io.harness.delegate.task.winrm.WinRmSessionConfig.WinRmSessionConfigBuilder;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.shell.ExecuteCommandResponse;
 
 import software.wings.core.winrm.executors.WinRmExecutor;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.Map;
 
 @OwnedBy(CDP)
 @Singleton
@@ -40,8 +42,9 @@ public class WinRmInitCommandHandler implements CommandHandler {
   @Inject private WinRmConfigAuthEnhancer winRmConfigAuthEnhancer;
 
   @Override
-  public CommandExecutionStatus handle(CommandTaskParameters parameters, NgCommandUnit commandUnit,
-      ILogStreamingTaskClient logStreamingTaskClient, CommandUnitsProgress commandUnitsProgress) {
+  public ExecuteCommandResponse handle(CommandTaskParameters parameters, NgCommandUnit commandUnit,
+      ILogStreamingTaskClient logStreamingTaskClient, CommandUnitsProgress commandUnitsProgress,
+      Map<String, Object> taskContext) {
     if (!(parameters instanceof WinrmTaskParameters)) {
       throw new InvalidRequestException("Invalid task parameters submitted for command task.");
     }
@@ -73,7 +76,8 @@ public class WinRmInitCommandHandler implements CommandHandler {
         scriptCommandUnit.setCommand(scriptCommandUnit.getScript());
       }
     }
-    return executor.executeCommandString(getInitCommand(), true);
+    CommandExecutionStatus commandExecutionStatus = executor.executeCommandString(getInitCommand(), true);
+    return ExecuteCommandResponse.builder().status(commandExecutionStatus).build();
   }
 
   private String getInitCommand() {

@@ -13,7 +13,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.creator.plan.envGroup.EnvGroupPlanCreatorHelper;
 import io.harness.cdng.creator.plan.environment.EnvironmentPlanCreatorHelper;
 import io.harness.cdng.creator.plan.infrastructure.InfrastructurePmsPlanCreator;
-import io.harness.cdng.creator.plan.service.ServicePlanCreator;
 import io.harness.cdng.creator.plan.service.ServicePlanCreatorHelper;
 import io.harness.cdng.envGroup.yaml.EnvGroupPlanCreatorConfig;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
@@ -29,13 +28,12 @@ import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
-import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.plancreator.stages.AbstractStagePlanCreator;
 import io.harness.plancreator.steps.GenericStepPMSPlanCreator;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.plancreator.steps.common.StageElementParameters.StageElementParametersBuilder;
-import io.harness.plancreator.strategy.StageStrategyUtils;
+import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependencies;
@@ -44,7 +42,9 @@ import io.harness.pms.contracts.plan.YamlUpdates;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.execution.utils.SkipInfoUtils;
+import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
 import io.harness.pms.sdk.core.plan.PlanNode;
+import io.harness.pms.sdk.core.plan.PlanNode.PlanNodeBuilder;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
@@ -68,6 +68,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Stage plan graph V1 -
@@ -102,15 +103,15 @@ import lombok.SneakyThrows;
  */
 
 @OwnedBy(CDC)
+@Slf4j
 public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<DeploymentStageNode> {
   @Inject private KryoSerializer kryoSerializer;
-  @Inject private ServicePlanCreator servicePlanCreator;
-
   @Inject private EnvironmentService environmentService;
-  @Inject private ServiceEntityService serviceEntityService;
+
   @Inject private InfrastructureEntityService infrastructure;
   @Inject private ServiceOverrideService serviceOverrideService;
   @Inject private EnvGroupPlanCreatorHelper envGroupPlanCreatorHelper;
+  @Inject private ServicePlanCreatorHelper servicePlanCreatorHelper;
 
   @Override
   public Set<String> getSupportedStageTypes() {
@@ -132,33 +133,44 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     return DeploymentStageNode.class;
   }
 
+  @Override
+  public String getExecutionInputTemplateAndModifyYamlField(YamlField yamlField) {
+    return RuntimeInputFormHelper.createExecutionInputFormAndUpdateYamlFieldForStage(
+        yamlField.getNode().getParentNode().getCurrJsonNode());
+  }
+
   @SneakyThrows
   @Override
   public PlanNode createPlanForParentNode(
       PlanCreationContext ctx, DeploymentStageNode stageNode, List<String> childrenNodeIds) {
-    stageNode.setIdentifier(StageStrategyUtils.getIdentifierWithExpression(ctx, stageNode.getIdentifier()));
-    stageNode.setName(StageStrategyUtils.getIdentifierWithExpression(ctx, stageNode.getName()));
+    stageNode.setIdentifier(StrategyUtils.getIdentifierWithExpression(ctx, stageNode.getIdentifier()));
+    stageNode.setName(StrategyUtils.getIdentifierWithExpression(ctx, stageNode.getName()));
 
     StageElementParametersBuilder stageParameters = CdStepParametersUtils.getStageParameters(stageNode);
     YamlField specField =
         Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
     stageParameters.specConfig(getSpecParameters(specField.getNode().getUuid(), ctx, stageNode));
     // We need to swap the ids if strategy is present
-    return PlanNode.builder()
-        .uuid(StageStrategyUtils.getSwappedPlanNodeId(ctx, stageNode.getUuid()))
-        .name(stageNode.getName())
-        .identifier(stageNode.getIdentifier())
-        .group(StepOutcomeGroup.STAGE.name())
-        .stepParameters(stageParameters.build())
-        .stepType(getStepType(stageNode))
-        .skipCondition(SkipInfoUtils.getSkipCondition(stageNode.getSkipCondition()))
-        .whenCondition(RunInfoUtils.getRunCondition(stageNode.getWhen()))
-        .facilitatorObtainment(
-            FacilitatorObtainment.newBuilder()
-                .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
-                .build())
-        .adviserObtainments(getAdviserObtainmentFromMetaData(ctx.getCurrentField()))
-        .build();
+    PlanNodeBuilder builder =
+        PlanNode.builder()
+            .uuid(StrategyUtils.getSwappedPlanNodeId(ctx, stageNode.getUuid()))
+            .name(stageNode.getName())
+            .identifier(stageNode.getIdentifier())
+            .group(StepOutcomeGroup.STAGE.name())
+            .stepParameters(stageParameters.build())
+            .stepType(getStepType(stageNode))
+            .skipCondition(SkipInfoUtils.getSkipCondition(stageNode.getSkipCondition()))
+            .whenCondition(RunInfoUtils.getRunCondition(stageNode.getWhen()))
+            .facilitatorObtainment(
+                FacilitatorObtainment.newBuilder()
+                    .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
+                    .build())
+            .adviserObtainments(getAdviserObtainmentFromMetaData(ctx.getCurrentField()));
+
+    if (!EmptyPredicate.isEmpty(ctx.getExecutionInputTemplate())) {
+      builder.executionInputTemplate(ctx.getExecutionInputTemplate());
+    }
+    return builder.build();
   }
 
   @Override
@@ -170,11 +182,11 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       // Validate Stage Failure strategy.
       validateFailureStrategy(stageNode);
 
-      Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
       Map<String, ByteString> metadataMap = new HashMap<>();
 
       YamlField specField =
           Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
+      logStepYamlField(specField);
 
       String postServiceStepUuid = "service-" + UUIDGenerator.generateUuid();
       String environmentUuid = "environment-" + UUIDGenerator.generateUuid();
@@ -184,7 +196,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
           planCreationResponseMap, specField, stageNode, ctx, environmentUuid, postServiceStepUuid);
 
       PipelineInfrastructure pipelineInfrastructure = stageNode.getDeploymentStageConfig().getInfrastructure();
-      String serviceSpecNodeUuid = ServicePlanCreatorHelper.fetchServiceSpecUuid(serviceField);
+      String serviceSpecNodeUuid = servicePlanCreatorHelper.fetchServiceSpecUuid(serviceField);
       addEnvAndInfraDependency(ctx, stageNode, planCreationResponseMap, specField, pipelineInfrastructure,
           postServiceStepUuid, environmentUuid, serviceSpecNodeUuid, environmentUuid);
 
@@ -202,6 +214,24 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     } catch (IOException e) {
       throw new InvalidRequestException(
           "Invalid yaml for Deployment stage with identifier - " + stageNode.getIdentifier(), e);
+    }
+  }
+
+  private void logStepYamlField(YamlField specField) {
+    try {
+      YamlField infraField = specField.getNode().getField(YAMLFieldNameConstants.PIPELINE_INFRASTRUCTURE);
+      if (infraField != null) {
+        log.info("infraField : {}", infraField.getNode().getCurrJsonNode());
+        YamlField infrastructureDefField =
+            Preconditions.checkNotNull(infraField.getNode().getField(YamlTypes.INFRASTRUCTURE_DEF));
+        YamlField provisionerYamlField = infrastructureDefField.getNode().getField(YAMLFieldNameConstants.PROVISIONER);
+        if (provisionerYamlField != null) {
+          YamlField stepsYamlField = provisionerYamlField.getNode().getField(YAMLFieldNameConstants.STEPS);
+          log.info("stepsYamlField before : {}", stepsYamlField.getNode().getCurrJsonNode());
+        }
+      }
+    } catch (Exception e) {
+      // Ignoring
     }
   }
 
@@ -276,8 +306,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       YamlField specField, DeploymentStageNode stageNode, PlanCreationContext ctx, String environmentUuid,
       String infraSectionUuid) throws IOException {
     // Adding service child by resolving the serviceField
-    YamlField serviceField = ServicePlanCreatorHelper.getResolvedServiceField(
-        specField, stageNode, servicePlanCreator, serviceEntityService, ctx);
+    YamlField serviceField = servicePlanCreatorHelper.getResolvedServiceField(specField, stageNode, ctx);
     String serviceNodeUuid = serviceField.getNode().getUuid();
 
     // Adding Spec node
@@ -288,8 +317,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     // Adding serviceField to yamlUpdates as its resolved value should be updated.
     planCreationResponseMap.put(serviceNodeUuid,
         PlanCreationResponse.builder()
-            .dependencies(ServicePlanCreatorHelper.getDependenciesForService(
-                serviceField, stageNode, environmentUuid, infraSectionUuid, kryoSerializer))
+            .dependencies(servicePlanCreatorHelper.getDependenciesForService(
+                serviceField, stageNode, environmentUuid, infraSectionUuid))
             .yamlUpdates(YamlUpdates.newBuilder()
                              .putFqnToYaml(serviceField.getYamlPath(),
                                  YamlUtils.writeYamlString(serviceField).replace("---\n", ""))

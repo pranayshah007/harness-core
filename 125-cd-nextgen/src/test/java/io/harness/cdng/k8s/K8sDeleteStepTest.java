@@ -78,7 +78,7 @@ public class K8sDeleteStepTest extends AbstractK8sStepExecutorTestBase {
     final StepElementParameters stepElementParameters =
         StepElementParameters.builder().spec(stepParameters).timeout(ParameterField.createValueField("10m")).build();
 
-    doReturn("test-delete-resource-name-release").when(k8sStepHelper).getReleaseName(ambiance, infrastructureOutcome);
+    doReturn("test-delete-resource-name-release").when(cdStepHelper).getReleaseName(ambiance, infrastructureOutcome);
     K8sDeleteRequest deleteRequest = executeTask(stepElementParameters, K8sDeleteRequest.class);
     assertThat(deleteRequest).isNotNull();
     assertThat(deleteRequest.getCommandName()).isEqualTo(K8S_DELETE_COMMAND_NAME);
@@ -114,7 +114,7 @@ public class K8sDeleteStepTest extends AbstractK8sStepExecutorTestBase {
     final StepElementParameters stepElementParameters =
         StepElementParameters.builder().spec(stepParameters).timeout(ParameterField.createValueField("10m")).build();
 
-    doReturn("test-delete-manifest-file-release").when(k8sStepHelper).getReleaseName(ambiance, infrastructureOutcome);
+    doReturn("test-delete-manifest-file-release").when(cdStepHelper).getReleaseName(ambiance, infrastructureOutcome);
 
     K8sDeleteRequest deleteRequest = executeTask(stepElementParameters, K8sDeleteRequest.class);
     assertThat(deleteRequest).isNotNull();
@@ -146,7 +146,7 @@ public class K8sDeleteStepTest extends AbstractK8sStepExecutorTestBase {
     final StepElementParameters stepElementParameters =
         StepElementParameters.builder().spec(stepParameters).timeout(ParameterField.createValueField("10m")).build();
 
-    doReturn("test-delete-release-name-release").when(k8sStepHelper).getReleaseName(ambiance, infrastructureOutcome);
+    doReturn("test-delete-release-name-release").when(cdStepHelper).getReleaseName(ambiance, infrastructureOutcome);
 
     K8sDeleteRequest deleteRequest = executeTask(stepElementParameters, K8sDeleteRequest.class);
     assertThat(deleteRequest).isNotNull();
@@ -216,9 +216,9 @@ public class K8sDeleteStepTest extends AbstractK8sStepExecutorTestBase {
     final StepResponse helmFetchValuesFailed = StepResponse.builder().status(Status.FAILED).build();
     final StepResponse stepException = StepResponse.builder().status(Status.FAILED).build();
 
-    doReturn(gitFetchValuesFailed).when(k8sStepHelper).handleGitTaskFailure(gitFetchPassThroughData);
+    doReturn(gitFetchValuesFailed).when(cdStepHelper).handleGitTaskFailure(gitFetchPassThroughData);
     doReturn(helmFetchValuesFailed).when(k8sStepHelper).handleHelmValuesFetchFailure(helmValuesPassThroughData);
-    doReturn(stepException).when(k8sStepHelper).handleStepExceptionFailure(stepExceptionPassThroughData);
+    doReturn(stepException).when(cdStepHelper).handleStepExceptionFailure(stepExceptionPassThroughData);
 
     assertThat(deleteStep.finalizeExecutionWithSecurityContext(
                    ambiance, stepElementParameters, gitFetchPassThroughData, () -> null))

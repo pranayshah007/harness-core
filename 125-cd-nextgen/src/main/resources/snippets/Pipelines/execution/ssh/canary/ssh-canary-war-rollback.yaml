@@ -1,0 +1,65 @@
+spec:
+  execution:
+    rollbackSteps:
+      - stepGroup:
+          identifier: Step_Group_Rollback_<+phase>
+          name: "Step Group"
+          strategy:
+            repeat:
+              items: <+stage.output.hosts>
+              maxConcurrency: <+maxConcurrency>
+              start: <+start>
+              end: <+end>
+              unit: <+unit>
+          steps:
+            - step:
+                name: "Rollback"
+                identifier: Rollback_<+phase>
+                type: Command
+                timeout: 10m
+                spec:
+                  onDelegate: false
+                  environmentVariables: [ ]
+                  outputVariables: [ ]
+                  commandUnits:
+                    - identifier: Stop_Rollback_<+phase>
+                      name: "Stop Rollback"
+                      type: Script
+                      spec:
+                        workingDirectory: $HOME/<+service.name>/<+env.name>
+                        shell: Bash
+                        source:
+                          type: Inline
+                          spec:
+                            script: echo "Stopping..."
+                    - identifier: Setup_Runtime_Paths_Rollback_<+phase>
+                      name: "Setup Runtime Paths Rollback"
+                      type: Script
+                      spec:
+                        shell: Bash
+                        source:
+                          type: Inline
+                          spec:
+                            script: |-
+                              <+setup_runtime_paths_script_war>
+                    - identifier: Copy_Artifact_Rollback_<+phase>
+                      name: "Copy Artifact Rollback"
+                      type: Copy
+                      spec:
+                        sourceType: Artifact
+                        destinationPath: $HOME/<+service.name>/<+env.name>
+                    - identifier: Copy_Config_Rollback_<+phase>
+                      name: "Copy Config Rollback"
+                      type: Copy
+                      spec:
+                        sourceType: Config
+                        destinationPath: $HOME/<+service.name>/<+env.name>
+                    - identifier: Start_Rollback_<+phase>
+                      name: "Start Rollback"
+                      type: Script
+                      spec:
+                        shell: Bash
+                        source:
+                          type: Inline
+                          spec:
+                            script: echo "Starting..."

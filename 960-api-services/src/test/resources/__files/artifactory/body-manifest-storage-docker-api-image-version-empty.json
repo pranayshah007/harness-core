@@ -1,0 +1,23 @@
+{
+  "properties": {
+    "artifactory.content-type": [
+      "application/vnd.docker.distribution.manifest.v2+json"
+    ],
+    "docker.manifest": [
+      "version"
+    ],
+    "docker.manifest.digest": [
+      "sha256:047ad42f407271c2ea16f62b25a0df3f6d63e3d8df7efdf531939050031576d9"
+    ],
+    "docker.manifest.type": [
+      "application/vnd.docker.distribution.manifest.v2+json"
+    ],
+    "docker.repoName": [
+      "image"
+    ],
+    "sha256": [
+      "047ad42f407271c2ea16f62b25a0df3f6d63e3d8df7efdf531939050031576d9"
+    ]
+  },
+  "uri": "https://harness.jfrog.io/artifactory/api/storage/docker/image/version/manifest.json"
+}

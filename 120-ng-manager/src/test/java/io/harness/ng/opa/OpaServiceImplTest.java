@@ -21,13 +21,13 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorInfoDTO;
+import io.harness.governance.GovernanceMetadata;
 import io.harness.network.SafeHttpCall;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.opa.entities.connector.ConnectorOpaEvaluationContext;
 import io.harness.ng.opa.entities.secret.SecretOpaEvaluationContext;
 import io.harness.opaclient.OpaServiceClient;
 import io.harness.opaclient.model.OpaEvaluationResponseHolder;
-import io.harness.pms.contracts.governance.GovernanceMetadata;
 import io.harness.rule.Owner;
 
 import java.io.IOException;

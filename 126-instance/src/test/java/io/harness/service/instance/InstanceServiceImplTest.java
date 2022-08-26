@@ -15,10 +15,14 @@
 package io.harness.service.instance;
 
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
+import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
 
+import static junit.framework.TestCase.assertFalse;
+import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyList;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -38,6 +42,7 @@ import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.repositories.instance.InstanceRepository;
 import io.harness.rule.Owner;
 
+import com.mongodb.client.result.UpdateResult;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -47,6 +52,7 @@ import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 
 public class InstanceServiceImplTest extends InstancesTestBase {
@@ -94,8 +100,33 @@ public class InstanceServiceImplTest extends InstancesTestBase {
     InstanceInfoDTO instanceInfoDTO = K8sInstanceInfoDTO.builder().build();
     InstanceDTO instanceDTO = InstanceDTO.builder().instanceInfoDTO(instanceInfoDTO).build();
     when(instanceRepository.save(any())).thenReturn(instance);
-    Optional<InstanceDTO> respone = instanceService.saveOrReturnEmptyIfAlreadyExists(instanceDTO);
-    assertThat(respone.get().getLastModifiedAt()).isEqualTo(3245L);
+    Optional<InstanceDTO> response = instanceService.saveOrReturnEmptyIfAlreadyExists(instanceDTO);
+    assertTrue(response.isPresent());
+    assertThat(response.get().getLastModifiedAt()).isEqualTo(3245L);
+  }
+
+  @Test
+  @Owner(developers = VIKYATH_HAREKAL)
+  @Category(UnitTests.class)
+  public void saveOrReturnEmptyIfAlreadyExistsDuplicateKeyException() {
+    InstanceInfoDTO instanceInfoDTO = K8sInstanceInfoDTO.builder().build();
+    InstanceDTO instanceDTO = InstanceDTO.builder().instanceInfoDTO(instanceInfoDTO).build();
+    when(instanceRepository.save(any())).thenThrow(new DuplicateKeyException("duplicate"));
+    Optional<InstanceDTO> response = instanceService.saveOrReturnEmptyIfAlreadyExists(instanceDTO);
+    assertFalse(response.isPresent());
+  }
+
+  @Test
+  @Owner(developers = VIKYATH_HAREKAL)
+  @Category(UnitTests.class)
+  public void saveOrReturnEmptyIfAlreadyExistsDuplicateKeyExceptionUndeleteInstance() {
+    InstanceInfoDTO instanceInfoDTO = K8sInstanceInfoDTO.builder().build();
+    InstanceDTO instanceDTO = InstanceDTO.builder().instanceInfoDTO(instanceInfoDTO).build();
+    when(instanceRepository.save(any())).thenThrow(new DuplicateKeyException("duplicate"));
+    Instance instanceInDeletedState = Instance.builder().build();
+    when(instanceRepository.findAndReplace(any(), any())).thenReturn(instanceInDeletedState);
+    Optional<InstanceDTO> response = instanceService.saveOrReturnEmptyIfAlreadyExists(instanceDTO);
+    assertFalse(response.isPresent());
   }
 
   @Test
@@ -317,5 +348,44 @@ public class InstanceServiceImplTest extends InstancesTestBase {
     assertThat(instanceService.getActiveServiceInstanceCountBreakdown(
                    accountIdentifier, orgIdentifier, projectIdentifier, serviceIdsList, timestamp))
         .isEqualTo(idAggregationResults);
+  }
+
+  @Test
+  @Owner(developers = VIKYATH_HAREKAL)
+  @Category(UnitTests.class)
+  public void testFindAndReplace() {
+    InstanceDTO instanceDTO = InstanceDTO.builder().instanceInfoDTO(K8sInstanceInfoDTO.builder().build()).build();
+    Instance instance = Instance.builder()
+                            .instanceInfo(K8sInstanceInfo.builder().build())
+                            .deletedAt(234L)
+                            .createdAt(123L)
+                            .lastModifiedAt(3245L)
+                            .build();
+    when(instanceRepository.findAndReplace(any(), any())).thenReturn(instance);
+    Optional<InstanceDTO> responseDTO = instanceService.findAndReplace(instanceDTO);
+    assertTrue(responseDTO.isPresent());
+    assertThat(responseDTO.get().getLastModifiedAt()).isEqualTo(3245L);
+  }
+
+  @Test
+  @Owner(developers = VIKYATH_HAREKAL)
+  @Category(UnitTests.class)
+  public void testFindAndReplaceFail() {
+    InstanceInfoDTO instanceInfoDTO = K8sInstanceInfoDTO.builder().build();
+    InstanceDTO instanceDTO = InstanceDTO.builder().instanceInfoDTO(instanceInfoDTO).build();
+    when(instanceRepository.findAndReplace(any(), any())).thenReturn(null);
+    Optional<InstanceDTO> responseDTO = instanceService.findAndReplace(instanceDTO);
+    assertFalse(responseDTO.isPresent());
+  }
+
+  @Test
+  @Owner(developers = VIKYATH_HAREKAL)
+  @Category(UnitTests.class)
+  public void testUpdateInfrastructureMapping() {
+    List<String> instanceIds = Arrays.asList("1", "2", "3");
+    String infrastructureMappingId = "2";
+    UpdateResult updateResult = mock(UpdateResult.class);
+    when(instanceRepository.updateInfrastructureMapping(instanceIds, infrastructureMappingId)).thenReturn(updateResult);
+    instanceService.updateInfrastructureMapping(instanceIds, infrastructureMappingId);
   }
 }

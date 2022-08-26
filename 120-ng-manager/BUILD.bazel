@@ -30,7 +30,7 @@ shared_dependencies = [
     "//126-instance:module",
     "//136-git-sync-manager:module",
     "//295-cdng-contracts:module",
-    "//800-pipeline-service/modules/pms-contracts:module",
+    "//pipeline-service/modules/pms-contracts:module",
     "//920-ng-signup:module",
     "//925-enforcement-service:module",
     "//925-subscription-service:module",
@@ -343,6 +343,7 @@ shared_dependencies = [
     "@maven//:io_jsonwebtoken_jjwt",
     "@maven//:io_kubernetes_client_java",
     "@maven//:io_kubernetes_client_java_api",
+    "@maven//:io_kubernetes_client_java_api_fluent",
     "@maven//:io_kubernetes_client_java_extended",
     "@maven//:io_kubernetes_client_java_proto",
     "@maven//:io_netty_netty_all",
@@ -639,6 +640,7 @@ shared_dependencies = [
     "@maven//:xpp3_xpp3",
     "@maven//:io_harness_ff_java_server_sdk",
     "@maven//:io_harness_cv_data_collection_dsl",
+    "@maven//:io_harness_ng_manager_server_spec",
     "@maven//:io_swagger_core_v3_swagger_jaxrs2",
     "@maven//:io_swagger_core_v3_swagger_jaxrs2_servlet_initializer_v2",
     "@maven//:io_swagger_core_v3_swagger_core",
@@ -688,6 +690,7 @@ java_library(
         "@maven//:org_powermock_powermock_module_junit4",
         "@maven//:org_powermock_powermock_core",
         "@maven//:org_powermock_powermock_api_mockito2",
+        "@maven//:pl_pragmatists_JUnitParams",
     ],
 )
 

@@ -36,32 +36,44 @@ import org.mockito.MockitoAnnotations;
 
 public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
   private static final String JSON_FOR_STEP_EXPANSION = "---\n"
-      + "- step:\n"
+      + "- __uuid: \"step1\"\n"
+      + "  step:\n"
       + "    type: \"Http\"\n"
+      + "    strategy:\n"
+      + "      parallelism: 4\n"
       + "    spec:\n"
       + "      url: \"https://www.google.com\"\n"
       + "      method: \"GET\"\n"
       + "    timeout: \"1m\"\n"
       + "    identifier: \"0_0\"\n"
       + "    name: \"4_0\"\n"
-      + "- step:\n"
+      + "- __uuid: \"step1\"\n"
+      + "  step:\n"
       + "    type: \"Http\"\n"
+      + "    strategy:\n"
+      + "      parallelism: 4\n"
       + "    spec:\n"
       + "      url: \"https://www.google.com\"\n"
       + "      method: \"GET\"\n"
       + "    timeout: \"1m\"\n"
       + "    identifier: \"1_1\"\n"
       + "    name: \"4_1\"\n"
-      + "- step:\n"
+      + "- __uuid: \"step1\"\n"
+      + "  step:\n"
       + "    type: \"Http\"\n"
+      + "    strategy:\n"
+      + "      parallelism: 4\n"
       + "    spec:\n"
       + "      url: \"https://www.google.com\"\n"
       + "      method: \"GET\"\n"
       + "    timeout: \"1m\"\n"
       + "    identifier: \"2_2\"\n"
       + "    name: \"4_2\"\n"
-      + "- step:\n"
+      + "- __uuid: \"step1\"\n"
+      + "  step:\n"
       + "    type: \"Http\"\n"
+      + "    strategy:\n"
+      + "      parallelism: 4\n"
       + "    spec:\n"
       + "      url: \"https://www.google.com\"\n"
       + "      method: \"GET\"\n"
@@ -70,44 +82,64 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
       + "    name: \"4_3\"\n";
 
   private static final String JSON_FOR_STEP_GROUP_EXPANSION = "---\n"
-      + "- stepGroup:\n"
+      + "- __uuid: \"stepGroupParent\"\n"
+      + "  stepGroup:\n"
+      + "    __uuid: \"sg1\"\n"
       + "    identifier: \"searching\"\n"
       + "    name: \"searching\"\n"
       + "    steps:\n"
       + "    - parallel:\n"
-      + "      - step:\n"
+      + "      - __uuid: \"parallel1\"\n"
+      + "        step:\n"
+      + "          __uuid: \"step1\"\n"
       + "          type: \"Http\"\n"
+      + "          strategy:\n"
+      + "            parallelism: 4\n"
       + "          spec:\n"
       + "            url: \"https://www.google.com\"\n"
       + "            method: \"GET\"\n"
       + "          timeout: \"1m\"\n"
       + "          identifier: \"0_0\"\n"
       + "          name: \"4_0\"\n"
-      + "      - step:\n"
+      + "      - __uuid: \"parallel1\"\n"
+      + "        step:\n"
+      + "          __uuid: \"step1\"\n"
       + "          type: \"Http\"\n"
+      + "          strategy:\n"
+      + "            parallelism: 4\n"
       + "          spec:\n"
       + "            url: \"https://www.google.com\"\n"
       + "            method: \"GET\"\n"
       + "          timeout: \"1m\"\n"
       + "          identifier: \"1_1\"\n"
       + "          name: \"4_1\"\n"
-      + "      - step:\n"
+      + "      - __uuid: \"parallel1\"\n"
+      + "        step:\n"
+      + "          __uuid: \"step1\"\n"
       + "          type: \"Http\"\n"
+      + "          strategy:\n"
+      + "            parallelism: 4\n"
       + "          spec:\n"
       + "            url: \"https://www.google.com\"\n"
       + "            method: \"GET\"\n"
       + "          timeout: \"1m\"\n"
       + "          identifier: \"2_2\"\n"
       + "          name: \"4_2\"\n"
-      + "      - step:\n"
+      + "      - __uuid: \"parallel1\"\n"
+      + "        step:\n"
+      + "          __uuid: \"step1\"\n"
       + "          type: \"Http\"\n"
+      + "          strategy:\n"
+      + "            parallelism: 4\n"
       + "          spec:\n"
       + "            url: \"https://www.google.com\"\n"
       + "            method: \"GET\"\n"
       + "          timeout: \"1m\"\n"
       + "          identifier: \"3_3\"\n"
       + "          name: \"4_3\"\n"
-      + "      - step:\n"
+      + "      - __uuid: \"parallel2\"\n"
+      + "        step:\n"
+      + "          __uuid: \"step3\"\n"
       + "          type: \"Http\"\n"
       + "          name: \"bing\"\n"
       + "          identifier: \"bing\"\n"
@@ -117,32 +149,44 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
       + "            headers: []\n"
       + "            outputVariables: []\n"
       + "          timeout: \"10s\"\n"
-      + "    - step:\n"
+      + "    - __uuid: \"step4\"\n"
+      + "      step:\n"
       + "        type: \"Http\"\n"
+      + "        strategy:\n"
+      + "          parallelism: 4\n"
       + "        spec:\n"
       + "          url: \"https://www.google.com\"\n"
       + "          method: \"GET\"\n"
       + "        timeout: \"1m\"\n"
       + "        identifier: \"0_0\"\n"
       + "        name: \"4_0\"\n"
-      + "    - step:\n"
+      + "    - __uuid: \"step4\"\n"
+      + "      step:\n"
       + "        type: \"Http\"\n"
+      + "        strategy:\n"
+      + "          parallelism: 4\n"
       + "        spec:\n"
       + "          url: \"https://www.google.com\"\n"
       + "          method: \"GET\"\n"
       + "        timeout: \"1m\"\n"
       + "        identifier: \"1_1\"\n"
       + "        name: \"4_1\"\n"
-      + "    - step:\n"
+      + "    - __uuid: \"step4\"\n"
+      + "      step:\n"
       + "        type: \"Http\"\n"
+      + "        strategy:\n"
+      + "          parallelism: 4\n"
       + "        spec:\n"
       + "          url: \"https://www.google.com\"\n"
       + "          method: \"GET\"\n"
       + "        timeout: \"1m\"\n"
       + "        identifier: \"2_2\"\n"
       + "        name: \"4_2\"\n"
-      + "    - step:\n"
+      + "    - __uuid: \"step4\"\n"
+      + "      step:\n"
       + "        type: \"Http\"\n"
+      + "        strategy:\n"
+      + "          parallelism: 4\n"
       + "        spec:\n"
       + "          url: \"https://www.google.com\"\n"
       + "          method: \"GET\"\n"
@@ -152,39 +196,57 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
 
   private static final String EXPECTED_JSON_FOR_PARALLEL = "---\n"
       + "- parallel:\n"
-      + "  - step:\n"
+      + "  - __uuid: \"parallel1\"\n"
+      + "    step:\n"
+      + "      __uuid: \"test\"\n"
       + "      type: \"Http\"\n"
+      + "      strategy:\n"
+      + "        parallelism: 4\n"
       + "      spec:\n"
       + "        url: \"https://www.google.com\"\n"
       + "        method: \"GET\"\n"
       + "      timeout: \"1m\"\n"
       + "      identifier: \"0_0\"\n"
       + "      name: \"4_0\"\n"
-      + "  - step:\n"
+      + "  - __uuid: \"parallel1\"\n"
+      + "    step:\n"
+      + "      __uuid: \"test\"\n"
       + "      type: \"Http\"\n"
+      + "      strategy:\n"
+      + "        parallelism: 4\n"
       + "      spec:\n"
       + "        url: \"https://www.google.com\"\n"
       + "        method: \"GET\"\n"
       + "      timeout: \"1m\"\n"
       + "      identifier: \"1_1\"\n"
       + "      name: \"4_1\"\n"
-      + "  - step:\n"
+      + "  - __uuid: \"parallel1\"\n"
+      + "    step:\n"
+      + "      __uuid: \"test\"\n"
       + "      type: \"Http\"\n"
+      + "      strategy:\n"
+      + "        parallelism: 4\n"
       + "      spec:\n"
       + "        url: \"https://www.google.com\"\n"
       + "        method: \"GET\"\n"
       + "      timeout: \"1m\"\n"
       + "      identifier: \"2_2\"\n"
       + "      name: \"4_2\"\n"
-      + "  - step:\n"
+      + "  - __uuid: \"parallel1\"\n"
+      + "    step:\n"
+      + "      __uuid: \"test\"\n"
       + "      type: \"Http\"\n"
+      + "      strategy:\n"
+      + "        parallelism: 4\n"
       + "      spec:\n"
       + "        url: \"https://www.google.com\"\n"
       + "        method: \"GET\"\n"
       + "      timeout: \"1m\"\n"
       + "      identifier: \"3_3\"\n"
       + "      name: \"4_3\"\n"
-      + "  - step:\n"
+      + "  - __uuid: \"parallel2\"\n"
+      + "    step:\n"
+      + "      _uuid: \"test1\"\n"
       + "      type: \"Http\"\n"
       + "      name: \"bing\"\n"
       + "      identifier: \"bing\"\n"
@@ -219,7 +281,8 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
     List<YamlNode> stageYamlNodes = stagesYamlField.getNode().asArray();
 
     YamlField approvalStageYamlField = stageYamlNodes.get(0).getField("stage");
-    List<JsonNode> jsonNodes = strategyHelper.expandJsonNodes(approvalStageYamlField.getNode().getCurrJsonNode());
+    List<JsonNode> jsonNodes =
+        strategyHelper.expandJsonNodes(approvalStageYamlField.getNode().getCurrJsonNode()).getExpandedJsonNodes();
     assertThat(jsonNodes.size()).isEqualTo(8);
     List<String> appendValues = Lists.newArrayList("0_1", "0_2", "1_0", "1_1", "1_2", "2_0", "2_1", "2_2");
     List<String> variableAValues = Lists.newArrayList("1", "1", "2", "2", "2", "3", "3", "3");
@@ -254,7 +317,8 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
     List<YamlNode> stageYamlNodes = stagesYamlField.getNode().asArray();
 
     YamlField approvalStageYamlField = stageYamlNodes.get(0).getField("stage");
-    List<JsonNode> jsonNodes = strategyHelper.expandJsonNodes(approvalStageYamlField.getNode().getCurrJsonNode());
+    List<JsonNode> jsonNodes =
+        strategyHelper.expandJsonNodes(approvalStageYamlField.getNode().getCurrJsonNode()).getExpandedJsonNodes();
     assertThat(jsonNodes.size()).isEqualTo(8);
     List<String> appendValues = Lists.newArrayList("0_1", "0_2", "1_0", "1_1", "1_2", "2_0", "2_1", "2_2");
     List<String> variableAValues = Lists.newArrayList(
@@ -290,13 +354,46 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
     List<YamlNode> stageYamlNodes = stagesYamlField.getNode().asArray();
 
     YamlField approvalStageYamlField = stageYamlNodes.get(2).getField("stage");
-    List<JsonNode> jsonNodes = strategyHelper.expandJsonNodes(approvalStageYamlField.getNode().getCurrJsonNode());
+    List<JsonNode> jsonNodes =
+        strategyHelper.expandJsonNodes(approvalStageYamlField.getNode().getCurrJsonNode()).getExpandedJsonNodes();
     assertThat(jsonNodes.size()).isEqualTo(10);
     int current = 0;
     for (JsonNode jsonNode : jsonNodes) {
       assertThat(jsonNode.get("identifier").asText()).isEqualTo("a11_" + current);
       assertThat(jsonNode.get("variables").get(0).get("value").asText()).isEqualTo(String.valueOf(current));
       assertThat(jsonNode.get("variables").get(1).get("value").asText()).isEqualTo(String.valueOf(10));
+      current++;
+    }
+  }
+
+  @Test
+  @Owner(developers = SAHIL)
+  @Category(UnitTests.class)
+  public void testExpandStageJsonNodesForItems() throws IOException {
+    MockitoAnnotations.initMocks(this);
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    final URL testFile = classLoader.getResource("pipeline-with-strategy.yaml");
+    assertThat(testFile).isNotNull();
+    String pipelineYaml = Resources.toString(testFile, Charsets.UTF_8);
+    String pipelineYamlWithUuid = YamlUtils.injectUuid(pipelineYaml);
+
+    YamlField pipelineYamlField = YamlUtils.readTree(pipelineYamlWithUuid).getNode().getField("pipeline");
+    assertThat(pipelineYamlField).isNotNull();
+    YamlField stagesYamlField = pipelineYamlField.getNode().getField("stages");
+    assertThat(stagesYamlField).isNotNull();
+    List<YamlNode> stageYamlNodes = stagesYamlField.getNode().asArray();
+
+    YamlField approvalStageYamlField = stageYamlNodes.get(5).getField("stage");
+    List<JsonNode> jsonNodes =
+        strategyHelper.expandJsonNodes(approvalStageYamlField.getNode().getCurrJsonNode()).getExpandedJsonNodes();
+    assertThat(jsonNodes.size()).isEqualTo(1);
+    int current = 0;
+    List<String> expectedValues = Lists.newArrayList("a", "b", "c");
+    for (JsonNode jsonNode : jsonNodes) {
+      assertThat(jsonNode.get("identifier").asText()).isEqualTo("a11_" + current);
+      assertThat(jsonNode.get("variables").get(0).get("value").asText()).isEqualTo(String.valueOf(current));
+      assertThat(jsonNode.get("variables").get(1).get("value").asText()).isEqualTo(String.valueOf(1));
+      assertThat(jsonNode.get("variables").get(2).get("value").asText()).isEqualTo(expectedValues.get(current));
       current++;
     }
   }
@@ -319,7 +416,8 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
     List<YamlNode> stageYamlNodes = stagesYamlField.getNode().asArray();
 
     YamlField approvalStageYamlField = stageYamlNodes.get(3).getField("stage");
-    List<JsonNode> jsonNodes = strategyHelper.expandJsonNodes(approvalStageYamlField.getNode().getCurrJsonNode());
+    List<JsonNode> jsonNodes =
+        strategyHelper.expandJsonNodes(approvalStageYamlField.getNode().getCurrJsonNode()).getExpandedJsonNodes();
     assertThat(jsonNodes.size()).isEqualTo(4);
     int current = 0;
     for (JsonNode jsonNode : jsonNodes) {
@@ -364,7 +462,8 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
                                   .asArray()
                                   .get(0)
                                   .getField("step");
-    List<JsonNode> jsonNodes = strategyHelper.expandJsonNodes(stepYamlField.getNode().getCurrJsonNode());
+    List<JsonNode> jsonNodes =
+        strategyHelper.expandJsonNodes(stepYamlField.getNode().getCurrJsonNode()).getExpandedJsonNodes();
     int current = 0;
     assertThat(jsonNodes.size()).isEqualTo(8);
     List<String> appendValues = Lists.newArrayList("0_1", "0_2", "1_0", "1_1", "1_2", "2_0", "2_1", "2_2");
@@ -414,7 +513,8 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
                                   .asArray()
                                   .get(0)
                                   .getField("step");
-    List<JsonNode> jsonNodes = strategyHelper.expandJsonNodes(stepYamlField.getNode().getCurrJsonNode());
+    List<JsonNode> jsonNodes =
+        strategyHelper.expandJsonNodes(stepYamlField.getNode().getCurrJsonNode()).getExpandedJsonNodes();
     int current = 0;
     assertThat(jsonNodes.size()).isEqualTo(10);
 
@@ -459,7 +559,8 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
                                   .asArray()
                                   .get(0)
                                   .getField("step");
-    List<JsonNode> jsonNodes = strategyHelper.expandJsonNodes(stepYamlField.getNode().getCurrJsonNode());
+    List<JsonNode> jsonNodes =
+        strategyHelper.expandJsonNodes(stepYamlField.getNode().getCurrJsonNode()).getExpandedJsonNodes();
     int current = 0;
     assertThat(jsonNodes.size()).isEqualTo(4);
 
@@ -480,8 +581,12 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
     assertThat(testFile).isNotNull();
     String stepYaml = Resources.toString(testFile, Charsets.UTF_8);
     ExecutionWrapperConfig executionWrapperConfig = YamlUtils.read(stepYaml, ExecutionWrapperConfig.class);
-    List<ExecutionWrapperConfig> executionWrapperConfigs =
+    ExpandedExecutionWrapperInfo expandedExecutionWrapperInfo =
         strategyHelper.expandExecutionWrapperConfig(executionWrapperConfig);
+    assertThat(
+        expandedExecutionWrapperInfo.getUuidToStrategyExpansionData().containsKey(executionWrapperConfig.getUuid()))
+        .isTrue();
+    List<ExecutionWrapperConfig> executionWrapperConfigs = expandedExecutionWrapperInfo.getExpandedExecutionConfigs();
     String yaml = YamlUtils.write(executionWrapperConfigs);
     assertThat(yaml).isEqualTo(JSON_FOR_STEP_EXPANSION);
   }
@@ -497,7 +602,7 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
     String stepYaml = Resources.toString(testFile, Charsets.UTF_8);
     ExecutionWrapperConfig executionWrapperConfig = YamlUtils.read(stepYaml, ExecutionWrapperConfig.class);
     List<ExecutionWrapperConfig> executionWrapperConfigs =
-        strategyHelper.expandExecutionWrapperConfig(executionWrapperConfig);
+        strategyHelper.expandExecutionWrapperConfig(executionWrapperConfig).getExpandedExecutionConfigs();
     String yaml = YamlUtils.write(executionWrapperConfigs);
     assertThat(yaml).isEqualTo(JSON_FOR_STEP_GROUP_EXPANSION);
   }
@@ -513,7 +618,7 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
     String stepYaml = Resources.toString(testFile, Charsets.UTF_8);
     ExecutionWrapperConfig executionWrapperConfig = YamlUtils.read(stepYaml, ExecutionWrapperConfig.class);
     List<ExecutionWrapperConfig> executionWrapperConfigs =
-        strategyHelper.expandExecutionWrapperConfig(executionWrapperConfig);
+        strategyHelper.expandExecutionWrapperConfig(executionWrapperConfig).getExpandedExecutionConfigs();
     String yaml = YamlUtils.write(executionWrapperConfigs);
     assertThat(yaml).isEqualTo(EXPECTED_JSON_FOR_PARALLEL);
   }
@@ -530,7 +635,8 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
     ExecutionWrapperConfig executionWrapperConfig = YamlUtils.read(stepYaml, ExecutionWrapperConfig.class);
     assertThatThrownBy(() -> strategyHelper.expandExecutionWrapperConfig(executionWrapperConfig))
         .isInstanceOf(InvalidYamlException.class)
-        .hasMessage("Cannot deserialize value of type `int` from String \"as\": not a valid `int` value");
+        .hasMessage(
+            "Cannot deserialize value of type `java.lang.Integer` from String \"as\": not a valid `java.lang.Integer` value");
   }
 
   @Test
@@ -546,5 +652,45 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
     assertThatThrownBy(() -> strategyHelper.expandExecutionWrapperConfig(executionWrapperConfig))
         .isInstanceOf(InvalidYamlException.class)
         .hasMessage("Value provided for axes [b] is string. It should either be a List or an Expression.");
+  }
+
+  @Test
+  @Owner(developers = SAHIL)
+  @Category(UnitTests.class)
+  public void usageExampleForExpandedExecutionWrapperInfo() throws IOException {
+    MockitoAnnotations.initMocks(this);
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    final URL testFile = classLoader.getResource("stepGroup-with-strategy.yaml");
+    assertThat(testFile).isNotNull();
+    String stepYaml = Resources.toString(testFile, Charsets.UTF_8);
+    ExecutionWrapperConfig executionWrapperConfig = YamlUtils.read(stepYaml, ExecutionWrapperConfig.class);
+    ExpandedExecutionWrapperInfo expandedExecutionWrapperInfo =
+        strategyHelper.expandExecutionWrapperConfig(executionWrapperConfig);
+
+    for (ExecutionWrapperConfig executionWrapperConfigEntry :
+        expandedExecutionWrapperInfo.getExpandedExecutionConfigs()) {
+      // Check if step is defined in executionWrapperConfig
+      if (executionWrapperConfigEntry.getStep() != null) {
+        // Extract uuid of the executionWrapperConfig
+        String uuid = executionWrapperConfig.getUuid();
+        // Fetch Max-Concurrency for this uuid.
+        // WrapperConfigs belonging to same uuid are part of same matrix configuration.
+        // If maxConcurrency is 1 then strategy is not defined.
+        assertThat(expandedExecutionWrapperInfo.getUuidToStrategyExpansionData().containsKey(uuid)).isTrue();
+      }
+      if (executionWrapperConfig.getStepGroup() != null) {
+        // Extract uuid of the executionWrapperConfig
+        String uuid = executionWrapperConfig.getUuid();
+        // This will give us the strategy information on step group, to traverse on each children, we will need to
+        // recursively call the function
+        assertThat(expandedExecutionWrapperInfo.getUuidToStrategyExpansionData().containsKey(uuid)).isTrue();
+      }
+      if (executionWrapperConfig.getParallel() != null) {
+        // Extract uuid of the executionWrapperConfig
+        String uuid = executionWrapperConfig.getUuid();
+        // For parallel, uuid will not be there in the map as strategy cannot be defined on parallel
+        assertThat(expandedExecutionWrapperInfo.getUuidToStrategyExpansionData().containsKey(uuid)).isFalse();
+      }
+    }
   }
 }

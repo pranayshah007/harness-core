@@ -1,0 +1,94 @@
+spec:
+  execution:
+    steps:
+      - step:
+          name: "Deploy"
+          identifier: Deploy
+          type: Command
+          timeout: 10m
+          strategy:
+            repeat:
+              items: <+stage.output.hosts>
+          spec:
+            onDelegate: false
+            environmentVariables: [ ]
+            outputVariables: [ ]
+            commandUnits:
+              - identifier: Setup_Runtime_Paths
+                name: "Setup Runtime Paths"
+                type: Script
+                spec:
+                  shell: PowerShell
+                  source:
+                    type: Inline
+                    spec:
+                      script: |-
+                        # Creating runtime, backup and staging directories:
+
+                        New-Item -Path "$HOME\<+service.name>\<+env.name>\runtime" -ItemType Directory
+                        New-Item -Path "$HOME\<+service.name>\<+env.name>\backup" -ItemType Directory
+                        New-Item -Path "$HOME\<+service.name>\<+env.name>\staging" -ItemType Directory
+              - identifier: Copy_Artifact
+                name: "Copy Artifact"
+                type: Copy
+                spec:
+                  sourceType: Artifact
+                  destinationPath: $HOME\<+service.name>\<+env.name>
+              - identifier: Copy_Config
+                name: "Copy Config"
+                type: Copy
+                spec:
+                  sourceType: Config
+                  destinationPath: $HOME\<+service.name>\<+env.name>
+      - step:
+          type: Verify
+          name: Verify
+          identifier: Verify
+          timeout: 2h
+          spec: { }
+    rollbackSteps:
+      - step:
+          name: "Rollback"
+          identifier: Rollback
+          type: Command
+          timeout: 10m
+          strategy:
+            repeat:
+              items: <+stage.output.hosts>
+          spec:
+            onDelegate: false
+            environmentVariables: [ ]
+            outputVariables: [ ]
+            commandUnits:
+              - identifier: Setup_Runtime_Paths_Rollback
+                name: "Setup Runtime Paths Rollback"
+                type: Script
+                spec:
+                  shell: PowerShell
+                  source:
+                    type: Inline
+                    spec:
+                      script: |-
+                        # Creating runtime, backup and staging directories:
+
+                        New-Item -Path "$HOME\<+service.name>\<+env.name>\runtime" -ItemType Directory
+                        New-Item -Path "$HOME\<+service.name>\<+env.name>\backup" -ItemType Directory
+                        New-Item -Path "$HOME\<+service.name>\<+env.name>\staging" -ItemType Directory
+              - identifier: Copy_Artifact_Rollback
+                name: "Copy Artifact Rollback"
+                type: Copy
+                spec:
+                  sourceType: Artifact
+                  destinationPath: $HOME\<+service.name>\<+env.name>
+              - identifier: Copy_Config_Rollback
+                name: "Copy Config Rollback"
+                type: Copy
+                spec:
+                  sourceType: Config
+                  destinationPath: $HOME\<+service.name>\<+env.name>
+      - step:
+          type: Verify
+          name: Verify Rollback
+          identifier: Verify_Rollback
+          timeout: 2h
+          spec: { }

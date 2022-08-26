@@ -11,6 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER_SRE;
+import static io.harness.instancesyncmonitoring.service.InstanceSyncMonitoringServiceImpl.FAILED_STATUS;
+import static io.harness.instancesyncmonitoring.service.InstanceSyncMonitoringServiceImpl.SUCCESS_STATUS;
 import static io.harness.validation.Validator.notNullCheck;
 
 import static software.wings.beans.InfrastructureMappingType.AWS_SSH;
@@ -34,7 +36,10 @@ import io.harness.context.ContextElementType;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.exception.WingsException;
+import io.harness.exception.runtime.NoInstancesException;
 import io.harness.ff.FeatureFlagService;
+import io.harness.instancesyncmonitoring.model.InstanceSyncMetricDetails;
+import io.harness.instancesyncmonitoring.service.InstanceSyncMonitoringService;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
 import io.harness.perpetualtask.PerpetualTaskService;
@@ -142,6 +147,7 @@ public class InstanceHelper {
   @Inject private FeatureFlagService featureFlagService;
   @Inject private InstanceSyncPerpetualTaskService instanceSyncPerpetualTaskService;
   @Inject private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
+  @Inject private InstanceSyncMonitoringService instanceSyncMonitoringService;
 
   /**
    * The phaseExecutionData is used to process the instance information that is used by the service and infra
@@ -517,6 +523,10 @@ public class InstanceHelper {
       return;
     }
 
+    long startTime = System.currentTimeMillis();
+    String status = "";
+    String deploymentType = "";
+    String accountId = deploymentSummaries.iterator().next().getAccountId();
     String infraMappingId = deploymentSummaries.iterator().next().getInfraMappingId();
     String appId = deploymentSummaries.iterator().next().getAppId();
     String workflowExecutionId = deploymentSummaries.iterator().next().getWorkflowExecutionId();
@@ -525,6 +535,7 @@ public class InstanceHelper {
       log.info("Handling deployment event for infraMappingId [{}] of appId [{}]", infraMappingId, appId);
 
       InfrastructureMapping infraMapping = infraMappingService.get(appId, infraMappingId);
+      deploymentType = infraMapping.getDeploymentType();
       notNullCheck("Infra mapping is null for the given id: " + infraMappingId, infraMapping);
 
       InfrastructureMappingType infrastructureMappingType =
@@ -534,13 +545,18 @@ public class InstanceHelper {
       InstanceHandler instanceHandler = instanceHandlerFactory.getInstanceHandler(infraMapping);
       instanceHandler.handleNewDeployment(deploymentSummaries, isRollback, onDemandRollbackInfo);
       createPerpetualTaskForNewDeploymentIfEnabled(infraMapping, deploymentSummaries);
+      status = SUCCESS_STATUS;
       log.info("Handled deployment event for infraMappingId [{}] successfully", infraMappingId);
 
     } catch (Exception ex) {
+      status = FAILED_STATUS;
       // We have to catch all kinds of runtime exceptions, log it and move on, otherwise the queue impl keeps retrying
       // forever in case of exception
       log.warn("Exception while handling deployment event for executionId [{}], infraMappingId [{}]",
           workflowExecutionId, infraMappingId, ex);
+    } finally {
+      InstanceSyncMetricDetails metricDetails = buildMetricDetails(accountId, appId, deploymentType, status);
+      instanceSyncMonitoringService.recordMetrics(metricDetails, true, System.currentTimeMillis() - startTime);
     }
   }
 
@@ -665,9 +681,12 @@ public class InstanceHelper {
 
   public boolean shouldSkipIteratorInstanceSync(InfrastructureMapping infrastructureMapping) {
     Optional<InstanceHandler> instanceHandler = getInstanceHandler(infrastructureMapping);
+
     return instanceHandler.isPresent()
-        && featureFlagService.isEnabled(instanceHandler.get().getFeatureFlagToStopIteratorBasedInstanceSync(),
-            infrastructureMapping.getAccountId());
+        && instanceHandler.get()
+               .getFeatureFlagToStopIteratorBasedInstanceSync()
+               .map(featureName -> featureFlagService.isEnabled(featureName, infrastructureMapping.getAccountId()))
+               .orElse(true);
   }
 
   @VisibleForTesting
@@ -688,8 +707,9 @@ public class InstanceHelper {
 
     if (instanceHandler.get() instanceof InstanceSyncByPerpetualTaskHandler) {
       InstanceSyncByPerpetualTaskHandler handler = (InstanceSyncByPerpetualTaskHandler) instanceHandler.get();
-      return featureFlagService.isEnabled(
-          handler.getFeatureFlagToEnablePerpetualTaskForInstanceSync(), infrastructureMapping.getAccountId());
+      return handler.getFeatureFlagToEnablePerpetualTaskForInstanceSync()
+          .map(featureName -> featureFlagService.isEnabled(featureName, infrastructureMapping.getAccountId()))
+          .orElse(true);
     }
 
     return false;
@@ -732,6 +752,7 @@ public class InstanceHelper {
 
   private void handleInstanceSyncResponseFromPerpetualTask(InfrastructureMapping infrastructureMapping,
       PerpetualTaskRecord perpetualTaskRecord, DelegateResponseData response) {
+    long startTime = System.currentTimeMillis();
     Optional<InstanceHandler> instanceHandler = getInstanceHandler(infrastructureMapping);
     if (!instanceHandler.isPresent() || !isInstanceSyncByPerpetualTaskEnabled(infrastructureMapping)) {
       return;
@@ -741,22 +762,14 @@ public class InstanceHelper {
 
     try {
       handler.processInstanceSyncResponseFromPerpetualTask(infrastructureMapping, response);
+    } catch (NoInstancesException ex) {
+      checkAndDeletePerpetualTask(infrastructureMapping, ex);
+      log.warn("Error handling Instance sync response. Infrastructure Mapping : [{}], Perpetual Task Id : [{}]",
+          infrastructureMapping.getUuid(), perpetualTaskRecord.getUuid(), ex);
     } catch (Exception ex) {
+      checkAndDeletePerpetualTask(infrastructureMapping, ex);
       log.error("Error handling Instance sync response. Infrastructure Mapping : [{}], Perpetual Task Id : [{}]",
           infrastructureMapping.getUuid(), perpetualTaskRecord.getUuid(), ex);
-      String errorMsg = getErrorMsg(ex);
-
-      boolean continueSync = instanceService.handleSyncFailure(infrastructureMapping.getAppId(),
-          infrastructureMapping.getServiceId(), infrastructureMapping.getEnvId(), infrastructureMapping.getUuid(),
-          infrastructureMapping.getDisplayName(), System.currentTimeMillis(), errorMsg);
-
-      if (!continueSync) {
-        log.info(
-            "Sync Status Failure for Infrastructure Mapping : [{}], Deleting all perpetual tasks for given infrastructure mapping",
-            infrastructureMapping.getUuid());
-        instanceSyncPerpetualTaskService.deletePerpetualTasks(infrastructureMapping);
-      }
-
       throw ex;
     } finally {
       Status status = handler.getStatus(infrastructureMapping, response);
@@ -777,6 +790,25 @@ public class InstanceHelper {
         instanceSyncPerpetualTaskService.resetPerpetualTask(
             infrastructureMapping.getAccountId(), perpetualTaskRecord.getUuid());
       }
+      InstanceSyncMetricDetails metricDetails =
+          buildMetricDetails(infrastructureMapping.getAccountId(), infrastructureMapping.getAppId(),
+              infrastructureMapping.getDeploymentType(), status.isSuccess() ? SUCCESS_STATUS : FAILED_STATUS);
+      instanceSyncMonitoringService.recordMetrics(metricDetails, false, System.currentTimeMillis() - startTime);
+    }
+  }
+
+  private void checkAndDeletePerpetualTask(InfrastructureMapping infrastructureMapping, Exception ex) {
+    String errorMsg = getErrorMsg(ex);
+
+    boolean continueSync = instanceService.handleSyncFailure(infrastructureMapping.getAppId(),
+        infrastructureMapping.getServiceId(), infrastructureMapping.getEnvId(), infrastructureMapping.getUuid(),
+        infrastructureMapping.getDisplayName(), System.currentTimeMillis(), errorMsg);
+
+    if (!continueSync) {
+      log.info(
+          "Sync Status Failure for Infrastructure Mapping : [{}], Deleting all perpetual tasks for given infrastructure mapping",
+          infrastructureMapping.getUuid());
+      instanceSyncPerpetualTaskService.deletePerpetualTasks(infrastructureMapping);
     }
   }
 
@@ -788,5 +820,16 @@ public class InstanceHelper {
       errorMsg = ex.getMessage() != null ? ex.getMessage() : "Unknown error";
     }
     return errorMsg;
+  }
+
+  private InstanceSyncMetricDetails buildMetricDetails(
+      String accountId, String appId, String deploymentType, String status) {
+    return InstanceSyncMetricDetails.builder()
+        .accountId(accountId)
+        .appId(appId)
+        .isNg(false)
+        .deploymentType(deploymentType)
+        .status(status)
+        .build();
   }
 }

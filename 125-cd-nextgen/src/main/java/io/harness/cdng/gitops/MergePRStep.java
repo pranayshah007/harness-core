@@ -23,7 +23,9 @@ import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.delegate.beans.gitapi.GitApiRequestType;
 import io.harness.delegate.beans.gitapi.GitApiTaskParams;
 import io.harness.delegate.beans.gitapi.GitRepoType;
@@ -34,6 +36,7 @@ import io.harness.delegate.task.git.NGGitOpsTaskParams;
 import io.harness.delegate.task.git.TaskStatus;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
+import io.harness.impl.scm.ScmGitProviderHelper;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
@@ -72,6 +75,7 @@ public class MergePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsRespo
   @Inject private CDStepHelper cdStepHelper;
   @Inject private GitOpsStepHelper gitOpsStepHelper;
   @Inject private ConnectorUtils connectorUtils;
+  @Inject private ScmGitProviderHelper scmGitProviderHelper;
 
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.GITOPS_MERGE_PR.getYamlType())
@@ -124,10 +128,14 @@ public class MergePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsRespo
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.CREATE_PR_OUTCOME));
     int prNumber;
     String prLink;
+    String sha;
+    String ref;
     if (optionalSweepingOutput != null && optionalSweepingOutput.isFound()) {
       CreatePROutcome createPROutcome = (CreatePROutcome) optionalSweepingOutput.getOutput();
       prNumber = createPROutcome.getPrNumber();
       prLink = createPROutcome.getPrlink();
+      sha = createPROutcome.getCommitId();
+      ref = createPROutcome.getRef();
     } else {
       throw new InvalidRequestException("Pull Request Details are missing", USER);
     }
@@ -145,21 +153,53 @@ public class MergePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsRespo
         connectorUtils.getConnectorDetails(identifierRef, identifierRef.buildScopedIdentifier());
 
     GitStoreDelegateConfig gitStoreDelegateConfig = getGitStoreDelegateConfig(ambiance, releaseRepoOutcome);
-    String repoOwner, repoName;
     GitApiTaskParams gitApiTaskParams;
     switch (gitStoreDelegateConfig.getGitConfigDTO().getConnectorType()) {
       case GITHUB:
         GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) gitStoreDelegateConfig.getGitConfigDTO();
-        repoOwner = githubConnectorDTO.getGitRepositoryDetails().getOrg();
-        repoName = githubConnectorDTO.getGitRepositoryDetails().getName();
-        gitApiTaskParams = GitApiTaskParams.builder()
-                               .gitRepoType(GitRepoType.GITHUB)
-                               .requestType(GitApiRequestType.MERGE_PR)
-                               .connectorDetails(connectorDetails)
-                               .prNumber(String.valueOf(prNumber))
-                               .owner(repoOwner)
-                               .repo(repoName)
-                               .build();
+        gitApiTaskParams =
+            GitApiTaskParams.builder()
+                .gitRepoType(GitRepoType.GITHUB)
+                .requestType(GitApiRequestType.MERGE_PR)
+                .connectorDetails(connectorDetails)
+                .prNumber(String.valueOf(prNumber))
+                .owner(githubConnectorDTO.getGitRepositoryDetails().getOrg())
+                .repo(githubConnectorDTO.getGitRepositoryDetails().getName())
+                .sha(sha)
+                .deleteSourceBranch(CDStepHelper.getParameterFieldBooleanValue(gitOpsSpecParams.getDeleteSourceBranch(),
+                    MergePRStepInfo.MergePRBaseStepInfoKeys.deleteSourceBranch, stepParameters))
+                .ref(ref)
+                .build();
+        break;
+      case AZURE_REPO:
+        AzureRepoConnectorDTO azureRepoConnectorDTO = (AzureRepoConnectorDTO) gitStoreDelegateConfig.getGitConfigDTO();
+        gitApiTaskParams =
+            GitApiTaskParams.builder()
+                .gitRepoType(GitRepoType.AZURE_REPO)
+                .requestType(GitApiRequestType.MERGE_PR)
+                .connectorDetails(connectorDetails)
+                .prNumber(String.valueOf(prNumber))
+                .owner(azureRepoConnectorDTO.getGitRepositoryDetails().getOrg())
+                .repo(azureRepoConnectorDTO.getGitRepositoryDetails().getName())
+                .sha(sha)
+                .deleteSourceBranch(CDStepHelper.getParameterFieldBooleanValue(gitOpsSpecParams.getDeleteSourceBranch(),
+                    MergePRStepInfo.MergePRBaseStepInfoKeys.deleteSourceBranch, stepParameters))
+                .build();
+        break;
+      case GITLAB:
+        GitlabConnectorDTO gitlabConnectorDTO = (GitlabConnectorDTO) gitStoreDelegateConfig.getGitConfigDTO();
+        String slug = scmGitProviderHelper.getSlug(gitlabConnectorDTO);
+        gitApiTaskParams =
+            GitApiTaskParams.builder()
+                .gitRepoType(GitRepoType.GITLAB)
+                .requestType(GitApiRequestType.MERGE_PR)
+                .connectorDetails(connectorDetails)
+                .prNumber(String.valueOf(prNumber))
+                .slug(slug)
+                .sha(sha)
+                .deleteSourceBranch(CDStepHelper.getParameterFieldBooleanValue(gitOpsSpecParams.getDeleteSourceBranch(),
+                    MergePRStepInfo.MergePRBaseStepInfoKeys.deleteSourceBranch, stepParameters))
+                .build();
         break;
       default:
         throw new InvalidRequestException("Failed to run MergePR Step. Connector not supported", USER);

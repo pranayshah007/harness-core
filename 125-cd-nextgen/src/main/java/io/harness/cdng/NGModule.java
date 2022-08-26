@@ -35,6 +35,8 @@ import io.harness.cdng.envGroup.mappers.EnvironmentGroupFilterPropertiesMapper;
 import io.harness.cdng.envGroup.services.EnvironmentGroupService;
 import io.harness.cdng.envGroup.services.EnvironmentGroupServiceImpl;
 import io.harness.cdng.environment.EnvironmentFilterPropertiesMapper;
+import io.harness.cdng.execution.service.StageExecutionInfoService;
+import io.harness.cdng.execution.service.StageExecutionInfoServiceImpl;
 import io.harness.cdng.gitops.ClusterServiceImpl;
 import io.harness.cdng.gitops.service.ClusterService;
 import io.harness.cdng.instance.info.InstanceInfoService;
@@ -55,6 +57,7 @@ import io.harness.filter.impl.FilterServiceImpl;
 import io.harness.filter.mapper.FilterPropertiesMapper;
 import io.harness.filter.service.FilterService;
 import io.harness.licensing.usage.interfaces.LicenseUsageInterface;
+import io.harness.migration.NGMigrationSdkModule;
 import io.harness.ng.core.NGCoreModule;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.environment.services.impl.EnvironmentServiceImpl;
@@ -67,8 +70,12 @@ import io.harness.ng.core.serviceoverride.services.impl.ServiceOverrideServiceIm
 import io.harness.service.instance.InstanceService;
 import io.harness.service.instance.InstanceServiceImpl;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.AbstractModule;
 import com.google.inject.multibindings.MapBinder;
+import com.google.inject.name.Names;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicReference;
 import lombok.extern.slf4j.Slf4j;
 
@@ -88,6 +95,7 @@ public class NGModule extends AbstractModule {
   protected void configure() {
     install(NGCoreModule.getInstance());
     install(WalkTreeModule.getInstance());
+    install(NGMigrationSdkModule.getInstance());
 
     bind(ArtifactSourceService.class).to(ArtifactSourceServiceImpl.class);
     bind(DockerResourceService.class).to(DockerResourceServiceImpl.class);
@@ -115,6 +123,14 @@ public class NGModule extends AbstractModule {
     bind(ClusterService.class).to(ClusterServiceImpl.class);
     bind(InfrastructureEntityService.class).to(InfrastructureEntityServiceImpl.class);
     bind(ServiceOverrideService.class).to(ServiceOverrideServiceImpl.class);
+    bind(ScheduledExecutorService.class)
+        .annotatedWith(Names.named("CdTelemetryPublisherExecutor"))
+        .toInstance(new ScheduledThreadPoolExecutor(1,
+            new ThreadFactoryBuilder()
+                .setNameFormat("Cd-ng-telemetry-publisher-Thread-%d")
+                .setPriority(Thread.NORM_PRIORITY)
+                .build()));
+    bind(StageExecutionInfoService.class).to(StageExecutionInfoServiceImpl.class);
 
     MapBinder<String, FilterPropertiesMapper> filterPropertiesMapper =
         MapBinder.newMapBinder(binder(), String.class, FilterPropertiesMapper.class);

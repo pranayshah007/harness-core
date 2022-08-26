@@ -16,6 +16,7 @@ import io.harness.azure.context.AzureWebClientContext;
 import io.harness.azure.model.AzureConfig;
 import io.harness.delegate.task.azure.appservice.AzureAppServicePreDeploymentData;
 import io.harness.delegate.task.azure.appservice.deployment.context.AzureAppServiceDockerDeploymentContext;
+import io.harness.delegate.task.azure.appservice.deployment.context.AzureAppServicePackageDeploymentContext;
 import io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppFetchPreDeploymentDataRequest;
 import io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppFetchPreDeploymentDataResponse;
 import io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppRequestResponse;
@@ -33,6 +34,7 @@ public class AzureWebAppFetchPreDeploymentDataRequestHandler
       case CONTAINER:
         return fetchDockerPreDeploymentData(taskRequest, azureConfig, logCallbackProvider);
       case PACKAGE:
+        return fetchPackagePreDeploymentData(taskRequest, azureConfig, logCallbackProvider);
       default:
         throw new UnsupportedOperationException(
             format("Artifact type [%s] is not supported yet", artifactConfig.getArtifactType()));
@@ -49,9 +51,22 @@ public class AzureWebAppFetchPreDeploymentDataRequestHandler
     AzureWebClientContext azureWebClientContext =
         buildAzureWebClientContext(taskRequest.getInfrastructure(), azureConfig);
     AzureAppServiceDockerDeploymentContext dockerDeploymentContext =
-        toAzureAppServiceDockerDeploymentContext(taskRequest, azureConfig, azureWebClientContext, logCallbackProvider);
+        toAzureAppServiceDockerDeploymentContext(taskRequest, azureWebClientContext, logCallbackProvider);
     AzureAppServicePreDeploymentData preDeploymentData =
         azureAppServiceService.getDockerDeploymentPreDeploymentData(dockerDeploymentContext);
+    azureSecretHelper.encryptAzureAppServicePreDeploymentData(preDeploymentData, taskRequest.getAccountId());
+    return AzureWebAppFetchPreDeploymentDataResponse.builder().preDeploymentData(preDeploymentData).build();
+  }
+
+  private AzureWebAppRequestResponse fetchPackagePreDeploymentData(AzureWebAppFetchPreDeploymentDataRequest taskRequest,
+      AzureConfig azureConfig, AzureLogCallbackProvider logCallbackProvider) {
+    AzureWebClientContext azureWebClientContext =
+        buildAzureWebClientContext(taskRequest.getInfrastructure(), azureConfig);
+    // Artifact file is not required for fetching pre deployment data
+    AzureAppServicePackageDeploymentContext packageDeploymentContext =
+        toAzureAppServicePackageDeploymentContext(taskRequest, azureWebClientContext, null, logCallbackProvider);
+    AzureAppServicePreDeploymentData preDeploymentData =
+        azureAppServiceService.getPackageDeploymentPreDeploymentData(packageDeploymentContext);
     azureSecretHelper.encryptAzureAppServicePreDeploymentData(preDeploymentData, taskRequest.getAccountId());
     return AzureWebAppFetchPreDeploymentDataResponse.builder().preDeploymentData(preDeploymentData).build();
   }

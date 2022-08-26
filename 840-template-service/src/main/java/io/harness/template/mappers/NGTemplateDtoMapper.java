@@ -16,12 +16,21 @@ import io.harness.common.NGExpressionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
+import io.harness.gitaware.helper.GitAwareContextHelper;
+import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.gitsync.sdk.EntityGitDetailsMapper;
 import io.harness.gitsync.sdk.EntityValidityDetails;
 import io.harness.jackson.JsonNodeUtils;
 import io.harness.ng.core.mapper.TagMapper;
+import io.harness.ng.core.template.TemplateListType;
+import io.harness.ng.core.template.TemplateMetadataSummaryResponseDTO;
 import io.harness.ng.core.template.TemplateSummaryResponseDTO;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.template.TemplateFilterPropertiesDTO;
+import io.harness.template.beans.FilterParamsDTO;
+import io.harness.template.beans.PageParamsDTO;
+import io.harness.template.beans.TemplateFilterProperties;
 import io.harness.template.beans.TemplateResponseDTO;
 import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.beans.yaml.NGTemplateInfoConfig;
@@ -29,6 +38,7 @@ import io.harness.template.entity.TemplateEntity;
 import io.harness.utils.YamlPipelineUtils;
 
 import java.io.IOException;
+import java.util.List;
 import lombok.experimental.UtilityClass;
 
 @OwnedBy(CDC)
@@ -50,12 +60,26 @@ public class NGTemplateDtoMapper {
         .versionLabel(templateEntity.getVersionLabel())
         .tags(TagMapper.convertToMap(templateEntity.getTags()))
         .version(templateEntity.getVersion())
-        .gitDetails(EntityGitDetailsMapper.mapEntityGitDetails(templateEntity))
+        .gitDetails(getEntityGitDetails(templateEntity))
         .lastUpdatedAt(templateEntity.getLastUpdatedAt())
         .entityValidityDetails(templateEntity.isEntityInvalid()
                 ? EntityValidityDetails.builder().valid(false).invalidYaml(templateEntity.getYaml()).build()
                 : EntityValidityDetails.builder().valid(true).build())
+        .storeType(templateEntity.getStoreType())
+        .connectorRef(templateEntity.getConnectorRef())
         .build();
+  }
+
+  public EntityGitDetails getEntityGitDetails(TemplateEntity templateEntity) {
+    return templateEntity.getStoreType() == null ? EntityGitDetailsMapper.mapEntityGitDetails(templateEntity)
+        : templateEntity.getStoreType() == StoreType.REMOTE
+        ? GitAwareContextHelper.getEntityGitDetailsFromScmGitMetadata()
+        : EntityGitDetails.builder().build();
+  }
+  public EntityGitDetails getEntityGitDetailsForListTemplates(TemplateEntity templateEntity) {
+    return templateEntity.getStoreType() == null            ? EntityGitDetailsMapper.mapEntityGitDetails(templateEntity)
+        : templateEntity.getStoreType() == StoreType.REMOTE ? GitAwareContextHelper.getEntityGitDetails(templateEntity)
+                                                            : EntityGitDetails.builder().build();
   }
 
   public TemplateSummaryResponseDTO prepareTemplateSummaryResponseDto(TemplateEntity templateEntity) {
@@ -74,12 +98,35 @@ public class NGTemplateDtoMapper {
         .versionLabel(templateEntity.getVersionLabel())
         .tags(TagMapper.convertToMap(templateEntity.getTags()))
         .version(templateEntity.getVersion())
-        .gitDetails(EntityGitDetailsMapper.mapEntityGitDetails(templateEntity))
+        .gitDetails(getEntityGitDetailsForListTemplates(templateEntity))
         .lastUpdatedAt(templateEntity.getLastUpdatedAt())
         .entityValidityDetails(templateEntity.isEntityInvalid()
                 ? EntityValidityDetails.builder().valid(false).invalidYaml(templateEntity.getYaml()).build()
                 : EntityValidityDetails.builder().valid(true).build())
         .createdAt(templateEntity.getCreatedAt())
+        .build();
+  }
+
+  public TemplateMetadataSummaryResponseDTO prepareTemplateMetaDataSummaryResponseDto(TemplateEntity templateEntity) {
+    return TemplateMetadataSummaryResponseDTO.builder()
+        .accountId(templateEntity.getAccountId())
+        .orgIdentifier(templateEntity.getOrgIdentifier())
+        .projectIdentifier(templateEntity.getProjectIdentifier())
+        .identifier(templateEntity.getIdentifier())
+        .description(templateEntity.getDescription())
+        .name(templateEntity.getName())
+        .stableTemplate(templateEntity.isStableTemplate())
+        .childType(templateEntity.getChildType())
+        .templateEntityType(templateEntity.getTemplateEntityType())
+        .templateScope(templateEntity.getTemplateScope())
+        .versionLabel(templateEntity.getVersionLabel())
+        .tags(TagMapper.convertToMap(templateEntity.getTags()))
+        .version(templateEntity.getVersion())
+        .gitDetails(getEntityGitDetailsForListTemplates(templateEntity))
+        .lastUpdatedAt(templateEntity.getLastUpdatedAt())
+        .createdAt(templateEntity.getCreatedAt())
+        .storeType(templateEntity.getStoreType())
+        .connectorRef(templateEntity.getConnectorRef())
         .build();
   }
 
@@ -109,8 +156,41 @@ public class NGTemplateDtoMapper {
         .templateEntityType(templateConfig.getTemplateInfoConfig().getType())
         .templateScope(getScopeFromTemplateDto(templateConfig.getTemplateInfoConfig()))
         .fullyQualifiedIdentifier(templateReference.getFullyQualifiedName())
-        .childType(JsonNodeUtils.getString(templateConfig.getTemplateInfoConfig().getSpec(), "type"))
+        .childType(templateConfig.getTemplateInfoConfig().getSpec() != null
+                ? JsonNodeUtils.getString(templateConfig.getTemplateInfoConfig().getSpec(), "type")
+                : null)
         .build();
+  }
+
+  public FilterParamsDTO prepareFilterParamsDTO(String searchTerm, String filterIdentifier,
+      TemplateListType templateListType, TemplateFilterProperties templateFilterProperties,
+      boolean includeAllTemplatesAccessibleAtScope, boolean getDistinctFromBranches) {
+    return FilterParamsDTO.builder()
+        .searchTerm(searchTerm)
+        .filterIdentifier(filterIdentifier)
+        .templateListType(templateListType)
+        .templateFilterProperties(templateFilterProperties)
+        .includeAllTemplatesAccessibleAtScope(includeAllTemplatesAccessibleAtScope)
+        .getDistinctFromBranches(getDistinctFromBranches)
+        .build();
+  }
+
+  public PageParamsDTO preparePageParamsDTO(int page, int size, List<String> sort) {
+    return PageParamsDTO.builder().page(page).size(size).sort(sort).build();
+  }
+
+  public TemplateFilterProperties toTemplateFilterProperties(TemplateFilterPropertiesDTO filterProperties) {
+    if (filterProperties == null) {
+      return TemplateFilterProperties.builder().build();
+    } else {
+      return TemplateFilterProperties.builder()
+          .templateNames(filterProperties.getTemplateNames())
+          .templateIdentifiers(filterProperties.getTemplateIdentifiers())
+          .templateEntityTypes(filterProperties.getTemplateEntityTypes())
+          .childTypes(filterProperties.getChildTypes())
+          .description(filterProperties.getDescription())
+          .build();
+    }
   }
 
   public TemplateEntity toTemplateEntity(String accountId, NGTemplateConfig templateConfig) {

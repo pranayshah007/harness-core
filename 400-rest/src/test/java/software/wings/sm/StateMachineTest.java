@@ -13,7 +13,6 @@ import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.PRASHANT;
 import static io.harness.rule.OwnerRule.VIKAS_S;
 
-import static software.wings.sm.StateMachine.MAPPING_ERROR_MESSAGE_PREFIX;
 import static software.wings.sm.states.RepeatState.Builder.aRepeatState;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -131,7 +130,7 @@ public class StateMachineTest extends WingsBaseTest {
   @Test
   @Owner(developers = VIKAS_S)
   @Category(UnitTests.class)
-  public void stateMachineShouldBeMarkedInvalidIfGivenPropertiesAreInvalid() {
+  public void stateMachineShouldBeMarkedInvalidIfGivenPropertiesAreInvalid_ApprovalState() {
     /**
      * This test Checks if properties for a given state are invalid, StateMachine should be marked invalid,
      * The orchestrationWorkflow for Generated StateMachine should also marked invalid with appropriate
@@ -165,7 +164,8 @@ public class StateMachineTest extends WingsBaseTest {
 
     StateMachine sm = new StateMachine(workflow, 1, graph, stencilMap, false);
     assertThat(sm.getOrchestrationWorkflow().isValid()).isFalse();
-    assertThat(sm.getOrchestrationWorkflow().getValidationMessage()).contains(MAPPING_ERROR_MESSAGE_PREFIX);
+    assertThat(sm.getOrchestrationWorkflow().getValidationMessage())
+        .contains("Invalid value for timeoutMillis or value exceeded maximum timeout of 3w 3d 20h 30m.");
     assertThat(sm.isValid()).isFalse();
   }
 

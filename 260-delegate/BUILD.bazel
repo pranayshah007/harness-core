@@ -20,9 +20,8 @@ java_library(
     deps = [
         "//:lombok",
         "//420-delegate-agent:module",
-        "//420-delegate-service:module",
         "//490-ce-commons:module",
-        "//950-ng-core:module",
+        "//867-polling-contracts:module",
         "//platform-service/modules/notification-service/delegate-tasks:module",
         "@maven//:org_apache_commons_commons_math3",
         "@maven//:org_apache_logging_log4j_log4j_api",
@@ -434,6 +433,7 @@ java_library(
         "@maven//:io_jsonwebtoken_jjwt",
         "@maven//:io_kubernetes_client_java",
         "@maven//:io_kubernetes_client_java_api",
+        "@maven//:io_kubernetes_client_java_api_fluent",
         "@maven//:io_kubernetes_client_java_extended",
         "@maven//:io_kubernetes_client_java_proto",
         "@maven//:io_netty_netty_all",

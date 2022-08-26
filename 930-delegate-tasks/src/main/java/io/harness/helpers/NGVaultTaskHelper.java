@@ -9,6 +9,7 @@ package io.harness.helpers;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.VAULT_OPERATION_ERROR;
 import static io.harness.exception.WingsException.USER;
 
@@ -17,6 +18,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.SecretManagementDelegateException;
 import io.harness.helpers.ext.vault.VaultAppRoleLoginResult;
+import io.harness.security.encryption.AccessType;
 
 import software.wings.beans.BaseVaultConfig;
 import software.wings.helpers.ext.vault.VaultAppRoleLoginRequest;
@@ -57,6 +59,7 @@ public class NGVaultTaskHelper {
   public static final String AWS_IAM_REQUEST_BODY = "Action=GetCallerIdentity&Version=2011-06-15";
   public static final String AWS_IAM_ENDPOINT_FORMAT = "https://sts.%s.amazonaws.com";
   public static final String X_VAULT_AWS_IAM_SERVER_ID = "X-Vault-AWS-IAM-Server-ID";
+  public static final String K8s_AUTH_DEFAULT_ENDPOINT = "kubernetes";
   public static final String CONTENT_TYPE = "Content-Type";
   public static final String APPLICATION_X_WWW_FORM_URLENCODED_CHARSET_UTF_8 =
       "application/x-www-form-urlencoded; charset=utf-8";
@@ -143,7 +146,12 @@ public class NGVaultTaskHelper {
       }
       VaultK8sAuthLoginRequest loginRequest =
           VaultK8sAuthLoginRequest.builder().role(vaultConfig.getVaultK8sAuthRole()).jwt(jwt).build();
-      Response<VaultK8sLoginResponse> response = restClient.k8sAuthLogin(loginRequest).execute();
+      Response<VaultK8sLoginResponse> response =
+          restClient
+              .k8sAuthLogin(isNotEmpty(vaultConfig.getK8sAuthEndpoint()) ? vaultConfig.getK8sAuthEndpoint()
+                                                                         : K8s_AUTH_DEFAULT_ENDPOINT,
+                  vaultConfig.getNamespace(), loginRequest)
+              .execute();
 
       VaultK8sLoginResult result = null;
       if (response.isSuccessful()) {
@@ -232,6 +240,9 @@ public class NGVaultTaskHelper {
     } else if (vaultConfig.isUseK8sAuth()) {
       VaultK8sLoginResult vaultK8sLoginResult = getVaultK8sAuthLoginResult(vaultConfig);
       vaultConfig.setAuthToken(vaultK8sLoginResult.getClientToken());
+    } else if (AccessType.APP_ROLE.equals(vaultConfig.getAccessType()) && !vaultConfig.getRenewAppRoleToken()) {
+      VaultAppRoleLoginResult vaultAppRoleLoginResult = getVaultAppRoleLoginResult(vaultConfig);
+      vaultConfig.setAuthToken(vaultAppRoleLoginResult.getClientToken());
     }
     return vaultConfig.getAuthToken();
   }

@@ -22,6 +22,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.event.client.EventPublisher;
 import io.harness.grpc.utils.HTimestamps;
 import io.harness.perpetualtask.k8s.informer.ClusterDetails;
+import io.harness.perpetualtask.k8s.utils.K8sWatcherHelper;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
@@ -39,13 +40,15 @@ import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeList;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeSpec;
 import io.kubernetes.client.util.CallGeneratorParams;
+import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
-import org.joda.time.DateTime;
 
 @OwnedBy(HarnessTeam.CE)
 @Slf4j
@@ -90,18 +93,32 @@ public class PVWatcher implements ResourceEventHandler<V1PersistentVolume> {
                                 .build();
 
     this.storageV1Api = new StorageV1Api(apiClient);
-    this.storageClassParamsCache =
-        Caffeine.newBuilder()
-            .maximumSize(20)
-            .expireAfterWrite(1, TimeUnit.DAYS)
-            .build(key -> this.storageV1Api.readStorageClass(key, null, null, null).getParameters());
+    this.storageClassParamsCache = Caffeine.newBuilder()
+                                       .maximumSize(20)
+                                       .expireAfterWrite(1, TimeUnit.DAYS)
+                                       .build(key -> this.storageV1Api.readStorageClass(key, null).getParameters());
 
     CoreV1Api coreV1Api = new CoreV1Api(apiClient);
     sharedInformerFactory
-        .sharedIndexInformerFor((CallGeneratorParams callGeneratorParams)
-                                    -> coreV1Api.listPersistentVolumeCall(null, null, null, null, null, null,
-                                        callGeneratorParams.resourceVersion, null, callGeneratorParams.timeoutSeconds,
-                                        callGeneratorParams.watch, null),
+        .sharedIndexInformerFor(
+            (CallGeneratorParams callGeneratorParams)
+                -> {
+              log.info("PV watcher :: Resource version: {}, timeoutSeconds: {}, watch: {}",
+                  callGeneratorParams.resourceVersion, callGeneratorParams.timeoutSeconds, callGeneratorParams.watch);
+              if (!"0".equals(callGeneratorParams.resourceVersion)
+                  && Objects.nonNull(callGeneratorParams.timeoutSeconds)) {
+                K8sWatcherHelper.updateLastSeen(
+                    String.format(K8sWatcherHelper.PV_WATCHER_PREFIX, clusterId), Instant.now());
+              }
+              try {
+                return coreV1Api.listPersistentVolumeCall(null, null, null, null, null, null,
+                    callGeneratorParams.resourceVersion, null, callGeneratorParams.timeoutSeconds,
+                    callGeneratorParams.watch, null);
+              } catch (Exception e) {
+                log.error("Unknown exception occurred for listPersistentVolumeCall", e);
+                throw e;
+              }
+            },
             V1PersistentVolume.class, V1PersistentVolumeList.class)
         .addEventHandler(this);
   }
@@ -111,8 +128,9 @@ public class PVWatcher implements ResourceEventHandler<V1PersistentVolume> {
     try {
       log.debug(EVENT_LOG_MSG, persistentVolume.getMetadata().getUid(), EventType.ADDED);
 
-      DateTime creationTimestamp = persistentVolume.getMetadata().getCreationTimestamp();
-      if (!isClusterSeen || creationTimestamp == null || creationTimestamp.isAfter(DateTime.now().minusHours(2))) {
+      OffsetDateTime creationTimestamp = persistentVolume.getMetadata().getCreationTimestamp();
+      if (!isClusterSeen || creationTimestamp == null
+          || creationTimestamp.isAfter(OffsetDateTime.now().minusHours(2))) {
         publishPVInfo(persistentVolume);
       } else {
         publishedPVs.add(persistentVolume.getMetadata().getUid());
@@ -138,7 +156,8 @@ public class PVWatcher implements ResourceEventHandler<V1PersistentVolume> {
 
       if (oldVolSize != newVolSize) {
         log.debug("Volume change observed from {} to {}", oldVolSize, newVolSize);
-        publishPVEvent(persistentVolume, HTimestamps.fromMillis(DateTime.now().getMillis()), EVENT_TYPE_EXPANSION);
+        publishPVEvent(persistentVolume, HTimestamps.fromMillis(OffsetDateTime.now().toInstant().toEpochMilli()),
+            EVENT_TYPE_EXPANSION);
       }
     } catch (Exception ex) {
       log.error(ERROR_PUBLISH_LOG_MSG, EventType.MODIFIED, ex);
@@ -151,8 +170,10 @@ public class PVWatcher implements ResourceEventHandler<V1PersistentVolume> {
       log.debug(EVENT_LOG_MSG, persistentVolume.getMetadata().getUid(), EventType.DELETED);
 
       publishPVEvent(persistentVolume,
-          HTimestamps.fromMillis(
-              ofNullable(persistentVolume.getMetadata().getDeletionTimestamp()).orElse(DateTime.now()).getMillis()),
+          HTimestamps.fromMillis(ofNullable(persistentVolume.getMetadata().getDeletionTimestamp())
+                                     .orElse(OffsetDateTime.now())
+                                     .toInstant()
+                                     .toEpochMilli()),
           EVENT_TYPE_STOP);
 
       publishedPVs.remove(persistentVolume.getMetadata().getUid());
@@ -162,7 +183,8 @@ public class PVWatcher implements ResourceEventHandler<V1PersistentVolume> {
   }
 
   private void publishPVInfo(V1PersistentVolume persistentVolume) {
-    Timestamp timestamp = HTimestamps.fromMillis(persistentVolume.getMetadata().getCreationTimestamp().getMillis());
+    Timestamp timestamp =
+        HTimestamps.fromMillis(persistentVolume.getMetadata().getCreationTimestamp().toInstant().toEpochMilli());
 
     PVInfo pvInfo =
         PVInfo.newBuilder(pvInfoPrototype)

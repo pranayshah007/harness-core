@@ -22,7 +22,6 @@ import static software.wings.beans.LogHelper.color;
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cli.CliResponse;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.storeconfig.ArtifactoryStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
@@ -37,8 +36,10 @@ import io.harness.git.model.GitBaseRequest;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.PlanJsonLogOutputStream;
+import io.harness.logging.PlanLogOutputStream;
 import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.terraform.TerraformHelperUtils;
+import io.harness.terraform.TerraformStepResponse;
 import io.harness.terraform.request.TerraformExecuteStepRequest;
 
 import software.wings.beans.LogColor;
@@ -123,7 +124,8 @@ public class TerraformPlanTaskHandler extends TerraformAbstractTaskHandler {
     File tfOutputsFile = Paths.get(scriptDirectory, format(TERRAFORM_VARIABLES_FILE_NAME, "output")).toFile();
 
     try (PlanJsonLogOutputStream planJsonLogOutputStream =
-             new PlanJsonLogOutputStream(taskParameters.isSaveTerraformStateJson())) {
+             new PlanJsonLogOutputStream(taskParameters.isSaveTerraformStateJson());
+         PlanLogOutputStream planLogOutputStream = new PlanLogOutputStream()) {
       TerraformExecuteStepRequest terraformExecuteStepRequest =
           TerraformExecuteStepRequest.builder()
               .tfBackendConfigsFile(taskParameters.getBackendConfig() != null
@@ -141,16 +143,22 @@ public class TerraformPlanTaskHandler extends TerraformAbstractTaskHandler {
               .isSaveTerraformJson(taskParameters.isSaveTerraformStateJson())
               .logCallback(logCallback)
               .planJsonLogOutputStream(planJsonLogOutputStream)
+              .planLogOutputStream(planLogOutputStream)
+              .analyseTfPlanSummary(false) // this only temporary until the logic for NG is implemented - FF should be
+                                           // sent from manager side
               .timeoutInMillis(taskParameters.getTimeoutInMillis())
               .isTfPlanDestroy(taskParameters.getTerraformCommand() == TerraformCommand.DESTROY)
-              .useOptimizedTfPlan(true)
+              .useOptimizedTfPlan(taskParameters.isUseOptimizedTfPlan())
+              .accountId(taskParameters.getAccountId())
               .build();
 
-      CliResponse response = terraformBaseHelper.executeTerraformPlanStep(terraformExecuteStepRequest);
+      TerraformStepResponse terraformStepResponse =
+          terraformBaseHelper.executeTerraformPlanStep(terraformExecuteStepRequest);
 
-      Integer detailedExitCode = response.getExitCode();
-      logCallback.saveExecutionLog(format("Script execution finished with status: %s, exit-code %d",
-                                       response.getCommandExecutionStatus(), detailedExitCode),
+      Integer detailedExitCode = terraformStepResponse.getCliResponse().getExitCode();
+      logCallback.saveExecutionLog(
+          format("Script execution finished with status: %s, exit-code %d",
+              terraformStepResponse.getCliResponse().getCommandExecutionStatus(), detailedExitCode),
           INFO, CommandExecutionStatus.RUNNING);
 
       if (isNotEmpty(taskParameters.getVarFileInfos())) {
@@ -168,9 +176,8 @@ public class TerraformPlanTaskHandler extends TerraformAbstractTaskHandler {
 
       String planName = terraformBaseHelper.getPlanName(taskParameters.getTerraformCommand());
 
-      EncryptedRecordData encryptedTfPlan =
-          terraformBaseHelper.encryptPlan(Files.readAllBytes(Paths.get(scriptDirectory, planName)),
-              taskParameters.getPlanName(), taskParameters.getEncryptionConfig());
+      EncryptedRecordData encryptedTfPlan = terraformBaseHelper.encryptPlan(
+          Files.readAllBytes(Paths.get(scriptDirectory, planName)), taskParameters, delegateId, taskId);
 
       String tfPlanJsonFileId = null;
       if (taskParameters.isSaveTerraformStateJson()) {
@@ -182,6 +189,9 @@ public class TerraformPlanTaskHandler extends TerraformAbstractTaskHandler {
         String tfPlanJsonFilePath = planJsonLogOutputStream.getTfPlanJsonLocalPath();
         tfPlanJsonFileId = terraformBaseHelper.uploadTfPlanJson(taskParameters.getAccountId(), delegateId, taskId,
             taskParameters.getEntityId(), planName, tfPlanJsonFilePath);
+
+        logCallback.saveExecutionLog(format("\nTerraform JSON plan will be available at: %s\n", tfPlanJsonFilePath),
+            INFO, CommandExecutionStatus.RUNNING);
       }
 
       logCallback.saveExecutionLog("\nDone executing scripts.\n", INFO, CommandExecutionStatus.RUNNING);

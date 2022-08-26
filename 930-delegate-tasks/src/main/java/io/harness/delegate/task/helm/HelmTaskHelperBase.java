@@ -21,6 +21,7 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.filesystem.FileIo.createDirectoryIfDoesNotExist;
 import static io.harness.filesystem.FileIo.deleteDirectoryAndItsContentIfExists;
 import static io.harness.filesystem.FileIo.waitForDirectoryToBeAccessibleOutOfProcess;
+import static io.harness.helm.HelmCommandType.RELEASE_HISTORY;
 import static io.harness.helm.HelmConstants.ADD_COMMAND_FOR_REPOSITORY;
 import static io.harness.helm.HelmConstants.CHARTS_YAML_KEY;
 import static io.harness.helm.HelmConstants.HELM_CACHE_HOME_PLACEHOLDER;
@@ -76,6 +77,7 @@ import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.helm.HelmCliCommandType;
 import io.harness.helm.HelmCommandFlagsUtils;
 import io.harness.helm.HelmCommandTemplateFactory;
+import io.harness.helm.HelmCommandType;
 import io.harness.helm.HelmSubCommandType;
 import io.harness.k8s.K8sGlobalConfigService;
 import io.harness.k8s.manifest.ObjectYamlUtils;
@@ -84,6 +86,8 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.utils.FieldWithPlainTextOrSecretValueHelper;
+
+import software.wings.helpers.ext.helm.response.ReleaseInfo;
 
 import com.esotericsoftware.yamlbeans.YamlException;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
@@ -112,7 +116,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -127,6 +130,7 @@ public class HelmTaskHelperBase {
   public static final String VERSION_KEY = "version:";
   public static final String NAME_KEY = "name:";
   public static final String REGISTRY_URL = "${REGISTRY_URL}";
+  private static final String CHMOD = "chmod go-r ";
 
   @Inject private K8sGlobalConfigService k8sGlobalConfigService;
   @Inject private NgChartmuseumClientFactory ngChartmuseumClientFactory;
@@ -152,6 +156,55 @@ public class HelmTaskHelperBase {
             USER, HelmCliCommandType.INIT);
       }
     }
+  }
+
+  public List<ReleaseInfo> parseHelmReleaseCommandOutput(String listReleaseOutput, HelmCommandType helmCommandType)
+      throws IOException {
+    if (isEmpty(listReleaseOutput)) {
+      return new ArrayList<>();
+    }
+    CSVFormat csvFormat = CSVFormat.RFC4180.withFirstRecordAsHeader().withDelimiter('\t').withTrim();
+    return CSVParser.parse(listReleaseOutput, csvFormat)
+        .getRecords()
+        .stream()
+        .map(helmCommandType == RELEASE_HISTORY ? this::releaseHistoryCsvRecordToReleaseInfo
+                                                : this::listReleaseCsvRecordToReleaseInfo)
+        .collect(Collectors.toList());
+  }
+
+  private ReleaseInfo listReleaseCsvRecordToReleaseInfo(CSVRecord releaseRecord) {
+    return ReleaseInfo.builder()
+        .name(releaseRecord.get("NAME"))
+        .revision(releaseRecord.get("REVISION"))
+        .status(releaseRecord.get("STATUS"))
+        .chart(releaseRecord.get("CHART"))
+        .namespace(releaseRecord.get("NAMESPACE"))
+        .build();
+  }
+
+  private ReleaseInfo releaseHistoryCsvRecordToReleaseInfo(CSVRecord releaseRecord) {
+    return ReleaseInfo.builder()
+        .revision(releaseRecord.get("REVISION"))
+        .status(releaseRecord.get("STATUS"))
+        .chart(releaseRecord.get("CHART"))
+        .description(releaseRecord.get("DESCRIPTION"))
+        .build();
+  }
+
+  public void processHelmReleaseHistOutput(ReleaseInfo releaseInfo) {
+    if (checkIfFailed(releaseInfo.getDescription()) || checkIfFailed(releaseInfo.getStatus())) {
+      throw new HelmClientException(
+          "Release History command passed but there is an issue with latest release, details: \n"
+              + releaseInfo.getDescription(),
+          USER, HelmCliCommandType.RELEASE_HISTORY);
+    }
+  }
+
+  public boolean checkIfFailed(String str) {
+    if (!isEmpty(str)) {
+      return str.toLowerCase().contains("failed");
+    }
+    return false;
   }
 
   public void loginOciRegistry(String repoUrl, String userName, char[] password, HelmVersion helmVersion,
@@ -360,18 +413,18 @@ public class HelmTaskHelperBase {
   }
 
   public void removeRepo(String repoName, String workingDirectory, HelmVersion helmVersion, long timeoutInMillis) {
-    removeRepo(repoName, workingDirectory, helmVersion, timeoutInMillis, false, EMPTY);
+    removeRepo(repoName, workingDirectory, helmVersion, timeoutInMillis, EMPTY);
   }
 
-  public void removeRepo(String repoName, String workingDirectory, HelmVersion helmVersion, long timeoutInMillis,
-      boolean useRepoFlags, String tempDir) {
+  public void removeRepo(
+      String repoName, String workingDirectory, HelmVersion helmVersion, long timeoutInMillis, String cacheDir) {
     try {
       Map<String, String> environment = new HashMap<>();
       String repoRemoveCommand = getRepoRemoveCommand(repoName, workingDirectory, helmVersion);
-      if (useRepoFlags) {
+      if (!isEmpty(cacheDir)) {
         environment.putIfAbsent(HELM_CACHE_HOME,
-            HELM_CACHE_HOME_PATH.replace(REPO_NAME, repoName).replace(HELM_CACHE_HOME_PLACEHOLDER, tempDir));
-        repoRemoveCommand = addRepoFlags(repoRemoveCommand, repoName, tempDir);
+            HELM_CACHE_HOME_PATH.replace(REPO_NAME, repoName).replace(HELM_CACHE_HOME_PLACEHOLDER, cacheDir));
+        repoRemoveCommand = addRepoFlags(repoRemoveCommand, repoName, cacheDir);
       }
       ProcessResult processResult = executeCommand(environment, repoRemoveCommand, null,
           format("remove helm repo %s", repoName), timeoutInMillis, HelmCliCommandType.REPO_REMOVE);
@@ -542,12 +595,12 @@ public class HelmTaskHelperBase {
           manifest.getChartName(), manifest.getChartVersion(), destinationDirectory, manifest.getHelmVersion(),
           manifest.getHelmCommandFlag(), timeoutInMillis, manifest.isCheckIncorrectChartVersion(), cacheDir);
     } finally {
-      if (manifest.isUseRepoFlags() && manifest.isDeleteRepoCacheDir()) {
+      if (!manifest.isUseCache()) {
         try {
-          FileUtils.forceDelete(new File(cacheDir));
+          deleteDirectoryAndItsContentIfExists(Paths.get(cacheDir).getParent().toString());
         } catch (IOException ie) {
-          log.error("Deletion of charts folder failed due to : {}",
-              ExceptionMessageSanitizer.sanitizeException(ie).getMessage());
+          log.error(
+              "Deletion of folder failed due to : {}", ExceptionMessageSanitizer.sanitizeException(ie).getMessage());
         }
       }
     }
@@ -574,32 +627,26 @@ public class HelmTaskHelperBase {
           manifest.getChartVersion(), destinationDirectory, HelmVersion.V380, manifest.getHelmCommandFlag(),
           timeoutInMillis, manifest.isCheckIncorrectChartVersion(), cacheDir);
     } finally {
-      if (manifest.isUseRepoFlags() && manifest.isDeleteRepoCacheDir()) {
+      if (!manifest.isUseCache()) {
         try {
-          FileUtils.forceDelete(new File(cacheDir));
+          deleteDirectoryAndItsContentIfExists(Paths.get(cacheDir).getParent().toString());
         } catch (IOException ie) {
-          log.error("Deletion of charts folder failed due to : {}",
-              ExceptionMessageSanitizer.sanitizeException(ie).getMessage());
+          log.error(
+              "Deletion of folder failed due to : {}", ExceptionMessageSanitizer.sanitizeException(ie).getMessage());
         }
       }
     }
   }
 
   private String getCacheDir(HelmChartManifestDelegateConfig manifest, String repoName) {
-    String cacheDir = "";
-    if (manifest.isUseRepoFlags()) {
-      if (manifest.isDeleteRepoCacheDir()) {
-        cacheDir = Paths
-                       .get(RESOURCE_DIR_BASE, repoName, RandomStringUtils.randomAlphabetic(5).toLowerCase(Locale.ROOT),
-                           "cache")
-                       .toAbsolutePath()
-                       .normalize()
-                       .toString();
-      } else {
-        cacheDir = Paths.get(RESOURCE_DIR_BASE, repoName, "cache").toAbsolutePath().normalize().toString();
-      }
+    if (manifest.isUseCache()) {
+      return Paths.get(RESOURCE_DIR_BASE, repoName, "cache").toAbsolutePath().normalize().toString();
     }
-    return cacheDir;
+    return Paths
+        .get(RESOURCE_DIR_BASE, repoName, RandomStringUtils.randomAlphabetic(5).toLowerCase(Locale.ROOT), "cache")
+        .toAbsolutePath()
+        .normalize()
+        .toString();
   }
 
   public void downloadChartFilesUsingChartMuseum(
@@ -649,12 +696,12 @@ public class HelmTaskHelperBase {
 
       cleanup(resourceDirectory);
 
-      if (manifest.isUseRepoFlags() && manifest.isDeleteRepoCacheDir()) {
+      if (!manifest.isUseCache()) {
         try {
-          FileUtils.forceDelete(new File(cacheDir));
+          deleteDirectoryAndItsContentIfExists(Paths.get(cacheDir).getParent().toString());
         } catch (IOException ie) {
-          log.error("Deletion of charts folder failed due to : {}",
-              ExceptionMessageSanitizer.sanitizeException(ie).getMessage());
+          log.error(
+              "Deletion of folder failed due to : {}", ExceptionMessageSanitizer.sanitizeException(ie).getMessage());
         }
       }
     }
@@ -1039,15 +1086,15 @@ public class HelmTaskHelperBase {
   }
 
   public void updateRepo(
-      String repoName, String workingDirectory, HelmVersion helmVersion, long timeoutInMillis, String repoDir) {
+      String repoName, String workingDirectory, HelmVersion helmVersion, long timeoutInMillis, String cacheDir) {
     try {
       String repoUpdateCommand = getRepoUpdateCommand(repoName, workingDirectory, helmVersion);
       Map<String, String> environment = new HashMap<>();
 
-      if (!isEmpty(repoDir)) {
+      if (!isEmpty(cacheDir)) {
         environment.put(HELM_CACHE_HOME,
-            HELM_CACHE_HOME_PATH.replace(REPO_NAME, repoName).replace(HELM_CACHE_HOME_PLACEHOLDER, repoDir));
-        repoUpdateCommand = addRepoFlags(repoUpdateCommand, repoName, repoDir);
+            HELM_CACHE_HOME_PATH.replace(REPO_NAME, repoName).replace(HELM_CACHE_HOME_PLACEHOLDER, cacheDir));
+        repoUpdateCommand = addRepoFlags(repoUpdateCommand, repoName, cacheDir);
       }
 
       ProcessResult processResult = executeCommand(environment, repoUpdateCommand, workingDirectory,
@@ -1233,6 +1280,17 @@ public class HelmTaskHelperBase {
       default:
         throw new InvalidRequestException(
             format("Store type: %s not supported for helm values fetch task NG", helmStoreDelegateConfig.getType()));
+    }
+  }
+
+  public void revokeReadPermission(String filePath) {
+    String cmd = CHMOD + filePath;
+
+    ProcessExecutor processExecutor = new ProcessExecutor().command("/bin/sh", "-c", cmd);
+    try {
+      processExecutor.execute();
+    } catch (Exception e) {
+      log.error("Unable to revoke the readable permissions for KubeConfig file ", e);
     }
   }
 }

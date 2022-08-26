@@ -21,4 +21,5 @@ public class InfraExecutionSummary {
   String name;
   String type;
   String infrastructureIdentifier;
+  String infrastructureName;
 }

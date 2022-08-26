@@ -18,6 +18,9 @@ import static io.harness.beans.RepairActionCode.CONTINUE_WITH_DEFAULTS;
 import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
 
 import static software.wings.sm.ExecutionInterrupt.ExecutionInterruptBuilder.anExecutionInterrupt;
+import static software.wings.sm.StateType.PHASE;
+import static software.wings.sm.StateType.PHASE_STEP;
+import static software.wings.sm.StateType.SHELL_SCRIPT;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -75,6 +78,7 @@ public class WorkflowExecutionMonitorHandler implements Handler<WorkflowExecutio
 
   private static final Duration INACTIVITY_TIMEOUT = Duration.ofMinutes(3);
   private static final Duration EXPIRE_THRESHOLD = Duration.ofMinutes(10);
+  private static final Duration SHELL_SCRIPT_EXPIRE_THRESHOLD = Duration.ofSeconds(10);
 
   public void registerIterators(int threadPoolSize) {
     PumpExecutorOptions options = PumpExecutorOptions.builder()
@@ -117,7 +121,17 @@ public class WorkflowExecutionMonitorHandler implements Handler<WorkflowExecutio
         hasActiveStates = stateExecutionInstances.hasNext();
         while (stateExecutionInstances.hasNext()) {
           StateExecutionInstance stateExecutionInstance = stateExecutionInstances.next();
-          if (stateExecutionInstance.getExpiryTs() > System.currentTimeMillis()) {
+          long now = System.currentTimeMillis();
+
+          if (featureFlagService.isEnabled(FeatureName.ENABLE_CHECK_STATE_EXECUTION_STARTING, entity.getAccountId())) {
+            checkIfStateExecutionIsStartingOrRunningWithoutResponse(stateExecutionInstance, now, entity.getEnvId());
+          }
+
+          if (shouldAvoidExpiringWithThreshold(stateExecutionInstance, now)) {
+            continue;
+          }
+
+          if (stateExecutionInstance.getExpiryTs() > now) {
             continue;
           }
 
@@ -225,5 +239,38 @@ public class WorkflowExecutionMonitorHandler implements Handler<WorkflowExecutio
                                                         .unset(WorkflowExecutionKeys.message);
 
     wingsPersistence.findAndModify(query, updateOps, HPersistence.returnNewOptions);
+  }
+
+  private void checkIfStateExecutionIsStartingOrRunningWithoutResponse(
+      StateExecutionInstance stateExecutionInstance, long currentTimeMillis, String envId) {
+    if (stateExecutionInstance.getStateType() != null && !stateExecutionInstance.getStateType().equals(PHASE.getType())
+        && !stateExecutionInstance.getStateType().equals(PHASE_STEP.getType())
+        && stateExecutionInstance.getStatus().equals(ExecutionStatus.STARTING)
+        && (currentTimeMillis - stateExecutionInstance.getStartTs()) > EXPIRE_THRESHOLD.toMillis()) {
+      log.info("Restart StateExecutionInstance found: {}", stateExecutionInstance.getUuid());
+      ExecutionInterrupt executionInterrupt = anExecutionInterrupt()
+                                                  .accountId(stateExecutionInstance.getAccountId())
+                                                  .executionInterruptType(ExecutionInterruptType.RETRY)
+                                                  .envId(envId)
+                                                  .appId(stateExecutionInstance.getAppId())
+                                                  .executionUuid(stateExecutionInstance.getExecutionUuid())
+                                                  .stateExecutionInstanceId(stateExecutionInstance.getUuid())
+                                                  .build();
+
+      executionInterruptManager.registerExecutionInterrupt(executionInterrupt);
+    }
+  }
+
+  private boolean shouldAvoidExpiringWithThreshold(
+      StateExecutionInstance stateExecutionInstance, long currentTimeMillis) {
+    // adding a expire threshold just for shell script for now
+    if (stateExecutionInstance.getStateType() != null
+        && stateExecutionInstance.getStateType().equals(SHELL_SCRIPT.getName())) {
+      if (stateExecutionInstance.getExpiryTs() < currentTimeMillis
+          && stateExecutionInstance.getExpiryTs() + SHELL_SCRIPT_EXPIRE_THRESHOLD.toMillis() > currentTimeMillis) {
+        return true;
+      }
+    }
+    return false;
   }
 }

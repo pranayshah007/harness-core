@@ -257,12 +257,12 @@ public class StepUtilsTest extends CategoryTest {
   public void testCreateStepResponseFromChildResponse() {
     Map<String, ResponseData> responseDataMap = new HashMap<>();
     responseDataMap.put("key1", StepResponseNotifyData.builder().nodeUuid("nodeUuid").status(Status.SUCCEEDED).build());
-    StepResponse stepResponse = StepUtils.createStepResponseFromChildResponse(responseDataMap);
+    StepResponse stepResponse = SdkCoreStepUtils.createStepResponseFromChildResponse(responseDataMap);
     assertNull(stepResponse.getFailureInfo());
     assertEquals(stepResponse.getStatus(), Status.SUCCEEDED);
     responseDataMap.put("key2",
         StepResponseNotifyData.builder().failureInfo(FailureInfo.newBuilder().build()).status(Status.FAILED).build());
-    stepResponse = StepUtils.createStepResponseFromChildResponse(responseDataMap);
+    stepResponse = SdkCoreStepUtils.createStepResponseFromChildResponse(responseDataMap);
     assertNotNull(stepResponse.getFailureInfo());
     assertEquals(stepResponse.getStatus(), Status.FAILED);
   }
@@ -279,13 +279,13 @@ public class StepUtilsTest extends CategoryTest {
             .failureInfo(
                 FailureInfo.newBuilder().addFailureData(FailureData.newBuilder().setMessage("abcd").build()).build())
             .build());
-    StepResponse stepResponse = StepUtils.createStepResponseFromChildResponse(responseDataMap);
+    StepResponse stepResponse = SdkCoreStepUtils.createStepResponseFromChildResponse(responseDataMap);
     responseDataMap.put("key2",
         StepResponseNotifyData.builder()
             .failureInfo(FailureInfo.newBuilder().addFailureData(FailureData.newBuilder().build()).build())
             .status(Status.FAILED)
             .build());
-    stepResponse = StepUtils.createStepResponseFromChildResponse(responseDataMap);
+    stepResponse = SdkCoreStepUtils.createStepResponseFromChildResponse(responseDataMap);
     assertNotNull(stepResponse.getFailureInfo());
     assertEquals(stepResponse.getFailureInfo().getFailureDataCount(), 2);
     assertEquals(stepResponse.getStatus(), Status.FAILED);
@@ -321,14 +321,14 @@ public class StepUtilsTest extends CategoryTest {
     TaskCategory taskCategory = TaskCategory.DELEGATE_TASK_V1;
 
     TaskRequest taskRequest = StepUtils.prepareTaskRequest(ambiance, taskData, kryoSerializer, taskCategory, null,
-        false, "taskName", null, Scope.ACCOUNT, EnvironmentType.NON_PROD);
+        false, "taskName", null, Scope.ACCOUNT, EnvironmentType.NON_PROD, false, Collections.emptyList());
     assertEquals(taskRequest.getDelegateTaskRequest().getRequest().getAccountId().getId(), accountId);
     assertEquals(taskRequest.getTaskCategory(), taskCategory);
     assertNotNull(taskRequest.getDelegateTaskRequest());
     assertEquals(taskRequest.getDelegateTaskRequest().getTaskName(), "taskName");
 
     taskRequest = StepUtils.prepareTaskRequest(ambiance, taskData, kryoSerializer, taskCategory, null, false, null,
-        null, Scope.ACCOUNT, EnvironmentType.NON_PROD);
+        null, Scope.ACCOUNT, EnvironmentType.NON_PROD, false, Collections.emptyList());
     assertEquals(taskRequest.getTaskCategory(), taskCategory);
     assertEquals(taskRequest.getDelegateTaskRequest().getRequest().getAccountId().getId(), accountId);
     assertNotNull(taskRequest.getDelegateTaskRequest());
@@ -337,7 +337,7 @@ public class StepUtilsTest extends CategoryTest {
 
     taskData.setAsync(true);
     taskRequest = StepUtils.prepareTaskRequest(ambiance, taskData, kryoSerializer, taskCategory, null, false, null,
-        null, Scope.ACCOUNT, EnvironmentType.NON_PROD);
+        null, Scope.ACCOUNT, EnvironmentType.NON_PROD, false, Collections.emptyList());
     assertEquals(taskRequest.getDelegateTaskRequest().getRequest().getAccountId().getId(), accountId);
     assertNotNull(taskRequest.getDelegateTaskRequest());
     assertEquals(taskRequest.getDelegateTaskRequest().getTaskName(), taskData.getTaskType());

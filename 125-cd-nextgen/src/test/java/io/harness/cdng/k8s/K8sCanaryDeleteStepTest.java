@@ -28,6 +28,7 @@ import static org.mockito.Mockito.verify;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.k8s.beans.K8sCanaryExecutionOutput;
 import io.harness.cdng.k8s.beans.K8sExecutionPassThroughData;
@@ -63,7 +64,7 @@ import org.mockito.MockitoAnnotations;
 @OwnedBy(CDP)
 public class K8sCanaryDeleteStepTest extends CategoryTest {
   @Mock private K8sStepHelper k8sStepHelper;
-
+  @Mock private CDStepHelper cdStepHelper;
   @InjectMocks private K8sCanaryDeleteStep canaryDeleteStep;
 
   @Mock private InfrastructureOutcome infrastructureOutcome;
@@ -88,9 +89,9 @@ public class K8sCanaryDeleteStepTest extends CategoryTest {
   public void setUp() {
     MockitoAnnotations.initMocks(this);
 
-    doReturn(infrastructureOutcome).when(k8sStepHelper).getInfrastructureOutcome(any());
-    doReturn(releaseName).when(k8sStepHelper).getReleaseName(ambiance, infrastructureOutcome);
-    doReturn(releaseName).when(k8sStepHelper).getReleaseName(rollback, infrastructureOutcome);
+    doReturn(infrastructureOutcome).when(cdStepHelper).getInfrastructureOutcome(any());
+    doReturn(releaseName).when(cdStepHelper).getReleaseName(ambiance, infrastructureOutcome);
+    doReturn(releaseName).when(cdStepHelper).getReleaseName(rollback, infrastructureOutcome);
     doReturn(OptionalSweepingOutput.builder().found(false).build())
         .when(executionSweepingOutputService)
         .resolveOptional(ambiance,

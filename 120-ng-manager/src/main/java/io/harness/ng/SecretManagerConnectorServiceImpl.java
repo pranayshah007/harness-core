@@ -15,6 +15,7 @@ import static io.harness.git.model.ChangeType.NONE;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.common.EntityReference;
+import io.harness.connector.CombineCcmK8sConnectorResponseDTO;
 import io.harness.connector.ConnectorCatalogueResponseDTO;
 import io.harness.connector.ConnectorCategory;
 import io.harness.connector.ConnectorDTO;
@@ -32,6 +33,7 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.awskmsconnector.AwsKmsConnectorDTO;
 import io.harness.delegate.beans.connector.awssecretmanager.AwsSecretManagerDTO;
 import io.harness.delegate.beans.connector.azurekeyvaultconnector.AzureKeyVaultConnectorDTO;
+import io.harness.delegate.beans.connector.customsecretmanager.CustomSecretManagerConnectorDTO;
 import io.harness.delegate.beans.connector.gcpkmsconnector.GcpKmsConnectorDTO;
 import io.harness.delegate.beans.connector.localconnector.LocalConnectorDTO;
 import io.harness.delegate.beans.connector.vaultconnector.VaultConnectorDTO;
@@ -162,6 +164,8 @@ public class SecretManagerConnectorServiceImpl implements ConnectorService {
         return ((AwsSecretManagerDTO) connector.getConnectorConfig()).isDefault();
       case LOCAL:
         return ((LocalConnectorDTO) connector.getConnectorConfig()).isDefault();
+      case CUSTOM_SECRET_MANAGER:
+        return ((CustomSecretManagerConnectorDTO) connector.getConnectorConfig()).isDefault();
       default:
         throw new SecretManagementException(ErrorCode.SECRET_MANAGEMENT_ERROR,
             String.format("Unsupported Secret Manager type [%s]", connector.getConnectorType()), WingsException.USER);
@@ -349,6 +353,16 @@ public class SecretManagerConnectorServiceImpl implements ConnectorService {
   public void deleteBatch(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> connectorIdentifierList) {
     defaultConnectorService.deleteBatch(accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifierList);
+  }
+
+  @Override
+  public Page<CombineCcmK8sConnectorResponseDTO> listCcmK8S(int page, int size, String accountIdentifier,
+      ConnectorFilterPropertiesDTO filterProperties, String orgIdentifier, String projectIdentifier,
+      String filterIdentifier, String searchTerm, Boolean includeAllConnectorsAccessibleAtScope,
+      Boolean getDistinctFromBranches) {
+    return defaultConnectorService.listCcmK8S(page, size, accountIdentifier, filterProperties, orgIdentifier,
+        projectIdentifier, filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope,
+        getDistinctFromBranches);
   }
 
   @Override

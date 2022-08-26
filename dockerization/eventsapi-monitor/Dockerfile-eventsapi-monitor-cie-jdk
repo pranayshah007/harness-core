@@ -7,6 +7,9 @@
 
 FROM us.gcr.io/platform-205701/ubi/ubi-java:latest as base
 USER root
+
+RUN microdnf install yum
+
 # Add the capsule JAR and other files
 COPY --chown=65534:65534 eventsapi-monitor-capsule.jar /opt/harness/
 COPY --chown=65534:65534 config.yml /opt/harness/
@@ -15,6 +18,8 @@ COPY --chown=65534:65534 install_redis.sh /opt/harness/
 COPY --chown=65534:65534 protocol.info /opt/harness/
 
 COPY --chown=65534:65534 scripts /opt/harness
+
+RUN microdnf install yum
 
 RUN yum install -y gcc gcc-c++ openssl wget openssl-devel
 

@@ -18,6 +18,7 @@ public class KustomizeManifestDelegateConfig implements ManifestDelegateConfig {
   StoreDelegateConfig storeDelegateConfig;
   String pluginPath;
   String kustomizeDirPath;
+  String kustomizeYamlFolderPath;
 
   @Override
   public ManifestType getManifestType() {

@@ -18,7 +18,6 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
-import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureFlag;
@@ -30,10 +29,8 @@ import io.harness.cf.client.api.CfClient;
 import io.harness.cf.client.dto.Target;
 import io.harness.configuration.DeployMode;
 import io.harness.exception.InvalidRequestException;
-import io.harness.ng.core.dto.AccountDTO;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.PersistentEntity;
-import io.harness.remote.client.RestClientUtils;
 import io.harness.serializer.JsonUtils;
 
 import com.google.common.base.Splitter;
@@ -70,19 +67,16 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
   private final CfMigrationConfig cfMigrationConfig;
   private final Provider<CfClient> cfClient;
   private final FeatureFlagConfig featureFlagConfig;
-  private Optional<AccountClient> optionalAccountClient;
 
   @Inject
   public FeatureFlagServiceImpl(HPersistence hPersistence, CfMigrationService cfMigrationService,
-      CfMigrationConfig cfMigrationConfig, Provider<CfClient> cfClient, FeatureFlagConfig featureFlagConfig,
-      Optional<AccountClient> optionalAccountClient) {
+      CfMigrationConfig cfMigrationConfig, Provider<CfClient> cfClient, FeatureFlagConfig featureFlagConfig) {
     this.persistence = hPersistence;
     this.cfMigrationService = cfMigrationService;
     this.cfMigrationConfig = cfMigrationConfig;
     this.cfClient = cfClient;
     this.featureFlagConfig = featureFlagConfig;
     this.cache = new HashMap<>();
-    this.optionalAccountClient = optionalAccountClient;
   }
 
   @Override
@@ -229,17 +223,7 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
        */
       accountId = FeatureFlagConstants.STATIC_ACCOUNT_ID;
     }
-    String name;
-    log.info("Fetching account name for account id " + accountId);
-    if (optionalAccountClient.isPresent()) {
-      AccountDTO accountDTO = RestClientUtils.getResponse(optionalAccountClient.get().getAccountDTO(accountId));
-      name = accountDTO.getName();
-      log.info("Account name is " + name);
-    } else {
-      log.info("Account client is absent, using account ID as name");
-      name = accountId;
-    }
-    Target target = Target.builder().identifier(accountId).name(name).build();
+    Target target = Target.builder().identifier(accountId).name(accountId).build();
     return cfClient.get().boolVariation(featureName.name(), target, false);
   }
 
@@ -376,9 +360,15 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
           ? emptyList()
           : Splitter.on(',').omitEmptyStrings().trimResults().splitToList(featureNames);
       for (String name : definedNames) {
+        boolean isEnabled = enabled.contains(name);
+        UpdateOperations<FeatureFlag> updateQuery =
+            persistence.createUpdateOperations(FeatureFlag.class).set(FeatureFlagKeys.enabled, isEnabled);
+        if (!isEnabled) {
+          updateQuery.unset(FeatureFlagKeys.accountIds);
+        }
         persistence.update(
             persistence.createQuery(FeatureFlag.class, excludeAuthority).filter(FeatureFlagKeys.name, name),
-            persistence.createUpdateOperations(FeatureFlag.class).set(FeatureFlagKeys.enabled, enabled.contains(name)));
+            updateQuery);
       }
     }
     /**

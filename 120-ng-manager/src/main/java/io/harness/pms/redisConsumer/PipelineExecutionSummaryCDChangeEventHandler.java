@@ -9,13 +9,12 @@ package io.harness.pms.redisConsumer;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.pms.plan.execution.PipelineExecutionSummaryKeys;
 import io.harness.redisHandler.RedisAbstractHandler;
-import io.harness.timescaledb.DBUtils;
 import io.harness.timescaledb.Tables;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
-import com.mongodb.DBObject;
 import java.util.HashMap;
 import java.util.List;
 import lombok.SneakyThrows;
@@ -32,7 +31,7 @@ public class PipelineExecutionSummaryCDChangeEventHandler extends RedisAbstractH
   @SneakyThrows
   public Record createRecord(String value, String id) {
     JsonNode node = objectMapper.readTree(value);
-    JsonNode moduleInfo = node.get("moduleInfo");
+    JsonNode moduleInfo = node.get(PipelineExecutionSummaryKeys.moduleInfo);
     if (moduleInfo == null || moduleInfo.get("cd") == null) {
       return null;
     }
@@ -40,115 +39,125 @@ public class PipelineExecutionSummaryCDChangeEventHandler extends RedisAbstractH
     record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.ID, id);
     record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.MODULEINFO_TYPE, "CD");
 
-    if (node.get("accountId") != null) {
-      record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.ACCOUNTID, node.get("accountId").asText());
+    if (node.get(PipelineExecutionSummaryKeys.accountId) != null) {
+      record.set(
+          Tables.PIPELINE_EXECUTION_SUMMARY_CD.ACCOUNTID, node.get(PipelineExecutionSummaryKeys.accountId).asText());
     }
-    if (node.get("orgIdentifier") != null) {
-      record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.ORGIDENTIFIER, node.get("orgIdentifier").asText());
+    if (node.get(PipelineExecutionSummaryKeys.orgIdentifier) != null) {
+      record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.ORGIDENTIFIER,
+          node.get(PipelineExecutionSummaryKeys.orgIdentifier).asText());
     }
-    if (node.get("pipelineIdentifier") != null) {
-      record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.PIPELINEIDENTIFIER, node.get("pipelineIdentifier").asText());
+    if (node.get(PipelineExecutionSummaryKeys.pipelineIdentifier) != null) {
+      record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.PIPELINEIDENTIFIER,
+          node.get(PipelineExecutionSummaryKeys.pipelineIdentifier).asText());
     }
-    if (node.get("projectIdentifier") != null) {
-      record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.PROJECTIDENTIFIER, node.get("projectIdentifier").asText());
+    if (node.get(PipelineExecutionSummaryKeys.projectIdentifier) != null) {
+      record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.PROJECTIDENTIFIER,
+          node.get(PipelineExecutionSummaryKeys.projectIdentifier).asText());
     }
-    if (node.get("planExecutionId") != null) {
-      record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.PLANEXECUTIONID, node.get("planExecutionId").asText());
+    if (node.get(PipelineExecutionSummaryKeys.planExecutionId) != null) {
+      record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.PLANEXECUTIONID,
+          node.get(PipelineExecutionSummaryKeys.planExecutionId).asText());
     }
-    if (node.get("name") != null) {
-      record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.NAME, node.get("name").asText());
+    if (node.get(PipelineExecutionSummaryKeys.name) != null) {
+      record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.NAME, node.get(PipelineExecutionSummaryKeys.name).asText());
     }
-    if (node.get("status") != null) {
-      record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.STATUS, node.get("status").asText());
+    if (node.get(PipelineExecutionSummaryKeys.status) != null) {
+      record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.STATUS, node.get(PipelineExecutionSummaryKeys.status).asText());
     }
 
-    if (node.get("startTs") != null) {
-      record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.STARTTS, node.get("startTs").asLong());
+    if (node.get(PipelineExecutionSummaryKeys.startTs) != null) {
+      record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.STARTTS, node.get(PipelineExecutionSummaryKeys.startTs).asLong());
     }
-    if (node.get("endTs") != null) {
-      record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.ENDTS, node.get("endTs").asLong());
+    if (node.get(PipelineExecutionSummaryKeys.endTs) != null) {
+      record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.ENDTS, node.get(PipelineExecutionSummaryKeys.endTs).asLong());
     }
-    if (node.get("executionTriggerInfo") != null) {
-      if (node.get("executionTriggerInfo").get("triggerType") != null) {
+    if (node.get(PipelineExecutionSummaryKeys.executionTriggerInfo) != null) {
+      if (node.get(PipelineExecutionSummaryKeys.executionTriggerInfo).get(PipelineExecutionSummaryKeys.triggerType)
+          != null) {
         record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.TRIGGER_TYPE,
-            node.get("executionTriggerInfo").get("triggerType").asText());
+            node.get(PipelineExecutionSummaryKeys.executionTriggerInfo)
+                .get(PipelineExecutionSummaryKeys.triggerType)
+                .asText());
       }
-      if (node.get("executionTriggerInfo").get("triggeredBy") != null
-          && node.get("executionTriggerInfo").get("triggeredBy").get("identifier") != null) {
+      if (node.get(PipelineExecutionSummaryKeys.executionTriggerInfo).get(PipelineExecutionSummaryKeys.triggeredBy)
+              != null
+          && node.get(PipelineExecutionSummaryKeys.executionTriggerInfo)
+                  .get(PipelineExecutionSummaryKeys.triggeredBy)
+                  .get(PipelineExecutionSummaryKeys.executionTriggerInfoIdentifier)
+              != null) {
         record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.MODULEINFO_AUTHOR_ID,
-            node.get("executionTriggerInfo").get("triggeredBy").get("identifier").asText());
+            node.get(PipelineExecutionSummaryKeys.executionTriggerInfo)
+                .get(PipelineExecutionSummaryKeys.triggeredBy)
+                .get(PipelineExecutionSummaryKeys.executionTriggerInfoIdentifier)
+                .asText());
       }
     }
 
-    if (node.get("moduleInfo").get("ci") != null) {
-      JsonNode ciObject = node.get("moduleInfo").get("ci");
-      JsonNode ciExecutionInfo = ciObject.get("ciExecutionInfoDTO");
-      if (ciObject.get("repoName") != null) {
-        record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.MODULEINFO_REPOSITORY, ciObject.get("repoName").toString());
+    if (node.get(PipelineExecutionSummaryKeys.moduleInfo).get("ci") != null) {
+      JsonNode ciObject = node.get(PipelineExecutionSummaryKeys.moduleInfo).get("ci");
+      JsonNode ciExecutionInfo = ciObject.get(PipelineExecutionSummaryKeys.ciExecutionInfoDTO);
+      if (ciObject.get(PipelineExecutionSummaryKeys.repoName) != null) {
+        record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.MODULEINFO_REPOSITORY,
+            ciObject.get(PipelineExecutionSummaryKeys.repoName).toString());
       }
 
-      if (ciObject.get("branch") != null) {
-        record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.MODULEINFO_BRANCH_NAME, ciObject.get("branch").toString());
+      if (ciObject.get(PipelineExecutionSummaryKeys.branch) != null) {
+        record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.MODULEINFO_BRANCH_NAME,
+            ciObject.get(PipelineExecutionSummaryKeys.branch).toString());
       }
-
-      //            if (ciObject.get("isPrivateRepo") != null) {
-      //              fields.add(Tables.PIPELINE_EXECUTION_SUMMARY_CD.MOd)
-      //              columnValueMapping.put("moduleinfo_is_private", ciObject.get("isPrivateRepo").toString());
-      //            }
 
       if (ciExecutionInfo != null) {
-        DBObject branch = (DBObject) (ciExecutionInfo.get("branch"));
+        JsonNode branch = ciExecutionInfo.get(PipelineExecutionSummaryKeys.branch);
 
         HashMap firstCommit;
-        String commits = "commits";
+        String commits = PipelineExecutionSummaryKeys.commits;
         if (branch != null && branch.get(commits) != null && ((List) branch.get(commits)).size() > 0) {
           firstCommit = (HashMap) ((List) branch.get(commits)).get(0);
           if (firstCommit != null) {
-            if (firstCommit.get("id") != null) {
-              record.set(
-                  Tables.PIPELINE_EXECUTION_SUMMARY_CD.MODULEINFO_BRANCH_COMMIT_ID, firstCommit.get("id").toString());
+            if (firstCommit.get(PipelineExecutionSummaryKeys.commitId) != null) {
+              record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.MODULEINFO_BRANCH_COMMIT_ID,
+                  firstCommit.get(PipelineExecutionSummaryKeys.commitId).toString());
             }
-            if (firstCommit.get("message") != null) {
+            if (firstCommit.get(PipelineExecutionSummaryKeys.commitMessage) != null) {
               record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.MODULEINFO_BRANCH_COMMIT_MESSAGE,
-                  firstCommit.get("message").toString());
+                  firstCommit.get(PipelineExecutionSummaryKeys.commitMessage).toString());
             }
           }
-        } else if (ciExecutionInfo.get("pullRequest") != null) {
-          DBObject pullRequestObject = (DBObject) ciExecutionInfo.get("pullRequest");
+        } else if (ciExecutionInfo.get(PipelineExecutionSummaryKeys.pullRequest) != null) {
+          JsonNode pullRequestObject = ciExecutionInfo.get(PipelineExecutionSummaryKeys.pullRequest);
 
-          if (pullRequestObject.get("sourceBranch") != null) {
-            record.set(
-                Tables.PIPELINE_EXECUTION_SUMMARY_CD.SOURCE_BRANCH, pullRequestObject.get("sourceBranch").toString());
+          if (pullRequestObject.get(PipelineExecutionSummaryKeys.sourceBranch) != null) {
+            record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.SOURCE_BRANCH,
+                pullRequestObject.get(PipelineExecutionSummaryKeys.sourceBranch).toString());
           }
-
-          //          if (pullRequestObject.get("id") != null) {
-          //            fields.add(Tables.PIPELINE_EXECUTION_SUMMARY_CD.PR)
-          //            columnValueMapping.put("pr",
-          //            String.valueOf(Long.parseLong(pullRequestObject.get("id").toString())));
-          //          }
 
           if (pullRequestObject.get(commits) != null && ((List) pullRequestObject.get(commits)).size() > 0) {
             firstCommit = (HashMap) ((List) pullRequestObject.get(commits)).get(0);
             if (firstCommit != null) {
-              if (firstCommit.get("id") != null) {
-                record.set(
-                    Tables.PIPELINE_EXECUTION_SUMMARY_CD.MODULEINFO_BRANCH_COMMIT_ID, firstCommit.get("id").toString());
+              if (firstCommit.get(PipelineExecutionSummaryKeys.commitId) != null) {
+                record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.MODULEINFO_BRANCH_COMMIT_ID,
+                    firstCommit.get(PipelineExecutionSummaryKeys.commitId).toString());
               }
-              if (firstCommit.get("message") != null) {
+              if (firstCommit.get(PipelineExecutionSummaryKeys.commitMessage) != null) {
                 record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.MODULEINFO_BRANCH_COMMIT_MESSAGE,
-                    firstCommit.get("message").toString());
+                    firstCommit.get(PipelineExecutionSummaryKeys.commitMessage).toString());
               }
             }
           }
         }
-        DBObject author = (DBObject) (ciExecutionInfo.get("author"));
+        JsonNode author = ciExecutionInfo.get(PipelineExecutionSummaryKeys.author);
         if (author != null) {
-          record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.MODULEINFO_AUTHOR_ID, author.get("id").toString());
-          record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.AUTHOR_NAME, author.get("name").toString());
-          record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.AUTHOR_AVATAR, author.get("avatar").toString());
+          record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.MODULEINFO_AUTHOR_ID,
+              author.get(PipelineExecutionSummaryKeys.commitId).toString());
+          record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.AUTHOR_NAME,
+              author.get(PipelineExecutionSummaryKeys.name).toString());
+          record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.AUTHOR_AVATAR,
+              author.get(PipelineExecutionSummaryKeys.avatar).toString());
         }
-        if (ciExecutionInfo.get("event") != null) {
-          record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.MODULEINFO_EVENT, ciExecutionInfo.get("event").toString());
+        if (ciExecutionInfo.get(PipelineExecutionSummaryKeys.event) != null) {
+          record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.MODULEINFO_EVENT,
+              ciExecutionInfo.get(PipelineExecutionSummaryKeys.event).toString());
         }
       }
     }
@@ -165,14 +174,13 @@ public class PipelineExecutionSummaryCDChangeEventHandler extends RedisAbstractH
       dsl.insertInto(Tables.PIPELINE_EXECUTION_SUMMARY_CD)
           .set(record)
           .onConflict(Tables.PIPELINE_EXECUTION_SUMMARY_CD.ID, Tables.PIPELINE_EXECUTION_SUMMARY_CD.STARTTS)
-          .doNothing()
+          .doUpdate()
+          .set(record)
           .execute();
-      log.info("Successfully inserted data for id {}", id);
+      log.debug("Successfully inserted data for id {}", id);
     } catch (DataAccessException ex) {
       log.error("Caught Exception while inserting data", ex);
-      if (DBUtils.isConnectionError(ex)) {
-        return false;
-      }
+      return false;
     }
     return true;
   }
@@ -181,12 +189,10 @@ public class PipelineExecutionSummaryCDChangeEventHandler extends RedisAbstractH
   public boolean handleDeleteEvent(String id) {
     try {
       dsl.delete(Tables.PIPELINE_EXECUTION_SUMMARY_CD).where(Tables.PIPELINE_EXECUTION_SUMMARY_CD.ID.eq(id)).execute();
-      log.info("Successfully deleted data for id {}", id);
+      log.debug("Successfully deleted data for id {}", id);
     } catch (DataAccessException ex) {
       log.error("Caught Exception while deleting data", ex);
-      if (DBUtils.isConnectionError(ex)) {
-        return false;
-      }
+      return false;
     }
     return true;
   }
@@ -204,12 +210,10 @@ public class PipelineExecutionSummaryCDChangeEventHandler extends RedisAbstractH
           .doUpdate()
           .set(record)
           .execute();
-      log.info("Successfully updated data for id {}", id);
+      log.debug("Successfully updated data for id {}", id);
     } catch (DataAccessException ex) {
       log.error("Caught Exception while updating data", ex);
-      if (DBUtils.isConnectionError(ex)) {
-        return false;
-      }
+      return false;
     }
     return true;
   }

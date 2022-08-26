@@ -11,6 +11,7 @@ import static io.harness.data.structure.UUIDGenerator.convertBase64UuidToCanonic
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.filesystem.FileIo.createDirectoryIfDoesNotExist;
 import static io.harness.filesystem.FileIo.waitForDirectoryToBeAccessibleOutOfProcess;
+import static io.harness.filesystem.FileIo.writeUtf8StringToFile;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 
 import static java.lang.String.format;
@@ -19,6 +20,8 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
+import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
+import io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO;
 import io.harness.delegate.beans.logstreaming.CommandUnitProgress;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
@@ -29,16 +32,20 @@ import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.ManifestDelegateConfigHelper;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
+import io.harness.delegate.task.k8s.GcpK8sInfraDelegateConfig;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
+import io.harness.k8s.K8sConstants;
 import io.harness.k8s.K8sGlobalConfigService;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
 
 import com.google.inject.Inject;
+import java.io.IOException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -84,6 +91,9 @@ public class HelmCommandTaskNG extends AbstractDelegateRunnableTask {
   public HelmCmdExecResponseNG run(TaskParameters parameters) {
     helmDeployServiceNG.setLogStreamingClient(this.getLogStreamingTaskClient());
     HelmCommandRequestNG helmCommandRequestNG = (HelmCommandRequestNG) parameters;
+    if (helmCommandRequestNG.getCommandUnitsProgress() == null) {
+      helmCommandRequestNG.setCommandUnitsProgress(CommandUnitsProgress.builder().build());
+    }
     HelmCommandResponseNG helmCommandResponseNG;
 
     String workingDirectory = Paths.get(WORKING_DIR_BASE, convertBase64UuidToCanonicalForm(generateUuid()))
@@ -160,15 +170,29 @@ public class HelmCommandTaskNG extends AbstractDelegateRunnableTask {
     containerDeploymentDelegateBaseHelper.decryptK8sInfraDelegateConfig(commandRequestNG.getK8sInfraDelegateConfig());
   }
 
-  private void init(HelmCommandRequestNG commandRequestNG, LogCallback logCallback) {
+  private void init(HelmCommandRequestNG commandRequestNG, LogCallback logCallback) throws IOException {
     commandRequestNG.setLogCallback(logCallback);
     logCallback.saveExecutionLog("Creating KubeConfig", LogLevel.INFO, CommandExecutionStatus.RUNNING);
     String configLocation = containerDeploymentDelegateBaseHelper.createKubeConfig(
         containerDeploymentDelegateBaseHelper.createKubernetesConfig(commandRequestNG.getK8sInfraDelegateConfig()));
     commandRequestNG.setKubeConfigLocation(configLocation);
-    commandRequestNG.setOcPath(k8sGlobalConfigService.getOcPath());
     logCallback.saveExecutionLog(
         "Setting KubeConfig\nKUBECONFIG_PATH=" + configLocation, LogLevel.INFO, CommandExecutionStatus.RUNNING);
+
+    if (commandRequestNG.getK8sInfraDelegateConfig() instanceof GcpK8sInfraDelegateConfig) {
+      GcpK8sInfraDelegateConfig gcpK8sInfraDelegateConfig =
+          (GcpK8sInfraDelegateConfig) commandRequestNG.getK8sInfraDelegateConfig();
+      GcpConnectorDTO gcpConnectorDTO = gcpK8sInfraDelegateConfig.getGcpConnectorDTO();
+      if (gcpConnectorDTO.getCredential().getConfig() instanceof GcpManualDetailsDTO) {
+        GcpManualDetailsDTO gcpManualDetailsDTO = (GcpManualDetailsDTO) gcpConnectorDTO.getCredential().getConfig();
+        char[] gcpFileKeyContent = gcpManualDetailsDTO.getSecretKeyRef().getDecryptedValue();
+        Path gcpKeyFilePath = Paths.get(commandRequestNG.getWorkingDir(), K8sConstants.GCP_JSON_KEY_FILE_NAME);
+        writeUtf8StringToFile(gcpKeyFilePath.toString(), String.valueOf(gcpFileKeyContent));
+        commandRequestNG.setGcpKeyPath(gcpKeyFilePath.toAbsolutePath().toString());
+        logCallback.saveExecutionLog("Created and Setting gcpFileKeyPath at: " + gcpKeyFilePath.toAbsolutePath(),
+            LogLevel.INFO, CommandExecutionStatus.RUNNING);
+      }
+    }
 
     ensureHelmInstalled(commandRequestNG);
     logCallback.saveExecutionLog("\nDone.", LogLevel.INFO, CommandExecutionStatus.SUCCESS);

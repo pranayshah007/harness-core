@@ -7,4 +7,17 @@
 
 package io.harness.cvng.statemachine.beans;
 
-public enum AnalysisOrchestratorStatus { @Deprecated CREATED, RUNNING, WAITING, COMPLETED }
+import java.util.Arrays;
+import java.util.List;
+
+public enum AnalysisOrchestratorStatus {
+  @Deprecated CREATED,
+  RUNNING,
+  WAITING,
+  COMPLETED,
+  TERMINATED;
+
+  public static List<AnalysisOrchestratorStatus> getFinalStates() {
+    return Arrays.asList(COMPLETED, TERMINATED);
+  }
+}

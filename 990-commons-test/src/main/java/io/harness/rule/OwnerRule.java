@@ -81,6 +81,7 @@ public class OwnerRule implements TestRule {
   public static final String ABHIJEET = "abhijeet.sharma";
   public static final String ABHIJITH = "abhijith.pradeep";
   public static final String ABHINAV = "abhinav.singh";
+  public static final String AKHIL_PANDEY = "akhilesh.pandey";
   public static final String ABHINAV2 = "abhinav.singh2";
   public static final String ABHISHEK = "abhishek.abhishek";
   public static final String ACHYUTH = "achyuth.prakash";
@@ -184,6 +185,7 @@ public class OwnerRule implements TestRule {
   public static final String SHASWAT = "shaswat.deep";
   public static final String SRIDHAR = "sridhar";
   public static final String SHIVAKUMAR = "shivakumar.ningappa";
+  public static final String SHREYAS = "shreyas.singh";
   public static final String SHUBHANSHU = "shubhanshu.verma";
   public static final String SOWMYA = "sowmya.k";
   public static final String SRINIVAS = "srinivas";
@@ -272,6 +274,7 @@ public class OwnerRule implements TestRule {
   public static final String SAHILDEEP = "sahildeep.singh";
   public static final String LUCAS_SALES = "lucas.sales";
   public static final String FERNANDOD = "fernando.dourado";
+  public static final String RAFAEL = "rafael.martins";
   public static final String SERGEY = "sergey.bobrov";
   public static final String RAGHAV_GUPTA = "raghav.gupta";
   public static final String SOUMYAJIT = "soumyajit.das";
@@ -286,6 +289,11 @@ public class OwnerRule implements TestRule {
   public static final String VIVEK_DIXIT = "vivek.dixit";
   public static final String SOURABH = "sourabh.awashti";
   public static final String VIKYATH_HAREKAL = "vikyath.harekal";
+  public static final String VINICIUS = "vinicius.calasans";
+  public static final String JAMES_RICKS = "james.ricks";
+  public static final String GAURAV_NANDA = "gaurav.nanda";
+  public static final String ANKIT_TIWARI = "ankit.tiwari";
+  public static final String VARSHA_LALWANI = "varsha.lalwani";
   @Deprecated public static final String UNKNOWN = "unknown";
 
   private static UserInfoBuilder defaultUserInfo(String user) {
@@ -298,6 +306,7 @@ public class OwnerRule implements TestRule {
           .put(ABHIJEET, defaultUserInfo(ABHIJEET).slack("U0395DJBXS7").team(CE).build())
           .put(ABHIJITH, defaultUserInfo(ABHIJITH).slack("U0270PE0T24").team(CV).build())
           .put(ABHINAV, defaultUserInfo(ABHINAV).slack("UQQPR8M6Y").team(DX).build())
+          .put(AKHIL_PANDEY, defaultUserInfo(AKHIL_PANDEY).slack("U0141LFM478").team(CDP).build())
           .put(ABHISHEK, defaultUserInfo(ABHISHEK).slack("U03F6BDAKTN").team(CDC).build())
           .put(ACHYUTH, defaultUserInfo(ACHYUTH).slack("U024FAWEZL7").team(CDP).build())
           .put(ADARSH, defaultUserInfo(ADARSH).slack("U01Q02K5LUR").team(CE).build())
@@ -402,6 +411,7 @@ public class OwnerRule implements TestRule {
           .put(SHASWAT, UserInfo.builder().email("shaswat.deep@harness.io").slack("UL9J5EH7A").build())
           .put(SRIDHAR, defaultUserInfo(SRIDHAR).slack("U03FVTU14CB").team(CDC).build())
           .put(SHIVAKUMAR, defaultUserInfo(SHIVAKUMAR).slack("U01124VC43C").team(CI).build())
+          .put(SHREYAS, defaultUserInfo(SHREYAS).slack("U03DL5XS3TM").team(PL).build())
           .put(SHUBHANSHU, defaultUserInfo(SHUBHANSHU).slack("UKLTRSAN9").team(CE).build())
           .put(SOWMYA, defaultUserInfo(SOWMYA).slack("UHM19HBKM").team(CV).build())
           .put(SRINIVAS, defaultUserInfo(SRINIVAS).slack("U4QC23961").team(CDC).build())
@@ -489,6 +499,7 @@ public class OwnerRule implements TestRule {
           .put(HEN, defaultUserInfo(HEN).slack("U02MD3UMWUA").team(CI).build())
           .put(SAHILDEEP, defaultUserInfo(SAHILDEEP).slack("U036DV63D1V").team(CE).build())
           .put(LUCAS_SALES, defaultUserInfo(LUCAS_SALES).slack("U038PURJS69").team(SPG).build())
+          .put(RAFAEL, defaultUserInfo(RAFAEL).slack("U03MRUNB8AD").team(SPG).build())
           .put(FERNANDOD, defaultUserInfo(FERNANDOD).slack("U039ESJUMFA").team(SPG).build())
           .put(SERGEY, defaultUserInfo(SERGEY).slack("U02N2AF83FA").team(STO).build())
           .put(RAGHAV_GUPTA, defaultUserInfo(RAGHAV_GUPTA).slack("U039P8DQPL5").team(CI).build())
@@ -503,6 +514,11 @@ public class OwnerRule implements TestRule {
           .put(VIVEK_DIXIT, defaultUserInfo(VIVEK_DIXIT).slack("U03JU7GQ464").team(CDC).build())
           .put(SOURABH, defaultUserInfo(SOURABH).slack("U03J4CFGQH1").team(CDP).build())
           .put(VIKYATH_HAREKAL, defaultUserInfo(VIKYATH_HAREKAL).slack("U03JNRMSLSK").team(CDP).build())
+          .put(VINICIUS, defaultUserInfo(VINICIUS).slack("U03N9NKBLS3").team(SPG).build())
+          .put(JAMES_RICKS, defaultUserInfo(JAMES_RICKS).slack("U03FVTUD5J7").team(CI).build())
+          .put(GAURAV_NANDA, defaultUserInfo(GAURAV_NANDA).slack("U03E7JHB70C").team(PL).build())
+          .put(ANKIT_TIWARI, defaultUserInfo(ANKIT_TIWARI).slack("U03S7RGTEBS").team(CDC).build())
+          .put(VARSHA_LALWANI, defaultUserInfo(VARSHA_LALWANI).slack("U03U3QQDQL8").team(CV).build())
           .build();
 
   private static String prDeveloperId = findDeveloperId(System.getenv(GHPRB_PULL_AUTHOR_EMAIL));

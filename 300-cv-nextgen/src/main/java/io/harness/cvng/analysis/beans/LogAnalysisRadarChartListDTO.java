@@ -11,6 +11,8 @@ import static io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.ClusterTyp
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -32,11 +34,14 @@ public class LogAnalysisRadarChartListDTO implements Comparable<LogAnalysisRadar
   DeploymentLogAnalysisDTO.ClusterType clusterType;
   int count;
   @Deprecated List<Double> frequencyData;
-  List<DeploymentLogAnalysisDTO.HostFrequencyData> hostFrequencyData;
+  List<DeploymentLogAnalysisDTO.HostFrequencyData> hostFrequencyData = new ArrayList<>();
   LogAnalysisRadarChartListDTO baseline;
   List<DeploymentLogAnalysisDTO.TimestampFrequencyCount> averageFrequencyData;
   public List<DeploymentLogAnalysisDTO.TimestampFrequencyCount> getAverageFrequencyData() {
-    return DeploymentLogAnalysisDTO.HostFrequencyData.generateAverageTimeFrequencyList(hostFrequencyData);
+    if (CollectionUtils.isNotEmpty(hostFrequencyData)) {
+      return DeploymentLogAnalysisDTO.HostFrequencyData.generateAverageTimeFrequencyList(hostFrequencyData);
+    }
+    return Collections.emptyList();
   }
 
   public List<Double> getFrequencyData() {

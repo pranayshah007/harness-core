@@ -11,9 +11,11 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
+import io.harness.cdng.azure.config.yaml.ApplicationSettingsConfiguration;
+import io.harness.cdng.azure.config.yaml.ConnectionStringsConfiguration;
+import io.harness.cdng.azure.config.yaml.StartupCommandConfiguration;
 import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
-import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.service.ServiceSpec;
 import io.harness.cdng.visitor.helpers.serviceconfig.AzureWebAppServiceSpecVisitorHelper;
 import io.harness.data.structure.EmptyPredicate;
@@ -50,9 +52,9 @@ public class AzureWebAppServiceSpec implements ServiceSpec, Visitable {
   List<ManifestConfigWrapper> manifests;
   List<ConfigFileWrapper> configFiles;
 
-  StoreConfigWrapper startupScript;
-  StoreConfigWrapper applicationSettings;
-  StoreConfigWrapper connectionStrings;
+  StartupCommandConfiguration startupCommand;
+  ApplicationSettingsConfiguration applicationSettings;
+  ConnectionStringsConfiguration connectionStrings;
 
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
@@ -78,8 +80,8 @@ public class AzureWebAppServiceSpec implements ServiceSpec, Visitable {
       configFiles.forEach(configFile -> children.add("configFiles", configFile));
     }
 
-    if (startupScript != null) {
-      children.add("startupScript", startupScript);
+    if (startupCommand != null) {
+      children.add("startupCommand", startupCommand);
     }
 
     if (applicationSettings != null) {

@@ -19,6 +19,7 @@ import lombok.experimental.FieldNameConstants;
 @OwnedBy(HarnessTeam.DX)
 @FieldNameConstants(innerTypeName = "ArtifactDetailsKeys")
 public class ArtifactDetails {
+  private String displayName;
   private String artifactId;
   private String tag; // this corresponds to the build number of the artifact
 }

@@ -111,6 +111,7 @@ public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, Ac
   private boolean profileError;
   private long profileExecutedAt;
   private boolean sampleDelegate;
+  private long expirationTime;
 
   @FdIndex Long capabilitiesCheckNextIteration;
 
@@ -125,6 +126,10 @@ public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, Ac
   private String delegateTokenName;
 
   private boolean heartbeatAsObject;
+
+  private boolean immutable;
+
+  private boolean mtls;
 
   @Override
   public void updateNextIteration(String fieldName, long nextIteration) {
@@ -147,5 +152,37 @@ public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, Ac
   public static final class DelegateKeys {
     public static final String owner_identifier = owner + "." + DelegateEntityOwnerKeys.identifier;
     public static final String searchTermFilter = "searchTermFilter";
+  }
+
+  public static Delegate getDelegateFromParams(DelegateParams delegateParams, boolean connectedUsingMtls) {
+    return Delegate.builder()
+        .uuid(delegateParams.getDelegateId())
+        .accountId(delegateParams.getAccountId())
+        .description(delegateParams.getDescription())
+        .ip(delegateParams.getIp())
+        .hostName(delegateParams.getHostName())
+        .delegateGroupName(delegateParams.getDelegateGroupName())
+        .delegateGroupId(delegateParams.getDelegateGroupId())
+        .delegateName(delegateParams.getDelegateName())
+        .delegateProfileId(delegateParams.getDelegateProfileId())
+        .lastHeartBeat(delegateParams.getLastHeartBeat())
+        .version(delegateParams.getVersion())
+        .sequenceNum(delegateParams.getSequenceNum())
+        .delegateType(delegateParams.getDelegateType())
+        .delegateRandomToken(delegateParams.getDelegateRandomToken())
+        .keepAlivePacket(delegateParams.isKeepAlivePacket())
+        .polllingModeEnabled(delegateParams.isPollingModeEnabled())
+        .ng(delegateParams.isNg())
+        .sampleDelegate(delegateParams.isSampleDelegate())
+        .currentlyExecutingDelegateTasks(delegateParams.getCurrentlyExecutingDelegateTasks())
+        .location(delegateParams.getLocation())
+        .mtls(connectedUsingMtls)
+        .heartbeatAsObject(delegateParams.isHeartbeatAsObject())
+        .supportedTaskTypes(delegateParams.getSupportedTaskTypes())
+        .proxy(delegateParams.isProxy())
+        .ceEnabled(delegateParams.isCeEnabled())
+        .immutable(delegateParams.isImmutable())
+        .tags(delegateParams.getTags())
+        .build();
   }
 }

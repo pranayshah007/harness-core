@@ -24,7 +24,11 @@ import io.harness.models.constants.InstanceSyncConstants;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.mongodb.client.result.UpdateResult;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.FindAndReplaceOptions;
@@ -57,16 +61,30 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
 
   @Override
   public List<Instance> getActiveInstancesByAccount(String accountIdentifier, long timestamp) {
-    Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier).is(accountIdentifier);
-    if (timestamp > 0) {
-      Criteria filterCreatedAt = Criteria.where(InstanceKeys.createdAt).lte(timestamp);
-      Criteria filterDeletedAt = Criteria.where(InstanceKeys.deletedAt).gte(timestamp);
-      Criteria filterNotDeleted = Criteria.where(InstanceKeys.isDeleted).is(false);
-      criteria.andOperator(filterCreatedAt.orOperator(filterNotDeleted, filterDeletedAt));
-    } else {
+    if (timestamp <= 0) {
+      Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier).is(accountIdentifier);
       criteria = criteria.andOperator(Criteria.where(InstanceKeys.isDeleted).is(false));
+      Query query = new Query().addCriteria(criteria);
+      return mongoTemplate.find(query, Instance.class);
     }
+    Set<Instance> instances = new HashSet<>();
+    instances.addAll(getInstancesCreatedBefore(accountIdentifier, timestamp));
+    instances.addAll(getInstancesDeletedAfter(accountIdentifier, timestamp));
+    return new ArrayList<>(instances);
+  }
 
+  private List<Instance> getInstancesCreatedBefore(String accountIdentifier, long timestamp) {
+    Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier).is(accountIdentifier);
+    criteria.andOperator(
+        Criteria.where(InstanceKeys.isDeleted).is(false), Criteria.where(InstanceKeys.createdAt).lte(timestamp));
+    Query query = new Query().addCriteria(criteria);
+    return mongoTemplate.find(query, Instance.class);
+  }
+
+  private List<Instance> getInstancesDeletedAfter(String accountIdentifier, long timestamp) {
+    Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier).is(accountIdentifier);
+    criteria.andOperator(
+        Criteria.where(InstanceKeys.deletedAt).gte(timestamp), Criteria.where(InstanceKeys.createdAt).lte(timestamp));
     Query query = new Query().addCriteria(criteria);
     return mongoTemplate.find(query, Instance.class);
   }
@@ -199,7 +217,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
 
   @Override
   public AggregationResults<ActiveServiceInstanceInfo> getActiveServiceInstanceInfo(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId, long timestampInMs) {
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId) {
     Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier)
                             .is(accountIdentifier)
                             .and(InstanceKeys.orgIdentifier)
@@ -214,7 +232,8 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
     MatchOperation matchStage = Aggregation.match(criteria);
     GroupOperation groupEnvId = group(InstanceKeys.infraIdentifier, InstanceKeys.infraName,
         InstanceKeys.lastPipelineExecutionId, InstanceKeys.lastPipelineExecutionName, InstanceKeys.lastDeployedAt,
-        InstanceKeys.envIdentifier, InstanceKeys.envName, InstanceSyncConstants.PRIMARY_ARTIFACT_TAG)
+        InstanceKeys.envIdentifier, InstanceKeys.envName, InstanceSyncConstants.PRIMARY_ARTIFACT_TAG,
+        InstanceSyncConstants.PRIMARY_ARTIFACT_DISPLAY_NAME)
                                     .count()
                                     .as(InstanceSyncConstants.COUNT);
     return mongoTemplate.aggregate(
@@ -321,5 +340,16 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
   public Instance findFirstInstance(Criteria criteria) {
     Query query = new Query().addCriteria(criteria);
     return mongoTemplate.findOne(query, Instance.class);
+  }
+
+  @Override
+  public UpdateResult updateInfrastructureMapping(List<String> instanceIds, String infrastructureMappingId) {
+    Criteria criteria = Criteria.where(InstanceKeys.id).in(instanceIds);
+    Query query = new Query();
+    query.addCriteria(criteria);
+
+    Update update = new Update();
+    update.set(InstanceKeys.infrastructureMappingId, infrastructureMappingId);
+    return mongoTemplate.updateMulti(query, update, Instance.class);
   }
 }

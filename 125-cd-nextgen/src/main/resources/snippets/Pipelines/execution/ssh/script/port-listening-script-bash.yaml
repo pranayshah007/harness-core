@@ -1,0 +1,12 @@
+# if [ -f "$server_xml" ]
+                        # then
+                        #   port=$(grep "<Connector[ ]*port=\"[0-9]*\"[ ]*protocol=\"HTTP/1.1\"" "$server_xml" |cut -d '"' -f2)
+                        #   nc -v -z -w 5 localhost $port
+                        #   rc=$?
+                        #   if [ "$rc" -eq 0 ]
+                        #   then
+                        #     exit 1
+                        #   fi
+                        # else
+                        #   echo "Tomcat config file("$server_xml") does not exist.. skipping port check."
+                        # fi

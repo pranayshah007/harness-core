@@ -193,7 +193,7 @@ public class K8sApplyStepTest extends AbstractK8sStepExecutorTestBase {
 
     final Exception thrownException = new GeneralException("Something went wrong");
 
-    when(k8sStepHelper.handleStepExceptionFailure(any()))
+    when(cdStepHelper.handleStepExceptionFailure(any()))
         .thenReturn(StepResponse.builder().status(Status.FAILED).build());
     StepResponse stepResponse = k8sApplyStep.finalizeExecutionWithSecurityContext(
         ambiance, stepElementParameters, passThroughData, () -> { throw thrownException; });
@@ -205,7 +205,7 @@ public class K8sApplyStepTest extends AbstractK8sStepExecutorTestBase {
         ambiance, stepElementParameters, helmValuesFetchResponsePassThroughData, () -> { throw thrownException; });
     assertThat(stepResponseHelm.getStatus()).isEqualTo(Status.FAILED);
 
-    when(k8sStepHelper.handleGitTaskFailure(any())).thenReturn(StepResponse.builder().status(Status.FAILED).build());
+    when(cdStepHelper.handleGitTaskFailure(any())).thenReturn(StepResponse.builder().status(Status.FAILED).build());
     StepResponse stepResponseGit = k8sApplyStep.finalizeExecutionWithSecurityContext(
         ambiance, stepElementParameters, gitFetchResponsePassThroughData, () -> { throw thrownException; });
     assertThat(stepResponseGit.getStatus()).isEqualTo(Status.FAILED);
@@ -236,9 +236,9 @@ public class K8sApplyStepTest extends AbstractK8sStepExecutorTestBase {
             }))
         .isNotNull();
 
-    verify(k8sStepHelper, times(1)).handleStepExceptionFailure(any());
+    verify(cdStepHelper, times(1)).handleStepExceptionFailure(any());
     verify(k8sStepHelper, times(1)).handleHelmValuesFetchFailure(any());
-    verify(k8sStepHelper, times(1)).handleGitTaskFailure(any());
+    verify(cdStepHelper, times(1)).handleGitTaskFailure(any());
     verify(k8sStepHelper, times(1)).handleTaskException(any(), any(), any());
   }
 

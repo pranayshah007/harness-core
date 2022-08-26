@@ -14,6 +14,7 @@ import io.harness.cdng.service.beans.ServiceYamlV2;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.preflight.PreFlightCheckMetadata;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.IdentifierRefProtoUtils;
@@ -43,12 +44,25 @@ public class ServiceEntityVisitorHelperV2 implements ConfigValidator, EntityRefe
   public Set<EntityDetailProtoDTO> addReference(Object object, String accountIdentifier, String orgIdentifier,
       String projectIdentifier, Map<String, Object> contextMap) {
     ServiceYamlV2 serviceYamlV2 = (ServiceYamlV2) object;
-    Set<EntityDetailProtoDTO> result = new HashSet<>();
 
-    String fullQualifiedDomainName =
+    final String fullQualifiedDomainName =
         VisitorParentPathUtils.getFullQualifiedDomainName(contextMap) + PATH_CONNECTOR + YamlTypes.SERVICE_REF;
-    Map<String, String> metadata =
+    final Map<String, String> metadata =
         new HashMap<>(Collections.singletonMap(PreFlightCheckMetadata.FQN, fullQualifiedDomainName));
+
+    // Clear out Service References
+    if (ParameterField.isNull(serviceYamlV2.getServiceRef())) {
+      IdentifierRef identifierRef = IdentifierRefHelper.createIdentifierRefWithUnknownScope(
+          accountIdentifier, orgIdentifier, projectIdentifier, "unknown", metadata);
+      EntityDetailProtoDTO entityDetail =
+          EntityDetailProtoDTO.newBuilder()
+              .setIdentifierRef(IdentifierRefProtoUtils.createIdentifierRefProtoFromIdentifierRef(identifierRef))
+              .setType(EntityTypeProtoEnum.SERVICE)
+              .build();
+      return Set.of(entityDetail);
+    }
+
+    final Set<EntityDetailProtoDTO> result = new HashSet<>();
     if (!serviceYamlV2.getServiceRef().isExpression()) {
       String serviceRefString = serviceYamlV2.getServiceRef().getValue();
       IdentifierRef identifierRef = IdentifierRefHelper.getIdentifierRef(

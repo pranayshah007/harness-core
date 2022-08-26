@@ -23,6 +23,7 @@ import io.harness.product.ci.scm.proto.CompareCommitsResponse;
 import io.harness.product.ci.scm.proto.CreateBranchResponse;
 import io.harness.product.ci.scm.proto.FindCommitResponse;
 import io.harness.product.ci.scm.proto.FindPRResponse;
+import io.harness.product.ci.scm.proto.GetLatestCommitOnFileResponse;
 import io.harness.product.ci.scm.proto.GetLatestCommitResponse;
 import io.harness.product.ci.scm.proto.GetUserRepoResponse;
 import io.harness.product.ci.scm.proto.GetUserReposResponse;
@@ -181,6 +182,15 @@ public class ScmGitRefTask extends AbstractDelegateRunnableTask {
         return ScmGitRefTaskResponseData.builder()
             .gitRefType(scmGitRefTaskParams.getGitRefType())
             .createBranchResponse(createBranchResponse.toByteArray())
+            .build();
+      }
+      case GET_LATEST_COMMIT_ON_FILE: {
+        final GetLatestCommitOnFileResponse getLatestCommitOnFileResponse = scmDelegateClient.processScmRequest(c
+            -> scmServiceClient.getLatestCommitOnFile(scmGitRefTaskParams.getScmConnector(),
+                scmGitRefTaskParams.getBranch(), scmGitRefTaskParams.getFilePath(), SCMGrpc.newBlockingStub(c)));
+        return ScmGitRefTaskResponseData.builder()
+            .gitRefType(scmGitRefTaskParams.getGitRefType())
+            .getLatestCommitOnFileResponse(getLatestCommitOnFileResponse.toByteArray())
             .build();
       }
       default:

@@ -13,14 +13,18 @@ import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.shell.CommandTaskParameters;
 import io.harness.delegate.task.ssh.NgCommandUnit;
-import io.harness.logging.CommandExecutionStatus;
+import io.harness.shell.ExecuteCommandResponse;
+
+import java.util.Map;
 
 @OwnedBy(HarnessTeam.CDP)
 public interface CommandHandler {
+  String RESOLVED_ENV_VARIABLES_KEY = "RESOLVED_ENV_VARIABLES";
   default String getExecutionStagingDir(CommandTaskParameters taskParameters) {
     return String.format("/tmp/%s", taskParameters.getExecutionId());
   }
 
-  CommandExecutionStatus handle(CommandTaskParameters parameters, NgCommandUnit commandUnit,
-      ILogStreamingTaskClient logStreamingTaskClient, CommandUnitsProgress commandUnitsProgress);
+  ExecuteCommandResponse handle(CommandTaskParameters parameters, NgCommandUnit commandUnit,
+      ILogStreamingTaskClient logStreamingTaskClient, CommandUnitsProgress commandUnitsProgress,
+      Map<String, Object> taskContext);
 }

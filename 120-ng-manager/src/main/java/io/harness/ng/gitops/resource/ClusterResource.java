@@ -7,6 +7,7 @@
 
 package io.harness.ng.gitops.resource;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.rbac.CDNGRbacPermissions.ENVIRONMENT_UPDATE_PERMISSION;
 import static io.harness.rbac.CDNGRbacPermissions.ENVIRONMENT_VIEW_PERMISSION;
@@ -24,8 +25,10 @@ import io.harness.accesscontrol.ResourceIdentifier;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.beans.ScopeLevel;
 import io.harness.cdng.gitops.beans.ClusterBatchRequest;
 import io.harness.cdng.gitops.beans.ClusterBatchResponse;
+import io.harness.cdng.gitops.beans.ClusterFromGitops;
 import io.harness.cdng.gitops.beans.ClusterRequest;
 import io.harness.cdng.gitops.beans.ClusterResponse;
 import io.harness.cdng.gitops.entity.Cluster;
@@ -57,8 +60,13 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.validation.Valid;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -73,7 +81,6 @@ import javax.ws.rs.QueryParam;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.validator.constraints.NotEmpty;
 import org.springframework.data.domain.Page;
 import retrofit2.Response;
 
@@ -146,7 +153,7 @@ public class ClusterResource {
 
     Optional<Cluster> entity =
         clusterService.get(accountId, orgIdentifier, projectIdentifier, environmentIdentifier, clusterRef);
-    if (!entity.isPresent()) {
+    if (entity.isEmpty()) {
       throw new NotFoundException(format("Cluster with clusterRef [%s] in project [%s], org [%s] not found", clusterRef,
           projectIdentifier, orgIdentifier));
     }
@@ -200,30 +207,15 @@ public class ClusterResource {
     if (!request.isLinkAllClusters()) {
       entities = ClusterEntityMapper.toEntities(accountId, request);
     } else {
-      // fetch clusters from gitops service using search term
-      final ClusterQuery query = ClusterQuery.builder()
-                                     .accountId(accountId)
-                                     .orgIdentifier(request.getOrgIdentifier())
-                                     .projectIdentifier(request.getProjectIdentifier())
-                                     .pageSize(UNLIMITED_PAGE_SIZE)
-                                     .pageIndex(0)
-                                     .searchTerm(request.getSearchTerm())
-                                     .build();
-
-      final Response<PageResponse<io.harness.gitops.models.Cluster>> clusterResponse;
-      try {
-        clusterResponse = gitopsResourceClient.listClusters(query).execute();
-        if (!clusterResponse.isSuccessful()) {
-          handleFailureResponse(clusterResponse);
-        } else if (clusterResponse.body() != null) {
-          List<io.harness.gitops.models.Cluster> clusters = clusterResponse.body().getContent();
-          entities = ClusterEntityMapper.toEntities(
-              accountId, request.getOrgIdentifier(), request.getProjectIdentifier(), request.getEnvRef(), clusters);
-        }
-      } catch (IOException io) {
-        throw new InvalidRequestException(
-            "failed to fetch cluster list from gitops. Cannot proceed with linking to the environment", io);
-      }
+      PageResponse<ClusterFromGitops> accountLevelClusters =
+          fetchClustersFromGitopsService(0, UNLIMITED_PAGE_SIZE, accountId, "", "", request.getSearchTerm());
+      // check number of project level clusters
+      PageResponse<ClusterFromGitops> projectLevelClusters = fetchClustersFromGitopsService(0, UNLIMITED_PAGE_SIZE,
+          accountId, request.getOrgIdentifier(), request.getProjectIdentifier(), request.getSearchTerm());
+      entities.addAll(ClusterEntityMapper.toEntities(accountId, request.getOrgIdentifier(),
+          request.getProjectIdentifier(), request.getEnvRef(), accountLevelClusters.getContent()));
+      entities.addAll(ClusterEntityMapper.toEntities(accountId, request.getOrgIdentifier(),
+          request.getProjectIdentifier(), request.getEnvRef(), projectLevelClusters.getContent()));
     }
     long linked = isNotEmpty(entities) ? clusterService.bulkCreate(entities) : 0;
     return ResponseDTO.newResponse(ClusterBatchResponse.builder().linked(linked).build());
@@ -245,13 +237,14 @@ public class ClusterResource {
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
       @Parameter(description = NGCommonEntityConstants.ENVIRONMENT_IDENTIFIER_KEY, required = true) @QueryParam(
-          NGCommonEntityConstants.ENVIRONMENT_IDENTIFIER_KEY) @NotEmpty String environmentIdentifier) {
+          NGCommonEntityConstants.ENVIRONMENT_IDENTIFIER_KEY) @NotEmpty String environmentIdentifier,
+      @Parameter(description = "Scope for the gitops cluster") @QueryParam("scope") ScopeLevel scope) {
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(orgIdentifier, projectIdentifier, accountId);
     environmentValidationHelper.checkThatEnvExists(accountId, orgIdentifier, projectIdentifier, environmentIdentifier);
     checkForAccessOrThrow(
         accountId, orgIdentifier, projectIdentifier, environmentIdentifier, ENVIRONMENT_UPDATE_PERMISSION, "delete");
     return ResponseDTO.newResponse(
-        clusterService.delete(accountId, orgIdentifier, projectIdentifier, environmentIdentifier, clusterRef));
+        clusterService.delete(accountId, orgIdentifier, projectIdentifier, environmentIdentifier, clusterRef, scope));
   }
 
   @GET
@@ -290,14 +283,26 @@ public class ClusterResource {
 
     Page<Cluster> entities = clusterService.list(
         page, size, accountId, orgIdentifier, projectIdentifier, envIdentifier, searchTerm, identifiers, sort);
-    return ResponseDTO.newResponse(getNGPageResponse(entities.map(ClusterEntityMapper::writeDTO)));
+
+    // Account level clusters
+    PageResponse<ClusterFromGitops> accountLevelClusters =
+        fetchClustersFromGitopsService(page, size, accountId, "", "", searchTerm);
+    // Project level clusters
+    PageResponse<ClusterFromGitops> projectLevelClusters =
+        fetchClustersFromGitopsService(page, size, accountId, orgIdentifier, projectIdentifier, searchTerm);
+
+    Map<String, ClusterFromGitops> allClusters =
+        Stream.of(accountLevelClusters.getContent(), projectLevelClusters.getContent())
+            .flatMap(List::stream)
+            .collect(Collectors.toMap(e -> e.getIdentifier(), Function.identity()));
+    return ResponseDTO.newResponse(getNGPageResponse(entities.map(e -> ClusterEntityMapper.writeDTO(e, allClusters))));
   }
 
   @GET
   @Path("/listFromGitops")
   @ApiOperation(value = "Gets cluster list from Gitops Service ", nickname = "getClusterListFromSource")
   @Hidden
-  public ResponseDTO<PageResponse<io.harness.gitops.models.Cluster>> listFromGitopsService(
+  public ResponseDTO<PageResponse<ClusterFromGitops>> listFromGitopsService(
       @Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PAGE) @DefaultValue("0") int page,
       @Parameter(description = NGCommonEntityConstants.SIZE_PARAM_MESSAGE) @QueryParam(
@@ -312,6 +317,45 @@ public class ClusterResource {
           NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm) {
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(orgIdentifier, projectIdentifier, accountId);
 
+    // Account level clusters
+    PageResponse<ClusterFromGitops> accountLevelClusters =
+        fetchClustersFromGitopsService(page, size, accountId, "", "", searchTerm);
+    // check number of project level clusters
+    PageResponse<ClusterFromGitops> projectLevelClusterSample =
+        fetchClustersFromGitopsService(0, 1, accountId, orgIdentifier, projectIdentifier, searchTerm);
+
+    final long totalItems = accountLevelClusters.getTotalItems() + projectLevelClusterSample.getTotalItems();
+    final long totalCombinedPages = totalItems % size == 0 ? totalItems / size : totalItems / size + 1;
+
+    if (accountLevelClusters.getContent().size() == size) {
+      return ResponseDTO.newResponse(
+          accountLevelClusters.but().totalPages(totalCombinedPages).totalItems(totalItems).build());
+    }
+
+    int leftOverSpace = size - accountLevelClusters.getContent().size();
+    int newPageIndex = (int) (leftOverSpace == size ? page - accountLevelClusters.getTotalPages()
+                                                    : 1 + page - accountLevelClusters.getTotalPages());
+    // Project level clusters
+    PageResponse<ClusterFromGitops> projectLevelClusters = fetchClustersFromGitopsService(
+        newPageIndex, leftOverSpace, accountId, orgIdentifier, projectIdentifier, searchTerm);
+
+    PageResponse<ClusterFromGitops> result = PageResponse.getEmptyPageResponse(null);
+    result.setEmpty(accountLevelClusters.isEmpty() && projectLevelClusters.isEmpty());
+    result.setPageIndex(page);
+    result.setTotalPages(totalCombinedPages);
+    result.setContent(Stream.of(accountLevelClusters.getContent(), projectLevelClusters.getContent())
+                          .flatMap(List::stream)
+                          .collect(Collectors.toList()));
+    result.setPageSize(size);
+    result.setPageItemCount(result.getContent().size());
+    result.setTotalItems(totalItems);
+
+    return ResponseDTO.newResponse(result);
+  }
+
+  private PageResponse<ClusterFromGitops> fetchClustersFromGitopsService(
+      int page, int size, String accountId, String orgIdentifier, String projectIdentifier, String searchTerm) {
+    final PageResponse<ClusterFromGitops> clusters;
     final ClusterQuery query = ClusterQuery.builder()
                                    .accountId(accountId)
                                    .orgIdentifier(orgIdentifier)
@@ -327,10 +371,18 @@ public class ClusterResource {
       if (!clusterResponse.isSuccessful()) {
         handleFailureResponse(clusterResponse);
       }
-      return ResponseDTO.newResponse(clusterResponse.body());
+      if (clusterResponse.body() == null) {
+        handleFailureResponse(clusterResponse);
+      }
+      ScopeLevel scopeLevel = ScopeLevel.of(accountId, orgIdentifier, projectIdentifier);
+      if (clusterResponse.body().isEmpty()) {
+        clusterResponse.body().setContent(new ArrayList<>());
+      }
+      clusters = clusterResponse.body().map(c -> ClusterEntityMapper.writeDTO(scopeLevel, c));
     } catch (IOException io) {
       throw new InvalidRequestException("failed to fetch cluster list from gitops", io);
     }
+    return clusters;
   }
 
   private void handleFailureResponse(Response<?> response) {
@@ -339,6 +391,9 @@ public class ClusterResource {
       errorBody = response.errorBody().string();
     } catch (Exception e) {
       log.error("Could not read error body {}", response.errorBody(), e);
+    }
+    if (isEmpty(errorBody) && response.body() == null) {
+      errorBody = "No clusters found in gitops";
     }
     throw new InvalidRequestException(
         String.format("Failed to list clusters from gitops service. %s", defaultIfEmpty(errorBody, "")));

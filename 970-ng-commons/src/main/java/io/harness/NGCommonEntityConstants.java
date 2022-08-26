@@ -16,6 +16,7 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(PL)
 @UtilityClass
 public class NGCommonEntityConstants {
+  public static final String ACCOUNT = "account";
   public static final String ACCOUNT_KEY = "accountIdentifier";
   public static final String ORG_KEY = "orgIdentifier";
   public static final String ORGS_KEY = "orgIdentifiers";
@@ -31,6 +32,7 @@ public class NGCommonEntityConstants {
   public static final String GROUP_IDENTIFIER_KEY = "groupIdentifier";
   public static final String GROUP_IDENTIFIERS_KEY = "groupIdentifiers";
   public static final String NAME_KEY = "name";
+  public static final String DRAFT_KEY = "skipValidation";
   public static final String TAGS_KEY = "tags";
   public static final String DESCRIPTION_KEY = "description";
   public static final String DELETED_KEY = "deleted";
@@ -52,6 +54,10 @@ public class NGCommonEntityConstants {
   public static final String SEARCH_TERM = "searchTerm";
   public static final String USER_ID = "userId";
   public static final String PAGE = "page";
+  public static final String PAGE_SIZE = "page_size";
+  public static final String SELF_REL = "self";
+  public static final String PREVIOUS_REL = "previous";
+  public static final String NEXT_REL = "next";
   public static final String SIZE = "size";
   public static final String MASK_SECRETS = "maskSecrets";
   public static final String CONNECTOR_IDENTIFIER_REF = "connectorIdentifierRef";

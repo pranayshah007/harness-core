@@ -111,7 +111,13 @@ public interface DelegateAgentManagerClient {
 
   @GET("agent/delegates/delegateScripts")
   Call<RestResponse<DelegateScripts>> getDelegateScripts(@Query("accountId") String accountId,
-      @Query("delegateVersion") String delegateVersion, @Query("delegateName") String delegateName);
+      @Query("delegateVersion") String delegateVersion, @Query("patchVersion") String patchVersion,
+      @Query("delegateName") String delegateName);
+
+  @GET("agent/delegates/delegateScriptsNg")
+  Call<RestResponse<DelegateScripts>> getDelegateScriptsNg(@Query("accountId") String accountId,
+      @Query("delegateVersion") String delegateVersion, @Query("patchVersion") String patchVersion,
+      @Query("delegateType") String delegateType);
 
   @GET("agent/infra-download/delegate-auth/delegate/logging-token")
   Call<RestResponse<AccessTokenBean>> getLoggingToken(@Query("accountId") String accountId);
@@ -178,6 +184,8 @@ public interface DelegateAgentManagerClient {
       @Query("accountId") String accountId, @Query("delegateInstanceId") String delegateInstanceId,
       @Body List<DelegateConnectionResultDetail> results);
 
+  @GET("version/watcher") Call<RestResponse<String>> getWatcherVersion(@Query("accountId") String accountId);
+
   @Consumes({"application/x-protobuf"})
   @GET("agent/delegates/perpetual-task/list")
   Call<PerpetualTaskListResponse> perpetualTaskList(
@@ -190,17 +198,20 @@ public interface DelegateAgentManagerClient {
 
   @Consumes({"application/x-protobuf"})
   @PUT("agent/delegates/perpetual-task/heartbeat")
-  Call<HeartbeatResponse> heartbeat(@Body HeartbeatRequest heartbeatRequest);
+  Call<HeartbeatResponse> heartbeat(@Query("accountId") String accountId, @Body HeartbeatRequest heartbeatRequest);
 
   @Consumes({"application/x-protobuf"})
   @PUT("agent/delegates/task-progress/progress-update")
-  Call<SendTaskProgressResponse> sendTaskProgressUpdate(@Body SendTaskProgressRequest sendTaskProgressRequest);
+  Call<SendTaskProgressResponse> sendTaskProgressUpdate(
+      @Body SendTaskProgressRequest sendTaskProgressRequest, @Query("accountId") String accountId);
 
   @Consumes({"application/x-protobuf"})
   @PUT("agent/delegates/task-progress/progress")
-  Call<TaskProgressResponse> taskProgress(@Body TaskProgressRequest taskProgressRequest);
+  Call<TaskProgressResponse> taskProgress(
+      @Body TaskProgressRequest taskProgressRequest, @Query("accountId") String accountId);
 
   @Consumes({"application/x-protobuf"})
   @PUT("agent/delegates/task-progress/status")
-  Call<SendTaskStatusResponse> sendTaskStatus(@Body SendTaskStatusRequest sendTaskStatusRequest);
+  Call<SendTaskStatusResponse> sendTaskStatus(
+      @Body SendTaskStatusRequest sendTaskStatusRequest, @Query("accountId") String accountId);
 }

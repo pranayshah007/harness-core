@@ -16,6 +16,7 @@ import io.harness.context.ContextElementType;
 import io.harness.provision.TfVarSource;
 import io.harness.security.encryption.EncryptedRecordData;
 
+import software.wings.beans.GitFileConfig;
 import software.wings.beans.NameValuePair;
 import software.wings.sm.ContextElement;
 
@@ -39,6 +40,8 @@ public class TerraformProvisionInheritPlanElement implements ContextElement {
   private String sourceRepoReference;
   private List<NameValuePair> variables;
   private List<NameValuePair> backendConfigs;
+  private GitFileConfig remoteBackendConfig;
+  private String backendConfigStoreType;
   private List<NameValuePair> environmentVariables;
   private String workspace;
   private String delegateTag;

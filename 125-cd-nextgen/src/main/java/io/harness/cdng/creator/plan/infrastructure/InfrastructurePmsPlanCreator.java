@@ -17,6 +17,7 @@ import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
 import io.harness.cdng.infra.steps.InfraSectionStepParameters;
 import io.harness.cdng.infra.steps.InfrastructureSectionStep;
 import io.harness.cdng.infra.steps.InfrastructureStep;
+import io.harness.cdng.infra.steps.InfrastructureTaskExecutableStep;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.InfrastructureDefinitionConfig;
 import io.harness.cdng.pipeline.PipelineInfrastructure;
@@ -28,6 +29,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.YamlException;
+import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
@@ -63,22 +65,33 @@ import java.util.List;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
 import lombok.experimental.UtilityClass;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDC)
 @UtilityClass
+@Slf4j
 public class InfrastructurePmsPlanCreator {
   public PlanNode getInfraStepPlanNode(Infrastructure pipelineInfrastructure) {
     return PlanNode.builder()
         .uuid(UUIDGenerator.generateUuid())
         .name(PlanCreatorConstants.INFRA_NODE_NAME)
         .identifier(PlanCreatorConstants.SPEC_IDENTIFIER)
-        .stepType(InfrastructureStep.STEP_TYPE)
+        .stepType(isTaskStep(pipelineInfrastructure) ? InfrastructureTaskExecutableStep.STEP_TYPE
+                                                     : InfrastructureStep.STEP_TYPE)
         .stepParameters(pipelineInfrastructure)
         .facilitatorObtainment(
             FacilitatorObtainment.newBuilder()
-                .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.SYNC).build())
+                .setType(FacilitatorType.newBuilder()
+                             .setType(isTaskStep(pipelineInfrastructure) ? OrchestrationFacilitatorType.TASK
+                                                                         : OrchestrationFacilitatorType.SYNC)
+                             .build())
                 .build())
         .build();
+  }
+
+  private boolean isTaskStep(Infrastructure pipelineInfrastructure) {
+    return InfrastructureKind.SSH_WINRM_AZURE.equals(pipelineInfrastructure.getKind())
+        || InfrastructureKind.SSH_WINRM_AWS.equals(pipelineInfrastructure.getKind());
   }
 
   public static LinkedHashMap<String, PlanCreationResponse> createPlanForInfraSectionV2(YamlNode infraSectionNode,
@@ -277,12 +290,15 @@ public class InfrastructurePmsPlanCreator {
     YamlField infraDefField = infraField.getNode().getField(YamlTypes.INFRASTRUCTURE_DEF);
     YamlField provisionerYamlField = infraDefField.getNode().getField(YAMLFieldNameConstants.PROVISIONER);
     YamlField stepsYamlField = provisionerYamlField.getNode().getField(YAMLFieldNameConstants.STEPS);
+    log.info("stepsYamlField after : {}", stepsYamlField.getNode().getCurrJsonNode());
 
     // Add each step dependency
     LinkedHashMap<String, PlanCreationResponse> responseMap = new LinkedHashMap<>();
 
     Map<String, YamlField> stepsYamlFieldMap = new HashMap<>();
     stepsYamlFieldMap.put(stepsYamlField.getNode().getUuid(), stepsYamlField);
+    log.info("stepsYamlField uuid : {}", stepsYamlField.getNode().getUuid());
+    log.info("stepsYamlField YamlPath : {}", stepsYamlField.getYamlPath());
     responseMap.put(stepsYamlField.getNode().getUuid(),
         PlanCreationResponse.builder().dependencies(DependenciesUtils.toDependenciesProto(stepsYamlFieldMap)).build());
 

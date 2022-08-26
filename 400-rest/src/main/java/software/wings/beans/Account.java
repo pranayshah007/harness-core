@@ -10,6 +10,7 @@ package software.wings.beans;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.delegate.beans.DelegateConfiguration.DelegateConfigurationKeys;
 
+import static software.wings.beans.Account.AccountKeys;
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.common.VerificationConstants.SERVICE_GUAARD_LIMIT;
 
@@ -34,6 +35,7 @@ import io.harness.security.EncryptionInterface;
 import io.harness.security.SimpleEncryption;
 import io.harness.validation.Create;
 
+import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.yaml.BaseEntityYaml;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -66,8 +68,8 @@ import org.mongodb.morphia.annotations.Transient;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Entity(value = "accounts", noClassnameStored = true)
 @HarnessEntity(exportable = true)
-@ChangeDataCapture(table = "accounts", fields = {}, handler = "Account")
-public class Account extends Base implements PersistentRegularIterable {
+@ChangeDataCapture(table = "accounts", fields = {AccountKeys.accountName, AccountKeys.createdAt}, handler = "")
+public class Account extends Base implements PersistentRegularIterable, NGMigrationEntity {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
@@ -127,6 +129,8 @@ public class Account extends Base implements PersistentRegularIterable {
 
   @Getter @Setter private boolean accountActivelyUsed;
 
+  @Getter @Setter boolean isProductLed;
+
   /**
    * If this flag is set, all encryption/decryption activities will go through LOCAL security manager.
    * No VAULT/KMS secret manager can be configured. This helps for accounts whose delegate can't access
@@ -170,6 +174,8 @@ public class Account extends Base implements PersistentRegularIterable {
 
   @Getter @Setter ServiceAccountConfig serviceAccountConfig;
 
+  @FdIndex @Getter @Setter boolean globalDelegateAccount;
+
   private transient Map<String, String> defaults = new HashMap<>();
   /**
    * Default mechanism is USER_PASSWORD
@@ -208,6 +214,12 @@ public class Account extends Base implements PersistentRegularIterable {
 
   public void setLocalEncryptionEnabled(boolean localEncryptionEnabled) {
     this.localEncryptionEnabled = localEncryptionEnabled;
+  }
+
+  @JsonIgnore
+  @Override
+  public String getMigrationEntityName() {
+    return getCompanyName() + " " + getAccountName();
   }
 
   public boolean isNextGenEnabled() {
@@ -585,8 +597,10 @@ public class Account extends Base implements PersistentRegularIterable {
     private AccountPreferences accountPreferences;
     private DefaultExperience defaultExperience;
     private boolean createdFromNG;
+    private boolean isProductLed;
     private boolean accountActivelyUsed;
     private ServiceAccountConfig serviceAccountConfig;
+    private boolean globalDelegateAccount;
 
     private Builder() {}
 
@@ -616,6 +630,11 @@ public class Account extends Base implements PersistentRegularIterable {
 
     public Builder withCreatedFromNG(boolean createdFromNG) {
       this.createdFromNG = createdFromNG;
+      return this;
+    }
+
+    public Builder withIsProductLed(boolean isProductLed) {
+      this.isProductLed = isProductLed;
       return this;
     }
 
@@ -754,6 +773,11 @@ public class Account extends Base implements PersistentRegularIterable {
       return this;
     }
 
+    public Builder withGlobalDelegateAccount(boolean globalDelegateAccount) {
+      this.globalDelegateAccount = globalDelegateAccount;
+      return this;
+    }
+
     public Builder but() {
       return anAccount()
           .withCompanyName(companyName)
@@ -781,6 +805,7 @@ public class Account extends Base implements PersistentRegularIterable {
           .withBackgroundJobsDisabled(backgroundJobsDisabled)
           .withDefaultExperience(defaultExperience)
           .withCreatedFromNG(createdFromNG)
+          .withIsProductLed(isProductLed)
           .withAccountActivelyUsed(accountActivelyUsed)
           .withAccountPreferences(accountPreferences)
           .withServiceAccountConfig(serviceAccountConfig);
@@ -816,6 +841,7 @@ public class Account extends Base implements PersistentRegularIterable {
       account.setBackgroundJobsDisabled(backgroundJobsDisabled);
       account.setDefaultExperience(defaultExperience);
       account.setCreatedFromNG(createdFromNG);
+      account.setProductLed(isProductLed);
       account.setAccountActivelyUsed(accountActivelyUsed);
       account.setAccountPreferences(accountPreferences);
       account.setNextGenEnabled(nextGenEnabled);

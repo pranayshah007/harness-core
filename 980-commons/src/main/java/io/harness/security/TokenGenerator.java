@@ -78,6 +78,10 @@ public class TokenGenerator {
 
     try {
       readWriteLock.writeLock().lock();
+      if (lastEncryptedJWT != null && expiryTimeOfLastJWT > System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(5)) {
+        return lastEncryptedJWT;
+      }
+
       Instant now = Instant.now();
       JWTClaimsSet jwtClaims = new JWTClaimsSet.Builder()
                                    .issuer(issuer)

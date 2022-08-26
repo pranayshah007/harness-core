@@ -20,6 +20,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.harness.CategoryTest;
@@ -30,11 +31,13 @@ import io.harness.ng.authenticationsettings.dtos.mechanisms.LDAPSettings;
 import io.harness.ng.authenticationsettings.impl.AuthenticationSettingsServiceImpl;
 import io.harness.ng.authenticationsettings.remote.AuthSettingsManagerClient;
 import io.harness.ng.core.api.UserGroupService;
+import io.harness.ng.core.user.entities.UserGroup;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 
 import software.wings.beans.sso.LdapConnectionSettings;
 import software.wings.beans.sso.SamlSettings;
+import software.wings.helpers.ext.ldap.LdapResponse;
 import software.wings.security.authentication.SSOConfig;
 
 import com.google.inject.Inject;
@@ -200,10 +203,44 @@ public class AuthenticationSettingServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testDeleteLdapSettings() throws IOException {
     Call<RestResponse<software.wings.beans.sso.LdapSettings>> request = mock(Call.class);
+    doReturn(request).when(managerClient).getLdapSettings(ACCOUNT_ID);
+    RestResponse<software.wings.beans.sso.LdapSettings> mockResponse =
+        new RestResponse<>(software.wings.beans.sso.LdapSettings.builder()
+                               .displayName("displayName")
+                               .connectionSettings(new LdapConnectionSettings())
+                               .build());
+    doReturn(Response.success(mockResponse)).when(request).execute();
+    UserGroup ug1 = UserGroup.builder()
+                        .identifier("UG1")
+                        .accountIdentifier(ACCOUNT_ID)
+                        .orgIdentifier("ORG_ID")
+                        .projectIdentifier("PROJECT_ID")
+                        .ssoGroupId("groupDn")
+                        .users(Collections.singletonList("testUserEmail"))
+                        .build();
+    when(userGroupService.getUserGroupsBySsoId(anyString(), anyString())).thenReturn(Collections.singletonList(ug1));
+
     doReturn(request).when(managerClient).deleteLdapSettings(ACCOUNT_ID);
-    RestResponse<Boolean> mockResponse = new RestResponse<>(true);
     doReturn(Response.success(mockResponse)).when(request).execute();
     authenticationSettingsServiceImpl.deleteLdapSettings(ACCOUNT_ID);
     verify(managerClient, times(1)).deleteLdapSettings(ACCOUNT_ID);
+  }
+
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void testLdapLoginTest() throws IOException {
+    Call<RestResponse<LdapResponse>> request = mock(Call.class);
+    doReturn(request).when(managerClient).testLdapAuthentication(anyString(), any(), any());
+    final String authNSuccessMsg = "Authentication Success";
+    LdapResponse authNResponse =
+        LdapResponse.builder().message(authNSuccessMsg).status(LdapResponse.Status.SUCCESS).build();
+    RestResponse<LdapResponse> mockResponse = new RestResponse<>(authNResponse);
+    doReturn(Response.success(mockResponse)).when(request).execute();
+    LdapResponse resultResponse =
+        authenticationSettingsServiceImpl.testLDAPLogin(ACCOUNT_ID, "testEmail", "testPassword");
+    verify(managerClient, times(1)).testLdapAuthentication(anyString(), any(), any());
+    assertThat(resultResponse.getStatus()).isEqualTo(LdapResponse.Status.SUCCESS);
+    assertThat(resultResponse.getMessage()).isEqualTo(authNSuccessMsg);
   }
 }

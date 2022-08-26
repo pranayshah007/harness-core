@@ -290,4 +290,7 @@ Jimit Gandhi jimit.gandhi@harness.io
 Tarun Uba tarun.uba@harness.io
 Sourabh Awashti sourabh.awashti@harness.io
 Vikyath Harekal vikyath.harekal@harness.io
+Vinícius Calasans vinicius.calasans@harness.io
+Xingchi Jin xingchi.jin@harness.io
+Varsha Lalwani varsha.lalwani@harness.io
 

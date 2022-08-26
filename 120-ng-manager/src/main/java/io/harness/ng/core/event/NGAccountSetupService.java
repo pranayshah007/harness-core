@@ -8,6 +8,8 @@
 package io.harness.ng.core.event;
 
 import static io.harness.NGConstants.DEFAULT_ORG_IDENTIFIER;
+import static io.harness.NGConstants.DEFAULT_PROJECT_IDENTIFIER;
+import static io.harness.NGConstants.DEFAULT_PROJECT_NAME;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.ng.core.invites.mapper.RoleBindingMapper.getDefaultResourceGroupIdentifierForAdmins;
@@ -22,18 +24,24 @@ import io.harness.accesscontrol.principals.PrincipalType;
 import io.harness.accesscontrol.roleassignments.api.RoleAssignmentCreateRequestDTO;
 import io.harness.accesscontrol.roleassignments.api.RoleAssignmentDTO;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.PageResponse;
 import io.harness.beans.Scope;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.GeneralException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.ng.NextGenConfiguration;
 import io.harness.ng.accesscontrol.migrations.models.AccessControlMigration;
 import io.harness.ng.accesscontrol.migrations.services.AccessControlMigrationService;
 import io.harness.ng.core.AccountOrgProjectValidator;
 import io.harness.ng.core.accountsetting.services.NGAccountSettingService;
 import io.harness.ng.core.dto.OrganizationDTO;
+import io.harness.ng.core.dto.ProjectDTO;
 import io.harness.ng.core.entities.Organization;
+import io.harness.ng.core.entities.Project;
+import io.harness.ng.core.manifests.SampleManifestFileService;
 import io.harness.ng.core.services.OrganizationService;
+import io.harness.ng.core.services.ProjectService;
 import io.harness.ng.core.user.UserInfo;
 import io.harness.ng.core.user.UserMembershipUpdateSource;
 import io.harness.ng.core.user.service.NgUserService;
@@ -62,6 +70,7 @@ import org.springframework.dao.DuplicateKeyException;
 @Slf4j
 public class NGAccountSetupService {
   private final OrganizationService organizationService;
+  private final ProjectService projectService;
   private final AccountOrgProjectValidator accountOrgProjectValidator;
   private final AccessControlAdminClient accessControlAdminClient;
   private final NgUserService ngUserService;
@@ -71,6 +80,9 @@ public class NGAccountSetupService {
   private final CIDefaultEntityManager ciDefaultEntityManager;
   private final boolean shouldAssignAdmins;
   private final NGAccountSettingService accountSettingService;
+  private final FeatureFlagService featureFlagService;
+
+  private final SampleManifestFileService sampleManifestFileService;
 
   @Inject
   public NGAccountSetupService(OrganizationService organizationService,
@@ -78,7 +90,9 @@ public class NGAccountSetupService {
       @Named("PRIVILEGED") AccessControlAdminClient accessControlAdminClient, NgUserService ngUserService,
       UserClient userClient, AccessControlMigrationService accessControlMigrationService,
       HarnessSMManager harnessSMManager, CIDefaultEntityManager ciDefaultEntityManager,
-      NextGenConfiguration nextGenConfiguration, NGAccountSettingService accountSettingService) {
+      NextGenConfiguration nextGenConfiguration, NGAccountSettingService accountSettingService,
+      ProjectService projectService, FeatureFlagService featureFlagService,
+      SampleManifestFileService sampleManifestFileService) {
     this.organizationService = organizationService;
     this.accountOrgProjectValidator = accountOrgProjectValidator;
     this.accessControlAdminClient = accessControlAdminClient;
@@ -91,6 +105,9 @@ public class NGAccountSetupService {
         nextGenConfiguration.getAccessControlAdminClientConfiguration().getMockAccessControlService().equals(
             Boolean.FALSE);
     this.accountSettingService = accountSettingService;
+    this.projectService = projectService;
+    this.featureFlagService = featureFlagService;
+    this.sampleManifestFileService = sampleManifestFileService;
   }
 
   public void setupAccountForNG(String accountIdentifier) {
@@ -101,13 +118,32 @@ public class NGAccountSetupService {
     }
 
     Organization defaultOrg = createDefaultOrg(accountIdentifier);
-    setupRBAC(defaultOrg.getAccountIdentifier(), defaultOrg.getIdentifier());
+    if (featureFlagService.isGlobalEnabled(FeatureName.CREATE_DEFAULT_PROJECT)) {
+      Project defaultProject = createDefaultProject(accountIdentifier, defaultOrg.getIdentifier());
+      setupAllLevelRBAC(defaultOrg.getAccountIdentifier(), defaultOrg.getIdentifier(), defaultProject.getIdentifier());
+    } else {
+      setupRBAC(defaultOrg.getAccountIdentifier(), defaultOrg.getIdentifier());
+    }
     log.info("[NGAccountSetupService]: Creating global SM for account{}", accountIdentifier);
     harnessSMManager.createGlobalSecretManager();
     log.info("[NGAccountSetupService]: Global SM Created Successfully for account{}", accountIdentifier);
     harnessSMManager.createHarnessSecretManager(accountIdentifier, null, null);
     ciDefaultEntityManager.createCIDefaultEntities(accountIdentifier, null, null);
     accountSettingService.setUpDefaultAccountSettings(accountIdentifier);
+    createSampleFiles(accountIdentifier);
+  }
+
+  private void createSampleFiles(String accountIdentifier) {
+    try {
+      SampleManifestFileService.SampleManifestFileCreateResponse fileCreateResponse =
+          sampleManifestFileService.createDefaultFilesInFileStore(accountIdentifier);
+      if (!fileCreateResponse.isCreated()) {
+        log.error(String.format("Failed to create sample manifest files for account:%s. Reason %s", accountIdentifier,
+            fileCreateResponse.getErrorMessage()));
+      }
+    } catch (Exception ex) {
+      log.error("Failed to create sample manifest files for account:" + accountIdentifier, ex);
+    }
   }
 
   private Organization createDefaultOrg(String accountIdentifier) {
@@ -123,6 +159,42 @@ public class NGAccountSetupService {
     createOrganizationDTO.setDescription("Default Organization");
     createOrganizationDTO.setHarnessManaged(true);
     return organizationService.create(accountIdentifier, createOrganizationDTO);
+  }
+
+  private Project createDefaultProject(String accountIdentifier, String organizationIdentifier) {
+    Optional<Project> project =
+        projectService.get(accountIdentifier, organizationIdentifier, DEFAULT_PROJECT_IDENTIFIER);
+    if (project.isPresent()) {
+      log.info(String.format(
+          "Default Project for account %s organization %s already present", accountIdentifier, organizationIdentifier));
+      return project.get();
+    }
+    ProjectDTO createProjectDTO = ProjectDTO.builder().build();
+    createProjectDTO.setIdentifier(DEFAULT_PROJECT_IDENTIFIER);
+    createProjectDTO.setName(DEFAULT_PROJECT_NAME);
+    return projectService.create(accountIdentifier, organizationIdentifier, createProjectDTO);
+  }
+
+  private void setupAllLevelRBAC(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    setupRBAC(accountIdentifier, orgIdentifier);
+
+    Collection<UserInfo> cgUsers = getCGUsers(accountIdentifier);
+    Collection<String> cgAdmins =
+        cgUsers.stream().filter(UserInfo::isAdmin).map(UserInfo::getUuid).collect(Collectors.toSet());
+
+    Scope projectScope = Scope.of(accountIdentifier, orgIdentifier, projectIdentifier);
+    if (!hasAdmin(projectScope)) {
+      cgAdmins.forEach(user -> upsertUserMembership(projectScope, user));
+      assignAdminRoleToUsers(projectScope, cgAdmins);
+      if (shouldAssignAdmins && !hasAdmin(projectScope)) {
+        throw new GeneralException(String.format("No Admin could be assigned in scope %s", projectScope));
+      }
+      accessControlMigrationService.save(AccessControlMigration.builder()
+                                             .accountIdentifier(accountIdentifier)
+                                             .orgIdentifier(orgIdentifier)
+                                             .projectIdentifier(projectIdentifier)
+                                             .build());
+    }
   }
 
   private void setupRBAC(String accountIdentifier, String orgIdentifier) {

@@ -1,0 +1,13 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "/artifactory/api/storage/docker/image/versionEmpty/manifest.json?properties"
+  },
+  "response": {
+    "status": 200,
+    "bodyFileName" : "/artifactory/body-manifest-storage-docker-api-image-version-empty.json",
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  }
+}

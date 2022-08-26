@@ -984,8 +984,8 @@ public class InstanceHelperTest extends WingsBaseTest {
           List<DeploymentSummary> deploymentSummaries, boolean rollback, OnDemandRollbackInfo onDemandRollbackInfo) {}
 
       @Override
-      public FeatureName getFeatureFlagToStopIteratorBasedInstanceSync() {
-        return null;
+      public Optional<FeatureName> getFeatureFlagToStopIteratorBasedInstanceSync() {
+        return Optional.empty();
       }
 
       @Override
@@ -1048,8 +1048,8 @@ public class InstanceHelperTest extends WingsBaseTest {
           List<DeploymentSummary> deploymentSummaries, boolean rollback, OnDemandRollbackInfo onDemandRollbackInfo) {}
 
       @Override
-      public FeatureName getFeatureFlagToStopIteratorBasedInstanceSync() {
-        return null;
+      public Optional<FeatureName> getFeatureFlagToStopIteratorBasedInstanceSync() {
+        return Optional.empty();
       }
 
       @Override

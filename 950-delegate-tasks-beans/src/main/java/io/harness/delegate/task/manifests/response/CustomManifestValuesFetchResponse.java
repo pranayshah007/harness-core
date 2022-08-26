@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateMetaInfo;
 import io.harness.delegate.beans.DelegateTaskNotifyResponseData;
+import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.manifest.CustomSourceFile;
 
@@ -32,4 +33,5 @@ public class CustomManifestValuesFetchResponse implements DelegateTaskNotifyResp
   @Nullable String errorMessage;
   @NonFinal @Setter String zippedManifestFileId;
   @NonFinal @Setter DelegateMetaInfo delegateMetaInfo;
+  @Setter private UnitProgressData unitProgressData;
 }

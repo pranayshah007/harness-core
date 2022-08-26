@@ -26,6 +26,7 @@ import io.harness.advisers.retry.RetryAdviserWithRollback;
 import io.harness.advisers.rollback.OnFailRollbackAdviser;
 import io.harness.advisers.rollback.OnFailRollbackParameters;
 import io.harness.advisers.rollback.OnFailRollbackParameters.OnFailRollbackParametersBuilder;
+import io.harness.advisers.rollback.ProceedWithDefaultValueAdviser;
 import io.harness.advisers.rollback.RollbackStrategy;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -39,7 +40,7 @@ import io.harness.plancreator.steps.AbstractStepPlanCreator;
 import io.harness.plancreator.steps.FailureStrategiesUtils;
 import io.harness.plancreator.steps.GenericPlanCreatorUtils;
 import io.harness.plancreator.steps.common.WithStepElementParameters;
-import io.harness.plancreator.strategy.StageStrategyUtils;
+import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.execution.failure.FailureType;
@@ -48,6 +49,7 @@ import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.execution.utils.SkipInfoUtils;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
+import io.harness.pms.sdk.core.adviser.ProceedWithDefaultAdviserParameters;
 import io.harness.pms.sdk.core.adviser.abort.OnAbortAdviser;
 import io.harness.pms.sdk.core.adviser.abort.OnAbortAdviserParameters;
 import io.harness.pms.sdk.core.adviser.ignore.IgnoreAdviser;
@@ -105,8 +107,8 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
     if (YamlUtils.findParentNode(ctx.getCurrentField().getNode(), ROLLBACK_STEPS) != null) {
       isStepInsideRollback = true;
     }
-    stepElement.setIdentifier(StageStrategyUtils.getIdentifierWithExpression(ctx, stepElement.getIdentifier()));
-    stepElement.setName(StageStrategyUtils.getIdentifierWithExpression(ctx, stepElement.getName()));
+    stepElement.setIdentifier(StrategyUtils.getIdentifierWithExpression(ctx, stepElement.getIdentifier()));
+    stepElement.setName(StrategyUtils.getIdentifierWithExpression(ctx, stepElement.getName()));
     List<AdviserObtainment> adviserObtainmentFromMetaData = getAdviserObtainmentFromMetaData(ctx.getCurrentField());
     Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
     Map<String, ByteString> metadataMap = new HashMap<>();
@@ -116,7 +118,7 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
     // We are swapping the uuid with strategy node if present.
     PlanNode stepPlanNode =
         PlanNode.builder()
-            .uuid(StageStrategyUtils.getSwappedPlanNodeId(ctx, stepElement.getUuid()))
+            .uuid(StrategyUtils.getSwappedPlanNodeId(ctx, stepElement.getUuid()))
             .name(getName(stepElement))
             .identifier(stepElement.getIdentifier())
             .stepType(stepElement.getStepSpecType().getStepType())
@@ -184,7 +186,7 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
       // If it is wrapped under parallel or strategy then we should not add next step as the next step adviser would be
       // on strategy node
       if (GenericPlanCreatorUtils.checkIfStepIsInParallelSection(currentField)
-          || StageStrategyUtils.isWrappedUnderStrategy(currentField)) {
+          || StrategyUtils.isWrappedUnderStrategy(currentField)) {
         return null;
       }
       YamlField siblingField = GenericPlanCreatorUtils.obtainNextSiblingField(currentField);
@@ -204,7 +206,7 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
       // If it is wrapped under parallel or strategy then we should not add next step as the next step adviser would be
       // on strategy node or parallel node
       if (GenericPlanCreatorUtils.checkIfStepIsInParallelSection(currentField)
-          || StageStrategyUtils.isWrappedUnderStrategy(currentField)) {
+          || StrategyUtils.isWrappedUnderStrategy(currentField)) {
         return null;
       }
       YamlField siblingField = GenericPlanCreatorUtils.obtainNextSiblingField(currentField);
@@ -320,7 +322,7 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
       YamlField siblingField = GenericPlanCreatorUtils.obtainNextSiblingField(currentField);
       // Check if step is in parallel section or inside strategy section then dont have nextNodeUUid set.
       if (siblingField != null && !GenericPlanCreatorUtils.checkIfStepIsInParallelSection(currentField)
-          && !StageStrategyUtils.isWrappedUnderStrategy(currentField)) {
+          && !StrategyUtils.isWrappedUnderStrategy(currentField)) {
         nextNodeUuid = siblingField.getNode().getUuid();
       }
 
@@ -380,6 +382,13 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
               actionConfig.getSpecConfig().getOnTimeout().getAction();
           adviserObtainmentList.add(getManualInterventionAdviserObtainment(
               failureTypes, adviserObtainmentBuilder, actionConfig, actionUnderManualIntervention));
+          break;
+        case PROCEED_WITH_DEFAULT_VALUE:
+          adviserObtainmentList.add(
+              adviserObtainmentBuilder.setType(ProceedWithDefaultValueAdviser.ADVISER_TYPE)
+                  .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+                      ProceedWithDefaultAdviserParameters.builder().applicableFailureTypes(failureTypes).build())))
+                  .build());
           break;
         default:
           Switch.unhandled(actionType);
@@ -457,23 +466,23 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
       return Collections.emptyList();
     }
 
-    if (stages.asArray().get(0).getField(PARALLEL) != null) {
-      YamlNode parallelStages = stages.asArray().get(0).getField(PARALLEL).getNode();
-      for (YamlNode stageNode : parallelStages.asArray()) {
-        YamlNode stage = stageNode.getField(STAGE).getNode();
-        if (stage == null) {
-          continue;
-        }
+    for (YamlNode stageNode : stages.asArray()) {
+      if (stageNode.getField(PARALLEL) != null) {
+        YamlNode parallelStages = stageNode.getField(PARALLEL).getNode();
+        for (YamlNode stageParallelNode : parallelStages.asArray()) {
+          YamlNode stage = stageParallelNode.getField(STAGE).getNode();
+          if (stage == null) {
+            continue;
+          }
 
-        steps.addAll(findExecutionStepsFromStage(stage, filter));
-        steps.addAll(findProvisionerStepsFromStage(stage, filter));
+          steps.addAll(findExecutionStepsFromStage(stage, filter));
+          steps.addAll(findProvisionerStepsFromStage(stage, filter));
 
-        if (currentStageIdentifier.equals(stage.getIdentifier())) {
-          break;
+          if (currentStageIdentifier.equals(stage.getIdentifier())) {
+            break;
+          }
         }
-      }
-    } else {
-      for (YamlNode stageNode : stages.asArray()) {
+      } else {
         YamlNode stage = stageNode.getField(STAGE).getNode();
         if (stage == null) {
           continue;

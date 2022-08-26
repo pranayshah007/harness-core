@@ -30,8 +30,10 @@ import io.harness.secretmanagers.SecretManagerConfigService;
 import io.harness.security.annotations.NextGenManagerAuth;
 
 import software.wings.beans.sso.LdapSettings;
+import software.wings.beans.sso.LdapSettingsMapper;
 import software.wings.beans.sso.OauthSettings;
 import software.wings.beans.sso.SamlSettings;
+import software.wings.helpers.ext.ldap.LdapResponse;
 import software.wings.security.annotations.AuthRule;
 import software.wings.security.authentication.LoginTypeResponse;
 import software.wings.security.authentication.LoginTypeResponse.LoginTypeResponseBuilder;
@@ -140,7 +142,7 @@ public class SSOResourceNG {
     final String clientSecretRef = getCGSecretManagerRefForClientSecret(accountId, true, clientId, clientSecret);
     return new RestResponse<>(ssoService.uploadSamlConfiguration(accountId, uploadedInputStream, displayName,
         groupMembershipAttr, authorizationEnabled, logoutUrl, entityIdentifier, samlProviderType, clientId,
-        isEmpty(clientSecretRef) ? null : clientSecretRef.toCharArray()));
+        isEmpty(clientSecretRef) ? null : clientSecretRef.toCharArray(), true));
   }
 
   @PUT
@@ -158,7 +160,7 @@ public class SSOResourceNG {
     final String clientSecretRef = getCGSecretManagerRefForClientSecret(accountId, false, clientId, clientSecret);
     return new RestResponse<>(ssoService.updateSamlConfiguration(accountId, uploadedInputStream, displayName,
         groupMembershipAttr, authorizationEnabled, logoutUrl, entityIdentifier, samlProviderType, clientId,
-        isEmpty(clientSecretRef) ? null : clientSecretRef.toCharArray()));
+        isEmpty(clientSecretRef) ? null : clientSecretRef.toCharArray(), true));
   }
 
   @DELETE
@@ -189,7 +191,19 @@ public class SSOResourceNG {
   @Produces("application/x-kryo")
   @Consumes("application/x-kryo")
   public RestResponse<LdapSettingsWithEncryptedDataDetail> getLdapSetting(@QueryParam("accountId") String accountId) {
-    return new RestResponse<>(ssoService.getLdapSettingWithEncryptedDataDetail(accountId));
+    return new RestResponse<>(ssoService.getLdapSettingWithEncryptedDataDetail(accountId, null));
+  }
+
+  @POST
+  @Path("ldap/setting-with-encrypted-details")
+  @Timed
+  @ExceptionMetered
+  @Produces("application/x-kryo")
+  @Consumes("application/x-kryo")
+  public RestResponse<LdapSettingsWithEncryptedDataDetail> getLdapSetting(
+      @QueryParam("accountId") String accountId, @Valid software.wings.beans.dto.LdapSettings settings) {
+    return new RestResponse<>(
+        ssoService.getLdapSettingWithEncryptedDataDetail(accountId, LdapSettingsMapper.fromLdapSettingsDTO(settings)));
   }
 
   @POST
@@ -230,6 +244,20 @@ public class SSOResourceNG {
   @ExceptionMetered
   public RestResponse<LdapSettings> deleteLdapSettings(@QueryParam("accountId") @NotBlank String accountId) {
     return new RestResponse<>(ssoService.deleteLdapSettings(accountId));
+  }
+
+  @POST
+  @Path("ldap/settings/test/authentication")
+  @Timed
+  @ExceptionMetered
+  public RestResponse<LdapResponse> testLdapAuthentication(@QueryParam("accountId") @NotBlank String accountId,
+      @FormDataParam("email") String email, @FormDataParam("password") String password) {
+    LdapSettings settings = ssoService.getLdapSettings(accountId);
+    if (null == settings) {
+      throw new InvalidRequestException(
+          String.format("No LDAP SSO Provider settings found for account: %s", accountId));
+    }
+    return new RestResponse<>(ssoService.validateLdapAuthentication(settings, email, password));
   }
 
   @VisibleForTesting

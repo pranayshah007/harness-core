@@ -218,6 +218,8 @@ public enum EntityType {
       ModuleType.CI, EntityTypeConstants.SAVE_CACHE_S3, IdentifierRef.class, EntityYamlRootNames.SAVE_CACHE_S3),
   @JsonProperty(EntityTypeConstants.SECURITY)
   SECURITY(ModuleType.CI, EntityTypeConstants.SECURITY, IdentifierRef.class, EntityYamlRootNames.SECURITY),
+  @JsonProperty(EntityTypeConstants.GIT_CLONE)
+  GIT_CLONE(ModuleType.CI, EntityTypeConstants.GIT_CLONE, IdentifierRef.class, EntityYamlRootNames.GIT_CLONE),
   @JsonProperty(EntityTypeConstants.ARTIFACTORY_UPLOAD)
   ARTIFACTORY_UPLOAD(ModuleType.CI, EntityTypeConstants.ARTIFACTORY_UPLOAD, IdentifierRef.class,
       EntityYamlRootNames.ARTIFACTORY_UPLOAD),
@@ -272,7 +274,22 @@ public enum EntityType {
       EntityYamlRootNames.AZURE_WEBAPP_ROLLBACK_STEP),
   @JsonProperty(EntityTypeConstants.JENKINS_BUILD)
   JENKINS_BUILD(
-      ModuleType.CD, EntityTypeConstants.JENKINS_BUILD, IdentifierRef.class, EntityYamlRootNames.JENKINS_BUILD);
+      ModuleType.CD, EntityTypeConstants.JENKINS_BUILD, IdentifierRef.class, EntityYamlRootNames.JENKINS_BUILD),
+  @JsonProperty(EntityTypeConstants.AZURE_CREATE_ARM_RESOURCE_STEP)
+  AZURE_CREATE_ARM_RESOURCE_STEP(ModuleType.CD, EntityTypeConstants.AZURE_CREATE_ARM_RESOURCE_STEP, IdentifierRef.class,
+      EntityYamlRootNames.AZURE_CREATE_ARM_RESOURCE_STEP),
+  @JsonProperty(EntityTypeConstants.BUILD_AND_PUSH_ACR)
+  BUILD_AND_PUSH_ACR(ModuleType.CI, EntityTypeConstants.BUILD_AND_PUSH_ACR, IdentifierRef.class,
+      EntityYamlRootNames.BUILD_AND_PUSH_ACR),
+  @JsonProperty(EntityTypeConstants.AZURE_CREATE_BP_RESOURCE_STEP)
+  AZURE_CREATE_BP_RESOURCE_STEP(ModuleType.CD, EntityTypeConstants.AZURE_CREATE_BP_RESOURCE_STEP, IdentifierRef.class,
+      EntityYamlRootNames.AZURE_CREATE_BP_RESOURCE_STEP),
+  @JsonProperty(EntityTypeConstants.AZURE_ROLLBACK_ARM_RESOURCE_STEP)
+  AZURE_ROLLBACK_ARM_RESOURCE_STEP(ModuleType.CD, EntityTypeConstants.AZURE_ROLLBACK_ARM_RESOURCE_STEP,
+      IdentifierRef.class, EntityYamlRootNames.AZURE_ROLLBACK_ARM_RESOURCE_STEP),
+  @JsonProperty(EntityTypeConstants.BACKGROUND_STEP)
+  BACKGROUND_STEP(
+      ModuleType.CI, EntityTypeConstants.BACKGROUND_STEP, IdentifierRef.class, EntityYamlRootNames.BACKGROUND_STEP);
 
   private final ModuleType moduleType;
   String yamlName;

@@ -75,10 +75,14 @@ public class InstanceStatServiceImpl implements InstanceStatService {
 
   @Override
   public boolean purgeUpTo(Instant timestamp) {
+    log.info("Purging instance stats up to {}", timestamp);
+    // Deleting old instances separately for each active account and then for deleted accounts
+    // So that the deletion happens in a staggered way
     try (HIterator<Account> accounts =
              new HIterator<>(persistence.createQuery(Account.class).project(Account.ID_KEY2, true).fetch())) {
       while (accounts.hasNext()) {
         final Account account = accounts.next();
+        log.info("Purging instance stats for account {} with ID {}", account.getAccountName(), account.getUuid());
         Query<InstanceStatsSnapshot> query = persistence.createQuery(InstanceStatsSnapshot.class)
                                                  .filter(InstanceStatsSnapshotKeys.accountId, account.getUuid())
                                                  .field(InstanceStatsSnapshotKeys.timestamp)
@@ -87,6 +91,11 @@ public class InstanceStatServiceImpl implements InstanceStatService {
         persistence.delete(query);
       }
     }
+    log.info("Purging instance stats for deleted accounts if present");
+    Query<InstanceStatsSnapshot> query = persistence.createQuery(InstanceStatsSnapshot.class)
+                                             .field(InstanceStatsSnapshotKeys.timestamp)
+                                             .lessThan(timestamp);
+    persistence.delete(query);
     return true;
   }
 

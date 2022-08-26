@@ -11,9 +11,9 @@ package io.harness.delegate.task.citasks.cik8handler;
  * Delegate task handler to delete CI build setup pod on a K8 cluster.
  */
 
+import static io.harness.connector.SecretSpecBuilder.getSecretName;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.delegate.task.citasks.cik8handler.SecretSpecBuilder.getSecretName;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static java.lang.String.format;

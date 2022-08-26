@@ -21,6 +21,7 @@ import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.commons.utils.BigQueryHelper;
 import io.harness.ccm.graphql.core.budget.BudgetCostService;
 import io.harness.ccm.graphql.core.budget.BudgetService;
+import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.remote.resources.perspectives.PerspectiveResource;
 import io.harness.ccm.service.intf.CCMNotificationService;
 import io.harness.ccm.views.entities.CEView;
@@ -57,6 +58,7 @@ public class PerspectiveResourceTest extends CategoryTest {
   private TelemetryReporter telemetryReporter = mock(TelemetryReporter.class);
   private TransactionTemplate transactionTemplate = mock(TransactionTemplate.class);
   private OutboxService outboxService = mock(OutboxService.class);
+  private CCMRbacHelper rbacHelper = mock(CCMRbacHelper.class);
   private PerspectiveResource perspectiveResource;
 
   private final String ACCOUNT_ID = "ACCOUNT_ID";
@@ -89,7 +91,7 @@ public class PerspectiveResourceTest extends CategoryTest {
 
     perspectiveResource = new PerspectiveResource(ceViewService, ceReportScheduleService, viewCustomFieldService,
         bigQueryService, bigQueryHelper, budgetCostService, budgetService, notificationService, awsAccountFieldHelper,
-        telemetryReporter, transactionTemplate, outboxService);
+        telemetryReporter, transactionTemplate, outboxService, rbacHelper);
   }
 
   @Test

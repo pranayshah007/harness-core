@@ -60,11 +60,11 @@ BAZEL_MODULES="\
   //290-dashboard-service:module \
   //295-cdng-contracts:module \
   //300-cv-nextgen:module \
-  //310-ci-manager:module \
-  //320-ci-execution:module \
   //323-sto-utilities:module \
   //325-sto-beans:module \
-  //330-ci-beans:module \
+  //332-ci-manager/app:module \
+  //332-ci-manager/contracts:module \
+  //332-ci-manager/service:module \
   //340-ce-nextgen:module \
   //350-event-server:module \
   //360-cg-manager:module \
@@ -83,15 +83,18 @@ BAZEL_MODULES="\
   //450-ce-views:module \
   //460-capability:module \
   //490-ce-commons:module \
-  //800-pipeline-service:module \
-  //800-pipeline-service/modules/ng-triggers:module \
-  //800-pipeline-service/modules/orchestration-steps:module \
-  //800-pipeline-service/modules/orchestration-steps/contracts:module \
-  //800-pipeline-service/modules/orchestration-visualization:module \
-  //800-pipeline-service/modules/orchestration:module \
-  //800-pipeline-service/modules/orchestration/contracts:module \
-  //800-pipeline-service/modules/orchestration-beans:module \
-  //800-pipeline-service/modules/pms-contracts:module \
+  //pipeline-service/service:module \
+  //pipeline-service/modules/ng-triggers:module \
+  //pipeline-service/modules/orchestration-steps:module \
+  //pipeline-service/modules/orchestration-steps/contracts:module \
+  //pipeline-service/modules/orchestration-visualization:module \
+  //pipeline-service/modules/orchestration:module \
+  //pipeline-service/modules/orchestration/contracts:module \
+  //pipeline-service/modules/orchestration-beans:module \
+  //pipeline-service/modules/pms-contracts:module \
+  //clients/pipeline-service/pms-client:module \
+  //clients/pipeline-service/pms-sdk-core:module \
+  //clients/pipeline-service/pms-sdk:module \
   //815-cg-triggers:module \
   //platform-service/service:module \
   //platform-service/service:module_deploy.jar \
@@ -110,9 +113,7 @@ BAZEL_MODULES="\
   //874-orchestration-delay:module \
   //877-filestore:module \
   //878-ng-common-utilities:module \
-  //879-pms-sdk:module \
   //880-pipeline-cd-commons:module \
-  //882-pms-sdk-core:module \
   //884-pms-commons:module \
   //890-sm-core:module \
   //900-git-sync-sdk:module \
@@ -128,7 +129,7 @@ BAZEL_MODULES="\
   //930-delegate-tasks:module \
   //930-ng-core-clients:module \
   //932-connector-task:module \
-  //933-scm-commons:module \
+  //933-ci-commons:module \
   //935-analyser-service:module \
   //937-persistence-tracer:module \
   //940-feature-flag:module \
@@ -151,7 +152,7 @@ BAZEL_MODULES="\
   //950-events-framework-monitor:module \
   //950-log-client:module \
   //951-cg-git-sync:module \
-  //951-debezium-service:module \
+  //debezium-service/service:module \
   //952-debezium-engine:module \
   //959-debezium-beans:module \
   //950-ng-authentication-service:module \
@@ -160,6 +161,7 @@ BAZEL_MODULES="\
   //950-ng-signup-beans:module \
   //950-telemetry:module \
   //950-wait-engine:module \
+  //951-opa-contracts:all \
   //952-remote-observers:module \
   //952-scm-java-client:module \
   //953-events-api/src/main/proto:all \
@@ -295,10 +297,8 @@ build_protocol_info(){
 }
 
 build_bazel_module 100-migrator
-build_bazel_module 320-ci-execution
 build_bazel_module 323-sto-utilities
 build_bazel_module 325-sto-beans
-build_bazel_module 330-ci-beans
 build_bazel_module 380-cg-graphql
 build_bazel_module 400-rest
 build_bazel_module 410-cg-rest
@@ -318,9 +318,7 @@ build_bazel_module 867-polling-contracts
 build_bazel_module 870-cg-orchestration
 build_bazel_module 874-orchestration-delay
 build_bazel_module 878-ng-common-utilities
-build_bazel_module 879-pms-sdk
 build_bazel_module 880-pipeline-cd-commons
-build_bazel_module 882-pms-sdk-core
 build_bazel_module 884-pms-commons
 build_bazel_module 890-sm-core
 build_bazel_module 900-git-sync-sdk
@@ -331,7 +329,7 @@ build_bazel_module 920-delegate-service-beans
 build_bazel_module 930-delegate-tasks
 build_bazel_module 930-ng-core-clients
 build_bazel_module 932-connector-task
-build_bazel_module 933-scm-commons
+build_bazel_module 933-ci-commons
 build_bazel_module 940-feature-flag
 build_bazel_module 940-secret-manager-client
 build_bazel_module 947-scim-core
@@ -388,6 +386,6 @@ build_proto_module ciscm product/ci/scm/proto
 bazel ${bazelrc} run ${BAZEL_ARGUMENTS} //001-microservice-intfc-tool:module | grep "Codebase Hash:" > protocol.info
 
 if [ "${PLATFORM}" == "jenkins" ]; then
- build_protocol_info 800-pipeline-service pipeline-service
- build_protocol_info 310-ci-manager ci-manager
+ build_protocol_info pipeline-service pipeline-service
+ build_protocol_info 332-ci-manager ci-manager
 fi

@@ -17,6 +17,7 @@ import static org.springframework.data.mongodb.core.query.Criteria.where;
 
 import io.harness.NGResourceFilterConstants;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.ScopeLevel;
 import io.harness.cdng.gitops.entity.Cluster;
 import io.harness.cdng.gitops.entity.Cluster.ClusterKeys;
 import io.harness.cdng.gitops.service.ClusterService;
@@ -83,15 +84,15 @@ public class ClusterServiceImpl implements ClusterService {
   }
 
   @Override
-  public boolean delete(
-      String accountId, String orgIdentifier, String projectIdentifier, String envIdentifier, String clusterRef) {
+  public boolean delete(String accountId, String orgIdentifier, String projectIdentifier, String envIdentifier,
+      String clusterRef, ScopeLevel scopeLevel) {
     checkArgument(isNotEmpty(accountId), "accountId must be present");
     checkArgument(isNotEmpty(orgIdentifier), "org identifier must be present");
     checkArgument(isNotEmpty(projectIdentifier), "project identifier must be present");
     checkArgument(isNotEmpty(clusterRef), "cluster identifier must be present");
 
-    Criteria criteria =
-        getClusterEqualityCriteria(accountId, orgIdentifier, projectIdentifier, envIdentifier, clusterRef);
+    Criteria criteria = getClusterEqualityCriteria(
+        accountId, orgIdentifier, projectIdentifier, envIdentifier, getScopedClusterRef(scopeLevel, clusterRef));
     DeleteResult delete = clusterRepository.delete(criteria);
     return delete.wasAcknowledged() && delete.getDeletedCount() == 1;
   }
@@ -99,12 +100,13 @@ public class ClusterServiceImpl implements ClusterService {
   @Override
   public DeleteResult deleteFromAllEnv(
       String accountId, String orgIdentifier, String projectIdentifier, String clusterRef) {
+    final ScopeLevel scope = ScopeLevel.of(accountId, orgIdentifier, projectIdentifier);
+
     checkArgument(isNotEmpty(accountId), "accountId must be present");
-    checkArgument(isNotEmpty(orgIdentifier), "org identifier must be present");
-    checkArgument(isNotEmpty(projectIdentifier), "project identifier must be present");
     checkArgument(isNotEmpty(clusterRef), "cluster identifier must be present");
 
-    Criteria criteria = getClusterEqualityCriteriaForAllEnv(accountId, orgIdentifier, projectIdentifier, clusterRef);
+    Criteria criteria = getClusterEqualityCriteriaForAllEnv(
+        accountId, orgIdentifier, projectIdentifier, getScopedClusterRef(scope, clusterRef));
     return clusterRepository.delete(criteria);
   }
 
@@ -187,14 +189,14 @@ public class ClusterServiceImpl implements ClusterService {
 
   private Criteria getClusterEqualityCriteriaForAllEnv(
       String accountId, String orgId, String projectId, String identifier) {
-    return where(ClusterKeys.accountId)
-        .is(accountId)
-        .and(ClusterKeys.orgIdentifier)
-        .is(orgId)
-        .and(ClusterKeys.projectIdentifier)
-        .is(projectId)
-        .and(ClusterKeys.clusterRef)
-        .is(identifier);
+    Criteria criteria = where(ClusterKeys.accountId).is(accountId);
+    if (isNotEmpty(orgId)) {
+      criteria = criteria.and(ClusterKeys.orgIdentifier).is(orgId);
+    }
+    if (isNotEmpty(projectId)) {
+      criteria = criteria.and(ClusterKeys.projectIdentifier).is(projectId);
+    }
+    return criteria.and(ClusterKeys.clusterRef).is(identifier);
   }
 
   private Criteria getClusterEqCriteriaForAllClusters(String accountId, String orgId, String projectId) {
@@ -260,5 +262,11 @@ public class ClusterServiceImpl implements ClusterService {
       criteria.andOperator(searchCriteria);
     }
     return criteria;
+  }
+
+  private String getScopedClusterRef(ScopeLevel scopeLevel, String ref) {
+    return scopeLevel != null && scopeLevel != ScopeLevel.PROJECT
+        ? String.format("%s.%s", scopeLevel.toString().toLowerCase(), ref)
+        : ref;
   }
 }

@@ -19,7 +19,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
-import io.harness.beans.FeatureName;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateSelectionLogParams;
 import io.harness.delegate.beans.DelegateSelectionLogResponse;
@@ -89,9 +88,6 @@ public class DelegateSelectionLogsServiceImpl implements DelegateSelectionLogsSe
 
   @Override
   public void save(DelegateSelectionLog selectionLog) {
-    if (featureFlagService.isEnabled(FeatureName.DELEGATE_SELECTION_LOGS_DISABLED, selectionLog.getAccountId())) {
-      return;
-    }
     try {
       persistence.save(selectionLog);
     } catch (Exception exception) {
@@ -105,7 +101,7 @@ public class DelegateSelectionLogsServiceImpl implements DelegateSelectionLogsSe
       return;
     }
     save(DelegateSelectionLog.builder()
-             .accountId(delegateTask.getAccountId())
+             .accountId(getAccountId(delegateTask))
              .taskId(delegateTask.getUuid())
              .conclusion(REJECTED)
              .message(NO_ELIGIBLE_DELEGATES)
@@ -126,7 +122,7 @@ public class DelegateSelectionLogsServiceImpl implements DelegateSelectionLogsSe
     String message = String.format(
         "%s : [%s]", message_prefix, String.join(", ", getDelegateHostNames(delegateTask.getAccountId(), delegateIds)));
     save(DelegateSelectionLog.builder()
-             .accountId(delegateTask.getAccountId())
+             .accountId(getAccountId(delegateTask))
              .taskId(delegateTask.getUuid())
              .delegateIds(delegateIds)
              .conclusion(SELECTED)
@@ -152,7 +148,7 @@ public class DelegateSelectionLogsServiceImpl implements DelegateSelectionLogsSe
             .collect(Collectors.toList());
     nonAssignables.forEach(msg
         -> save(DelegateSelectionLog.builder()
-                    .accountId(delegateTask.getAccountId())
+                    .accountId(getAccountId(delegateTask))
                     .taskId(delegateTask.getUuid())
                     .message(msg)
                     .conclusion(NON_SELECTED)
@@ -171,7 +167,7 @@ public class DelegateSelectionLogsServiceImpl implements DelegateSelectionLogsSe
     String message = String.format("%s : [%s]", BROADCASTING_DELEGATES,
         String.join(", ", getDelegateHostNames(delegateTask.getAccountId(), delegateIds)));
     save(DelegateSelectionLog.builder()
-             .accountId(delegateTask.getAccountId())
+             .accountId(getAccountId(delegateTask))
              .taskId(delegateTask.getUuid())
              .delegateIds(delegateIds)
              .conclusion(BROADCAST)
@@ -191,7 +187,7 @@ public class DelegateSelectionLogsServiceImpl implements DelegateSelectionLogsSe
     }
     String message = String.format("%s : [%s]", TASK_ASSIGNED, delegateId);
     save(DelegateSelectionLog.builder()
-             .accountId(delegateTask.getAccountId())
+             .accountId(getAccountId(delegateTask))
              .taskId(delegateTask.getUuid())
              .conclusion(ASSIGNED)
              .message(message)
@@ -205,7 +201,7 @@ public class DelegateSelectionLogsServiceImpl implements DelegateSelectionLogsSe
       return;
     }
     save(DelegateSelectionLog.builder()
-             .accountId(delegateTask.getAccountId())
+             .accountId(getAccountId(delegateTask))
              .taskId(delegateTask.getUuid())
              .conclusion(REJECTED)
              .message(failureMessage)
@@ -289,7 +285,7 @@ public class DelegateSelectionLogsServiceImpl implements DelegateSelectionLogsSe
       return;
     }
     save(DelegateSelectionLog.builder()
-             .accountId(delegateTask.getAccountId())
+             .accountId(getAccountId(delegateTask))
              .taskId(delegateTask.getUuid())
              .conclusion(INFO)
              .message(info.toString())
@@ -327,5 +323,10 @@ public class DelegateSelectionLogsServiceImpl implements DelegateSelectionLogsSe
     selectorCapabilities.forEach(
         capability -> taskSelectors.add(capability.getSelectorOrigin().concat(capability.getSelectors().toString())));
     return String.format("Selector(s) originated from %s ", String.join(", ", taskSelectors));
+  }
+
+  private String getAccountId(DelegateTask delegateTask) {
+    return delegateTask.isExecuteOnHarnessHostedDelegates() ? delegateTask.getSecondaryAccountId()
+                                                            : delegateTask.getAccountId();
   }
 }

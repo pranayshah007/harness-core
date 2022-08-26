@@ -194,8 +194,7 @@ public class GitClientHelperTest extends CategoryTest {
   @Owner(developers = HARSH)
   @Category(UnitTests.class)
   public void testGitHubType() {
-    final boolean githubSAAS =
-        GitClientHelper.isGithubSAAS("https://github.kdc.capitalone.com/wings-software/portal.git");
+    final boolean githubSAAS = GitClientHelper.isGithubSAAS("https://github.harness.io/wings-software/portal.git");
     assertThat(githubSAAS).isEqualTo(false);
   }
 
@@ -504,6 +503,28 @@ public class GitClientHelperTest extends CategoryTest {
         .isEqualTo("https://api.bitbucket.org/");
     assertThat(GitClientHelper.getBitBucketApiURL("http://10.67.0.1/devkimittal/harness-core"))
         .isEqualTo("http://10.67.0.1/");
+    assertThat(GitClientHelper.getBitBucketApiURL("https://bb.harness.io/stash/scm/rutvijproject/rutvijrepo.git"))
+        .isEqualTo("https://bb.harness.io/stash/");
+    assertThat(GitClientHelper.getBitBucketApiURL("https://bb.harness.io/scm/rutvijproject/rutvijrepo.git"))
+        .isEqualTo("https://bb.harness.io/");
+    assertThat(
+        GitClientHelper.getBitBucketApiURL("https://rutvijmehta@bb.harness.io/stash/scm/rutvijproject/rutvijrepo.git"))
+        .isEqualTo("https://bb.harness.io/stash/");
+    assertThat(GitClientHelper.getBitBucketApiURL("https://rutvijmehta@bb.harness.io/scm/rutvijproject/rutvijrepo.git"))
+        .isEqualTo("https://bb.harness.io/");
+    assertThat(GitClientHelper.getBitBucketApiURL("https://bb.harness.io")).isEqualTo("https://bb.harness.io/");
+    assertThat(GitClientHelper.getBitBucketApiURL("https://bb.harness.io/")).isEqualTo("https://bb.harness.io/");
+    assertThat(GitClientHelper.getBitBucketApiURL("https://bb.harness.io/scm")).isEqualTo("https://bb.harness.io/");
+    assertThat(GitClientHelper.getBitBucketApiURL("https://bb.harness.io/scm/")).isEqualTo("https://bb.harness.io/");
+    assertThat(GitClientHelper.getBitBucketApiURL("https://bb.harness.io/stash/")).isEqualTo("https://bb.harness.io/");
+    assertThat(GitClientHelper.getBitBucketApiURL("https://bb.harness.io/stash/scm"))
+        .isEqualTo("https://bb.harness.io/stash/");
+    assertThat(GitClientHelper.getBitBucketApiURL("ssh://git@bb.harness.io/rutvijproject/rutvijrepo.git"))
+        .isEqualTo("https://bb.harness.io/");
+    assertThat(GitClientHelper.getBitBucketApiURL("ssh://git@bb.harness.io/scm/rutvijproject/rutvijrepo.git"))
+        .isEqualTo("https://bb.harness.io/");
+    assertThat(GitClientHelper.getBitBucketApiURL("ssh://git@bb.harness.io/stash/scm/rutvijproject/rutvijrepo.git"))
+        .isEqualTo("https://bb.harness.io/stash/");
   }
 
   @Test
@@ -529,6 +550,10 @@ public class GitClientHelperTest extends CategoryTest {
     assertThatCode(() -> GitClientHelper.validateURL("ssh://github.com/smjt-h")).doesNotThrowAnyException();
     assertThatCode(() -> GitClientHelper.validateURL("git@github.com:smjt-h/goHelloWorldServer.git"))
         .doesNotThrowAnyException();
+    assertThatThrownBy(() -> GitClientHelper.validateURL("git@github.com/smjt-h/goHelloWorldServer.git"))
+        .isExactlyInstanceOf(InvalidRequestException.class);
+    assertThatCode(() -> GitClientHelper.validateURL("ssh://git@github.com/smjt-h/goHelloWorldServer.git"))
+        .doesNotThrowAnyException();
     assertThatCode(() -> GitClientHelper.validateURL("https://github.com/smjt-h/goHelloWorldServer.git"))
         .doesNotThrowAnyException();
   }
@@ -537,10 +562,9 @@ public class GitClientHelperTest extends CategoryTest {
   @Owner(developers = RAGHAV_GUPTA)
   @Category(UnitTests.class)
   public void testRepoAndOwnerForGithubOnPrem() {
-    assertThat(GitClientHelper.getGitOwner("https://github.kdc.capitalone.com/wings-software/portal.git", false))
+    assertThat(GitClientHelper.getGitOwner("https://github.harness.io/wings-software/portal.git", false))
         .isEqualTo("wings-software");
-    assertThat(GitClientHelper.getGitRepo("https://github.kdc.capitalone.com/wings-software/portal.git"))
-        .isEqualTo("portal");
+    assertThat(GitClientHelper.getGitRepo("https://github.harness.io/wings-software/portal.git")).isEqualTo("portal");
     assertThat(GitClientHelper.getGitOwner("git@github.harness.com:wings-software/portal.git", false))
         .isEqualTo("wings-software");
     assertThat(GitClientHelper.getGitRepo("git@github.harness.com:wings-software/portal.git")).isEqualTo("portal");
@@ -663,7 +687,7 @@ public class GitClientHelperTest extends CategoryTest {
   @Test
   @Owner(developers = BHAVYA)
   @Category(UnitTests.class)
-  public void testGetCompleteHTTPUrlFromSSHUrlForBitbucketClone() {
+  public void testGetCompleteHTTPUrlFromHTTPCloneUrlForBitbucket() {
     assertThat(GitClientHelper.getCompleteHTTPUrlForBitbucketSaas("https://bhavya181@bitbucket.org/repoOrg/repo.git"))
         .isEqualTo("https://bitbucket.org/repoOrg/repo");
   }

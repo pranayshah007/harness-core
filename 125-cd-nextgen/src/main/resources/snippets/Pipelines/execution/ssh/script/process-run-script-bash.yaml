@@ -1,0 +1,16 @@
+# i=0
+                        # while [ "$i" -lt 30 ]
+                        # do
+                        #     pgrep -f "\-Dcatalina.home=$HOME/<+service.name>/<+env.name>/tomcat"
+                        #     rc=$?
+                        #     if [ "$rc" -eq 0 ]
+                        #     then
+                        #         exit 0
+                        #         sleep 1
+                        #         i=$((i+1))
+                        #     else
+                        #         sleep 1
+                        #         i=$((i+1))
+                        #     fi
+                        # done
+                        # exit 1

@@ -14,6 +14,7 @@ import io.harness.entities.ArtifactDetails;
 import io.harness.entities.InstanceType;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.Map;
 import lombok.Builder;
 import lombok.Setter;
@@ -24,6 +25,7 @@ import lombok.experimental.NonFinal;
 @Value
 @Builder
 public class InstanceDTO {
+  @JsonIgnore String uuid;
   String accountIdentifier;
   String orgIdentifier;
   String projectIdentifier;
@@ -39,12 +41,12 @@ public class InstanceDTO {
   String infraIdentifier;
   String infraName;
   String connectorRef;
-  ArtifactDetails primaryArtifact;
-  String lastDeployedById;
-  String lastDeployedByName;
+  @NonFinal @Setter ArtifactDetails primaryArtifact;
+  @NonFinal @Setter String lastDeployedById;
+  @NonFinal @Setter String lastDeployedByName;
   @NonFinal @Setter long lastDeployedAt;
-  String lastPipelineExecutionId;
-  String lastPipelineExecutionName;
+  @NonFinal @Setter String lastPipelineExecutionId;
+  @NonFinal @Setter String lastPipelineExecutionName;
   InstanceInfoDTO instanceInfoDTO;
   boolean isDeleted;
   long deletedAt;

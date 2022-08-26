@@ -103,60 +103,6 @@ public class K8sRollingRollbackBaseHandlerTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = ANSHUL)
-  @Category(UnitTests.class)
-  public void testRollbackForDC() throws Exception {
-    rollbackUtil(deploymentConfig(),
-        "oc --kubeconfig=config-path rollout undo DeploymentConfig/test-dc --namespace=default --to-revision=1");
-  }
-
-  @Test
-  @Owner(developers = ANSHUL)
-  @Category(UnitTests.class)
-  public void testRollbackForDeployment() throws Exception {
-    rollbackUtil(
-        deployment(), "kubectl --kubeconfig=config-path rollout undo Deployment/nginx-deployment --to-revision=1");
-  }
-
-  private void rollbackUtil(KubernetesResource kubernetesResource, String expectedOutput) throws Exception {
-    int releaseNumber = 2;
-    K8sDelegateTaskParams k8sDelegateTaskParams =
-        K8sDelegateTaskParams.builder().kubectlPath("kubectl").ocPath("oc").kubeconfigPath("config-path").build();
-    K8sRollingRollbackHandlerConfig rollbackHandlerConfig = new K8sRollingRollbackHandlerConfig();
-    Release release = Release.builder()
-                          .resources(asList(kubernetesResource.getResourceId()))
-                          .number(2)
-                          .managedWorkloads(asList(KubernetesResourceIdRevision.builder()
-                                                       .workload(kubernetesResource.getResourceId())
-                                                       .revision("2")
-                                                       .build()))
-                          .build();
-    Release previousEligibleRelease = Release.builder()
-                                          .resources(asList(kubernetesResource.getResourceId()))
-                                          .number(1)
-                                          .managedWorkloads(asList(KubernetesResourceIdRevision.builder()
-                                                                       .workload(kubernetesResource.getResourceId())
-                                                                       .revision("1")
-                                                                       .build()))
-                                          .build();
-    rollbackHandlerConfig.setReleaseHistory(releaseHistory);
-    rollbackHandlerConfig.setClient(Kubectl.client("kubectl", "config-path"));
-    ProcessResult processResult = new ProcessResult(0, new ProcessOutput("".getBytes()));
-
-    doReturn(processResult)
-        .when(k8sRollingRollbackBaseHandler)
-        .executeScript(eq(k8sDelegateTaskParams), eq(expectedOutput), any(LogOutputStream.class),
-            any(LogOutputStream.class), any(Map.class));
-    doReturn(processResult)
-        .when(k8sRollingRollbackBaseHandler)
-        .runK8sExecutable(eq(k8sDelegateTaskParams), eq(logCallback), any(RolloutUndoCommand.class));
-
-    boolean rollback = k8sRollingRollbackBaseHandler.rollback(
-        rollbackHandlerConfig, k8sDelegateTaskParams, releaseNumber, logCallback, emptySet(), false);
-    assertThat(rollback).isTrue();
-  }
-
-  @Test
   @Owner(developers = ABOSII)
   @Category(UnitTests.class)
   public void testFirstDeploymentFailsRollBack() throws Exception {

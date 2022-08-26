@@ -51,11 +51,16 @@ public interface SettingsService extends OwnedByAccount, OwnedBySettingAttribute
   PageResponse<SettingAttribute> list(
       PageRequest<SettingAttribute> req, String appIdFromRequest, String envIdFromRequest, boolean forUsageInNewApp);
 
+  PageResponse<SettingAttribute> list(
+      PageRequest<SettingAttribute> req, String appIdFromRequest, String accountIdFromRequest);
+
   PageResponse<SettingAttribute> list(PageRequest<SettingAttribute> req, String appIdFromRequest,
       String envIdFromRequest, String accountId, boolean gitSshConfigOnly, boolean withArtifactStreamCount,
       String artifactStreamSearchString, int maxArtifactStreams, ArtifactType artifactType, boolean forUsageInNewApp);
 
   List<SettingAttribute> listAllSettingAttributesByType(String accountId, String type);
+
+  List<String> getSettingIdsForAccount(String accountId);
 
   List<SettingAttribute> list(String accountId, SettingAttribute.SettingCategory category);
 

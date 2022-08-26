@@ -39,7 +39,10 @@ import io.harness.gitsync.ErrorDetails;
 import io.harness.gitsync.FileInfo;
 import io.harness.gitsync.GetFileRequest;
 import io.harness.gitsync.GetFileResponse;
+import io.harness.gitsync.GetRepoUrlRequest;
+import io.harness.gitsync.GetRepoUrlResponse;
 import io.harness.gitsync.GitMetaData;
+import io.harness.gitsync.IsGitSimplificationEnabledRequest;
 import io.harness.gitsync.PushFileResponse;
 import io.harness.gitsync.PushInfo;
 import io.harness.gitsync.RepoDetails;
@@ -257,19 +260,22 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
   }
 
   @Override
-  public Boolean isGitSimplificationEnabled(EntityScopeInfo entityScopeInfo) {
+  public Boolean isGitSimplificationEnabled(IsGitSimplificationEnabledRequest isGitSimplificationEnabledRequest) {
+    String accountIdentifier = isGitSimplificationEnabledRequest.getEntityScopeInfo().getAccountId();
+    String orgIdentifier = isGitSimplificationEnabledRequest.getEntityScopeInfo().getOrgId().getValue();
+    String projectIdentifier = isGitSimplificationEnabledRequest.getEntityScopeInfo().getProjectId().getValue();
     try {
-      if (isEnabled(entityScopeInfo.getAccountId(), FeatureName.NG_GIT_EXPERIENCE)) {
-        return true;
+      if (isEnabled(accountIdentifier, FeatureName.USE_OLD_GIT_SYNC)) {
+        return gitSyncSettingsService.getGitSimplificationStatus(accountIdentifier, orgIdentifier, projectIdentifier);
+      } else {
+        return !isOldGitSyncEnabledForModule(isGitSimplificationEnabledRequest.getEntityScopeInfo(),
+            isGitSimplificationEnabledRequest.getIsNotForFFModule());
       }
-      return gitSyncSettingsService.getGitSimplificationStatus(entityScopeInfo.getAccountId(),
-          entityScopeInfo.getOrgId().getValue(), entityScopeInfo.getProjectId().getValue());
     } catch (Exception ex) {
       log.error(
           String.format(
               "Exception while checking git Simplification status for accountId: %s , orgId: %s , projectId: %s "),
-          entityScopeInfo.getAccountId(), entityScopeInfo.getOrgId().getValue(),
-          entityScopeInfo.getProjectId().getValue(), ex);
+          accountIdentifier, orgIdentifier, projectIdentifier, ex);
       return false;
     }
   }
@@ -483,6 +489,34 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
     return CreatePRResponse.newBuilder().setStatusCode(200).setPrNumber(scmCreatePRResponseDTO.getPrNumber()).build();
   }
 
+  @Override
+  public GetRepoUrlResponse getRepoUrl(GetRepoUrlRequest getRepoUrlRequest) {
+    try {
+      String repoUrl = scmFacilitatorService.getRepoUrl(
+          ScopeIdentifierMapper.getScopeFromScopeIdentifiers(getRepoUrlRequest.getScopeIdentifiers()),
+          getRepoUrlRequest.getConnectorRef(), getRepoUrlRequest.getRepoName());
+      return GetRepoUrlResponse.newBuilder().setStatusCode(HTTP_200).setRepoUrl(repoUrl).build();
+    } catch (WingsException ex) {
+      ScmException scmException = ScmExceptionUtils.getScmException(ex);
+      if (scmException == null) {
+        return io.harness.gitsync.GetRepoUrlResponse.newBuilder()
+            .setStatusCode(ex.getCode().getStatus().getCode())
+            .setError(prepareDefaultErrorDetails(ex))
+            .build();
+      }
+      return io.harness.gitsync.GetRepoUrlResponse.newBuilder()
+          .setStatusCode(ScmErrorCodeToHttpStatusCodeMapping.getHttpStatusCode(scmException.getCode()))
+          .setError(prepareErrorDetails(ex))
+          .build();
+    }
+  }
+
+  @Override
+  public Boolean isOldGitSyncEnabledForModule(EntityScopeInfo entityScopeInfo, boolean isNotForFFModule) {
+    return gitSyncSettingsService.isOldGitSyncEnabledForModule(entityScopeInfo.getAccountId(),
+        entityScopeInfo.getOrgId().getValue(), entityScopeInfo.getProjectId().getValue(), isNotForFFModule);
+  }
+
   private InfoForGitPush getInfoForGitPush(
       FileInfo request, EntityDetail entityDetailDTO, String accountId, YamlGitConfigDTO yamlGitConfig) {
     Principal principal = request.getPrincipal();
@@ -569,6 +603,8 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
                             .setBlobId(scmCommitFileResponseDTO.getBlobId())
                             .setFileUrl(gitFilePathHelper.getFileUrl(scope, createFileRequest.getConnectorRef(),
                                 createFileRequest.getBranchName(), createFileRequest.getFilePath(), gitRepositoryDTO))
+                            .setRepoUrl(scmFacilitatorService.getRepoUrl(
+                                scope, createFileRequest.getConnectorRef(), createFileRequest.getRepoName()))
                             .build())
         .build();
   }

@@ -368,6 +368,8 @@ public class StateMachine implements PersistentEntity, UuidAware, CreatedAtAware
       if (node.getProperties() != null) {
         try {
           state.parseProperties(node.getProperties());
+        } catch (WingsException e) {
+          throw e;
         } catch (Exception e) {
           String errorMessage = format(MAPPING_ERROR_MESSAGE, state.getName(), state.getStateType());
           log.warn(errorMessage, e);

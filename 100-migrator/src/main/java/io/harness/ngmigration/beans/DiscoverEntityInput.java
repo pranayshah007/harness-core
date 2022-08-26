@@ -12,10 +12,16 @@ import io.harness.annotations.dev.OwnedBy;
 
 import software.wings.ngmigration.NGMigrationEntityType;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @OwnedBy(HarnessTeam.CDC)
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class DiscoverEntityInput {
   private String entityId;
   private String appId;

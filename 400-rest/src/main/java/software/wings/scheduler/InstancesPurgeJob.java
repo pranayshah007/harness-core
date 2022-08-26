@@ -13,6 +13,7 @@ import io.harness.scheduler.PersistentScheduler;
 import software.wings.graphql.datafetcher.instance.InstanceTimeSeriesDataHelper;
 import software.wings.service.intfc.instance.InstanceService;
 import software.wings.service.intfc.instance.stats.InstanceStatService;
+import software.wings.service.intfc.instance.stats.ServerlessInstanceStatService;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Stopwatch;
@@ -40,11 +41,12 @@ public class InstancesPurgeJob implements Job {
   private static final String INSTANCES_PURGE_CRON_GROUP = "INSTANCES_PURGE_CRON_GROUP";
 
   private static final int MONTHS_TO_RETAIN_INSTANCES_EXCLUDING_CURRENT_MONTH = 2;
-  private static final int MONTHS_TO_RETAIN_INSTANCE_STATS_EXCLUDING_CURRENT_MONTH = 5;
+  private static final int MONTHS_TO_RETAIN_INSTANCE_STATS_EXCLUDING_CURRENT_MONTH = 6;
 
   @Inject private BackgroundExecutorService executorService;
   @Inject private InstanceService instanceService;
   @Inject private InstanceStatService instanceStatsService;
+  @Inject private ServerlessInstanceStatService serverlessInstanceStatService;
   @Inject InstanceTimeSeriesDataHelper instanceTimeSeriesDataHelper;
 
   public static void add(PersistentScheduler jobScheduler) {
@@ -73,6 +75,7 @@ public class InstancesPurgeJob implements Job {
     Stopwatch sw = Stopwatch.createStarted();
 
     purgeOldStats();
+    purgeOldServerlessInstanceStats();
     purgeOldDeletedInstances();
     purgeOldInstancesFromTimeScaleDB();
 
@@ -84,7 +87,8 @@ public class InstancesPurgeJob implements Job {
     log.info("Starting purge of instance stats");
     Stopwatch sw = Stopwatch.createStarted();
 
-    boolean purged = instanceStatsService.purgeUpTo(getStartingInstantOfRetentionOfInstanceStats());
+    boolean purged =
+        instanceStatsService.purgeUpTo(getRetentionStartTime(MONTHS_TO_RETAIN_INSTANCE_STATS_EXCLUDING_CURRENT_MONTH));
     if (purged) {
       log.info(
           "Purge of instance stats completed successfully. Time taken: {} millis", sw.elapsed(TimeUnit.MILLISECONDS));
@@ -93,11 +97,26 @@ public class InstancesPurgeJob implements Job {
     }
   }
 
+  private void purgeOldServerlessInstanceStats() {
+    log.info("Starting purge of serverless instance stats");
+    Stopwatch sw = Stopwatch.createStarted();
+
+    boolean purged = serverlessInstanceStatService.purgeUpTo(
+        getRetentionStartTime(MONTHS_TO_RETAIN_INSTANCE_STATS_EXCLUDING_CURRENT_MONTH));
+    if (purged) {
+      log.info("Purge of serverless instance stats completed successfully. Time taken: {} millis",
+          sw.elapsed(TimeUnit.MILLISECONDS));
+    } else {
+      log.info("Purge of serverless instance stats failed. Time taken: {} millis", sw.elapsed(TimeUnit.MILLISECONDS));
+    }
+  }
+
   private void purgeOldDeletedInstances() {
     log.info("Starting purge of instances");
     Stopwatch sw = Stopwatch.createStarted();
 
-    boolean purged = instanceService.purgeDeletedUpTo(getStartingInstantOfRetentionOfInstances());
+    boolean purged =
+        instanceService.purgeDeletedUpTo(getRetentionStartTime(MONTHS_TO_RETAIN_INSTANCES_EXCLUDING_CURRENT_MONTH));
     if (purged) {
       log.info("Purge of instances completed successfully. Time taken: {} millis", sw.elapsed(TimeUnit.MILLISECONDS));
     } else {
@@ -111,18 +130,9 @@ public class InstancesPurgeJob implements Job {
     log.info("Completed purge of instances from timescaledb");
   }
 
-  public Instant getStartingInstantOfRetentionOfInstances() {
-    LocalDate firstDayOfMonthOfRetention = LocalDate.now(ZoneOffset.UTC)
-                                               .minusMonths(MONTHS_TO_RETAIN_INSTANCES_EXCLUDING_CURRENT_MONTH)
-                                               .with(TemporalAdjusters.firstDayOfMonth());
-
-    return firstDayOfMonthOfRetention.atStartOfDay().toInstant(ZoneOffset.UTC);
-  }
-
-  public Instant getStartingInstantOfRetentionOfInstanceStats() {
-    LocalDate firstDayOfMonthOfRetention = LocalDate.now(ZoneOffset.UTC)
-                                               .minusMonths(MONTHS_TO_RETAIN_INSTANCE_STATS_EXCLUDING_CURRENT_MONTH)
-                                               .with(TemporalAdjusters.firstDayOfMonth());
+  public Instant getRetentionStartTime(int monthsToSubtract) {
+    LocalDate firstDayOfMonthOfRetention =
+        LocalDate.now(ZoneOffset.UTC).minusMonths(monthsToSubtract).with(TemporalAdjusters.firstDayOfMonth());
 
     return firstDayOfMonthOfRetention.atStartOfDay().toInstant(ZoneOffset.UTC);
   }

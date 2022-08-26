@@ -27,7 +27,7 @@ public class EventsFrameworkChangeConsumerTest extends CategoryTest {
   private static final String DEFAULT_STRING = "default";
   private static final String collection = "coll";
   private static final EventsFrameworkChangeConsumer eventsFrameworkChangeConsumer =
-      new EventsFrameworkChangeConsumer(collection, null);
+      new EventsFrameworkChangeConsumer(60, collection, null, 1000, 1000);
   private static final String key = "key";
   private static final String value = "value";
   private static final String destination = "destination";

@@ -10,6 +10,7 @@ package software.wings.helpers.ext.helm;
 import static io.harness.annotations.dev.HarnessModule._930_DELEGATE_TASKS;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.helm.HelmCommandType.RELEASE_HISTORY;
 import static io.harness.helm.HelmSubCommandType.TEMPLATE;
 import static io.harness.k8s.model.HelmVersion.V2;
 import static io.harness.k8s.model.HelmVersion.V3;
@@ -66,6 +67,7 @@ import io.harness.delegate.task.helm.CustomManifestFetchTaskHelper;
 import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.helm.HelmCommandFlag;
 import io.harness.delegate.task.helm.HelmCommandResponse;
+import io.harness.delegate.task.helm.HelmTaskHelperBase;
 import io.harness.delegate.task.helm.HelmTestConstants;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
@@ -77,10 +79,12 @@ import io.harness.git.model.GitFile;
 import io.harness.helm.HelmClient;
 import io.harness.helm.HelmClientImpl.HelmCliResponse;
 import io.harness.helm.HelmCommandData;
+import io.harness.helm.HelmCommandType;
 import io.harness.k8s.K8sGlobalConfigService;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.manifest.ManifestHelper;
+import io.harness.k8s.model.HelmVersion;
 import io.harness.k8s.model.Kind;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
@@ -143,6 +147,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import wiremock.com.google.common.collect.ImmutableMap;
 
 @OwnedBy(CDP)
@@ -153,6 +158,7 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
   @Mock private TimeLimiter mockTimeLimiter;
   @Mock private EncryptionService encryptionService;
   @Mock private HelmCommandHelper helmCommandHelper;
+  @Spy private HelmTaskHelperBase helmTaskHelperBase;
   @Mock private ExecutionLogCallback logCallback;
   @Mock private HelmTaskHelper helmTaskHelper;
   @Mock private ContainerDeploymentDelegateHelper containerDeploymentDelegateHelper;
@@ -204,6 +210,8 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
     when(helmCommandHelper.isValidChartSpecification(any())).thenReturn(true);
     when(helmCommandHelper.generateHelmDeployChartSpecFromYaml(any())).thenReturn(Optional.empty());
     when(helmClient.repoUpdate(any())).thenReturn(HelmCliResponse.builder().build());
+    when(helmTaskHelperBase.parseHelmReleaseCommandOutput(eq(""), eq(RELEASE_HISTORY)))
+        .thenReturn(Collections.emptyList());
   }
 
   @Test
@@ -216,13 +224,17 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
     when(helmClient.releaseHistory(any(), eq(false))).thenReturn(helmCliReleaseHistoryResponse);
     when(helmClient.install(any(), eq(false))).thenReturn(helmCliResponse);
     when(helmClient.listReleases(any(), eq(false))).thenReturn(helmCliListReleasesResponse);
-
     ArgumentCaptor<io.harness.helm.HelmCommandData> argumentCaptor = ArgumentCaptor.forClass(HelmCommandData.class);
     HelmCommandResponse helmCommandResponse = helmDeployService.deploy(helmInstallCommandRequest);
     assertThat(helmCommandResponse.getCommandExecutionStatus()).isEqualTo(SUCCESS);
     verify(helmClient).install(argumentCaptor.capture(), eq(false));
-  }
 
+    // Check if revokeReadPermission function called when Helm Version is V380
+    helmInstallCommandRequest.setHelmVersion(HelmVersion.V380);
+    doNothing().when(helmTaskHelperBase).revokeReadPermission(helmInstallCommandRequest.getKubeConfigLocation());
+    helmDeployService.deploy(helmInstallCommandRequest);
+    verify(helmTaskHelperBase, times(1)).revokeReadPermission(helmInstallCommandRequest.getKubeConfigLocation());
+  }
   @Test
   @Owner(developers = ACASIAN)
   @Category(UnitTests.class)
@@ -509,7 +521,7 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
         .build();
   }
   private HelmCliResponse createHelmCliResponse() {
-    return HelmCliResponse.builder().build();
+    return HelmCliResponse.builder().output("").build();
   }
 
   private HelmInstallCommandResponse createHelmInstallCommandResponse() {
@@ -568,7 +580,6 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
                         .build());
 
     HelmReleaseHistoryCommandResponse response = helmDeployService.releaseHistory(request);
-
     assertThat(response).isNotNull();
     assertThat(response.getCommandExecutionStatus()).isEqualTo(SUCCESS);
     assertThat(response.getReleaseInfoList()).hasSize(5);
@@ -1714,7 +1725,7 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testRepoUpdateOnDeployNonInstallRequest() throws Exception {
     helmInstallCommandRequest.setRepoConfig(null);
-    helmInstallCommandRequest.setHelmCommandType(HelmCommandRequest.HelmCommandType.LIST_RELEASE);
+    helmInstallCommandRequest.setHelmCommandType(HelmCommandType.LIST_RELEASE);
     doReturn(helmCliReleaseHistoryResponse)
         .when(helmClient)
         .releaseHistory(HelmCommandDataMapper.getHelmCommandData(helmInstallCommandRequest), false);

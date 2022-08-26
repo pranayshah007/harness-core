@@ -13,11 +13,14 @@ import static java.lang.String.format;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.MigrationAsyncTracker;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ngmigration.beans.DiscoveryInput;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.MigrationInputResult;
 import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.beans.summary.BaseSummary;
+import io.harness.ngmigration.service.AsyncDiscoveryHandler;
 import io.harness.ngmigration.service.DiscoveryService;
 import io.harness.ngmigration.utils.NGMigrationConstants;
 import io.harness.rest.RestResponse;
@@ -30,9 +33,11 @@ import software.wings.security.annotations.Scope;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
@@ -53,6 +58,7 @@ import org.apache.http.entity.ContentType;
 @Scope(ResourceType.APPLICATION)
 public class NgMigrationResource {
   @Inject DiscoveryService discoveryService;
+  @Inject AsyncDiscoveryHandler asyncDiscoveryHandler;
 
   @POST
   @Path("/discover-multi")
@@ -73,6 +79,35 @@ public class NgMigrationResource {
       @QueryParam("entityType") NGMigrationEntityType entityType, @QueryParam("exportImg") boolean exportImage) {
     return new RestResponse<>(discoveryService.discover(
         accountId, appId, entityId, entityType, exportImage ? NGMigrationConstants.DISCOVERY_IMAGE_PATH : null));
+  }
+
+  @GET
+  @Path("/discover/summary")
+  @Timed
+  @ExceptionMetered
+  public RestResponse<Map<NGMigrationEntityType, BaseSummary>> discoverySummary(@QueryParam("entityId") String entityId,
+      @QueryParam("appId") String appId, @QueryParam("accountId") String accountId,
+      @QueryParam("entityType") NGMigrationEntityType entityType) {
+    return new RestResponse<>(discoveryService.getSummary(accountId, appId, entityId, entityType));
+  }
+
+  // This is get because in prod we cannot run this on customers accounts if it is POST
+  @GET
+  @Path("/discover/summary/async")
+  @Timed
+  @ExceptionMetered
+  public RestResponse<Map<String, String>> queueAccountLevelSummary(@QueryParam("accountId") String accountId) {
+    String requestId = asyncDiscoveryHandler.queueAccountSummary(accountId);
+    return new RestResponse<>(ImmutableMap.of("requestId", requestId));
+  }
+
+  @GET
+  @Path("/discover/summary/async-result")
+  @Timed
+  @ExceptionMetered
+  public RestResponse<MigrationAsyncTracker> getAccountLevelSummary(
+      @QueryParam("requestId") String reqId, @QueryParam("accountId") String accountId) {
+    return new RestResponse<>(asyncDiscoveryHandler.getAccountSummary(accountId, reqId));
   }
 
   @GET

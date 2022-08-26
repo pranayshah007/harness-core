@@ -8,6 +8,7 @@
 package io.harness.app;
 
 import static io.harness.AuthorizationServiceHeader.STO_MANAGER;
+import static io.harness.ci.utils.HostedVmSecretResolver.SECRET_CACHE_KEY;
 import static io.harness.lock.DistributedLockImplementation.MONGO;
 import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCHESTRATION;
 
@@ -17,13 +18,19 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.impl.STOYamlSchemaServiceImpl;
 import io.harness.app.intfc.STOYamlSchemaService;
+import io.harness.aws.AwsClient;
+import io.harness.aws.AwsClientImpl;
+import io.harness.cache.NoOpCache;
 import io.harness.callback.DelegateCallback;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.callback.MongoDatabase;
 import io.harness.ci.CIExecutionServiceModule;
+import io.harness.ci.beans.entities.EncryptedDataDetails;
 import io.harness.ci.buildstate.SecretDecryptorViaNg;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.ff.impl.CIFeatureFlagServiceImpl;
+import io.harness.ci.license.CILicenseService;
+import io.harness.ci.license.impl.CILicenseServiceImpl;
 import io.harness.ci.logserviceclient.CILogServiceClientModule;
 import io.harness.ci.tiserviceclient.TIServiceClientModule;
 import io.harness.cistatus.service.GithubService;
@@ -43,6 +50,7 @@ import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.grpc.client.AbstractManagerGrpcClientModule;
 import io.harness.grpc.client.ManagerGrpcClientModule;
 import io.harness.impl.scm.ScmServiceClientImpl;
+import io.harness.licensing.remote.NgLicenseHttpClientModule;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
 import io.harness.manage.ManagedScheduledExecutorService;
@@ -86,6 +94,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import javax.cache.Cache;
 import lombok.extern.slf4j.Slf4j;
 import org.reflections.Reflections;
 
@@ -116,6 +125,12 @@ public class STOManagerServiceModule extends AbstractModule {
       return apiUrl.substring(0, apiUrl.length() - 1);
     }
     return apiUrl;
+  }
+
+  @Provides
+  @Named(SECRET_CACHE_KEY)
+  Cache<String, EncryptedDataDetails> getSecretTokenCache() {
+    return new NoOpCache<>();
   }
 
   private DelegateCallbackToken getDelegateCallbackToken(
@@ -181,7 +196,6 @@ public class STOManagerServiceModule extends AbstractModule {
   @Override
   protected void configure() {
     install(VersionModule.getInstance());
-    install(PrimaryVersionManagerModule.getInstance());
     bind(STOManagerConfiguration.class).toInstance(stoManagerConfiguration);
     bind(HPersistence.class).to(MongoPersistence.class).in(Singleton.class);
     bind(STOYamlSchemaService.class).to(STOYamlSchemaServiceImpl.class).in(Singleton.class);
@@ -192,6 +206,11 @@ public class STOManagerServiceModule extends AbstractModule {
     bind(BitbucketService.class).to(BitbucketServiceImpl.class);
     bind(AzureRepoService.class).to(AzureRepoServiceImpl.class);
     bind(SecretDecryptor.class).to(SecretDecryptorViaNg.class);
+    bind(AwsClient.class).to(AwsClientImpl.class);
+    bind(CILicenseService.class).to(CILicenseServiceImpl.class).in(Singleton.class);
+
+    install(NgLicenseHttpClientModule.getInstance(stoManagerConfiguration.getNgManagerClientConfig(),
+        stoManagerConfiguration.getNgManagerServiceSecret(), STO_MANAGER.getServiceId()));
 
     // Keeping it to 1 thread to start with. Assuming executor service is used only to
     // serve health checks. If it's being used for other tasks also, max pool size should be increased.
@@ -215,9 +234,12 @@ public class STOManagerServiceModule extends AbstractModule {
         .annotatedWith(Names.named("taskPollExecutor"))
         .toInstance(new ManagedScheduledExecutorService("TaskPoll-Thread"));
 
+    install(NgLicenseHttpClientModule.getInstance(stoManagerConfiguration.getNgManagerClientConfig(),
+        stoManagerConfiguration.getNgManagerServiceSecret(), STO_MANAGER.getServiceId()));
+
     install(new CIExecutionServiceModule(
         stoManagerConfiguration.getCiExecutionServiceConfig(), stoManagerConfiguration.getShouldConfigureWithPMS()));
-    install(DelegateServiceDriverModule.getInstance(false, true));
+    install(DelegateServiceDriverModule.getInstance(false, false));
     install(new DelegateServiceDriverGrpcClientModule(stoManagerConfiguration.getManagerServiceSecret(),
         stoManagerConfiguration.getManagerTarget(), stoManagerConfiguration.getManagerAuthority(), true));
 

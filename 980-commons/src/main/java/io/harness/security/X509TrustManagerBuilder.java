@@ -21,19 +21,15 @@ import javax.net.ssl.X509TrustManager;
 /**
  * Responsible for building a X509TrustManager.
  *
- * Explicit key algorithm SunX509 is used to ensure we actually create a X509TrustManager.
- * This is similar to the default algorithm that's returned if nothing else configured.
+ * Explicit algorithm 'PKIX' is used to avoid unintended behavioral changes in the future and to ensure we actually
+ * create a X509TrustManager.
+ *     https://github.com/openjdk/jdk11u/blob/master/src/java.base/share/classes/sun/security/ssl/TrustManagerFactoryImpl.java
  *
- * Default values are found here:
- *    https://github.com/openjdk/jdk11u/blob/master/src/java.base/share/classes/javax/net/ssl/TrustManagerFactory.java
- *    https://github.com/openjdk/jdk11u/blob/master/src/java.base/share/classes/java/security/KeyStore.java
- *
- * Registered classes for the algorithms can be found here:
- *    https://github.com/openjdk/jdk11u/blob/master/src/java.base/share/classes/sun/security/ssl/SunJSSE.java
+ * This is similar to what TrustManagerFactory.getDefaultAlgorithm() returns as of writing this.
  */
 @OwnedBy(PL)
 public class X509TrustManagerBuilder {
-  public static final String TRUST_MANAGER_ALGORITHM_SUNX509 = "SunX509";
+  public static final String TRUST_MANAGER_ALGORITHM_PKIX = "PKIX";
 
   private KeyStore keyStore;
   private boolean trustAllCerts;
@@ -48,7 +44,7 @@ public class X509TrustManagerBuilder {
 
     try {
       // Load all trusted issuers from default java trust store
-      TrustManagerFactory defaultTrustManagerFactory = TrustManagerFactory.getInstance(TRUST_MANAGER_ALGORITHM_SUNX509);
+      TrustManagerFactory defaultTrustManagerFactory = TrustManagerFactory.getInstance(TRUST_MANAGER_ALGORITHM_PKIX);
       defaultTrustManagerFactory.init((KeyStore) null);
       for (TrustManager trustManager : defaultTrustManagerFactory.getTrustManagers()) {
         if (trustManager instanceof X509TrustManager) {
@@ -87,10 +83,10 @@ public class X509TrustManagerBuilder {
     }
 
     try {
-      TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TRUST_MANAGER_ALGORITHM_SUNX509);
+      TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TRUST_MANAGER_ALGORITHM_PKIX);
       trustManagerFactory.init(this.keyStore);
 
-      // We only expect one TrustManager from the SunX509 factory
+      // We only expect one TrustManager from the PKIX factory
       return (X509TrustManager) trustManagerFactory.getTrustManagers()[0];
     } catch (Exception ex) {
       throw new TrustManagerBuilderException(String.format("Failed to build trust manager: %s", ex.getMessage()), ex);

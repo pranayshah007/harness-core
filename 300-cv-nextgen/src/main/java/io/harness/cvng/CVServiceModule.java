@@ -122,6 +122,7 @@ import io.harness.cvng.core.services.api.DatadogService;
 import io.harness.cvng.core.services.api.DebugService;
 import io.harness.cvng.core.services.api.DeleteEntityByHandler;
 import io.harness.cvng.core.services.api.DynatraceService;
+import io.harness.cvng.core.services.api.EntityDisabledTimeService;
 import io.harness.cvng.core.services.api.ExecutionLogService;
 import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.HostRecordService;
@@ -168,6 +169,7 @@ import io.harness.cvng.core.services.impl.DebugServiceImpl;
 import io.harness.cvng.core.services.impl.DefaultDeleteEntityByHandler;
 import io.harness.cvng.core.services.impl.DynatraceDataCollectionInfoMapper;
 import io.harness.cvng.core.services.impl.DynatraceServiceImpl;
+import io.harness.cvng.core.services.impl.EntityDisabledTimeServiceImpl;
 import io.harness.cvng.core.services.impl.ErrorTrackingDataCollectionInfoMapper;
 import io.harness.cvng.core.services.impl.ExecutionLogServiceImpl;
 import io.harness.cvng.core.services.impl.FeatureFlagServiceImpl;
@@ -340,10 +342,10 @@ import io.harness.outbox.api.OutboxEventHandler;
 import io.harness.outbox.api.OutboxService;
 import io.harness.outbox.api.impl.OutboxDaoImpl;
 import io.harness.outbox.api.impl.OutboxServiceImpl;
-import io.harness.packages.HarnessPackages;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.sdk.core.waiter.AsyncWaitEngine;
 import io.harness.redis.RedisConfig;
+import io.harness.reflection.HarnessReflections;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.serializer.CvNextGenRegistrars;
 import io.harness.template.TemplateResourceClientModule;
@@ -380,7 +382,6 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
-import org.reflections.Reflections;
 
 /**
  * Guice Module for initializing all beans.
@@ -699,6 +700,7 @@ public class CVServiceModule extends AbstractModule {
     bind(SumoLogicService.class).to(SumoLogicServiceImpl.class);
     bind(HealthSourceService.class).to(HealthSourceServiceImpl.class);
     bind(MonitoredServiceService.class).to(MonitoredServiceServiceImpl.class);
+    bind(EntityDisabledTimeService.class).to(EntityDisabledTimeServiceImpl.class);
     bind(ServiceDependencyService.class).to(ServiceDependencyServiceImpl.class);
     bind(ServiceDependencyGraphService.class).to(ServiceDependencyGraphServiceImpl.class);
     bind(SetupUsageEventService.class).to(SetupUsageEventServiceImpl.class);
@@ -1038,11 +1040,9 @@ public class CVServiceModule extends AbstractModule {
   @Named("yaml-schema-subtypes")
   @Singleton
   public Map<Class<?>, Set<Class<?>>> yamlSchemaSubtypes() {
-    Reflections reflections = new Reflections(HarnessPackages.IO_HARNESS);
-
-    Set<Class<? extends StepSpecType>> subTypesOfStepSpecType = reflections.getSubTypesOf(StepSpecType.class);
+    Set<Class<? extends StepSpecType>> subTypesOfStepSpecType =
+        HarnessReflections.get().getSubTypesOf(StepSpecType.class);
     Set<Class<?>> set = new HashSet<>(subTypesOfStepSpecType);
-
     return ImmutableMap.of(StepSpecType.class, set);
   }
 

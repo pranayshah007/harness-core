@@ -12,6 +12,7 @@ import static io.harness.ng.core.remote.OrganizationMapper.toOrganization;
 import static io.harness.rule.OwnerRule.KARAN;
 import static io.harness.rule.OwnerRule.NAMANG;
 import static io.harness.rule.OwnerRule.VIKAS_M;
+import static io.harness.rule.OwnerRule.VINICIUS;
 import static io.harness.utils.PageTestUtils.getPage;
 
 import static java.util.Collections.emptyList;
@@ -296,5 +297,16 @@ public class OrganizationServiceImplTest extends CategoryTest {
     assertTrue(permittedOrganizations.contains("O1"));
     verify(organizationRepository, times(1)).findAllOrgs(orgCriteria);
     verifyNoMoreInteractions(organizationRepository);
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void shouldGetOrganizationIdentifierCaseInsensitive() {
+    String accountIdentifier = "accountIdentifier";
+    String organizationIdentifier = "organizationIdentifier";
+    organizationService.get(accountIdentifier, organizationIdentifier);
+    verify(organizationRepository, times(1))
+        .findByAccountIdentifierAndIdentifierIgnoreCaseAndDeletedNot(accountIdentifier, organizationIdentifier, true);
   }
 }

@@ -1,0 +1,70 @@
+spec:
+  execution:
+    steps:
+      - stepGroup:
+          identifier: Step_Group_<+phase>
+          name: "Step Group"
+          strategy:
+            repeat:
+              items: <+stage.output.hosts>
+              maxConcurrency: <+maxConcurrency>
+              start: <+start>
+              end: <+end>
+              unit: <+unit>
+          steps:
+            - step:
+                name: "Deploy"
+                identifier: Deploy_<+phase>
+                type: Command
+                timeout: 10m
+                spec:
+                  onDelegate: false
+                  environmentVariables: [ ]
+                  outputVariables: [ ]
+                  commandUnits:
+                    - identifier: Setup_Runtime_Paths_<+phase>
+                      name: "Setup Runtime Paths"
+                      type: Script
+                      spec:
+                        shell: PowerShell
+                        source:
+                          type: Inline
+                          spec:
+                            script: |-
+                              # Creating runtime, backup and staging directories:
+
+                              New-Item -Path "$HOME\<+service.name>\<+env.name>\runtime" -ItemType Directory
+                              New-Item -Path "$HOME\<+service.name>\<+env.name>\backup" -ItemType Directory
+                              New-Item -Path "$HOME\<+service.name>\<+env.name>\staging" -ItemType Directory
+                    - identifier: Stop_<+phase>
+                      name: "Stop"
+                      type: Script
+                      spec:
+                        workingDirectory: $HOME\<+service.name>\<+env.name>
+                        shell: PowerShell
+                        source:
+                          type: Inline
+                          spec:
+                            script: Write-Host "Stopping..."
+                    - identifier: Copy_Artifact_<+phase>
+                      name: "Copy Artifact"
+                      type: Copy
+                      spec:
+                        sourceType: Artifact
+                        destinationPath: $HOME\<+service.name>\<+env.name>
+                    - identifier: Copy_Config_<+phase>
+                      name: "Copy Config"
+                      type: Copy
+                      spec:
+                        sourceType: Config
+                        destinationPath: $HOME\<+service.name>\<+env.name>
+                    - identifier: Start_<+phase>
+                      name: "Start"
+                      type: Script
+                      spec:
+                        workingDirectory: $HOME\<+service.name>\<+env.name>
+                        shell: PowerShell
+                        source:
+                          type: Inline
+                          spec:
+                            script: Write-Host "Starting..."

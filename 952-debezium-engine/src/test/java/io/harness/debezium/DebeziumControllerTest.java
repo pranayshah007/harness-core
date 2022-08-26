@@ -30,7 +30,8 @@ public class DebeziumControllerTest extends CategoryTest {
   public void testGetLockName() {
     Properties props = new Properties();
     props.setProperty(DebeziumConfiguration.CONNECTOR_NAME, "conn1");
-    EventsFrameworkChangeConsumer eventsFrameworkChangeConsumer = new EventsFrameworkChangeConsumer("coll1", null);
+    EventsFrameworkChangeConsumer eventsFrameworkChangeConsumer =
+        new EventsFrameworkChangeConsumer(60, "coll1", null, 1000, 1000);
     DebeziumController debeziumController =
         new DebeziumController(props, eventsFrameworkChangeConsumer, null, null, null);
     assertEquals(debeziumController.getLockName(),

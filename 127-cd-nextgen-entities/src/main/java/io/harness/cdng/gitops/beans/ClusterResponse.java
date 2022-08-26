@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.GITOPS;
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.ScopeLevel;
 import io.harness.data.validator.EntityIdentifier;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -34,4 +35,7 @@ public class ClusterResponse {
   @Schema(description = "project identifier of the cluster") String projectIdentifier;
   @Schema(description = "environment identifier of the cluster") @NotEmpty String envRef;
   @Schema(description = "time at which the cluster was linked") Long linkedAt;
+  @Schema(description = "scope at which the cluster exists in harness gitops, project vs org vs account")
+  ScopeLevel scope;
+  @Schema(description = "name of the gitops cluster") String name;
 }

@@ -10,9 +10,12 @@ package software.wings.helpers.ext.helm;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.clienttools.ClientTool.OC;
 import static io.harness.delegate.task.helm.HelmTaskHelperBase.getChartDirectory;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.filesystem.FileIo.deleteDirectoryAndItsContentIfExists;
+import static io.harness.helm.HelmCommandType.LIST_RELEASE;
+import static io.harness.helm.HelmCommandType.RELEASE_HISTORY;
 import static io.harness.helm.HelmConstants.DEFAULT_TILLER_CONNECTION_TIMEOUT_MILLIS;
 import static io.harness.logging.LogLevel.INFO;
 import static io.harness.validation.Validator.notNullCheck;
@@ -32,9 +35,11 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.FileData;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.container.ContainerInfo;
+import io.harness.delegate.clienttools.InstallUtils;
 import io.harness.delegate.task.helm.CustomManifestFetchTaskHelper;
 import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.helm.HelmCommandResponse;
+import io.harness.delegate.task.helm.HelmTaskHelperBase;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.exception.ExceptionUtils;
@@ -47,11 +52,14 @@ import io.harness.git.model.GitRepositoryType;
 import io.harness.helm.HelmClient;
 import io.harness.helm.HelmClientImpl.HelmCliResponse;
 import io.harness.helm.HelmCommandResponseMapper;
+import io.harness.helm.HelmCommandType;
+import io.harness.k8s.K8sConstants;
 import io.harness.k8s.K8sGlobalConfigService;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.HelmVersion;
+import io.harness.k8s.model.Kind;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
@@ -79,7 +87,6 @@ import software.wings.delegatetasks.helm.HelmTaskHelper;
 import software.wings.helpers.ext.container.ContainerDeploymentDelegateHelper;
 import software.wings.helpers.ext.helm.request.HelmChartConfigParams;
 import software.wings.helpers.ext.helm.request.HelmCommandRequest;
-import software.wings.helpers.ext.helm.request.HelmCommandRequest.HelmCommandType;
 import software.wings.helpers.ext.helm.request.HelmInstallCommandRequest;
 import software.wings.helpers.ext.helm.request.HelmReleaseHistoryCommandRequest;
 import software.wings.helpers.ext.helm.request.HelmRollbackCommandRequest;
@@ -105,6 +112,8 @@ import com.google.inject.Singleton;
 import io.fabric8.kubernetes.api.model.Pod;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -135,6 +144,7 @@ public class HelmDeployServiceImpl implements HelmDeployService {
   @Inject private ContainerDeploymentDelegateHelper containerDeploymentDelegateHelper;
   @Inject private ContainerDeploymentDelegateBaseHelper containerDeploymentDelegateBaseHelper;
   @Inject private TimeLimiter timeLimiter;
+  @Inject private HelmTaskHelperBase helmTaskHelperBase;
   @Inject private GitService gitService;
   @Inject private EncryptionService encryptionService;
   @Inject private HelmCommandHelper helmCommandHelper;
@@ -152,7 +162,6 @@ public class HelmDeployServiceImpl implements HelmDeployService {
   protected static final String WORKING_DIR = "./repository/helm/source/${" + ACTIVITY_ID + "}";
   public static final String FROM = " from ";
   public static final String TIMED_OUT_IN_STEADY_STATE = "Timed out waiting for controller to reach in steady state";
-
   @Override
   public HelmCommandResponse deploy(HelmInstallCommandRequest commandRequest) throws IOException {
     LogCallback executionLogCallback = commandRequest.getExecutionLogCallback();
@@ -163,8 +172,20 @@ public class HelmDeployServiceImpl implements HelmDeployService {
       executionLogCallback.saveExecutionLog(
           "List all existing deployed releases for release name: " + commandRequest.getReleaseName());
 
+      if (HelmVersion.V380.equals(commandRequest.getHelmVersion())) {
+        helmTaskHelperBase.revokeReadPermission(commandRequest.getKubeConfigLocation());
+      }
+
       HelmCliResponse helmCliResponse =
           helmClient.releaseHistory(HelmCommandDataMapper.getHelmCommandData(commandRequest), false);
+
+      List<ReleaseInfo> releaseInfoList =
+          helmTaskHelperBase.parseHelmReleaseCommandOutput(helmCliResponse.getOutput(), RELEASE_HISTORY);
+
+      if (!isEmpty(releaseInfoList)) {
+        helmTaskHelperBase.processHelmReleaseHistOutput(releaseInfoList.get(releaseInfoList.size() - 1));
+      }
+
       executionLogCallback.saveExecutionLog(
           preProcessReleaseHistoryCommandOutput(helmCliResponse, commandRequest.getReleaseName()));
 
@@ -279,6 +300,16 @@ public class HelmDeployServiceImpl implements HelmDeployService {
     for (Map.Entry<String, List<KubernetesResourceId>> entry : namespacewiseResources.entrySet()) {
       if (success) {
         final String namespace = entry.getKey();
+        Optional<String> ocPath = setupPathOfOcBinaries(entry.getValue());
+        if (ocPath.isPresent()) {
+          commandRequest.setOcPath(ocPath.get());
+        }
+        if (isNotEmpty(commandRequest.getGcpKeyPath())) {
+          Path oldPath = Paths.get(commandRequest.getGcpKeyPath());
+          Path newPath = Paths.get(commandRequest.getWorkingDir(), K8sConstants.GCP_JSON_KEY_FILE_NAME);
+          Files.move(oldPath, newPath);
+          commandRequest.setGcpKeyPath(newPath.toAbsolutePath().toString());
+        }
         success = success
             && k8sTaskHelperBase.doStatusCheckAllResourcesForHelm(client, entry.getValue(), commandRequest.getOcPath(),
                 commandRequest.getWorkingDir(), namespace, commandRequest.getKubeConfigLocation(),
@@ -754,7 +785,7 @@ public class HelmDeployServiceImpl implements HelmDeployService {
       HelmCliResponse helmCliResponse =
           helmClient.listReleases(HelmCommandDataMapper.getHelmCommandData(helmCommandRequest), false);
       List<ReleaseInfo> releaseInfoList =
-          parseHelmReleaseCommandOutput(helmCliResponse.getOutput(), HelmCommandType.LIST_RELEASE);
+          helmTaskHelperBase.parseHelmReleaseCommandOutput(helmCliResponse.getOutput(), LIST_RELEASE);
       return HelmListReleasesCommandResponse.builder()
           .commandExecutionStatus(helmCliResponse.getCommandExecutionStatus())
           .output(helmCliResponse.getOutputWithErrorStream())
@@ -776,46 +807,14 @@ public class HelmDeployServiceImpl implements HelmDeployService {
     try {
       HelmCliResponse helmCliResponse =
           helmClient.releaseHistory(HelmCommandDataMapper.getHelmCommandData(helmCommandRequest), false);
-      releaseInfoList =
-          parseHelmReleaseCommandOutput(helmCliResponse.getOutput(), helmCommandRequest.getHelmCommandType());
+      releaseInfoList = helmTaskHelperBase.parseHelmReleaseCommandOutput(
+          helmCliResponse.getOutput(), helmCommandRequest.getHelmCommandType());
     } catch (Exception e) {
       log.error("Helm list releases failed", ExceptionMessageSanitizer.sanitizeException(e));
     }
     return HelmReleaseHistoryCommandResponse.builder()
         .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
         .releaseInfoList(releaseInfoList)
-        .build();
-  }
-
-  private List<ReleaseInfo> parseHelmReleaseCommandOutput(String listReleaseOutput, HelmCommandType helmCommandType)
-      throws IOException {
-    if (isEmpty(listReleaseOutput)) {
-      return new ArrayList<>();
-    }
-    CSVFormat csvFormat = CSVFormat.RFC4180.withFirstRecordAsHeader().withDelimiter('\t').withTrim();
-    return CSVParser.parse(listReleaseOutput, csvFormat)
-        .getRecords()
-        .stream()
-        .map(helmCommandType == HelmCommandType.RELEASE_HISTORY ? this::releaseHistoryCsvRecordToReleaseInfo
-                                                                : this::listReleaseCsvRecordToReleaseInfo)
-        .collect(Collectors.toList());
-  }
-
-  private ReleaseInfo listReleaseCsvRecordToReleaseInfo(CSVRecord releaseRecord) {
-    return ReleaseInfo.builder()
-        .name(releaseRecord.get("NAME"))
-        .revision(releaseRecord.get("REVISION"))
-        .status(releaseRecord.get("STATUS"))
-        .chart(releaseRecord.get("CHART"))
-        .namespace(releaseRecord.get("NAMESPACE"))
-        .build();
-  }
-
-  private ReleaseInfo releaseHistoryCsvRecordToReleaseInfo(CSVRecord releaseRecord) {
-    return ReleaseInfo.builder()
-        .revision(releaseRecord.get("REVISION"))
-        .status(releaseRecord.get("STATUS"))
-        .chart(releaseRecord.get("CHART"))
         .build();
   }
 
@@ -840,7 +839,6 @@ public class HelmDeployServiceImpl implements HelmDeployService {
     if (helmCliResponse.getCommandExecutionStatus() == CommandExecutionStatus.FAILURE) {
       return "Release: \"" + releaseName + "\" not found\n";
     }
-
     return helmCliResponse.getOutputWithErrorStream();
   }
 
@@ -1004,7 +1002,7 @@ public class HelmDeployServiceImpl implements HelmDeployService {
   private void addRepoForCommand(HelmCommandRequest helmCommandRequest) throws Exception {
     LogCallback executionLogCallback = helmCommandRequest.getExecutionLogCallback();
 
-    if (helmCommandRequest.getHelmCommandType() != HelmCommandType.INSTALL) {
+    if (helmCommandRequest.getHelmCommandType() != io.harness.helm.HelmCommandType.INSTALL) {
       return;
     }
 
@@ -1186,5 +1184,25 @@ public class HelmDeployServiceImpl implements HelmDeployService {
         .chartVersion(releaseRecord.get("CHART VERSION"))
         .appVersion(releaseRecord.get("APP VERSION"))
         .build();
+  }
+
+  private Optional<String> setupPathOfOcBinaries(List<KubernetesResourceId> resourceIds) {
+    if (isEmpty(resourceIds)) {
+      return Optional.empty();
+    }
+
+    for (KubernetesResourceId kubernetesResourceId : resourceIds) {
+      if (Kind.DeploymentConfig.name().equals(kubernetesResourceId.getKind())) {
+        String ocPath = null;
+        try {
+          ocPath = InstallUtils.getLatestVersionPath(OC);
+        } catch (Exception ex) {
+          log.warn(
+              "Unable to fetch OC binary path from delegate. Kindly ensure it is configured as env variable." + ex);
+        }
+        return Optional.ofNullable(ocPath);
+      }
+    }
+    return Optional.empty();
   }
 }

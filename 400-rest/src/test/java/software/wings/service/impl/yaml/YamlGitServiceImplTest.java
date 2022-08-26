@@ -62,6 +62,7 @@ import software.wings.service.intfc.DelegateService;
 import software.wings.service.intfc.security.SecretManager;
 import software.wings.service.intfc.yaml.YamlChangeSetService;
 import software.wings.service.intfc.yaml.YamlDirectoryService;
+import software.wings.service.intfc.yaml.sync.GitSyncErrorService;
 import software.wings.yaml.gitSync.GitWebhookRequestAttributes;
 import software.wings.yaml.gitSync.YamlChangeSet;
 import software.wings.yaml.gitSync.YamlGitConfig;
@@ -72,6 +73,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import javax.ws.rs.core.HttpHeaders;
 import org.apache.commons.io.FileUtils;
@@ -95,7 +97,7 @@ public class YamlGitServiceImplTest extends WingsBaseTest {
   @Mock private WebhookEventUtils webhookEventUtils;
   @Mock private WaitNotifyEngine waitNotifyEngine;
   @Mock private YamlChangeSetService yamlChangeSetService;
-
+  @Mock private GitSyncErrorService gitSyncErrorService;
   @InjectMocks @Inject private YamlGitServiceImpl yamlGitService;
 
   private static final String TEST_GIT_REPO_URL = "https://github.com/rathn/SyncTest";
@@ -148,12 +150,14 @@ public class YamlGitServiceImplTest extends WingsBaseTest {
             .withFilePath("Setup/Applications/App1/Environments/env1/PCF Overrides/Services/SERVICE_NAME/Index.yaml")
             .build());
 
-    yamlGitService.ensureValidNameSyntax(gitFileChanges);
-    gitFileChanges.add(GitFileChange.Builder.aGitFileChange()
-                           .withFilePath("Setup/Applications/app1/Services/service/1/Index.yaml")
-                           .build());
+    yamlGitService.ensureValidNameSyntax(gitFileChanges, null);
+
     try {
-      yamlGitService.ensureValidNameSyntax(gitFileChanges);
+      yamlGitService.ensureValidNameSyntax(
+          Collections.singletonList(GitFileChange.Builder.aGitFileChange()
+                                        .withFilePath("Setup/Applications/app1/Services/service/1/Index.yaml")
+                                        .build()),
+          YamlChangeSet.builder().build());
       assertThat(false).isTrue();
     } catch (Exception ex) {
       assertThat(ex instanceof WingsException).isTrue();

@@ -15,6 +15,7 @@ import io.harness.licensing.beans.modules.CEModuleLicenseDTO;
 import io.harness.licensing.beans.modules.CFModuleLicenseDTO;
 import io.harness.licensing.beans.modules.CIModuleLicenseDTO;
 import io.harness.licensing.beans.modules.CVModuleLicenseDTO;
+import io.harness.licensing.beans.modules.ChaosModuleLicenseDTO;
 import io.harness.licensing.beans.modules.ModuleLicenseDTO;
 import io.harness.licensing.beans.modules.STOModuleLicenseDTO;
 import io.harness.serializer.KryoRegistrar;
@@ -34,5 +35,6 @@ public class LicenseBeanKryoClassesRegistrar implements KryoRegistrar {
     kryo.register(Edition.class, 930007);
     kryo.register(LicenseType.class, 930008);
     kryo.register(LicenseStatus.class, 930009);
+    kryo.register(ChaosModuleLicenseDTO.class, 9800002);
   }
 }

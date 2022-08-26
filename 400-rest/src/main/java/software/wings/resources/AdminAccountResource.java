@@ -130,6 +130,13 @@ public class AdminAccountResource {
   }
 
   @PUT
+  @Path("{accountId}/is-product-led")
+  public RestResponse<Boolean> updateIsProductLed(@PathParam("accountId") String accountId,
+      @QueryParam("isProductLed") @DefaultValue("false") boolean isProductLed) {
+    return new RestResponse<>(adminAccountService.enableOrDisableNextGen(accountId, isProductLed));
+  }
+
+  @PUT
   @Path("{accountId}/license/continuous-efficiency/")
   @Timed
   @ExceptionMetered
@@ -183,6 +190,13 @@ public class AdminAccountResource {
     return new RestResponse<>(adminAccountService.createAccount(account, adminUserEmail));
   }
 
+  @POST
+  @Path("/global")
+  public RestResponse<Account> createGlobalDelegateAccount(
+      @Body Account account, @QueryParam("adminUserEmail") String adminUserEmail) {
+    return new RestResponse<>(adminAccountService.createAccount(account, adminUserEmail));
+  }
+
   @PUT
   @Path("/{accountId}/enable")
   public RestResponse<Boolean> enableAccount(@PathParam("accountId") String accountId) {
@@ -221,7 +235,7 @@ public class AdminAccountResource {
   @Path("/{accountId}/ceAutoCollectK8sEvents")
   public RestResponse<Boolean> enableOrDisableCeAutoCollectK8sEvents(
       @PathParam("accountId") String accountId, @QueryParam("enable") boolean enabled) {
-    return new RestResponse<>(adminAccountService.enableOrDisableCeK8sEventCollection(accountId, enabled));
+    return new RestResponse<>(false);
   }
 
   @DELETE

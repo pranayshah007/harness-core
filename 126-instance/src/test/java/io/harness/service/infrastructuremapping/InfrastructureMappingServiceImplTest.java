@@ -8,8 +8,10 @@
 package io.harness.service.infrastructuremapping;
 
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
+import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 import io.harness.InstancesTestBase;
@@ -25,6 +27,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.springframework.dao.DuplicateKeyException;
 
 public class InfrastructureMappingServiceImplTest extends InstancesTestBase {
   private static final String ACCOUNT_IDENTIFIER = "account_identifier";
@@ -80,6 +83,19 @@ public class InfrastructureMappingServiceImplTest extends InstancesTestBase {
   @Category(UnitTests.class)
   public void createNewOrReturnExistingInfrastructureMappingTest() {
     when(infrastructureMappingRepository.save(infrastructureMapping)).thenReturn(infrastructureMapping);
+    assertThat(infrastructureMappingService.createNewOrReturnExistingInfrastructureMapping(infrastructureMappingDTO))
+        .isEqualTo(Optional.of(infrastructureMappingDTO));
+  }
+
+  @Test
+  @Owner(developers = VIKYATH_HAREKAL)
+  @Category(UnitTests.class)
+  public void testCreateNewOrReturnExistingInfrastructureMappingDuplicateKeyException() {
+    when(infrastructureMappingRepository.save(infrastructureMapping)).thenThrow(new DuplicateKeyException("duplicate"));
+    when(
+        infrastructureMappingRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndInfrastructureKey(
+            anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(Optional.of(infrastructureMapping));
     assertThat(infrastructureMappingService.createNewOrReturnExistingInfrastructureMapping(infrastructureMappingDTO))
         .isEqualTo(Optional.of(infrastructureMappingDTO));
   }

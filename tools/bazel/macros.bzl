@@ -22,7 +22,7 @@ def sonarqube_test(
         name = None,
         project_key = None,
         project_name = None,
-        srcs = [],
+        srcs = ["src/main/java/**/*.java"],
         source_encoding = None,
         targets = [],
         test_srcs = [],
@@ -32,12 +32,12 @@ def sonarqube_test(
         sq_properties_template = None,
         tags = [],
         visibility = []):
-    srcs = native.glob(["src/main/java/**/*.java"])
+    srcs = native.glob(srcs)
     targets = [":module"]
     if name == None:
         name = "sonarqube"
     if project_key == None:
-        project_key = native.package_name()
+        project_key = native.package_name().replace("/", ":")
     if project_name == None:
         project_name = "Portal :: " + native.package_name()
     if test_srcs == []:
@@ -65,9 +65,16 @@ def sonarqube_test(
         checkstyle_report_path = getCheckstyleReportPathForSonar(),
     )
 
+def run_analysis_per_module(
+        checkstyle_srcs = ["*"],
+        pmd_srcs = ["*"],
+        sonarqube_srcs = ["*.java"]):
+    run_analysis(checkstyle_srcs, pmd_srcs, sonarqube_srcs)
+
 def run_analysis(
         checkstyle_srcs = ["src/**/*"],
         pmd_srcs = ["src/main/**/*"],
+        sonarqube_srcs = ["src/main/java/**/*.java"],
         run_checkstyle = True,
         run_pmd = True,
         run_sonar = True,
@@ -80,7 +87,7 @@ def run_analysis(
         pmd(pmd_srcs)
 
     if run_sonar:
-        sonarqube_test(test_targets = test_targets)
+        sonarqube_test(srcs = sonarqube_srcs, test_targets = test_targets)
 
     if run_duplicated:
         report_duplicated()

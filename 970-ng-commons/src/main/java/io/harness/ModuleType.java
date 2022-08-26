@@ -29,7 +29,8 @@ public enum ModuleType {
   @JsonProperty("CORE") CORE("Core", true, false),
   @JsonProperty("PMS") PMS("Pipelines", true, false),
   @JsonProperty("TEMPLATESERVICE") TEMPLATESERVICE("TemplateService", true, false),
-  @JsonProperty("GOVERNANCE") GOVERNANCE("Governance", true, true);
+  @JsonProperty("GOVERNANCE") GOVERNANCE("Governance", true, true),
+  @JsonProperty("CHAOS") CHAOS("Chaos Engineering");
 
   String displayName;
   boolean internal;

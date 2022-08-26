@@ -14,6 +14,7 @@ import io.harness.k8s.model.KubernetesConfig;
 import io.harness.perpetualtask.k8s.informer.ClusterDetails;
 import io.harness.perpetualtask.k8s.informer.SharedInformerFactoryFactory;
 import io.harness.perpetualtask.k8s.metrics.client.impl.DefaultK8sMetricsClient;
+import io.harness.perpetualtask.k8s.utils.K8sWatcherHelper;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -95,9 +96,8 @@ public class K8sWatchServiceDelegate {
 
   public String create(K8sWatchTaskParams params, KubernetesConfig kubernetesConfig) {
     String watchId = params.getClusterId();
-    watchMap.computeIfAbsent(watchId, id -> {
-      log.info("Creating watch with id: {}", id);
-
+    if (K8sWatcherHelper.shouldCreateWatcher(watchId)) {
+      log.info("Creating watch with id: {}", watchId);
       ApiClient apiClient = apiClientFactory.getClient(kubernetesConfig);
       DefaultK8sMetricsClient k8sMetricsClient = new DefaultK8sMetricsClient(apiClient);
 
@@ -139,17 +139,18 @@ public class K8sWatchServiceDelegate {
       watcherFactory.createPodWatcher(
           apiClient, clusterDetails, controllerFetcher, sharedInformerFactory, pvcFetcher, namespaceFetcher);
 
-      log.info("Starting AllRegisteredInformers for watch {}", id);
+      log.info("Starting AllRegisteredInformers for watch {}", watchId);
       sharedInformerFactory.startAllRegisteredInformers();
 
       // cluster is seen/old now, any new onAdd event older than 2 hours will be ignored.
       // TODO(UTSAV): TEMP K8sClusterHelper.setAsSeen(params.getClusterId(), kubeSystemUid);
-      return WatcherGroup.builder()
-          .watchId(id)
-          .sharedInformerFactory(sharedInformerFactory)
-          .controllerFetcher(controllerFetcher)
-          .build();
-    });
+      watchMap.put(watchId,
+          WatcherGroup.builder()
+              .watchId(watchId)
+              .sharedInformerFactory(sharedInformerFactory)
+              .controllerFetcher(controllerFetcher)
+              .build());
+    }
 
     return watchId;
   }
@@ -166,7 +167,7 @@ public class K8sWatchServiceDelegate {
 
   public static String getKubeSystemUid(DefaultK8sMetricsClient client) {
     try {
-      return client.readNamespace("kube-system", null, null, null).getMetadata().getUid();
+      return client.readNamespace("kube-system", null).getMetadata().getUid();
     } catch (Exception e) {
       log.warn("Error getting kube-system namespace uid", e);
       return "kube-system";
@@ -176,6 +177,7 @@ public class K8sWatchServiceDelegate {
   public void delete(String watchId) {
     watchMap.computeIfPresent(watchId, (id, watcherGroup) -> {
       log.info("Deleting watch with id: {}", watchId);
+      K8sWatcherHelper.deleteWatcher(watchId);
       watcherGroup.close();
       return null;
     });

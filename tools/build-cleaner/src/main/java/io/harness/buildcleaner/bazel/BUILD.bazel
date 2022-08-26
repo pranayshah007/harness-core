@@ -1,0 +1,15 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "module",
+    srcs = [
+        "BuildFile.java",
+        "JavaBinary.java",
+        "JavaLibrary.java",
+        "LoadStatement.java",
+        "WriteUtil.java",
+    ],
+    visibility = ["//visibility:public"],
+    runtime_deps = [],
+    deps = ["@maven//:com_google_guava_guava"],
+)

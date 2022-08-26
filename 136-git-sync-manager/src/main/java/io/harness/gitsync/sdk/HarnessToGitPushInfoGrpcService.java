@@ -23,9 +23,14 @@ import io.harness.gitsync.ErrorDetails;
 import io.harness.gitsync.FileInfo;
 import io.harness.gitsync.GetFileRequest;
 import io.harness.gitsync.GetFileResponse;
+import io.harness.gitsync.GetRepoUrlRequest;
+import io.harness.gitsync.GetRepoUrlResponse;
 import io.harness.gitsync.HarnessToGitPushInfoServiceGrpc.HarnessToGitPushInfoServiceImplBase;
 import io.harness.gitsync.IsGitSimplificationEnabled;
+import io.harness.gitsync.IsGitSimplificationEnabledRequest;
 import io.harness.gitsync.IsGitSyncEnabled;
+import io.harness.gitsync.IsOldGitSyncEnabledForModule;
+import io.harness.gitsync.IsOldGitSyncEnabledResponse;
 import io.harness.gitsync.PushFileResponse;
 import io.harness.gitsync.PushInfo;
 import io.harness.gitsync.PushResponse;
@@ -62,7 +67,8 @@ public class HarnessToGitPushInfoGrpcService extends HarnessToGitPushInfoService
   @Inject EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
   @Inject ExceptionManager exceptionManager;
   private String errorFormat =
-      "Unexpected error occurred while performing %s git operation. Please contact Harness Support.";
+      "Unexpected error occurred while performing %s git operation in %s. Please contact Harness Support.";
+  private String GIT_SERVICE = "Git Service";
 
   @Override
   public void pushFromHarness(PushInfo request, StreamObserver<PushResponse> responseObserver) {
@@ -109,11 +115,11 @@ public class HarnessToGitPushInfoGrpcService extends HarnessToGitPushInfoService
         request.getBranchName(), request.getFilePath(), GitOperation.GET_FILE, request.getContextMapMap());
     try (GlobalContextManager.GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard();
          MdcContextSetter ignore1 = new MdcContextSetter(contextMap)) {
-      log.info("Grpc request received for getFile ops {}", request);
+      log.info(String.format("%s Grpc request received for getFile ops %s", GIT_SERVICE, request));
       try {
         setPrincipal(request.getScopeIdentifiers().getAccountIdentifier(), request.getPrincipal());
         getFileResponse = harnessToGitHelperService.getFileByBranch(request);
-        log.info("Git Sync Service getFile ops response : {}", getFileResponse);
+        log.info(String.format("%s getFile ops response : %s", GIT_SERVICE, getFileResponse));
       } catch (Exception ex) {
         final String errorMessage = String.format(errorFormat, GitOperation.GET_FILE.name());
         log.error(errorMessage, ex);
@@ -135,11 +141,11 @@ public class HarnessToGitPushInfoGrpcService extends HarnessToGitPushInfoService
         request.getBranchName(), request.getFilePath(), GitOperation.CREATE_FILE, request.getContextMapMap());
     try (GlobalContextManager.GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard();
          MdcContextSetter ignore1 = new MdcContextSetter(contextMap)) {
-      log.info("Grpc request received for createFile ops {}", request);
+      log.info(String.format("%s Grpc request received for createFile ops %s", GIT_SERVICE, request));
       try {
         setPrincipal(request.getScopeIdentifiers().getAccountIdentifier(), request.getPrincipal());
         createFileResponse = harnessToGitHelperService.createFile(request);
-        log.info("Git Sync Service createFile ops response : {}", createFileResponse);
+        log.info(String.format("%s createFile ops response : %s", GIT_SERVICE, createFileResponse));
       } catch (Exception ex) {
         final String errorMessage = String.format(errorFormat, GitOperation.CREATE_FILE.name());
         log.error(errorMessage, ex);
@@ -161,11 +167,11 @@ public class HarnessToGitPushInfoGrpcService extends HarnessToGitPushInfoService
         request.getBranchName(), request.getFilePath(), GitOperation.UPDATE_FILE, request.getContextMapMap());
     try (GlobalContextManager.GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard();
          MdcContextSetter ignore1 = new MdcContextSetter(contextMap)) {
-      log.info("Grpc request received for updateFile ops {}", request);
+      log.info(String.format("%s Grpc request received for updateFile ops %s", GIT_SERVICE, request));
       try {
         setPrincipal(request.getScopeIdentifiers().getAccountIdentifier(), request.getPrincipal());
         updateFileResponse = harnessToGitHelperService.updateFile(request);
-        log.info("Git Sync Service updateFile ops response : {}", updateFileResponse);
+        log.info(String.format("%s updateFile ops response : %s", GIT_SERVICE, updateFileResponse));
       } catch (Exception ex) {
         final String errorMessage = String.format(errorFormat, GitOperation.UPDATE_FILE.name());
         log.error(errorMessage, ex);
@@ -198,6 +204,31 @@ public class HarnessToGitPushInfoGrpcService extends HarnessToGitPushInfoService
     responseObserver.onCompleted();
   }
 
+  @Override
+  public void getRepoUrl(GetRepoUrlRequest request, StreamObserver<GetRepoUrlResponse> responseObserver) {
+    GetRepoUrlResponse getRepoUrlResponse;
+    Map<String, String> contextMap = GitSyncLogContextHelper.setContextMap(
+        ScopeIdentifierMapper.getScopeFromScopeIdentifiers(request.getScopeIdentifiers()), request.getRepoName(), "",
+        "", GitOperation.GET_REPO_URL, request.getContextMapMap());
+    try (GlobalContextManager.GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard();
+         MdcContextSetter ignore1 = new MdcContextSetter(contextMap)) {
+      log.info(String.format("%s Grpc request received for getRepoUrl ops %s", GIT_SERVICE, request));
+      try {
+        getRepoUrlResponse = harnessToGitHelperService.getRepoUrl(request);
+        log.info(String.format("%s getRepoUrl ops response : %s", GIT_SERVICE, getRepoUrlResponse));
+      } catch (Exception ex) {
+        final String errorMessage = String.format(errorFormat, GitOperation.GET_REPO_URL.name());
+        log.error(errorMessage, ex);
+        getRepoUrlResponse = GetRepoUrlResponse.newBuilder()
+                                 .setStatusCode(HTTP_500)
+                                 .setError(ErrorDetails.newBuilder().setErrorMessage(errorMessage).build())
+                                 .build();
+      }
+    }
+    responseObserver.onNext(getRepoUrlResponse);
+    responseObserver.onCompleted();
+  }
+
   @VisibleForTesting
   void setPrincipal(FileInfo request) {
     final Principal principalFromProto = request.getPrincipal();
@@ -222,9 +253,19 @@ public class HarnessToGitPushInfoGrpcService extends HarnessToGitPushInfoService
 
   @Override
   public void isGitSimplificationEnabledForScope(
-      EntityScopeInfo request, StreamObserver<IsGitSimplificationEnabled> responseObserver) {
+      IsGitSimplificationEnabledRequest request, StreamObserver<IsGitSimplificationEnabled> responseObserver) {
     final Boolean isGitSimplificationEnabled = harnessToGitHelperService.isGitSimplificationEnabled(request);
     responseObserver.onNext(IsGitSimplificationEnabled.newBuilder().setEnabled(isGitSimplificationEnabled).build());
+    responseObserver.onCompleted();
+  }
+
+  @Override
+  public void isOldGitSyncEnabledForModule(
+      IsOldGitSyncEnabledForModule request, StreamObserver<IsOldGitSyncEnabledResponse> responseObserver) {
+    final Boolean isOldGitSyncEnabledForModule = harnessToGitHelperService.isOldGitSyncEnabledForModule(
+        request.getEntityScopeInfo(), request.getIsNotFFModule());
+    responseObserver.onNext(
+        IsOldGitSyncEnabledResponse.newBuilder().setIsEnabled(isOldGitSyncEnabledForModule).build());
     responseObserver.onCompleted();
   }
 

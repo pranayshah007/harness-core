@@ -9,6 +9,7 @@ package io.harness.cdng.azure.webapp;
 
 import static io.harness.azure.model.AzureConstants.SLOT_TRAFFIC_PERCENTAGE;
 import static io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppRequestType.SLOT_TRAFFIC_SHIFT;
+import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.VLICA;
 
 import static java.util.Collections.singletonList;
@@ -27,10 +28,12 @@ import io.harness.cdng.CDNGTestBase;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.task.azure.appservice.AzureAppServicePreDeploymentData;
 import io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppInfraDelegateConfig;
 import io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppTrafficShiftRequest;
 import io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppTaskResponse;
 import io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppTrafficShiftResponse;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.logging.UnitProgress;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -77,7 +80,7 @@ public class AzureWebAppTrafficShiftStepTest extends CDNGTestBase {
 
   @Before
   public void testSetup() {
-    doReturn(azureInfra).when(stepHelper).getInfraDelegateConfig(ambiance);
+    doReturn(azureInfra).when(stepHelper).getInfraDelegateConfig(eq(ambiance), any(), any());
   }
 
   @Test
@@ -88,6 +91,13 @@ public class AzureWebAppTrafficShiftStepTest extends CDNGTestBase {
         .when(stepHelper)
         .prepareTaskRequest(eq(stepElementParameters), eq(ambiance), any(TaskParameters.class),
             eq(TaskType.AZURE_WEB_APP_TASK_NG), anyList());
+    doReturn(AzureAppServicePreDeploymentData.builder().build())
+        .when(stepHelper)
+        .getPreDeploymentData(eq(ambiance), any());
+    doReturn(
+        AzureWebAppInfraDelegateConfig.builder().appName("webAppName").deploymentSlot("deploymentSlotName").build())
+        .when(stepHelper)
+        .getInfraDelegateConfig(eq(ambiance), any(), any());
 
     ArgumentCaptor<TaskParameters> taskParametersArgumentCaptor = ArgumentCaptor.forClass(TaskParameters.class);
 
@@ -106,6 +116,19 @@ public class AzureWebAppTrafficShiftStepTest extends CDNGTestBase {
     assertThat(requestParameters.getTrafficPercentage()).isEqualTo(10);
     assertThat(requestParameters.getInfrastructure().getDeploymentSlot()).isEqualTo("deploymentSlotName");
     assertThat(requestParameters.getInfrastructure().getAppName()).isEqualTo("webAppName");
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testObtainTaskAfterRbacNoPreDeploymentDataFound() {
+    doReturn(null).when(stepHelper).getPreDeploymentData(eq(ambiance), any());
+
+    TaskRequest taskRequest =
+        azureWebAppTrafficShiftStep.obtainTaskAfterRbac(ambiance, stepElementParameters, stepInputPackage);
+
+    assertThat(taskRequest.getSkipTaskRequest().getMessage())
+        .isEqualTo("No successful Slot deployment step found, traffic shift can't be done");
   }
 
   @Test
@@ -137,6 +160,24 @@ public class AzureWebAppTrafficShiftStepTest extends CDNGTestBase {
                            -> azureWebAppTrafficShiftStep.handleTaskResultWithSecurityContext(
                                ambiance, stepElementParameters, () -> null))
         .isInstanceOf(Exception.class);
+  }
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testValidateExceptionIsThrownIfDeploymentSlotIsInvalid() {
+    doReturn(taskRequest)
+        .when(stepHelper)
+        .prepareTaskRequest(eq(stepElementParameters), eq(ambiance), any(TaskParameters.class),
+            eq(TaskType.AZURE_WEB_APP_TASK_NG), anyList());
+    doReturn(AzureAppServicePreDeploymentData.builder().slotName("production").build())
+        .when(stepHelper)
+        .getPreDeploymentData(eq(ambiance), any());
+
+    assertThatThrownBy(
+        () -> azureWebAppTrafficShiftStep.obtainTaskAfterRbac(ambiance, stepElementParameters, stepInputPackage))
+        .isInstanceOf(InvalidArgumentsException.class)
+        .hasMessage(
+            "Traffic shift is supposed to shift traffic from PRODUCTION slot to deployment slot. Traffic shift is not applicable when deployment slot is PRODUCTION.");
   }
 
   private Ambiance getAmbiance() {

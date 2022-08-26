@@ -37,7 +37,6 @@ import static org.powermock.api.mockito.PowerMockito.doReturn;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
@@ -84,7 +83,6 @@ import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.steps.StepCategory;
-import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
@@ -188,6 +186,7 @@ public class TerraformStepHelperTest extends CategoryTest {
     io.harness.cdng.manifest.yaml.GitStoreConfig configFiles = output.getConfigFiles();
     assertThat(configFiles).isNotNull();
     assertThat(configFiles.getGitFetchType()).isEqualTo(FetchType.COMMIT);
+    assertThat(ParameterFieldHelper.getParameterFieldValue(configFiles.getBranch())).isNull();
     String commitId = ParameterFieldHelper.getParameterFieldValue(configFiles.getCommitId());
     assertThat(commitId).isEqualTo("commit-1");
     List<TerraformVarFileConfig> varFileConfigs = output.getVarFileConfigs();
@@ -213,10 +212,6 @@ public class TerraformStepHelperTest extends CategoryTest {
             .folderPath(ParameterField.createValueField("Config/"))
             .connectoref(ParameterField.createValueField("terraform"))
             .build();
-
-    Mockito.doReturn(true)
-        .when(cdFeatureFlagHelper)
-        .isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.TF_MODULE_SOURCE_INHERIT_SSH);
 
     TerraformPlanStepParameters planStepParameters = TerraformStepDataGenerator.generateStepPlanWithVarFiles(
         StoreConfigType.GITHUB, null, gitStoreConfigFiles, null, true);
@@ -381,7 +376,7 @@ public class TerraformStepHelperTest extends CategoryTest {
     doNothing().when(cdStepHelper).validateGitStoreConfig(any());
     doReturn(
         ConnectorInfoDTO.builder().connectorConfig(GitConfigDTO.builder().gitAuthType(GitAuthType.SSH).build()).build())
-        .when(mockK8sStepHelper)
+        .when(cdStepHelper)
         .getConnector(anyString(), any());
     doReturn(SSHKeySpecDTO.builder().build())
         .when(mockGitConfigAuthenticationInfoHelper)
@@ -444,7 +439,7 @@ public class TerraformStepHelperTest extends CategoryTest {
                                             .name("connectorName")
                                             .connectorConfig(artifactoryConnectorDTO)
                                             .build();
-    doReturn(connectorInfoDTO).when(mockK8sStepHelper).getConnector(anyString(), any());
+    doReturn(connectorInfoDTO).when(cdStepHelper).getConnector(anyString(), any());
     List<TerraformVarFileInfo> terraformVarFileInfos = helper.toTerraformVarFileInfo(varFilesMap, ambiance);
     assertThat(terraformVarFileInfos).isNotNull();
     assertThat(terraformVarFileInfos.size()).isEqualTo(2);
@@ -531,7 +526,7 @@ public class TerraformStepHelperTest extends CategoryTest {
                                             .connectorConfig(artifactoryConnectorDTO)
                                             .build();
     doNothing().when(cdStepHelper).validateGitStoreConfig(any());
-    when(mockK8sStepHelper.getConnector(anyString(), any()))
+    when(cdStepHelper.getConnector(anyString(), any()))
         .thenReturn(connectorInfoDTO, connectorInfoDTO,
             ConnectorInfoDTO.builder()
                 .connectorConfig(GitConfigDTO.builder().gitAuthType(GitAuthType.SSH).build())
@@ -614,7 +609,7 @@ public class TerraformStepHelperTest extends CategoryTest {
                                                               .build())
                                          .build();
 
-    doReturn(connectorInfo).when(mockK8sStepHelper).getConnector(anyString(), any());
+    doReturn(connectorInfo).when(cdStepHelper).getConnector(anyString(), any());
     doReturn(SSHKeySpecDTO.builder().build())
         .when(mockGitConfigAuthenticationInfoHelper)
         .getSSHKey(any(), anyString(), anyString(), anyString());
@@ -677,8 +672,8 @@ public class TerraformStepHelperTest extends CategoryTest {
             .artifactPaths(ParameterField.createValueField(asList("path1", "path2")))
             .build();
 
-    doReturn(TerraformStepDataGenerator.getConnectorInfoDTO()).when(mockK8sStepHelper).getConnector(any(), any());
-    doNothing().when(mockK8sStepHelper).validateManifest(any(), any(), any());
+    doReturn(TerraformStepDataGenerator.getConnectorInfoDTO()).when(cdStepHelper).getConnector(any(), any());
+    doNothing().when(cdStepHelper).validateManifest(any(), any(), any());
     doReturn(null).when(mockSecretManagerClientService).getEncryptionDetails(any(), any());
     assertThatThrownBy(()
                            -> helper.getFileStoreFetchFilesConfig(
@@ -723,7 +718,7 @@ public class TerraformStepHelperTest extends CategoryTest {
                                             .name("connectorName")
                                             .connectorConfig(artifactoryConnectorDTO)
                                             .build();
-    doReturn(connectorInfoDTO).when(mockK8sStepHelper).getConnector(anyString(), any());
+    doReturn(connectorInfoDTO).when(cdStepHelper).getConnector(anyString(), any());
     List<TerraformVarFileInfo> terraformVarFileInfos = helper.toTerraformVarFileInfo(varFilesMap, ambiance);
     assertThat(terraformVarFileInfos).isNotNull();
     assertThat(terraformVarFileInfos.size()).isEqualTo(2);
@@ -816,7 +811,7 @@ public class TerraformStepHelperTest extends CategoryTest {
     Ambiance ambiance = getAmbiance();
     doReturn(
         ConnectorInfoDTO.builder().connectorConfig(GitConfigDTO.builder().gitAuthType(GitAuthType.SSH).build()).build())
-        .when(mockK8sStepHelper)
+        .when(cdStepHelper)
         .getConnector(anyString(), any());
     doReturn(SSHKeySpecDTO.builder().build())
         .when(mockGitConfigAuthenticationInfoHelper)
@@ -868,7 +863,7 @@ public class TerraformStepHelperTest extends CategoryTest {
     Ambiance ambiance = getAmbiance();
     doReturn(
         ConnectorInfoDTO.builder().connectorConfig(GitConfigDTO.builder().gitAuthType(GitAuthType.SSH).build()).build())
-        .when(mockK8sStepHelper)
+        .when(cdStepHelper)
         .getConnector(anyString(), any());
     doReturn(SSHKeySpecDTO.builder().build())
         .when(mockGitConfigAuthenticationInfoHelper)

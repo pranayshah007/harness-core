@@ -1,0 +1,60 @@
+{
+  "data" : {
+    "pairs" : [ {
+      "request" : {
+        "path" : [ {
+          "matcher" : "exact",
+          "value" : "/api/v2/logs/events/search"
+        } ],
+        "method" : [ {
+          "matcher" : "exact",
+          "value" : "POST"
+        } ],
+        "destination" : [ {
+          "matcher" : "exact",
+          "value" : "app.datadoghq.com"
+        } ],
+        "scheme" : [ {
+          "matcher" : "exact",
+          "value" : "https"
+        } ],
+        "body" : [ {
+          "matcher" : "exact",
+          "value" : "{\"filter\":{\"query\":\"service:shopping*\",\"from\":1658401544711,\"to\":1658401604711},\"page\":{\"limit\":500}}"
+        } ]
+      },
+      "response" : {
+        "status" : 200,
+        "body" : "{\"data\":[]}",
+        "encodedBody" : false,
+        "templated" : false,
+        "headers" : {
+          "Cache-Control" : [ "no-cache" ],
+          "Connection" : [ "keep-alive" ],
+          "Content-Length" : [ "11" ],
+          "Content-Security-Policy" : [ "frame-ancestors 'self'; report-uri https://logs.browser-intake-datadoghq.com/api/v2/logs?dd-api-key=pube4f163c23bbf91c16b8f57f56af9fc58&dd-evp-origin=content-security-policy&ddsource=csp-report&ddtags=site%3Adatadoghq.com" ],
+          "Content-Type" : [ "application/json" ],
+          "Date" : [ "Fri, 22 Jul 2022 08:25:45 GMT" ],
+          "Hoverfly" : [ "Was-Here" ],
+          "Pragma" : [ "no-cache" ],
+          "Strict-Transport-Security" : [ "max-age=15724800;" ],
+          "X-Content-Type-Options" : [ "nosniff" ],
+          "X-Frame-Options" : [ "SAMEORIGIN" ],
+          "X-Ratelimit-Limit" : [ "300" ],
+          "X-Ratelimit-Name" : [ "logs_public_search_api" ],
+          "X-Ratelimit-Period" : [ "3600" ],
+          "X-Ratelimit-Remaining" : [ "180" ],
+          "X-Ratelimit-Reset" : [ "2055" ]
+        }
+      }
+    } ],
+    "globalActions" : {
+      "delays" : [ ]
+    }
+  },
+  "meta" : {
+    "schemaVersion" : "v5",
+    "hoverflyVersion" : "v1.1.5",
+    "timeExported" : "2022-07-22T08:25:45Z"
+  }
+}

@@ -16,6 +16,7 @@ import lombok.Data;
 @OwnedBy(HarnessTeam.CDC)
 @Data
 public class ManifestProvidedEntitySpec extends ProvidedEntitySpec {
+  private String branch;
   private String folderPath;
   private List<String> paths;
 }

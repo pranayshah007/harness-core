@@ -54,8 +54,11 @@ public class InputSetMergeHelper {
                                                     .collect(Collectors.toList());
     String res = template;
     for (String yaml : inputSetPipelineCompYamlList) {
-      res = MergeHelper.mergeRuntimeInputValuesIntoOriginalYaml(
-          res, removeNonRequiredStages(yaml, stageIdentifiers), appendInputSetValidator);
+      String yamlWithRequiredStages = removeNonRequiredStages(yaml, stageIdentifiers);
+      if (EmptyPredicate.isEmpty(yamlWithRequiredStages)) {
+        continue;
+      }
+      res = MergeHelper.mergeRuntimeInputValuesIntoOriginalYaml(res, yamlWithRequiredStages, appendInputSetValidator);
     }
     return res;
   }

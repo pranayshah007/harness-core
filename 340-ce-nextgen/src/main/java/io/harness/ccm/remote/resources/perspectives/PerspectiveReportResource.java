@@ -250,9 +250,10 @@ public class PerspectiveReportResource {
     try {
       CEReportSchedule oldReport = ceReportScheduleService.get(schedule.getUuid(), accountId);
       List<CEReportSchedule> reports = ceReportScheduleService.update(accountId, schedule);
+      CEReportSchedule newReport = ceReportScheduleService.get(schedule.getUuid(), accountId);
       return ResponseDTO.newResponse(
           Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-            outboxService.save(new ReportUpdateEvent(accountId, schedule.toDTO(), oldReport.toDTO()));
+            outboxService.save(new ReportUpdateEvent(accountId, newReport.toDTO(), oldReport.toDTO()));
             return reports;
           })));
     } catch (IllegalArgumentException e) {

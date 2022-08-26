@@ -13,6 +13,7 @@ import io.harness.cdng.artifact.bean.artifactsource.ArtifactSource;
 import io.harness.cdng.artifact.bean.artifactsource.DockerArtifactSource;
 import io.harness.cdng.artifact.steps.ArtifactStepParameters;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
+import io.harness.cdng.execution.StageExecutionInfo;
 import io.harness.cdng.infra.beans.AzureWebAppInfraMapping;
 import io.harness.cdng.infra.beans.InfraMapping;
 import io.harness.cdng.infra.beans.InfraUseFromStage;
@@ -24,6 +25,7 @@ import io.harness.cdng.infra.beans.ServerlessAwsLambdaInfraMapping;
 import io.harness.cdng.infra.beans.SshWinRmAwsInfraMapping;
 import io.harness.cdng.infra.beans.SshWinRmAzureInfraMapping;
 import io.harness.cdng.infra.steps.InfraStepParameters;
+import io.harness.cdng.instance.InstanceDeploymentInfo;
 import io.harness.cdng.pipeline.executions.CDAccountExecutionMetadata;
 import io.harness.cdng.provision.cloudformation.beans.CloudformationConfig;
 import io.harness.cdng.provision.terraform.TerraformConfig;
@@ -31,6 +33,7 @@ import io.harness.cdng.service.steps.ServiceStepParameters;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrarHelperPut;
 import io.harness.polling.bean.PollingDocument;
+import io.harness.telemetry.beans.CdTelemetrySentStatus;
 
 import java.util.Set;
 
@@ -54,6 +57,9 @@ public class NGMorphiaRegistrar implements MorphiaRegistrar {
     set.add(ServerlessAwsLambdaInfraMapping.class);
     set.add(SshWinRmAwsInfraMapping.class);
     set.add(AzureWebAppInfraMapping.class);
+    set.add(CdTelemetrySentStatus.class);
+    set.add(StageExecutionInfo.class);
+    set.add(InstanceDeploymentInfo.class);
   }
 
   @Override
@@ -66,5 +72,7 @@ public class NGMorphiaRegistrar implements MorphiaRegistrar {
     h.put("io.harness.cdng.provision.terraform.TerraformConfig", TerraformConfig.class);
     h.put("io.harness.cdng.provision.cloudformation.beans.CloudformationConfig", CloudformationConfig.class);
     h.put("io.harness.polling.bean.PollingDocument", PollingDocument.class);
+    h.put("io.harness.cdng.execution.StageExecutionInfo", StageExecutionInfo.class);
+    h.put("io.harness.cdng.instance.InstanceDeploymentInfo", InstanceDeploymentInfo.class);
   }
 }

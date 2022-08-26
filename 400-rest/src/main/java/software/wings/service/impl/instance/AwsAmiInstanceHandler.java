@@ -158,8 +158,8 @@ public class AwsAmiInstanceHandler extends AwsInstanceHandler implements Instanc
   }
 
   @Override
-  public FeatureName getFeatureFlagToStopIteratorBasedInstanceSync() {
-    return STOP_INSTANCE_SYNC_VIA_ITERATOR_FOR_AWS_AMI_DEPLOYMENTS;
+  public Optional<FeatureName> getFeatureFlagToStopIteratorBasedInstanceSync() {
+    return Optional.of(STOP_INSTANCE_SYNC_VIA_ITERATOR_FOR_AWS_AMI_DEPLOYMENTS);
   }
 
   /**
@@ -253,8 +253,8 @@ public class AwsAmiInstanceHandler extends AwsInstanceHandler implements Instanc
   }
 
   @Override
-  public FeatureName getFeatureFlagToEnablePerpetualTaskForInstanceSync() {
-    return FeatureName.MOVE_AWS_AMI_INSTANCE_SYNC_TO_PERPETUAL_TASK;
+  public Optional<FeatureName> getFeatureFlagToEnablePerpetualTaskForInstanceSync() {
+    return Optional.of(FeatureName.MOVE_AWS_AMI_INSTANCE_SYNC_TO_PERPETUAL_TASK);
   }
 
   @Override

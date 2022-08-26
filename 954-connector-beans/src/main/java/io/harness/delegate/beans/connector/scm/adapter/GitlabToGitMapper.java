@@ -62,14 +62,19 @@ public class GitlabToGitMapper {
         passwordRef = httpCredentialsSpec.getTokenRef();
       }
 
-      return GitConfigCreater.getGitConfigForHttp(connectionType, url, validationRepo, username, usernameRef,
-          passwordRef, gitlabConnectorDTO.getDelegateSelectors());
+      GitConfigDTO gitConfigForHttp = GitConfigCreater.getGitConfigForHttp(connectionType, url, validationRepo,
+          username, usernameRef, passwordRef, gitlabConnectorDTO.getDelegateSelectors());
+      gitConfigForHttp.setExecuteOnDelegate(gitlabConnectorDTO.getExecuteOnDelegate());
+      return gitConfigForHttp;
     } else if (authType == GitAuthType.SSH) {
       final GitlabSshCredentialsDTO credentials =
           (GitlabSshCredentialsDTO) gitlabConnectorDTO.getAuthentication().getCredentials();
       final SecretRefData sshKeyRef = credentials.getSshKeyRef();
-      return GitConfigCreater.getGitConfigForSsh(
+
+      GitConfigDTO gitConfigForSsh = GitConfigCreater.getGitConfigForSsh(
           connectionType, url, validationRepo, sshKeyRef, gitlabConnectorDTO.getDelegateSelectors());
+      gitConfigForSsh.setExecuteOnDelegate(gitlabConnectorDTO.getExecuteOnDelegate());
+      return gitConfigForSsh;
     }
     throw new InvalidRequestException("Unknown auth type: " + authType);
   }

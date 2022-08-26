@@ -88,6 +88,8 @@ replace_key_value ceAzureSetupConfig.enableFileCheckAtSource "$AZURE_ENABLE_FILE
 
 replace_key_value ceGcpSetupConfig.enableServiceAccountPermissionsCheck "$GCP_ENABLE_SERVICE_ACCOUNT_PERMISSIONS_CHECK"
 
+replace_key_value deploymentClusterName "$DEPLOYMENT_CLUSTER_NAME"
+
 replace_key_value awsConfig.accessKey "$AWS_ACCESS_KEY"
 replace_key_value awsConfig.secretKey "$AWS_SECRET_KEY"
 replace_key_value awsConfig.destinationBucket "$AWS_DESTINATION_BUCKET"
@@ -111,6 +113,13 @@ replace_key_value secretsConfiguration.gcpSecretManagerProject "$GCP_SECRET_MANA
 replace_key_value secretsConfiguration.secretResolutionEnabled  "$RESOLVE_SECRETS"
 replace_key_value awsConnectorCreatedInstantForPolicyCheck $AWS_CONNECTOR_CREATED_INSTANT_FOR_POLICY_CHECK
 
+replace_key_value accessControlClient.enableAccessControl "$ACCESS_CONTROL_ENABLED"
+replace_key_value accessControlClient.accessControlServiceConfig.baseUrl "$ACCESS_CONTROL_BASE_URL"
+replace_key_value accessControlClient.accessControlServiceSecret "$ACCESS_CONTROL_SECRET"
+replace_key_value accessControlAdminClient.accessControlServiceConfig.baseUrl "$ACCESS_CONTROL_BASE_URL"
+replace_key_value accessControlAdminClient.accessControlServiceSecret "$ACCESS_CONTROL_SECRET"
+replace_key_value accessControlAdminClient.mockAccessControlService "${MOCK_ACCESS_CONTROL_SERVICE:-true}"
+
 replace_key_value notificationClient.httpClient.baseUrl "$NOTIFICATION_BASE_URL"
 replace_key_value notificationClient.secrets.notificationClientSecret "$NEXT_GEN_MANAGER_SECRET"
 replace_key_value notificationClient.messageBroker.uri "${NOTIFICATION_MONGO_URI//\\&/&}"
@@ -132,11 +141,11 @@ else
 fi
 
 if [[ "" != "$SEGMENT_ENABLED" ]]; then
-  yq write -i $CONFIG_FILE segmentConfig.enabled "$SEGMENT_ENABLED"
+  yq write -i $CONFIG_FILE segmentConfiguration.enabled "$SEGMENT_ENABLED"
 fi
 
 if [[ "" != "$SEGMENT_APIKEY" ]]; then
-  yq write -i $CONFIG_FILE segmentConfig.apiKey "$SEGMENT_APIKEY"
+  yq write -i $CONFIG_FILE segmentConfiguration.apiKey "$SEGMENT_APIKEY"
 fi
 
 if [[ "" != "$AUDIT_CLIENT_BASEURL" ]]; then

@@ -68,6 +68,9 @@ message RunStep {
   repeated Report reports = 5;
   map<string, string> environment = 6;
   ShellType shell_type = 7;
+  bool detach = 8;
+  repeated string entrypoint = 9;
+  string image = 10;
 }
 
 message PluginStep {

@@ -1,0 +1,31 @@
+failureStrategies:
+  - onFailure:
+      errors:
+        - AllErrors
+      action:
+        type: StageRollback
+spec:
+  execution:
+    steps:
+      - stepGroup:
+          name: Phase
+          identifier: Phase
+          strategy:
+            repeat:
+              items: <+stage.output.hosts>
+              maxConcurrency: <+maxConcurrency>
+              partitions: <+partitionSize>
+              unit: <+unit>
+          steps:
+            - stepGroup:
+                name: Phase Group
+                identifier: phase_group
+                strategy:
+                  repeat:
+                    items: <+repeat.partition>
+                steps:
+                  - step:
+                      type: Command
+                      name: "Deploy"
+                      identifier: Deploy
+                      spec: {}

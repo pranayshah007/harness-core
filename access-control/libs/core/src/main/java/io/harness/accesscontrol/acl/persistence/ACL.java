@@ -14,6 +14,7 @@ import io.harness.accesscontrol.acl.persistence.SourceMetadata.SourceMetadataKey
 import io.harness.annotation.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.CompoundMongoIndex;
+import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.persistence.PersistentEntity;
 
@@ -50,6 +51,8 @@ public class ACL implements PersistentEntity {
   public static final String ROLE_IDENTIFIER_KEY = ACLKeys.sourceMetadata + "." + SourceMetadataKeys.roleIdentifier;
   public static final String RESOURCE_GROUP_IDENTIFIER_KEY =
       ACLKeys.sourceMetadata + "." + SourceMetadataKeys.resourceGroupIdentifier;
+  public static final String IMPLICITLY_CREATED_FOR_SCOPE_ACCESS_KEY =
+      ACLKeys.sourceMetadata + "." + SourceMetadataKeys.implicitlyCreatedForScopeAccess;
   public static final String PRIMARY_COLLECTION = "acl";
   public static final String SECONDARY_COLLECTION = "acl_secondary";
 
@@ -65,7 +68,7 @@ public class ACL implements PersistentEntity {
   String principalType;
   String principalIdentifier;
   String aclQueryString;
-  @Getter(value = AccessLevel.NONE) Boolean conditional;
+  @FdIndex @Getter(value = AccessLevel.NONE) Boolean conditional;
   String condition;
   @Getter(value = AccessLevel.NONE) private Boolean enabled;
 
@@ -77,6 +80,10 @@ public class ACL implements PersistentEntity {
     return Boolean.TRUE.equals(conditional);
   }
 
+  public boolean isImplicit() {
+    return sourceMetadata.getImplicitlyCreatedForScopeAccess();
+  }
+
   public static String getAclQueryString(String scopeIdentifier, String resourceSelector, String principalType,
       String principalIdentifier, String permissionIdentifier) {
     return scopeIdentifier + DELIMITER + permissionIdentifier + DELIMITER + resourceSelector + DELIMITER + principalType
@@ -86,7 +93,7 @@ public class ACL implements PersistentEntity {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("uniqueIdx")
+                 .name("uniqueIdxV2")
                  .field(ACLKeys.scopeIdentifier)
                  .field(ROLE_ASSIGNMENT_IDENTIFIER_KEY)
                  .field(USER_GROUP_IDENTIFIER_KEY)
@@ -97,6 +104,9 @@ public class ACL implements PersistentEntity {
                  .field(ACLKeys.principalIdentifier)
                  .field(ACLKeys.principalType)
                  .field(ACLKeys.aclQueryString)
+                 .field(ACLKeys.condition)
+                 .field(ACLKeys.conditional)
+                 .field(IMPLICITLY_CREATED_FOR_SCOPE_ACCESS_KEY)
                  .unique(true)
                  .build())
         .add(CompoundMongoIndex.builder()

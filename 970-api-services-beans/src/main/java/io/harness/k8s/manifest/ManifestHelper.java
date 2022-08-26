@@ -45,6 +45,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.StringUtils;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.yaml.snakeyaml.error.YAMLException;
@@ -92,7 +93,8 @@ public class ManifestHelper {
 
   private List<KubernetesResource> getKubernetesResources(Map map, ListKind listKind) {
     org.yaml.snakeyaml.Yaml yaml = new org.yaml.snakeyaml.Yaml(
-        new io.kubernetes.client.util.Yaml.CustomConstructor(Object.class), new BooleanPatchedRepresenter());
+        new io.kubernetes.client.util.Yaml.CustomConstructor(Object.class, new LoaderOptions()),
+        new BooleanPatchedRepresenter());
     List<KubernetesResource> resources =
         getItems(map).stream().map(item -> getKubernetesResource(yaml.dump(item), item)).collect(Collectors.toList());
 

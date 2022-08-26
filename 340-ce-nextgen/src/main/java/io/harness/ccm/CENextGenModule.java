@@ -13,11 +13,14 @@ import static io.harness.annotations.dev.HarnessTeam.CE;
 import static io.harness.audit.ResourceTypeConstants.COST_CATEGORY;
 import static io.harness.audit.ResourceTypeConstants.PERSPECTIVE;
 import static io.harness.audit.ResourceTypeConstants.PERSPECTIVE_BUDGET;
+import static io.harness.audit.ResourceTypeConstants.PERSPECTIVE_FOLDER;
 import static io.harness.audit.ResourceTypeConstants.PERSPECTIVE_REPORT;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CONNECTOR_ENTITY;
 import static io.harness.lock.DistributedLockImplementation.MONGO;
 
+import io.harness.AccessControlClientModule;
+import io.harness.accesscontrol.AccessControlAdminClientModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.retry.MethodExecutionHelper;
 import io.harness.annotations.retry.RetryOnException;
@@ -33,6 +36,7 @@ import io.harness.ccm.audittrails.eventhandler.BudgetEventHandler;
 import io.harness.ccm.audittrails.eventhandler.CENextGenOutboxEventHandler;
 import io.harness.ccm.audittrails.eventhandler.CostCategoryEventHandler;
 import io.harness.ccm.audittrails.eventhandler.PerspectiveEventHandler;
+import io.harness.ccm.audittrails.eventhandler.PerspectiveFolderEventHandler;
 import io.harness.ccm.audittrails.eventhandler.ReportEventHandler;
 import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.bigQuery.BigQueryServiceImpl;
@@ -49,6 +53,8 @@ import io.harness.ccm.graphql.core.budget.BudgetCostServiceImpl;
 import io.harness.ccm.graphql.core.budget.BudgetService;
 import io.harness.ccm.graphql.core.budget.BudgetServiceImpl;
 import io.harness.ccm.perpetualtask.K8sWatchTaskResourceClientModule;
+import io.harness.ccm.rbac.CCMRbacHelper;
+import io.harness.ccm.rbac.CCMRbacHelperImpl;
 import io.harness.ccm.remote.mapper.anomaly.AnomalyFilterPropertiesMapper;
 import io.harness.ccm.remote.mapper.recommendation.CCMRecommendationFilterPropertiesMapper;
 import io.harness.ccm.service.impl.AWSBucketPolicyHelperServiceImpl;
@@ -105,6 +111,7 @@ import io.harness.govern.ProviderMethodInterceptor;
 import io.harness.govern.ProviderModule;
 import io.harness.grpc.DelegateServiceDriverGrpcClientModule;
 import io.harness.grpc.DelegateServiceGrpcClient;
+import io.harness.licensing.remote.NgLicenseHttpClientModule;
 import io.harness.licensing.usage.interfaces.LicenseUsageInterface;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.metrics.modules.MetricsModule;
@@ -264,6 +271,10 @@ public class CENextGenModule extends AbstractModule {
         configuration.getNgManagerServiceSecret(), CE_NEXT_GEN.getServiceId(),
         configuration.getEnforcementClientConfiguration()));
     install(new MetricsModule());
+    install(AccessControlClientModule.getInstance(
+        configuration.getAccessControlClientConfiguration(), CE_NEXT_GEN.getServiceId()));
+    install(new AccessControlAdminClientModule(
+        configuration.getAccessControlAdminClientConfiguration(), CE_NEXT_GEN.getServiceId()));
 
     install(new SecretNGManagerClientModule(configuration.getNgManagerClientConfig(),
         configuration.getNgManagerServiceSecret(), CE_NEXT_GEN.getServiceId()));
@@ -285,6 +296,8 @@ public class CENextGenModule extends AbstractModule {
         NG_MANAGER.getServiceId(), configuration.isEnableAudit()));
     install(new TransactionOutboxModule(
         configuration.getOutboxPollConfig(), NG_MANAGER.getServiceId(), configuration.isExportMetricsToStackDriver()));
+    install(NgLicenseHttpClientModule.getInstance(configuration.getNgManagerClientConfig(),
+        configuration.getNgManagerServiceSecret(), CE_NEXT_GEN.getServiceId()));
     bind(HPersistence.class).to(MongoPersistence.class);
     bind(CENextGenConfiguration.class).toInstance(configuration);
     bind(SQLConverter.class).to(SQLConverterImpl.class);
@@ -311,6 +324,7 @@ public class CENextGenModule extends AbstractModule {
     bind(FilterService.class).to(FilterServiceImpl.class);
     registerOutboxEventHandlers();
     bind(OutboxEventHandler.class).to(CENextGenOutboxEventHandler.class);
+    bind(CCMRbacHelper.class).to(CCMRbacHelperImpl.class);
 
     registerEventsFrameworkMessageListeners();
 
@@ -339,6 +353,7 @@ public class CENextGenModule extends AbstractModule {
         MapBinder.newMapBinder(binder(), String.class, OutboxEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(PERSPECTIVE).to(PerspectiveEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(PERSPECTIVE_BUDGET).to(BudgetEventHandler.class);
+    outboxEventHandlerMapBinder.addBinding(PERSPECTIVE_FOLDER).to(PerspectiveFolderEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(PERSPECTIVE_REPORT).to(ReportEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(COST_CATEGORY).to(CostCategoryEventHandler.class);
   }

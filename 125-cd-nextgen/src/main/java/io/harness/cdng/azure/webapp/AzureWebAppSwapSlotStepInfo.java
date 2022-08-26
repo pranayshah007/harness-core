@@ -10,6 +10,7 @@ package io.harness.cdng.azure.webapp;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.AzureWebAppSwapSlotStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
@@ -26,11 +27,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.validator.constraints.NotEmpty;
 import org.springframework.data.annotation.TypeAlias;
 
 @OwnedBy(HarnessTeam.CDP)
@@ -48,10 +51,13 @@ public class AzureWebAppSwapSlotStepInfo extends AzureWebAppSwapSlotBaseStepInfo
   private String uuid;
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
+  @NotNull @NotEmpty @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> targetSlot;
 
   @Builder(builderMethodName = "infoBuilder")
-  public AzureWebAppSwapSlotStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
-    super(delegateSelectors);
+  public AzureWebAppSwapSlotStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
+      String slotDeploymentStepFqn, ParameterField<String> targetSlot) {
+    super(delegateSelectors, slotDeploymentStepFqn);
+    this.targetSlot = targetSlot;
   }
 
   @Override
@@ -66,7 +72,10 @@ public class AzureWebAppSwapSlotStepInfo extends AzureWebAppSwapSlotBaseStepInfo
 
   @Override
   public SpecParameters getSpecParameters() {
-    return AzureWebAppSwapSlotStepParameters.infoBuilder().delegateSelectors(this.getDelegateSelectors()).build();
+    return AzureWebAppSwapSlotStepParameters.infoBuilder()
+        .targetSlot(this.getTargetSlot())
+        .delegateSelectors(this.getDelegateSelectors())
+        .build();
   }
 
   @Override

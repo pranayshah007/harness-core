@@ -19,6 +19,7 @@ import io.harness.delegate.task.scm.GitWebhookTaskType;
 import io.harness.gitsync.common.beans.InfoForGitPush;
 import io.harness.gitsync.common.dtos.CreateGitFileRequestDTO;
 import io.harness.gitsync.common.dtos.CreatePRDTO;
+import io.harness.gitsync.common.dtos.GetLatestCommitOnFileRequestDTO;
 import io.harness.gitsync.common.dtos.GitDiffResultFileListDTO;
 import io.harness.gitsync.common.dtos.GitFileChangeDTO;
 import io.harness.gitsync.common.dtos.GitFileContent;
@@ -32,6 +33,7 @@ import io.harness.product.ci.scm.proto.CreatePRResponse;
 import io.harness.product.ci.scm.proto.CreateWebhookResponse;
 import io.harness.product.ci.scm.proto.DeleteFileResponse;
 import io.harness.product.ci.scm.proto.FileContent;
+import io.harness.product.ci.scm.proto.GetLatestCommitOnFileResponse;
 import io.harness.product.ci.scm.proto.GetUserRepoResponse;
 import io.harness.product.ci.scm.proto.GetUserReposResponse;
 import io.harness.product.ci.scm.proto.ListBranchesWithDefaultResponse;
@@ -106,4 +108,6 @@ public interface ScmClientFacilitatorService {
   CreateFileResponse createFile(CreateGitFileRequestDTO createGitFileRequestDTO);
 
   UpdateFileResponse updateFile(UpdateGitFileRequestDTO updateGitFileRequestDTO);
+
+  GetLatestCommitOnFileResponse getLatestCommitOnFile(GetLatestCommitOnFileRequestDTO getLatestCommitOnFileRequestDTO);
 }

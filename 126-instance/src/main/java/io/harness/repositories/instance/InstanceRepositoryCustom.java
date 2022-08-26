@@ -15,6 +15,7 @@ import io.harness.models.CountByServiceIdAndEnvType;
 import io.harness.models.EnvBuildInstanceCount;
 import io.harness.models.InstancesByBuildId;
 
+import com.mongodb.client.result.UpdateResult;
 import java.util.List;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -55,7 +56,7 @@ public interface InstanceRepositoryCustom {
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId, long timestampInMs);
 
   AggregationResults<ActiveServiceInstanceInfo> getActiveServiceInstanceInfo(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId, long timestampInMs);
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId);
 
   AggregationResults<InstancesByBuildId> getActiveInstancesByServiceIdEnvIdAndBuildIds(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String serviceId, String envId, List<String> buildIds,
@@ -65,4 +66,6 @@ public interface InstanceRepositoryCustom {
       String orgIdentifier, String projectIdentifier, List<String> serviceId, long timestampInMs);
 
   Instance findFirstInstance(Criteria criteria);
+
+  UpdateResult updateInfrastructureMapping(List<String> instanceIds, String infrastructureMappingId);
 }

@@ -96,14 +96,14 @@ public class EnvLoopState extends State implements WorkflowState {
     if (loopedValues.size() == 1 && ExpressionEvaluator.matchesVariablePattern(loopedValues.get(0))
         && loopedValues.get(0).contains(".")) {
       String resolvedValue = context.renderExpression(loopedValues.get(0));
-      if (resolvedValue == null || resolvedValue.equals(loopedValues.get(0))) {
+      if (resolvedValue == null || resolvedValue.equals(loopedValues.get(0)) || "null".equals(resolvedValue)) {
         forkStateExecutionData.setStateType(StateType.ENV_LOOP_STATE.name());
         forkStateExecutionData.setForkStateNames(Collections.singletonList(getName()));
         return executionResponseBuilder.stateExecutionData(forkStateExecutionData)
             .async(false)
             .executionStatus(ExecutionStatus.FAILED)
-            .errorMessage(
-                "The expression " + loopedValues.get(0) + " provided for the variable doesn't resolve to a valid value")
+            .errorMessage("The expression " + loopedValues.get(0)
+                + " provided for the infra variable doesn't resolve to a valid value. Value should not be null or empty")
             .build();
       }
       loopedValues = new ArrayList<>();

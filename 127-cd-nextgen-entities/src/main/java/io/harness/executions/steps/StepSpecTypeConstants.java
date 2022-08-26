@@ -18,6 +18,7 @@ public interface StepSpecTypeConstants {
   String CLOUDFORMATION_CREATE_STACK = "CreateStack";
   String CLOUDFORMATION_DELETE_STACK = "DeleteStack";
   String CLOUDFORMATION_ROLLBACK_STACK = "RollbackStack";
+
   String K8S_ROLLING_DEPLOY = "K8sRollingDeploy";
   String K8S_ROLLING_ROLLBACK = "K8sRollingRollback";
   String K8S_BLUE_GREEN_DEPLOY = "K8sBlueGreenDeploy";
@@ -32,6 +33,10 @@ public interface StepSpecTypeConstants {
   String TERRAFORM_PLAN = "TerraformPlan";
   String TERRAFORM_DESTROY = "TerraformDestroy";
   String TERRAFORM_ROLLBACK = "TerraformRollback";
+
+  String AZURE_CREATE_ARM_RESOURCE = "AzureCreateARMResource";
+  String AZURE_CREATE_BP_RESOURCE = "AzureCreateBPResource";
+  String AZURE_ROLLBACK_ARM_RESOURCE = "AzureARMRollback";
 
   String PLACEHOLDER = "Placeholder";
 

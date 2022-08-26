@@ -148,6 +148,24 @@ public class LicenseResource {
   }
 
   @GET
+  @Path("account-license")
+  @ApiOperation(value = "Gets All Module Licenses for an Account", nickname = "getAllAccountModuleLicenses")
+  @Operation(operationId = "getAllAccountModuleLicenses", summary = "Gets All Module License Information in Account",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns all module licenses for an account")
+      })
+  @InternalApi
+  @Hidden
+  public ResponseDTO<List<ModuleLicenseDTO>>
+  getAllAccountModuleLicenses(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+      NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier) {
+    List<ModuleLicenseDTO> moduleLicenses = licenseService.getAllModuleLicences(accountIdentifier);
+    return ResponseDTO.newResponse(moduleLicenses);
+  }
+
+  @GET
   @Path("{identifier}")
   @ApiOperation(value = "Gets Module License", nickname = "getModuleLicenseById")
   @Operation(operationId = "getModuleLicenseById", summary = "Gets Module License",

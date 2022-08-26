@@ -8,6 +8,8 @@
 package io.harness.delegate.task.azure.appservice;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.azure.model.AzureConstants.DEPLOYMENT_SLOT_PRODUCTION_NAME;
+import static io.harness.azure.model.AzureConstants.FETCH_ARTIFACT_FILE;
 import static io.harness.azure.model.AzureConstants.SHIFT_TRAFFIC_SLOT_NAME_BLANK_ERROR_MSG;
 import static io.harness.azure.model.AzureConstants.SOURCE_SLOT_NAME_BLANK_ERROR_MSG;
 import static io.harness.azure.model.AzureConstants.TARGET_SLOT_NAME_BLANK_ERROR_MSG;
@@ -20,15 +22,11 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.azure.context.AzureWebClientContext;
 import io.harness.azure.model.AzureAppServiceApplicationSetting;
 import io.harness.azure.model.AzureAppServiceConnectionString;
-import io.harness.azure.model.AzureConfig;
-import io.harness.delegate.beans.azure.registry.AzureRegistry;
-import io.harness.delegate.beans.azure.registry.AzureRegistryFactory;
-import io.harness.delegate.beans.azure.registry.AzureRegistryType;
-import io.harness.delegate.beans.connector.ConnectorConfigDTO;
-import io.harness.delegate.beans.connector.azureconnector.AzureContainerRegistryConnectorDTO;
 import io.harness.delegate.task.azure.appservice.deployment.AzureAppServiceDeploymentService;
 import io.harness.delegate.task.azure.appservice.deployment.context.AzureAppServiceDeploymentContext;
-import io.harness.delegate.task.azure.common.AzureContainerRegistryService;
+import io.harness.delegate.task.azure.artifact.ArtifactDownloadContext;
+import io.harness.delegate.task.azure.artifact.AzurePackageArtifactConfig;
+import io.harness.delegate.task.azure.common.AutoCloseableWorkingDirectory;
 import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
 import io.harness.exception.InvalidArgumentsException;
 
@@ -44,13 +42,28 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Singleton
 public class AzureAppServiceResourceUtilities {
-  @Inject private AzureContainerRegistryService azureContainerRegistryService;
   @Inject protected AzureAppServiceDeploymentService azureAppServiceDeploymentService;
 
   private static final int defaultTimeoutInterval = 10;
 
+  public ArtifactDownloadContext toArtifactNgDownloadContext(AzurePackageArtifactConfig artifactConfig,
+      AutoCloseableWorkingDirectory workingDirectory, AzureLogCallbackProvider logCallbackProvider) {
+    return ArtifactDownloadContext.builder()
+        .artifactConfig(artifactConfig)
+        .commandUnitName(FETCH_ARTIFACT_FILE)
+        .workingDirectory(workingDirectory.workingDir())
+        .logCallbackProvider(logCallbackProvider)
+        .build();
+  }
+
   public void swapSlots(AzureWebClientContext webClientContext, AzureLogCallbackProvider logCallbackProvider,
       String deploymentSlot, String targetSlot, Integer timeoutIntervalInMin) {
+    if (DEPLOYMENT_SLOT_PRODUCTION_NAME.equalsIgnoreCase(deploymentSlot)) {
+      String initialTargetSlot = targetSlot;
+      targetSlot = deploymentSlot;
+      deploymentSlot = initialTargetSlot;
+    }
+
     AzureAppServiceDeploymentContext azureAppServiceDeploymentContext = new AzureAppServiceDeploymentContext();
     azureAppServiceDeploymentContext.setAzureWebClientContext(webClientContext);
     azureAppServiceDeploymentContext.setLogCallbackProvider(logCallbackProvider);
@@ -71,20 +84,6 @@ public class AzureAppServiceResourceUtilities {
       List<AzureAppServiceConnectionString> connectionStrings) {
     return connectionStrings.stream().collect(
         Collectors.toMap(AzureAppServiceConnectionString::getName, Function.identity()));
-  }
-
-  public Map<String, AzureAppServiceApplicationSetting> getDockerSettings(
-      ConnectorConfigDTO connectorConfigDTO, AzureRegistryType azureRegistryType, AzureConfig azureConfig) {
-    AzureRegistry azureRegistry = AzureRegistryFactory.getAzureRegistry(azureRegistryType);
-    Map<String, AzureAppServiceApplicationSetting> dockerSettings =
-        azureRegistry.getContainerSettings(connectorConfigDTO);
-
-    if (AzureRegistryType.ACR == azureRegistryType) {
-      azureContainerRegistryService.updateACRDockerSettingByCredentials(
-          (AzureContainerRegistryConnectorDTO) connectorConfigDTO, azureConfig, dockerSettings);
-    }
-
-    return dockerSettings;
   }
 
   public void validateSlotShiftTrafficParameters(String webAppName, String deploymentSlot, double trafficPercent) {

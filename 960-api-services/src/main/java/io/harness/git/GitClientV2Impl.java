@@ -176,6 +176,7 @@ public class GitClientV2Impl implements GitClientV2 {
       try (Git git = Git.open(repoDir)) {
         log.info(gitClientHelper.getGitLogMessagePrefix(request.getRepoType())
             + "Repo exist. do hard sync with remote branch");
+        printCommitId(request, git);
 
         ((FetchCommand) (getAuthConfiguredCommand(git.fetch(), request))).setTagOpt(TagOpt.FETCH_TAGS).call();
         checkout(request);
@@ -186,6 +187,7 @@ public class GitClientV2Impl implements GitClientV2 {
         }
         log.info(gitClientHelper.getGitLogMessagePrefix(request.getRepoType()) + "Hard reset done for branch "
             + request.getBranch());
+        printCommitId(request, git);
         // TODO:: log failed commits queued and being ignored.
         return;
       } catch (Exception ex) {
@@ -227,6 +229,15 @@ public class GitClientV2Impl implements GitClientV2 {
       throw new YamlException(format("Unable to checkout given reference: %s",
                                   isEmpty(request.getCommitId()) ? request.getBranch() : request.getCommitId()),
           ex, USER);
+    }
+  }
+
+  private void printCommitId(GitBaseRequest request, Git git) {
+    try {
+      log.info("{}Commit id: {}", gitClientHelper.getGitLogMessagePrefix(request.getRepoType()), getHeadCommit(git));
+    } catch (Exception e) {
+      log.warn("{}Failed to get last commit: {}", gitClientHelper.getGitLogMessagePrefix(request.getRepoType()),
+          e.getMessage());
     }
   }
 
@@ -1134,6 +1145,8 @@ public class GitClientV2Impl implements GitClientV2 {
                                     .append(request.getFilePaths())
                                     .append(". Reason: ")
                                     .append(e.getMessage())
+                                    .append(", ")
+                                    .append(e.getCause() != null ? e.getCause().getMessage() : "")
                                     .toString(),
             e, USER);
       }

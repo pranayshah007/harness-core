@@ -8,7 +8,6 @@
 package software.wings.service.impl;
 
 import static io.harness.beans.EnvironmentType.PROD;
-import static io.harness.beans.FeatureName.DELEGATE_SELECTION_LOGS_DISABLED;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.JENNY;
 
@@ -301,7 +300,6 @@ public class DelegateSelectionLogsServiceImplTest extends WingsBaseTest {
     String accountId = generateUuid();
     String taskId = generateUuid();
     when(featureFlagService.isEnabled(any(), anyString())).thenReturn(true);
-    when(featureFlagService.isEnabled(DELEGATE_SELECTION_LOGS_DISABLED, accountId)).thenReturn(true);
     assertThat(persistence.get(DelegateSelectionLog.class, taskId)).isNull();
   }
 
@@ -362,6 +360,30 @@ public class DelegateSelectionLogsServiceImplTest extends WingsBaseTest {
                    .filter(DelegateSelectionLogKeys.accountId, accountId)
                    .count())
         .isEqualTo(20L);
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void fetchSelectionLogWhenExecuteOnHarnessHostedDelegates() {
+    String taskId = generateUuid();
+    String accountId = generateUuid();
+    String globalAccountId = generateUuid();
+    DelegateTask task = DelegateTask.builder()
+                            .uuid(taskId)
+                            .accountId(globalAccountId)
+                            .executeOnHarnessHostedDelegates(true)
+                            .secondaryAccountId(accountId)
+                            .selectionLogsTrackingEnabled(true)
+                            .build();
+    delegateSelectionLogsService.logNoEligibleDelegatesToExecuteTask(task);
+    List<DelegateSelectionLogParams> delegateSelectionLogParams =
+        delegateSelectionLogsService.fetchTaskSelectionLogs(accountId, taskId);
+    assertThat(delegateSelectionLogParams).isNotEmpty();
+    assertThat(delegateSelectionLogParams.size()).isEqualTo(1);
+    assertThat(delegateSelectionLogParams.get(0).getConclusion()).isEqualTo(REJECTED);
+    assertThat(delegateSelectionLogParams.get(0).getMessage()).isEqualTo(NO_ELIGIBLE_DELEGATES);
+    assertThat(delegateSelectionLogParams.get(0).getEventTimestamp()).isNotNull();
   }
 
   private Map<String, String> obtainTaskSetupAbstractions() {

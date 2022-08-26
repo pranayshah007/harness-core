@@ -23,11 +23,10 @@ import io.harness.delegate.task.gcp.GcpTaskType;
 import io.harness.delegate.task.gcp.request.GcpTaskParameters;
 import io.harness.delegate.task.gcp.request.GcpValidationRequest;
 import io.harness.delegate.task.gcp.request.GcpValidationRequest.GcpValidationRequestBuilder;
-import io.harness.delegate.task.gcp.response.GcpValidationTaskResponse;
 import io.harness.exception.InvalidRequestException;
 
 @OwnedBy(CDP)
-public class GcpConnectorValidator extends AbstractConnectorValidator {
+public class GcpConnectorValidator extends AbstractCloudProviderConnectorValidator {
   @Override
   public <T extends ConnectorConfigDTO> TaskParameters getTaskParameters(
       T connectorConfig, String accountIdentifier, String orgIdentifier, String projectIdentifier) {
@@ -61,9 +60,7 @@ public class GcpConnectorValidator extends AbstractConnectorValidator {
   @Override
   public ConnectorValidationResult validate(ConnectorConfigDTO connectorDTO, String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String identifier) {
-    final GcpValidationTaskResponse gcpValidationTaskResponse = (GcpValidationTaskResponse) super.validateConnector(
-        connectorDTO, accountIdentifier, orgIdentifier, projectIdentifier, identifier);
-    return gcpValidationTaskResponse.getConnectorValidationResult();
+    return super.validate(connectorDTO, accountIdentifier, orgIdentifier, projectIdentifier, identifier);
   }
 
   @Override

@@ -345,7 +345,7 @@ cg:
   envPath: ""
 
   kubectlVersion: v1.13.2
-  scmVersion: 386387fc
+  scmVersion: 72b37b4b
 
   ngAuthUIEnabled: false
 
@@ -629,7 +629,6 @@ cg:
     connectTimeOutSeconds: 15
     readTimeOutSeconds: 15
     enableHttpLogging: ${ENABLE_HTTP_LOGGING:-false}
-
 
   eventsFramework:
     redis:

@@ -26,6 +26,7 @@ import static io.harness.rule.OwnerRule.PRABU;
 import static io.harness.rule.OwnerRule.ROHIT_KUMAR;
 import static io.harness.rule.OwnerRule.SRINIVAS;
 import static io.harness.rule.OwnerRule.YOGESH;
+import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static software.wings.beans.Application.Builder.anApplication;
 import static software.wings.beans.ElementExecutionSummary.ElementExecutionSummaryBuilder.anElementExecutionSummary;
@@ -761,6 +762,36 @@ public class ApprovalStateTest extends WingsBaseTest {
   }
 
   @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void testParsePropertiesWithInvalidTimeout() {
+    Integer maximumTimeout = 2147400049;
+    final Map<String, Object> properties = new HashMap<>();
+    properties.put("timeoutMillis", maximumTimeout + 50);
+    assertThatThrownBy(() -> approvalState.parseProperties(properties)).isInstanceOf(InvalidRequestException.class);
+  }
+
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void testParsePropertiesWithTimeoutAsString() {
+    final Map<String, Object> properties = new HashMap<>();
+    Integer timeout = 50934043;
+    properties.put("timeoutMillis", timeout.toString());
+    approvalState.parseProperties(properties);
+    assertThat(approvalState.getTimeoutMillis()).isEqualTo(timeout);
+  }
+
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void testParsePropertiesWithNegativeTimeout() {
+    final Map<String, Object> properties = new HashMap<>();
+    properties.put("timeoutMillis", "-543423");
+    assertThatThrownBy(() -> approvalState.parseProperties(properties)).isInstanceOf(InvalidRequestException.class);
+  }
+
+  @Test
   @Owner(developers = ROHIT_KUMAR)
   @Category(UnitTests.class)
   public void testSetPipelineVariables() {
@@ -773,6 +804,27 @@ public class ApprovalStateTest extends WingsBaseTest {
 
     approvalState.setPipelineVariables(executionContextMock);
     assertThat(workflowStandardParams.getWorkflowElement().getVariables().get("key")).isEqualTo("value");
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void testSetPipelineVariables1() {
+    final ExecutionContext executionContextMock = mock(ExecutionContext.class);
+    final WorkflowStandardParams workflowStandardParams = new WorkflowStandardParams();
+    workflowStandardParams.setWorkflowVariables(ImmutableMap.of("key", "value"));
+    doReturn(workflowStandardParams).when(executionContextMock).getContextElement(ContextElementType.STANDARD);
+    Map<String, Object> variableMap = new HashMap<>();
+    variableMap.put("var1", "value1");
+    variableMap.put("var2", "value2");
+    variableMap.put("var3", "value3");
+    WorkflowElement workflowElement = WorkflowElement.builder().variables(variableMap).build();
+    workflowStandardParams.setWorkflowElement(workflowElement);
+    approvalState.setPipelineVariables(executionContextMock);
+    assertThat(workflowStandardParams.getWorkflowElement().getVariables().get("key")).isEqualTo("value");
+    assertThat(workflowStandardParams.getWorkflowElement().getVariables().get("var1")).isEqualTo("value1");
+    assertThat(workflowStandardParams.getWorkflowElement().getVariables().get("var2")).isEqualTo("value2");
+    assertThat(workflowStandardParams.getWorkflowElement().getVariables().get("var3")).isEqualTo("value3");
   }
 
   @Test

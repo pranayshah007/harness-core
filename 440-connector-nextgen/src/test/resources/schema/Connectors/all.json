@@ -117,6 +117,9 @@
               "items": {
                 "type": "string"
               }
+            },
+            "executeOnDelegate": {
+              "type": "boolean"
             }
           }
         }
@@ -340,6 +343,9 @@
               "items": {
                 "type": "string"
               }
+            },
+            "executeOnDelegate": {
+              "type": "boolean"
             }
           }
         }
@@ -961,6 +967,9 @@
               "items": {
                 "type": "string"
               }
+            },
+            "executeOnDelegate": {
+              "type": "boolean"
             }
           }
         }
@@ -1239,6 +1248,9 @@
               "items": {
                 "type": "string"
               }
+            },
+            "executeOnDelegate": {
+              "type": "boolean"
             },
             "type": {
               "type": "string",
@@ -1554,6 +1566,9 @@
               "items": {
                 "type": "string"
               }
+            },
+            "executeOnDelegate": {
+              "type": "boolean"
             },
             "type": {
               "type": "string",
@@ -1909,7 +1924,8 @@
             "Pdc",
             "AzureRepo",
             "Jenkins",
-            "OciHelmRepo"
+            "OciHelmRepo",
+            "CustomSecretManager"
           ]
         }
       },
@@ -2135,6 +2151,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/CustomHealthConnectorDTO"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "CustomSecretManager"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CustomSecretManager"
               }
             }
           }
@@ -2629,6 +2661,48 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "CustomSecretManager": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ConnectorConfigDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "onDelegate",
+            "template"
+          ],
+          "properties": {
+            "connectorRef": {
+              "type": "string"
+            },
+            "default": {
+              "type": "boolean"
+            },
+            "delegateSelectors": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string"
+              }
+            },
+            "host": {
+              "type": "string"
+            },
+            "onDelegate": {
+              "type": "boolean"
+            },
+            "template": {
+              "$ref": "#/definitions/TemplateLinkConfigForCustomSecretManager"
+            },
+            "workingDirectory": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "DatadogConnectorDTO": {
       "allOf": [
         {
@@ -2725,6 +2799,9 @@
             },
             "dockerRegistryUrl": {
               "type": "string"
+            },
+            "executeOnDelegate": {
+              "type": "boolean"
             },
             "providerType": {
               "type": "string",
@@ -2913,6 +2990,9 @@
               "items": {
                 "type": "string"
               }
+            },
+            "executeOnDelegate": {
+              "type": "boolean"
             }
           }
         }
@@ -3712,6 +3792,9 @@
               "items": {
                 "type": "string"
               }
+            },
+            "executeOnDelegate": {
+              "type": "boolean"
             },
             "type": {
               "type": "string",
@@ -5111,6 +5194,29 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "TemplateLinkConfigForCustomSecretManager": {
+      "type": "object",
+      "required": [
+        "templateRef",
+        "versionLabel"
+      ],
+      "properties": {
+        "templateInputs": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object"
+          }
+        },
+        "templateRef": {
+          "type": "string"
+        },
+        "versionLabel": {
+          "type": "string",
+          "pattern": "^[0-9a-zA-Z][^\\s]{0,63}$"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "VaultConnectorDTO": {
       "allOf": [
         {
@@ -5155,10 +5261,16 @@
                 "type": "string"
               }
             },
+            "k8sAuthEndpoint": {
+              "type": "string"
+            },
             "namespace": {
               "type": "string"
             },
             "readOnly": {
+              "type": "boolean"
+            },
+            "renewAppRoleToken": {
               "type": "boolean"
             },
             "renewalIntervalMinutes": {

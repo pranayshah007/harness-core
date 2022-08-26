@@ -88,6 +88,7 @@ import software.wings.beans.SumoConfig;
 import software.wings.beans.SyncTaskContext;
 import software.wings.beans.TaskType;
 import software.wings.beans.ValidationResult;
+import software.wings.beans.WinRmCommandParameter;
 import software.wings.beans.WinRmConnectionAttributes;
 import software.wings.beans.ce.CEAwsConfig;
 import software.wings.beans.ce.CEAzureConfig;
@@ -411,6 +412,8 @@ public class SettingValidationService {
       validateCEAwsConfig(settingAttribute);
     } else if (settingValue instanceof CEAzureConfig) {
       validateCEAzureConfig(settingAttribute);
+    } else if (settingValue instanceof WinRmConnectionAttributes) {
+      validateWinRmConnectionAttributes((WinRmConnectionAttributes) settingValue);
     }
 
     if (EncryptableSetting.class.isInstance(settingValue)) {
@@ -601,6 +604,17 @@ public class SettingValidationService {
     }
   }
 
+  private void validateWinRmConnectionAttributes(WinRmConnectionAttributes winRmConnectionAttributes) {
+    List<WinRmCommandParameter> Parameters = winRmConnectionAttributes.getParameters();
+    if (EmptyPredicate.isNotEmpty(Parameters)) {
+      for (WinRmCommandParameter parameter : Parameters) {
+        if (EmptyPredicate.isEmpty(parameter.getParameter())) {
+          throw new InvalidRequestException(
+              "WinRM Command Parameters cannot be empty. Please remove the empty WinRM Command Parameters pairs", USER);
+        }
+      }
+    }
+  }
   private void validateIfSpecifiedSecretsExist(HostConnectionAttributes hostConnectionAttributes) {
     if (isNotEmpty(hostConnectionAttributes.getEncryptedKey())
         && null

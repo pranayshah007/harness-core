@@ -14,26 +14,25 @@ import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.GIT;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.HTTP_HELM;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.OCI_HELM;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.S3_HELM;
-import static io.harness.delegate.task.helm.HelmCommandRequestNG.HelmCommandType.RELEASE_HISTORY;
+import static io.harness.delegate.clienttools.ClientTool.OC;
 import static io.harness.delegate.task.helm.HelmTaskHelperBase.getChartDirectory;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.filesystem.FileIo.createDirectoryIfDoesNotExist;
 import static io.harness.filesystem.FileIo.deleteDirectoryAndItsContentIfExists;
 import static io.harness.filesystem.FileIo.waitForDirectoryToBeAccessibleOutOfProcess;
+import static io.harness.helm.HelmCommandType.RELEASE_HISTORY;
 import static io.harness.helm.HelmConstants.CHARTS_YAML_KEY;
 import static io.harness.helm.HelmConstants.DEFAULT_TILLER_CONNECTION_TIMEOUT_MILLIS;
-import static io.harness.helm.HelmConstants.ReleaseRecordConstants.CHART;
-import static io.harness.helm.HelmConstants.ReleaseRecordConstants.NAME;
-import static io.harness.helm.HelmConstants.ReleaseRecordConstants.NAMESPACE;
-import static io.harness.helm.HelmConstants.ReleaseRecordConstants.REVISION;
-import static io.harness.helm.HelmConstants.ReleaseRecordConstants.STATUS;
 import static io.harness.k8s.K8sConstants.MANIFEST_FILES_DIR;
+import static io.harness.k8s.manifest.ManifestHelper.values_filename;
+import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.validation.Validator.notNullCheck;
 
 import static software.wings.beans.LogColor.Gray;
 import static software.wings.beans.LogColor.White;
 import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
+import static software.wings.delegatetasks.helm.HelmTaskHelper.copyManifestFilesToWorkingDir;
 
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
@@ -47,13 +46,16 @@ import io.harness.container.ContainerInfo;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.beans.storeconfig.CustomRemoteStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GcsHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.HttpHelmStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.LocalFileStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfigType;
+import io.harness.delegate.clienttools.InstallUtils;
 import io.harness.delegate.exception.HelmNGException;
 import io.harness.delegate.service.ExecutionConfigOverrideFromFileOnDelegate;
 import io.harness.delegate.task.git.ScmFetchFilesHelperNG;
@@ -61,6 +63,7 @@ import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
 import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.delegate.task.k8s.ManifestDelegateConfig;
+import io.harness.delegate.task.localstore.ManifestFiles;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GitOperationException;
 import io.harness.exception.HelmClientException;
@@ -69,10 +72,12 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
+import io.harness.filesystem.FileIo;
 import io.harness.helm.HelmCliCommandType;
 import io.harness.helm.HelmClient;
 import io.harness.helm.HelmClientImpl.HelmCliResponse;
 import io.harness.helm.HelmCommandResponseMapper;
+import io.harness.helm.HelmCommandType;
 import io.harness.helm.HelmConstants;
 import io.harness.k8s.K8sConstants;
 import io.harness.k8s.K8sGlobalConfigService;
@@ -81,6 +86,7 @@ import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.HelmVersion;
 import io.harness.k8s.model.K8sDelegateTaskParams;
+import io.harness.k8s.model.Kind;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
@@ -92,6 +98,8 @@ import io.harness.logging.LogLevel;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.shell.SshSessionConfig;
 
+import software.wings.beans.LogColor;
+import software.wings.beans.LogWeight;
 import software.wings.helpers.ext.helm.response.ReleaseInfo;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -101,6 +109,7 @@ import com.google.common.util.concurrent.TimeLimiter;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.Inject;
 import io.fabric8.kubernetes.api.model.Pod;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -118,9 +127,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
-import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -142,6 +148,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
   @Inject private SecretDecryptionService secretDecryptionService;
   private ILogStreamingTaskClient logStreamingTaskClient;
   @Inject private TimeLimiter timeLimiter;
+  @Inject private CustomManifestFetchTaskHelper customManifestFetchTaskHelper;
   public static final String TIMED_OUT_IN_STEADY_STATE = "Timed out waiting for controller to reach in steady state";
   public static final String InstallUpgrade = "Install / Upgrade";
   public static final String Rollback = "Rollback";
@@ -150,7 +157,6 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
   private static final String NON_DIGITS_REGEX = "\\D+";
   private static final int VERSION_LENGTH = 3;
   private static final int KUBERNETESS_116_VERSION = 116;
-
   @Override
   public void setLogStreamingClient(ILogStreamingTaskClient iLogStreamingTaskClient) {
     this.logStreamingTaskClient = iLogStreamingTaskClient;
@@ -163,13 +169,25 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
     int prevVersion = -1;
     boolean isInstallUpgrade = false;
     List<KubernetesResource> resources = Collections.emptyList();
+    String initWorkingDir = commandRequest.getWorkingDir();
     try {
       HelmInstallCmdResponseNG commandResponse;
       logCallback.saveExecutionLog(
           "List all existing deployed releases for release name: " + commandRequest.getReleaseName());
 
+      if (HelmVersion.V380.equals(commandRequest.getHelmVersion())) {
+        helmTaskHelperBase.revokeReadPermission(commandRequest.getKubeConfigLocation());
+      }
+
       HelmCliResponse helmCliResponse =
           helmClient.releaseHistory(HelmCommandDataMapperNG.getHelmCmdDataNG(commandRequest), true);
+
+      List<ReleaseInfo> releaseInfoList =
+          helmTaskHelperBase.parseHelmReleaseCommandOutput(helmCliResponse.getOutput(), RELEASE_HISTORY);
+
+      if (!isEmpty(releaseInfoList)) {
+        helmTaskHelperBase.processHelmReleaseHistOutput(releaseInfoList.get(releaseInfoList.size() - 1));
+      }
 
       logCallback.saveExecutionLog(helmCliResponse.getOutputWithErrorStream());
 
@@ -262,7 +280,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
         logCallback.saveExecutionLog("Deployment failed.");
         deleteAndPurgeHelmRelease(commandRequest, logCallback);
       }
-      cleanUpWorkingDirectory(commandRequest.getWorkingDir());
+      cleanUpWorkingDirectory(initWorkingDir);
     }
   }
 
@@ -294,7 +312,8 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
   }
 
   private int getPrevReleaseVersion(HelmCliResponse helmCliResponse) throws IOException {
-    List<ReleaseInfo> releaseInfoList = parseHelmReleaseCommandOutput(helmCliResponse.getOutput(), RELEASE_HISTORY);
+    List<ReleaseInfo> releaseInfoList =
+        helmTaskHelperBase.parseHelmReleaseCommandOutput(helmCliResponse.getOutput(), RELEASE_HISTORY);
     return isEmpty(releaseInfoList) ? 0
                                     : Integer.parseInt(releaseInfoList.get(releaseInfoList.size() - 1).getRevision());
   }
@@ -372,6 +391,16 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
     for (Map.Entry<String, List<KubernetesResourceId>> entry : namespacewiseResources.entrySet()) {
       if (success) {
         final String namespace = entry.getKey();
+        Optional<String> ocPath = setupPathOfOcBinaries(entry.getValue());
+        if (ocPath.isPresent()) {
+          commandRequest.setOcPath(ocPath.get());
+        }
+        if (isNotEmpty(commandRequest.getGcpKeyPath())) {
+          Path oldPath = Paths.get(commandRequest.getGcpKeyPath());
+          Path newPath = Paths.get(commandRequest.getWorkingDir(), K8sConstants.GCP_JSON_KEY_FILE_NAME);
+          Files.move(oldPath, newPath);
+          commandRequest.setGcpKeyPath(newPath.toAbsolutePath().toString());
+        }
         success = success
             && doStatusCheckAllResourcesForHelm(client, entry.getValue(), commandRequest.getOcPath(),
                 commandRequest.getWorkingDir(), namespace, commandRequest.getKubeConfigLocation(), logCallback);
@@ -570,7 +599,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
       HelmCliResponse helmCliResponse =
           helmClient.listReleases(HelmCommandDataMapperNG.getHelmCmdDataNG(helmCommandRequest), true);
       List<ReleaseInfo> releaseInfoList =
-          parseHelmReleaseCommandOutput(helmCliResponse.getOutput(), HelmCommandRequestNG.HelmCommandType.LIST_RELEASE);
+          helmTaskHelperBase.parseHelmReleaseCommandOutput(helmCliResponse.getOutput(), HelmCommandType.LIST_RELEASE);
       return HelmListReleaseResponseNG.builder()
           .commandExecutionStatus(helmCliResponse.getCommandExecutionStatus())
           .output(helmCliResponse.getOutputWithErrorStream())
@@ -594,8 +623,8 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
     try {
       HelmCliResponse helmCliResponse =
           helmClient.releaseHistory(HelmCommandDataMapperNG.getHelmCmdDataNG(helmCommandRequest), true);
-      List<ReleaseInfo> releaseInfoList =
-          parseHelmReleaseCommandOutput(helmCliResponse.getOutput(), helmCommandRequest.getHelmCommandType());
+      List<ReleaseInfo> releaseInfoList = helmTaskHelperBase.parseHelmReleaseCommandOutput(
+          helmCliResponse.getOutput(), helmCommandRequest.getHelmCommandType());
       return HelmReleaseHistoryCmdResponseNG.builder()
           .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
           .releaseInfoList(releaseInfoList)
@@ -632,12 +661,18 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
   }
 
   @VisibleForTesting
-  void prepareRepoAndCharts(HelmCommandRequestNG commandRequest, long timeoutInMillis) {
+  void prepareRepoAndCharts(HelmCommandRequestNG commandRequest, long timeoutInMillis) throws IOException {
     ManifestDelegateConfig manifestDelegateConfig = commandRequest.getManifestDelegateConfig();
     HelmChartManifestDelegateConfig helmChartManifestDelegateConfig =
         (HelmChartManifestDelegateConfig) manifestDelegateConfig;
 
     switch (helmChartManifestDelegateConfig.getStoreDelegateConfig().getType()) {
+      case HARNESS:
+        fetchLocalChartRepo(commandRequest);
+        break;
+      case CUSTOM_REMOTE:
+        fetchCustomSourceManifest(commandRequest);
+        break;
       case GIT:
         fetchSourceRepo(commandRequest);
         break;
@@ -651,6 +686,25 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
         throw new InvalidRequestException(
             "Unsupported store type: " + helmChartManifestDelegateConfig.getStoreDelegateConfig().getType(), USER);
     }
+  }
+
+  void fetchCustomSourceManifest(HelmCommandRequestNG commandRequest) throws IOException {
+    CustomRemoteStoreDelegateConfig storeDelegateConfig =
+        (CustomRemoteStoreDelegateConfig) commandRequest.getManifestDelegateConfig().getStoreDelegateConfig();
+
+    String workingDirectory = Paths.get(commandRequest.getWorkingDir()).toString();
+    customManifestFetchTaskHelper.downloadAndUnzipCustomSourceManifestFiles(workingDirectory,
+        storeDelegateConfig.getCustomManifestSource().getZippedManifestFileId(), commandRequest.getAccountId());
+
+    File file = new File(workingDirectory);
+    if (isEmpty(file.list())) {
+      throw new InvalidRequestException("No manifest files found under working directory", USER);
+    }
+    File manifestDirectory = file.listFiles(pathname -> !file.isHidden())[0];
+    copyManifestFilesToWorkingDir(manifestDirectory, new File(workingDirectory));
+
+    commandRequest.setWorkingDir(workingDirectory);
+    commandRequest.getLogCallback().saveExecutionLog("Custom source manifest downloaded locally");
   }
 
   private void fetchSourceRepo(HelmCommandRequestNG commandRequest) {
@@ -714,6 +768,31 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
     commandRequestNG.getLogCallback().saveExecutionLog("Helm Chart Repo checked-out locally");
   }
 
+  private void fetchLocalChartRepo(HelmCommandRequestNG commandRequestNG) {
+    String workingDir = Paths.get(commandRequestNG.getWorkingDir()).toString();
+    LocalFileStoreDelegateConfig localFileStoreDelegateConfig =
+        (LocalFileStoreDelegateConfig) commandRequestNG.getManifestDelegateConfig().getStoreDelegateConfig();
+    List<ManifestFiles> ManifestFileList = localFileStoreDelegateConfig.getManifestFiles();
+    if (isNotEmpty(localFileStoreDelegateConfig.getManifestType())
+        && isNotEmpty(localFileStoreDelegateConfig.getManifestIdentifier())) {
+      commandRequestNG.getLogCallback().saveExecutionLog("\n"
+          + color(format("Fetching %s files with identifier: %s", localFileStoreDelegateConfig.getManifestType(),
+                      localFileStoreDelegateConfig.getManifestIdentifier()),
+              White, Bold));
+      commandRequestNG.getLogCallback().saveExecutionLog(color("Fetching manifest files at path: ", LogColor.White));
+    } else {
+      commandRequestNG.getLogCallback().saveExecutionLog("\n" + color("Fetching manifest files", White, Bold));
+    }
+    List<String> scopedFilePathList = localFileStoreDelegateConfig.getFilePaths();
+    printFilesFetchedFromHarnessStore(scopedFilePathList, commandRequestNG.getLogCallback());
+    commandRequestNG.getLogCallback().saveExecutionLog(
+        color(format("%nSuccessfully fetched following files: "), LogColor.White, LogWeight.Bold));
+    downloadFilesFromLocalChartRepo(ManifestFileList, workingDir, commandRequestNG.getLogCallback());
+
+    commandRequestNG.setWorkingDir(workingDir);
+    commandRequestNG.getLogCallback().saveExecutionLog("Helm Chart Repo checked-out locally");
+  }
+
   private void downloadFilesFromChartRepo(ManifestDelegateConfig manifestDelegateConfig, String destinationDirectory,
       LogCallback logCallback, long timeoutInMillis) {
     if (!(manifestDelegateConfig instanceof HelmChartManifestDelegateConfig)) {
@@ -749,6 +828,34 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
           manifestDelegateConfig.getStoreDelegateConfig().getType());
       throw new HelmClientRuntimeException(
           new HelmClientException(errorMsg, ExceptionMessageSanitizer.sanitizeException(e), HelmCliCommandType.FETCH));
+    }
+  }
+
+  private void downloadFilesFromLocalChartRepo(
+      List<ManifestFiles> ManifestFileList, String destinationDirectory, LogCallback executionLogCallback) {
+    String directoryPath = Paths.get(destinationDirectory).toString();
+
+    try {
+      for (int i = 0; i < ManifestFileList.size(); i++) {
+        ManifestFiles manifestFile = ManifestFileList.get(i);
+        if (StringUtils.equals(values_filename, manifestFile.getFileName())) {
+          continue;
+        }
+
+        Path filePath = Paths.get(directoryPath, manifestFile.getFileName());
+        Path parent = filePath.getParent();
+        if (parent == null) {
+          throw new InvalidRequestException("Failed to create file at path " + filePath.toString());
+        }
+
+        createDirectoryIfDoesNotExist(parent.toString());
+        FileIo.writeUtf8StringToFile(filePath.toString(), manifestFile.getFileContent());
+        executionLogCallback.saveExecutionLog(color(format("%n- %s", manifestFile.getFilePath()), LogColor.White));
+      }
+
+    } catch (Exception ex) {
+      executionLogCallback.saveExecutionLog(ExceptionUtils.getMessage(ExceptionMessageSanitizer.sanitizeException(ex)),
+          ERROR, CommandExecutionStatus.FAILURE);
     }
   }
 
@@ -894,38 +1001,6 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
     return logCallback;
   }
 
-  private List<ReleaseInfo> parseHelmReleaseCommandOutput(
-      String listReleaseOutput, HelmCommandRequestNG.HelmCommandType helmCommandType) throws IOException {
-    if (isEmpty(listReleaseOutput)) {
-      return new ArrayList<>();
-    }
-    CSVFormat csvFormat = CSVFormat.RFC4180.withFirstRecordAsHeader().withDelimiter('\t').withTrim();
-    return CSVParser.parse(listReleaseOutput, csvFormat)
-        .getRecords()
-        .stream()
-        .map(helmCommandType == RELEASE_HISTORY ? this::releaseHistoryCsvRecordToReleaseInfo
-                                                : this::listReleaseCsvRecordToReleaseInfo)
-        .collect(Collectors.toList());
-  }
-
-  private ReleaseInfo releaseHistoryCsvRecordToReleaseInfo(CSVRecord releaseRecord) {
-    return ReleaseInfo.builder()
-        .revision(releaseRecord.get(REVISION))
-        .status(releaseRecord.get(STATUS))
-        .chart(releaseRecord.get(CHART))
-        .build();
-  }
-
-  private ReleaseInfo listReleaseCsvRecordToReleaseInfo(CSVRecord releaseRecord) {
-    return ReleaseInfo.builder()
-        .name(releaseRecord.get(NAME))
-        .revision(releaseRecord.get(REVISION))
-        .status(releaseRecord.get(STATUS))
-        .chart(releaseRecord.get(CHART))
-        .namespace(releaseRecord.get(NAMESPACE))
-        .build();
-  }
-
   private HelmChartInfo getHelmChartDetails(HelmCommandRequestNG commandRequest) throws Exception {
     ManifestDelegateConfig manifestDelegateConfig = commandRequest.getManifestDelegateConfig();
 
@@ -937,7 +1012,8 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
     if (commandRequest instanceof HelmRollbackCommandRequestNG) {
       HelmCliResponse helmHistResponse =
           helmClient.releaseHistory(HelmCommandDataMapperNG.getHelmCmdDataNG(commandRequest), true);
-      List<ReleaseInfo> releaseInfoList = parseHelmReleaseCommandOutput(helmHistResponse.getOutput(), RELEASE_HISTORY);
+      List<ReleaseInfo> releaseInfoList =
+          helmTaskHelperBase.parseHelmReleaseCommandOutput(helmHistResponse.getOutput(), RELEASE_HISTORY);
       String chartName = releaseInfoList.get(releaseInfoList.size() - 1).getChart();
       int index = chartName.lastIndexOf('-');
       String version = chartName.substring(index + 1);
@@ -1000,5 +1076,31 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
     } else {
       return null;
     }
+  }
+
+  public void printFilesFetchedFromHarnessStore(List<String> scopedFilePathList, LogCallback logCallback) {
+    for (String scopedFilePath : scopedFilePathList) {
+      logCallback.saveExecutionLog(color(format("- %s", scopedFilePath), LogColor.White));
+    }
+  }
+
+  private Optional<String> setupPathOfOcBinaries(List<KubernetesResourceId> resourceIds) {
+    if (isEmpty(resourceIds)) {
+      return Optional.empty();
+    }
+
+    for (KubernetesResourceId kubernetesResourceId : resourceIds) {
+      if (Kind.DeploymentConfig.name().equals(kubernetesResourceId.getKind())) {
+        String ocPath = null;
+        try {
+          ocPath = InstallUtils.getLatestVersionPath(OC);
+        } catch (Exception ex) {
+          log.warn(
+              "Unable to fetch OC binary path from delegate. Kindly ensure it is configured as env variable." + ex);
+        }
+        return Optional.ofNullable(ocPath);
+      }
+    }
+    return Optional.empty();
   }
 }

@@ -18,11 +18,17 @@ import io.harness.delegate.beans.ci.docker.CIDockerCleanupStepRequest;
 import io.harness.delegate.beans.ci.docker.CIDockerExecuteStepRequest;
 import io.harness.delegate.beans.ci.docker.CIDockerInitializeTaskRequest;
 import io.harness.delegate.beans.ci.docker.DockerTaskExecutionResponse;
+import io.harness.delegate.beans.ci.vm.VmTaskExecutionResponse;
+import io.harness.delegate.beans.ci.vm.dlite.DliteVmCleanupTaskParams;
+import io.harness.delegate.beans.ci.vm.dlite.DliteVmExecuteStepTaskParams;
+import io.harness.delegate.beans.ci.vm.dlite.DliteVmInitializeTaskParams;
 import io.harness.delegate.task.TaskParameters;
 
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._955_DELEGATE_BEANS)
 public enum TaskType {
+  CUSTOM_MANIFEST_VALUES_FETCH_TASK_NG(
+      TaskGroup.CUSTOM_MANIFEST_VALUES_FETCH_TASK, "Custom Manifest/Values Fetch Task"),
   GITOPS_TASK_NG(TaskGroup.GIT),
   BATCH_CAPABILITY_CHECK(TaskGroup.BATCH_CAPABILITY_CHECK),
   CAPABILITY_VALIDATION(TaskGroup.CAPABILITY_VALIDATION),
@@ -298,6 +304,7 @@ public enum TaskType {
   SHELL_SCRIPT_APPROVAL(TaskGroup.SCRIPT),
   CUSTOM_GET_BUILDS(TaskGroup.CUSTOM),
   CUSTOM_VALIDATE_ARTIFACT_STREAM(TaskGroup.CUSTOM),
+  CUSTOM_ARTIFACT_NG(TaskGroup.ARTIFACT_COLLECT_NG, "Custom Artifacts Task"),
   SHELL_SCRIPT_PROVISION_TASK(TaskGroup.SHELL_SCRIPT_PROVISION),
   SERVICENOW_ASYNC(TaskGroup.SERVICENOW),
   SERVICENOW_SYNC(TaskGroup.SERVICENOW),
@@ -366,11 +373,20 @@ public enum TaskType {
   OCI_HELM_CONNECTIVITY_TASK(TaskGroup.HELM_REPO_CONFIG_VALIDATION),
   AZURE_WEB_APP_TASK_NG(TaskGroup.AZURE, "Azure Web App Task"),
   COMMAND_TASK_NG(TaskGroup.COMMAND_TASK_NG, "Command Task"),
+  VALIDATE_CUSTOM_SECRET_MANAGER_SECRET_REFERENCE(TaskGroup.COMMAND_TASK_NG),
+  FETCH_CUSTOM_SECRET(TaskGroup.COMMAND_TASK_NG),
+  RESOLVE_CUSTOM_SM_CONFIG(TaskGroup.COMMAND_TASK_NG),
   CI_DOCKER_INITIALIZE_TASK(TaskGroup.CI, CIDockerInitializeTaskRequest.class, DockerTaskExecutionResponse.class, true),
   CI_DOCKER_EXECUTE_TASK(TaskGroup.CI, CIDockerExecuteStepRequest.class, DockerTaskExecutionResponse.class, true),
   CI_DOCKER_CLEANUP_TASK(TaskGroup.CI, CIDockerCleanupStepRequest.class, DockerTaskExecutionResponse.class, true),
   NG_LDAP_TEST_USER_SETTINGS(TaskGroup.LDAP),
-  NG_LDAP_TEST_GROUP_SETTINGS(TaskGroup.LDAP);
+  NG_LDAP_TEST_GROUP_SETTINGS(TaskGroup.LDAP),
+  DLITE_CI_VM_INITIALIZE_TASK(TaskGroup.CI, DliteVmInitializeTaskParams.class, VmTaskExecutionResponse.class, true),
+  DLITE_CI_VM_EXECUTE_TASK(TaskGroup.CI, DliteVmExecuteStepTaskParams.class, VmTaskExecutionResponse.class, true),
+  DLITE_CI_VM_CLEANUP_TASK(TaskGroup.CI, DliteVmCleanupTaskParams.class, VmTaskExecutionResponse.class, true),
+  NG_LDAP_GROUPS_SYNC(TaskGroup.LDAP),
+  AZURE_NG_ARM(TaskGroup.AZURE_NG_ARM_BLUEPRINT, "Azure ARM");
+
   private final TaskGroup taskGroup;
   private final String displayName;
   private final Class<? extends TaskParameters> request;

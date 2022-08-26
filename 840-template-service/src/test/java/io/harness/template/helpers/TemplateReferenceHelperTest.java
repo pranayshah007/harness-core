@@ -13,49 +13,41 @@ import static io.harness.template.beans.NGTemplateConstants.STABLE_VERSION;
 import static io.harness.template.helpers.TemplateReferenceTestHelper.ACCOUNT_ID;
 import static io.harness.template.helpers.TemplateReferenceTestHelper.ORG_ID;
 import static io.harness.template.helpers.TemplateReferenceTestHelper.PROJECT_ID;
-import static io.harness.template.helpers.TemplateReferenceTestHelper.connectorEntityDetailProto_StageTemplate;
-import static io.harness.template.helpers.TemplateReferenceTestHelper.connectorEntityDetailProto_StepTemplate;
 import static io.harness.template.helpers.TemplateReferenceTestHelper.generateIdentifierRefWithUnknownScope;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.EntityType;
 import io.harness.TemplateServiceTestBase;
-import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
-import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
+import io.harness.exception.InvalidIdentifierRefException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.entitydetail.EntityDetailProtoToRestMapper;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.template.TemplateEntityType;
-import io.harness.pms.contracts.service.EntityReferenceServiceGrpc;
-import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.preflight.PreFlightCheckMetadata;
-import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.handler.TemplateYamlConversionHandler;
 import io.harness.template.handler.TemplateYamlConversionHandlerRegistry;
+import io.harness.template.helpers.crud.PipelineTemplateCrudHelper;
+import io.harness.template.helpers.crud.TemplateCrudHelperFactory;
 import io.harness.template.services.NGTemplateServiceHelper;
 
 import com.google.common.io.Resources;
 import com.google.inject.Inject;
-import io.grpc.inprocess.InProcessChannelBuilder;
-import io.grpc.inprocess.InProcessServerBuilder;
-import io.grpc.testing.GrpcCleanupRule;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
@@ -66,46 +58,29 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import retrofit2.Call;
-import retrofit2.Response;
 
 @OwnedBy(HarnessTeam.CDC)
 public class TemplateReferenceHelperTest extends TemplateServiceTestBase {
-  @Rule public final GrpcCleanupRule grpcCleanupRule = new GrpcCleanupRule();
-
-  EntityReferenceServiceGrpc.EntityReferenceServiceBlockingStub entityReferenceServiceBlockingStub;
   @Inject TemplateYamlConversionHelper templateYamlConversionHelper;
-  @Mock PmsGitSyncHelper pmsGitSyncHelper;
+
   @Mock TemplateSetupUsageHelper templateSetupUsageHelper;
   @Mock NGTemplateServiceHelper templateServiceHelper;
   @Inject TemplateYamlConversionHandlerRegistry templateYamlConversionHandlerRegistry;
   @Inject EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
-  @Mock AccountClient accountClient;
+
+  @Mock TemplateCrudHelperFactory templateCrudHelperFactory;
+  @Mock PipelineTemplateCrudHelper pipelineTemplateCrudHelper;
 
   TemplateReferenceHelper templateReferenceHelper;
 
   @Before
   public void setup() throws IOException {
-    String serverName = InProcessServerBuilder.generateName();
-    grpcCleanupRule.register(InProcessServerBuilder.forName(serverName)
-                                 .directExecutor()
-                                 .addService(new TemplateReferenceTestHelper())
-                                 .build()
-                                 .start());
-    entityReferenceServiceBlockingStub = EntityReferenceServiceGrpc.newBlockingStub(
-        grpcCleanupRule.register(InProcessChannelBuilder.forName(serverName).directExecutor().build()));
-
-    templateReferenceHelper = new TemplateReferenceHelper(entityReferenceServiceBlockingStub,
-        templateYamlConversionHelper, pmsGitSyncHelper, templateServiceHelper, templateSetupUsageHelper, accountClient);
-    Call<RestResponse<Boolean>> ffCall = mock(Call.class);
-    when(accountClient.isFeatureFlagEnabled(eq(FeatureName.NG_TEMPLATE_REFERENCES_SUPPORT.name()), anyString()))
-        .thenReturn(ffCall);
-    when(ffCall.execute()).thenReturn(Response.success(new RestResponse<>(true)));
+    templateReferenceHelper = new TemplateReferenceHelper(
+        templateYamlConversionHelper, templateServiceHelper, templateSetupUsageHelper, templateCrudHelperFactory);
   }
 
   private String readFile(String filename) {
@@ -115,46 +90,6 @@ public class TemplateReferenceHelperTest extends TemplateServiceTestBase {
     } catch (IOException e) {
       throw new InvalidRequestException("Could not read resource file: " + filename);
     }
-  }
-
-  @Test
-  @Owner(developers = INDER)
-  @Category(UnitTests.class)
-  public void testConvertFQNsOfReferredEntities_StepTemplate() {
-    List<EntityDetailProtoDTO> referredEntitiesWithModifiedFQNs = templateReferenceHelper.correctFQNsOfReferredEntities(
-        Collections.singletonList(connectorEntityDetailProto_StepTemplate), TemplateEntityType.STEP_TEMPLATE);
-
-    assertThat(referredEntitiesWithModifiedFQNs).isNotNull().hasSize(1);
-    assertThat(referredEntitiesWithModifiedFQNs.get(0)).isNotNull();
-    assertThat(referredEntitiesWithModifiedFQNs.get(0).getType()).isEqualTo(EntityTypeProtoEnum.CONNECTORS);
-
-    IdentifierRefProtoDTO expectedIdentifierRef =
-        connectorEntityDetailProto_StepTemplate.getIdentifierRef()
-            .toBuilder()
-            .clearMetadata()
-            .putMetadata(PreFlightCheckMetadata.FQN, "templateInputs.spec.connector")
-            .build();
-    assertThat(referredEntitiesWithModifiedFQNs.get(0).getIdentifierRef()).isNotNull().isEqualTo(expectedIdentifierRef);
-  }
-
-  @Test
-  @Owner(developers = INDER)
-  @Category(UnitTests.class)
-  public void testConvertFQNsOfReferredEntities_OtherTemplates() {
-    List<EntityDetailProtoDTO> referredEntitiesWithModifiedFQNs = templateReferenceHelper.correctFQNsOfReferredEntities(
-        Collections.singletonList(connectorEntityDetailProto_StageTemplate), TemplateEntityType.STAGE_TEMPLATE);
-
-    assertThat(referredEntitiesWithModifiedFQNs).isNotNull().hasSize(1);
-    assertThat(referredEntitiesWithModifiedFQNs.get(0)).isNotNull();
-    assertThat(referredEntitiesWithModifiedFQNs.get(0).getType()).isEqualTo(EntityTypeProtoEnum.CONNECTORS);
-
-    IdentifierRefProtoDTO expectedIdentifierRef =
-        connectorEntityDetailProto_StepTemplate.getIdentifierRef()
-            .toBuilder()
-            .clearMetadata()
-            .putMetadata(PreFlightCheckMetadata.FQN, "templateInputs.spec.execution.steps.jira.spec.connector")
-            .build();
-    assertThat(referredEntitiesWithModifiedFQNs.get(0).getIdentifierRef()).isNotNull().isEqualTo(expectedIdentifierRef);
   }
 
   @Test
@@ -196,6 +131,14 @@ public class TemplateReferenceHelperTest extends TemplateServiceTestBase {
                                         .build();
 
     templateYamlConversionHandlerRegistry.register(STAGE, new TemplateYamlConversionHandler());
+    when(templateCrudHelperFactory.getCrudHelperForTemplateType(TemplateEntityType.STAGE_TEMPLATE))
+        .thenReturn(pipelineTemplateCrudHelper);
+    Map<String, String> metadata = new HashMap<>();
+    metadata.put(PreFlightCheckMetadata.FQN, "templateInputs.spec.execution.steps.jiraApproval.spec.connectorRef");
+    when(pipelineTemplateCrudHelper.supportsReferences()).thenReturn(true);
+    when(pipelineTemplateCrudHelper.getReferences(any(TemplateEntity.class), anyString()))
+        .thenReturn(Collections.singletonList(TemplateReferenceTestHelper.generateIdentifierRefEntityDetailProto(
+            ACCOUNT_ID, ORG_ID, PROJECT_ID, "jiraConnector", metadata, EntityTypeProtoEnum.CONNECTORS)));
     Map<String, String> metadataMap = new HashMap<>();
     metadataMap.put(PreFlightCheckMetadata.FQN, "templateInputs.spec.connectorRef");
     metadataMap.put(PreFlightCheckMetadata.EXPRESSION, "<+input>");
@@ -259,7 +202,7 @@ public class TemplateReferenceHelperTest extends TemplateServiceTestBase {
     String filename = "pipeline-with-references.yaml";
     String pipelineYaml = readFile(filename);
 
-    when(templateServiceHelper.getOrThrowExceptionIfInvalid(
+    when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
              ACCOUNT_ID, ORG_ID, PROJECT_ID, "approvalTemplate", "", false))
         .thenReturn(Optional.of(TemplateEntity.builder().identifier("approvalTemplate").versionLabel("1").build()));
 
@@ -303,7 +246,7 @@ public class TemplateReferenceHelperTest extends TemplateServiceTestBase {
 
     assertThatThrownBy(
         () -> templateReferenceHelper.getNestedTemplateReferences(ACCOUNT_ID, ORG_ID, null, pipelineYaml, false))
-        .isInstanceOf(InvalidRequestException.class)
+        .isInstanceOf(InvalidIdentifierRefException.class)
         .hasMessage("ProjectIdentifier cannot be empty for PROJECT scope");
   }
 }
