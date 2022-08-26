@@ -7,7 +7,7 @@
 
 package software.wings.resources;
 
-import static software.wings.security.PermissionAttribute.PermissionType.SERVICE;
+import static software.wings.security.PermissionAttribute.PermissionType.LOGGED_IN;
 import static software.wings.service.intfc.ServiceVariableService.EncryptedFieldMode.MASKED;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -51,9 +51,9 @@ import javax.ws.rs.QueryParam;
 @Produces("application/json")
 // ToBeRevisited
 // Both service and env overrides variables use the same rest end points. So, no annotation can be determined
-@AuthRule(permissionType = SERVICE)
+@AuthRule(permissionType = LOGGED_IN)
 @Scope(ResourceType.APPLICATION)
-@ApiKeyAuthorized(permissionType = SERVICE)
+@ApiKeyAuthorized(permissionType = LOGGED_IN)
 @OwnedBy(HarnessTeam.CDC)
 public class ServiceVariableResource {
   @Inject private ServiceVariableService serviceVariablesService;
