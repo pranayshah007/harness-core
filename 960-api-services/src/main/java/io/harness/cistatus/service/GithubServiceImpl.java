@@ -143,6 +143,22 @@ public class GithubServiceImpl implements GithubService {
     }
   }
 
+  @Override
+  public boolean deleteRef(String apiUrl, String token, String owner, String repo, String ref) {
+    try {
+      Response<Object> response = getGithubClient(GithubAppConfig.builder().githubUrl(apiUrl).build())
+                                      .deleteRef(getAuthToken(token), owner, repo, ref)
+                                      .execute();
+
+      if (response.isSuccessful()) {
+        return true;
+      }
+    } catch (Exception e) {
+      log.error("Failed to delete ref for github url {} and ref {} ", apiUrl, ref, e);
+    }
+    return false;
+  }
+
   public List<GitPollingWebhookData> getWebhookRecentDeliveryEvents(
       String apiUrl, String token, String repoOwner, String repoName, String webhookId) {
     try {

@@ -158,6 +158,17 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
       switch (connectorType) {
         case GITHUB:
           responseData = (GitApiTaskResponse) githubApiClient.mergePR(taskParams);
+          if (responseData.getCommandExecutionStatus() == CommandExecutionStatus.SUCCESS
+              && taskParams.isDeleteSourceBranch()) {
+            GitApiTaskResponse resp = (GitApiTaskResponse) githubApiClient.deleteRef(taskParams);
+            if (resp.getCommandExecutionStatus() == CommandExecutionStatus.FAILURE) {
+              // Not failing the command unit for failure to delete source branch
+              logCallback.saveExecutionLog(
+                  format("Error encountered when deleting source branch %s of the pull request",
+                      gitOpsTaskParams.getGitApiTaskParams().getRef()),
+                  INFO);
+            }
+          }
           break;
         case GITLAB:
           responseData = (GitApiTaskResponse) gitlabApiClient.mergePR(taskParams);
@@ -275,6 +286,7 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
           .commitId(gitCommitAndPushResult.getGitCommitResult().getCommitId())
           .prNumber(createPRResponse.getNumber())
           .prLink(prLink)
+          .ref(newBranch)
           .taskStatus(TaskStatus.SUCCESS)
           .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
           .build();
@@ -458,7 +470,7 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
       stringObjectMap.forEach(
           (k, v)
               -> logCallback.saveExecutionLog(
-                  format("Modifying %s with value %s", color(k, White, Bold), color(k, White, Bold)), INFO));
+                  format("Modifying %s with value %s", color(k, White, Bold), color(v, White, Bold)), INFO));
       if (gitFile.getFilePath().contains(".yaml") || gitFile.getFilePath().contains(".yml")) {
         updatedFiles.add(replaceFields(convertYamlToJson(gitFile.getFileContent()), stringObjectMap));
       } else if (gitFile.getFilePath().contains(".json")) {
