@@ -10,6 +10,7 @@ package io.harness.pms.pipeline.service;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.SAMARTH;
+import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -151,6 +152,44 @@ public class PMSPipelineServiceHelperTest extends CategoryTest {
                    .build();
     doReturn(response).when(filterCreatorMergeService).getPipelineInfo(any());
     updatedEntity = pmsPipelineServiceHelper.updatePipelineInfo(updatedEntity);
+    assertThat(updatedEntity.getStageCount()).isEqualTo(1);
+    assertThat(updatedEntity.getStageNames().size()).isEqualTo(1);
+    assertThat(updatedEntity.getStageNames().contains("stage-1")).isTrue();
+    assertThat(updatedEntity.getFilters().size()).isEqualTo(0);
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testUpdatePipelineInfoWithEmptyFilterValue() throws IOException {
+    FilterCreatorMergeServiceResponse response = FilterCreatorMergeServiceResponse.builder()
+                                                     .stageCount(1)
+                                                     .stageNames(Collections.singletonList("stage-1"))
+                                                     .filters(Collections.singletonMap("whatKey?", ""))
+                                                     .build();
+    doReturn(response).when(filterCreatorMergeService).getPipelineInfo(any());
+    PipelineEntity entity = PipelineEntity.builder().build();
+    PipelineEntity updatedEntity = pmsPipelineServiceHelper.updatePipelineInfo(entity);
+    assertThat(updatedEntity.getStageCount()).isEqualTo(1);
+    assertThat(updatedEntity.getStageNames().size()).isEqualTo(1);
+    assertThat(updatedEntity.getStageNames().contains("stage-1")).isTrue();
+    assertThat(updatedEntity.getFilters().size()).isEqualTo(1);
+    assertThat(updatedEntity.getFilters().containsKey("whatKey?")).isTrue();
+    assertThat(updatedEntity.getFilters().containsValue(Document.parse("{}"))).isTrue();
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testUpdatePipelineInfoWithInvalidFilterValue() throws IOException {
+    FilterCreatorMergeServiceResponse response = FilterCreatorMergeServiceResponse.builder()
+                                                     .stageCount(1)
+                                                     .stageNames(Collections.singletonList("stage-1"))
+                                                     .filters(Collections.singletonMap("whatKey?", "-`6^!"))
+                                                     .build();
+    doReturn(response).when(filterCreatorMergeService).getPipelineInfo(any());
+    PipelineEntity entity = PipelineEntity.builder().build();
+    PipelineEntity updatedEntity = pmsPipelineServiceHelper.updatePipelineInfo(entity);
     assertThat(updatedEntity.getStageCount()).isEqualTo(1);
     assertThat(updatedEntity.getStageNames().size()).isEqualTo(1);
     assertThat(updatedEntity.getStageNames().contains("stage-1")).isTrue();

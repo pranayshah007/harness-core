@@ -33,6 +33,7 @@ public class HelmCommandDataMapper {
             .workingDir(helmCommandRequest.getWorkingDir())
             .commandFlags(helmCommandRequest.getCommandFlags())
             .repoName(helmCommandRequest.getRepoName())
+            .gcpKeyPath(helmCommandRequest.getGcpKeyPath())
             .build();
 
     if (helmCommandRequest.getChartSpecification() != null) {

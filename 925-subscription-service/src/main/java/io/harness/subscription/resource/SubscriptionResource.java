@@ -320,7 +320,7 @@ public class SubscriptionResource {
   }
 
   @GET
-  @Path("/customers/{customerId}")
+  @Path("/customer")
   @ApiOperation(value = "Retrieves the customer", nickname = "retrieveCustomer")
   @Operation(operationId = "retrieveCustomer", summary = "Retrieves the customer",
       responses =
@@ -331,10 +331,8 @@ public class SubscriptionResource {
   @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
   public ResponseDTO<CustomerDetailDTO>
   retrieveCustomer(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
-                       NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
-      @Parameter(required = true, description = "Customer Identifier for the Entity") @NotNull @PathParam(
-          CUSTOMER_ID) String customerId) {
-    return ResponseDTO.newResponse(subscriptionService.getStripeCustomer(accountIdentifier, customerId));
+      NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier) {
+    return ResponseDTO.newResponse(subscriptionService.getStripeCustomer(accountIdentifier));
   }
 
   //  @GET

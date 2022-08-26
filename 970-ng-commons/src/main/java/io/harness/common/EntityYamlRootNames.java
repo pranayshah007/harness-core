@@ -119,4 +119,5 @@ public class EntityYamlRootNames {
   public static final String EMAIL = "EMAIL";
   public static final String AZURE_CREATE_ARM_RESOURCE_STEP = "AzureCreateARMResource";
   public static final String AZURE_CREATE_BP_RESOURCE_STEP = "AzureCreateBPResource";
+  public static final String AZURE_ROLLBACK_ARM_RESOURCE_STEP = "AzureARMRollback";
 }

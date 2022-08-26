@@ -62,11 +62,13 @@ import io.harness.cvng.core.beans.params.filterParams.TimeSeriesAnalysisFilter;
 import io.harness.cvng.core.beans.params.logsFilterParams.LiveMonitoringLogsFilter;
 import io.harness.cvng.core.beans.template.TemplateDTO;
 import io.harness.cvng.core.entities.CVConfig;
+import io.harness.cvng.core.entities.EntityDisableTime;
 import io.harness.cvng.core.entities.MonitoredService;
 import io.harness.cvng.core.entities.MonitoredService.MonitoredServiceKeys;
 import io.harness.cvng.core.handler.monitoredService.BaseMonitoredServiceHandler;
 import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.CVNGLogService;
+import io.harness.cvng.core.services.api.EntityDisabledTimeService;
 import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.SetupUsageEventService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
@@ -101,7 +103,6 @@ import io.harness.cvng.notification.services.api.NotificationRuleTemplateDataGen
 import io.harness.cvng.notification.services.api.NotificationRuleTemplateDataGenerator.NotificationData;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
-import io.harness.cvng.servicelevelobjective.services.api.SLODashboardService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveService;
@@ -199,7 +200,6 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
   @Inject private CVNGLogService cvngLogService;
   @Inject private NotificationRuleService notificationRuleService;
   @Inject private TemplateFacade templateFacade;
-  @Inject private SLODashboardService sloDashboardService;
   @Inject private ServiceLevelObjectiveService serviceLevelObjectiveService;
   @Inject private NotificationClient notificationClient;
   @Inject private ActivityService activityService;
@@ -210,6 +210,8 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
   @Inject
   private Map<NotificationRuleConditionType, NotificationRuleTemplateDataGenerator>
       notificationRuleConditionTypeTemplateDataGeneratorMap;
+
+  @Inject private EntityDisabledTimeService entityDisabledTimeService;
 
   @Override
   public MonitoredServiceResponse create(String accountId, MonitoredServiceDTO monitoredServiceDTO) {
@@ -881,6 +883,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
             .type(monitoredServiceDTO.getType())
             // SRM-10798: enabled should come from monitoredServiceDTO
             .enabled(monitoredServiceDTO.isEnabled())
+            .lastDisabledAt(clock.millis())
             .tags(TagMapper.convertToList(monitoredServiceDTO.getTags()))
             .notificationRuleRefs(notificationRuleService.getNotificationRuleRefs(projectParams,
                 monitoredServiceDTO.getNotificationRuleRefs(), NotificationRuleType.MONITORED_SERVICE,
@@ -1256,9 +1259,21 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
         projectParams, monitoredService.getIdentifier(), enable);
     serviceLevelIndicatorService.setMonitoredServiceSLIsEnableFlag(
         projectParams, monitoredService.getIdentifier(), enable);
+    if (enable
+        && featureFlagService.isFeatureFlagEnabled(
+            projectParams.getAccountIdentifier(), FeatureFlagNames.CVNG_SLO_DISABLE_ENABLE)) {
+      entityDisabledTimeService.save(EntityDisableTime.builder()
+                                         .entityUUID(monitoredService.getUuid())
+                                         .accountId(monitoredService.getAccountId())
+                                         .startTime(monitoredService.getLastDisabledAt())
+                                         .endTime(clock.millis())
+                                         .build());
+    }
     hPersistence.update(
         hPersistence.createQuery(MonitoredService.class).filter(MonitoredServiceKeys.uuid, monitoredService.getUuid()),
-        hPersistence.createUpdateOperations(MonitoredService.class).set(MonitoredServiceKeys.enabled, enable));
+        hPersistence.createUpdateOperations(MonitoredService.class)
+            .set(MonitoredServiceKeys.enabled, enable)
+            .set(MonitoredServiceKeys.lastDisabledAt, clock.millis()));
 
     MonitoredServiceDTO newMonitoredServiceDTO = getMonitoredServiceDTO(monitoredServiceParams);
     MonitoredService newMonitoredService = getMonitoredService(projectParams, identifier);

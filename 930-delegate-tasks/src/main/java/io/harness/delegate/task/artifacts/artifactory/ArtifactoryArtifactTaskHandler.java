@@ -167,8 +167,10 @@ public class ArtifactoryArtifactTaskHandler extends DelegateArtifactTaskHandler<
     String finalArtifactDirectory = artifactDirectory;
     buildDetails = buildDetails.stream()
                        .map(buildDetail -> {
-                         String artifactoryPath =
-                             buildDetail.getArtifactPath().replaceFirst(finalArtifactDirectory, "");
+                         String artifactoryPath = buildDetail.getArtifactPath();
+                         if (!finalArtifactDirectory.equals(".")) {
+                           artifactoryPath = buildDetail.getArtifactPath().replaceFirst(finalArtifactDirectory, "");
+                         }
                          if (!artifactoryPath.isEmpty() && artifactoryPath.charAt(0) == '/') {
                            artifactoryPath = artifactoryPath.substring(1);
                          }

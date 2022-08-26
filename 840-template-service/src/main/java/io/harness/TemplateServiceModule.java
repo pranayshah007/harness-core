@@ -64,6 +64,7 @@ import io.harness.template.event.ProjectEntityCrudStreamListener;
 import io.harness.template.events.TemplateOutboxEventHandler;
 import io.harness.template.eventsframework.TemplateEventsFrameworkModule;
 import io.harness.template.handler.PipelineTemplateYamlConversionHandler;
+import io.harness.template.handler.SecretManagerTemplateYamlConversionHandler;
 import io.harness.template.handler.TemplateYamlConversionHandler;
 import io.harness.template.handler.TemplateYamlConversionHandlerRegistry;
 import io.harness.template.mappers.TemplateFilterPropertiesMapper;
@@ -292,7 +293,7 @@ public class TemplateServiceModule extends AbstractModule {
     templateYamlConversionHandlerRegistry.register(
         MONITORED_SERVICE, injector.getInstance(TemplateYamlConversionHandler.class));
     templateYamlConversionHandlerRegistry.register(
-        SECRET_MANAGER, injector.getInstance(TemplateYamlConversionHandler.class));
+        SECRET_MANAGER, injector.getInstance(SecretManagerTemplateYamlConversionHandler.class));
     return templateYamlConversionHandlerRegistry;
   }
 

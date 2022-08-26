@@ -442,8 +442,6 @@ public class DelegateProfileServiceTest extends WingsBaseTest {
     assertThat(updatedDelegateProfile.isApprovalRequired()).isTrue();
     assertThat(updatedDelegateProfile.getSelectors()).isEqualTo(profileSelectors);
     assertThat(updatedDelegateProfile.getScopingRules()).containsExactly(rule);
-
-    verify(delegateProfileSubject).fireInform(any(), any(DelegateProfile.class), any(DelegateProfile.class));
   }
 
   @Test(expected = InvalidRequestException.class)

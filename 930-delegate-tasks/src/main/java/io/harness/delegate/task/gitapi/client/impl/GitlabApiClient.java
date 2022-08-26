@@ -101,6 +101,11 @@ public class GitlabApiClient implements GitApiClient {
     throw new InvalidRequestException("Not implemented");
   }
 
+  @Override
+  public DelegateResponseData deleteRef(GitApiTaskParams gitApiTaskParams) {
+    throw new InvalidRequestException("Not implemented");
+  }
+
   private String getGitApiURL(String url) {
     Matcher m = GIT_URL.matcher(url);
     String domain = extractDomain(url, m);

@@ -92,6 +92,7 @@ public class ResourceGroupValidatorImpl implements ResourceGroupValidator {
                 : resourceMap.get(resourceType).getSelectorKind().get(scopeLevel).contains(BY_RESOURCE_TYPE));
   }
 
+  @Override
   public boolean sanitizeResourceSelectors(ResourceGroup resourceGroup) {
     if (resourceGroup.getResourceFilter() == null) {
       return false;
@@ -166,6 +167,7 @@ public class ResourceGroupValidatorImpl implements ResourceGroupValidator {
     }
   }
 
+  @Override
   public void validateResourceGroup(ResourceGroupRequest resourceGroupRequest) {
     if (resourceGroupRequest == null || resourceGroupRequest.getResourceGroup() == null) {
       return;

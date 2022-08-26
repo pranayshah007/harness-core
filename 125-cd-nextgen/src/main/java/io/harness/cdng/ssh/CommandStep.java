@@ -32,6 +32,7 @@ import io.harness.delegate.beans.instancesync.mapper.PdcToServiceInstanceInfoMap
 import io.harness.delegate.task.shell.CommandTaskParameters;
 import io.harness.delegate.task.shell.CommandTaskResponse;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.exception.SkipRollbackException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.UnitProgress;
@@ -41,6 +42,7 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
+import io.harness.pms.contracts.execution.tasks.SkipTaskRequest;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
@@ -88,28 +90,34 @@ public class CommandStep extends TaskExecutableWithRollbackAndRbac<CommandTaskRe
   @Override
   public TaskRequest obtainTaskAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
-    CommandStepParameters executeCommandStepParameters = (CommandStepParameters) stepParameters.getSpec();
-    validateStepParameters(executeCommandStepParameters);
+    try {
+      CommandStepParameters executeCommandStepParameters = (CommandStepParameters) stepParameters.getSpec();
+      validateStepParameters(executeCommandStepParameters);
 
-    CommandTaskParameters taskParameters =
-        sshCommandStepHelper.buildCommandTaskParameters(ambiance, executeCommandStepParameters);
+      CommandTaskParameters taskParameters =
+          sshCommandStepHelper.buildCommandTaskParameters(ambiance, executeCommandStepParameters);
 
-    TaskData taskData =
-        TaskData.builder()
-            .async(true)
-            .taskType(TaskType.COMMAND_TASK_NG.name())
-            .parameters(new Object[] {taskParameters})
-            .timeout(StepUtils.getTimeoutMillis(stepParameters.getTimeout(), StepUtils.DEFAULT_STEP_TIMEOUT))
-            .build();
+      TaskData taskData =
+          TaskData.builder()
+              .async(true)
+              .taskType(TaskType.COMMAND_TASK_NG.name())
+              .parameters(new Object[] {taskParameters})
+              .timeout(StepUtils.getTimeoutMillis(stepParameters.getTimeout(), StepUtils.DEFAULT_STEP_TIMEOUT))
+              .build();
 
-    List<String> commandExecutionUnits =
-        taskParameters.getCommandUnits().stream().map(cu -> cu.getName()).collect(Collectors.toList());
-    String taskName = TaskType.COMMAND_TASK_NG.getDisplayName();
+      List<String> commandExecutionUnits =
+          taskParameters.getCommandUnits().stream().map(cu -> cu.getName()).collect(Collectors.toList());
+      String taskName = TaskType.COMMAND_TASK_NG.getDisplayName();
 
-    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer, commandExecutionUnits, taskName,
-        TaskSelectorYaml.toTaskSelector(
-            emptyIfNull(getParameterFieldValue(executeCommandStepParameters.getDelegateSelectors()))),
-        stepHelper.getEnvironmentType(ambiance));
+      return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer, commandExecutionUnits, taskName,
+          TaskSelectorYaml.toTaskSelector(
+              emptyIfNull(getParameterFieldValue(executeCommandStepParameters.getDelegateSelectors()))),
+          stepHelper.getEnvironmentType(ambiance));
+    } catch (SkipRollbackException e) {
+      return TaskRequest.newBuilder()
+          .setSkipTaskRequest(SkipTaskRequest.newBuilder().setMessage(e.getMessage()).build())
+          .build();
+    }
   }
 
   @Override

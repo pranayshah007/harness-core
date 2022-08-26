@@ -380,6 +380,13 @@ io.harness.ngpipeline.artifact.bean.JenkinsArtifactOutcome
 io.harness.cdng.artifact.JenkinsArtifactSummary
 io.harness.logging.CommandExecutionStatus
 io.harness.plancreator.steps.TaskSelectorYaml
+io.harness.cdng.artifact.outcome.customArtifactOutcome
+io.harness.cdng.artifact.bean.yaml.customartifact.CustomArtifactScriptInfo
+io.harness.cdng.artifact.bean.yaml.customartifact.CustomArtifactScripts
+io.harness.cdng.artifact.bean.yaml.customartifact.CustomArtifactScriptSourceWrapper
+io.harness.cdng.artifact.bean.yaml.customartifact.CustomScriptInlineSource
+io.harness.cdng.artifact.bean.yaml.customartifact.FetchAllArtifacts
+io.harness.cdng.artifact.bean.yaml.customartifact.CustomArtifactSpecInfo
 io.harness.plancreator.strategy.ExpressionAxisConfig
 io.harness.cdng.service.beans.ServiceUseFromStageV2
 io.harness.ng.core.environment.beans.NGEnvironmentGlobalOverride
@@ -406,3 +413,6 @@ io.harness.cdng.provision.azure.AzureCreateBPStepConfiguration
 io.harness.cdng.provision.azure.AzureCreateBPStepConfigurationParameters
 io.harness.cdng.provision.azure.AzureCreateBPStepParameters
 io.harness.cdng.provision.azure.beans.AzureCreateBPPassThroughData
+io.harness.cdng.provision.azure.AzureARMRollbackStepInfo
+io.harness.cdng.provision.azure.AzureARMRollback
+io.harness.cdng.provision.azure.AzureARMRollbackStepParameters

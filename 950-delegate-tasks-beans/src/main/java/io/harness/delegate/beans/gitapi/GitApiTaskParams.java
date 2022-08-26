@@ -44,10 +44,11 @@ public class GitApiTaskParams implements TaskParameters, ExecutionCapabilityDema
   @NotEmpty GitApiRequestType requestType;
   String sha;
   @Setter boolean deleteSourceBranch;
+  String ref;
 
   public GitApiTaskParams(String prNumber, String repo, String owner, String slug, String key, String installId,
       String appId, String userName, ConnectorDetails connectorDetails, GitRepoType gitRepoType,
-      GitApiRequestType requestType, String sha, boolean deleteSourceBranch) {
+      GitApiRequestType requestType, String sha, boolean deleteSourceBranch, String ref) {
     this.prNumber = prNumber;
     this.repo = repo;
     this.owner = owner;
@@ -61,6 +62,7 @@ public class GitApiTaskParams implements TaskParameters, ExecutionCapabilityDema
     this.requestType = requestType;
     this.sha = sha;
     this.deleteSourceBranch = deleteSourceBranch;
+    this.ref = ref;
   }
 
   @Override

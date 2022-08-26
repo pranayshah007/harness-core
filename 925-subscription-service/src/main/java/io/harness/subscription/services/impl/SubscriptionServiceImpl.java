@@ -433,11 +433,10 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   }
 
   @Override
-  public CustomerDetailDTO getStripeCustomer(String accountIdentifier, String customerId) {
+  public CustomerDetailDTO getStripeCustomer(String accountIdentifier) {
     isSelfServiceEnable(accountIdentifier);
 
-    StripeCustomer stripeCustomer =
-        stripeCustomerRepository.findByAccountIdentifierAndCustomerId(accountIdentifier, customerId);
+    StripeCustomer stripeCustomer = stripeCustomerRepository.findByAccountIdentifier(accountIdentifier);
     if (stripeCustomer == null) {
       throw new InvalidRequestException("Customer doesn't exists");
     }

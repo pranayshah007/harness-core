@@ -45,6 +45,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Paths;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -236,7 +238,7 @@ public class HelmClientImpl implements HelmClient {
 
     else {
       response = fetchCliResponseWithExceptionHandling(
-          command, commandType, errorMessagePrefix, null, DEFAULT_HELM_COMMAND_TIMEOUT);
+          command, commandType, errorMessagePrefix, null, DEFAULT_HELM_COMMAND_TIMEOUT, Collections.emptyMap());
     }
 
     if (HelmVersion.isHelmV3(helmCommandData.getHelmVersion())) {
@@ -249,8 +251,8 @@ public class HelmClientImpl implements HelmClient {
         log.info(
             "Detected repository configuration change after executing. Trying again with --force-update command flag");
         if (isErrorFrameworkEnabled) {
-          return fetchCliResponseWithExceptionHandling(
-              forceAddRepoCommand, commandType, errorMessagePrefix, null, DEFAULT_HELM_COMMAND_TIMEOUT);
+          return fetchCliResponseWithExceptionHandling(forceAddRepoCommand, commandType, errorMessagePrefix, null,
+              DEFAULT_HELM_COMMAND_TIMEOUT, Collections.emptyMap());
         }
         return executeHelmCLICommand(forceAddRepoCommand);
       }
@@ -390,27 +392,32 @@ public class HelmClientImpl implements HelmClient {
     try (LogOutputStream errorStream = helmCommandData.getLogCallback() != null
             ? new ErrorActivityOutputStream(helmCommandData.getLogCallback())
             : new LogErrorStream()) {
+      Map<String, String> env = new HashMap<>();
+      if (!isEmpty(helmCommandData.getGcpKeyPath())) {
+        env.put("GOOGLE_APPLICATION_CREDENTIALS", helmCommandData.getGcpKeyPath());
+      }
       return isErrorFrameworkEnabled ? fetchCliResponseWithExceptionHandling(
-                 command, commandType, errorMessagePrefix, errorStream, timeoutInMillis)
-                                     : executeHelmCLICommand(command, errorStream);
+                 command, commandType, errorMessagePrefix, errorStream, timeoutInMillis, env)
+                                     : executeHelmCLICommand(command, errorStream, env);
     }
   }
 
   @VisibleForTesting
-  HelmCliResponse executeHelmCLICommand(String command, OutputStream errorStream)
+  HelmCliResponse executeHelmCLICommand(String command, OutputStream errorStream, Map<String, String> env)
       throws IOException, InterruptedException, TimeoutException {
-    return executeHelmCLICommand(command, DEFAULT_HELM_COMMAND_TIMEOUT, errorStream);
+    return executeHelmCLICommand(command, DEFAULT_HELM_COMMAND_TIMEOUT, errorStream, env);
   }
 
   @VisibleForTesting
   HelmCliResponse executeHelmCLICommand(String command) throws IOException, InterruptedException, TimeoutException {
-    return executeHelmCLICommand(command, DEFAULT_HELM_COMMAND_TIMEOUT, null);
+    return executeHelmCLICommand(command, DEFAULT_HELM_COMMAND_TIMEOUT, null, Collections.emptyMap());
   }
 
   @VisibleForTesting
-  HelmCliResponse executeHelmCLICommand(String command, long timeoutInMillis, OutputStream errorStream)
-      throws IOException, InterruptedException, TimeoutException {
+  HelmCliResponse executeHelmCLICommand(String command, long timeoutInMillis, OutputStream errorStream,
+      Map<String, String> env) throws IOException, InterruptedException, TimeoutException {
     ProcessExecutor processExecutor = new ProcessExecutor()
+                                          .environment(env)
                                           .timeout(timeoutInMillis, TimeUnit.MILLISECONDS)
                                           .command("/bin/sh", "-c", command)
                                           .readOutput(true)
@@ -535,9 +542,9 @@ public class HelmClientImpl implements HelmClient {
   }
 
   public HelmCliResponse fetchCliResponseWithExceptionHandling(String command, HelmCliCommandType commandType,
-      String errorMessagePrefix, OutputStream errorStream, long timeoutInMillis) {
+      String errorMessagePrefix, OutputStream errorStream, long timeoutInMillis, Map<String, String> env) {
     try {
-      HelmCliResponse helmCliResponse = executeHelmCLICommand(command, timeoutInMillis, errorStream);
+      HelmCliResponse helmCliResponse = executeHelmCLICommand(command, timeoutInMillis, errorStream, env);
 
       if (helmCliResponse.getCommandExecutionStatus() != SUCCESS) {
         // if helm hist fails due to 'release not found' -- then we don't fail/ throw exception

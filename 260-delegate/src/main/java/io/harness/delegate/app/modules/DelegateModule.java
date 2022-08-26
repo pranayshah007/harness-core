@@ -155,6 +155,9 @@ import io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifact
 import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.azure.AcrArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.azure.AcrArtifactTaskNG;
+import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.custom.CustomArtifactTaskHandler;
+import io.harness.delegate.task.artifacts.custom.CustomArtifactTaskNG;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactTaskNG;
@@ -1264,6 +1267,13 @@ public class DelegateModule extends AbstractModule {
         .toInstance(JenkinsArtifactTaskHandler.class);
 
     MapBinder<Class<? extends ArtifactSourceDelegateRequest>, Class<? extends DelegateArtifactTaskHandler>>
+        customArtifactServiceMapBinder =
+            MapBinder.newMapBinder(binder(), new TypeLiteral<Class<? extends ArtifactSourceDelegateRequest>>() {},
+                new TypeLiteral<Class<? extends DelegateArtifactTaskHandler>>() {});
+    customArtifactServiceMapBinder.addBinding(CustomArtifactDelegateRequest.class)
+        .toInstance(CustomArtifactTaskHandler.class);
+
+    MapBinder<Class<? extends ArtifactSourceDelegateRequest>, Class<? extends DelegateArtifactTaskHandler>>
         nexusArtifactServiceMapBinder =
             MapBinder.newMapBinder(binder(), new TypeLiteral<Class<? extends ArtifactSourceDelegateRequest>>() {},
                 new TypeLiteral<Class<? extends DelegateArtifactTaskHandler>>() {});
@@ -1688,6 +1698,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.SHELL_SCRIPT_APPROVAL).toInstance(ShellScriptApprovalTask.class);
     mapBinder.addBinding(TaskType.CUSTOM_GET_BUILDS).toInstance(ServiceImplDelegateTask.class);
     mapBinder.addBinding(TaskType.CUSTOM_VALIDATE_ARTIFACT_STREAM).toInstance(ServiceImplDelegateTask.class);
+    mapBinder.addBinding(TaskType.CUSTOM_ARTIFACT_NG).toInstance(CustomArtifactTaskNG.class);
     mapBinder.addBinding(TaskType.SHELL_SCRIPT_PROVISION_TASK).toInstance(ShellScriptProvisionTask.class);
     mapBinder.addBinding(TaskType.SERVICENOW_ASYNC).toInstance(ServicenowTask.class);
     mapBinder.addBinding(TaskType.SERVICENOW_SYNC).toInstance(ServiceImplDelegateTask.class);

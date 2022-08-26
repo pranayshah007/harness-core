@@ -78,7 +78,7 @@ public class ContainerDeploymentDelegateHelper {
     kubernetesContainerService.persistKubernetesConfig(getKubernetesConfig(k8sClusterConfig, false), workingDir);
   }
 
-  private String createKubeConfig(KubernetesConfig kubernetesConfig) {
+  public String createKubeConfig(KubernetesConfig kubernetesConfig) {
     try {
       String configFileContent = kubernetesContainerService.getConfigFileContent(kubernetesConfig);
       String md5Hash = DigestUtils.md5Hex(configFileContent);
