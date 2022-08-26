@@ -7,7 +7,7 @@ COPY migrator-capsule.jar newrelic.yml keystore.jks config.yml hazelcast.xml red
 COPY scripts /opt/harness
 
 RUN apk add --no-cache fontconfig ttf-dejavu
-RUN wget https://github.com/mikefarah/yq/releases/download/3.3.2/yq_linux_amd64 -O /usr/bin/yq -O /usr/bin/yq
+RUN wget https://github.com/mikefarah/yq/releases/download/v4.26.1/yq_linux_amd64 -O /usr/bin/yq -O /usr/bin/yq
 RUN chmod +x /usr/bin/yq
 
 RUN chmod +x /opt/harness/*.sh
