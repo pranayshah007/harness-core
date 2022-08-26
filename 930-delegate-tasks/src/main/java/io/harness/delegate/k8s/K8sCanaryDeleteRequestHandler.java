@@ -131,11 +131,7 @@ public class K8sCanaryDeleteRequestHandler extends K8sRequestHandler {
       String releaseName, LogCallback logCallback) {
     logCallback.saveExecutionLog(format("Getting canary workloads from release %s\n", releaseName));
 
-    Map<String, String> labels = new HashMap<>(RELEASE_HARNESS_SECRET_LABELS);
-    labels.put(RELEASE_KEY, releaseName);
-
-    List<V1Secret> releaseHistory =
-        releaseHistoryService.getReleaseHistory(kubernetesConfig, labels, RELEASE_HARNESS_SECRET_TYPE);
+    List<V1Secret> releaseHistory = releaseHistoryService.getReleaseHistory(kubernetesConfig, releaseName);
 
     if (isEmpty(releaseHistory)) {
       logCallback.saveExecutionLog(format("Empty or missing release history for release %s", releaseName), WARN);

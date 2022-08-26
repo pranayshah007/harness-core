@@ -19,7 +19,6 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
@@ -184,7 +183,7 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
         .renderTemplate(delegateTaskParams, manifestDelegateConfig, manifestFileDirectory, openshiftParamList,
             releaseName, namespace, logCallback, timeoutIntervalInMin);
     verify(k8sTaskHelperBase, times(1)).deleteSkippedManifestFiles(manifestFileDirectory, logCallback);
-    verify(releaseHistoryService, times(1)).getReleaseHistory(any(KubernetesConfig.class), anyMap(), anyMap());
+    verify(releaseHistoryService, times(1)).getReleaseHistory(any(KubernetesConfig.class), anyString());
     verify(k8sCanaryBaseHandler, times(1))
         .updateDestinationRuleManifestFilesWithSubsets(kubernetesResources, kubernetesConfig, logCallback);
     verify(k8sCanaryBaseHandler, times(1))
@@ -277,7 +276,7 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
         spyRequestHandler.executeTask(canaryDeployRequest, delegateTaskParams, iLogStreamingTaskClient, null);
     verify(k8sCanaryBaseHandler, times(1)).wrapUp(nullable(Kubectl.class), eq(delegateTaskParams), eq(logCallback));
     verify(releaseHistoryService, times(1))
-        .markStatusAndSaveRelease(any(V1Secret.class), anyString(), eq(kubernetesConfig));
+        .updateStatusAndSaveRelease(any(V1Secret.class), anyString(), eq(kubernetesConfig));
     K8sCanaryDeployResponse canaryDeployResponse = (K8sCanaryDeployResponse) k8sDeployResponse.getK8sNGTaskResponse();
     assertThat(k8sDeployResponse.getCommandExecutionStatus()).isEqualTo(SUCCESS);
     assertThat(canaryDeployResponse.getCanaryWorkload()).isEqualTo("Deployment/deployment");
@@ -409,7 +408,7 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
 
     k8sCanaryRequestHandler.init(deployRequest, delegateTaskParams, logCallback);
     //    verify(k8sTaskHelperBase, times(1)).getReleaseHistoryDataFromConfigMap(kubernetesConfig, releaseName);
-    verify(releaseHistoryService, times(1)).getReleaseHistory(any(KubernetesConfig.class), anyMap(), anyMap());
+    verify(releaseHistoryService, times(1)).getReleaseHistory(any(KubernetesConfig.class), anyString());
   }
 
   @Test
@@ -447,7 +446,7 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
 
     k8sCanaryRequestHandler.executeTask(request, delegateTaskParams, iLogStreamingTaskClient, null);
     verify(releaseHistoryService, times(1))
-        .markStatusAndSaveRelease(any(V1Secret.class), anyString(), eq(kubernetesConfig));
+        .updateStatusAndSaveRelease(any(V1Secret.class), anyString(), eq(kubernetesConfig));
   }
 
   @Test
@@ -487,7 +486,7 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
     });
 
     verify(releaseHistoryService, never())
-        .markStatusAndSaveRelease(any(V1Secret.class), anyString(), any(KubernetesConfig.class));
+        .updateStatusAndSaveRelease(any(V1Secret.class), anyString(), any(KubernetesConfig.class));
   }
 
   @Test
@@ -501,7 +500,7 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
     });
 
     verify(releaseHistoryService, times(1))
-        .markStatusAndSaveRelease(any(V1Secret.class), anyString(), any(KubernetesConfig.class));
+        .updateStatusAndSaveRelease(any(V1Secret.class), anyString(), any(KubernetesConfig.class));
   }
 
   private void testExecutionWithFailure(Exception applyThrowable, Exception statusCheckThrowable) throws Exception {

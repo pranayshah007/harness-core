@@ -8,11 +8,6 @@
 package software.wings.delegatetasks.k8s.taskhandler;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_HARNESS_SECRET_LABELS;
-import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_HARNESS_SECRET_TYPE;
-import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_KEY;
-import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_OWNER_LABEL_KEY;
-import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_OWNER_LABEL_VALUE;
 import static io.harness.delegate.task.k8s.K8sTaskHelperBase.getTimeoutMillisFromMinutes;
 import static io.harness.k8s.K8sCommandUnitConstants.Apply;
 import static io.harness.k8s.K8sCommandUnitConstants.FetchFiles;
@@ -28,8 +23,6 @@ import static io.harness.k8s.manifest.ManifestHelper.getPrimaryService;
 import static io.harness.k8s.manifest.ManifestHelper.getServices;
 import static io.harness.k8s.manifest.ManifestHelper.getStageService;
 import static io.harness.k8s.manifest.ManifestHelper.getWorkloadsForCanaryAndBG;
-import static io.harness.k8s.manifest.VersionUtils.addRevisionNumber;
-import static io.harness.k8s.manifest.VersionUtils.markVersionedResources;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.ERROR;
@@ -41,8 +34,6 @@ import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
 
 import static java.lang.String.format;
-import static java.util.stream.Collectors.toList;
-import static org.apache.commons.lang3.BooleanUtils.isNotTrue;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -68,7 +59,6 @@ import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.Release;
 import io.harness.k8s.model.Release.Status;
-import io.harness.k8s.model.ReleaseHistory;
 import io.harness.logging.CommandExecutionStatus;
 
 import software.wings.beans.LogColor;
@@ -87,13 +77,9 @@ import com.google.inject.Inject;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
 import java.nio.file.Paths;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
 @NoArgsConstructor
@@ -231,7 +217,7 @@ public class K8sBlueGreenDeployTaskHandler extends K8sTaskHandler {
   }
 
   private void saveRelease(Release.Status status) {
-    releaseHistoryService.markStatusAndSaveRelease(
+    releaseHistoryService.updateStatusAndSaveRelease(
         k8sBlueGreenHandlerConfig.getCurrentRelease(), status.name(), k8sBlueGreenHandlerConfig.getKubernetesConfig());
   }
 
@@ -285,11 +271,8 @@ public class K8sBlueGreenDeployTaskHandler extends K8sTaskHandler {
   boolean prepareForBlueGreen(K8sBlueGreenDeployTaskParameters k8sBlueGreenDeployTaskParameters,
       K8sDelegateTaskParams k8sDelegateTaskParams, ExecutionLogCallback executionLogCallback) {
     try {
-      Map<String, String> labels = new HashMap<>(RELEASE_HARNESS_SECRET_LABELS);
-      labels.put(RELEASE_KEY, k8sBlueGreenHandlerConfig.getReleaseName());
-
       List<V1Secret> releaseList = releaseHistoryService.getReleaseHistory(
-          k8sBlueGreenHandlerConfig.getKubernetesConfig(), labels, RELEASE_HARNESS_SECRET_TYPE);
+          k8sBlueGreenHandlerConfig.getKubernetesConfig(), k8sBlueGreenHandlerConfig.getReleaseName());
       int currentReleaseNumber = releaseService.getCurrentReleaseNumber(releaseList);
 
       k8sBlueGreenHandlerConfig.setReleaseHistory(releaseList);

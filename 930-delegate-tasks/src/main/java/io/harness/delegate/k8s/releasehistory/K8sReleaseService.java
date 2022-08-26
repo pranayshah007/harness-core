@@ -13,10 +13,15 @@ import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE
 import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_KEY;
 import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_LABEL_QUERY_LIST_FORMAT;
 import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_LABEL_QUERY_SET_FORMAT;
+import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_NAME_DELIMITER;
 import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_NUMBER_LABEL_KEY;
+import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_OWNER_LABEL_KEY;
+import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_OWNER_LABEL_VALUE;
 import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_STATUS_LABEL_KEY;
 import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.SECRET_LABEL_DELIMITER;
 import static io.harness.k8s.manifest.ManifestHelper.getWorkloads;
+import static io.harness.k8s.model.Release.Status.Failed;
+import static io.harness.k8s.model.Release.Status.Succeeded;
 
 import static java.util.Collections.emptyList;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
@@ -25,7 +30,6 @@ import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
-import io.harness.k8s.model.Release;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -69,8 +73,7 @@ public class K8sReleaseService {
             .filter(release
                 -> release.getMetadata() != null && release.getMetadata().getLabels() != null
                     && release.getMetadata().getLabels().containsKey(RELEASE_STATUS_LABEL_KEY))
-            .filter(release
-                -> Release.Status.Failed.name().equals(release.getMetadata().getLabels().get(RELEASE_STATUS_LABEL_KEY)))
+            .filter(release -> Failed.name().equals(release.getMetadata().getLabels().get(RELEASE_STATUS_LABEL_KEY)))
             .map(release -> release.getMetadata().getLabels().get(RELEASE_NUMBER_LABEL_KEY))
             .collect(Collectors.toList());
 
@@ -79,8 +82,7 @@ public class K8sReleaseService {
             .filter(release
                 -> release.getMetadata() != null && release.getMetadata().getLabels() != null
                     && release.getMetadata().getLabels().containsKey(RELEASE_STATUS_LABEL_KEY))
-            .filter(release
-                -> Release.Status.Failed.name().equals(release.getMetadata().getLabels().get(RELEASE_STATUS_LABEL_KEY)))
+            .filter(release -> !Failed.name().equals(release.getMetadata().getLabels().get(RELEASE_STATUS_LABEL_KEY)))
             .filter(release
                 -> currentReleaseNumber
                     > Integer.parseInt(release.getMetadata().getLabels().get(RELEASE_NUMBER_LABEL_KEY)))
@@ -128,11 +130,7 @@ public class K8sReleaseService {
                         .getLabels()
                         .get(RELEASE_NUMBER_LABEL_KEY)
                         .equals(String.valueOf(currentReleaseNumber)))
-            .filter(release
-                -> release.getMetadata()
-                       .getLabels()
-                       .get(RELEASE_STATUS_LABEL_KEY)
-                       .equals(Release.Status.Succeeded.name()))
+            .filter(release -> release.getMetadata().getLabels().get(RELEASE_STATUS_LABEL_KEY).equals(Succeeded.name()))
             .max(Comparator.comparing(
                 release -> Integer.valueOf(release.getMetadata().getLabels().get(RELEASE_NUMBER_LABEL_KEY))));
     return lastSuccessfulReleaseOptional.orElse(null);
@@ -153,7 +151,7 @@ public class K8sReleaseService {
         .filter(release
             -> currentReleaseNumber
                 != Integer.parseInt(release.getMetadata().getLabels().get(RELEASE_NUMBER_LABEL_KEY)))
-        .filter(release -> checkReleaseForColouredWorkloads(release, color))
+        .filter(release -> checkReleaseForColoredWorkloads(release, color))
         .collect(Collectors.toList());
   }
 
@@ -177,7 +175,9 @@ public class K8sReleaseService {
 
   public Set<String> getReleaseNumbers(List<V1Secret> releases) {
     return releases.stream()
-        .filter(release -> release.getMetadata() != null && release.getMetadata().getLabels() != null)
+        .filter(release
+            -> release.getMetadata() != null && release.getMetadata().getLabels() != null
+                && release.getMetadata().getLabels().containsKey(RELEASE_NUMBER_LABEL_KEY))
         .map(release -> release.getMetadata().getLabels().get(RELEASE_NUMBER_LABEL_KEY))
         .collect(Collectors.toSet());
   }
@@ -197,12 +197,6 @@ public class K8sReleaseService {
     return release;
   }
 
-  public boolean checkReleaseForColouredWorkloads(V1Secret release, String color) {
-    return getWorkloads(getResourcesFromRelease(release))
-        .stream()
-        .anyMatch(resource -> resource.getResourceId().getName().endsWith(color));
-  }
-
   String createSetBasedArg(String key, Set<String> values) {
     return String.format(RELEASE_LABEL_QUERY_SET_FORMAT, key, String.join(SECRET_LABEL_DELIMITER, values));
   }
@@ -216,5 +210,20 @@ public class K8sReleaseService {
         .stream()
         .map(entry -> createListBasedArg(entry.getKey(), entry.getValue()))
         .collect(Collectors.joining(SECRET_LABEL_DELIMITER));
+  }
+
+  String generateName(String releaseName, int releaseNumber) {
+    return RELEASE_KEY + RELEASE_NAME_DELIMITER + releaseName + RELEASE_NAME_DELIMITER + releaseNumber;
+  }
+
+  Map<String, String> generateLabels(String releaseName, int releaseNumber, String status) {
+    return Map.of(RELEASE_KEY, releaseName, RELEASE_NUMBER_LABEL_KEY, String.valueOf(releaseNumber),
+        RELEASE_OWNER_LABEL_KEY, RELEASE_OWNER_LABEL_VALUE, RELEASE_STATUS_LABEL_KEY, status);
+  }
+
+  boolean checkReleaseForColoredWorkloads(V1Secret release, String color) {
+    return getWorkloads(getResourcesFromRelease(release))
+        .stream()
+        .anyMatch(resource -> resource.getResourceId().getName().endsWith(color));
   }
 }

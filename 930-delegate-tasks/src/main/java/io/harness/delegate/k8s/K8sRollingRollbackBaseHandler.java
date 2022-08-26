@@ -10,15 +10,8 @@ package io.harness.delegate.k8s;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_HARNESS_SECRET_LABELS;
-import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_HARNESS_SECRET_TYPE;
-import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_KEY;
 import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_NUMBER_LABEL_KEY;
-import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_OWNER_LABEL_KEY;
-import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_OWNER_LABEL_VALUE;
 import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_STATUS_LABEL_KEY;
-import static io.harness.delegate.task.k8s.K8sTaskHelperBase.getExecutionLogOutputStream;
-import static io.harness.delegate.task.k8s.K8sTaskHelperBase.getOcCommandPrefix;
 import static io.harness.delegate.task.k8s.K8sTaskHelperBase.getTimeoutMillisFromMinutes;
 import static io.harness.exception.ExceptionUtils.getMessage;
 import static io.harness.k8s.manifest.ManifestHelper.getCustomResourceDefinitionWorkloads;
@@ -32,10 +25,8 @@ import static software.wings.beans.LogColor.Cyan;
 import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
 
-import static java.lang.String.format;
 import static java.time.Duration.ofMinutes;
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toMap;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
@@ -64,7 +55,6 @@ import io.kubernetes.client.openapi.models.V1Secret;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -86,11 +76,8 @@ public class K8sRollingRollbackBaseHandler {
 
   public void init(K8sRollingRollbackHandlerConfig rollbackHandlerConfig, String releaseName, LogCallback logCallback)
       throws IOException {
-    Map<String, String> labels = new HashMap<>(RELEASE_HARNESS_SECRET_LABELS);
-    labels.put(RELEASE_KEY, releaseName);
-
-    List<V1Secret> releases = releaseHistoryService.getReleaseHistory(
-        rollbackHandlerConfig.getKubernetesConfig(), labels, RELEASE_HARNESS_SECRET_TYPE);
+    List<V1Secret> releases =
+        releaseHistoryService.getReleaseHistory(rollbackHandlerConfig.getKubernetesConfig(), releaseName);
     if (isEmpty(releases)) {
       rollbackHandlerConfig.setNoopRollBack(true);
       logCallback.saveExecutionLog("\nNo release history found for release " + releaseName);
@@ -133,7 +120,7 @@ public class K8sRollingRollbackBaseHandler {
         k8sTaskHelperBase.doStatusCheckForAllCustomResources(
             client, customResources, k8sDelegateTaskParams, logCallback, false, steadyStateTimeoutInMillis);
       }
-      releaseHistoryService.updateReleaseStatus(currentRelease, Release.Status.Failed.name());
+      releaseService.updateReleaseStatus(currentRelease, Release.Status.Failed.name());
     }
   }
 
@@ -141,7 +128,8 @@ public class K8sRollingRollbackBaseHandler {
     boolean isNoopRollBack = rollbackHandlerConfig.isNoopRollBack();
     KubernetesConfig kubernetesConfig = rollbackHandlerConfig.getKubernetesConfig();
     if (!isNoopRollBack) {
-      releaseHistoryService.saveRelease(rollbackHandlerConfig.getRelease(), kubernetesConfig);
+      releaseHistoryService.updateStatusAndSaveRelease(
+          rollbackHandlerConfig.getRelease(), Release.Status.Succeeded.name(), kubernetesConfig);
     }
   }
 

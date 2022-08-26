@@ -26,7 +26,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyListOf;
@@ -81,7 +80,6 @@ import io.harness.k8s.model.K8sSteadyStateDTO;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
-import io.harness.k8s.model.Release;
 import io.harness.k8s.model.ReleaseHistory;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
@@ -218,7 +216,7 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
         .when(k8sBGBaseHandler)
         .getAllPods(anyLong(), eq(kubernetesConfig), any(KubernetesResource.class), eq(HarnessLabelValues.colorBlue),
             eq(HarnessLabelValues.colorGreen), eq("releaseName"));
-    doReturn(emptyList()).when(releaseHistoryService).getReleaseHistory(any(), anyMap(), anyMap());
+    doReturn(emptyList()).when(releaseHistoryService).getReleaseHistory(any(), anyString());
     doReturn(1).when(releaseService).getCurrentReleaseNumber(anyList());
     doReturn(new V1SecretBuilder().build())
         .when(releaseHistoryService)
@@ -294,7 +292,7 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
         .isSameAs(runtimeException);
     verify(k8sBGRequestHandler, never())
         .prepareForBlueGreen(any(K8sDelegateTaskParams.class), any(LogCallback.class), anyBoolean(), anyBoolean());
-    verify(releaseHistoryService, never()).markStatusAndSaveRelease(any(), anyString(), any());
+    verify(releaseHistoryService, never()).updateStatusAndSaveRelease(any(), anyString(), any());
   }
 
   @Test
@@ -315,7 +313,7 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
                                k8sBGDeployRequest, k8sDelegateTaskParams, logStreamingTaskClient, commandUnitsProgress))
         .isSameAs(thrownException);
 
-    verify(releaseHistoryService, never()).markStatusAndSaveRelease(any(), anyString(), any());
+    verify(releaseHistoryService, never()).updateStatusAndSaveRelease(any(), anyString(), any());
     verify(k8sTaskHelperBase, never())
         .applyManifests(any(Kubectl.class), anyListOf(KubernetesResource.class), any(K8sDelegateTaskParams.class),
             any(LogCallback.class), anyBoolean());
@@ -354,7 +352,7 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
     assertThatCode(() -> k8sBGRequestHandler.handleTaskFailure(k8sBGDeployRequest, exception))
         .doesNotThrowAnyException();
 
-    verify(releaseHistoryService, times(1)).markStatusAndSaveRelease(any(), anyString(), any());
+    verify(releaseHistoryService, times(1)).updateStatusAndSaveRelease(any(), anyString(), any());
     verify(k8sTaskHelperBase)
         .applyManifests(any(Kubectl.class), anyListOf(KubernetesResource.class), eq(k8sDelegateTaskParams),
             eq(logCallback), eq(true), eq(true));
@@ -395,7 +393,7 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
     assertThatCode(() -> k8sBGRequestHandler.handleTaskFailure(k8sBGDeployRequest, thrownException))
         .doesNotThrowAnyException();
 
-    verify(releaseHistoryService, times(2)).markStatusAndSaveRelease(any(), anyString(), any());
+    verify(releaseHistoryService, times(2)).updateStatusAndSaveRelease(any(), anyString(), any());
   }
 
   @Test
@@ -457,7 +455,7 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
     }
 
     verify(containerDeploymentDelegateBaseHelper).createKubernetesConfig(k8sInfraDelegateConfig);
-    verify(releaseHistoryService).getReleaseHistory(any(), anyMap(), anyMap());
+    verify(releaseHistoryService).getReleaseHistory(any(), anyString());
 
     if (!throwException) {
       verify(k8sTaskHelperBase).setNamespaceToKubernetesResourcesIfRequired(resources, "default");

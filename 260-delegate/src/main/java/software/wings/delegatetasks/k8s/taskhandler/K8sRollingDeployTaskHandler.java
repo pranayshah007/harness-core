@@ -11,12 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.k8s.K8sRollingBaseHandler.HARNESS_TRACK_STABLE_SELECTOR;
-import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_HARNESS_SECRET_LABELS;
-import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_HARNESS_SECRET_TYPE;
-import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_KEY;
 import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_NUMBER_LABEL_KEY;
-import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_OWNER_LABEL_KEY;
-import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_OWNER_LABEL_VALUE;
 import static io.harness.delegate.task.k8s.K8sTaskHelperBase.getTimeoutMillisFromMinutes;
 import static io.harness.exception.ExceptionUtils.getMessage;
 import static io.harness.k8s.K8sCommandUnitConstants.Apply;
@@ -85,9 +80,7 @@ import com.google.inject.Inject;
 import io.kubernetes.client.openapi.models.V1Secret;
 import java.nio.file.Paths;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.NoArgsConstructor;
@@ -302,7 +295,7 @@ public class K8sRollingDeployTaskHandler extends K8sTaskHandler {
   }
 
   private void saveRelease(Status status) {
-    releaseHistoryService.markStatusAndSaveRelease(
+    releaseHistoryService.updateStatusAndSaveRelease(
         k8sRollingHandlerConfig.getRelease(), status.name(), k8sRollingHandlerConfig.getKubernetesConfig());
   }
 
@@ -366,11 +359,8 @@ public class K8sRollingDeployTaskHandler extends K8sTaskHandler {
       boolean inCanaryWorkflow, Boolean skipVersioningForAllK8sObjects, boolean isPruningEnabled,
       boolean skipAddingTrackSelectorToDeployment) {
     try {
-      Map<String, String> labels = new HashMap<>(RELEASE_HARNESS_SECRET_LABELS);
-      labels.put(RELEASE_KEY, k8sRollingHandlerConfig.getReleaseName());
-
       List<V1Secret> releaseHistory = releaseHistoryService.getReleaseHistory(
-          k8sRollingHandlerConfig.getKubernetesConfig(), labels, RELEASE_HARNESS_SECRET_TYPE);
+          k8sRollingHandlerConfig.getKubernetesConfig(), k8sRollingHandlerConfig.getReleaseName());
       int currentReleaseNumber = releaseService.getCurrentReleaseNumber(releaseHistory);
 
       k8sRollingHandlerConfig.setReleaseHistory(releaseHistory);

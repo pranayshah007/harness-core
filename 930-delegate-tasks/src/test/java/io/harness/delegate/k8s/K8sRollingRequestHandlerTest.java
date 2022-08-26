@@ -19,7 +19,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyList;
@@ -170,7 +169,7 @@ public class K8sRollingRequestHandlerTest extends CategoryTest {
                                rollingDeployRequest, delegateTaskParams, logStreamingTaskClient, commandUnitsProgress))
         .isEqualTo(thrownException);
 
-    verify(releaseHistoryService, times(1)).markStatusAndSaveRelease(any(), anyString(), any(KubernetesConfig.class));
+    verify(releaseHistoryService, times(1)).updateStatusAndSaveRelease(any(), anyString(), any(KubernetesConfig.class));
     verify(baseHandler, times(1))
         .addLabelsInDeploymentSelectorForCanary(anyBoolean(), anyBoolean(), anyList(), anyList());
   }
@@ -187,9 +186,7 @@ public class K8sRollingRequestHandlerTest extends CategoryTest {
             .manifestDelegateConfig(K8sManifestDelegateConfig.builder().build())
             .k8sInfraDelegateConfig(mock(K8sInfraDelegateConfig.class))
             .build();
-    doReturn(emptyList())
-        .when(releaseHistoryService)
-        .getReleaseHistory(any(KubernetesConfig.class), anyMap(), anyMap());
+    doReturn(emptyList()).when(releaseHistoryService).getReleaseHistory(any(KubernetesConfig.class), anyString());
     doReturn(1).when(releaseService).getCurrentReleaseNumber(anyList());
     doReturn(new V1SecretBuilder().build())
         .when(releaseHistoryService)

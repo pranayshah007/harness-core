@@ -103,7 +103,7 @@ public class K8sCanaryBaseHandler {
     if (cleanUpIncompleteCanaryDeployRelease) {
       for (V1Secret release : canaryHandlerConfig.getReleaseHistory()) {
         if (InProgress.name().equals(releaseService.getReleaseLabelValue(release, RELEASE_STATUS_LABEL_KEY))) {
-          releaseHistoryService.markStatusAndSaveRelease(
+          releaseHistoryService.updateStatusAndSaveRelease(
               release, Failed.name(), canaryHandlerConfig.getKubernetesConfig());
         }
       }

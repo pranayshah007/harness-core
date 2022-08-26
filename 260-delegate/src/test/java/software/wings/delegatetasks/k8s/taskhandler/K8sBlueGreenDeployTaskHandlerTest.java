@@ -41,7 +41,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
-import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyLong;
@@ -84,7 +84,6 @@ import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
 import io.harness.k8s.model.Release;
-import io.harness.k8s.model.Release.KubernetesResourceIdRevision;
 import io.harness.k8s.model.ReleaseHistory;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
@@ -101,8 +100,6 @@ import software.wings.helpers.ext.k8s.response.K8sTaskExecutionResponse;
 import software.wings.helpers.ext.k8s.response.K8sTaskResponse;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.inject.Inject;
-import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretBuilder;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceBuilder;
@@ -194,14 +191,14 @@ public class K8sBlueGreenDeployTaskHandlerTest extends CategoryTest {
     doReturn(false).when(k8sTaskHelperBase).doStatusCheck(any(), any(), any(), any());
     K8sTaskExecutionResponse response = spyHandler.executeTaskInternal(deployTaskParams, taskParams);
     assertThat(response.getCommandExecutionStatus()).isEqualTo(FAILURE);
-    verify(releaseHistoryService, times(1)).markStatusAndSaveRelease(any(), eq(Release.Status.Failed.name()), any());
+    verify(releaseHistoryService, times(1)).updateStatusAndSaveRelease(any(), eq(Release.Status.Failed.name()), any());
 
     deployTaskParams.setReleaseName("releaseName-apply");
     clearInvocations(releaseHistoryService);
     doReturn(false).when(k8sTaskHelperBase).applyManifests(any(), any(), any(), any(), anyBoolean());
     response = spyHandler.executeTaskInternal(deployTaskParams, taskParams);
     assertThat(response.getCommandExecutionStatus()).isEqualTo(FAILURE);
-    verify(releaseHistoryService, times(1)).markStatusAndSaveRelease(any(), eq(Release.Status.Failed.name()), any());
+    verify(releaseHistoryService, times(1)).updateStatusAndSaveRelease(any(), eq(Release.Status.Failed.name()), any());
   }
 
   @Test
@@ -863,7 +860,7 @@ public class K8sBlueGreenDeployTaskHandlerTest extends CategoryTest {
 
     k8sBlueGreenDeployTaskHandler.prepareForBlueGreen(
         K8sBlueGreenDeployTaskParameters.builder().build(), delegateTaskParams, executionLogCallback);
-    verify(releaseHistoryService, times(1)).getReleaseHistory(any(), anyMap(), anyMap());
+    verify(releaseHistoryService, times(1)).getReleaseHistory(any(), anyString());
   }
 
   @Test
@@ -897,7 +894,8 @@ public class K8sBlueGreenDeployTaskHandlerTest extends CategoryTest {
             .build());
 
     verify(k8sTaskHelper, times(1)).getK8sTaskExecutionResponse(any(), eq(SUCCESS));
-    verify(releaseHistoryService, times(2)).markStatusAndSaveRelease(any(), eq(Release.Status.Succeeded.name()), any());
+    verify(releaseHistoryService, times(2))
+        .updateStatusAndSaveRelease(any(), eq(Release.Status.Succeeded.name()), any());
 
     K8sBlueGreenDeployTaskParameters deployTaskParams =
         K8sBlueGreenDeployTaskParameters.builder().releaseName("releaseName-statusCheck").build();
@@ -907,14 +905,14 @@ public class K8sBlueGreenDeployTaskHandlerTest extends CategoryTest {
     doReturn(false).when(k8sTaskHelperBase).doStatusCheck(any(), any(), any(), any());
     K8sTaskExecutionResponse response = spyHandler.executeTaskInternal(deployTaskParams, taskParams);
     assertThat(response.getCommandExecutionStatus()).isEqualTo(FAILURE);
-    verify(releaseHistoryService, times(1)).markStatusAndSaveRelease(any(), eq(Release.Status.Failed.name()), any());
+    verify(releaseHistoryService, times(1)).updateStatusAndSaveRelease(any(), eq(Release.Status.Failed.name()), any());
 
     deployTaskParams.setReleaseName("releaseName-apply");
     clearInvocations(releaseHistoryService);
     doReturn(false).when(k8sTaskHelperBase).applyManifests(any(), any(), any(), any(), anyBoolean());
     response = spyHandler.executeTaskInternal(deployTaskParams, taskParams);
     assertThat(response.getCommandExecutionStatus()).isEqualTo(FAILURE);
-    verify(releaseHistoryService).markStatusAndSaveRelease(any(), eq(Release.Status.Failed.name()), any());
+    verify(releaseHistoryService).updateStatusAndSaveRelease(any(), eq(Release.Status.Failed.name()), any());
   }
 
   @Test
@@ -949,6 +947,6 @@ public class K8sBlueGreenDeployTaskHandlerTest extends CategoryTest {
         .isEqualTo(thrownException);
 
     verify(executionLogCallback, atLeastOnce()).saveExecutionLog(thrownException.getMessage(), ERROR, FAILURE);
-    verify(releaseHistoryService, times(2)).markStatusAndSaveRelease(any(), any(), any());
+    verify(releaseHistoryService, times(2)).updateStatusAndSaveRelease(any(), any(), any());
   }
 }

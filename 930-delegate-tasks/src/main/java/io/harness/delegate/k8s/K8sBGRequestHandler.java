@@ -8,11 +8,6 @@
 package io.harness.delegate.k8s;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_HARNESS_SECRET_LABELS;
-import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_HARNESS_SECRET_TYPE;
-import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_KEY;
-import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_OWNER_LABEL_KEY;
-import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_OWNER_LABEL_VALUE;
 import static io.harness.delegate.task.k8s.K8sTaskHelperBase.getTimeoutMillisFromMinutes;
 import static io.harness.k8s.K8sCommandUnitConstants.Apply;
 import static io.harness.k8s.K8sCommandUnitConstants.FetchFiles;
@@ -84,9 +79,7 @@ import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
 import java.nio.file.Paths;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -153,7 +146,7 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
     k8sTaskHelperBase.applyManifests(client, resources, k8sDelegateTaskParams,
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Apply, true, commandUnitsProgress), true, true);
 
-    releaseHistoryService.markStatusAndSaveRelease(currentRelease, Status.Succeeded.name(), kubernetesConfig);
+    releaseHistoryService.updateStatusAndSaveRelease(currentRelease, Status.Succeeded.name(), kubernetesConfig);
 
     K8sSteadyStateDTO k8sSteadyStateDTO =
         K8sSteadyStateDTO.builder()
@@ -177,7 +170,7 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
     final List<K8sPod> podList = k8sBGBaseHandler.getAllPods(
         timeoutInMillis, kubernetesConfig, managedWorkload, primaryColor, stageColor, releaseName);
 
-    releaseHistoryService.markStatusAndSaveRelease(currentRelease, Status.Succeeded.name(), kubernetesConfig);
+    releaseHistoryService.updateStatusAndSaveRelease(currentRelease, Status.Succeeded.name(), kubernetesConfig);
     K8sBGDeployResponse k8sBGDeployResponse = K8sBGDeployResponse.builder()
                                                   .releaseNumber(currentReleaseNumber)
                                                   .k8sPodList(podList)
@@ -209,7 +202,7 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
   @Override
   protected void handleTaskFailure(K8sDeployRequest request, Exception exception) throws Exception {
     if (shouldSaveReleaseHistory) {
-      releaseHistoryService.markStatusAndSaveRelease(currentRelease, Status.Failed.name(), kubernetesConfig);
+      releaseHistoryService.updateStatusAndSaveRelease(currentRelease, Status.Failed.name(), kubernetesConfig);
     }
   }
 
@@ -223,10 +216,8 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
         containerDeploymentDelegateBaseHelper.createKubernetesConfig(request.getK8sInfraDelegateConfig());
 
     client = Kubectl.client(k8sDelegateTaskParams.getKubectlPath(), k8sDelegateTaskParams.getKubeconfigPath());
-    Map<String, String> labels = new HashMap<>(RELEASE_HARNESS_SECRET_LABELS);
-    labels.put(RELEASE_KEY, request.getReleaseName());
 
-    releaseList = releaseHistoryService.getReleaseHistory(kubernetesConfig, labels, RELEASE_HARNESS_SECRET_TYPE);
+    releaseList = releaseHistoryService.getReleaseHistory(kubernetesConfig, request.getReleaseName());
     currentReleaseNumber = releaseService.getCurrentReleaseNumber(releaseList);
 
     k8sTaskHelperBase.deleteSkippedManifestFiles(manifestFilesDirectory, executionLogCallback);

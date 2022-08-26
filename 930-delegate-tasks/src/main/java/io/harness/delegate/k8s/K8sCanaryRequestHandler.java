@@ -8,11 +8,6 @@
 package io.harness.delegate.k8s;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_HARNESS_SECRET_LABELS;
-import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_HARNESS_SECRET_TYPE;
-import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_KEY;
-import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_OWNER_LABEL_KEY;
-import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_OWNER_LABEL_VALUE;
 import static io.harness.delegate.task.k8s.K8sTaskHelperBase.getTimeoutMillisFromMinutes;
 import static io.harness.govern.Switch.unhandled;
 import static io.harness.k8s.K8sCommandUnitConstants.Apply;
@@ -63,9 +58,7 @@ import com.google.inject.Inject;
 import io.kubernetes.client.openapi.models.V1Secret;
 import java.nio.file.Paths;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -144,7 +137,7 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
     k8sCanaryBaseHandler.wrapUp(k8sCanaryHandlerConfig.getClient(), k8sDelegateTaskParams, wrapUpLogCallback);
 
     V1Secret release = k8sCanaryHandlerConfig.getRelease();
-    releaseHistoryService.markStatusAndSaveRelease(
+    releaseHistoryService.updateStatusAndSaveRelease(
         release, Release.Status.Succeeded.name(), k8sCanaryHandlerConfig.getKubernetesConfig());
 
     wrapUpLogCallback.saveExecutionLog("\nDone.", INFO, CommandExecutionStatus.SUCCESS);
@@ -170,7 +163,7 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
   protected void handleTaskFailure(K8sDeployRequest request, Exception exception) throws Exception {
     if (saveReleaseHistory) {
       V1Secret release = k8sCanaryHandlerConfig.getRelease();
-      releaseHistoryService.markStatusAndSaveRelease(
+      releaseHistoryService.updateStatusAndSaveRelease(
           release, Release.Status.Failed.name(), k8sCanaryHandlerConfig.getKubernetesConfig());
     }
 
@@ -194,11 +187,8 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
     k8sCanaryHandlerConfig.setClient(
         Kubectl.client(k8sDelegateTaskParams.getKubectlPath(), k8sDelegateTaskParams.getKubeconfigPath()));
 
-    Map<String, String> labels = new HashMap<>(RELEASE_HARNESS_SECRET_LABELS);
-    labels.put(RELEASE_KEY, request.getReleaseName());
-
-    List<V1Secret> releaseHistory = releaseHistoryService.getReleaseHistory(
-        k8sCanaryHandlerConfig.getKubernetesConfig(), labels, RELEASE_HARNESS_SECRET_TYPE);
+    List<V1Secret> releaseHistory =
+        releaseHistoryService.getReleaseHistory(k8sCanaryHandlerConfig.getKubernetesConfig(), request.getReleaseName());
     k8sCanaryHandlerConfig.setReleaseHistory(releaseHistory);
 
     k8sTaskHelperBase.deleteSkippedManifestFiles(k8sCanaryHandlerConfig.getManifestFilesDirectory(), logCallback);

@@ -27,7 +27,7 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyLong;
@@ -83,8 +83,6 @@ import software.wings.helpers.ext.k8s.request.K8sTaskParameters;
 import software.wings.helpers.ext.k8s.response.K8sCanaryDeployResponse;
 import software.wings.helpers.ext.k8s.response.K8sTaskExecutionResponse;
 
-import com.google.inject.Inject;
-import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretBuilder;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -207,7 +205,7 @@ public class K8sCanaryDeployTaskHandlerTest extends WingsBaseTest {
         k8sCanaryDeployTaskHandler.prepareForCanary(delegateTaskParams, canaryDeployTaskParams, executionLogCallback);
 
     assertThat(result).isTrue();
-    verify(releaseHistoryService, times(1)).getReleaseHistory(any(), anyMap(), anyMap());
+    verify(releaseHistoryService, times(1)).getReleaseHistory(any(), anyString());
     verify(k8sCanaryBaseHandler, times(1))
         .getCurrentInstances(canaryHandlerConfig, delegateTaskParams, executionLogCallback);
     verify(k8sCanaryBaseHandler, times(1)).updateTargetInstances(canaryHandlerConfig, 1, executionLogCallback);
@@ -285,7 +283,8 @@ public class K8sCanaryDeployTaskHandlerTest extends WingsBaseTest {
                                 .build(),
             K8sDelegateTaskParams.builder().build());
     verify(k8sCanaryBaseHandler, times(1)).wrapUp(any(), any(), any());
-    verify(releaseHistoryService, times(1)).markStatusAndSaveRelease(any(), eq(Release.Status.Succeeded.name()), any());
+    verify(releaseHistoryService, times(1))
+        .updateStatusAndSaveRelease(any(), eq(Release.Status.Succeeded.name()), any());
     final K8sCanaryDeployResponse canaryDeployResponse = (K8sCanaryDeployResponse) response.getK8sTaskResponse();
     assertThat(response.getCommandExecutionStatus()).isEqualTo(SUCCESS);
     assertThat(canaryDeployResponse.getCanaryWorkload()).isEqualTo("Deployment/nginx-deployment");
@@ -301,7 +300,7 @@ public class K8sCanaryDeployTaskHandlerTest extends WingsBaseTest {
                                 .releaseName("release")
                                 .build(),
             K8sDelegateTaskParams.builder().build());
-    verify(releaseHistoryService, times(1)).markStatusAndSaveRelease(any(), eq(Release.Status.Failed.name()), any());
+    verify(releaseHistoryService, times(1)).updateStatusAndSaveRelease(any(), eq(Release.Status.Failed.name()), any());
     assertThat(failureResponse.getCommandExecutionStatus()).isEqualTo(FAILURE);
 
     // apply manifests fails
@@ -315,7 +314,7 @@ public class K8sCanaryDeployTaskHandlerTest extends WingsBaseTest {
                                 .build(),
             K8sDelegateTaskParams.builder().build());
     assertThat(taskExecutionResponse.getCommandExecutionStatus()).isEqualTo(FAILURE);
-    verify(releaseHistoryService, times(1)).markStatusAndSaveRelease(any(), eq(Release.Status.Failed.name()), any());
+    verify(releaseHistoryService, times(1)).updateStatusAndSaveRelease(any(), eq(Release.Status.Failed.name()), any());
   }
 
   @Test
@@ -364,7 +363,7 @@ public class K8sCanaryDeployTaskHandlerTest extends WingsBaseTest {
         .getCurrentInstances(canaryHandlerConfig, delegateTaskParams, executionLogCallback);
 
     k8sCanaryDeployTaskHandler.prepareForCanary(delegateTaskParams, deployTaskParameters, executionLogCallback);
-    verify(releaseHistoryService, times(1)).getReleaseHistory(any(), anyMap(), anyMap());
+    verify(releaseHistoryService, times(1)).getReleaseHistory(any(), anyString());
     verify(k8sCanaryBaseHandler, times(1)).updateTargetInstances(canaryHandlerConfig, 4, executionLogCallback);
   }
 
@@ -390,7 +389,7 @@ public class K8sCanaryDeployTaskHandlerTest extends WingsBaseTest {
     doReturn(3).when(k8sTaskHelperBase).getTargetInstancesForCanary(70, currentInstances, executionLogCallback);
 
     k8sCanaryDeployTaskHandler.prepareForCanary(delegateTaskParams, deployTaskParameters, executionLogCallback);
-    verify(releaseHistoryService, times(1)).getReleaseHistory(any(), anyMap(), anyMap());
+    verify(releaseHistoryService, times(1)).getReleaseHistory(any(), anyString());
     verify(k8sTaskHelperBase, times(1)).getTargetInstancesForCanary(70, currentInstances, executionLogCallback);
     verify(k8sCanaryBaseHandler, times(1)).updateTargetInstances(canaryHandlerConfig, 3, executionLogCallback);
   }
@@ -444,7 +443,8 @@ public class K8sCanaryDeployTaskHandlerTest extends WingsBaseTest {
                             .k8sDelegateManifestConfig(K8sDelegateManifestConfig.builder().build())
                             .build(),
         K8sDelegateTaskParams.builder().build());
-    verify(releaseHistoryService, times(1)).markStatusAndSaveRelease(any(), eq(Release.Status.Succeeded.name()), any());
+    verify(releaseHistoryService, times(1))
+        .updateStatusAndSaveRelease(any(), eq(Release.Status.Succeeded.name()), any());
 
     // status check fails
     clearInvocations(releaseHistoryService);
@@ -454,7 +454,7 @@ public class K8sCanaryDeployTaskHandlerTest extends WingsBaseTest {
                             .releaseName("release-name-1")
                             .build(),
         K8sDelegateTaskParams.builder().build());
-    verify(releaseHistoryService, times(1)).markStatusAndSaveRelease(any(), eq(Release.Status.Failed.name()), any());
+    verify(releaseHistoryService, times(1)).updateStatusAndSaveRelease(any(), eq(Release.Status.Failed.name()), any());
 
     clearInvocations(releaseHistoryService);
     doReturn(false).when(k8sTaskHelperBase).applyManifests(any(), any(), any(), any(), anyBoolean());
@@ -463,7 +463,7 @@ public class K8sCanaryDeployTaskHandlerTest extends WingsBaseTest {
                             .releaseName("release-name-2")
                             .build(),
         K8sDelegateTaskParams.builder().build());
-    verify(releaseHistoryService, times(1)).markStatusAndSaveRelease(any(), eq(Release.Status.Failed.name()), any());
+    verify(releaseHistoryService, times(1)).updateStatusAndSaveRelease(any(), eq(Release.Status.Failed.name()), any());
   }
 
   @Test
@@ -489,7 +489,7 @@ public class K8sCanaryDeployTaskHandlerTest extends WingsBaseTest {
                                                .build(),
                 K8sDelegateTaskParams.builder().build()))
         .isEqualTo(thrownException);
-    verify(releaseHistoryService, times(1)).markStatusAndSaveRelease(any(), eq(Release.Status.Failed.name()), any());
+    verify(releaseHistoryService, times(1)).updateStatusAndSaveRelease(any(), eq(Release.Status.Failed.name()), any());
   }
 
   @Test
