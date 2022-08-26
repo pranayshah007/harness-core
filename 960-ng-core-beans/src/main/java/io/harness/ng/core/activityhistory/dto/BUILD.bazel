@@ -6,9 +6,7 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//960-ng-core-beans/src/main/java/io/harness/ng/core/activityhistory",
-        "//970-ng-commons/src/main/java/io/harness/connector",
-        "//970-ng-commons/src/main/java/io/harness/ng/core",
-        "//970-ng-commons/src/main/java/io/harness/ng/core/dto",
+        "//970-ng-commons:module",
         "//999-annotations:module",
         "//:lombok",
         "@maven//:com_fasterxml_jackson_core_jackson_annotations",

@@ -1,17 +1,48 @@
-load("//:tools/bazel/harness.bzl", "java_library")
+load("//:tools/bazel/harness.bzl","java_library")
 load("//:tools/bazel/macros.bzl", "run_analysis")
 
 java_library(
-    name = "module",
-    srcs = glob(["src/main/java/**/*.java"]),
-    visibility = ["//visibility:public"],
-    deps = [
-        "//:lombok",
-        "//970-api-services-beans:module",
-        "//970-ng-commons:module",
-        "//980-commons:module",
-        "//999-annotations:module",
-    ],
-)
+        name = "module",
+        srcs = glob(["src/main/java/**/*.java"]),
+        visibility = ["//visibility:public"],
+        deps =[
+              "//:lombok",
+              "//970-api-services-beans:module",
+              "//970-ng-commons:module",
+              "//980-commons:module",
+              "//999-annotations:module",
+              "//960-ng-core-beans/src/main/java/io/harness/ng/core",
+              "//960-ng-core-beans/src/main/java/io/harness/ng/core/account",
+              "//960-ng-core-beans/src/main/java/io/harness/ng/core/activityhistory",
+              "//960-ng-core-beans/src/main/java/io/harness/ng/core/activityhistory/dto",
+              "//960-ng-core-beans/src/main/java/io/harness/ng/core/dashboard",
+              "//960-ng-core-beans/src/main/java/io/harness/ng/core/delegate",
+              "//960-ng-core-beans/src/main/java/io/harness/ng/core/dto",
+              "//960-ng-core-beans/src/main/java/io/harness/ng/core/envGroup/dto",
+              "//960-ng-core-beans/src/main/java/io/harness/ng/core/environment/beans",
+              "//960-ng-core-beans/src/main/java/io/harness/ng/core/environment/dto",
+              "//960-ng-core-beans/src/main/java/io/harness/ng/core/exceptionmappers",
+              "//960-ng-core-beans/src/main/java/io/harness/ng/core/filestore",
+              "//960-ng-core-beans/src/main/java/io/harness/ng/core/filestore/dto",
+              "//960-ng-core-beans/src/main/java/io/harness/ng/core/gitsync",
+              "//960-ng-core-beans/src/main/java/io/harness/ng/core/infrastructure",
+              "//960-ng-core-beans/src/main/java/io/harness/ng/core/infrastructure/dto",
+              "//960-ng-core-beans/src/main/java/io/harness/ng/core/invites",
+              "//960-ng-core-beans/src/main/java/io/harness/ng/core/invites/dto",
+              "//960-ng-core-beans/src/main/java/io/harness/ng/core/k8s",
+              "//960-ng-core-beans/src/main/java/io/harness/ng/core/notification",
+              "//960-ng-core-beans/src/main/java/io/harness/ng/core/service/dto",
+              "//960-ng-core-beans/src/main/java/io/harness/ng/core/switchaccount",
+              "//960-ng-core-beans/src/main/java/io/harness/ng/core/template",
+              "//960-ng-core-beans/src/main/java/io/harness/ng/core/template/exception",
+              "//960-ng-core-beans/src/main/java/io/harness/ng/core/user",
+              "//960-ng-core-beans/src/main/java/io/harness/ng/core/user/remote/dto",
+              "//960-ng-core-beans/src/main/java/io/harness/ng/core/usergroups/filter",
+              "//960-ng-core-beans/src/main/java/io/harness/pms/ng/core/environment/beans",
+              "//960-ng-core-beans/src/main/java/io/harness/serializer",
+              "//960-ng-core-beans/src/main/java/io/harness/serializer/kryo",
+              "//960-ng-core-beans/src/main/java/io/harness/template/beans",
+              "//960-ng-core-beans/src/main/java/io/harness/template/beans/refresh",
+],)
 
 run_analysis()
