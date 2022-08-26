@@ -10,7 +10,7 @@ import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class GarRequestResponseMapper {
-  public GarInternalConfig toGarInternalConfig(GarDelegateRequest request, String bearerToken) {
+  public static GarInternalConfig toGarInternalConfig(GarDelegateRequest request, String bearerToken) {
     return GarInternalConfig.builder()
         .bearerToken(bearerToken)
         .project(request.getProject())
@@ -20,7 +20,8 @@ public class GarRequestResponseMapper {
         .maxBuilds(request.getMaxBuilds())
         .build();
   }
-  public GarDelegateResponse toGarResponse(BuildDetailsInternal buildDetailsInternal, GarDelegateRequest request) {
+  public static GarDelegateResponse toGarResponse(
+      BuildDetailsInternal buildDetailsInternal, GarDelegateRequest request) {
     return GarDelegateResponse.builder()
         .buildDetails(ArtifactBuildDetailsMapper.toBuildDetailsNG(buildDetailsInternal))
         .sourceType(ArtifactSourceType.GOOGLE_ARTIFACT_REGISTRY)

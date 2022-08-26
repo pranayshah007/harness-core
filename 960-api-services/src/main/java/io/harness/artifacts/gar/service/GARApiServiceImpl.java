@@ -68,7 +68,7 @@ public class GARApiServiceImpl implements GarApiService {
       return paginate(garinternalConfig, garRestClient, versionRegex, maxNumberOfBuilds);
     } catch (IOException e) {
       throw NestedExceptionUtils.hintWithExplanationException("Could not fetch versions for the package",
-          "Check if the package exists and if the permissions are scoped for the authenticated user",
+          "Please check if the package exists and if the permissions are scoped for the authenticated user",
           new ArtifactServerException(ExceptionUtils.getMessage(e), e, WingsException.USER));
     }
   }
@@ -130,7 +130,7 @@ public class GARApiServiceImpl implements GarApiService {
       if (!isSuccessful(response)) {
         throw NestedExceptionUtils.hintWithExplanationException(
             "GOOGLE ARTIFACT REGISTRY : Unable to fetch the versions for the package",
-            "Check if the package exists and if the permissions are scoped for the authenticated user",
+            "Please Check if the package exists and if the permissions are scoped for the authenticated user",
             new InvalidArtifactServerException(response.message(), USER));
       }
 
@@ -151,7 +151,7 @@ public class GARApiServiceImpl implements GarApiService {
   private boolean isSuccessful(Response<GarPackageVersionResponse> response) {
     if (response == null) {
       throw NestedExceptionUtils.hintWithExplanationException("GOOGLE ARTIFACT REGISTRY : Response Is Null",
-          "Check Whether Artifact exists or not",
+          "Please Check Whether Artifact exists or not",
           new InvalidArtifactServerException(response.errorBody().toString(), USER));
     }
 
@@ -164,15 +164,15 @@ public class GARApiServiceImpl implements GarApiService {
     switch (code) {
       case 404:
         throw NestedExceptionUtils.hintWithExplanationException(
-            "Please Check Project,RepositoryName,Package,Region fields",
-            "Google Artifact Registry: Check Values of Project,RepositoryName,Package,Region Field",
+            "Please check project, repository name, package, region fields",
+            "Google Artifact Registry: Please verify the values of project, repository name, package, region are same as of package in Google Artifact Registry",
             new InvalidArtifactServerException(response.errorBody().toString(), USER));
       case 400:
         return false;
       case 401:
         throw NestedExceptionUtils.hintWithExplanationException(
-            "Google Artifact Registry: Connector provided Is not Having Artifact Registry Reader permission",
-            "Check connector's permission and credentials",
+            "Google Artifact Registry: The connector provided does not have sufficient privileges to access Google artifact registry",
+            "Please check connector's permission and credentials",
             new InvalidArtifactServerException(response.errorBody().toString(), USER));
       default:
         throw NestedExceptionUtils.hintWithExplanationException("Google Artifact Registry", "Google Artifact Registry",
