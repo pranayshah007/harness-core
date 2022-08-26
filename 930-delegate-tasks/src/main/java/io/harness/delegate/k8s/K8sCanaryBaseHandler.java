@@ -102,10 +102,9 @@ public class K8sCanaryBaseHandler {
 
     if (cleanUpIncompleteCanaryDeployRelease) {
       for (V1Secret release : canaryHandlerConfig.getReleaseHistory()) {
-        if (release.getMetadata() != null && release.getMetadata().getLabels() != null
-            && InProgress.name().equals(release.getMetadata().getLabels().get(RELEASE_STATUS_LABEL_KEY))) {
-          releaseHistoryService.updateReleaseStatus(release, Failed.name());
-          releaseHistoryService.saveRelease(release, canaryHandlerConfig.getKubernetesConfig());
+        if (InProgress.name().equals(releaseService.getReleaseLabelValue(release, RELEASE_STATUS_LABEL_KEY))) {
+          releaseHistoryService.markStatusAndSaveRelease(
+              release, Failed.name(), canaryHandlerConfig.getKubernetesConfig());
         }
       }
     }
@@ -195,10 +194,5 @@ public class K8sCanaryBaseHandler {
     logCallback.saveExecutionLog("Wrapping up..\n");
 
     k8sTaskHelperBase.describe(client, k8sDelegateTaskParams, logCallback);
-  }
-
-  public void failAndSaveKubernetesRelease(K8sCanaryHandlerConfig canaryHandlerConfig, String releaseName) {
-    releaseHistoryService.markStatusAndSaveRelease(
-        canaryHandlerConfig.getRelease(), Failed.name(), canaryHandlerConfig.getKubernetesConfig());
   }
 }

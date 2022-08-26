@@ -9,14 +9,10 @@ package io.harness.delegate.k8s;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.delegate.k8s.K8sRollingRollbackBaseHandler.ResourceRecreationStatus.RESOURCE_CREATION_SUCCESSFUL;
-import static io.harness.delegate.k8s.K8sTestHelper.buildProcessResult;
-import static io.harness.delegate.k8s.K8sTestHelper.buildRelease;
-import static io.harness.delegate.k8s.K8sTestHelper.buildReleaseMultipleManagedWorkloads;
 import static io.harness.delegate.k8s.K8sTestHelper.crdNew;
 import static io.harness.delegate.k8s.K8sTestHelper.crdOld;
 import static io.harness.delegate.k8s.K8sTestHelper.deployment;
 import static io.harness.delegate.k8s.K8sTestHelper.deploymentConfig;
-import static io.harness.k8s.model.Release.Status.Failed;
 import static io.harness.k8s.model.Release.Status.Succeeded;
 import static io.harness.logging.LogLevel.INFO;
 import static io.harness.rule.OwnerRule.ABOSII;
@@ -39,13 +35,11 @@ import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -67,7 +61,6 @@ import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
 import io.harness.k8s.model.Release;
 import io.harness.k8s.model.Release.KubernetesResourceIdRevision;
-import io.harness.k8s.model.ReleaseHistory;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 
@@ -92,7 +85,6 @@ import org.zeroturnaround.exec.stream.LogOutputStream;
 
 @OwnedBy(CDP)
 public class K8sRollingRollbackBaseHandlerTest extends CategoryTest {
-  // TODO fix tests here
   @Mock private LogCallback logCallback;
   @Mock private List<V1Secret> releaseHistory;
   @Mock private K8sTaskHelperBase k8sTaskHelperBase;
@@ -148,7 +140,6 @@ public class K8sRollingRollbackBaseHandlerTest extends CategoryTest {
                                                                        .build()))
                                           .build();
     rollbackHandlerConfig.setReleaseHistory(releaseHistory);
-    //    rollbackHandlerConfig.setRelease(release);
     rollbackHandlerConfig.setClient(Kubectl.client("kubectl", "config-path"));
     ProcessResult processResult = new ProcessResult(0, new ProcessOutput("".getBytes()));
 
@@ -159,7 +150,6 @@ public class K8sRollingRollbackBaseHandlerTest extends CategoryTest {
     doReturn(processResult)
         .when(k8sRollingRollbackBaseHandler)
         .runK8sExecutable(eq(k8sDelegateTaskParams), eq(logCallback), any(RolloutUndoCommand.class));
-    //    doReturn(previousEligibleRelease).when(releaseHistory).getPreviousRollbackEligibleRelease(releaseNumber);
 
     boolean rollback = k8sRollingRollbackBaseHandler.rollback(
         rollbackHandlerConfig, k8sDelegateTaskParams, releaseNumber, logCallback, emptySet(), false);
@@ -203,7 +193,6 @@ public class K8sRollingRollbackBaseHandlerTest extends CategoryTest {
     K8sRollingRollbackHandlerConfig rollbackHandlerConfig =
         prepareRollbackCustomWorkloads(previousCustomResource, currentCustomResource);
 
-    //    when(releaseHistory.getLatestRelease()).thenReturn(rollbackHandlerConfig.getRelease());
     when(k8sTaskHelperBase.doStatusCheckForAllCustomResources(any(Kubectl.class), anyList(),
              any(K8sDelegateTaskParams.class), any(LogCallback.class), anyBoolean(), anyLong(), eq(false)))
         .thenReturn(true);
@@ -224,11 +213,6 @@ public class K8sRollingRollbackBaseHandlerTest extends CategoryTest {
     List<KubernetesResource> customWorkloadsUnderCheck = statusCheckCustomWorkloadsCaptor.getValue();
     assertThat(customWorkloadsUnderCheck).isNotEmpty();
     assertThat(customWorkloadsUnderCheck.get(0)).isEqualTo(previousCustomResource);
-
-    //    Release releaseToSave = rollbackHandlerConfig.getRelease();
-    //    assertThat(releaseToSave).isNotNull();
-    //    assertThat(releaseToSave.getStatus()).isEqualTo(Failed);
-    //    verify(k8sTaskHelperBase, never()).saveReleaseHistory(any(), any(), any(), eq(false));
   }
 
   @Test
@@ -245,11 +229,6 @@ public class K8sRollingRollbackBaseHandlerTest extends CategoryTest {
     assertThat(rollback).isTrue();
 
     ArgumentCaptor<List> previousCustomWorkloadsCaptor = ArgumentCaptor.forClass(List.class);
-    //    ArgumentCaptor<List> currentCustomWorkloadsCaptor = ArgumentCaptor.forClass(List.class);
-
-    //    verify(k8sTaskHelperBase, times(1))
-    //        .delete(any(Kubectl.class), any(K8sDelegateTaskParams.class), currentCustomWorkloadsCaptor.capture(),
-    //            any(LogCallback.class), anyBoolean());
 
     verify(k8sTaskHelperBase, times(1))
         .applyManifests(any(Kubectl.class), previousCustomWorkloadsCaptor.capture(), any(K8sDelegateTaskParams.class),
@@ -258,10 +237,6 @@ public class K8sRollingRollbackBaseHandlerTest extends CategoryTest {
     List<KubernetesResource> previousCustomWorkloads = previousCustomWorkloadsCaptor.getValue();
     assertThat(previousCustomWorkloads).isNotEmpty();
     assertThat(previousCustomWorkloads.get(0)).isEqualTo(previousCustomResource);
-
-    //    List<KubernetesResourceId> currentCustomWorkloads = currentCustomWorkloadsCaptor.getValue();
-    //    assertThat(currentCustomWorkloads).isNotEmpty();
-    //    assertThat(currentCustomWorkloads.get(0)).isEqualTo(currentCustomResource.getResourceId());
   }
 
   @Test
@@ -295,21 +270,6 @@ public class K8sRollingRollbackBaseHandlerTest extends CategoryTest {
       KubernetesResource previousCustomResource, KubernetesResource currentCustomResource) throws Exception {
     K8sRollingRollbackHandlerConfig rollbackHandlerConfig = new K8sRollingRollbackHandlerConfig();
     rollbackHandlerConfig.setKubernetesConfig(kubernetesConfig);
-    Release release = Release.builder()
-                          .resources(asList(currentCustomResource.getResourceId()))
-                          .number(2)
-                          .managedWorkloads(getManagedWorkloads(currentCustomResource))
-                          .customWorkloads(getCustomWorkloads(currentCustomResource))
-                          .build();
-    Release previousEligibleRelease = Release.builder()
-                                          .resources(asList(previousCustomResource.getResourceId()))
-                                          .number(1)
-                                          .customWorkloads(asList(previousCustomResource))
-                                          .build();
-
-    //    when(releaseHistory.getPreviousRollbackEligibleRelease(anyInt())).thenReturn(previousEligibleRelease);
-    //    rollbackHandlerConfig.setReleaseHistory(releaseHistory);
-    //    rollbackHandlerConfig.setRelease(release);
     rollbackHandlerConfig.setRelease(new V1SecretBuilder().build());
     rollbackHandlerConfig.setReleaseHistory(emptyList());
     rollbackHandlerConfig.setClient(Kubectl.client("kubectl", "config-path"));
@@ -328,8 +288,6 @@ public class K8sRollingRollbackBaseHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void rollback() throws Exception {
     testRollBackReleaseIsNull();
-    testRollBackIfNoManagedWorkload();
-    testRollBackToSpecificRelease();
   }
 
   private void testRollBackReleaseIsNull() throws Exception {
@@ -339,79 +297,6 @@ public class K8sRollingRollbackBaseHandlerTest extends CategoryTest {
     assertThat(success).isTrue();
   }
 
-  private void testRollBackIfNoManagedWorkload() throws Exception {
-    K8sRollingRollbackHandlerConfig rollbackHandlerConfig = new K8sRollingRollbackHandlerConfig();
-    //    rollbackHandlerConfig.setRelease(new Release());
-    final boolean success = k8sRollingRollbackBaseHandler.rollback(
-        rollbackHandlerConfig, K8sDelegateTaskParams.builder().build(), 2, logCallback, emptySet(), false);
-    assertThat(success).isTrue();
-  }
-
-  private void testRollBackToSpecificRelease() throws Exception {
-    rollback1ManagedWorkload();
-    rollbackMultipleWorkloads();
-  }
-
-  private void rollback1ManagedWorkload() throws Exception {
-    reset(k8sRollingRollbackBaseHandler);
-    K8sRollingRollbackHandlerConfig rollbackHandlerConfig = new K8sRollingRollbackHandlerConfig();
-    rollbackHandlerConfig.setClient(Kubectl.client("kubectl", "config-path"));
-    doReturn(buildProcessResult(0)).when(k8sRollingRollbackBaseHandler).runK8sExecutable(any(), any(), any());
-
-    ReleaseHistory releaseHistory = ReleaseHistory.createNew();
-    releaseHistory.getReleases().add(buildRelease(Failed, 2));
-    releaseHistory.getReleases().add(buildRelease(Succeeded, 1));
-    releaseHistory.getReleases().add(buildRelease(Succeeded, 0));
-    //    rollbackHandlerConfig.setRelease(releaseHistory.getLatestRelease());
-    //    rollbackHandlerConfig.setReleaseHistory(releaseHistory);
-
-    final boolean success = k8sRollingRollbackBaseHandler.rollback(
-        rollbackHandlerConfig, K8sDelegateTaskParams.builder().build(), 2, logCallback, emptySet(), false);
-
-    ArgumentCaptor<RolloutUndoCommand> captor = ArgumentCaptor.forClass(RolloutUndoCommand.class);
-    verify(k8sRollingRollbackBaseHandler, times(1)).runK8sExecutable(any(), any(), captor.capture());
-
-    RolloutUndoCommand rolloutUndoCommand = captor.getValue();
-    assertThat(rolloutUndoCommand.command())
-        .isEqualTo("kubectl --kubeconfig=config-path rollout undo Deployment/nginx-deployment");
-    assertThat(success).isTrue();
-  }
-
-  private void rollbackMultipleWorkloads() throws Exception {
-    reset(k8sRollingRollbackBaseHandler);
-    K8sRollingRollbackHandlerConfig rollbackHandlerConfig = new K8sRollingRollbackHandlerConfig();
-    rollbackHandlerConfig.setClient(Kubectl.client("kubectl", "config-path"));
-    doReturn(buildProcessResult(0)).when(k8sRollingRollbackBaseHandler).runK8sExecutable(any(), any(), any());
-    doReturn(buildProcessResult(0))
-        .when(k8sRollingRollbackBaseHandler)
-        .executeScript(any(), anyString(), any(), any(), any());
-
-    ReleaseHistory releaseHistory = ReleaseHistory.createNew();
-    releaseHistory.getReleases().add(buildReleaseMultipleManagedWorkloads(Failed));
-    releaseHistory.getReleases().add(buildReleaseMultipleManagedWorkloads(Succeeded));
-    releaseHistory.getReleases().add(buildReleaseMultipleManagedWorkloads(Succeeded));
-    //    rollbackHandlerConfig.setRelease(releaseHistory.getLatestRelease());
-    //    rollbackHandlerConfig.setReleaseHistory(releaseHistory);
-
-    final boolean success = k8sRollingRollbackBaseHandler.rollback(rollbackHandlerConfig,
-        K8sDelegateTaskParams.builder().kubeconfigPath("kubeconfig").build(), 2, logCallback, emptySet(), false);
-
-    ArgumentCaptor<RolloutUndoCommand> captor = ArgumentCaptor.forClass(RolloutUndoCommand.class);
-    ArgumentCaptor<String> stringArgumentCaptor = ArgumentCaptor.forClass(String.class);
-    verify(k8sRollingRollbackBaseHandler, times(1)).runK8sExecutable(any(), any(), captor.capture());
-    verify(k8sRollingRollbackBaseHandler, times(1))
-        .executeScript(any(), stringArgumentCaptor.capture(), any(), any(), any());
-
-    RolloutUndoCommand rolloutUndoCommand = captor.getValue();
-    assertThat(rolloutUndoCommand.command())
-        .isEqualTo("kubectl --kubeconfig=config-path rollout undo Deployment/nginx-deployment --to-revision=2");
-    assertThat(success).isTrue();
-
-    String command = stringArgumentCaptor.getValue();
-    assertThat(command).isEqualTo(
-        "oc --kubeconfig=kubeconfig rollout undo DeploymentConfig/test-dc --namespace=default --to-revision=2");
-  }
-
   @Test
   @Owner(developers = BOJANA)
   @Category(UnitTests.class)
@@ -419,16 +304,11 @@ public class K8sRollingRollbackBaseHandlerTest extends CategoryTest {
     K8sDelegateTaskParams k8sDelegateTaskParams = K8sDelegateTaskParams.builder().build();
     K8sRollingRollbackHandlerConfig rollbackHandlerConfig = new K8sRollingRollbackHandlerConfig();
     rollbackHandlerConfig.setReleaseHistory(releaseHistory);
-    KubernetesResource currentCustomResource = crdNew();
-    Release release = Release.builder()
-                          .resources(asList(currentCustomResource.getResourceId()))
-                          .customWorkloads(asList(currentCustomResource))
-                          .status(Succeeded)
-                          .build();
-    //    rollbackHandlerConfig.setRelease(release);
+    rollbackHandlerConfig.setRelease(new V1SecretBuilder().build());
+    doReturn(Succeeded.name()).when(releaseService).getReleaseLabelValue(any(), any());
 
     boolean rollback = k8sRollingRollbackBaseHandler.rollback(
-        rollbackHandlerConfig, k8sDelegateTaskParams, 0, logCallback, emptySet(), false);
+        rollbackHandlerConfig, k8sDelegateTaskParams, null, logCallback, emptySet(), false);
     assertThat(rollback).isTrue();
     ArgumentCaptor<String> logCaptor = ArgumentCaptor.forClass(String.class);
     verify(logCallback, times(1)).saveExecutionLog(logCaptor.capture());
@@ -441,15 +321,9 @@ public class K8sRollingRollbackBaseHandlerTest extends CategoryTest {
   public void testSkipRollbackNoPreviousEligibleRelease() throws Exception {
     K8sDelegateTaskParams k8sDelegateTaskParams = K8sDelegateTaskParams.builder().build();
     K8sRollingRollbackHandlerConfig rollbackHandlerConfig = new K8sRollingRollbackHandlerConfig();
-    KubernetesResource currentCustomResource = crdNew();
-    Release release = Release.builder()
-                          .resources(asList(currentCustomResource.getResourceId()))
-                          .customWorkloads(asList(currentCustomResource))
-                          .status(Succeeded)
-                          .build();
-    //    rollbackHandlerConfig.setRelease(release);
+    rollbackHandlerConfig.setRelease(new V1SecretBuilder().build());
     rollbackHandlerConfig.setReleaseHistory(releaseHistory);
-    //    when(releaseHistory.getPreviousRollbackEligibleRelease(anyInt())).thenReturn(null);
+    doReturn(null).when(releaseService).getLastSuccessfulRelease(anyList(), anyInt());
 
     boolean rollback = k8sRollingRollbackBaseHandler.rollback(
         rollbackHandlerConfig, k8sDelegateTaskParams, 1, logCallback, emptySet(), false);
@@ -457,39 +331,6 @@ public class K8sRollingRollbackBaseHandlerTest extends CategoryTest {
     ArgumentCaptor<String> logCaptor = ArgumentCaptor.forClass(String.class);
     verify(logCallback).saveExecutionLog(logCaptor.capture());
     assertThat(logCaptor.getValue()).isEqualTo("No previous eligible release found. Can't rollback.");
-  }
-
-  @Test
-  @Owner(developers = BOJANA)
-  @Category(UnitTests.class)
-  public void testRollbackFailed() throws Exception {
-    K8sRollingRollbackHandlerConfig rollbackHandlerConfig = new K8sRollingRollbackHandlerConfig();
-    rollbackHandlerConfig.setClient(Kubectl.client("kubectl", "config-path"));
-    doReturn(buildProcessResult(1)).when(k8sRollingRollbackBaseHandler).runK8sExecutable(any(), any(), any());
-
-    ReleaseHistory releaseHistory = ReleaseHistory.createNew();
-    releaseHistory.getReleases().add(buildRelease(Failed, 2));
-    releaseHistory.getReleases().add(buildRelease(Succeeded, 1));
-    releaseHistory.getReleases().add(buildRelease(Succeeded, 0));
-    //    rollbackHandlerConfig.setRelease(releaseHistory.getLatestRelease());
-    //    rollbackHandlerConfig.setReleaseHistory(releaseHistory);
-
-    final boolean success = k8sRollingRollbackBaseHandler.rollback(
-        rollbackHandlerConfig, K8sDelegateTaskParams.builder().build(), 2, logCallback, emptySet(), false);
-    assertThat(success).isFalse();
-
-    ArgumentCaptor<RolloutUndoCommand> captor = ArgumentCaptor.forClass(RolloutUndoCommand.class);
-    verify(k8sRollingRollbackBaseHandler, times(1)).runK8sExecutable(any(), any(), captor.capture());
-    RolloutUndoCommand rolloutUndoCommand = captor.getValue();
-    assertThat(rolloutUndoCommand.command())
-        .isEqualTo("kubectl --kubeconfig=config-path rollout undo Deployment/nginx-deployment");
-
-    ArgumentCaptor<String> logCaptor = ArgumentCaptor.forClass(String.class);
-    verify(logCallback, times(4)).saveExecutionLog(logCaptor.capture());
-    List<String> logValues = logCaptor.getAllValues();
-    assertThat(logValues).contains("Previous eligible Release is 1 with status Succeeded",
-        "\nRolling back to release 1",
-        "\nRolling back resource Deployment/nginx-deployment in namespace null to revision null");
   }
 
   private List<KubernetesResourceIdRevision> getManagedWorkloads(KubernetesResource kubernetesResource) {
@@ -520,7 +361,6 @@ public class K8sRollingRollbackBaseHandlerTest extends CategoryTest {
     assertThat(k8sRollingRollbackBaseHandler.recreatePrunedResources(
                    rollbackHandlerConfig, 1, emptyList(), logCallback, k8sDelegateTaskParams))
         .isEqualTo(ResourceRecreationStatus.NO_RESOURCE_CREATED);
-    //    verify(releaseHistory, never()).getPreviousRollbackEligibleRelease(anyInt());
   }
 
   @Test
@@ -533,7 +373,6 @@ public class K8sRollingRollbackBaseHandlerTest extends CategoryTest {
     assertThat(k8sRollingRollbackBaseHandler.recreatePrunedResources(rollbackHandlerConfig, 1,
                    ImmutableList.of(KubernetesResourceId.builder().build()), logCallback, k8sDelegateTaskParams))
         .isEqualTo(ResourceRecreationStatus.NO_RESOURCE_CREATED);
-    //    verify(releaseHistory, never()).getPreviousRollbackEligibleRelease(anyInt());
   }
 
   @Test
@@ -553,11 +392,9 @@ public class K8sRollingRollbackBaseHandlerTest extends CategoryTest {
     // no successful deployment in release history
     K8sRollingRollbackHandlerConfig rollbackHandlerConfig = new K8sRollingRollbackHandlerConfig();
     rollbackHandlerConfig.setReleaseHistory(releaseHistory);
-    //    doReturn(null).when(releaseHistory).getPreviousRollbackEligibleRelease(anyInt());
     assertThat(k8sRollingRollbackBaseHandler.recreatePrunedResources(rollbackHandlerConfig, 1,
                    ImmutableList.of(KubernetesResourceId.builder().build()), logCallback, k8sDelegateTaskParams))
         .isEqualTo(ResourceRecreationStatus.NO_RESOURCE_CREATED);
-    //    verify(releaseHistory, times(1)).getPreviousRollbackEligibleRelease(anyInt());
   }
 
   @Test
@@ -569,15 +406,11 @@ public class K8sRollingRollbackBaseHandlerTest extends CategoryTest {
     rollbackHandlerConfig.setReleaseHistory(releaseHistory);
     KubernetesResource resourcesInPreviousSuccessfulRelease =
         KubernetesResource.builder().resourceId(KubernetesResourceId.builder().build()).build();
-    Release previousSuccessfulRelease =
-        Release.builder().resourcesWithSpec(ImmutableList.of(resourcesInPreviousSuccessfulRelease)).build();
-    //    doReturn(previousSuccessfulRelease).when(releaseHistory).getPreviousRollbackEligibleRelease(anyInt());
 
     assertThat(k8sRollingRollbackBaseHandler.recreatePrunedResources(rollbackHandlerConfig, 1,
                    ImmutableList.of(KubernetesResourceId.builder().name("resource1").build()), logCallback,
                    k8sDelegateTaskParams))
         .isEqualTo(ResourceRecreationStatus.NO_RESOURCE_CREATED);
-    //    verify(releaseHistory, times(1)).getPreviousRollbackEligibleRelease(anyInt());
   }
 
   @Test
@@ -600,9 +433,9 @@ public class K8sRollingRollbackBaseHandlerTest extends CategoryTest {
     resourcesInPreviousSuccessfulRelease.add(
         KubernetesResource.builder().spec("spec1").resourceId(resourceIds.get(1)).build());
 
-    Release previousSuccessfulRelease =
-        Release.builder().resourcesWithSpec(resourcesInPreviousSuccessfulRelease).build();
-    //    doReturn(previousSuccessfulRelease).when(releaseHistory).getPreviousRollbackEligibleRelease(anyInt());
+    V1Secret previousRelease = new V1SecretBuilder().build();
+    doReturn(previousRelease).when(releaseService).getLastSuccessfulRelease(anyList(), anyInt());
+    doReturn(resourcesInPreviousSuccessfulRelease).when(releaseService).getResourcesFromRelease(any());
     doReturn(true)
         .when(k8sTaskHelperBase)
         .applyManifests(any(), anyList(), any(K8sDelegateTaskParams.class), any(LogCallback.class), anyBoolean());
@@ -610,7 +443,6 @@ public class K8sRollingRollbackBaseHandlerTest extends CategoryTest {
     assertThat(k8sRollingRollbackBaseHandler.recreatePrunedResources(
                    rollbackHandlerConfig, 1, resourceIds, logCallback, k8sDelegateTaskParams))
         .isEqualTo(ResourceRecreationStatus.RESOURCE_CREATION_SUCCESSFUL);
-    //    verify(releaseHistory, times(1)).getPreviousRollbackEligibleRelease(anyInt());
     verify(k8sTaskHelperBase, times(1))
         .applyManifests(
             any(Kubectl.class), anyList(), any(K8sDelegateTaskParams.class), any(LogCallback.class), anyBoolean());
@@ -631,16 +463,22 @@ public class K8sRollingRollbackBaseHandlerTest extends CategoryTest {
             .collect(toList());
 
     K8sRollingRollbackHandlerConfig rollbackHandlerConfig = new K8sRollingRollbackHandlerConfig();
-    Release currentRelease = Release.builder().resources(resourceIds).resourcesWithSpec(resources).build();
+    V1Secret currentRelease = new V1SecretBuilder().withType("currentRelease").build();
     rollbackHandlerConfig.setReleaseHistory(releaseHistory);
-    //    rollbackHandlerConfig.setRelease(currentRelease);
+    rollbackHandlerConfig.setRelease(currentRelease);
     rollbackHandlerConfig.setClient(mock(Kubectl.class));
 
     List<KubernetesResourceId> resourcesInPreviousSuccessfulRelease = new ArrayList<>();
     resourcesInPreviousSuccessfulRelease.add(resourceIds.get(0));
 
-    Release previousSuccessfulRelease = Release.builder().resources(resourcesInPreviousSuccessfulRelease).build();
-    //    doReturn(previousSuccessfulRelease).when(releaseHistory).getPreviousRollbackEligibleRelease(anyInt());
+    List<KubernetesResource> previousResources =
+        resourcesInPreviousSuccessfulRelease.stream()
+            .map(resourceId -> KubernetesResource.builder().resourceId(resourceId).build())
+            .collect(toList());
+    V1Secret previousRelease = new V1SecretBuilder().withType("previousRelease").build();
+    doReturn(previousRelease).when(releaseService).getLastSuccessfulRelease(anyList(), anyInt());
+    doReturn(previousResources).when(releaseService).getResourcesFromRelease(eq(previousRelease));
+    doReturn(resources).when(releaseService).getResourcesFromRelease(eq(currentRelease));
     when(k8sTaskHelperBase.arrangeResourceIdsInDeletionOrder(anyList())).thenAnswer(i -> i.getArguments()[0]);
 
     ArgumentCaptor<List> captor = ArgumentCaptor.forClass(List.class);
@@ -648,7 +486,6 @@ public class K8sRollingRollbackBaseHandlerTest extends CategoryTest {
     k8sRollingRollbackBaseHandler.deleteNewResourcesForCurrentFailedRelease(
         rollbackHandlerConfig, 1, logCallback, k8sDelegateTaskParams);
 
-    //    verify(releaseHistory, times(1)).getPreviousRollbackEligibleRelease(anyInt());
     verify(k8sTaskHelperBase, times(1))
         .executeDeleteHandlingPartialExecution(any(Kubectl.class), any(K8sDelegateTaskParams.class), captor.capture(),
             any(LogCallback.class), anyBoolean());
@@ -673,17 +510,24 @@ public class K8sRollingRollbackBaseHandlerTest extends CategoryTest {
             .collect(toList());
 
     K8sRollingRollbackHandlerConfig rollbackHandlerConfig = new K8sRollingRollbackHandlerConfig();
-    Release currentRelease = Release.builder().resources(resourceIds).resourcesWithSpec(resources).build();
+    V1Secret currentRelease = new V1SecretBuilder().withType("currentRelease").build();
+
     rollbackHandlerConfig.setReleaseHistory(releaseHistory);
-    //    rollbackHandlerConfig.setRelease(currentRelease);
+    rollbackHandlerConfig.setRelease(currentRelease);
     rollbackHandlerConfig.setClient(mock(Kubectl.class));
 
     List<KubernetesResourceId> resourcesInPreviousSuccessfulRelease = new ArrayList<>();
     resourcesInPreviousSuccessfulRelease.add(resourceIds.get(0));
     resourcesInPreviousSuccessfulRelease.add(resourceIds.get(1));
 
-    Release previousSuccessfulRelease = Release.builder().resources(resourcesInPreviousSuccessfulRelease).build();
-    //    doReturn(previousSuccessfulRelease).when(releaseHistory).getPreviousRollbackEligibleRelease(anyInt());
+    List<KubernetesResource> previousResources =
+        resourcesInPreviousSuccessfulRelease.stream()
+            .map(resourceId -> KubernetesResource.builder().resourceId(resourceId).build())
+            .collect(toList());
+    V1Secret previousRelease = new V1SecretBuilder().withType("previousRelease").build();
+    doReturn(previousRelease).when(releaseService).getLastSuccessfulRelease(anyList(), anyInt());
+    doReturn(previousResources).when(releaseService).getResourcesFromRelease(eq(previousRelease));
+    doReturn(resources).when(releaseService).getResourcesFromRelease(eq(currentRelease));
     when(k8sTaskHelperBase.arrangeResourceIdsInDeletionOrder(anyList())).thenAnswer(i -> i.getArguments()[0]);
 
     doThrow(new InvalidRequestException("dummy exception"))
@@ -696,7 +540,6 @@ public class K8sRollingRollbackBaseHandlerTest extends CategoryTest {
                            rollbackHandlerConfig, 1, logCallback, k8sDelegateTaskParams))
         .doesNotThrowAnyException();
 
-    //    verify(releaseHistory, times(1)).getPreviousRollbackEligibleRelease(anyInt());
     verify(k8sTaskHelperBase, times(1))
         .executeDeleteHandlingPartialExecution(
             any(Kubectl.class), any(K8sDelegateTaskParams.class), anyList(), any(LogCallback.class), anyBoolean());
@@ -712,7 +555,6 @@ public class K8sRollingRollbackBaseHandlerTest extends CategoryTest {
     k8sRollingRollbackBaseHandler.deleteNewResourcesForCurrentFailedRelease(
         rollbackHandlerConfig, 1, logCallback, k8sDelegateTaskParams);
 
-    //    verify(releaseHistory, never()).getPreviousRollbackEligibleRelease(anyInt());
     verify(k8sTaskHelperBase, never())
         .executeDeleteHandlingPartialExecution(
             any(Kubectl.class), any(K8sDelegateTaskParams.class), anyList(), any(LogCallback.class), anyBoolean());
@@ -724,12 +566,10 @@ public class K8sRollingRollbackBaseHandlerTest extends CategoryTest {
   public void testDeleteWithNoPreviousSuccessfulReleasePresent() throws Exception {
     K8sRollingRollbackHandlerConfig rollbackHandlerConfig = new K8sRollingRollbackHandlerConfig();
     rollbackHandlerConfig.setReleaseHistory(releaseHistory);
-    //    doReturn(null).when(releaseHistory).getPreviousRollbackEligibleRelease(anyInt());
 
     k8sRollingRollbackBaseHandler.deleteNewResourcesForCurrentFailedRelease(
         rollbackHandlerConfig, 1, logCallback, k8sDelegateTaskParams);
 
-    //    verify(releaseHistory, times(1)).getPreviousRollbackEligibleRelease(anyInt());
     verify(k8sTaskHelperBase, never())
         .executeDeleteHandlingPartialExecution(
             any(Kubectl.class), any(K8sDelegateTaskParams.class), anyList(), any(LogCallback.class), anyBoolean());
@@ -741,12 +581,10 @@ public class K8sRollingRollbackBaseHandlerTest extends CategoryTest {
   public void testDeleteAbortCase() throws Exception {
     K8sRollingRollbackHandlerConfig rollbackHandlerConfig = new K8sRollingRollbackHandlerConfig();
     rollbackHandlerConfig.setReleaseHistory(releaseHistory);
-    //    rollbackHandlerConfig.setRelease(Release.builder().status(Succeeded).build());
 
     k8sRollingRollbackBaseHandler.deleteNewResourcesForCurrentFailedRelease(
         rollbackHandlerConfig, null, logCallback, k8sDelegateTaskParams);
 
-    //    verify(releaseHistory, never()).getPreviousRollbackEligibleRelease(anyInt());
     verify(k8sTaskHelperBase, never())
         .executeDeleteHandlingPartialExecution(
             any(Kubectl.class), any(K8sDelegateTaskParams.class), anyList(), any(LogCallback.class), anyBoolean());
