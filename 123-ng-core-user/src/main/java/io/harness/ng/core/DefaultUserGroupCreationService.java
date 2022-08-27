@@ -6,6 +6,8 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.exception.DuplicateFieldException;
+import io.harness.lock.AcquiredLock;
+import io.harness.lock.PersistentLocker;
 import io.harness.ng.core.api.UserGroupService;
 import io.harness.ng.core.entities.Organization;
 import io.harness.ng.core.entities.Project;
@@ -21,6 +23,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 import io.harness.ng.core.user.entities.UserMembership.UserMembershipKeys;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -41,45 +44,58 @@ public class DefaultUserGroupCreationService implements Runnable {
     private final OrganizationService organizationService;
     private final ProjectService projectService;
     private final UserMembershipRepository userMembershipRepository;
+    private final PersistentLocker persistentLocker;
 
     private static final String DEBUG_MESSAGE = "DefaultUserGroupCreationService: ";
+    private static final String LOCK_NAME = "DefaultUserGroupsCreationJobLock";
 
     @Inject
     public DefaultUserGroupCreationService(UserGroupService userGroupService, OrganizationService organizationService,
-                                           ProjectService projectService, UserMembershipRepository userMembershipRepository) {
+                                           ProjectService projectService, UserMembershipRepository userMembershipRepository, PersistentLocker persistentLocker) {
         this.userGroupService = userGroupService;
         this.organizationService = organizationService;
         this.projectService = projectService;
         this.userMembershipRepository = userMembershipRepository;
+        this.persistentLocker = persistentLocker;
     }
 
     @Override
     public void run() {
         log.info(DEBUG_MESSAGE + "Started running...");
-        try {
-            log.info(DEBUG_MESSAGE + "Setting SecurityContext.");
-            SecurityContextBuilder.setContext(new ServicePrincipal(NG_MANAGER.getServiceId()));
-            log.info(DEBUG_MESSAGE + "Setting SecurityContext completed.");
-            createDefaultUserGroups();
-        } catch (Exception ex) {
-            log.error(DEBUG_MESSAGE + " unexpectedly stopped", ex);
-        } finally {
-            log.info(DEBUG_MESSAGE + "Unsetting SecurityContext.");
-            SecurityContextBuilder.unsetCompleteContext();
-            log.info(DEBUG_MESSAGE + "Unsetting SecurityContext completed.");
+        log.info(DEBUG_MESSAGE + "Trying to acquire lock...");
+        try (AcquiredLock<?> lock = persistentLocker.tryToAcquireLock(LOCK_NAME, Duration.ofMinutes(10))) {
+            if (lock == null) {
+                log.info(DEBUG_MESSAGE + "failed to acquire lock");
+                return;
+            }
+            try {
+                log.info(DEBUG_MESSAGE + "Setting SecurityContext.");
+                SecurityContextBuilder.setContext(new ServicePrincipal(NG_MANAGER.getServiceId()));
+                log.info(DEBUG_MESSAGE + "Setting SecurityContext completed.");
+                createDefaultUserGroups();
+            } catch (Exception ex) {
+                log.error(DEBUG_MESSAGE + " unexpected error occurred while Setting SecurityContext", ex);
+            } finally {
+                log.info(DEBUG_MESSAGE + "Unsetting SecurityContext.");
+                SecurityContextBuilder.unsetCompleteContext();
+                log.info(DEBUG_MESSAGE + "Unsetting SecurityContext completed.");
+            }
+            log.info(DEBUG_MESSAGE + "Stopped running...");
         }
-        log.info(DEBUG_MESSAGE + "Stopped running...");
+        catch (Exception ex) {
+            log.error(DEBUG_MESSAGE + " failed to acquire lock", ex);
+        }
     }
 
     private void createDefaultUserGroups() {
         log.info(DEBUG_MESSAGE + "User Groups creation started.");
 
         try {
-            List<String> accountIdsToBeInserted = organizationService.getDistinctAccounts();
-            if (isEmpty(accountIdsToBeInserted)) {
+            List<String> distinctAccountIds = organizationService.getDistinctAccounts();
+            if (isEmpty(distinctAccountIds)) {
                 return;
             }
-            createUserGroupForAccounts(accountIdsToBeInserted);
+            createUserGroupForAccounts(distinctAccountIds);
         } catch (Exception ex) {
             log.error(DEBUG_MESSAGE + " Fetching all accounts failed : ", ex);
         }
