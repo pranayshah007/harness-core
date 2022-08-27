@@ -11,7 +11,6 @@ import io.harness.ModuleType;
 import io.harness.beans.FeatureName;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnsupportedOperationException;
-import io.harness.ff.FeatureFlagService;
 import io.harness.licensing.Edition;
 import io.harness.licensing.LicenseType;
 import io.harness.licensing.entities.modules.CDModuleLicense;
@@ -45,6 +44,7 @@ import io.harness.subscription.params.ItemParams;
 import io.harness.subscription.params.SubscriptionParams;
 import io.harness.subscription.params.UsageKey;
 import io.harness.subscription.services.SubscriptionService;
+import io.harness.subscription.utils.NGFeatureFlagHelperService;
 
 import com.google.common.base.Strings;
 import com.google.inject.Inject;
@@ -65,7 +65,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   private final ModuleLicenseRepository licenseRepository;
   private final StripeCustomerRepository stripeCustomerRepository;
   private final SubscriptionDetailRepository subscriptionDetailRepository;
-  private final FeatureFlagService featureFlagService;
+  private final NGFeatureFlagHelperService nGFeatureFlagHelperService;
 
   private final Map<String, StripeEventHandler> eventHandlers;
 
@@ -74,12 +74,12 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   @Inject
   public SubscriptionServiceImpl(StripeHelper stripeHelper, ModuleLicenseRepository licenseRepository,
       StripeCustomerRepository stripeCustomerRepository, SubscriptionDetailRepository subscriptionDetailRepository,
-      FeatureFlagService featureFlagService, Map<String, StripeEventHandler> eventHandlers) {
+      NGFeatureFlagHelperService nGFeatureFlagHelperService, Map<String, StripeEventHandler> eventHandlers) {
     this.stripeHelper = stripeHelper;
     this.licenseRepository = licenseRepository;
     this.stripeCustomerRepository = stripeCustomerRepository;
     this.subscriptionDetailRepository = subscriptionDetailRepository;
-    this.featureFlagService = featureFlagService;
+    this.nGFeatureFlagHelperService = nGFeatureFlagHelperService;
     this.eventHandlers = eventHandlers;
   }
 
@@ -514,7 +514,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   }
 
   private void isSelfServiceEnable(String accountIdentifier) {
-    if (!featureFlagService.isEnabled(FeatureName.SELF_SERVICE_ENABLED, accountIdentifier)) {
+    if (!nGFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.SELF_SERVICE_ENABLED)) {
       throw new UnsupportedOperationException("Self Service is currently unavailable");
     }
   }
