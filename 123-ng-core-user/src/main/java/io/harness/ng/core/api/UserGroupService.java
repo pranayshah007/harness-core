@@ -93,9 +93,10 @@ public interface UserGroupService {
 
   void sanitize(Scope scope, String identifier);
 
-  void setUpDefaultUserGroup(Scope scope);
+  UserGroup createDefaultUserGroup(UserGroupDTO userGroupDTO);
 
-  boolean exists(Scope scope, String userGroupIdentifier);
+  UserGroup addMemberToDefaultUserGroup(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String userGroupIdentifier, String userIdentifier);
 
-  void addUserToDefaultUserGroups(Scope scope, String userId);
+  UserGroup updateDefaultUserGroup(UserGroup userGroup);
 }

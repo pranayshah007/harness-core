@@ -37,7 +37,7 @@ import io.harness.enforcement.client.annotation.FeatureRestrictionCheck;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
-import io.harness.ng.core.api.UserGroupService;
+import io.harness.ng.core.api.DefaultUserGroupService;
 import io.harness.ng.core.common.beans.NGTag.NGTagKeys;
 import io.harness.ng.core.dto.OrganizationDTO;
 import io.harness.ng.core.dto.OrganizationFilterDTO;
@@ -98,13 +98,13 @@ public class OrganizationServiceImpl implements OrganizationService {
   private final ScopeAccessHelper scopeAccessHelper;
   private final OrganizationInstrumentationHelper instrumentationHelper;
   private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
-  private final UserGroupService userGroupService;
+  private final DefaultUserGroupService defaultUserGroupService;
 
   @Inject
   public OrganizationServiceImpl(OrganizationRepository organizationRepository, OutboxService outboxService,
       @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate, NgUserService ngUserService,
       AccessControlClient accessControlClient, ScopeAccessHelper scopeAccessHelper,
-      OrganizationInstrumentationHelper instrumentationHelper, NGFeatureFlagHelperService ngFeatureFlagHelperService, UserGroupService userGroupService) {
+      OrganizationInstrumentationHelper instrumentationHelper, NGFeatureFlagHelperService ngFeatureFlagHelperService, DefaultUserGroupService defaultUserGroupService) {
     this.organizationRepository = organizationRepository;
     this.outboxService = outboxService;
     this.transactionTemplate = transactionTemplate;
@@ -113,7 +113,7 @@ public class OrganizationServiceImpl implements OrganizationService {
     this.scopeAccessHelper = scopeAccessHelper;
     this.instrumentationHelper = instrumentationHelper;
     this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;
-    this.userGroupService = userGroupService;
+    this.defaultUserGroupService = defaultUserGroupService;
   }
 
   @Override
@@ -143,7 +143,7 @@ public class OrganizationServiceImpl implements OrganizationService {
 
   private void setupOrganization(Scope scope) {
     try {
-      userGroupService.setUpDefaultUserGroup(scope);
+      defaultUserGroupService.create(scope, emptyList());
     } catch (DuplicateFieldException ex) {
       log.error("User Group Creation failed for Organization:" + scope.toString() + "as User Group already exists", ex);
     } catch (Exception ex) {

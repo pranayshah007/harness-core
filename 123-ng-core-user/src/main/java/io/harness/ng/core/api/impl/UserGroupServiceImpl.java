@@ -157,6 +157,10 @@ public class UserGroupServiceImpl implements UserGroupService {
     return createInternal(userGroupDTO);
   }
 
+  public UserGroup createDefaultUserGroup(UserGroupDTO userGroupDTO) {
+    return createInternal(userGroupDTO);
+  }
+
   private UserGroup createInternal(UserGroupDTO userGroupDTO) {
     try {
       UserGroup userGroup = toEntity(userGroupDTO);
@@ -169,8 +173,8 @@ public class UserGroupServiceImpl implements UserGroupService {
       }));
     } catch (DuplicateKeyException ex) {
       throw new DuplicateFieldException(
-              String.format("Try using different user group identifier, [%s] cannot be used", userGroupDTO.getIdentifier()),
-              USER_SRE, ex);
+          String.format("Try using different user group identifier, [%s] cannot be used", userGroupDTO.getIdentifier()),
+          USER_SRE, ex);
     }
   }
 
@@ -198,9 +202,17 @@ public class UserGroupServiceImpl implements UserGroupService {
   public UserGroup update(UserGroupDTO userGroupDTO) {
     UserGroup savedUserGroup = getOrThrow(userGroupDTO.getAccountIdentifier(), userGroupDTO.getOrgIdentifier(),
         userGroupDTO.getProjectIdentifier(), userGroupDTO.getIdentifier());
+    checkUpdateForHarnessManagedGroup(userGroupDTO, savedUserGroup);
     UserGroup userGroup = toEntity(userGroupDTO);
     userGroup.setId(savedUserGroup.getId());
     userGroup.setVersion(savedUserGroup.getVersion());
+    return updateInternal(userGroup, toDTO(savedUserGroup));
+  }
+
+  @Override
+  public UserGroup updateDefaultUserGroup(UserGroup userGroup) {
+    UserGroup savedUserGroup = getOrThrow(userGroup.getAccountIdentifier(), userGroup.getOrgIdentifier(),
+        userGroup.getProjectIdentifier(), userGroup.getIdentifier());
     return updateInternal(userGroup, toDTO(savedUserGroup));
   }
 
@@ -209,7 +221,6 @@ public class UserGroupServiceImpl implements UserGroupService {
     UserGroup savedUserGroup = getOrThrow(userGroupDTO.getAccountIdentifier(), userGroupDTO.getOrgIdentifier(),
         userGroupDTO.getProjectIdentifier(), userGroupDTO.getIdentifier());
     checkIfSCIMFieldsAreNotUpdatedInExternallyManagedGroup(userGroupDTO, savedUserGroup);
-    checkUpdateForHarnessManagedGroup(userGroupDTO, savedUserGroup);
     return update(userGroupDTO);
   }
 
@@ -221,13 +232,16 @@ public class UserGroupServiceImpl implements UserGroupService {
     }
 
     cannotUpdateUsers(toBeSavedUserGroup, savedUserGroup, "Update is not supported for externally managed group ");
-    cannotChangeUserGroupName(toBeSavedUserGroup, savedUserGroup, "The name cannot be updated for externally managed group");
+    cannotChangeUserGroupName(
+        toBeSavedUserGroup, savedUserGroup, "The name cannot be updated for externally managed group");
   }
 
   private void checkUpdateForHarnessManagedGroup(UserGroupDTO toBeSavedUserGroup, UserGroup savedUserGroup) {
     if (savedUserGroup.isHarnessManaged()) {
-      cannotUpdateUsers(toBeSavedUserGroup, savedUserGroup, "Update is not supported for harness managed group ");
-      cannotChangeUserGroupName(toBeSavedUserGroup, savedUserGroup, "The name cannot be updated for harness managed group.");
+      cannotUpdateUsers(
+          toBeSavedUserGroup, savedUserGroup, "Updating users is not supported for harness managed group ");
+      cannotChangeUserGroupName(
+          toBeSavedUserGroup, savedUserGroup, "The name cannot be updated for harness managed group.");
     }
   }
 
@@ -239,9 +253,10 @@ public class UserGroupServiceImpl implements UserGroupService {
     }
   }
 
-  private void cannotChangeUserGroupName(UserGroupDTO toBeSavedUserGroup, UserGroup savedUserGroup, String errorMessage) {
+  private void cannotChangeUserGroupName(
+      UserGroupDTO toBeSavedUserGroup, UserGroup savedUserGroup, String errorMessage) {
     if (!savedUserGroup.getName().equals(toBeSavedUserGroup.getName())) {
-      throw new InvalidRequestException("The name cannot be updated for externally managed group");
+      throw new InvalidRequestException(errorMessage);
     }
   }
 
@@ -375,9 +390,15 @@ public class UserGroupServiceImpl implements UserGroupService {
 
   @Override
   public UserGroup addMember(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-                             String userGroupIdentifier, String userIdentifier) {
+      String userGroupIdentifier, String userIdentifier) {
     UserGroup existingUserGroup = getOrThrow(accountIdentifier, orgIdentifier, projectIdentifier, userGroupIdentifier);
     checkForHarnessManagedUserGroup(existingUserGroup);
+    return addMemberInternal(accountIdentifier, orgIdentifier, projectIdentifier, userGroupIdentifier, userIdentifier);
+  }
+
+  @Override
+  public UserGroup addMemberToDefaultUserGroup(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String userGroupIdentifier, String userIdentifier) {
     return addMemberInternal(accountIdentifier, orgIdentifier, projectIdentifier, userGroupIdentifier, userIdentifier);
   }
 
@@ -429,33 +450,9 @@ public class UserGroupServiceImpl implements UserGroupService {
   }
 
   @Override
-  public void addUserToDefaultUserGroups(Scope scope, String userId) {
-    addUserToDefaultUserGroup(scope.getAccountIdentifier(), null, null, DEFAULT_ACCOUNT_LEVEL_USER_GROUP_IDENTIFIER, userId);
-    if (!isEmpty(scope.getOrgIdentifier())) {
-      addUserToDefaultUserGroup(scope.getAccountIdentifier(), scope.getOrgIdentifier(), null, DEFAULT_ORGANIZATION_LEVEL_USER_GROUP_IDENTIFIER, userId);
-    }
-    if (!isEmpty(scope.getProjectIdentifier())) {
-      addUserToDefaultUserGroup(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), DEFAULT_PROJECT_LEVEL_USER_GROUP_IDENTIFIER, userId);
-    }
-  }
-
-  private void addUserToDefaultUserGroup(String accountIdentifier, String orgIdentifier, String projectIdentifier, String userGroupId, String userId) {
-    Optional<UserGroup> userGroupOptional = get(accountIdentifier, orgIdentifier, projectIdentifier, userGroupId);
-    if (!userGroupOptional.isPresent())
-    {
-      //Skipping safe. As Default UG at that scope may not be present if Migration has not run yet for that scope. And migration will add user to UG.
-      //TODO: Remove once migration job has run for all scopes.
-      return;
-    }
-    if (!checkMember(accountIdentifier, orgIdentifier, projectIdentifier, userGroupId, userId)) {
-      addMemberInternal(accountIdentifier, orgIdentifier, projectIdentifier, userGroupId, userId);
-    }
-  }
-
-  @Override
   public UserGroup removeMember(Scope scope, String userGroupIdentifier, String userIdentifier) {
     UserGroup existingUserGroup = getOrThrow(
-            scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), userGroupIdentifier);
+        scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), userGroupIdentifier);
     checkForHarnessManagedUserGroup(existingUserGroup);
     return removeMemberInternal(scope, userGroupIdentifier, userIdentifier);
   }
@@ -466,10 +463,9 @@ public class UserGroupServiceImpl implements UserGroupService {
     }
   }
 
-
   private UserGroup removeMemberInternal(Scope scope, String userGroupIdentifier, String userIdentifier) {
     UserGroup existingUserGroup = getOrThrow(
-            scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), userGroupIdentifier);
+        scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), userGroupIdentifier);
     UserGroupDTO oldUserGroup = (UserGroupDTO) HObjectMapper.clone(toDTO(existingUserGroup));
     validateAtleastOneAdminExistAfterRemoval(scope, userGroupIdentifier, userIdentifier);
     existingUserGroup.getUsers().remove(userIdentifier);
@@ -500,7 +496,8 @@ public class UserGroupServiceImpl implements UserGroupService {
                       .projectIdentifier(projectIdentifier)
                       .build();
     List<String> userGroupIdentifiers = userGroups.stream().map(UserGroup::getIdentifier).collect(Collectors.toList());
-    userGroupIdentifiers.forEach(userGroupIdentifier -> removeMemberInternal(scope, userGroupIdentifier, userIdentifier));
+    userGroupIdentifiers.forEach(
+        userGroupIdentifier -> removeMemberInternal(scope, userGroupIdentifier, userIdentifier));
   }
 
   private Criteria createCriteriaByScopeAndUsersIn(
@@ -793,90 +790,6 @@ public class UserGroupServiceImpl implements UserGroupService {
     List<String> userIds = ngUserService.listUserIds(scope);
     userIds = userIds == null ? new ArrayList<>() : userIds;
     return new HashSet<>(Sets.difference(currentUserIds, new HashSet<>(userIds)));
-  }
-
-  @Override
-  public boolean exists(Scope scope, String userGroupIdentifier) {
-    Optional<UserGroup> optionalUserGroup =  get(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), userGroupIdentifier);
-    return optionalUserGroup.isPresent();
-  }
-
-  @Override
-  public void setUpDefaultUserGroup(Scope scope) {
-    String userGroupIdentifier = DEFAULT_ACCOUNT_LEVEL_USER_GROUP_IDENTIFIER;
-    String userGroupName = "Account All Users";
-    String userGroupDescription = "Account all users user group";
-    if (isNotEmpty(scope.getProjectIdentifier())) {
-      userGroupIdentifier = DEFAULT_PROJECT_LEVEL_USER_GROUP_IDENTIFIER;
-      userGroupName = "Project All Users";
-      userGroupDescription = "Project all users user group";
-    } else if (isNotEmpty(scope.getOrgIdentifier())) {
-      userGroupIdentifier = DEFAULT_ORGANIZATION_LEVEL_USER_GROUP_IDENTIFIER;
-      userGroupName = "Organization All Users";
-      userGroupDescription = "Organization all users user group";
-    }
-
-    UserGroupDTO userGroupDTO = UserGroupDTO.builder()
-            .accountIdentifier(scope.getAccountIdentifier())
-            .orgIdentifier(scope.getOrgIdentifier())
-            .projectIdentifier(scope.getProjectIdentifier())
-            .name(userGroupName)
-            .description(userGroupDescription)
-            .identifier(userGroupIdentifier)
-            .isSsoLinked(false)
-            .externallyManaged(false)
-            .harnessManaged(true)
-            .build();
-
-    log.info("Creating all users usergroup {} at scope {}", userGroupIdentifier, scope);
-    createInternal(userGroupDTO);
-    if (isNotEmpty(scope.getProjectIdentifier())) {
-      createRoleAssignmentForProject(userGroupIdentifier, scope);
-    }
-    else if (isNotEmpty(scope.getOrgIdentifier())) {
-      createRoleAssignmentsForOrganization(userGroupIdentifier, scope);
-    }
-    else {
-      createRoleAssignmentsForAccount(userGroupIdentifier, scope);
-    }
-    log.info("Created all users usergroup {} at scope {}", userGroupIdentifier, scope);
-  }
-
-  private void createRoleAssignmentsForOrganization(String userGroupIdentifier, Scope scope) {
-    createRoleAssignment(userGroupIdentifier, scope, true, ORGANIZATION_VIEWER_ROLE, DEFAULT_ORGANIZATION_LEVEL_RESOURCE_GROUP_IDENTIFIER);
-  }
-
-  private void createRoleAssignmentForProject(String userGroupIdentifier, Scope scope) {
-    createRoleAssignment(userGroupIdentifier, scope, true, PROJECT_VIEWER_ROLE, DEFAULT_PROJECT_LEVEL_RESOURCE_GROUP_IDENTIFIER);
-  }
-
-  private void createRoleAssignment(String userGroupIdentifier, Scope scope, boolean managed, String roleIdentifier, String resourceGroupIdentifier) {
-    List<RoleAssignmentDTO> roleAssignmentDTOList = new ArrayList<>();
-    roleAssignmentDTOList.add(RoleAssignmentDTO.builder()
-            .resourceGroupIdentifier(resourceGroupIdentifier)
-            .roleIdentifier(roleIdentifier)
-            .disabled(false)
-            .managed(managed)
-            .principal(PrincipalDTO.builder().identifier(userGroupIdentifier)
-                    .scopeLevel(ScopeLevel.of(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier()).name().toLowerCase())
-                    .type(USER_GROUP)
-                    .build())
-            .build());
-
-    RoleAssignmentCreateRequestDTO roleAssignmentCreateRequestDTO = RoleAssignmentCreateRequestDTO.builder()
-            .roleAssignments(roleAssignmentDTOList).build();
-
-    log.info("Creating role assignment for all users usergroup {} at scope {}", userGroupIdentifier, scope);
-    NGRestUtils.getResponse(accessControlAdminClient.createMultiRoleAssignment(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), managed, roleAssignmentCreateRequestDTO));
-    log.info("Created role assignment for all users usergroup {} at scope {}", userGroupIdentifier, scope);
-  }
-
-  private void createRoleAssignmentsForAccount(String principalIdentifier, Scope scope) {
-    createRoleAssignment(principalIdentifier, scope, true, ACCOUNT_BASIC_ROLE, DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER);
-    boolean isAccountBasicFeatureFlagEnabled = ngFeatureFlagHelperService.isEnabled(scope.getAccountIdentifier(), FeatureName.ACCOUNT_BASIC_ROLE_ONLY);
-    if (!isAccountBasicFeatureFlagEnabled) {
-      createRoleAssignment(principalIdentifier, scope, false, ACCOUNT_VIEWER_ROLE, DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER);
-    }
   }
 
   private void cannotDeleteHarnessManagedGroup(Optional<UserGroup> userGroupOptional) {
