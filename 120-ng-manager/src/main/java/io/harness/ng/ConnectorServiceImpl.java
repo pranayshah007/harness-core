@@ -213,7 +213,7 @@ public class ConnectorServiceImpl implements ConnectorService {
             connectorInfo.getOrgIdentifier(), connectorInfo.getProjectIdentifier(), connectorInfo.getIdentifier());
       }
       if (connectorHeartbeatTaskId != null || isHarnessManagedSecretManager || !isDefaultBranchConnector
-          || !executeOnDelegate) {
+          || !executeOnDelegate || connectorInfo.getConnectorType().equals(ConnectorType.CUSTOM_SECRET_MANAGER)) {
         if (gitChangeType != null) {
           connectorResponse = getConnectorService(connectorInfo.getConnectorType())
                                   .create(connectorDTO, accountIdentifier, gitChangeType);
