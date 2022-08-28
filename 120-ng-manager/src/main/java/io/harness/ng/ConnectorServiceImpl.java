@@ -207,7 +207,8 @@ public class ConnectorServiceImpl implements ConnectorService {
       final boolean executeOnDelegate = defaultConnectorService.checkConnectorExecutableOnDelegate(connectorInfo);
       boolean isDefaultBranchConnector = gitSyncSdkService.isDefaultBranch(accountIdentifier,
           connectorDTO.getConnectorInfo().getOrgIdentifier(), connectorDTO.getConnectorInfo().getProjectIdentifier());
-      if (!isHarnessManagedSecretManager && isDefaultBranchConnector && executeOnDelegate) {
+      if (!isHarnessManagedSecretManager && isDefaultBranchConnector && executeOnDelegate
+          && !connectorInfo.getConnectorType().equals(ConnectorType.CUSTOM_SECRET_MANAGER)) {
         connectorHeartbeatTaskId = connectorHeartbeatService.createConnectorHeatbeatTask(accountIdentifier,
             connectorInfo.getOrgIdentifier(), connectorInfo.getProjectIdentifier(), connectorInfo.getIdentifier());
       }
