@@ -1010,7 +1010,7 @@ workflowExecutions {"name": "appId_endTs", "background": true} {"appId": 1, "end
 workflowExecutions {"name": "app_pipExecutionId_createdAt", "background": true} {"appId": 1, "pipelineExecutionId": 1, "createdAt": -1}
 workflowExecutions {"name": "appid_status_workflowid_infraMappingIds_createdat", "background": true} {"appId": 1, "status": 1, "workflowId": 1, "infraMappingIds": 1, "createdAt": -1}
 workflowExecutions {"name": "appid_workflowid_infraMappingIds_status_createdat", "background": true} {"appId": 1, "workflowId": 1, "infraMappingIds": 1, "status": 1, "createdAt": -1}
-workflowExecutions {"name": "appid_workflowid_status_createdat", "background": true} {"appId": 1, "workflowId": 1, "status": 1, "createdAt": -1}
+workflowExecutions {"name": "appid_workflowid_status_deployedServices_createdat", "background": true} {"appId": 1, "workflowId": 1, "status": 1, "deployedServices": 1, "createdAt": -1}
 workflowExecutions {"name": "createdAt_1", "background": true} {"createdAt": 1}
 workflowExecutions {"name": "infraDefinitionIds_1", "background": true} {"infraDefinitionIds": 1}
 workflowExecutions {"name": "infraMappingIds_1", "background": true} {"infraMappingIds": 1}
