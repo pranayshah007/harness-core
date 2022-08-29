@@ -99,6 +99,11 @@ public class DefaultUserGroupServiceImpl implements DefaultUserGroupService {
         return userGroupIdentifier;
     }
 
+    @Override
+    public boolean isDefaultUserGroupService(Scope scope, String identifier) {
+        return getUserGroupIdentifier(scope).equals(identifier);
+    }
+
     private String getUserGroupName(Scope scope) {
         String userGroupName = "Account All Users";
         if (isNotEmpty(scope.getProjectIdentifier())) {

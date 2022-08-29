@@ -13,4 +13,5 @@ public interface DefaultUserGroupService {
     UserGroup update(UserGroup userGroup);
     Optional<UserGroup> get(String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier);
     String getUserGroupIdentifier(Scope scope);
+    boolean isDefaultUserGroupService(Scope scope, String identifier);
 }
