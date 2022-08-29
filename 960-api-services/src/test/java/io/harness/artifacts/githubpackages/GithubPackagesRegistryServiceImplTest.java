@@ -439,7 +439,7 @@ public class GithubPackagesRegistryServiceImplTest extends CategoryTest {
 
     ObjectMapper mapper = new ObjectMapper();
 
-    File from = new File("960-api-services/src/test/resources/__files/githubpackages/build-details-for-user.json");
+    File from = new File("960-api-services/src/test/resources/__files/githubpackages/last-successful-for-user.json");
 
     ArrayNode versionsJsonFormat = null;
 
@@ -498,7 +498,7 @@ public class GithubPackagesRegistryServiceImplTest extends CategoryTest {
 
     ObjectMapper mapper = new ObjectMapper();
 
-    File from = new File("960-api-services/src/test/resources/__files/githubpackages/build-details-for-org.json");
+    File from = new File("960-api-services/src/test/resources/__files/githubpackages/last-successful-for-org.json");
 
     ArrayNode versionsJsonFormat = null;
 
