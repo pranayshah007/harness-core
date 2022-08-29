@@ -536,4 +536,63 @@ public class GithubPackagesRegistryServiceImplTest extends CategoryTest {
     assertThat(build.getUiDisplayName()).isEqualTo("Tag# 5");
     assertThat(build.getStatus()).isEqualTo(BuildStatus.SUCCESS);
   }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testGetSpecificVersionForUser() throws IOException {
+    GithubPackagesInternalConfig githubPackagesInternalConfig = GithubPackagesInternalConfig.builder()
+                                                                    .githubPackagesUrl("https://github.com/username")
+                                                                    .authMechanism("UsernameToken")
+                                                                    .username("username")
+                                                                    .token("token")
+                                                                    .build();
+
+    String packageName = "helloworld";
+    String packageType = "container";
+    String org = "";
+    String version = "2";
+    Integer MAX_NO_OF_TAGS_PER_IMAGE = 10000;
+
+    ObjectMapper mapper = new ObjectMapper();
+
+    File from = new File("960-api-services/src/test/resources/__files/githubpackages/build-details-for-user.json");
+
+    ArrayNode versionsJsonFormat = null;
+
+    try {
+      versionsJsonFormat = (ArrayNode) mapper.readTree(from);
+    } catch (IOException e) {
+      doNothing();
+    }
+
+    List<JsonNode> list = new ArrayList<>();
+    for (JsonNode node : versionsJsonFormat) {
+      list.add(node);
+    }
+
+    doReturn(githubPackagesRestClient)
+        .when(githubPackagesRestClientFactory)
+        .getGithubPackagesRestClient(githubPackagesInternalConfig);
+
+    Call<List<JsonNode>> executeCall = mock(Call.class);
+
+    doReturn(executeCall)
+        .when(githubPackagesRestClient)
+        .listVersionsForPackages(anyString(), anyString(), anyString(), anyInt(), anyInt());
+
+    doReturn(Response.success(list)).when(executeCall).execute();
+
+    BuildDetails build =
+        githubPackagesRegistryService.getBuild(githubPackagesInternalConfig, packageName, packageType, version, org);
+
+    assertThat(build.getNumber()).isEqualTo("2");
+    assertThat(build.getArtifactPath()).isEqualTo("ghcr.io/username/helloworld:2");
+    assertThat(build.getBuildUrl()).isEqualTo("https://github.com/username/packages/container/helloworld/39008500");
+    assertThat(build.getBuildDisplayName()).isEqualTo("helloworld: 2");
+    assertThat(build.getBuildFullDisplayName())
+        .isEqualTo("sha256:08cde8fece645d8b60bc13cf85691f0a092238a270c1a95554fc71714cd25237");
+    assertThat(build.getUiDisplayName()).isEqualTo("Tag# 2");
+    assertThat(build.getStatus()).isEqualTo(BuildStatus.SUCCESS);
+  }
 }
