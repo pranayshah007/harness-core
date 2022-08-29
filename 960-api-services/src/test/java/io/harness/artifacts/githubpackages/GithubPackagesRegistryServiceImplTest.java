@@ -476,4 +476,64 @@ public class GithubPackagesRegistryServiceImplTest extends CategoryTest {
     assertThat(build.getUiDisplayName()).isEqualTo("Tag# 5");
     assertThat(build.getStatus()).isEqualTo(BuildStatus.SUCCESS);
   }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testGetLastSuccessfulVersionForOrg() throws IOException {
+    GithubPackagesInternalConfig githubPackagesInternalConfig = GithubPackagesInternalConfig.builder()
+                                                                    .githubPackagesUrl("https://github.com/username")
+                                                                    .authMechanism("UsernameToken")
+                                                                    .username("username")
+                                                                    .token("token")
+                                                                    .build();
+
+    String packageName = "helloworld";
+    String packageType = "container";
+    String org = "org-vtxorxwitty";
+    String versionRegex = "*";
+    Integer MAX_NO_OF_TAGS_PER_IMAGE = 10000;
+
+    ObjectMapper mapper = new ObjectMapper();
+
+    File from = new File("960-api-services/src/test/resources/__files/githubpackages/build-details-for-org.json");
+
+    ArrayNode versionsJsonFormat = null;
+
+    try {
+      versionsJsonFormat = (ArrayNode) mapper.readTree(from);
+    } catch (IOException e) {
+      doNothing();
+    }
+
+    List<JsonNode> list = new ArrayList<>();
+    for (JsonNode node : versionsJsonFormat) {
+      list.add(node);
+    }
+
+    doReturn(githubPackagesRestClient)
+        .when(githubPackagesRestClientFactory)
+        .getGithubPackagesRestClient(githubPackagesInternalConfig);
+
+    Call<List<JsonNode>> executeCall = mock(Call.class);
+
+    doReturn(executeCall)
+        .when(githubPackagesRestClient)
+        .listVersionsForPackagesInOrg(anyString(), anyString(), anyString(), anyString(), anyInt(), anyInt());
+
+    doReturn(Response.success(list)).when(executeCall).execute();
+
+    BuildDetails build = githubPackagesRegistryService.getLastSuccessfulBuildFromRegex(
+        githubPackagesInternalConfig, packageName, packageType, versionRegex, org);
+
+    assertThat(build.getNumber()).isEqualTo("5");
+    assertThat(build.getArtifactPath()).isEqualTo("ghcr.io/org-vtxorxwitty/helloworld:5");
+    assertThat(build.getBuildUrl())
+        .isEqualTo("https://github.com/orgs/org-vtxorxwitty/packages/container/helloworld/39008634");
+    assertThat(build.getBuildDisplayName()).isEqualTo("helloworld: 5");
+    assertThat(build.getBuildFullDisplayName())
+        .isEqualTo("sha256:49f75d46899bf47edbf3558890e1557a008a20b78e3d0b22e9d18cf00d27699d");
+    assertThat(build.getUiDisplayName()).isEqualTo("Tag# 5");
+    assertThat(build.getStatus()).isEqualTo(BuildStatus.SUCCESS);
+  }
 }
