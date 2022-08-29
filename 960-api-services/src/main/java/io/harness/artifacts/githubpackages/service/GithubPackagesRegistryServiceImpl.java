@@ -276,10 +276,10 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
         }
 
         if (EmptyPredicate.isNotEmpty(pageResponse.body())) {
+          response.addAll(pageResponse.body());
           if (pageResponse.body().size() < 100) {
             break;
           }
-          response.addAll(pageResponse.body());
         } else {
           break;
         }
