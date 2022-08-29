@@ -41,6 +41,7 @@ java_library(
               "//960-ng-core-beans/src/main/java/io/harness/pms/ng/core/environment/beans",
               "//960-ng-core-beans/src/main/java/io/harness/serializer",
               "//960-ng-core-beans/src/main/java/io/harness/serializer/kryo",
+              "//960-ng-core-beans/src/main/java/io/harness/steps/shellscript:module",
               "//960-ng-core-beans/src/main/java/io/harness/template/beans",
               "//960-ng-core-beans/src/main/java/io/harness/template/beans/refresh",
 ],)
