@@ -33,6 +33,16 @@ public class BQConst {
       + "startTime  >= '%s' AND startTime < '%s' AND cloudProvider = 'AZURE' "
       + "GROUP BY  azureInstanceId, azureVMProviderId, azureMeterCategory; ";
 
+  public static final String GCP_VM_BILLING_QUERY =
+          "SELECT SUM(cost) as cost, MAX(usage.amount_in_pricing_units) as gcpRate, resource.name as gcpResourceName, service.description gcpServiceName "
+                  + "FROM `%s` "
+                  + "WHERE gcpResourceName IN (`%s`) and usage_start_time >= `%s` and usage_end_time < `%s` and "
+                  + "(sku.description like '%E2 Instance Core running%' OR "
+                  + "sku.description like '%RAM cost%' OR "
+                  + "sku.description like '%CPU cost%' OR "
+                  + "sku.description like '%NETWORK%') "
+                  + "group by gcpResourceName, gcpServiceName";
+
   public static final String EKS_FARGATE_BILLING_QUERY = "SELECT SUM(unblendedcost) as cost, resourceid, usagetype  "
       + "FROM `%s` "
       + "WHERE  "
@@ -57,6 +67,7 @@ public class BQConst {
 
   public static final String cost = "cost";
   public static final String azureRate = "azureRate";
+  public static final String gcpRate = "gcpRate";
   public static final String effectiveCost = "effectivecost";
   public static final String resourceId = "resourceid";
   public static final String count = "count";
@@ -66,12 +77,16 @@ public class BQConst {
   public static final String usageType = "usagetype";
 
   public static final String networkProductFamily = "Data Transfer";
+  public static final String gcpNetworkProductFamily = "Networking";
   public static final String computeProductFamily = "Compute Instance";
 
   public static final String eksNetworkInstanceType = "DataTransfer";
   public static final String eksCpuInstanceType = "vCPU-Hours";
   public static final String eksMemoryInstanceType = "Fargate-GB-Hours";
   public static final String azureMeterCategory = "azureMeterCategory";
+  public static final String gcpServiceName = "gcpServiceName";
   public static final String azureVMProviderId = "azureVMProviderId";
+  public static final String gcpResourceName = "gcpResourceName";
   public static final String azureVMMeterCategory = "Virtual Machines";
+  public static final String gcpComputeService = "Compute Engine";
 }

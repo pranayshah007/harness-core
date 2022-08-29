@@ -67,6 +67,7 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
   private static final String TABLE_SUFFIX = "%s_%s";
   private static final String AWS_CUR_TABLE_NAME = "awscur_%s";
   private static final String AZURE_TABLE_NAME = "unifiedTable";
+  private static final String GCP_TABLE_NAME_WITH_WILDCARD = "gcp_billing_export_*";
   private String resourceCondition = "resourceid like '%%%s%%'";
 
   @Override
@@ -154,6 +155,8 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
           return convertToAwsInstanceBillingData(result);
         case "AZURE":
           return convertToAzureInstanceBillingData(result);
+        case "GCP":
+          return convertToGcpInstanceBillingData(result);
         default:
           break;
       }
@@ -165,6 +168,71 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
       log.error("Exception Failed to get {} Billing Data", cloudProviderType, ex);
     }
     return Collections.emptyMap();
+  }
+
+  private Map<String, VMInstanceBillingData> convertToGcpInstanceBillingData(TableResult result) {
+    List<VMInstanceServiceBillingData> vmInstanceServiceBillingDataList =
+            convertToGcpInstanceServiceBillingData(result);
+
+    Map<String, VMInstanceBillingData> vmInstanceBillingDataMap = new HashMap<>();
+    vmInstanceServiceBillingDataList.forEach(vmInstanceServiceBillingData -> {
+      String resourceId = vmInstanceServiceBillingData.getResourceId();
+      VMInstanceBillingData vmInstanceBillingData = VMInstanceBillingData.builder().resourceId(resourceId).build();
+      if (vmInstanceBillingDataMap.containsKey(resourceId)) {
+        vmInstanceBillingData = vmInstanceBillingDataMap.get(resourceId);
+      }
+
+      if (BQConst.gcpNetworkProductFamily.equals(vmInstanceServiceBillingData.getProductFamily())) {
+        vmInstanceBillingData =
+                vmInstanceBillingData.toBuilder().networkCost(vmInstanceServiceBillingData.getCost()).build();
+      }
+
+      if (BQConst.gcpComputeService.equals(vmInstanceServiceBillingData.getProductFamily())
+              || vmInstanceServiceBillingData.getProductFamily() == null) {
+        double cost = vmInstanceServiceBillingData.getCost();
+        double rate = vmInstanceServiceBillingData.getRate();
+        if (null != vmInstanceServiceBillingData.getEffectiveCost()) {
+          cost = vmInstanceServiceBillingData.getEffectiveCost();
+        }
+        vmInstanceBillingData = vmInstanceBillingData.toBuilder().computeCost(cost).rate(rate).build();
+      }
+
+      vmInstanceBillingDataMap.put(resourceId, vmInstanceBillingData);
+    });
+
+    log.debug("GCP: resource map data {} ", vmInstanceBillingDataMap);
+    return vmInstanceBillingDataMap;
+  }
+
+  private List<VMInstanceServiceBillingData> convertToGcpInstanceServiceBillingData(TableResult result) {
+
+    FieldList fields = getFieldList(result);
+    List<VMInstanceServiceBillingData> instanceServiceBillingDataList = new ArrayList<>();
+    Iterable<FieldValueList> fieldValueLists = getFieldValueLists(result);
+    for (FieldValueList row : fieldValueLists) {
+      VMInstanceServiceBillingDataBuilder dataBuilder = VMInstanceServiceBillingData.builder();
+      for (Field field : fields) {
+        switch (field.getName()) {
+          case BQConst.gcpResourceName:
+            dataBuilder.resourceId(fetchStringValue(row, field));
+            break;
+          case BQConst.cost:
+            dataBuilder.cost(getNumericValue(row, field));
+            break;
+          case BQConst.gcpRate:
+            dataBuilder.rate(getNumericValue(row, field));
+            break;
+          case BQConst.gcpServiceName:
+            dataBuilder.productFamily(fetchStringValue(row, field));
+            break;
+          default:
+            break;
+        }
+      }
+      instanceServiceBillingDataList.add(dataBuilder.build());
+    }
+    log.info("Resource Id data {} ", instanceServiceBillingDataList);
+    return instanceServiceBillingDataList;
   }
 
   private Map<String, VMInstanceBillingData> convertToAzureInstanceBillingData(TableResult result) {
@@ -319,7 +387,17 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
   @Override
   public Map<String, VMInstanceBillingData> getGcpVMBillingData(
       List<String> resourceIds, Instant startTime, Instant endTime, String dataSetId) {
-    return null;
+
+    String query = BQConst.GCP_VM_BILLING_QUERY;
+    String resourceId = String.join("','", resourceIds);
+    String projectTableName = getGcpProjectTableName(dataSetId);
+    String formattedQuery = format(query, projectTableName, resourceId, startTime, endTime);
+    return query(formattedQuery, "GCP");
+  }
+
+  private String getGcpProjectTableName(String dataSetId) {
+    BillingDataPipelineConfig billingDataPipelineConfig = mainConfig.getBillingDataPipelineConfig();
+    return format("%s.%s.%s", billingDataPipelineConfig.getGcpProjectId(), dataSetId, GCP_TABLE_NAME_WITH_WILDCARD);
   }
 
   public FieldList getFieldList(TableResult result) {
