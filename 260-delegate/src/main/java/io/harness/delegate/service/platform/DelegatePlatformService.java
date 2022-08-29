@@ -21,7 +21,6 @@ import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
 import static io.harness.logging.Misc.getDurationString;
 import static io.harness.network.Localhost.getLocalHostAddress;
-import static io.harness.network.SafeHttpCall.execute;
 import static io.harness.threading.Morpheus.sleep;
 import static io.harness.utils.MemoryPerformanceUtils.memoryUsage;
 
@@ -50,37 +49,26 @@ import io.harness.delegate.beans.DelegateTaskAbortEvent;
 import io.harness.delegate.beans.DelegateTaskEvent;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
-import io.harness.delegate.beans.ErrorNotifyResponseData;
-import io.harness.delegate.beans.SecretDetail;
 import io.harness.delegate.beans.TaskData;
-import io.harness.delegate.expression.DelegateExpressionEvaluator;
 import io.harness.delegate.logging.DelegateStackdriverLogAppender;
 import io.harness.delegate.service.common.AbstractDelegateAgentServiceImpl;
 import io.harness.delegate.service.common.DelegateTaskExecutionData;
 import io.harness.delegate.task.ActivityAccess;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.tasklogging.TaskLogContext;
-import io.harness.delegate.task.validation.DelegateConnectionResultDetail;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.UnexpectedException;
-import io.harness.expression.ExpressionReflectionUtils;
 import io.harness.logging.AutoLogContext;
 import io.harness.network.FibonacciBackOff;
 import io.harness.rest.RestResponse;
 import io.harness.security.TokenGenerator;
-import io.harness.security.encryption.DelegateDecryptionService;
-import io.harness.security.encryption.EncryptedRecord;
-import io.harness.security.encryption.EncryptionConfig;
 import io.harness.serializer.JsonUtils;
 import io.harness.threading.Schedulable;
 
 import software.wings.beans.TaskType;
 import software.wings.beans.bash.BashScriptParameters;
 import software.wings.delegatetasks.bash.BashScriptTask;
-import software.wings.delegatetasks.validation.DelegateConnectionResult;
 import software.wings.misc.MemoryHelper;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
@@ -98,10 +86,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.ConcurrentModificationException;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -182,7 +168,7 @@ public class DelegatePlatformService extends AbstractDelegateAgentServiceImpl {
   //  @Inject(optional = true) @Nullable private LogStreamingClient logStreamingClient;
   //  @Inject(optional = true) @Nullable private DelegateServiceAgentClient delegateServiceAgentClient;
   //  @Inject private KryoSerializer kryoSerializer;
-  @Inject private DelegateDecryptionService delegateDecryptionService;
+  //  @Inject private DelegateDecryptionService delegateDecryptionService;
   @Inject private AsyncHttpClient asyncHttpClient;
   @Inject private TokenGenerator tokenGenerator;
 
@@ -898,7 +884,8 @@ public class DelegatePlatformService extends AbstractDelegateAgentServiceImpl {
 
         if (isEmpty(delegateTaskPackage.getDelegateInstanceId())
             || DELEGATE_INSTANCE_ID.equals(delegateTaskPackage.getDelegateInstanceId())) {
-          applyDelegateSecretFunctor(delegateTaskPackage);
+          //          applyDelegateSecretFunctor(delegateTaskPackage); Possibly needed, but hard to break into small
+          //          deps
           // Whitelisted. Proceed immediately.
           log.info("Delegate {} whitelisted for task and accountId: {}", DelegateAgentCommonVariables.getDelegateId(),
               getDelegateConfiguration().getAccountId());
@@ -915,58 +902,6 @@ public class DelegatePlatformService extends AbstractDelegateAgentServiceImpl {
         currentlyExecutingFutures.remove(delegateTaskId);
       }
     }
-  }
-
-  private Consumer<List<DelegateConnectionResult>> getPostValidationFunction(
-      DelegateTaskEvent delegateTaskEvent, String taskId) {
-    return delegateConnectionResults -> {
-      try (AutoLogContext ignored = new TaskLogContext(taskId, OVERRIDE_ERROR)) {
-        // Tools might be installed asynchronously, so get the flag early on
-        currentlyValidatingTasks.remove(taskId);
-        log.info("Removed from validating futures on post validation");
-        List<DelegateConnectionResult> results = Optional.ofNullable(delegateConnectionResults).orElse(emptyList());
-        boolean validated = results.stream().allMatch(DelegateConnectionResult::isValidated);
-        log.info("Validation {} for task", validated ? "succeeded" : "failed");
-        try {
-          DelegateTaskPackage delegateTaskPackage = execute(
-              getDelegateAgentManagerClient().reportConnectionResults(DelegateAgentCommonVariables.getDelegateId(),
-                  delegateTaskEvent.getDelegateTaskId(), getDelegateConfiguration().getAccountId(),
-                  DELEGATE_INSTANCE_ID, getDelegateConnectionResultDetails(results)));
-
-          if (delegateTaskPackage != null && delegateTaskPackage.getData() != null
-              && DELEGATE_INSTANCE_ID.equals(delegateTaskPackage.getDelegateInstanceId())) {
-            applyDelegateSecretFunctor(delegateTaskPackage);
-            executeTask(delegateTaskPackage);
-          } else {
-            log.info("Did not get the go-ahead to proceed for task");
-            if (validated) {
-              log.info("Task validated but was not assigned");
-            }
-          }
-        } catch (IOException e) {
-          log.error("Unable to report validation results for task", e);
-        }
-      }
-    };
-  }
-
-  private List<DelegateConnectionResultDetail> getDelegateConnectionResultDetails(
-      List<DelegateConnectionResult> results) {
-    List<DelegateConnectionResultDetail> delegateConnectionResultDetails = new ArrayList<>();
-    for (DelegateConnectionResult source : results) {
-      DelegateConnectionResultDetail target = DelegateConnectionResultDetail.builder().build();
-      target.setAccountId(source.getAccountId());
-      target.setCriteria(source.getCriteria());
-      target.setDelegateId(source.getDelegateId());
-      target.setDuration(source.getDuration());
-      target.setLastUpdatedAt(source.getLastUpdatedAt());
-      target.setUuid(source.getUuid());
-      target.setValidated(source.isValidated());
-      target.setValidUntil(source.getValidUntil());
-      delegateConnectionResultDetails.add(target);
-    }
-
-    return delegateConnectionResultDetails;
   }
 
   private void executeTask(@NotNull DelegateTaskPackage delegateTaskPackage) {
@@ -1292,97 +1227,97 @@ public class DelegatePlatformService extends AbstractDelegateAgentServiceImpl {
   //    return taskClientBuilder.build();
   //  }
 
-  @VisibleForTesting
-  void applyDelegateSecretFunctor(DelegateTaskPackage delegateTaskPackage) {
-    try {
-      Map<String, EncryptionConfig> encryptionConfigs = delegateTaskPackage.getEncryptionConfigs();
-      Map<String, SecretDetail> secretDetails = delegateTaskPackage.getSecretDetails();
-      if (isEmpty(encryptionConfigs) || isEmpty(secretDetails)) {
-        return;
-      }
+  //  @VisibleForTesting
+  //  void applyDelegateSecretFunctor(DelegateTaskPackage delegateTaskPackage) {
+  //    try {
+  //      Map<String, EncryptionConfig> encryptionConfigs = delegateTaskPackage.getEncryptionConfigs();
+  //      Map<String, SecretDetail> secretDetails = delegateTaskPackage.getSecretDetails();
+  //      if (isEmpty(encryptionConfigs) || isEmpty(secretDetails)) {
+  //        return;
+  //      }
+  //
+  //      Map<EncryptionConfig, List<EncryptedRecord>> encryptionConfigListMap = new HashMap<>();
+  //      secretDetails.forEach(
+  //          (key, secretDetail)
+  //              -> addToEncryptedConfigListMap(encryptionConfigListMap,
+  //                  encryptionConfigs.get(secretDetail.getConfigUuid()), secretDetail.getEncryptedRecord()));
+  //
+  //      Map<String, char[]> decryptedRecords = delegateDecryptionService.decrypt(encryptionConfigListMap);
+  //      Map<String, char[]> secretUuidToValues = new HashMap<>();
+  //
+  //      secretDetails.forEach((key, value) -> {
+  //        char[] secretValue = decryptedRecords.get(value.getEncryptedRecord().getUuid());
+  //        secretUuidToValues.put(key, secretValue);
+  //
+  //        // Adds secret values from the 3 phase decryption to the list of task secrets to be masked
+  //        delegateTaskPackage.getSecrets().add(String.valueOf(secretValue));
+  //      });
+  //
+  //      DelegateExpressionEvaluator delegateExpressionEvaluator = new DelegateExpressionEvaluator(
+  //          secretUuidToValues, delegateTaskPackage.getData().getExpressionFunctorToken());
+  //      applyDelegateExpressionEvaluator(delegateTaskPackage, delegateExpressionEvaluator);
+  //    } catch (Exception e) {
+  //      sendErrorResponse(delegateTaskPackage, e);
+  //      throw e;
+  //    }
+  //  }
 
-      Map<EncryptionConfig, List<EncryptedRecord>> encryptionConfigListMap = new HashMap<>();
-      secretDetails.forEach(
-          (key, secretDetail)
-              -> addToEncryptedConfigListMap(encryptionConfigListMap,
-                  encryptionConfigs.get(secretDetail.getConfigUuid()), secretDetail.getEncryptedRecord()));
+  //  private void addToEncryptedConfigListMap(Map<EncryptionConfig, List<EncryptedRecord>> encryptionConfigListMap,
+  //      EncryptionConfig encryptionConfig, EncryptedRecord encryptedRecord) {
+  //    if (encryptionConfigListMap.containsKey(encryptionConfig)) {
+  //      encryptionConfigListMap.get(encryptionConfig).add(encryptedRecord);
+  //    } else {
+  //      List<EncryptedRecord> encryptedRecordList = new ArrayList<>();
+  //      encryptedRecordList.add(encryptedRecord);
+  //      encryptionConfigListMap.put(encryptionConfig, encryptedRecordList);
+  //    }
+  //  }
 
-      Map<String, char[]> decryptedRecords = delegateDecryptionService.decrypt(encryptionConfigListMap);
-      Map<String, char[]> secretUuidToValues = new HashMap<>();
+  //  private void applyDelegateExpressionEvaluator(
+  //      DelegateTaskPackage delegateTaskPackage, DelegateExpressionEvaluator delegateExpressionEvaluator) {
+  //    try {
+  //      TaskData taskData = delegateTaskPackage.getData();
+  //      if (taskData.getParameters() != null && taskData.getParameters().length == 1
+  //          && taskData.getParameters()[0] instanceof TaskParameters) {
+  //        log.debug("Applying DelegateExpression Evaluator for delegateTask");
+  //        ExpressionReflectionUtils.applyExpression(taskData.getParameters()[0],
+  //            (secretMode, value) -> delegateExpressionEvaluator.substitute(value, new HashMap<>()));
+  //      }
+  //    } catch (Exception e) {
+  //      log.error("Exception occurred during applying DelegateExpression Evaluator for delegateTask.", e);
+  //      throw e;
+  //    }
+  //  }
 
-      secretDetails.forEach((key, value) -> {
-        char[] secretValue = decryptedRecords.get(value.getEncryptedRecord().getUuid());
-        secretUuidToValues.put(key, secretValue);
-
-        // Adds secret values from the 3 phase decryption to the list of task secrets to be masked
-        delegateTaskPackage.getSecrets().add(String.valueOf(secretValue));
-      });
-
-      DelegateExpressionEvaluator delegateExpressionEvaluator = new DelegateExpressionEvaluator(
-          secretUuidToValues, delegateTaskPackage.getData().getExpressionFunctorToken());
-      applyDelegateExpressionEvaluator(delegateTaskPackage, delegateExpressionEvaluator);
-    } catch (Exception e) {
-      sendErrorResponse(delegateTaskPackage, e);
-      throw e;
-    }
-  }
-
-  private void addToEncryptedConfigListMap(Map<EncryptionConfig, List<EncryptedRecord>> encryptionConfigListMap,
-      EncryptionConfig encryptionConfig, EncryptedRecord encryptedRecord) {
-    if (encryptionConfigListMap.containsKey(encryptionConfig)) {
-      encryptionConfigListMap.get(encryptionConfig).add(encryptedRecord);
-    } else {
-      List<EncryptedRecord> encryptedRecordList = new ArrayList<>();
-      encryptedRecordList.add(encryptedRecord);
-      encryptionConfigListMap.put(encryptionConfig, encryptedRecordList);
-    }
-  }
-
-  private void applyDelegateExpressionEvaluator(
-      DelegateTaskPackage delegateTaskPackage, DelegateExpressionEvaluator delegateExpressionEvaluator) {
-    try {
-      TaskData taskData = delegateTaskPackage.getData();
-      if (taskData.getParameters() != null && taskData.getParameters().length == 1
-          && taskData.getParameters()[0] instanceof TaskParameters) {
-        log.debug("Applying DelegateExpression Evaluator for delegateTask");
-        ExpressionReflectionUtils.applyExpression(taskData.getParameters()[0],
-            (secretMode, value) -> delegateExpressionEvaluator.substitute(value, new HashMap<>()));
-      }
-    } catch (Exception e) {
-      log.error("Exception occurred during applying DelegateExpression Evaluator for delegateTask.", e);
-      throw e;
-    }
-  }
-
-  private void sendErrorResponse(DelegateTaskPackage delegateTaskPackage, Exception exception) {
-    String taskId = delegateTaskPackage.getDelegateTaskId();
-    DelegateTaskResponse taskResponse =
-        DelegateTaskResponse.builder()
-            .accountId(delegateTaskPackage.getAccountId())
-            .responseCode(DelegateTaskResponse.ResponseCode.FAILED)
-            .response(ErrorNotifyResponseData.builder().errorMessage(ExceptionUtils.getMessage(exception)).build())
-            .build();
-    log.info("Sending error response for task{}", taskId);
-    try {
-      Response<ResponseBody> resp;
-      int retries = 5;
-      for (int attempt = 0; attempt < retries; attempt++) {
-        resp = getDelegateAgentManagerClient()
-                   .sendTaskStatus(DelegateAgentCommonVariables.getDelegateId(), taskId,
-                       getDelegateConfiguration().getAccountId(), taskResponse)
-                   .execute();
-        if (resp.code() >= 200 && resp.code() <= 299) {
-          log.info("Task {} response sent to manager", taskId);
-          return;
-        }
-        log.warn("Failed to send response for task {}: {}. error: {}. requested url: {} {}", taskId, resp.code(),
-            resp.errorBody() == null ? "null" : resp.errorBody().string(), resp.raw().request().url(), "Retrying.");
-        sleep(ofSeconds(FibonacciBackOff.getFibonacciElement(attempt)));
-      }
-    } catch (Exception e) {
-      log.error("Unable to send response to manager", e);
-    }
-  }
+  //  private void sendErrorResponse(DelegateTaskPackage delegateTaskPackage, Exception exception) {
+  //    String taskId = delegateTaskPackage.getDelegateTaskId();
+  //    DelegateTaskResponse taskResponse =
+  //        DelegateTaskResponse.builder()
+  //            .accountId(delegateTaskPackage.getAccountId())
+  //            .responseCode(DelegateTaskResponse.ResponseCode.FAILED)
+  //            .response(ErrorNotifyResponseData.builder().errorMessage(ExceptionUtils.getMessage(exception)).build())
+  //            .build();
+  //    log.info("Sending error response for task{}", taskId);
+  //    try {
+  //      Response<ResponseBody> resp;
+  //      int retries = 5;
+  //      for (int attempt = 0; attempt < retries; attempt++) {
+  //        resp = getDelegateAgentManagerClient()
+  //                   .sendTaskStatus(DelegateAgentCommonVariables.getDelegateId(), taskId,
+  //                       getDelegateConfiguration().getAccountId(), taskResponse)
+  //                   .execute();
+  //        if (resp.code() >= 200 && resp.code() <= 299) {
+  //          log.info("Task {} response sent to manager", taskId);
+  //          return;
+  //        }
+  //        log.warn("Failed to send response for task {}: {}. error: {}. requested url: {} {}", taskId, resp.code(),
+  //            resp.errorBody() == null ? "null" : resp.errorBody().string(), resp.raw().request().url(), "Retrying.");
+  //        sleep(ofSeconds(FibonacciBackOff.getFibonacciElement(attempt)));
+  //      }
+  //    } catch (Exception e) {
+  //      log.error("Unable to send response to manager", e);
+  //    }
+  //  }
 
   private void logProxyConfiguration() {
     String proxyHost = System.getProperty("https.proxyHost");

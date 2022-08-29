@@ -14,6 +14,7 @@ import io.harness.exception.KeyManagerBuilderException;
 import io.harness.exception.TrustManagerBuilderException;
 import io.harness.security.X509KeyManagerBuilder;
 import io.harness.security.X509TrustManagerBuilder;
+import io.harness.security.encryption.DelegateDecryptionService;
 import io.harness.time.TimeModule;
 import io.harness.version.VersionModule;
 
@@ -22,6 +23,7 @@ import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
+import java.time.Clock;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.TrustManager;
@@ -63,9 +65,10 @@ public class DelegateCommonModule extends AbstractModule {
   protected void configure() {
     install(VersionModule.getInstance());
     install(TimeModule.getInstance());
+
     //        install(new NGDelegateModule());//??
     //        install(ExceptionModule.getInstance());//??
-
+    bind(Clock.class).toInstance(Clock.systemUTC());
     bind(DelegateConfiguration.class).toInstance(configuration);
     bind(DelegateAgentService.class).to(DelegatePlatformService.class);
     // Secrets Related ???
