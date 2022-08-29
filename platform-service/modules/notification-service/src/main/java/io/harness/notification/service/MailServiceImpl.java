@@ -137,8 +137,10 @@ public class MailServiceImpl implements ChannelService {
   private NotificationProcessingResponse send(
       List<String> emailIds, String subject, String body, String notificationId, String accountId) {
     NotificationProcessingResponse notificationProcessingResponse;
+    log.info("Fetching smtpConfig");
     SmtpConfigResponse smtpConfigResponse = notificationSettingsService.getSmtpConfigResponse(accountId);
     if (Objects.nonNull(smtpConfigResponse)) {
+      log.info("Inside if smtpConfigResponse is not null");
       DelegateTaskRequest delegateTaskRequest =
           DelegateTaskRequest.builder()
               .accountId(accountId)
@@ -153,6 +155,8 @@ public class MailServiceImpl implements ChannelService {
                                   .build())
               .executionTimeout(Duration.ofMinutes(1L))
               .build();
+      log.info("SmtpConfig", smtpConfigResponse.getSmtpConfig());
+      log.info("delegateTaskRequest: ", delegateTaskRequest);
       String taskId = delegateGrpcClientWrapper.submitAsyncTask(delegateTaskRequest, Duration.ZERO);
       log.info("Async delegate task created with taskID {}", taskId);
       notificationProcessingResponse = NotificationProcessingResponse.allSent(emailIds.size());
