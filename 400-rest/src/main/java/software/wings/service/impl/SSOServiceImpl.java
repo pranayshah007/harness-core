@@ -374,12 +374,38 @@ public class SSOServiceImpl implements SSOService {
   }
 
   @Override
-  public LdapSettingsWithEncryptedDataDetail getLdapSettingWithEncryptedDataDetail(@NotBlank String accountId) {
-    LdapSettings ldapSettings = ssoSettingService.getLdapSettingsByAccountId(accountId);
-    populateEncryptedFields(ldapSettings);
-    encryptSecretIfFFisEnabled(ldapSettings);
-    ldapSettings.encryptLdapInlineSecret(secretManager);
-    EncryptedDataDetail encryptedDataDetail = ldapSettings.getEncryptedDataDetails(secretManager);
+  public LdapSettingsWithEncryptedDataDetail getLdapSettingWithEncryptedDataDetail(
+      @NotBlank String accountId, LdapSettings inputLdapSettings) {
+    if (null == inputLdapSettings) {
+      LdapSettings ldapSettings = ssoSettingService.getLdapSettingsByAccountId(accountId);
+      populateEncryptedFields(ldapSettings);
+      encryptSecretIfFFisEnabled(ldapSettings);
+      ldapSettings.encryptLdapInlineSecret(secretManager, false);
+      EncryptedDataDetail encryptedDataDetail = ldapSettings.getEncryptedDataDetails(secretManager);
+      return buildLdapSettingsWithEncryptedDataDetail(ldapSettings, encryptedDataDetail);
+    } else {
+      return getLdapSettingsWithEncryptedDataDetailFromInputSettings(accountId, inputLdapSettings);
+    }
+  }
+
+  private LdapSettingsWithEncryptedDataDetail getLdapSettingsWithEncryptedDataDetailFromInputSettings(
+      String accountId, LdapSettings inputLdapSettings) {
+    boolean temporaryEncryption = !populateEncryptedFields(inputLdapSettings);
+    encryptSecretIfFFisEnabled(inputLdapSettings);
+    EncryptedDataDetail encryptedDataDetail = null;
+    try {
+      inputLdapSettings.encryptLdapInlineSecret(secretManager, true);
+      encryptedDataDetail = inputLdapSettings.getEncryptedDataDetails(secretManager);
+    } finally {
+      if (null != encryptedDataDetail) {
+        deleteTempSecret(temporaryEncryption, encryptedDataDetail, inputLdapSettings, accountId);
+      }
+    }
+    return buildLdapSettingsWithEncryptedDataDetail(inputLdapSettings, encryptedDataDetail);
+  }
+
+  private LdapSettingsWithEncryptedDataDetail buildLdapSettingsWithEncryptedDataDetail(
+      LdapSettings ldapSettings, EncryptedDataDetail encryptedDataDetail) {
     return LdapSettingsWithEncryptedDataDetail.builder()
         .ldapSettings(LdapSettingsMapper.ldapSettingsDTO(ldapSettings))
         .encryptedDataDetail(encryptedDataDetail)
@@ -396,7 +422,7 @@ public class SSOServiceImpl implements SSOService {
       @NotNull LdapSettings ldapSettings, @NotBlank final String accountId) {
     boolean temporaryEncryption = !populateEncryptedFields(ldapSettings);
     encryptSecretIfFFisEnabled(ldapSettings);
-    ldapSettings.encryptLdapInlineSecret(secretManager);
+    ldapSettings.encryptLdapInlineSecret(secretManager, false);
     EncryptedDataDetail encryptedDataDetail = ldapSettings.getEncryptedDataDetails(secretManager);
     try {
       SyncTaskContext syncTaskContext = SyncTaskContext.builder()
@@ -416,7 +442,7 @@ public class SSOServiceImpl implements SSOService {
       @NotNull LdapSettings ldapSettings, @NotBlank final String accountId) {
     boolean temporaryEncryption = !populateEncryptedFields(ldapSettings);
     encryptSecretIfFFisEnabled(ldapSettings);
-    ldapSettings.encryptLdapInlineSecret(secretManager);
+    ldapSettings.encryptLdapInlineSecret(secretManager, false);
     EncryptedDataDetail encryptedDataDetail = ldapSettings.getEncryptedDataDetails(secretManager);
     try {
       SyncTaskContext syncTaskContext = SyncTaskContext.builder()
@@ -436,7 +462,7 @@ public class SSOServiceImpl implements SSOService {
       @NotNull LdapSettings ldapSettings, @NotBlank final String accountId) {
     boolean temporaryEncryption = !populateEncryptedFields(ldapSettings);
     encryptSecretIfFFisEnabled(ldapSettings);
-    ldapSettings.encryptLdapInlineSecret(secretManager);
+    ldapSettings.encryptLdapInlineSecret(secretManager, false);
     EncryptedDataDetail encryptedDataDetail = ldapSettings.getEncryptedDataDetails(secretManager);
     try {
       SyncTaskContext syncTaskContext = SyncTaskContext.builder()

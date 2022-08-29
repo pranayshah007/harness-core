@@ -36,4 +36,13 @@ public class CDExpressionResolver {
     return ExpressionEvaluatorUtils.updateExpressions(
         obj, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
   }
+
+  public <T> T evaluateExpression(Ambiance ambiance, String expression, Class<T> type) {
+    Object result = engineExpressionService.evaluateExpression(ambiance, expression);
+    return type.cast(result);
+  }
+
+  public String renderExpression(Ambiance ambiance, String expression) {
+    return engineExpressionService.renderExpression(ambiance, expression);
+  }
 }

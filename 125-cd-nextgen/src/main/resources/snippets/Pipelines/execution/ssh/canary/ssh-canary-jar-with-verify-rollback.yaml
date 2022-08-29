@@ -18,7 +18,6 @@ spec:
                 type: Command
                 timeout: 10m
                 spec:
-                  host: <+repeat.item>
                   onDelegate: false
                   environmentVariables: [ ]
                   outputVariables: [ ]
@@ -27,7 +26,7 @@ spec:
                       name: "Stop Service Rollback"
                       type: Script
                       spec:
-                        workingDirectory: $HARNESS_RUNTIME_PATH/tomcat/bin
+                        workingDirectory: $HOME/<+service.name>/<+env.name>/tomcat/bin
                         shell: Bash
                         source:
                           type: Inline
@@ -37,7 +36,7 @@ spec:
                       name: "Process Stopped Rollback"
                       type: Script
                       spec:
-                        workingDirectory: $HARNESS_RUNTIME_PATH/tomcat/bin
+                        workingDirectory: $HOME/<+service.name>/<+env.name>/tomcat/bin
                         shell: Bash
                         source:
                           type: Inline
@@ -48,7 +47,7 @@ spec:
                       name: "Port Cleared Rollback"
                       type: Script
                       spec:
-                        workingDirectory: $HARNESS_RUNTIME_PATH/tomcat/bin
+                        workingDirectory: $HOME/<+service.name>/<+env.name>/tomcat/bin
                         shell: Bash
                         source:
                           type: Inline
@@ -70,18 +69,18 @@ spec:
                       type: Copy
                       spec:
                         sourceType: Artifact
-                        destinationPath: $HARNESS_RUNTIME_PATH
+                        destinationPath: $HOME/<+service.name>/<+env.name>
                     - identifier: Copy_Config_Rollback_<+phase>
                       name: "Copy Config Rollback"
                       type: Copy
                       spec:
                         sourceType: Config
-                        destinationPath: $HARNESS_RUNTIME_PATH
+                        destinationPath: $HOME/<+service.name>/<+env.name>
                     - identifier: Start_Service_Rollback_<+phase>
                       name: "Start Service Rollback"
                       type: Script
                       spec:
-                        workingDirectory: $HARNESS_RUNTIME_PATH/tomcat/bin
+                        workingDirectory: $HOME/<+service.name>/<+env.name>/tomcat/bin
                         shell: Bash
                         source:
                           type: Inline
@@ -91,7 +90,7 @@ spec:
                       name: "Process Running Rollback"
                       type: Script
                       spec:
-                        workingDirectory: $HARNESS_RUNTIME_PATH/tomcat/bin
+                        workingDirectory: $HOME/<+service.name>/<+env.name>/tomcat/bin
                         shell: Bash
                         source:
                           type: Inline
@@ -102,7 +101,7 @@ spec:
                       name: "Port Listening Rollback"
                       type: Script
                       spec:
-                        workingDirectory: $HARNESS_RUNTIME_PATH/tomcat/bin
+                        workingDirectory: $HOME/<+service.name>/<+env.name>/tomcat/bin
                         shell: Bash
                         source:
                           type: Inline

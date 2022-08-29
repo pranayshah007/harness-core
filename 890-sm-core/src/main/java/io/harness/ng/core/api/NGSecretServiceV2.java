@@ -10,6 +10,7 @@ package io.harness.ng.core.api;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.IdentifierRef;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.models.Secret;
 import io.harness.ng.core.remote.SecretValidationMetaData;
@@ -27,6 +28,8 @@ public interface NGSecretServiceV2 {
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier);
 
   Optional<Secret> get(String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier);
+
+  Optional<Secret> get(IdentifierRef identifierRef);
 
   boolean delete(String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier);
 

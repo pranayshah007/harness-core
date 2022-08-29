@@ -19,6 +19,7 @@ public class InstanceGroupedByArtifactList {
   @Builder
   public static class InstanceGroupedByArtifact {
     String artifactVersion;
+    String artifactPath;
     List<InstanceGroupedByEnvironment> instanceGroupedByEnvironmentList;
   }
   @Value

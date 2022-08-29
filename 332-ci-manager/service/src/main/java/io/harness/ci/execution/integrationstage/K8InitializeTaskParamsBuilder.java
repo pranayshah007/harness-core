@@ -44,6 +44,7 @@ import io.harness.ci.buildstate.CodebaseUtils;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.buildstate.SecretUtils;
 import io.harness.ci.buildstate.providers.InternalContainerParamsProvider;
+import io.harness.ci.license.CILicenseService;
 import io.harness.ci.utils.HarnessImageUtils;
 import io.harness.ci.utils.LiteEngineSecretEvaluator;
 import io.harness.ci.utils.PortFinder;
@@ -57,6 +58,7 @@ import io.harness.delegate.beans.ci.pod.ContainerSecurityContext;
 import io.harness.delegate.beans.ci.pod.ImageDetailsWithConnector;
 import io.harness.delegate.beans.ci.pod.PodVolume;
 import io.harness.delegate.beans.ci.pod.SecretVariableDetails;
+import io.harness.delegate.task.citasks.cik8handler.params.CIConstants;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.k8s.model.ImageDetails;
 import io.harness.ng.core.NGAccess;
@@ -92,7 +94,7 @@ public class K8InitializeTaskParamsBuilder {
   @Inject private HarnessImageUtils harnessImageUtils;
   @Inject private InternalContainerParamsProvider internalContainerParamsProvider;
   @Inject private SecretUtils secretUtils;
-
+  @Inject private CILicenseService ciLicenseService;
   @Inject CodebaseUtils codebaseUtils;
 
   private static String RUNTIME_CLASS_NAME = "gvisor";
@@ -168,6 +170,8 @@ public class K8InitializeTaskParamsBuilder {
         .initContainerParamsList(singletonList(podContainers.getLeft()))
         .volumes(volumes)
         .runtime(RUNTIME_CLASS_NAME)
+        .activeDeadLineSeconds(
+            IntegrationStageUtils.getStageTtl(ciLicenseService, ngAccess.getAccountIdentifier(), k8sHostedInfraYaml))
         .build();
   }
 
@@ -212,6 +216,7 @@ public class K8InitializeTaskParamsBuilder {
         .containerParamsList(podContainers.getRight())
         //.pvcParamList(pvcParamsList)
         .initContainerParamsList(singletonList(podContainers.getLeft()))
+        .activeDeadLineSeconds(CIConstants.POD_MAX_TTL_SECS)
         .volumes(volumes)
         .build();
   }
@@ -229,7 +234,8 @@ public class K8InitializeTaskParamsBuilder {
     Map<String, String> logEnvVars = k8InitializeTaskUtils.getLogServiceEnvVariables(k8PodDetails, accountId);
     Map<String, String> tiEnvVars = k8InitializeTaskUtils.getTIServiceEnvVariables(accountId);
     Map<String, String> stoEnvVars = k8InitializeTaskUtils.getSTOServiceEnvVariables(accountId);
-    Map<String, String> gitEnvVars = codebaseUtils.getGitEnvVariables(gitConnector, ciCodebase);
+    Map<String, String> gitEnvVars =
+        codebaseUtils.getGitEnvVariables(gitConnector, ciCodebase, initializeStepInfo.isSkipGitClone());
     Map<String, String> runtimeCodebaseVars = codebaseUtils.getRuntimeCodebaseVars(ambiance);
     Map<String, String> commonEnvVars = k8InitializeTaskUtils.getCommonStepEnvVariables(
         k8PodDetails, gitEnvVars, runtimeCodebaseVars, k8InitializeTaskUtils.getWorkDir(), logPrefix, ambiance);
@@ -400,7 +406,7 @@ public class K8InitializeTaskParamsBuilder {
         k8InitializeServiceUtils.createServiceContainerDefinitions(stageElementConfig, portFinder, os);
     List<ContainerDefinitionInfo> stepCtrDefinitionInfos =
         k8InitializeStepUtils.createStepContainerDefinitions(initializeStepInfo, stageElementConfig, ciExecutionArgs,
-            portFinder, AmbianceUtils.getAccountId(ambiance), os, 0);
+            portFinder, AmbianceUtils.getAccountId(ambiance), os, ambiance, 0);
 
     List<ContainerDefinitionInfo> containerDefinitionInfos = new ArrayList<>();
     containerDefinitionInfos.addAll(serviceCtrDefinitionInfos);

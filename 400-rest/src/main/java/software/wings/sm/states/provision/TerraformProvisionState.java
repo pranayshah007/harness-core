@@ -252,6 +252,7 @@ public abstract class TerraformProvisionState extends State {
   @Getter @Setter private boolean runPlanOnly;
   @Getter @Setter private boolean inheritApprovedPlan;
   @Getter @Setter private boolean exportPlanToApplyStep;
+  @Getter @Setter private boolean exportPlanToHumanReadableOutput;
   @Getter @Setter private String workspace;
   @Getter @Setter private String delegateTag;
   @Attributes(title = "awsConfigId") @Getter @Setter private String awsConfigId;
@@ -271,6 +272,7 @@ public abstract class TerraformProvisionState extends State {
   }
 
   protected abstract TerraformCommandUnit commandUnit();
+
   protected abstract TerraformCommand command();
 
   @Override
@@ -382,6 +384,18 @@ public abstract class TerraformProvisionState extends State {
     TerraformPlanParamBuilder tfPlanParamBuilder = TerraformPlanParam.builder();
     boolean saveTfPlanSweepingOutput =
         executionData.getTfPlanJsonFiledId() != null || executionData.getTfPlanJson() != null;
+
+    if (exportPlanToHumanReadableOutput) {
+      // Backward compatible changes, incase delegate doesn't send this field back
+      try {
+        tfPlanParamBuilder.tfplanHumanReadable(executionData.getTfPlanHumanReadable());
+      } catch (Exception e) {
+        String message =
+            "Terraform tfplanHumanReadable not found in Delegate sent Execution Data, Possible reason could be that delegate is on a older version not supporting human readable plan for Terraform";
+        log.error(message, e);
+      }
+    }
+
     if (featureFlagService.isEnabled(FeatureName.EXPORT_TF_PLAN, context.getAccountId()) && saveTfPlanSweepingOutput) {
       String variableName = terraformCommand == TerraformCommand.APPLY ? TF_APPLY_VAR_NAME : TF_DESTROY_VAR_NAME;
       // if the plan variable exists overwrite it
@@ -1225,6 +1239,7 @@ public abstract class TerraformProvisionState extends State {
             .targets(targets)
             .runPlanOnly(runPlanOnly)
             .exportPlanToApplyStep(exportPlanToApplyStep)
+            .exportPlanToHumanReadableOutput(exportPlanToHumanReadableOutput)
             .saveTerraformJson(featureFlagService.isEnabled(FeatureName.EXPORT_TF_PLAN, context.getAccountId()))
             .useOptimizedTfPlanJson(featureFlagService.isEnabled(FeatureName.OPTIMIZED_TF_PLAN, context.getAccountId()))
             .tfVarFiles(getRenderedTfVarFiles(tfVarFiles, context))

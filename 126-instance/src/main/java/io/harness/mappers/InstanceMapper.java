@@ -22,6 +22,7 @@ import lombok.experimental.UtilityClass;
 public class InstanceMapper {
   public InstanceDTO toDTO(Instance instance) {
     return InstanceDTO.builder()
+        .uuid(instance.getId())
         .accountIdentifier(instance.getAccountIdentifier())
         .envIdentifier(instance.getEnvIdentifier())
         .envName(instance.getEnvName())
@@ -59,6 +60,7 @@ public class InstanceMapper {
 
   public Instance toEntity(InstanceDTO instanceDTO) {
     return Instance.builder()
+        .id(instanceDTO.getUuid())
         .accountIdentifier(instanceDTO.getAccountIdentifier())
         .envIdentifier(instanceDTO.getEnvIdentifier())
         .envName(instanceDTO.getEnvName())

@@ -48,8 +48,8 @@ public class PermissionAttributeTest extends WingsBaseTest {
   @Owner(developers = UJJAWAL)
   @Category(UnitTests.class)
   public void testAddedActionsAreInSync() {
-    assertThat(PermissionAttribute.Action.values().length).isEqualTo(10);
-    assertThat(QLActions.values().length).isEqualTo(8);
+    assertThat(PermissionAttribute.Action.values().length).isEqualTo(11);
+    assertThat(QLActions.values().length).isEqualTo(9);
     assertThat(PermissionAttribute.Action.values().length - 10).isEqualTo(QLActions.values().length - 8);
   }
 }

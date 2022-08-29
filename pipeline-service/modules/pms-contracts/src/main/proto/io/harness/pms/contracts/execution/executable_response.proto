@@ -48,6 +48,7 @@ message ChildrenExecutableResponse {
   }
   repeated Child children = 1;
   int64 maxConcurrency = 2;
+  repeated string logKeys = 3;
 }
 
 message StrategyMetadata {
@@ -61,6 +62,7 @@ message StrategyMetadata {
 
 message ForMetadata {
   string value = 1;
+  repeated string partition = 2;
 }
 
 message MatrixMetadata {

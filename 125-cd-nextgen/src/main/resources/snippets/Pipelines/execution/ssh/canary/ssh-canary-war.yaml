@@ -18,13 +18,12 @@ spec:
                 type: Command
                 timeout: 10m
                 spec:
-                  host: <+repeat.item>
                   onDelegate: false
                   environmentVariables: [ ]
                   outputVariables: [ ]
                   commandUnits:
                     - identifier: Setup_Runtime_Paths_<+phase>
-                      name: Setup Runtime Paths
+                      name: "Setup Runtime Paths"
                       type: Script
                       spec:
                         shell: Bash
@@ -37,28 +36,29 @@ spec:
                       name: "Stop"
                       type: Script
                       spec:
-                        workingDirectory: $HARNESS_RUNTIME_PATH
+                        workingDirectory: $HOME/<+service.name>/<+env.name>
                         shell: Bash
                         source:
                           type: Inline
                           spec:
                             script: echo "Stopping..."
                     - identifier: Copy_Artifact_<+phase>
-                      name: Copy Artifact
+                      name: "Copy Artifact"
                       type: Copy
                       spec:
                         sourceType: Artifact
-                        destinationPath: $HARNESS_RUNTIME_PATH
+                        destinationPath: $HOME/<+service.name>/<+env.name>
                     - identifier: Copy_Config_<+phase>
-                      name: Copy Config
+                      name: "Copy Config"
                       type: Copy
                       spec:
                         sourceType: Config
-                        destinationPath: $HARNESS_RUNTIME_PATH
+                        destinationPath: $HOME/<+service.name>/<+env.name>
                     - identifier: Start_<+phase>
                       name: Start
                       type: Script
                       spec:
+                        workingDirectory: $HOME/<+service.name>/<+env.name>
                         shell: Bash
                         source:
                           type: Inline

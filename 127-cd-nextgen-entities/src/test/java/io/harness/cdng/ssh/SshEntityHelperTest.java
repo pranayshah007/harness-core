@@ -26,7 +26,6 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.azure.AzureHelperService;
-import io.harness.cdng.infra.beans.AwsInstanceFilter;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
 import io.harness.cdng.infra.beans.PdcInfrastructureOutcome;
@@ -163,7 +162,7 @@ public class SshEntityHelperTest extends CategoryTest {
     PdcSshInfraDelegateConfig pdcSshInfraDelegateConfig = (PdcSshInfraDelegateConfig) infraDelegateConfig;
     assertThat(pdcSshInfraDelegateConfig.getSshKeySpecDto()).isEqualTo(sshKeySpecDTO);
     assertThat(pdcSshInfraDelegateConfig.getHosts()).isNotEmpty();
-    assertThat(pdcSshInfraDelegateConfig.getHosts().get(0)).isEqualTo("host1");
+    assertThat(pdcSshInfraDelegateConfig.getHosts()).containsOnly("host1");
     assertThat(pdcSshInfraDelegateConfig.getEncryptionDataDetails()).isNotEmpty();
   }
 
@@ -200,7 +199,7 @@ public class SshEntityHelperTest extends CategoryTest {
     PdcSshInfraDelegateConfig pdcSshInfraDelegateConfig = (PdcSshInfraDelegateConfig) infraDelegateConfig;
     assertThat(pdcSshInfraDelegateConfig.getSshKeySpecDto()).isEqualTo(sshKeySpecDTO);
     assertThat(pdcSshInfraDelegateConfig.getHosts()).isNotEmpty();
-    assertThat(pdcSshInfraDelegateConfig.getHosts().get(0)).isEqualTo("host1");
+    assertThat(pdcSshInfraDelegateConfig.getHosts()).containsOnly("host1");
     assertThat(pdcSshInfraDelegateConfig.getEncryptionDataDetails()).isNotEmpty();
 
     ArgumentCaptor<HostFilterDTO> filterCaptor = ArgumentCaptor.forClass(HostFilterDTO.class);
@@ -281,7 +280,7 @@ public class SshEntityHelperTest extends CategoryTest {
     PdcSshInfraDelegateConfig pdcSshInfraDelegateConfig = (PdcSshInfraDelegateConfig) infraDelegateConfig;
     assertThat(pdcSshInfraDelegateConfig.getSshKeySpecDto()).isEqualTo(sshKeySpecDTO);
     assertThat(pdcSshInfraDelegateConfig.getHosts()).isNotEmpty();
-    assertThat(pdcSshInfraDelegateConfig.getHosts().get(0)).isEqualTo("host1");
+    assertThat(pdcSshInfraDelegateConfig.getHosts()).containsOnly("host1");
     assertThat(pdcSshInfraDelegateConfig.getEncryptionDataDetails()).isNotEmpty();
 
     ArgumentCaptor<HostFilterDTO> filterCaptor = ArgumentCaptor.forClass(HostFilterDTO.class);
@@ -352,7 +351,7 @@ public class SshEntityHelperTest extends CategoryTest {
     PdcSshInfraDelegateConfig pdcSshInfraDelegateConfig = (PdcSshInfraDelegateConfig) infraDelegateConfig;
     assertThat(pdcSshInfraDelegateConfig.getSshKeySpecDto()).isEqualTo(sshKeySpecDTO);
     assertThat(pdcSshInfraDelegateConfig.getHosts()).isNotEmpty();
-    assertThat(pdcSshInfraDelegateConfig.getHosts().get(0)).isEqualTo("host2");
+    assertThat(pdcSshInfraDelegateConfig.getHosts()).containsOnly("host2");
     assertThat(pdcSshInfraDelegateConfig.getEncryptionDataDetails()).isNotEmpty();
   }
 
@@ -400,16 +399,12 @@ public class SshEntityHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetSshAwsInfraDelegateConfig() throws IOException {
     doReturn(awsConnectorDTO).when(connectorService).get(anyString(), anyString(), anyString(), anyString());
-    SshWinRmAwsInfrastructureOutcome awsInfrastructure =
-        SshWinRmAwsInfrastructureOutcome.builder()
-            .connectorRef("awsConnector")
-            .credentialsRef("sshKeyRef")
-            .region("regionId")
-            .awsInstanceFilter(AwsInstanceFilter.builder()
-                                   .vpcs(Arrays.asList("vpc1"))
-                                   .tags(Collections.singletonMap("testTag", "test"))
-                                   .build())
-            .build();
+    SshWinRmAwsInfrastructureOutcome awsInfrastructure = SshWinRmAwsInfrastructureOutcome.builder()
+                                                             .connectorRef("awsConnector")
+                                                             .credentialsRef("sshKeyRef")
+                                                             .region("regionId")
+                                                             .tags(Collections.singletonMap("testTag", "test"))
+                                                             .build();
 
     Call<ResponseDTO<SecretResponseWrapper>> getSecretCall = mock(Call.class);
     ResponseDTO<SecretResponseWrapper> responseDTO =
@@ -432,7 +427,6 @@ public class SshEntityHelperTest extends CategoryTest {
     assertThat(awsSshInfraDelegateConfig.getHosts()).isNull();
     assertThat(awsSshInfraDelegateConfig.getEncryptionDataDetails()).isNotEmpty();
     assertThat(awsSshInfraDelegateConfig.getConnectorEncryptionDataDetails()).isNotEmpty();
-    assertThat(awsSshInfraDelegateConfig.getVpcIds()).isNotEmpty();
     assertThat(awsSshInfraDelegateConfig.getTags()).isNotEmpty();
     assertThat(awsSshInfraDelegateConfig.getAutoScalingGroupName()).isNullOrEmpty();
   }
@@ -481,7 +475,7 @@ public class SshEntityHelperTest extends CategoryTest {
     PdcWinRmInfraDelegateConfig pdcWinRmInfraDelegateConfig = (PdcWinRmInfraDelegateConfig) infraDelegateConfig;
     assertThat(pdcWinRmInfraDelegateConfig.getWinRmCredentials()).isEqualTo(winRmCredentials);
     assertThat(pdcWinRmInfraDelegateConfig.getHosts()).isNotEmpty();
-    assertThat(pdcWinRmInfraDelegateConfig.getHosts().get(0)).isEqualTo("host1");
+    assertThat(pdcWinRmInfraDelegateConfig.getHosts()).containsOnly("host1");
     assertThat(pdcWinRmInfraDelegateConfig.getEncryptionDataDetails()).isNotEmpty();
   }
 
@@ -508,7 +502,7 @@ public class SshEntityHelperTest extends CategoryTest {
     PdcWinRmInfraDelegateConfig pdcWinRmInfraDelegateConfig = (PdcWinRmInfraDelegateConfig) infraDelegateConfig;
     assertThat(pdcWinRmInfraDelegateConfig.getWinRmCredentials()).isEqualTo(winRmCredentials);
     assertThat(pdcWinRmInfraDelegateConfig.getHosts()).isNotEmpty();
-    assertThat(pdcWinRmInfraDelegateConfig.getHosts().get(0)).isEqualTo("host2");
+    assertThat(pdcWinRmInfraDelegateConfig.getHosts()).containsOnly("host2");
     assertThat(pdcWinRmInfraDelegateConfig.getEncryptionDataDetails()).isNotEmpty();
   }
 
@@ -556,16 +550,12 @@ public class SshEntityHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetWinRmAwsInfraDelegateConfig() throws IOException {
     doReturn(awsConnectorDTO).when(connectorService).get(anyString(), anyString(), anyString(), anyString());
-    SshWinRmAwsInfrastructureOutcome awsInfrastructure =
-        SshWinRmAwsInfrastructureOutcome.builder()
-            .connectorRef("awsConnector")
-            .credentialsRef("winrmCredentialsRef")
-            .region("regionId")
-            .awsInstanceFilter(AwsInstanceFilter.builder()
-                                   .vpcs(Arrays.asList("vpc1"))
-                                   .tags(Collections.singletonMap("testTag", "test"))
-                                   .build())
-            .build();
+    SshWinRmAwsInfrastructureOutcome awsInfrastructure = SshWinRmAwsInfrastructureOutcome.builder()
+                                                             .connectorRef("awsConnector")
+                                                             .credentialsRef("winrmCredentialsRef")
+                                                             .region("regionId")
+                                                             .tags(Collections.singletonMap("testTag", "test"))
+                                                             .build();
 
     Call<ResponseDTO<SecretResponseWrapper>> getSecretCall = mock(Call.class);
     ResponseDTO<SecretResponseWrapper> responseDTO = ResponseDTO.newResponse(
@@ -588,7 +578,6 @@ public class SshEntityHelperTest extends CategoryTest {
     assertThat(awsWinrmInfraDelegateConfig.getHosts()).isNull();
     assertThat(awsWinrmInfraDelegateConfig.getEncryptionDataDetails()).isNotEmpty();
     assertThat(awsWinrmInfraDelegateConfig.getConnectorEncryptionDataDetails()).isNotEmpty();
-    assertThat(awsWinrmInfraDelegateConfig.getVpcIds()).isNotEmpty();
     assertThat(awsWinrmInfraDelegateConfig.getTags()).isNotEmpty();
     assertThat(awsWinrmInfraDelegateConfig.getAutoScalingGroupName()).isNullOrEmpty();
   }

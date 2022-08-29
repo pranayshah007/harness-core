@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
@@ -21,6 +22,7 @@ import io.harness.pms.inputset.OverlayInputSetErrorWrapperDTOPMS;
 import io.harness.pms.merger.helpers.InputSetYamlHelper;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity.InputSetEntityKeys;
+import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetListTypePMS;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetYamlDiffDTO;
 import io.harness.pms.ngpipeline.inputset.exceptions.InvalidOverlayInputSetException;
@@ -75,6 +77,65 @@ public class OverlayInputSetValidationHelper {
     }
   }
 
+  public void validateOverlayInputSetsForGivenInputSet(
+      PMSInputSetService inputSetService, InputSetEntity validatedInputSet) {
+    if (validatedInputSet.getStoreType() != StoreType.INLINE
+        || validatedInputSet.getInputSetEntityType() != InputSetEntityType.INPUT_SET) {
+      return;
+    }
+    String accountId = validatedInputSet.getAccountId();
+    String orgIdentifier = validatedInputSet.getOrgIdentifier();
+    String projectIdentifier = validatedInputSet.getProjectIdentifier();
+    String pipelineIdentifier = validatedInputSet.getPipelineIdentifier();
+
+    Criteria criteriaOverlay = PMSInputSetFilterHelper.createCriteriaForGetListForBranchAndRepo(
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, InputSetListTypePMS.OVERLAY_INPUT_SET);
+    List<InputSetEntity> allOverlayInputSets = inputSetService.list(criteriaOverlay);
+    for (InputSetEntity overlayInputSet : allOverlayInputSets) {
+      if (!overlayInputSet.getIsInvalid()) {
+        continue;
+      }
+      List<String> inputSetReferences =
+          InputSetYamlHelper.getReferencesFromOverlayInputSetYaml(overlayInputSet.getYaml());
+      if (!inputSetReferences.contains(validatedInputSet.getIdentifier())) {
+        continue;
+      }
+      List<Optional<InputSetEntity>> inputSets = findAllReferredInputSets(
+          inputSetService, inputSetReferences, accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
+      Map<String, String> invalidReferences =
+          InputSetErrorsHelper.getInvalidInputSetReferences(inputSets, inputSetReferences);
+      if (invalidReferences.isEmpty()) {
+        inputSetService.switchValidationFlag(overlayInputSet, false);
+      }
+    }
+  }
+
+  public void invalidateOverlayInputSetsReferringDeletedInputSet(
+      PMSInputSetService inputSetService, InputSetEntity deletedInputSet) {
+    if (deletedInputSet.getStoreType() != StoreType.INLINE
+        || deletedInputSet.getInputSetEntityType() != InputSetEntityType.INPUT_SET) {
+      return;
+    }
+    String accountId = deletedInputSet.getAccountId();
+    String orgIdentifier = deletedInputSet.getOrgIdentifier();
+    String projectIdentifier = deletedInputSet.getProjectIdentifier();
+    String pipelineIdentifier = deletedInputSet.getPipelineIdentifier();
+
+    Criteria criteriaOverlay = PMSInputSetFilterHelper.createCriteriaForGetListForBranchAndRepo(
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, InputSetListTypePMS.OVERLAY_INPUT_SET);
+    List<InputSetEntity> allOverlayInputSets = inputSetService.list(criteriaOverlay);
+    for (InputSetEntity overlayInputSet : allOverlayInputSets) {
+      if (overlayInputSet.getIsInvalid()) {
+        continue;
+      }
+      List<String> inputSetReferences =
+          InputSetYamlHelper.getReferencesFromOverlayInputSetYaml(overlayInputSet.getYaml());
+      if (inputSetReferences.contains(deletedInputSet.getIdentifier())) {
+        inputSetService.switchValidationFlag(overlayInputSet, true);
+      }
+    }
+  }
+
   private List<Optional<InputSetEntity>> findAllReferredInputSets(PMSInputSetService inputSetService,
       List<String> referencesInOverlay, String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier) {
@@ -126,7 +187,9 @@ public class OverlayInputSetValidationHelper {
     List<String> existingButInvalidReferences =
         invalidReferencesWithErrors.keySet()
             .stream()
-            .filter(ref -> invalidReferencesWithErrors.get(ref).equals(InputSetErrorsHelper.INVALID_INPUT_SET_MESSAGE))
+            .filter(ref
+                -> invalidReferencesWithErrors.get(ref).equals(InputSetErrorsHelper.INVALID_INPUT_SET_MESSAGE)
+                    || invalidReferencesWithErrors.get(ref).equals(InputSetErrorsHelper.OUTDATED_INPUT_SET_MESSAGE))
             .collect(Collectors.toList());
     Set<String> invalidReferences = invalidReferencesWithErrors.keySet();
     List<String> validReferences =

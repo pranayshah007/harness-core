@@ -10,7 +10,6 @@ package io.harness.delegate.task.winrm;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.encoding.EncodingUtils.encodeBase64;
 import static io.harness.delegate.task.shell.ArtifactoryUtils.getArtifactConfigRequest;
-import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.RUNNING;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
@@ -23,11 +22,16 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifactory.ArtifactoryConfigRequest;
+import io.harness.delegate.beans.connector.jenkins.JenkinsAuthType;
+import io.harness.delegate.beans.connector.jenkins.JenkinsBearerTokenDTO;
+import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
+import io.harness.delegate.beans.connector.jenkins.JenkinsUserNamePasswordDTO;
 import io.harness.delegate.task.artifactory.ArtifactoryRequestMapper;
 import io.harness.delegate.task.shell.ConfigFileMetaData;
 import io.harness.delegate.task.shell.WinrmTaskParameters;
 import io.harness.delegate.task.ssh.CopyCommandUnit;
 import io.harness.delegate.task.ssh.artifact.ArtifactoryArtifactDelegateConfig;
+import io.harness.delegate.task.ssh.artifact.JenkinsArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.config.ConfigFileParameters;
 import io.harness.eraro.ResponseMessage;
@@ -71,15 +75,18 @@ public class FileBasedWinRmExecutorNG extends FileBasedAbstractWinRmExecutor {
     if (artifactDelegateConfig == null) {
       throw new InvalidRequestException("Artifact delegate config not found.");
     }
-
-    if (!(artifactDelegateConfig instanceof ArtifactoryArtifactDelegateConfig)) {
+    if (artifactDelegateConfig instanceof ArtifactoryArtifactDelegateConfig) {
+      return handleArtifactoryArtifact((ArtifactoryArtifactDelegateConfig) artifactDelegateConfig, copyCommandUnit);
+    } else if (artifactDelegateConfig instanceof JenkinsArtifactDelegateConfig) {
+      return handleJenkinsArtifact((JenkinsArtifactDelegateConfig) artifactDelegateConfig, copyCommandUnit);
+    } else {
       log.warn("Wrong artifact delegate config submitted");
-      throw new InvalidRequestException("Expecting artifactory delegate config");
+      throw new InvalidRequestException("Expecting artifactory or jenkins delegate config");
     }
+  }
 
-    ArtifactoryArtifactDelegateConfig artifactoryArtifactDelegateConfig =
-        (ArtifactoryArtifactDelegateConfig) artifactDelegateConfig;
-
+  private CommandExecutionStatus handleArtifactoryArtifact(
+      ArtifactoryArtifactDelegateConfig artifactoryArtifactDelegateConfig, CopyCommandUnit copyCommandUnit) {
     ArtifactoryConfigRequest artifactoryConfigRequest = getArtifactConfigRequest(
         artifactoryArtifactDelegateConfig, logCallback, secretDecryptionService, artifactoryRequestMapper);
 
@@ -95,10 +102,46 @@ public class FileBasedWinRmExecutorNG extends FileBasedAbstractWinRmExecutor {
                                 .get(artifactoryArtifactDelegateConfig.getRepositoryName(),
                                     artifactoryArtifactDelegateConfig.getArtifactPath())
                                 .toString();
-      clearTargetArtifact(copyCommandUnit.getDestinationPath(), artifactPath, session, outputWriter, errorWriter);
 
       String command =
           getDownloadArtifactCommand(artifactoryConfigRequest, copyCommandUnit.getDestinationPath(), artifactPath);
+      commandExecutionStatus = executeRemoteCommand(session, outputWriter, errorWriter, command, true);
+      saveExecutionLog("Command completed successfully", INFO, commandExecutionStatus);
+      if (FAILURE == commandExecutionStatus) {
+        saveExecutionLog("Failed to copy artifact.", ERROR, RUNNING);
+        return commandExecutionStatus;
+      }
+    } catch (Exception e) {
+      log.error(ERROR_WHILE_EXECUTING_COMMAND, e);
+      ResponseMessage details = buildErrorDetailsFromWinRmClientException(e);
+      saveExecutionLog(
+          format("Command execution failed. Error: %s", details.getMessage()), ERROR, commandExecutionStatus);
+    }
+
+    log.info("Copy Config command execution returned status: {}", commandExecutionStatus);
+    return commandExecutionStatus;
+  }
+
+  private CommandExecutionStatus handleJenkinsArtifact(
+      JenkinsArtifactDelegateConfig jenkinsArtifactDelegateConfig, CopyCommandUnit copyCommandUnit) {
+    CommandExecutionStatus commandExecutionStatus = FAILURE;
+
+    try (WinRmSession session = new WinRmSession(config, this.logCallback);
+         ExecutionLogWriter outputWriter = getExecutionLogWriter(INFO);
+         ExecutionLogWriter errorWriter = getExecutionLogWriter(ERROR)) {
+      saveExecutionLog(format("Connected to %s", config.getHostname()), INFO);
+      saveExecutionLog(format("Executing command ...%n"), INFO);
+
+      String artifactPathOnTarget =
+          jenkinsArtifactDelegateConfig.getJobName() + "\\" + jenkinsArtifactDelegateConfig.getArtifactPath();
+      String artifactPath =
+          Paths
+              .get(jenkinsArtifactDelegateConfig.getJobName(), jenkinsArtifactDelegateConfig.getBuild(), "artifact",
+                  "target", jenkinsArtifactDelegateConfig.getArtifactPath())
+              .toString();
+
+      String command = getDownloadJenkinsArtifactCommand(
+          jenkinsArtifactDelegateConfig, copyCommandUnit.getDestinationPath(), artifactPath, artifactPathOnTarget);
       commandExecutionStatus = executeRemoteCommand(session, outputWriter, errorWriter, command, true);
       saveExecutionLog("Command completed successfully", INFO, commandExecutionStatus);
       if (FAILURE == commandExecutionStatus) {
@@ -172,32 +215,48 @@ public class FileBasedWinRmExecutorNG extends FileBasedAbstractWinRmExecutor {
     return SUCCESS;
   }
 
-  protected void clearTargetArtifact(String destinationPath, String artifactPath, WinRmSession session,
-      ExecutionLogWriter outputWriter, ExecutionLogWriter errorWriter) throws IOException {
-    String command = getDeleteArtifactCommandStr(destinationPath, artifactPath);
-    final CommandExecutionStatus status = executeRemoteCommand(session, outputWriter, errorWriter, command, false);
-    if (status != SUCCESS) {
-      final String message =
-          format("File %s could not cleared before writing", Paths.get(destinationPath, artifactPath));
-      saveExecutionLog(message, ERROR, FAILURE);
-      throw new InvalidRequestException(message, USER);
-    }
-  }
-
   private String getDownloadArtifactCommand(
       ArtifactoryConfigRequest artifactoryConfigRequest, String destinationPath, String artifactPath) {
+    String artifactFileName = artifactPath;
+    int lastIndexOfSlash = artifactFileName.lastIndexOf('/');
+    if (lastIndexOfSlash > 0) {
+      artifactFileName = artifactFileName.substring(lastIndexOfSlash + 1);
+      log.info("Got filename: " + artifactFileName);
+    }
     if (artifactoryConfigRequest.isHasCredentials()) {
       return "$Headers = @{\n"
           + "    Authorization = \"" + getAuthHeader(artifactoryConfigRequest) + "\"\n"
           + "}\n [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12"
           + "\n $ProgressPreference = 'SilentlyContinue'"
           + "\n Invoke-WebRequest -Uri \"" + getArtifactoryUrl(artifactoryConfigRequest, artifactPath)
-          + "\" -Headers $Headers -OutFile \"" + destinationPath + "\\" + artifactPath + "\"";
+          + "\" -Headers $Headers -OutFile \"" + destinationPath + "\\" + artifactFileName + "\"";
     } else {
       return "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12\n "
           + "$ProgressPreference = 'SilentlyContinue'\n"
           + "Invoke-WebRequest -Uri \"" + getArtifactoryUrl(artifactoryConfigRequest, artifactPath) + "\" -OutFile \""
-          + destinationPath + "\\" + artifactPath + "\"";
+          + destinationPath + "\\" + artifactFileName + "\"";
+    }
+  }
+
+  private String getDownloadJenkinsArtifactCommand(JenkinsArtifactDelegateConfig jenkinsArtifactDelegateConfig,
+      String destinationPath, String artifactPath, String artifactPathOnTarget) {
+    JenkinsConnectorDTO jenkinsConnectorDto =
+        (JenkinsConnectorDTO) jenkinsArtifactDelegateConfig.getConnectorDTO().getConnectorConfig();
+    if (jenkinsConnectorDto.getAuth() != null) {
+      return "$Headers = @{\n"
+          + "    Authorization = \"" + getJenkinsAuthHeader(jenkinsArtifactDelegateConfig) + "\"\n"
+          + "}\n"
+          + "$AllProtocols = [Net.SecurityProtocolType]'Ssl3,Tls,Tls11,Tls12'\n"
+          + "[Net.ServicePointManager]::SecurityProtocol = $AllProtocols"
+          + "\n $ProgressPreference = 'SilentlyContinue'"
+          + "\n Invoke-WebRequest -Uri \"" + getJenkinsUrl(jenkinsArtifactDelegateConfig, artifactPath)
+          + "\" -Headers $Headers -OutFile \"" + destinationPath + "\\" + artifactPathOnTarget + "\"";
+    } else {
+      return "$AllProtocols = [Net.SecurityProtocolType]'Ssl3,Tls,Tls11,Tls12'\n"
+          + "[Net.ServicePointManager]::SecurityProtocol = $AllProtocols\n"
+          + "$ProgressPreference = 'SilentlyContinue'\n"
+          + "Invoke-WebRequest -Uri \"" + getJenkinsUrl(jenkinsArtifactDelegateConfig, artifactPath) + "\" -OutFile \""
+          + destinationPath + "\\" + artifactPathOnTarget + "\"";
     }
   }
 
@@ -210,6 +269,37 @@ public class FileBasedWinRmExecutorNG extends FileBasedAbstractWinRmExecutor {
     return authHeader;
   }
 
+  private String getJenkinsAuthHeader(JenkinsArtifactDelegateConfig jenkinsArtifactDelegateConfig) {
+    String authHeader = null;
+    JenkinsConnectorDTO jenkinsConnectorDto =
+        (JenkinsConnectorDTO) jenkinsArtifactDelegateConfig.getConnectorDTO().getConnectorConfig();
+    JenkinsAuthType authType = jenkinsConnectorDto.getAuth().getAuthType();
+    if (JenkinsAuthType.USER_PASSWORD.equals(authType)) {
+      JenkinsUserNamePasswordDTO jenkinsUserNamePasswordDTO =
+          (JenkinsUserNamePasswordDTO) jenkinsConnectorDto.getAuth().getCredentials();
+      String pair = jenkinsUserNamePasswordDTO.getUsername() + ":"
+          + String.copyValueOf((jenkinsUserNamePasswordDTO.isDecrypted()
+                  ? jenkinsUserNamePasswordDTO
+                  : decrypt(jenkinsUserNamePasswordDTO, jenkinsArtifactDelegateConfig))
+                                   .getPasswordRef()
+                                   .getDecryptedValue());
+      authHeader = "Basic " + encodeBase64(pair);
+    } else if (JenkinsAuthType.BEARER_TOKEN.equals(authType)) {
+      JenkinsBearerTokenDTO jenkinsBearerTokenDTO =
+          (JenkinsBearerTokenDTO) jenkinsConnectorDto.getAuth().getCredentials();
+      if (!jenkinsBearerTokenDTO.isDecrypted()) {
+        jenkinsBearerTokenDTO = decrypt(jenkinsBearerTokenDTO, jenkinsArtifactDelegateConfig);
+      }
+      authHeader = "Bearer "
+          + String.copyValueOf(
+              (jenkinsBearerTokenDTO.isDecrypted() ? jenkinsBearerTokenDTO
+                                                   : decrypt(jenkinsBearerTokenDTO, jenkinsArtifactDelegateConfig))
+                  .getTokenRef()
+                  .getDecryptedValue());
+    }
+    return authHeader;
+  }
+
   private String getArtifactoryUrl(ArtifactoryConfigRequest artifactoryConfigRequest, String artifactPath) {
     String url = artifactoryConfigRequest.getArtifactoryUrl().trim();
     if (!url.endsWith("/")) {
@@ -218,9 +308,26 @@ public class FileBasedWinRmExecutorNG extends FileBasedAbstractWinRmExecutor {
     return url + artifactPath;
   }
 
-  private String getDeleteArtifactCommandStr(String destinationPath, String artifactPath) {
-    return "$artifact = '" + destinationPath + "\\" + artifactPath + "'\n"
-        + "Write-Host \"Clearing target artifact $artifact on the host.\"\n"
-        + "[IO.File]::Delete($artifact)";
+  private String getJenkinsUrl(JenkinsArtifactDelegateConfig jenkinsArtifactDelegateConfig, String artifactPath) {
+    JenkinsConnectorDTO jenkinsConnectorDto =
+        (JenkinsConnectorDTO) jenkinsArtifactDelegateConfig.getConnectorDTO().getConnectorConfig();
+    String url = jenkinsConnectorDto.getJenkinsUrl().trim();
+    if (!url.endsWith("/")) {
+      url += "/";
+    }
+    return url + "job"
+        + "/" + artifactPath;
+  }
+
+  private JenkinsUserNamePasswordDTO decrypt(JenkinsUserNamePasswordDTO jenkinsUserNamePasswordDTO,
+      JenkinsArtifactDelegateConfig jenkinsArtifactDelegateConfig) {
+    return (JenkinsUserNamePasswordDTO) secretDecryptionService.decrypt(
+        jenkinsUserNamePasswordDTO, jenkinsArtifactDelegateConfig.getEncryptedDataDetails());
+  }
+
+  private JenkinsBearerTokenDTO decrypt(
+      JenkinsBearerTokenDTO jenkinsBearerTokenDTO, JenkinsArtifactDelegateConfig jenkinsArtifactDelegateConfig) {
+    return (JenkinsBearerTokenDTO) secretDecryptionService.decrypt(
+        jenkinsBearerTokenDTO, jenkinsArtifactDelegateConfig.getEncryptedDataDetails());
   }
 }

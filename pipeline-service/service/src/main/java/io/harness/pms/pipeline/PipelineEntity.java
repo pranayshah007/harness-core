@@ -37,6 +37,7 @@ import com.google.common.collect.ImmutableList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import lombok.AccessLevel;
@@ -101,6 +102,8 @@ public class PipelineEntity
         .build();
   }
   @Setter @NonFinal @Id @org.mongodb.morphia.annotations.Id String uuid;
+
+  @Setter @NonFinal Set<String> templateModules;
 
   @NotEmpty String accountId;
   @NotEmpty String orgIdentifier;

@@ -10,6 +10,7 @@ package io.harness.serializer.morphia;
 import static io.harness.annotations.dev.HarnessTeam.DEL;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateGroup;
 import io.harness.delegate.beans.DelegateRing;
 import io.harness.delegate.beans.VersionOverride;
@@ -30,6 +31,7 @@ import java.util.Set;
 public class DelegateServiceMorphiaRegistrar implements MorphiaRegistrar {
   @Override
   public void registerClasses(Set<Class> set) {
+    set.add(Delegate.class);
     set.add(DelegateConnection.class);
     set.add(DelegateSelectionLog.class);
     set.add(DelegateSelectionLogTaskMetadata.class);

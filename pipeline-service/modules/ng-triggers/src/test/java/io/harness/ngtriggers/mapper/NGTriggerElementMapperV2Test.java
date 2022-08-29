@@ -1108,7 +1108,7 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
     // baseUrl: "https://app.harness.io/pipeline/api"
     assertThat(ngTriggerDetailsResponseDTO.getWebhookUrl())
         .isEqualTo(
-            "https://app.harness.io/pipeline/api/webhook/custom?accountIdentifier=accId&orgIdentifier=org&projectIdentifier=proj&pipelineIdentifier=pipeline&triggerIdentifier=first_trigger");
+            "https://app.harness.io/pipeline/api/webhook/custom/v2?accountIdentifier=accId&orgIdentifier=org&projectIdentifier=proj&pipelineIdentifier=pipeline&triggerIdentifier=first_trigger");
 
     ngTriggerEntity.setType(SCHEDULED);
     ngTriggerDetailsResponseDTO = ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity, false, true);

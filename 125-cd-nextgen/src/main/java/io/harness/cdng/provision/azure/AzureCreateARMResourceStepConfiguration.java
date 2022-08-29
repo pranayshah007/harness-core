@@ -36,14 +36,13 @@ import lombok.experimental.FieldDefaults;
 @OwnedBy(HarnessTeam.CDP)
 @RecasterAlias("io.harness.cdng.provision.azure.AzureCreateARMResourceStepConfiguration")
 public class AzureCreateARMResourceStepConfiguration {
-  private static final String ARM = "ARM";
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
   String uuid;
 
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> connectorRef;
-  @NotNull AzureCreateARMResourceTemplateFile template;
+  @NotNull AzureTemplateFile template;
 
   AzureCreateARMResourceParameterFile parameters;
 
@@ -56,10 +55,6 @@ public class AzureCreateARMResourceStepConfiguration {
     isNumberOfFilesValid(template.getStore(), "Number of files in template file should be equal to 1");
     isNumberOfFilesValid(parameters.getStore(), "Number of files in parameters file should be equal to 1");
     scope.getSpec().validateParams();
-  }
-
-  public String getType() {
-    return ARM;
   }
 
   public AzureCreateARMResourceStepConfigurationParameters toStepParameters() {

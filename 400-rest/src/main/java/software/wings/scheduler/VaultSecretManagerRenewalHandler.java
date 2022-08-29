@@ -99,7 +99,9 @@ public class VaultSecretManagerRenewalHandler implements Handler<SecretManagerCo
         return;
       }
       if (baseVaultConfig.getAccessType() == APP_ROLE) {
-        vaultService.renewAppRoleClientToken(baseVaultConfig);
+        if (baseVaultConfig.getRenewAppRoleToken()) {
+          vaultService.renewAppRoleClientToken(baseVaultConfig);
+        }
       } else {
         vaultService.renewToken(baseVaultConfig);
       }

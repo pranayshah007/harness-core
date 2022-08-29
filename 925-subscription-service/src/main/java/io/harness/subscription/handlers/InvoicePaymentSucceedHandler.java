@@ -40,6 +40,12 @@ public class InvoicePaymentSucceedHandler implements StripeEventHandler {
   private final SubscriptionDetailRepository subscriptionDetailRepository;
   private final StripeHelper stripeHelper;
 
+  private static final String DEVELOPERS_TYPE = "DEVELOPERS";
+  private static final String MAU_TYPE = "MAU";
+  private static final String MAU_SUPPORT_TYPE = "MAU_SUPPORT";
+  private static final String DEVELOPERS_SUPPORT_TYPE = "DEVELOPERS_SUPPORT";
+  private static final String STRIPE_QUANTITY_KEY = "max";
+
   @Inject
   public InvoicePaymentSucceedHandler(LicenseService licenseService,
       SubscriptionDetailRepository subscriptionDetailRepository, StripeHelper stripeHelper) {
@@ -149,14 +155,14 @@ public class InvoicePaymentSucceedHandler implements StripeEventHandler {
   private void syncCFLicense(CFModuleLicense cfModuleLicense, List<InvoiceLineItem> items) {
     items.forEach(item -> {
       if (isPaymentConsequence(item)) {
-        if (isItem("DEVELOPERS", item)) {
+        if (isItem(DEVELOPERS_TYPE, item)) {
           cfModuleLicense.setNumberOfUsers(item.getQuantity().intValue());
         }
-        if (isItem("MAUS", item)) {
-          cfModuleLicense.setNumberOfClientMAUs(item.getQuantity().longValue());
+        if (isItem(MAU_TYPE, item)) {
+          cfModuleLicense.setNumberOfClientMAUs(getQuantity(item));
           setLicenseProperty(item, cfModuleLicense);
         }
-        if (isItem("SUPPORT", item)) {
+        if (isItem(MAU_SUPPORT_TYPE, item) || isItem(DEVELOPERS_SUPPORT_TYPE, item)) {
           setSupport(item, cfModuleLicense);
         }
       }
@@ -216,6 +222,10 @@ public class InvoicePaymentSucceedHandler implements StripeEventHandler {
 
   private boolean isPaymentConsequence(InvoiceLineItem invoiceLineItem) {
     return !invoiceLineItem.getProration() || (invoiceLineItem.getProration() && invoiceLineItem.getAmount() > 0);
+  }
+
+  private long getQuantity(InvoiceLineItem invoiceLineItem) {
+    return Long.parseLong(invoiceLineItem.getPrice().getMetadata().get(STRIPE_QUANTITY_KEY));
   }
 
   private void setLicenseProperty(InvoiceLineItem item, ModuleLicense moduleLicense) {

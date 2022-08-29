@@ -207,7 +207,7 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
               infraService.get(filterCreationContext.getSetupMetadata().getAccountId(),
                   filterCreationContext.getSetupMetadata().getOrgId(),
                   filterCreationContext.getSetupMetadata().getProjectId(), entity.getIdentifier(),
-                  infraList.get(0).getIdentifier());
+                  infraList.get(0).getIdentifier().getValue());
           if (infrastructureEntity.isPresent()) {
             if (infrastructureEntity.get().getType() == null) {
               throw new InvalidRequestException(format(

@@ -52,4 +52,6 @@ public interface ILogStreamingTaskClient {
   ITaskProgressClient obtainTaskProgressClient();
 
   ExecutorService obtainTaskProgressExecutor();
+
+  default void dispatchLogs() {}
 }

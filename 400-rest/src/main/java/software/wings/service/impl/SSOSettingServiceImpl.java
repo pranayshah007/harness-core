@@ -283,7 +283,7 @@ public class SSOSettingServiceImpl implements SSOSettingService {
     if (featureFlagService.isEnabled(FeatureName.LDAP_SECRET_AUTH, settings.getAccountId())) {
       ssoServiceHelper.encryptLdapSecret(settings.getConnectionSettings(), secretManager, settings.getAccountId());
     }
-    settings.encryptLdapInlineSecret(secretManager);
+    settings.encryptLdapInlineSecret(secretManager, false);
     if (isEmpty(settings.getCronExpression())) {
       settings.setCronExpression(ldapSyncJobConfig.getDefaultCronExpression());
     }
@@ -320,7 +320,7 @@ public class SSOSettingServiceImpl implements SSOSettingService {
     if (featureFlagService.isEnabled(FeatureName.LDAP_SECRET_AUTH, settings.getAccountId())) {
       ssoServiceHelper.encryptLdapSecret(oldSettings.getConnectionSettings(), secretManager, settings.getAccountId());
     }
-    oldSettings.encryptLdapInlineSecret(secretManager);
+    oldSettings.encryptLdapInlineSecret(secretManager, false);
     oldSettings.setDefaultCronExpression(ldapSyncJobConfig.getDefaultCronExpression());
     oldSettings.setCronExpression(settings.getCronExpression());
     updateNextIterations(oldSettings);

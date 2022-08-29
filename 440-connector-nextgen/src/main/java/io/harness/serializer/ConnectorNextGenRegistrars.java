@@ -16,6 +16,7 @@ import io.harness.filter.serializer.FiltersRegistrars;
 import io.harness.gitsync.serializer.GitSyncSdkRegistrar;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.serializer.kryo.ConnectorNextGenKryoRegistrar;
+import io.harness.serializer.kryo.NotificationBeansKryoRegistrar;
 import io.harness.serializer.morphia.ConnectorMorphiaClassesRegistrar;
 import io.harness.yaml.schema.beans.YamlSchemaRootClass;
 
@@ -40,6 +41,8 @@ public class ConnectorNextGenRegistrars {
           .addAll(DelegateTaskRegistrars.kryoRegistrars)
           .addAll(LicenseBeanRegistrar.kryoRegistrars)
           .addAll(AccessControlClientRegistrars.kryoRegistrars)
+          .addAll(NGCommonModuleRegistrars.kryoRegistrars)
+          .add(NotificationBeansKryoRegistrar.class)
           .addAll(ProjectAndOrgRegistrars.kryoRegistrars)
           .build();
 
@@ -56,11 +59,14 @@ public class ConnectorNextGenRegistrars {
           .addAll(NGAuditCommonsRegistrars.morphiaRegistrars)
           .addAll(OutboxEventRegistrars.morphiaRegistrars)
           .addAll(DelegateTaskRegistrars.morphiaRegistrars)
+          .addAll(NGCommonModuleRegistrars.morphiaRegistrars)
           .addAll(ProjectAndOrgRegistrars.morphiaRegistrars)
           .build();
 
   public static final ImmutableList<Class<? extends Converter<?, ?>>> springConverters =
-      ImmutableList.<Class<? extends Converter<?, ?>>>builder().build();
+      ImmutableList.<Class<? extends Converter<?, ?>>>builder()
+          .addAll(NGCommonModuleRegistrars.springConverters)
+          .build();
 
   public static final ImmutableList<YamlSchemaRootClass> yamlSchemaRegistrars =
       ImmutableList.<YamlSchemaRootClass>builder()

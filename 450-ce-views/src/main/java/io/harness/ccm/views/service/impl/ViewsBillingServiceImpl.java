@@ -16,6 +16,7 @@ import static io.harness.ccm.commons.constants.ViewFieldConstants.NAMESPACE_FIEL
 import static io.harness.ccm.commons.constants.ViewFieldConstants.TASK_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.WORKLOAD_NAME_FIELD_ID;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.CLUSTER;
+import static io.harness.ccm.views.entities.ViewFieldIdentifier.COMMON;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.LABEL;
 import static io.harness.ccm.views.graphql.QLCEViewAggregateOperation.MAX;
 import static io.harness.ccm.views.graphql.QLCEViewAggregateOperation.MIN;
@@ -28,6 +29,8 @@ import static io.harness.ccm.views.graphql.ViewMetaDataConstants.entityConstantM
 import static io.harness.ccm.views.graphql.ViewMetaDataConstants.entityConstantMinStartTime;
 import static io.harness.ccm.views.graphql.ViewMetaDataConstants.entityConstantSystemCost;
 import static io.harness.ccm.views.graphql.ViewMetaDataConstants.entityConstantUnallocatedCost;
+import static io.harness.ccm.views.graphql.ViewsQueryBuilder.ECS_TASK_EC2;
+import static io.harness.ccm.views.graphql.ViewsQueryBuilder.ECS_TASK_FARGATE;
 import static io.harness.ccm.views.graphql.ViewsQueryBuilder.K8S_NODE;
 import static io.harness.ccm.views.graphql.ViewsQueryBuilder.K8S_POD;
 import static io.harness.ccm.views.graphql.ViewsQueryBuilder.K8S_POD_FARGATE;
@@ -246,13 +249,6 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     List<QLCEViewFilter> idFilters =
         awsAccountFieldHelper.addAccountIdsByAwsAccountNameFilter(getIdFilters(filters), queryParams.getAccountId());
 
-    List<QLCEViewRule> rules = getRuleFilters(filters);
-    if (!rules.isEmpty()) {
-      for (QLCEViewRule rule : rules) {
-        viewRuleList.add(convertQLCEViewRuleToViewRule(rule));
-      }
-    }
-
     if (viewMetadataFilter.isPresent()) {
       QLCEViewMetadataFilter metadataFilter = viewMetadataFilter.get().getViewMetadataFilter();
       final String viewId = metadataFilter.getViewId();
@@ -378,7 +374,6 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
           groupBy.stream().filter(g -> g.getEntityGroupBy() != null).collect(Collectors.toList());
       QLCEViewGridData gridData = getEntityStatsDataPointsNg(bigQuery, filters, groupByExcludingGroupByTime,
           aggregateFunction, sort, cloudProviderTableName, limit, 0, queryParamsForGrid);
-      log.info("GRID DATA: {}", gridData);
       filters = getModifiedFilters(filters, gridData);
     }
 
@@ -477,65 +472,55 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
   }
 
   @Override
-  public boolean isClusterPerspective(List<QLCEViewFilterWrapper> filters) {
-    boolean dataSourceCondition = false;
-    boolean ruleCondition = true;
-    List<ViewRule> viewRuleList = new ArrayList<>();
-    Optional<QLCEViewFilterWrapper> viewMetadataFilter = getViewMetadataFilter(filters);
+  public boolean isClusterPerspective(final List<QLCEViewFilterWrapper> filters) {
+    Set<ViewFieldIdentifier> dataSources = null;
+    final Optional<QLCEViewFilterWrapper> viewMetadataFilter = getViewMetadataFilter(filters);
     if (viewMetadataFilter.isPresent()) {
-      QLCEViewMetadataFilter metadataFilter = viewMetadataFilter.get().getViewMetadataFilter();
-      final String viewId = metadataFilter.getViewId();
+      final QLCEViewMetadataFilter metadataFilter = viewMetadataFilter.get().getViewMetadataFilter();
       if (!metadataFilter.isPreview()) {
-        CEView ceView = viewService.get(viewId);
-        viewRuleList = ceView.getViewRules();
-        List<ViewFieldIdentifier> dataSources;
+        final CEView ceView = viewService.get(metadataFilter.getViewId());
         try {
-          dataSources = ceView.getDataSources();
-        } catch (Exception e) {
-          dataSources = null;
-        }
-        if (dataSources != null) {
-          dataSourceCondition = true;
-          for (ViewFieldIdentifier identifier : dataSources) {
-            if (!identifier.equals(CLUSTER) && !identifier.equals(LABEL)) {
-              dataSourceCondition = false;
-              break;
-            }
-          }
+          dataSources = ceView.getDataSources().stream().collect(Collectors.toSet());
+        } catch (final Exception e) {
+          log.error("Exception while fetching dataSources for ceView: {}", ceView, e);
         }
       } else {
-        dataSourceCondition = true;
-        ruleCondition = isClusterPerspectiveRules(getRuleFilters(filters));
-      }
-    }
-    for (ViewRule rule : viewRuleList) {
-      for (ViewCondition condition : rule.getViewConditions()) {
-        ViewIdCondition viewIdCondition = (ViewIdCondition) condition;
-        if (isNotClusterPerspective(viewIdCondition.getViewField().getIdentifier())) {
-          ruleCondition = false;
-          break;
-        }
+        dataSources = getDataSourcesFromFilters(filters);
       }
     }
 
-    return dataSourceCondition && ruleCondition;
+    return dataSources != null && isClusterDataSources(dataSources);
   }
 
-  private boolean isClusterPerspectiveRules(final List<QLCEViewRule> qlCEViewRules) {
-    boolean ruleCondition = true;
+  private Set<ViewFieldIdentifier> getDataSourcesFromFilters(final List<QLCEViewFilterWrapper> filters) {
+    final Set<ViewFieldIdentifier> dataSources = new HashSet<>();
+    dataSources.addAll(getDataSourcesFromViewFilters(getIdFilters(filters)));
+    dataSources.addAll(getDataSourcesFromViewRules(getRuleFilters(filters)));
+    return dataSources;
+  }
+
+  private Set<ViewFieldIdentifier> getDataSourcesFromViewFilters(final List<QLCEViewFilter> qlCEViewFilters) {
+    final Set<ViewFieldIdentifier> dataSources = new HashSet<>();
+    for (final QLCEViewFilter qlCEViewFilter : qlCEViewFilters) {
+      dataSources.add(qlCEViewFilter.getField().getIdentifier());
+    }
+    return dataSources;
+  }
+
+  private Set<ViewFieldIdentifier> getDataSourcesFromViewRules(final List<QLCEViewRule> qlCEViewRules) {
+    final Set<ViewFieldIdentifier> dataSources = new HashSet<>();
     for (final QLCEViewRule qlCEViewRule : qlCEViewRules) {
-      for (final QLCEViewFilter qlCEViewFilter : qlCEViewRule.getConditions()) {
-        if (isNotClusterPerspective(qlCEViewFilter.getField().getIdentifier())) {
-          ruleCondition = false;
-          break;
-        }
-      }
+      dataSources.addAll(getDataSourcesFromViewFilters(qlCEViewRule.getConditions()));
     }
-    return ruleCondition;
+    return dataSources;
   }
 
-  private boolean isNotClusterPerspective(final ViewFieldIdentifier viewFieldIdentifier) {
-    return !(viewFieldIdentifier.equals(CLUSTER) || viewFieldIdentifier.equals(LABEL));
+  public boolean isClusterDataSources(final Set<ViewFieldIdentifier> dataSources) {
+    return (dataSources.size() == 1 && dataSources.contains(CLUSTER))
+        || (dataSources.size() == 2 && dataSources.contains(CLUSTER)
+            && (dataSources.contains(COMMON) || dataSources.contains(LABEL)))
+        || (dataSources.size() == 3 && dataSources.contains(CLUSTER) && dataSources.contains(COMMON)
+            && dataSources.contains(LABEL));
   }
 
   @Override
@@ -1676,6 +1661,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     groupByList.forEach(groupBy -> {
       if (groupBy.getEntityGroupBy() != null) {
         switch (groupBy.getEntityGroupBy().getFieldName()) {
+          case GROUP_BY_ECS_TASK_ID:
           case GROUP_BY_INSTANCE_ID:
           case GROUP_BY_INSTANCE_NAME:
           case GROUP_BY_INSTANCE_TYPE:
@@ -1834,6 +1820,8 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
       values = new String[] {K8S_NODE};
     } else if (entityGroupBy.contains(GROUP_BY_STORAGE)) {
       values = new String[] {K8S_PV};
+    } else if (entityGroupBy.contains(GROUP_BY_ECS_TASK_ID)) {
+      values = new String[] {ECS_TASK_EC2, ECS_TASK_FARGATE};
     } else {
       values = new String[] {K8S_POD, K8S_POD_FARGATE};
     }

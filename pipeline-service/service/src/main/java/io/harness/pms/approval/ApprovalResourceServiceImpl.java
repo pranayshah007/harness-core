@@ -8,7 +8,6 @@
 package io.harness.pms.approval;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.beans.FeatureName.SERVICENOW_CREATE_UPDATE_NG;
 import static io.harness.security.dto.PrincipalType.USER;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -39,7 +38,6 @@ import io.harness.steps.approval.step.harness.entities.HarnessApprovalInstance;
 import io.harness.user.remote.UserClient;
 import io.harness.usergroups.UserGroupClient;
 import io.harness.utils.IdentifierRefHelper;
-import io.harness.utils.NGFeatureFlagHelperService;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Resources;
@@ -66,20 +64,17 @@ public class ApprovalResourceServiceImpl implements ApprovalResourceService {
   private final UserGroupClient userGroupClient;
   private final CurrentUserHelper currentUserHelper;
   private final UserClient userClient;
-  private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
 
   @Inject
   public ApprovalResourceServiceImpl(ApprovalInstanceService approvalInstanceService,
       ApprovalInstanceResponseMapper approvalInstanceResponseMapper, PlanExecutionService planExecutionService,
-      UserGroupClient userGroupClient, CurrentUserHelper currentUserHelper, UserClient userClient,
-      NGFeatureFlagHelperService ngFeatureFlagHelperService) {
+      UserGroupClient userGroupClient, CurrentUserHelper currentUserHelper, UserClient userClient) {
     this.approvalInstanceService = approvalInstanceService;
     this.approvalInstanceResponseMapper = approvalInstanceResponseMapper;
     this.planExecutionService = planExecutionService;
     this.userGroupClient = userGroupClient;
     this.currentUserHelper = currentUserHelper;
     this.userClient = userClient;
-    this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;
   }
 
   @Override
@@ -158,11 +153,7 @@ public class ApprovalResourceServiceImpl implements ApprovalResourceService {
   public String getYamlSnippet(ApprovalType approvalType, String accountId) throws IOException {
     ClassLoader classLoader = this.getClass().getClassLoader();
     String yamlFile = approvalType.getDisplayName();
-    boolean isSnowCreateUpdateEnabled = ngFeatureFlagHelperService.isEnabled(accountId, SERVICENOW_CREATE_UPDATE_NG);
 
-    if (isSnowCreateUpdateEnabled && ApprovalType.SERVICENOW_APPROVAL.equals(approvalType)) {
-      yamlFile = yamlFile.concat("WithCreateUpdate");
-    }
     return Resources.toString(
         Objects.requireNonNull(classLoader.getResource(String.format("approval_stage_yamls/%s.yaml", yamlFile))),
         StandardCharsets.UTF_8);

@@ -197,7 +197,7 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
       if (environmentRef != null) {
         createVariablesForEnvironment(ctx, environmentRef, responseMap, serviceVariables);
       }
-      if (environmentRef != null && infraDefinitionRefs != null) {
+      if (environmentRef != null && isNotEmpty(infraDefinitionRefs)) {
         // todo: multi-infra
         createVariablesForInfraDefinitions(ctx, environmentRef, infraDefinitionRefs, responseMap);
       }
@@ -396,6 +396,8 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
       if (isNotEmpty(infraStructureDefinitionYamls)) {
         return infraStructureDefinitionYamls.stream()
             .map(InfraStructureDefinitionYaml::getIdentifier)
+            .filter(p -> !p.isExpression())
+            .map(ParameterField::getValue)
             .collect(Collectors.toList());
       }
     }

@@ -119,6 +119,7 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
       }
     }
     if (variableOverrides != null) {
+      variableOverrides.removeIf(Objects::isNull);
       Set<String> variableKeys = new HashSet<>();
       Set<String> duplicates = new HashSet<>();
       int emptyOverrides = 0;

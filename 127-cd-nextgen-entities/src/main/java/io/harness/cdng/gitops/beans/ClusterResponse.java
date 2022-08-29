@@ -37,4 +37,5 @@ public class ClusterResponse {
   @Schema(description = "time at which the cluster was linked") Long linkedAt;
   @Schema(description = "scope at which the cluster exists in harness gitops, project vs org vs account")
   ScopeLevel scope;
+  @Schema(description = "name of the gitops cluster") String name;
 }

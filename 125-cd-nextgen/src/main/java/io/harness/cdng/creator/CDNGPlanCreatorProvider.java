@@ -35,7 +35,9 @@ import io.harness.cdng.creator.plan.service.ServiceDefinitionPlanCreator;
 import io.harness.cdng.creator.plan.service.ServicePlanCreator;
 import io.harness.cdng.creator.plan.service.ServicePlanCreatorV2;
 import io.harness.cdng.creator.plan.stage.DeploymentStagePMSPlanCreatorV2;
+import io.harness.cdng.creator.plan.steps.AzureARMRollbackResourceStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.AzureCreateARMResourceStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.AzureCreateBPResourceStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.CDPMSStepFilterJsonCreator;
 import io.harness.cdng.creator.plan.steps.CDPMSStepFilterJsonCreatorV2;
 import io.harness.cdng.creator.plan.steps.CloudformationCreateStackStepPlanCreator;
@@ -84,7 +86,9 @@ import io.harness.cdng.creator.variables.ServerlessAwsLambdaDeployStepVariableCr
 import io.harness.cdng.creator.variables.ServerlessAwsLambdaRollbackStepVariableCreator;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepVariableCreator;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsCreateStepPlanCreator;
+import io.harness.cdng.provision.azure.variablecreator.AzureARMRollbackStepVariableCreator;
 import io.harness.cdng.provision.azure.variablecreator.AzureCreateARMResourceStepVariableCreator;
+import io.harness.cdng.provision.azure.variablecreator.AzureCreateBPStepVariableCreator;
 import io.harness.cdng.provision.cloudformation.variablecreator.CloudformationCreateStepVariableCreator;
 import io.harness.cdng.provision.cloudformation.variablecreator.CloudformationDeleteStepVariableCreator;
 import io.harness.cdng.provision.cloudformation.variablecreator.CloudformationRollbackStepVariableCreator;
@@ -95,6 +99,8 @@ import io.harness.cdng.provision.terraform.variablecreator.TerraformRollbackStep
 import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.filters.ExecutionPMSFilterJsonCreator;
+import io.harness.filters.ParallelGenericFilterJsonCreator;
+import io.harness.filters.StepGroupPmsFilterJsonCreator;
 import io.harness.plancreator.stages.parallel.ParallelPlanCreator;
 import io.harness.plancreator.steps.SpecNodePlanCreator;
 import io.harness.plancreator.steps.StepGroupPMSPlanCreator;
@@ -124,6 +130,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
       Arrays.asList("Kubernetes", "Provisioner", "Cloudformation", "Helm");
   private static final String CLOUDFORMATION_STEP_METADATA = "Cloudformation";
   private static final List<String> TERRAFORM_CATEGORY = Arrays.asList("Kubernetes", "Provisioner", "Helm");
+  private static final String BUILD_STEP = "Builds";
 
   private static final List<String> AZURE_RESOURCE_CATEGORY =
       Arrays.asList("Kubernetes", "Provisioner", "Azure", "Helm", "AzureWebApp");
@@ -187,6 +194,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new ApplicationSettingsPlanCreator());
     planCreators.add(new ConnectionStringsPlanCreator());
     planCreators.add(new AzureCreateARMResourceStepPlanCreator());
+    planCreators.add(new AzureCreateBPResourceStepPlanCreator());
+    planCreators.add(new AzureARMRollbackResourceStepPlanCreator());
     injectorUtils.injectMembers(planCreators);
     return planCreators;
   }
@@ -198,6 +207,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     filterJsonCreators.add(new CDPMSStepFilterJsonCreator());
     filterJsonCreators.add(new CDPMSStepFilterJsonCreatorV2());
     filterJsonCreators.add(new ExecutionPMSFilterJsonCreator());
+    filterJsonCreators.add(new ParallelGenericFilterJsonCreator());
+    filterJsonCreators.add(new StepGroupPmsFilterJsonCreator());
     injectorUtils.injectMembers(filterJsonCreators);
 
     return filterJsonCreators;
@@ -238,6 +249,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new JenkinsBuildStepVariableCreator());
     variableCreators.add(new StrategyVariableCreator());
     variableCreators.add(new AzureCreateARMResourceStepVariableCreator());
+    variableCreators.add(new AzureCreateBPStepVariableCreator());
+    variableCreators.add(new AzureARMRollbackStepVariableCreator());
     return variableCreators;
   }
 
@@ -402,7 +415,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setType(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_DEPLOY)
             .setStepMetaData(
                 StepMetaData.newBuilder().addCategory("ServerlessAwsLambda").setFolderPath("Serverless Lambda").build())
-            .setFeatureFlag(FeatureName.SERVERLESS_SUPPORT.name())
             .build();
 
     StepInfo serverlessRollback =
@@ -411,7 +423,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setType(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK)
             .setStepMetaData(
                 StepMetaData.newBuilder().addCategory("ServerlessAwsLambda").setFolderPath("Serverless Lambda").build())
-            .setFeatureFlag(FeatureName.SERVERLESS_SUPPORT.name())
             .build();
 
     StepInfo createStack = StepInfo.newBuilder()
@@ -480,19 +491,44 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setFeatureFlag(FeatureName.AZURE_WEBAPP_NG.name())
             .build();
 
-    StepInfo jenkinsBuildStepInfo = StepInfo.newBuilder()
-                                        .setName("Jenkins Build")
-                                        .setType(StepSpecTypeConstants.JENKINS_BUILD)
-                                        .setFeatureRestrictionName(FeatureRestrictionName.JENKINS_BUILD.name())
-                                        .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Builds").build())
-                                        .setFeatureFlag(FeatureName.JENKINS_ARTIFACT.name())
-                                        .build();
+    StepInfo jenkinsBuildStepInfo =
+        StepInfo.newBuilder()
+            .setName("Jenkins Build")
+            .setType(StepSpecTypeConstants.JENKINS_BUILD)
+            .setFeatureRestrictionName(FeatureRestrictionName.JENKINS_BUILD.name())
+            .setStepMetaData(StepMetaData.newBuilder().addCategory(BUILD_STEP).addFolderPaths("Builds").build())
+            .setFeatureFlag(FeatureName.JENKINS_ARTIFACT.name())
+            .build();
 
     StepInfo azureCreateARMResources =
         StepInfo.newBuilder()
             .setName("Create Azure ARM Resources")
             .setType(StepSpecTypeConstants.AZURE_CREATE_ARM_RESOURCE)
             .setFeatureRestrictionName(FeatureRestrictionName.AZURE_CREATE_ARM_RESOURCE.name())
+            .setStepMetaData(StepMetaData.newBuilder()
+                                 .addAllCategory(AZURE_RESOURCE_CATEGORY)
+                                 .addFolderPaths(AZURE_RESOURCE_STEP_METADATA)
+                                 .build())
+            .setFeatureFlag(FeatureName.AZURE_ARM_BP_NG.name())
+            .build();
+
+    StepInfo azureCreateBPResources =
+        StepInfo.newBuilder()
+            .setName("Create Azure BP Resources")
+            .setType(StepSpecTypeConstants.AZURE_CREATE_BP_RESOURCE)
+            .setFeatureRestrictionName(FeatureRestrictionName.AZURE_CREATE_BP_RESOURCE.name())
+            .setStepMetaData(StepMetaData.newBuilder()
+                                 .addAllCategory(AZURE_RESOURCE_CATEGORY)
+                                 .addFolderPaths(AZURE_RESOURCE_STEP_METADATA)
+                                 .build())
+            .setFeatureFlag(FeatureName.AZURE_ARM_BP_NG.name())
+            .build();
+
+    StepInfo azureARMRollback =
+        StepInfo.newBuilder()
+            .setName("Rollback Azure ARM Resources")
+            .setType(StepSpecTypeConstants.AZURE_ROLLBACK_ARM_RESOURCE)
+            .setFeatureRestrictionName(FeatureRestrictionName.AZURE_ROLLBACK_ARM_RESOURCE.name())
             .setStepMetaData(StepMetaData.newBuilder()
                                  .addAllCategory(AZURE_RESOURCE_CATEGORY)
                                  .addFolderPaths(AZURE_RESOURCE_STEP_METADATA)
@@ -531,6 +567,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(azureWebAppRollback);
     stepInfos.add(jenkinsBuildStepInfo);
     stepInfos.add(azureCreateARMResources);
+    stepInfos.add(azureCreateBPResources);
+    stepInfos.add(azureARMRollback);
     return stepInfos;
   }
 }
