@@ -20,6 +20,8 @@ import io.harness.delegate.beans.connector.datadog.DatadogConnectorDTO;
 import io.harness.delegate.beans.connector.datadogconnector.DatadogCapabilityHelper;
 import io.harness.delegate.beans.connector.dynatrace.DynatraceConnectorDTO;
 import io.harness.delegate.beans.connector.dynatraceconnector.DynatraceCapabilityHelper;
+import io.harness.delegate.beans.connector.elkconnector.ELKCapabilityHelper;
+import io.harness.delegate.beans.connector.elkconnector.ELKConnectorDTO;
 import io.harness.delegate.beans.connector.errortracking.ErrorTrackingConnectorDTO;
 import io.harness.delegate.beans.connector.errortrackingconnector.ErrorTrackingCapabilityHelper;
 import io.harness.delegate.beans.connector.gcp.GcpCapabilityHelper;
@@ -76,6 +78,8 @@ public class CVConnectorCapabilitiesHelper extends ConnectorTaskParams {
       return CustomHealthCapabilityHelper.fetchRequiredExecutionCapabilities(maskingEvaluator, connectorDTO);
     } else if (connectorDTO instanceof ErrorTrackingConnectorDTO) {
       return ErrorTrackingCapabilityHelper.fetchRequiredExecutionCapabilities(maskingEvaluator, connectorDTO);
+    } else if (connectorDTO instanceof ELKConnectorDTO) {
+      return ELKCapabilityHelper.fetchRequiredExecutionCapabilities(connectorDTO, maskingEvaluator);
     } else {
       throw new InvalidRequestException("Connector capability not found for " + connectorDTO);
     }

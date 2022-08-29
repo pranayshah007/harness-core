@@ -7,7 +7,6 @@
 
 package io.harness.delegate.beans.cvng.elk;
 
-import io.harness.delegate.beans.connector.appdynamicsconnector.AppDynamicsAuthType;
 import io.harness.delegate.beans.connector.elkconnector.ELKAuthType;
 import io.harness.delegate.beans.connector.elkconnector.ELKConnectorDTO;
 
@@ -38,8 +37,8 @@ public class elkUtils {
   public static Map<String, String> collectionHeaders(ELKConnectorDTO elkConnectorDTO) {
     Map<String, String> headers = new HashMap<>();
     headers.put("Connection", "keep-alive");
-    if (elkConnectorDTO.getAuthType().equals(AppDynamicsAuthType.USERNAME_PASSWORD)
-        || elkConnectorDTO.getAuthType().equals(AppDynamicsAuthType.API_CLIENT_TOKEN)) {
+    if (elkConnectorDTO.getAuthType().equals(ELKAuthType.USERNAME_PASSWORD)
+        || elkConnectorDTO.getAuthType().equals(ELKAuthType.API_CLIENT_TOKEN)) {
       headers.put("Authorization", getAuthorizationHeader(elkConnectorDTO));
     }
     return headers;
