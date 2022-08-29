@@ -88,14 +88,15 @@ public class ShellScriptYamlExpressionEvaluatorTest extends CategoryTest {
   // Tests for resolution of Hierarchical resolution
   // ie resolve(expression 1) where expression 1 needs resolution of expression 2 or more levels
   public void testResolveHierarichalExpression() throws Exception {
-    String script = "echo 1 echo <+spec.source.spec.type> and <+spec.environmentVariables.e1>";
+    String script =
+        "echo 1 echo <+spec.source.spec.type> and <+spec.environmentVariables.e1> and <+secretManager.source.spec.type>";
     String yaml = getYaml(script);
     ShellScriptYamlExpressionEvaluator shellScriptYamlExpressionEvaluator =
         new ShellScriptYamlExpressionEvaluator(yaml, 7);
     ShellScriptBaseDTO shellScriptBaseDTO = YamlUtils.read(yaml, ShellScriptYamlDTO.class).getShellScriptBaseDTO();
     shellScriptBaseDTO = (ShellScriptBaseDTO) shellScriptYamlExpressionEvaluator.resolve(shellScriptBaseDTO, false);
     assertThat(shellScriptBaseDTO.getShellScriptSpec().getSource().getSpec().getScript().getValue())
-        .isEqualTo("echo 1 echo Inline and dummyValue2");
+        .isEqualTo("echo 1 echo Inline and dummyValue2 and Inline");
   }
 
   @Test

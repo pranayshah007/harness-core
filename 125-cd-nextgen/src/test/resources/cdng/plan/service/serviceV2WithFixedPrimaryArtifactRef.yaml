@@ -21,12 +21,14 @@ service:
               connectorRef: "https://registry.hub.docker.com/"
               imagePath: "library/nginx"
               tag: "1.19"
-          - identifier: i3
-            type: DockerRegistry
-            spec:
-              connectorRef: "https://registry.hub.docker.com/"
-              imagePath: "library/nginx"
-              tag: ""
+        sidecars:
+          - sidecar:
+              identifier: i3
+              type: DockerRegistry
+              spec:
+                connectorRef: "https://registry.hub.docker.com/"
+                imagePath: "library/nginx"
+                tag: "1.19"
       manifests:
         - manifest:
             identifier: manifestIdentifier

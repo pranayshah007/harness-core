@@ -99,6 +99,8 @@ import io.harness.cdng.provision.terraform.variablecreator.TerraformRollbackStep
 import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.filters.ExecutionPMSFilterJsonCreator;
+import io.harness.filters.ParallelGenericFilterJsonCreator;
+import io.harness.filters.StepGroupPmsFilterJsonCreator;
 import io.harness.plancreator.stages.parallel.ParallelPlanCreator;
 import io.harness.plancreator.steps.SpecNodePlanCreator;
 import io.harness.plancreator.steps.StepGroupPMSPlanCreator;
@@ -205,6 +207,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     filterJsonCreators.add(new CDPMSStepFilterJsonCreator());
     filterJsonCreators.add(new CDPMSStepFilterJsonCreatorV2());
     filterJsonCreators.add(new ExecutionPMSFilterJsonCreator());
+    filterJsonCreators.add(new ParallelGenericFilterJsonCreator());
+    filterJsonCreators.add(new StepGroupPmsFilterJsonCreator());
     injectorUtils.injectMembers(filterJsonCreators);
 
     return filterJsonCreators;

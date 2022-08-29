@@ -11,6 +11,7 @@ import io.harness.eventsframework.impl.redis.RedisUtils;
 import io.harness.redis.RedisConfig;
 import io.harness.serializer.JsonUtils;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
@@ -55,7 +56,8 @@ public class RedisOffsetBackingStore extends MemoryOffsetBackingStore {
   /**
    * Load offsets from redis keys
    */
-  private void load() {
+  @VisibleForTesting
+  public void load() {
     this.data = new HashMap<>();
     RMap<byte[], byte[]> offsets = redisson.getMap(this.redisKey);
     if (offsets.size() > 0) {

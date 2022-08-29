@@ -12,6 +12,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.steps.nodes.ArtifactoryUploadNode;
+import io.harness.beans.steps.nodes.BackgroundStepNode;
 import io.harness.beans.steps.nodes.BuildAndPushACRNode;
 import io.harness.beans.steps.nodes.BuildAndPushDockerNode;
 import io.harness.beans.steps.nodes.BuildAndPushECRNode;
@@ -60,6 +61,7 @@ public class CIExecutionServiceModule extends AbstractModule {
   public static Set<Class<?>> ciStepsMovedToNewSchema = new HashSet() {
     {
       add(RunStepNode.class);
+      add(BackgroundStepNode.class);
       add(RunTestStepNode.class);
       add(GCSUploadNode.class);
       add(S3UploadNode.class);

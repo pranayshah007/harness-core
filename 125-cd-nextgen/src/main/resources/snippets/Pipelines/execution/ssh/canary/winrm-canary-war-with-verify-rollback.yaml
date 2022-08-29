@@ -7,7 +7,6 @@ spec:
           strategy:
             repeat:
               items: <+stage.output.hosts>
-              maxConcurrency: <+maxConcurrency>
               start: <+start>
               end: <+end>
               unit: <+unit>
@@ -26,7 +25,6 @@ spec:
                       name: "Setup Runtime Paths Rollback"
                       type: Script
                       spec:
-                        workingDirectory: $HOME\<+service.name>\<+env.name>
                         shell: PowerShell
                         source:
                           type: Inline

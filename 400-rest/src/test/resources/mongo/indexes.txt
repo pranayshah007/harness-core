@@ -345,8 +345,10 @@ gitFileActivity {"name": "accountId_commitId_Idx", "background": true} {"account
 gitFileActivity {"name": "accountId_filePath", "background": true} {"accountId": 1, "filePath": 1}
 gitFileActivity {"name": "accountId_procCommitId_filePath_status", "background": true} {"accountId": 1, "processingCommitId": 1, "filePath": 1, "status": 1}
 gitFileActivity {"name": "accountId_procCommitId_status", "background": true} {"accountId": 1, "processingCommitId": 1, "status": 1}
+gitFileActivity {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 gitFileActivitySummary {"name": "gitCommits_createdAt_direction_indx", "background": true} {"accountId": 1, "createdAt": 1, "gitToHarness": 1}
 gitFileActivitySummary {"name": "gitCommits_for_appId_indx", "background": true} {"accountId": 1, "appId": 1, "gitToHarness": 1}
+gitFileActivitySummary {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 gitProcessRequestSdk {"name": "accountId_repo_branch_commit_index", "background": true} {"accountId": 1, "repoUrl": 1, "branch": 1, "commitId": 1}
 gitSyncError {"name": "accountId_createdAt", "background": true} {"accountId": 1, "createdAt": 1}
 gitSyncError {"name": "account_filepath_direction_idx", "unique": true} {"accountId": 1, "yamlFilePath": 1, "gitSyncDirection": 1}
@@ -357,6 +359,7 @@ gitSyncError {"name": "gitCommitId_idx_for_app_filter", "background": true} {"ac
 gitSyncError {"name": "nextIteration_1", "background": true} {"nextIteration": 1}
 gitSyncError {"name": "previousErrors_idx", "background": true} {"accountId": 1, "gitSyncDirection": 1, "additionalErrorDetails.previousCommitIdsWithError": 1}
 gitSyncError {"name": "previousErrors_idx_for_app_filter", "background": true} {"accountId": 1, "appId": 1, "gitSyncDirection": 1, "additionalErrorDetails.previousCommitIdsWithError": 1}
+gitSyncError {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 gitSyncWebhook {"name": "appId_1", "background": true} {"appId": 1}
 gitSyncWebhook {"name": "createdAt_1", "background": true} {"createdAt": 1}
 governanceConfig {"name": "accountId_1", "background": true} {"accountId": 1}
@@ -876,7 +879,7 @@ workflowExecutions {"name": "appId_endTs", "background": true} {"appId": 1, "end
 workflowExecutions {"name": "app_pipExecutionId_createdAt", "background": true} {"appId": 1, "pipelineExecutionId": 1, "createdAt": -1}
 workflowExecutions {"name": "appid_status_workflowid_infraMappingIds_createdat", "background": true} {"appId": 1, "status": 1, "workflowId": 1, "infraMappingIds": 1, "createdAt": -1}
 workflowExecutions {"name": "appid_workflowid_infraMappingIds_status_createdat", "background": true} {"appId": 1, "workflowId": 1, "infraMappingIds": 1, "status": 1, "createdAt": -1}
-workflowExecutions {"name": "appid_workflowid_status_createdat", "background": true} {"appId": 1, "workflowId": 1, "status": 1, "createdAt": -1}
+workflowExecutions {"name": "appid_workflowid_status_deployedServices_createdat", "background": true} {"appId": 1, "workflowId": 1, "status": 1, "deployedServices": 1, "createdAt": -1}
 workflowExecutions {"name": "createdAt_1", "background": true} {"createdAt": 1}
 workflowExecutions {"name": "infraDefinitionIds_1", "background": true} {"infraDefinitionIds": 1}
 workflowExecutions {"name": "infraMappingIds_1", "background": true} {"infraMappingIds": 1}

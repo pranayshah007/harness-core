@@ -75,16 +75,16 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
 
   private List<Instance> getInstancesCreatedBefore(String accountIdentifier, long timestamp) {
     Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier).is(accountIdentifier);
-    criteria.andOperator(Criteria.where(InstanceKeys.isDeleted).is(false));
-    criteria.andOperator(Criteria.where(InstanceKeys.createdAt).lte(timestamp));
+    criteria.andOperator(
+        Criteria.where(InstanceKeys.isDeleted).is(false), Criteria.where(InstanceKeys.createdAt).lte(timestamp));
     Query query = new Query().addCriteria(criteria);
     return mongoTemplate.find(query, Instance.class);
   }
 
   private List<Instance> getInstancesDeletedAfter(String accountIdentifier, long timestamp) {
     Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier).is(accountIdentifier);
-    criteria.andOperator(Criteria.where(InstanceKeys.deletedAt).gte(timestamp));
-    criteria.andOperator(Criteria.where(InstanceKeys.createdAt).lte(timestamp));
+    criteria.andOperator(
+        Criteria.where(InstanceKeys.deletedAt).gte(timestamp), Criteria.where(InstanceKeys.createdAt).lte(timestamp));
     Query query = new Query().addCriteria(criteria);
     return mongoTemplate.find(query, Instance.class);
   }

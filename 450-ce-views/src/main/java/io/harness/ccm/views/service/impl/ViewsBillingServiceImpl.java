@@ -29,6 +29,8 @@ import static io.harness.ccm.views.graphql.ViewMetaDataConstants.entityConstantM
 import static io.harness.ccm.views.graphql.ViewMetaDataConstants.entityConstantMinStartTime;
 import static io.harness.ccm.views.graphql.ViewMetaDataConstants.entityConstantSystemCost;
 import static io.harness.ccm.views.graphql.ViewMetaDataConstants.entityConstantUnallocatedCost;
+import static io.harness.ccm.views.graphql.ViewsQueryBuilder.ECS_TASK_EC2;
+import static io.harness.ccm.views.graphql.ViewsQueryBuilder.ECS_TASK_FARGATE;
 import static io.harness.ccm.views.graphql.ViewsQueryBuilder.K8S_NODE;
 import static io.harness.ccm.views.graphql.ViewsQueryBuilder.K8S_POD;
 import static io.harness.ccm.views.graphql.ViewsQueryBuilder.K8S_POD_FARGATE;
@@ -372,7 +374,6 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
           groupBy.stream().filter(g -> g.getEntityGroupBy() != null).collect(Collectors.toList());
       QLCEViewGridData gridData = getEntityStatsDataPointsNg(bigQuery, filters, groupByExcludingGroupByTime,
           aggregateFunction, sort, cloudProviderTableName, limit, 0, queryParamsForGrid);
-      log.info("GRID DATA: {}", gridData);
       filters = getModifiedFilters(filters, gridData);
     }
 
@@ -1660,6 +1661,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     groupByList.forEach(groupBy -> {
       if (groupBy.getEntityGroupBy() != null) {
         switch (groupBy.getEntityGroupBy().getFieldName()) {
+          case GROUP_BY_ECS_TASK_ID:
           case GROUP_BY_INSTANCE_ID:
           case GROUP_BY_INSTANCE_NAME:
           case GROUP_BY_INSTANCE_TYPE:
@@ -1818,6 +1820,8 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
       values = new String[] {K8S_NODE};
     } else if (entityGroupBy.contains(GROUP_BY_STORAGE)) {
       values = new String[] {K8S_PV};
+    } else if (entityGroupBy.contains(GROUP_BY_ECS_TASK_ID)) {
+      values = new String[] {ECS_TASK_EC2, ECS_TASK_FARGATE};
     } else {
       values = new String[] {K8S_POD, K8S_POD_FARGATE};
     }

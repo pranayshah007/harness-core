@@ -80,6 +80,9 @@ public interface TerraformBaseHelper {
 
   EncryptedRecordData encryptPlan(byte[] content, String planName, EncryptionConfig encryptionConfig);
 
+  EncryptedRecordData encryptPlan(byte[] readAllBytes, TerraformTaskNGParameters taskNGParameters, String delegateId,
+      String taskId) throws IOException;
+
   String getPlanName(TerraformCommand terraformCommand);
 
   void performCleanupOfTfDirs(TerraformTaskNGParameters parameters, LogCallback logCallback);

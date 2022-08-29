@@ -8,8 +8,16 @@
 package io.harness.ci.integrationstage;
 
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveOSType;
+import static io.harness.ci.commonconstants.CIExecutionConstants.ACCOUNT_ID_ATTR;
+import static io.harness.ci.commonconstants.CIExecutionConstants.BUILD_NUMBER_ATTR;
+import static io.harness.ci.commonconstants.CIExecutionConstants.ORG_ID_ATTR;
 import static io.harness.ci.commonconstants.CIExecutionConstants.OSX_STEP_MOUNT_PATH;
+import static io.harness.ci.commonconstants.CIExecutionConstants.PIPELINE_EXECUTION_ID_ATTR;
+import static io.harness.ci.commonconstants.CIExecutionConstants.PIPELINE_ID_ATTR;
+import static io.harness.ci.commonconstants.CIExecutionConstants.PROJECT_ID_ATTR;
 import static io.harness.ci.commonconstants.CIExecutionConstants.SHARED_VOLUME_PREFIX;
+import static io.harness.ci.commonconstants.CIExecutionConstants.STAGE_ID_ATTR;
+import static io.harness.ci.commonconstants.CIExecutionConstants.STAGE_RUNTIME_ID_ATTR;
 import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_MOUNT_PATH;
 import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_VOLUME;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -22,8 +30,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.steps.CIStepInfo;
+import io.harness.beans.steps.stepinfo.BackgroundStepInfo;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
+import io.harness.beans.sweepingoutputs.StageDetails;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.beans.yaml.extended.infrastrucutre.VmInfraSpec;
@@ -38,6 +48,8 @@ import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
 import io.harness.plancreator.steps.StepElementConfig;
 import io.harness.plancreator.steps.StepGroupElementConfig;
+import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.ParameterField;
 
 import com.google.inject.Inject;
@@ -92,6 +104,9 @@ public class VmInitializeUtils {
         case RUN:
           validateRunStepConnector((RunStepInfo) ciStepInfo);
           break;
+        case BACKGROUND:
+          validateBackgroundStepConnector((BackgroundStepInfo) ciStepInfo);
+          break;
         case RUN_TESTS:
           validateRunTestsStepConnector((RunTestsStepInfo) ciStepInfo);
           break;
@@ -118,6 +133,15 @@ public class VmInitializeUtils {
       throw new CIStageExecutionException("connector ref can't be empty if image is provided");
     }
     if (runStepInfo.getImage() == null && runStepInfo.getConnectorRef() != null) {
+      throw new CIStageExecutionException("image can't be empty if connector ref is provided");
+    }
+  }
+
+  private void validateBackgroundStepConnector(BackgroundStepInfo backgroundStepInfo) {
+    if (backgroundStepInfo.getImage() != null && backgroundStepInfo.getConnectorRef() == null) {
+      throw new CIStageExecutionException("connector ref can't be empty if image is provided");
+    }
+    if (backgroundStepInfo.getImage() == null && backgroundStepInfo.getConnectorRef() != null) {
       throw new CIStageExecutionException("image can't be empty if connector ref is provided");
     }
   }
@@ -191,5 +215,27 @@ public class VmInitializeUtils {
 
     VmPoolYaml vmPoolYaml = (VmPoolYaml) vmInfraYaml.getSpec();
     return resolveOSType(vmPoolYaml.getSpec().getOs());
+  }
+
+  public Map<String, String> getBuildTags(Ambiance ambiance, StageDetails stageDetails) {
+    final String accountID = AmbianceUtils.getAccountId(ambiance);
+    final String orgID = AmbianceUtils.getOrgIdentifier(ambiance);
+    final String projectID = AmbianceUtils.getProjectIdentifier(ambiance);
+    final String pipelineID = ambiance.getMetadata().getPipelineIdentifier();
+    final String pipelineExecutionID = ambiance.getPlanExecutionId();
+    final int buildNumber = ambiance.getMetadata().getRunSequence();
+    final String stageID = stageDetails.getStageID();
+    final String stageRuntimeID = stageDetails.getStageRuntimeID();
+
+    Map<String, String> tags = new HashMap<>();
+    tags.put(ACCOUNT_ID_ATTR, accountID);
+    tags.put(ORG_ID_ATTR, orgID);
+    tags.put(PROJECT_ID_ATTR, projectID);
+    tags.put(PIPELINE_ID_ATTR, pipelineID);
+    tags.put(PIPELINE_EXECUTION_ID_ATTR, pipelineExecutionID);
+    tags.put(STAGE_ID_ATTR, stageID);
+    tags.put(STAGE_RUNTIME_ID_ATTR, stageRuntimeID);
+    tags.put(BUILD_NUMBER_ATTR, String.valueOf(buildNumber));
+    return tags;
   }
 }

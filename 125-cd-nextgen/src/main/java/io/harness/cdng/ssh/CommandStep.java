@@ -52,6 +52,7 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.serializer.KryoSerializer;
+import io.harness.shell.ShellExecutionData;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;
@@ -61,6 +62,7 @@ import software.wings.beans.TaskType;
 import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
@@ -160,7 +162,6 @@ public class CommandStep extends TaskExecutableWithRollbackAndRbac<CommandTaskRe
       throw new InvalidArgumentsException("Invalid service outcome found " + serviceOutcome);
     }
 
-    CommandStepOutcome commandStepOutcome = CommandStepOutcome.builder().host(host).build();
     InfrastructureOutcome infrastructure = cdStepHelper.getInfrastructureOutcome(ambiance);
 
     ServerInstanceInfo serverInstanceInfo;
@@ -181,14 +182,15 @@ public class CommandStep extends TaskExecutableWithRollbackAndRbac<CommandTaskRe
     if (CommandExecutionStatus.SUCCESS.equals(taskResponse.getStatus())) {
       instanceInfoService.saveServerInstancesIntoSweepingOutput(
           ambiance, Collections.singletonList(serverInstanceInfo));
+
+      CommandStepOutcome commandStepOutcome = getCommandStepOutcome(taskResponse, executeCommandStepParameters, host);
+      stepResponseBuilder.stepOutcome(StepResponse.StepOutcome.builder()
+                                          .name(OutcomeExpressionConstants.OUTPUT)
+                                          .outcome(commandStepOutcome)
+                                          .build());
     }
 
-    return stepResponseBuilder
-        .stepOutcome(StepResponse.StepOutcome.builder()
-                         .name(OutcomeExpressionConstants.OUTPUT)
-                         .outcome(commandStepOutcome)
-                         .build())
-        .build();
+    return stepResponseBuilder.build();
   }
 
   private void validateStepParameters(CommandStepParameters executeCommandStepParameters) {
@@ -197,8 +199,28 @@ public class CommandStep extends TaskExecutableWithRollbackAndRbac<CommandTaskRe
     if (!onDelegate) {
       String host = ParameterFieldHelper.getParameterFieldValue(executeCommandStepParameters.getHost());
       if (isEmpty(host)) {
-        throw new InvalidArgumentsException("Host information is missing in Command Step.");
+        throw new InvalidArgumentsException(
+            "Host information is missing in Command Step. Please make sure the looping strategy (repeat) is provided.");
       }
     }
+  }
+
+  private CommandStepOutcome getCommandStepOutcome(
+      CommandTaskResponse taskResponse, CommandStepParameters executeCommandStepParameters, String host) {
+    Map<String, String> outputVariables = getOutputVariables(taskResponse, executeCommandStepParameters);
+    return CommandStepOutcome.builder().host(host).outputVariables(outputVariables).build();
+  }
+
+  private Map<String, String> getOutputVariables(
+      CommandTaskResponse taskResponse, CommandStepParameters executeCommandStepParameters) {
+    Map<String, String> outputVariables = null;
+    if (taskResponse.getExecuteCommandResponse() != null
+        && taskResponse.getExecuteCommandResponse().getCommandExecutionData() != null) {
+      ShellExecutionData commandExecutionData =
+          (ShellExecutionData) taskResponse.getExecuteCommandResponse().getCommandExecutionData();
+      outputVariables = sshCommandStepHelper.prepareOutputVariables(
+          commandExecutionData.getSweepingOutputEnvVariables(), executeCommandStepParameters.getOutputVariables());
+    }
+    return outputVariables;
   }
 }

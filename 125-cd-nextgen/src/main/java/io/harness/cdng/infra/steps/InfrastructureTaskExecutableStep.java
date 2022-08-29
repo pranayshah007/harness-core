@@ -184,10 +184,6 @@ public class InfrastructureTaskExecutableStep implements TaskExecutableWithRbac<
     AzureHostsResponse azureHostsResponse = (AzureHostsResponse) responseData;
     switch (azureHostsResponse.getCommandExecutionStatus()) {
       case SUCCESS:
-        if (EmptyPredicate.isEmpty(azureHostsResponse.getHosts())) {
-          return buildFailureStepResponse(
-              startTime, "No instance(s) were found for specified infrastructure", logCallback);
-        }
         return publishAzureHosts(
             azureHostsResponse, ambiance, logCallback, infrastructureOutcome, executionInfoKey, startTime);
       case FAILURE:
@@ -206,10 +202,6 @@ public class InfrastructureTaskExecutableStep implements TaskExecutableWithRbac<
     AwsListEC2InstancesTaskResponse awsListEC2InstancesTaskResponse = (AwsListEC2InstancesTaskResponse) responseData;
     switch (awsListEC2InstancesTaskResponse.getCommandExecutionStatus()) {
       case SUCCESS:
-        if (EmptyPredicate.isEmpty(awsListEC2InstancesTaskResponse.getInstances())) {
-          return buildFailureStepResponse(
-              startTime, "No instance(s) were found for specified infrastructure", logCallback);
-        }
         return publishAwsHosts(
             awsListEC2InstancesTaskResponse, ambiance, logCallback, infrastructureOutcome, executionInfoKey, startTime);
       case FAILURE:
@@ -225,12 +217,17 @@ public class InfrastructureTaskExecutableStep implements TaskExecutableWithRbac<
   private StepResponse publishAzureHosts(AzureHostsResponse azureHostsResponse, Ambiance ambiance,
       NGLogCallback logCallback, InfrastructureOutcome infrastructureOutcome, ExecutionInfoKey executionInfoKey,
       long startTime) {
-    List<String> hostNames =
-        azureHostsResponse.getHosts().stream().map(AzureHostResponse::getHostName).collect(Collectors.toList());
-    infrastructureStepHelper.saveExecutionLog(
-        logCallback, color(format("Successfully fetched %s instance(s)", hostNames.size()), Green));
-    infrastructureStepHelper.saveExecutionLog(
-        logCallback, color(format("Fetched following instance(s) %s)", hostNames), Green));
+    Set<String> hostNames =
+        azureHostsResponse.getHosts().stream().map(AzureHostResponse::getHostName).collect(Collectors.toSet());
+    if (EmptyPredicate.isEmpty(hostNames)) {
+      infrastructureStepHelper.saveExecutionLog(logCallback,
+          color("No host(s) found for specified infrastructure or filter did not match any instance(s)", Red));
+    } else {
+      infrastructureStepHelper.saveExecutionLog(
+          logCallback, color(format("Successfully fetched %s instance(s)", hostNames.size()), Green));
+      infrastructureStepHelper.saveExecutionLog(
+          logCallback, color(format("Fetched following instance(s) %s)", hostNames), Green));
+    }
 
     executionSweepingOutputService.consume(ambiance, OutputExpressionConstants.OUTPUT,
         HostsOutput.builder().hosts(hostNames).build(), StepCategory.STAGE.name());
@@ -241,14 +238,19 @@ public class InfrastructureTaskExecutableStep implements TaskExecutableWithRbac<
   private StepResponse publishAwsHosts(AwsListEC2InstancesTaskResponse awsListEC2InstancesTaskResponse,
       Ambiance ambiance, NGLogCallback logCallback, InfrastructureOutcome infrastructureOutcome,
       ExecutionInfoKey executionInfoKey, long startTime) {
-    List<String> hostNames = awsListEC2InstancesTaskResponse.getInstances()
-                                 .stream()
-                                 .map(AwsEC2Instance::getPublicDnsName)
-                                 .collect(Collectors.toList());
-    infrastructureStepHelper.saveExecutionLog(
-        logCallback, color(format("Successfully fetched %s instance(s)", hostNames.size()), Green));
-    infrastructureStepHelper.saveExecutionLog(
-        logCallback, color(format("Fetched following instance(s) %s)", hostNames), Green));
+    Set<String> hostNames = awsListEC2InstancesTaskResponse.getInstances()
+                                .stream()
+                                .map(AwsEC2Instance::getPublicDnsName)
+                                .collect(Collectors.toSet());
+    if (EmptyPredicate.isEmpty(hostNames)) {
+      infrastructureStepHelper.saveExecutionLog(logCallback,
+          color("No host(s) found for specified infrastructure or filter did not match any instance(s)", Red));
+    } else {
+      infrastructureStepHelper.saveExecutionLog(
+          logCallback, color(format("Successfully fetched %s instance(s)", hostNames.size()), Green));
+      infrastructureStepHelper.saveExecutionLog(
+          logCallback, color(format("Fetched following instance(s) %s)", hostNames), Green));
+    }
 
     executionSweepingOutputService.consume(ambiance, OutputExpressionConstants.OUTPUT,
         HostsOutput.builder().hosts(hostNames).build(), StepCategory.STAGE.name());

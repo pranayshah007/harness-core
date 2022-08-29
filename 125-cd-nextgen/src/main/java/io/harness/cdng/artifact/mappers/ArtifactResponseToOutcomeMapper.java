@@ -161,6 +161,8 @@ public class ArtifactResponseToOutcomeMapper {
       S3ArtifactDelegateResponse s3ArtifactDelegateResponse, boolean useDelegateResponse) {
     return S3ArtifactOutcome.builder()
         .bucketName(amazonS3ArtifactConfig.getBucketName().getValue())
+        .region(
+            amazonS3ArtifactConfig.getRegion() != null ? amazonS3ArtifactConfig.getRegion().getValue() : "us-east-1")
         .filePath(s3ArtifactDelegateResponse.getFilePath())
         .connectorRef(amazonS3ArtifactConfig.getConnectorRef().getValue())
         .type(ArtifactSourceType.AMAZONS3.getDisplayName())

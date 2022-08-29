@@ -12,6 +12,7 @@ import static io.harness.ci.integrationstage.K8InitializeStepUtilsHelper.DEFAULT
 import static io.harness.ci.integrationstage.K8InitializeStepUtilsHelper.PLUGIN_STEP_LIMIT_CPU;
 import static io.harness.ci.integrationstage.K8InitializeStepUtilsHelper.PLUGIN_STEP_LIMIT_MEM;
 import static io.harness.rule.OwnerRule.DEV_MITTAL;
+import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.SHUBHAM;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -38,6 +39,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -62,6 +64,41 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
     CIExecutionArgs ciExecutionArgs = K8InitializeStepUtilsHelper.getCIExecutionArgs();
 
     List<ContainerDefinitionInfo> expected = K8InitializeStepUtilsHelper.getStepContainers();
+    InitializeStepInfo initializeStepInfo =
+        InitializeStepInfo.builder()
+            .executionElementConfig(ExecutionElementConfig.builder().steps(steps).build())
+            .build();
+    Ambiance ambiance = Ambiance.newBuilder().build();
+    List<ContainerDefinitionInfo> stepContainers = k8InitializeStepUtils.createStepContainerDefinitions(
+        initializeStepInfo, integrationStageConfig, ciExecutionArgs, portFinder, "test", OSType.Linux, ambiance, 0);
+
+    assertThat(stepContainers).isEqualTo(expected);
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void createStepContainerDefinitionsForBackgroundStep() {
+    List<ExecutionWrapperConfig> steps =
+        Collections.singletonList(ExecutionWrapperConfig.builder()
+                                      .step(K8InitializeStepUtilsHelper.getBackgroundStepElementConfigAsJsonNode())
+                                      .build());
+    StageElementConfig integrationStageConfig = K8InitializeStepUtilsHelper.getIntegrationStageElementConfig();
+    IntegrationStageConfigImpl integrationStageConfigImpl =
+        (IntegrationStageConfigImpl) integrationStageConfig.getStageType();
+    integrationStageConfigImpl.setExecution(ExecutionElementConfig.builder().steps(steps).build());
+    PortFinder portFinder = PortFinder.builder().startingPort(PORT_STARTING_RANGE).usedPorts(new HashSet<>()).build();
+    CIExecutionArgs ciExecutionArgs = K8InitializeStepUtilsHelper.getCIExecutionArgs();
+
+    ContainerDefinitionInfo containerDefinitionInfo = K8InitializeStepUtilsHelper.getBackgroundStepContainer(1);
+    containerDefinitionInfo.setContainerResourceParams(ContainerResourceParams.builder()
+                                                           .resourceRequestMemoryMiB(500)
+                                                           .resourceRequestMilliCpu(300)
+                                                           .resourceLimitMemoryMiB(500)
+                                                           .resourceLimitMilliCpu(300)
+                                                           .build());
+
+    List<ContainerDefinitionInfo> expected = Collections.singletonList(containerDefinitionInfo);
     InitializeStepInfo initializeStepInfo =
         InitializeStepInfo.builder()
             .executionElementConfig(ExecutionElementConfig.builder().steps(steps).build())

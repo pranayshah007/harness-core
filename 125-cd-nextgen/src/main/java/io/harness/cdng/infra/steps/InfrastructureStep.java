@@ -12,6 +12,7 @@ import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static software.wings.beans.LogColor.Green;
+import static software.wings.beans.LogColor.Red;
 import static software.wings.beans.LogColor.Yellow;
 import static software.wings.beans.LogHelper.color;
 
@@ -226,16 +227,16 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
         SshInfraDelegateConfigOutput.builder().sshInfraDelegateConfig(sshInfraDelegateConfig).build();
     executionSweepingOutputService.consume(ambiance, OutputExpressionConstants.SSH_INFRA_DELEGATE_CONFIG_OUTPUT_NAME,
         sshInfraDelegateConfigOutput, StepCategory.STAGE.name());
-    List<String> hosts = sshInfraDelegateConfig.getHosts();
+    Set<String> hosts = sshInfraDelegateConfig.getHosts();
     if (EmptyPredicate.isEmpty(hosts)) {
-      throw new InvalidRequestException("No hosts were provided for specified infrastructure");
+      infrastructureStepHelper.saveExecutionLog(logCallback,
+          color("No host(s) were provided for specified infrastructure or filter did not match any instance(s)", Red));
+    } else {
+      infrastructureStepHelper.saveExecutionLog(
+          logCallback, color(format("Successfully fetched %s instance(s)", hosts.size()), Green));
+      infrastructureStepHelper.saveExecutionLog(
+          logCallback, color(format("Fetched following instance(s) %s)", hosts), Green));
     }
-
-    infrastructureStepHelper.saveExecutionLog(
-        logCallback, color(format("Successfully fetched %s instance(s)", hosts.size()), Green));
-    infrastructureStepHelper.saveExecutionLog(
-        logCallback, color(format("Fetched following instance(s) %s)", hosts), Green));
-
     executionSweepingOutputService.consume(ambiance, OutputExpressionConstants.OUTPUT,
         HostsOutput.builder().hosts(hosts).build(), StepCategory.STAGE.name());
   }
@@ -249,15 +250,16 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
         WinRmInfraDelegateConfigOutput.builder().winRmInfraDelegateConfig(winRmInfraDelegateConfig).build();
     executionSweepingOutputService.consume(ambiance, OutputExpressionConstants.WINRM_INFRA_DELEGATE_CONFIG_OUTPUT_NAME,
         winRmInfraDelegateConfigOutput, StepCategory.STAGE.name());
-    List<String> hosts = winRmInfraDelegateConfig.getHosts();
+    Set<String> hosts = winRmInfraDelegateConfig.getHosts();
     if (EmptyPredicate.isEmpty(hosts)) {
-      throw new InvalidRequestException("No hosts were provided for specified infrastructure");
+      infrastructureStepHelper.saveExecutionLog(logCallback,
+          color("No host(s) were provided for specified infrastructure or filter did not match any instance(s)", Red));
+    } else {
+      infrastructureStepHelper.saveExecutionLog(
+          logCallback, color(format("Successfully fetched %s instance(s)", hosts.size()), Green));
+      infrastructureStepHelper.saveExecutionLog(
+          logCallback, color(format("Fetched following instance(s) %s)", hosts), Green));
     }
-
-    infrastructureStepHelper.saveExecutionLog(
-        logCallback, color(format("Successfully fetched %s instance(s)", hosts.size()), Green));
-    infrastructureStepHelper.saveExecutionLog(
-        logCallback, color(format("Fetched following instance(s) [%s])", hosts), Green));
 
     executionSweepingOutputService.consume(ambiance, OutputExpressionConstants.OUTPUT,
         HostsOutput.builder().hosts(hosts).build(), StepCategory.STAGE.name());

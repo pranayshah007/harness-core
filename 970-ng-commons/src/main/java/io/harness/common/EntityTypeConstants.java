@@ -57,6 +57,7 @@ public interface EntityTypeConstants {
   String K8S_BG_SWAP_SERVICES = "K8sBGSwapServices";
   String K8S_CANARY_DELETE = "K8sCanaryDelete";
   String RUN_STEP = "Run";
+  String BACKGROUND_STEP = "Background";
   String RUN_TEST = "RunTests";
   String PLUGIN = "Plugin";
   String RESTORE_CACHE_GCS = "RestoreCacheGCS";

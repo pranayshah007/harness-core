@@ -192,7 +192,7 @@ public class EnvironmentPlanCreatorHelper {
       List<String> infraIdentifierList = new ArrayList<>();
 
       for (InfraStructureDefinitionYaml infraYaml : environmentV2.getInfrastructureDefinitions().getValue()) {
-        String ref = infraYaml.getIdentifier();
+        String ref = infraYaml.getIdentifier().getValue();
         infraIdentifierList.add(ref);
         if (isNotEmpty(infraYaml.getInputs())) {
           refToInputMap.put(ref, infraYaml.getInputs());

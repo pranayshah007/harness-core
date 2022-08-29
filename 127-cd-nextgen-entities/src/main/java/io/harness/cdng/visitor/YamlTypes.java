@@ -127,6 +127,9 @@ public interface YamlTypes {
   String REF = "ref";
   String JENKINS_BUILD = StepSpecTypeConstants.JENKINS_BUILD;
   String STARTUP_COMMAND = "startupCommand";
+
+  String AZURE_SERVICE_SETTINGS_STEP = "Azure_Service_Settings";
+
   String APPLICATION_SETTINGS = "applicationSettings";
   String CONNECTION_STRINGS = "connectionStrings";
 }

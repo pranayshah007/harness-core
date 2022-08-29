@@ -41,6 +41,7 @@ import io.harness.exception.runtime.SshCommandExecutionException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogLevel;
 import io.harness.security.encryption.SecretDecryptionService;
+import io.harness.shell.ExecuteCommandResponse;
 import io.harness.ssh.FileSourceType;
 
 import com.google.inject.Inject;
@@ -59,7 +60,7 @@ public class SshCopyCommandHandler implements CommandHandler {
   @Inject private SecretDecryptionService secretDecryptionService;
 
   @Override
-  public CommandExecutionStatus handle(CommandTaskParameters parameters, NgCommandUnit commandUnit,
+  public ExecuteCommandResponse handle(CommandTaskParameters parameters, NgCommandUnit commandUnit,
       ILogStreamingTaskClient logStreamingTaskClient, CommandUnitsProgress commandUnitsProgress,
       Map<String, Object> taskContext) {
     if (!(parameters instanceof SshCommandTaskParameters)) {
@@ -112,7 +113,7 @@ public class SshCopyCommandHandler implements CommandHandler {
       if (context.getArtifactDelegateConfig() instanceof SkipCopyArtifactDelegateConfig) {
         log.info("Artifactory docker registry found, skipping copy artifact.");
         executor.getLogCallback().saveExecutionLog("Command finished with status " + result, LogLevel.INFO, result);
-        return result;
+        return ExecuteCommandResponse.builder().status(result).build();
       }
 
       result = executor.copyFiles(context);
@@ -121,7 +122,7 @@ public class SshCopyCommandHandler implements CommandHandler {
         log.error(
             "Failed to copy artifact with id: " + sshCommandTaskParameters.getArtifactDelegateConfig().getIdentifier());
       }
-      return result;
+      return ExecuteCommandResponse.builder().status(result).build();
     }
 
     if (FileSourceType.CONFIG.equals(copyCommandUnit.getSourceType())) {
@@ -145,7 +146,7 @@ public class SshCopyCommandHandler implements CommandHandler {
       executor.getLogCallback().saveExecutionLog("Command finished with status " + result, LogLevel.INFO, result);
     }
 
-    return result;
+    return ExecuteCommandResponse.builder().status(result).build();
   }
 
   private List<ConfigFileParameters> getConfigFileParameters(

@@ -81,7 +81,7 @@ check_branch_name "develop"
 echo "STEP2: INFO: Bumping version in build.properties in develop branch."
 
 export SHA=`git rev-parse HEAD`
-export VERSION_FILE=build.properties
+export VERSION_FILE=260-delegate/build.properties
 
 export VERSION=`cat ${VERSION_FILE} | grep 'build.number=' | sed -e 's: *build.number=::g'`
 export VERSION=${VERSION%??}

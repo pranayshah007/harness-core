@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 @OwnedBy(CI)
 public interface StepSpecTypeConstants {
   String RUN = "Run";
+  String BACKGROUND = "Background";
   String RUN_TEST = "RunTests";
   String PLUGIN = "Plugin";
   String SECURITY = "Security";

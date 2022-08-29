@@ -63,7 +63,9 @@ public abstract class CommandTaskParameters implements TaskParameters, Execution
       fetchStoreExecutionCapabilities(capabilities, maskingEvaluator);
     }
 
-    fetchInfraExecutionCapabilities(capabilities, maskingEvaluator);
+    if (!executeOnDelegate) {
+      fetchInfraExecutionCapabilities(capabilities, maskingEvaluator);
+    }
 
     return capabilities;
   }

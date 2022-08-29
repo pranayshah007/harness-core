@@ -5596,6 +5596,21 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
   }
 
   @Override
+  public List<Artifact> obtainLastGoodDeployedArtifacts(String appId, String workflowId, String serviceId) {
+    if (serviceId == null) {
+      return obtainLastGoodDeployedArtifacts(appId, workflowId);
+    }
+    WorkflowExecution workflowExecution = fetchLastSuccessDeployment(appId, workflowId, serviceId);
+    if (workflowExecution != null) {
+      ExecutionArgs executionArgs = workflowExecution.getExecutionArgs();
+      if (executionArgs != null) {
+        return executionArgs.getArtifacts();
+      }
+    }
+    return new ArrayList<>();
+  }
+
+  @Override
   public List<Artifact> obtainLastGoodDeployedArtifacts(String appId, String workflowId) {
     WorkflowExecution workflowExecution = fetchLastSuccessDeployment(appId, workflowId);
     if (workflowExecution != null) {
@@ -5644,6 +5659,16 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
         .get();
   }
 
+  private WorkflowExecution fetchLastSuccessDeployment(String appId, String workflowId, String serviceId) {
+    return wingsPersistence.createQuery(WorkflowExecution.class)
+        .filter(WorkflowExecutionKeys.appId, appId)
+        .filter(WorkflowExecutionKeys.workflowId, workflowId)
+        .filter(WorkflowExecutionKeys.status, SUCCESS)
+        .filter(WorkflowExecutionKeys.deployedServices, serviceId)
+        .order("-createdAt")
+        .get();
+  }
+
   private WorkflowExecution fetchLastSuccessDeployment(WorkflowExecution workflowExecution) {
     FindOptions findOptions = new FindOptions();
     Query<WorkflowExecution> workflowExecutionQuery = getWorkflowExecutionQuery(workflowExecution, SUCCESS);
@@ -5661,7 +5686,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     if (isNotEmpty(workflowExecution.getInfraMappingIds())) {
       findOptions.modifier("$hint", "appid_status_workflowid_infraMappingIds_createdat");
     } else {
-      findOptions.modifier("$hint", "appid_workflowid_status_createdat");
+      findOptions.modifier("$hint", "appid_workflowid_status_deployedServices_createdat");
     }
     return workflowExecutionQuery.order("-createdAt").get(findOptions);
   }
@@ -5695,7 +5720,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
         findOptions.modifier("$hint", "appid_status_workflowid_infraMappingIds_createdat");
       }
     } else {
-      findOptions.modifier("$hint", "appid_workflowid_status_createdat");
+      findOptions.modifier("$hint", "appid_workflowid_status_deployedServices_createdat");
     }
     return workflowExecutionQuery.order("-createdAt").get(findOptions);
   }

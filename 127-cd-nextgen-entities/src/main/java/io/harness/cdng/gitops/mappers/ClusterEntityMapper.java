@@ -20,6 +20,7 @@ import io.harness.exception.InvalidRequestException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 
@@ -66,9 +67,24 @@ public class ClusterEntityMapper {
                    .build())
         .collect(Collectors.toList());
   }
+
   public ClusterResponse writeDTO(Cluster cluster) {
     final ScopeAndRef scopeFromClusterRef = getScopeFromClusterRef(cluster.getClusterRef());
     return ClusterResponse.builder()
+        .orgIdentifier(cluster.getOrgIdentifier())
+        .projectIdentifier(cluster.getProjectIdentifier())
+        .clusterRef(scopeFromClusterRef.getOriginalRef())
+        .scope(scopeFromClusterRef.getScope())
+        .envRef(cluster.getEnvRef())
+        .linkedAt(cluster.getCreatedAt())
+        .build();
+  }
+
+  public ClusterResponse writeDTO(Cluster cluster, Map<String, ClusterFromGitops> clusterFromGitops) {
+    final ScopeAndRef scopeFromClusterRef = getScopeFromClusterRef(cluster.getClusterRef());
+
+    return ClusterResponse.builder()
+        .name(clusterFromGitops.get(cluster.getClusterRef()).getName())
         .orgIdentifier(cluster.getOrgIdentifier())
         .projectIdentifier(cluster.getProjectIdentifier())
         .clusterRef(scopeFromClusterRef.getOriginalRef())

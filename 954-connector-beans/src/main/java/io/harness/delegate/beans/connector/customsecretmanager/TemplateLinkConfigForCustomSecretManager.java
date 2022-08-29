@@ -12,7 +12,10 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.validator.NGRegexValidatorConstants;
 
+import software.wings.beans.NameValuePairWithDefault;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import java.util.List;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
@@ -31,5 +34,5 @@ import org.springframework.data.annotation.TypeAlias;
 public class TemplateLinkConfigForCustomSecretManager {
   @NotNull String templateRef;
   @NotNull @Pattern(regexp = NGRegexValidatorConstants.VERSION_LABEL_PATTERN) String versionLabel;
-  Map<String, Object> templateInputs;
+  Map<String, List<NameValuePairWithDefault>> templateInputs;
 }
