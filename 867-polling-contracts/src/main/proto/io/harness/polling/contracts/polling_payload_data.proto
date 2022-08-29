@@ -25,6 +25,7 @@ message PollingPayloadData {
     AmazonS3Payload amazonS3Payload = 12;
     JenkinsPayload jenkinsPayload = 13;
     GitPollingPayload gitPollPayload = 14;
+    GARPayload garPayload = 15;
   }
 }
 
@@ -42,6 +43,7 @@ enum Type {
   AMAZON_S3 = 10;
   JENKINS = 11;
   GIT_POLL = 12;
+  GOOGLE_ARTIFACT_REGISTRY = 13;
 }
 
 message HttpHelmPayload {
@@ -118,4 +120,8 @@ message GitPollingPayload {
   string eventType = 1;
   string webhookId = 2;
   int32 pollInterval = 3;
+}
+
+message GARPayload {
+  string version = 1;
 }

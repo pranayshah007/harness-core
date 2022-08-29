@@ -39,6 +39,7 @@ import io.harness.polling.contracts.ArtifactoryRegistryPayload;
 import io.harness.polling.contracts.BuildInfo;
 import io.harness.polling.contracts.DockerHubPayload;
 import io.harness.polling.contracts.EcrPayload;
+import io.harness.polling.contracts.GARPayload;
 import io.harness.polling.contracts.GcrPayload;
 import io.harness.polling.contracts.JenkinsPayload;
 import io.harness.polling.contracts.PollingItem;
@@ -253,6 +254,8 @@ public class BuildTriggerHelper {
       validatePollingItemForS3(pollingItem);
     } else if (pollingPayloadData.hasJenkinsPayload()) {
       validatePollingItemForJenkins(pollingItem);
+    } else if (pollingPayloadData.hasGarPayload()) {
+      validatePollingItemForGoogleArtifactRegistry(pollingItem);
     } else {
       throw new InvalidRequestException("Invalid Polling Type");
     }
@@ -270,6 +273,16 @@ public class BuildTriggerHelper {
     JenkinsPayload jenkinsPayload = pollingItem.getPollingPayloadData().getJenkinsPayload();
 
     String error = checkFiledValueError("jobName", jenkinsPayload.getJobName());
+    if (isNotBlank(error)) {
+      throw new InvalidRequestException(error);
+    }
+  }
+
+  private void validatePollingItemForGoogleArtifactRegistry(PollingItem pollingItem) {
+    GARPayload garPayload = pollingItem.getPollingPayloadData().getGarPayload();
+
+    String error = checkFiledValueError("Version", garPayload.getVersion());
+
     if (isNotBlank(error)) {
       throw new InvalidRequestException(error);
     }

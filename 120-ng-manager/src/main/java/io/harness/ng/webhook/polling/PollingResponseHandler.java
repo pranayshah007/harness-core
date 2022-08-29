@@ -17,6 +17,7 @@ import static io.harness.polling.contracts.Type.DOCKER_HUB;
 import static io.harness.polling.contracts.Type.ECR;
 import static io.harness.polling.contracts.Type.GCR;
 import static io.harness.polling.contracts.Type.GCS_HELM;
+import static io.harness.polling.contracts.Type.GOOGLE_ARTIFACT_REGISTRY;
 import static io.harness.polling.contracts.Type.HTTP_HELM;
 import static io.harness.polling.contracts.Type.JENKINS;
 import static io.harness.polling.contracts.Type.NEXUS3;
@@ -51,6 +52,7 @@ import io.harness.polling.bean.artifact.ArtifactPolledResponse;
 import io.harness.polling.bean.artifact.ArtifactoryRegistryArtifactInfo;
 import io.harness.polling.bean.artifact.DockerHubArtifactInfo;
 import io.harness.polling.bean.artifact.EcrArtifactInfo;
+import io.harness.polling.bean.artifact.GARrtifactInfo;
 import io.harness.polling.bean.artifact.GcrArtifactInfo;
 import io.harness.polling.bean.artifact.JenkinsArtifactInfo;
 import io.harness.polling.bean.artifact.NexusRegistryArtifactInfo;
@@ -369,6 +371,10 @@ public class PollingResponseHandler {
       case JENKINS:
         polledResponseResultBuilder.name(((JenkinsArtifactInfo) artifactInfo).getJobName());
         polledResponseResultBuilder.type(JENKINS);
+        break;
+      case GOOGLE_ARTIFACT_REGISTRY:
+        polledResponseResultBuilder.name(((GARrtifactInfo) artifactInfo).getJobName());
+        polledResponseResultBuilder.type(GOOGLE_ARTIFACT_REGISTRY);
         break;
       default:
         throw new InvalidRequestException("Unsupported Artifact Type " + artifactInfo.getType().getDisplayName());
