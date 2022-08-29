@@ -15,7 +15,6 @@ import static io.harness.rule.OwnerRule.TATHAGAT;
 import static software.wings.beans.LogColor.Blue;
 import static software.wings.beans.LogColor.Green;
 
-import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -52,7 +51,6 @@ import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
 import io.harness.k8s.model.Release;
-import io.harness.k8s.model.ReleaseHistory;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 

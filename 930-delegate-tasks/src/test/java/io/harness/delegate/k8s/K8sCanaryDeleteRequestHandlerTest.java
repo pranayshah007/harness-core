@@ -12,6 +12,7 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACASIAN;
 
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -32,6 +33,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.k8s.releasehistory.K8sReleaseHistoryService;
+import io.harness.delegate.k8s.releasehistory.K8sReleaseService;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
 import io.harness.delegate.task.k8s.K8sCanaryDeleteRequest;
 import io.harness.delegate.task.k8s.K8sDeployResponse;
@@ -42,12 +45,15 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.KubernetesConfig;
+import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1Secret;
+import io.kubernetes.client.openapi.models.V1SecretBuilder;
 import java.io.IOException;
 import java.util.List;
 import lombok.AccessLevel;
@@ -66,17 +72,20 @@ public class K8sCanaryDeleteRequestHandlerTest extends CategoryTest {
   @Mock K8sTaskHelperBase k8sTaskHelperBase;
   @Mock K8sDeleteBaseHandler k8sDeleteBaseHandler;
   @Mock ContainerDeploymentDelegateBaseHelper containerDeploymentDelegateBaseHelper;
+  @Mock private K8sReleaseHistoryService releaseHistoryService;
+  @Mock private K8sReleaseService releaseService;
 
   @InjectMocks K8sCanaryDeleteRequestHandler requestHandler;
 
   @Mock K8sInfraDelegateConfig k8sInfraDelegateConfig;
   @Mock ILogStreamingTaskClient logStreamingTaskClient;
   @Mock LogCallback logCallback;
-  final String noReleaseHistory = "no-release-history";
-  final String emptyReleasesHistory = "empty-releases-history";
-  final String noInProgressReleaseHistory = "no-inprogress-history";
-  final String canaryReleaseHistory = "canary-release-history";
-  final String canaryFailedReleaseHistory = "canary-failed-release-history";
+  //  final String noReleaseHistory = "no-release-history";
+  //  final String emptyReleasesHistory = "empty-releases-history";
+  //  final String noInProgressReleaseHistory = "no-inprogress-history";
+  //  final String canaryReleaseHistory = "canary-release-history";
+  //  final String canaryFailedReleaseHistory = "canary-failed-release-history";
+  public static final String releaseName = "dummy";
   final String canaryExceptionReleaseHistory = "canary-exception-release-history";
   final KubernetesConfig kubernetesConfig = KubernetesConfig.builder().build();
   final K8sDelegateTaskParams delegateTaskParams = K8sDelegateTaskParams.builder().build();
@@ -89,24 +98,11 @@ public class K8sCanaryDeleteRequestHandlerTest extends CategoryTest {
     doReturn(kubernetesConfig)
         .when(containerDeploymentDelegateBaseHelper)
         .createKubernetesConfig(k8sInfraDelegateConfig);
-    doReturn("").when(k8sTaskHelperBase).getReleaseHistoryData(kubernetesConfig, noReleaseHistory);
-    doReturn(K8sTestHelper.readResourceFileContent(K8sTestHelper.EMPTY_RELEASE_HISTORY))
-        .when(k8sTaskHelperBase)
-        .getReleaseHistoryData(kubernetesConfig, emptyReleasesHistory);
-    doReturn(K8sTestHelper.readResourceFileContent(K8sTestHelper.RELEASE_HISTORY))
-        .when(k8sTaskHelperBase)
-        .getReleaseHistoryData(kubernetesConfig, noInProgressReleaseHistory);
-    doReturn(K8sTestHelper.readResourceFileContent(K8sTestHelper.RELEASE_HISTORY_CANARY))
-        .when(k8sTaskHelperBase)
-        .getReleaseHistoryData(kubernetesConfig, canaryReleaseHistory);
-    doReturn(K8sTestHelper.readResourceFileContent(K8sTestHelper.RELEASE_HISTORY_FAILED_CANARY))
-        .when(k8sTaskHelperBase)
-        .getReleaseHistoryData(kubernetesConfig, canaryFailedReleaseHistory);
 
     ApiException apiException = new ApiException("Failed to get configmap");
     InvalidRequestException exception =
         new InvalidRequestException("Failed to read release history", apiException, USER);
-    doThrow(exception).when(k8sTaskHelperBase).getReleaseHistoryData(kubernetesConfig, canaryExceptionReleaseHistory);
+    doThrow(exception).when(releaseHistoryService).getReleaseHistory(kubernetesConfig, canaryExceptionReleaseHistory);
 
     doReturn(logCallback)
         .when(k8sTaskHelperBase)
@@ -124,7 +120,7 @@ public class K8sCanaryDeleteRequestHandlerTest extends CategoryTest {
   public void testDeleteByResourceId() throws Exception {
     K8sCanaryDeleteRequest deleteRequest = K8sCanaryDeleteRequest.builder()
                                                .canaryWorkloads("default/deployment/deployment-canary")
-                                               .releaseName(noReleaseHistory)
+                                               .releaseName(releaseName)
                                                .k8sInfraDelegateConfig(k8sInfraDelegateConfig)
                                                .build();
 
@@ -144,9 +140,22 @@ public class K8sCanaryDeleteRequestHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void deleteFromReleaseHistory() throws Exception {
     K8sCanaryDeleteRequest deleteRequest = K8sCanaryDeleteRequest.builder()
-                                               .releaseName(canaryReleaseHistory)
+                                               .releaseName(releaseName)
                                                .k8sInfraDelegateConfig(k8sInfraDelegateConfig)
                                                .build();
+    V1Secret release = new V1SecretBuilder().build();
+    doReturn(List.of(release)).when(releaseHistoryService).getReleaseHistory(any(), anyString());
+    doReturn(release).when(releaseService).getLatestRelease(anyList());
+    doReturn("InProgress").when(releaseService).getReleaseLabelValue(any(), anyString());
+    doReturn(List.of(KubernetesResource.builder()
+                         .resourceId(KubernetesResourceId.builder()
+                                         .namespace("default")
+                                         .name("test-value-deployment-canary")
+                                         .kind("Deployment")
+                                         .build())
+                         .build()))
+        .when(releaseService)
+        .getResourcesFromRelease(any());
 
     K8sDeployResponse response = requestHandler.executeTaskInternal(
         deleteRequest, delegateTaskParams, logStreamingTaskClient, commandUnitsProgress);
@@ -164,9 +173,22 @@ public class K8sCanaryDeleteRequestHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void deleteFromReleaseHistoryFailedRelease() throws Exception {
     K8sCanaryDeleteRequest deleteRequest = K8sCanaryDeleteRequest.builder()
-                                               .releaseName(canaryFailedReleaseHistory)
+                                               .releaseName(releaseName)
                                                .k8sInfraDelegateConfig(k8sInfraDelegateConfig)
                                                .build();
+    V1Secret release = new V1SecretBuilder().build();
+    doReturn(List.of(release)).when(releaseHistoryService).getReleaseHistory(any(), anyString());
+    doReturn(release).when(releaseService).getLatestRelease(anyList());
+    doReturn("Failed").when(releaseService).getReleaseLabelValue(any(), anyString());
+    doReturn(List.of(KubernetesResource.builder()
+                         .resourceId(KubernetesResourceId.builder()
+                                         .namespace("default")
+                                         .name("test-value-deployment-canary")
+                                         .kind("Deployment")
+                                         .build())
+                         .build()))
+        .when(releaseService)
+        .getResourcesFromRelease(any());
 
     K8sDeployResponse response = requestHandler.executeTaskInternal(
         deleteRequest, delegateTaskParams, logStreamingTaskClient, commandUnitsProgress);
@@ -184,9 +206,11 @@ public class K8sCanaryDeleteRequestHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void skipDeleteNoWorkloadNameNoReleaseHistory() throws Exception {
     K8sCanaryDeleteRequest deleteRequest = K8sCanaryDeleteRequest.builder()
-                                               .releaseName(noReleaseHistory)
+                                               .releaseName(releaseName)
                                                .k8sInfraDelegateConfig(k8sInfraDelegateConfig)
                                                .build();
+
+    doReturn(emptyList()).when(releaseHistoryService).getReleaseHistory(any(), anyString());
 
     K8sDeployResponse response = requestHandler.executeTaskInternal(
         deleteRequest, delegateTaskParams, logStreamingTaskClient, commandUnitsProgress);
@@ -201,9 +225,15 @@ public class K8sCanaryDeleteRequestHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void skipDeleteNoWorkloadNameEmptyReleases() throws Exception {
     K8sCanaryDeleteRequest deleteRequest = K8sCanaryDeleteRequest.builder()
-                                               .releaseName(emptyReleasesHistory)
+                                               .releaseName(releaseName)
                                                .k8sInfraDelegateConfig(k8sInfraDelegateConfig)
                                                .build();
+
+    V1Secret release = new V1SecretBuilder().build();
+    doReturn(List.of(release)).when(releaseHistoryService).getReleaseHistory(any(), anyString());
+    doReturn(release).when(releaseService).getLatestRelease(anyList());
+    doReturn("InProgress").when(releaseService).getReleaseLabelValue(any(), anyString());
+    doReturn(emptyList()).when(releaseService).getResourcesFromRelease(any());
 
     K8sDeployResponse response = requestHandler.executeTaskInternal(
         deleteRequest, delegateTaskParams, logStreamingTaskClient, commandUnitsProgress);
@@ -218,9 +248,14 @@ public class K8sCanaryDeleteRequestHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void skipDeleteNoWorkloadMissingCanaryRelease() throws Exception {
     K8sCanaryDeleteRequest deleteRequest = K8sCanaryDeleteRequest.builder()
-                                               .releaseName(noInProgressReleaseHistory)
+                                               .releaseName(releaseName)
                                                .k8sInfraDelegateConfig(k8sInfraDelegateConfig)
                                                .build();
+
+    V1Secret release = new V1SecretBuilder().build();
+    doReturn(List.of(release)).when(releaseHistoryService).getReleaseHistory(any(), anyString());
+    doReturn(release).when(releaseService).getLatestRelease(anyList());
+    doReturn("Succeeded").when(releaseService).getReleaseLabelValue(any(), anyString());
 
     K8sDeployResponse response = requestHandler.executeTaskInternal(
         deleteRequest, delegateTaskParams, logStreamingTaskClient, commandUnitsProgress);

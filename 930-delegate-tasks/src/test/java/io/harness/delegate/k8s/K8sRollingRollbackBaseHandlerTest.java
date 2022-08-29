@@ -12,12 +12,10 @@ import static io.harness.delegate.k8s.K8sRollingRollbackBaseHandler.ResourceRecr
 import static io.harness.delegate.k8s.K8sTestHelper.crdNew;
 import static io.harness.delegate.k8s.K8sTestHelper.crdOld;
 import static io.harness.delegate.k8s.K8sTestHelper.deployment;
-import static io.harness.delegate.k8s.K8sTestHelper.deploymentConfig;
 import static io.harness.k8s.model.Release.Status.Succeeded;
 import static io.harness.logging.LogLevel.INFO;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACASIAN;
-import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.BOJANA;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.TATHAGAT;
@@ -54,7 +52,6 @@ import io.harness.delegate.k8s.releasehistory.K8sReleaseService;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.exception.InvalidRequestException;
 import io.harness.k8s.kubectl.Kubectl;
-import io.harness.k8s.kubectl.RolloutUndoCommand;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
@@ -70,7 +67,6 @@ import io.kubernetes.client.openapi.models.V1SecretBuilder;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -79,9 +75,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
-import org.zeroturnaround.exec.ProcessOutput;
-import org.zeroturnaround.exec.ProcessResult;
-import org.zeroturnaround.exec.stream.LogOutputStream;
 
 @OwnedBy(CDP)
 public class K8sRollingRollbackBaseHandlerTest extends CategoryTest {
