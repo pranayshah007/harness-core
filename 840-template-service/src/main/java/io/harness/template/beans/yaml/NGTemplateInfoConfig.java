@@ -15,13 +15,12 @@ import io.harness.data.validator.EntityName;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.validator.NGRegexValidatorConstants;
+import io.harness.yaml.core.variables.NGVariable;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
-import io.harness.yaml.core.variables.NGVariable;
 import io.swagger.annotations.ApiModelProperty;
-
 import java.util.List;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
@@ -61,5 +60,4 @@ public class NGTemplateInfoConfig {
 
   String orgIdentifier;
   String projectIdentifier;
-  List<NGVariable> templateVariables;
 }
