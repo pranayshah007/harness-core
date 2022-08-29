@@ -8,6 +8,7 @@
 package io.harness.ng.core.event;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CREATE_ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DELETE_ACTION;
 
 import static org.apache.commons.lang3.StringUtils.stripToNull;
@@ -17,6 +18,7 @@ import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.schemas.usermembership.Scope;
 import io.harness.eventsframework.schemas.usermembership.UserMembershipDTO;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.api.DefaultUserGroupService;
 import io.harness.ng.core.api.UserGroupService;
 
 import com.google.inject.Inject;
@@ -29,10 +31,12 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 public class UserMembershipStreamListener implements MessageListener {
   private final UserGroupService userGroupService;
+  private final DefaultUserGroupService defaultUserGroupService;
 
   @Inject
-  public UserMembershipStreamListener(UserGroupService userGroupService) {
+  public UserMembershipStreamListener(UserGroupService userGroupService, DefaultUserGroupService defaultUserGroupService) {
     this.userGroupService = userGroupService;
+    this.defaultUserGroupService  = defaultUserGroupService;
   }
 
   @Override
@@ -55,6 +59,10 @@ public class UserMembershipStreamListener implements MessageListener {
     if (DELETE_ACTION.equals(action)) {
       return processDeleteEvent(userMembershipDTO);
     }
+    if (CREATE_ACTION.equals(action))
+    {
+      return processCreateEvent(userMembershipDTO);
+    }
     return true;
   }
 
@@ -62,6 +70,13 @@ public class UserMembershipStreamListener implements MessageListener {
     Scope scope = userMembershipDTO.getScope();
     userGroupService.removeMemberAll(stripToNull(scope.getAccountIdentifier()), stripToNull(scope.getOrgIdentifier()),
         stripToNull(scope.getProjectIdentifier()), stripToNull(userMembershipDTO.getUserId()));
+    return true;
+  }
+
+  private boolean processCreateEvent(UserMembershipDTO userMembershipDTO) {
+    Scope scope = userMembershipDTO.getScope();
+    io.harness.beans.Scope currentScope = io.harness.beans.Scope.of(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier());
+    defaultUserGroupService.addUserToDefaultUserGroups(currentScope, userMembershipDTO.getUserId());
     return true;
   }
 }
