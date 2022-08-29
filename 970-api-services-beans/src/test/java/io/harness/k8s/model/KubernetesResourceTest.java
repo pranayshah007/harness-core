@@ -300,6 +300,11 @@ public class KubernetesResourceTest extends CategoryTest {
     fileContents = Resources.toString(url, Charsets.UTF_8);
     resource = processYaml(fileContents).get(0);
     assertThat(resource.isLoadBalancerService()).isFalse();
+
+    url = this.getClass().getResource("/service-with-extra-unknown-fields.yaml");
+    fileContents = Resources.toString(url, Charsets.UTF_8);
+    resource = processYaml(fileContents).get(0);
+    assertThat(resource.isLoadBalancerService()).isFalse();
   }
 
   @Test

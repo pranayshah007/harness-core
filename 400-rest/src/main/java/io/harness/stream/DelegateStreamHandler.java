@@ -31,6 +31,7 @@ import io.harness.logging.AutoLogContext;
 import io.harness.serializer.JsonUtils;
 import io.harness.service.intfc.DelegateCache;
 
+import software.wings.logcontext.WebsocketLogContext;
 import software.wings.service.intfc.AuthService;
 import software.wings.service.intfc.DelegateService;
 
@@ -81,7 +82,9 @@ public class DelegateStreamHandler extends AtmosphereHandlerAdapter {
         delegateId = req.getParameter("delegateId");
 
         try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
-             AutoLogContext ignore2 = new DelegateLogContext(delegateId, OVERRIDE_ERROR)) {
+             AutoLogContext ignore2 = new DelegateLogContext(delegateId, OVERRIDE_ERROR);
+             AutoLogContext ignore3 = new WebsocketLogContext(resource.uuid(), OVERRIDE_ERROR)) {
+          log.info("delegate socket connected");
           String delegateConnectionId = req.getParameter("delegateConnectionId");
           String delegateVersion = req.getParameter("version");
 
@@ -106,10 +109,22 @@ public class DelegateStreamHandler extends AtmosphereHandlerAdapter {
           resource.addEventListener(new AtmosphereResourceEventListenerAdapter() {
             @Override
             public void onDisconnect(AtmosphereResourceEvent event) {
-              try (AccountLogContext ignore = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
+              try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
+                   AutoLogContext ignore2 = new DelegateLogContext(delegateId, OVERRIDE_ERROR);
+                   AutoLogContext ignore3 = new WebsocketLogContext(event.getResource().uuid(), OVERRIDE_ERROR)) {
+                log.info("delegate socket disconnected");
                 Delegate delegate = delegateCache.get(accountId, delegateId, true);
                 delegateService.register(delegate);
                 delegateService.delegateDisconnected(accountId, delegateId, delegateConnectionId);
+              }
+            }
+
+            @Override
+            public void onClose(AtmosphereResourceEvent event) {
+              try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
+                   AutoLogContext ignore2 = new DelegateLogContext(delegateId, OVERRIDE_ERROR);
+                   AutoLogContext ignore3 = new WebsocketLogContext(event.getResource().uuid(), OVERRIDE_ERROR)) {
+                log.info("delegate socket closed");
               }
             }
           });
@@ -157,31 +172,36 @@ public class DelegateStreamHandler extends AtmosphereHandlerAdapter {
 
   @Override
   public void onStateChange(AtmosphereResourceEvent event) throws IOException {
-    AtmosphereResource r = event.getResource();
-    AtmosphereResponse res = r.getResponse();
+    AtmosphereRequest req = event.getResource().getRequest();
+    String delegateId = req.getParameter("delegateId");
+    try (AutoLogContext ignore2 = new DelegateLogContext(delegateId, OVERRIDE_ERROR);
+         AutoLogContext ignore3 = new WebsocketLogContext(event.getResource().uuid(), OVERRIDE_ERROR)) {
+      AtmosphereResource r = event.getResource();
+      AtmosphereResponse res = r.getResponse();
 
-    if (r.isSuspended()) {
-      Object message = event.getMessage();
-      if (message != null) {
-        if (message instanceof String) {
-          event.getResource().write((String) message);
-        } else {
-          event.getResource().write(JsonUtils.asJson(message));
+      if (r.isSuspended()) {
+        Object message = event.getMessage();
+        if (message != null) {
+          if (message instanceof String) {
+            event.getResource().write((String) message);
+          } else {
+            event.getResource().write(JsonUtils.asJson(message));
+          }
         }
-      }
-      AtmosphereResource.TRANSPORT transport = r.transport();
-      switch (transport) {
-        case JSONP:
-        case LONG_POLLING:
-          event.getResource().resume();
-          break;
-        case WEBSOCKET:
-          break;
-        case STREAMING:
-          res.getWriter().flush();
-          break;
-        default:
-          unhandled(transport);
+        AtmosphereResource.TRANSPORT transport = r.transport();
+        switch (transport) {
+          case JSONP:
+          case LONG_POLLING:
+            event.getResource().resume();
+            break;
+          case WEBSOCKET:
+            break;
+          case STREAMING:
+            res.getWriter().flush();
+            break;
+          default:
+            unhandled(transport);
+        }
       }
     }
   }

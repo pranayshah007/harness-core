@@ -11,6 +11,7 @@ import static io.harness.gitsync.common.scmerrorhandling.handlers.ado.ScmErrorHi
 
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.ScmBadRequestException;
+import io.harness.exception.ScmConflictException;
 import io.harness.exception.ScmUnauthorizedException;
 import io.harness.exception.ScmUnexpectedException;
 import io.harness.exception.WingsException;
@@ -73,7 +74,7 @@ public class AdoUpdateFileScmApiErrorHandler implements ScmApiErrorHandler {
         throw NestedExceptionUtils.hintWithExplanationException(
             ErrorMessageFormatter.formatMessage(UPDATE_FILE_CONFLICT_ERROR_HINT, errorMetadata),
             ErrorMessageFormatter.formatMessage(UPDATE_FILE_CONFLICT_ERROR_EXPLANATION, errorMetadata),
-            new ScmBadRequestException(errorMessage));
+            new ScmConflictException(errorMessage));
       default:
         log.error(String.format("Error while updating Azure file: [%s: %s]", statusCode, errorMessage));
         throw new ScmUnexpectedException(errorMessage);

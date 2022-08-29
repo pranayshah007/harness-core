@@ -447,8 +447,9 @@ public class AuthenticationFilter implements ContainerRequestFilter {
       // In case of graphql, accountId comes as null. For the new version of api keys, we can get the accountId
       accountId = apiKeyService.getAccountIdFromApiKey(apiKey);
     }
-
-    apiKeyService.validate(apiKey, accountId);
+    if (!apiKeyService.validate(apiKey, accountId)) {
+      throw new UnauthorizedException("Invalid Api Key", USER);
+    }
   }
 
   protected boolean authenticationExemptedRequests(ContainerRequestContext requestContext) {

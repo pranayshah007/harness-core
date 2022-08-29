@@ -8,7 +8,6 @@
 package io.harness.cdng.creator.plan.service;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import io.harness.cdng.creator.plan.infrastructure.InfrastructurePmsPlanCreator;
 import io.harness.cdng.creator.plan.stage.DeploymentStageConfig;
@@ -36,8 +35,6 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
 import io.harness.utils.YamlPipelineUtils;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -206,30 +203,23 @@ public class ServicePlanCreatorHelper {
 
     YamlField artifactSourcesField = artifactsField.getNode().getField(YamlTypes.ARTIFACT_SOURCES);
     String primaryArtifactRefValue = primaryArtifactRef.getNode().asText();
-    if (artifactSourcesField != null && NGExpressionUtils.isRuntimeOrExpressionField(primaryArtifactRefValue)) {
-      throw new InvalidRequestException(String.format(
-          "Primary artifact ref cannot be runtime or expression inside service %s of DeploymentStage - %s", serviceRef,
-          stageNode.getIdentifier()));
-    }
 
-    if (artifactSourcesField != null && artifactSourcesField.getNode().isArray()) {
+    if (artifactSourcesField != null && artifactSourcesField.getNode().isArray() && primaryArtifactRefValue != null) {
+      if (NGExpressionUtils.isRuntimeOrExpressionField(primaryArtifactRefValue)) {
+        // TODO: need to support primary artifact ref as expression.
+        throw new InvalidRequestException(String.format(
+            "Primary artifact ref cannot be runtime or expression inside service %s of DeploymentStage - %s",
+            serviceRef, stageNode.getIdentifier()));
+      }
+
       ObjectNode artifactsNode = (ObjectNode) artifactsField.getNode().getCurrJsonNode();
       List<YamlNode> artifactSources = artifactSourcesField.getNode().asArray();
-      ObjectMapper objectMapper = new ObjectMapper();
-      ArrayNode sidecarNodes = objectMapper.createArrayNode();
       ObjectNode primaryNode = null;
       for (YamlNode artifactSource : artifactSources) {
         String artifactSourceIdentifier = artifactSource.getIdentifier();
-        if (primaryArtifactRefValue.equals(artifactSourceIdentifier)) {
-          if (artifactSource.isObject()) {
-            primaryNode = (ObjectNode) artifactSource.getCurrJsonNode();
-            primaryNode.remove(YamlTypes.IDENTIFIER);
-          }
-        } else {
-          ObjectNode sidecarNode = objectMapper.createObjectNode();
-          sidecarNode.set(YamlTypes.SIDECAR_ARTIFACT_CONFIG, artifactSource.getCurrJsonNode());
-          sidecarNode.put(YamlNode.UUID_FIELD_NAME, generateUuid());
-          sidecarNodes.add(sidecarNode);
+        if (primaryArtifactRefValue.equals(artifactSourceIdentifier) && artifactSource.isObject()) {
+          primaryNode = (ObjectNode) artifactSource.getCurrJsonNode();
+          primaryNode.remove(YamlTypes.IDENTIFIER);
         }
       }
 
@@ -239,10 +229,6 @@ public class ServicePlanCreatorHelper {
         throw new InvalidRequestException(
             String.format("No artifact source exists with the identifier %s inside service %s of DeploymentStage - %s",
                 primaryArtifactRefValue, serviceRef, stageNode.getIdentifier()));
-      }
-
-      if (!sidecarNodes.isEmpty()) {
-        artifactsNode.set(YamlTypes.SIDECARS_ARTIFACT_CONFIG, sidecarNodes);
       }
 
       artifactsNode.remove(YamlTypes.PRIMARY_ARTIFACT_REF);

@@ -90,6 +90,7 @@ Kamal Joshi kamal.joshi@harness.io
 Kanhaiya Rathi kanhaiya.rathi@harness.io
 Kapil Choudhary kapil.choudhary@harness.io
 Kapil Kumawat kapil.kumawat@harness.io
+Karan Saraswat karan.saraswat@harness.io
 Karan Siwach karan.siwach@harness.io
 Kshitij Rastogi kshitij.rastogi@harness.io
 Lazar Matovic lazar.matovic@harness.io
@@ -293,4 +294,3 @@ Vikyath Harekal vikyath.harekal@harness.io
 Vinícius Calasans vinicius.calasans@harness.io
 Xingchi Jin xingchi.jin@harness.io
 Varsha Lalwani varsha.lalwani@harness.io
-

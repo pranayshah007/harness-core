@@ -44,7 +44,6 @@ import java.util.List;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.UriInfo;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -150,7 +149,7 @@ public class NGTriggerWebhookConfigResourceImpl implements NGTriggerWebhookConfi
 
   public ResponseDTO<NGProcessWebhookResponseDTO> processWebhookEventV2(@NotNull String accountIdentifier,
       @NotNull String orgIdentifier, @NotNull String projectIdentifier, String pipelineIdentifier,
-      String triggerIdentifier, @NotNull String eventPayload, HttpHeaders httpHeaders, UriInfo uriInfo) {
+      String triggerIdentifier, @NotNull String eventPayload, HttpHeaders httpHeaders) {
     List<HeaderConfig> headerConfigs = new ArrayList<>();
     httpHeaders.getRequestHeaders().forEach(
         (k, v) -> headerConfigs.add(HeaderConfig.builder().key(k).values(v).build()));
@@ -167,7 +166,7 @@ public class NGTriggerWebhookConfigResourceImpl implements NGTriggerWebhookConfi
       return ResponseDTO.newResponse(
           NGProcessWebhookResponseDTO.builder()
               .eventCorrelationId(uuid)
-              .apiUrl(urlHelper.buildApiExecutionUrl(uriInfo, uuid, accountIdentifier))
+              .apiUrl(urlHelper.buildApiExecutionUrl(uuid, accountIdentifier))
               .uiUrl(urlHelper.buildUiUrl(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier))
               .uiSetupUrl(
                   urlHelper.buildUiSetupUrl(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier))

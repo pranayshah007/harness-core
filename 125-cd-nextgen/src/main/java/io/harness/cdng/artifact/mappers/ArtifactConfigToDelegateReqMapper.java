@@ -82,7 +82,8 @@ public class ArtifactConfigToDelegateReqMapper {
       filePathRegex = "*";
     }
     return ArtifactDelegateRequestUtils.getAmazonS3DelegateRequest(artifactConfig.getBucketName().getValue(), filePath,
-        filePathRegex, null, connectorRef, connectorDTO, encryptedDataDetails, ArtifactSourceType.AMAZONS3);
+        filePathRegex, null, connectorRef, connectorDTO, encryptedDataDetails, ArtifactSourceType.AMAZONS3,
+        artifactConfig.getRegion() != null ? artifactConfig.getRegion().getValue() : "us-east-1");
   }
 
   public GithubPackagesArtifactDelegateRequest getGithubPackagesDelegateRequest(

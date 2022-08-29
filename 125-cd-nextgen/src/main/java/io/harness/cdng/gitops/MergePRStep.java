@@ -129,11 +129,13 @@ public class MergePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsRespo
     int prNumber;
     String prLink;
     String sha;
+    String ref;
     if (optionalSweepingOutput != null && optionalSweepingOutput.isFound()) {
       CreatePROutcome createPROutcome = (CreatePROutcome) optionalSweepingOutput.getOutput();
       prNumber = createPROutcome.getPrNumber();
       prLink = createPROutcome.getPrlink();
       sha = createPROutcome.getCommitId();
+      ref = createPROutcome.getRef();
     } else {
       throw new InvalidRequestException("Pull Request Details are missing", USER);
     }
@@ -151,32 +153,38 @@ public class MergePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsRespo
         connectorUtils.getConnectorDetails(identifierRef, identifierRef.buildScopedIdentifier());
 
     GitStoreDelegateConfig gitStoreDelegateConfig = getGitStoreDelegateConfig(ambiance, releaseRepoOutcome);
-    String repoOwner, repoName;
     GitApiTaskParams gitApiTaskParams;
     switch (gitStoreDelegateConfig.getGitConfigDTO().getConnectorType()) {
       case GITHUB:
         GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) gitStoreDelegateConfig.getGitConfigDTO();
-        gitApiTaskParams = GitApiTaskParams.builder()
-                               .gitRepoType(GitRepoType.GITHUB)
-                               .requestType(GitApiRequestType.MERGE_PR)
-                               .connectorDetails(connectorDetails)
-                               .prNumber(String.valueOf(prNumber))
-                               .owner(githubConnectorDTO.getGitRepositoryDetails().getOrg())
-                               .repo(githubConnectorDTO.getGitRepositoryDetails().getName())
-                               .sha(sha)
-                               .build();
+        gitApiTaskParams =
+            GitApiTaskParams.builder()
+                .gitRepoType(GitRepoType.GITHUB)
+                .requestType(GitApiRequestType.MERGE_PR)
+                .connectorDetails(connectorDetails)
+                .prNumber(String.valueOf(prNumber))
+                .owner(githubConnectorDTO.getGitRepositoryDetails().getOrg())
+                .repo(githubConnectorDTO.getGitRepositoryDetails().getName())
+                .sha(sha)
+                .deleteSourceBranch(CDStepHelper.getParameterFieldBooleanValue(gitOpsSpecParams.getDeleteSourceBranch(),
+                    MergePRStepInfo.MergePRBaseStepInfoKeys.deleteSourceBranch, stepParameters))
+                .ref(ref)
+                .build();
         break;
       case AZURE_REPO:
         AzureRepoConnectorDTO azureRepoConnectorDTO = (AzureRepoConnectorDTO) gitStoreDelegateConfig.getGitConfigDTO();
-        gitApiTaskParams = GitApiTaskParams.builder()
-                               .gitRepoType(GitRepoType.AZURE_REPO)
-                               .requestType(GitApiRequestType.MERGE_PR)
-                               .connectorDetails(connectorDetails)
-                               .prNumber(String.valueOf(prNumber))
-                               .owner(azureRepoConnectorDTO.getGitRepositoryDetails().getOrg())
-                               .repo(azureRepoConnectorDTO.getGitRepositoryDetails().getName())
-                               .sha(sha)
-                               .build();
+        gitApiTaskParams =
+            GitApiTaskParams.builder()
+                .gitRepoType(GitRepoType.AZURE_REPO)
+                .requestType(GitApiRequestType.MERGE_PR)
+                .connectorDetails(connectorDetails)
+                .prNumber(String.valueOf(prNumber))
+                .owner(azureRepoConnectorDTO.getGitRepositoryDetails().getOrg())
+                .repo(azureRepoConnectorDTO.getGitRepositoryDetails().getName())
+                .sha(sha)
+                .deleteSourceBranch(CDStepHelper.getParameterFieldBooleanValue(gitOpsSpecParams.getDeleteSourceBranch(),
+                    MergePRStepInfo.MergePRBaseStepInfoKeys.deleteSourceBranch, stepParameters))
+                .build();
         break;
       case GITLAB:
         GitlabConnectorDTO gitlabConnectorDTO = (GitlabConnectorDTO) gitStoreDelegateConfig.getGitConfigDTO();

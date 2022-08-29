@@ -28,7 +28,7 @@ import org.springframework.data.domain.Sort;
 @UtilityClass
 @OwnedBy(PL)
 public class PageUtils {
-  private final String COMMA_SEPARATOR = ",";
+  public final String COMMA_SEPARATOR = ",";
 
   public static Pageable getPageRequest(int page, int size, List<String> sort) {
     if (isEmpty(sort)) {

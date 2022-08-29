@@ -22,6 +22,7 @@ public class NGGitOpsResponse implements DelegateTaskNotifyResponseData {
   String prLink;
   int prNumber;
   String commitId;
+  String ref;
   TaskStatus taskStatus;
   String errorMessage;
   UnitProgressData unitProgressData;

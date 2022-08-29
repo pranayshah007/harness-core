@@ -15,13 +15,14 @@ import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import lombok.Builder;
 import lombok.Getter;
 
 @Getter
 @OwnedBy(HarnessTeam.CDP)
 public class AzureWinrmInfraDelegateConfig extends AzureInfraDelegateConfig implements WinRmInfraDelegateConfig {
-  List<String> hosts;
+  Set<String> hosts;
   List<EncryptedDataDetail> encryptionDataDetails;
   WinRmCredentialsSpecDTO winRmCredentials;
 

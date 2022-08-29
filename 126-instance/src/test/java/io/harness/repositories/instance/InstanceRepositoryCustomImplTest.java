@@ -92,15 +92,15 @@ public class InstanceRepositoryCustomImplTest extends InstancesTestBase {
   public void getActiveInstancesByAccountTest() {
     Instance instance1 = Instance.builder().instanceKey("abc").build();
     Criteria criteria1 = Criteria.where(InstanceKeys.accountIdentifier).is(ACCOUNT_ID);
-    criteria1.andOperator(Criteria.where(InstanceKeys.isDeleted).is(false));
-    criteria1.andOperator(Criteria.where(InstanceKeys.createdAt).lte(TIMESTAMP));
+    criteria1.andOperator(
+        Criteria.where(InstanceKeys.isDeleted).is(false), Criteria.where(InstanceKeys.createdAt).lte(TIMESTAMP));
     Query query1 = new Query().addCriteria(criteria1);
     when(mongoTemplate.find(query1, Instance.class)).thenReturn(Collections.singletonList(instance1));
 
     Instance instance2 = Instance.builder().instanceKey("def").build();
     Criteria criteria2 = Criteria.where(InstanceKeys.accountIdentifier).is(ACCOUNT_ID);
-    criteria2.andOperator(Criteria.where(InstanceKeys.deletedAt).gte(TIMESTAMP));
-    criteria2.andOperator(Criteria.where(InstanceKeys.createdAt).lte(TIMESTAMP));
+    criteria2.andOperator(
+        Criteria.where(InstanceKeys.deletedAt).gte(TIMESTAMP), Criteria.where(InstanceKeys.createdAt).lte(TIMESTAMP));
     Query query2 = new Query().addCriteria(criteria2);
     when(mongoTemplate.find(query2, Instance.class)).thenReturn(Collections.singletonList(instance2));
 
