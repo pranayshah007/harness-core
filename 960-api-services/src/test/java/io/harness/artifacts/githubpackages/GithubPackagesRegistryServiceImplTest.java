@@ -345,4 +345,76 @@ public class GithubPackagesRegistryServiceImplTest extends CategoryTest {
     assertThat(package3.get("packageUrl"))
         .isEqualTo("https://github.com/users/vtxorxwitty/packages/container/package/img");
   }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testGetPackagesForOrg() throws IOException {
+    GithubPackagesInternalConfig githubPackagesInternalConfig = GithubPackagesInternalConfig.builder()
+                                                                    .githubPackagesUrl("https://github.com/username")
+                                                                    .authMechanism("UsernameToken")
+                                                                    .username("username")
+                                                                    .token("token")
+                                                                    .build();
+
+    String packageType = "container";
+    String org = "";
+
+    ObjectMapper mapper = new ObjectMapper();
+
+    File from = new File("960-api-services/src/test/resources/__files/githubpackages/packages-for-org.json");
+
+    ArrayNode versionsJsonFormat = null;
+
+    try {
+      versionsJsonFormat = (ArrayNode) mapper.readTree(from);
+    } catch (IOException e) {
+      doNothing();
+    }
+
+    List<JsonNode> list = new ArrayList<>();
+    for (JsonNode node : versionsJsonFormat) {
+      list.add(node);
+    }
+
+    doReturn(githubPackagesRestClient)
+        .when(githubPackagesRestClientFactory)
+        .getGithubPackagesRestClient(githubPackagesInternalConfig);
+
+    Call<List<JsonNode>> executeCall = mock(Call.class);
+
+    doReturn(executeCall).when(githubPackagesRestClient).listPackages(anyString(), anyString());
+
+    doReturn(Response.success(list)).when(executeCall).execute();
+
+    List<Map<String, String>> packageList =
+        githubPackagesRegistryService.listPackages(githubPackagesInternalConfig, packageType, org);
+
+    Map<String, String> package1 = packageList.get(0);
+
+    assertThat(package1.get("packageName")).isEqualTo("helloworld");
+    assertThat(package1.get("packageType")).isEqualTo("container");
+    assertThat(package1.get("packageId")).isEqualTo("2244066");
+    assertThat(package1.get("visibility")).isEqualTo("private");
+    assertThat(package1.get("packageUrl"))
+        .isEqualTo("https://github.com/orgs/org-vtxorxwitty/packages/container/package/helloworld");
+
+    Map<String, String> package2 = packageList.get(1);
+
+    assertThat(package2.get("packageName")).isEqualTo("byeworld");
+    assertThat(package2.get("packageType")).isEqualTo("container");
+    assertThat(package2.get("packageId")).isEqualTo("2244074");
+    assertThat(package2.get("visibility")).isEqualTo("private");
+    assertThat(package2.get("packageUrl"))
+        .isEqualTo("https://github.com/orgs/org-vtxorxwitty/packages/container/package/byeworld");
+
+    Map<String, String> package3 = packageList.get(2);
+
+    assertThat(package3.get("packageName")).isEqualTo("p3");
+    assertThat(package3.get("packageType")).isEqualTo("container");
+    assertThat(package3.get("packageId")).isEqualTo("2244098");
+    assertThat(package3.get("visibility")).isEqualTo("private");
+    assertThat(package3.get("packageUrl"))
+        .isEqualTo("https://github.com/orgs/org-vtxorxwitty/packages/container/package/p3");
+  }
 }
