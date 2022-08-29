@@ -20,6 +20,7 @@ import io.harness.audit.beans.AuditEntry;
 import io.harness.audit.beans.ResourceDTO;
 import io.harness.audit.beans.ResourceScopeDTO;
 import io.harness.audit.client.api.AuditClientService;
+import io.harness.beans.Scope;
 import io.harness.context.GlobalContext;
 import io.harness.eventsframework.EventsFrameworkConstants;
 import io.harness.eventsframework.EventsFrameworkMetadataConstants;
@@ -28,6 +29,7 @@ import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.eventsframework.producer.Message;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.ng.core.api.DefaultUserGroupService;
 import io.harness.ng.core.dto.UserGroupDTO;
 import io.harness.ng.core.dto.UserGroupRequest;
 import io.harness.ng.core.events.UserGroupCreateEvent;
@@ -51,13 +53,15 @@ public class UserGroupEventHandler implements OutboxEventHandler {
   private final ObjectMapper objectMapper;
   private final Producer eventProducer;
   private final AuditClientService auditClientService;
+  private final DefaultUserGroupService defaultUserGroupService;
 
   @Inject
-  public UserGroupEventHandler(
-      @Named(EventsFrameworkConstants.ENTITY_CRUD) Producer eventProducer, AuditClientService auditClientService) {
+  public UserGroupEventHandler(@Named(EventsFrameworkConstants.ENTITY_CRUD) Producer eventProducer,
+      AuditClientService auditClientService, DefaultUserGroupService defaultUserGroupService) {
     this.objectMapper = NG_DEFAULT_OBJECT_MAPPER;
     this.eventProducer = eventProducer;
     this.auditClientService = auditClientService;
+    this.defaultUserGroupService = defaultUserGroupService;
   }
 
   @Override
@@ -84,6 +88,12 @@ public class UserGroupEventHandler implements OutboxEventHandler {
         objectMapper.readValue(outboxEvent.getEventData(), UserGroupCreateEvent.class);
     boolean publishedToRedis =
         publishEvent(userGroupCreateEvent.getUserGroup(), EventsFrameworkMetadataConstants.CREATE_ACTION);
+    UserGroupDTO userGroupDTO = userGroupCreateEvent.getUserGroup();
+    Scope scope = Scope.of(
+        userGroupDTO.getAccountIdentifier(), userGroupDTO.getOrgIdentifier(), userGroupDTO.getProjectIdentifier());
+    if (defaultUserGroupService.isDefaultUserGroupService(scope, userGroupDTO.getIdentifier())) {
+      return publishedToRedis;
+    }
     AuditEntry auditEntry =
         AuditEntry.builder()
             .action(Action.CREATE)
@@ -104,6 +114,12 @@ public class UserGroupEventHandler implements OutboxEventHandler {
         objectMapper.readValue(outboxEvent.getEventData(), UserGroupUpdateEvent.class);
     boolean publishedToRedis =
         publishEvent(userGroupUpdateEvent.getNewUserGroup(), EventsFrameworkMetadataConstants.UPDATE_ACTION);
+    UserGroupDTO userGroupDTO = userGroupUpdateEvent.getOldUserGroup();
+    Scope scope = Scope.of(
+        userGroupDTO.getAccountIdentifier(), userGroupDTO.getOrgIdentifier(), userGroupDTO.getProjectIdentifier());
+    if (defaultUserGroupService.isDefaultUserGroupService(scope, userGroupDTO.getIdentifier())) {
+      return publishedToRedis;
+    }
     AuditEntry auditEntry =
         AuditEntry.builder()
             .action(Action.UPDATE)
@@ -126,6 +142,12 @@ public class UserGroupEventHandler implements OutboxEventHandler {
         objectMapper.readValue(outboxEvent.getEventData(), UserGroupDeleteEvent.class);
     boolean publishedToRedis =
         publishEvent(userGroupDeleteEvent.getUserGroup(), EventsFrameworkMetadataConstants.DELETE_ACTION);
+    UserGroupDTO userGroupDTO = userGroupDeleteEvent.getUserGroup();
+    Scope scope = Scope.of(
+        userGroupDTO.getAccountIdentifier(), userGroupDTO.getOrgIdentifier(), userGroupDTO.getProjectIdentifier());
+    if (defaultUserGroupService.isDefaultUserGroupService(scope, userGroupDTO.getIdentifier())) {
+      return publishedToRedis;
+    }
     AuditEntry auditEntry =
         AuditEntry.builder()
             .action(Action.DELETE)
