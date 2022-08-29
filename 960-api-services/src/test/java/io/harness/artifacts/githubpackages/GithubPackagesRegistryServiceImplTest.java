@@ -27,6 +27,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
 import software.wings.helpers.ext.jenkins.BuildDetails;
+import software.wings.helpers.ext.jenkins.BuildDetails.BuildStatus;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -35,6 +36,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -60,7 +62,7 @@ public class GithubPackagesRegistryServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = VED)
   @Category(UnitTests.class)
-  public void testGetBuildsForUser() throws IOException {
+  public void testGetVersionsForUser() throws IOException {
     GithubPackagesInternalConfig githubPackagesInternalConfig = GithubPackagesInternalConfig.builder()
                                                                     .githubPackagesUrl("https://github.com/username")
                                                                     .authMechanism("UsernameToken")
@@ -115,6 +117,7 @@ public class GithubPackagesRegistryServiceImplTest extends CategoryTest {
     assertThat(build1.getBuildFullDisplayName())
         .isEqualTo("sha256:49f75d46899bf47edbf3558890e1557a008a20b78e3d0b22e9d18cf00d27699d");
     assertThat(build1.getUiDisplayName()).isEqualTo("Tag# 5");
+    assertThat(build1.getStatus()).isEqualTo(BuildStatus.SUCCESS);
 
     BuildDetails build2 = builds.get(1);
 
@@ -125,6 +128,7 @@ public class GithubPackagesRegistryServiceImplTest extends CategoryTest {
     assertThat(build2.getBuildFullDisplayName())
         .isEqualTo("sha256:f26fbadb0acab4a21ecb4e337a326907e61fbec36c9a9b52e725669d99ed1261");
     assertThat(build2.getUiDisplayName()).isEqualTo("Tag# 4");
+    assertThat(build2.getStatus()).isEqualTo(BuildStatus.SUCCESS);
 
     BuildDetails build3 = builds.get(2);
 
@@ -135,6 +139,7 @@ public class GithubPackagesRegistryServiceImplTest extends CategoryTest {
     assertThat(build3.getBuildFullDisplayName())
         .isEqualTo("sha256:54fc6c7e4927da8e3a6ae3e2bf3ec97481d860455adab48b8cff5f6916a69652");
     assertThat(build3.getUiDisplayName()).isEqualTo("Tag# 3");
+    assertThat(build3.getStatus()).isEqualTo(BuildStatus.SUCCESS);
 
     BuildDetails build4 = builds.get(3);
 
@@ -145,6 +150,7 @@ public class GithubPackagesRegistryServiceImplTest extends CategoryTest {
     assertThat(build4.getBuildFullDisplayName())
         .isEqualTo("sha256:08cde8fece645d8b60bc13cf85691f0a092238a270c1a95554fc71714cd25237");
     assertThat(build4.getUiDisplayName()).isEqualTo("Tag# 2");
+    assertThat(build4.getStatus()).isEqualTo(BuildStatus.SUCCESS);
 
     BuildDetails build5 = builds.get(4);
 
@@ -155,12 +161,13 @@ public class GithubPackagesRegistryServiceImplTest extends CategoryTest {
     assertThat(build5.getBuildFullDisplayName())
         .isEqualTo("sha256:e987fb89e5455d7a465e50d88f4c1497e8947342acfab6cfd347ec201ed6885f");
     assertThat(build5.getUiDisplayName()).isEqualTo("Tag# 1");
+    assertThat(build5.getStatus()).isEqualTo(BuildStatus.SUCCESS);
   }
 
   @Test
   @Owner(developers = VED)
   @Category(UnitTests.class)
-  public void testGetBuildsForOrg() throws IOException {
+  public void testGetVersionsForOrg() throws IOException {
     GithubPackagesInternalConfig githubPackagesInternalConfig = GithubPackagesInternalConfig.builder()
                                                                     .githubPackagesUrl("https://github.com/username")
                                                                     .authMechanism("UsernameToken")
@@ -176,7 +183,7 @@ public class GithubPackagesRegistryServiceImplTest extends CategoryTest {
 
     ObjectMapper mapper = new ObjectMapper();
 
-    File from = new File("960-api-services/src/test/resources/__files/githubpackages/build-details-for-user.json");
+    File from = new File("960-api-services/src/test/resources/__files/githubpackages/build-details-for-org.json");
 
     ArrayNode versionsJsonFormat = null;
 
@@ -210,50 +217,132 @@ public class GithubPackagesRegistryServiceImplTest extends CategoryTest {
 
     assertThat(build1.getNumber()).isEqualTo("5");
     assertThat(build1.getArtifactPath()).isEqualTo("ghcr.io/org-vtxorxwitty/helloworld:5");
-    assertThat(build1.getBuildUrl()).isEqualTo("https://github.com/username/packages/container/helloworld/39008634");
+    assertThat(build1.getBuildUrl())
+        .isEqualTo("https://github.com/orgs/org-vtxorxwitty/packages/container/helloworld/39008634");
     assertThat(build1.getBuildDisplayName()).isEqualTo("helloworld: 5");
     assertThat(build1.getBuildFullDisplayName())
         .isEqualTo("sha256:49f75d46899bf47edbf3558890e1557a008a20b78e3d0b22e9d18cf00d27699d");
     assertThat(build1.getUiDisplayName()).isEqualTo("Tag# 5");
+    assertThat(build1.getStatus()).isEqualTo(BuildStatus.SUCCESS);
 
     BuildDetails build2 = builds.get(1);
 
     assertThat(build2.getNumber()).isEqualTo("4");
     assertThat(build2.getArtifactPath()).isEqualTo("ghcr.io/org-vtxorxwitty/helloworld:4");
-    assertThat(build2.getBuildUrl()).isEqualTo("https://github.com/username/packages/container/helloworld/39008588");
+    assertThat(build2.getBuildUrl())
+        .isEqualTo("https://github.com/orgs/org-vtxorxwitty/packages/container/helloworld/39008588");
     assertThat(build2.getBuildDisplayName()).isEqualTo("helloworld: 4");
     assertThat(build2.getBuildFullDisplayName())
         .isEqualTo("sha256:f26fbadb0acab4a21ecb4e337a326907e61fbec36c9a9b52e725669d99ed1261");
     assertThat(build2.getUiDisplayName()).isEqualTo("Tag# 4");
+    assertThat(build2.getStatus()).isEqualTo(BuildStatus.SUCCESS);
 
     BuildDetails build3 = builds.get(2);
 
     assertThat(build3.getNumber()).isEqualTo("3");
     assertThat(build3.getArtifactPath()).isEqualTo("ghcr.io/org-vtxorxwitty/helloworld:3");
-    assertThat(build3.getBuildUrl()).isEqualTo("https://github.com/username/packages/container/helloworld/39008548");
+    assertThat(build3.getBuildUrl())
+        .isEqualTo("https://github.com/orgs/org-vtxorxwitty/packages/container/helloworld/39008548");
     assertThat(build3.getBuildDisplayName()).isEqualTo("helloworld: 3");
     assertThat(build3.getBuildFullDisplayName())
         .isEqualTo("sha256:54fc6c7e4927da8e3a6ae3e2bf3ec97481d860455adab48b8cff5f6916a69652");
     assertThat(build3.getUiDisplayName()).isEqualTo("Tag# 3");
+    assertThat(build3.getStatus()).isEqualTo(BuildStatus.SUCCESS);
 
     BuildDetails build4 = builds.get(3);
 
     assertThat(build4.getNumber()).isEqualTo("2");
     assertThat(build4.getArtifactPath()).isEqualTo("ghcr.io/org-vtxorxwitty/helloworld:2");
-    assertThat(build4.getBuildUrl()).isEqualTo("https://github.com/username/packages/container/helloworld/39008500");
+    assertThat(build4.getBuildUrl())
+        .isEqualTo("https://github.com/orgs/org-vtxorxwitty/packages/container/helloworld/39008500");
     assertThat(build4.getBuildDisplayName()).isEqualTo("helloworld: 2");
     assertThat(build4.getBuildFullDisplayName())
         .isEqualTo("sha256:08cde8fece645d8b60bc13cf85691f0a092238a270c1a95554fc71714cd25237");
     assertThat(build4.getUiDisplayName()).isEqualTo("Tag# 2");
+    assertThat(build4.getStatus()).isEqualTo(BuildStatus.SUCCESS);
 
     BuildDetails build5 = builds.get(4);
 
     assertThat(build5.getNumber()).isEqualTo("1");
     assertThat(build5.getArtifactPath()).isEqualTo("ghcr.io/org-vtxorxwitty/helloworld:1");
-    assertThat(build5.getBuildUrl()).isEqualTo("https://github.com/username/packages/container/helloworld/39008399");
+    assertThat(build5.getBuildUrl())
+        .isEqualTo("https://github.com/orgs/org-vtxorxwitty/packages/container/helloworld/39008399");
     assertThat(build5.getBuildDisplayName()).isEqualTo("helloworld: 1");
     assertThat(build5.getBuildFullDisplayName())
         .isEqualTo("sha256:e987fb89e5455d7a465e50d88f4c1497e8947342acfab6cfd347ec201ed6885f");
     assertThat(build5.getUiDisplayName()).isEqualTo("Tag# 1");
+    assertThat(build5.getStatus()).isEqualTo(BuildStatus.SUCCESS);
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testGetPackagesForUser() throws IOException {
+    GithubPackagesInternalConfig githubPackagesInternalConfig = GithubPackagesInternalConfig.builder()
+                                                                    .githubPackagesUrl("https://github.com/username")
+                                                                    .authMechanism("UsernameToken")
+                                                                    .username("username")
+                                                                    .token("token")
+                                                                    .build();
+
+    String packageType = "container";
+    String org = "";
+
+    ObjectMapper mapper = new ObjectMapper();
+
+    File from = new File("960-api-services/src/test/resources/__files/githubpackages/packages-for-user.json");
+
+    ArrayNode versionsJsonFormat = null;
+
+    try {
+      versionsJsonFormat = (ArrayNode) mapper.readTree(from);
+    } catch (IOException e) {
+      doNothing();
+    }
+
+    List<JsonNode> list = new ArrayList<>();
+    for (JsonNode node : versionsJsonFormat) {
+      list.add(node);
+    }
+
+    doReturn(githubPackagesRestClient)
+        .when(githubPackagesRestClientFactory)
+        .getGithubPackagesRestClient(githubPackagesInternalConfig);
+
+    Call<List<JsonNode>> executeCall = mock(Call.class);
+
+    doReturn(executeCall).when(githubPackagesRestClient).listPackages(anyString(), anyString());
+
+    doReturn(Response.success(list)).when(executeCall).execute();
+
+    List<Map<String, String>> packageList =
+        githubPackagesRegistryService.listPackages(githubPackagesInternalConfig, packageType, org);
+
+    Map<String, String> package1 = packageList.get(0);
+
+    assertThat(package1.get("packageName")).isEqualTo("helloworld");
+    assertThat(package1.get("packageType")).isEqualTo("container");
+    assertThat(package1.get("packageId")).isEqualTo("1707838");
+    assertThat(package1.get("visibility")).isEqualTo("private");
+    assertThat(package1.get("packageUrl"))
+        .isEqualTo("https://github.com/users/vtxorxwitty/packages/container/package/helloworld");
+
+    Map<String, String> package2 = packageList.get(1);
+
+    assertThat(package2.get("packageName")).isEqualTo("open-repo/helloworld");
+    assertThat(package2.get("packageType")).isEqualTo("container");
+    assertThat(package2.get("packageId")).isEqualTo("1707849");
+    assertThat(package2.get("visibility")).isEqualTo("private");
+    assertThat(package2.get("packageUrl"))
+        .isEqualTo("https://github.com/users/vtxorxwitty/packages/container/package/open-repo%2Fhelloworld");
+
+    Map<String, String> package3 = packageList.get(2);
+
+    assertThat(package3.get("packageName")).isEqualTo("img");
+    assertThat(package3.get("packageType")).isEqualTo("container");
+    assertThat(package3.get("packageId")).isEqualTo("1981514");
+    assertThat(package3.get("visibility")).isEqualTo("private");
+    assertThat(package3.get("packageUrl"))
+        .isEqualTo("https://github.com/users/vtxorxwitty/packages/container/package/img");
   }
 }
