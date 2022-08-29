@@ -15,8 +15,6 @@ import io.harness.timescaledb.Tables;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
-import java.util.HashMap;
-import java.util.List;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.jooq.DSLContext;
@@ -109,11 +107,12 @@ public class PipelineExecutionSummaryCDChangeEventHandler extends RedisAbstractH
 
       if (ciExecutionInfo != null) {
         JsonNode branch = ciExecutionInfo.get(PipelineExecutionSummaryKeys.branch);
-
-        HashMap firstCommit;
+        JsonNode commitsNode;
+        JsonNode firstCommit;
         String commits = PipelineExecutionSummaryKeys.commits;
-        if (branch != null && branch.get(commits) != null && ((List) branch.get(commits)).size() > 0) {
-          firstCommit = (HashMap) ((List) branch.get(commits)).get(0);
+        if (branch != null && branch.get(commits) != null && (branch.get(commits)).size() > 0) {
+          commitsNode = branch.get(commits);
+          firstCommit = commitsNode.get("_0");
           if (firstCommit != null) {
             if (firstCommit.get(PipelineExecutionSummaryKeys.commitId) != null) {
               record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.MODULEINFO_BRANCH_COMMIT_ID,
@@ -132,8 +131,9 @@ public class PipelineExecutionSummaryCDChangeEventHandler extends RedisAbstractH
                 pullRequestObject.get(PipelineExecutionSummaryKeys.sourceBranch).toString());
           }
 
-          if (pullRequestObject.get(commits) != null && ((List) pullRequestObject.get(commits)).size() > 0) {
-            firstCommit = (HashMap) ((List) pullRequestObject.get(commits)).get(0);
+          if (pullRequestObject.get(commits) != null && pullRequestObject.get(commits).size() > 0) {
+            commitsNode = branch.get(commits);
+            firstCommit = commitsNode.get("_0");
             if (firstCommit != null) {
               if (firstCommit.get(PipelineExecutionSummaryKeys.commitId) != null) {
                 record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.MODULEINFO_BRANCH_COMMIT_ID,
