@@ -189,6 +189,9 @@
             },
             "filePathRegex": {
               "type": "string"
+            },
+            "region": {
+              "type": "string"
             }
           }
         },

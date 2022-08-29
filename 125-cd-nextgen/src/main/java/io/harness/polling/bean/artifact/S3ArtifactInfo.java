@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.pms.yaml.ParameterField;
 
@@ -22,6 +23,7 @@ import lombok.Value;
 @Builder
 public class S3ArtifactInfo implements ArtifactInfo {
   String connectorRef;
+  String region;
   String bucketName;
   String filePathRegex;
   String filePath;
@@ -35,6 +37,8 @@ public class S3ArtifactInfo implements ArtifactInfo {
   public ArtifactConfig toArtifactConfig() {
     return AmazonS3ArtifactConfig.builder()
         .connectorRef(ParameterField.<String>builder().value(connectorRef).build())
+        .region(
+            ParameterField.<String>builder().value(EmptyPredicate.isNotEmpty(region) ? region : "us-east-1").build())
         .bucketName(ParameterField.<String>builder().value(bucketName).build())
         .filePath(ParameterField.<String>builder().value(filePath).build())
         .filePathRegex(ParameterField.<String>builder().value(filePathRegex).build())

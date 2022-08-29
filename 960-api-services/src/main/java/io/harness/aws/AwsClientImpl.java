@@ -22,6 +22,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.beans.AwsInternalConfig;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.ExplanationException;
@@ -113,9 +114,9 @@ public class AwsClientImpl implements AwsClient {
   private static final Regions DEFAULT_REGION = Regions.US_EAST_1;
 
   @Override
-  public void validateAwsAccountCredential(AwsConfig awsConfig) {
+  public void validateAwsAccountCredential(AwsConfig awsConfig, @NotNull String region) {
     try (CloseableAmazonWebServiceClient<AmazonEC2Client> closeableAmazonEC2Client =
-             new CloseableAmazonWebServiceClient(getAmazonEc2Client(awsConfig))) {
+             new CloseableAmazonWebServiceClient(getAmazonEc2Client(awsConfig, region))) {
       tracker.trackEC2Call("Get Ec2 client");
       closeableAmazonEC2Client.getClient().describeRegions();
     } catch (Exception exception) {
@@ -238,17 +239,17 @@ public class AwsClientImpl implements AwsClient {
   }
 
   @VisibleForTesting
-  AmazonEC2Client getAmazonEc2Client(AwsConfig awsConfig) {
-    AWSCredentialsProvider credentialsProvider = getCredentialProvider(awsConfig);
+  AmazonEC2Client getAmazonEc2Client(AwsConfig awsConfig, String region) {
+    AWSCredentialsProvider credentialsProvider = getCredentialProvider(awsConfig, region);
     return (AmazonEC2Client) AmazonEC2ClientBuilder.standard()
-        .withRegion(DEFAULT_REGION)
+        .withRegion(region)
         .withCredentials(credentialsProvider)
         .build();
   }
 
   @VisibleForTesting
   AWSCodeCommitClient getAmazonCodeCommitClient(AwsConfig awsConfig, String region) {
-    AWSCredentialsProvider credentialsProvider = getCredentialProvider(awsConfig);
+    AWSCredentialsProvider credentialsProvider = getCredentialProvider(awsConfig, region);
     return (AWSCodeCommitClient) AWSCodeCommitClientBuilder.standard()
         .withRegion(region)
         .withCredentials(credentialsProvider)
@@ -257,14 +258,14 @@ public class AwsClientImpl implements AwsClient {
 
   @VisibleForTesting
   AmazonECRClient getAmazonEcrClient(String region, AwsConfig awsConfig) {
-    AWSCredentialsProvider credentialsProvider = getCredentialProvider(awsConfig);
+    AWSCredentialsProvider credentialsProvider = getCredentialProvider(awsConfig, region);
     return (AmazonECRClient) AmazonECRClientBuilder.standard()
         .withRegion(region)
         .withCredentials(credentialsProvider)
         .build();
   }
 
-  protected AWSCredentialsProvider getCredentialProvider(AwsConfig awsConfig) {
+  protected AWSCredentialsProvider getCredentialProvider(AwsConfig awsConfig, String region) {
     AWSCredentialsProvider credentialsProvider;
     if (awsConfig.isEc2IamCredentials()) {
       log.info("Instantiating EC2ContainerCredentialsProviderWrapper");
@@ -287,16 +288,26 @@ public class AwsClientImpl implements AwsClient {
     }
     if (awsConfig.getCrossAccountAccess() != null) {
       CrossAccountAccess crossAccountAttributes = awsConfig.getCrossAccountAccess();
-      // For the security token service we default to us-east-1.
-      credentialsProvider = getAssumedCredentialsProvider(credentialsProvider, crossAccountAttributes);
+      region = EmptyPredicate.isNotEmpty(region) ? region : DEFAULT_REGION.getName();
+      credentialsProvider = getAssumedCredentialsProvider(credentialsProvider, crossAccountAttributes, region);
     }
     return credentialsProvider;
   }
 
   public AWSCredentialsProvider getAssumedCredentialsProvider(
-      AWSCredentialsProvider credentialsProvider, CrossAccountAccess crossAccountAccess) {
-    return getAssumedCredentialsProvider(
-        credentialsProvider, crossAccountAccess.getCrossAccountRoleArn(), crossAccountAccess.getExternalId());
+      AWSCredentialsProvider credentialsProvider, CrossAccountAccess crossAccountAccess, String region) {
+    return getAssumedCredentialsProviderWithRegion(
+        credentialsProvider, crossAccountAccess.getCrossAccountRoleArn(), crossAccountAccess.getExternalId(), region);
+  }
+
+  private AWSCredentialsProvider getAssumedCredentialsProviderWithRegion(AWSCredentialsProvider credentialsProvider,
+      String crossAccountRoleArn, @Nullable String externalId, @NotNull String region) {
+    final AWSSecurityTokenService awsSecurityTokenService =
+        AWSSecurityTokenServiceClientBuilder.standard().withRegion(region).withCredentials(credentialsProvider).build();
+    return new STSAssumeRoleSessionCredentialsProvider.Builder(crossAccountRoleArn, UUID.randomUUID().toString())
+        .withExternalId(externalId)
+        .withStsClient(awsSecurityTokenService)
+        .build();
   }
 
   @Override

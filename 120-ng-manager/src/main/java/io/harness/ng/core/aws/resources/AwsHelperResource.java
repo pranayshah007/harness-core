@@ -108,10 +108,12 @@ public class AwsHelperResource {
   public ResponseDTO<Map<String, String>> listIamRoles(@NotNull @QueryParam("awsConnectorRef") String awsConnectorRef,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam("region") String region) {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(awsConnectorRef, accountIdentifier, orgIdentifier, projectIdentifier);
-    return ResponseDTO.newResponse(awsHelperService.getRolesARNs(connectorRef, orgIdentifier, projectIdentifier));
+    return ResponseDTO.newResponse(
+        awsHelperService.getRolesARNs(connectorRef, orgIdentifier, projectIdentifier, region));
   }
 
   @GET

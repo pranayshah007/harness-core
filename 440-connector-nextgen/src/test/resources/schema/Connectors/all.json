@@ -361,6 +361,9 @@
         "crossAccountAccess": {
           "$ref": "#/definitions/CrossAccountAccess"
         },
+        "region": {
+          "type": "string"
+        },
         "type": {
           "type": "string",
           "enum": [

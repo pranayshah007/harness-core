@@ -105,6 +105,7 @@ message AcrPayload {
 message AmazonS3Payload {
   string bucketName = 1;
   string filePathRegex = 2;
+  string region = 3;
 }
 
 message JenkinsPayload {
