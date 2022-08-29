@@ -57,6 +57,10 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
       String packageType, String org, String versionRegex, int maxNoOfVersionsPerPackage) {
     List<BuildDetails> buildDetails;
 
+    if (!isPackageType(packageType)) {
+      throw new InvalidRequestException("Incorrect Package Type");
+    }
+
     try {
       buildDetails = getBuildDetails(githubPackagesInternalConfig, packageName, packageType, org);
     } catch (GithubPackagesServerRuntimeException ex) {
@@ -80,6 +84,10 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
   public BuildDetails getLastSuccessfulBuildFromRegex(GithubPackagesInternalConfig githubPackagesInternalConfig,
       String packageName, String packageType, String versionRegex, String org) {
     List<BuildDetails> buildDetails;
+
+    if (!isPackageType(packageType)) {
+      throw new InvalidRequestException("Incorrect Package Type");
+    }
 
     try {
       buildDetails = getBuildDetails(githubPackagesInternalConfig, packageName, packageType, org);
@@ -105,6 +113,10 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
       String packageType, String version, String org) {
     List<BuildDetails> builds = new ArrayList<>();
 
+    if (!isPackageType(packageType)) {
+      throw new InvalidRequestException("Incorrect Package Type");
+    }
+
     try {
       builds = getBuildDetails(githubPackagesInternalConfig, packageName, packageType, org);
     } catch (GithubPackagesServerRuntimeException ex) {
@@ -122,6 +134,10 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
   public List<Map<String, String>> listPackages(
       GithubPackagesInternalConfig githubPackagesInternalConfig, String packageType, String org) {
     List<Map<String, String>> map;
+
+    if (!isPackageType(packageType)) {
+      throw new InvalidRequestException("Incorrect Package Type");
+    }
 
     try {
       map = getPackages(githubPackagesInternalConfig, packageType, org);
@@ -411,5 +427,15 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
     return NestedExceptionUtils.hintWithExplanationException("Update the credentials",
         "Check if the provided credentials are correct",
         new InvalidArtifactServerException("Invalid Github Packages Registry credentials", USER));
+  }
+
+  private boolean isPackageType(String packageType) {
+    if (StringUtils.equals(packageType, "container") || StringUtils.equals(packageType, "nuget")
+        || StringUtils.equals(packageType, "maven") || StringUtils.equals(packageType, "npm")
+        || StringUtils.equals(packageType, "rubygems")) {
+      return true;
+    } else {
+      return false;
+    }
   }
 }

@@ -10,6 +10,7 @@ package io.harness.artifacts.githubpackages;
 import static io.harness.rule.OwnerRule.VED;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
@@ -24,6 +25,7 @@ import io.harness.artifacts.githubpackages.client.GithubPackagesRestClient;
 import io.harness.artifacts.githubpackages.client.GithubPackagesRestClientFactory;
 import io.harness.artifacts.githubpackages.service.GithubPackagesRegistryServiceImpl;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.InvalidRequestException;
 import io.harness.rule.Owner;
 
 import software.wings.helpers.ext.jenkins.BuildDetails;
@@ -383,7 +385,7 @@ public class GithubPackagesRegistryServiceImplTest extends CategoryTest {
 
     Call<List<JsonNode>> executeCall = mock(Call.class);
 
-    doReturn(executeCall).when(githubPackagesRestClient).listPackages(anyString(), anyString());
+    doReturn(executeCall).when(githubPackagesRestClient).listPackagesForOrg(anyString(), anyString(), anyString());
 
     doReturn(Response.success(list)).when(executeCall).execute();
 
@@ -654,5 +656,58 @@ public class GithubPackagesRegistryServiceImplTest extends CategoryTest {
         .isEqualTo("sha256:54fc6c7e4927da8e3a6ae3e2bf3ec97481d860455adab48b8cff5f6916a69652");
     assertThat(build.getUiDisplayName()).isEqualTo("Tag# 3");
     assertThat(build.getStatus()).isEqualTo(BuildStatus.SUCCESS);
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testInvalidPackageType() throws IOException {
+    GithubPackagesInternalConfig githubPackagesInternalConfig = GithubPackagesInternalConfig.builder()
+                                                                    .githubPackagesUrl("https://github.com/username")
+                                                                    .authMechanism("UsernameToken")
+                                                                    .username("username")
+                                                                    .token("token")
+                                                                    .build();
+
+    String packageName = "helloworld";
+    String packageType = "invalid-container";
+    String org = "";
+    String versionRegex = "*";
+    Integer MAX_NO_OF_TAGS_PER_IMAGE = 10000;
+
+    ObjectMapper mapper = new ObjectMapper();
+
+    File from = new File("960-api-services/src/test/resources/__files/githubpackages/build-details-for-user.json");
+
+    ArrayNode versionsJsonFormat = null;
+
+    try {
+      versionsJsonFormat = (ArrayNode) mapper.readTree(from);
+    } catch (IOException e) {
+      doNothing();
+    }
+
+    List<JsonNode> list = new ArrayList<>();
+    for (JsonNode node : versionsJsonFormat) {
+      list.add(node);
+    }
+
+    doReturn(githubPackagesRestClient)
+        .when(githubPackagesRestClientFactory)
+        .getGithubPackagesRestClient(githubPackagesInternalConfig);
+
+    Call<List<JsonNode>> executeCall = mock(Call.class);
+
+    doReturn(executeCall)
+        .when(githubPackagesRestClient)
+        .listVersionsForPackages(anyString(), anyString(), anyString(), anyInt(), anyInt());
+
+    doReturn(Response.success(list)).when(executeCall).execute();
+
+    assertThatThrownBy(()
+                           -> githubPackagesRegistryService.getBuilds(githubPackagesInternalConfig, packageName,
+                               packageType, org, versionRegex, MAX_NO_OF_TAGS_PER_IMAGE))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Incorrect Package Type");
   }
 }
