@@ -352,6 +352,7 @@ public class DelegateServiceGrpcClient {
           RegisterCallbackRequest.newBuilder().setCallback(delegateCallback).build());
       return response.getCallbackToken();
     } catch (StatusRuntimeException ex) {
+      log.error("Unexpected error occurred while registering callback.", ex);
       throw new DelegateServiceDriverException("Unexpected error occurred while registering callback.", ex);
     }
   }
