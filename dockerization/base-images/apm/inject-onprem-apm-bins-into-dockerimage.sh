@@ -17,7 +17,8 @@ function download_onprem_apm_binaries(){
 	fi
 }
 
-export OCELET_AGENT='https://harness.jfrog.io/artifactory/BuildsTools/docker/inspectit-ocelot-agent/inspectit-ocelot-agent-1.16.0.jar'
 
-echo "STEP 1: INFO: Downloading APM Binaries Locally..."
-download_onprem_apm_binaries
+#export OCELET_AGENT='https://harness.jfrog.io/artifactory/BuildsTools/docker/inspectit-ocelot-agent/inspectit-ocelot-agent-1.16.0.jar'
+
+#echo "STEP 1: INFO: Downloading APM Binaries Locally..."
+#download_onprem_apm_binaries
