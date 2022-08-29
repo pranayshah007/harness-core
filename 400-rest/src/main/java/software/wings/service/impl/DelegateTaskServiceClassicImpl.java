@@ -976,10 +976,6 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
               .accountId(delegateTask.getAccountId())
               .build();
       delegateTaskService.handleResponse(delegateTask, taskQuery, response);
-      if (featureFlagService.isEnabled(
-              FeatureName.FAIL_WORKFLOW_IF_SECRET_DECRYPTION_FAILS, delegateTask.getAccountId())) {
-        throw exception;
-      }
       return null;
     }
   }
