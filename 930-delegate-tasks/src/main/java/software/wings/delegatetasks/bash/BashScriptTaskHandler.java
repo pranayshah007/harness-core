@@ -13,7 +13,7 @@ import io.harness.shell.ScriptProcessExecutor;
 import io.harness.shell.ShellExecutorConfig;
 
 import software.wings.beans.bash.BashScriptParameters;
-import software.wings.core.local.executors.ShellExecutorFactory;
+import software.wings.core.executors.bash.BashExecutorFactory;
 
 import com.google.inject.Inject;
 import java.util.Arrays;
@@ -24,7 +24,7 @@ import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor(onConstructor_ = @Inject)
 public class BashScriptTaskHandler {
-  private final ShellExecutorFactory shellExecutorFactory;
+  private final BashExecutorFactory shellExecutorFactory;
 
   public CommandExecutionResult handle(final BashScriptParameters parameters) {
     // Define output variables and secret output variables together
@@ -41,8 +41,7 @@ public class BashScriptTaskHandler {
                                                    .scriptType(parameters.getScriptType())
                                                    .build();
 
-    final ScriptProcessExecutor executor =
-        shellExecutorFactory.getExecutor(executorConfig, parameters.isSaveExecutionLogs());
+    final ScriptProcessExecutor executor = shellExecutorFactory.getExecutor(executorConfig);
 
     return CommandExecutionResultMapper.from(
         executor.executeCommandString(parameters.getScript(), items, secretItems, parameters.getTimeout()));

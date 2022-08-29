@@ -75,9 +75,7 @@ import io.harness.serializer.JsonUtils;
 import io.harness.threading.Schedulable;
 
 import software.wings.beans.TaskType;
-import software.wings.beans.delegation.ShellScriptParameters;
-import software.wings.delegatetasks.ActivityBasedLogSanitizer;
-import software.wings.delegatetasks.LogSanitizer;
+import software.wings.beans.bash.BashScriptParameters;
 import software.wings.delegatetasks.bash.BashScriptTask;
 import software.wings.delegatetasks.validation.DelegateConnectionResult;
 import software.wings.misc.MemoryHelper;
@@ -977,7 +975,6 @@ public class DelegatePlatformService extends AbstractDelegateAgentServiceImpl {
     log.debug("DelegateTask acquired - accountId: {}, taskType: {}", getDelegateConfiguration().getAccountId(),
         taskData.getTaskType());
     Pair<String, Set<String>> activitySecrets = obtainActivitySecrets(delegateTaskPackage);
-    Optional<LogSanitizer> sanitizer = getLogSanitizer(activitySecrets);
     //    ILogStreamingTaskClient logStreamingTaskClient = getLogStreamingTaskClient(activitySecrets,
     //    delegateTaskPackage);
     // At the moment used to download and render terraform json plan file and keep track of the download tf plans
@@ -1034,11 +1031,11 @@ public class DelegatePlatformService extends AbstractDelegateAgentServiceImpl {
         activityId = ((ActivityAccess) parameters[0]).getActivityId();
       }
 
-      if (parameters[0] instanceof ShellScriptParameters) {
+      if (parameters[0] instanceof BashScriptParameters) {
         // Shell Script
-        ShellScriptParameters shellScriptParameters = (ShellScriptParameters) parameters[0];
+        final BashScriptParameters bashScriptParameters = (BashScriptParameters) parameters[0];
         secrets.addAll(secretsFromMaskedVariables(
-            shellScriptParameters.getServiceVariables(), shellScriptParameters.getSafeDisplayServiceVariables()));
+            bashScriptParameters.getServiceVariables(), bashScriptParameters.getSafeDisplayServiceVariables()));
       } /* else if (parameters[0] instanceof ShellScriptProvisionParameters) {
          // Shell Script Provision
          ShellScriptProvisionParameters shellScriptProvisionParameters = (ShellScriptProvisionParameters) parameters[0];
@@ -1384,15 +1381,6 @@ public class DelegatePlatformService extends AbstractDelegateAgentServiceImpl {
       }
     } catch (Exception e) {
       log.error("Unable to send response to manager", e);
-    }
-  }
-
-  private Optional<LogSanitizer> getLogSanitizer(Pair<String, Set<String>> activitySecrets) {
-    // Create log sanitizer only if activityId and secrets are present
-    if (isNotBlank(activitySecrets.getLeft()) && isNotEmpty(activitySecrets.getRight())) {
-      return Optional.of(new ActivityBasedLogSanitizer(activitySecrets.getLeft(), activitySecrets.getRight()));
-    } else {
-      return Optional.empty();
     }
   }
 

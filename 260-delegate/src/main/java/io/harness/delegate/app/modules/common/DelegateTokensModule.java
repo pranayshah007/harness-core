@@ -8,9 +8,10 @@
 package io.harness.delegate.app.modules.common;
 
 import io.harness.delegate.configuration.DelegateConfiguration;
-//import io.harness.delegate.task.citasks.cik8handler.helper.DelegateServiceTokenHelper;
-//import io.harness.security.ServiceTokenGenerator;
+import io.harness.security.TokenGenerator;
 
+// import io.harness.delegate.task.citasks.cik8handler.helper.DelegateServiceTokenHelper;
+// import io.harness.security.ServiceTokenGenerator;
 import com.google.inject.AbstractModule;
 import lombok.RequiredArgsConstructor;
 
@@ -20,10 +21,12 @@ public class DelegateTokensModule extends AbstractModule {
 
   @Override
   protected void configure() {
-//    bind(DelegateServiceTokenHelper.class)
-//        .toInstance(DelegateServiceTokenHelper.builder()
-//                        .serviceTokenGenerator(new ServiceTokenGenerator())
-//                        .accountSecret(configuration.getDelegateToken())
-//                        .build());
+    bind(TokenGenerator.class)
+        .toInstance(new TokenGenerator(configuration.getAccountId(), configuration.getDelegateToken()));
+    //    bind(DelegateServiceTokenHelper.class)
+    //        .toInstance(DelegateServiceTokenHelper.builder()
+    //                        .serviceTokenGenerator(new ServiceTokenGenerator())
+    //                        .accountSecret(configuration.getDelegateToken())
+    //                        .build());
   }
 }

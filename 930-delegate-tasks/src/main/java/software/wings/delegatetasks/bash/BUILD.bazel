@@ -6,9 +6,9 @@ java_library(
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
-        "//930-delegate-tasks/src/main/java/io/harness/delegate/task:module",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/common:module",
         "//930-delegate-tasks/src/main/java/software/wings/beans/bash:module",
-        "//930-delegate-tasks/src/main/java/software/wings/core/local/executors:module",
+        "//930-delegate-tasks/src/main/java/software/wings/core/executors/bash:module",
         "//950-delegate-tasks-beans:module",
         "//960-api-services:module",
         "//970-api-services-beans:module",

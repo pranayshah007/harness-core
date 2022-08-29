@@ -7,7 +7,9 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//920-delegate-agent-beans:module",
+        "//920-delegate-service-beans:module",
         "//930-delegate-tasks/src/main/java/software/wings/beans/configfile:module",
+        "//930-delegate-tasks/src/main/proto/io/harness:930_delegate_tasks_java_proto",
         "//950-delegate-tasks-beans:module",
         "//959-file-service-commons:module",
         "//970-watcher-beans:module",
@@ -22,6 +24,7 @@ java_library(
         "@maven//:com_google_protobuf_protobuf_java",
         "@maven//:com_squareup_okhttp3_okhttp",
         "@maven//:com_squareup_retrofit2_converter_jackson",
+        "@maven//:com_squareup_retrofit2_converter_protobuf",
         "@maven//:com_squareup_retrofit2_retrofit",
         "@maven//:javax_ws_rs_javax_ws_rs_api",
         "@maven//:org_apache_commons_commons_lang3",

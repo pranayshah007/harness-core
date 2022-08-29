@@ -27,7 +27,8 @@ import io.harness.event.client.impl.appender.AppenderModule.Config;
 import io.harness.event.client.impl.tailer.DelegateTailerModule;
 import io.harness.grpc.delegateservice.DelegateServiceGrpcAgentClientModule;
 import io.harness.logstreaming.LogStreamingModule;
-import io.harness.managerclient.DelegateManagerClientModule;
+import io.harness.delegate.app.modules.common.DelegateManagerClientModule;
+import io.harness.managerclient.VerificationServiceClientModule;
 import io.harness.metrics.MetricRegistryModule;
 import io.harness.perpetualtask.PerpetualTaskWorkerModule;
 import io.harness.serializer.KryoModule;
@@ -55,15 +56,14 @@ public class DelegateAgentModule extends AbstractModule {
       log.info("Delegate is running with mTLS enabled.");
     }
 
+    install(new DelegateTokensModule(configuration));
     install(new DelegateHealthModule());
     install(KryoModule.getInstance());
     install(new DelegateKryoModule());
     install(new MetricRegistryModule(new MetricRegistry()));
 
-    install(new DelegateManagerClientModule(configuration.getManagerUrl(), configuration.getVerificationServiceUrl(),
-        configuration.getCvNextGenUrl(), configuration.getAccountId(), configuration.getDelegateToken(),
-        configuration.getClientCertificateFilePath(), configuration.getClientCertificateKeyFilePath(),
-        configuration.isTrustAllCertificates()));
+    install(new DelegateManagerClientModule());
+    install(new VerificationServiceClientModule());
 
     install(new LogStreamingModule(configuration.getLogStreamingServiceBaseUrl(),
         configuration.getClientCertificateFilePath(), configuration.getClientCertificateKeyFilePath(),
@@ -83,8 +83,6 @@ public class DelegateAgentModule extends AbstractModule {
       install(
           new DelegateGrpcServiceModule(configuration.getGrpcServiceConnectorPort(), configuration.getDelegateToken()));
     }
-
-    install(new DelegateTokensModule(configuration));
   }
 
   private void configureCcmEventPublishing() {

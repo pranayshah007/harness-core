@@ -1,6 +1,7 @@
 load("@rules_java//java:defs.bzl", "java_library")
 load("@rules_java//java:defs.bzl", "java_binary")
-load("//:tools/bazel/macros.bzl", "run_analysis_per_module")
+load("//:tools/bazel/macros.bzl", "run_analysis")
+load("@rules_spring//springboot:springboot.bzl", "springboot")
 
 java_library(
     name = "module",
@@ -26,6 +27,7 @@ java_library(
         "@maven//:org_asynchttpclient_async_http_client",
         "@maven//:org_slf4j_jul_to_slf4j",
         "@maven//:org_slf4j_slf4j_api",
+        "@maven//:org_springframework_boot_spring_boot_loader",
     ],
 )
 
@@ -33,8 +35,16 @@ java_binary(
     name = "DelegatePlatformApplication",
     main_class = "io.harness.delegate.app.platform.DelegatePlatformApplication",
     visibility = ["//visibility:public"],
-    runtime_deps = [":platform"],
+    runtime_deps = [":module"],
     deps = [],
 )
-run_analysis_per_module()
+
+springboot(
+    name = "module_deploy",
+    boot_app_class = "io.harness.delegate.app.platform.DelegatePlatformApplication",
+    java_library = ":module",
+    visibility = ["//visibility:public"],
+)
+
+run_analysis(run_duplicated = False)
 

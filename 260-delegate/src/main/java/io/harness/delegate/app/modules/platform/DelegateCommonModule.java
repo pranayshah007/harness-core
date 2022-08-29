@@ -9,7 +9,6 @@ package io.harness.delegate.app.modules.platform;
 
 import io.harness.delegate.configuration.DelegateConfiguration;
 import io.harness.delegate.service.DelegateAgentService;
-import io.harness.delegate.service.tasklogging.DelegateLogServiceImpl;
 import io.harness.delegate.service.platform.DelegatePlatformService;
 import io.harness.exception.KeyManagerBuilderException;
 import io.harness.exception.TrustManagerBuilderException;
@@ -17,8 +16,6 @@ import io.harness.security.X509KeyManagerBuilder;
 import io.harness.security.X509TrustManagerBuilder;
 import io.harness.time.TimeModule;
 import io.harness.version.VersionModule;
-
-import software.wings.delegatetasks.DelegateLogService;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
@@ -77,7 +74,7 @@ public class DelegateCommonModule extends AbstractModule {
     //        bind(DelegatePropertiesServiceProvider.class).to(DelegatePropertiesServiceProviderImpl.class);
     //        bind(DelegateConfigurationServiceProvider.class).to(DelegateConfigurationServiceProviderImpl.class);
 
-    bind(DelegateLogService.class).to(DelegateLogServiceImpl.class);
+    //    bind(DelegateLogService.class).to(DelegateLogServiceImpl.class);
     // DefaultAsyncHttpClient is being bound using a separate function (as this function can't throw)
     bind(AsyncHttpClient.class).to(DefaultAsyncHttpClient.class);
   }

@@ -10,7 +10,7 @@ package io.harness.delegate.app.modules.platform;
 import io.harness.delegate.task.common.DelegateRunnableTask;
 
 import software.wings.beans.TaskType;
-import software.wings.delegatetasks.ShellScriptTask;
+import software.wings.delegatetasks.bash.BashScriptTask;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.TypeLiteral;
@@ -24,6 +24,6 @@ public class DelegateTaskModule extends AbstractModule {
     MapBinder<TaskType, Class<? extends DelegateRunnableTask>> mapBinder = MapBinder.newMapBinder(
         binder(), new TypeLiteral<TaskType>() {}, new TypeLiteral<Class<? extends DelegateRunnableTask>>() {});
 
-    mapBinder.addBinding(TaskType.SCRIPT).toInstance(ShellScriptTask.class);
+    mapBinder.addBinding(TaskType.SCRIPT).toInstance(BashScriptTask.class);
   }
 }

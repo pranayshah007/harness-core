@@ -12,7 +12,7 @@ import io.harness.delegate.app.modules.common.DelegateManagerGrpcClientModule;
 import io.harness.delegate.app.modules.common.DelegateTokensModule;
 import io.harness.delegate.configuration.DelegateConfiguration;
 import io.harness.logstreaming.LogStreamingModule;
-import io.harness.managerclient.DelegateManagerClientModule;
+import io.harness.delegate.app.modules.common.DelegateManagerClientModule;
 import io.harness.metrics.MetricRegistryModule;
 
 import com.codahale.metrics.MetricRegistry;
@@ -35,15 +35,13 @@ public class DelegatePlatformModule extends AbstractModule {
       log.info("Delegate is running with mTLS enabled.");
     }
 
+    install(new DelegateTokensModule(configuration));
     install(new DelegateHealthModule());
 //    install(KryoModule.getInstance()); //??
     install(new DelegatePlatformKryoModule());
     install(new MetricRegistryModule(new MetricRegistry()));
 
-    install(new DelegateManagerClientModule(configuration.getManagerUrl(), configuration.getVerificationServiceUrl(),
-        configuration.getCvNextGenUrl(), configuration.getAccountId(), configuration.getDelegateToken(),
-        configuration.getClientCertificateFilePath(), configuration.getClientCertificateKeyFilePath(),
-        configuration.isTrustAllCertificates()));
+    install(new DelegateManagerClientModule());
 
     install(new LogStreamingModule(configuration.getLogStreamingServiceBaseUrl(),
         configuration.getClientCertificateFilePath(), configuration.getClientCertificateKeyFilePath(),
@@ -71,8 +69,6 @@ public class DelegatePlatformModule extends AbstractModule {
        configuration.getDelegateToken()));
             }*/
     //==============================
-
-    install(new DelegateTokensModule(configuration));
   }
 
   //    private void configureCcmEventPublishing() {

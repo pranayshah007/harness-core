@@ -8,11 +8,9 @@ java_library(
     deps = [
         "//260-delegate/src/main/java/io/harness/delegate/app/modules/common:module",
         "//260-delegate/src/main/java/io/harness/delegate/service/platform:module",
-        "//260-delegate/src/main/java/io/harness/delegate/service/tasklogging:module",
-        "//260-delegate/src/main/java/io/harness/managerclient:module",
         "//420-delegate-agent/src/main/java/io/harness/delegate/service:module",
-        "//930-delegate-tasks/src/main/java/io/harness/delegate/task:module",
-        "//930-delegate-tasks/src/main/java/software/wings/delegatetasks:module",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/common:module",
+        "//930-delegate-tasks/src/main/java/software/wings/delegatetasks/bash:module",
         "//950-delegate-tasks-beans:module",
         "//950-log-client:module",
         "//960-api-services/src/main/java/io/harness/delegate/configuration:module",

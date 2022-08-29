@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.delegate.configuration.DelegateConfiguration;
 import io.harness.network.Http;
 import io.harness.network.NoopHostnameVerifier;
 import io.harness.security.TokenGenerator;
@@ -22,6 +23,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.google.inject.Inject;
 import com.google.inject.Provider;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509KeyManager;
@@ -43,13 +45,14 @@ public class VerificationServiceClientFactory implements Provider<VerificationSe
   // As of now ignored (always trusts all certs)
   private final boolean trustAllCertificates;
 
-  public VerificationServiceClientFactory(String baseUrl, TokenGenerator delegateTokenGenerator,
-      String clientCertificateFilePath, String clientCertificateKeyFilePath, boolean trustAllCertificates) {
-    this.baseUrl = baseUrl;
-    this.tokenGenerator = delegateTokenGenerator;
-    this.clientCertificateFilePath = clientCertificateFilePath;
-    this.clientCertificateKeyFilePath = clientCertificateKeyFilePath;
-    this.trustAllCertificates = trustAllCertificates;
+  @Inject
+  public VerificationServiceClientFactory(
+      final DelegateConfiguration configuration, final TokenGenerator tokenGenerator) {
+    this.baseUrl = configuration.getVerificationServiceUrl();
+    this.tokenGenerator = tokenGenerator;
+    this.clientCertificateFilePath = configuration.getClientCertificateFilePath();
+    this.clientCertificateKeyFilePath = configuration.getClientCertificateKeyFilePath();
+    this.trustAllCertificates = configuration.isTrustAllCertificates();
   }
 
   @Override

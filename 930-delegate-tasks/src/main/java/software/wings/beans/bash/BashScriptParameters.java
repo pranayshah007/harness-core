@@ -38,7 +38,6 @@ public class BashScriptParameters implements TaskParameters, ActivityAccess, Exe
   private final String accountId;
   private final String appId;
   private final String workingDirectory;
-  private final boolean saveExecutionLogs;
   private final Map<String, String> serviceVariables;
   private final Map<String, String> safeDisplayServiceVariables;
   private final Map<String, String> environment;

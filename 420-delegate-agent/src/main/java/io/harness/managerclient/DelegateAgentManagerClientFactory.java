@@ -9,6 +9,7 @@ package io.harness.managerclient;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.configuration.DelegateConfiguration;
 import io.harness.exception.KeyManagerBuilderException;
 import io.harness.exception.SslContextBuilderException;
 import io.harness.network.FibonacciBackOff;
@@ -42,10 +43,9 @@ import retrofit2.converter.protobuf.ProtoConverterFactory;
 
 @Slf4j
 @OwnedBy(HarnessTeam.DEL)
-public class DelegateAgentManagerClientFactory
-    implements Provider<io.harness.managerclient.DelegateAgentManagerClient> {
-  @Inject private VersionInfoManager versionInfoManager;
-  @Inject private DelegateKryoConverterFactory kryoConverterFactory;
+public class DelegateAgentManagerClientFactory implements Provider<DelegateAgentManagerClient> {
+  private final VersionInfoManager versionInfoManager;
+  private final DelegateKryoConverterFactory kryoConverterFactory;
 
   private final String baseUrl;
   private final TokenGenerator tokenGenerator;
@@ -53,17 +53,21 @@ public class DelegateAgentManagerClientFactory
   private final String clientCertificateKeyFilePath;
   private final boolean trustAllCertificates;
 
-  DelegateAgentManagerClientFactory(String baseUrl, TokenGenerator tokenGenerator, String clientCertificateFilePath,
-      String clientCertificateKeyFilePath, boolean trustAllCertificates) {
-    this.baseUrl = baseUrl;
+  @Inject
+  public DelegateAgentManagerClientFactory(final DelegateConfiguration configuration,
+      final VersionInfoManager versionInfoManager, final DelegateKryoConverterFactory kryoConverterFactory,
+      final TokenGenerator tokenGenerator) {
+    this.baseUrl = configuration.getManagerUrl();
     this.tokenGenerator = tokenGenerator;
-    this.clientCertificateFilePath = clientCertificateFilePath;
-    this.clientCertificateKeyFilePath = clientCertificateKeyFilePath;
-    this.trustAllCertificates = trustAllCertificates;
+    this.clientCertificateFilePath = configuration.getClientCertificateFilePath();
+    this.clientCertificateKeyFilePath = configuration.getClientCertificateKeyFilePath();
+    this.trustAllCertificates = configuration.isTrustAllCertificates();
+    this.versionInfoManager = versionInfoManager;
+    this.kryoConverterFactory = kryoConverterFactory;
   }
 
   @Override
-  public io.harness.managerclient.DelegateAgentManagerClient get() {
+  public DelegateAgentManagerClient get() {
     ObjectMapper objectMapper = new ObjectMapper();
     objectMapper.registerModule(new Jdk8Module());
     objectMapper.registerModule(new GuavaModule());
@@ -78,7 +82,7 @@ public class DelegateAgentManagerClientFactory
                             .addConverterFactory(ProtoConverterFactory.createWithRegistry(registryLite))
                             .addConverterFactory(JacksonConverterFactory.create(objectMapper))
                             .build();
-    return retrofit.create(io.harness.managerclient.DelegateAgentManagerClient.class);
+    return retrofit.create(DelegateAgentManagerClient.class);
   }
 
   private OkHttpClient getSafeOkHttpClient() {
