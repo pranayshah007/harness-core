@@ -1759,7 +1759,7 @@ public class HelmDeployStateTest extends CategoryTest {
         ContainerServiceParams.builder().settingAttribute(aSettingAttribute().withValue(settingValue).build()).build();
     assertThatThrownBy(()
                            -> helmDeployState.getPreviousReleaseVersion(context, app, RELEASE_NAME, params, gitConfig,
-                               emptyList(), "", version, 0, HelmDeployStateExecutionData.builder(), null))
+                               emptyList(), "", version, 0, HelmDeployStateExecutionData.builder(), null, null))
         .hasMessageContaining(expectedMessage);
   }
 

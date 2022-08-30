@@ -263,6 +263,7 @@ public enum FeatureName {
   DYNATRACE_APM_ENABLED,
   CUSTOM_POLICY_STEP,
   CCM_AS_DRY_RUN("Dry Run functionality of the AutoStopping Rules", HarnessTeam.CE),
+  CM_COMMORCH("Commitment Orchestration", HarnessTeam.CE),
   DONT_RESTRICT_PARALLEL_STAGE_COUNT,
   NG_EXECUTION_INPUT,
   HELM_CHART_VERSION_STRICT_MATCH,

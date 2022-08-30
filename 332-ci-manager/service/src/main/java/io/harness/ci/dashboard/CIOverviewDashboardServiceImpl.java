@@ -367,6 +367,7 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
         while (resultSet != null && resultSet.next()) {
           buildFailureInfos.add(parseResultToBuildFailureInfo(resultSet));
         }
+        return buildFailureInfos;
       } catch (SQLException ex) {
         log.error(ex.getMessage());
         totalTries++;
