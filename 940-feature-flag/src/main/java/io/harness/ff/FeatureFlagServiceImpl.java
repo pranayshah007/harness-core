@@ -230,7 +230,7 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
     // Error if account id passed is a null string.
     // Adding this check now, since we found issue where accountId being passed was "null" and it was causing failure
     if ("null".equalsIgnoreCase(accountId)) {
-      log.info(String.format("Can not evaluate account name for accountId as string ", accountId));
+      log.info(String.format("Can not evaluate account name for accountId %s as string ", accountId));
       throw new RuntimeException(
           String.format("AccountId can not be null when evaluating feature flag. Feature Name %s and account id %s",
               featureName.name(), accountId));
