@@ -291,7 +291,8 @@ public class HelmTaskHelper {
     final String modifiedRepoName =
         helmChartConfigParams.getRepoName() + "-" + helmChartConfigParams.getHelmRepoConfig().getBucketName();
 
-    String cacheDir = getCacheDir(modifiedRepoName, helmChartConfigParams.isUseCache());
+    String cacheDir =
+        getCacheDir(modifiedRepoName, helmChartConfigParams.isUseCache(), helmChartConfigParams.getHelmVersion());
 
     try {
       resourceDirectory = createNewDirectoryAtPath(RESOURCE_DIR_BASE);
@@ -418,7 +419,8 @@ public class HelmTaskHelper {
 
   private void fetchChartFromOciRegistry(HelmChartConfigParams helmChartConfigParams, String chartDirectory,
       long timeoutInMillis, HelmCommandFlag helmCommandFlag) {
-    String cacheDir = getCacheDir(helmChartConfigParams.getRepoName(), helmChartConfigParams.isUseCache());
+    String cacheDir = getCacheDir(helmChartConfigParams.getRepoName(), helmChartConfigParams.isUseCache(),
+        helmChartConfigParams.getHelmVersion());
 
     if (!(helmChartConfigParams.getHelmRepoConfig() instanceof OciHelmRepoConfig)) {
       log.error("Invalid repo config passed for OCI Registry based Helm Repo");
@@ -444,7 +446,10 @@ public class HelmTaskHelper {
     }
   }
 
-  public String getCacheDir(String repoName, boolean useCache) {
+  public String getCacheDir(String repoName, boolean useCache, HelmVersion version) {
+    if (HelmVersion.V2.equals(version)) {
+      return EMPTY;
+    }
     if (useCache) {
       return Paths.get(RESOURCE_DIR_BASE, repoName, "cache").toAbsolutePath().normalize().toString();
     }
@@ -466,7 +471,8 @@ public class HelmTaskHelper {
       long timeoutInMillis, HelmCommandFlag helmCommandFlag) {
     HttpHelmRepoConfig httpHelmRepoConfig = (HttpHelmRepoConfig) helmChartConfigParams.getHelmRepoConfig();
 
-    String cacheDir = getCacheDir(helmChartConfigParams.getRepoName(), helmChartConfigParams.isUseCache());
+    String cacheDir = getCacheDir(helmChartConfigParams.getRepoName(), helmChartConfigParams.isUseCache(),
+        helmChartConfigParams.getHelmVersion());
     try {
       helmTaskHelperBase.addRepo(helmChartConfigParams.getRepoName(), helmChartConfigParams.getRepoDisplayName(),
           httpHelmRepoConfig.getChartRepoUrl(), httpHelmRepoConfig.getUsername(), httpHelmRepoConfig.getPassword(),
@@ -476,7 +482,7 @@ public class HelmTaskHelper {
           helmChartConfigParams.getChartVersion(), chartDirectory, helmChartConfigParams.getHelmVersion(),
           helmCommandFlag, timeoutInMillis, helmChartConfigParams.isCheckIncorrectChartVersion(), cacheDir);
     } finally {
-      if (!helmChartConfigParams.isUseCache()) {
+      if (isNotEmpty(cacheDir) && !helmChartConfigParams.isUseCache()) {
         try {
           deleteDirectoryAndItsContentIfExists(Paths.get(cacheDir).getParent().toString());
         } catch (IOException ie) {

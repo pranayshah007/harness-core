@@ -10,6 +10,7 @@ package software.wings.sm.states;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.EnvironmentType.ALL;
 import static io.harness.beans.FeatureName.CUSTOM_MANIFEST;
+import static io.harness.beans.FeatureName.DISABLE_HELM_REPO_YAML_CACHE;
 import static io.harness.beans.FeatureName.GIT_HOST_CONNECTIVITY;
 import static io.harness.beans.FeatureName.HELM_CHART_VERSION_STRICT_MATCH;
 import static io.harness.beans.FeatureName.OPTIMIZED_GIT_FETCH_FILES;
@@ -1052,6 +1053,14 @@ public class HelmDeployState extends State {
                 helmChartConfigHelperService.getHelmChartConfigTaskParams(context, appManifest);
             helmChartConfigTaskParams.setUseLatestChartMuseumVersion(
                 featureFlagService.isEnabled(USE_LATEST_CHARTMUSEUM_VERSION, context.getAccountId()));
+
+            if (HelmVersion.isHelmV3(helmVersion)) {
+              helmChartConfigTaskParams.setUseRepoFlags(true);
+              helmChartConfigTaskParams.setDeleteRepoCacheDir(true);
+            }
+
+            helmChartConfigTaskParams.setUseCache(helmVersion != HelmVersion.V2
+                && featureFlagService.isEnabled(DISABLE_HELM_REPO_YAML_CACHE, context.getAccountId()));
 
             helmChartConfigTaskParams.setCheckIncorrectChartVersion(
                 featureFlagService.isEnabled(HELM_CHART_VERSION_STRICT_MATCH, context.getAccountId()));

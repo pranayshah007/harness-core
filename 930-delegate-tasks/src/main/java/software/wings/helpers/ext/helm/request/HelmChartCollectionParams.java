@@ -37,6 +37,7 @@ public class HelmChartCollectionParams implements ManifestCollectionParams {
   private Set<String> publishedVersions;
   private HelmChartCollectionType collectionType;
   private boolean isRegex;
+  private boolean useRepoFlags;
 
   public enum HelmChartCollectionType { ALL, SPECIFIC_VERSION }
 

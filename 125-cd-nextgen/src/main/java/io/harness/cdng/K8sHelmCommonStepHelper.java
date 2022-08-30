@@ -123,6 +123,7 @@ import software.wings.beans.LogColor;
 import software.wings.beans.LogWeight;
 import software.wings.beans.TaskType;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import java.util.ArrayList;
@@ -152,6 +153,8 @@ public class K8sHelmCommonStepHelper {
   @Inject protected StepHelper stepHelper;
   @Inject protected CDStepHelper cdStepHelper;
 
+  public static final String MANIFEST_OUTCOME_INCOMPATIBLE_ERROR_MESSAGE =
+      "Incompatible manifest store type. Cannot convert manifest outcome to HelmChartManifestOutcome.";
   public static final String RELEASE_NAME_VALIDATION_REGEX =
       "[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*";
 
@@ -573,12 +576,13 @@ public class K8sHelmCommonStepHelper {
             .chartVersion(getParameterFieldValue(helmChartManifestOutcome.getChartVersion()))
             .helmVersion(helmVersion)
             .helmCommandFlag(getDelegateHelmCommandFlag(helmChartManifestOutcome.getCommandFlags()))
-            .useCache(!cdFeatureFlagHelper.isEnabled(
-                AmbianceUtils.getAccountId(ambiance), FeatureName.DISABLE_HELM_REPO_YAML_CACHE))
+            .useCache(helmVersion != HelmVersion.V2
+                && !cdFeatureFlagHelper.isEnabled(
+                    AmbianceUtils.getAccountId(ambiance), FeatureName.DISABLE_HELM_REPO_YAML_CACHE))
             .checkIncorrectChartVersion(cdFeatureFlagHelper.isEnabled(
                 AmbianceUtils.getAccountId(ambiance), FeatureName.HELM_CHART_VERSION_STRICT_MATCH))
-            .useRepoFlags(true)
-            .deleteRepoCacheDir(true)
+            .useRepoFlags(helmVersion != HelmVersion.V2)
+            .deleteRepoCacheDir(helmVersion != HelmVersion.V2)
             .build();
 
       case ManifestType.Kustomize:
@@ -829,9 +833,11 @@ public class K8sHelmCommonStepHelper {
       ConnectorInfoDTO helmConnectorDTO =
           cdStepHelper.getConnector(getParameterFieldValue(httpStoreConfig.getConnectorRef()), ambiance);
       cdStepHelper.validateManifest(storeConfig.getKind(), helmConnectorDTO, validationErrorMessage);
+      Preconditions.checkArgument(
+          manifestOutcome instanceof HelmChartManifestOutcome, MANIFEST_OUTCOME_INCOMPATIBLE_ERROR_MESSAGE);
 
       return HttpHelmStoreDelegateConfig.builder()
-          .repoName(getRepoName(ambiance, helmConnectorDTO.getIdentifier()))
+          .repoName(getRepoName(ambiance, helmConnectorDTO.getIdentifier(), (HelmChartManifestOutcome) manifestOutcome))
           .repoDisplayName(helmConnectorDTO.getName())
           .httpHelmConnector((HttpHelmConnectorDTO) helmConnectorDTO.getConnectorConfig())
           .encryptedDataDetails(
@@ -847,9 +853,11 @@ public class K8sHelmCommonStepHelper {
       ConnectorInfoDTO helmConnectorDTO =
           cdStepHelper.getConnector(getParameterFieldValue(ociStoreConfig.getConnectorReference()), ambiance);
       cdStepHelper.validateManifest(storeConfig.getKind(), helmConnectorDTO, validationErrorMessage);
+      Preconditions.checkArgument(
+          manifestOutcome instanceof HelmChartManifestOutcome, MANIFEST_OUTCOME_INCOMPATIBLE_ERROR_MESSAGE);
 
       return OciHelmStoreDelegateConfig.builder()
-          .repoName(getRepoName(ambiance, helmConnectorDTO.getIdentifier()))
+          .repoName(getRepoName(ambiance, helmConnectorDTO.getIdentifier(), (HelmChartManifestOutcome) manifestOutcome))
           .basePath(getParameterFieldValue(ociStoreConfig.getBasePath()))
           .repoDisplayName(helmConnectorDTO.getName())
           .ociHelmConnector((OciHelmConnectorDTO) helmConnectorDTO.getConnectorConfig())
@@ -864,9 +872,11 @@ public class K8sHelmCommonStepHelper {
       ConnectorInfoDTO awsConnectorDTO =
           cdStepHelper.getConnector(getParameterFieldValue(s3StoreConfig.getConnectorRef()), ambiance);
       cdStepHelper.validateManifest(storeConfig.getKind(), awsConnectorDTO, validationErrorMessage);
+      Preconditions.checkArgument(
+          manifestOutcome instanceof HelmChartManifestOutcome, MANIFEST_OUTCOME_INCOMPATIBLE_ERROR_MESSAGE);
 
       return S3HelmStoreDelegateConfig.builder()
-          .repoName(getRepoName(ambiance, awsConnectorDTO.getIdentifier()))
+          .repoName(getRepoName(ambiance, awsConnectorDTO.getIdentifier(), (HelmChartManifestOutcome) manifestOutcome))
           .repoDisplayName(awsConnectorDTO.getName())
           .bucketName(getParameterFieldValue(s3StoreConfig.getBucketName()))
           .region(getParameterFieldValue(s3StoreConfig.getRegion()))
@@ -884,9 +894,11 @@ public class K8sHelmCommonStepHelper {
       ConnectorInfoDTO gcpConnectorDTO =
           cdStepHelper.getConnector(getParameterFieldValue(gcsStoreConfig.getConnectorRef()), ambiance);
       cdStepHelper.validateManifest(storeConfig.getKind(), gcpConnectorDTO, validationErrorMessage);
+      Preconditions.checkArgument(
+          manifestOutcome instanceof HelmChartManifestOutcome, MANIFEST_OUTCOME_INCOMPATIBLE_ERROR_MESSAGE);
 
       return GcsHelmStoreDelegateConfig.builder()
-          .repoName(getRepoName(ambiance, gcpConnectorDTO.getIdentifier()))
+          .repoName(getRepoName(ambiance, gcpConnectorDTO.getIdentifier(), (HelmChartManifestOutcome) manifestOutcome))
           .repoDisplayName(gcpConnectorDTO.getName())
           .bucketName(getParameterFieldValue(gcsStoreConfig.getBucketName()))
           .folderPath(getParameterFieldValue(gcsStoreConfig.getFolderPath()))
@@ -901,14 +913,16 @@ public class K8sHelmCommonStepHelper {
     throw new UnsupportedOperationException(format("Unsupported Store Config type: [%s]", storeConfig.getKind()));
   }
 
-  public String getRepoName(Ambiance ambiance, String connectorId) {
+  public String getRepoName(Ambiance ambiance, String connectorId, HelmChartManifestOutcome manifestOutcome) {
     /*
       going forward, we will be creating default cache based on connectorId unless FF is enabled
       in which case we will create based on executionId
       details here: https://harness.atlassian.net/wiki/spaces/CDP/pages/21134344193/Helm+FFs+cleanup
      */
-    boolean useCache =
-        !cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.DISABLE_HELM_REPO_YAML_CACHE);
+    boolean isNotHelmV2 = manifestOutcome != null && HelmVersion.V2 != manifestOutcome.getHelmVersion();
+    boolean useCache = isNotHelmV2
+        && !cdFeatureFlagHelper.isEnabled(
+            AmbianceUtils.getAccountId(ambiance), FeatureName.DISABLE_HELM_REPO_YAML_CACHE);
     String repoId = useCache ? connectorId : ambiance.getPlanExecutionId();
 
     return convertBase64UuidToCanonicalForm(repoId);
