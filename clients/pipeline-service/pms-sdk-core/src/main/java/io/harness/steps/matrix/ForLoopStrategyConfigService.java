@@ -41,7 +41,7 @@ public class ForLoopStrategyConfigService implements StrategyConfigService {
                                                   .build())
                          .build());
       }
-    } else if (!ParameterField.isBlank(harnessForConfig.getPartitions())) {
+    } else if (!ParameterField.isBlank(harnessForConfig.getPartitionSize())) {
       int currentIteration = 0;
       List<List<String>> partitions = partitionItems(harnessForConfig);
 
@@ -87,7 +87,7 @@ public class ForLoopStrategyConfigService implements StrategyConfigService {
   private List<List<String>> partitionItemsByPercentage(HarnessForConfig harnessForConfig) {
     List<String> items = harnessForConfig.getItems().getValue();
     int itemsSize = items.size();
-    ParameterField<Integer> partitionSizeInPercentage = harnessForConfig.getPartitions();
+    ParameterField<Integer> partitionSizeInPercentage = harnessForConfig.getPartitionSize();
     float partitionSizeInPercentageValue = partitionSizeInPercentage.getValue().floatValue();
 
     int partitionSize = Math.round((partitionSizeInPercentageValue / 100) * itemsSize);
@@ -107,7 +107,7 @@ public class ForLoopStrategyConfigService implements StrategyConfigService {
   private List<List<String>> partitionItemsByCount(HarnessForConfig harnessForConfig) {
     List<String> items = harnessForConfig.getItems().getValue();
     int itemsSize = items.size();
-    int partitionSize = harnessForConfig.getPartitions().getValue();
+    int partitionSize = harnessForConfig.getPartitionSize().getValue();
 
     // fix partitionSize if partitionSize is greater than number of items
     if (partitionSize > itemsSize) {
@@ -130,11 +130,12 @@ public class ForLoopStrategyConfigService implements StrategyConfigService {
     validateItems(params);
     int end = params.size() - 1;
     if (!ParameterField.isBlank(harnessForConfig.getStart())) {
-      start = (int) (((harnessForConfig.getStart().getValue().floatValue()) / 100) * params.size());
+      start = Math.round(((harnessForConfig.getStart().getValue().floatValue()) / 100) * params.size());
     }
     if (!ParameterField.isBlank(harnessForConfig.getEnd())) {
-      end = (int) (((harnessForConfig.getEnd().getValue().floatValue()) / 100) * params.size());
+      end = Math.round(((harnessForConfig.getEnd().getValue().floatValue()) / 100) * params.size());
     }
+
     validateStartEnd(start, end, params.size());
     return params.subList(start, end);
   }

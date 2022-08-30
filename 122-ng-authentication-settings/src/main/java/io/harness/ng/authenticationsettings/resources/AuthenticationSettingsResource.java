@@ -436,7 +436,7 @@ public class AuthenticationSettingsResource {
   @Path("/ldap/settings")
   @ApiOperation(value = "Delete Ldap settings", nickname = "deleteLdapSettings")
   @Operation(operationId = "deleteLdapSettings", summary = "Delete Ldap settings",
-      description = "Delete configured Ldap settings on the account.",
+      description = "Delete configured Ldap settings on this account.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.

@@ -23,6 +23,7 @@ public class SetupVmRequest {
   @JsonProperty("correlation_id") String correlationID;
   @JsonProperty("pool_id") String poolID;
   @JsonProperty("log_key") String logKey;
+  @JsonProperty("tags") Map<String, String> tags;
   @JsonProperty("setup_request") Config config;
 
   @Data

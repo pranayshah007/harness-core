@@ -38,6 +38,9 @@
       "type": "string",
       "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
     },
+    "skipInstances": {
+      "type": "boolean"
+    },
     "strategy": {
       "$ref": "#/definitions/StrategyConfig"
     },
@@ -188,6 +191,9 @@
               "type": "string"
             },
             "filePathRegex": {
+              "type": "string"
+            },
+            "region": {
               "type": "string"
             }
           }
@@ -380,6 +386,40 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "AzureARMRollbackStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "provisionerIdentifier"
+          ],
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "provisionerIdentifier": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "AzureCreateARMResourceParameterFile": {
       "type": "object",
       "required": [
@@ -411,9 +451,6 @@
         },
         "template": {
           "$ref": "#/definitions/AzureTemplateFile"
-        },
-        "type": {
-          "type": "string"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -2332,6 +2369,9 @@
           "type": "string",
           "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
         },
+        "skipInstances": {
+          "type": "boolean"
+        },
         "strategy": {
           "$ref": "#/definitions/StrategyConfig"
         },
@@ -3125,7 +3165,7 @@
             }
           ]
         },
-        "partitions": {
+        "partitionSize": {
           "oneOf": [
             {
               "type": "integer",
@@ -3443,8 +3483,7 @@
       ],
       "properties": {
         "identifier": {
-          "type": "string",
-          "pattern": "\\<\\+input\\>|^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$"
+          "type": "string"
         },
         "inputs": {
           "$ref": "#/definitions/JsonNode"
@@ -7355,6 +7394,22 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#",
       "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AzureARMRollback"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AzureARMRollbackStepInfo"
+              }
+            }
+          }
+        },
         {
           "if": {
             "properties": {

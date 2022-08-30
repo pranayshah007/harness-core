@@ -30,4 +30,5 @@ public class AwsConfig extends Connector {
   AwsCredentialType credentialType;
   CrossAccountAccessDTO crossAccountAccess;
   AwsCredential credential;
+  String testRegion;
 }

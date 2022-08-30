@@ -60,7 +60,6 @@ public enum FeatureName {
   CUSTOM_MAX_PAGE_SIZE,
   EXTRA_LARGE_PAGE_SIZE,
   CUSTOM_RESOURCEGROUP_SCOPE,
-  CUSTOM_SECRETS_MANAGER,
   CVNG_ENABLED,
   CV_DEMO,
   CV_FEEDBACKS,
@@ -103,7 +102,7 @@ public enum FeatureName {
   HELM_CHART_AS_ARTIFACT,
   HELM_STEADY_STATE_CHECK_1_16,
   HELM_CHART_NAME_SPLIT,
-  HELM_MERGE_CAPABILITIES,
+  HELM_MERGE_CAPABILITIES("Add helm merge capabilities", HarnessTeam.CDP),
   INLINE_SSH_COMMAND,
   IGNORE_PCF_CONNECTION_CONTEXT_CACHE,
   LIMIT_PCF_THREADS,
@@ -170,7 +169,6 @@ public enum FeatureName {
   SAVE_SHELL_SCRIPT_PROVISION_OUTPUTS_TO_SWEEPING_OUTPUT,
   SAVE_TERRAFORM_OUTPUTS_TO_SWEEPING_OUTPUT,
   SAVE_TERRAFORM_APPLY_SWEEPING_OUTPUT_TO_WORKFLOW,
-  TRIGGER_PROFILE_SCRIPT_EXECUTION_WF,
   NEW_DEPLOYMENT_FREEZE,
   ECS_REGISTER_TASK_DEFINITION_TAGS,
   CUSTOM_DASHBOARD_INSTANCE_FETCH_LONGER_RETENTION_DATA,
@@ -265,6 +263,7 @@ public enum FeatureName {
   DYNATRACE_APM_ENABLED,
   CUSTOM_POLICY_STEP,
   CCM_AS_DRY_RUN("Dry Run functionality of the AutoStopping Rules", HarnessTeam.CE),
+  CCM_COMMORCH("Commitment Orchestration", HarnessTeam.CE),
   DONT_RESTRICT_PARALLEL_STAGE_COUNT,
   NG_EXECUTION_INPUT,
   HELM_CHART_VERSION_STRICT_MATCH,
@@ -290,7 +289,6 @@ public enum FeatureName {
   STOP_SHOWING_RUNNING_EXECUTIONS,
   SSH_NG,
   ARTIFACT_STREAM_METADATA_ONLY,
-  SERVICENOW_CREATE_UPDATE_NG,
   OUTCOME_GRAPHQL_WITH_INFRA_DEF,
   AUTO_REJECT_PREVIOUS_APPROVALS,
   BIND_CUSTOM_VALUE_AND_MANIFEST_FETCH_TASK,
@@ -300,7 +298,6 @@ public enum FeatureName {
   GIT_SYNC_PROJECT_CLEANUP,
   ENV_GROUP,
   REDUCE_DELEGATE_MEMORY_SIZE("Reduce CG delegate memory to 4GB", HarnessTeam.DEL),
-  NG_VARIABLES,
   PIPELINE_PER_ENV_DEPLOYMENT_PERMISSION,
   DISABLE_LOCAL_LOGIN,
   WINRM_KERBEROS_CACHE_UNIQUE_FILE,
@@ -325,7 +322,6 @@ public enum FeatureName {
   USAGE_SCOPE_RBAC,
   ALLOW_USER_TYPE_FIELDS_JIRA,
   HARD_DELETE_ENTITIES,
-  PIPELINE_MATRIX,
   ACTIVITY_ID_BASED_TF_BASE_DIR,
   INHERITED_USER_GROUP,
   JDK11_UPGRADE_BANNER,
@@ -418,11 +414,23 @@ public enum FeatureName {
   GIT_WEBHOOK_POLLING("Used to poll git webhook recent delivery events", HarnessTeam.CDP),
   TRIGGERS_REFACTOR("Enable NG Triggers UI refactoring", HarnessTeam.CDP),
   NG_SERVICE_MANIFEST_OVERRIDE("Enable Service Manifests override from Environment", HarnessTeam.CDP),
+  NG_SERVICE_CONFIG_FILES_OVERRIDE("Enable Service Config Files override from Environment", HarnessTeam.CDP),
   ENABLE_CHECK_STATE_EXECUTION_STARTING(
       "Used to allow create retry state execution when event is status equals to STARTING", HarnessTeam.SPG),
   NG_DEFAULT_K8S_MANIFESTS("Sample k8s manifests at account level file store", HarnessTeam.CDP, Scope.GLOBAL),
-  CI_TI_DASHBOARDS_ENABLED;
+  CI_TI_DASHBOARDS_ENABLED,
+  SERVICE_ID_FILTER_FOR_TRIGGERS(
+      "Filter last deployed artifacts for triggers using serviceId as well", HarnessTeam.SPG),
+  PERSIST_MONITORED_SERVICE_TEMPLATE_STEP(
+      "Enables saving of monitored service created during template verify step", HarnessTeam.CV),
+  FIX_CORRUPTED_INSTANCES("Used to fix instances mapped to old/wrong infrastructure mapping", HarnessTeam.CDP),
+  VALIDATE_PHASES_AND_ROLLBACK("Validate that each phase has your own rollback phase", HarnessTeam.SPG),
+  OPTIMIZED_TF_PLAN_NG(
+      "Enables uploading Terraform plan to GCS/MongoGridFS instead of saving to sweeping output", HarnessTeam.CDP),
 
+  ENABLE_CLOUDFORMATION_AS_EXPRESSION("Used to enabled solve cloud formation by expression", HarnessTeam.SPG),
+  SERVICE_V2_EXPRESSION(
+      "Allow service reference to be an expression in a pipeline for the new service entity", HarnessTeam.CDC);
   @Deprecated
   FeatureName() {
     scope = Scope.PER_ACCOUNT;

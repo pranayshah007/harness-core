@@ -70,7 +70,8 @@ public class ResourceGroupChangeConsumerImpl implements ChangeConsumer<ResourceG
 
   @Override
   public void consumeUpdateEvent(String id, ResourceGroupDBO updatedResourceGroup) {
-    if (updatedResourceGroup.getResourceSelectors() == null && updatedResourceGroup.getResourceSelectorsV2() == null) {
+    if (updatedResourceGroup.getResourceSelectors() == null && updatedResourceGroup.getResourceSelectorsV2() == null
+        && updatedResourceGroup.getScopeSelectors() == null) {
       return;
     }
 
@@ -140,47 +141,60 @@ public class ResourceGroupChangeConsumerImpl implements ChangeConsumer<ResourceG
 
     @Override
     public Result call() {
-      Set<ResourceSelector> existingResourceSelectors =
-          aclRepository.getDistinctResourceSelectorsInACLs(roleAssignmentDBO.getId());
-      Set<ResourceSelector> newResourceSelectors = new HashSet<>();
-      if (updatedResourceGroup.getResourceSelectors() != null) {
-        newResourceSelectors.addAll(updatedResourceGroup.getResourceSelectors()
-                                        .stream()
-                                        .map(selector -> ResourceSelector.builder().selector(selector).build())
-                                        .collect(Collectors.toList()));
-      }
-      if (updatedResourceGroup.getResourceSelectorsV2() != null) {
-        newResourceSelectors.addAll(updatedResourceGroup.getResourceSelectorsV2());
-      }
-
-      Set<ResourceSelector> resourceSelectorsRemovedFromResourceGroup =
-          Sets.difference(existingResourceSelectors, newResourceSelectors);
-      Set<ResourceSelector> resourceSelectorsAddedToResourceGroup =
-          Sets.difference(newResourceSelectors, existingResourceSelectors);
-
-      long numberOfACLsDeleted = aclRepository.deleteByRoleAssignmentIdAndResourceSelectors(
-          roleAssignmentDBO.getId(), resourceSelectorsRemovedFromResourceGroup);
-
-      Set<String> existingPermissions =
-          Sets.newHashSet(aclRepository.getDistinctPermissionsInACLsForRoleAssignment(roleAssignmentDBO.getId()));
-      Set<String> existingPrincipals =
-          Sets.newHashSet(aclRepository.getDistinctPrincipalsInACLsForRoleAssignment(roleAssignmentDBO.getId()));
-      PrincipalType principalType =
-          USER_GROUP.equals(roleAssignmentDBO.getPrincipalType()) ? USER : roleAssignmentDBO.getPrincipalType();
-
       long numberOfACLsCreated = 0;
-      List<ACL> aclsToCreate = new ArrayList<>();
+      long numberOfACLsDeleted = 0;
 
-      if (existingPermissions.isEmpty() || existingPrincipals.isEmpty()) {
-        aclsToCreate.addAll(changeConsumerService.getAClsForRoleAssignment(roleAssignmentDBO));
-      } else {
-        resourceSelectorsAddedToResourceGroup.forEach(resourceSelector
-            -> existingPrincipals.forEach(principalIdentifier
-                -> existingPermissions.forEach(permissionIdentifier
-                    -> aclsToCreate.add(buildACL(permissionIdentifier, Principal.of(principalType, principalIdentifier),
-                        roleAssignmentDBO, resourceSelector)))));
+      if (updatedResourceGroup.getResourceSelectors() != null
+          || updatedResourceGroup.getResourceSelectorsV2() != null) {
+        Set<ResourceSelector> existingResourceSelectors =
+            aclRepository.getDistinctResourceSelectorsInACLs(roleAssignmentDBO.getId());
+        Set<ResourceSelector> newResourceSelectors = new HashSet<>();
+        if (updatedResourceGroup.getResourceSelectors() != null) {
+          newResourceSelectors.addAll(updatedResourceGroup.getResourceSelectors()
+                                          .stream()
+                                          .map(selector -> ResourceSelector.builder().selector(selector).build())
+                                          .collect(Collectors.toList()));
+        }
+        if (updatedResourceGroup.getResourceSelectorsV2() != null) {
+          newResourceSelectors.addAll(updatedResourceGroup.getResourceSelectorsV2());
+        }
+
+        Set<ResourceSelector> resourceSelectorsRemovedFromResourceGroup =
+            Sets.difference(existingResourceSelectors, newResourceSelectors);
+        Set<ResourceSelector> resourceSelectorsAddedToResourceGroup =
+            Sets.difference(newResourceSelectors, existingResourceSelectors);
+
+        numberOfACLsDeleted += aclRepository.deleteByRoleAssignmentIdAndResourceSelectors(
+            roleAssignmentDBO.getId(), resourceSelectorsRemovedFromResourceGroup);
+
+        Set<String> existingPermissions =
+            Sets.newHashSet(aclRepository.getDistinctPermissionsInACLsForRoleAssignment(roleAssignmentDBO.getId()));
+        Set<String> existingPrincipals =
+            Sets.newHashSet(aclRepository.getDistinctPrincipalsInACLsForRoleAssignment(roleAssignmentDBO.getId()));
+        PrincipalType principalType =
+            USER_GROUP.equals(roleAssignmentDBO.getPrincipalType()) ? USER : roleAssignmentDBO.getPrincipalType();
+
+        List<ACL> aclsToCreate = new ArrayList<>();
+
+        if (existingPermissions.isEmpty() || existingPrincipals.isEmpty()) {
+          aclsToCreate.addAll(changeConsumerService.getAClsForRoleAssignment(roleAssignmentDBO));
+        } else {
+          resourceSelectorsAddedToResourceGroup.forEach(resourceSelector
+              -> existingPrincipals.forEach(principalIdentifier
+                  -> existingPermissions.forEach(permissionIdentifier
+                      -> aclsToCreate.add(
+                          buildACL(permissionIdentifier, Principal.of(principalType, principalIdentifier),
+                              roleAssignmentDBO, resourceSelector, false)))));
+        }
+        numberOfACLsCreated += aclRepository.insertAllIgnoringDuplicates(aclsToCreate);
       }
-      numberOfACLsCreated += aclRepository.insertAllIgnoringDuplicates(aclsToCreate);
+
+      if (updatedResourceGroup.getScopeSelectors() != null) {
+        numberOfACLsDeleted += aclRepository.deleteByRoleAssignmentIdAndImplicitForScope(roleAssignmentDBO.getId());
+        List<ACL> aclsToCreate =
+            changeConsumerService.getImplicitACLsForRoleAssignment(roleAssignmentDBO, new HashSet<>(), new HashSet<>());
+        numberOfACLsCreated += aclRepository.insertAllIgnoringDuplicates(aclsToCreate);
+      }
 
       return new Result(numberOfACLsCreated, numberOfACLsDeleted);
     }

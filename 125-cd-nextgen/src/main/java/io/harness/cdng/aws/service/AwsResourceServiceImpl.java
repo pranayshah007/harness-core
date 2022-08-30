@@ -122,7 +122,7 @@ public class AwsResourceServiceImpl implements AwsResourceService {
 
   @Override
   public Map<String, String> getRolesARNs(
-      IdentifierRef awsConnectorRef, String orgIdentifier, String projectIdentifier) {
+      IdentifierRef awsConnectorRef, String orgIdentifier, String projectIdentifier, String region) {
     AwsConnectorDTO awsConnector = serviceHelper.getAwsConnector(awsConnectorRef);
     BaseNGAccess access =
         serviceHelper.getBaseNGAccess(awsConnectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
@@ -131,6 +131,7 @@ public class AwsResourceServiceImpl implements AwsResourceService {
                                .awsTaskType(AwsTaskType.LIST_IAM_ROLES)
                                .awsConnector(awsConnector)
                                .encryptionDetails(encryptedData)
+                               .region(region)
                                .build();
     AwsIAMRolesResponse response = executeSyncTask(params, access);
     return response.getRoles();

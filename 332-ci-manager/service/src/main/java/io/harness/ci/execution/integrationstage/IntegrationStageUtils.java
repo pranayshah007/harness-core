@@ -11,6 +11,7 @@ import static io.harness.beans.execution.WebhookEvent.Type.BRANCH;
 import static io.harness.beans.execution.WebhookEvent.Type.PR;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveOSType;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameter;
+import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.HOSTED_VM;
 import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.KUBERNETES_DIRECT;
 import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.KUBERNETES_HOSTED;
 import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.VM;
@@ -45,6 +46,7 @@ import io.harness.beans.execution.WebhookExecutionSource;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.steps.CIStepInfo;
+import io.harness.beans.steps.stepinfo.BackgroundStepInfo;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
@@ -53,6 +55,7 @@ import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.ci.buildstate.ConnectorUtils;
+import io.harness.ci.license.CILicenseService;
 import io.harness.ci.pipeline.executions.beans.CIImageDetails;
 import io.harness.ci.pipeline.executions.beans.CIInfraDetails;
 import io.harness.ci.pipeline.executions.beans.CIScmDetails;
@@ -72,6 +75,7 @@ import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
+import io.harness.delegate.task.citasks.cik8handler.params.CIConstants;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
@@ -79,6 +83,8 @@ import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.git.GitClientHelper;
 import io.harness.jackson.JsonNodeUtils;
 import io.harness.k8s.model.ImageDetails;
+import io.harness.licensing.Edition;
+import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.stages.stage.StageElementConfig;
@@ -112,9 +118,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.CI)
+@Slf4j
 public class IntegrationStageUtils {
   private static final String TAG_EXPRESSION = "<+trigger.tag>";
   private static final String BRANCH_EXPRESSION = "<+trigger.branch>";
@@ -696,6 +704,9 @@ public class IntegrationStageUtils {
       switch (ciStepInfo.getNonYamlInfo().getStepInfoType()) {
         case RUN:
           return resolveConnectorIdentifier(((RunStepInfo) ciStepInfo).getConnectorRef(), ciStepInfo.getIdentifier());
+        case BACKGROUND:
+          return resolveConnectorIdentifier(
+              ((BackgroundStepInfo) ciStepInfo).getConnectorRef(), ciStepInfo.getIdentifier());
         case PLUGIN:
           return resolveConnectorIdentifier(
               ((PluginStepInfo) ciStepInfo).getConnectorRef(), ciStepInfo.getIdentifier());
@@ -759,5 +770,17 @@ public class IntegrationStageUtils {
         .scmAuthType(connectorUtils.getScmAuthType(connectorDetails))
         .scmHostType(connectorUtils.getScmHostType(connectorDetails))
         .build();
+  }
+
+  public static Long getStageTtl(CILicenseService ciLicenseService, String accountId, Infrastructure infrastructure) {
+    if (infrastructure.getType() != HOSTED_VM && infrastructure.getType() != KUBERNETES_HOSTED) {
+      return CIConstants.STAGE_MAX_TTL_SECS;
+    }
+
+    LicensesWithSummaryDTO licensesWithSummaryDTO = ciLicenseService.getLicenseSummary(accountId);
+    if (licensesWithSummaryDTO != null && licensesWithSummaryDTO.getEdition() == Edition.FREE) {
+      return CIConstants.STAGE_MAX_TTL_SECS_HOSTED_FREE;
+    }
+    return CIConstants.STAGE_MAX_TTL_SECS;
   }
 }

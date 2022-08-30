@@ -40,11 +40,13 @@ import io.harness.ng.authenticationsettings.remote.AuthSettingsManagerClient;
 import io.harness.ng.core.api.UserGroupService;
 import io.harness.ng.core.user.entities.UserGroup;
 import io.harness.rest.RestResponse;
+import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.service.DelegateGrpcClientWrapper;
 
 import software.wings.beans.TaskType;
 import software.wings.beans.dto.LdapSettings;
 import software.wings.beans.sso.LdapGroupResponse;
+import software.wings.beans.sso.LdapSettingsMapper;
 import software.wings.beans.sso.LdapTestResponse;
 import software.wings.service.impl.ldap.LdapDelegateException;
 
@@ -73,8 +75,11 @@ public class NGLdapServiceImpl implements NGLdapService {
 
   @Override
   public LdapTestResponse validateLdapConnectionSettings(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, software.wings.beans.dto.LdapSettings settings) {
-    NGLdapDelegateTaskParameters parameters = NGLdapDelegateTaskParameters.builder().ldapSettings(settings).build();
+      String projectIdentifier, software.wings.beans.sso.LdapSettings settings) {
+    log.info(
+        "Validate ldap connection in NG LDAP case for account: {}, organization: {}, project: {} with ldap settings id {}",
+        accountIdentifier, orgIdentifier, projectIdentifier, settings.getUuid());
+    NGLdapDelegateTaskParameters parameters = getNgLdapDelegateTaskParameters(accountIdentifier, settings);
 
     DelegateResponseData delegateResponseData = getDelegateResponseData(
         accountIdentifier, orgIdentifier, projectIdentifier, parameters, NG_LDAP_TEST_CONN_SETTINGS);
@@ -86,9 +91,12 @@ public class NGLdapServiceImpl implements NGLdapService {
   }
 
   @Override
-  public LdapTestResponse validateLdapUserSettings(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, LdapSettings settings) {
-    NGLdapDelegateTaskParameters parameters = NGLdapDelegateTaskParameters.builder().ldapSettings(settings).build();
+  public LdapTestResponse validateLdapUserSettings(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, software.wings.beans.sso.LdapSettings settings) {
+    log.info(
+        "Validate ldap user query in NG LDAP case for account: {}, organization: {}, project: {} with ldap settings id {}",
+        accountIdentifier, orgIdentifier, projectIdentifier, settings.getUuid());
+    NGLdapDelegateTaskParameters parameters = getNgLdapDelegateTaskParameters(accountIdentifier, settings);
 
     DelegateResponseData delegateResponseData = getDelegateResponseData(
         accountIdentifier, orgIdentifier, projectIdentifier, parameters, NG_LDAP_TEST_USER_SETTINGS);
@@ -100,9 +108,12 @@ public class NGLdapServiceImpl implements NGLdapService {
   }
 
   @Override
-  public LdapTestResponse validateLdapGroupSettings(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, LdapSettings settings) {
-    NGLdapDelegateTaskParameters parameters = NGLdapDelegateTaskParameters.builder().ldapSettings(settings).build();
+  public LdapTestResponse validateLdapGroupSettings(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, software.wings.beans.sso.LdapSettings settings) {
+    log.info(
+        "Validate ldap group query in NG LDAP case for account: {}, organization: {}, project: {} with ldap settings id {}",
+        accountIdentifier, orgIdentifier, projectIdentifier, settings.getUuid());
+    NGLdapDelegateTaskParameters parameters = getNgLdapDelegateTaskParameters(accountIdentifier, settings);
 
     DelegateResponseData delegateResponseData = getDelegateResponseData(
         accountIdentifier, orgIdentifier, projectIdentifier, parameters, NG_LDAP_TEST_GROUP_SETTINGS);
@@ -116,6 +127,8 @@ public class NGLdapServiceImpl implements NGLdapService {
   @Override
   public Collection<LdapGroupResponse> searchLdapGroupsByName(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String ldapId, String name) {
+    log.info("Search user group by name in NG LDAP case for account: {}, organization: {}, project: {}",
+        accountIdentifier, orgIdentifier, projectIdentifier);
     LdapSettingsWithEncryptedDataDetail settingsWithEncryptedDataDetail =
         getLdapSettingsWithEncryptedDataInternal(accountIdentifier);
     LdapSettings ldapSettings = settingsWithEncryptedDataDetail.getLdapSettings();
@@ -131,13 +144,14 @@ public class NGLdapServiceImpl implements NGLdapService {
         getDelegateResponseData(accountIdentifier, orgIdentifier, projectIdentifier, parameters, NG_LDAP_SEARCH_GROUPS);
 
     NGLdapGroupSearchTaskResponse groupSearchResponse = (NGLdapGroupSearchTaskResponse) delegateResponseData;
-    log.info("Delegate response for searchLdapGroupsByName returned groups whose size: {}",
-        groupSearchResponse.getLdapListGroupsResponses().size());
+    log.info("Received delegate response for searchLdapGroupsByName in NG LDAP for account: {}", accountIdentifier);
     return groupSearchResponse.getLdapListGroupsResponses();
   }
 
   @Override
   public void syncUserGroupsJob(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    log.info("Sync user group for NG LDAP starting for account: {}, organization: {}, project: {}", accountIdentifier,
+        orgIdentifier, projectIdentifier);
     LdapSettingsWithEncryptedDataDetail settingsWithEncryptedDataDetail =
         getLdapSettingsWithEncryptedDataInternal(accountIdentifier);
 
@@ -157,8 +171,7 @@ public class NGLdapServiceImpl implements NGLdapService {
           userGroup.getOrgIdentifier(), userGroup.getProjectIdentifier(), parameters, NG_LDAP_GROUPS_SYNC);
 
       NGLdapGroupSyncTaskResponse groupSearchResponse = (NGLdapGroupSyncTaskResponse) delegateResponseData;
-      log.info("Delegate response for syncLdapGroupByDn returned group whose total members size: {}",
-          groupSearchResponse.getLdapGroupsResponse().getTotalMembers());
+      log.info("Received delegate response for syncLdapGroupByDn in NG LDAP for account: {}", accountIdentifier);
 
       userGroupsToLdapGroupMap.put(userGroup, groupSearchResponse.getLdapGroupsResponse());
     }
@@ -167,9 +180,33 @@ public class NGLdapServiceImpl implements NGLdapService {
         userGroupsToLdapGroupMap, settingsWithEncryptedDataDetail.getLdapSettings().getUuid(), accountIdentifier);
   }
 
+  private NGLdapDelegateTaskParameters getNgLdapDelegateTaskParameters(
+      String accountIdentifier, software.wings.beans.sso.LdapSettings settings) {
+    LdapSettingsWithEncryptedDataDetail settingsWithEncryptedDataDetail =
+        getLdapSettingsWithEncryptedDataInternal(accountIdentifier, settings);
+    EncryptedDataDetail encryptedDataDetail = settingsWithEncryptedDataDetail.getEncryptedDataDetail();
+    return NGLdapDelegateTaskParameters.builder()
+        .ldapSettings(settingsWithEncryptedDataDetail.getLdapSettings())
+        .encryptedDataDetail(encryptedDataDetail)
+        .build();
+  }
+
+  private LdapSettingsWithEncryptedDataDetail getLdapSettingsWithEncryptedDataInternal(
+      String accountIdentifier, software.wings.beans.sso.LdapSettings ldapSettings) {
+    Call<RestResponse<LdapSettingsWithEncryptedDataDetail>> settingsWithEncryptedDataDetails =
+        managerClient.getLdapSettingsUsingAccountIdAndLdapSettings(
+            accountIdentifier, LdapSettingsMapper.ldapSettingsDTO(ldapSettings));
+    if (null == settingsWithEncryptedDataDetails) {
+      log.warn(
+          "Failed to get ldap settings with encrypted data detail from manager for account: {}", accountIdentifier);
+      throw new InvalidRequestException("Failed to get LDAPSettings with encrypted data detail for the request");
+    }
+    return getResponse(settingsWithEncryptedDataDetails);
+  }
+
   private LdapSettingsWithEncryptedDataDetail getLdapSettingsWithEncryptedDataInternal(String accountIdentifier) {
     Call<RestResponse<LdapSettingsWithEncryptedDataDetail>> settingsWithEncryptedDataDetails =
-        managerClient.getLdapSettingsWithEncryptedDataDetails(accountIdentifier);
+        managerClient.getLdapSettingsUsingAccountId(accountIdentifier);
     if (null == settingsWithEncryptedDataDetails) {
       log.warn(
           "Failed to get ldap settings with encrypted data detail from manager for account: {}", accountIdentifier);

@@ -84,6 +84,7 @@ public class EntityYamlRootNames {
   public static final String OPAPOLICY = "governancePolicy";
   public static final String POLICY_STEP = "Policy";
   public static final String RUN_STEP = "Run";
+  public static final String BACKGROUND_STEP = "Background";
   public static final String RUN_TEST = "RunTests";
   public static final String PLUGIN = "Plugin";
   public static final String SECURITY = "Security";
@@ -119,4 +120,5 @@ public class EntityYamlRootNames {
   public static final String EMAIL = "EMAIL";
   public static final String AZURE_CREATE_ARM_RESOURCE_STEP = "AzureCreateARMResource";
   public static final String AZURE_CREATE_BP_RESOURCE_STEP = "AzureCreateBPResource";
+  public static final String AZURE_ROLLBACK_ARM_RESOURCE_STEP = "AzureARMRollback";
 }

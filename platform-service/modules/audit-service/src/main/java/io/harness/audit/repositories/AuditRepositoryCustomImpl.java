@@ -12,10 +12,10 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.entities.AuditEvent;
 import io.harness.audit.entities.AuditEvent.AuditEventKeys;
+import io.harness.mongo.helper.SecondaryMongoTemplateHolder;
 
 import com.google.inject.Inject;
 import java.util.List;
-import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -24,16 +24,24 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.repository.support.PageableExecutionUtils;
 
 @OwnedBy(PL)
-@AllArgsConstructor(onConstructor = @__({ @Inject }))
 public class AuditRepositoryCustomImpl implements AuditRepositoryCustom {
   private final MongoTemplate mongoTemplate;
+
+  private final MongoTemplate secondaryMongoTemplate;
+
+  @Inject
+  public AuditRepositoryCustomImpl(
+      MongoTemplate mongoTemplate, SecondaryMongoTemplateHolder secondaryMongoTemplateHolder) {
+    this.mongoTemplate = mongoTemplate;
+    this.secondaryMongoTemplate = secondaryMongoTemplateHolder.getSecondaryMongoTemplate();
+  }
 
   @Override
   public Page<AuditEvent> findAll(Criteria criteria, Pageable pageable) {
     Query query = new Query(criteria).with(pageable);
-    List<AuditEvent> auditEvents = mongoTemplate.find(query, AuditEvent.class);
-    return PageableExecutionUtils.getPage(
-        auditEvents, pageable, () -> mongoTemplate.count(Query.of(query).limit(-1).skip(-1), AuditEvent.class));
+    List<AuditEvent> auditEvents = secondaryMongoTemplate.find(query, AuditEvent.class);
+    return PageableExecutionUtils.getPage(auditEvents, pageable,
+        () -> secondaryMongoTemplate.count(Query.of(query).limit(-1).skip(-1), AuditEvent.class));
   }
 
   @Override
@@ -45,12 +53,13 @@ public class AuditRepositoryCustomImpl implements AuditRepositoryCustom {
   @Override
   public List<String> fetchDistinctAccountIdentifiers() {
     Query query = new Query();
-    return mongoTemplate.findDistinct(query, AuditEventKeys.ACCOUNT_IDENTIFIER_KEY, AuditEvent.class, String.class);
+    return secondaryMongoTemplate.findDistinct(
+        query, AuditEventKeys.ACCOUNT_IDENTIFIER_KEY, AuditEvent.class, String.class);
   }
 
   @Override
   public AuditEvent get(Criteria criteria) {
     Query query = new Query(criteria);
-    return mongoTemplate.findOne(query, AuditEvent.class);
+    return secondaryMongoTemplate.findOne(query, AuditEvent.class);
   }
 }

@@ -21,6 +21,9 @@ public interface YamlTypes {
   String GITOPS_MERGE_PR = StepSpecTypeConstants.GITOPS_MERGE_PR;
 
   String PRIMARY_ARTIFACT = "primary";
+  String PRIMARY_ARTIFACT_REF = "primaryArtifactRef";
+  String ARTIFACT_SOURCES = "sources";
+  String IDENTIFIER = "identifier";
   String ARTIFACT_LIST_CONFIG = "artifacts";
   String SIDECAR_ARTIFACT_CONFIG = "sidecar";
   String SIDECARS_ARTIFACT_CONFIG = "sidecars";
@@ -124,6 +127,9 @@ public interface YamlTypes {
   String REF = "ref";
   String JENKINS_BUILD = StepSpecTypeConstants.JENKINS_BUILD;
   String STARTUP_COMMAND = "startupCommand";
+
+  String AZURE_SERVICE_SETTINGS_STEP = "Azure_Service_Settings";
+
   String APPLICATION_SETTINGS = "applicationSettings";
   String CONNECTION_STRINGS = "connectionStrings";
 }

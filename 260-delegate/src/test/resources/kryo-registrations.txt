@@ -209,7 +209,6 @@
 2014:com.google.api.services.monitoring.v3.model.Exponential
 2015:com.mongodb.BasicDBList
 2016:com.mongodb.BasicDBObject
-2528:io.harness.beans.RepairActionCode
 3001:io.harness.exception.VerificationOperationException
 3002:io.harness.exception.ServiceNowException
 3003:io.harness.encryption.SecretRefData
@@ -219,7 +218,6 @@
 3007:io.harness.tasks.FailureResponseData
 3008:io.harness.beans.KeyValuePair
 3101:io.harness.beans.SweepingOutput
-3102:io.harness.beans.ExecutionStatusResponseData
 4000:io.harness.beans.ExecutionInterruptType
 4002:software.wings.beans.ExecutionStrategy
 4004:io.harness.context.ContextElementType
@@ -228,8 +226,6 @@
 4008:software.wings.beans.CountsByStatuses
 4010:software.wings.api.ContainerRollbackRequestElement
 5002:io.harness.delegate.beans.DelegateScripts
-5003:io.harness.beans.DelegateTask
-5004:io.harness.beans.DelegateTask.Status
 5005:software.wings.beans.TaskType
 5006:io.harness.delegate.beans.DelegateTaskResponse
 5007:software.wings.beans.artifact.ArtifactStreamAttributes
@@ -398,6 +394,7 @@
 5229:software.wings.api.AwsLambdaContextElement.FunctionMeta
 5230:software.wings.api.AwsLambdaFunctionElement
 5231:software.wings.api.artifact.ServiceArtifactElement
+5232:software.wings.beans.NameValuePairWithDefault
 5233:io.harness.eraro.ErrorCode
 5234:software.wings.beans.command.JenkinsTaskParams
 5235:software.wings.api.ScriptStateExecutionData
@@ -428,7 +425,6 @@
 5268:software.wings.helpers.ext.helm.request.HelmRollbackCommandRequest
 5269:software.wings.beans.dto.HelmChartSpecification
 5270:io.harness.git.model.GitRepositoryType
-5271:io.harness.waiter.StringNotifyResponseData
 5272:software.wings.beans.command.InitPowerShellCommandUnit
 5273:software.wings.beans.command.CleanupPowerShellCommandUnit
 5274:software.wings.beans.command.ShellCommandExecutionContext
@@ -700,9 +696,7 @@
 5619:software.wings.delegatetasks.buildsource.BuildSourceResponse
 5620:software.wings.delegatetasks.buildsource.BuildSourceExecutionResponse
 5621:software.wings.delegatetasks.buildsource.BuildSourceParameters.BuildSourceRequestType
-5626:software.wings.beans.notification.NotificationSettings
 5671:software.wings.api.EcsSetupElement
-5700:io.harness.waiter.StringNotifyProgressData
 5701:software.wings.service.impl.aws.model.embed.AwsLambdaDetails
 6501:io.harness.delegate.beans.DelegateRegisterResponse
 6502:io.harness.delegate.beans.DelegateParams
@@ -723,10 +717,8 @@
 7112:software.wings.api.ShellScriptApprovalExecutionData
 7113:software.wings.helpers.ext.k8s.request.K8sDeleteTaskParameters
 7114:software.wings.helpers.ext.k8s.response.K8sDeleteResponse
-7115:software.wings.beans.NotificationChannelType
 7116:software.wings.service.impl.aws.model.AwsLambdaFunctionRequest
 7117:software.wings.service.impl.aws.model.AwsLambdaFunctionResponse
-7119:software.wings.beans.notification.SlackNotificationSetting
 7121:software.wings.helpers.ext.ecs.request.EcsServiceSetupRequest
 7122:software.wings.helpers.ext.ecs.response.EcsServiceSetupResponse
 7123:software.wings.helpers.ext.ecs.request.EcsBGServiceSetupRequest
@@ -821,7 +813,6 @@
 7222:software.wings.api.artifact.ServiceArtifactVariableElement
 7223:software.wings.sm.states.spotinst.SpotInstSetupContextElement
 7226:software.wings.service.impl.MasterUrlFetchTaskParameter
-7228:software.wings.beans.CyberArkConfig
 7229:software.wings.api.ShellScriptProvisionerOutputElement
 7230:com.google.api.services.logging.v2.model.LogEntry
 7231:com.google.api.services.logging.v2.model.MonitoredResourceMetadata
@@ -856,8 +847,6 @@
 7268:software.wings.service.impl.aws.model.AwsS3ListBucketNamesRequest
 7269:software.wings.service.impl.aws.model.AwsS3ListBucketNamesResponse
 7272:software.wings.service.impl.aws.model.response.AwsCloudWatchMetricDataResponse
-7273:io.harness.delay.DelayEventNotifyData
-7277:software.wings.sm.BarrierStatusData
 7283:software.wings.service.impl.elk.ElkDataCollectionInfoV2
 7284:software.wings.beans.settings.azureartifacts.AzureArtifactsPATConfig
 7285:software.wings.helpers.ext.azure.devops.AzureDevopsProject
@@ -1122,7 +1111,6 @@
 9110:io.harness.cvng.beans.SplunkMetricDataCollectionInfo
 9111:io.harness.cvng.beans.SplunkMetricDataCollectionInfo.MetricInfo
 9112:io.harness.cvng.beans.splunk.SplunkMetricSampleDataCollectionRequest
-9501:io.harness.timeout.trackers.absolute.AbsoluteTimeoutParameters
 9701:io.harness.logging.UnitProgress
 9702:io.harness.logging.UnitStatus
 9709:io.harness.jira.JiraIssueTypeNG
@@ -1650,14 +1638,10 @@
 40016:software.wings.beans.AzureResourceGroup
 40017:software.wings.beans.AzureImageGallery
 40018:software.wings.beans.AzureImageDefinition
-40021:io.harness.beans.ShellScriptProvisionOutputVariables
 40022:software.wings.beans.GitConfig.ProviderType
 40025:com.google.gson.internal.LinkedTreeMap
 40028:io.harness.perpetualtask.PerpetualTaskSchedule
 40029:com.google.protobuf.Duration
-40030:io.harness.perpetualtask.PerpetualTaskClientContext
-40031:io.harness.delegate.beans.Delegate
-40032:software.wings.beans.DelegateTaskUsageInsightsEventType
 40074:io.harness.beans.TriggeredBy
 40092:software.wings.beans.AwsInstanceFilter
 40098:software.wings.beans.PhysicalDataCenterConfig
@@ -1672,8 +1656,6 @@
 50008:software.wings.beans.ClusterSelectionCriteriaEntry
 50011:software.wings.helpers.ext.k8s.response.K8sRollingDeployRollbackResponse
 50012:software.wings.beans.settings.helm.OciHelmRepoConfig
-54320:io.harness.ng.core.entities.Organization
-54321:io.harness.ng.core.entities.Project
 54322:io.harness.ng.core.entities.SampleEncryptableSettingImplementation
 54323:io.harness.ng.core.NGAccessWithEncryptionConsumer
 54324:io.harness.ng.core.BaseNGAccess
@@ -1794,8 +1776,6 @@
 83079:io.harness.delegate.beans.connector.awsconnector.AwsListASGNamesTaskResponse
 90001:software.wings.service.impl.apm.AWSPrometheusInfo
 95001:io.harness.delegate.beans.logstreaming.UnitProgressData
-95002:io.harness.waiter.WaitInstanceTimeoutCallback
-96001:io.harness.springdata.exceptions.WingsTransactionFailureException
 97001:io.harness.jira.JiraActionNG
 97002:io.harness.jira.JiraCreateIssueRequestNG
 97003:io.harness.jira.JiraFieldAllowedValueNG

@@ -35,11 +35,14 @@ import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.account.OauthProviderType;
+import io.harness.outbox.api.OutboxService;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.Account;
 import software.wings.beans.Event;
 import software.wings.beans.SyncTaskContext;
+import software.wings.beans.loginSettings.events.AuthMechanismYamlDTO;
+import software.wings.beans.loginSettings.events.LoginSettingsAuthMechanismUpdateEvent;
 import software.wings.beans.sso.LdapConnectionSettings;
 import software.wings.beans.sso.LdapGroupResponse;
 import software.wings.beans.sso.LdapSettings;
@@ -110,6 +113,7 @@ public class SSOServiceImpl implements SSOService {
   @Inject private AuditServiceHelper auditServiceHelper;
   @Inject private EncryptionService encryptionService;
   @Inject private SSOServiceHelper ssoServiceHelper;
+  @Inject private OutboxService outboxService;
 
   @Override
   public SSOConfig uploadSamlConfiguration(String accountId, InputStream inputStream, String displayName,
@@ -216,6 +220,22 @@ public class SSOServiceImpl implements SSOService {
       } else {
         auditServiceHelper.reportForAuditingUsingAccountId(accountId, null, ssoSettings, Event.Type.DISABLE);
       }
+      ngAuditLoginSettings(accountId, currentAuthMechanism, mechanism);
+    }
+  }
+
+  private void ngAuditLoginSettings(
+      String accountIdentifier, AuthenticationMechanism oldAuthMechanism, AuthenticationMechanism newAuthMechanism) {
+    try {
+      outboxService.save(
+          LoginSettingsAuthMechanismUpdateEvent.builder()
+              .accountIdentifier(accountIdentifier)
+              .oldAuthMechanismYamlDTO(AuthMechanismYamlDTO.builder().authenticationMechanism(oldAuthMechanism).build())
+              .newAuthMechanismYamlDTO(AuthMechanismYamlDTO.builder().authenticationMechanism(newAuthMechanism).build())
+              .build());
+    } catch (Exception ex) {
+      log.error("For account {} Audit trails for Authentication Mechanism Update event failed with exception: {}",
+          accountIdentifier, ex);
     }
   }
 
@@ -374,12 +394,38 @@ public class SSOServiceImpl implements SSOService {
   }
 
   @Override
-  public LdapSettingsWithEncryptedDataDetail getLdapSettingWithEncryptedDataDetail(@NotBlank String accountId) {
-    LdapSettings ldapSettings = ssoSettingService.getLdapSettingsByAccountId(accountId);
-    populateEncryptedFields(ldapSettings);
-    encryptSecretIfFFisEnabled(ldapSettings);
-    ldapSettings.encryptLdapInlineSecret(secretManager);
-    EncryptedDataDetail encryptedDataDetail = ldapSettings.getEncryptedDataDetails(secretManager);
+  public LdapSettingsWithEncryptedDataDetail getLdapSettingWithEncryptedDataDetail(
+      @NotBlank String accountId, LdapSettings inputLdapSettings) {
+    if (null == inputLdapSettings) {
+      LdapSettings ldapSettings = ssoSettingService.getLdapSettingsByAccountId(accountId);
+      populateEncryptedFields(ldapSettings);
+      encryptSecretIfFFisEnabled(ldapSettings);
+      ldapSettings.encryptLdapInlineSecret(secretManager, false);
+      EncryptedDataDetail encryptedDataDetail = ldapSettings.getEncryptedDataDetails(secretManager);
+      return buildLdapSettingsWithEncryptedDataDetail(ldapSettings, encryptedDataDetail);
+    } else {
+      return getLdapSettingsWithEncryptedDataDetailFromInputSettings(accountId, inputLdapSettings);
+    }
+  }
+
+  private LdapSettingsWithEncryptedDataDetail getLdapSettingsWithEncryptedDataDetailFromInputSettings(
+      String accountId, LdapSettings inputLdapSettings) {
+    boolean temporaryEncryption = !populateEncryptedFields(inputLdapSettings);
+    encryptSecretIfFFisEnabled(inputLdapSettings);
+    EncryptedDataDetail encryptedDataDetail = null;
+    try {
+      inputLdapSettings.encryptLdapInlineSecret(secretManager, true);
+      encryptedDataDetail = inputLdapSettings.getEncryptedDataDetails(secretManager);
+    } finally {
+      if (null != encryptedDataDetail) {
+        deleteTempSecret(temporaryEncryption, encryptedDataDetail, inputLdapSettings, accountId);
+      }
+    }
+    return buildLdapSettingsWithEncryptedDataDetail(inputLdapSettings, encryptedDataDetail);
+  }
+
+  private LdapSettingsWithEncryptedDataDetail buildLdapSettingsWithEncryptedDataDetail(
+      LdapSettings ldapSettings, EncryptedDataDetail encryptedDataDetail) {
     return LdapSettingsWithEncryptedDataDetail.builder()
         .ldapSettings(LdapSettingsMapper.ldapSettingsDTO(ldapSettings))
         .encryptedDataDetail(encryptedDataDetail)
@@ -396,7 +442,7 @@ public class SSOServiceImpl implements SSOService {
       @NotNull LdapSettings ldapSettings, @NotBlank final String accountId) {
     boolean temporaryEncryption = !populateEncryptedFields(ldapSettings);
     encryptSecretIfFFisEnabled(ldapSettings);
-    ldapSettings.encryptLdapInlineSecret(secretManager);
+    ldapSettings.encryptLdapInlineSecret(secretManager, false);
     EncryptedDataDetail encryptedDataDetail = ldapSettings.getEncryptedDataDetails(secretManager);
     try {
       SyncTaskContext syncTaskContext = SyncTaskContext.builder()
@@ -416,7 +462,7 @@ public class SSOServiceImpl implements SSOService {
       @NotNull LdapSettings ldapSettings, @NotBlank final String accountId) {
     boolean temporaryEncryption = !populateEncryptedFields(ldapSettings);
     encryptSecretIfFFisEnabled(ldapSettings);
-    ldapSettings.encryptLdapInlineSecret(secretManager);
+    ldapSettings.encryptLdapInlineSecret(secretManager, false);
     EncryptedDataDetail encryptedDataDetail = ldapSettings.getEncryptedDataDetails(secretManager);
     try {
       SyncTaskContext syncTaskContext = SyncTaskContext.builder()
@@ -436,7 +482,7 @@ public class SSOServiceImpl implements SSOService {
       @NotNull LdapSettings ldapSettings, @NotBlank final String accountId) {
     boolean temporaryEncryption = !populateEncryptedFields(ldapSettings);
     encryptSecretIfFFisEnabled(ldapSettings);
-    ldapSettings.encryptLdapInlineSecret(secretManager);
+    ldapSettings.encryptLdapInlineSecret(secretManager, false);
     EncryptedDataDetail encryptedDataDetail = ldapSettings.getEncryptedDataDetails(secretManager);
     try {
       SyncTaskContext syncTaskContext = SyncTaskContext.builder()

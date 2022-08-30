@@ -94,7 +94,7 @@ public class TimeSeriesMetricPackDTO {
         }
         timeSeriesThresholdCriterias.add(timeSeriesThresholdCriteria);
       }
-      if (Objects.nonNull(criteria.getSpec().lessThan) && MetricThresholdActionType.IGNORE.equals(type)) {
+      if (Objects.nonNull(criteria.getSpec().lessThan)) {
         TimeSeriesThresholdCriteria timeSeriesThresholdCriteria =
             TimeSeriesThresholdCriteria.builder()
                 .type(criteria.getType().getTimeSeriesThresholdComparisonType())

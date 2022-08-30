@@ -25,7 +25,6 @@ import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.appmanifest.ManifestFile;
 import software.wings.security.PermissionAttribute.Action;
 import software.wings.security.PermissionAttribute.PermissionType;
-import software.wings.security.annotations.ApiKeyAuthorized;
 import software.wings.security.annotations.AuthRule;
 import software.wings.security.annotations.Scope;
 import software.wings.service.intfc.ApplicationManifestService;
@@ -61,7 +60,6 @@ public class ApplicationManifestResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = PermissionType.SERVICE, action = Action.CREATE)
-  @ApiKeyAuthorized(permissionType = PermissionType.SERVICE, action = Action.CREATE)
   public RestResponse<ApplicationManifest> createApplicationManifest(@QueryParam("appId") String appId,
       @QueryParam("serviceId") String serviceId, ApplicationManifest applicationManifest) {
     applicationManifest.setAppId(appId);

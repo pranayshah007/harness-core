@@ -29,7 +29,6 @@ import software.wings.beans.container.KubernetesPayload;
 import software.wings.beans.stats.CloneMetadata;
 import software.wings.security.PermissionAttribute.Action;
 import software.wings.security.PermissionAttribute.PermissionType;
-import software.wings.security.annotations.ApiKeyAuthorized;
 import software.wings.security.annotations.AuthRule;
 import software.wings.security.annotations.ListAPI;
 import software.wings.security.annotations.Scope;
@@ -64,7 +63,6 @@ import javax.ws.rs.QueryParam;
 @Consumes("application/json")
 @Scope(APPLICATION)
 @AuthRule(permissionType = ENV)
-@ApiKeyAuthorized(permissionType = ENV)
 public class EnvironmentResource {
   @Inject private EnvironmentService environmentService;
   @Inject private AuthService authService;

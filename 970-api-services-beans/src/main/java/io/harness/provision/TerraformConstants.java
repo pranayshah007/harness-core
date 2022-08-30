@@ -57,8 +57,13 @@ public final class TerraformConstants {
   public static final String WORKSPACE_DESTROY_PLAN_FILE_PATH_FORMAT =
       WORKSPACE_DIR_BASE + "/$WORKSPACE_NAME/tfdestroyplan";
   public static final String TERRAFORM_PLAN_FILE_OUTPUT_NAME = "tfplan";
+  public static final String TERRAFORM_HUMAN_READABLE_PLAN_FILE_OUTPUT_NAME = "tfHumanReadablePlan";
   public static final String TERRAFORM_DESTROY_PLAN_FILE_OUTPUT_NAME = "tfdestroyplan";
+  public static final String TERRAFORM_DESTROY_HUMAN_READABLE_PLAN_FILE_OUTPUT_NAME = "tfDestroyHumanReadablePlan";
   public static final String TERRAFORM_APPLY_PLAN_FILE_VAR_NAME = "${terraformApply.tfplan}";
+  public static final String TERRAFORM_HUMAN_READABLE_PLAN_FILE_VAR_NAME = "${terraformApply.tfHumanReadablePlan}";
+  public static final String TERRAFORM_DESTROY_HUMAN_READABLE_PLAN_FILE_VAR_NAME =
+      "${terraformDestroy.tfHumanReadablePlan}";
   public static final String TERRAFORM_DESTROY_PLAN_FILE_VAR_NAME = "${terraformDestroy.tfplan}";
   public static final String TERRAFORM_PLAN_FILE_NAME = "terraform.tfplan";
   public static final String TERRAFORM_PLAN_JSON_FILE_NAME = "%s.json";

@@ -8,6 +8,7 @@
 package io.harness.data.validator;
 
 import static io.harness.rule.OwnerRule.KARAN;
+import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
@@ -33,7 +34,7 @@ public class NGEntityNameValidatorTest extends CategoryTest {
   private Validator validator;
 
   private static final String ALLOWED_CHARS_STRING =
-      "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_ ";
+      "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_. ";
   private static final int MAX_ALLOWED_LENGTH = 64;
 
   @Builder
@@ -70,6 +71,15 @@ public class NGEntityNameValidatorTest extends CategoryTest {
         assertTrue("name : " + name, violationsCount > 0);
       }
     }
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void testEntityNameValidatorForDot() {
+    String name = "abc.abc";
+    int violationsCount = validator.validate(EntityNameValidatorTestStructure.builder().name(name).build()).size();
+    assertEquals("name : " + name, 0, violationsCount);
   }
 
   private static String generateRandomAsciiString() {

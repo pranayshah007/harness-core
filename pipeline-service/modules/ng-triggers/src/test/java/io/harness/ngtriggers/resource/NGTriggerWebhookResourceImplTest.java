@@ -22,7 +22,6 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
-import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
@@ -35,6 +34,7 @@ import io.harness.ngtriggers.mapper.NGTriggerElementMapper;
 import io.harness.ngtriggers.service.NGTriggerService;
 import io.harness.ngtriggers.validations.TriggerWebhookValidator;
 import io.harness.rule.Owner;
+import io.harness.webhook.WebhookConfigProvider;
 
 import java.net.URI;
 import javax.ws.rs.core.HttpHeaders;
@@ -52,9 +52,10 @@ public class NGTriggerWebhookResourceImplTest extends CategoryTest {
   NGTriggerWebhookConfigResourceImpl ngTriggerWebhookConfigResource;
   @Mock NGTriggerService ngTriggerService;
   @Mock NGTriggerElementMapper ngTriggerElementMapper;
-  @Mock AccountClient accountClient;
+  @Mock WebhookConfigProvider webhookConfigProvider;
   TriggerWebhookValidator triggerWebhookValidator;
   @InjectMocks private UrlHelper urlHelper = spy(UrlHelper.class);
+  private final String BASE_API_URL = "base_api_url/";
   private final String accountIdentifier = "account";
   private final String orgIdentifier = "org";
   private final String projectIdentifier = "project";
@@ -64,6 +65,7 @@ public class NGTriggerWebhookResourceImplTest extends CategoryTest {
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
+    when(webhookConfigProvider.getCustomApiBaseUrl()).thenReturn(BASE_API_URL);
     triggerWebhookValidator = spy(new TriggerWebhookValidator(ngTriggerService));
     ngTriggerWebhookConfigResource = new NGTriggerWebhookConfigResourceImpl(
         ngTriggerService, ngTriggerElementMapper, triggerWebhookValidator, urlHelper);
@@ -106,7 +108,7 @@ public class NGTriggerWebhookResourceImplTest extends CategoryTest {
         .thenReturn(triggerWebhookEventBuilder);
     assertThatThrownBy(()
                            -> ngTriggerWebhookConfigResource.processWebhookEventV2(accountIdentifier, orgIdentifier,
-                               projectIdentifier, pipelineIdentifier, triggerIdentifier, "payload", headers, uriInfo))
+                               projectIdentifier, pipelineIdentifier, triggerIdentifier, "payload", headers))
         .isInstanceOf(InvalidRequestException.class);
   }
 
@@ -142,8 +144,6 @@ public class NGTriggerWebhookResourceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testProcessWebhookEventV2() {
     HttpHeaders headers = mock(HttpHeaders.class);
-    UriInfo uriInfo = mock(UriInfo.class);
-    when(uriInfo.getBaseUri()).thenReturn(URI.create("base_url/"));
     when(headers.getRequestHeaders()).thenReturn(new MultivaluedHashMap<>());
     doReturn("base_ui_url/").when(urlHelper).getBaseUrl(any());
     String executionUuid = "executionUuid";
@@ -159,17 +159,16 @@ public class NGTriggerWebhookResourceImplTest extends CategoryTest {
         .thenReturn(triggerWebhookEventBuilder);
     doNothing().when(triggerWebhookValidator).applyValidationsForCustomWebhook(any());
     when(ngTriggerService.addEventToQueue(any())).thenReturn(eventEntity);
-    ResponseDTO<NGProcessWebhookResponseDTO> response =
-        ngTriggerWebhookConfigResource.processWebhookEventV2(accountIdentifier, orgIdentifier, projectIdentifier,
-            pipelineIdentifier, triggerIdentifier, "payload", headers, uriInfo);
+    ResponseDTO<NGProcessWebhookResponseDTO> response = ngTriggerWebhookConfigResource.processWebhookEventV2(
+        accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, triggerIdentifier, "payload", headers);
     assertThat(response.getData().getEventCorrelationId()).isEqualTo(executionUuid);
     String expectedApiUrl = format(
-        "%swebhook/triggerExecutionDetails/%s?accountIdentifier=%s", "base_url/", executionUuid, accountIdentifier);
+        "%swebhook/triggerExecutionDetails/%s?accountIdentifier=%s", BASE_API_URL, executionUuid, accountIdentifier);
     assertThat(response.getData().getApiUrl()).isEqualTo(expectedApiUrl);
-    String expectedUiUrl = format("%s#/account/%s/cd/orgs/%s/projects/%s/deployments?pipelineIdentifier=%s&page=1",
+    String expectedUiUrl = format("%sng/#/account/%s/cd/orgs/%s/projects/%s/deployments?pipelineIdentifier=%s&page=0",
         "base_ui_url/", accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier);
     assertThat(response.getData().getUiUrl()).isEqualTo(expectedUiUrl);
-    String expectedUiSetupUrl = format("%s#/account/%s/cd/orgs/%s/projects/%s/pipelines/%s/pipeline-studio/",
+    String expectedUiSetupUrl = format("%sng/#/account/%s/cd/orgs/%s/projects/%s/pipelines/%s/pipeline-studio/",
         "base_ui_url/", accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier);
     assertThat(response.getData().getUiSetupUrl()).isEqualTo(expectedUiSetupUrl);
   }

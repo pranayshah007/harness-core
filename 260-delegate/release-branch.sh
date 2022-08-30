@@ -81,7 +81,7 @@ check_branch_name "develop"
 echo "STEP2: INFO: Bumping version in build.properties in develop branch."
 
 export SHA=`git rev-parse HEAD`
-export VERSION_FILE=build.properties
+export VERSION_FILE=260-delegate/build.properties
 
 export VERSION=`cat ${VERSION_FILE} | grep 'build.number=' | sed -e 's: *build.number=::g'`
 export VERSION=${VERSION%??}
@@ -92,14 +92,14 @@ export MINOR_VERSION=`cat ${VERSION_FILE} | grep 'build.minorVersion=' | sed -e 
 YEAR=$(date +%y)
 MONTH=$(date +%m)
 
-# sed -i "s:build.number=${VERSION}00:build.number=${NEW_VERSION}00:g" ${VERSION_FILE}
-# sed -i "s:build.majorVersion=${MAJOR_VERSION}:build.majorVersion=${YEAR}:g" ${VERSION_FILE}
-# sed -i "s:build.minorVersion=${MINOR_VERSION}:build.minorVersion=${MONTH}:g" ${VERSION_FILE}
+sed -i "s:build.number=${VERSION}00:build.number=${NEW_VERSION}00:g" ${VERSION_FILE}
+sed -i "s:build.majorVersion=${MAJOR_VERSION}:build.majorVersion=${YEAR}:g" ${VERSION_FILE}
+sed -i "s:build.minorVersion=${MINOR_VERSION}:build.minorVersion=${MONTH}:g" ${VERSION_FILE}
 
-# git add ${VERSION_FILE}
-# git commit -m "Branching to release/${PURPOSE}/${VERSION}xx. New version ${NEW_VERSION}xx"
-# git push origin develop
-# print_err "$?" "Pushing build.properties to develop branch failed"
+git add ${VERSION_FILE}
+git commit -m "Branching to release/${PURPOSE}/${VERSION}xx. New version ${NEW_VERSION}xx"
+git push origin develop
+print_err "$?" "Pushing build.properties to develop branch failed"
 
 
 echo "STEP3: INFO: Creating a release branch for ${PURPOSE}"

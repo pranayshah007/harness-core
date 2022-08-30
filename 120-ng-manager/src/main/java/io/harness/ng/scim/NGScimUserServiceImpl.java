@@ -14,6 +14,7 @@ import static java.util.Collections.emptyList;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.api.UserGroupService;
 import io.harness.ng.core.invites.InviteType;
 import io.harness.ng.core.invites.api.InviteService;
@@ -93,7 +94,7 @@ public class NGScimUserServiceImpl implements ScimUserService {
       }
       ngUserService.addUserToScope(
           user.getUuid(), Scope.of(accountId, null, null), null, null, UserMembershipUpdateSource.SYSTEM);
-      return Response.status(Response.Status.CREATED).entity(getUser(user.getUuid(), accountId)).build();
+      return Response.status(Response.Status.CREATED).entity(getUserInternal(user.getUuid())).build();
     } else {
       String userName = getName(userQuery);
       Invite invite = Invite.builder()
@@ -118,7 +119,7 @@ public class NGScimUserServiceImpl implements ScimUserService {
         user = userOptional.get();
         userQuery.setId(user.getUuid());
         log.info("NGSCIM: Completed creating user call for accountId {} with query {}", accountId, userQuery);
-        return Response.status(Response.Status.CREATED).entity(getUser(user.getUuid(), accountId)).build();
+        return Response.status(Response.Status.CREATED).entity(getUserInternal(user.getUuid())).build();
       } else {
         return Response.status(Response.Status.NOT_FOUND).build();
       }
@@ -132,10 +133,24 @@ public class NGScimUserServiceImpl implements ScimUserService {
     return false;
   }
 
+  private ScimUser getUserInternal(String userId) {
+    Optional<UserInfo> userInfo = ngUserService.getUserById(userId);
+    return userInfo.map(this::buildUserResponse).orElse(null);
+  }
+
   @Override
   public ScimUser getUser(String userId, String accountId) {
     Optional<UserInfo> userInfo = ngUserService.getUserById(userId);
-    return userInfo.map(this::buildUserResponse).orElse(null);
+    if (userInfo.isPresent()) {
+      Optional<UserMetadataDTO> userOptional = ngUserService.getUserByEmail(userInfo.get().getEmail(), false);
+      if (userOptional.isEmpty()) {
+        throw new InvalidRequestException("User does not exist in NG");
+      } else {
+        return userInfo.map(this::buildUserResponse).get();
+      }
+    } else {
+      throw new InvalidRequestException("User does not exist in NG");
+    }
   }
 
   @Override
@@ -195,7 +210,7 @@ public class NGScimUserServiceImpl implements ScimUserService {
         }
       });
     }
-    return getUser(userId, accountId);
+    return getUserInternal(userId);
   }
 
   @Override
@@ -229,7 +244,7 @@ public class NGScimUserServiceImpl implements ScimUserService {
       log.info("NGSCIM: Updating user completed - userId: {}, accountId: {}", userId, accountId);
 
       // @Todo: Not handling GIVEN_NAME AND FAMILY_NAME. Add if we need to persist them
-      return Response.status(Response.Status.OK).entity(getUser(userId, accountId)).build();
+      return Response.status(Response.Status.OK).entity(getUserInternal(userId)).build();
     }
   }
 

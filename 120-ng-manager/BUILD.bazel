@@ -23,6 +23,13 @@ shared_dependencies = [
     "//120-ng-manager/modules/ng-settings/contracts:module",
     "//120-ng-manager/modules/ng-variables:module",
     "//120-ng-manager/modules/ng-variables/contracts:module",
+    "//120-ng-manager/src/main/java/io/harness/ng/accesscontrol/migrations:module",
+    "//120-ng-manager/src/main/java/io/harness/ng/accesscontrol/migrations/dao:module",
+    "//120-ng-manager/src/main/java/io/harness/ng/accesscontrol/migrations/models:module",
+    "//120-ng-manager/src/main/java/io/harness/ng/accesscontrol/migrations/repositories:module",
+    "//120-ng-manager/src/main/java/io/harness/ng/accesscontrol/migrations/services:module",
+    "//120-ng-manager/src/main/java/io/harness/ng/accesscontrol/mockserver:module",
+    "//120-ng-manager/src/main/java/io/harness/ng/accesscontrol/resources:module",
     "//122-ng-authentication-settings:module",
     "//clients/resource-group:module",
     "//123-ng-core-user:module",
@@ -640,6 +647,7 @@ shared_dependencies = [
     "@maven//:xpp3_xpp3",
     "@maven//:io_harness_ff_java_server_sdk",
     "@maven//:io_harness_cv_data_collection_dsl",
+    "@maven//:io_harness_ng_manager_server_spec",
     "@maven//:io_swagger_core_v3_swagger_jaxrs2",
     "@maven//:io_swagger_core_v3_swagger_jaxrs2_servlet_initializer_v2",
     "@maven//:io_swagger_core_v3_swagger_core",
@@ -650,7 +658,10 @@ shared_dependencies = [
 
 java_binary(
     name = "module",
-    srcs = glob(["src/main/java/**/*.java"]),
+    srcs = glob(
+        ["src/main/java/**/*.java"],
+        exclude = ["src/main/java/io/harness/ng/accesscontrol/**/*"],
+    ),
     data = ["//:resource"],
     main_class = "io.harness.ng.NextGenApplication",
     resources = [

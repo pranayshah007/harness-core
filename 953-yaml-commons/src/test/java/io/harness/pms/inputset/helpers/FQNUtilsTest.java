@@ -8,6 +8,7 @@
 package io.harness.pms.inputset.helpers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
@@ -24,6 +25,8 @@ import io.harness.pms.merger.helpers.FQNMapGenerator;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -187,5 +190,30 @@ public class FQNUtilsTest extends CategoryTest {
                            -> FQNMapGenerator.generateFQNMap(
                                YamlUtils.readTree(parallelStepsFailedFqnYaml).getNode().getCurrJsonNode()))
         .isInstanceOf(InvalidRequestException.class);
+  }
+
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testKeepUuidAndRemoveFromJsonNode() throws IOException {
+    ObjectMapper objectMapper = new ObjectMapper();
+    String filename = "yamlWithList.yaml";
+    ClassLoader classLoader = getClass().getClassLoader();
+    String yaml = Resources.toString(Objects.requireNonNull(classLoader.getResource(filename)), StandardCharsets.UTF_8);
+    String yamlWithUUID = YamlUtils.injectUuid(yaml);
+    JsonNode jsonNode = objectMapper.readTree(yamlWithUUID);
+    JsonNode originalJsonNode = jsonNode.deepCopy();
+    // Will not remove the uuid from stages' first child.
+    new YamlConfig(originalJsonNode, true);
+
+    assertThat(jsonNode).isEqualTo(originalJsonNode);
+    assertThat(originalJsonNode.get("pipeline").get("stages").get(0).get("__uuid")).isNotNull();
+    assertThat(originalJsonNode.get("pipeline").get("stages").get(1).get("__uuid")).isNotNull();
+
+    // Will remove the uuid from stages' first child. This is current logic.
+    new YamlConfig(originalJsonNode);
+    assertThat(jsonNode).isNotEqualTo(originalJsonNode);
+    assertThat(originalJsonNode.get("pipeline").get("stages").get(0).get("__uuid")).isNull();
+    assertThat(originalJsonNode.get("pipeline").get("stages").get(1).get("__uuid")).isNotNull();
   }
 }

@@ -8,6 +8,7 @@
 package io.harness.ng.core.api.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.rule.OwnerRule.BOJAN;
 import static io.harness.rule.OwnerRule.PHOENIKX;
 import static io.harness.rule.OwnerRule.VITALIE;
 
@@ -24,6 +25,7 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.IdentifierRef;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.secrets.SSHConfigValidationTaskResponse;
 import io.harness.delegate.beans.secrets.WinRmConfigValidationTaskResponse;
@@ -120,6 +122,20 @@ public class NGSecretServiceV2ImplTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = BOJAN)
+  @Category(UnitTests.class)
+  public void testGetForIdentifierRef() {
+    Secret testsecret = Secret.builder().name("testsecret").build();
+    when(secretRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+             any(), any(), any(), any()))
+        .thenReturn(Optional.of(testsecret));
+    Optional<Secret> secretOptional = secretServiceV2.get(IdentifierRef.builder().identifier("test").build());
+    assertThat(secretOptional.get()).isEqualTo(testsecret);
+    verify(secretRepository)
+        .findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(any(), any(), any(), any());
+  }
+
+  @Test
   @Owner(developers = PHOENIKX)
   @Category(UnitTests.class)
   public void testDelete() {
@@ -138,7 +154,7 @@ public class NGSecretServiceV2ImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCreate() {
     SecretDTOV2 secretDTOV2 = getSecretDTO();
-    Secret secret = secretDTOV2.toEntity();
+    Secret secret = Secret.fromDTO(secretDTOV2);
     when(secretRepository.save(any())).thenReturn(secret);
     when(transactionTemplate.execute(any())).thenReturn(secret);
 
