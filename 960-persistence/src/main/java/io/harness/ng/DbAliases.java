@@ -24,4 +24,11 @@ public class DbAliases {
   public static final String ALL = "all";
   public static final String CVNG = "cvng";
   public static final String CENG = "events";
+  public static final String CDC = "change-data-capture";
+  public static final String ANALYSER = "harness-analyser";
+  public static final String MIGRATOR = "migrator";
+  public static final String CGMANAGER = "cg-manager";
+  public static final String VERIFICATION = "verification";
+  public static final String COMMAND_LIBRARY = "command-library";
+  public static final String BATCH_PROCESSING = "batch-processing";
 }

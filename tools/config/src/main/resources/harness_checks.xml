@@ -226,7 +226,7 @@
 
         <module name="io.harness.checks.TestAnnotationsCheck"/>
         <module name="io.harness.checks.AnnotationParametersCheck"/>
-
+        <module name="io.harness.checks.AnnotationStoreInCheck"/>
         <!-- *** -->
 
         <module name="EmptyStatement"/>
