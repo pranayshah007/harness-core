@@ -185,6 +185,7 @@ public class OrganizationEventHandler implements OutboxEventHandler {
 
   private boolean publishOrganizationChangeEventToRedis(String accountIdentifier, String identifier, String action) {
     try {
+      log.info("Publishing organization create event to redis for org {}", identifier);
       eventProducer.send(Message.newBuilder()
                              .putAllMetadata(ImmutableMap.of("accountId", accountIdentifier,
                                  EventsFrameworkMetadataConstants.ENTITY_TYPE, ORGANIZATION_ENTITY,

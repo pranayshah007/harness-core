@@ -89,6 +89,7 @@ public class ConnectorEntityCRUDStreamListener implements MessageListener {
   }
 
   private boolean processOrganizationCreateEvent(OrganizationEntityChangeDTO organizationEntityChangeDTO) {
+    log.info("Create event for org is being handled for org {}", organizationEntityChangeDTO.getIdentifier());
     final boolean isBuiltInSMDisabled = accountSettingService.getIsBuiltInSMDisabled(
         organizationEntityChangeDTO.getAccountIdentifier(), null, null, AccountSettingType.CONNECTOR);
     if (!isBuiltInSMDisabled) {
@@ -131,6 +132,7 @@ public class ConnectorEntityCRUDStreamListener implements MessageListener {
   }
 
   private boolean processProjectCreateEvent(ProjectEntityChangeDTO projectEntityChangeDTO) {
+    log.info("Create event for project is being handled for proj {}", projectEntityChangeDTO.getIdentifier());
     final boolean isBuiltInSMDisabled = accountSettingService.getIsBuiltInSMDisabled(
         projectEntityChangeDTO.getAccountIdentifier(), null, null, AccountSettingType.CONNECTOR);
     if (!isBuiltInSMDisabled) {
