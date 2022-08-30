@@ -182,10 +182,11 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
         vmInstanceBillingData = vmInstanceBillingDataMap.get(resourceId);
       }
 
-      if (BQConst.gcpNetworkProductFamily.equals(vmInstanceServiceBillingData.getProductFamily())) {
-        vmInstanceBillingData =
-                vmInstanceBillingData.toBuilder().networkCost(vmInstanceServiceBillingData.getCost()).build();
-      }
+      // Network cost calculation is avoided as of now.
+      //      if (BQConst.gcpNetworkProductFamily.equals(vmInstanceServiceBillingData.getProductFamily())) {
+      //        vmInstanceBillingData =
+      //                vmInstanceBillingData.toBuilder().networkCost(vmInstanceServiceBillingData.getCost()).build();
+      //      }
 
       if (BQConst.gcpComputeService.equals(vmInstanceServiceBillingData.getProductFamily())
               || vmInstanceServiceBillingData.getProductFamily() == null) {
