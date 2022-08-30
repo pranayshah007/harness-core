@@ -10,8 +10,8 @@ package io.harness.dashboard;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 
-import javax.validation.constraints.NotNull;
 import java.util.List;
+import javax.validation.constraints.NotNull;
 
 public interface DashboardSettingsService {
   DashboardSettings createDashboardSettings(@NotNull String accountId, @NotNull DashboardSettings dashboardSettings);
@@ -27,5 +27,5 @@ public interface DashboardSettingsService {
   PageResponse<DashboardSettings> getDashboardSettingSummary(
       @NotNull String accountId, @NotNull PageRequest pageRequest);
 
-    void addToToMigrateAccountIds(List<String> accountIds);
+  void addToToMigrateAccountIds(List<String> accountIds);
 }

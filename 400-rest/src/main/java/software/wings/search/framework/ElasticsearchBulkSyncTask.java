@@ -240,7 +240,7 @@ public class ElasticsearchBulkSyncTask {
             ? workflowExecutionEntityIndexState.getToMigrateAccountIds()
             : new LinkedList<>(accountIds);
         List<String> alreadyMigratedAccountIds =
-                isNotEmpty(workflowExecutionEntityIndexState.getAlreadyMigratedAccountIds())
+            isNotEmpty(workflowExecutionEntityIndexState.getAlreadyMigratedAccountIds())
             ? workflowExecutionEntityIndexState.getAlreadyMigratedAccountIds()
             : new LinkedList<>();
         runDeploymentMigrations(toMigrateAccountIds, alreadyMigratedAccountIds);
@@ -253,16 +253,16 @@ public class ElasticsearchBulkSyncTask {
 
   private void runDeploymentMigrations(List<String> accountIds, List<String> alreadyMigratedAccountIds) {
     List<String> toMigrateAccountIds = new ArrayList<>(accountIds);
-    for (String accountId: accountIds) {
-      deploymentsMigrationHelper.setFailureDetailsForAccountIds(
-              Collections.singletonList(accountId), "EXECUTION_FAILURE_TIMESCALE MIGRATION: ", 100, EXECUTION_FAILURE_UPDATE_STATEMENT);
-      deploymentsMigrationHelper.setParentPipelineForAccountIds(
-              Collections.singletonList(accountId), "PARENT_PIPELINE_TIMESCALE MIGRATION: ", 1000, PARENT_PIPELNE_UPDATE_STATEMENT);
+    for (String accountId : accountIds) {
+      deploymentsMigrationHelper.setFailureDetailsForAccountIds(Collections.singletonList(accountId),
+          "EXECUTION_FAILURE_TIMESCALE MIGRATION: ", 100, EXECUTION_FAILURE_UPDATE_STATEMENT);
+      deploymentsMigrationHelper.setParentPipelineForAccountIds(Collections.singletonList(accountId),
+          "PARENT_PIPELINE_TIMESCALE MIGRATION: ", 1000, PARENT_PIPELNE_UPDATE_STATEMENT);
       toMigrateAccountIds.remove(accountId);
       alreadyMigratedAccountIds.add(accountId);
       TimeScaleEntityIndexState execution_entity =
-              new TimeScaleEntityIndexState(WorkflowExecution.class.getCanonicalName(), System.currentTimeMillis(),
-                      alreadyMigratedAccountIds, toMigrateAccountIds);
+          new TimeScaleEntityIndexState(WorkflowExecution.class.getCanonicalName(), System.currentTimeMillis(),
+              alreadyMigratedAccountIds, toMigrateAccountIds);
       wingsPersistence.save(execution_entity);
     }
   }

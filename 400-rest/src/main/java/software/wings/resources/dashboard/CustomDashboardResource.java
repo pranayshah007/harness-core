@@ -567,27 +567,27 @@ public class CustomDashboardResource {
       } catch (Exception ex) {
         log.error("Deployment migration per account Failure", ex);
         return Builder.aRestResponse()
-                .withResponseMessages(Lists.newArrayList(ResponseMessage.builder().message(ex.toString()).build()))
-                .build();
+            .withResponseMessages(Lists.newArrayList(ResponseMessage.builder().message(ex.toString()).build()))
+            .build();
       }
 
       return Builder.aRestResponse()
-              .withResponseMessages(Lists.newArrayList(ResponseMessage
-                      .builder()
-                      //                      .message(accountId + ":" + status.name())
-                      .message("RECON COMPLETED")
-                      .code(null)
-                      .level(Level.INFO)
-                      .build()))
-              .build();
+          .withResponseMessages(Lists.newArrayList(ResponseMessage
+                                                       .builder()
+                                                       //                      .message(accountId + ":" + status.name())
+                                                       .message("RECON COMPLETED")
+                                                       .code(null)
+                                                       .level(Level.INFO)
+                                                       .build()))
+          .build();
     } else {
       return Builder.aRestResponse()
-              .withResponseMessages(Lists.newArrayList(
-                      ResponseMessage.builder()
-                              .message("User not allowed to perform the deployment-migration-per-account operation : "
-                                      + authUser.getUuid())
-                              .build()))
-              .build();
+          .withResponseMessages(Lists.newArrayList(
+              ResponseMessage.builder()
+                  .message("User not allowed to perform the deployment-migration-per-account operation : "
+                      + authUser.getUuid())
+                  .build()))
+          .build();
     }
   }
 }
