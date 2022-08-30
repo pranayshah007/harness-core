@@ -227,15 +227,8 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
   }
 
   private boolean cfFeatureFlagEvaluation(@NonNull FeatureName featureName, String accountId) {
-    // Error if account id passed is a null string.
-    // Adding this check now, since we found issue where accountId being passed was "null" and it was causing failure
-    if ("null".equalsIgnoreCase(accountId)) {
-      log.info(String.format("Can not evaluate account name for accountId %s as string ", accountId));
-      throw new RuntimeException(
-          String.format("AccountId can not be null when evaluating feature flag. Feature Name %s and account id %s",
-              featureName.name(), accountId));
-    }
     String name;
+    // If scope is global or account id is empty/null
     if (Scope.GLOBAL.equals(featureName.getScope()) || isEmpty(accountId)) {
       /**
        * If accountID is null or empty, use a static accountID
@@ -256,13 +249,19 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
         if (optionalAccountClient.isPresent()) {
           // Use account client
           AccountDTO accountDTO = RestClientUtils.getResponse(optionalAccountClient.get().getAccountDTO(accountId));
-          name = accountDTO.getName();
-          log.info("Account name is " + name);
+          if (accountDTO == null) {
+            log.info(String.format(
+                "Can not fetch account name for accountId %s . Setting account name same as account id", accountId));
+            name = accountId;
+          } else {
+            name = accountDTO.getName();
+            log.info(String.format("Received account name %s corresponding to account id %s ", name, accountId));
+          }
           caffeineAccountCache.put(accountId, name);
         } else {
-          // TODO: Check if we need to put cache in case account client is absent.
+          // TODO: Check if we need to put cache in case account client is absent. Might not be needed
           //       Since it will consume cache space for something that can be evaluated without any rest call
-          log.info(String.format("Account client is absent, using account ID as name for id %s", accountId));
+          log.info(String.format("Account client is absent, using account ID as name for accountId %s", accountId));
           name = accountId;
         }
       }
