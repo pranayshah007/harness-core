@@ -74,8 +74,9 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
   private final FeatureFlagConfig featureFlagConfig;
   private Optional<AccountClient> optionalAccountClient;
   // Caffeine cache
-  private final Cache<String, String> caffeineAccountCache =
+  private final Cache<String, String> accountIdToAccountNameCache =
       Caffeine.newBuilder().initialCapacity(50).maximumSize(200).expireAfterWrite(1, TimeUnit.HOURS).build();
+
   @Inject
   public FeatureFlagServiceImpl(HPersistence hPersistence, CfMigrationService cfMigrationService,
       CfMigrationConfig cfMigrationConfig, Provider<CfClient> cfClient, FeatureFlagConfig featureFlagConfig,
@@ -242,7 +243,7 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
     } else {
       log.info(String.format("Fetching account name for account id %s ", accountId));
       // Use cache.
-      name = caffeineAccountCache.getIfPresent(accountId);
+      name = accountIdToAccountNameCache.getIfPresent(accountId);
       if (isEmpty(name)) {
         // Cache miss - make rest call to get the name.
         log.info(String.format("Cache does not contain name corresponding to account id - %s ", accountId));
@@ -257,7 +258,7 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
             name = accountDTO.getName();
             log.info(String.format("Received account name %s corresponding to account id %s ", name, accountId));
           }
-          caffeineAccountCache.put(accountId, name);
+          accountIdToAccountNameCache.put(accountId, name);
         } else {
           // TODO: Check if we need to put cache in case account client is absent. Might not be needed
           //       Since it will consume cache space for something that can be evaluated without any rest call
