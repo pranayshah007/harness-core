@@ -173,9 +173,8 @@ public class K8sTask extends AbstractDelegateRunnableTask {
           break;
 
         case KustomizeSourceRepo:
-          k8sDelegateTaskParamsBuilder
-              .kustomizeBinaryPath(k8sGlobalConfigService.getKustomizePath(isUseLatestKustomizeVersion))
-              .useLatestKustomizeVersion(isUseLatestKustomizeVersion);
+          k8sDelegateTaskParamsBuilder.kustomizeBinaryPath(
+              k8sGlobalConfigService.getKustomizePath(isUseLatestKustomizeVersion));
           break;
 
         case OC_TEMPLATES:

@@ -78,18 +78,18 @@ public class KustomizeTaskHelper {
 
   @NotNull
   public List<FileData> buildForApply(@Nonnull String kustomizeBinaryPath, String pluginRootDir,
-      @Nonnull String manifestFilesDirectory, @NotEmpty List<String> filesToApply, boolean useLatestKustomizeVersion,
-      List<String> kustomizePatchesFiles, LogCallback executionLogCallback) {
+      @Nonnull String manifestFilesDirectory, @NotEmpty List<String> filesToApply, List<String> kustomizePatchesFiles,
+      LogCallback executionLogCallback) {
     if (isEmpty(filesToApply)) {
       throw new InvalidRequestException("Apply files can't be empty", USER);
     }
     if (filesToApply.size() > 1) {
       throw new InvalidRequestException("Apply with Kustomize is supported for single file only", USER);
     }
-    if (useLatestKustomizeVersion) {
-      String kustomizePath = Paths.get(manifestFilesDirectory, filesToApply.get(0)).toString();
-      k8sTaskHelperBase.savingPatchesToDirectory(kustomizePath, kustomizePatchesFiles, executionLogCallback);
-    }
+
+    String kustomizePath = Paths.get(manifestFilesDirectory, filesToApply.get(0)).toString();
+    k8sTaskHelperBase.savingPatchesToDirectory(kustomizePath, kustomizePatchesFiles, executionLogCallback);
+
     String kustomizeDirPath = filesToApply.get(0);
     return build(manifestFilesDirectory, kustomizeBinaryPath, pluginRootDir, kustomizeDirPath, executionLogCallback);
   }

@@ -10,7 +10,7 @@ package software.wings.sm.states.k8s;
 import static io.harness.annotations.dev.HarnessModule._870_CG_ORCHESTRATION;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.FeatureName.BIND_CUSTOM_VALUE_AND_MANIFEST_FETCH_TASK;
-import static io.harness.beans.FeatureName.KUSTOMIZE_PATCHES_CG;
+import static io.harness.beans.FeatureName.NEW_KUSTOMIZE_BINARY;
 import static io.harness.beans.FeatureName.OPTIMIZED_GIT_FETCH_FILES;
 import static io.harness.beans.FeatureName.OVERRIDE_VALUES_YAML_FROM_HELM_CHART;
 import static io.harness.beans.FeatureName.USE_LATEST_CHARTMUSEUM_VERSION;
@@ -770,8 +770,7 @@ public abstract class AbstractK8sState extends State implements K8sStateExecutor
         appManifestMap = applicationManifestUtils.getOverrideApplicationManifests(context, AppManifestKind.OC_PARAMS);
         remoteParams = isValuesInGit(appManifestMap);
         customSourceParams = isValuesInCustomSource(appManifestMap);
-      } else if (applicationManifestUtils.isKustomizeSource(context)
-          && isUseLatestKustomizeVersion(context.getAccountId())) {
+      } else if (applicationManifestUtils.isKustomizeSource(context)) {
         kustomizeSource = true;
         appManifestMap =
             applicationManifestUtils.getOverrideApplicationManifests(context, AppManifestKind.KUSTOMIZE_PATCHES);
@@ -1266,7 +1265,7 @@ public abstract class AbstractK8sState extends State implements K8sStateExecutor
   public Map<K8sValuesLocation, ApplicationManifest> fetchApplicationManifests(ExecutionContext context) {
     boolean isOpenShiftManifestConfig = openShiftManagerService.isOpenShiftManifestConfig(context);
     AppManifestKind appManifestKind;
-    if (applicationManifestUtils.isKustomizeSource(context) && isUseLatestKustomizeVersion(context.getAccountId())) {
+    if (applicationManifestUtils.isKustomizeSource(context)) {
       appManifestKind = AppManifestKind.KUSTOMIZE_PATCHES;
     } else {
       appManifestKind = isOpenShiftManifestConfig ? AppManifestKind.OC_PARAMS : AppManifestKind.VALUES;
@@ -1351,6 +1350,6 @@ public abstract class AbstractK8sState extends State implements K8sStateExecutor
   }
 
   public boolean isUseLatestKustomizeVersion(String accountId) {
-    return featureFlagService.isEnabled(KUSTOMIZE_PATCHES_CG, accountId);
+    return featureFlagService.isEnabled(NEW_KUSTOMIZE_BINARY, accountId);
   }
 }

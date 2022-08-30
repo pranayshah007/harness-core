@@ -436,16 +436,13 @@ public class ServiceTemplateServiceImpl implements ServiceTemplateService {
   }
 
   private void populateKustomizePatches(ServiceTemplate serviceTemplate) {
-    if (featureFlagService.isEnabled(FeatureName.KUSTOMIZE_PATCHES_CG, serviceTemplate.getAccountId())) {
-      ApplicationManifest kustomizePatchesManifest =
-          applicationManifestService.getAppManifest(serviceTemplate.getAppId(), serviceTemplate.getEnvId(),
-              serviceTemplate.getServiceId(), AppManifestKind.KUSTOMIZE_PATCHES);
-      serviceTemplate.setKustomizePatchesOverrideAppManifest(kustomizePatchesManifest);
+    ApplicationManifest kustomizePatchesManifest = applicationManifestService.getAppManifest(serviceTemplate.getAppId(),
+        serviceTemplate.getEnvId(), serviceTemplate.getServiceId(), AppManifestKind.KUSTOMIZE_PATCHES);
+    serviceTemplate.setKustomizePatchesOverrideAppManifest(kustomizePatchesManifest);
 
-      if (kustomizePatchesManifest != null) {
-        serviceTemplate.setKustomizePatchesOverrideManifestFile(applicationManifestService.getManifestFileByFileName(
-            kustomizePatchesManifest.getUuid(), AppManifestKind.KUSTOMIZE_PATCHES.getDefaultFileName()));
-      }
+    if (kustomizePatchesManifest != null) {
+      serviceTemplate.setKustomizePatchesOverrideManifestFile(applicationManifestService.getManifestFileByFileName(
+          kustomizePatchesManifest.getUuid(), AppManifestKind.KUSTOMIZE_PATCHES.getDefaultFileName()));
     }
   }
 

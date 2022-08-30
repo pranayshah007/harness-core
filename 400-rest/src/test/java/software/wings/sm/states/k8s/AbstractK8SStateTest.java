@@ -9,7 +9,6 @@ package software.wings.sm.states.k8s;
 
 import static io.harness.annotations.dev.HarnessModule._870_CG_ORCHESTRATION;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.beans.FeatureName.KUSTOMIZE_PATCHES_CG;
 import static io.harness.beans.FeatureName.OPTIMIZED_GIT_FETCH_FILES;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.k8s.manifest.ManifestHelper.values_filename;
@@ -1563,7 +1562,6 @@ public class AbstractK8SStateTest extends WingsBaseTest {
     when(openShiftManagerService.isOpenShiftManifestConfig(context)).thenReturn(false);
     when(applicationManifestUtils.isValuesInHelmChartRepo(context)).thenReturn(false);
     when(applicationManifestUtils.isKustomizeSource(context)).thenReturn(true);
-    when(featureFlagService.isEnabled(KUSTOMIZE_PATCHES_CG, context.getAccountId())).thenReturn(true);
     when(activityService.save(any(Activity.class))).thenReturn(Activity.builder().uuid(ACTIVITY_ID).build());
     when(applicationManifestUtils.createGitFetchFilesTaskParams(context, application, appManifestMap))
         .thenReturn(GitFetchFilesTaskParams.builder().build());
