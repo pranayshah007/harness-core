@@ -17,6 +17,7 @@ import io.harness.metrics.MetricRegistryModule;
 
 import com.codahale.metrics.MetricRegistry;
 import com.google.inject.AbstractModule;
+import io.harness.serializer.KryoModule;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -37,7 +38,7 @@ public class DelegatePlatformModule extends AbstractModule {
 
     install(new DelegateTokensModule(configuration));
     install(new DelegateHealthModule());
-//    install(KryoModule.getInstance()); //??
+    install(KryoModule.getInstance());
     install(new DelegatePlatformKryoModule());
     install(new MetricRegistryModule(new MetricRegistry()));
 
