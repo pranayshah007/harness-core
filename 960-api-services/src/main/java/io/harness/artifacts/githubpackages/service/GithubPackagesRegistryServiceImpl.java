@@ -48,13 +48,9 @@ import retrofit2.Response;
 public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistryService {
   @Inject private GithubPackagesRestClientFactory githubPackagesRestClientFactory;
 
-  private final String USERNAME_PASSWORD = "UsernamePassword";
-  private final String USERNAME_TOKEN = "UsernameToken";
-  private final String OAUTH = "OAuth";
-
   @Override
   public List<BuildDetails> getBuilds(GithubPackagesInternalConfig githubPackagesInternalConfig, String packageName,
-      String packageType, String org, String versionRegex, int maxNoOfVersionsPerPackage) {
+      String packageType, String org, String versionRegex) {
     List<BuildDetails> buildDetails;
 
     if (!isPackageType(packageType)) {

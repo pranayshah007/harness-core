@@ -33,15 +33,13 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 public class GithubPackagesArtifactTaskHandler
     extends DelegateArtifactTaskHandler<GithubPackagesArtifactDelegateRequest> {
-  private static final int MAX_NO_OF_TAGS_PER_IMAGE = 10000;
-
   private final SecretDecryptionService secretDecryptionService;
   private final GithubPackagesRegistryService githubPackagesRegistryService;
 
   public ArtifactTaskExecutionResponse getBuilds(GithubPackagesArtifactDelegateRequest attributes) {
     List<BuildDetails> builds = githubPackagesRegistryService.getBuilds(
         GithubPackagesRequestResponseMapper.toGithubPackagesInternalConfig(attributes), attributes.getPackageName(),
-        attributes.getPackageType(), attributes.getOrg(), attributes.getVersionRegex(), MAX_NO_OF_TAGS_PER_IMAGE);
+        attributes.getPackageType(), attributes.getOrg(), attributes.getVersionRegex());
 
     List<GithubPackagesArtifactDelegateResponse> githubPackagesArtifactDelegateResponses =
         builds.stream()
