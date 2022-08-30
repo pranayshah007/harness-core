@@ -12,7 +12,6 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import io.harness.OrchestrationPublisherName;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.concurrency.ConcurrentChildInstance;
 import io.harness.concurrency.MaxConcurrentChildCallback;
 import io.harness.engine.OrchestrationEngine;
@@ -58,8 +57,6 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
   public void handleEvent(SdkResponseEventProto event) {
     SpawnChildrenRequest request = event.getSpawnChildrenRequest();
     Ambiance ambiance = event.getAmbiance();
-    boolean isMatrixFeatureEnabled =
-        pmsFeatureFlagService.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.PIPELINE_MATRIX);
     String nodeExecutionId = Objects.requireNonNull(AmbianceUtils.obtainCurrentRuntimeId(ambiance));
     try (AutoLogContext ignore = AmbianceUtils.autoLogContext(ambiance)) {
       List<String> callbackIds = new ArrayList<>();
@@ -73,22 +70,23 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
       for (int i = 0; i < request.getChildren().getChildrenList().size(); i++) {
         callbackIds.add(generateUuid());
       }
+
       if (callbackIds.isEmpty()) {
         // If callbackIds are empty then it means that there are no children, we should just do a no-op and return to
         // parent.
         orchestrationEngine.resumeNodeExecution(ambiance, new HashMap<>(), false);
         return;
       }
-      if (isMatrixFeatureEnabled) {
-        // Save the ConcurrentChildInstance in db first so that whenever callback is called, this information is readily
-        // available. If not done here, it could lead to race conditions
-        nodeExecutionInfoService.addConcurrentChildInformation(
-            ConcurrentChildInstance.builder().childrenNodeExecutionIds(callbackIds).cursor(maxConcurrency).build(),
-            nodeExecutionId);
-      }
+
+      // Save the ConcurrentChildInstance in db first so that whenever callback is called, this information is readily
+      // available. If not done here, it could lead to race conditions
+      nodeExecutionInfoService.addConcurrentChildInformation(
+          ConcurrentChildInstance.builder().childrenNodeExecutionIds(callbackIds).cursor(maxConcurrency).build(),
+          nodeExecutionId);
+
       for (Child child : request.getChildren().getChildrenList()) {
         String uuid = callbackIds.get(currentChild);
-        if (isMatrixFeatureEnabled && child.hasStrategyMetadata()) {
+        if (child.hasStrategyMetadata()) {
           InitiateMode initiateMode = InitiateMode.CREATE;
           if (shouldCreateAndStart(maxConcurrency, currentChild)) {
             initiateMode = InitiateMode.CREATE_AND_START;
