@@ -435,7 +435,6 @@ public class GithubPackagesRegistryServiceImplTest extends CategoryTest {
     String packageType = "container";
     String org = "";
     String versionRegex = "*";
-    Integer MAX_NO_OF_TAGS_PER_IMAGE = 10000;
 
     ObjectMapper mapper = new ObjectMapper();
 
@@ -494,7 +493,6 @@ public class GithubPackagesRegistryServiceImplTest extends CategoryTest {
     String packageType = "container";
     String org = "org-vtxorxwitty";
     String versionRegex = "*";
-    Integer MAX_NO_OF_TAGS_PER_IMAGE = 10000;
 
     ObjectMapper mapper = new ObjectMapper();
 
@@ -554,7 +552,6 @@ public class GithubPackagesRegistryServiceImplTest extends CategoryTest {
     String packageType = "container";
     String org = "";
     String version = "2";
-    Integer MAX_NO_OF_TAGS_PER_IMAGE = 10000;
 
     ObjectMapper mapper = new ObjectMapper();
 
@@ -613,7 +610,6 @@ public class GithubPackagesRegistryServiceImplTest extends CategoryTest {
     String packageType = "container";
     String org = "org-vtxorxwitty";
     String versionRegex = "3";
-    Integer MAX_NO_OF_TAGS_PER_IMAGE = 10000;
 
     ObjectMapper mapper = new ObjectMapper();
 
@@ -709,5 +705,63 @@ public class GithubPackagesRegistryServiceImplTest extends CategoryTest {
                                packageType, org, versionRegex, MAX_NO_OF_TAGS_PER_IMAGE))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Incorrect Package Type");
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testVersionRegexFiltering() throws IOException {
+    GithubPackagesInternalConfig githubPackagesInternalConfig = GithubPackagesInternalConfig.builder()
+                                                                    .githubPackagesUrl("https://github.com/username")
+                                                                    .authMechanism("UsernameToken")
+                                                                    .username("username")
+                                                                    .token("token")
+                                                                    .build();
+
+    String packageName = "helloworld";
+    String packageType = "container";
+    String org = "";
+    String versionRegex = "*3*";
+
+    ObjectMapper mapper = new ObjectMapper();
+
+    File from = new File("960-api-services/src/test/resources/__files/githubpackages/last-successful-for-user.json");
+
+    ArrayNode versionsJsonFormat = null;
+
+    try {
+      versionsJsonFormat = (ArrayNode) mapper.readTree(from);
+    } catch (IOException e) {
+      doNothing();
+    }
+
+    List<JsonNode> list = new ArrayList<>();
+    for (JsonNode node : versionsJsonFormat) {
+      list.add(node);
+    }
+
+    doReturn(githubPackagesRestClient)
+        .when(githubPackagesRestClientFactory)
+        .getGithubPackagesRestClient(githubPackagesInternalConfig);
+
+    Call<List<JsonNode>> executeCall = mock(Call.class);
+
+    doReturn(executeCall)
+        .when(githubPackagesRestClient)
+        .listVersionsForPackages(anyString(), anyString(), anyString(), anyInt(), anyInt());
+
+    doReturn(Response.success(list)).when(executeCall).execute();
+
+    BuildDetails build = githubPackagesRegistryService.getLastSuccessfulBuildFromRegex(
+        githubPackagesInternalConfig, packageName, packageType, versionRegex, org);
+
+    assertThat(build.getNumber()).isEqualTo("3");
+    assertThat(build.getArtifactPath()).isEqualTo("ghcr.io/username/helloworld:3");
+    assertThat(build.getBuildUrl()).isEqualTo("https://github.com/username/packages/container/helloworld/39008548");
+    assertThat(build.getBuildDisplayName()).isEqualTo("helloworld: 3");
+    assertThat(build.getBuildFullDisplayName())
+        .isEqualTo("sha256:54fc6c7e4927da8e3a6ae3e2bf3ec97481d860455adab48b8cff5f6916a69652");
+    assertThat(build.getUiDisplayName()).isEqualTo("Tag# 3");
+    assertThat(build.getStatus()).isEqualTo(BuildStatus.SUCCESS);
   }
 }
