@@ -33,8 +33,6 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 public class GithubPackagesArtifactTaskHandler
     extends DelegateArtifactTaskHandler<GithubPackagesArtifactDelegateRequest> {
-  private static final int ARTIFACT_RETENTION_SIZE = 25;
-  private static final int MAX_RETRY = 5;
   private static final int MAX_NO_OF_TAGS_PER_IMAGE = 10000;
 
   private final SecretDecryptionService secretDecryptionService;
