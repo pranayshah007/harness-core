@@ -7,8 +7,7 @@
 
 package io.harness.steps.template.stage;
 
-import static io.harness.annotations.dev.HarnessTeam.CDC;
-
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.EntityIdentifier;
@@ -16,15 +15,16 @@ import io.harness.data.validator.EntityName;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.template.yaml.TemplateLinkConfig;
 import io.harness.validator.NGRegexValidatorConstants;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
 import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.TypeAlias;
+
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
+
+import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 @Data
 @NoArgsConstructor

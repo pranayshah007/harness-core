@@ -16,6 +16,7 @@ import io.harness.validator.NGRegexValidatorConstants;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
+import io.harness.yaml.core.variables.NGVariable;
 import io.swagger.annotations.ApiModelProperty;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
@@ -25,6 +26,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.data.annotation.TypeAlias;
+
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -41,4 +44,5 @@ public class TemplateLinkConfig {
   @NotNull String templateRef;
   @Pattern(regexp = NGRegexValidatorConstants.VERSION_LABEL_PATTERN) String versionLabel;
   JsonNode templateInputs;
+  List<NGVariable> templateVariables;
 }
