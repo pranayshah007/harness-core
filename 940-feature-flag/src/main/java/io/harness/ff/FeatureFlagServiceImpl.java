@@ -36,6 +36,8 @@ import io.harness.persistence.PersistentEntity;
 import io.harness.remote.client.RestClientUtils;
 import io.harness.serializer.JsonUtils;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -71,7 +73,9 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
   private final Provider<CfClient> cfClient;
   private final FeatureFlagConfig featureFlagConfig;
   private Optional<AccountClient> optionalAccountClient;
-
+  // Caffeine cache with expiry time as 5 min.
+  private final Cache<String, String> caffeineAccountCache =
+      Caffeine.newBuilder().expireAfterWrite(5, TimeUnit.MINUTES).build();
   @Inject
   public FeatureFlagServiceImpl(HPersistence hPersistence, CfMigrationService cfMigrationService,
       CfMigrationConfig cfMigrationConfig, Provider<CfClient> cfClient, FeatureFlagConfig featureFlagConfig,
@@ -223,23 +227,42 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
   }
 
   private boolean cfFeatureFlagEvaluation(@NonNull FeatureName featureName, String accountId) {
+    // Error if account id passed is a null string.
+    // Adding this check now, since we found issue where accountId being passed was "null" and it was causing failure
+    if ("null".equalsIgnoreCase(accountId)) {
+      log.info("Can not evaluate account name for accountId as string " + accountId);
+      throw new RuntimeException("AccountId can not be null when evaluating feature flag");
+    }
     String name;
     if (Scope.GLOBAL.equals(featureName.getScope()) || isEmpty(accountId)) {
       /**
        * If accountID is null or empty, use a static accountID
        */
+      if (isEmpty(accountId)) {
+        log.info("Account Id passed is empty when evaluating for feature " + featureName.name());
+      }
       accountId = FeatureFlagConstants.STATIC_ACCOUNT_ID;
       name = accountId;
       log.info("Using same default account id and name - " + accountId);
     } else {
       log.info("Fetching account name for account id " + accountId);
-      if (optionalAccountClient.isPresent()) {
-        AccountDTO accountDTO = RestClientUtils.getResponse(optionalAccountClient.get().getAccountDTO(accountId));
-        name = accountDTO.getName();
-        log.info("Account name is " + name);
-      } else {
-        log.info("Account client is absent, using account ID as name");
-        name = accountId;
+      // Use cache.
+      name = caffeineAccountCache.getIfPresent(accountId);
+      if (isEmpty(name)) {
+        // Cache miss - make rest call to get the name.
+        log.info(String.format("Cache does not contain name corresponding to account id - %s ", accountId));
+        if (optionalAccountClient.isPresent()) {
+          // Use account client
+          AccountDTO accountDTO = RestClientUtils.getResponse(optionalAccountClient.get().getAccountDTO(accountId));
+          name = accountDTO.getName();
+          log.info("Account name is " + name);
+          caffeineAccountCache.put(accountId, name);
+        } else {
+          // TODO: Check if we need to put cache in case account client is absent.
+          //       Since it will consume cache space for something that can be evaluated without any rest call
+          log.info("Account client is absent, using account ID as name");
+          name = accountId;
+        }
       }
     }
     Target target = Target.builder().identifier(accountId).name(name).build();
