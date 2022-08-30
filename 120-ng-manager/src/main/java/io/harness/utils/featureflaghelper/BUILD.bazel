@@ -12,5 +12,3 @@ java_library(
         "@maven//:com_google_inject_guice",
     ],
 )
-
-

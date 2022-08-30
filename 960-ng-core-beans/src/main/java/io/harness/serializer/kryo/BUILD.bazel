@@ -14,5 +14,3 @@ java_library(
         "@maven//:com_esotericsoftware_kryo",
     ],
 )
-
-

@@ -5,5 +5,3 @@ java_library(
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
 )
-
-

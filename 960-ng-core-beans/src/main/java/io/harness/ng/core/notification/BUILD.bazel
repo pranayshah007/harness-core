@@ -5,11 +5,9 @@ java_library(
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
-        "//970-ng-commons:module",
         "//:lombok",
+        "//970-ng-commons:module",
         "@maven//:com_fasterxml_jackson_core_jackson_annotations",
         "@maven//:javax_validation_validation_api",
     ],
 )
-
-

@@ -9,5 +9,3 @@ java_library(
         "@maven//:org_codehaus_jackson_jackson_core_asl",
     ],
 )
-
-

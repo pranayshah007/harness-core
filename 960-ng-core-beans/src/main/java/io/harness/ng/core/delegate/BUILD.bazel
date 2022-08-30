@@ -9,5 +9,3 @@ java_library(
         "@maven//:com_fasterxml_jackson_core_jackson_annotations",
     ],
 )
-
-

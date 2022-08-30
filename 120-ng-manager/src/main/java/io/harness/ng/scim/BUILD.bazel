@@ -5,6 +5,7 @@ java_library(
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
+        "//:lombok",
         "//120-ng-manager/src/main/java/io/harness/utils/featureflaghelper",
         "//123-ng-core-user:module",
         "//947-scim-core:module",
@@ -16,7 +17,6 @@ java_library(
         "//960-ng-core-beans/src/main/java/io/harness/ng/core/user/remote/dto",
         "//970-ng-commons:module",
         "//980-commons:module",
-        "//:lombok",
         "@maven//:com_fasterxml_jackson_core_jackson_core",
         "@maven//:com_google_inject_guice",
         "@maven//:javax_validation_validation_api",
@@ -25,5 +25,3 @@ java_library(
         "@maven//:org_springframework_data_spring_data_mongodb",
     ],
 )
-
-

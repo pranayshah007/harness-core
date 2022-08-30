@@ -5,10 +5,8 @@ java_library(
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
+        "//:lombok",
         "//970-api-services-beans:module",
         "//970-ng-commons:module",
-        "//:lombok",
     ],
 )
-
-

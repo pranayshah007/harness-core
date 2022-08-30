@@ -5,11 +5,11 @@ java_library(
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
+        "//:lombok",
         "//960-ng-core-beans/src/main/java/io/harness/ng/core/dto",
         "//960-ng-core-beans/src/main/java/io/harness/ng/core/invites/dto",
         "//980-commons:module",
         "//999-annotations:module",
-        "//:lombok",
         "@maven//:com_fasterxml_jackson_core_jackson_annotations",
         "@maven//:io_swagger_core_v3_swagger_annotations",
         "@maven//:io_swagger_swagger_annotations",
@@ -17,5 +17,3 @@ java_library(
         "@maven//:org_hibernate_validator_hibernate_validator",
     ],
 )
-
-

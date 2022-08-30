@@ -5,13 +5,11 @@ java_library(
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
-        "//999-annotations:module",
         "//:lombok",
+        "//999-annotations:module",
         "@maven//:com_fasterxml_jackson_core_jackson_annotations",
         "@maven//:io_swagger_core_v3_swagger_annotations",
         "@maven//:io_swagger_swagger_annotations",
         "@maven//:org_hibernate_validator_hibernate_validator",
     ],
 )
-
-

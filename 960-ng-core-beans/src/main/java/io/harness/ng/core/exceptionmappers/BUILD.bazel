@@ -5,17 +5,15 @@ java_library(
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
+        "//:lombok",
         "//960-ng-core-beans/src/main/java/io/harness/ng/core",
         "//960-ng-core-beans/src/main/java/io/harness/ng/core/dto",
         "//970-ng-commons:module",
         "//980-commons:module",
         "//999-annotations:module",
-        "//:lombok",
         "@maven//:io_dropwizard_dropwizard_jersey",
         "@maven//:jakarta_validation_jakarta_validation_api",
         "@maven//:javax_javaee_api",
         "@maven//:javax_ws_rs_javax_ws_rs_api",
     ],
 )
-
-

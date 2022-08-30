@@ -5,13 +5,11 @@ java_library(
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
+        "//:lombok",
         "//960-ng-core-beans/src/main/java/io/harness/serializer/kryo",
+        "//970-api-services-beans:module",
         "//970-ng-commons:module",
         "//980-commons:module",
-        "//970-api-services-beans:module",
-        "//:lombok",
         "@maven//:com_google_guava_guava",
     ],
 )
-
-
