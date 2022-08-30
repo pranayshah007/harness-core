@@ -76,6 +76,9 @@ public class NGLdapServiceImpl implements NGLdapService {
   @Override
   public LdapTestResponse validateLdapConnectionSettings(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, software.wings.beans.sso.LdapSettings settings) {
+    log.info(
+        "Validate ldap connection in NG LDAP case for account: {}, organization: {}, project: {} with ldap settings id {}",
+        accountIdentifier, orgIdentifier, projectIdentifier, settings.getUuid());
     NGLdapDelegateTaskParameters parameters = getNgLdapDelegateTaskParameters(accountIdentifier, settings);
 
     DelegateResponseData delegateResponseData = getDelegateResponseData(
@@ -90,6 +93,9 @@ public class NGLdapServiceImpl implements NGLdapService {
   @Override
   public LdapTestResponse validateLdapUserSettings(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, software.wings.beans.sso.LdapSettings settings) {
+    log.info(
+        "Validate ldap user query in NG LDAP case for account: {}, organization: {}, project: {} with ldap settings id {}",
+        accountIdentifier, orgIdentifier, projectIdentifier, settings.getUuid());
     NGLdapDelegateTaskParameters parameters = getNgLdapDelegateTaskParameters(accountIdentifier, settings);
 
     DelegateResponseData delegateResponseData = getDelegateResponseData(
@@ -104,6 +110,9 @@ public class NGLdapServiceImpl implements NGLdapService {
   @Override
   public LdapTestResponse validateLdapGroupSettings(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, software.wings.beans.sso.LdapSettings settings) {
+    log.info(
+        "Validate ldap group query in NG LDAP case for account: {}, organization: {}, project: {} with ldap settings id {}",
+        accountIdentifier, orgIdentifier, projectIdentifier, settings.getUuid());
     NGLdapDelegateTaskParameters parameters = getNgLdapDelegateTaskParameters(accountIdentifier, settings);
 
     DelegateResponseData delegateResponseData = getDelegateResponseData(
@@ -118,6 +127,8 @@ public class NGLdapServiceImpl implements NGLdapService {
   @Override
   public Collection<LdapGroupResponse> searchLdapGroupsByName(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String ldapId, String name) {
+    log.info("Search user group by name in NG LDAP case for account: {}, organization: {}, project: {}",
+        accountIdentifier, orgIdentifier, projectIdentifier);
     LdapSettingsWithEncryptedDataDetail settingsWithEncryptedDataDetail =
         getLdapSettingsWithEncryptedDataInternal(accountIdentifier);
     LdapSettings ldapSettings = settingsWithEncryptedDataDetail.getLdapSettings();
@@ -133,14 +144,14 @@ public class NGLdapServiceImpl implements NGLdapService {
         getDelegateResponseData(accountIdentifier, orgIdentifier, projectIdentifier, parameters, NG_LDAP_SEARCH_GROUPS);
 
     NGLdapGroupSearchTaskResponse groupSearchResponse = (NGLdapGroupSearchTaskResponse) delegateResponseData;
-    log.info("Delegate response for searchLdapGroupsByName returned groups whose size: {}",
-        groupSearchResponse.getLdapListGroupsResponses().size());
+    log.info("Received delegate response for searchLdapGroupsByName in NG LDAP for account: {}", accountIdentifier);
     return groupSearchResponse.getLdapListGroupsResponses();
   }
 
   @Override
   public void syncUserGroupsJob(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
-    // TODO: Add more logs
+    log.info("Sync user group for NG LDAP starting for account: {}, organization: {}, project: {}", accountIdentifier,
+        orgIdentifier, projectIdentifier);
     LdapSettingsWithEncryptedDataDetail settingsWithEncryptedDataDetail =
         getLdapSettingsWithEncryptedDataInternal(accountIdentifier);
 
@@ -160,8 +171,7 @@ public class NGLdapServiceImpl implements NGLdapService {
           userGroup.getOrgIdentifier(), userGroup.getProjectIdentifier(), parameters, NG_LDAP_GROUPS_SYNC);
 
       NGLdapGroupSyncTaskResponse groupSearchResponse = (NGLdapGroupSyncTaskResponse) delegateResponseData;
-      log.info("Delegate response for syncLdapGroupByDn returned group whose total members size: {}",
-          groupSearchResponse.getLdapGroupsResponse().getTotalMembers());
+      log.info("Received delegate response for syncLdapGroupByDn in NG LDAP for account: {}", accountIdentifier);
 
       userGroupsToLdapGroupMap.put(userGroup, groupSearchResponse.getLdapGroupsResponse());
     }

@@ -813,7 +813,6 @@
 7222:software.wings.api.artifact.ServiceArtifactVariableElement
 7223:software.wings.sm.states.spotinst.SpotInstSetupContextElement
 7226:software.wings.service.impl.MasterUrlFetchTaskParameter
-7228:software.wings.beans.CyberArkConfig
 7229:software.wings.api.ShellScriptProvisionerOutputElement
 7230:com.google.api.services.logging.v2.model.LogEntry
 7231:com.google.api.services.logging.v2.model.MonitoredResourceMetadata

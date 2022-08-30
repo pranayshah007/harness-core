@@ -9,6 +9,7 @@ package io.harness.steps.matrix;
 
 import static io.harness.steps.SdkCoreStepUtils.createStepResponseFromChildResponse;
 
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.enforcement.beans.metadata.RestrictionMetadataDTO;
 import io.harness.enforcement.beans.metadata.StaticLimitRestrictionMetadataDTO;
 import io.harness.enforcement.client.services.EnforcementClientService;
@@ -21,6 +22,7 @@ import io.harness.plancreator.strategy.MatrixConfig;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse.Child;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -127,6 +129,11 @@ public class StrategyStep extends ChildrenExecutableWithRollbackAndRbac<Strategy
   public StepResponse handleChildrenResponseInternal(
       Ambiance ambiance, StrategyStepParameters stepParameters, Map<String, ResponseData> responseDataMap) {
     log.info("Completed  execution for Strategy Step [{}]", stepParameters);
+
+    if (EmptyPredicate.isEmpty(responseDataMap)) {
+      return StepResponse.builder().status(Status.SKIPPED).build();
+    }
+
     return createStepResponseFromChildResponse(responseDataMap);
   }
 }

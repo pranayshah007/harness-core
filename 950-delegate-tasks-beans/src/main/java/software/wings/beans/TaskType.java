@@ -205,7 +205,6 @@ public enum TaskType {
   ARTIFACTORY_VALIDATE_ARTIFACT_STREAM(TaskGroup.ARTIFACTORY),
 
   // Secret Management (Old Tasks)
-  CYBERARK_VALIDATE_CONFIG(TaskGroup.KMS),
   VAULT_GET_CHANGELOG(TaskGroup.KMS),
   VAULT_RENEW_TOKEN(TaskGroup.KMS),
   VAULT_LIST_ENGINES(TaskGroup.KMS),

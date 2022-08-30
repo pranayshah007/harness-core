@@ -315,7 +315,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
           postServiceStepUuid, serviceSpecNodeUuid);
     } else {
       final boolean gitOpsEnabled = isGitopsEnabled(stageNode.getDeploymentStageConfig());
-
+      final boolean skipInstances = isSkipInstances(stageNode);
       // serviceRef will be used to fetch serviceOverride of this service in the environment
       String serviceRef = stageNode.getDeploymentStageConfig().getService().getServiceRef().getValue();
       EnvironmentPlanCreatorConfig environmentPlanCreatorConfig =
@@ -323,9 +323,17 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
               serviceOverrideService, environmentService, infrastructure);
 
       EnvironmentPlanCreatorHelper.addEnvironmentV2Dependency(planCreationResponseMap, environmentPlanCreatorConfig,
-          specField.getNode().getField(YamlTypes.ENVIRONMENT_YAML), gitOpsEnabled, environmentUuid, postServiceStepUuid,
-          serviceSpecNodeUuid, kryoSerializer);
+          specField.getNode().getField(YamlTypes.ENVIRONMENT_YAML), gitOpsEnabled, skipInstances, environmentUuid,
+          postServiceStepUuid, serviceSpecNodeUuid, kryoSerializer);
     }
+  }
+
+  private boolean isSkipInstances(DeploymentStageNode stageNode) {
+    boolean value = false;
+    if (null != stageNode.getSkipInstances()) {
+      value = stageNode.getSkipInstances().getValue();
+    }
+    return value;
   }
 
   // This function adds the service dependency and returns the resolved service field

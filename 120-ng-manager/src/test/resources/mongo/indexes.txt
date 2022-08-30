@@ -484,6 +484,8 @@ instance {"name": "isDeleted_1", "background": true} {"isDeleted": 1}
 instance {"name": "needRetry_1", "background": true} {"needRetry": 1}
 instanceChangeQueue {"name": "earliestGet_1", "background": true, "expireAfterSeconds": 86400} {"earliestGet": 1}
 instanceChangeQueue {"name": "next4", "background": true} {"topic": 1, "earliestGet": 1}
+instanceDeploymentInfo {"name": "stage_execution_instance_deployment_info_idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "envIdentifier": 1, "infraIdentifier": 1, "serviceIdentifier": 1, "stageExecutionId": 1}
+instanceDeploymentInfo {"name": "unique_instance_deployment_info_idx", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "envIdentifier": 1, "infraIdentifier": 1, "serviceIdentifier": 1, "instanceInfo.host": 1}
 instanceEventQueue {"name": "earliestGet_1", "background": true, "expireAfterSeconds": 86400} {"earliestGet": 1}
 instanceEventQueue {"name": "next4", "background": true} {"topic": 1, "earliestGet": 1}
 instanceNG {"name": "accountId_instanceInfo.Namespace_instanceInfoPodName_createdAt_idx", "background": true} {"accountIdentifier": 1, "instanceInfo.namespace": 1, "instanceInfo.podName": 1, "createdAt": 1}

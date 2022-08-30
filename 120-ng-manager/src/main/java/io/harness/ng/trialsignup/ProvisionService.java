@@ -7,6 +7,7 @@
 
 package io.harness.ng.trialsignup;
 
+import static io.harness.beans.FeatureName.HOSTED_BUILDS;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.k8s.KubernetesConvention.getAccountIdentifier;
 import static io.harness.ng.NextGenModule.CONNECTOR_DECORATOR_SERVICE;
@@ -37,6 +38,7 @@ import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialType;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.UnexpectedException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.licensing.Edition;
 import io.harness.licensing.LicenseStatus;
 import io.harness.licensing.LicenseType;
@@ -80,6 +82,7 @@ import retrofit2.Response;
 @Slf4j
 public class ProvisionService {
   @Inject SecretCrudService ngSecretService;
+  @Inject FeatureFlagService featureFlagService;
   @Inject DelegateNgManagerCgManagerClient delegateTokenNgClient;
   @Inject NextGenConfiguration configuration;
   @Inject LicenseService licenseService;
@@ -113,8 +116,8 @@ public class ProvisionService {
   private static final String CI_MODULE = "CI";
 
   public ProvisionResponse.SetupStatus provisionCIResources(String accountId) {
-    if (!licenceValid(accountId)) {
-      return ProvisionResponse.SetupStatus.INCOMPATIBLE_LICENSE;
+    if (!provisioningAllowed(accountId)) {
+      return ProvisionResponse.SetupStatus.PROVISIONING_DISABLED;
     }
 
     Boolean delegateUpsertStatus = updateDelegateGroup(accountId);
@@ -393,6 +396,9 @@ public class ProvisionService {
     return userRepoResponses;
   }
 
+  private boolean provisioningAllowed(String accountId) {
+    return featureFlagService.isEnabled(HOSTED_BUILDS, accountId) || licenceValid(accountId);
+  }
   private boolean licenceValid(String accountId) {
     ModuleLicenseDTO moduleLicenseDTO = licenseService.getModuleLicense(accountId, ModuleType.CI);
 

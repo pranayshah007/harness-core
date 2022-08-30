@@ -322,4 +322,22 @@ public class JsonNodeUtils {
     }
     return value;
   }
+
+  public Object getValueFromJsonNode(Object objectNode) {
+    if (objectNode instanceof TextNode) {
+      return ((TextNode) objectNode).asText();
+    } else if (objectNode instanceof NumericNode) {
+      return ((NumericNode) objectNode).doubleValue();
+    } else if (objectNode instanceof BooleanNode) {
+      return ((BooleanNode) objectNode).booleanValue();
+    } else if (objectNode instanceof ArrayNode) {
+      List<Object> response = new ArrayList<>();
+      for (int i = 0; i < ((ArrayNode) objectNode).size(); i++) {
+        response.add(getValueFromJsonNode(((ArrayNode) objectNode).get(i)));
+      }
+      return response;
+    } else {
+      return objectNode.toString().replace("\\\"", "").replace("\"", "");
+    }
+  }
 }

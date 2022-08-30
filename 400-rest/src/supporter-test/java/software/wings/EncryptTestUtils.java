@@ -15,7 +15,6 @@ import io.harness.exception.WingsException;
 import io.harness.security.encryption.EncryptedRecord;
 import io.harness.security.encryption.EncryptionType;
 
-import software.wings.beans.CyberArkConfig;
 import software.wings.beans.KmsConfig;
 import software.wings.beans.VaultConfig;
 
@@ -47,28 +46,6 @@ public class EncryptTestUtils {
   public static char[] decrypt(EncryptedRecord data, KmsConfig kmsConfig) throws Exception {
     return AwsKmsEncryptor.decrypt(data.getEncryptedValue(), new SecretKeySpec(plainTextKey.getBytes(), "AES"))
         .toCharArray();
-  }
-
-  public static EncryptedData encrypt(String value, CyberArkConfig cyberArkConfig) throws Exception {
-    if (cyberArkConfig.getClientCertificate().equals("invalidCertificate")) {
-      throw new SecretManagementException(
-          ErrorCode.SECRET_MANAGEMENT_ERROR, "Invalid credentials", WingsException.USER);
-    }
-    char[] encryptedValue =
-        value == null ? null : AwsKmsEncryptor.encrypt(value, new SecretKeySpec(plainTextKey.getBytes(), "AES"));
-
-    return EncryptedData.builder()
-        .encryptionKey(plainTextKey)
-        .encryptedValue(encryptedValue)
-        .encryptionType(EncryptionType.CYBERARK)
-        .kmsId(cyberArkConfig.getUuid())
-        .enabled(true)
-        .accountId(cyberArkConfig.getAccountId())
-        .build();
-  }
-
-  public static char[] decrypt(EncryptedRecord data, CyberArkConfig cyberArkConfig) throws Exception {
-    return "Cyberark1".toCharArray();
   }
 
   public static EncryptedData encrypt(String accountId, String name, String value, VaultConfig vaultConfig,
