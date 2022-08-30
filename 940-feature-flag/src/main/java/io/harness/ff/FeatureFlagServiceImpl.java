@@ -75,7 +75,7 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
   private Optional<AccountClient> optionalAccountClient;
   // Caffeine cache with expiry time as 5 min.
   private final Cache<String, String> caffeineAccountCache =
-      Caffeine.newBuilder().expireAfterWrite(1, TimeUnit.HOURS).build();
+      Caffeine.newBuilder().initialCapacity(50).maximumSize(200).expireAfterWrite(1, TimeUnit.HOURS).build();
   @Inject
   public FeatureFlagServiceImpl(HPersistence hPersistence, CfMigrationService cfMigrationService,
       CfMigrationConfig cfMigrationConfig, Provider<CfClient> cfClient, FeatureFlagConfig featureFlagConfig,
