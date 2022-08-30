@@ -285,16 +285,16 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   private static final String HOST_NAME = getLocalHostName();
   private static final String DELEGATE_NAME =
       isNotBlank(System.getenv().get("DELEGATE_NAME")) ? System.getenv().get("DELEGATE_NAME") : "";
-  private static final String DELEGATE_TYPE = System.getenv().get("DELEGATE_TYPE");
-  private static final boolean IsEcsDelegate = "ECS".equals(DELEGATE_TYPE);
-  private static final String DELEGATE_GROUP_NAME = System.getenv().get("DELEGATE_GROUP_NAME");
+  private static final String DELEGATE_TYPE = "ECS";
+  private static final boolean IsEcsDelegate = true;
+  private static final String DELEGATE_GROUP_NAME = "delegate-1";
   private final String delegateGroupId = System.getenv().get("DELEGATE_GROUP_ID");
 
   private static final String START_SH = "start.sh";
   private static final String DUPLICATE_DELEGATE_ERROR_MESSAGE =
       "Duplicate delegate with same delegateId:%s and connectionId:%s exists";
 
-  private final String delegateTags = System.getenv().get("DELEGATE_TAGS");
+  private final String delegateTags = "implicit-tag-1,implicit-tag-2";
   private final String delegateOrgIdentifier = System.getenv().get("DELEGATE_ORG_IDENTIFIER");
   private final String delegateProjectIdentifier = System.getenv().get("DELEGATE_PROJECT_IDENTIFIER");
   private final String delegateDescription = System.getenv().get("DELEGATE_DESCRIPTION");
@@ -2563,13 +2563,14 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     if (!isEcsDelegate()) {
       return null;
     }
-    String content = getSequenceConfigData();
-    if (isBlank(content)) {
-      return null;
-    }
-
-    String seqNum = content.substring(content.lastIndexOf(SEQ) + 5);
-    return isBlank(seqNum) ? null : seqNum;
+    return "2";
+//    String content = getSequenceConfigData();
+//    if (isBlank(content)) {
+//      return null;
+//    }
+//
+//    String seqNum = content.substring(content.lastIndexOf(SEQ) + 5);
+//    return isBlank(seqNum) ? null : seqNum;
   }
 
   private String getRandomTokenForEcsDelegate() {
