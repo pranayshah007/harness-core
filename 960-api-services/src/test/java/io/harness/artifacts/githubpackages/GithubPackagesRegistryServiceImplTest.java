@@ -76,7 +76,6 @@ public class GithubPackagesRegistryServiceImplTest extends CategoryTest {
     String packageType = "container";
     String org = null;
     String versionRegex = "*";
-    Integer MAX_NO_OF_TAGS_PER_IMAGE = 10000;
 
     ObjectMapper mapper = new ObjectMapper();
 
@@ -108,7 +107,7 @@ public class GithubPackagesRegistryServiceImplTest extends CategoryTest {
     doReturn(Response.success(list)).when(executeCall).execute();
 
     List<BuildDetails> builds = githubPackagesRegistryService.getBuilds(
-        githubPackagesInternalConfig, packageName, packageType, null, versionRegex, MAX_NO_OF_TAGS_PER_IMAGE);
+        githubPackagesInternalConfig, packageName, packageType, null, versionRegex);
 
     BuildDetails build1 = builds.get(0);
 
@@ -181,7 +180,6 @@ public class GithubPackagesRegistryServiceImplTest extends CategoryTest {
     String packageType = "container";
     String org = "org-vtxorxwitty";
     String versionRegex = "*";
-    Integer MAX_NO_OF_TAGS_PER_IMAGE = 10000;
 
     ObjectMapper mapper = new ObjectMapper();
 
@@ -213,7 +211,7 @@ public class GithubPackagesRegistryServiceImplTest extends CategoryTest {
     doReturn(Response.success(list)).when(executeCall).execute();
 
     List<BuildDetails> builds = githubPackagesRegistryService.getBuilds(
-        githubPackagesInternalConfig, packageName, packageType, org, versionRegex, MAX_NO_OF_TAGS_PER_IMAGE);
+        githubPackagesInternalConfig, packageName, packageType, org, versionRegex);
 
     BuildDetails build1 = builds.get(0);
 
@@ -669,7 +667,6 @@ public class GithubPackagesRegistryServiceImplTest extends CategoryTest {
     String packageType = "invalid-container";
     String org = "";
     String versionRegex = "*";
-    Integer MAX_NO_OF_TAGS_PER_IMAGE = 10000;
 
     ObjectMapper mapper = new ObjectMapper();
 
@@ -701,8 +698,8 @@ public class GithubPackagesRegistryServiceImplTest extends CategoryTest {
     doReturn(Response.success(list)).when(executeCall).execute();
 
     assertThatThrownBy(()
-                           -> githubPackagesRegistryService.getBuilds(githubPackagesInternalConfig, packageName,
-                               packageType, org, versionRegex, MAX_NO_OF_TAGS_PER_IMAGE))
+                           -> githubPackagesRegistryService.getBuilds(
+                               githubPackagesInternalConfig, packageName, packageType, org, versionRegex))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Incorrect Package Type");
   }
