@@ -8,10 +8,12 @@
 package software.wings.beans.infrastructure.instance;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotation.StoreIn;
 import io.harness.beans.EmbeddedUser;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 
+import io.harness.ng.DbAliases;
 import software.wings.beans.Base;
 
 import com.google.common.collect.ImmutableList;
@@ -29,6 +31,7 @@ import org.mongodb.morphia.annotations.Entity;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "syncStatus", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @FieldNameConstants(innerTypeName = "SyncStatusKeys")

@@ -63,10 +63,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "ApprovalInstanceKeys")
+@StoreIn(DbAliases.PMS)
 @Document("approvalInstances")
 @Entity(value = "approvalInstances", noClassnameStored = true)
 @Persistent
-@StoreIn(DbAliases.PMS)
 public abstract class ApprovalInstance implements PersistentEntity, PersistentRegularIterable {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()

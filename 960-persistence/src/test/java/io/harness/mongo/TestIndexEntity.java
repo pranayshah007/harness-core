@@ -7,12 +7,14 @@
 
 package io.harness.mongo;
 
+import io.harness.annotation.StoreIn;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdSparseIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.FdUniqueIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAccess;
 
@@ -31,6 +33,7 @@ import org.mongodb.morphia.annotations.Id;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldNameConstants(innerTypeName = "TestEntityKeys")
+@StoreIn(DbAliases.TEST)
 @Entity(value = "!!!testIndexes", noClassnameStored = true)
 public class TestIndexEntity implements PersistentEntity, UuidAccess {
   public static List<MongoIndex> mongoIndexes() {

@@ -9,9 +9,12 @@ package io.harness.ng.core.variable.entity;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import io.harness.annotation.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 
 import java.util.Set;
+
+import io.harness.ng.DbAliases;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -25,6 +28,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @EqualsAndHashCode(callSuper = true)
 @FieldNameConstants(innerTypeName = "StringVariableKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "variables", noClassnameStored = true)
 @Persistent
 @TypeAlias("NGStringVariable")

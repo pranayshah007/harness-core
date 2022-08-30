@@ -49,10 +49,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @ToString
 @EqualsAndHashCode
 @FieldNameConstants(innerTypeName = "PermissionDBOKeys")
+@StoreIn(ACCESS_CONTROL)
 @Entity(value = "permissions", noClassnameStored = true)
 @Document("permissions")
 @TypeAlias("permissions")
-@StoreIn(ACCESS_CONTROL)
 public class PermissionDBO implements PersistentEntity {
   @Setter @Id @org.mongodb.morphia.annotations.Id String id;
   @FdUniqueIndex @PermissionIdentifier final String identifier;

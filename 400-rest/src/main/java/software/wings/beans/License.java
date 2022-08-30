@@ -8,10 +8,13 @@
 package software.wings.beans;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotation.StoreIn;
 import io.harness.beans.EmbeddedUser;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
+import io.harness.ng.DbAliases;
 import lombok.EqualsAndHashCode;
 import org.mongodb.morphia.annotations.Entity;
 
@@ -19,6 +22,7 @@ import org.mongodb.morphia.annotations.Entity;
  * Created by peeyushaggarwal on 3/22/17.
  */
 @EqualsAndHashCode(callSuper = false)
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "licenses", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 public class License extends Base {

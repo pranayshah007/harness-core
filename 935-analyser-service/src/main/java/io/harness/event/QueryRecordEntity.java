@@ -10,6 +10,7 @@ package io.harness.event;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotation.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
@@ -20,6 +21,8 @@ import com.google.common.collect.ImmutableList;
 import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.List;
+
+import io.harness.ng.DbAliases;
 import lombok.Builder;
 import lombok.Builder.Default;
 import lombok.NonNull;
@@ -37,6 +40,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "QueryRecordEntityKeys")
+@StoreIn(DbAliases.ANALYSER)
 @Entity(value = "queryRecords", noClassnameStored = true)
 @Document("queryRecords")
 @TypeAlias("queryRecords")

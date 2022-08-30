@@ -53,10 +53,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @ToString
 @EqualsAndHashCode
 @FieldNameConstants(innerTypeName = "RoleDBOKeys")
+@StoreIn(ACCESS_CONTROL)
 @Entity(value = "roles", noClassnameStored = true)
 @Document("roles")
 @TypeAlias("roles")
-@StoreIn(ACCESS_CONTROL)
 public class RoleDBO implements PersistentEntity, AccessControlEntity {
   @Setter @Id @org.mongodb.morphia.annotations.Id String id;
   @EntityIdentifier final String identifier;

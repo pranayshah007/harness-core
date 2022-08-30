@@ -23,9 +23,9 @@ import org.mongodb.morphia.annotations.Id;
 
 @Value
 @Builder
+@StoreIn(DbAliases.ALL)
 @Entity(value = "!!!custom_delegateTaskProgressResponses", noClassnameStored = true)
 @FieldNameConstants(innerTypeName = "DelegateTaskProgressResponseKeys")
-@StoreIn(DbAliases.ALL)
 public class DelegateTaskProgressResponse implements PersistentEntity {
   @Id @org.springframework.data.annotation.Id private String uuid;
   private String correlationId;

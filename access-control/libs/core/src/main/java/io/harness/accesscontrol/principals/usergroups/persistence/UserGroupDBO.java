@@ -52,10 +52,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @ToString
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @FieldNameConstants(innerTypeName = "UserGroupDBOKeys")
+@StoreIn(ACCESS_CONTROL)
 @Entity(value = "usergroups", noClassnameStored = true)
 @Document("usergroups")
 @TypeAlias("usergroups")
-@StoreIn(ACCESS_CONTROL)
 public class UserGroupDBO implements PersistentRegularIterable, AccessControlEntity {
   @Setter @Id @org.mongodb.morphia.annotations.Id String id;
   @EqualsAndHashCode.Include @NotEmpty final String scopeIdentifier;

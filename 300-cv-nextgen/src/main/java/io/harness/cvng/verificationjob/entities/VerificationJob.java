@@ -63,11 +63,11 @@ import org.mongodb.morphia.annotations.Id;
 @FieldNameConstants(innerTypeName = "VerificationJobKeys")
 @EqualsAndHashCode(callSuper = false)
 @JsonIgnoreProperties(ignoreUnknown = true)
+@StoreIn(DbAliases.CVNG)
 @Entity(value = "verificationJobs")
 @HarnessEntity(exportable = true)
 @SuperBuilder
 @OwnedBy(HarnessTeam.CV)
-@StoreIn(DbAliases.CVNG)
 // Also the serialization of duration is in millis.
 public abstract class VerificationJob
     implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, AccountAccess {

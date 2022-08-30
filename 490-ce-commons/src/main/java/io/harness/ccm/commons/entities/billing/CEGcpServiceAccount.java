@@ -34,9 +34,9 @@ import org.mongodb.morphia.annotations.Id;
 @Data
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @FieldNameConstants(innerTypeName = "CEGcpServiceAccountKeys")
+@StoreIn(DbAliases.CENG)
 @Entity(value = "gcpServiceAccount", noClassnameStored = true)
 @OwnedBy(CE)
-@StoreIn(DbAliases.CENG)
 public class CEGcpServiceAccount implements PersistentEntity, UuidAware, AccountAccess, CreatedAtAware, UpdatedAtAware {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()

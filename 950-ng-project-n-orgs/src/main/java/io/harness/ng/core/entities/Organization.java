@@ -47,12 +47,12 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "OrganizationKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "organizations", noClassnameStored = true)
 @Document("organizations")
 @TypeAlias("organizations")
 @ChangeDataCapture(table = "organizations", dataStore = "ng-harness", fields = {}, handler = "Organizations")
 @ChangeDataCapture(table = "tags_info", dataStore = "ng-harness", fields = {}, handler = "TagsInfoCD")
-@StoreIn(DbAliases.NG_MANAGER)
 public class Organization implements PersistentEntity, NGAccountAccess {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()

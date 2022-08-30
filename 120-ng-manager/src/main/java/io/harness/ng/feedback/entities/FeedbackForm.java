@@ -33,8 +33,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "FeedbackFormKeys")
-@Entity(value = "feedbackForms", noClassnameStored = true)
 @StoreIn(DbAliases.NG_MANAGER)
+@Entity(value = "feedbackForms", noClassnameStored = true)
 @Document("feedbackForms")
 @Persistent
 @OwnedBy(GTM)

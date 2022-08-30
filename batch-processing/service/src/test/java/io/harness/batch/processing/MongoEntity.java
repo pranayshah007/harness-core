@@ -7,12 +7,15 @@
 
 package io.harness.batch.processing;
 
+import io.harness.annotation.StoreIn;
+import io.harness.ng.DbAliases;
 import software.wings.beans.Base;
 
 import lombok.Getter;
 import lombok.Setter;
 import org.mongodb.morphia.annotations.Entity;
 
+@StoreIn(DbAliases.TEST)
 @Entity(value = "!!!testMongo", noClassnameStored = true)
 public class MongoEntity extends Base {
   @Getter @Setter private String data;

@@ -48,9 +48,9 @@ import org.mongodb.morphia.annotations.PrePersist;
 @AllArgsConstructor
 @FieldNameConstants(innerTypeName = "LogAnalysisClusterKeys")
 @JsonIgnoreProperties(ignoreUnknown = true)
+@StoreIn(DbAliases.CVNG)
 @Entity(value = "logAnalysisClusters", noClassnameStored = true)
 @HarnessEntity(exportable = false)
-@StoreIn(DbAliases.CVNG)
 public final class LogAnalysisCluster implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()

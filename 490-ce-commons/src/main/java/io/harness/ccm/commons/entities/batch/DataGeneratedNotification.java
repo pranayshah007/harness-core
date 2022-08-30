@@ -26,10 +26,10 @@ import org.mongodb.morphia.annotations.Id;
 
 @Data
 @Builder
+@StoreIn(DbAliases.CENG)
 @Entity(value = "dataGeneratedNotification", noClassnameStored = true)
 @FieldNameConstants(innerTypeName = "DataGeneratedNotificationKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@StoreIn(DbAliases.CENG)
 public final class DataGeneratedNotification implements PersistentEntity, UuidAware, CreatedAtAware, AccountAccess {
   @Id String uuid;
   @Unique String accountId;

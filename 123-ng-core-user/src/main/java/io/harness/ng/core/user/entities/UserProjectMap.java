@@ -34,10 +34,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "UserProjectMapKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "userProjectMaps", noClassnameStored = true)
 @Document("userProjectMaps")
 @TypeAlias("userProjectMaps")
-@StoreIn(DbAliases.NG_MANAGER)
 @OwnedBy(PL)
 public class UserProjectMap implements PersistentEntity {
   public static List<MongoIndex> mongoIndexes() {

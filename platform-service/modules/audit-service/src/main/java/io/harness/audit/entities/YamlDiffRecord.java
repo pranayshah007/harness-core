@@ -35,11 +35,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "YamlDiffRecordKeys")
+@StoreIn(DbAliases.AUDITS)
 @Entity(value = "yamlDiff", noClassnameStored = true)
 @Document("yamlDiff")
 @TypeAlias("yamlDiff")
 @JsonInclude(NON_NULL)
-@StoreIn(DbAliases.AUDITS)
 public class YamlDiffRecord {
   @Id @org.mongodb.morphia.annotations.Id String id;
   @NotNull String auditId;

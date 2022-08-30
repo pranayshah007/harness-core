@@ -39,10 +39,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "SettingConfigurationKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "settingConfigurations", noClassnameStored = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Document("settingConfigurations")
-@StoreIn(DbAliases.NG_MANAGER)
 @Persistent
 @TypeAlias("NGSettingConfiguration")
 public class SettingConfiguration implements PersistentEntity {

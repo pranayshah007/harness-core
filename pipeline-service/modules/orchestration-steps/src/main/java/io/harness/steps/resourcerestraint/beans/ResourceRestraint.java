@@ -40,10 +40,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "ResourceRestraintKeys")
+@StoreIn(DbAliases.PMS)
 @Entity(value = "resourceRestraints")
 @Document("resourceRestraints")
 @TypeAlias("resourceRestraints")
-@StoreIn(DbAliases.PMS)
 public class ResourceRestraint {
   @Id @org.mongodb.morphia.annotations.Id private String uuid;
   private EmbeddedUser createdBy;

@@ -7,8 +7,10 @@
 
 package io.harness.connector.entities.embedded.newrelicconnector;
 
+import io.harness.annotation.StoreIn;
 import io.harness.connector.entities.Connector;
 
+import io.harness.ng.DbAliases;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
@@ -21,6 +23,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @EqualsAndHashCode(callSuper = true)
 @FieldNameConstants(innerTypeName = "NewRelicConnectorKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "connectors", noClassnameStored = true)
 @Persistent
 @TypeAlias("io.harness.connector.entities.embedded.newrelicconnector.NewRelicConnector")

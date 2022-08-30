@@ -38,10 +38,10 @@ import org.mongodb.morphia.annotations.Id;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = false)
+@StoreIn(DbAliases.CVNG)
 @Entity(value = "entityDisabledTime", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @OwnedBy(HarnessTeam.CV)
-@StoreIn(DbAliases.CVNG)
 public class EntityDisableTime implements PersistentEntity, UuidAware, AccountAccess, UpdatedAtAware, CreatedAtAware {
   @Id private String uuid;
   @FdIndex String entityUUID;

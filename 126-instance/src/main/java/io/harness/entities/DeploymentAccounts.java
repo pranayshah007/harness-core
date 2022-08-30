@@ -8,12 +8,14 @@
 package io.harness.entities;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotation.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 
 import com.google.common.collect.ImmutableList;
@@ -29,9 +31,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "DeploymentAccountsKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "deploymentAccounts", noClassnameStored = true)
-@HarnessEntity(exportable = false)
 @Document("deploymentAccounts")
+@HarnessEntity(exportable = false)
 @Persistent
 @OwnedBy(HarnessTeam.DX)
 public class DeploymentAccounts implements PersistentEntity, PersistentRegularIterable {

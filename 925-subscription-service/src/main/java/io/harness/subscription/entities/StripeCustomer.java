@@ -34,9 +34,9 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "StripeCustomerKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "stripeCustomers", noClassnameStored = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@StoreIn(DbAliases.NG_MANAGER)
 @Document("stripeCustomers")
 @Persistent
 public class StripeCustomer implements PersistentEntity, NGAccountAccess {

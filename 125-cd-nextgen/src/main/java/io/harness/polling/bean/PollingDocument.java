@@ -34,10 +34,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "PollingDocumentKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "pollingDocuments", noClassnameStored = true)
 @Document("pollingDocuments")
 @HarnessEntity(exportable = true)
-@StoreIn(DbAliases.NG_MANAGER)
 @OwnedBy(HarnessTeam.CDC)
 public class PollingDocument implements PersistentEntity, AccountAccess, UuidAware {
   public static List<MongoIndex> mongoIndexes() {

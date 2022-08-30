@@ -9,6 +9,8 @@ package software.wings.integration.dl;
 
 import io.harness.annotation.HarnessEntity;
 
+import io.harness.annotation.StoreIn;
+import io.harness.ng.DbAliases;
 import software.wings.beans.Base;
 
 import java.util.List;
@@ -24,6 +26,7 @@ import org.mongodb.morphia.annotations.Entity;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
+@StoreIn(DbAliases.TEST)
 @Entity(value = "!!!testDummies", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 public class Dummy extends Base {

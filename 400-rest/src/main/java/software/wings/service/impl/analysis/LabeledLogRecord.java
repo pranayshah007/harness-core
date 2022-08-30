@@ -17,6 +17,8 @@ import static io.harness.persistence.GoogleDataStoreAware.readString;
 import static java.lang.System.currentTimeMillis;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotation.StoreIn;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.GoogleDataStoreAware;
 
@@ -44,6 +46,7 @@ import org.mongodb.morphia.annotations.PrePersist;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @NoArgsConstructor
 @AllArgsConstructor
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "supervisedLogRecords", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 public class LabeledLogRecord implements GoogleDataStoreAware, AccountAccess {

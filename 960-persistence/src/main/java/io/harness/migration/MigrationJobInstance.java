@@ -10,6 +10,8 @@ package io.harness.migration;
 import static io.harness.migration.MigrationJobInstance.COLLECTION_NAME;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotation.StoreIn;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UpdatedAtAware;
 
@@ -23,6 +25,7 @@ import org.mongodb.morphia.annotations.Id;
 
 @Data
 @Builder
+@StoreIn(DbAliases.ALL)
 @Entity(value = COLLECTION_NAME, noClassnameStored = true)
 @HarnessEntity(exportable = false)
 @FieldNameConstants(innerTypeName = "MigrationJobInstanceKeys")

@@ -30,10 +30,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "AggregatorSecondarySyncStateKeys")
+@StoreIn(ACCESS_CONTROL)
 @Entity(value = "aggregatorSecondarySyncState", noClassnameStored = true)
 @Document("aggregatorSecondarySyncState")
 @TypeAlias("aggregatorSecondarySyncState")
-@StoreIn(ACCESS_CONTROL)
 public class AggregatorSecondarySyncState {
   @Id @org.mongodb.morphia.annotations.Id private String id;
   @FdUniqueIndex private String identifier;

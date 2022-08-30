@@ -34,11 +34,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "TerraformConfigKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "terraformConfig", noClassnameStored = true)
 @Document("terraformConfig")
 @TypeAlias("terraformConfig")
 @HarnessEntity(exportable = true)
-@StoreIn(DbAliases.NG_MANAGER)
 @OwnedBy(HarnessTeam.CDP)
 public class TerraformConfig implements PersistentEntity, CreatedAtAware {
   public static List<MongoIndex> mongoIndexes() {

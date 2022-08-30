@@ -33,9 +33,9 @@ import org.mongodb.morphia.annotations.Id;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldNameConstants(innerTypeName = "CVNGSchemaKeys")
+@StoreIn(DbAliases.CVNG)
 @Entity(value = "cvngSchema", noClassnameStored = true)
 @HarnessEntity(exportable = true)
-@StoreIn(DbAliases.CVNG)
 public final class CVNGSchema
     implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, PersistentRegularIterable {
   public static final String SCHEMA_ID = "schema";

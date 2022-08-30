@@ -42,9 +42,9 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
 @FieldNameConstants(innerTypeName = "GitOpsProviderKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "gitopsproviders", noClassnameStored = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@StoreIn(DbAliases.NG_MANAGER)
 @Document("gitopsproviders")
 @Persistent
 @OwnedBy(HarnessTeam.GITOPS)

@@ -64,11 +64,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "PipelineEntityKeys")
+@StoreIn(DbAliases.PMS)
 @Entity(value = "pipelinesPMS", noClassnameStored = true)
 @Document("pipelinesPMS")
 @TypeAlias("pipelinesPMS")
 @HarnessEntity(exportable = true)
-@StoreIn(DbAliases.PMS)
 @ChangeDataCapture(table = "tags_info", dataStore = "pms-harness", fields = {}, handler = "TagsInfoCD")
 @ChangeDataCapture(table = "pipelines", dataStore = "ng-harness", fields = {}, handler = "Pipelines")
 public class PipelineEntity

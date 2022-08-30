@@ -21,8 +21,8 @@ import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.Persistent;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+@StoreIn(DbAliases.TEST)
 @Entity(value = "ngschema")
-@StoreIn(DbAliases.NG_MANAGER)
 @Document("ngschema")
 @HarnessEntity(exportable = true)
 @Persistent

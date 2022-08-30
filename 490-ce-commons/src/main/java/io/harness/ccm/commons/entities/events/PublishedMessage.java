@@ -35,8 +35,8 @@ import org.mongodb.morphia.annotations.Entity;
 import org.mongodb.morphia.annotations.Id;
 import org.mongodb.morphia.annotations.PostLoad;
 
-@StoreIn(DbAliases.CENG)
 @Data
+@StoreIn(DbAliases.CENG)
 @Entity(value = "publishedMessages", noClassnameStored = true)
 @FieldNameConstants(innerTypeName = "PublishedMessageKeys")
 @Slf4j

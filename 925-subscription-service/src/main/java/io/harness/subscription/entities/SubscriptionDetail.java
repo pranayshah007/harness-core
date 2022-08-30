@@ -35,9 +35,9 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "SubscriptionDetailKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "subscriptionDetails", noClassnameStored = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@StoreIn(DbAliases.NG_MANAGER)
 @Document("subscriptionDetails")
 @Persistent
 public class SubscriptionDetail implements PersistentEntity, NGAccountAccess {

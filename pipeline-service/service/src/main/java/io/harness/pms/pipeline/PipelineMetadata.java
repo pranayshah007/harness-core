@@ -39,11 +39,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "PipelineMetadataKeys")
+@StoreIn(DbAliases.PMS)
 @Entity(value = "pipelineMetadata", noClassnameStored = true)
 @Document("pipelineMetadata")
 @TypeAlias("pipelineMetadata")
 @HarnessEntity(exportable = true)
-@StoreIn(DbAliases.PMS)
 @Deprecated
 public class PipelineMetadata {
   public static List<MongoIndex> mongoIndexes() {

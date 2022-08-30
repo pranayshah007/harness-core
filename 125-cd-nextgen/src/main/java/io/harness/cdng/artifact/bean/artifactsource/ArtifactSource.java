@@ -8,10 +8,12 @@
 package io.harness.cdng.artifact.bean.artifactsource;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotation.StoreIn;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
@@ -42,6 +44,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
 @FieldNameConstants(innerTypeName = "ArtifactSourceKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "artifactSourceNG")
 @Document("artifactSourceNG")
 @TypeAlias("artifactSourceNG")

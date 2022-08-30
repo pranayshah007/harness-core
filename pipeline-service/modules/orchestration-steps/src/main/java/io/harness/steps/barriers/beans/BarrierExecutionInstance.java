@@ -47,10 +47,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "BarrierExecutionInstanceKeys")
+@StoreIn(DbAliases.PMS)
 @Entity(value = "barrierExecutionInstances")
 @Document("barrierExecutionInstances")
 @TypeAlias("barrierExecutionInstance")
-@StoreIn(DbAliases.PMS)
 public final class BarrierExecutionInstance implements PersistentEntity, UuidAware, PersistentRegularIterable {
   public static final long TTL = 6;
 

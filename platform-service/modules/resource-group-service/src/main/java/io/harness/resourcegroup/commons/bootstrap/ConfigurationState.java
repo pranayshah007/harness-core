@@ -8,12 +8,12 @@
 package io.harness.resourcegroup.commons.bootstrap;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.ng.DbAliases.RESOURCEGROUP;
 
 import io.harness.annotation.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.FdIndex;
 
+import io.harness.ng.DbAliases;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
@@ -30,10 +30,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "ConfigurationStateKeys")
+@StoreIn(DbAliases.RESOURCEGROUP)
 @Entity(value = "configurationState", noClassnameStored = true)
 @Document("configurationState")
 @TypeAlias("configurationState")
-@StoreIn(RESOURCEGROUP)
 public class ConfigurationState {
   @Id @org.mongodb.morphia.annotations.Id String id;
   @FdIndex @NotEmpty String identifier;

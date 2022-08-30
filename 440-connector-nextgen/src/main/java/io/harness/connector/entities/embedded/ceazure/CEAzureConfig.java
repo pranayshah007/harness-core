@@ -7,12 +7,15 @@
 
 package io.harness.connector.entities.embedded.ceazure;
 
+import io.harness.annotation.StoreIn;
 import io.harness.connector.entities.Connector;
 import io.harness.delegate.beans.connector.CEFeatures;
 
 import java.util.List;
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
+
+import io.harness.ng.DbAliases;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -27,6 +30,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Persistent
 @EqualsAndHashCode(callSuper = false)
 @FieldNameConstants(innerTypeName = "CEAzureConfigKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "connectors", noClassnameStored = true)
 @TypeAlias("io.harness.connector.entities.embedded.ceazure.CEAzureConfig")
 public class CEAzureConfig extends Connector {

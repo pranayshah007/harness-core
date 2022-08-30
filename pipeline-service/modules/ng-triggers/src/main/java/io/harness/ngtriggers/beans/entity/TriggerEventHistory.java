@@ -10,11 +10,13 @@ package io.harness.ngtriggers.beans.entity;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotation.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.ngtriggers.beans.response.TargetExecutionSummary;
 import io.harness.persistence.PersistentEntity;
 
@@ -35,6 +37,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "TriggerEventHistoryKeys")
+@StoreIn(DbAliases.PMS)
 @Entity(value = "triggerEventHistory", noClassnameStored = true)
 @Document("triggerEventHistory")
 @TypeAlias("triggerEventHistory")

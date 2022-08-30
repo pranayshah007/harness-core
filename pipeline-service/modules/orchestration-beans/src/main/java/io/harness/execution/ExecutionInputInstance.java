@@ -25,11 +25,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
 @Builder
+@StoreIn(DbAliases.PMS)
 @Entity(value = "executionInputInstance", noClassnameStored = true)
 @Document("executionInputInstance")
 @FieldNameConstants(innerTypeName = "ExecutionInputInstanceKeys")
 @TypeAlias("executionInputInstance")
-@StoreIn(DbAliases.PMS)
 @OwnedBy(HarnessTeam.PIPELINE)
 public class ExecutionInputInstance {
   @Id @org.mongodb.morphia.annotations.Id String inputInstanceId;

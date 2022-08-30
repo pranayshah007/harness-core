@@ -41,11 +41,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @ToString
 @FieldNameConstants(innerTypeName = "InstanceDeploymentInfoKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "instanceDeploymentInfo", noClassnameStored = true)
 @Document("instanceDeploymentInfo")
 @TypeAlias("instanceDeploymentInfo")
 @HarnessEntity(exportable = true)
-@StoreIn(DbAliases.NG_MANAGER)
 @OwnedBy(HarnessTeam.CDP)
 public class InstanceDeploymentInfo implements PersistentEntity, UuidAware {
   @org.springframework.data.annotation.Id @Id String uuid;

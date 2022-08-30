@@ -41,9 +41,9 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @FieldNameConstants(innerTypeName = "NGEncryptedDataKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "ngEncryptedRecords", noClassnameStored = true)
 @TypeAlias("ngEncryptedData")
-@StoreIn(DbAliases.NG_MANAGER)
 public class NGEncryptedData implements PersistentEntity, EncryptedRecord {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()

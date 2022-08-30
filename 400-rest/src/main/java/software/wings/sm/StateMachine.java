@@ -23,6 +23,7 @@ import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotation.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -38,6 +39,7 @@ import io.harness.exception.WingsException;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAware;
@@ -91,6 +93,7 @@ import org.mongodb.morphia.annotations.Transient;
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._957_CG_BEANS)
 @Data
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "stateMachines", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @FieldNameConstants(innerTypeName = "StateMachineKeys")

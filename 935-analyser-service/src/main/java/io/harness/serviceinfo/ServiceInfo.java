@@ -9,11 +9,14 @@ package io.harness.serviceinfo;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotation.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.FdUniqueIndex;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.List;
+
+import io.harness.ng.DbAliases;
 import lombok.Builder;
 import lombok.NonNull;
 import lombok.Singular;
@@ -32,6 +35,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "ServiceInfoKeys")
+@StoreIn(DbAliases.ANALYSER)
 @Entity(value = "serviceInfos", noClassnameStored = true)
 @Document("serviceInfos")
 @TypeAlias("serviceInfo")

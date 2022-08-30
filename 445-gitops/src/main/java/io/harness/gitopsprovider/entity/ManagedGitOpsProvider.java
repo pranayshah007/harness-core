@@ -7,11 +7,13 @@
 
 package io.harness.gitopsprovider.entity;
 
+import io.harness.annotation.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.GitOpsProviderType;
 import io.harness.gitopsprovider.SearchTerm;
 
+import io.harness.ng.DbAliases;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -24,6 +26,7 @@ import org.springframework.data.annotation.Persistent;
 @Value
 @Builder
 @EqualsAndHashCode(callSuper = true)
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "gitopsproviders", noClassnameStored = true)
 @Persistent
 @FieldDefaults(level = AccessLevel.PRIVATE)

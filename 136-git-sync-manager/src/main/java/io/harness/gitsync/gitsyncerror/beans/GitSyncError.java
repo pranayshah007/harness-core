@@ -54,12 +54,12 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @NoArgsConstructor
 @EqualsAndHashCode()
 @FieldNameConstants(innerTypeName = "GitSyncErrorKeys")
+@StoreIn(DbAliases.NG_MANAGER)
+@Document("gitSyncErrorNG")
 @Entity(value = "gitSyncErrorNG")
 @HarnessEntity(exportable = false)
-@Document("gitSyncErrorNG")
 @TypeAlias("io.harness.gitsync.gitsyncerror.beans.gitSyncError")
 @OwnedBy(PL)
-@StoreIn(DbAliases.NG_MANAGER)
 public class GitSyncError
     implements PersistentEntity, UuidAware, CreatedAtAware, CreatedByAware, UpdatedAtAware, UpdatedByAware {
   @org.springframework.data.annotation.Id @org.mongodb.morphia.annotations.Id private String uuid;

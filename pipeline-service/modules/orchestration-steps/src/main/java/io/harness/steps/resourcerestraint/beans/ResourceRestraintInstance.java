@@ -45,10 +45,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "ResourceRestraintInstanceKeys")
+@StoreIn(DbAliases.PMS)
 @Entity(value = "resourceRestraintInstances")
 @Document("resourceRestraintInstances")
 @TypeAlias("resourceRestraintInstance")
-@StoreIn(DbAliases.PMS)
 public class ResourceRestraintInstance implements PersistentEntity, UuidAccess, PersistentRegularIterable {
   public static final long TTL = 6;
 

@@ -12,6 +12,7 @@ import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotation.StoreIn;
 import io.harness.beans.EmbeddedUser;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.data.structure.EmptyPredicate;
@@ -21,6 +22,7 @@ import io.harness.iterator.PersistentCronIterable;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UpdatedByAware;
@@ -56,6 +58,7 @@ import org.mongodb.morphia.annotations.Id;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = false)
 @FieldNameConstants(innerTypeName = "GovernanceConfigKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "governanceConfig", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @Slf4j

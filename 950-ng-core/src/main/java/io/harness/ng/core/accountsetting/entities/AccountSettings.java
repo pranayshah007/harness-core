@@ -34,10 +34,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
 @FieldNameConstants(innerTypeName = "AccountSettingsKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "accountSettings", noClassnameStored = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Document("accountSettings")
-@StoreIn(DbAliases.NG_MANAGER)
 @Persistent
 public class AccountSettings implements PersistentEntity, NGAccountAccess {
   @Builder

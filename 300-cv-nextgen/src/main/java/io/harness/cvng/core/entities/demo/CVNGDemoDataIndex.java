@@ -40,10 +40,10 @@ import org.mongodb.morphia.annotations.Id;
 @FieldNameConstants(innerTypeName = "cvngDemoDataIndexKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @EqualsAndHashCode(callSuper = false)
+@StoreIn(DbAliases.CVNG)
 @Entity(value = "cvngDemoDataIndices")
 @HarnessEntity(exportable = true)
 @OwnedBy(HarnessTeam.CV)
-@StoreIn(DbAliases.CVNG)
 public class CVNGDemoDataIndex implements AccountAccess, PersistentEntity, UuidAware {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()

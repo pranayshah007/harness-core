@@ -30,10 +30,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "NotificationSettingKeys")
+@StoreIn(DbAliases.NOTIFICATION)
 @Entity(value = "notificationSettings")
 @Document("notificationSettings")
 @TypeAlias("notificationSettings")
-@StoreIn(DbAliases.NOTIFICATION)
 @OwnedBy(PL)
 public class NotificationSetting {
   public static List<MongoIndex> mongoIndexes() {

@@ -48,13 +48,12 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Builder
 @FieldNameConstants(innerTypeName = "EntitySetupUsageKeys")
 @JsonIgnoreProperties(ignoreUnknown = true)
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@StoreIn(DbAliases.NG_MANAGER)
 @Document("entitySetupUsage")
 @TypeAlias("io.harness.ng.core.entityReference.entity.EntitySetupUsage")
 @OwnedBy(DX)
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity(value = "entitySetupUsage", noClassnameStored = true)
-@StoreIn(DbAliases.NG_MANAGER)
-@StoreIn(DbAliases.PMS)
 public class EntitySetupUsage implements PersistentEntity, NGAccountAccess {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()

@@ -49,10 +49,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "ResourceGroupKeys")
+@StoreIn(DbAliases.RESOURCEGROUP)
 @Document("resourceGroup")
 @Entity("resourceGroup")
 @TypeAlias("resourceGroup")
-@StoreIn(DbAliases.RESOURCEGROUP)
 public class ResourceGroup implements PersistentRegularIterable, PersistentEntity {
   public static final String DEFAULT_COLOR = "#0063F7";
 

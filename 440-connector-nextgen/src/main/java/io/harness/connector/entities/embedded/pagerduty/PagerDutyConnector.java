@@ -7,11 +7,13 @@
 
 package io.harness.connector.entities.embedded.pagerduty;
 
+import io.harness.annotation.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.entities.Connector;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.harness.ng.DbAliases;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -27,6 +29,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @EqualsAndHashCode(callSuper = true)
 @FieldNameConstants(innerTypeName = "PagerDutyConnectorKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "connectors", noClassnameStored = true)
 @Persistent
 @TypeAlias("io.harness.connector.entities.embedded.pagerduty.PagerDutyConnector")

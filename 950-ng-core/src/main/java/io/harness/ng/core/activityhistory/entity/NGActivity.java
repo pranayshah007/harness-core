@@ -39,8 +39,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @NoArgsConstructor
 @FieldNameConstants(innerTypeName = "ActivityHistoryEntityKeys")
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Document("entityActivity")
 @StoreIn(DbAliases.NG_MANAGER)
+@Document("entityActivity")
 @Entity(value = "entityActivity", noClassnameStored = true)
 @Persistent
 public class NGActivity implements PersistentEntity, NGAccountAccess {

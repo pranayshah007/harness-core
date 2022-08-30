@@ -8,11 +8,13 @@
 package software.wings.beans;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotation.StoreIn;
 import io.harness.beans.EmbeddedUser;
 import io.harness.delegate.beans.ChecksumType;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 
+import io.harness.ng.DbAliases;
 import software.wings.utils.ContainerFamily;
 import software.wings.utils.FileType;
 
@@ -28,6 +30,7 @@ import org.mongodb.morphia.annotations.Entity;
  * Application bean class.
  */
 
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "appContainers", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @FieldNameConstants(innerTypeName = "AppContainerKeys")

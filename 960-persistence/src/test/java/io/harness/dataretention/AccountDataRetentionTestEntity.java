@@ -7,7 +7,9 @@
 
 package io.harness.dataretention;
 
+import io.harness.annotation.StoreIn;
 import io.harness.mongo.index.FdTtlIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 
 import java.util.Date;
@@ -18,6 +20,7 @@ import org.mongodb.morphia.annotations.Id;
 
 @Value
 @Builder
+@StoreIn(DbAliases.TEST)
 @Entity(value = "!!!accountDataRetentionTestEntities", noClassnameStored = true)
 public class AccountDataRetentionTestEntity implements PersistentEntity, AccountDataRetentionEntity {
   @Id private String uuid;

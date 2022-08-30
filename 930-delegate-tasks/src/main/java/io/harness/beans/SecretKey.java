@@ -9,7 +9,9 @@ package io.harness.beans;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import io.harness.annotation.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -27,6 +29,7 @@ import org.springframework.data.annotation.Id;
 @NoArgsConstructor
 @FieldNameConstants(innerTypeName = "SecretKeyKeys")
 @JsonIgnoreProperties(ignoreUnknown = true)
+@StoreIn(DbAliases.TEST)
 @Entity(value = "SecretKey", noClassnameStored = true)
 public class SecretKey implements PersistentEntity {
   @Id @org.mongodb.morphia.annotations.Id private String uuid;

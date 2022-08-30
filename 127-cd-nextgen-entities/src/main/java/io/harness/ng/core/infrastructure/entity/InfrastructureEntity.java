@@ -42,10 +42,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "InfrastructureEntityKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "infrastructures", noClassnameStored = true)
 @Document("infrastructures")
 @TypeAlias("io.harness.ng.core.infrastructure.entity.InfrastructureEntity")
-@StoreIn(DbAliases.NG_MANAGER)
 public class InfrastructureEntity implements PersistentEntity {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()

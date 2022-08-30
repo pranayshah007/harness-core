@@ -34,10 +34,10 @@ import org.mongodb.morphia.annotations.Id;
 @FieldNameConstants(innerTypeName = "CVNGDemoPerpetualTaskKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @EqualsAndHashCode(callSuper = false)
+@StoreIn(DbAliases.CVNG)
 @Entity(value = "cvngDemoPerpetualTasks")
 @HarnessEntity(exportable = true)
 @OwnedBy(HarnessTeam.CV)
-@StoreIn(DbAliases.CVNG)
 public class CVNGDemoPerpetualTask
     implements PersistentEntity, UuidAware, AccountAccess, UpdatedAtAware, CreatedAtAware, PersistentRegularIterable {
   @Id private String uuid;

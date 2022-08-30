@@ -30,11 +30,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "CDAccountExecutionMetadataKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "cdAccountExecutionMetadata", noClassnameStored = true)
 @Document("cdAccountExecutionMetadata")
 @TypeAlias("cdAccountExecutionMetadata")
 @HarnessEntity(exportable = true)
-@StoreIn(DbAliases.NG_MANAGER)
 public class CDAccountExecutionMetadata {
   @Wither @Id @org.mongodb.morphia.annotations.Id String uuid;
   String accountId;

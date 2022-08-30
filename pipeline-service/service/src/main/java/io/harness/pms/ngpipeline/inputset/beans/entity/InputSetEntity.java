@@ -59,11 +59,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "InputSetEntityKeys")
+@StoreIn(DbAliases.PMS)
 @Entity(value = "inputSetsPMS", noClassnameStored = true)
 @Document("inputSetsPMS")
 @TypeAlias("inputSetsPMS")
 @HarnessEntity(exportable = true)
-@StoreIn(DbAliases.PMS)
 public class InputSetEntity
     implements GitAware, GitSyncableEntity, PersistentEntity, AccountAccess, UuidAware, CreatedAtAware, UpdatedAtAware {
   public static List<MongoIndex> mongoIndexes() {

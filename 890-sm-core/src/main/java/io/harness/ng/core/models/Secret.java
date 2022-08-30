@@ -41,10 +41,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "SecretKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "secrets", noClassnameStored = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Document("secrets")
-@StoreIn(DbAliases.NG_MANAGER)
 public class Secret {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()

@@ -33,10 +33,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "TemplateKeys")
+@StoreIn(DbAliases.NOTIFICATION)
 @Document("notificationTemplates")
 @Entity("notificationTemplates")
 @TypeAlias("notificationTemplate")
-@StoreIn(DbAliases.NOTIFICATION)
 @OwnedBy(PL)
 public class NotificationTemplate {
   public static List<MongoIndex> mongoIndexes() {

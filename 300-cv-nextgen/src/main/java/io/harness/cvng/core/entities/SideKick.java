@@ -31,9 +31,9 @@ import org.mongodb.morphia.annotations.Id;
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "SidekickKeys")
+@StoreIn(DbAliases.CVNG)
 @Entity(value = "sidekicks", noClassnameStored = true)
 @HarnessEntity(exportable = false)
-@StoreIn(DbAliases.CVNG)
 public final class SideKick implements UuidAware, CreatedAtAware, UpdatedAtAware, PersistentEntity {
   @Id private String uuid;
   @FdIndex private long createdAt;

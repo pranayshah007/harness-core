@@ -12,12 +12,14 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotation.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 
 import software.wings.beans.Base;
@@ -43,6 +45,7 @@ import org.mongodb.morphia.annotations.Entity;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = false)
 @FieldNameConstants(innerTypeName = "SSOSettingsKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "ssoSettings")
 @HarnessEntity(exportable = true)
 @JsonIgnoreProperties(ignoreUnknown = true)

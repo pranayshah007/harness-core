@@ -7,6 +7,8 @@
 
 package io.harness.engine.interrupts.steps;
 
+import io.harness.annotation.StoreIn;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 
 import lombok.Builder;
@@ -16,6 +18,7 @@ import org.mongodb.morphia.annotations.Id;
 
 @Value
 @Builder
+@StoreIn(DbAliases.TEST)
 @Entity(value = "!!!testTransport", noClassnameStored = true)
 public class TestTransportEntity implements PersistentEntity {
   @Id private String uuid;

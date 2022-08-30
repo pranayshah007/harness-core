@@ -43,10 +43,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @EqualsAndHashCode(callSuper = false)
 @FieldNameConstants(innerTypeName = "YamlChangeSetKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Document("yamlChangeSetNG")
 @TypeAlias("io.harness.gitsync.common.beans.yamlChangeSet")
 @Entity(value = "yamlChangeSetNG", noClassnameStored = true)
-@StoreIn(DbAliases.NG_MANAGER)
 @OwnedBy(DX)
 public class YamlChangeSet implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, AccountAccess {
   public static final String MAX_RETRY_COUNT_EXCEEDED_CODE = "MAX_RETRY_COUNT_EXCEEDED";

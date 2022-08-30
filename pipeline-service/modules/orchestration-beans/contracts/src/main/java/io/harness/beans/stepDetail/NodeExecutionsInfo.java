@@ -35,10 +35,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "NodeExecutionsInfoKeys")
+@StoreIn(DbAliases.PMS)
 @Entity(value = "nodeExecutionsInfo", noClassnameStored = true)
 @Document("nodeExecutionsInfo")
 @TypeAlias("nodeExecutionsInfo")
-@StoreIn(DbAliases.PMS)
 public class NodeExecutionsInfo {
   public static final long TTL_MONTHS = 6;
 

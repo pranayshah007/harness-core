@@ -29,10 +29,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @FieldNameConstants(innerTypeName = "AccessControlPreferenceKeys")
+@StoreIn(ACCESS_CONTROL)
 @Document("aclPreferences")
 @Entity(value = "aclPreferences", noClassnameStored = true)
 @TypeAlias("aclPreferences")
-@StoreIn(ACCESS_CONTROL)
 public class AccessControlPreference {
   @Id @org.mongodb.morphia.annotations.Id String id;
   @FdUniqueIndex String accountId;

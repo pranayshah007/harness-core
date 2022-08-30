@@ -8,9 +8,11 @@
 package software.wings.beans;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotation.StoreIn;
 import io.harness.beans.EmbeddedUser;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.yaml.BaseYaml;
 
 import com.google.common.collect.ImmutableList;
@@ -21,6 +23,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
 import org.mongodb.morphia.annotations.Entity;
 
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "entityVersions", noClassnameStored = true)
 @FieldNameConstants(innerTypeName = "EntityVersionCollectionKeys")
 @HarnessEntity(exportable = true)
