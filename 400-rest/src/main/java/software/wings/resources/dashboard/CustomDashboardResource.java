@@ -551,4 +551,43 @@ public class CustomDashboardResource {
           .build();
     }
   }
+
+  @PUT
+  @Path("add-accounts-to-deployment-migrations")
+  @Scope(value = ResourceType.USER, scope = LOGGED_IN)
+  @Timed
+  @ExceptionMetered
+  @AuthRule(permissionType = LOGGED_IN)
+  public RestResponse addToToMigrateAccountIds(@QueryParam("accountIds") @NotEmpty List<String> accountIds) {
+    User authUser = UserThreadLocal.get();
+
+    if (harnessUserGroupService.isHarnessSupportUser(authUser.getUuid())) {
+      try {
+        dashboardSettingsService.addToToMigrateAccountIds(accountIds);
+      } catch (Exception ex) {
+        log.error("Deployment migration per account Failure", ex);
+        return Builder.aRestResponse()
+                .withResponseMessages(Lists.newArrayList(ResponseMessage.builder().message(ex.toString()).build()))
+                .build();
+      }
+
+      return Builder.aRestResponse()
+              .withResponseMessages(Lists.newArrayList(ResponseMessage
+                      .builder()
+                      //                      .message(accountId + ":" + status.name())
+                      .message("RECON COMPLETED")
+                      .code(null)
+                      .level(Level.INFO)
+                      .build()))
+              .build();
+    } else {
+      return Builder.aRestResponse()
+              .withResponseMessages(Lists.newArrayList(
+                      ResponseMessage.builder()
+                              .message("User not allowed to perform the deployment-migration-per-account operation : "
+                                      + authUser.getUuid())
+                              .build()))
+              .build();
+    }
+  }
 }

@@ -27,6 +27,7 @@ import io.harness.exception.InvalidRequestException;
 import software.wings.beans.AccountEvent;
 import software.wings.beans.AccountEventType;
 import software.wings.beans.Event.Type;
+import software.wings.beans.WorkflowExecution;
 import software.wings.dl.WingsPersistence;
 import software.wings.features.CustomDashboardFeature;
 import software.wings.features.api.AccountId;
@@ -36,15 +37,12 @@ import software.wings.service.impl.security.auth.DashboardAuthHandler;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+
+import java.util.*;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.query.UpdateOperations;
+import software.wings.timescale.framework.TimeScaleEntityIndexState;
 
 @Slf4j
 @Singleton
@@ -216,7 +214,26 @@ public class DashboardSettingsServiceImpl implements DashboardSettingsService {
     return pageResponse;
   }
 
-  private PageRequest sanitizePageRequest(PageRequest pageRequest) {
+    @Override
+    public void addToToMigrateAccountIds(List<String> accountIds) {
+      TimeScaleEntityIndexState timeScaleEntityIndexState =
+              persistence.get(TimeScaleEntityIndexState.class, WorkflowExecution.class.getCanonicalName());
+      if (timeScaleEntityIndexState == null) {
+        TimeScaleEntityIndexState initial_entity = new TimeScaleEntityIndexState(
+                WorkflowExecution.class.getCanonicalName(), System.currentTimeMillis(), new LinkedList<>(), accountIds);
+        persistence.save(initial_entity);
+      } else{
+        List<String> toMigrateAccountIds = timeScaleEntityIndexState.getToMigrateAccountIds() != null
+                ? timeScaleEntityIndexState.getToMigrateAccountIds()
+                : new LinkedList<>();
+        toMigrateAccountIds.addAll(accountIds);
+        TimeScaleEntityIndexState updated_entity = new TimeScaleEntityIndexState(
+                WorkflowExecution.class.getCanonicalName(), System.currentTimeMillis(), timeScaleEntityIndexState.getAlreadyMigratedAccountIds(), toMigrateAccountIds);
+        persistence.save(updated_entity);
+      }
+    }
+
+    private PageRequest sanitizePageRequest(PageRequest pageRequest) {
     if (pageRequest == null) {
       pageRequest =
           PageRequestBuilder.aPageRequest().withLimit(Integer.toString(DEFAULT_PAGE_SIZE)).withOffset("0").build();
