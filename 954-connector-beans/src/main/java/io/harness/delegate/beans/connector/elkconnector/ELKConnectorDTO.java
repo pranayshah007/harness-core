@@ -54,6 +54,13 @@ public class ELKConnectorDTO extends ConnectorConfigDTO implements DecryptableEn
 
   private ELKAuthType authType;
 
+  public String getUrl() {
+    if (url.endsWith("/")) {
+      return url;
+    }
+    return url + "/";
+  }
+
   public ELKAuthType getAuthType() {
     if (authType == null) {
       return ELKAuthType.USERNAME_PASSWORD;
