@@ -193,7 +193,7 @@ public class StripeHelperImpl implements StripeHelper {
   }
 
   @Override
-  public Price getPrice(ModuleType moduleType, String type, String edition, String paymentFrequency, int quantity) {
+  public Price getPrice(ModuleType moduleType, String type, String edition, String paymentFrequency, long quantity) {
     String searchString = String.format(
         SEARCH_MODULE_TYPE_EDITION_BILLED_MAX, moduleType.toString(), type, edition, paymentFrequency, quantity);
 

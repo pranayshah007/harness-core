@@ -31,6 +31,7 @@ import io.harness.subscription.dto.PriceCollectionDTO;
 import io.harness.subscription.dto.StripeBillingDTO;
 import io.harness.subscription.dto.SubscriptionDTO;
 import io.harness.subscription.dto.SubscriptionDetailDTO;
+import io.harness.subscription.params.SubscriptionCreateParams;
 import io.harness.subscription.params.UsageKey;
 import io.harness.subscription.services.SubscriptionService;
 
@@ -142,8 +143,8 @@ public class SubscriptionResource {
                            NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
       @io.swagger.v3.oas.annotations.parameters.RequestBody(
           required = true, description = "This is the details of the Subscription Request.") @NotNull
-      @Valid FfSubscriptionDTO subscriptionDTO) {
-    return ResponseDTO.newResponse(subscriptionService.createFfSubscription(accountIdentifier, subscriptionDTO));
+      @Valid SubscriptionCreateParams subscriptionParams) {
+    return ResponseDTO.newResponse(subscriptionService.createFfSubscription(subscriptionParams));
   }
 
   //  @POST

@@ -12,7 +12,7 @@ import lombok.Data;
 
 @Data
 @Builder
-public class ItemParams {
-  private String priceId;
+public class SubscriptionItemParams {
+  private String type;
   private Long quantity;
 }
