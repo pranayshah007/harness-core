@@ -5684,13 +5684,12 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     addressInefficientQueries(workflowExecutionQuery);
 
     if (isNotEmpty(workflowExecution.getInfraMappingIds())) {
-      findOptions.modifier("$hint", "appid_status_workflowid_infraMappingIds_createdat");
+      findOptions.modifier("$hint", "appid_workflowid_status_createdat");
     } else {
-      findOptions.modifier("$hint", "appid_workflowid_status_deployedServices_createdat");
+      findOptions.modifier("$hint", "appid_workflowid_status_createdat");
     }
     return workflowExecutionQuery.order("-createdAt").get(findOptions);
   }
-
   private WorkflowExecution fetchLastSuccessDeployment(
       WorkflowExecution workflowExecution, List<String> infraMappingList, boolean isInfraBasedArtifact) {
     FindOptions findOptions = new FindOptions();
