@@ -12,7 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.entities.AuditEvent;
 import io.harness.audit.entities.AuditEvent.AuditEventKeys;
-import io.harness.mongo.SecondaryMongoTemplateHolder;
+import io.harness.mongo.helper.SecondaryMongoTemplateHolder;
 
 import com.google.inject.Inject;
 import java.util.List;

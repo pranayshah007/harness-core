@@ -92,7 +92,6 @@ import software.wings.beans.BugsnagConfig;
 import software.wings.beans.ClusterSelectionCriteriaEntry;
 import software.wings.beans.ConnectionType;
 import software.wings.beans.CustomSecretNGManagerConfig;
-import software.wings.beans.CyberArkConfig;
 import software.wings.beans.DatadogConfig;
 import software.wings.beans.DockerConfig;
 import software.wings.beans.DynaTraceConfig;
@@ -744,7 +743,6 @@ public class DelegateTasksKryoRegistrar implements KryoRegistrar {
     kryo.register(AzureVaultConfig.class, 7205);
     kryo.register(ServiceNowImportSetResponse.class, 7212);
     kryo.register(ServiceNowImportSetResult.class, 7213);
-    kryo.register(CyberArkConfig.class, 7228);
     kryo.register(AppManifestKind.class, 7243);
     kryo.register(GcpKmsConfig.class, 7290);
     kryo.register(SmbConfig.class, 5551);

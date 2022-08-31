@@ -193,7 +193,7 @@ public class InfrastructureStepTest extends CategoryTest {
     Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions(SetupAbstractionKeys.accountId, ACCOUNT_ID).build();
 
     PdcSshInfraDelegateConfig pdcSshInfraDelegateConfig =
-        PdcSshInfraDelegateConfig.builder().hosts(Arrays.asList("host1")).build();
+        PdcSshInfraDelegateConfig.builder().hosts(Collections.singleton("host1")).build();
     Infrastructure infrastructureSpec = PdcInfrastructure.builder()
                                             .credentialsRef(ParameterField.createValueField("sshKeyRef"))
                                             .hosts(ParameterField.createValueField(Arrays.asList("host1", "host2")))
@@ -228,7 +228,7 @@ public class InfrastructureStepTest extends CategoryTest {
     Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions(SetupAbstractionKeys.accountId, ACCOUNT_ID).build();
 
     PdcWinRmInfraDelegateConfig pdcWinRmInfraDelegateConfig =
-        PdcWinRmInfraDelegateConfig.builder().hosts(Arrays.asList("host1")).build();
+        PdcWinRmInfraDelegateConfig.builder().hosts(Collections.singleton("host1")).build();
     Infrastructure infrastructureSpec = PdcInfrastructure.builder()
                                             .credentialsRef(ParameterField.createValueField("sshKeyRef"))
                                             .hosts(ParameterField.createValueField(Arrays.asList("host1", "host2")))

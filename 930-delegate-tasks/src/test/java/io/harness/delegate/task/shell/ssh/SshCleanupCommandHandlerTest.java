@@ -87,8 +87,10 @@ public class SshCleanupCommandHandlerTest extends CategoryTest {
     when(scriptSshExecutor.executeCommandString("rm -rf /tmp/testExecution"))
         .thenReturn(CommandExecutionStatus.SUCCESS);
 
-    CommandExecutionStatus status = sshCleanupCommandHandler.handle(
-        getParameters(false), cleanupCommandUnit, logStreamingTaskClient, commandUnitsProgress, taskContext);
+    CommandExecutionStatus status =
+        sshCleanupCommandHandler
+            .handle(getParameters(false), cleanupCommandUnit, logStreamingTaskClient, commandUnitsProgress, taskContext)
+            .getStatus();
     assertThat(status).isEqualTo(CommandExecutionStatus.SUCCESS);
 
     ArgumentCaptor<SshExecutorFactoryContext> contextArgumentCaptor =
@@ -106,8 +108,10 @@ public class SshCleanupCommandHandlerTest extends CategoryTest {
         .thenReturn(CommandExecutionStatus.SUCCESS);
     when(scriptProcessExecutor.getLogCallback()).thenReturn(logCallback);
 
-    CommandExecutionStatus status = sshCleanupCommandHandler.handle(
-        getParameters(true), cleanupCommandUnit, logStreamingTaskClient, commandUnitsProgress, taskContext);
+    CommandExecutionStatus status =
+        sshCleanupCommandHandler
+            .handle(getParameters(true), cleanupCommandUnit, logStreamingTaskClient, commandUnitsProgress, taskContext)
+            .getStatus();
     assertThat(status).isEqualTo(CommandExecutionStatus.SUCCESS);
 
     ArgumentCaptor<SshExecutorFactoryContext> contextArgumentCaptor =

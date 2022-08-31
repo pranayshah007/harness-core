@@ -84,6 +84,7 @@ public class EntityYamlRootNames {
   public static final String OPAPOLICY = "governancePolicy";
   public static final String POLICY_STEP = "Policy";
   public static final String RUN_STEP = "Run";
+  public static final String BACKGROUND_STEP = "Background";
   public static final String RUN_TEST = "RunTests";
   public static final String PLUGIN = "Plugin";
   public static final String SECURITY = "Security";

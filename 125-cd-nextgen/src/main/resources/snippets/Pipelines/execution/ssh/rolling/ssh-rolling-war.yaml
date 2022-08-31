@@ -8,7 +8,7 @@ spec:
             repeat:
               items: <+stage.output.hosts>
               maxConcurrency: <+maxConcurrency>
-              partitions: <+partitionSize>
+              partitionSize: <+partitionSize>
               unit: <+unit>
           steps:
             - stepGroup:
@@ -58,7 +58,7 @@ spec:
             repeat:
               items: <+stage.output.hosts>
               maxConcurrency: <+maxConcurrency>
-              partitions: <+partitionSize>
+              partitionSize: <+partitionSize>
               unit: <+unit>
           steps:
             - stepGroup:

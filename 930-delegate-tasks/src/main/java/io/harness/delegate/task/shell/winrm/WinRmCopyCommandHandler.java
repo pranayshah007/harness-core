@@ -43,6 +43,7 @@ import io.harness.exception.runtime.WinRmCommandExecutionException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogLevel;
 import io.harness.security.encryption.SecretDecryptionService;
+import io.harness.shell.ExecuteCommandResponse;
 import io.harness.ssh.FileSourceType;
 
 import com.google.api.client.util.Lists;
@@ -62,7 +63,7 @@ public class WinRmCopyCommandHandler implements CommandHandler {
   @Inject private SecretDecryptionService secretDecryptionService;
 
   @Override
-  public CommandExecutionStatus handle(CommandTaskParameters parameters, NgCommandUnit commandUnit,
+  public ExecuteCommandResponse handle(CommandTaskParameters parameters, NgCommandUnit commandUnit,
       ILogStreamingTaskClient logStreamingTaskClient, CommandUnitsProgress commandUnitsProgress,
       Map<String, Object> taskContext) {
     if (!(parameters instanceof WinrmTaskParameters)) {
@@ -96,13 +97,14 @@ public class WinRmCopyCommandHandler implements CommandHandler {
           new WinRmCommandExecutionException(NO_DESTINATION_PATH_SPECIFIED));
     }
 
+    CommandExecutionStatus commandExecutionStatus = CommandExecutionStatus.SUCCESS;
     if (FileSourceType.ARTIFACT.equals(copyCommandUnit.getSourceType())) {
-      return copyArtifact(winRmCommandTaskParameters, copyCommandUnit, executor);
+      commandExecutionStatus = copyArtifact(winRmCommandTaskParameters, copyCommandUnit, executor);
     } else if (FileSourceType.CONFIG.equals(copyCommandUnit.getSourceType())) {
-      return copyConfigFiles(winRmCommandTaskParameters, copyCommandUnit, executor);
+      commandExecutionStatus = copyConfigFiles(winRmCommandTaskParameters, copyCommandUnit, executor);
     }
 
-    return CommandExecutionStatus.SUCCESS;
+    return ExecuteCommandResponse.builder().status(commandExecutionStatus).build();
   }
 
   private CommandExecutionStatus copyConfigFiles(WinrmTaskParameters winRmCommandTaskParameters,

@@ -361,6 +361,9 @@
         "crossAccountAccess": {
           "$ref": "#/definitions/CrossAccountAccess"
         },
+        "region": {
+          "type": "string"
+        },
         "type": {
           "type": "string",
           "enum": [
@@ -4733,6 +4736,28 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "NameValuePairWithDefault": {
+      "type": "object",
+      "required": [
+        "type",
+        "value"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "useAsDefault": {
+          "type": "boolean"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "NewRelicConnectorDTO": {
       "allOf": [
         {
@@ -5204,7 +5229,10 @@
         "templateInputs": {
           "type": "object",
           "additionalProperties": {
-            "type": "object"
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/NameValuePairWithDefault"
+            }
           }
         },
         "templateRef": {

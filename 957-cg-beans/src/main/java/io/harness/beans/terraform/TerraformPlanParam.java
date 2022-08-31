@@ -24,6 +24,7 @@ import lombok.Data;
 public class TerraformPlanParam implements SweepingOutput {
   private EncryptedRecordData encryptedRecordData;
   private String tfplan;
+  private String tfplanHumanReadable;
   private String tfPlanJsonFileId;
   private Integer add;
   private Integer change;

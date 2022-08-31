@@ -162,7 +162,7 @@ public class SshEntityHelperTest extends CategoryTest {
     PdcSshInfraDelegateConfig pdcSshInfraDelegateConfig = (PdcSshInfraDelegateConfig) infraDelegateConfig;
     assertThat(pdcSshInfraDelegateConfig.getSshKeySpecDto()).isEqualTo(sshKeySpecDTO);
     assertThat(pdcSshInfraDelegateConfig.getHosts()).isNotEmpty();
-    assertThat(pdcSshInfraDelegateConfig.getHosts().get(0)).isEqualTo("host1");
+    assertThat(pdcSshInfraDelegateConfig.getHosts()).containsOnly("host1");
     assertThat(pdcSshInfraDelegateConfig.getEncryptionDataDetails()).isNotEmpty();
   }
 
@@ -199,7 +199,7 @@ public class SshEntityHelperTest extends CategoryTest {
     PdcSshInfraDelegateConfig pdcSshInfraDelegateConfig = (PdcSshInfraDelegateConfig) infraDelegateConfig;
     assertThat(pdcSshInfraDelegateConfig.getSshKeySpecDto()).isEqualTo(sshKeySpecDTO);
     assertThat(pdcSshInfraDelegateConfig.getHosts()).isNotEmpty();
-    assertThat(pdcSshInfraDelegateConfig.getHosts().get(0)).isEqualTo("host1");
+    assertThat(pdcSshInfraDelegateConfig.getHosts()).containsOnly("host1");
     assertThat(pdcSshInfraDelegateConfig.getEncryptionDataDetails()).isNotEmpty();
 
     ArgumentCaptor<HostFilterDTO> filterCaptor = ArgumentCaptor.forClass(HostFilterDTO.class);
@@ -280,7 +280,7 @@ public class SshEntityHelperTest extends CategoryTest {
     PdcSshInfraDelegateConfig pdcSshInfraDelegateConfig = (PdcSshInfraDelegateConfig) infraDelegateConfig;
     assertThat(pdcSshInfraDelegateConfig.getSshKeySpecDto()).isEqualTo(sshKeySpecDTO);
     assertThat(pdcSshInfraDelegateConfig.getHosts()).isNotEmpty();
-    assertThat(pdcSshInfraDelegateConfig.getHosts().get(0)).isEqualTo("host1");
+    assertThat(pdcSshInfraDelegateConfig.getHosts()).containsOnly("host1");
     assertThat(pdcSshInfraDelegateConfig.getEncryptionDataDetails()).isNotEmpty();
 
     ArgumentCaptor<HostFilterDTO> filterCaptor = ArgumentCaptor.forClass(HostFilterDTO.class);
@@ -351,7 +351,7 @@ public class SshEntityHelperTest extends CategoryTest {
     PdcSshInfraDelegateConfig pdcSshInfraDelegateConfig = (PdcSshInfraDelegateConfig) infraDelegateConfig;
     assertThat(pdcSshInfraDelegateConfig.getSshKeySpecDto()).isEqualTo(sshKeySpecDTO);
     assertThat(pdcSshInfraDelegateConfig.getHosts()).isNotEmpty();
-    assertThat(pdcSshInfraDelegateConfig.getHosts().get(0)).isEqualTo("host2");
+    assertThat(pdcSshInfraDelegateConfig.getHosts()).containsOnly("host2");
     assertThat(pdcSshInfraDelegateConfig.getEncryptionDataDetails()).isNotEmpty();
   }
 
@@ -475,7 +475,7 @@ public class SshEntityHelperTest extends CategoryTest {
     PdcWinRmInfraDelegateConfig pdcWinRmInfraDelegateConfig = (PdcWinRmInfraDelegateConfig) infraDelegateConfig;
     assertThat(pdcWinRmInfraDelegateConfig.getWinRmCredentials()).isEqualTo(winRmCredentials);
     assertThat(pdcWinRmInfraDelegateConfig.getHosts()).isNotEmpty();
-    assertThat(pdcWinRmInfraDelegateConfig.getHosts().get(0)).isEqualTo("host1");
+    assertThat(pdcWinRmInfraDelegateConfig.getHosts()).containsOnly("host1");
     assertThat(pdcWinRmInfraDelegateConfig.getEncryptionDataDetails()).isNotEmpty();
   }
 
@@ -502,7 +502,7 @@ public class SshEntityHelperTest extends CategoryTest {
     PdcWinRmInfraDelegateConfig pdcWinRmInfraDelegateConfig = (PdcWinRmInfraDelegateConfig) infraDelegateConfig;
     assertThat(pdcWinRmInfraDelegateConfig.getWinRmCredentials()).isEqualTo(winRmCredentials);
     assertThat(pdcWinRmInfraDelegateConfig.getHosts()).isNotEmpty();
-    assertThat(pdcWinRmInfraDelegateConfig.getHosts().get(0)).isEqualTo("host2");
+    assertThat(pdcWinRmInfraDelegateConfig.getHosts()).containsOnly("host2");
     assertThat(pdcWinRmInfraDelegateConfig.getEncryptionDataDetails()).isNotEmpty();
   }
 

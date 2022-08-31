@@ -21,7 +21,6 @@ import io.harness.rest.RestResponse;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.ArtifactStreamSummary;
 import software.wings.security.PermissionAttribute;
-import software.wings.security.annotations.ApiKeyAuthorized;
 import software.wings.security.annotations.AuthRule;
 import software.wings.security.annotations.Scope;
 import software.wings.service.impl.security.auth.AuthHandler;
@@ -59,7 +58,6 @@ import javax.ws.rs.QueryParam;
 @Consumes("application/json")
 @Scope(APPLICATION)
 @AuthRule(permissionType = SERVICE, skipAuth = true)
-@ApiKeyAuthorized(permissionType = SERVICE, skipAuth = true)
 @OwnedBy(HarnessTeam.CDC)
 public class ArtifactStreamResource {
   private ArtifactStreamService artifactStreamService;

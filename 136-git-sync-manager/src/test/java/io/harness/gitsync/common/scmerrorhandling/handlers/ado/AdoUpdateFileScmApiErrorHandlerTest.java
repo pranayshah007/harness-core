@@ -7,6 +7,7 @@
 
 package io.harness.gitsync.common.scmerrorhandling.handlers.ado;
 
+import static io.harness.rule.OwnerRule.BHAVYA;
 import static io.harness.rule.OwnerRule.MOHIT_GARG;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -14,6 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.ScmBadRequestException;
+import io.harness.exception.ScmConflictException;
 import io.harness.exception.ScmUnauthorizedException;
 import io.harness.exception.ScmUnexpectedException;
 import io.harness.exception.WingsException;
@@ -84,6 +86,19 @@ public class AdoUpdateFileScmApiErrorHandlerTest extends GitSyncTestBase {
       errorHandler.handleError(405, errorMessage, ErrorMetadata.builder().build());
     } catch (Exception ex) {
       WingsException exception = ExceptionUtils.cause(ScmUnexpectedException.class, ex);
+      assertThat(exception).isNotNull();
+      assertThat(exception.getMessage()).isEqualTo(errorMessage);
+    }
+  }
+
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void testHandleErrorWhenConflictStatusCode() {
+    try {
+      errorHandler.handleError(409, errorMessage, ErrorMetadata.builder().build());
+    } catch (Exception ex) {
+      WingsException exception = ExceptionUtils.cause(ScmConflictException.class, ex);
       assertThat(exception).isNotNull();
       assertThat(exception.getMessage()).isEqualTo(errorMessage);
     }

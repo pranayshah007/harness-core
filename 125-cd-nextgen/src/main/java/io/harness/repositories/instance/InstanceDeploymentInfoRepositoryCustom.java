@@ -10,6 +10,7 @@ package io.harness.repositories.instance;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.Scope;
 import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.instance.InstanceDeploymentInfo;
 import io.harness.cdng.instance.InstanceDeploymentInfoStatus;
@@ -23,12 +24,15 @@ import java.util.List;
 public interface InstanceDeploymentInfoRepositoryCustom {
   UpdateResult updateStatus(ExecutionInfoKey executionInfoKey, InstanceDeploymentInfoStatus status);
 
-  UpdateResult updateStatus(ExecutionInfoKey executionInfoKey, String host, InstanceDeploymentInfoStatus status);
+  UpdateResult updateStatus(Scope scope, String stageExecutionId, InstanceDeploymentInfoStatus status);
 
-  UpdateResult updateArtifactAndStatus(ExecutionInfoKey executionInfoKey, String deploymentIdentifier,
-      List<String> hosts, ArtifactDetails artifactDetails, InstanceDeploymentInfoStatus status);
+  UpdateResult updateArtifactAndStatus(ExecutionInfoKey executionInfoKey, List<String> hosts,
+      ArtifactDetails artifactDetails, InstanceDeploymentInfoStatus status, String stageExecutionId);
 
   DeleteResult deleteByExecutionInfoKey(ExecutionInfoKey executionInfoKey);
 
   List<InstanceDeploymentInfo> listByHosts(ExecutionInfoKey executionInfoKey, List<String> hosts);
+
+  List<InstanceDeploymentInfo> listByHostsAndArtifact(ExecutionInfoKey executionInfoKey, List<String> hosts,
+      ArtifactDetails artifactDetails, InstanceDeploymentInfoStatus status);
 }

@@ -6,6 +6,9 @@
 
 set +e
 
+export BRANCH_PREFIX=`echo ${ghprbTargetBranch} | sed 's/\(........\).*/\1/g'`
+echo "INFO: BRANCH_PREFIX=$BRANCH_PREFIX"
+
 function check_file_present(){
      local_file=$1
      if [ ! -f "$local_file" ]; then
@@ -28,14 +31,22 @@ KEY=`echo "${ghprbPullTitle}" | grep -o -iE "\[(${PROJECTS})-[0-9]+]:" | grep -o
 
 echo "JIRA Key is : $KEY "
 
-jira_response=`curl -X GET -H "Content-Type: application/json" https://harness.atlassian.net/rest/api/2/issue/${KEY}?fields=issuetype,customfield_10687,customfield_10709,customfield_10748,customfield_10763,customfield_10785 --user $JIRA_USERNAME:$JIRA_PASSWORD`
-
+jira_response=`curl -X GET -H "Content-Type: application/json" https://harness.atlassian.net/rest/api/2/issue/${KEY}?fields=issuetype,customfield_10687,customfield_10709,customfield_10748,customfield_10763,customfield_10785,priority --user $JIRA_USERNAME:$JIRA_PASSWORD`
 issuetype=`echo "${jira_response}" | jq ".fields.issuetype.name" | tr -d '"'`
+prioritytype=`echo "${jira_response}" | jq ".fields.priority.name" | tr -d '"'`
+
+
 # No longer require what changed or phase injected in fields
 # BT-950
 what_changed="n/a"
 phase_injected="n/a"
 ## End Change for BT-950
+PRIORITY_LIST=("P2","P3","P4")
+if [[ "${BRANCH_PREFIX}" = "release/"  && ( ${PRIORITY_LIST[*]} =~ "${prioritytype}" ) ]]
+then
+  echo "ERROR: Hotfix merge to target branch: release/* is blocked unless it is P0 or P1."
+  exit 1
+fi
 
 if [[ $KEY == BT-* || $KEY == SPG-* ]]
 then

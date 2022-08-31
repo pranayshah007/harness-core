@@ -19,6 +19,7 @@ import static io.harness.pms.yaml.YamlNode.UUID_FIELD_NAME;
 
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptySet;
 import static java.util.stream.Collectors.joining;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -74,10 +75,12 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.annotation.Nonnull;
@@ -107,7 +110,7 @@ public class SshEntityHelper {
         PhysicalDataCenterConnectorDTO pdcConnectorDTO =
             (connectorDTO != null) ? (PhysicalDataCenterConnectorDTO) connectorDTO.getConnectorConfig() : null;
         sshKeySpecDto = getSshKeySpecDto(pdcDirectInfrastructure.getCredentialsRef(), ambiance);
-        List<String> hosts = extractHostNames(pdcDirectInfrastructure, pdcConnectorDTO, ngAccess);
+        Set<String> hosts = extractHostNames(pdcDirectInfrastructure, pdcConnectorDTO, ngAccess);
         return PdcSshInfraDelegateConfig.builder()
             .hosts(hosts)
             .physicalDataCenterConnectorDTO(pdcConnectorDTO)
@@ -165,7 +168,7 @@ public class SshEntityHelper {
         PhysicalDataCenterConnectorDTO pdcConnectorDTO =
             (connectorDTO != null) ? (PhysicalDataCenterConnectorDTO) connectorDTO.getConnectorConfig() : null;
         winRmCredentials = getWinRmCredentials(pdcDirectInfrastructure.getCredentialsRef(), ambiance);
-        List<String> hosts = extractHostNames(pdcDirectInfrastructure, pdcConnectorDTO, ngAccess);
+        Set<String> hosts = new HashSet<>(extractHostNames(pdcDirectInfrastructure, pdcConnectorDTO, ngAccess));
         return PdcWinRmInfraDelegateConfig.builder()
             .hosts(hosts)
             .physicalDataCenterConnectorDTO(pdcConnectorDTO)
@@ -221,17 +224,17 @@ public class SshEntityHelper {
         .collect(Collectors.toMap(map -> map.getKey(), map -> map.getValue()));
   }
 
-  private List<String> extractHostNames(PdcInfrastructureOutcome pdcDirectInfrastructure,
+  private Set<String> extractHostNames(PdcInfrastructureOutcome pdcDirectInfrastructure,
       PhysicalDataCenterConnectorDTO pdcConnectorDTO, NGAccess ngAccess) {
     return pdcDirectInfrastructure.useInfrastructureHosts()
-        ? pdcDirectInfrastructure.getHosts()
+        ? new HashSet<>(pdcDirectInfrastructure.getHosts())
         : toStringHostNames(extractConnectorHostNames(pdcDirectInfrastructure, pdcConnectorDTO.getHosts(), ngAccess));
   }
 
-  private List<HostDTO> extractConnectorHostNames(
+  private Set<HostDTO> extractConnectorHostNames(
       PdcInfrastructureOutcome pdcDirectInfrastructure, List<HostDTO> hosts, NGAccess ngAccess) {
     if (isEmpty(hosts)) {
-      return emptyList();
+      return emptySet();
     }
 
     if (isNotEmpty(pdcDirectInfrastructure.getHostFilters())) {
@@ -241,7 +244,7 @@ public class SshEntityHelper {
           .mapToObj(
               index -> filterConnectorHostsByHostName(ngAccess, pdcDirectInfrastructure, batches.get(index), index))
           .flatMap(Collection::stream)
-          .collect(Collectors.toList());
+          .collect(Collectors.toSet());
     }
 
     if (isNotEmpty(pdcDirectInfrastructure.getAttributeFilters())) {
@@ -251,10 +254,10 @@ public class SshEntityHelper {
           .mapToObj(
               index -> filterConnectorHostsByAttributes(ngAccess, pdcDirectInfrastructure, batches.get(index), index))
           .flatMap(Collection::stream)
-          .collect(Collectors.toList());
+          .collect(Collectors.toSet());
     }
 
-    return hosts;
+    return new HashSet<>(hosts);
   }
 
   private List<HostDTO> filterConnectorHostsByAttributes(
@@ -288,8 +291,8 @@ public class SshEntityHelper {
     return result.getContent();
   }
 
-  private List<String> toStringHostNames(List<HostDTO> hosts) {
-    return hosts.stream().map(host -> host.getHostName()).collect(Collectors.toList());
+  private Set<String> toStringHostNames(Collection<HostDTO> hosts) {
+    return hosts.stream().map(host -> host.getHostName()).collect(Collectors.toSet());
   }
 
   private SSHKeySpecDTO getSshKeySpecDto(String credentialsRef, Ambiance ambiance) {

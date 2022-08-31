@@ -50,6 +50,7 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import io.serializer.HObjectMapper;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
@@ -83,8 +84,8 @@ public class UserGroupChangeConsumerImplTest extends AggregatorTestBase {
     UserGroupCRUDEventHandler userGroupCRUDEventHandler = mock(UserGroupCRUDEventHandler.class);
     RoleService roleService = mock(RoleService.class);
     scopeService = mock(ScopeService.class);
-    ChangeConsumerService changeConsumerService =
-        new ChangeConsumerServiceImpl(roleService, userGroupService, resourceGroupService, scopeService);
+    ChangeConsumerService changeConsumerService = new ChangeConsumerServiceImpl(
+        roleService, userGroupService, resourceGroupService, scopeService, new HashMap<>());
     userGroupChangeConsumer =
         new UserGroupChangeConsumerImpl(aclRepository, roleAssignmentRepository, userGroupRepository,
             AggregatorJobType.PRIMARY.name(), changeConsumerService, scopeService, userGroupCRUDEventHandler);

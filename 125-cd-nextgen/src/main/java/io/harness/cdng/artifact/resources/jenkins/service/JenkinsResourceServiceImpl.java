@@ -12,6 +12,7 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 
 import io.harness.beans.DelegateTaskRequest;
+import io.harness.beans.DelegateTaskRequest.DelegateTaskRequestBuilder;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.resources.jenkins.dtos.JenkinsJobDetailsDTO;
 import io.harness.cdng.artifact.resources.jenkins.mappers.JenkinsResourceMapper;
@@ -19,6 +20,7 @@ import io.harness.common.NGTaskType;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.RemoteMethodReturnValueData;
@@ -178,18 +180,27 @@ public class JenkinsResourceServiceImpl implements JenkinsResourceService {
                                                         .artifactTaskType(artifactTaskType)
                                                         .attributes(delegateRequest)
                                                         .build();
-    final DelegateTaskRequest delegateTaskRequest =
+    DelegateTaskRequestBuilder delegateTaskRequestBuilder =
         DelegateTaskRequest.builder()
             .accountId(ngAccess.getAccountIdentifier())
             .taskType(NGTaskType.JENKINS_ARTIFACT_TASK_NG.name())
             .taskParameters(artifactTaskParameters)
             .executionTimeout(java.time.Duration.ofSeconds(timeoutInSecs))
-            .taskSetupAbstraction("orgIdentifier", ngAccess.getOrgIdentifier())
             .taskSetupAbstraction("ng", "true")
-            .taskSetupAbstraction("owner", ngAccess.getOrgIdentifier() + "/" + ngAccess.getProjectIdentifier())
-            .taskSetupAbstraction("projectIdentifier", ngAccess.getProjectIdentifier())
-            .taskSelectors(delegateRequest.getJenkinsConnectorDTO().getDelegateSelectors())
-            .build();
+            .taskSelectors(delegateRequest.getJenkinsConnectorDTO().getDelegateSelectors());
+    if (EmptyPredicate.isEmpty(ngAccess.getOrgIdentifier())
+        && EmptyPredicate.isEmpty(ngAccess.getProjectIdentifier())) {
+      delegateTaskRequestBuilder.taskSetupAbstraction("owner", ngAccess.getAccountIdentifier());
+    } else if (EmptyPredicate.isEmpty(ngAccess.getProjectIdentifier())
+        && EmptyPredicate.isNotEmpty(ngAccess.getOrgIdentifier())) {
+      delegateTaskRequestBuilder.taskSetupAbstraction("orgIdentifier", ngAccess.getOrgIdentifier())
+          .taskSetupAbstraction("owner", ngAccess.getOrgIdentifier());
+    } else {
+      delegateTaskRequestBuilder.taskSetupAbstraction("orgIdentifier", ngAccess.getOrgIdentifier())
+          .taskSetupAbstraction("projectIdentifier", ngAccess.getProjectIdentifier())
+          .taskSetupAbstraction("owner", ngAccess.getOrgIdentifier() + "/" + ngAccess.getProjectIdentifier());
+    }
+    final DelegateTaskRequest delegateTaskRequest = delegateTaskRequestBuilder.build();
     return delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
   }
 

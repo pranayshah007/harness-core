@@ -13,6 +13,7 @@ import static java.util.Objects.isNull;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
@@ -199,13 +200,13 @@ public class ArtifactDelegateRequestUtils {
 
   public static S3ArtifactDelegateRequest getAmazonS3DelegateRequest(String bucketName, String filePath,
       String filePathRegex, Object o, String connectorRef, AwsConnectorDTO connectorDTO,
-      List<EncryptedDataDetail> encryptedDataDetails, ArtifactSourceType sourceType) {
+      List<EncryptedDataDetail> encryptedDataDetails, ArtifactSourceType sourceType, String region) {
     return S3ArtifactDelegateRequest.builder()
         .bucketName(trim(bucketName))
         .filePath(trim(filePath))
         .filePathRegex(trim(filePathRegex))
         .connectorRef(connectorRef)
-        .region(DEFAULT_REGION_AWS)
+        .region(EmptyPredicate.isNotEmpty(region) ? region : DEFAULT_REGION_AWS)
         .awsConnectorDTO(connectorDTO)
         .encryptedDataDetails(encryptedDataDetails)
         .sourceType(sourceType)

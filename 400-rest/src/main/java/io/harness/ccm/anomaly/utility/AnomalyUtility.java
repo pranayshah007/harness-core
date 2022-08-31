@@ -101,11 +101,16 @@ public class AnomalyUtility {
   }
 
   public Double getPercentageRaise(double actualCost, double expectedCost, boolean rounded) {
-    if (rounded) {
-      return getRoundedDoubleValue((actualCost - expectedCost) / expectedCost * 100);
+    double percentageRaise;
+    if (expectedCost == 0) {
+      percentageRaise = 100D;
     } else {
-      return (actualCost - expectedCost) / expectedCost * 100;
+      percentageRaise = (actualCost - expectedCost) / expectedCost * 100;
     }
+    if (rounded) {
+      percentageRaise = getRoundedDoubleValue(percentageRaise);
+    }
+    return percentageRaise;
   }
 
   public String convertInstantToDate(Instant instant) {

@@ -56,7 +56,6 @@ import software.wings.security.PermissionAttribute.Action;
 import software.wings.security.PermissionAttribute.PermissionType;
 import software.wings.security.PermissionAttribute.ResourceType;
 import software.wings.security.UserThreadLocal;
-import software.wings.security.annotations.ApiKeyAuthorized;
 import software.wings.security.annotations.AuthRule;
 import software.wings.security.annotations.Scope;
 import software.wings.service.intfc.ArtifactStreamServiceBindingService;
@@ -94,7 +93,6 @@ import javax.ws.rs.QueryParam;
 @Produces("application/json")
 @Scope(ResourceType.APPLICATION)
 @AuthRule(permissionType = WORKFLOW)
-@ApiKeyAuthorized(permissionType = WORKFLOW)
 @OwnedBy(HarnessTeam.CDC)
 public class WorkflowResource {
   @Inject private ArtifactStreamServiceBindingService artifactStreamServiceBindingService;

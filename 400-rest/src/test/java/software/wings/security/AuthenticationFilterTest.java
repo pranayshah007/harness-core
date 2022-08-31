@@ -279,6 +279,7 @@ public class AuthenticationFilterTest extends CategoryTest {
     doReturn(false).when(authenticationFilter).isAdminPortalRequest();
     doReturn(true).when(authenticationFilter).externalFacingAPI();
     doReturn(false).when(rateLimitingService).rateLimitRequest(anyString());
+    doReturn(true).when(apiKeyService).validate(apiKey, ACCOUNT_ID);
     UriInfo uriInfo = mock(UriInfo.class);
     MultivaluedHashMap<String, String> queryParams = new MultivaluedHashMap<>();
     queryParams.put("accountId", Arrays.asList(ACCOUNT_ID));
@@ -329,6 +330,7 @@ public class AuthenticationFilterTest extends CategoryTest {
     doReturn(false).when(authenticationFilter).externalFacingAPI();
     doReturn(false).when(rateLimitingService).rateLimitRequest(anyString());
     doReturn(true).when(authenticationFilter).isApiKeyAuthorizationAPI();
+    doReturn(true).when(apiKeyService).validate(apiKey, ACCOUNT_ID);
 
     UriInfo uriInfo = mock(UriInfo.class);
     MultivaluedHashMap<String, String> queryParams = new MultivaluedHashMap<>();

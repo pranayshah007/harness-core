@@ -33,6 +33,10 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class FQNMapGenerator {
   public Map<FQN, Object> generateFQNMap(JsonNode yamlMap) {
+    return generateFQNMap(yamlMap, false);
+  }
+
+  public Map<FQN, Object> generateFQNMap(JsonNode yamlMap, boolean keepUuidFields) {
     HashSet<String> expressions = new HashSet<>();
     Set<String> fieldNames = new LinkedHashSet<>();
     yamlMap.fieldNames().forEachRemaining(fieldNames::add);
@@ -43,11 +47,12 @@ public class FQNMapGenerator {
 
     Map<FQN, Object> res = new LinkedHashMap<>();
 
-    generateFQNMap(yamlMap.get(topKey), currentFQN, res, expressions);
+    generateFQNMap(yamlMap.get(topKey), currentFQN, res, expressions, keepUuidFields);
     return res;
   }
 
-  public void generateFQNMap(JsonNode map, FQN baseFQN, Map<FQN, Object> res, HashSet<String> expressions) {
+  public void generateFQNMap(
+      JsonNode map, FQN baseFQN, Map<FQN, Object> res, HashSet<String> expressions, boolean keepUuidFields) {
     Set<String> fieldNames = new LinkedHashSet<>();
     map.fieldNames().forEachRemaining(fieldNames::add);
     for (String key : fieldNames) {
@@ -59,20 +64,21 @@ public class FQNMapGenerator {
           continue;
         }
         ArrayNode arrayNode = (ArrayNode) value;
-        generateFQNMapFromList(arrayNode, currFQN, res, expressions);
+        generateFQNMapFromList(arrayNode, currFQN, res, expressions, keepUuidFields);
       } else if (value.getNodeType() == JsonNodeType.OBJECT) {
         if (value.size() == 0) {
           FQNHelper.validateUniqueFqn(currFQN, value, res, expressions);
           continue;
         }
-        generateFQNMap(value, currFQN, res, expressions);
+        generateFQNMap(value, currFQN, res, expressions, keepUuidFields);
       } else {
         FQNHelper.validateUniqueFqn(currFQN, value, res, expressions);
       }
     }
   }
 
-  public void generateFQNMapFromList(ArrayNode list, FQN baseFQN, Map<FQN, Object> res, HashSet<String> expressions) {
+  public void generateFQNMapFromList(
+      ArrayNode list, FQN baseFQN, Map<FQN, Object> res, HashSet<String> expressions, boolean keepUuidFields) {
     if (list == null || list.get(0) == null) {
       FQNHelper.validateUniqueFqn(baseFQN, list, res, expressions);
       return;
@@ -84,21 +90,21 @@ public class FQNMapGenerator {
     }
 
     // Remove __uuid key if it contains in the json object
-    if (firstNode.isObject() && firstNode.get(UUID_FIELD_NAME) != null) {
+    if (!keepUuidFields && firstNode.isObject() && firstNode.get(UUID_FIELD_NAME) != null) {
       ObjectNode objectNode = (ObjectNode) firstNode;
       objectNode.remove(UUID_FIELD_NAME);
       firstNode = objectNode;
     }
     int noOfKeys = firstNode.size();
     if (noOfKeys == 1) {
-      generateFQNMapFromListOfSingleKeyMaps(list, baseFQN, res, expressions);
+      generateFQNMapFromListOfSingleKeyMaps(list, baseFQN, res, expressions, keepUuidFields);
     } else {
-      generateFQNMapFromListOfMultipleKeyMaps(list, baseFQN, res, expressions);
+      generateFQNMapFromListOfMultipleKeyMaps(list, baseFQN, res, expressions, keepUuidFields);
     }
   }
 
   public void generateFQNMapFromListOfSingleKeyMaps(
-      ArrayNode list, FQN baseFQN, Map<FQN, Object> res, HashSet<String> expressions) {
+      ArrayNode list, FQN baseFQN, Map<FQN, Object> res, HashSet<String> expressions, boolean keepUuidFields) {
     if (FQNHelper.checkIfListHasNoIdentifier(list)) {
       FQNHelper.validateUniqueFqn(baseFQN, list, res, expressions);
       return;
@@ -107,7 +113,7 @@ public class FQNMapGenerator {
       if (element.has(YAMLFieldNameConstants.PARALLEL)) {
         FQN currFQN = FQN.duplicateAndAddNode(baseFQN, FQNNode.builder().nodeType(FQNNode.NodeType.PARALLEL).build());
         ArrayNode listOfMaps = (ArrayNode) element.get(YAMLFieldNameConstants.PARALLEL);
-        generateFQNMapFromList(listOfMaps, currFQN, res, expressions);
+        generateFQNMapFromList(listOfMaps, currFQN, res, expressions, keepUuidFields);
       } else {
         Set<String> fieldNames = new LinkedHashSet<>();
         element.fieldNames().forEachRemaining(fieldNames::add);
@@ -121,13 +127,13 @@ public class FQNMapGenerator {
                 .uuidKey(YAMLFieldNameConstants.IDENTIFIER)
                 .uuidValue(identifier)
                 .build());
-        generateFQNMap(innerMap, currFQN, res, expressions);
+        generateFQNMap(innerMap, currFQN, res, expressions, keepUuidFields);
       }
     });
   }
 
   public void generateFQNMapFromListOfMultipleKeyMaps(
-      ArrayNode list, FQN baseFQN, Map<FQN, Object> res, HashSet<String> expressions) {
+      ArrayNode list, FQN baseFQN, Map<FQN, Object> res, HashSet<String> expressions, boolean keepUuidFields) {
     String uuidKey = FQNHelper.getUuidKey(list);
     if (EmptyPredicate.isEmpty(uuidKey)) {
       FQNHelper.validateUniqueFqn(baseFQN, list, res, expressions);
@@ -142,7 +148,7 @@ public class FQNMapGenerator {
       FQN currFQN = FQN.duplicateAndAddNode(baseFQN,
           FQNNode.builder().nodeType(FQNNode.NodeType.UUID).uuidKey(uuidKey).uuidValue(jsonNode.asText()).build());
       if (uuidKey.equals(YAMLFieldNameConstants.IDENTIFIER)) {
-        generateFQNMap(element, currFQN, res, expressions);
+        generateFQNMap(element, currFQN, res, expressions, keepUuidFields);
       } else {
         Set<String> fieldNames = new LinkedHashSet<>();
         element.fieldNames().forEachRemaining(fieldNames::add);

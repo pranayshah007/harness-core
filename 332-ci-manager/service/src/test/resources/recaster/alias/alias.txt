@@ -49,6 +49,7 @@ io.harness.steps.common.NGSectionStepParameters
 io.harness.steps.fork.ForkStepParameters
 io.harness.beans.steps.stepinfo.DockerStepInfo
 io.harness.beans.steps.stepinfo.RunStepInfo
+io.harness.beans.steps.stepinfo.BackgroundStepInfo
 io.harness.plancreator.execution.ExecutionElementConfig
 io.harness.pms.sdk.core.plan.MapStepParameters
 io.harness.steps.section.chain.SectionChainPassThroughData
@@ -73,6 +74,7 @@ io.harness.yaml.core.failurestrategy.rollback.StageRollbackFailureActionConfig
 io.harness.advisers.rollback.RollbackTriggeredOutput
 io.harness.beans.stages.IntegrationStageNode
 io.harness.beans.steps.nodes.RunStepNode
+io.harness.beans.steps.nodes.BackgroundStepNode
 io.harness.beans.steps.nodes.RunTestsStepNode
 io.harness.beans.steps.nodes.ArtifactoryUploadNode
 io.harness.beans.steps.nodes.BuildAndPushDockerNode

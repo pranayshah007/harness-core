@@ -9,6 +9,7 @@ package io.harness.security;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.rule.OwnerRule.ASHISHSANODIA;
 import static io.harness.rule.OwnerRule.RAJ;
 import static io.harness.rule.OwnerRule.SHASHANK;
 import static io.harness.rule.OwnerRule.SOWMYA;
@@ -275,6 +276,42 @@ public class NextGenAuthenticationFilterTest extends ApiKeyFilterTestBase {
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining("Invalid accountId in token " + uuid)
         .hasMessageContaining(uuid);
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testAccountQueryParamForAPISpecFirst() {
+    final UriInfo mockUriInfo = mock(UriInfo.class);
+    doReturn(mockUriInfo).when(containerRequestContext).getUriInfo();
+    MultivaluedMap<String, String> queryParams = new MultivaluedHashMap<>();
+    queryParams.put(NGCommonEntityConstants.ACCOUNT, Lists.newArrayList("account"));
+    when(mockUriInfo.getQueryParameters()).thenReturn(queryParams);
+    when(mockUriInfo.getPathParameters()).thenReturn(queryParams);
+
+    String delimiter = ".";
+    String uuid = generateUuid();
+    String rawPassword = generateUuid();
+    String encodedPassword = new BCryptPasswordEncoder($2A, 10).encode(rawPassword);
+    apiKey = "pat" + delimiter + uuid + delimiter + rawPassword;
+    when(containerRequestContext.getHeaderString(X_API_KEY)).thenReturn(apiKey);
+    when(authenticationFilter.testRequestPredicate(containerRequestContext)).thenReturn(true);
+    PowerMockito.mockStatic(NGRestUtils.class);
+    TokenDTO tokenDTO = TokenDTO.builder()
+                            .apiKeyType(ApiKeyType.USER)
+                            .encodedPassword(encodedPassword)
+                            .valid(true)
+                            .accountIdentifier("account")
+                            .parentIdentifier(generateUuid())
+                            .email("user@harness.io")
+                            .username("user")
+                            .build();
+    when(NGRestUtils.getResponse(any())).thenAnswer(invocationOnMock -> tokenDTO);
+    authenticationFilter.filter(containerRequestContext);
+    Principal context = SourcePrincipalContextBuilder.getSourcePrincipal();
+    assertThat(context).isNotNull();
+    assertThat(context.getType()).isEqualByComparingTo(PrincipalType.USER);
+    assertThat(context.getName()).isEqualTo(tokenDTO.getParentIdentifier());
   }
 
   @Test

@@ -7,6 +7,10 @@
 
 package io.harness.delegate.task.shell.ssh;
 
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.SCRIPT_EXECUTION_FAILED;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.SCRIPT_EXECUTION_FAILED_EXPLANATION;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.SCRIPT_EXECUTION_FAILED_HINT;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
@@ -16,9 +20,12 @@ import io.harness.delegate.task.shell.SshCommandTaskParameters;
 import io.harness.delegate.task.ssh.NgCommandUnit;
 import io.harness.delegate.task.ssh.ScriptCommandUnit;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.NestedExceptionUtils;
+import io.harness.exception.runtime.SshCommandExecutionException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogLevel;
 import io.harness.shell.AbstractScriptExecutor;
+import io.harness.shell.ExecuteCommandResponse;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -30,7 +37,7 @@ public class SshScriptCommandHandler implements CommandHandler {
   @Inject private SshScriptExecutorFactory sshScriptExecutorFactory;
 
   @Override
-  public CommandExecutionStatus handle(CommandTaskParameters parameters, NgCommandUnit commandUnit,
+  public ExecuteCommandResponse handle(CommandTaskParameters parameters, NgCommandUnit commandUnit,
       ILogStreamingTaskClient logStreamingTaskClient, CommandUnitsProgress commandUnitsProgress,
       Map<String, Object> taskContext) {
     if (!(parameters instanceof SshCommandTaskParameters)) {
@@ -62,15 +69,24 @@ public class SshScriptCommandHandler implements CommandHandler {
 
     AbstractScriptExecutor executor = sshScriptExecutorFactory.getExecutor(context);
 
-    CommandExecutionStatus commandExecutionStatus =
-        executor.executeCommandString(scriptCommandUnit.getCommand(), sshCommandTaskParameters.getOutputVariables())
-            .getStatus();
+    ExecuteCommandResponse executeCommandResponse =
+        executor.executeCommandString(scriptCommandUnit.getCommand(), sshCommandTaskParameters.getOutputVariables());
+    if (executeCommandResponse == null) {
+      if (parameters.isExecuteOnDelegate()) {
+        executor.getLogCallback().saveExecutionLog("Command finished with status " + CommandExecutionStatus.FAILURE,
+            LogLevel.ERROR, CommandExecutionStatus.FAILURE);
+      }
 
+      throw NestedExceptionUtils.hintWithExplanationException(SCRIPT_EXECUTION_FAILED_HINT,
+          SCRIPT_EXECUTION_FAILED_EXPLANATION, new SshCommandExecutionException(SCRIPT_EXECUTION_FAILED));
+    }
+
+    CommandExecutionStatus commandExecutionStatus = executeCommandResponse.getStatus();
     if (parameters.isExecuteOnDelegate()) {
       executor.getLogCallback().saveExecutionLog(
           "Command finished with status " + commandExecutionStatus, LogLevel.INFO, commandExecutionStatus);
     }
 
-    return commandExecutionStatus;
+    return executeCommandResponse;
   }
 }

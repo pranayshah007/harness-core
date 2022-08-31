@@ -44,7 +44,6 @@ import software.wings.beans.container.UserDataSpecification;
 import software.wings.security.PermissionAttribute.Action;
 import software.wings.security.PermissionAttribute.PermissionType;
 import software.wings.security.PermissionAttribute.ResourceType;
-import software.wings.security.annotations.ApiKeyAuthorized;
 import software.wings.security.annotations.AuthRule;
 import software.wings.security.annotations.ListAPI;
 import software.wings.security.annotations.Scope;
@@ -85,7 +84,6 @@ import org.hibernate.validator.constraints.NotEmpty;
 @Produces(APPLICATION_JSON)
 @Scope(ResourceType.APPLICATION)
 @AuthRule(permissionType = PermissionType.SERVICE)
-@ApiKeyAuthorized(permissionType = PermissionType.SERVICE)
 @OwnedBy(HarnessTeam.CDC)
 public class ServiceResource {
   private ServiceResourceService serviceResourceService;

@@ -26,6 +26,7 @@ import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UpdatedAtAware;
@@ -87,10 +88,15 @@ public class StateExecutionInstance implements PersistentEntity, AccountDataRete
                  .field(StateExecutionInstanceKeys.parentInstanceId)
                  .field(StateExecutionInstanceKeys.createdAt)
                  .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("appId_endTs")
+                 .field(StateExecutionInstanceKeys.appId)
+                 .ascSortField(StateExecutionInstanceKeys.endTs)
+                 .build())
         .build();
   }
   @Id private String uuid;
-  @FdIndex protected String appId;
+  protected String appId;
   @FdIndex private long createdAt;
   private long lastUpdatedAt;
 

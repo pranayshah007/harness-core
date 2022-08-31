@@ -24,6 +24,7 @@ import software.wings.api.PhaseElement;
 import software.wings.api.SelectedNodeExecutionData;
 import software.wings.api.ServiceInstanceIdsParam;
 import software.wings.beans.AwsInfrastructureMapping;
+import software.wings.beans.Base;
 import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.ServiceInstance;
 import software.wings.service.intfc.InfrastructureMappingService;
@@ -39,6 +40,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.annotations.Transient;
 
@@ -57,20 +59,71 @@ public class CollectRemainingInstancesState extends State {
     String appId = requireNonNull(context.getApp()).getUuid();
     String infraMappingId = context.fetchInfraMappingId();
 
-    if (!context.isLastPhase(true) || !isAutoScaleGroupSet(appId, infraMappingId)) {
+    if (!isAutoScaleGroupSet(appId, infraMappingId)) {
       return ExecutionResponse.builder().executionStatus(ExecutionStatus.SKIPPED).build();
     }
 
     String serviceId = ((PhaseElement) context.getContextElement(ContextElementType.PARAM, PhaseElement.PHASE_PARAM))
                            .getServiceElement()
                            .getUuid();
-    Set<String> alreadyRolledBackInstances = getRolledBackInstances(context);
 
-    List<ServiceInstance> serviceInstances =
+    List<ServiceInstance> activeInstances =
         getAllServiceInstancesInASG(appId, infraMappingId, context)
             .stream()
             .filter(serviceInstance -> serviceInstance.getServiceId().equals(serviceId))
-            .filter(serviceInstance -> !alreadyRolledBackInstances.contains(serviceInstance.getUuid()))
+            .collect(toList());
+
+    // all active instance ids
+    Set<String> activeInstanceIds = activeInstances.stream().map(Base::getUuid).collect(Collectors.toSet());
+
+    List<SweepingOutputInstance> sweepingOutputInstances = sweepingOutputService.findManyWithNamePrefix(
+        context.prepareSweepingOutputInquiryBuilder().name(ServiceInstanceIdsParam.SERVICE_INSTANCE_IDS_PARAMS).build(),
+        SweepingOutputInstance.Scope.WORKFLOW);
+
+    // instances that are already rolled back or will be rolled back in other phases
+    Set<String> instancesDeployedInOtherPhases = new HashSet<>();
+    // instances that were initially deployed in this phase
+    Set<String> instancesForRollback = new HashSet<>();
+    for (SweepingOutputInstance sweepingOutputInstance : sweepingOutputInstances) {
+      ServiceInstanceIdsParam serviceInstanceIdsParam = (ServiceInstanceIdsParam) sweepingOutputInstance.getValue();
+      if (sweepingOutputInstance.getName().equals(
+              ServiceInstanceIdsParam.SERVICE_INSTANCE_IDS_PARAMS + getPhaseNameForRollback(context))) {
+        instancesForRollback.addAll(serviceInstanceIdsParam.getInstanceIds());
+      } else {
+        instancesDeployedInOtherPhases.addAll(serviceInstanceIdsParam.getInstanceIds());
+      }
+    }
+
+    List<String> newInstances =
+        activeInstanceIds.stream()
+            .filter(serviceInstance -> !instancesDeployedInOtherPhases.contains(serviceInstance))
+            .filter(serviceInstance -> !instancesForRollback.contains(serviceInstance))
+            .collect(toList());
+
+    // get count of initially deployed instances before updating a list
+    int initiallyDeployedInstancesCount = instancesForRollback.size();
+
+    // remove inactive instances from list
+    instancesForRollback.removeIf(instance -> !activeInstanceIds.contains(instance));
+
+    // count how many we want to rollback
+    int countRollback =
+        calculateRollbackCount(sweepingOutputInstances, getPhaseNameForRollback(context), activeInstanceIds.size());
+
+    int missingInstancesCount = countRollback - instancesForRollback.size();
+    if (missingInstancesCount > 0) {
+      instancesForRollback.addAll(
+          newInstances.size() <= missingInstancesCount ? newInstances : newInstances.subList(0, missingInstancesCount));
+    }
+
+    // if it's last rollback phase add all remaining
+    if (context.isLastPhase(true)) {
+      instancesForRollback.addAll(newInstances);
+    }
+
+    List<ServiceInstance> serviceInstances =
+        activeInstances.stream()
+            .filter(serviceInstance -> instancesForRollback.contains(serviceInstance.getUuid()))
             .collect(toList());
 
     SelectedNodeExecutionData selectedNodeExecutionData = new SelectedNodeExecutionData();
@@ -88,6 +141,7 @@ public class CollectRemainingInstancesState extends State {
         aServiceInstanceIdsParam()
             .withInstanceIds(serviceInstances.stream().map(ServiceInstance::getUuid).collect(toList()))
             .withServiceId(serviceId)
+            .withInitiallyDeployedInstancesCount(initiallyDeployedInstancesCount)
             .build();
 
     updateServiceInstancesInSweepingOutput(context, serviceIdParamElement);
@@ -100,27 +154,27 @@ public class CollectRemainingInstancesState extends State {
         .build();
   }
 
-  private Set<String> getRolledBackInstances(ExecutionContext context) {
-    Set<String> alreadyRolledBackInstances = new HashSet<>();
-    String phaseNameForRollback = getPhaseNameForRollback(context);
-    if (phaseNameForRollback == null) {
-      return alreadyRolledBackInstances;
+  private int calculateRollbackCount(
+      List<SweepingOutputInstance> sweepingOutputInstances, String phaseName, int allActiveInstancesCount) {
+    double allInitiallyDeployedInstancesCount = 0;
+    double numberOfInstancesDeployedInCurrentPhase = 0;
+    for (SweepingOutputInstance sweepingOutputInstance : sweepingOutputInstances) {
+      ServiceInstanceIdsParam serviceInstanceIdsParam = (ServiceInstanceIdsParam) sweepingOutputInstance.getValue();
+      allInitiallyDeployedInstancesCount += serviceInstanceIdsParam.getInitiallyDeployedInstancesCount() == 0
+          ? serviceInstanceIdsParam.getInstanceIds().size()
+          : serviceInstanceIdsParam.getInitiallyDeployedInstancesCount();
+
+      if (sweepingOutputInstance.getName().equals(ServiceInstanceIdsParam.SERVICE_INSTANCE_IDS_PARAMS + phaseName)) {
+        numberOfInstancesDeployedInCurrentPhase = serviceInstanceIdsParam.getInstanceIds().size();
+      }
     }
 
-    sweepingOutputService
-        .findManyWithNamePrefix(context.prepareSweepingOutputInquiryBuilder()
-                                    .name(ServiceInstanceIdsParam.SERVICE_INSTANCE_IDS_PARAMS)
-                                    .build(),
-            SweepingOutputInstance.Scope.WORKFLOW)
-        .stream()
-        .filter(sweepingOutputInstance
-            -> !sweepingOutputInstance.getName().equals(
-                ServiceInstanceIdsParam.SERVICE_INSTANCE_IDS_PARAMS + phaseNameForRollback))
-        .forEach(sweepingOutputInstance
-            -> alreadyRolledBackInstances.addAll(
-                ((ServiceInstanceIdsParam) sweepingOutputInstance.getValue()).getInstanceIds()));
+    if (allInitiallyDeployedInstancesCount == 0 || numberOfInstancesDeployedInCurrentPhase == 0) {
+      return 0;
+    }
 
-    return alreadyRolledBackInstances;
+    return (int) Math.round(
+        allActiveInstancesCount * numberOfInstancesDeployedInCurrentPhase / allInitiallyDeployedInstancesCount);
   }
 
   private void updateServiceInstancesInSweepingOutput(
