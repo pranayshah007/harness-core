@@ -302,7 +302,7 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
                                               }
                                             });
 
-      if (timeoutInMillis != null) {
+      if (timeoutInMillis != null && timeoutInMillis > 0) {
         processExecutor.timeout(timeoutInMillis, TimeUnit.MILLISECONDS);
       }
 

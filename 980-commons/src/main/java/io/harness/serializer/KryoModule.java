@@ -64,6 +64,7 @@ public class KryoModule extends AbstractModule {
   @Named("referenceFalseKryoSerializer")
   @Singleton
   public KryoSerializer getKryoSerializer(Provider<Set<Class<? extends KryoRegistrar>>> provider) {
-    return new KryoSerializer(provider.get(), false, false);
+    // FixMe: Disabled class origin check because it can't work for granular targets - revisit this
+    return new KryoSerializer(provider.get(), true, false);
   }
 }

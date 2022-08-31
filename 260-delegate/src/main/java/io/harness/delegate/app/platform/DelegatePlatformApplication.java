@@ -82,7 +82,7 @@ public class DelegatePlatformApplication extends Application<DelegatePlatformCon
   }
 
   @Override
-  public void run(final DelegatePlatformConfig delegateAgentConfig, final Environment environment) throws Exception {
+  public void run(final DelegatePlatformConfig delegatePlatformConfig, final Environment environment) throws Exception {
     ExecutorModule.getInstance().setExecutorService(ThreadPool.create(10, 40, 1, TimeUnit.SECONDS,
         new ThreadFactoryBuilder().setNameFormat("other-%d").setPriority(Thread.NORM_PRIORITY).build()));
 
@@ -94,7 +94,7 @@ public class DelegatePlatformApplication extends Application<DelegatePlatformCon
     registerResources(environment, injector);
     initializeMetrics(environment, injector);
 
-    log.info("Starting Delegate in {} mode", DEPLOY_MODE);
+    log.info("Starting Delegate Platform in {} mode", DEPLOY_MODE);
     log.info("Process: {}", ManagementFactory.getRuntimeMXBean().getName());
 
     injector.getInstance(DelegateAgentService.class).run(false, true);
@@ -143,14 +143,14 @@ public class DelegatePlatformApplication extends Application<DelegatePlatformCon
       }
       log.info("Log manager has been shutdown and logs have been flushed.");
     }));
-    log.info("Delegate agent shutdown hooks registered");
+    log.info("Delegate platform shutdown hooks registered");
   }
 
   private void registerHealthChecks(final Environment environment, final Injector injector) {
     final HealthService healthService = injector.getInstance(HealthService.class);
 
     healthService.registerMonitor(injector.getInstance(HealthMonitor.class));
-    environment.healthChecks().register("DelegateAgentApp", healthService);
+    environment.healthChecks().register("DelegatePlatformApp", healthService);
   }
 
   private void initializeMetrics(final Environment environment, final Injector injector) {

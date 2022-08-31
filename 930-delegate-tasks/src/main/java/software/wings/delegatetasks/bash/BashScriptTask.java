@@ -13,7 +13,7 @@ import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
 
-import software.wings.beans.bash.BashScriptParameters;
+import software.wings.beans.bash.ShellScriptParameters;
 
 import com.google.inject.Inject;
 import java.io.IOException;
@@ -39,7 +39,7 @@ public class BashScriptTask extends AbstractDelegateRunnableTask {
 
   @Override
   public DelegateResponseData run(TaskParameters parameters) throws IOException, JoseException {
-    final BashScriptParameters scriptParameters = (BashScriptParameters) parameters;
+    final ShellScriptParameters scriptParameters = (ShellScriptParameters) parameters;
     log.info("Shell script task parameters: accountId - {}, appId - {}, workingDir - {}, activityId - {}",
         scriptParameters.getAccountId(), scriptParameters.getAppId(), scriptParameters.getWorkingDirectory(),
         scriptParameters.getActivityId());

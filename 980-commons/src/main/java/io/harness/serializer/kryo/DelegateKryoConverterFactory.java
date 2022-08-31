@@ -47,6 +47,9 @@ public class DelegateKryoConverterFactory extends Factory {
       return value -> {
         try {
           return kryoSerializer.asObject(value.bytes());
+        } catch (final Exception e) {
+          log.error("Exception deserializing object of type {}", type);
+          throw e;
         } finally {
           value.close();
         }

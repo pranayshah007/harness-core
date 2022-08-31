@@ -12,6 +12,7 @@ import io.harness.delegate.service.DelegateAgentService;
 import io.harness.delegate.service.platform.DelegatePlatformService;
 import io.harness.exception.KeyManagerBuilderException;
 import io.harness.exception.TrustManagerBuilderException;
+import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionHandler;
 import io.harness.security.X509KeyManagerBuilder;
 import io.harness.security.X509TrustManagerBuilder;
 import io.harness.security.encryption.DelegateDecryptionService;
@@ -21,6 +22,8 @@ import io.harness.version.VersionModule;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
+import com.google.inject.TypeLiteral;
+import com.google.inject.multibindings.MapBinder;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import java.time.Clock;
@@ -80,5 +83,12 @@ public class DelegateCommonModule extends AbstractModule {
     //    bind(DelegateLogService.class).to(DelegateLogServiceImpl.class);
     // DefaultAsyncHttpClient is being bound using a separate function (as this function can't throw)
     bind(AsyncHttpClient.class).to(DefaultAsyncHttpClient.class);
+
+    bindExceptionHandlers();
+  }
+
+  private void bindExceptionHandlers() {
+    MapBinder<Class<? extends Exception>, ExceptionHandler> exceptionHandlerMapBinder = MapBinder.newMapBinder(
+        binder(), new TypeLiteral<Class<? extends Exception>>() {}, new TypeLiteral<ExceptionHandler>() {});
   }
 }

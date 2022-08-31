@@ -27,14 +27,14 @@ import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
-public class BashScriptParameters implements TaskParameters, ActivityAccess, ExecutionCapabilityDemander {
+public class ShellScriptParameters implements TaskParameters, ActivityAccess, ExecutionCapabilityDemander {
   private final String commandUnit = "Execute";
   private final ScriptType scriptType = BASH;
   private final String activityId;
   private final String outputVars;
   private final String secretOutputVars;
   @Expression(ALLOW_SECRETS) private final String script;
-  private final long timeout;
+  private final long sshTimeOut;
   private final String accountId;
   private final String appId;
   private final String workingDirectory;

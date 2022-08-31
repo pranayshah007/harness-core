@@ -8,6 +8,7 @@ java_library(
     deps = [
         "//260-delegate/src/main/java/io/harness/delegate/app/modules/common:module",
         "//260-delegate/src/main/java/io/harness/delegate/service/platform:module",
+        "//260-delegate/src/main/java/io/harness/serializer/platform:module",
         "//420-delegate-agent/src/main/java/io/harness/delegate/service:module",
         "//930-delegate-tasks/src/main/java/io/harness/delegate/task/common:module",
         "//930-delegate-tasks/src/main/java/software/wings/delegatetasks/bash:module",

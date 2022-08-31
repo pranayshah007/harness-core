@@ -34,8 +34,6 @@ import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 import io.harness.beans.DelegateHeartbeatResponse;
 import io.harness.beans.DelegateHeartbeatResponseStreaming;
 import io.harness.beans.DelegateTaskEventsResponse;
@@ -55,8 +53,6 @@ import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.logging.DelegateStackdriverLogAppender;
 import io.harness.delegate.service.common.AbstractDelegateAgentServiceImpl;
 import io.harness.delegate.service.common.DelegateTaskExecutionData;
-import io.harness.delegate.task.ActivityAccess;
-import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.tasklogging.TaskLogContext;
 import io.harness.exception.UnexpectedException;
 import io.harness.logging.AutoLogContext;
@@ -67,15 +63,16 @@ import io.harness.serializer.JsonUtils;
 import io.harness.threading.Schedulable;
 
 import software.wings.beans.TaskType;
-import software.wings.beans.bash.BashScriptParameters;
 import software.wings.delegatetasks.bash.BashScriptTask;
 import software.wings.misc.MemoryHelper;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.sun.management.OperatingSystemMXBean;
 import java.io.IOException;
@@ -114,7 +111,6 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.ResponseBody;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.math3.util.Precision;
 import org.apache.http.client.utils.URIBuilder;
 import org.asynchttpclient.AsyncHttpClient;
@@ -129,6 +125,7 @@ import org.atmosphere.wasync.Socket;
 import org.atmosphere.wasync.transport.TransportNotSupported;
 import retrofit2.Response;
 
+@Singleton
 @Slf4j
 public class DelegatePlatformService extends AbstractDelegateAgentServiceImpl {
   private static final double RESOURCE_USAGE_THRESHOLD = 0.90;
@@ -216,9 +213,9 @@ public class DelegatePlatformService extends AbstractDelegateAgentServiceImpl {
 
       log.info("Delegate process started");
       // We shouldn't need GRPC??
-//      if (getDelegateConfiguration().isGrpcServiceEnabled()) {
-//        getRestartableServiceManager().start();
-//      }
+      //      if (getDelegateConfiguration().isGrpcServiceEnabled()) {
+      //        getRestartableServiceManager().start();
+      //      }
 
       long start = getClock().millis();
       final String delegateDescription = System.getenv().get("DELEGATE_DESCRIPTION");
@@ -890,6 +887,8 @@ public class DelegatePlatformService extends AbstractDelegateAgentServiceImpl {
 
       } catch (IOException e) {
         log.error("Unable to get task for validation", e);
+      } catch (Exception e) {
+        log.error("Unable to execute task", e);
       } finally {
         currentlyAcquiringTasks.remove(delegateTaskId);
         currentlyExecutingFutures.remove(delegateTaskId);
@@ -902,7 +901,7 @@ public class DelegatePlatformService extends AbstractDelegateAgentServiceImpl {
 
     log.debug("DelegateTask acquired - accountId: {}, taskType: {}", getDelegateConfiguration().getAccountId(),
         taskData.getTaskType());
-    Pair<String, Set<String>> activitySecrets = obtainActivitySecrets(delegateTaskPackage);
+    //    Pair<String, Set<String>> activitySecrets = obtainActivitySecrets(delegateTaskPackage);
     //    ILogStreamingTaskClient logStreamingTaskClient = getLogStreamingTaskClient(activitySecrets,
     //    delegateTaskPackage);
     // At the moment used to download and render terraform json plan file and keep track of the download tf plans
@@ -942,7 +941,7 @@ public class DelegatePlatformService extends AbstractDelegateAgentServiceImpl {
     }
   }
 
-  private Pair<String, Set<String>> obtainActivitySecrets(@NotNull DelegateTaskPackage delegateTaskPackage) {
+  /*private Pair<String, Set<String>> obtainActivitySecrets(@NotNull DelegateTaskPackage delegateTaskPackage) {
     TaskData taskData = delegateTaskPackage.getData();
 
     String activityId = null;
@@ -964,7 +963,7 @@ public class DelegatePlatformService extends AbstractDelegateAgentServiceImpl {
         final BashScriptParameters bashScriptParameters = (BashScriptParameters) parameters[0];
         secrets.addAll(secretsFromMaskedVariables(
             bashScriptParameters.getServiceVariables(), bashScriptParameters.getSafeDisplayServiceVariables()));
-      } /* else if (parameters[0] instanceof ShellScriptProvisionParameters) {
+      } *//* else if (parameters[0] instanceof ShellScriptProvisionParameters) {
          // Shell Script Provision
          ShellScriptProvisionParameters shellScriptProvisionParameters = (ShellScriptProvisionParameters) parameters[0];
          Map<String, EncryptedDataDetail> encryptedVariables = shellScriptProvisionParameters.getEncryptedVariables();
@@ -979,7 +978,7 @@ public class DelegatePlatformService extends AbstractDelegateAgentServiceImpl {
          activityId = commandParameters.getActivityId();
          secrets.addAll(secretsFromMaskedVariables(
                  commandParameters.getServiceVariables(), commandParameters.getSafeDisplayServiceVariables()));
-       }*/
+       }*//*
       //    } else {
       //      if (parameters.length >= 2 && parameters[0] instanceof Command
       //              && parameters[1] instanceof CommandExecutionContext) {
@@ -993,7 +992,7 @@ public class DelegatePlatformService extends AbstractDelegateAgentServiceImpl {
     }
 
     return Pair.of(activityId, secrets);
-  }
+  }*/
 
   private void addSystemSecrets(Set<String> secrets) {
     // Add config file secrets

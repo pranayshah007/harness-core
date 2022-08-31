@@ -9,6 +9,7 @@ package io.harness.delegate.app.modules.platform;
 
 import io.harness.govern.ProviderModule;
 import io.harness.serializer.KryoRegistrar;
+import io.harness.serializer.platform.DelegatePlatformRegistrar;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Provides;
@@ -19,8 +20,8 @@ public class DelegatePlatformKryoModule extends ProviderModule {
   @Provides
   @Singleton
   Set<Class<? extends KryoRegistrar> > registrars() {
-    return ImmutableSet
-        .<Class<? extends KryoRegistrar> >builder()
+    return ImmutableSet.<Class<? extends KryoRegistrar> >builder()
+        .add(DelegatePlatformRegistrar.class)
         // TODO: Add only required registrars
         .build();
   }

@@ -12,7 +12,7 @@ import io.harness.delegate.command.CommandExecutionResultMapper;
 import io.harness.shell.ScriptProcessExecutor;
 import io.harness.shell.ShellExecutorConfig;
 
-import software.wings.beans.bash.BashScriptParameters;
+import software.wings.beans.bash.ShellScriptParameters;
 import software.wings.core.executors.bash.BashExecutorFactory;
 
 import com.google.inject.Inject;
@@ -26,7 +26,7 @@ import lombok.RequiredArgsConstructor;
 public class BashScriptTaskHandler {
   private final BashExecutorFactory shellExecutorFactory;
 
-  public CommandExecutionResult handle(final BashScriptParameters parameters) {
+  public CommandExecutionResult handle(final ShellScriptParameters parameters) {
     // Define output variables and secret output variables together
     final List<String> items = splitVars(parameters.getOutputVars());
     final List<String> secretItems = splitVars(parameters.getSecretOutputVars());
@@ -44,7 +44,7 @@ public class BashScriptTaskHandler {
     final ScriptProcessExecutor executor = shellExecutorFactory.getExecutor(executorConfig);
 
     return CommandExecutionResultMapper.from(
-        executor.executeCommandString(parameters.getScript(), items, secretItems, parameters.getTimeout()));
+        executor.executeCommandString(parameters.getScript(), items, secretItems, parameters.getSshTimeOut()));
   }
 
   private List<String> splitVars(final String vars) {
