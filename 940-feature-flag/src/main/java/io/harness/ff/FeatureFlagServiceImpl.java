@@ -75,7 +75,7 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
   private Optional<AccountClient> optionalAccountClient;
   // Caffeine cache
   private final Cache<String, String> accountIdToAccountNameCache =
-      Caffeine.newBuilder().initialCapacity(50).maximumSize(200).expireAfterWrite(1, TimeUnit.HOURS).build();
+      Caffeine.newBuilder().initialCapacity(10).maximumSize(200).expireAfterWrite(1, TimeUnit.HOURS).build();
 
   @Inject
   public FeatureFlagServiceImpl(HPersistence hPersistence, CfMigrationService cfMigrationService,
