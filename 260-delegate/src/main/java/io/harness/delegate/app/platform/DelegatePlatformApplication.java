@@ -57,6 +57,7 @@ public class DelegatePlatformApplication extends Application<DelegatePlatformCon
     try {
       configuration = new YamlUtils().read(FileUtils.readFileToString(configFile, UTF_8), DelegateConfiguration.class);
       configuration.setImmutable(true);
+      log.info("Config: {}", configuration);
     } catch (final IOException e) {
       log.error("Unable to read the delegate config file {}", configFileName, e);
       throw e;
@@ -130,7 +131,6 @@ public class DelegatePlatformApplication extends Application<DelegatePlatformCon
       }
 
       injector.getInstance(ExecutorService.class).shutdown();
-      injector.getInstance(EventPublisher.class).shutdown();
       log.info("Executor services have been shut down.");
 
       injector.getInstance(DefaultAsyncHttpClient.class).close();

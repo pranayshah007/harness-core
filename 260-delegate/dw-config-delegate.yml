@@ -13,11 +13,11 @@ logging:
   type: external
 
 # Delegate Config
-accountId: kmpySmUISimoRrJL6NL73w
-delegateToken: 2f6b0988b6fb3370073c3d0505baee59
-managerUrl: https://localhost:9090/api/
-verificationServiceUrl: https://localhost:7070/verification/
-cvNextGenUrl: https://localhost:6060/cv/api/
+accountId: zEaak-FLS425IEO7OLzMUg
+delegateToken: 876c7daa24bc66d4b176b82d7368a442
+managerUrl: https://qa.harness.io/api/
+verificationServiceUrl: https://qa.harness.io/verification/
+cvNextGenUrl: https://qa.harness.io/cv/api/
 heartbeatIntervalMs: 60000
 localDiskPath: /tmp
 doUpgrade: false
@@ -28,7 +28,7 @@ managerAuthority: localhost
 queueFilePath: ../eventQueue
 grpcServiceEnabled: true
 grpcServiceConnectorPort: 8080
-logStreamingServiceBaseUrl: http://localhost:8079
+logStreamingServiceBaseUrl: https://qa.harness.io/log-service/
 clientToolsDownloadDisabled: true
 installClientToolsInBackground: true
 

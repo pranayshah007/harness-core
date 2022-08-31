@@ -1,8 +1,8 @@
-accountId: kmpySmUISimoRrJL6NL73w
-delegateToken: 2f6b0988b6fb3370073c3d0505baee59
-managerUrl: https://localhost:9090/api/
-verificationServiceUrl: https://localhost:7070/verification/
-cvNextGenUrl: https://localhost:6060/cv/api/
+accountId: D3fzqqYxSmGYPzWMvroIWw
+delegateToken: e5379ede3694eefa057bf2b5e13645c5
+managerUrl: https://qa.harness.io/gratis/api/
+verificationServiceUrl: https://qa.harness.io/gratis/verification/
+cvNextGenUrl: https://qa.harness.io/gratis/cv/api/
 heartbeatIntervalMs: 60000
 localDiskPath: /tmp
 doUpgrade: false
@@ -13,7 +13,7 @@ managerAuthority: localhost
 queueFilePath: ../eventQueue
 grpcServiceEnabled: true
 grpcServiceConnectorPort: 8080
-logStreamingServiceBaseUrl: http://localhost:8079
+logStreamingServiceBaseUrl: https://qa.harness.io/gratis/log-service/
 clientToolsDownloadDisabled: false
 installClientToolsInBackground: true
 

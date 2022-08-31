@@ -34,6 +34,8 @@ import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import io.harness.beans.DelegateHeartbeatResponse;
 import io.harness.beans.DelegateHeartbeatResponseStreaming;
 import io.harness.beans.DelegateTaskEventsResponse;
@@ -213,9 +215,10 @@ public class DelegatePlatformService extends AbstractDelegateAgentServiceImpl {
       logProxyConfiguration();
 
       log.info("Delegate process started");
-      if (getDelegateConfiguration().isGrpcServiceEnabled()) {
-        getRestartableServiceManager().start();
-      }
+      // We shouldn't need GRPC??
+//      if (getDelegateConfiguration().isGrpcServiceEnabled()) {
+//        getRestartableServiceManager().start();
+//      }
 
       long start = getClock().millis();
       final String delegateDescription = System.getenv().get("DELEGATE_DESCRIPTION");
@@ -233,19 +236,9 @@ public class DelegatePlatformService extends AbstractDelegateAgentServiceImpl {
         log.info("Registering delegate with delegate profile: {}", delegateProfile);
       }
 
-      final List<String> supportedTasks = Arrays.stream(TaskType.values()).map(Enum::name).collect(toList());
+      final List<TaskType> supportedTasks = ImmutableList.of(SCRIPT, SHELL_SCRIPT_TASK_NG);
 
       // Remove tasks which are in TaskTypeV2 and only specified with onlyV2 as true
-      final List<String> unsupportedTasks =
-          Arrays.stream(TaskType.values()).filter(TaskType::isUnsupported).map(Enum::name).collect(toList());
-
-      if (BLOCK_SHELL_TASK) {
-        log.info("Delegate is blocked from executing shell script tasks.");
-        unsupportedTasks.add(SCRIPT.name());
-        unsupportedTasks.add(SHELL_SCRIPT_TASK_NG.name());
-      }
-
-      supportedTasks.removeAll(unsupportedTasks);
 
       if (isNotBlank(DELEGATE_TYPE)) {
         log.info("Registering delegate with delegate Type: {}, DelegateGroupName: {} that supports tasks: {}",
@@ -266,7 +259,7 @@ public class DelegatePlatformService extends AbstractDelegateAgentServiceImpl {
               .description(description)
               .version(getVersion())
               .delegateType(DELEGATE_TYPE)
-              .supportedTaskTypes(supportedTasks)
+              .supportedTaskTypes(supportedTasks.stream().map(Enum::name).collect(toList()))
               //.proxy(set to true if there is a system proxy)
               .pollingModeEnabled(getDelegateConfiguration().isPollForTasks())
               .ng(DELEGATE_NG)

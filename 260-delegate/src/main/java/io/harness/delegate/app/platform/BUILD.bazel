@@ -27,6 +27,8 @@ java_library(
         "@maven//:org_asynchttpclient_async_http_client",
         "@maven//:org_slf4j_jul_to_slf4j",
         "@maven//:org_slf4j_slf4j_api",
+        "@maven//:org_apache_logging_log4j_log4j_api",
+        "@maven//:org_apache_logging_log4j_log4j_to_slf4j",
 #        "@maven//:org_springframework_boot_spring_boot_loader",
     ],
 )
@@ -37,6 +39,9 @@ java_binary(
     visibility = ["//visibility:public"],
     runtime_deps = [":module"],
     deps = [],
+    resources = [
+        "//260-delegate/src/main/resources:resource",
+    ]
 )
 
 #springboot(
