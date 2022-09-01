@@ -10,11 +10,7 @@ package io.harness.ccm;
 import static io.harness.AuthorizationServiceHeader.CE_NEXT_GEN;
 import static io.harness.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.annotations.dev.HarnessTeam.CE;
-import static io.harness.audit.ResourceTypeConstants.COST_CATEGORY;
-import static io.harness.audit.ResourceTypeConstants.PERSPECTIVE;
-import static io.harness.audit.ResourceTypeConstants.PERSPECTIVE_BUDGET;
-import static io.harness.audit.ResourceTypeConstants.PERSPECTIVE_FOLDER;
-import static io.harness.audit.ResourceTypeConstants.PERSPECTIVE_REPORT;
+import static io.harness.audit.ResourceTypeConstants.*;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CONNECTOR_ENTITY;
 import static io.harness.lock.DistributedLockImplementation.MONGO;
@@ -65,6 +61,7 @@ import io.harness.ccm.service.impl.AzureEntityChangeEventServiceImpl;
 import io.harness.ccm.service.impl.CCMConnectorDetailsServiceImpl;
 import io.harness.ccm.service.impl.CCMNotificationServiceImpl;
 import io.harness.ccm.service.impl.CEYamlServiceImpl;
+import io.harness.ccm.service.impl.ExternalDataServiceImpl;
 import io.harness.ccm.service.impl.GCPEntityChangeEventServiceImpl;
 import io.harness.ccm.service.impl.LicenseUsageInterfaceImpl;
 import io.harness.ccm.service.intf.AWSBucketPolicyHelperService;
@@ -75,6 +72,7 @@ import io.harness.ccm.service.intf.AzureEntityChangeEventService;
 import io.harness.ccm.service.intf.CCMConnectorDetailsService;
 import io.harness.ccm.service.intf.CCMNotificationService;
 import io.harness.ccm.service.intf.CEYamlService;
+import io.harness.ccm.service.intf.ExternalDataService;
 import io.harness.ccm.service.intf.GCPEntityChangeEventService;
 import io.harness.ccm.serviceAccount.CEGcpServiceAccountService;
 import io.harness.ccm.serviceAccount.CEGcpServiceAccountServiceImpl;
@@ -245,6 +243,7 @@ public class CENextGenModule extends AbstractModule {
 
     // Bind Services
     bind(CEYamlService.class).to(CEYamlServiceImpl.class);
+    bind(ExternalDataService.class).to(ExternalDataServiceImpl.class);
     bind(AwsClient.class).to(AwsClientImpl.class);
     bind(GCPEntityChangeEventService.class).to(GCPEntityChangeEventServiceImpl.class);
     bind(AwsEntityChangeEventService.class).to(AwsEntityChangeEventServiceImpl.class);
