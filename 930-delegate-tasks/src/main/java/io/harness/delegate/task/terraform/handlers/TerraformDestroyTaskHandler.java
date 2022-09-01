@@ -138,6 +138,8 @@ public class TerraformDestroyTaskHandler extends TerraformAbstractTaskHandler {
               .analyseTfPlanSummary(false) // this only temporary until the logic for NG is implemented - FF should be
                                            // sent from manager side
               .timeoutInMillis(taskParameters.getTimeoutInMillis())
+              .useOptimizedTfPlan(taskParameters.isUseOptimizedTfPlan())
+              .accountId(taskParameters.getAccountId())
               .build();
 
       TerraformStepResponse terraformStepResponse =
