@@ -163,7 +163,7 @@ public class ForLoopStrategyConfigService implements StrategyConfigService {
 
   private void validateItems(List<String> params) {
     if (null == params) {
-      throw new InvalidArgumentsException("items list cannot be null");
+      throw new InvalidArgumentsException("Loop items list cannot be null");
     }
   }
 

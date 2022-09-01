@@ -169,6 +169,17 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "AllHostsFilter": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/HostFilterSpec"
+        },
+        {
+          "type": "object"
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "AmazonS3ArtifactConfig": {
       "allOf": [
         {
@@ -3581,6 +3592,144 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "HostAttributesFilter": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/HostFilterSpec"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "value": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "HostFilter": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "All",
+            "HostNames",
+            "HostAttributes"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "All"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AllHostsFilter"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "HostAttributes"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/HostAttributesFilter"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "HostNames"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/HostNamesFilter"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "HostFilterSpec": {
+      "type": "object",
+      "discriminator": "type",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "All",
+            "HostNames",
+            "HostAttributes"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "HostNamesFilter": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/HostFilterSpec"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "value": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "HttpStoreConfig": {
       "allOf": [
         {
@@ -5898,6 +6047,7 @@
           "type": "object",
           "required": [
             "credentialsRef",
+            "hostFilter",
             "connectorRef"
           ],
           "properties": {
@@ -5905,8 +6055,7 @@
               "type": "string"
             },
             "credentialsRef": {
-              "type": "string",
-              "minLength": 1
+              "type": "string"
             },
             "delegateSelectors": {
               "oneOf": [
@@ -5922,6 +6071,9 @@
                   "minLength": 1
                 }
               ]
+            },
+            "hostFilter": {
+              "$ref": "#/definitions/HostFilter"
             }
           },
           "additionalProperties": false
@@ -5930,12 +6082,12 @@
           "type": "object",
           "required": [
             "credentialsRef",
+            "hostFilter",
             "hosts"
           ],
           "properties": {
             "credentialsRef": {
-              "type": "string",
-              "minLength": 1
+              "type": "string"
             },
             "delegateSelectors": {
               "oneOf": [
@@ -5951,6 +6103,9 @@
                   "minLength": 1
                 }
               ]
+            },
+            "hostFilter": {
+              "$ref": "#/definitions/HostFilter"
             },
             "hosts": {
               "oneOf": [
@@ -5962,102 +6117,6 @@
                 },
                 {
                   "type": "string"
-                }
-              ]
-            }
-          },
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "required": [
-            "credentialsRef",
-            "connectorRef",
-            "hostFilters"
-          ],
-          "properties": {
-            "connectorRef": {
-              "type": "string"
-            },
-            "credentialsRef": {
-              "type": "string",
-              "minLength": 1
-            },
-            "delegateSelectors": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
-            },
-            "hostFilters": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
-            }
-          },
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "required": [
-            "credentialsRef",
-            "connectorRef",
-            "attributeFilters"
-          ],
-          "properties": {
-            "attributeFilters": {
-              "oneOf": [
-                {
-                  "type": "object",
-                  "additionalProperties": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
-            },
-            "connectorRef": {
-              "type": "string"
-            },
-            "credentialsRef": {
-              "type": "string",
-              "minLength": 1
-            },
-            "delegateSelectors": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
                 }
               ]
             }

@@ -429,3 +429,7 @@ io.harness.cdng.environment.yaml.EnvironmentsMetadata
 io.harness.cdng.artifact.steps.ArtifactsStepV2SweepingOutput
 io.harness.ngpipeline.artifact.bean.GarArtifactOutcome
 io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig
+io.harness.cdng.infra.beans.host.HostFilter
+io.harness.cdng.infra.beans.host.AllHostsFilter
+io.harness.cdng.infra.beans.host.HostNamesFilter
+io.harness.cdng.infra.beans.host.HostAttributesFilter
