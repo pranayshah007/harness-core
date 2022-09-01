@@ -16,7 +16,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.infra.beans.host.HostFilter;
-import io.harness.cdng.infra.beans.host.HostNamesFilter;
+import io.harness.cdng.infra.beans.host.HostNameFilter;
 import io.harness.delegate.beans.connector.pdcconnector.HostFilterType;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
@@ -35,7 +35,7 @@ public class CdngPdcInfrastructureYamlTest extends CategoryTest {
           .connectorRef(ParameterField.createValueField("some-connector-ref"))
           .hostFilter(HostFilter.builder()
                           .type(HostFilterType.HOST_NAMES)
-                          .spec(HostNamesFilter.builder()
+                          .spec(HostNameFilter.builder()
                                     .value(ParameterField.createValueField(Arrays.asList("host-1", "host-2")))
                                     .build())
                           .build())
@@ -53,7 +53,7 @@ public class CdngPdcInfrastructureYamlTest extends CategoryTest {
             .connectorRef(ParameterField.createValueField("another-connector-ref"))
             .hostFilter(HostFilter.builder()
                             .type(HostFilterType.HOST_NAMES)
-                            .spec(HostNamesFilter.builder()
+                            .spec(HostNameFilter.builder()
                                       .value(ParameterField.createValueField(Arrays.asList("host-3", "host-4")))
                                       .build())
                             .build())

@@ -50,7 +50,7 @@ import io.harness.cdng.infra.beans.PdcInfraMapping;
 import io.harness.cdng.infra.beans.SshWinRmAzureInfraMapping;
 import io.harness.cdng.infra.beans.host.HostAttributesFilter;
 import io.harness.cdng.infra.beans.host.HostFilter;
-import io.harness.cdng.infra.beans.host.HostNamesFilter;
+import io.harness.cdng.infra.beans.host.HostNameFilter;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
@@ -341,7 +341,7 @@ public class InfrastructureStepTest extends CategoryTest {
             .connectorRef(ParameterField.createValueField(connectorRef))
             .hostFilter(HostFilter.builder()
                             .type(HostFilterType.HOST_NAMES)
-                            .spec(HostNamesFilter.builder().value(ParameterField.createValueField(hostFilters)).build())
+                            .spec(HostNameFilter.builder().value(ParameterField.createValueField(hostFilters)).build())
                             .build())
             .build();
 
@@ -351,7 +351,7 @@ public class InfrastructureStepTest extends CategoryTest {
             .connectorRef(connectorRef)
             .hostFilter(HostFilter.builder()
                             .type(HostFilterType.HOST_NAMES)
-                            .spec(HostNamesFilter.builder().value(ParameterField.createValueField(hostFilters)).build())
+                            .spec(HostNameFilter.builder().value(ParameterField.createValueField(hostFilters)).build())
                             .build())
             .build();
 

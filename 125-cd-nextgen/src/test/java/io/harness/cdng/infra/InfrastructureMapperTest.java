@@ -33,7 +33,7 @@ import io.harness.cdng.infra.beans.PdcInfrastructureOutcome;
 import io.harness.cdng.infra.beans.ServerlessAwsLambdaInfrastructureOutcome;
 import io.harness.cdng.infra.beans.SshWinRmAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.host.HostFilter;
-import io.harness.cdng.infra.beans.host.HostNamesFilter;
+import io.harness.cdng.infra.beans.host.HostNameFilter;
 import io.harness.cdng.infra.beans.host.dto.AllHostsFilterDTO;
 import io.harness.cdng.infra.beans.host.dto.HostFilterDTO;
 import io.harness.cdng.infra.beans.host.dto.HostNamesFilterDTO;
@@ -222,7 +222,7 @@ public class InfrastructureMapperTest extends CategoryTest {
             .connectorRef(ParameterField.createValueField("connector-ref"))
             .hostFilter(HostFilter.builder()
                             .type(HostFilterType.HOST_NAMES)
-                            .spec(HostNamesFilter.builder()
+                            .spec(HostNameFilter.builder()
                                       .value(ParameterField.createValueField(Arrays.asList("host1", "host2")))
                                       .build())
                             .build())

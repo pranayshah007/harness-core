@@ -31,7 +31,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName("HostNames")
 @TypeAlias("HostNameFilter")
 @RecasterAlias("io.harness.cdng.infra.beans.host.HostNamesFilter")
-public class HostNamesFilter implements HostFilterSpec {
+public class HostNameFilter implements Filter {
   @YamlSchemaTypes({expression}) @ApiModelProperty(dataType = STRING_LIST_CLASSPATH) ParameterField<List<String>> value;
 
   @Override

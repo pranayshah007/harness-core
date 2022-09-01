@@ -24,10 +24,10 @@ import io.harness.cdng.infra.beans.PdcInfrastructureOutcome;
 import io.harness.cdng.infra.beans.ServerlessAwsLambdaInfrastructureOutcome;
 import io.harness.cdng.infra.beans.SshWinRmAwsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.SshWinRmAzureInfrastructureOutcome;
+import io.harness.cdng.infra.beans.host.Filter;
 import io.harness.cdng.infra.beans.host.HostAttributesFilter;
 import io.harness.cdng.infra.beans.host.HostFilter;
-import io.harness.cdng.infra.beans.host.HostFilterSpec;
-import io.harness.cdng.infra.beans.host.HostNamesFilter;
+import io.harness.cdng.infra.beans.host.HostNameFilter;
 import io.harness.cdng.infra.beans.host.dto.AllHostsFilterDTO;
 import io.harness.cdng.infra.beans.host.dto.HostAttributesFilterDTO;
 import io.harness.cdng.infra.beans.host.dto.HostFilterDTO;
@@ -232,10 +232,10 @@ public class InfrastructureMapper {
     }
 
     HostFilterType type = hostFilter.getType();
-    HostFilterSpec spec = hostFilter.getSpec();
+    Filter spec = hostFilter.getSpec();
     if (type == HostFilterType.HOST_NAMES) {
       return HostFilterDTO.builder()
-          .spec(HostNamesFilterDTO.builder().value(((HostNamesFilter) spec).getValue()).build())
+          .spec(HostNamesFilterDTO.builder().value(((HostNameFilter) spec).getValue()).build())
           .type(type)
           .build();
     } else if (type == HostFilterType.HOST_ATTRIBUTES) {

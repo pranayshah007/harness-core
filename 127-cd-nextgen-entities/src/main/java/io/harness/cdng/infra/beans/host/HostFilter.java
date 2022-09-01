@@ -31,10 +31,10 @@ public class HostFilter {
 
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
-  HostFilterSpec spec;
+  Filter spec;
 
   @Builder
-  public HostFilter(HostFilterType type, HostFilterSpec spec) {
+  public HostFilter(HostFilterType type, Filter spec) {
     this.type = type;
     this.spec = spec;
   }

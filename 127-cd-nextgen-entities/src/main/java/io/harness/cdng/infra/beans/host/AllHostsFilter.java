@@ -25,7 +25,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName("All")
 @TypeAlias("AllHostsFilter")
 @RecasterAlias("io.harness.cdng.infra.beans.host.AllHostsFilter")
-public class AllHostsFilter implements HostFilterSpec {
+public class AllHostsFilter implements Filter {
   @Override
   @JsonIgnore
   public HostFilterType getType() {

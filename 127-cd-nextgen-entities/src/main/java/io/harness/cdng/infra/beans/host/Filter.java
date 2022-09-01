@@ -19,6 +19,6 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 @OwnedBy(CDP)
 @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
-public interface HostFilterSpec {
+public interface Filter {
   HostFilterType getType();
 }
