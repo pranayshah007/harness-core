@@ -59,6 +59,7 @@ public class ECSServiceDaoImpl implements ECSServiceDao {
                    .set(ECSServiceKeys.clusterId, ecsService.getClusterId())
                    .set(ECSServiceKeys.serviceArn, ecsService.getServiceArn())
                    .set(ECSServiceKeys.serviceName, ecsService.getServiceName())
+                   .set(ECSServiceKeys.launchType, ecsService.getLaunchType())
                    .set(ECSServiceKeys.resource, ecsService.getResource())
                    .set(ECSServiceKeys.labels, ecsService.getLabels()),
                HPersistence.upsertReturnNewOptions))
