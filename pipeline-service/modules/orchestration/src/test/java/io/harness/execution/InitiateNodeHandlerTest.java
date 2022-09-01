@@ -13,7 +13,6 @@ import static io.harness.rule.OwnerRule.SAHIL;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -92,21 +91,6 @@ public class InitiateNodeHandlerTest extends OrchestrationTestBase {
                                   .setRuntimeId(generateUuid())
                                   .build();
     assertThat(initiateNodeHandler.extractAmbiance(event)).isEqualTo(ambiance);
-  }
-
-  @Test
-  @Owner(developers = PRASHANT)
-  @Category(UnitTests.class)
-  public void handleEventWithContext() {
-    when(pmsFeatureFlagService.isEnabled(anyString(), anyString())).thenReturn(false);
-    Ambiance ambiance = Ambiance.newBuilder().setPlanExecutionId(generateUuid()).build();
-    InitiateNodeEvent event = InitiateNodeEvent.newBuilder()
-                                  .setAmbiance(ambiance)
-                                  .setNodeId(generateUuid())
-                                  .setRuntimeId(generateUuid())
-                                  .build();
-    initiateNodeHandler.handleEventWithContext(event);
-    verify(engine).initiateNode(eq(ambiance), eq(event.getNodeId()), eq(event.getRuntimeId()), eq(null));
   }
 
   @Test

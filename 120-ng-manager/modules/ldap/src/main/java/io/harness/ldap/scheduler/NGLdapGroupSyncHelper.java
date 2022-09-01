@@ -148,22 +148,34 @@ public class NGLdapGroupSyncHelper {
     Optional<UserMetadataDTO> userOptional = ngUserService.getUserByEmail(userResponse.getEmail(), false);
 
     if (userInfoOptional.isPresent() && userOptional.isEmpty()) {
-      log.info("NGLDAP: adding user {} with externalUserId {}, to scope- account: {}, organization: {}, project: {}",
-          userInfoOptional.get().getUuid(), userResponse.getUserId(), userGroup.getAccountIdentifier(),
-          userGroup.getOrgIdentifier(), userGroup.getProjectIdentifier());
-      ngUserService.addUserToScope(userInfoOptional.get().getUuid(),
-          Scope.of(userGroup.getAccountIdentifier(), userGroup.getOrgIdentifier(), userGroup.getProjectIdentifier()),
-          Collections.singletonList(RoleBinding.builder().roleIdentifier(ACCOUNT_VIEWER_ROLE).build()), emptyList(),
-          UserMembershipUpdateSource.SYSTEM);
-      userOptional = ngUserService.getUserByEmail(userResponse.getEmail(), false);
+      log.info(
+          "NGLDAP: User {} with externalUserId {}, not present in NG. Adding to NG at user group {}, in account: {}.",
+          userInfoOptional.get().getUuid(), userResponse.getUserId(), userGroup.getIdentifier(),
+          userGroup.getAccountIdentifier());
+      userOptional = addUserToScopeAndReturnMetadataDTO(userResponse, userInfoOptional.get().getUuid(),
+          userGroup.getAccountIdentifier(), userGroup.getOrgIdentifier(), userGroup.getProjectIdentifier());
     }
 
-    if (userOptional.isEmpty()) {
+    if (userOptional.isPresent()
+        && !checkUserPartOfAccountInNg(userGroup.getAccountIdentifier(), userGroup.getOrgIdentifier(),
+            userGroup.getProjectIdentifier(), userOptional.get())) {
+      log.info(
+          "NGLDAP: User {} with externalUserId {}, present in NG but not in this account {}. Adding to NG for the user group {}.",
+          userInfoOptional.get().getUuid(), userResponse.getUserId(), userGroup.getAccountIdentifier(),
+          userGroup.getIdentifier());
+      userOptional = addUserToScopeAndReturnMetadataDTO(userResponse, userOptional.get().getUuid(),
+          userGroup.getAccountIdentifier(), userGroup.getOrgIdentifier(), userGroup.getProjectIdentifier());
+    }
+
+    if (userOptional.isEmpty()
+        || !checkUserPartOfAccountInNg(userGroup.getAccountIdentifier(), userGroup.getOrgIdentifier(),
+            userGroup.getProjectIdentifier(), userOptional.get())) {
       log.warn(
-          "NGLDAP: invite user with id {} and with externalUserId {} to account: {}, or adding user to scope- organization: {}, project: {} failed",
+          "NGLDAP: Invite user with id {} and with externalUserId {}, or adding user to scope- account: {}, organization: {}, project: {} failed",
           userOptional.get().getUuid(), userResponse.getUserId(), userGroup.getAccountIdentifier(),
           userGroup.getOrgIdentifier(), userGroup.getProjectIdentifier());
-      return;
+      // throw here to be caught above and added to 'failedUserGroups' count
+      throw new IllegalStateException("NGLDAP: Illegal state value of user to be added as member to user group");
     }
 
     log.info("NGLDAP: adding new user {}, to group: {} in account {} and externalUserId {}",
@@ -178,6 +190,22 @@ public class NGLdapGroupSyncHelper {
       return userInfoOptional.get().getAccounts().stream().anyMatch(account -> accountId.equals(account.getUuid()));
     }
     return false;
+  }
+
+  private boolean checkUserPartOfAccountInNg(
+      String accountId, String orgId, String projectId, UserMetadataDTO userOptional) {
+    return ngUserService.isUserAtScope(userOptional.getUuid(),
+        Scope.builder().accountIdentifier(accountId).orgIdentifier(orgId).projectIdentifier(projectId).build());
+  }
+
+  private Optional<UserMetadataDTO> addUserToScopeAndReturnMetadataDTO(LdapUserResponse userResponse, final String uuid,
+      final String accountId, final String orgId, final String projectId) {
+    log.info("NGLDAP: adding user {} with externalUserId {}, to scope- account: {}, organization: {}, project: {}",
+        uuid, userResponse.getUserId(), accountId, orgId, projectId);
+    ngUserService.addUserToScope(uuid, Scope.of(accountId, orgId, projectId),
+        Collections.singletonList(RoleBinding.builder().roleIdentifier(ACCOUNT_VIEWER_ROLE).build()), emptyList(),
+        UserMembershipUpdateSource.SYSTEM);
+    return ngUserService.getUserByEmail(userResponse.getEmail(), false);
   }
 
   private void inviteUserToAccount(LdapUserResponse ldapUserResponse, String accountId) {

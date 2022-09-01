@@ -196,12 +196,17 @@ public class ServicePlanCreatorHelper {
       return yamlField;
     }
 
-    YamlField primaryArtifactRef = artifactsField.getNode().getField(YamlTypes.PRIMARY_ARTIFACT_REF);
+    YamlField primaryArtifactField = artifactsField.getNode().getField(YamlTypes.PRIMARY_ARTIFACT);
+    if (primaryArtifactField == null) {
+      return yamlField;
+    }
+
+    YamlField primaryArtifactRef = primaryArtifactField.getNode().getField(YamlTypes.PRIMARY_ARTIFACT_REF);
     if (primaryArtifactRef == null) {
       return yamlField;
     }
 
-    YamlField artifactSourcesField = artifactsField.getNode().getField(YamlTypes.ARTIFACT_SOURCES);
+    YamlField artifactSourcesField = primaryArtifactField.getNode().getField(YamlTypes.ARTIFACT_SOURCES);
     String primaryArtifactRefValue = primaryArtifactRef.getNode().asText();
 
     if (artifactSourcesField != null && artifactSourcesField.getNode().isArray() && primaryArtifactRefValue != null) {
@@ -220,6 +225,7 @@ public class ServicePlanCreatorHelper {
         if (primaryArtifactRefValue.equals(artifactSourceIdentifier) && artifactSource.isObject()) {
           primaryNode = (ObjectNode) artifactSource.getCurrJsonNode();
           primaryNode.remove(YamlTypes.IDENTIFIER);
+          break;
         }
       }
 
@@ -230,9 +236,6 @@ public class ServicePlanCreatorHelper {
             String.format("No artifact source exists with the identifier %s inside service %s of DeploymentStage - %s",
                 primaryArtifactRefValue, serviceRef, stageNode.getIdentifier()));
       }
-
-      artifactsNode.remove(YamlTypes.PRIMARY_ARTIFACT_REF);
-      artifactsNode.remove(YamlTypes.ARTIFACT_SOURCES);
     }
     return yamlField;
   }

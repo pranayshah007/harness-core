@@ -53,8 +53,6 @@ import com.google.cloud.bigquery.Schema;
 import com.google.cloud.bigquery.TableResult;
 import com.google.inject.Inject;
 import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -64,7 +62,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
-import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -276,32 +273,26 @@ public class PerspectiveTimeSeriesHelper {
     return Math.round(value * 100D) / 100D;
   }
 
-  public PerspectiveTimeSeriesData postFetch(PerspectiveTimeSeriesData data, Integer limit, boolean includeOthers,
-      boolean includeUnallocatedCost, @Nullable Map<Long, Double> unallocatedCostMapping) {
-    Map<String, Double> aggregatedDataPerUniqueId = new HashMap<>();
+  public PerspectiveTimeSeriesData postFetch(PerspectiveTimeSeriesData data, boolean includeOthers,
+      Map<Long, Double> othersTotalCostMapping, Map<Long, Double> unallocatedCostMapping) {
+    boolean isEmptyData = true;
     String type = DEFAULT_STRING_VALUE;
     for (final TimeSeriesDataPoints dataPoint : data.getStats()) {
-      for (DataPoint entry : dataPoint.getValues()) {
-        Reference qlReference = entry.getKey();
-        if (qlReference != null && qlReference.getId() != null) {
-          String key = qlReference.getId();
+      for (final DataPoint entry : dataPoint.getValues()) {
+        final Reference qlReference = entry.getKey();
+        if (Objects.nonNull(qlReference) && Objects.nonNull(qlReference.getId())) {
           type = qlReference.getType();
-          if (aggregatedDataPerUniqueId.containsKey(key)) {
-            aggregatedDataPerUniqueId.put(key, entry.getValue().doubleValue() + aggregatedDataPerUniqueId.get(key));
-          } else {
-            aggregatedDataPerUniqueId.put(key, entry.getValue().doubleValue());
-          }
+          isEmptyData = false;
+          break;
         }
       }
     }
-    if (aggregatedDataPerUniqueId.isEmpty()) {
+    if (isEmptyData) {
       return data;
     }
-    List<String> selectedIdsAfterLimit = getElementIdsAfterLimit(aggregatedDataPerUniqueId, limit);
 
     return PerspectiveTimeSeriesData.builder()
-        .stats(getDataAfterLimit(
-            data, selectedIdsAfterLimit, includeOthers, includeUnallocatedCost, unallocatedCostMapping, type))
+        .stats(getDataAfterLimit(data, includeOthers, othersTotalCostMapping, unallocatedCostMapping, type))
         .cpuLimit(data.getCpuLimit())
         .cpuRequest(data.getCpuRequest())
         .cpuUtilValues(data.getCpuUtilValues())
@@ -345,33 +336,34 @@ public class PerspectiveTimeSeriesHelper {
     return updatedDataPoints;
   }
 
-  private List<TimeSeriesDataPoints> getDataAfterLimit(PerspectiveTimeSeriesData data,
-      List<String> selectedIdsAfterLimit, boolean includeOthers, boolean includeUnallocatedCost,
-      @Nullable Map<Long, Double> unallocatedCostMapping, String type) {
+  private List<TimeSeriesDataPoints> getDataAfterLimit(PerspectiveTimeSeriesData data, boolean includeOthers,
+      Map<Long, Double> othersTotalCostMapping, Map<Long, Double> unallocatedCostMapping, String type) {
     List<TimeSeriesDataPoints> limitProcessedData = new ArrayList<>();
     data.getStats().forEach(dataPoint -> {
       List<DataPoint> limitProcessedValues = new ArrayList<>();
-      DataPoint others =
-          DataPoint.builder().key(Reference.builder().id(OTHERS).name(OTHERS).type(type).build()).value(0D).build();
+      double topLimitCost = 0D;
       for (DataPoint entry : dataPoint.getValues()) {
-        String key = entry.getKey().getId();
-        if (selectedIdsAfterLimit.contains(key)) {
-          limitProcessedValues.add(entry);
-        } else {
-          others.setValue(others.getValue().doubleValue() + entry.getValue().doubleValue());
-        }
+        limitProcessedValues.add(entry);
+        topLimitCost += entry.getValue().doubleValue();
       }
 
       if (includeOthers) {
-        others.setValue(getRoundedDoubleValue(others.getValue().doubleValue()));
-        limitProcessedValues.add(others);
+        Number value = 0D;
+        if (othersTotalCostMapping.containsKey(dataPoint.getTime())) {
+          value = Math.max(getRoundedDoubleValue(othersTotalCostMapping.get(dataPoint.getTime()) - topLimitCost),
+              value.doubleValue());
+        }
+        limitProcessedValues.add(DataPoint.builder()
+                                     .key(Reference.builder().id(OTHERS).name(OTHERS).type(type).build())
+                                     .value(value)
+                                     .build());
       }
 
-      if (includeUnallocatedCost && Objects.nonNull(unallocatedCostMapping)) {
+      if (!unallocatedCostMapping.isEmpty()) {
         limitProcessedValues.add(
             DataPoint.builder()
                 .key(Reference.builder().id(UNALLOCATED_COST).name(UNALLOCATED_COST).type(type).build())
-                .value(unallocatedCostMapping.getOrDefault(dataPoint.getTime(), 0D))
+                .value(getRoundedDoubleValue(unallocatedCostMapping.getOrDefault(dataPoint.getTime(), 0D)))
                 .build());
       }
 
@@ -379,15 +371,6 @@ public class PerspectiveTimeSeriesHelper {
           TimeSeriesDataPoints.builder().time(dataPoint.getTime()).values(limitProcessedValues).build());
     });
     return limitProcessedData;
-  }
-
-  private List<String> getElementIdsAfterLimit(Map<String, Double> aggregatedData, Integer limit) {
-    List<Map.Entry<String, Double>> list = new ArrayList<>(aggregatedData.entrySet());
-    list.sort(Map.Entry.comparingByValue(Comparator.reverseOrder()));
-    list = list.stream().limit(limit).collect(Collectors.toList());
-    List<String> topNElementIds = new ArrayList<>();
-    list.forEach(entry -> topNElementIds.add(entry.getKey()));
-    return topNElementIds;
   }
 
   private String getUpdatedId(String id, String newField) {
@@ -413,8 +396,8 @@ public class PerspectiveTimeSeriesHelper {
   public long getTimePeriod(List<QLCEViewGroupBy> groupBy) {
     try {
       List<QLCEViewTimeTruncGroupBy> timeGroupBy = groupBy.stream()
-                                                       .filter(entry -> entry.getTimeTruncGroupBy() != null)
                                                        .map(QLCEViewGroupBy::getTimeTruncGroupBy)
+                                                       .filter(Objects::nonNull)
                                                        .collect(Collectors.toList());
       switch (timeGroupBy.get(0).getResolution()) {
         case HOUR:

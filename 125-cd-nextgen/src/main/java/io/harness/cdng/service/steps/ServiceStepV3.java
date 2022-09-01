@@ -21,7 +21,6 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
   public static final StepType STEP_TYPE =
       StepType.newBuilder().setType(ExecutionNodeType.SERVICE_V3.getName()).setStepCategory(StepCategory.STEP).build();
   public static final String SERVICE_SWEEPING_OUTPUT = "serviceSweepingOutput";
-
   @Override
   public Class<ServiceStepV3Parameters> getStepParametersClass() {
     return ServiceStepV3Parameters.class;

@@ -88,6 +88,9 @@ public class SideCarPlanCreatorTest extends CDNGTestBase {
         .isEqualTo(true);
     assertThat(supportedTypes.get(YamlTypes.SIDECAR_ARTIFACT_CONFIG).contains(ArtifactSourceConstants.JENKINS_NAME))
         .isEqualTo(true);
+    assertThat(supportedTypes.get(YamlTypes.SIDECAR_ARTIFACT_CONFIG)
+                   .contains(ArtifactSourceConstants.GOOGLE_ARTIFACT_REGISTRY_NAME))
+        .isEqualTo(true);
   }
 
   @Test

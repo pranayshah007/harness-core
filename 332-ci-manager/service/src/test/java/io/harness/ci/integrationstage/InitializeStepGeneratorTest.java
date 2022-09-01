@@ -22,6 +22,7 @@ import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
+import java.util.HashMap;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -47,7 +48,12 @@ public class InitializeStepGeneratorTest extends CIExecutionTestBase {
     InitializeStepInfo expected = ciExecutionPlanTestHelper.getExpectedLiteEngineTaskInfoOnFirstPod(
         ciExecutionArgs.getExecutionSource(), ciExecutionPlanTestHelper.getIntegrationStageElementConfig());
 
+    ExecutionElementConfig actualExecutionElementConfig = actual.getExecutionElementConfig();
+    actual.setExecutionElementConfig(null);
+    actual.setStrategyExpansionMap(new HashMap<>());
+    expected.setExecutionElementConfig(null);
     assertThat(actual).isEqualTo(expected);
+    assertThat(actualExecutionElementConfig.getSteps().size()).isEqualTo(3);
   }
 
   @Test
@@ -66,6 +72,11 @@ public class InitializeStepGeneratorTest extends CIExecutionTestBase {
     InitializeStepInfo expected = ciExecutionPlanTestHelper.getExpectedLiteEngineTaskInfoOnOtherPods(
         ciExecutionArgs.getExecutionSource(), stageElementConfig);
 
+    ExecutionElementConfig actualExecutionElementConfig = actual.getExecutionElementConfig();
+    actual.setExecutionElementConfig(null);
+    actual.setStrategyExpansionMap(new HashMap<>());
+    expected.setExecutionElementConfig(null);
     assertThat(actual).isEqualTo(expected);
+    assertThat(actualExecutionElementConfig.getSteps().size()).isEqualTo(3);
   }
 }

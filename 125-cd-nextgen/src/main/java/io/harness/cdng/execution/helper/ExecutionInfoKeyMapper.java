@@ -26,9 +26,9 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(HarnessTeam.CDP)
 @UtilityClass
 public class ExecutionInfoKeyMapper {
-  public static ExecutionInfoKey getExecutionInfoKey(Ambiance ambiance, final String infrastructureKind,
-      EnvironmentOutcome environmentOutcome, ServiceStepOutcome serviceOutcome,
-      InfrastructureOutcome infrastructureOutcome) {
+  public static ExecutionInfoKey getExecutionInfoKey(Ambiance ambiance, EnvironmentOutcome environmentOutcome,
+      ServiceStepOutcome serviceOutcome, InfrastructureOutcome infrastructureOutcome) {
+    String infrastructureKind = infrastructureOutcome.getKind();
     if (InfrastructureKind.PDC.equals(infrastructureKind)
         || InfrastructureKind.SSH_WINRM_AZURE.equals(infrastructureKind)
         || InfrastructureKind.SSH_WINRM_AWS.equals(infrastructureKind)) {

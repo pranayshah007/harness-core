@@ -13,6 +13,8 @@ import io.harness.artifactory.service.ArtifactoryRegistryService;
 import io.harness.artifactory.service.ArtifactoryRegistryServiceImpl;
 import io.harness.artifacts.docker.service.DockerRegistryService;
 import io.harness.artifacts.docker.service.DockerRegistryServiceImpl;
+import io.harness.artifacts.gar.service.GARApiServiceImpl;
+import io.harness.artifacts.gar.service.GarApiService;
 import io.harness.artifacts.gcr.service.GcrApiService;
 import io.harness.artifacts.gcr.service.GcrApiServiceImpl;
 import io.harness.artifacts.githubpackages.client.GithubPackagesRestClientFactory;
@@ -41,6 +43,7 @@ public class NGDelegateModule extends AbstractModule {
     bind(GcrApiService.class).to(GcrApiServiceImpl.class);
     bind(GithubPackagesRestClientFactory.class).to(GithubPackagesRestClientFactoryImpl.class);
     bind(GithubPackagesRegistryService.class).to(GithubPackagesRegistryServiceImpl.class);
+    bind(GarApiService.class).to(GARApiServiceImpl.class);
     bind(HttpService.class).to(HttpServiceImpl.class);
     bind(DockerArtifactTaskHandler.class);
     bind(GithubPackagesArtifactTaskHandler.class);

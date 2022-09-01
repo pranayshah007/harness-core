@@ -54,7 +54,6 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
@@ -506,7 +505,6 @@ public class CloudFormationStateTest extends WingsBaseTest {
     cloudFormationCreateStackState.setInfraCloudProviderExpression(CLOUD_PROVIDER_EXPRESSION);
     cloudFormationCreateStackState.setInfraCloudProviderAsExpression(true);
 
-    when(featureFlagService.isEnabled(eq(FeatureName.ENABLE_CLOUDFORMATION_AS_EXPRESSION), any())).thenReturn(true);
     when(settingsService.getSettingAttributeByName(
              ACCOUNT_ID, "InfraMappingSweepingOutput(infraMappingId=INFRA_MAPPING_ID)"))
         .thenReturn(awsConfig);
@@ -528,7 +526,6 @@ public class CloudFormationStateTest extends WingsBaseTest {
     cloudFormationDeleteStackState.setInfraCloudProviderExpression(CLOUD_PROVIDER_EXPRESSION);
     cloudFormationDeleteStackState.setInfraCloudProviderAsExpression(true);
 
-    when(featureFlagService.isEnabled(eq(FeatureName.ENABLE_CLOUDFORMATION_AS_EXPRESSION), any())).thenReturn(true);
     when(settingsService.getSettingAttributeByName(
              ACCOUNT_ID, "InfraMappingSweepingOutput(infraMappingId=INFRA_MAPPING_ID)"))
         .thenReturn(awsConfig);

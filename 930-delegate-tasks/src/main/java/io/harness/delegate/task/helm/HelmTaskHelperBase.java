@@ -585,7 +585,7 @@ public class HelmTaskHelperBase {
     String username = getHttpHelmUsername(httpHelmConnector);
     char[] password = getHttpHelmPassword(httpHelmConnector);
 
-    String cacheDir = getCacheDir(manifest, storeDelegateConfig.getRepoName());
+    String cacheDir = getCacheDir(manifest, storeDelegateConfig.getRepoName(), manifest.getHelmVersion());
 
     try {
       addRepo(storeDelegateConfig.getRepoName(), storeDelegateConfig.getRepoDisplayName(),
@@ -616,7 +616,7 @@ public class HelmTaskHelperBase {
     OciHelmStoreDelegateConfig storeDelegateConfig = (OciHelmStoreDelegateConfig) manifest.getStoreDelegateConfig();
     OciHelmConnectorDTO ociHelmConnector = storeDelegateConfig.getOciHelmConnector();
 
-    String cacheDir = getCacheDir(manifest, storeDelegateConfig.getRepoName());
+    String cacheDir = getCacheDir(manifest, storeDelegateConfig.getRepoName(), HelmVersion.V380);
 
     try {
       loginOciRegistry(ociHelmConnector.getHelmRepoUrl(), getOciHelmUsername(ociHelmConnector),
@@ -638,7 +638,10 @@ public class HelmTaskHelperBase {
     }
   }
 
-  private String getCacheDir(HelmChartManifestDelegateConfig manifest, String repoName) {
+  private String getCacheDir(HelmChartManifestDelegateConfig manifest, String repoName, HelmVersion version) {
+    if (HelmVersion.V2.equals(version)) {
+      return EMPTY;
+    }
     if (manifest.isUseCache()) {
       return Paths.get(RESOURCE_DIR_BASE, repoName, "cache").toAbsolutePath().normalize().toString();
     }
@@ -672,7 +675,7 @@ public class HelmTaskHelperBase {
 
     repoName = repoName + "-" + bucketName;
 
-    String cacheDir = getCacheDir(manifest, repoName);
+    String cacheDir = getCacheDir(manifest, repoName, manifest.getHelmVersion());
 
     try {
       resourceDirectory = createNewDirectoryAtPath(RESOURCE_DIR_BASE);

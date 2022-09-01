@@ -366,6 +366,7 @@ public class SshEntityHelperTest extends CategoryTest {
                                                                  .subscriptionId("subscriptionId")
                                                                  .resourceGroup("resourceGroup")
                                                                  .tags(ImmutableMap.of("ENV", "Dev"))
+                                                                 .usePublicDns(false)
                                                                  .build();
 
     Call<ResponseDTO<SecretResponseWrapper>> getSecretCall = mock(Call.class);
@@ -517,6 +518,7 @@ public class SshEntityHelperTest extends CategoryTest {
                                                                  .subscriptionId("subscriptionId")
                                                                  .resourceGroup("resourceGroup")
                                                                  .tags(ImmutableMap.of("ENV", "Dev"))
+                                                                 .usePublicDns(true)
                                                                  .build();
 
     Call<ResponseDTO<SecretResponseWrapper>> getSecretCall = mock(Call.class);

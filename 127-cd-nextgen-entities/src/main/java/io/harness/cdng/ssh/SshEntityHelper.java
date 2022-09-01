@@ -134,6 +134,7 @@ public class SshEntityHelper {
             .subscriptionId(azureInfrastructureOutcome.getSubscriptionId())
             .resourceGroup(azureInfrastructureOutcome.getResourceGroup())
             .tags(filterInfraTags(azureInfrastructureOutcome.getTags()))
+            .usePublicDns(azureInfrastructureOutcome.getUsePublicDns())
             .build();
       case SSH_WINRM_AWS:
         SshWinRmAwsInfrastructureOutcome awsInfrastructureOutcome = (SshWinRmAwsInfrastructureOutcome) infrastructure;
@@ -191,6 +192,7 @@ public class SshEntityHelper {
             .subscriptionId(azureInfrastructureOutcome.getSubscriptionId())
             .resourceGroup(azureInfrastructureOutcome.getResourceGroup())
             .tags(filterInfraTags(azureInfrastructureOutcome.getTags()))
+            .usePublicDns(azureInfrastructureOutcome.getUsePublicDns())
             .build();
       case SSH_WINRM_AWS:
         SshWinRmAwsInfrastructureOutcome awsInfrastructureOutcome = (SshWinRmAwsInfrastructureOutcome) infrastructure;
