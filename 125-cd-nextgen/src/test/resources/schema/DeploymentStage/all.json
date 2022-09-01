@@ -7277,8 +7277,8 @@
             "Acr",
             "Jenkins",
             "AmazonS3",
-            "GithubPackageRegistry",
-            "GoogleArtifactRegistry"
+            "GoogleArtifactRegistry",
+            "GithubPackageRegistry"
           ]
         }
       },
