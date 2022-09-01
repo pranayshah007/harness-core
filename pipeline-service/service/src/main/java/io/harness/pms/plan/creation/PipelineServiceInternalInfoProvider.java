@@ -30,6 +30,7 @@ import io.harness.plancreator.steps.email.EmailStepPlanCreator;
 import io.harness.plancreator.steps.email.EmailStepVariableCreator;
 import io.harness.plancreator.steps.http.HTTPStepVariableCreator;
 import io.harness.plancreator.steps.http.HttpStepPlanCreator;
+import io.harness.plancreator.steps.internal.CommandStepFilterJsonCreatorV2;
 import io.harness.plancreator.steps.internal.FlagConfigurationStepPlanCreator;
 import io.harness.plancreator.steps.internal.PMSStepPlanCreator;
 import io.harness.plancreator.steps.internal.PmsStepFilterJsonCreator;
@@ -138,6 +139,7 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     filterJsonCreators.add(new StepGroupPmsFilterJsonCreator());
     filterJsonCreators.add(new FeatureFlagStageFilterJsonCreator());
     filterJsonCreators.add(new CustomStageFilterCreator());
+    filterJsonCreators.add(new CommandStepFilterJsonCreatorV2());
     injectorUtils.injectMembers(filterJsonCreators);
     return filterJsonCreators;
   }
