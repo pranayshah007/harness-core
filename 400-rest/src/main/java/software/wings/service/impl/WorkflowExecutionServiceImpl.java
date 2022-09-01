@@ -5686,7 +5686,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     if (isNotEmpty(workflowExecution.getInfraMappingIds())) {
       findOptions.modifier("$hint", "appid_status_workflowid_infraMappingIds_createdat");
     } else {
-      findOptions.modifier("$hint", "appid_workflowid_status_deployedServices_createdat");
+      findOptions.modifier("$hint", "appid_workflowid_status_createdat");
     }
     return workflowExecutionQuery.order("-createdAt").get(findOptions);
   }
@@ -5720,7 +5720,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
         findOptions.modifier("$hint", "appid_status_workflowid_infraMappingIds_createdat");
       }
     } else {
-      findOptions.modifier("$hint", "appid_workflowid_status_deployedServices_createdat");
+      findOptions.modifier("$hint", "appid_workflowid_status_createdat");
     }
     return workflowExecutionQuery.order("-createdAt").get(findOptions);
   }
