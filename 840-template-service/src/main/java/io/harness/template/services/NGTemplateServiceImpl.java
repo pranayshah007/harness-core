@@ -134,10 +134,16 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     }
 
     if (!isRemoteTemplateAndGitEntity(templateEntity)) {
-      throw new InvalidRequestException(format(
-          "Remote template entity cannot be created for template type [%s] on git simplification enabled for Project [%s] in Organisation [%s] in Account [%s]",
-          templateEntity.getTemplateEntityType(), templateEntity.getProjectIdentifier(),
-          templateEntity.getOrgIdentifier(), templateEntity.getAccountIdentifier()));
+      if (null != templateEntity.getOrgIdentifier() && null != templateEntity.getProjectIdentifier()) {
+        throw new InvalidRequestException(format(
+            "Remote template entity cannot be created for template type [%s] on git simplification enabled for Project [%s] in Organisation [%s] in Account [%s]",
+            templateEntity.getTemplateEntityType(), templateEntity.getProjectIdentifier(),
+            templateEntity.getOrgIdentifier(), templateEntity.getAccountIdentifier()));
+      } else {
+        throw new InvalidRequestException(format(
+            "Remote template entity cannot be created for template type [%s] on git simplification enabled in Account [%s]",
+            templateEntity.getTemplateEntityType(), templateEntity.getAccountIdentifier()));
+      }
     }
 
     // apply templates to template yaml for validation and populating module info
