@@ -59,7 +59,11 @@ public class TerraformPlanExpressionFunctor implements ExpressionFunctor, Terraf
   @Override
   public String jsonFilePath() {
     if (cachedTerraformPlanParam == null) {
-      this.cachedTerraformPlanParam = findTerraformPlanParam();
+      TerraformPlanParam terraformPlanParam = findTerraformPlanParam();
+      if (terraformPlanParam == null) {
+        return null;
+      }
+      this.cachedTerraformPlanParam = terraformPlanParam;
     }
 
     return format(
@@ -69,9 +73,7 @@ public class TerraformPlanExpressionFunctor implements ExpressionFunctor, Terraf
   private TerraformPlanParam findTerraformPlanParam() {
     TerraformPlanParam terraformPlanParam = obtainTfPlanFunction.apply(this.planSweepingOutputName);
     if (terraformPlanParam == null) {
-      throw new FunctorException(format("Terraform plan '%s' is not available in current context. "
-              + "Terraform plan is available only after terraform step with run plan only option",
-          this.planSweepingOutputName));
+      return null;
     }
 
     if (terraformPlanParam.getTfPlanJsonFileId() == null) {

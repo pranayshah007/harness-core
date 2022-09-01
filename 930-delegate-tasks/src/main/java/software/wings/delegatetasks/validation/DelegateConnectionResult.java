@@ -50,6 +50,12 @@ public class DelegateConnectionResult implements PersistentEntity, UuidAware, Up
                  .field(DelegateConnectionResultKeys.delegateId)
                  .field(DelegateConnectionResultKeys.criteria)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("delegateConnectionResultsMatchingCriteriaIdx")
+                 .unique(false)
+                 .field(DelegateConnectionResultKeys.accountId)
+                 .field(DelegateConnectionResultKeys.criteria)
+                 .build())
         .build();
   }
 

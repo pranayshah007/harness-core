@@ -46,6 +46,7 @@ import io.harness.azure.model.AzureOSType;
 import io.harness.azure.model.AzureUserAuthVMInstanceData;
 import io.harness.azure.model.AzureVMSSTagsData;
 import io.harness.azure.model.VirtualMachineData;
+import io.harness.azure.model.VirtualMachineData.VirtualMachineDataBuilder;
 import io.harness.azure.model.image.AzureMachineImage;
 import io.harness.azure.model.image.AzureMachineImageFactory;
 import io.harness.azure.utility.AzureResourceUtility;
@@ -611,7 +612,7 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
 
   @Override
   public List<VirtualMachineData> listHosts(AzureConfig azureConfig, String subscriptionId, String resourceGroup,
-      AzureOSType osType, Map<String, String> tags) {
+      AzureOSType osType, Map<String, String> tags, boolean usePublicDns) {
     if (isBlank(resourceGroup)) {
       throw new IllegalArgumentException(RESOURCE_GROUP_NAME_NULL_VALIDATION_MSG);
     }
@@ -631,8 +632,7 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
         .filter(this::isVmRunning)
         .filter(virtualMachine -> filterOsType(virtualMachine, osType))
         .filter(virtualMachine -> filterTags(virtualMachine, tags))
-        .filter(virtualMachine -> virtualMachine.getPrimaryPublicIPAddress() != null)
-        .map(this::toVirtualMachineData)
+        .map(virtualMachine -> toVirtualMachineData(virtualMachine, usePublicDns))
         .collect(Collectors.toList());
   }
 
@@ -660,7 +660,13 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
         && virtualMachine.tags().values().containsAll(tags.values());
   }
 
-  private VirtualMachineData toVirtualMachineData(VirtualMachine virtualMachine) {
-    return VirtualMachineData.builder().hostName(virtualMachine.getPrimaryPublicIPAddress().ipAddress()).build();
+  private VirtualMachineData toVirtualMachineData(VirtualMachine virtualMachine, boolean usePublicDns) {
+    VirtualMachineDataBuilder builder = VirtualMachineData.builder().hostName(virtualMachine.name());
+
+    if (usePublicDns && virtualMachine.getPrimaryPublicIPAddress() != null) {
+      builder.publicAddress(virtualMachine.getPrimaryPublicIPAddress().fqdn());
+    }
+
+    return builder.build();
   }
 }

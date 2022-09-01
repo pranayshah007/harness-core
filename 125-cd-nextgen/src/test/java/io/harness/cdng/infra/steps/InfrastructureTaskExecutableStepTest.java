@@ -18,6 +18,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -93,7 +95,9 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -296,6 +300,9 @@ public class InfrastructureTaskExecutableStepTest extends CategoryTest {
             .hosts(Arrays.asList(AzureHostResponse.builder().hostName("host1").build(),
                 AzureHostResponse.builder().hostName("host2").build()))
             .build();
+    when(stageExecutionHelper.saveAndExcludeHostsWithSameArtifactDeployedIfNeeded(
+             eq(ambiance), any(ExecutionInfoKey.class), any(), any(Set.class), anyString(), anyBoolean(), eq(null)))
+        .thenReturn(new HashSet<>(Arrays.asList("host1", "host2")));
     Map<String, ResponseData> responseDataMap = ImmutableMap.of("azure-hosts-response", azureHostsResponse);
     ThrowingSupplier responseDataSupplier = StrategyHelper.buildResponseDataSupplier(responseDataMap);
 
@@ -325,6 +332,9 @@ public class InfrastructureTaskExecutableStepTest extends CategoryTest {
     when(outcomeService.resolve(any(), eq(RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE))))
         .thenReturn(ServiceStepOutcome.builder().type(ServiceSpecType.SSH).build());
     when(cdStepHelper.getSshInfraDelegateConfig(any(), eq(ambiance))).thenReturn(awsSshInfraDelegateConfig);
+    when(stageExecutionHelper.saveAndExcludeHostsWithSameArtifactDeployedIfNeeded(
+             eq(ambiance), any(ExecutionInfoKey.class), any(), any(Set.class), anyString(), anyBoolean(), eq(null)))
+        .thenReturn(new HashSet<>(Arrays.asList("host1")));
     doNothing()
         .when(stageExecutionHelper)
         .saveStageExecutionInfoAndPublishExecutionInfoKey(

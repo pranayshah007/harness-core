@@ -199,7 +199,8 @@ public class CommandStep extends TaskExecutableWithRollbackAndRbac<CommandTaskRe
     if (!onDelegate) {
       String host = ParameterFieldHelper.getParameterFieldValue(executeCommandStepParameters.getHost());
       if (isEmpty(host)) {
-        throw new InvalidArgumentsException("Host information is missing in Command Step.");
+        throw new InvalidArgumentsException(
+            "Host information is missing in Command Step. Please make sure the looping strategy (repeat) is provided.");
       }
     }
   }

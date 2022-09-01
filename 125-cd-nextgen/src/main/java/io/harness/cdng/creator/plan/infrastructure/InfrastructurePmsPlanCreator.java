@@ -7,6 +7,8 @@
 
 package io.harness.cdng.creator.plan.infrastructure;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.advisers.RollbackCustomAdviser;
@@ -14,10 +16,13 @@ import io.harness.cdng.creator.plan.PlanCreatorConstants;
 import io.harness.cdng.creator.plan.gitops.ClusterPlanCreatorUtils;
 import io.harness.cdng.envGroup.yaml.EnvGroupPlanCreatorConfig;
 import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
+import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.infra.steps.InfraSectionStepParameters;
 import io.harness.cdng.infra.steps.InfrastructureSectionStep;
 import io.harness.cdng.infra.steps.InfrastructureStep;
 import io.harness.cdng.infra.steps.InfrastructureTaskExecutableStep;
+import io.harness.cdng.infra.steps.InfrastructureTaskExecutableStepV2;
+import io.harness.cdng.infra.steps.InfrastructureTaskExecutableStepV2Params;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.InfrastructureDefinitionConfig;
 import io.harness.cdng.pipeline.PipelineInfrastructure;
@@ -89,6 +94,31 @@ public class InfrastructurePmsPlanCreator {
         .build();
   }
 
+  public PlanNode getInfraTaskExecutableStepV2PlanNode(
+      EnvironmentYamlV2 environmentYamlV2, List<AdviserObtainment> adviserObtainments) {
+    InfrastructureTaskExecutableStepV2Params params =
+        InfrastructureTaskExecutableStepV2Params.builder()
+            .envRef(environmentYamlV2.getEnvironmentRef())
+            .infraRef(ParameterField.isNotNull(environmentYamlV2.getInfrastructureDefinitions())
+                        && isNotEmpty(environmentYamlV2.getInfrastructureDefinitions().getValue())
+                    ? environmentYamlV2.getInfrastructureDefinitions().getValue().get(0).getIdentifier()
+                    : ParameterField.createValueField(null))
+            .build();
+    return PlanNode.builder()
+        .uuid(UUIDGenerator.generateUuid())
+        .name(PlanCreatorConstants.INFRA_NODE_NAME)
+        .identifier(PlanCreatorConstants.INFRA_DEFINITION_NODE_IDENTIFIER)
+        .stepType(InfrastructureTaskExecutableStepV2.STEP_TYPE)
+        .group(OutcomeExpressionConstants.INFRASTRUCTURE_GROUP)
+        .stepParameters(params)
+        .facilitatorObtainment(
+            FacilitatorObtainment.newBuilder()
+                .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.TASK).build())
+                .build())
+        .adviserObtainments(adviserObtainments)
+        .build();
+  }
+
   private boolean isTaskStep(Infrastructure pipelineInfrastructure) {
     return InfrastructureKind.SSH_WINRM_AZURE.equals(pipelineInfrastructure.getKind())
         || InfrastructureKind.SSH_WINRM_AWS.equals(pipelineInfrastructure.getKind());
@@ -101,7 +131,7 @@ public class InfrastructurePmsPlanCreator {
         getInfraSectionStepParamsFromConfig(infrastructureDefinitionConfig, infraStepNodeUuid);
     LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
 
-    PlanNodeBuilder planNodeBuilder = planBuilderForInfraSection(infraSectionNode, infraSectionUuid);
+    PlanNodeBuilder planNodeBuilder = planBuilderForInfraSection(infraSectionUuid);
     planNodeBuilder = planNodeBuilder.stepParameters(infraSectionStepParameters);
 
     List<AdviserObtainment> adviserObtainments =
@@ -112,8 +142,8 @@ public class InfrastructurePmsPlanCreator {
 
     if (!allowSimultaneousDeployments) {
       // Passing infra section parent node since rbac will be created parallel to environment node
-      YamlField rcYamlField =
-          addResourceConstraintDependency(infraSectionNode.getParentNode(), planCreationResponseMap);
+      YamlField rcYamlField = addResourceConstraintDependency(
+          infraSectionNode.getParentNode().getParentNode(), planCreationResponseMap, null);
       adviserObtainments = getAdviserObtainmentFromMetaDataToResourceConstraint(rcYamlField, kryoSerializer);
     }
 
@@ -153,7 +183,7 @@ public class InfrastructurePmsPlanCreator {
         getInfraSectionStepParams(pipelineInfrastructure, infraStepNodeUuid);
     LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
 
-    PlanNodeBuilder planNodeBuilder = planBuilderForInfraSection(infraSectionNode, infraSectionUuid);
+    PlanNodeBuilder planNodeBuilder = planBuilderForInfraSection(infraSectionUuid);
     planNodeBuilder = planNodeBuilder.stepParameters(infraSectionStepParameters);
 
     if (!isProvisionerConfigured(pipelineInfrastructure)) {
@@ -168,7 +198,8 @@ public class InfrastructurePmsPlanCreator {
         pipelineInfrastructure.getAllowSimultaneousDeployments());
 
     if (!allowSimultaneousDeployments) {
-      YamlField rcYamlField = addResourceConstraintDependency(infraSectionNode, planCreationResponseMap);
+      YamlField rcYamlField =
+          addResourceConstraintDependency(infraSectionNode.getParentNode(), planCreationResponseMap, null);
       adviserObtainments = getAdviserObtainmentFromMetaDataToResourceConstraint(rcYamlField, kryoSerializer);
     }
 
@@ -181,9 +212,9 @@ public class InfrastructurePmsPlanCreator {
     return planCreationResponseMap;
   }
 
-  public YamlField addResourceConstraintDependency(
-      YamlNode rcStepSibilingNode, LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap) {
-    YamlField rcYamlField = constructResourceConstraintYamlField(rcStepSibilingNode);
+  public YamlField addResourceConstraintDependency(YamlNode rcParentNode,
+      LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, String whenCondition) {
+    YamlField rcYamlField = constructResourceConstraintYamlField(rcParentNode, whenCondition);
 
     try {
       YamlUpdates yamlUpdates =
@@ -203,7 +234,7 @@ public class InfrastructurePmsPlanCreator {
     return rcYamlField;
   }
 
-  public PlanNodeBuilder planBuilderForInfraSection(YamlNode infraSectionNode, String infraSectionUuid) {
+  public PlanNodeBuilder planBuilderForInfraSection(String infraSectionUuid) {
     return PlanNode.builder()
         .uuid(infraSectionUuid)
         .name(PlanCreatorConstants.INFRA_SECTION_NODE_NAME)
@@ -225,10 +256,11 @@ public class InfrastructurePmsPlanCreator {
         .build();
   }
 
-  private YamlField constructResourceConstraintYamlField(YamlNode infraNode) {
+  private YamlField constructResourceConstraintYamlField(YamlNode specNode, String whenCondition) {
     final String resourceUnit = "<+INFRA_KEY>";
-    JsonNode resourceConstraintJsonNode = ResourceConstraintUtility.getResourceConstraintJsonNode(resourceUnit);
-    return new YamlField("step", new YamlNode("step", resourceConstraintJsonNode, infraNode.getParentNode()));
+    JsonNode resourceConstraintJsonNode =
+        ResourceConstraintUtility.getResourceConstraintJsonNode(resourceUnit, whenCondition);
+    return new YamlField("step", new YamlNode("step", resourceConstraintJsonNode, specNode));
   }
 
   private List<AdviserObtainment> getAdviserObtainmentFromMetaDataToExecution(
@@ -354,10 +386,6 @@ public class InfrastructurePmsPlanCreator {
     return provisionerYamlField.getNode().getUuid();
   }
 
-  public boolean areSimultaneousDeploymentsAllowed(boolean allowSimultaneousDeployments, YamlField rcField) {
-    return !(allowSimultaneousDeployments || rcField == null);
-  }
-
   public static PlanNode getInfraDefPlanNode(YamlField infrastructureDefField, String childNodeId) {
     StepParameters stepParameters =
         NGSectionStepParameters.builder().childNodeId(childNodeId).logMessage("Infra Definition").build();
@@ -373,5 +401,14 @@ public class InfrastructurePmsPlanCreator {
                 .build())
         .skipGraphType(SkipType.SKIP_NODE)
         .build();
+  }
+
+  public static List<AdviserObtainment> addResourceConstraintDependency(
+      LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, YamlField specField,
+      KryoSerializer kryoSerializer) {
+    final String whenCondition = "<+infraAllowSimultaneousDeployments.allowed> == \"false\"";
+    YamlField rcYamlField =
+        addResourceConstraintDependency(specField.getNode(), planCreationResponseMap, whenCondition);
+    return getAdviserObtainmentFromMetaDataToResourceConstraint(rcYamlField, kryoSerializer);
   }
 }

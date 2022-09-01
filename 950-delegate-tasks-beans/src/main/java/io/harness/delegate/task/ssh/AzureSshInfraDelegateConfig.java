@@ -15,21 +15,24 @@ import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import lombok.Builder;
 import lombok.Getter;
 
 @Getter
 @OwnedBy(HarnessTeam.CDP)
 public class AzureSshInfraDelegateConfig extends AzureInfraDelegateConfig implements SshInfraDelegateConfig {
-  List<String> hosts;
+  Set<String> hosts;
   List<EncryptedDataDetail> encryptionDataDetails;
   SSHKeySpecDTO sshKeySpecDto;
 
   @Builder(builderMethodName = "sshAzureBuilder")
   public AzureSshInfraDelegateConfig(AzureConnectorDTO azureConnectorDTO,
       List<EncryptedDataDetail> connectorEncryptionDataDetails, String subscriptionId, String resourceGroup,
-      Map<String, String> tags, List<EncryptedDataDetail> encryptionDataDetails, SSHKeySpecDTO sshKeySpecDto) {
-    super(azureConnectorDTO, connectorEncryptionDataDetails, subscriptionId, resourceGroup, tags, "LINUX");
+      Map<String, String> tags, List<EncryptedDataDetail> encryptionDataDetails, SSHKeySpecDTO sshKeySpecDto,
+      boolean usePublicDns) {
+    super(
+        azureConnectorDTO, connectorEncryptionDataDetails, subscriptionId, resourceGroup, tags, "LINUX", usePublicDns);
     this.encryptionDataDetails = encryptionDataDetails;
     this.sshKeySpecDto = sshKeySpecDto;
   }

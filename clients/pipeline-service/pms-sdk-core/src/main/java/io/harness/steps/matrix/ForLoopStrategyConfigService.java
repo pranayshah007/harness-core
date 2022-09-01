@@ -41,7 +41,7 @@ public class ForLoopStrategyConfigService implements StrategyConfigService {
                                                   .build())
                          .build());
       }
-    } else if (!ParameterField.isBlank(harnessForConfig.getPartitions())) {
+    } else if (!ParameterField.isBlank(harnessForConfig.getPartitionSize())) {
       int currentIteration = 0;
       List<List<String>> partitions = partitionItems(harnessForConfig);
 
@@ -87,7 +87,7 @@ public class ForLoopStrategyConfigService implements StrategyConfigService {
   private List<List<String>> partitionItemsByPercentage(HarnessForConfig harnessForConfig) {
     List<String> items = harnessForConfig.getItems().getValue();
     int itemsSize = items.size();
-    ParameterField<Integer> partitionSizeInPercentage = harnessForConfig.getPartitions();
+    ParameterField<Integer> partitionSizeInPercentage = harnessForConfig.getPartitionSize();
     float partitionSizeInPercentageValue = partitionSizeInPercentage.getValue().floatValue();
 
     int partitionSize = Math.round((partitionSizeInPercentageValue / 100) * itemsSize);
@@ -107,7 +107,7 @@ public class ForLoopStrategyConfigService implements StrategyConfigService {
   private List<List<String>> partitionItemsByCount(HarnessForConfig harnessForConfig) {
     List<String> items = harnessForConfig.getItems().getValue();
     int itemsSize = items.size();
-    int partitionSize = harnessForConfig.getPartitions().getValue();
+    int partitionSize = harnessForConfig.getPartitionSize().getValue();
 
     // fix partitionSize if partitionSize is greater than number of items
     if (partitionSize > itemsSize) {
@@ -163,7 +163,7 @@ public class ForLoopStrategyConfigService implements StrategyConfigService {
 
   private void validateItems(List<String> params) {
     if (null == params) {
-      throw new InvalidArgumentsException("items list cannot be null");
+      throw new InvalidArgumentsException("Loop items list cannot be null");
     }
   }
 

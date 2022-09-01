@@ -23,6 +23,7 @@ import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig;
 import io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
 import io.harness.data.structure.EmptyPredicate;
@@ -168,6 +169,13 @@ public class ArtifactUtils {
         return String.format(placeholder, sourceType, jenkinsArtifactConfig.getJobName().getValue(),
             jenkinsArtifactConfig.getArtifactPath().getValue(), jenkinsArtifactConfig.getBuild().getValue(),
             jenkinsArtifactConfig.getConnectorRef().getValue());
+      case GOOGLE_ARTIFACT_REGISTRY:
+        GoogleArtifactRegistryConfig googleArtifactRegistryConfig = (GoogleArtifactRegistryConfig) artifactConfig;
+        return String.format(placeholder, sourceType, googleArtifactRegistryConfig.getRegion().getValue(),
+            googleArtifactRegistryConfig.getPkg().getValue(), googleArtifactRegistryConfig.getConnectorRef().getValue(),
+            googleArtifactRegistryConfig.getProject().getValue(),
+            googleArtifactRegistryConfig.getRepositoryName().getValue(),
+            googleArtifactRegistryConfig.getGoogleArtifactRegistryType().getValue());
       default:
         throw new UnsupportedOperationException(String.format("Unknown Artifact Config type: [%s]", sourceType));
     }

@@ -60,4 +60,7 @@ public class GitSyncApiConstants {
       "Identifier of Connector needed for CRUD operations on the respective Entity";
   public static final String STORE_TYPE_PARAM_MESSAGE = "Tells whether the Entity is to be saved on Git or not";
   public static final String STORE_TYPE_RESPONSE_PARAM_MESSAGE = "Tells whether the Entity is saved on Git or not";
+
+  public static final String PARENT_ENTITY_SCOPE_MESSAGE = "Tells us the parent entity scope";
+  public static final String PARENT_ENTITY_SCOPE = "parentEntityScope";
 }

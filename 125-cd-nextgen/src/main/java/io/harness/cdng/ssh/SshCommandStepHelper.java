@@ -278,7 +278,7 @@ public class SshCommandStepHelper extends CDStepHelper {
         .artifactDelegateConfig(getArtifactDelegateConfig(ambiance))
         .fileDelegateConfig(getFileDelegateConfig(ambiance))
         .commandUnits(mapCommandUnits(commandStepParameters.getCommandUnits(), onDelegate))
-        .host(getHost(commandStepParameters))
+        .host(onDelegate ? null : getHost(commandStepParameters))
         .build();
   }
 
@@ -297,7 +297,7 @@ public class SshCommandStepHelper extends CDStepHelper {
         .artifactDelegateConfig(sshWinRmRollbackData.getArtifactDelegateConfig())
         .fileDelegateConfig(sshWinRmRollbackData.getFileDelegateConfig())
         .commandUnits(mapCommandUnits(commandStepParameters.getCommandUnits(), onDelegate))
-        .host(getHost(commandStepParameters))
+        .host(onDelegate ? null : getHost(commandStepParameters))
         .build();
   }
 
@@ -317,7 +317,7 @@ public class SshCommandStepHelper extends CDStepHelper {
         .artifactDelegateConfig(getArtifactDelegateConfig(ambiance))
         .fileDelegateConfig(getFileDelegateConfig(ambiance))
         .commandUnits(mapCommandUnits(commandStepParameters.getCommandUnits(), onDelegate))
-        .host(getHost(commandStepParameters))
+        .host(onDelegate ? null : getHost(commandStepParameters))
         .useWinRMKerberosUniqueCacheFile(
             cdFeatureFlagHelper.isEnabled(accountId, FeatureName.WINRM_KERBEROS_CACHE_UNIQUE_FILE))
         .disableWinRMCommandEncodingFFSet(
@@ -341,7 +341,7 @@ public class SshCommandStepHelper extends CDStepHelper {
         .artifactDelegateConfig(sshWinRmRollbackData.getArtifactDelegateConfig())
         .fileDelegateConfig(sshWinRmRollbackData.getFileDelegateConfig())
         .commandUnits(mapCommandUnits(commandStepParameters.getCommandUnits(), onDelegate))
-        .host(getHost(commandStepParameters))
+        .host(onDelegate ? null : getHost(commandStepParameters))
         .useWinRMKerberosUniqueCacheFile(
             cdFeatureFlagHelper.isEnabled(accountId, FeatureName.WINRM_KERBEROS_CACHE_UNIQUE_FILE))
         .disableWinRMCommandEncodingFFSet(

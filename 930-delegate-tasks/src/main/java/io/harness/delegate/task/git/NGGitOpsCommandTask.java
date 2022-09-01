@@ -214,16 +214,17 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
     }
   }
 
-  public FetchFilesResult getFiles(NGGitOpsTaskParams gitOpsTaskParams, LogCallback logCallback)
+  public FetchFilesResult getFiles(NGGitOpsTaskParams gitOpsTaskParams, CommandUnitsProgress commandUnitsProgress)
       throws IOException, ParseException {
     try {
       FetchFilesResult fetchFilesResult =
           getFetchFilesResult(gitOpsTaskParams.getGitFetchFilesConfig(), gitOpsTaskParams.getAccountId());
-      updateFiles(gitOpsTaskParams.getFilesToVariablesMap(), fetchFilesResult, logCallback);
+      this.logCallback = markDoneAndStartNew(logCallback, UpdateFiles, commandUnitsProgress);
+      updateFiles(gitOpsTaskParams.getFilesToVariablesMap(), fetchFilesResult);
       return fetchFilesResult;
     } catch (Exception e) {
-      if (e instanceof NoSuchFileException) {
-        this.logCallback.saveExecutionLog(color(format("%Files were not found. Creating files at the requested path."),
+      if (e.getCause() instanceof NoSuchFileException) {
+        this.logCallback.saveExecutionLog(color(format("Files were not found. Creating files at the requested path."),
                                               LogColor.White, LogWeight.Bold),
             ERROR);
         List<GitFile> gitFiles = new ArrayList<>();
@@ -242,8 +243,7 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
       log.info("Running Create PR Task for activityId {}", gitOpsTaskParams.getActivityId());
 
       logCallback = new NGDelegateLogCallback(getLogStreamingTaskClient(), FetchFiles, true, commandUnitsProgress);
-      FetchFilesResult fetchFilesResult = getFiles(gitOpsTaskParams, logCallback);
-      logCallback = markDoneAndStartNew(logCallback, UpdateFiles, commandUnitsProgress);
+      FetchFilesResult fetchFilesResult = getFiles(gitOpsTaskParams, commandUnitsProgress);
       List<GitFile> fetchFilesResultFiles = fetchFilesResult.getFiles();
       StringBuilder sb = new StringBuilder(1024);
       fetchFilesResultFiles.forEach(f -> sb.append("\n- ").append(f.getFilePath()));
@@ -457,20 +457,18 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
    *
    * @param filesToVariablesMap resolve filesPaths from the releaseRepoConfig to Cluster Variables
    * @param fetchFilesResult    Files checkout out from git
-   * @param logCallback
    * @throws ParseException
    * @throws IOException
    */
-  public void updateFiles(Map<String, Map<String, String>> filesToVariablesMap, FetchFilesResult fetchFilesResult,
-      LogCallback logCallback) throws ParseException, IOException {
+  public void updateFiles(Map<String, Map<String, String>> filesToVariablesMap, FetchFilesResult fetchFilesResult)
+      throws ParseException, IOException {
     List<String> updatedFiles = new ArrayList<>();
     logCallback.saveExecutionLog("Updating files with the following variables.");
     for (GitFile gitFile : fetchFilesResult.getFiles()) {
       Map<String, String> stringObjectMap = filesToVariablesMap.get(gitFile.getFilePath());
-      stringObjectMap.forEach(
-          (k, v)
-              -> logCallback.saveExecutionLog(
-                  format("Modifying %s with value %s", color(k, White, Bold), color(v, White, Bold)), INFO));
+      stringObjectMap.forEach((k, v)
+                                  -> logCallback.saveExecutionLog(
+                                      format("Modifying %s:%s", color(k, White, Bold), color(v, White, Bold)), INFO));
       if (gitFile.getFilePath().contains(".yaml") || gitFile.getFilePath().contains(".yml")) {
         updatedFiles.add(replaceFields(convertYamlToJson(gitFile.getFileContent()), stringObjectMap));
       } else if (gitFile.getFilePath().contains(".json")) {

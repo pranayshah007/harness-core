@@ -295,6 +295,13 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
 
   @Override
   public void run(NextGenConfiguration appConfig, Environment environment) {
+    log.info("Entering startup maintenance mode");
+    MaintenanceController.forceMaintenance(true);
+    environment.lifecycle().addServerLifecycleListener(server -> {
+      log.info("Leaving startup maintenance mode");
+      MaintenanceController.forceMaintenance(false);
+    });
+
     log.info("Starting Next Gen Application ...");
 
     ConfigSecretUtils.resolveSecrets(appConfig.getSecretsConfiguration(), appConfig);
@@ -426,8 +433,6 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     } else {
       log.info("NextGenApplication DEPLOY_VERSION is not COMMUNITY");
     }
-
-    MaintenanceController.forceMaintenance(false);
   }
 
   private void initializeNGMonitoring(NextGenConfiguration appConfig, Injector injector) {

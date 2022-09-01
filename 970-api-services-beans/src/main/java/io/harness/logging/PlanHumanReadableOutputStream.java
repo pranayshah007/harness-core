@@ -25,7 +25,7 @@ public class PlanHumanReadableOutputStream extends LogOutputStream {
   protected void processLine(String s) {
     // Only append when not empty, Add a new line after the string so it looks better as a plan in the end
     if (!s.isEmpty()) {
-      humanReadablePlan = humanReadablePlan + NEW_LINE;
+      humanReadablePlan += s + NEW_LINE;
     }
   }
   public String getHumanReadablePlan() {

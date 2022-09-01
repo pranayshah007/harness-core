@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
@@ -144,6 +145,33 @@ public class ParameterFieldDeserializerTest extends CategoryTest implements Mult
         .isEqualTo(InputSetValidatorType.ALLOWED_VALUES);
     assertThat(infrastructure.getInner10().getInputSetValidator().getParameters())
         .isEqualTo("dev, <+env>, <+env2>, stage");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.BRIJESH)
+  @Category(UnitTests.class)
+  public void testExtractDefaultValue() throws JsonProcessingException {
+    String defaultValueString = "<+input>.executionInput().default(abc)";
+    assertThat(objectMapper.readValue(defaultValueString, ParameterField.class).getValue()).isEqualTo("abc");
+    defaultValueString = "<+input>.executionInput().default(\"abc\")";
+    assertThat(objectMapper.readValue(defaultValueString, ParameterField.class).getValue()).isEqualTo("abc");
+
+    defaultValueString = "<+input>.executionInput().default([\"abc\"])";
+    ArrayList responseArray = (ArrayList) objectMapper.readValue(defaultValueString, ParameterField.class).getValue();
+    assertThat(responseArray.size()).isEqualTo(1);
+    assertThat(responseArray.get(0)).isEqualTo("abc");
+
+    defaultValueString = "<+input>.executionInput().default([\"abc\",\"def\"])";
+    responseArray = (ArrayList) objectMapper.readValue(defaultValueString, ParameterField.class).getValue();
+    assertThat(responseArray.size()).isEqualTo(2);
+    assertThat(responseArray.contains("abc")).isTrue();
+    assertThat(responseArray.contains("def")).isTrue();
+
+    defaultValueString = "<+input>.executionInput().default([4,6])";
+    responseArray = (ArrayList) objectMapper.readValue(defaultValueString, ParameterField.class).getValue();
+    assertThat(responseArray.size()).isEqualTo(2);
+    assertThat(responseArray.contains(4.0)).isTrue();
+    assertThat(responseArray.contains(6.0)).isTrue();
   }
 
   @Data

@@ -407,6 +407,7 @@ io.harness.cdng.provision.azure.AzureCreateARMResourceStepConfiguration
 io.harness.cdng.provision.azure.AzureCreateARMResourceStepScope
 io.harness.cdng.provision.azure.AzureCreateARMResourceStepParameters
 io.harness.yaml.core.failurestrategy.ProceedWithDefaultValuesFailureActionConfig
+io.harness.cdng.pipeline.beans.MultiDeploymentStepParameters
 io.harness.cdng.provision.azure.AzureCreateBPStepNode
 io.harness.cdng.provision.azure.AzureCreateBPStepInfo
 io.harness.cdng.provision.azure.AzureCreateBPStepConfiguration
@@ -416,3 +417,16 @@ io.harness.cdng.provision.azure.beans.AzureCreateBPPassThroughData
 io.harness.cdng.provision.azure.AzureARMRollbackStepInfo
 io.harness.cdng.provision.azure.AzureARMRollback
 io.harness.cdng.provision.azure.AzureARMRollbackStepParameters
+io.harness.cdng.steps.EmptyStepParameters
+io.harness.cdng.service.steps.ServiceSweepingOutput
+io.harness.cdng.environment.yaml.EnvironmentsYaml
+io.harness.cdng.service.beans.ServicesMetadata
+io.harness.cdng.service.beans.Services
+io.harness.cdng.environment.yaml.EnvironmentsMetadata
+io.harness.cdng.artifact.steps.ArtifactsStepV2SweepingOutput
+io.harness.ngpipeline.artifact.bean.GarArtifactOutcome
+io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig
+io.harness.cdng.infra.beans.host.HostFilter
+io.harness.cdng.infra.beans.host.AllHostsFilter
+io.harness.cdng.infra.beans.host.HostNamesFilter
+io.harness.cdng.infra.beans.host.HostAttributesFilter

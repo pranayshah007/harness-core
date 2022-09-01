@@ -38,7 +38,7 @@ import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.task.azure.arm.AzureARMTaskNGParameters;
-import io.harness.delegate.task.azure.arm.AzureTaskNGParameters;
+import io.harness.delegate.task.azure.arm.AzureResourceCreationTaskNGParameters;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.git.GitFetchResponse;
 import io.harness.eraro.ErrorCode;
@@ -172,7 +172,7 @@ public class AzureCreateARMResourceStep extends TaskChainExecutableWithRollbackA
     //      // TODO: Add logic for harness store type
     //    }
     populatePassThroughData(passThroughData, templateBody, parametersBody);
-    AzureTaskNGParameters azureARMTaskNGParameters = getAzureTaskNGParams(
+    AzureResourceCreationTaskNGParameters azureARMTaskNGParameters = getAzureTaskNGParams(
         ambiance, stepParameters, (AzureConnectorDTO) connectorDTO.getConnectorConfig(), passThroughData);
     return executeCreateTask(ambiance, stepParameters, azureARMTaskNGParameters, passThroughData);
   }
@@ -212,7 +212,7 @@ public class AzureCreateARMResourceStep extends TaskChainExecutableWithRollbackA
   }
 
   private TaskChainResponse executeCreateTask(Ambiance ambiance, StepElementParameters stepParameters,
-      AzureTaskNGParameters parameters, PassThroughData passThroughData) {
+      AzureResourceCreationTaskNGParameters parameters, PassThroughData passThroughData) {
     TaskData taskData = TaskData.builder()
                             .async(true)
                             .taskType(TaskType.AZURE_NG_ARM.name())
@@ -234,8 +234,8 @@ public class AzureCreateARMResourceStep extends TaskChainExecutableWithRollbackA
     passThroughData.setParametersBody(parametersBody);
   }
 
-  private AzureTaskNGParameters getAzureTaskNGParams(Ambiance ambiance, StepElementParameters stepElementParameters,
-      AzureConnectorDTO connectorConfig, PassThroughData passThroughData) {
+  private AzureResourceCreationTaskNGParameters getAzureTaskNGParams(Ambiance ambiance,
+      StepElementParameters stepElementParameters, AzureConnectorDTO connectorConfig, PassThroughData passThroughData) {
     AzureCreateARMResourceStepParameters azureCreateStepParameters =
         (AzureCreateARMResourceStepParameters) stepElementParameters.getSpec();
     AzureCreateARMResourcePassThroughData azureCreatePassThroughData =
@@ -330,7 +330,7 @@ public class AzureCreateARMResourceStep extends TaskChainExecutableWithRollbackA
     AzureConnectorDTO connectorDTO = azureCommonHelper.getAzureConnectorConfig(
         ambiance, ParameterField.createValueField(spec.getConfigurationParameters().getConnectorRef().getValue()));
 
-    AzureTaskNGParameters azureTaskNGParameters =
+    AzureResourceCreationTaskNGParameters azureTaskNGParameters =
         getAzureTaskNGParams(ambiance, stepElementParameters, connectorDTO, passThroughData);
     return executeCreateTask(ambiance, stepElementParameters, azureTaskNGParameters, passThroughData);
   }

@@ -131,13 +131,14 @@ public class ViewsQueryBuilder {
   public SelectQuery getQuery(List<ViewRule> rules, List<QLCEViewFilter> filters, List<QLCEViewTimeFilter> timeFilters,
       List<QLCEViewGroupBy> groupByList, List<QLCEViewAggregation> aggregations,
       List<QLCEViewSortCriteria> sortCriteriaList, String cloudProviderTableName) {
-    return getQuery(
-        rules, filters, timeFilters, groupByList, aggregations, sortCriteriaList, cloudProviderTableName, 0);
+    return getQuery(rules, filters, timeFilters, Collections.emptyList(), groupByList, aggregations, sortCriteriaList,
+        cloudProviderTableName, 0);
   }
 
   public SelectQuery getQuery(List<ViewRule> rules, List<QLCEViewFilter> filters, List<QLCEViewTimeFilter> timeFilters,
-      List<QLCEViewGroupBy> groupByList, List<QLCEViewAggregation> aggregations,
-      List<QLCEViewSortCriteria> sortCriteriaList, String cloudProviderTableName, int timeOffsetInDays) {
+      List<QLCEInExpressionFilter> inExpressionFilters, List<QLCEViewGroupBy> groupByList,
+      List<QLCEViewAggregation> aggregations, List<QLCEViewSortCriteria> sortCriteriaList,
+      String cloudProviderTableName, int timeOffsetInDays) {
     SelectQuery selectQuery = new SelectQuery();
     selectQuery.addCustomFromTable(cloudProviderTableName);
     List<QLCEViewFieldInput> groupByEntity = getGroupByEntity(groupByList);
@@ -162,6 +163,10 @@ public class ViewsQueryBuilder {
 
     if (!timeFilters.isEmpty()) {
       decorateQueryWithTimeFilters(selectQuery, timeFilters, isClusterTable);
+    }
+
+    if (!inExpressionFilters.isEmpty()) {
+      decorateQueryWithInExpressionFilters(selectQuery, inExpressionFilters);
     }
 
     if (!groupByEntity.isEmpty()) {
@@ -1210,6 +1215,12 @@ public class ViewsQueryBuilder {
     }
   }
 
+  private void decorateQueryWithInExpressionFilters(SelectQuery selectQuery, List<QLCEInExpressionFilter> filters) {
+    for (QLCEInExpressionFilter filter : filters) {
+      selectQuery.addCondition(getCondition(filter));
+    }
+  }
+
   private Condition getCondition(QLCEViewFilter filter) {
     Object conditionKey = getSQLObjectFromField(filter.getField());
     if (conditionKey.toString().equals(ViewsMetaDataFields.LABEL_VALUE.getFieldName())) {
@@ -1269,6 +1280,15 @@ public class ViewsQueryBuilder {
       default:
         throw new InvalidRequestException("Invalid View TimeFilter operator: " + operator);
     }
+  }
+
+  private Condition getCondition(QLCEInExpressionFilter filter) {
+    Condition condition = new InCondition(Converter.toCustomColumnSqlObject(new InFieldsExpression(filter.getFields())),
+        Converter.toCustomColumnSqlObject(new InValuesExpression(filter.getValues())));
+    if (Objects.nonNull(filter.getNullValueField())) {
+      condition = ComboCondition.or(condition, UnaryCondition.isNull(new CustomSql(filter.getNullValueField())));
+    }
+    return condition;
   }
 
   private Object getSQLObjectFromField(QLCEViewFieldInput field) {

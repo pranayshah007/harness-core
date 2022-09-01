@@ -359,6 +359,7 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
 
       int code;
       TerraformVersion version = terraformClient.version(parameters.getTimeoutInMillis(), scriptDirectory);
+      log.info(format("Using Terraform version v%d.%d.%d", version.getMajor(), version.getMinor(), version.getPatch()));
       if (parameters.isUseTfClient()) {
         try {
           log.info(format("Using TFClient for Running Terraform Commands for account %s", parameters.getAccountId()));
@@ -743,6 +744,7 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
       PlanLogOutputStream planLogOutputStream) throws IOException, InterruptedException, TimeoutException {
     if (parameters.isAnalyseTfPlanSummary()) {
       TerraformVersion version = terraformClient.version(parameters.getTimeoutInMillis(), scriptDirectory);
+      log.info(format("Using Terraform version v%d.%d.%d", version.getMajor(), version.getMinor(), version.getPatch()));
       String command;
       if (!version.minVersion(0, 12)) {
         command = format("terraform show %s", tfplanFileName);
@@ -935,6 +937,7 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
       LogCallback logCallback, PlanHumanReadableOutputStream planHumanReadableOutputStream)
       throws IOException, InterruptedException, TimeoutException {
     TerraformVersion version = terraformClient.version(parameters.getTimeoutInMillis(), scriptDirectory);
+    log.info(format("Using Terraform version v%d.%d.%d", version.getMajor(), version.getMinor(), version.getPatch()));
     if (!version.minVersion(0, 12)) {
       String messageFormat = "Terraform plan json export not supported in v%d.%d.%d. Minimum version is v0.12.x. "
           + "Skipping command.";

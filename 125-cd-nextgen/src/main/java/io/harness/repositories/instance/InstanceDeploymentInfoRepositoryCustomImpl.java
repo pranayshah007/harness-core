@@ -7,19 +7,24 @@
 
 package io.harness.repositories.instance;
 
+import static java.lang.String.format;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.Scope;
 import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.instance.InstanceDeploymentInfo;
 import io.harness.cdng.instance.InstanceDeploymentInfo.InstanceDeploymentInfoKeys;
 import io.harness.cdng.instance.InstanceDeploymentInfoStatus;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.entities.ArtifactDetails;
+import io.harness.entities.ArtifactDetails.ArtifactDetailsKeys;
 
 import com.google.inject.Inject;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import java.util.List;
+import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -44,10 +49,9 @@ public class InstanceDeploymentInfoRepositoryCustomImpl implements InstanceDeplo
   }
 
   @Override
-  public UpdateResult updateStatus(
-      ExecutionInfoKey executionInfoKey, String host, InstanceDeploymentInfoStatus status) {
+  public UpdateResult updateStatus(Scope scope, String stageExecutionId, InstanceDeploymentInfoStatus status) {
     Criteria criteria =
-        createExecutionCriteria(executionInfoKey).and(InstanceDeploymentInfoKeys.instanceInfo + ".host").is(host);
+        createScopeCriteria(scope).and(InstanceDeploymentInfoKeys.stageExecutionId).is(stageExecutionId);
 
     Query query = new Query();
     query.addCriteria(criteria);
@@ -58,8 +62,8 @@ public class InstanceDeploymentInfoRepositoryCustomImpl implements InstanceDeplo
   }
 
   @Override
-  public UpdateResult updateArtifactAndStatus(ExecutionInfoKey executionInfoKey, String deploymentIdentifier,
-      List<String> hosts, ArtifactDetails artifactDetails, InstanceDeploymentInfoStatus status) {
+  public UpdateResult updateArtifactAndStatus(ExecutionInfoKey executionInfoKey, List<String> hosts,
+      ArtifactDetails artifactDetails, InstanceDeploymentInfoStatus status, String stageExecutionId) {
     Criteria criteria =
         createExecutionCriteria(executionInfoKey).and(InstanceDeploymentInfoKeys.instanceInfo + ".host").in(hosts);
 
@@ -68,8 +72,8 @@ public class InstanceDeploymentInfoRepositoryCustomImpl implements InstanceDeplo
 
     Update update = new Update();
     update.set(InstanceDeploymentInfoKeys.status, status);
-    update.set(InstanceDeploymentInfoKeys.deploymentIdentifier, deploymentIdentifier);
     update.set(InstanceDeploymentInfoKeys.artifactDetails, artifactDetails);
+    update.set(InstanceDeploymentInfoKeys.stageExecutionId, stageExecutionId);
     return mongoTemplate.updateMulti(query, update, InstanceDeploymentInfo.class);
   }
 
@@ -94,7 +98,28 @@ public class InstanceDeploymentInfoRepositoryCustomImpl implements InstanceDeplo
     return mongoTemplate.find(query, InstanceDeploymentInfo.class);
   }
 
-  public Criteria createExecutionCriteria(ExecutionInfoKey key) {
+  @Override
+  public List<InstanceDeploymentInfo> listByHostsAndArtifact(ExecutionInfoKey executionInfoKey, List<String> hosts,
+      ArtifactDetails artifactDetails, InstanceDeploymentInfoStatus status) {
+    Criteria criteria = createExecutionCriteria(executionInfoKey);
+    criteria.and(InstanceDeploymentInfoKeys.instanceInfo + ".host").in(hosts);
+
+    criteria.and(format("%s.%s", InstanceDeploymentInfoKeys.artifactDetails, ArtifactDetailsKeys.artifactId))
+        .is(artifactDetails.getArtifactId());
+    criteria.and(format("%s.%s", InstanceDeploymentInfoKeys.artifactDetails, ArtifactDetailsKeys.displayName))
+        .is(artifactDetails.getDisplayName());
+    criteria.and(format("%s.%s", InstanceDeploymentInfoKeys.artifactDetails, ArtifactDetailsKeys.tag))
+        .is(artifactDetails.getTag());
+
+    criteria.and(InstanceDeploymentInfoKeys.status).is(status);
+
+    Query query = new Query();
+    query.addCriteria(criteria);
+
+    return mongoTemplate.find(query, InstanceDeploymentInfo.class);
+  }
+
+  private Criteria createExecutionCriteria(ExecutionInfoKey key) {
     Criteria criteria = new Criteria();
     criteria.and(InstanceDeploymentInfoKeys.accountIdentifier).is(key.getScope().getAccountIdentifier());
     criteria.and(InstanceDeploymentInfoKeys.orgIdentifier).is(key.getScope().getOrgIdentifier());
@@ -105,6 +130,14 @@ public class InstanceDeploymentInfoRepositoryCustomImpl implements InstanceDeplo
     if (EmptyPredicate.isNotEmpty(key.getDeploymentIdentifier())) {
       criteria.and(InstanceDeploymentInfoKeys.deploymentIdentifier).is(key.getDeploymentIdentifier());
     }
+    return criteria;
+  }
+
+  private Criteria createScopeCriteria(@NotNull Scope scope) {
+    Criteria criteria = new Criteria();
+    criteria.and(InstanceDeploymentInfoKeys.accountIdentifier).is(scope.getAccountIdentifier());
+    criteria.and(InstanceDeploymentInfoKeys.orgIdentifier).is(scope.getOrgIdentifier());
+    criteria.and(InstanceDeploymentInfoKeys.projectIdentifier).is(scope.getProjectIdentifier());
     return criteria;
   }
 }

@@ -365,7 +365,7 @@ public class HelmTaskHelperTest extends WingsBaseTest {
         .when(cgChartmuseumClientFactory)
         .createClient(eq(gcsHelmRepoConfig), any(), any(), any(), eq(false));
     doReturn(successfulResult).when(processExecutor).execute();
-    doReturn("cache").when(helmTaskHelper).getCacheDir(anyString(), anyBoolean());
+    doReturn("cache").when(helmTaskHelper).getCacheDir(anyString(), anyBoolean(), eq(HelmVersion.V3));
     helmTaskHelper.downloadChartFiles(gcsConfigParams, outputTemporaryDir.toString(), LONG_TIMEOUT_INTERVAL, null);
     verifyFetchChartFilesProcessExecutor(outputTemporaryDir.toString());
     deleteDirectoryAndItsContentIfExists(outputTemporaryDir.toString());
@@ -388,7 +388,7 @@ public class HelmTaskHelperTest extends WingsBaseTest {
         .createClient(eq(s3HelmRepoConfig), any(), any(), any(), eq(false));
     doReturn(successfulResult).when(processExecutor).execute();
     doNothing().when(helmTaskHelper).initHelm(anyString(), any(), anyLong());
-    doReturn("cache").when(helmTaskHelper).getCacheDir(anyString(), anyBoolean());
+    doReturn("cache").when(helmTaskHelper).getCacheDir(anyString(), anyBoolean(), eq(HelmVersion.V3));
     doReturn("resource-dir").when(helmTaskHelper).createNewDirectoryAtPath(anyString());
 
     helmTaskHelper.downloadChartFiles(awsConfigParams, outputTemporaryDir.toString(), LONG_TIMEOUT_INTERVAL, null);
@@ -429,7 +429,7 @@ public class HelmTaskHelperTest extends WingsBaseTest {
         .createClient(eq(httpHelmRepoConfig), any(), any(), any(), eq(false));
     doReturn(successfulResult).when(processExecutor).execute();
     doNothing().when(helmTaskHelper).initHelm(anyString(), any(), anyLong());
-    doReturn("cache").when(helmTaskHelper).getCacheDir(anyString(), anyBoolean());
+    doReturn("cache").when(helmTaskHelper).getCacheDir(anyString(), anyBoolean(), eq(HelmVersion.V3));
 
     helmTaskHelper.downloadChartFiles(httpHelmChartConfig, outputTemporaryDir.toString(), LONG_TIMEOUT_INTERVAL, null);
 
@@ -465,7 +465,7 @@ public class HelmTaskHelperTest extends WingsBaseTest {
         .when(helmTaskHelperBase)
         .loginOciRegistry(repoConfig.getChartRepoUrl(), repoConfig.getUsername(), repoConfig.getPassword(),
             HelmVersion.V380, LONG_TIMEOUT_INTERVAL, outputTemporaryDir.toString());
-    doReturn("cache").when(helmTaskHelper).getCacheDir(anyString(), anyBoolean());
+    doReturn("cache").when(helmTaskHelper).getCacheDir(anyString(), anyBoolean(), eq(HelmVersion.V3));
     doReturn(successfulResult).when(processExecutor).execute();
     helmTaskHelper.downloadChartFiles(configParams, outputTemporaryDir.toString(), LONG_TIMEOUT_INTERVAL, null);
     verify(helmTaskHelperBase, times(1))

@@ -19,6 +19,7 @@ import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig;
 import io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
 import io.harness.cdng.artifact.outcome.AcrArtifactOutcome;
@@ -28,6 +29,7 @@ import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
 import io.harness.cdng.artifact.outcome.CustomArtifactOutcome;
 import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
+import io.harness.cdng.artifact.outcome.GarArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.JenkinsArtifactOutcome;
 import io.harness.cdng.artifact.outcome.NexusArtifactOutcome;
@@ -42,6 +44,7 @@ import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.gar.GarDelegateResponse;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateResponse;
@@ -100,6 +103,7 @@ public class ArtifactResponseToOutcomeMapper {
             artifactOutcome = getArtifactoryGenericArtifactOutcome(
                 artifactoryRegistryArtifactConfig, artifactoryGenericDelegateResponse, useDelegateResponse);
             return artifactOutcome;
+
           default:
             throw new UnsupportedOperationException(
                 String.format("Repository Format [%s] for Artifactory Not Supported", repositoryType));
@@ -126,6 +130,10 @@ public class ArtifactResponseToOutcomeMapper {
         JenkinsArtifactDelegateResponse jenkinsArtifactDelegateResponse =
             (JenkinsArtifactDelegateResponse) artifactDelegateResponse;
         return getJenkinsArtifactOutcome(jenkinsArtifactConfig, jenkinsArtifactDelegateResponse, useDelegateResponse);
+      case GOOGLE_ARTIFACT_REGISTRY:
+        GoogleArtifactRegistryConfig googleArtifactRegistryConfig = (GoogleArtifactRegistryConfig) artifactConfig;
+        GarDelegateResponse garDelegateResponse = (GarDelegateResponse) artifactDelegateResponse;
+        return getGarArtifactOutcome(googleArtifactRegistryConfig, garDelegateResponse, useDelegateResponse);
       default:
         throw new UnsupportedOperationException(
             String.format("Unknown Artifact Config type: [%s]", artifactConfig.getSourceType()));
@@ -177,6 +185,27 @@ public class ArtifactResponseToOutcomeMapper {
         .type(ArtifactSourceType.GCR.getDisplayName())
         .primaryArtifact(gcrArtifactConfig.isPrimaryArtifact())
         .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(gcrArtifactConfig)))
+        .build();
+  }
+  private static GarArtifactOutcome getGarArtifactOutcome(GoogleArtifactRegistryConfig googleArtifactRegistryConfig,
+      GarDelegateResponse garDelegateResponse, boolean useDelegateResponse) {
+    return GarArtifactOutcome.builder()
+        .version(useDelegateResponse ? garDelegateResponse.getVersion()
+                                     : (googleArtifactRegistryConfig.getVersion() != null
+                                             ? googleArtifactRegistryConfig.getVersion().getValue()
+                                             : null))
+        .registryHostname(garDelegateResponse.getBuildDetails().getMetadata().get("registryHostname"))
+        .connectorRef(googleArtifactRegistryConfig.getConnectorRef().getValue())
+        .pkg(googleArtifactRegistryConfig.getPkg().getValue())
+        .project(googleArtifactRegistryConfig.getProject().getValue())
+        .region(googleArtifactRegistryConfig.getRegion().getValue())
+        .repositoryName(googleArtifactRegistryConfig.getRepositoryName().getValue())
+        .versionRegex(googleArtifactRegistryConfig.getVersionRegex().getValue())
+        .type(ArtifactSourceType.GOOGLE_ARTIFACT_REGISTRY.getDisplayName())
+        .identifier(googleArtifactRegistryConfig.getIdentifier())
+        .primaryArtifact(googleArtifactRegistryConfig.isPrimaryArtifact())
+        .image(getImageValue(garDelegateResponse))
+        .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(googleArtifactRegistryConfig)))
         .build();
   }
 

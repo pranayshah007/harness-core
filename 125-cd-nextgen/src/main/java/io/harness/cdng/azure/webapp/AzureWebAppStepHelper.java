@@ -273,7 +273,7 @@ public class AzureWebAppStepHelper {
         .azureConnectorDTO(azureConnectorDTO)
         .subscription(infrastructure.getSubscription())
         .resourceGroup(infrastructure.getResourceGroup())
-        .appName(webApp)
+        .appName(webApp.toLowerCase())
         .deploymentSlot(AzureResourceUtility.fixDeploymentSlotName(deploymentSlot, webApp))
         .encryptionDataDetails(azureHelperService.getEncryptionDetails(azureConnectorDTO, ngAccess))
         .build();

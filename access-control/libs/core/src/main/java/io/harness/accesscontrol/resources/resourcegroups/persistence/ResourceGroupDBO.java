@@ -11,6 +11,7 @@ import static io.harness.ng.DbAliases.ACCESS_CONTROL;
 
 import io.harness.accesscontrol.AccessControlEntity;
 import io.harness.accesscontrol.resources.resourcegroups.ResourceSelector;
+import io.harness.accesscontrol.resources.resourcegroups.ScopeSelector;
 import io.harness.annotation.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -64,6 +65,7 @@ public class ResourceGroupDBO implements PersistentRegularIterable, AccessContro
   @EqualsAndHashCode.Include final Set<String> allowedScopeLevels;
   @EqualsAndHashCode.Include @NotNull final Set<String> resourceSelectors;
   @EqualsAndHashCode.Include @NotNull final Set<ResourceSelector> resourceSelectorsV2;
+  @EqualsAndHashCode.Include @NotNull final Set<ScopeSelector> scopeSelectors;
   @EqualsAndHashCode.Include @NotNull @Builder.Default final Boolean managed = Boolean.FALSE;
 
   @Setter @CreatedDate Long createdAt;
