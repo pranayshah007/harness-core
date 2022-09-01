@@ -487,6 +487,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         startLocalHeartbeat();
         watcherMonitorExecutor.scheduleWithFixedDelay(() -> {
           try {
+            log.info("Checking for watcher upgrade");
             watcherUpgrade(false);
           } catch (Exception e) {
             log.error("Error while upgrading watcher", e);

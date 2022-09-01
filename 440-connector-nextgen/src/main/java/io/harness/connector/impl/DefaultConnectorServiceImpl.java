@@ -554,7 +554,8 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
 
     if (existingConnector.getIsFromDefaultBranch() == null || existingConnector.getIsFromDefaultBranch()) {
       if (existingConnector.getHeartbeatPerpetualTaskId() == null
-          && !harnessManagedConnectorHelper.isHarnessManagedSecretManager(connector) && executeOnDelegate) {
+          && !harnessManagedConnectorHelper.isHarnessManagedSecretManager(connector) && executeOnDelegate
+          && !ConnectorType.CUSTOM_SECRET_MANAGER.equals(connector.getConnectorType())) {
         PerpetualTaskId connectorHeartbeatTaskId = connectorHeartbeatService.createConnectorHeatbeatTask(
             accountIdentifier, existingConnector.getOrgIdentifier(), existingConnector.getProjectIdentifier(),
             existingConnector.getIdentifier());

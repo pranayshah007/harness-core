@@ -394,6 +394,7 @@
 5229:software.wings.api.AwsLambdaContextElement.FunctionMeta
 5230:software.wings.api.AwsLambdaFunctionElement
 5231:software.wings.api.artifact.ServiceArtifactElement
+5232:software.wings.beans.NameValuePairWithDefault
 5233:io.harness.eraro.ErrorCode
 5234:software.wings.beans.command.JenkinsTaskParams
 5235:software.wings.api.ScriptStateExecutionData
@@ -812,7 +813,6 @@
 7222:software.wings.api.artifact.ServiceArtifactVariableElement
 7223:software.wings.sm.states.spotinst.SpotInstSetupContextElement
 7226:software.wings.service.impl.MasterUrlFetchTaskParameter
-7228:software.wings.beans.CyberArkConfig
 7229:software.wings.api.ShellScriptProvisionerOutputElement
 7230:com.google.api.services.logging.v2.model.LogEntry
 7231:com.google.api.services.logging.v2.model.MonitoredResourceMetadata
@@ -1711,6 +1711,12 @@
 55336:io.harness.delegate.task.shell.WinrmTaskParameters
 55337:io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateRequest
 55338:io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateResponse
+55339:io.harness.delegate.task.azure.arm.AzureARMTaskNGParameters
+55340:io.harness.delegate.task.azure.arm.AzureARMTaskNGResponse
+55342:io.harness.delegate.task.azure.arm.AzureBlueprintTaskNGParameters
+55343:io.harness.delegate.task.azure.arm.AzureBlueprintTaskNGResponse
+55344:io.harness.delegate.task.azure.arm.AzureResourceCreationTaskNGParameters
+55345:io.harness.delegate.task.azure.arm.AzureResourceCreationTaskNGResponse
 55401:io.harness.delegate.beans.SerializedResponseData
 55402:software.wings.beans.SerializationFormat
 55403:io.harness.delegate.beans.gitapi.GitApiMergePRTaskResponse
@@ -1910,7 +1916,7 @@
 543250:io.harness.delegate.task.k8s.K8sCanaryDeployResponse
 543251:io.harness.delegate.task.azure.arm.response.AzureARMListManagementGroupResponse
 543252:io.harness.delegate.task.azure.arm.response.AzureARMListSubscriptionLocationsResponse
-543253:io.harness.delegate.task.azure.arm.AzureARMTaskParameters.AzureARMTaskType
+543253:io.harness.delegate.task.azure.arm.AzureARMTaskType
 543254:io.harness.delegate.task.k8s.K8sSwapServiceSelectorsRequest
 543255:io.harness.delegate.task.k8s.K8sDeleteRequest
 543256:io.harness.delegate.beans.azure.ManagementGroupData

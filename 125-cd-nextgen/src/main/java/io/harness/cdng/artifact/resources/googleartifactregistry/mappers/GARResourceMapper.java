@@ -11,13 +11,13 @@ import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class GARResourceMapper {
-  public GARResponseDTO toGarResponse(List<GarDelegateResponse> garDelegateResponses) {
+  public static GARResponseDTO toGarResponse(List<GarDelegateResponse> garDelegateResponses) {
     List<GARBuildDetailsDTO> detailsDTOList = garDelegateResponses.stream()
                                                   .map(response -> toGarBuildDetailsDTO(response.getBuildDetails()))
                                                   .collect(Collectors.toList());
     return GARResponseDTO.builder().buildDetailsList(detailsDTOList).build();
   }
-  public GARBuildDetailsDTO toGarBuildDetailsDTO(ArtifactBuildDetailsNG artifactBuildDetailsNG) {
+  public static GARBuildDetailsDTO toGarBuildDetailsDTO(ArtifactBuildDetailsNG artifactBuildDetailsNG) {
     return GARBuildDetailsDTO.builder().version(artifactBuildDetailsNG.getNumber()).build();
   }
 }

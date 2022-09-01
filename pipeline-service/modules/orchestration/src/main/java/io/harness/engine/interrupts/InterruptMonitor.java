@@ -115,7 +115,7 @@ public class InterruptMonitor implements Handler<Interrupt> {
         // Just ignoring this exception this happens again for old executions where the plan execution have been removed
         // from database
       }
-      if (planExecution == null || StatusUtils.isFinalStatus(planExecution.getStatus())) {
+      if (planExecution == null) {
         log.info("Interrupt active but plan finished, Closing the interrupt");
         interruptService.markProcessedForceful(interrupt.getUuid(), PROCESSED_SUCCESSFULLY, true);
         return;
@@ -165,6 +165,7 @@ public class InterruptMonitor implements Handler<Interrupt> {
       log.info("Interrupt processing stuck. Taking forceful action");
       forceTerminate(
           interrupt, nodeExecutions, leaves.stream().map(NodeExecution::getUuid).collect(Collectors.toSet()));
+      interruptService.markProcessedForceful(interrupt.getUuid(), PROCESSED_SUCCESSFULLY, true);
     }
   }
 

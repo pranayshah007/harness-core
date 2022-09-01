@@ -61,8 +61,19 @@ public class ResourceGroupFactory {
                                .map(ResourceSelector::getSelector)
                                .collect(Collectors.toSet()))
         .resourceSelectorsV2(resourceSelectors)
+        .scopeSelectors(
+            resourceGroupDTO.getIncludedScopes().stream().map(this::buildScopeSelector).collect(Collectors.toSet()))
         .managed(resourceGroupResponse.isHarnessManaged())
         .allowedScopeLevels(resourceGroupDTO.getAllowedScopeLevels())
+        .build();
+  }
+
+  private io.harness.accesscontrol.resources.resourcegroups.ScopeSelector buildScopeSelector(
+      ScopeSelector scopeSelector) {
+    Scope scope = getScope(scopeSelector);
+    return io.harness.accesscontrol.resources.resourcegroups.ScopeSelector.builder()
+        .scopeIdentifier(scope == null ? null : scope.toString())
+        .includingChildScopes(ScopeFilterType.INCLUDING_CHILD_SCOPES.equals(scopeSelector.getFilter()))
         .build();
   }
 
@@ -75,28 +86,6 @@ public class ResourceGroupFactory {
                                         .build());
     }
     return null;
-  }
-
-  private boolean addProjectResource(ScopeSelector scopeSelector) {
-    if (ScopeFilterType.INCLUDING_CHILD_SCOPES.equals(scopeSelector.getFilter())) {
-      return true;
-    } else if (ScopeFilterType.EXCLUDING_CHILD_SCOPES.equals(scopeSelector.getFilter())
-        && scopeSelector.getProjectIdentifier() != null) {
-      return true;
-    }
-    return false;
-  }
-
-  private boolean addOrgResource(ScopeSelector scopeSelector) {
-    if (scopeSelector.getProjectIdentifier() == null) {
-      if (ScopeFilterType.INCLUDING_CHILD_SCOPES.equals(scopeSelector.getFilter())) {
-        return true;
-      } else if (ScopeFilterType.EXCLUDING_CHILD_SCOPES.equals(scopeSelector.getFilter())
-          && scopeSelector.getOrgIdentifier() != null) {
-        return true;
-      }
-    }
-    return false;
   }
 
   private Set<ResourceSelector> getResourceSelectors(
@@ -162,19 +151,7 @@ public class ResourceGroupFactory {
       if (ScopeFilterType.INCLUDING_CHILD_SCOPES.equals(scopeSelector.getFilter())) {
         selector.append(PATH_DELIMITER).append(ResourceGroup.INCLUDE_CHILD_SCOPES_IDENTIFIER);
       }
-
-      Set<ResourceSelector> modifiedResourceSelectors = new HashSet<>(resourceSelectors);
-      if (Boolean.FALSE.equals(resourceFilter.isIncludeAllResources())) {
-        if (addOrgResource(scopeSelector)) {
-          modifiedResourceSelectors.addAll(getResourceSelectors(
-              io.harness.resourcegroup.v2.model.ResourceSelector.builder().resourceType("ORGANIZATION").build()));
-        }
-        if (addProjectResource(scopeSelector)) {
-          modifiedResourceSelectors.addAll(getResourceSelectors(
-              io.harness.resourcegroup.v2.model.ResourceSelector.builder().resourceType("PROJECT").build()));
-        }
-      }
-      modifiedResourceSelectors.forEach(resourceSelector
+      resourceSelectors.forEach(resourceSelector
           -> selectors.add(ResourceSelector.builder()
                                .selector(selector.toString().concat(resourceSelector.getSelector()))
                                .conditional(resourceSelector.isConditional())

@@ -22,7 +22,6 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
@@ -132,7 +131,6 @@ public class PMSPipelineTemplateHelperTest extends CategoryTest {
   @Owner(developers = INDER)
   @Category(UnitTests.class)
   public void testGetTemplateReferencesForGivenYamlWhenFFIsOnAndGitSyncNotEnabled() throws IOException {
-    doReturn(true).when(pmsFeatureFlagHelper).isEnabled(ACCOUNT_ID, FeatureName.NG_TEMPLATE_REFERENCES_SUPPORT);
     Call<ResponseDTO<List<EntityDetailProtoDTO>>> callRequest = mock(Call.class);
     doReturn(callRequest)
         .when(templateResourceClient)

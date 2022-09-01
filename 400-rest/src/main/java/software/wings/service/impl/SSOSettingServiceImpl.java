@@ -33,6 +33,7 @@ import io.harness.ff.FeatureFlagService;
 import io.harness.iterator.PersistentCronIterable;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.account.OauthProviderType;
+import io.harness.outbox.api.OutboxService;
 import io.harness.persistence.HIterator;
 import io.harness.scheduler.PersistentScheduler;
 
@@ -44,6 +45,14 @@ import software.wings.beans.NotificationRule;
 import software.wings.beans.alert.Alert;
 import software.wings.beans.alert.AlertType;
 import software.wings.beans.alert.SSOSyncFailedAlert;
+import software.wings.beans.loginSettings.events.LoginSettingsOAuthCreateEvent;
+import software.wings.beans.loginSettings.events.LoginSettingsOAuthDeleteEvent;
+import software.wings.beans.loginSettings.events.LoginSettingsOAuthUpdateEvent;
+import software.wings.beans.loginSettings.events.LoginSettingsSAMLCreateEvent;
+import software.wings.beans.loginSettings.events.LoginSettingsSAMLDeleteEvent;
+import software.wings.beans.loginSettings.events.LoginSettingsSAMLUpdateEvent;
+import software.wings.beans.loginSettings.events.OAuthSettingsYamlDTO;
+import software.wings.beans.loginSettings.events.SamlSettingsYamlDTO;
 import software.wings.beans.sso.LdapConnectionSettings;
 import software.wings.beans.sso.LdapSettings;
 import software.wings.beans.sso.OauthSettings;
@@ -113,6 +122,7 @@ public class SSOSettingServiceImpl implements SSOSettingService {
   @Inject private LdapSyncJobConfig ldapSyncJobConfig;
   @Inject private SSOServiceHelper ssoServiceHelper;
   @Inject private FeatureFlagService featureFlagService;
+  @Inject private OutboxService outboxService;
   static final int ONE_DAY = 86400000;
 
   @Override
@@ -156,6 +166,7 @@ public class SSOSettingServiceImpl implements SSOSettingService {
   private SamlSettings saveSSOSettingsInternal(
       @GetAccountId(SamlSettingsAccountIdExtractor.class) SamlSettings settings) {
     SamlSettings queriedSettings = getSamlSettingsByAccountId(settings.getAccountId());
+    SamlSettings currentSamlSettings = queriedSettings;
     SamlSettings savedSettings;
     if (queriedSettings != null) {
       queriedSettings.setUrl(settings.getUrl());
@@ -170,10 +181,12 @@ public class SSOSettingServiceImpl implements SSOSettingService {
       queriedSettings.setEncryptedClientSecret(settings.getEncryptedClientSecret());
       String ssoSettingUuid = wingsPersistence.save(queriedSettings);
       savedSettings = wingsPersistence.get(SamlSettings.class, ssoSettingUuid);
+      ngAuditLoginSettingsForSAMLUpdate(currentSamlSettings, savedSettings);
     } else {
       String ssoSettingUuid = wingsPersistence.save(settings);
       savedSettings = wingsPersistence.get(SamlSettings.class, ssoSettingUuid);
       eventPublishHelper.publishSSOEvent(settings.getAccountId());
+      ngAuditLoginSettingsForSAMLUpload(savedSettings);
     }
     auditServiceHelper.reportForAuditingUsingAccountId(settings.getAccountId(), null, settings, Event.Type.CREATE);
     log.info("Auditing creation of SAML Settings for account={}", settings.getAccountId());
@@ -181,9 +194,50 @@ public class SSOSettingServiceImpl implements SSOSettingService {
     return savedSettings;
   }
 
+  private void ngAuditLoginSettingsForSAMLUpload(SamlSettings newSamlSettings) {
+    try {
+      outboxService.save(
+          LoginSettingsSAMLCreateEvent.builder()
+              .accountIdentifier(newSamlSettings.getAccountId())
+              .newSamlSettingsYamlDTO(SamlSettingsYamlDTO.builder().samlSettings(newSamlSettings).build())
+              .build());
+    } catch (Exception ex) {
+      log.error("For account {} Audit trails for SAML SSO upload event failed with exception: {}",
+          newSamlSettings.getAccountId(), ex);
+    }
+  }
+
+  private void ngAuditLoginSettingsForSAMLUpdate(SamlSettings oldSamlSettings, SamlSettings newSamlSettings) {
+    try {
+      outboxService.save(
+          LoginSettingsSAMLUpdateEvent.builder()
+              .accountIdentifier(newSamlSettings.getAccountId())
+              .oldSamlSettingsYamlDTO(SamlSettingsYamlDTO.builder().samlSettings(oldSamlSettings).build())
+              .newSamlSettingsYamlDTO(SamlSettingsYamlDTO.builder().samlSettings(newSamlSettings).build())
+              .build());
+    } catch (Exception ex) {
+      log.error("For account {} Audit trails for SAML SSO update event failed with exception: {}",
+          newSamlSettings.getAccountId(), ex);
+    }
+  }
+
+  private void ngAuditLoginSettingsForSAMLDelete(SamlSettings oldSamlSettings) {
+    try {
+      outboxService.save(
+          LoginSettingsSAMLDeleteEvent.builder()
+              .accountIdentifier(oldSamlSettings.getAccountId())
+              .oldSamlSettingsYamlDTO(SamlSettingsYamlDTO.builder().samlSettings(oldSamlSettings).build())
+              .build());
+    } catch (Exception ex) {
+      log.error("For account {} Audit trails for SAML SSO delete event failed with exception: {}",
+          oldSamlSettings.getAccountId(), ex);
+    }
+  }
+
   @Override
   public OauthSettings saveOauthSettings(OauthSettings settings) {
     OauthSettings queriedSettings = getOauthSettingsByAccountId(settings.getAccountId());
+    OauthSettings currentSettings = queriedSettings;
     OauthSettings savedSettings;
     if (queriedSettings != null) {
       queriedSettings.setUrl(settings.getUrl());
@@ -192,16 +246,59 @@ public class SSOSettingServiceImpl implements SSOSettingService {
       queriedSettings.setFilter(settings.getFilter());
       wingsPersistence.save(queriedSettings);
       savedSettings = wingsPersistence.get(OauthSettings.class, queriedSettings.getUuid());
+      ngAuditLoginSettingsForOAuthUpdate(settings.getAccountId(), currentSettings, savedSettings);
     } else {
       String ssoSettingUuid = wingsPersistence.save(settings);
       savedSettings = wingsPersistence.get(OauthSettings.class, ssoSettingUuid);
       eventPublishHelper.publishSSOEvent(settings.getAccountId());
+      ngAuditLoginSettingsForOAuthUpload(settings.getAccountId(), savedSettings);
     }
     Account account = accountService.get(settings.getAccountId());
     accountService.update(account);
     auditServiceHelper.reportForAuditingUsingAccountId(account.getUuid(), null, settings, Event.Type.CREATE);
     log.info("Auditing creation of OAUTH Settings for account={}", settings.getAccountId());
     return savedSettings;
+  }
+
+  private void ngAuditLoginSettingsForOAuthUpload(String accountIdentifier, OauthSettings newOauthSettings) {
+    try {
+      outboxService.save(
+          LoginSettingsOAuthCreateEvent.builder()
+              .accountIdentifier(accountIdentifier)
+              .newOAuthSettingsYamlDTO(OAuthSettingsYamlDTO.builder().oauthSettings(newOauthSettings).build())
+              .build());
+    } catch (Exception ex) {
+      log.error("For account {} Audit trails for OAuth Provider Upload event failed with exception: {}",
+          accountIdentifier, ex);
+    }
+  }
+
+  private void ngAuditLoginSettingsForOAuthUpdate(
+      String accountIdentifier, OauthSettings oldOauthSettings, OauthSettings newOauthSettings) {
+    try {
+      outboxService.save(
+          LoginSettingsOAuthUpdateEvent.builder()
+              .accountIdentifier(accountIdentifier)
+              .oldOAuthSettingsYamlDTO(OAuthSettingsYamlDTO.builder().oauthSettings(oldOauthSettings).build())
+              .newOAuthSettingsYamlDTO(OAuthSettingsYamlDTO.builder().oauthSettings(newOauthSettings).build())
+              .build());
+    } catch (Exception ex) {
+      log.error("For account {} Audit trails for OAuth Provider Update event failed with exception: {}",
+          accountIdentifier, ex);
+    }
+  }
+
+  private void ngAuditLoginSettingsForOAuthDelete(String accountIdentifier, OauthSettings oldOauthSettings) {
+    try {
+      outboxService.save(
+          LoginSettingsOAuthDeleteEvent.builder()
+              .accountIdentifier(accountIdentifier)
+              .oldOAuthSettingsYamlDTO(OAuthSettingsYamlDTO.builder().oauthSettings(oldOauthSettings).build())
+              .build());
+    } catch (Exception ex) {
+      log.error("For account {} Audit trails for OAuth Provider Delete event failed with exception: {}",
+          accountIdentifier, ex);
+    }
   }
 
   @Override
@@ -233,6 +330,7 @@ public class SSOSettingServiceImpl implements SSOSettingService {
     account.setOauthEnabled(false);
     accountService.update(account);
     auditServiceHelper.reportDeleteForAuditingUsingAccountId(accountId, settings);
+    ngAuditLoginSettingsForOAuthDelete(accountId, settings);
     log.info("Auditing deletion of OAUTH Settings for account={}", accountId);
     return wingsPersistence.delete(settings);
   }
@@ -244,6 +342,7 @@ public class SSOSettingServiceImpl implements SSOSettingService {
       throw new InvalidRequestException("No Saml settings found for this account");
     }
     auditServiceHelper.reportDeleteForAuditingUsingAccountId(accountId, samlSettings);
+    ngAuditLoginSettingsForSAMLDelete(samlSettings);
     log.info("Auditing deletion of SAML Settings for account={}", accountId);
     return deleteSamlSettings(samlSettings);
   }

@@ -7,6 +7,7 @@
 
 package io.harness.delegate.task.shell.ssh;
 
+import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -23,10 +24,12 @@ import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 
 @Data
 @Builder
 @AllArgsConstructor
+@Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class SshExecutorFactoryContext {
   private final String accountId;
@@ -51,7 +54,12 @@ public class SshExecutorFactoryContext {
       for (Map.Entry<String, String> entry : environmentVariables.entrySet()) {
         String key = entry.getKey();
         String value = entry.getValue();
-        text = text.replaceAll("\\$" + key, value);
+        try {
+          text = text.replaceAll("\\$" + key, value);
+        } catch (IllegalArgumentException exception) {
+          log.info(format("ENV variable evaluation failed for %s with error: %s. Skipping evaluation.", key,
+              exception.getMessage()));
+        }
       }
     }
     return text;

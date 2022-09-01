@@ -150,7 +150,7 @@ public class GARApiServiceImpl implements GarApiService {
 
   private boolean isSuccessful(Response<GarPackageVersionResponse> response) {
     if (response == null) {
-      throw NestedExceptionUtils.hintWithExplanationException("GOOGLE ARTIFACT REGISTRY : Response Is Null",
+      throw NestedExceptionUtils.hintWithExplanationException("Response Is Null",
           "Please Check Whether Artifact exists or not",
           new InvalidArtifactServerException(response.errorBody().toString(), USER));
     }
@@ -165,17 +165,19 @@ public class GARApiServiceImpl implements GarApiService {
       case 404:
         throw NestedExceptionUtils.hintWithExplanationException(
             "Please check project, repository name, package, region fields",
-            "Google Artifact Registry: Please verify the values of project, repository name, package, region are same as of package in Google Artifact Registry",
+            "Please verify the values of project, repository name, package, region are same as of package in Google Artifact Registry",
             new InvalidArtifactServerException(response.errorBody().toString(), USER));
       case 400:
         return false;
       case 401:
         throw NestedExceptionUtils.hintWithExplanationException(
-            "Google Artifact Registry: The connector provided does not have sufficient privileges to access Google artifact registry",
+            "The connector provided does not have sufficient privileges to access Google artifact registry",
             "Please check connector's permission and credentials",
             new InvalidArtifactServerException(response.errorBody().toString(), USER));
       default:
-        throw NestedExceptionUtils.hintWithExplanationException("Google Artifact Registry", "Google Artifact Registry",
+        throw NestedExceptionUtils.hintWithExplanationException(
+            "The server could have failed authenticate ,Please check your credentials",
+            " Server responded with the following error code",
             new InvalidArtifactServerException(StringUtils.isNotBlank(response.errorBody().toString())
                     ? response.errorBody().toString()
                     : String.format("Server responded with the following error code - %d", code),

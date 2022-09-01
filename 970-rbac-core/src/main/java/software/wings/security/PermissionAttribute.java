@@ -327,7 +327,11 @@ public class PermissionAttribute {
     /**
      * default action.
      */
-    DEFAULT
+    DEFAULT,
+    /**
+     * Abort Workflow
+     */
+    ABORT_WORKFLOW
   }
 
   /**

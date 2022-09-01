@@ -132,6 +132,8 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
   Long startTs;
   Long endTs;
 
+  Boolean notifyOnlyMe;
+
   @Builder.Default @FdTtlIndex Date validUntil = Date.from(OffsetDateTime.now().plusMonths(TTL_MONTHS).toInstant());
 
   // TODO: removing these getters after 6 months (13/10/21)

@@ -38,6 +38,9 @@
       "type": "string",
       "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
     },
+    "skipInstances": {
+      "type": "boolean"
+    },
     "strategy": {
       "$ref": "#/definitions/StrategyConfig"
     },
@@ -188,6 +191,9 @@
               "type": "string"
             },
             "filePathRegex": {
+              "type": "string"
+            },
+            "region": {
               "type": "string"
             }
           }
@@ -2305,6 +2311,9 @@
         "environmentGroup": {
           "$ref": "#/definitions/EnvironmentGroupYaml"
         },
+        "environments": {
+          "$ref": "#/definitions/EnvironmentsYaml"
+        },
         "execution": {
           "$ref": "#/definitions/ExecutionElementConfig"
         },
@@ -2319,6 +2328,9 @@
         },
         "serviceConfig": {
           "$ref": "#/definitions/ServiceConfig"
+        },
+        "services": {
+          "$ref": "#/definitions/ServicesYaml"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -2362,6 +2374,9 @@
         "name": {
           "type": "string",
           "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
+        },
+        "skipInstances": {
+          "type": "boolean"
         },
         "strategy": {
           "$ref": "#/definitions/StrategyConfig"
@@ -2652,6 +2667,39 @@
             {
               "type": "string",
               "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "EnvironmentsMetadata": {
+      "type": "object",
+      "properties": {
+        "parallel": {
+          "type": "boolean"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "EnvironmentsYaml": {
+      "type": "object",
+      "properties": {
+        "metadata": {
+          "$ref": "#/definitions/EnvironmentsMetadata"
+        },
+        "values": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/EnvironmentYamlV2"
+              }
+            },
+            {
+              "type": "string",
+              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
               "minLength": 1
             }
           ]
@@ -3218,7 +3266,7 @@
             }
           ]
         },
-        "partitions": {
+        "partitionSize": {
           "oneOf": [
             {
               "type": "integer",
@@ -3536,8 +3584,7 @@
       ],
       "properties": {
         "identifier": {
-          "type": "string",
-          "pattern": "\\<\\+input\\>|^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$"
+          "type": "string"
         },
         "inputs": {
           "$ref": "#/definitions/JsonNode"
@@ -6953,7 +7000,7 @@
             },
             {
               "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
               "minLength": 1
             }
           ]
@@ -6983,6 +7030,39 @@
           ]
         }
       ]
+    },
+    "ServicesMetadata": {
+      "type": "object",
+      "properties": {
+        "parallel": {
+          "type": "boolean"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ServicesYaml": {
+      "type": "object",
+      "properties": {
+        "metadata": {
+          "$ref": "#/definitions/ServicesMetadata"
+        },
+        "values": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ServiceYamlV2"
+              }
+            },
+            {
+              "type": "string",
+              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+              "minLength": 1
+            }
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "ShellScriptBaseSource": {
       "type": "object",

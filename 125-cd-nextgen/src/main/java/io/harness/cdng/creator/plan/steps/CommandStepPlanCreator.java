@@ -71,7 +71,7 @@ public class CommandStepPlanCreator extends CDPMSStepPlanCreatorV2<CommandStepNo
           YamlUtils.findParentNode(ctx.getCurrentField().getNode(), STEP_GROUP).getCurrJsonNode();
       JsonNode strategyNode = stepGroupJsonNode.findValue(STRATEGY);
       if (strategyNode == null) {
-        throw new InvalidRequestException("Missing looping strategy for step group");
+        return false;
       }
 
       JsonNode repeatNode = strategyNode.findValue(REPEAT);
@@ -82,7 +82,7 @@ public class CommandStepPlanCreator extends CDPMSStepPlanCreatorV2<CommandStepNo
     } else {
       StrategyConfig strategyConfig = stepElement.getStrategy();
       if (strategyConfig == null) {
-        throw new InvalidRequestException("Missing looping strategy for Command Step");
+        return false;
       }
       if (strategyConfig.getRepeat() == null) {
         throw new InvalidRequestException("Only repeat looping strategy is supported for Command Step");

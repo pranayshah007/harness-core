@@ -24,6 +24,7 @@ import io.harness.delegate.beans.RemoteMethodReturnValueData;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorCredentialDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
+import io.harness.delegate.beans.connector.gcpconnector.GcpDelegateDetailsDTO;
 import io.harness.delegate.task.artifacts.ArtifactTaskType;
 import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
@@ -70,16 +71,17 @@ public class GarResourceServiceImplTest extends CategoryTest {
   }
 
   private ConnectorResponseDTO getConnector() {
-    ConnectorInfoDTO connectorInfoDTO =
-        ConnectorInfoDTO.builder()
-            .connectorType(ConnectorType.GCP)
-            .connectorConfig(GcpConnectorDTO.builder()
-                                 .delegateSelectors(Collections.emptySet())
-                                 .credential(GcpConnectorCredentialDTO.builder().build())
-                                 .build())
-            .projectIdentifier("dummyProject")
-            .orgIdentifier("dummyOrg")
-            .build();
+    GcpConnectorCredentialDTO gcpConnectorCredentialDTO = GcpConnectorCredentialDTO.builder().build();
+    gcpConnectorCredentialDTO.setConfig(GcpDelegateDetailsDTO.builder().build());
+    ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder()
+                                            .connectorType(ConnectorType.GCP)
+                                            .connectorConfig(GcpConnectorDTO.builder()
+                                                                 .delegateSelectors(Collections.emptySet())
+                                                                 .credential(gcpConnectorCredentialDTO)
+                                                                 .build())
+                                            .projectIdentifier("dummyProject")
+                                            .orgIdentifier("dummyOrg")
+                                            .build();
     return ConnectorResponseDTO.builder().connector(connectorInfoDTO).build();
   }
   @Test

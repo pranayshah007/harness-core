@@ -286,7 +286,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Request.Builder;
-import okhttp3.Response;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.io.IOUtils;
@@ -1402,197 +1401,194 @@ public class DelegateServiceImpl implements DelegateService {
 
     log.info("Current version of delegate :[{}], latest version: [{}] url: [{}]", templateParameters.getVersion(),
         latestVersion, delegateJarDownloadUrl);
-    if (doesJarFileExist(delegateJarDownloadUrl)) {
-      final String watcherMetadataUrl;
-      if (useCDN) {
-        watcherMetadataUrl = infraDownloadService.getCdnWatcherMetaDataFileUrl();
-      } else {
-        watcherMetadataUrl = subdomainUrlHelper.getWatcherMetadataUrl(templateParameters.getAccountId(),
-            templateParameters.getManagerHost(), mainConfiguration.getDeployMode().name());
-      }
-      final String watcherStorageUrl = watcherMetadataUrl.substring(0, watcherMetadataUrl.lastIndexOf('/'));
-      final String watcherCheckLocation = watcherMetadataUrl.substring(watcherMetadataUrl.lastIndexOf('/') + 1);
-
-      final String hexkey = format("%040x",
-          new BigInteger(1, templateParameters.getAccountId().substring(0, 6).getBytes(StandardCharsets.UTF_8)))
-                                .replaceFirst("^0+(?!$)", "");
-
-      final boolean isCiEnabled = isCiEnabled(templateParameters);
-      final String accountSecret = getAccountSecret(templateParameters, isNgDelegate);
-      final String base64Secret = Base64.getEncoder().encodeToString(accountSecret.getBytes());
-      // Ng helm delegates always use immutable image irrespective of FF
-      final String delegateDockerImage = (isNgDelegate && HELM_DELEGATE.equals(templateParameters.getDelegateType()))
-          ? delegateVersionService.getImmutableDelegateImageTag(templateParameters.getAccountId())
-          : delegateVersionService.getDelegateImageTag(
-              templateParameters.getAccountId(), templateParameters.getDelegateType());
-      ImmutableMap.Builder<String, String> params =
-          ImmutableMap.<String, String>builder()
-              .put("delegateDockerImage", delegateDockerImage)
-              .put("upgraderDockerImage",
-                  delegateVersionService.getUpgraderImageTag(
-                      templateParameters.getAccountId(), templateParameters.getDelegateType()))
-              .put("accountId", templateParameters.getAccountId())
-              .put("delegateToken", accountSecret)
-              .put("base64Secret", base64Secret)
-              .put("hexkey", hexkey)
-              .put(UPGRADE_VERSION, latestVersion)
-              .put("managerHostAndPort", templateParameters.getManagerHost())
-              .put("verificationHostAndPort", templateParameters.getVerificationHost())
-              .put("watcherStorageUrl", watcherStorageUrl)
-              .put("watcherCheckLocation", watcherCheckLocation)
-              .put("delegateStorageUrl", delegateStorageUrl)
-              .put("delegateCheckLocation", delegateCheckLocation)
-              .put("deployMode", mainConfiguration.getDeployMode().name())
-              .put("ciEnabled", String.valueOf(isCiEnabled))
-              .put("scmVersion", mainConfiguration.getScmVersion())
-              .put("delegateGrpcServicePort", String.valueOf(delegateGrpcConfig.getPort()))
-              .put("kubernetesAccountLabel", getAccountIdentifier(templateParameters.getAccountId()))
-              .put("dynamicHandlingOfRequestEnabled",
-                  String.valueOf(featureFlagService.isEnabled(
-                      DELEGATE_ENABLE_DYNAMIC_HANDLING_OF_REQUEST, templateParameters.getAccountId())));
-
-      final boolean isOnPrem = DeployMode.isOnPrem(mainConfiguration.getDeployMode().name());
-      params.put("isOnPrem", String.valueOf(isOnPrem));
-      if (!isOnPrem) {
-        final String watcherVersion =
-            substringBefore(delegateVersionService.getWatcherJarVersions(templateParameters.getAccountId()), "-")
-                .trim()
-                .split("\\.")[2];
-        params.put("watcherJarVersion", watcherVersion);
-      }
-
-      if (mainConfiguration.getDeployMode() == DeployMode.KUBERNETES_ONPREM) {
-        params.put("managerTarget", mainConfiguration.getGrpcOnpremDelegateClientConfig().getTarget());
-        params.put("managerAuthority", mainConfiguration.getGrpcOnpremDelegateClientConfig().getAuthority());
-      }
-
-      if (isNotBlank(templateParameters.getDelegateName())) {
-        params.put("delegateName", templateParameters.getDelegateName());
-      }
-
-      if (isNotBlank(mainConfiguration.getOcVersion())) {
-        params.put("ocVersion", mainConfiguration.getOcVersion());
-      }
-
-      if (templateParameters.getDelegateProfile() != null) {
-        params.put("delegateProfile", templateParameters.getDelegateProfile());
-      }
-
-      if (templateParameters.getDelegateType() != null) {
-        params.put("delegateType", templateParameters.getDelegateType());
-      }
-
-      if (templateParameters.getLogStreamingServiceBaseUrl() != null) {
-        params.put("logStreamingServiceBaseUrl", templateParameters.getLogStreamingServiceBaseUrl());
-      }
-
-      params.put("grpcServiceEnabled", String.valueOf(isCiEnabled));
-      if (isCiEnabled) {
-        params.put("grpcServiceConnectorPort", String.valueOf(delegateGrpcConfig.getPort()));
-      } else {
-        params.put("grpcServiceConnectorPort", String.valueOf(0));
-      }
-
-      params.put("useCdn", String.valueOf(useCDN));
-      if (useCDN) {
-        params.put("cdnUrl", cdnConfig.getUrl());
-        params.put("remoteWatcherUrlCdn", infraDownloadService.getCdnWatcherBaseUrl());
-      } else {
-        params.put("cdnUrl", EMPTY);
-        params.put("remoteWatcherUrlCdn", EMPTY);
-      }
-
-      if (isNotBlank(templateParameters.getDelegateXmx())) {
-        params.put("delegateXmx", templateParameters.getDelegateXmx());
-      } else {
-        if (featureFlagService.isEnabled(REDUCE_DELEGATE_MEMORY_SIZE, templateParameters.getAccountId())) {
-          params.put("delegateXmx", "-Xmx1536m");
-        } else {
-          params.put("delegateXmx", "-Xmx4096m");
-        }
-      }
-
-      JreConfig jreConfig = getJreConfig(templateParameters.getAccountId(), templateParameters.isWatcher());
-
-      Preconditions.checkNotNull(jreConfig, "jreConfig cannot be null");
-
-      params.put(JRE_VERSION_KEY, jreConfig.getVersion());
-      params.put(JRE_DIRECTORY, jreConfig.getJreDirectory());
-      params.put(JRE_MAC_DIRECTORY, jreConfig.getJreMacDirectory());
-      params.put(JRE_TAR_PATH, jreConfig.getJreTarPath());
-      params.put("isJdk11Watcher", String.valueOf(isJdk11Watcher(templateParameters.getAccountId())));
-
-      if (jreConfig.getAlpnJarPath() != null) {
-        params.put(ALPN_JAR_PATH, jreConfig.getAlpnJarPath());
-      }
-      params.put("enableCE", String.valueOf(templateParameters.isCeEnabled()));
-
-      if (isNotBlank(templateParameters.getDelegateTags())) {
-        params.put("delegateTags", templateParameters.getDelegateTags());
-      } else {
-        params.put("delegateTags", EMPTY);
-      }
-
-      if (isNotBlank(templateParameters.getDelegateDescription())) {
-        params.put("delegateDescription", templateParameters.getDelegateDescription());
-      } else {
-        params.put("delegateDescription", EMPTY);
-      }
-
-      if (isNotBlank(templateParameters.getDelegateSize())) {
-        params.put("delegateSize", templateParameters.getDelegateSize());
-      }
-
-      if (templateParameters.getDelegateReplicas() != 0) {
-        params.put("delegateReplicas", String.valueOf(templateParameters.getDelegateReplicas()));
-      }
-
-      if (templateParameters.getDelegateRam() != 0) {
-        params.put("delegateRam", String.valueOf(templateParameters.getDelegateRam()));
-      }
-
-      if (templateParameters.getDelegateCpu() != 0) {
-        params.put("delegateCpu", String.valueOf(templateParameters.getDelegateCpu()));
-      }
-
-      if (templateParameters.getDelegateRequestsRam() != 0) {
-        params.put("delegateRequestsRam", String.valueOf(templateParameters.getDelegateRequestsRam()));
-      }
-
-      if (templateParameters.getDelegateRequestsCpu() != 0) {
-        params.put("delegateRequestsCpu", String.valueOf(templateParameters.getDelegateRequestsCpu()));
-      }
-
-      if (isNotBlank(templateParameters.getDelegateGroupId())) {
-        params.put("delegateGroupId", templateParameters.getDelegateGroupId());
-      } else {
-        params.put("delegateGroupId", "");
-      }
-
-      if (isNotBlank(templateParameters.getDelegateGroupName())) {
-        params.put("delegateGroupName", templateParameters.getDelegateGroupName());
-      } else {
-        params.put("delegateGroupName", "");
-      }
-
-      params.put("delegateNamespace", getDelegateNamespace(templateParameters.getDelegateNamespace(), isNgDelegate));
-
-      if (templateParameters.getK8sPermissionsType() != null) {
-        params.put("k8sPermissionsType", templateParameters.getK8sPermissionsType().name());
-      }
-
-      if (isNotBlank(templateParameters.getDelegateTokenName())) {
-        params.put("delegateTokenName", templateParameters.getDelegateTokenName());
-      }
-
-      params.put("isImmutable",
-          String.valueOf(isImmutableDelegate(templateParameters.getAccountId(), templateParameters.getDelegateType())));
-
-      params.put("mtlsEnabled", String.valueOf(templateParameters.isMtlsEnabled()));
-
-      return params.build();
+    final String watcherMetadataUrl;
+    if (useCDN) {
+      watcherMetadataUrl = infraDownloadService.getCdnWatcherMetaDataFileUrl();
+    } else {
+      watcherMetadataUrl = subdomainUrlHelper.getWatcherMetadataUrl(templateParameters.getAccountId(),
+          templateParameters.getManagerHost(), mainConfiguration.getDeployMode().name());
     }
-    throw new IllegalStateException("delegate.jar can't be downloaded from " + delegateJarDownloadUrl);
+    final String watcherStorageUrl = watcherMetadataUrl.substring(0, watcherMetadataUrl.lastIndexOf('/'));
+    final String watcherCheckLocation = watcherMetadataUrl.substring(watcherMetadataUrl.lastIndexOf('/') + 1);
+
+    final String hexkey = format(
+        "%040x", new BigInteger(1, templateParameters.getAccountId().substring(0, 6).getBytes(StandardCharsets.UTF_8)))
+                              .replaceFirst("^0+(?!$)", "");
+
+    final boolean isCiEnabled = isCiEnabled(templateParameters);
+    final String accountSecret = getAccountSecret(templateParameters, isNgDelegate);
+    final String base64Secret = Base64.getEncoder().encodeToString(accountSecret.getBytes());
+    // Ng helm delegates always use immutable image irrespective of FF
+    final String delegateDockerImage = (isNgDelegate && HELM_DELEGATE.equals(templateParameters.getDelegateType()))
+        ? delegateVersionService.getImmutableDelegateImageTag(templateParameters.getAccountId())
+        : delegateVersionService.getDelegateImageTag(
+            templateParameters.getAccountId(), templateParameters.getDelegateType());
+    ImmutableMap.Builder<String, String> params =
+        ImmutableMap.<String, String>builder()
+            .put("delegateDockerImage", delegateDockerImage)
+            .put("upgraderDockerImage",
+                delegateVersionService.getUpgraderImageTag(
+                    templateParameters.getAccountId(), templateParameters.getDelegateType()))
+            .put("accountId", templateParameters.getAccountId())
+            .put("delegateToken", accountSecret)
+            .put("base64Secret", base64Secret)
+            .put("hexkey", hexkey)
+            .put(UPGRADE_VERSION, latestVersion)
+            .put("managerHostAndPort", templateParameters.getManagerHost())
+            .put("verificationHostAndPort", templateParameters.getVerificationHost())
+            .put("watcherStorageUrl", watcherStorageUrl)
+            .put("watcherCheckLocation", watcherCheckLocation)
+            .put("delegateStorageUrl", delegateStorageUrl)
+            .put("delegateCheckLocation", delegateCheckLocation)
+            .put("deployMode", mainConfiguration.getDeployMode().name())
+            .put("ciEnabled", String.valueOf(isCiEnabled))
+            .put("scmVersion", mainConfiguration.getScmVersion())
+            .put("delegateGrpcServicePort", String.valueOf(delegateGrpcConfig.getPort()))
+            .put("kubernetesAccountLabel", getAccountIdentifier(templateParameters.getAccountId()))
+            .put("dynamicHandlingOfRequestEnabled",
+                String.valueOf(featureFlagService.isEnabled(
+                    DELEGATE_ENABLE_DYNAMIC_HANDLING_OF_REQUEST, templateParameters.getAccountId())));
+
+    final boolean isOnPrem = DeployMode.isOnPrem(mainConfiguration.getDeployMode().name());
+    params.put("isOnPrem", String.valueOf(isOnPrem));
+    if (!isOnPrem) {
+      final String watcherVersion =
+          substringBefore(delegateVersionService.getWatcherJarVersions(templateParameters.getAccountId()), "-")
+              .trim()
+              .split("\\.")[2];
+      params.put("watcherJarVersion", watcherVersion);
+    }
+
+    if (mainConfiguration.getDeployMode() == DeployMode.KUBERNETES_ONPREM) {
+      params.put("managerTarget", mainConfiguration.getGrpcOnpremDelegateClientConfig().getTarget());
+      params.put("managerAuthority", mainConfiguration.getGrpcOnpremDelegateClientConfig().getAuthority());
+    }
+
+    if (isNotBlank(templateParameters.getDelegateName())) {
+      params.put("delegateName", templateParameters.getDelegateName());
+    }
+
+    if (isNotBlank(mainConfiguration.getOcVersion())) {
+      params.put("ocVersion", mainConfiguration.getOcVersion());
+    }
+
+    if (templateParameters.getDelegateProfile() != null) {
+      params.put("delegateProfile", templateParameters.getDelegateProfile());
+    }
+
+    if (templateParameters.getDelegateType() != null) {
+      params.put("delegateType", templateParameters.getDelegateType());
+    }
+
+    if (templateParameters.getLogStreamingServiceBaseUrl() != null) {
+      params.put("logStreamingServiceBaseUrl", templateParameters.getLogStreamingServiceBaseUrl());
+    }
+
+    params.put("grpcServiceEnabled", String.valueOf(isCiEnabled));
+    if (isCiEnabled) {
+      params.put("grpcServiceConnectorPort", String.valueOf(delegateGrpcConfig.getPort()));
+    } else {
+      params.put("grpcServiceConnectorPort", String.valueOf(0));
+    }
+
+    params.put("useCdn", String.valueOf(useCDN));
+    if (useCDN) {
+      params.put("cdnUrl", cdnConfig.getUrl());
+      params.put("remoteWatcherUrlCdn", infraDownloadService.getCdnWatcherBaseUrl());
+    } else {
+      params.put("cdnUrl", EMPTY);
+      params.put("remoteWatcherUrlCdn", EMPTY);
+    }
+
+    if (isNotBlank(templateParameters.getDelegateXmx())) {
+      params.put("delegateXmx", templateParameters.getDelegateXmx());
+    } else {
+      if (featureFlagService.isEnabled(REDUCE_DELEGATE_MEMORY_SIZE, templateParameters.getAccountId())) {
+        params.put("delegateXmx", "-Xmx1536m");
+      } else {
+        params.put("delegateXmx", "-Xmx4096m");
+      }
+    }
+
+    JreConfig jreConfig = getJreConfig(templateParameters.getAccountId(), templateParameters.isWatcher());
+
+    Preconditions.checkNotNull(jreConfig, "jreConfig cannot be null");
+
+    params.put(JRE_VERSION_KEY, jreConfig.getVersion());
+    params.put(JRE_DIRECTORY, jreConfig.getJreDirectory());
+    params.put(JRE_MAC_DIRECTORY, jreConfig.getJreMacDirectory());
+    params.put(JRE_TAR_PATH, jreConfig.getJreTarPath());
+    params.put("isJdk11Watcher", String.valueOf(isJdk11Watcher(templateParameters.getAccountId())));
+
+    if (jreConfig.getAlpnJarPath() != null) {
+      params.put(ALPN_JAR_PATH, jreConfig.getAlpnJarPath());
+    }
+    params.put("enableCE", String.valueOf(templateParameters.isCeEnabled()));
+
+    if (isNotBlank(templateParameters.getDelegateTags())) {
+      params.put("delegateTags", templateParameters.getDelegateTags());
+    } else {
+      params.put("delegateTags", EMPTY);
+    }
+
+    if (isNotBlank(templateParameters.getDelegateDescription())) {
+      params.put("delegateDescription", templateParameters.getDelegateDescription());
+    } else {
+      params.put("delegateDescription", EMPTY);
+    }
+
+    if (isNotBlank(templateParameters.getDelegateSize())) {
+      params.put("delegateSize", templateParameters.getDelegateSize());
+    }
+
+    if (templateParameters.getDelegateReplicas() != 0) {
+      params.put("delegateReplicas", String.valueOf(templateParameters.getDelegateReplicas()));
+    }
+
+    if (templateParameters.getDelegateRam() != 0) {
+      params.put("delegateRam", String.valueOf(templateParameters.getDelegateRam()));
+    }
+
+    if (templateParameters.getDelegateCpu() != 0) {
+      params.put("delegateCpu", String.valueOf(templateParameters.getDelegateCpu()));
+    }
+
+    if (templateParameters.getDelegateRequestsRam() != 0) {
+      params.put("delegateRequestsRam", String.valueOf(templateParameters.getDelegateRequestsRam()));
+    }
+
+    if (templateParameters.getDelegateRequestsCpu() != 0) {
+      params.put("delegateRequestsCpu", String.valueOf(templateParameters.getDelegateRequestsCpu()));
+    }
+
+    if (isNotBlank(templateParameters.getDelegateGroupId())) {
+      params.put("delegateGroupId", templateParameters.getDelegateGroupId());
+    } else {
+      params.put("delegateGroupId", "");
+    }
+
+    if (isNotBlank(templateParameters.getDelegateGroupName())) {
+      params.put("delegateGroupName", templateParameters.getDelegateGroupName());
+    } else {
+      params.put("delegateGroupName", "");
+    }
+
+    params.put("delegateNamespace", getDelegateNamespace(templateParameters.getDelegateNamespace(), isNgDelegate));
+
+    if (templateParameters.getK8sPermissionsType() != null) {
+      params.put("k8sPermissionsType", templateParameters.getK8sPermissionsType().name());
+    }
+
+    if (isNotBlank(templateParameters.getDelegateTokenName())) {
+      params.put("delegateTokenName", templateParameters.getDelegateTokenName());
+    }
+
+    params.put("isImmutable",
+        String.valueOf(isImmutableDelegate(templateParameters.getAccountId(), templateParameters.getDelegateType())));
+
+    params.put("mtlsEnabled", String.valueOf(templateParameters.isMtlsEnabled()));
+
+    return params.build();
   }
 
   @VisibleForTesting
@@ -1689,24 +1685,6 @@ public class DelegateServiceImpl implements DelegateService {
       return cdnConfig.getUrl();
     }
     return delegateMetadataUrl.substring(0, delegateMetadataUrl.lastIndexOf('/'));
-  }
-
-  private boolean doesJarFileExist(final String delegateJarDownloadUrl) {
-    if ("local".equals(getEnv()) || DeployMode.isOnPrem(mainConfiguration.getDeployMode().name())) {
-      return true;
-    } else {
-      final int responseCode;
-      try (Response response = Http.getUnsafeOkHttpClient(delegateJarDownloadUrl, 10, 10)
-                                   .newCall(new Builder().url(delegateJarDownloadUrl).head().build())
-                                   .execute()) {
-        responseCode = response.code();
-      } catch (final IOException e) {
-        log.warn("Failed to get jar and script runtime params", e);
-        return false;
-      }
-      log.info("HEAD on downloadUrl got statusCode {}", responseCode);
-      return responseCode == 200;
-    }
   }
 
   private String getAccountSecret(final TemplateParameters inquiry, final boolean isNg) {
@@ -3343,6 +3321,13 @@ public class DelegateServiceImpl implements DelegateService {
       if (registeredDelegate != null) {
         return registeredDelegate;
       }
+    }
+
+    String delegateGroupId = delegate.getDelegateGroupId();
+    if (isBlank(delegateGroupId) && isNotBlank(delegate.getDelegateGroupName())) {
+      final DelegateGroup delegateGroup =
+          upsertDelegateGroup(delegate.getDelegateGroupName(), delegate.getAccountId(), null);
+      delegate.setDelegateGroupId(delegateGroup.getUuid());
     }
 
     // can not proceed unless we receive valid token

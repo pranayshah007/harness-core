@@ -7,26 +7,29 @@ service:
     type: Kubernetes
     spec:
       artifacts:
-        primaryArtifactRef: i1
-        sources:
-          - identifier: i1
-            type: DockerRegistry
-            spec:
-              connectorRef: "https://registry.hub.docker.com/"
-              imagePath: "library/nginx"
-              tag: "1.20"
-          - identifier: i2
-            type: DockerRegistry
-            spec:
-              connectorRef: "https://registry.hub.docker.com/"
-              imagePath: "library/nginx"
-              tag: "1.19"
-          - identifier: i3
-            type: DockerRegistry
-            spec:
-              connectorRef: "https://registry.hub.docker.com/"
-              imagePath: "library/nginx"
-              tag: ""
+        primary:
+          primaryArtifactRef: i1
+          sources:
+            - identifier: i1
+              type: DockerRegistry
+              spec:
+                connectorRef: "https://registry.hub.docker.com/"
+                imagePath: "library/nginx"
+                tag: "1.20"
+            - identifier: i2
+              type: DockerRegistry
+              spec:
+                connectorRef: "https://registry.hub.docker.com/"
+                imagePath: "library/nginx"
+                tag: "1.19"
+        sidecars:
+          - sidecar:
+              identifier: i3
+              type: DockerRegistry
+              spec:
+                connectorRef: "https://registry.hub.docker.com/"
+                imagePath: "library/nginx"
+                tag: "1.19"
       manifests:
         - manifest:
             identifier: manifestIdentifier

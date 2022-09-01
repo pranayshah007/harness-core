@@ -92,8 +92,8 @@ public class SettingsServiceImpl implements SettingsService {
         Boolean isSettingEditable =
             ScopeLevel.of(accountIdentifier, orgIdentifier, projectIdentifier) == ScopeLevel.ACCOUNT
             || parentSetting.getAllowOverrides();
-        settingResponseDTOList.add(settingsMapper.writeSettingResponseDTO(
-            parentSetting, settingConfiguration, isSettingEditable, parentSetting.getValue()));
+        settingResponseDTOList.add(
+            settingsMapper.writeSettingResponseDTO(parentSetting, settingConfiguration, isSettingEditable));
       }
     });
     return settingResponseDTOList;
@@ -132,9 +132,14 @@ public class SettingsServiceImpl implements SettingsService {
           settingRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
               currentScope.getAccountIdentifier(), currentScope.getOrgIdentifier(), currentScope.getProjectIdentifier(),
               settingRequestDTO.getIdentifier());
-      if (setting.isPresent() && Boolean.FALSE.equals(setting.get().getAllowOverrides())) {
+      if (!setting.isPresent()) {
+        continue;
+      }
+      if (Boolean.FALSE.equals(setting.get().getAllowOverrides())) {
         throw new InvalidRequestException(
             String.format("Setting- %s cannot be overridden at the current scope", settingRequestDTO.getIdentifier()));
+      } else {
+        return;
       }
     }
     Optional<SettingConfiguration> settingConfiguration =
@@ -310,10 +315,12 @@ public class SettingsServiceImpl implements SettingsService {
       settingDTO =
           settingsMapper.writeNewDTO(orgIdentifier, projectIdentifier, settingRequestDTO, settingConfiguration, true);
     }
+    Setting parentSetting = getSettingFromParentScope(Scope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+        settingRequestDTO.getIdentifier(), settingConfiguration);
     return Failsafe.with(DEFAULT_TRANSACTION_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
       setting.ifPresent(settingRepository::delete);
       outboxService.save(new SettingRestoreEvent(accountIdentifier, oldSettingDTO, settingDTO));
-      return settingsMapper.writeSettingResponseDTO(settingConfiguration, true);
+      return settingsMapper.writeSettingResponseDTO(parentSetting, settingConfiguration, true);
     }));
   }
 

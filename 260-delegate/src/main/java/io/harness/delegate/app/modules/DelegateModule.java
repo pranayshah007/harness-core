@@ -189,7 +189,13 @@ import io.harness.delegate.task.azure.appservice.webapp.handler.AzureWebAppSlotS
 import io.harness.delegate.task.azure.appservice.webapp.handler.AzureWebAppTrafficShiftRequestHandler;
 import io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppRequestType;
 import io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppTaskRequest;
-import io.harness.delegate.task.azure.arm.AzureARMTaskParameters;
+import io.harness.delegate.task.azure.arm.AzureARMBaseHelperImpl;
+import io.harness.delegate.task.azure.arm.AzureARMTaskType;
+import io.harness.delegate.task.azure.arm.AzureResourceCreationBaseHelper;
+import io.harness.delegate.task.azure.arm.AzureResourceCreationTaskNG;
+import io.harness.delegate.task.azure.arm.handlers.AzureCreateArmResourceTaskHandler;
+import io.harness.delegate.task.azure.arm.handlers.AzureCreateBlueprintTaskHandler;
+import io.harness.delegate.task.azure.arm.handlers.AzureResourceCreationAbstractTaskHandler;
 import io.harness.delegate.task.azure.artifact.AzureArtifactDownloadService;
 import io.harness.delegate.task.azure.artifact.AzureArtifactDownloadServiceImpl;
 import io.harness.delegate.task.azure.exception.AzureAppServicesRuntimeExceptionHandler;
@@ -318,7 +324,6 @@ import io.harness.encryptors.clients.AwsKmsEncryptor;
 import io.harness.encryptors.clients.AwsSecretsManagerEncryptor;
 import io.harness.encryptors.clients.AzureVaultEncryptor;
 import io.harness.encryptors.clients.CustomSecretsManagerEncryptor;
-import io.harness.encryptors.clients.CyberArkVaultEncryptor;
 import io.harness.encryptors.clients.GcpKmsEncryptor;
 import io.harness.encryptors.clients.GcpSecretsManagerEncryptor;
 import io.harness.encryptors.clients.HashicorpVaultEncryptor;
@@ -1238,6 +1243,13 @@ public class DelegateModule extends AbstractModule {
     cfnTaskTypeToHandlerMap.addBinding(CloudformationTaskType.DELETE_STACK)
         .to(CloudformationDeleteStackTaskHandler.class);
 
+    // Azure ARM/BP Task handlers
+    MapBinder<AzureARMTaskType, AzureResourceCreationAbstractTaskHandler> azTaskTypeToHandlerMap =
+        MapBinder.newMapBinder(binder(), AzureARMTaskType.class, AzureResourceCreationAbstractTaskHandler.class);
+    azTaskTypeToHandlerMap.addBinding(AzureARMTaskType.ARM_DEPLOYMENT).to(AzureCreateArmResourceTaskHandler.class);
+    azTaskTypeToHandlerMap.addBinding(AzureARMTaskType.BLUEPRINT_DEPLOYMENT).to(AzureCreateBlueprintTaskHandler.class);
+    bind(AzureResourceCreationBaseHelper.class).to(AzureARMBaseHelperImpl.class);
+
     // HelmNG Task Handlers
 
     bind(DockerRegistryService.class).to(DockerRegistryServiceImpl.class);
@@ -1337,16 +1349,15 @@ public class DelegateModule extends AbstractModule {
     // Azure ARM tasks
     MapBinder<String, AbstractAzureARMTaskHandler> azureARMTaskTypeToTaskHandlerMap =
         MapBinder.newMapBinder(binder(), String.class, AbstractAzureARMTaskHandler.class);
-    azureARMTaskTypeToTaskHandlerMap.addBinding(AzureARMTaskParameters.AzureARMTaskType.ARM_DEPLOYMENT.name())
+    azureARMTaskTypeToTaskHandlerMap.addBinding(AzureARMTaskType.ARM_DEPLOYMENT.name())
         .to(AzureARMDeploymentTaskHandler.class);
-    azureARMTaskTypeToTaskHandlerMap.addBinding(AzureARMTaskParameters.AzureARMTaskType.ARM_ROLLBACK.name())
+    azureARMTaskTypeToTaskHandlerMap.addBinding(AzureARMTaskType.ARM_ROLLBACK.name())
         .to(AzureARMRollbackTaskHandler.class);
-    azureARMTaskTypeToTaskHandlerMap
-        .addBinding(AzureARMTaskParameters.AzureARMTaskType.LIST_SUBSCRIPTION_LOCATIONS.name())
+    azureARMTaskTypeToTaskHandlerMap.addBinding(AzureARMTaskType.LIST_SUBSCRIPTION_LOCATIONS.name())
         .to(AzureARMListSubscriptionLocationsTaskHandler.class);
-    azureARMTaskTypeToTaskHandlerMap.addBinding(AzureARMTaskParameters.AzureARMTaskType.LIST_MNG_GROUP.name())
+    azureARMTaskTypeToTaskHandlerMap.addBinding(AzureARMTaskType.LIST_MNG_GROUP.name())
         .to(AzureARMListManagementGroupTaskHandler.class);
-    azureARMTaskTypeToTaskHandlerMap.addBinding(AzureARMTaskParameters.AzureARMTaskType.BLUEPRINT_DEPLOYMENT.name())
+    azureARMTaskTypeToTaskHandlerMap.addBinding(AzureARMTaskType.BLUEPRINT_DEPLOYMENT.name())
         .to(AzureBlueprintDeploymentTaskHandler.class);
 
     // Azure Resource tasks
@@ -1596,7 +1607,6 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.ARTIFACTORY_VALIDATE_ARTIFACT_STREAM).toInstance(ServiceImplDelegateTask.class);
 
     // Secret Management (Old Tasks)
-    mapBinder.addBinding(TaskType.CYBERARK_VALIDATE_CONFIG).toInstance(ServiceImplDelegateTask.class);
     mapBinder.addBinding(TaskType.VAULT_GET_CHANGELOG).toInstance(ServiceImplDelegateTask.class);
     mapBinder.addBinding(TaskType.VAULT_RENEW_TOKEN).toInstance(ServiceImplDelegateTask.class);
     mapBinder.addBinding(TaskType.VAULT_LIST_ENGINES).toInstance(ServiceImplDelegateTask.class);
@@ -1776,6 +1786,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.SERVERLESS_COMMAND_TASK).toInstance(ServerlessCommandTask.class);
     mapBinder.addBinding(TaskType.AZURE_WEB_APP_TASK_NG).toInstance(AzureWebAppTaskNG.class);
     mapBinder.addBinding(TaskType.COMMAND_TASK_NG).toInstance(CommandTaskNG.class);
+    mapBinder.addBinding(TaskType.AZURE_NG_ARM).toInstance(AzureResourceCreationTaskNG.class);
   }
 
   private void registerSecretManagementBindings() {
@@ -1805,11 +1816,6 @@ public class DelegateModule extends AbstractModule {
         .bind(VaultEncryptor.class)
         .annotatedWith(Names.named(Encryptors.GCP_VAULT_ENCRYPTOR.getName()))
         .to(GcpSecretsManagerEncryptor.class);
-
-    binder()
-        .bind(VaultEncryptor.class)
-        .annotatedWith(Names.named(Encryptors.CYBERARK_VAULT_ENCRYPTOR.getName()))
-        .to(CyberArkVaultEncryptor.class);
 
     binder()
         .bind(KmsEncryptor.class)

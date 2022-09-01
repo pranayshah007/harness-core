@@ -1,5 +1,6 @@
 package io.harness.cdng.artifact.resources.googleartifactregistry.service;
 
+import static io.harness.cdng.artifact.resources.googleartifactregistry.mappers.GARResourceMapper.toGarResponse;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
@@ -10,7 +11,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARResponseDTO;
-import io.harness.cdng.artifact.resources.googleartifactregistry.mappers.GARResourceMapper;
 import io.harness.common.NGTaskType;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
@@ -194,6 +194,6 @@ public class GARResourceServiceImpl implements GARResourceService {
             .stream()
             .map(delegateResponse -> (GarDelegateResponse) delegateResponse)
             .collect(Collectors.toList());
-    return GARResourceMapper.toGarResponse(garDelegateResponses);
+    return toGarResponse(garDelegateResponses);
   }
 }

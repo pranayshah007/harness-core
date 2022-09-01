@@ -139,11 +139,11 @@ public class GARApiServiceTest extends CategoryTest {
     assertThatThrownBy(() -> garApiServiceImpl.getBuilds(modiifedInternalConfig, "", 100))
         .extracting(ex -> ((WingsException) ex).getParams().get("message"))
         .isEqualTo(
-            "Google Artifact Registry: The connector provided does not have sufficient privileges to access Google artifact registry"); // 401
+            "The connector provided does not have sufficient privileges to access Google artifact registry"); // 401
     modiifedInternalConfig.setBearerToken("bearerToken");
     modiifedInternalConfig.setPkg("wrongpackage");
     assertThatThrownBy(() -> garApiServiceImpl.getBuilds(modiifedInternalConfig, "", 100))
         .extracting(ex -> ((WingsException) ex).getParams().get("message"))
-        .isEqualTo("Please check project, repositoryname, package, region fields"); // 404
+        .isEqualTo("Please check project, repository name, package, region fields"); // 404
   }
 }

@@ -62,9 +62,4 @@ public class GarDelegateRequest implements ArtifactSourceDelegateRequest {
     }
     return capabilities;
   }
-
-  @Override
-  public ArtifactSourceType getSourceType() {
-    return ArtifactSourceType.GOOGLE_ARTIFACT_REGISTRY;
-  }
 }

@@ -83,7 +83,7 @@ public class GitSyncThreadDecorator implements ContainerRequestFilter, Container
                                          .baseBranch(baseBranch)
                                          .resolvedConflictCommitId(resolvedConflictCommitId)
                                          .connectorRef(connectorRef)
-                                         .storeType(StoreType.getFromStringOrNull(storeType))
+                                         .storeType(StoreType.getFromStringOrInline(storeType))
                                          .repoName(repoName)
                                          .lastCommitId(lastCommitId)
                                          .parentEntityConnectorRef(parentEntityConnectorRef)

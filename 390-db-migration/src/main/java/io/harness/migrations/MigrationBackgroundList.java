@@ -91,6 +91,7 @@ import io.harness.migrations.all.DeleteStaleSlackConfigs;
 import io.harness.migrations.all.DeleteStaleThirdPartyApiCallLogsMigration;
 import io.harness.migrations.all.DeletedAccountStatusMigration;
 import io.harness.migrations.all.DisableServiceGuardsWithDeletedConnectorsMigration;
+import io.harness.migrations.all.ExecuteWorkflowAbortActionMigration;
 import io.harness.migrations.all.ExecuteWorkflowRollbackActionMigration;
 import io.harness.migrations.all.ExplodeLogMLFeedbackRecordsMigration;
 import io.harness.migrations.all.FetchAndSaveAccounts;
@@ -396,6 +397,7 @@ public class MigrationBackgroundList {
         .add(Pair.of(230, TimeSeriesMLScoresTTLMigration.class))
         .add(Pair.of(231, TimeSeriesRiskSummaryTTLMigration.class))
         .add(Pair.of(232, TimeSeriesMLScoresTTLMigration.class))
+        .add(Pair.of(233, ExecuteWorkflowAbortActionMigration.class))
         .build();
   }
 }

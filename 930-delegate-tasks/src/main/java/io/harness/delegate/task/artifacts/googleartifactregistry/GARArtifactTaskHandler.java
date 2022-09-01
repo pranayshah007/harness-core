@@ -1,5 +1,7 @@
 package io.harness.delegate.task.artifacts.googleartifactregistry;
 
+import static io.harness.delegate.task.artifacts.mappers.GarRequestResponseMapper.toGarInternalConfig;
+import static io.harness.delegate.task.artifacts.mappers.GarRequestResponseMapper.toGarResponse;
 import static io.harness.exception.WingsException.USER;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -14,7 +16,6 @@ import io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO;
 import io.harness.delegate.task.artifacts.DelegateArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.gar.GarDelegateRequest;
 import io.harness.delegate.task.artifacts.gar.GarDelegateResponse;
-import io.harness.delegate.task.artifacts.mappers.GarRequestResponseMapper;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
 import io.harness.delegate.task.gcp.helpers.GcpHelperService;
 import io.harness.encryption.SecretRefData;
@@ -61,8 +62,7 @@ public class GARArtifactTaskHandler extends DelegateArtifactTaskHandler<GarDeleg
     } else {
       lastSuccessfulBuild = garApiService.verifyBuildNumber(garInternalConfig, attributesRequest.getVersion());
     }
-    GarDelegateResponse garDelegateResponse =
-        GarRequestResponseMapper.toGarResponse(lastSuccessfulBuild, attributesRequest);
+    GarDelegateResponse garDelegateResponse = toGarResponse(lastSuccessfulBuild, attributesRequest);
     return getSuccessTaskExecutionResponse(Collections.singletonList(garDelegateResponse));
   }
   @Override
@@ -81,7 +81,7 @@ public class GARArtifactTaskHandler extends DelegateArtifactTaskHandler<GarDeleg
     List<GarDelegateResponse> garArtifactDelegateResponseList =
         builds.stream()
             .sorted(new BuildDetailsInternalComparatorDescending())
-            .map(build -> GarRequestResponseMapper.toGarResponse(build, attributesRequest))
+            .map(build -> toGarResponse(build, attributesRequest))
             .collect(Collectors.toList());
     return getSuccessTaskExecutionResponse(garArtifactDelegateResponseList);
   }
@@ -105,7 +105,7 @@ public class GARArtifactTaskHandler extends DelegateArtifactTaskHandler<GarDeleg
     }
 
     String token = getToken(serviceAccountKeyFileContent, isUseDelegate);
-    return GarRequestResponseMapper.toGarInternalConfig(attributesRequest, "Bearer " + token);
+    return toGarInternalConfig(attributesRequest, "Bearer " + token);
   }
   public String getToken(char[] serviceAccountKeyFileContent, boolean isUseDelegate) throws IOException {
     GoogleCredential gc = gcpHelperService.getGoogleCredential(serviceAccountKeyFileContent, isUseDelegate);

@@ -29,6 +29,7 @@ import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.DelegateTaskRequest.DelegateTaskRequestBuilder;
+import io.harness.beans.IdentifierRef;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.RemoteMethodReturnValueData;
 import io.harness.delegate.beans.SSHTaskParams;
@@ -139,6 +140,13 @@ public class NGSecretServiceV2Impl implements NGSecretServiceV2 {
       @NotNull String accountIdentifier, String orgIdentifier, String projectIdentifier, @NotNull String identifier) {
     return secretRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
         accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+  }
+
+  @Override
+  public Optional<Secret> get(@NotNull IdentifierRef identifierRef) {
+    return secretRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+        identifierRef.getAccountIdentifier(), identifierRef.getOrgIdentifier(), identifierRef.getProjectIdentifier(),
+        identifierRef.getIdentifier());
   }
 
   @Override

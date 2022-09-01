@@ -148,7 +148,8 @@ public class TerraformPlanTaskHandler extends TerraformAbstractTaskHandler {
                                            // sent from manager side
               .timeoutInMillis(taskParameters.getTimeoutInMillis())
               .isTfPlanDestroy(taskParameters.getTerraformCommand() == TerraformCommand.DESTROY)
-              .useOptimizedTfPlan(true)
+              .useOptimizedTfPlan(taskParameters.isUseOptimizedTfPlan())
+              .accountId(taskParameters.getAccountId())
               .build();
 
       TerraformStepResponse terraformStepResponse =
@@ -175,9 +176,8 @@ public class TerraformPlanTaskHandler extends TerraformAbstractTaskHandler {
 
       String planName = terraformBaseHelper.getPlanName(taskParameters.getTerraformCommand());
 
-      EncryptedRecordData encryptedTfPlan =
-          terraformBaseHelper.encryptPlan(Files.readAllBytes(Paths.get(scriptDirectory, planName)),
-              taskParameters.getPlanName(), taskParameters.getEncryptionConfig());
+      EncryptedRecordData encryptedTfPlan = terraformBaseHelper.encryptPlan(
+          Files.readAllBytes(Paths.get(scriptDirectory, planName)), taskParameters, delegateId, taskId);
 
       String tfPlanJsonFileId = null;
       if (taskParameters.isSaveTerraformStateJson()) {
@@ -189,6 +189,9 @@ public class TerraformPlanTaskHandler extends TerraformAbstractTaskHandler {
         String tfPlanJsonFilePath = planJsonLogOutputStream.getTfPlanJsonLocalPath();
         tfPlanJsonFileId = terraformBaseHelper.uploadTfPlanJson(taskParameters.getAccountId(), delegateId, taskId,
             taskParameters.getEntityId(), planName, tfPlanJsonFilePath);
+
+        logCallback.saveExecutionLog(format("\nTerraform JSON plan will be available at: %s\n", tfPlanJsonFilePath),
+            INFO, CommandExecutionStatus.RUNNING);
       }
 
       logCallback.saveExecutionLog("\nDone executing scripts.\n", INFO, CommandExecutionStatus.RUNNING);

@@ -13,7 +13,9 @@ import static io.harness.beans.OrchestrationWorkflowType.BUILD;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.beans.pcf.ResizeStrategy.RESIZE_NEW_FIRST;
 import static io.harness.delegate.task.cloudformation.CloudformationBaseHelperImpl.CLOUDFORMATION_STACK_CREATE_BODY;
+import static io.harness.exception.WingsException.USER;
 import static io.harness.rule.OwnerRule.ADWAIT;
+import static io.harness.rule.OwnerRule.RAFAEL;
 import static io.harness.rule.OwnerRule.SRINIVAS;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 
@@ -50,6 +52,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
@@ -70,6 +73,7 @@ import io.harness.beans.SweepingOutputInstance;
 import io.harness.beans.TriggeredBy;
 import io.harness.category.element.UnitTests;
 import io.harness.context.ContextElementType;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 
@@ -166,6 +170,8 @@ public class CloudFormationStateTest extends WingsBaseTest {
   public static final String INFRA_PROV_ID = "12345678";
   public static final String EXPECTED_SUFFIX = "abcdefgh12345678";
   private static final String PHASE_NAME = "phaseName";
+
+  private static final String CLOUD_PROVIDER_EXPRESSION = "${infra.cloudProvider.name}";
 
   @Mock private SettingsService settingsService;
   @Mock private DelegateService delegateService;
@@ -430,6 +436,103 @@ public class CloudFormationStateTest extends WingsBaseTest {
 
     ExecutionResponse executionResponse = cloudFormationCreateStackState.execute(context);
     assertThat(executionResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void shouldResolveInfrastructureProviderExpression() {
+    cloudFormationCreateStackState.setInfraCloudProviderAsExpression(true);
+    cloudFormationCreateStackState.setInfraCloudProviderExpression(CLOUD_PROVIDER_EXPRESSION);
+
+    doReturn("AWS").when(executionContext).renderExpression(CLOUD_PROVIDER_EXPRESSION);
+    doReturn(ACCOUNT_ID).when(executionContext).getAccountId();
+    doReturn(awsConfig).when(settingsService).getSettingAttributeByName(ACCOUNT_ID, "AWS");
+
+    assertThat(cloudFormationCreateStackState.resolveInfraStructureProviderFromExpression(executionContext))
+        .isEqualTo(awsConfig.getValue());
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void shouldThrowInvalidRequestWhenInfraCloudProviderExpressionIsNull() {
+    assertThatThrownBy(() -> {
+      cloudFormationCreateStackState.setInfraCloudProviderExpression(null);
+      cloudFormationCreateStackState.resolveInfraStructureProviderFromExpression(context);
+    })
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Infrastructure Provider expression is set but value not provided")
+        .hasFieldOrPropertyWithValue("reportTargets", USER);
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void shouldThrowInvalidRequestWhenInfraCloudProviderExpressionIsEmpty() {
+    assertThatThrownBy(() -> {
+      cloudFormationCreateStackState.setInfraCloudProviderExpression("");
+      cloudFormationCreateStackState.resolveInfraStructureProviderFromExpression(context);
+    })
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Infrastructure Provider expression is set but value not provided")
+        .hasFieldOrPropertyWithValue("reportTargets", USER);
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void shouldThrowInvalidRequestWhenRenderedExpressionIsEmpty() {
+    String expression = "${dummyExpression}";
+    cloudFormationCreateStackState.setInfraCloudProviderExpression(expression);
+    cloudFormationCreateStackState.setInfraCloudProviderAsExpression(true);
+
+    assertThatThrownBy(() -> {
+      doReturn("").when(executionContext).renderExpression(expression);
+      cloudFormationCreateStackState.resolveInfraStructureProviderFromExpression(executionContext);
+    })
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Infrastructure provider expression is invalid")
+        .hasFieldOrPropertyWithValue("reportTargets", USER);
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void shouldExecuteCreateStateWithAwsExpression() {
+    cloudFormationCreateStackState.setRegion(Regions.US_EAST_1.name());
+    cloudFormationCreateStackState.setTimeoutMillis(1000);
+    cloudFormationCreateStackState.setInfraCloudProviderExpression(CLOUD_PROVIDER_EXPRESSION);
+    cloudFormationCreateStackState.setInfraCloudProviderAsExpression(true);
+
+    when(settingsService.getSettingAttributeByName(
+             ACCOUNT_ID, "InfraMappingSweepingOutput(infraMappingId=INFRA_MAPPING_ID)"))
+        .thenReturn(awsConfig);
+
+    cloudFormationCreateStackState.setSkipBasedOnStackStatus(true);
+    cloudFormationCreateStackState.setStackStatusesToMarkAsSuccess(singletonList("ROLLBACK_COMPLETE"));
+
+    verifyCreateStackRequest();
+    verify(settingsService)
+        .getSettingAttributeByName(ACCOUNT_ID, "InfraMappingSweepingOutput(infraMappingId=INFRA_MAPPING_ID)");
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void shouldExecuteDeleteStateWithAwsExpression() {
+    cloudFormationDeleteStackState.setRegion(Regions.US_EAST_1.name());
+    cloudFormationDeleteStackState.setTimeoutMillis(1000);
+    cloudFormationDeleteStackState.setInfraCloudProviderExpression(CLOUD_PROVIDER_EXPRESSION);
+    cloudFormationDeleteStackState.setInfraCloudProviderAsExpression(true);
+
+    when(settingsService.getSettingAttributeByName(
+             ACCOUNT_ID, "InfraMappingSweepingOutput(infraMappingId=INFRA_MAPPING_ID)"))
+        .thenReturn(awsConfig);
+
+    verifyDeleteStackRequest();
+    verify(settingsService)
+        .getSettingAttributeByName(ACCOUNT_ID, "InfraMappingSweepingOutput(infraMappingId=INFRA_MAPPING_ID)");
   }
 
   @Test
