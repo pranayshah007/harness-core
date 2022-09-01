@@ -139,6 +139,11 @@ public class NGTemplateServiceImpl implements NGTemplateService {
             "Remote template entity cannot be created for template type [%s] on git simplification enabled for Project [%s] in Organisation [%s] in Account [%s]",
             templateEntity.getTemplateEntityType(), templateEntity.getProjectIdentifier(),
             templateEntity.getOrgIdentifier(), templateEntity.getAccountIdentifier()));
+      } else if (null != templateEntity.getOrgIdentifier()) {
+        throw new InvalidRequestException(format(
+            "Remote template entity cannot be created for template type [%s] on git simplification enabled in Organisation [%s] in Account [%s]",
+            templateEntity.getTemplateEntityType(), templateEntity.getOrgIdentifier(),
+            templateEntity.getAccountIdentifier()));
       } else {
         throw new InvalidRequestException(format(
             "Remote template entity cannot be created for template type [%s] on git simplification enabled in Account [%s]",
