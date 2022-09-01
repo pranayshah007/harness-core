@@ -61,6 +61,7 @@ public class AnnotationOrderCheck extends AbstractCheck {
                                              .put("SchemaIgnore", -49)
                                              .put("Entity", -39)
                                              .put("HarnessEntity", -38)
+                                             .put("StoreIn", -37)
                                              .put("UtilityClass", -9)
                                              .put("Slf4j", -8)
                                              .put("Deprecated", 1000)
@@ -79,6 +80,7 @@ public class AnnotationOrderCheck extends AbstractCheck {
   Map<String, Set<String>> required = ImmutableMap.<String, Set<String>>builder()
                                           .put("Ignore", ImmutableSet.<String>builder().add("Owner").build())
                                           .put("HarnessEntity", ImmutableSet.<String>builder().add("Entity").build())
+                                          .put("Entity", ImmutableSet.<String>builder().add("StoreIn").build())
                                           .build();
 
   @Override
