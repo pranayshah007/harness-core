@@ -8,8 +8,10 @@
 package io.harness.delegate.beans.connector.k8Connector;
 
 import static io.harness.ConnectorConstants.INHERIT_FROM_DELEGATE_TYPE_ERROR_MSG;
+import static io.harness.ConnectorConstants.INVALID_URL_MSG;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import io.harness.ConnectorConstants;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
@@ -25,6 +27,8 @@ import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.validator.routines.UrlValidator;
 
 @Data
 @Builder
@@ -50,5 +54,18 @@ public class KubernetesClusterConfigDTO extends ConnectorConfigDTO implements De
         && isEmpty(delegateSelectors)) {
       throw new InvalidRequestException(INHERIT_FROM_DELEGATE_TYPE_ERROR_MSG);
     }
+    KubernetesCredentialSpecDTO config = credential.getConfig();
+    if (config != null) {
+      String masterUrl = ((KubernetesClusterDetailsDTO) config).getMasterUrl();
+      if (StringUtils.isNotEmpty(masterUrl) && !checkIfStringIsValidUrl(masterUrl)) {
+        throw new InvalidRequestException(INVALID_URL_MSG);
+      }
+    }
   }
+
+  private boolean checkIfStringIsValidUrl(String value) {
+    UrlValidator urlValidator = new UrlValidator();
+    return urlValidator.isValid(value);
+  }
+
 }
