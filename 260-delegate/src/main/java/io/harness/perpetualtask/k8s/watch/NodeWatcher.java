@@ -20,6 +20,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.event.client.EventPublisher;
 import io.harness.grpc.utils.HTimestamps;
 import io.harness.perpetualtask.k8s.informer.ClusterDetails;
+import io.harness.perpetualtask.k8s.utils.ApiExceptionLogger;
 import io.harness.perpetualtask.k8s.utils.K8sWatcherHelper;
 
 import com.google.common.collect.ImmutableMap;
@@ -93,6 +94,9 @@ public class NodeWatcher implements ResourceEventHandler<V1Node> {
               try {
                 return coreV1Api.listNodeCall(null, null, null, null, null, null, callGeneratorParams.resourceVersion,
                     null, callGeneratorParams.timeoutSeconds, callGeneratorParams.watch, null);
+              } catch (IllegalArgumentException ex) {
+                ApiExceptionLogger.logErrorIfNotSeenRecently(ex, String.format("IllegalArgumentException: %s", ex.getMessage()));
+                throw ex;
               } catch (Exception e) {
                 log.error("Unknown exception occurred for listNodeCall", e);
                 throw e;

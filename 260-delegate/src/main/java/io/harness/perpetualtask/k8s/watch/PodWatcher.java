@@ -24,6 +24,7 @@ import io.harness.event.client.EventPublisher;
 import io.harness.event.payloads.CeExceptionMessage;
 import io.harness.grpc.utils.HTimestamps;
 import io.harness.perpetualtask.k8s.informer.ClusterDetails;
+import io.harness.perpetualtask.k8s.utils.ApiExceptionLogger;
 import io.harness.perpetualtask.k8s.utils.K8sWatcherHelper;
 
 import com.google.common.collect.ImmutableMap;
@@ -124,6 +125,9 @@ public class PodWatcher implements ResourceEventHandler<V1Pod> {
                 return coreV1Api.listPodForAllNamespacesCall(null, null, null, null, null, null,
                     callGeneratorParams.resourceVersion, null, callGeneratorParams.timeoutSeconds,
                     callGeneratorParams.watch, null);
+              } catch (IllegalArgumentException ex) {
+                ApiExceptionLogger.logErrorIfNotSeenRecently(ex, String.format("IllegalArgumentException: %s", ex.getMessage()));
+                throw ex;
               } catch (Exception e) {
                 log.error("Unknown exception occurred for listPodForAllNamespacesCall", e);
                 throw e;
