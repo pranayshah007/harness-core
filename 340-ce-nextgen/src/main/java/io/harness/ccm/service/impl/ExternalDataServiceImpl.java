@@ -75,7 +75,7 @@ public class ExternalDataServiceImpl implements ExternalDataService {
           dateFormat.parse(String.format("%s/%s/%s", i, externalDataSource.getMonth(), externalDataSource.getYear()));
       Timestamp timestamp = new Timestamp(date.getTime());
 
-      rowContent.put("startTime", timestamp.getTime());
+      rowContent.put("startTime", timestamp.getTime()/1000L);
       rowContent.put("cost", costPerDay);
       rowContent.put("product", datasource);
       rowContent.put("cloudProvider", "EXTERNAL");
