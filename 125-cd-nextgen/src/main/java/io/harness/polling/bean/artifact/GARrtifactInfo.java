@@ -15,7 +15,8 @@ import lombok.Value;
 @Builder
 public class GARrtifactInfo implements ArtifactInfo {
   String connectorRef;
-  String jobName;
+  String project;
+  String version;
 
   @Override
   public ArtifactSourceType getType() {
@@ -26,6 +27,7 @@ public class GARrtifactInfo implements ArtifactInfo {
   public ArtifactConfig toArtifactConfig() {
     return GoogleArtifactRegistryConfig.builder()
         .connectorRef(ParameterField.<String>builder().value(connectorRef).build())
+        .version(ParameterField.<String>builder().value(version).build())
         .build();
   }
 }

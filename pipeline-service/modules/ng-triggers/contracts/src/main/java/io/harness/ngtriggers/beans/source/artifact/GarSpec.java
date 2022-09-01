@@ -14,6 +14,7 @@ import lombok.Data;
 public class GarSpec implements ArtifactTypeSpec {
   String connectorRef;
   List<TriggerEventDataCondition> eventConditions;
+  String version;
   @Override
   public String fetchConnectorRef() {
     return connectorRef;
