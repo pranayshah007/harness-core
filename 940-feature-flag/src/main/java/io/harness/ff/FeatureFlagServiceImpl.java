@@ -35,10 +35,12 @@ import io.harness.persistence.HPersistence;
 import io.harness.persistence.PersistentEntity;
 import io.harness.remote.client.RestClientUtils;
 import io.harness.serializer.JsonUtils;
+import io.harness.utils.RetryUtils;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.base.Splitter;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
@@ -58,6 +60,8 @@ import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.RetryPolicy;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.UpdateOperations;
 
@@ -76,6 +80,10 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
   // Caffeine cache
   private final Cache<String, String> accountIdToAccountNameCache =
       Caffeine.newBuilder().initialCapacity(10).maximumSize(200).expireAfterWrite(1, TimeUnit.HOURS).build();
+
+  private static final RetryPolicy<Object> fetchAccountNameRetryPolicy =
+      RetryUtils.getRetryPolicy("Failed attempt: Could not fetch account name", "Failure: Could not fetch account name",
+          Lists.newArrayList(InvalidRequestException.class), Duration.ofSeconds(5), 3, log);
 
   @Inject
   public FeatureFlagServiceImpl(HPersistence hPersistence, CfMigrationService cfMigrationService,
@@ -228,47 +236,68 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
   }
 
   private boolean cfFeatureFlagEvaluation(@NonNull FeatureName featureName, String accountId) {
-    String name;
-    // If scope is global or account id is empty/null
-    if (Scope.GLOBAL.equals(featureName.getScope()) || isEmpty(accountId)) {
-      /**
-       * If accountID is null or empty, use a static accountID
-       */
-      if (isEmpty(accountId)) {
-        log.info(String.format("Account Id passed is empty when evaluating for feature %s ", featureName.name()));
-      }
-      accountId = FeatureFlagConstants.STATIC_ACCOUNT_ID;
-      name = accountId;
-      log.info(String.format("Using same default account id and name - %s ", accountId));
+    String accountName;
+    Target target;
+    if (Scope.GLOBAL.equals(featureName.getScope())) {
+      log.info(String.format("Scope is Global for feature name %s .", featureName.name()));
+      target = buildStaticIdAndNameTarget();
+    } else if (isEmpty(accountId)) {
+      log.info(String.format("Account Id passed is empty when evaluating for feature %s ", featureName.name()));
+      target = buildStaticIdAndNameTarget();
     } else {
       log.info(String.format("Fetching account name for account id %s ", accountId));
-      // Use cache.
-      name = accountIdToAccountNameCache.getIfPresent(accountId);
-      if (isEmpty(name)) {
-        // Cache miss - make rest call to get the name.
+      // Use cache
+      accountName = accountIdToAccountNameCache.getIfPresent(accountId);
+      if (isEmpty(accountName)) {
+        // Cache miss
         log.info(String.format("Cache does not contain name corresponding to account id - %s ", accountId));
         if (optionalAccountClient.isPresent()) {
-          // Use account client
-          AccountDTO accountDTO = RestClientUtils.getResponse(optionalAccountClient.get().getAccountDTO(accountId));
-          if (accountDTO == null) {
-            log.info(String.format(
-                "Can not fetch account name for accountId %s . Setting account name same as account id", accountId));
-            name = accountId;
-          } else {
-            name = accountDTO.getName();
-            log.info(String.format("Received account name %s corresponding to account id %s ", name, accountId));
-          }
-          accountIdToAccountNameCache.put(accountId, name);
+          // Make rest call
+          log.info(String.format("Using account client to get account name for accountId %s", accountId));
+          accountName = getAccountNameFromClient(optionalAccountClient, accountId);
         } else {
-          // TODO: Check if we need to put cache in case account client is absent. Might not be needed
-          //       Since it will consume cache space for something that can be evaluated without any rest call
-          log.info(String.format("Account client is absent, using account ID as name for accountId %s", accountId));
-          name = accountId;
+          log.info(String.format("Account client is absent. Using account id %s as account name", accountId));
+          accountName = accountId;
         }
       }
+      target = buildTarget(accountId, accountName);
     }
-    Target target = Target.builder().identifier(accountId).name(name).build();
     return cfClient.get().boolVariation(featureName.name(), target, false);
+  }
+
+  private String getAccountNameFromClient(Optional<AccountClient> optionalAccountClient, String accountId) {
+    try {
+      AccountDTO accountDTO =
+          Failsafe.with(fetchAccountNameRetryPolicy)
+              .get(() -> RestClientUtils.getResponse(optionalAccountClient.get().getAccountDTO(accountId)));
+      if (accountDTO == null) {
+        log.info(String.format(
+            "Can not fetch account name for accountId %s . Setting account name same as account id", accountId));
+        return accountId;
+      }
+      String accountName = accountDTO.getName();
+      log.info(String.format("Received account name %s corresponding to account id %s ", accountName, accountId));
+      if (isEmpty(accountName)) {
+        log.info(String.format("Account name is empty, using account id %s as accountName", accountId));
+        return accountId;
+      }
+      // put value in cache
+      accountIdToAccountNameCache.put(accountId, accountName);
+      return accountName;
+    } catch (Exception e) {
+      log.info(String.format("Can not fetch account name corresponding to accountId %s . "
+              + "Using account id as account name",
+          accountId));
+      return accountId;
+    }
+  }
+
+  private Target buildStaticIdAndNameTarget() {
+    return buildTarget(FeatureFlagConstants.STATIC_ACCOUNT_ID, FeatureFlagConstants.STATIC_ACCOUNT_ID);
+  }
+
+  public Target buildTarget(String accountId, String accountName) {
+    return Target.builder().identifier(accountId).name(accountName).build();
   }
 
   private boolean localFeatureFlagEvaluation(@NonNull FeatureName featureName, String accountId) {
