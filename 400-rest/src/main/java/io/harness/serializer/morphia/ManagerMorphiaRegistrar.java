@@ -242,6 +242,8 @@ import software.wings.beans.artifact.NexusArtifactStream;
 import software.wings.beans.artifact.SftpArtifactStream;
 import software.wings.beans.artifact.SmbArtifactStream;
 import software.wings.beans.baseline.WorkflowExecutionBaseline;
+import software.wings.beans.ce.depricated.CECloudAccountOld;
+import software.wings.beans.ce.depricated.GcpServiceAccountOld;
 import software.wings.beans.command.Command;
 import software.wings.beans.command.ServiceCommand;
 import software.wings.beans.commandlibrary.CommandEntity;
@@ -642,6 +644,7 @@ public class ManagerMorphiaRegistrar implements MorphiaRegistrar {
     set.add(BarrierInstance.class);
     set.add(Base.class);
     set.add(BugsnagCVConfiguration.class);
+    set.add(CECloudAccountOld.class);
     set.add(CECommunications.class);
     set.add(CESlackWebhook.class);
     set.add(CloudFormationInfrastructureProvisioner.class);
@@ -702,6 +705,7 @@ public class ManagerMorphiaRegistrar implements MorphiaRegistrar {
     set.add(GcpKubernetesInfrastructureMapping.class);
     set.add(GcpOrganization.class);
     set.add(GcpServiceAccount.class);
+    set.add(GcpServiceAccountOld.class);
     set.add(GCPUsageReport.class);
     set.add(GcrArtifactStream.class);
     set.add(GcsArtifactStream.class);
