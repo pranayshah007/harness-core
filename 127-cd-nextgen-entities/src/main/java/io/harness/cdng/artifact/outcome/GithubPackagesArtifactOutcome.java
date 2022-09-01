@@ -85,6 +85,6 @@ public class GithubPackagesArtifactOutcome implements ArtifactOutcome {
 
   @Override
   public String getTag() {
-    return null;
+    return version;
   }
 }
