@@ -107,11 +107,16 @@ public class ConfigurationController implements Managed, QueueController {
         managerConfiguration = aManagerConfiguration().withPrimaryVersion(MATCH_ALL_VERSION).build();
         persistence.save(managerConfiguration);
       }
-
+      log.info("Manager configuration primary version is {}", managerConfiguration.getPrimaryVersion());
+      log.info("Primary version is {}", primary.get());
       if (!StringUtils.equals(primaryVersion.get(), managerConfiguration.getPrimaryVersion())) {
         primaryVersion.set(managerConfiguration.getPrimaryVersion());
       }
-
+      log.info("Primary version is {}", primary.get());
+      log.info("Version info manager's full version is {}", versionInfoManager.getFullVersion());
+      log.info("Version info version is {}", versionInfoManager.getVersionInfo().getVersion());
+      log.info("Version info build no is {}", versionInfoManager.getVersionInfo().getBuildNo());
+      log.info("Version info patch is {}", versionInfoManager.getVersionInfo().getPatch());
       // With introduction of the patch version feature, we need to incorporate the patch version to calculate the
       // current primary version of manager. If the `primaryVersion` from DB doesn't have patch then we fall back to
       // using getVersion() like earlier. We always build the full version from buildNo and patch like below.
@@ -119,8 +124,12 @@ public class ConfigurationController implements Managed, QueueController {
           ? versionInfoManager.getVersionInfo().getVersion() + "-" + versionInfoManager.getVersionInfo().getPatch()
           : versionInfoManager.getVersionInfo().getVersion();
 
+      log.info("Current primary version is {}", currPrimaryVersion);
+
       boolean isPrimary = StringUtils.equals(MATCH_ALL_VERSION, managerConfiguration.getPrimaryVersion())
           || StringUtils.equals(currPrimaryVersion, managerConfiguration.getPrimaryVersion());
+
+      log.info("isPrimary value is {}", isPrimary);
 
       if (primary.getAndSet(isPrimary) != isPrimary) {
         log.info("{} primary mode", isPrimary ? "Entering" : "Leaving");
