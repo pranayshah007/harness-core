@@ -10,11 +10,13 @@ package io.harness.cache;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotation.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.PersistentEntity;
 
@@ -31,6 +33,7 @@ import org.mongodb.morphia.annotations.Id;
 @Value
 @Builder
 @FieldNameConstants(innerTypeName = "CacheEntityKeys")
+@StoreIn(DbAliases.ALL)
 @Entity(value = "cache")
 @HarnessEntity(exportable = false)
 public class CacheEntity implements PersistentEntity, AccountAccess {

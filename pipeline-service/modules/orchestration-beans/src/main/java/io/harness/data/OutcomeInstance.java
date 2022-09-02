@@ -42,11 +42,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @OwnedBy(PIPELINE)
 @Value
 @Builder
+@StoreIn(DbAliases.PMS)
 @Entity(value = "outcomeInstances", noClassnameStored = true)
 @Document("outcomeInstances")
 @FieldNameConstants(innerTypeName = "OutcomeInstanceKeys")
 @TypeAlias("outcomeInstance")
-@StoreIn(DbAliases.PMS)
 public class OutcomeInstance implements PersistentEntity, UuidAccess {
   public static final long TTL_MONTHS = 6;
 

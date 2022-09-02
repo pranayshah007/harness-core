@@ -36,9 +36,9 @@ import org.mongodb.morphia.annotations.Id;
 @Data
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@StoreIn(DbAliases.CENG)
 @Entity(value = "ceCloudAccount", noClassnameStored = true)
 @FieldNameConstants(innerTypeName = "CECloudAccountKeys")
-@StoreIn(DbAliases.CENG)
 @ChangeDataCapture(table = "awsTruthTable", dataStore = DbAliases.CENG,
     fields = {"accountId", "infraAccountId", "accountName"}, handler = "TimeScaleDBChangeHandler")
 @ChangeDataCapture(table = "awsTruthTable", dataStore = DbAliases.CENG, sink = ChangeDataCaptureSink.BQ,

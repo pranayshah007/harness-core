@@ -8,9 +8,11 @@
 package software.wings.scheduler.events.segment;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotation.StoreIn;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.FdIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.CreatedAtAccess;
 import io.harness.persistence.UpdatedAtAccess;
 
@@ -27,6 +29,7 @@ import org.mongodb.morphia.annotations.Entity;
 import org.mongodb.morphia.annotations.Id;
 
 @Value
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "segmentGroupEventJobContexts")
 @HarnessEntity(exportable = false)
 @FieldNameConstants(innerTypeName = "SegmentGroupEventJobContextKeys")

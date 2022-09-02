@@ -8,8 +8,10 @@
 package io.harness.delegate.beans;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotation.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -27,6 +29,7 @@ import org.mongodb.morphia.annotations.Id;
 @Builder
 @AllArgsConstructor
 @FieldNameConstants(innerTypeName = "DelegateRingKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "delegateRing", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 @OwnedBy(HarnessTeam.DEL)

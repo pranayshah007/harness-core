@@ -10,10 +10,12 @@ package software.wings.beans.template;
 import static java.util.Arrays.asList;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotation.StoreIn;
 import io.harness.beans.EmbeddedUser;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 
+import io.harness.ng.DbAliases;
 import software.wings.beans.Base;
 import software.wings.beans.entityinterface.KeywordsAware;
 
@@ -32,6 +34,7 @@ import org.mongodb.morphia.annotations.Entity;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = false)
+@StoreIn(DbAliases.HARNESS)
 @Entity("templateGalleries")
 @HarnessEntity(exportable = true)
 @FieldNameConstants(innerTypeName = "TemplateGalleryKeys")

@@ -38,9 +38,6 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Getter
 @Builder
 @FieldNameConstants(innerTypeName = "OutboxEventKeys")
-@Entity(value = "outboxEvents", noClassnameStored = true)
-@Document("outboxEvents")
-@TypeAlias("outboxEvents")
 @StoreIn(DbAliases.NG_MANAGER)
 @StoreIn(DbAliases.PMS)
 @StoreIn(DbAliases.TEMPLATE)
@@ -48,6 +45,9 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @StoreIn(DbAliases.ACCESS_CONTROL)
 @StoreIn(DbAliases.RESOURCEGROUP)
 @StoreIn(DbAliases.CENG)
+@Entity(value = "outboxEvents", noClassnameStored = true)
+@Document("outboxEvents")
+@TypeAlias("outboxEvents")
 public class OutboxEvent implements PersistentEntity {
   @Id @org.mongodb.morphia.annotations.Id String id;
 

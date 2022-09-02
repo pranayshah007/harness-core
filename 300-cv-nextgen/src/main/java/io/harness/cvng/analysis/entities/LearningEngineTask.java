@@ -52,9 +52,9 @@ import org.mongodb.morphia.annotations.Id;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
 @JsonIgnoreProperties(ignoreUnknown = true)
+@StoreIn(DbAliases.CVNG)
 @Entity(value = "learningEngineTasks")
 @HarnessEntity(exportable = true)
-@StoreIn(DbAliases.CVNG)
 public abstract class LearningEngineTask implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware,
                                                     AccountAccess, VerificationTaskExecutionInstance {
   public static List<MongoIndex> mongoIndexes() {

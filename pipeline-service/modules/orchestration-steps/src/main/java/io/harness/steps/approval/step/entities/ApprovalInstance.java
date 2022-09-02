@@ -63,6 +63,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "ApprovalInstanceKeys")
+@StoreIn(DbAliases.PMS)
 @Document("approvalInstances")
 @Entity(value = "approvalInstances", noClassnameStored = true)
 @Persistent

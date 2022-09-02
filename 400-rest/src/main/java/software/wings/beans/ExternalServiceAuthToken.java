@@ -12,11 +12,14 @@ import static software.wings.utils.CryptoUtils.secureRandAlphaNumString;
 
 import io.harness.annotation.HarnessEntity;
 
+import io.harness.annotation.StoreIn;
+import io.harness.ng.DbAliases;
 import org.mongodb.morphia.annotations.Entity;
 
 /**
  * Created by rsingh on 06/21/17.
  */
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "externalServiceAuthTokens", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 public class ExternalServiceAuthToken extends Base {

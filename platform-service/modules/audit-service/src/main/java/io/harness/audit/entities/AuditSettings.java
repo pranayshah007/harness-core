@@ -37,10 +37,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Setter
 @Builder
 @FieldNameConstants(innerTypeName = "AuditSettingsKeys")
+@StoreIn(DbAliases.AUDITS)
 @Entity(value = "auditSettings", noClassnameStored = true)
 @Document("auditSettings")
 @TypeAlias("auditSettings")
-@StoreIn(DbAliases.AUDITS)
 public class AuditSettings implements PersistentIterable, PersistentRegularIterable {
   @Id @org.mongodb.morphia.annotations.Id String id;
   @NotBlank String accountIdentifier;

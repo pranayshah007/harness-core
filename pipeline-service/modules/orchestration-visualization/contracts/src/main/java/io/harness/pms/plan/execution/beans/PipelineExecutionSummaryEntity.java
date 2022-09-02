@@ -73,6 +73,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "PlanExecutionSummaryKeys")
+@StoreIn(DbAliases.PMS)
 @Entity(value = "planExecutionsSummary", noClassnameStored = true)
 @Document("planExecutionsSummary")
 @TypeAlias("planExecutionsSummary")

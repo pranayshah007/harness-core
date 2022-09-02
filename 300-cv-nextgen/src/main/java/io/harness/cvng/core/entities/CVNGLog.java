@@ -51,11 +51,11 @@ import org.mongodb.morphia.annotations.Id;
 @Setter
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = false)
+@StoreIn(DbAliases.CVNG)
 @Entity(value = "cvngLogs", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @SuperBuilder
 @OwnedBy(HarnessTeam.CV)
-@StoreIn(DbAliases.CVNG)
 public final class CVNGLog implements PersistentEntity, UuidAware, AccountAccess, UpdatedAtAware {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()

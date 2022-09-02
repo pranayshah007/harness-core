@@ -12,9 +12,11 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotation.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
 import io.harness.mongo.index.FdIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 
 import software.wings.beans.Base;
@@ -37,6 +39,7 @@ import org.mongodb.morphia.annotations.Entity;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = false)
 @FieldNameConstants(innerTypeName = "WhitelistKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "whitelist", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 public class Whitelist extends Base implements AccountAccess {

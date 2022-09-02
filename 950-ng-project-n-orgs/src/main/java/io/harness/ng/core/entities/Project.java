@@ -48,10 +48,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "ProjectKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "projects", noClassnameStored = true)
 @Document("projects")
 @TypeAlias("projects")
-@StoreIn(DbAliases.NG_MANAGER)
 @ChangeDataCapture(table = "projects", dataStore = "ng-harness", fields = {}, handler = "Projects")
 @ChangeDataCapture(table = "tags_info", dataStore = "ng-harness", fields = {}, handler = "TagsInfoCD")
 public class Project implements PersistentEntity, NGAccountAccess {

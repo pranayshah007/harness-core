@@ -8,11 +8,13 @@
 package software.wings.yaml.errorhandling;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotation.StoreIn;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 
+import io.harness.ng.DbAliases;
 import software.wings.beans.Base;
 import software.wings.beans.GitRepositoryInfo;
 import software.wings.service.impl.yaml.GitSyncErrorStatus;
@@ -40,6 +42,7 @@ import org.mongodb.morphia.annotations.Transient;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @FieldNameConstants(innerTypeName = "GitSyncErrorKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "gitSyncError")
 @HarnessEntity(exportable = false)
 public class GitSyncError extends Base implements PersistentRegularIterable {

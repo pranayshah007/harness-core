@@ -45,9 +45,9 @@ import org.mongodb.morphia.annotations.Id;
 @EqualsAndHashCode()
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "HostRecordKeys")
+@StoreIn(DbAliases.CVNG)
 @Entity(value = "hostRecords", noClassnameStored = true)
 @HarnessEntity(exportable = false)
-@StoreIn(DbAliases.CVNG)
 public final class HostRecord implements PersistentEntity, UuidAware, CreatedAtAware, AccountAccess {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()

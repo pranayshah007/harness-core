@@ -10,11 +10,13 @@ package io.harness.limits;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotation.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdUniqueIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 
 import software.wings.beans.Base;
@@ -28,6 +30,7 @@ import org.mongodb.morphia.annotations.Entity;
 @Getter
 @ToString
 @EqualsAndHashCode(callSuper = false)
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "limitCounters", noClassnameStored = true)
 @FieldNameConstants(innerTypeName = "CounterKeys")
 @HarnessEntity(exportable = true)

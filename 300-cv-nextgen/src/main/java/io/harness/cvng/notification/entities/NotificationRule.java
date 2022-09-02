@@ -55,10 +55,10 @@ import org.mongodb.morphia.query.UpdateOperations;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
+@StoreIn(DbAliases.CVNG)
 @Entity(value = "notificationRules")
 @HarnessEntity(exportable = true)
 @OwnedBy(HarnessTeam.CV)
-@StoreIn(DbAliases.CVNG)
 public abstract class NotificationRule
     implements PersistentEntity, UuidAware, AccountAccess, UpdatedAtAware, CreatedAtAware {
   public static List<MongoIndex> mongoIndexes() {

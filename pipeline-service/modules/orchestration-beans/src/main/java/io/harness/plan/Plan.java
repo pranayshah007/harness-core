@@ -60,10 +60,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Value
 @Builder
 @FieldNameConstants(innerTypeName = "PlanKeys")
+@StoreIn(DbAliases.PMS)
 @Document("plans")
 @TypeAlias("plan")
 @Entity(value = "plans")
-@StoreIn(DbAliases.PMS)
 public class Plan implements PersistentEntity, Node {
   static final long TTL_MONTHS = 6;
 

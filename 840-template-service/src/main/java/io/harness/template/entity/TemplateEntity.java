@@ -61,11 +61,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "TemplateEntityKeys")
+@StoreIn(DbAliases.TEMPLATE)
 @Entity(value = "templatesNG", noClassnameStored = true)
 @Document("templatesNG")
 @TypeAlias("templatesNG")
 @HarnessEntity(exportable = true)
-@StoreIn(DbAliases.TEMPLATE)
 public class TemplateEntity
     implements GitAware, GitSyncableEntity, PersistentEntity, AccountAccess, UuidAware, CreatedAtAware, UpdatedAtAware {
   @Setter @NonFinal @Id @org.mongodb.morphia.annotations.Id String uuid;

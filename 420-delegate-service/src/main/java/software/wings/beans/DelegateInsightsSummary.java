@@ -10,11 +10,13 @@ package software.wings.beans;
 import static io.harness.annotations.dev.HarnessTeam.DEL;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotation.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateInsightsType;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAware;
 
@@ -33,6 +35,7 @@ import org.mongodb.morphia.annotations.Id;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Data
 @Builder
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "delegateInsightsSummary", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 @OwnedBy(DEL)

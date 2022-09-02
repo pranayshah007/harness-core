@@ -9,10 +9,12 @@ package io.harness.steps.approval.step.harness.entities;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotation.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.DbAliases;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.steps.approval.step.entities.ApprovalInstance;
@@ -47,6 +49,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @FieldNameConstants(innerTypeName = "HarnessApprovalInstanceKeys")
 @EqualsAndHashCode(callSuper = true)
+@StoreIn(DbAliases.PMS)
 @Entity(value = "approvalInstances", noClassnameStored = true)
 @Persistent
 @TypeAlias("harnessApprovalInstance")

@@ -38,10 +38,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @FieldNameConstants(innerTypeName = "ACLKeys")
+@StoreIn(ACCESS_CONTROL)
 @Document(ACL.PRIMARY_COLLECTION)
 @Entity(value = "acl", noClassnameStored = true)
 @TypeAlias("acl")
-@StoreIn(ACCESS_CONTROL)
 public class ACL implements PersistentEntity {
   private static final String DELIMITER = "$";
   public static final String ROLE_ASSIGNMENT_IDENTIFIER_KEY =

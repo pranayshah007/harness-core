@@ -8,7 +8,9 @@
 package io.harness.beans;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotation.StoreIn;
 import io.harness.mongo.index.FdIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UuidAware;
@@ -23,6 +25,7 @@ import org.mongodb.morphia.annotations.Id;
 
 @Data
 @Builder
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "featureFlag", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @JsonIgnoreProperties({"obsolete", "accountIds"})

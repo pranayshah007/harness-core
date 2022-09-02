@@ -38,10 +38,10 @@ import org.mongodb.morphia.annotations.Id;
 
 @Data
 @Builder
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "delegateTokensNG", noClassnameStored = true)
 @FieldNameConstants(innerTypeName = "DelegateNgTokenKeys")
 @OwnedBy(HarnessTeam.DEL)
-@StoreIn(DbAliases.ALL)
 public class DelegateNgToken
     implements PersistentEntity, UuidAware, CreatedAtAware, CreatedByAware, NameAndValueAccess {
   public static final Duration TTL = ofDays(30);

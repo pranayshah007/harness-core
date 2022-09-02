@@ -14,6 +14,7 @@ import io.harness.beans.build.PublishedArtifact;
 import io.harness.beans.execution.ExecutionSource;
 import io.harness.beans.inputset.InputSet;
 import io.harness.mongo.index.FdIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAware;
@@ -35,9 +36,9 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
-@FieldNameConstants(innerTypeName = "Build")
+@FieldNameConstants(innerTypeName = "Build")\
+@StoreIn(DbAliases.CIMANAGER)
 @Entity(value = "cibuild", noClassnameStored = true)
-@StoreIn("harnessci")
 @Document("cibuild")
 @HarnessEntity(exportable = true)
 public class CIBuild implements PersistentEntity, UuidAware, CreatedAtAware {

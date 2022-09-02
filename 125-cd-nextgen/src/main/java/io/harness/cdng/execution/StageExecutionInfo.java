@@ -41,11 +41,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @ToString
 @FieldNameConstants(innerTypeName = "StageExecutionInfoKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "stageExecutionInfo", noClassnameStored = true)
 @Document("stageExecutionInfo")
 @TypeAlias("stageExecutionInfo")
 @HarnessEntity(exportable = true)
-@StoreIn(DbAliases.NG_MANAGER)
 @OwnedBy(HarnessTeam.CDP)
 public class StageExecutionInfo implements PersistentEntity, UuidAware {
   @org.springframework.data.annotation.Id @Id String uuid;

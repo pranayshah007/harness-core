@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static software.wings.beans.ServiceTemplate.Builder.aServiceTemplate;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotation.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -21,6 +22,7 @@ import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
 
+import io.harness.ng.DbAliases;
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.appmanifest.ManifestFile;
 import software.wings.utils.ArtifactType;
@@ -40,6 +42,7 @@ import org.mongodb.morphia.annotations.Transient;
 
 @TargetModule(HarnessModule._957_CG_BEANS)
 @OwnedBy(CDC)
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "serviceTemplates", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @FieldNameConstants(innerTypeName = "ServiceTemplateKeys")

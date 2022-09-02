@@ -11,6 +11,7 @@ import io.harness.annotation.HarnessEntity;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotation.StoreIn;
 import io.harness.ci.config.VmImageConfig;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAware;
@@ -30,8 +31,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "CIExecutionConfigKeys")
+@StoreIn(DbAliases.CIMANAGER)
 @Entity(value = "ciexecutionconfig", noClassnameStored = true)
-@StoreIn("harnessci")
 @Document("ciexecutionconfig")
 @HarnessEntity(exportable = true)
 @TypeAlias("ciExecutionConfig")

@@ -15,6 +15,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static software.wings.beans.trigger.TriggerConditionType.WEBHOOK;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotation.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -25,6 +26,7 @@ import io.harness.iterator.PersistentCronIterable;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.NameAccess;
 
@@ -71,6 +73,7 @@ import org.mongodb.morphia.annotations.Entity;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @FieldNameConstants(innerTypeName = "TriggerKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "triggers")
 @HarnessEntity(exportable = true)
 @TargetModule(HarnessModule._815_CG_TRIGGERS)

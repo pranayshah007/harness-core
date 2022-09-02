@@ -52,9 +52,9 @@ import org.mongodb.morphia.annotations.PrePersist;
 @Data
 @SuperBuilder
 @JsonIgnoreProperties(ignoreUnknown = true)
+@StoreIn(DbAliases.CVNG)
 @Entity(value = "dataCollectionTasks")
 @HarnessEntity(exportable = false)
-@StoreIn(DbAliases.CVNG)
 public abstract class DataCollectionTask
     implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, AccountAccess, PersistentRegularIterable,
                VerificationTaskExecutionInstance {

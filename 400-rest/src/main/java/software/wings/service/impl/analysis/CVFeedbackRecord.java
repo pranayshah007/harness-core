@@ -18,8 +18,10 @@ import static java.lang.System.currentTimeMillis;
 
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotation.IgnoreUnusedIndex;
+import io.harness.annotation.StoreIn;
 import io.harness.beans.EmbeddedUser;
 import io.harness.mongo.index.FdIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.GoogleDataStoreAware;
 import io.harness.serializer.JsonUtils;
@@ -50,6 +52,7 @@ import org.mongodb.morphia.annotations.PrePersist;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @EqualsAndHashCode(callSuper = false)
 @IgnoreUnusedIndex
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "cvFeedbackRecords", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 public class CVFeedbackRecord implements GoogleDataStoreAware, AccountAccess {

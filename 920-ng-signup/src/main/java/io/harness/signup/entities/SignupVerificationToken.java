@@ -29,10 +29,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "signupVerificationTokensKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "signupVerificationTokens", noClassnameStored = true)
 @Document("signupVerificationTokens")
 @TypeAlias("signupVerificationTokens")
-@StoreIn(DbAliases.NG_MANAGER)
 public class SignupVerificationToken {
   @Id @org.mongodb.morphia.annotations.Id String id;
   @NotEmpty String token;

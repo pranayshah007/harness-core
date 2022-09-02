@@ -38,12 +38,12 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Value
 @Builder
 @FieldNameConstants(innerTypeName = "NotifyResponseKeys")
-@Document("notifyResponses")
 @TypeAlias("notifyResponses")
+@StoreIn(DbAliases.ALL)
+@Document("notifyResponses")
 @Entity(value = "notifyResponses", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 @OwnedBy(HarnessTeam.PIPELINE)
-@StoreIn(DbAliases.ALL)
 public class NotifyResponse implements WaitEngineEntity, CreatedAtAccess {
   public static final Duration TTL = ofDays(21);
 

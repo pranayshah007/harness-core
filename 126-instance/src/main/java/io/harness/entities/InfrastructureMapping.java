@@ -27,9 +27,9 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "InfrastructureMappingNGKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "infrastructureMappingNG", noClassnameStored = true)
 @Document("infrastructureMappingNG")
-@StoreIn(DbAliases.NG_MANAGER)
 @Persistent
 @OwnedBy(HarnessTeam.DX)
 public class InfrastructureMapping {

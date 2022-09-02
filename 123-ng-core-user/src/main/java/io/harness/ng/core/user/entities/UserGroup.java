@@ -46,10 +46,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Builder
 @EqualsAndHashCode(callSuper = false)
 @FieldNameConstants(innerTypeName = "UserGroupKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "user-groups", noClassnameStored = true)
 @Document("user-groups")
 @TypeAlias("user-groups")
-@StoreIn(DbAliases.NG_MANAGER)
 @OwnedBy(PL)
 public class UserGroup implements PersistentEntity, NGAccountAccess {
   public static List<MongoIndex> mongoIndexes() {

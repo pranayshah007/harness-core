@@ -37,9 +37,9 @@ import org.mongodb.morphia.annotations.Id;
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "VerificationTaskKeys")
+@StoreIn(DbAliases.CVNG)
 @Entity(value = "verificationTasks", noClassnameStored = true)
 @HarnessEntity(exportable = false)
-@StoreIn(DbAliases.CVNG)
 public final class VerificationTask implements UuidAware, CreatedAtAware, AccountAccess, PersistentEntity {
   public static final String VERIFICATION_TASK_ID_KEY = "verificationTaskId";
 

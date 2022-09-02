@@ -24,9 +24,9 @@ import org.mongodb.morphia.annotations.Entity;
 @OwnedBy(CDC)
 @Value
 @EqualsAndHashCode(callSuper = false)
+@StoreIn(DbAliases.ALL)
 @Entity(value = "delayQueue", noClassnameStored = true)
 @HarnessEntity(exportable = false)
-@StoreIn(DbAliases.ALL)
 public class DelayEvent extends Queuable {
   private String resumeId;
   private Map<String, String> context;

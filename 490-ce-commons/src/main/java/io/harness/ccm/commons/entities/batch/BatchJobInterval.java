@@ -31,10 +31,10 @@ import org.mongodb.morphia.annotations.Entity;
 import org.mongodb.morphia.annotations.Id;
 
 @Data
+@StoreIn(DbAliases.CENG)
 @Entity(value = "batchJobInterval", noClassnameStored = true)
 @FieldNameConstants(innerTypeName = "BatchJobIntervalKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@StoreIn(DbAliases.CENG)
 @OwnedBy(CE)
 public final class BatchJobInterval
     implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, AccountAccess {

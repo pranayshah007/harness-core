@@ -32,10 +32,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "DeploymentSummaryKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "deploymentSummaryNG", noClassnameStored = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Document("deploymentSummaryNG")
-@StoreIn(DbAliases.NG_MANAGER)
 @OwnedBy(HarnessTeam.DX)
 public class DeploymentSummary implements PersistentEntity {
   public static List<MongoIndex> mongoIndexes() {

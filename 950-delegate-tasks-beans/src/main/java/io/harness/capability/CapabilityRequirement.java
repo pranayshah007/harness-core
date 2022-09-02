@@ -7,10 +7,12 @@
 
 package io.harness.capability;
 
+import io.harness.annotation.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 
 import java.util.Date;
@@ -24,6 +26,7 @@ import org.mongodb.morphia.annotations.Id;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "CapabilityRequirementKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "capabilityRequirement", noClassnameStored = true)
 @TargetModule(HarnessModule._460_CAPABILITY)
 public final class CapabilityRequirement implements PersistentEntity {

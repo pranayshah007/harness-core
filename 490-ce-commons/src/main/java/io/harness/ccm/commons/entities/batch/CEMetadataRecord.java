@@ -29,9 +29,9 @@ import org.mongodb.morphia.annotations.Id;
 @Data
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@StoreIn(DbAliases.CENG)
 @Entity(value = "ceMetadataRecord", noClassnameStored = true)
 @FieldNameConstants(innerTypeName = "CEMetadataRecordKeys")
-@StoreIn(DbAliases.CENG)
 public final class CEMetadataRecord implements PersistentEntity, UuidAware, AccountAccess, UpdatedAtAware {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()

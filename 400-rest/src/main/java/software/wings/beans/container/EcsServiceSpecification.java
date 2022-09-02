@@ -10,10 +10,12 @@ package software.wings.beans.container;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotation.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 
+import io.harness.ng.DbAliases;
 import software.wings.beans.DeploymentSpecification;
 
 import javax.validation.constraints.NotNull;
@@ -29,6 +31,7 @@ import org.mongodb.morphia.annotations.Entity;
 @Builder
 @EqualsAndHashCode(callSuper = false)
 @FieldNameConstants(innerTypeName = "EcsServiceSpecificationKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity("ecsServiceSpecification")
 @HarnessEntity(exportable = true)
 @TargetModule(HarnessModule._955_DELEGATE_BEANS)

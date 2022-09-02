@@ -36,10 +36,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "NotificationKeys")
+@StoreIn(DbAliases.NOTIFICATION)
 @Entity(value = "notificationsNg", noClassnameStored = true)
 @Document("notificationsNg")
 @TypeAlias("notificationsNg")
-@StoreIn(DbAliases.NOTIFICATION)
 @OwnedBy(PL)
 public class Notification implements PersistentRegularIterable, PersistentEntity {
   public static List<MongoIndex> mongoIndexes() {

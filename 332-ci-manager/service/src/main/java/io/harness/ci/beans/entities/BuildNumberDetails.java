@@ -9,6 +9,7 @@ package io.harness.ci.beans.entities;
 
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotation.StoreIn;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 import io.harness.validation.Update;
 
@@ -27,8 +28,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "BuildNumberDetailsKeys")
+@StoreIn(DbAliases.CIMANAGER)
 @Entity(value = "buildNumberDetails", noClassnameStored = true)
-@StoreIn("harnessci")
 @Document("buildNumberDetails")
 @HarnessEntity(exportable = true)
 @TypeAlias("buildNumberDetails")

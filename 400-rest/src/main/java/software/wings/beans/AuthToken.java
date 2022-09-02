@@ -13,8 +13,10 @@ import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.utils.CryptoUtils.secureRandAlphaNumString;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotation.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.FdTtlIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 
 import java.time.OffsetDateTime;
@@ -29,6 +31,7 @@ import org.simpleframework.xml.Transient;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @FieldNameConstants(innerTypeName = "AuthTokenKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "authTokens", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 public class AuthToken extends Base implements AccountAccess {

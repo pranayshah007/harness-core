@@ -28,9 +28,9 @@ import org.mongodb.morphia.annotations.Id;
 @Data
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@StoreIn(DbAliases.CENG)
 @Entity(value = "ceDataCleanupRequest", noClassnameStored = true)
 @FieldNameConstants(innerTypeName = "CEDataCleanupRequestKeys")
-@StoreIn(DbAliases.CENG)
 public final class CEDataCleanupRequest
     implements PersistentEntity, UuidAware, AccountAccess, CreatedAtAccess, CreatedAtAware, UpdatedAtAware {
   @Id String uuid;

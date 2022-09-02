@@ -22,9 +22,9 @@ import org.mongodb.morphia.annotations.Id;
 @Value
 @Builder
 @FieldNameConstants(innerTypeName = "MorphiaMoveKeys")
+@StoreIn(DbAliases.ALL)
 @Entity(value = "morphiaMove", noClassnameStored = true)
 @HarnessEntity(exportable = false)
-@StoreIn(DbAliases.ALL)
 public class MorphiaMove implements PersistentEntity {
   @Id private String target;
   private Set<String> sources;

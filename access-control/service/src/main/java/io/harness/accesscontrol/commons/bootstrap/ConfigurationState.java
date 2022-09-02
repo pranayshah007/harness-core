@@ -30,10 +30,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "ConfigurationStateKeys")
+@StoreIn(ACCESS_CONTROL)
 @Entity(value = "configurationState", noClassnameStored = true)
 @Document("configurationState")
 @TypeAlias("configurationState")
-@StoreIn(ACCESS_CONTROL)
 public class ConfigurationState {
   @Id @org.mongodb.morphia.annotations.Id String id;
   @FdIndex @NotEmpty String identifier;

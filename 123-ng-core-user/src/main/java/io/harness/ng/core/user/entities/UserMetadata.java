@@ -37,10 +37,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Builder
 @FieldNameConstants(innerTypeName = "UserMetadataKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "userMetadata", noClassnameStored = true)
 @Document("userMetadata")
 @TypeAlias("userMetadata")
-@StoreIn(DbAliases.NG_MANAGER)
 @OwnedBy(PL)
 public class UserMetadata implements PersistentEntity {
   public static List<MongoIndex> mongoIndexes() {

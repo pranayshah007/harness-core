@@ -41,9 +41,9 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @OwnedBy(HarnessTeam.GTM)
 @Data
 @FieldNameConstants(innerTypeName = "ModuleLicenseKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "moduleLicenses", noClassnameStored = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@StoreIn(DbAliases.NG_MANAGER)
 @Document("moduleLicenses")
 @Persistent
 public abstract class ModuleLicense implements PersistentEntity, NGAccountAccess {

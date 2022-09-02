@@ -54,11 +54,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Value
 @Builder
 @FieldNameConstants(innerTypeName = "PlanExecutionKeys")
+@StoreIn(DbAliases.PMS)
 @Entity(value = "planExecutions", noClassnameStored = true)
 @Document("planExecutions")
 @JsonIgnoreProperties(ignoreUnknown = true, value = {"plan"})
 @TypeAlias("planExecution")
-@StoreIn(DbAliases.PMS)
 public class PlanExecution implements PersistentRegularIterable, UuidAccess, PmsNodeExecution {
   public static final String EXEC_TAG_SET_BY_TRIGGER = "execution_trigger_tag_needed_for_abort";
   public static final long TTL_MONTHS = 6;

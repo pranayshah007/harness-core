@@ -50,10 +50,10 @@ import org.mongodb.morphia.annotations.Id;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
+@StoreIn(DbAliases.CVNG)
 @Entity(value = "metricPacks", noClassnameStored = true)
 @FieldNameConstants(innerTypeName = "MetricPackKeys")
 @HarnessEntity(exportable = true)
-@StoreIn(DbAliases.CVNG)
 public final class MetricPack implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, AccountAccess {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()

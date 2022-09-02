@@ -35,9 +35,9 @@ import org.mongodb.morphia.annotations.Id;
 
 @Data
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@StoreIn(DbAliases.CENG)
 @Entity(value = "ceCluster", noClassnameStored = true)
 @FieldNameConstants(innerTypeName = "CEClusterKeys")
-@StoreIn(DbAliases.CENG)
 public final class CECluster implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, AccountAccess {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()

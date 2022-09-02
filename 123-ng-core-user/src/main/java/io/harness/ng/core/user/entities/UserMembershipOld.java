@@ -44,10 +44,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Builder
 @FieldNameConstants(innerTypeName = "UserMembershipKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "userMemberships", noClassnameStored = true)
 @Document("userMemberships")
 @TypeAlias("userMemberships")
-@StoreIn(DbAliases.NG_MANAGER)
 @OwnedBy(PL)
 public class UserMembershipOld implements PersistentRegularIterable, PersistentEntity {
   public static List<MongoIndex> mongoIndexes() {

@@ -8,9 +8,11 @@
 package software.wings.service.impl.analysis;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotation.StoreIn;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 
 import software.wings.beans.Base;
@@ -36,6 +38,7 @@ import org.mongodb.morphia.annotations.Entity;
 @Builder
 @EqualsAndHashCode(callSuper = false)
 @FieldNameConstants(innerTypeName = "TimeSeriesMLTransactionThresholdKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "timeseriesTransactionThresholds", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 public class TimeSeriesMLTransactionThresholds extends Base implements AccountAccess {

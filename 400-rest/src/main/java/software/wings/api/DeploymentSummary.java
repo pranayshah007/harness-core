@@ -10,6 +10,7 @@ package software.wings.api;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotation.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -18,6 +19,7 @@ import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
 
+import io.harness.ng.DbAliases;
 import software.wings.beans.Base;
 import software.wings.beans.infrastructure.instance.key.deployment.AwsAmiDeploymentKey;
 import software.wings.beans.infrastructure.instance.key.deployment.AwsCodeDeployDeploymentKey;
@@ -40,6 +42,7 @@ import org.mongodb.morphia.annotations.Entity;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "deploymentSummary", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 @FieldNameConstants(innerTypeName = "DeploymentSummaryKeys")

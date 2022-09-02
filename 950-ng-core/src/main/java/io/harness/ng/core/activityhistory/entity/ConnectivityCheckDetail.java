@@ -7,8 +7,10 @@
 
 package io.harness.ng.core.activityhistory.entity;
 
+import io.harness.annotation.StoreIn;
 import io.harness.connector.ConnectorValidationResult;
 
+import io.harness.ng.DbAliases;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -21,6 +23,7 @@ import org.springframework.data.annotation.TypeAlias;
 @SuperBuilder
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = false)
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "entityActivity", noClassnameStored = true)
 @Persistent
 @TypeAlias("io.harness.ng.core.activity.ConnectivityCheckDetail")

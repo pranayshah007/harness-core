@@ -35,10 +35,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "StepDetailInstanceKeys")
+@StoreIn(DbAliases.PMS)
 @Entity(value = "stepDetailInstance", noClassnameStored = true)
 @Document("stepDetailInstance")
 @TypeAlias("stepDetailInstance")
-@StoreIn(DbAliases.PMS)
 @ToBeDeleted
 // Delete after six months from 27-Jan
 public class StepDetailInstance {

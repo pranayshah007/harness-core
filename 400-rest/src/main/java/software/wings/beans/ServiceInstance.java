@@ -10,6 +10,7 @@ package software.wings.beans;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotation.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -17,6 +18,7 @@ import io.harness.beans.EmbeddedUser;
 import io.harness.beans.ExecutionStatus;
 import io.harness.mongo.index.FdIndex;
 
+import io.harness.ng.DbAliases;
 import software.wings.beans.infrastructure.Host;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -34,6 +36,7 @@ import org.mongodb.morphia.annotations.Property;
  */
 @TargetModule(HarnessModule._957_CG_BEANS)
 @OwnedBy(CDP)
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "serviceInstance", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 @FieldNameConstants(innerTypeName = "ServiceInstanceKeys")

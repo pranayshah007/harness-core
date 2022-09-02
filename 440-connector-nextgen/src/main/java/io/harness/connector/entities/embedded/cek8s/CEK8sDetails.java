@@ -7,11 +7,14 @@
 
 package io.harness.connector.entities.embedded.cek8s;
 
+import io.harness.annotation.StoreIn;
 import io.harness.connector.entities.Connector;
 import io.harness.delegate.beans.connector.CEFeatures;
 
 import java.util.List;
 import javax.validation.constraints.NotNull;
+
+import io.harness.ng.DbAliases;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -26,6 +29,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Persistent
 @EqualsAndHashCode(callSuper = false)
 @FieldNameConstants(innerTypeName = "CEK8sDetailsKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "connectors", noClassnameStored = true)
 @TypeAlias("io.harness.connector.entities.embedded.cek8s.CEK8sDetails")
 public class CEK8sDetails extends Connector {

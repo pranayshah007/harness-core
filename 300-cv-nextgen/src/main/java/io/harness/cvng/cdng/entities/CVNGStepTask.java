@@ -39,9 +39,9 @@ import org.mongodb.morphia.annotations.Id;
 @Builder
 @FieldNameConstants(innerTypeName = "CVNGStepTaskKeys")
 @EqualsAndHashCode
+@StoreIn(DbAliases.CVNG)
 @Entity(value = "cvngStepTasks", noClassnameStored = true)
 @HarnessEntity(exportable = true)
-@StoreIn(DbAliases.CVNG)
 public class CVNGStepTask
     implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, AccountAccess, PersistentRegularIterable {
   public static List<MongoIndex> mongoIndexes() {

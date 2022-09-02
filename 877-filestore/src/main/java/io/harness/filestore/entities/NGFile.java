@@ -10,6 +10,7 @@ package io.harness.filestore.entities;
 import static io.harness.beans.EmbeddedUser.EmbeddedUserKeys;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotation.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
@@ -20,6 +21,7 @@ import io.harness.mongo.CollationStrength;
 import io.harness.mongo.index.Collation;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.ng.core.NGAccountAccess;
 import io.harness.ng.core.NGOrgAccess;
 import io.harness.ng.core.NGProjectAccess;
@@ -58,6 +60,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @ToString
 @FieldNameConstants(innerTypeName = "NGFiles")
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "ngFiles", noClassnameStored = true)
 @Document("ngFiles")
 @TypeAlias("ngFiles")

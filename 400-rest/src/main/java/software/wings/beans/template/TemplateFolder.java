@@ -15,10 +15,12 @@ import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 import static java.util.Arrays.asList;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotation.StoreIn;
 import io.harness.beans.EmbeddedUser;
 import io.harness.data.validator.EntityName;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.NameAccess;
 import io.harness.validation.Create;
 import io.harness.validation.Update;
@@ -47,6 +49,7 @@ import org.mongodb.morphia.annotations.Entity;
 @JsonInclude(NON_NULL)
 @EqualsAndHashCode(callSuper = false)
 @FieldNameConstants(innerTypeName = "TemplateFolderKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "templateFolders", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 public class TemplateFolder extends Base implements KeywordsAware, NameAccess {

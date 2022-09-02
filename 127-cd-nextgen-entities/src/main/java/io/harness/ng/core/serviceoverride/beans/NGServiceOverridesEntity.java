@@ -35,12 +35,12 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
 @Builder
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "serviceOverridesNG", noClassnameStored = true)
 @FieldNameConstants(innerTypeName = "NGServiceOverridesEntityKeys")
 @Document("serviceOverridesNG")
 @TypeAlias("io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity")
 @RecasterAlias("io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity")
-@StoreIn(DbAliases.NG_MANAGER)
 @OwnedBy(CDC)
 public class NGServiceOverridesEntity implements PersistentEntity {
   public static List<MongoIndex> mongoIndexes() {

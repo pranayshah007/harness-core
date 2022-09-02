@@ -42,10 +42,10 @@ import org.mongodb.morphia.annotations.Id;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
+@StoreIn(DbAliases.CVNG)
 @Entity(value = "userJourneys", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @OwnedBy(HarnessTeam.CV)
-@StoreIn(DbAliases.CVNG)
 public class UserJourney implements PersistentEntity, UuidAware, AccountAccess, UpdatedAtAware, CreatedAtAware {
   String accountId;
   String orgIdentifier;

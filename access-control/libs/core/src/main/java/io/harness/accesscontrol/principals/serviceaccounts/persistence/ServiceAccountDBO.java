@@ -49,10 +49,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @ToString
 @EqualsAndHashCode
 @FieldNameConstants(innerTypeName = "ServiceAccountDBOKeys")
+@StoreIn(ACCESS_CONTROL)
 @Entity(value = "serviceAccounts", noClassnameStored = true)
 @Document("serviceAccounts")
 @TypeAlias("serviceAccounts")
-@StoreIn(ACCESS_CONTROL)
 public class ServiceAccountDBO implements PersistentRegularIterable, AccessControlEntity {
   @Setter @Id @org.mongodb.morphia.annotations.Id String id;
   @NotEmpty final String scopeIdentifier;

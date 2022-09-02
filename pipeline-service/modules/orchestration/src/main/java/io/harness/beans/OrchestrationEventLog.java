@@ -41,11 +41,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Builder
 @EqualsAndHashCode(callSuper = false)
 @FieldNameConstants(innerTypeName = "OrchestrationEventLogKeys")
+@StoreIn(DbAliases.PMS)
 @Entity(value = "orchestrationEventLog", noClassnameStored = true)
 @Document("orchestrationEventLog")
 @HarnessEntity(exportable = false)
 @TypeAlias("OrchestrationEventLog")
-@StoreIn(DbAliases.PMS)
 public class OrchestrationEventLog implements PersistentEntity {
   public static final Duration TTL = ofDays(5);
 

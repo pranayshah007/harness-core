@@ -10,7 +10,9 @@ package software.wings.service.impl;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotation.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ng.DbAliases;
 import io.harness.queue.Queuable;
 
 import java.util.List;
@@ -23,6 +25,7 @@ import org.mongodb.morphia.annotations.Entity;
 @Data
 @Builder
 @EqualsAndHashCode(callSuper = false)
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "executionQueue", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 public class ExecutionEvent extends Queuable {

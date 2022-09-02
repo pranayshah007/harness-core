@@ -22,9 +22,9 @@ import org.mongodb.morphia.annotations.Id;
 
 @Value
 @Builder
+@StoreIn(DbAliases.ALL)
 @Entity(value = "!!!custom_delegateSyncTaskResponses", noClassnameStored = true)
 @FieldNameConstants(innerTypeName = "DelegateSyncTaskResponseKeys")
-@StoreIn(DbAliases.ALL)
 public class DelegateSyncTaskResponse implements PersistentEntity {
   @Id @org.springframework.data.annotation.Id private String uuid;
   private byte[] responseData;

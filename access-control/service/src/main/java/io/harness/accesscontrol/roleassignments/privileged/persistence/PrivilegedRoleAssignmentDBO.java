@@ -51,10 +51,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @ToString
 @EqualsAndHashCode
 @FieldNameConstants(innerTypeName = "PrivilegedRoleAssignmentDBOKeys")
+@StoreIn(ACCESS_CONTROL)
 @Entity(value = COLLECTION_NAME, noClassnameStored = true)
 @Document(COLLECTION_NAME)
 @TypeAlias(COLLECTION_NAME)
-@StoreIn(ACCESS_CONTROL)
 public class PrivilegedRoleAssignmentDBO implements PersistentEntity, AccessControlEntity {
   public static final String COLLECTION_NAME = "privilegedRoleAssignments";
 

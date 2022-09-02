@@ -12,9 +12,11 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static software.wings.yaml.YamlHelper.trimYaml;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotation.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 
 import software.wings.beans.DeploymentSpecification;
@@ -31,6 +33,7 @@ import org.mongodb.morphia.annotations.Entity;
 @Builder
 @EqualsAndHashCode(callSuper = false)
 @FieldNameConstants(innerTypeName = "PcfServiceSpecificationKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity("pcfServiceSpecification")
 @HarnessEntity(exportable = true)
 @OwnedBy(CDP)

@@ -46,11 +46,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "PmsSdkInstanceKeys")
+@StoreIn(DbAliases.PMS)
 @Entity(value = "pmsSdkInstances", noClassnameStored = true)
 @Document("pmsSdkInstances")
 @TypeAlias("pmsSdkInstances")
 @HarnessEntity(exportable = false)
-@StoreIn(DbAliases.PMS)
 public class PmsSdkInstance implements PersistentEntity, UuidAware {
   @Setter @NonFinal @Id @org.mongodb.morphia.annotations.Id String uuid;
 

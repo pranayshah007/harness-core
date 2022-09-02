@@ -42,10 +42,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Builder
 @FieldNameConstants(innerTypeName = "NGEncryptedDataKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "ngEncryptedRecords", noClassnameStored = true)
 @Document("ngEncryptedRecords")
 @TypeAlias("ngEncryptedData")
-@StoreIn(DbAliases.NG_MANAGER)
 public class NGEncryptedData implements PersistentEntity, EncryptedRecord {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()

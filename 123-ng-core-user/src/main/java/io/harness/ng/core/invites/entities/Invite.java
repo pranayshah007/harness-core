@@ -42,10 +42,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder(toBuilder = true)
 @FieldNameConstants(innerTypeName = "InviteKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "invites", noClassnameStored = true)
 @Document("invites")
 @TypeAlias("invites")
-@StoreIn(DbAliases.NG_MANAGER)
 @OwnedBy(PL)
 public class Invite implements PersistentEntity {
   public static List<MongoIndex> mongoIndexes() {

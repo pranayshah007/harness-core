@@ -8,9 +8,11 @@
 package software.wings.beans.template;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotation.StoreIn;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 
 import software.wings.beans.Base;
@@ -33,6 +35,7 @@ import org.mongodb.morphia.annotations.Entity;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "templateVersions", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 public class TemplateVersion extends Base implements AccountAccess {

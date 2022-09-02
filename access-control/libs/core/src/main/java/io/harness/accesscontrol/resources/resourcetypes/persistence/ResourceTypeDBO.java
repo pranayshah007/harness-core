@@ -43,10 +43,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @ToString
 @EqualsAndHashCode
 @FieldNameConstants(innerTypeName = "ResourceTypeDBOKeys")
+@StoreIn(ACCESS_CONTROL)
 @Entity(value = "resourcetypes", noClassnameStored = true)
 @Document("resourcetypes")
 @TypeAlias("resourcetypes")
-@StoreIn(ACCESS_CONTROL)
 public class ResourceTypeDBO {
   @Setter @Id @org.mongodb.morphia.annotations.Id String id;
   @FdUniqueIndex @NotEmpty final String identifier;

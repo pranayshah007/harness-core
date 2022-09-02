@@ -30,9 +30,9 @@ import org.mongodb.morphia.annotations.Id;
 
 @Data
 @Builder
+@StoreIn(DbAliases.CENG)
 @Entity(value = "pricingProfile")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@StoreIn(DbAliases.CENG)
 @FieldNameConstants(innerTypeName = "PricingProfileKeys")
 @OwnedBy(CE)
 @TargetModule(HarnessModule._490_CE_COMMONS)

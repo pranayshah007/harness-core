@@ -44,10 +44,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @AllArgsConstructor
 @FieldNameConstants(innerTypeName = "SCMKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "sourceCodeManagers", noClassnameStored = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Document("sourceCodeManagers")
-@StoreIn(DbAliases.NG_MANAGER)
 public abstract class SourceCodeManager implements PersistentEntity {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()

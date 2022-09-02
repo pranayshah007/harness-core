@@ -45,10 +45,10 @@ import org.mongodb.morphia.query.UpdateOperations;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = false)
+@StoreIn(DbAliases.CVNG)
 @Entity(value = "changeSources")
 @OwnedBy(HarnessTeam.CV)
 @HarnessEntity(exportable = true)
-@StoreIn(DbAliases.CVNG)
 public abstract class ChangeSource
     implements PersistentEntity, UuidAware, AccountAccess, UpdatedAtAware, CreatedAtAware, PersistentRegularIterable {
   public static List<MongoIndex> mongoIndexes() {

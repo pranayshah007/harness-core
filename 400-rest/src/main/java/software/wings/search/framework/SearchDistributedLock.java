@@ -10,9 +10,11 @@ package software.wings.search.framework;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotation.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.CreatedAtAccess;
 import io.harness.persistence.PersistentEntity;
 import io.harness.validation.Update;
@@ -34,6 +36,7 @@ import org.mongodb.morphia.annotations.Id;
 @OwnedBy(PL)
 @Value
 @Builder
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "searchDistributedLocks", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 @FieldNameConstants(innerTypeName = "SearchDistributedLockKeys")

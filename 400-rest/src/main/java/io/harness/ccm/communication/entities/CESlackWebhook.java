@@ -9,9 +9,11 @@ package io.harness.ccm.communication.entities;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
 
+import io.harness.annotation.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
@@ -31,6 +33,7 @@ import org.mongodb.morphia.annotations.Id;
 @Builder
 @FieldNameConstants(innerTypeName = "CESlackWebhookKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "ceSlackWebhooks", noClassnameStored = true)
 @OwnedBy(CE)
 @TargetModule(HarnessModule._490_CE_COMMONS)
