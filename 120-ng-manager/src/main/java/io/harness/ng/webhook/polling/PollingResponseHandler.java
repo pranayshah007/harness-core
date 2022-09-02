@@ -370,6 +370,7 @@ public class PollingResponseHandler {
         polledResponseResultBuilder.name(((JenkinsArtifactInfo) artifactInfo).getJobName());
         polledResponseResultBuilder.type(JENKINS);
         break;
+      case GITHUB_PACKAGES:
       default:
         throw new InvalidRequestException("Unsupported Artifact Type " + artifactInfo.getType().getDisplayName());
     }
