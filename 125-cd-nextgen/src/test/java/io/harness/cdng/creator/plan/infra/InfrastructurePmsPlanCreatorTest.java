@@ -94,6 +94,7 @@ public class InfrastructurePmsPlanCreatorTest extends CDNGTestBase {
     LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
     YamlField rcField = InfrastructurePmsPlanCreator.addResourceConstraintDependency(
         yamlField.getNode().getField("spec").getNode().getField("environment").getNode(), planCreationResponseMap, "");
+
     assertThat(planCreationResponseMap.size()).isEqualTo(1);
     Map<String, String> dependencyMap =
         planCreationResponseMap.get(rcField.getNode().getUuid()).getDependencies().getDependenciesMap();

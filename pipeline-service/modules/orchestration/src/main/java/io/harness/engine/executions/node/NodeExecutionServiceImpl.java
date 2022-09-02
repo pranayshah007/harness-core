@@ -592,7 +592,8 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     return extractChildExecutions(parentId, includeParent, finalList, allExecutions);
   }
 
-  private List<NodeExecution> extractChildExecutions(
+  @Override
+  public List<NodeExecution> extractChildExecutions(
       String parentId, boolean includeParent, List<NodeExecution> finalList, List<NodeExecution> allExecutions) {
     Map<String, List<NodeExecution>> parentChildrenMap = new HashMap<>();
     for (NodeExecution execution : allExecutions) {

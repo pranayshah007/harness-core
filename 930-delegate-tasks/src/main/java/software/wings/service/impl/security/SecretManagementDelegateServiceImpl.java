@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessModule._890_SM_CORE;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.eraro.ErrorCode.CYBERARK_OPERATION_ERROR;
 import static io.harness.eraro.ErrorCode.VAULT_OPERATION_ERROR;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.helpers.NGVaultTaskHelper.getVaultAppRoleLoginResult;
@@ -31,13 +30,9 @@ import io.harness.helpers.ext.vault.VaultAppRoleLoginResult;
 import io.harness.security.encryption.EncryptedRecord;
 
 import software.wings.beans.BaseVaultConfig;
-import software.wings.beans.CyberArkConfig;
 import software.wings.beans.HostConnectionAttributes;
 import software.wings.beans.SSHVaultConfig;
 import software.wings.beans.VaultConfig;
-import software.wings.helpers.ext.cyberark.CyberArkReadResponse;
-import software.wings.helpers.ext.cyberark.CyberArkRestClient;
-import software.wings.helpers.ext.cyberark.CyberArkRestClientFactory;
 import software.wings.helpers.ext.vault.SSHVaultAuthResponse;
 import software.wings.helpers.ext.vault.SignedSSHVaultRequest;
 import software.wings.helpers.ext.vault.SignedSSHVaultResponse;
@@ -301,34 +296,6 @@ public class SecretManagementDelegateServiceImpl implements SecretManagementDele
           + vaultConfig.getVaultUrl();
       throw new SecretManagementDelegateException(VAULT_OPERATION_ERROR, message, e, USER);
     }
-  }
-
-  @Override
-  public boolean validateCyberArkConfig(CyberArkConfig cyberArkConfig) {
-    String errorMessage;
-    // Basic connectivity and certificate validity checks
-    if (isNotEmpty(cyberArkConfig.getClientCertificate())
-        && !CyberArkRestClientFactory.validateClientCertificate(cyberArkConfig.getClientCertificate())) {
-      errorMessage = "Client certificate provided is not valid. Please check your configurations and try again";
-      throw new SecretManagementDelegateException(CYBERARK_OPERATION_ERROR, errorMessage, USER);
-    }
-
-    try {
-      CyberArkRestClient restClient = CyberArkRestClientFactory.create(cyberArkConfig);
-      String testQuery = "Username=svc_account_harness_validate_config";
-      Response<CyberArkReadResponse> response = restClient.readSecret(cyberArkConfig.getAppId(), testQuery).execute();
-      // Expecting a 404 response (or 200 by accident) as the test query of a non-existent account in normal cases.
-      int status = response.code();
-      if (status != 404 && status != 200) {
-        errorMessage = "Failed to query the CyberArk REST endpoint. Please check your configurations and try again";
-        throw new SecretManagementDelegateException(CYBERARK_OPERATION_ERROR, errorMessage, USER);
-      }
-    } catch (IOException e) {
-      errorMessage = "Failed to test a sample CyberArk query. Please check your configurations and try again";
-      throw new SecretManagementDelegateException(CYBERARK_OPERATION_ERROR, errorMessage, e, USER);
-    }
-
-    return false;
   }
 
   private void logAndThrowVaultError(BaseVaultConfig baseVaultConfig, Response response, String operation)

@@ -66,7 +66,7 @@ public class CdTelemetryPublisher {
       for (AccountDTO accountDTO : accountDTOList) {
         String accountId = accountDTO.getIdentifier();
         try {
-          sendEvent(accountId);
+          sendEvent(accountId, accountDTO.getCluster());
         } catch (Exception e) {
           log.error("Failed to send telemetry event for account {}", accountId, e);
         }
@@ -78,13 +78,14 @@ public class CdTelemetryPublisher {
     }
   }
 
-  private void sendEvent(String accountId) {
+  private void sendEvent(String accountId, String prodCluster) {
     if (EmptyPredicate.isNotEmpty(accountId) && !accountId.equals(GLOBAL_ACCOUNT_ID)) {
       if (cdTelemetryStatusRepository.updateTimestampIfOlderThan(
               accountId, System.currentTimeMillis() - A_DAY_MINUS_TEN_MINS_IN_MILLIS, System.currentTimeMillis())) {
         CDLicenseUsageDTO cdLicenseUsage = (CDLicenseUsageDTO) licenseUsageInterface.getLicenseUsage(accountId,
             ModuleType.CD, new Date().getTime(), CDUsageRequestParams.builder().cdLicenseType(SERVICES).build());
         HashMap<String, Object> map = new HashMap<>();
+        map.put(HARNESS_PROD_CLUSTER_ID, prodCluster);
         map.put(GROUP_TYPE, ACCOUNT);
         map.put(GROUP_ID, accountId);
         map.put(COUNT_ACTIVE_SERVICES, cdLicenseUsage.getActiveServices().getCount());

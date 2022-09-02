@@ -49,7 +49,7 @@ public class PodCountComputationServiceImpl {
   @Autowired private TimeUtils utils;
 
   private static final String ACTIVE_POD_COUNT_PURGE_QUERY =
-      "SELECT drop_chunks('active_pod_count', interval '90 days')";
+      "SELECT drop_chunks('active_pod_count', interval '60 days')";
 
   static final String GET_NODE_QUERY =
       "SELECT INSTANCEID, CLUSTERID FROM billing_data where INSTANCETYPE = 'K8S_NODE' AND ACCOUNTID = '%s' AND STARTTIME >= '%s' AND STARTTIME < '%s' GROUP BY INSTANCEID, CLUSTERID";

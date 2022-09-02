@@ -1726,17 +1726,18 @@ public class AccountServiceImpl implements AccountService {
   }
 
   private void ngAuditLoginSettings(
-      String accountId, Set<String> oldWhitelistedDomains, Set<String> newWhitelistedDomains) {
+      String accountIdentifier, Set<String> oldWhitelistedDomains, Set<String> newWhitelistedDomains) {
     try {
       outboxService.save(LoginSettingsWhitelistedDomainsUpdateEvent.builder()
-                             .accountIdentifier(accountId)
+                             .accountIdentifier(accountIdentifier)
                              .oldWhitelistedDomainsYamlDTO(
                                  WhitelistedDomainsYamlDTO.builder().whitelistedDomains(oldWhitelistedDomains).build())
                              .newWhitelistedDomainsYamlDTO(
                                  WhitelistedDomainsYamlDTO.builder().whitelistedDomains(newWhitelistedDomains).build())
                              .build());
     } catch (Exception ex) {
-      log.error("Audit trails for LoginSettings update event failed with exception: ", ex);
+      log.error(
+          "For account {} Audit trails for LoginSettings update event failed with exception: ", accountIdentifier, ex);
     }
   }
 

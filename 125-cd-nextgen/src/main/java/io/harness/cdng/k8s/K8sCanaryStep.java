@@ -43,7 +43,9 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
+import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
@@ -138,8 +140,12 @@ public class K8sCanaryStep extends TaskChainExecutableWithRollbackAndRbac implem
     TaskChainResponse response =
         k8sStepHelper.queueK8sTask(stepElementParameters, k8sCanaryDeployRequest, ambiance, executionPassThroughData);
 
-    executionSweepingOutputService.consume(ambiance, K8sCanaryExecutionOutput.OUTPUT_NAME,
-        K8sCanaryExecutionOutput.builder().build(), StepOutcomeGroup.STEP.name());
+    OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputService.resolveOptional(
+        ambiance, RefObjectUtils.getSweepingOutputRefObject(K8sCanaryExecutionOutput.OUTPUT_NAME));
+    if (optionalSweepingOutput == null || !optionalSweepingOutput.isFound()) {
+      executionSweepingOutputService.consume(ambiance, K8sCanaryExecutionOutput.OUTPUT_NAME,
+          K8sCanaryExecutionOutput.builder().build(), StepOutcomeGroup.STAGE.name());
+    }
 
     return response;
   }

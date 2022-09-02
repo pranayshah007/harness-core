@@ -19,7 +19,7 @@ import lombok.experimental.UtilityClass;
 public class STOCreatorUtils {
   public Set<String> getSupportedSteps() {
     // These are internal steps does not need to be in V2
-    return Sets.newHashSet("Test", "SaveCache", "liteEngineTask", "GitClone", "Cleanup", "PublishArtifacts");
+    return Sets.newHashSet("Test", "SaveCache", "liteEngineTask", "Cleanup", "PublishArtifacts");
   }
 
   public Set<String> getSupportedStepsV2() {

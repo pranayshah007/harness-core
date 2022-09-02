@@ -17,6 +17,7 @@ import static io.harness.cvng.governance.beans.ExpansionKeysConstants.INFRASTRUC
 
 import io.harness.cvng.cdng.services.impl.CVNGStepUtils;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceResponse;
+import io.harness.cvng.core.beans.monitoredService.SloHealthIndicatorDTO;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
@@ -36,7 +37,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 
@@ -74,15 +77,27 @@ public class SLOPolicyExpansionHandler implements JsonExpansionHandler {
       List<SLOHealthIndicator> sloHealthIndicatorList = sloHealthIndicatorService.getByMonitoredServiceIdentifiers(
           projectParams, Collections.singletonList(monitoredServiceResponse.getMonitoredServiceDTO().getIdentifier()));
       double sloErrorBudgetRemainingPercentage = 100D;
-
+      Map<String, SloHealthIndicatorDTO> sloMappedToTheirHealthIndicators = new HashMap<>();
       for (SLOHealthIndicator sloHealthIndicator : sloHealthIndicatorList) {
         if (sloErrorBudgetRemainingPercentage > sloHealthIndicator.getErrorBudgetRemainingPercentage()) {
           sloErrorBudgetRemainingPercentage = sloHealthIndicator.getErrorBudgetRemainingPercentage();
         }
+        SloHealthIndicatorDTO sloHealthIndicatorDTO =
+            SloHealthIndicatorDTO.builder()
+                .serviceLevelObjectiveIdentifier(sloHealthIndicator.getServiceLevelObjectiveIdentifier())
+                .monitoredServiceIdentifier(sloHealthIndicator.getMonitoredServiceIdentifier())
+                .errorBudgetRisk(sloHealthIndicator.getErrorBudgetRisk())
+                .errorBudgetBurnRate(sloHealthIndicator.getErrorBudgetBurnRate())
+                .errorBudgetRemainingPercentage(sloHealthIndicator.getErrorBudgetRemainingPercentage())
+                .errorBudgetRemainingMinutes(sloHealthIndicator.getErrorBudgetRemainingMinutes())
+                .build();
+        sloMappedToTheirHealthIndicators.put(
+            sloHealthIndicator.getServiceLevelObjectiveIdentifier(), sloHealthIndicatorDTO);
       }
       sloPolicyDTO = SLOPolicyDTO.builder()
                          .sloErrorBudgetRemainingPercentage(sloErrorBudgetRemainingPercentage)
                          .statusOfMonitoredService(SLOPolicyDTO.MonitoredServiceStatus.CONFIGURED)
+                         .slos(sloMappedToTheirHealthIndicators)
                          .build();
     }
     ExpandedValue value = SLOPolicyExpandedValue.builder().sloPolicyDTO(sloPolicyDTO).build();

@@ -369,6 +369,7 @@
 5198:software.wings.beans.yaml.Change
 5200:software.wings.beans.yaml.GitCheckoutResult
 5201:software.wings.beans.yaml.GitCloneResult
+5202:io.harness.delegate.beans.ldap.LdapSettingsWithEncryptedDataAndPasswordDetail
 5203:software.wings.beans.yaml.GitCommandRequest
 5204:software.wings.beans.yaml.GitCommandResult
 5205:software.wings.beans.yaml.GitCommitAndPushResult
@@ -388,6 +389,7 @@
 5222:software.wings.beans.container.PortMapping
 5223:software.wings.beans.container.LogConfiguration.LogOption
 5224:io.harness.rest.RestResponse
+5225:io.harness.delegate.beans.ldap.LDAPTestAuthenticationRequest
 5226:software.wings.beans.NameValuePair
 5227:software.wings.sm.WorkflowStandardParams
 5228:software.wings.api.AwsLambdaContextElement
@@ -519,6 +521,8 @@
 5393:software.wings.service.impl.aws.model.AwsElbListClassicElbsResponse
 5394:software.wings.service.impl.aws.model.AwsElbListTargetGroupsRequest
 5395:software.wings.service.impl.aws.model.AwsElbListTargetGroupsResponse
+5396:io.harness.delegate.beans.ldap.NGLdapTestAuthenticationTaskParameters
+5397:io.harness.delegate.beans.ldap.NGLdapTestAuthenticationTaskResponse
 5398:software.wings.service.impl.aws.model.AwsEcsRequest
 5399:software.wings.service.impl.aws.model.AwsEcsRequest.AwsEcsRequestType
 5400:software.wings.service.impl.aws.model.AwsEcsListClustersRequest
@@ -813,7 +817,6 @@
 7222:software.wings.api.artifact.ServiceArtifactVariableElement
 7223:software.wings.sm.states.spotinst.SpotInstSetupContextElement
 7226:software.wings.service.impl.MasterUrlFetchTaskParameter
-7228:software.wings.beans.CyberArkConfig
 7229:software.wings.api.ShellScriptProvisionerOutputElement
 7230:com.google.api.services.logging.v2.model.LogEntry
 7231:com.google.api.services.logging.v2.model.MonitoredResourceMetadata
@@ -1712,6 +1715,16 @@
 55336:io.harness.delegate.task.shell.WinrmTaskParameters
 55337:io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateRequest
 55338:io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateResponse
+55339:io.harness.delegate.task.azure.arm.AzureARMTaskNGParameters
+55340:io.harness.delegate.task.azure.arm.AzureARMTaskNGResponse
+55342:io.harness.delegate.task.azure.arm.AzureBlueprintTaskNGParameters
+55343:io.harness.delegate.task.azure.arm.AzureBlueprintTaskNGResponse
+55344:io.harness.delegate.task.azure.arm.AzureResourceCreationTaskNGParameters
+55345:io.harness.delegate.task.azure.arm.AzureResourceCreationTaskNGResponse
+55346:io.harness.delegate.task.jira.JiraSearchUserParams
+55347:io.harness.delegate.task.jira.JiraSearchUserData
+
+
 55401:io.harness.delegate.beans.SerializedResponseData
 55402:software.wings.beans.SerializationFormat
 55403:io.harness.delegate.beans.gitapi.GitApiMergePRTaskResponse
@@ -1731,6 +1744,9 @@
 55417:io.harness.delegate.task.ssh.AwsSshInfraDelegateConfig
 55418:io.harness.delegate.task.ssh.AwsWinrmInfraDelegateConfig
 55419:io.harness.delegate.task.azure.appservice.webapp.ng.exception.AzureWebAppRollbackExceptionData
+55420:io.harness.delegate.task.artifacts.gar.GarDelegateRequest
+55421:io.harness.delegate.task.artifacts.gar.GarDelegateResponse
+55470:io.harness.delegate.task.ssh.artifact.CustomArtifactDelegateConfig
 55501:io.harness.delegate.beans.instancesync.info.PdcServerInstanceInfo
 55502:io.harness.delegate.beans.instancesync.info.AzureSshWinrmServerInstanceInfo
 55503:io.harness.delegate.beans.instancesync.info.AwsSshWinrmServerInstanceInfo
@@ -1909,7 +1925,7 @@
 543250:io.harness.delegate.task.k8s.K8sCanaryDeployResponse
 543251:io.harness.delegate.task.azure.arm.response.AzureARMListManagementGroupResponse
 543252:io.harness.delegate.task.azure.arm.response.AzureARMListSubscriptionLocationsResponse
-543253:io.harness.delegate.task.azure.arm.AzureARMTaskParameters.AzureARMTaskType
+543253:io.harness.delegate.task.azure.arm.AzureARMTaskType
 543254:io.harness.delegate.task.k8s.K8sSwapServiceSelectorsRequest
 543255:io.harness.delegate.task.k8s.K8sDeleteRequest
 543256:io.harness.delegate.beans.azure.ManagementGroupData
@@ -2268,3 +2284,5 @@
 9800003:io.harness.delegate.task.ssh.artifact.JenkinsArtifactDelegateConfig
 9800004:io.harness.delegate.task.ssh.artifact.SkipCopyArtifactDelegateConfig
 9800005:io.harness.delegate.task.ssh.artifact.ArtifactoryDockerArtifactDelegateConfig
+10000001:io.harness.delegate.beans.connector.elkconnector.ELKConnectorDTO
+10000002:io.harness.delegate.beans.connector.elkconnector.ELKAuthType

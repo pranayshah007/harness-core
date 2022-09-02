@@ -12,10 +12,13 @@ import static io.harness.ng.core.account.AuthenticationMechanism.LDAP;
 import static io.harness.ng.core.account.AuthenticationMechanism.OAUTH;
 import static io.harness.ng.core.account.AuthenticationMechanism.SAML;
 import static io.harness.ng.core.account.AuthenticationMechanism.USER_PASSWORD;
+import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.PRATEEK;
 import static io.harness.rule.OwnerRule.RAJ;
 import static io.harness.rule.OwnerRule.RAMA;
 import static io.harness.rule.OwnerRule.UJJAWAL;
+
+import static software.wings.beans.loginSettings.LoginSettingsConstants.AUTHENTICATION_MECHANISM_UPDATED;
 
 import static junit.framework.TestCase.assertNotNull;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -42,6 +45,9 @@ import io.harness.eraro.ErrorCode;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.ng.core.account.OauthProviderType;
+import io.harness.outbox.OutboxEvent;
+import io.harness.outbox.api.OutboxService;
+import io.harness.outbox.filter.OutboxEventFilter;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
 
@@ -49,6 +55,7 @@ import software.wings.WingsBaseTest;
 import software.wings.annotation.EncryptableSetting;
 import software.wings.beans.Account;
 import software.wings.beans.Event;
+import software.wings.beans.loginSettings.events.LoginSettingsAuthMechanismUpdateEvent;
 import software.wings.beans.sso.LdapConnectionSettings;
 import software.wings.beans.sso.LdapGroupSettings;
 import software.wings.beans.sso.LdapSettings;
@@ -66,9 +73,11 @@ import software.wings.service.intfc.security.SecretManager;
 
 import com.coveo.saml.SamlClient;
 import com.coveo.saml.SamlException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+import io.serializer.HObjectMapper;
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -99,6 +108,7 @@ public class SSOServiceImplTest extends WingsBaseTest {
   @InjectMocks @Inject private AccountService accountService;
   @InjectMocks @Inject private SSOSettingService ssoSettingService;
   @InjectMocks @Inject private SSOServiceHelper ssoServiceHelper;
+  @Inject private OutboxService outboxService;
 
   @Test
   @Owner(developers = UJJAWAL)
@@ -421,5 +431,37 @@ public class SSOServiceImplTest extends WingsBaseTest {
     assertThat(resultDetails.getLdapSettings().getDisplayName()).isEqualTo(displayName);
     assertNotNull(resultDetails.getEncryptedDataDetail());
     assertThat(resultDetails.getEncryptedDataDetail().getFieldName()).isEqualTo(bindSecret);
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testSetAuthenticationMechanism_forNGAudits() throws JsonProcessingException {
+    Account account = Account.Builder.anAccount()
+                          .withUuid("Account 4")
+                          .withOauthEnabled(false)
+                          .withAccountName("Account 4")
+                          .withLicenseInfo(getLicenseInfo())
+                          .withAppId(APP_ID)
+                          .withCompanyName("Account 4")
+                          .withAuthenticationMechanism(USER_PASSWORD)
+                          .build();
+    accountService.save(account, false);
+    when(featureFlagService.isEnabled(FeatureName.AUDIT_TRAIL_ENHANCEMENT, account.getUuid())).thenReturn(true);
+
+    ssoService.setAuthenticationMechanism(account.getUuid(), SAML);
+    List<OutboxEvent> outboxEvents = outboxService.list(OutboxEventFilter.builder().maximumEventsPolled(10).build());
+    OutboxEvent outboxEvent = outboxEvents.get(outboxEvents.size() - 1);
+
+    assertThat(outboxEvent.getEventType()).isEqualTo(AUTHENTICATION_MECHANISM_UPDATED);
+    LoginSettingsAuthMechanismUpdateEvent loginSettingsAuthMechanismUpdateEvent =
+        HObjectMapper.NG_DEFAULT_OBJECT_MAPPER.readValue(
+            outboxEvent.getEventData(), LoginSettingsAuthMechanismUpdateEvent.class);
+
+    assertThat(loginSettingsAuthMechanismUpdateEvent.getAccountIdentifier()).isEqualTo(account.getUuid());
+    assertThat(loginSettingsAuthMechanismUpdateEvent.getOldAuthMechanismYamlDTO().getAuthenticationMechanism())
+        .isEqualTo(USER_PASSWORD);
+    assertThat(loginSettingsAuthMechanismUpdateEvent.getNewAuthMechanismYamlDTO().getAuthenticationMechanism())
+        .isEqualTo(SAML);
   }
 }

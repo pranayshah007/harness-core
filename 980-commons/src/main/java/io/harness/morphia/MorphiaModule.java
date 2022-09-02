@@ -34,6 +34,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.URL;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -67,16 +68,16 @@ public class MorphiaModule extends AbstractModule {
   @Named("morphiaClasses")
   @Singleton
   Set<Class> classes(Set<Class<? extends MorphiaRegistrar>> registrars) {
-    Set<Class> classes = new HashSet<>();
-    try {
-      for (Class clazz : registrars) {
-        Constructor<?> constructor = clazz.getConstructor();
+    Set<Class> classes = Collections.newSetFromMap(new ConcurrentHashMap<>());
+    registrars.forEach(registrar -> {
+      try {
+        Constructor<?> constructor = registrar.getConstructor();
         final MorphiaRegistrar morphiaRegistrar = (MorphiaRegistrar) constructor.newInstance();
         morphiaRegistrar.registerClasses(classes);
+      } catch (NoSuchMethodException | IllegalAccessException | InstantiationException | InvocationTargetException e) {
+        throw new GeneralException("Failed initializing morphia", e);
       }
-    } catch (NoSuchMethodException | IllegalAccessException | InstantiationException | InvocationTargetException e) {
-      throw new GeneralException("Failed initializing morphia", e);
-    }
+    });
 
     return classes;
   }
@@ -90,16 +91,16 @@ public class MorphiaModule extends AbstractModule {
     MorphiaRegistrarHelperPut h = (name, clazz) -> putClass(map, "io.harness." + name, clazz);
     MorphiaRegistrarHelperPut w = (name, clazz) -> putClass(map, "software.wings." + name, clazz);
 
-    try {
-      for (Class clazz : registrars) {
-        Constructor<?> constructor = clazz.getConstructor();
+    registrars.forEach(registrar -> {
+      try {
+        Constructor<?> constructor = registrar.getConstructor();
         final MorphiaRegistrar morphiaRegistrar = (MorphiaRegistrar) constructor.newInstance();
 
         morphiaRegistrar.registerImplementationClasses(h, w);
+      } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
+        throw new GeneralException("Failed to initialize MorphiaInterfaceImplementers", e);
       }
-    } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
-      throw new GeneralException("Failed to initialize MorphiaInterfaceImplementers", e);
-    }
+    });
 
     return map;
   }

@@ -294,7 +294,7 @@ public class ClusterResource {
     Map<String, ClusterFromGitops> allClusters =
         Stream.of(accountLevelClusters.getContent(), projectLevelClusters.getContent())
             .flatMap(List::stream)
-            .collect(Collectors.toMap(e -> e.getIdentifier(), Function.identity()));
+            .collect(Collectors.toMap(e -> e.getIdentifier(), Function.identity(), (c1, c2) -> c1));
     return ResponseDTO.newResponse(getNGPageResponse(entities.map(e -> ClusterEntityMapper.writeDTO(e, allClusters))));
   }
 

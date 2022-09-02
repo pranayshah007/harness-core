@@ -318,6 +318,8 @@ import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.gar.GarDelegateRequest;
+import io.harness.delegate.task.artifacts.gar.GarDelegateResponse;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest;
@@ -381,8 +383,15 @@ import io.harness.delegate.task.azure.appservice.webapp.response.AzureWebAppSlot
 import io.harness.delegate.task.azure.appservice.webapp.response.AzureWebAppSwapSlotsResponse;
 import io.harness.delegate.task.azure.appservice.webapp.response.DeploymentSlotData;
 import io.harness.delegate.task.azure.arm.AzureARMPreDeploymentData;
+import io.harness.delegate.task.azure.arm.AzureARMTaskNGParameters;
+import io.harness.delegate.task.azure.arm.AzureARMTaskNGResponse;
 import io.harness.delegate.task.azure.arm.AzureARMTaskParameters;
 import io.harness.delegate.task.azure.arm.AzureARMTaskResponse;
+import io.harness.delegate.task.azure.arm.AzureARMTaskType;
+import io.harness.delegate.task.azure.arm.AzureBlueprintTaskNGParameters;
+import io.harness.delegate.task.azure.arm.AzureBlueprintTaskNGResponse;
+import io.harness.delegate.task.azure.arm.AzureResourceCreationTaskNGParameters;
+import io.harness.delegate.task.azure.arm.AzureResourceCreationTaskNGResponse;
 import io.harness.delegate.task.azure.arm.request.AzureARMDeploymentParameters;
 import io.harness.delegate.task.azure.arm.request.AzureARMRollbackParameters;
 import io.harness.delegate.task.azure.arm.request.AzureBlueprintDeploymentParameters;
@@ -484,6 +493,8 @@ import io.harness.delegate.task.http.HttpStepResponse;
 import io.harness.delegate.task.http.HttpTaskParameters;
 import io.harness.delegate.task.http.HttpTaskParametersNg;
 import io.harness.delegate.task.jenkins.JenkinsBuildTaskNGResponse;
+import io.harness.delegate.task.jira.JiraSearchUserData;
+import io.harness.delegate.task.jira.JiraSearchUserParams;
 import io.harness.delegate.task.jira.JiraTaskNGParameters;
 import io.harness.delegate.task.jira.JiraTaskNGResponse;
 import io.harness.delegate.task.k8s.AzureK8sInfraDelegateConfig;
@@ -623,6 +634,7 @@ import io.harness.delegate.task.ssh.PdcWinRmInfraDelegateConfig;
 import io.harness.delegate.task.ssh.ScriptCommandUnit;
 import io.harness.delegate.task.ssh.artifact.ArtifactoryArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.ArtifactoryDockerArtifactDelegateConfig;
+import io.harness.delegate.task.ssh.artifact.CustomArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.JenkinsArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.SkipCopyArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactDelegateConfig;
@@ -1214,7 +1226,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(K8sCanaryDeployResponse.class, 543250);
     kryo.register(AzureARMListManagementGroupResponse.class, 543251);
     kryo.register(AzureARMListSubscriptionLocationsResponse.class, 543252);
-    kryo.register(AzureARMTaskParameters.AzureARMTaskType.class, 543253);
+    kryo.register(AzureARMTaskType.class, 543253);
     kryo.register(K8sSwapServiceSelectorsRequest.class, 543254);
     kryo.register(K8sDeleteRequest.class, 543255);
     kryo.register(ManagementGroupData.class, 543256);
@@ -1623,6 +1635,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(FileDelegateConfig.class, 55318);
     kryo.register(HarnessStoreDelegateConfig.class, 55319);
     kryo.register(ConfigFileParameters.class, 55320);
+    kryo.register(CustomArtifactDelegateConfig.class, 55470);
     kryo.register(ServerlessPrepareRollbackDataRequest.class, 29309);
     kryo.register(ServerlessPrepareRollbackDataResponse.class, 29310);
     kryo.register(ServerlessPrepareRollbackDataResult.class, 29311);
@@ -1650,6 +1663,15 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(WinrmTaskParameters.class, 55336);
     kryo.register(CustomArtifactDelegateRequest.class, 55337);
     kryo.register(CustomArtifactDelegateResponse.class, 55338);
+    kryo.register(AzureARMTaskNGParameters.class, 55339);
+    kryo.register(AzureARMTaskNGResponse.class, 55340);
+    kryo.register(AzureResourceCreationTaskNGParameters.class, 55344);
+    kryo.register(AzureResourceCreationTaskNGResponse.class, 55345);
+    kryo.register(AzureBlueprintTaskNGParameters.class, 55342);
+    kryo.register(AzureBlueprintTaskNGResponse.class, 55343);
+    kryo.register(JiraSearchUserParams.class, 55346);
+    kryo.register(JiraSearchUserData.class, 55347);
+
     kryo.register(LocalFileStoreDelegateConfig.class, 55404);
     kryo.register(LocalStoreFetchFilesResult.class, 55405);
     kryo.register(ManifestFiles.class, 55406);
@@ -1681,5 +1703,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(SkipCopyArtifactDelegateConfig.class, 9800004);
     kryo.register(ArtifactoryDockerArtifactDelegateConfig.class, 9800005);
     kryo.register(CustomSecretManagerValidationParams.class, 19876);
+    kryo.register(GarDelegateRequest.class, 55420);
+    kryo.register(GarDelegateResponse.class, 55421);
   }
 }

@@ -102,8 +102,7 @@ public interface YamlTypes {
   String STAGE = "stage";
   String CREDENTIALS_REF = "credentialsRef";
   String HOSTS = "hosts";
-  String ATTRIBUTE_FILTERS = "attributeFilters";
-  String HOST_FILTERS = "hostFilters";
+  String HOST_FILTER = "hostFilter";
 
   String SUBSCRIPTION = "subscription";
   String RESOURCE_GROUP = "resourceGroup";

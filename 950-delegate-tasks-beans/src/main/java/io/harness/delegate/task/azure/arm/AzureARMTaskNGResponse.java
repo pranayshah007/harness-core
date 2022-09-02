@@ -17,7 +17,7 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class AzureARMTaskNGResponse extends AzureTaskNGResponse {
+public class AzureARMTaskNGResponse extends AzureResourceCreationTaskNGResponse {
   private String outputs;
   private AzureARMPreDeploymentData preDeploymentData;
 

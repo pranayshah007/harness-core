@@ -94,6 +94,7 @@ public class ManifestCollectionUtils {
         .serviceId(appManifest.getServiceId())
         .publishedVersions(getPublishedVersionsForAppManifest(accountId, appManifestId))
         .helmChartConfigParams(helmChartConfigParamsBuilder.build())
+        .useRepoFlags(HelmVersion.isHelmV3(service.getHelmVersion()))
         .build();
   }
 
@@ -125,6 +126,7 @@ public class ManifestCollectionUtils {
         .publishedVersions(getPublishedVersionsForAppManifest(accountId, appManifestId))
         .helmChartConfigParams(helmChartConfigParamsBuilder.build())
         .collectionType(helmChartCollectionType)
+        .useRepoFlags(HelmVersion.isHelmV3(service.getHelmVersion()))
         .build();
   }
 
@@ -156,9 +158,10 @@ public class ManifestCollectionUtils {
             .useLatestChartMuseumVersion(
                 featureFlagService.isEnabled(FeatureName.USE_LATEST_CHARTMUSEUM_VERSION, accountId))
             .bypassHelmFetch(featureFlagService.isEnabled(FeatureName.BYPASS_HELM_FETCH, accountId))
-            .useRepoFlags(true)
-            .deleteRepoCacheDir(true)
-            .useCache(!featureFlagService.isEnabled(FeatureName.DISABLE_HELM_REPO_YAML_CACHE, accountId))
+            .useRepoFlags(helmVersion != HelmVersion.V2)
+            .deleteRepoCacheDir(helmVersion != HelmVersion.V2)
+            .useCache(helmVersion != HelmVersion.V2
+                && !featureFlagService.isEnabled(FeatureName.DISABLE_HELM_REPO_YAML_CACHE, accountId))
             .helmRepoConfig(helmRepoConfig);
 
     if (isNotBlank(helmRepoConfig.getConnectorId())) {
@@ -191,8 +194,7 @@ public class ManifestCollectionUtils {
             .repoDisplayName(helmChartCollectionParams.getHelmChartConfigParams().getRepoDisplayName())
             .useLatestChartMuseumVersion(featureFlagService.isEnabled(
                 FeatureName.USE_LATEST_CHARTMUSEUM_VERSION, helmChartCollectionParams.getAccountId()))
-            .useOCIHelmRepo(
-                featureFlagService.isEnabled(FeatureName.HELM_OCI_SUPPORT, helmChartCollectionParams.getAccountId()))
+            .useOCIHelmRepo(true)
             .useNewHelmBinary(
                 featureFlagService.isEnabled(FeatureName.HELM_VERSION_3_8_0, helmChartCollectionParams.getAccountId()))
             .connectorEncryptedDataDetails(

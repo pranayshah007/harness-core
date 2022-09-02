@@ -235,6 +235,15 @@ public class GitAwareEntityHelperTest extends CategoryTest {
         DummyGitAware.builder().connectorRef("__default__").repo("__default__").filePath("__default__").build();
     assertThatThrownBy(() -> gitAwareEntityHelper.updateEntityOnGit(noRepoName, data, scope))
         .hasMessage("No repo name provided.");
+
+    DummyGitAware noBranchName = DummyGitAware.builder()
+                                     .connectorRef(connectorRef)
+                                     .repo(repoName)
+                                     .filePath(filePath)
+                                     .branch("__default__")
+                                     .build();
+    assertThatThrownBy(() -> gitAwareEntityHelper.updateEntityOnGit(noBranchName, data, scope))
+        .hasMessage("No branch provided for updating the file.");
   }
 
   @Test
@@ -256,6 +265,7 @@ public class GitAwareEntityHelperTest extends CategoryTest {
     String repo;
     String filePath;
     String data;
+    String branch;
 
     @Override
     public void setData(String data) {

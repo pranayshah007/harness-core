@@ -152,7 +152,7 @@ public class ExecutionHelper {
   @SneakyThrows
   public ExecArgs buildExecutionArgs(PipelineEntity pipelineEntity, String moduleType, String mergedRuntimeInputYaml,
       List<String> stagesToRun, Map<String, String> expressionValues, ExecutionTriggerInfo triggerInfo,
-      String originalExecutionId, RetryExecutionParameters retryExecutionParameters) {
+      String originalExecutionId, RetryExecutionParameters retryExecutionParameters, boolean notifyOnlyUser) {
     long start = System.currentTimeMillis();
     final String executionId = generateUuid();
     try (AutoLogContext ignore =
@@ -185,8 +185,8 @@ public class ExecutionHelper {
             InputSetMergeHelper.removeNonRequiredStages(pipelineYamlWithTemplateRef, stagesToRun);
       }
 
-      PlanExecutionMetadata.Builder planExecutionMetadataBuilder = obtainPlanExecutionMetadata(
-          mergedRuntimeInputYaml, executionId, stagesExecutionInfo, originalExecutionId, retryExecutionParameters);
+      PlanExecutionMetadata.Builder planExecutionMetadataBuilder = obtainPlanExecutionMetadata(mergedRuntimeInputYaml,
+          executionId, stagesExecutionInfo, originalExecutionId, retryExecutionParameters, notifyOnlyUser);
       if (stagesExecutionInfo.isStagesExecution()) {
         pipelineEnforcementService.validateExecutionEnforcementsBasedOnStage(pipelineEntity.getAccountId(),
             YamlUtils.extractPipelineField(planExecutionMetadataBuilder.build().getProcessedYaml()));
@@ -304,7 +304,7 @@ public class ExecutionHelper {
 
   private PlanExecutionMetadata.Builder obtainPlanExecutionMetadata(String mergedRuntimeInputYaml, String executionId,
       StagesExecutionInfo stagesExecutionInfo, String originalExecutionId,
-      RetryExecutionParameters retryExecutionParameters) {
+      RetryExecutionParameters retryExecutionParameters, boolean notifyOnlyUser) {
     long start = System.currentTimeMillis();
     boolean isRetry = retryExecutionParameters.isRetry();
     String pipelineYaml = stagesExecutionInfo.getPipelineYamlToRun();
@@ -314,7 +314,8 @@ public class ExecutionHelper {
             .inputSetYaml(mergedRuntimeInputYaml)
             .yaml(pipelineYaml)
             .stagesExecutionMetadata(stagesExecutionInfo.toStagesExecutionMetadata())
-            .allowStagesExecution(stagesExecutionInfo.isAllowStagesExecution());
+            .allowStagesExecution(stagesExecutionInfo.isAllowStagesExecution())
+            .notifyOnlyUser(notifyOnlyUser);
     String currentProcessedYaml;
     try {
       currentProcessedYaml = YamlUtils.injectUuid(pipelineYaml);

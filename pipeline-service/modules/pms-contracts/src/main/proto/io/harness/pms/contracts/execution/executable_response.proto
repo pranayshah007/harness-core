@@ -48,6 +48,7 @@ message ChildrenExecutableResponse {
   }
   repeated Child children = 1;
   int64 maxConcurrency = 2;
+  bool shouldProceedIfFailed = 4;
   repeated string logKeys = 3;
 }
 

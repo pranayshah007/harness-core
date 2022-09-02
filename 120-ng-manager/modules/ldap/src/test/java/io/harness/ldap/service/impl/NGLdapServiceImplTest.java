@@ -33,10 +33,12 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
+import io.harness.delegate.beans.ldap.LdapSettingsWithEncryptedDataAndPasswordDetail;
 import io.harness.delegate.beans.ldap.LdapSettingsWithEncryptedDataDetail;
 import io.harness.delegate.beans.ldap.NGLdapDelegateTaskResponse;
 import io.harness.delegate.beans.ldap.NGLdapGroupSearchTaskResponse;
 import io.harness.delegate.beans.ldap.NGLdapGroupSyncTaskResponse;
+import io.harness.delegate.beans.ldap.NGLdapTestAuthenticationTaskResponse;
 import io.harness.delegate.utils.TaskSetupAbstractionHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
@@ -47,6 +49,7 @@ import io.harness.ng.core.user.entities.UserGroup;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.service.DelegateGrpcClientWrapper;
 
 import software.wings.beans.dto.LdapSettings;
@@ -54,6 +57,7 @@ import software.wings.beans.sso.LdapConnectionSettings;
 import software.wings.beans.sso.LdapGroupResponse;
 import software.wings.beans.sso.LdapTestResponse;
 import software.wings.beans.sso.LdapUserResponse;
+import software.wings.helpers.ext.ldap.LdapResponse;
 import software.wings.service.impl.ldap.LdapDelegateException;
 
 import java.io.IOException;
@@ -369,6 +373,49 @@ public class NGLdapServiceImplTest extends CategoryTest {
     verify(managerClient, times(1)).getLdapSettingsUsingAccountId(ACCOUNT_ID);
     verify(groupSyncHelper, times(1)).reconcileAllUserGroups(usrGroupToLdapGroupMap, LDAP_SETTINGS_ID, ACCOUNT_ID);
     verify(delegateGrpcClientWrapper, times(1)).executeSyncTask(any());
+  }
+
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void testLDAPAuthentication() throws IOException {
+    // Arrange
+    final EncryptedRecordData encryptedRecord = EncryptedRecordData.builder()
+                                                    .name("testLdapRecord")
+                                                    .encryptedValue("encryptedTestPassword".toCharArray())
+                                                    .kmsId(ACCOUNT_ID)
+                                                    .build();
+    EncryptedDataDetail encryptedPwdDetail =
+        EncryptedDataDetail.builder().fieldName("password").encryptedData(encryptedRecord).build();
+
+    Call<RestResponse<EncryptedDataDetail>> dataRequest = mock(Call.class);
+    RestResponse<EncryptedDataDetail> mockDataResponse = new RestResponse<>(encryptedPwdDetail);
+    String testPassword = "testPassword";
+    final String userName = "testUserName@test.io";
+    doReturn(Response.success(mockDataResponse)).when(dataRequest).execute();
+
+    Call<RestResponse<LdapSettingsWithEncryptedDataAndPasswordDetail>> request = mock(Call.class);
+    RestResponse<LdapSettingsWithEncryptedDataAndPasswordDetail> mockResponse =
+        new RestResponse<>(LdapSettingsWithEncryptedDataAndPasswordDetail.builder()
+                               .ldapSettings(ldapSettingsWithEncryptedDataDetail.getLdapSettings())
+                               .encryptedDataDetail(ldapSettingsWithEncryptedDataDetail.getEncryptedDataDetail())
+                               .encryptedPwdDataDetail(encryptedPwdDetail)
+                               .build());
+    doReturn(request).when(managerClient).getLdapSettingsAndEncryptedPassword(anyString(), any());
+    doReturn(Response.success(mockResponse)).when(request).execute();
+    String authSuccessMsg = "Authentication Successful";
+    LdapResponse ldapResponse =
+        LdapResponse.builder().status(LdapResponse.Status.SUCCESS).message(authSuccessMsg).build();
+    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+        .thenReturn(NGLdapTestAuthenticationTaskResponse.builder().ldapAuthenticationResponse(ldapResponse).build());
+
+    // Act
+    LdapResponse resultResponse = ngLdapService.testLDAPLogin(ACCOUNT_ID, ORG_ID, PROJECT_ID, userName, testPassword);
+
+    // Assert
+    assertNotNull(resultResponse);
+    assertThat(resultResponse.getStatus()).isEqualTo(LdapResponse.Status.SUCCESS);
+    assertThat(resultResponse.getMessage()).isEqualTo(authSuccessMsg);
   }
 
   private software.wings.beans.sso.LdapSettings getLdapSettings(String accountId) {

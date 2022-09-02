@@ -10,6 +10,7 @@ package software.wings.sm.states;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.EnvironmentType.ALL;
 import static io.harness.beans.FeatureName.CUSTOM_MANIFEST;
+import static io.harness.beans.FeatureName.DISABLE_HELM_REPO_YAML_CACHE;
 import static io.harness.beans.FeatureName.GIT_HOST_CONNECTIVITY;
 import static io.harness.beans.FeatureName.HELM_CHART_VERSION_STRICT_MATCH;
 import static io.harness.beans.FeatureName.OPTIMIZED_GIT_FETCH_FILES;
@@ -440,11 +441,11 @@ public class HelmDeployState extends State {
   protected void setNewAndPrevReleaseVersion(ExecutionContext context, Application app, String releaseName,
       ContainerServiceParams containerServiceParams, HelmDeployStateExecutionDataBuilder stateExecutionDataBuilder,
       GitConfig gitConfig, List<EncryptedDataDetail> encryptedDataDetails, String commandFlags, HelmVersion helmVersion,
-      int expressionFunctorToken, HelmCommandFlag helmCommandFlag) throws InterruptedException {
+      int expressionFunctorToken, HelmCommandFlag helmCommandFlag, String activityId) throws InterruptedException {
     log.info("Setting new and previous helm release version");
     int prevVersion =
         getPreviousReleaseVersion(context, app, releaseName, containerServiceParams, gitConfig, encryptedDataDetails,
-            commandFlags, helmVersion, expressionFunctorToken, stateExecutionDataBuilder, helmCommandFlag);
+            commandFlags, helmVersion, expressionFunctorToken, stateExecutionDataBuilder, helmCommandFlag, activityId);
 
     stateExecutionDataBuilder.releaseOldVersion(prevVersion);
     stateExecutionDataBuilder.releaseNewVersion(prevVersion + 1);
@@ -529,11 +530,11 @@ public class HelmDeployState extends State {
       ContainerServiceParams containerServiceParams, GitConfig gitConfig,
       List<EncryptedDataDetail> encryptedDataDetails, String commandFlags, HelmVersion helmVersion,
       int expressionFunctorToken, HelmDeployStateExecutionDataBuilder stateExecutionDataBuilder,
-      HelmCommandFlag helmCommandFlag) throws InterruptedException {
+      HelmCommandFlag helmCommandFlag, String activityId) throws InterruptedException {
     int prevVersion = 0;
     HelmReleaseHistoryCommandRequest helmReleaseHistoryCommandRequest =
         HelmReleaseHistoryCommandRequest.builder()
-            .activityId(obtainActivityId(context))
+            .activityId(activityId)
             .releaseName(releaseName)
             .containerServiceParams(containerServiceParams)
             .gitConfig(gitConfig)
@@ -1053,6 +1054,14 @@ public class HelmDeployState extends State {
             helmChartConfigTaskParams.setUseLatestChartMuseumVersion(
                 featureFlagService.isEnabled(USE_LATEST_CHARTMUSEUM_VERSION, context.getAccountId()));
 
+            if (HelmVersion.isHelmV3(helmVersion)) {
+              helmChartConfigTaskParams.setUseRepoFlags(true);
+              helmChartConfigTaskParams.setDeleteRepoCacheDir(true);
+            }
+
+            helmChartConfigTaskParams.setUseCache(helmVersion != HelmVersion.V2
+                && featureFlagService.isEnabled(DISABLE_HELM_REPO_YAML_CACHE, context.getAccountId()));
+
             helmChartConfigTaskParams.setCheckIncorrectChartVersion(
                 featureFlagService.isEnabled(HELM_CHART_VERSION_STRICT_MATCH, context.getAccountId()));
 
@@ -1147,7 +1156,7 @@ public class HelmDeployState extends State {
 
     final int expressionFunctorToken = HashGenerator.generateIntegerHash();
     setNewAndPrevReleaseVersion(context, app, releaseName, containerServiceParams, stateExecutionDataBuilder, gitConfig,
-        encryptedDataDetails, cmdFlags, helmVersion, expressionFunctorToken, helmCommandFlag);
+        encryptedDataDetails, cmdFlags, helmVersion, expressionFunctorToken, helmCommandFlag, activityId);
     HelmCommandRequest commandRequest = getHelmCommandRequest(context, helmChartSpecification, containerServiceParams,
         releaseName, app.getAccountId(), app.getUuid(), activityId, imageDetails, repoName, gitConfig,
         encryptedDataDetails, cmdFlags, manifestConfig, appManifestMap, helmVersion, helmCommandFlag);

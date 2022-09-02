@@ -21,7 +21,7 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @OwnedBy(CDP)
-public class AzureBlueprintTaskNGResponse extends AzureTaskNGResponse {
+public class AzureBlueprintTaskNGResponse extends AzureResourceCreationTaskNGResponse {
   String outputs;
   @Builder
   public AzureBlueprintTaskNGResponse(CommandExecutionStatus commandExecutionStatus, UnitProgressData unitProgressData,

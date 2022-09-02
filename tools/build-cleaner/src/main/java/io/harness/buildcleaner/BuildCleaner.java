@@ -88,10 +88,27 @@ public class BuildCleaner {
           try {
             Path modulePath = workspace().relativize(path);
             Optional<BuildFile> buildFile = generateBuildForModule(modulePath, harnessSymbolMap);
-
-            if (buildFile.isPresent()) {
-              logger.info("Writing Build file for Module: " + path);
-              buildFile.get().writeToPackage(workspace().resolve(path));
+            Path packagePath = workspace().resolve(path);
+            Path buildFilePath = Paths.get(packagePath.toString(), "/BUILD.bazel");
+            logger.info("Module {}; PackagePath {}; BuildFilePath {};", modulePath, packagePath, buildFilePath);
+            if (Files.exists(buildFilePath)) {
+              logger.info("BuildFile already exists at: {}", buildFilePath);
+              // Need to update the existing file with new content, after replacing the dependencies.
+              // Assumptions:
+              // - The BUILD file has at most one java_library rule
+              // - The BUILD file has at most one java_binary rule.
+              // - Empty dependencies are explicitly mentioned in the rules: Eg: deps = [] and runtime_deps = []
+              if (options.hasOption("updateExistingBuildFiles")) {
+                logger.info("Updating existing BUILD file at: {}", buildFilePath);
+                buildFile.get().updateDependencies(buildFilePath);
+              } else {
+                logger.info("Skipping update to existing BUILD file. Use --updateExistingBuildFiles to override");
+              }
+            } else {
+              if (buildFile.isPresent()) {
+                logger.info("Writing Build file for Module: {}", path);
+                buildFile.get().writeToPackage(workspace().resolve(path));
+              }
             }
           } catch (IOException e) {
             throw new RuntimeException(e);
@@ -184,7 +201,7 @@ public class BuildCleaner {
     // Find main files in the folder and create java binary targets.
     for (String className : classpathParser.getMainClasses()) {
       JavaBinary javaBinary = new JavaBinary(className, DEFAULT_VISIBILITY,
-          getPackageName(classpathParser) + "." + className, Collections.singleton(":" + path.getFileName().toString()),
+          getPackageName(classpathParser) + "." + className, /*runTimeDeps=*/Collections.singleton(":module"),
           /*deps=*/Collections.emptySet());
       buildFile.addJavaBinary(javaBinary);
     }
@@ -308,6 +325,8 @@ public class BuildCleaner {
     options.addOption(new Option(
         null, "indexSourceGlob", true, "Pattern for source files to build index. Defaults to '**/src/main/**/*.java'"));
     options.addOption(new Option(null, "overrideIndex", false, "Override the existing index"));
+    options.addOption(
+        new Option(null, "updateExistingBuildFiles", false, "Update dependencies in existing BUILD file"));
     options.addOption(new Option(null, "module", true, "Relative path of the module from the workspace"));
     options.addOption(new Option(null, "srcsGlob", true, "Pattern to match for finding source files."));
     options.addOption(

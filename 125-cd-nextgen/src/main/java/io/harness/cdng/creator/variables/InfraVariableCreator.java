@@ -199,8 +199,7 @@ public class InfraVariableCreator {
     addVariableForYamlType(YamlTypes.CREDENTIALS_REF, infraSpecNode, yamlPropertiesMap);
     addVariableForYamlType(YamlTypes.HOSTS, infraSpecNode, yamlPropertiesMap);
     addVariableForYamlType(YamlTypes.CONNECTOR_REF, infraSpecNode, yamlPropertiesMap);
-    addVariableForYamlType(YamlTypes.ATTRIBUTE_FILTERS, infraSpecNode, yamlPropertiesMap);
-    addVariableForYamlType(YamlTypes.HOST_FILTERS, infraSpecNode, yamlPropertiesMap);
+    addVariableForYamlType(YamlTypes.HOST_FILTER, infraSpecNode, yamlPropertiesMap);
     addVariableForYamlType(YamlTypes.DELEGATE_SELECTORS, infraSpecNode, yamlPropertiesMap);
   }
 

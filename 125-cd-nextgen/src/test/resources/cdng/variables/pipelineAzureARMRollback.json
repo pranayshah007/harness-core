@@ -1,0 +1,144 @@
+{
+  "pipeline": {
+    "name": "Rollback",
+    "identifier": "Rollback",
+    "tags": {
+      "__uuid": "m4LwhC6MSmKzOHanUuY_kg"
+    },
+    "stages": [
+      {
+        "stage": {
+          "name": "cf-stage-test",
+          "identifier": "cfstagetest",
+          "description": "",
+          "type": "Deployment",
+          "spec": {
+            "serviceConfig": {
+              "service": {
+                "name": "service-test",
+                "identifier": "service-test",
+                "__uuid": "1MeDmWrVQrWt5-OVmDLa-Q"
+              },
+              "serviceDefinition": {
+                "type": "Kubernetes",
+                "spec": {
+                  "variables": [
+                    {
+                      "name": "Email",
+                      "type": "String",
+                      "value": "envVariableEmailTo@harness.io",
+                      "__uuid": "mTH2b0zGQuWO62vYB7eMwg"
+                    }
+                  ],
+                  "manifest": [],
+                  "__uuid": "ShxTQ-nSTKG2P0pgv03B9g"
+                },
+                "__uuid": "DFIVM4dbRTGFZwlxSi1Fcw"
+              },
+              "__uuid": "eZmV-dY1SyqphuF1qLN6Gg"
+            },
+            "infrastructure": {
+              "environment": {
+                "name": "environment-test",
+                "identifier": "environment-test",
+                "description": "",
+                "type": "PreProduction",
+                "__uuid": "kpavwClHTaOy_4d8IP4mAw"
+              },
+              "infrastructureDefinition": {
+                "type": "KubernetesDirect",
+                "spec": {
+                  "connectorRef": "org.KubernetesConnectorForAutomationTest",
+                  "namespace": "cdp-k8s-qa-sanity",
+                  "releaseName": "releasename-933006",
+                  "__uuid": "-yklQMfDQHSSM1ZcFnvPbQ"
+                },
+                "provisioner": {
+                  "steps": [
+                    {
+                      "step": {
+                        "type": "AzureARMRollback",
+                        "name": "Rollback Azure Resources",
+                        "identifier": "asdf",
+                        "timeout": "10m",
+                        "spec": {
+                          "provisionerIdentifier": "foobar",
+                          "__uuid": "P66PjSXtTkyxiXcufYMb6A"
+                        },
+                        "__uuid": "ibWtwg-OTZSPZGJqCj2hNQ"
+                      },
+                      "__uuid": "_dDM6hueQhajmftMLobm6g"
+                    }
+                  ],
+                  "__uuid": "v7QiY0xbRXutSXLTxx5_hg"
+                },
+                "__uuid": "psSoe-9bTvCYKymgQpuzKw"
+              },
+              "allowSimultaneousDeployments": true,
+              "__uuid": "3R78Q_dQQpGAnrdlyDpqtg"
+            },
+            "execution": {
+              "steps": [
+                {
+                  "step": {
+                    "type": "ShellScript",
+                    "name": "echo",
+                    "identifier": "echo",
+                    "spec": {
+                      "shell": "Bash",
+                      "onDelegate": true,
+                      "source": {
+                        "type": "Inline",
+                        "spec": {
+                          "script": "echo test",
+                          "__uuid": "n433qriaQaONOMP1TIsNlA"
+                        },
+                        "__uuid": "usd3XWVRQZWW869OlHkouQ"
+                      },
+                      "environmentVariables": [],
+                      "outputVariables": [],
+                      "executionTarget": {
+                        "__uuid": "bEA34LWDR5yLqHgmePyy4g"
+                      },
+                      "__uuid": "6fmWtqvsTACsFZ3zFbZs8Q"
+                    },
+                    "timeout": "10m",
+                    "__uuid": "u6Yhpu60RS-TYCvVG2YqKw"
+                  },
+                  "__uuid": "ojtiivJjS-e5XtAkTOPOdA"
+                }
+              ],
+              "rollbackSteps": [],
+              "__uuid": "XD2d8MRpS2Gqiu7x003tAA"
+            },
+            "__uuid": "3OvtEIBeSYWrbv4M1mXalQ"
+          },
+          "tags": {
+            "__uuid": "03GQuoGfQseGgfV5E1crUQ"
+          },
+          "failureStrategies": [
+            {
+              "onFailure": {
+                "errors": [
+                  "AllErrors"
+                ],
+                "action": {
+                  "type": "StageRollback",
+                  "__uuid": "M5Xw-ysOScWgi0z0cAHE_Q"
+                },
+                "__uuid": "3N5MPFRtQr6MxrgXZbzFUg"
+              },
+              "__uuid": "bmgqsw60RDywVsaJ0QP2GA"
+            }
+          ],
+          "__uuid": "gZbwbVi1Royae6AnmwCBYw"
+        },
+        "__uuid": "ToPCVBtCTwCrcnOxZHocBQ"
+      }
+    ],
+    "projectIdentifier": "NGPipeAutoDemoProUsF9qDyXU8",
+    "orgIdentifier": "CF_PipelineOrg",
+    "__uuid": "9O1JWWIuQz-A2vsX_dpTZg"
+  },
+  "__uuid": "6aAXWmxwSiyQlGrUUUT1jQ"
+}

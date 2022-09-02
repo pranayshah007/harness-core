@@ -106,7 +106,7 @@ public class TemplateInputsRefreshHelperTest extends TemplateServiceTestBase {
     String orgId = "default";
     String projId = "VT";
 
-    String filename = "stage-template-with-one-runtime-input.yaml";
+    String filename = "stage-template-with-one-runtime-input-2.yaml";
     String stageTemplate = readFile(filename);
     TemplateEntity templateEntity = TemplateEntity.builder()
                                         .accountId(accountId)

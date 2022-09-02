@@ -18,7 +18,6 @@ import static io.harness.validation.PersistenceValidator.duplicateCheck;
 
 import static software.wings.settings.SettingVariableTypes.AWS_SECRETS_MANAGER;
 import static software.wings.settings.SettingVariableTypes.AZURE_VAULT;
-import static software.wings.settings.SettingVariableTypes.CYBERARK;
 import static software.wings.settings.SettingVariableTypes.GCP_KMS;
 import static software.wings.settings.SettingVariableTypes.KMS;
 import static software.wings.settings.SettingVariableTypes.VAULT;
@@ -204,7 +203,7 @@ public class SecretsDaoImpl implements SecretsDao {
 
     if (!shouldIncludeSecretManagerSecrets) {
       query.field(EncryptedDataKeys.type)
-          .notIn(Lists.newArrayList(VAULT, KMS, GCP_KMS, CYBERARK, AZURE_VAULT, AWS_SECRETS_MANAGER));
+          .notIn(Lists.newArrayList(VAULT, KMS, GCP_KMS, AZURE_VAULT, AWS_SECRETS_MANAGER));
     }
     return query.fetch();
   }
