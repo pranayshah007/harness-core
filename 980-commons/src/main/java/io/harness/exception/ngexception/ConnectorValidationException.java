@@ -22,5 +22,6 @@ public class ConnectorValidationException extends WingsException {
 
   public ConnectorValidationException(String message, Throwable cause) {
     super(message, cause, CONNECTOR_VALIDATION_EXCEPTION, Level.ERROR, null, null);
+    param(MESSAGE_KEY, message + cause.getMessage());
   }
 }
