@@ -248,9 +248,7 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
 
   @Override
   public void sendUpdateEventIfAny(PipelineExecutionSummaryEntity executionSummaryEntity) {
-    if (!StatusUtils.isFinalStatus(executionSummaryEntity.getStatus().getEngineStatus())) {
       orchestrationLogPublisher.sendLogEvent(executionSummaryEntity.getPlanExecutionId());
-    }
   }
 
   private void sendUpdateEventIfAny(OrchestrationGraph orchestrationGraph) {
