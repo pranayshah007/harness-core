@@ -203,7 +203,7 @@ public class AppDynamicsCVConfig extends MetricCVConfig<MetricInfo> {
                         .metricName(metricPackDTO.getMetricName())
                         .action(metricPackDTO.getType().getTimeSeriesThresholdActionType())
                         .criteria(criteria)
-                        .thresholdConfigType(ThresholdConfigType.CUSTOMER)
+                        .thresholdConfigType(ThresholdConfigType.USER_DEFINED)
                         .build();
                 if (!MonitoredServiceConstants.CUSTOM_METRIC_PACK.equalsIgnoreCase(
                         timeSeriesMetricPackDTO.getIdentifier())) {

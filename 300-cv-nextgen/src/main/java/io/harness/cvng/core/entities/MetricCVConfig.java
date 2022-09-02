@@ -135,7 +135,7 @@ public abstract class MetricCVConfig<I extends AnalysisInfo> extends CVConfig {
         List<TimeSeriesThreshold> customThresholds =
             metricDefinition.getThresholds()
                 .stream()
-                .filter(m -> ThresholdConfigType.CUSTOMER.equals(m.getThresholdConfigType()))
+                .filter(m -> ThresholdConfigType.USER_DEFINED.equals(m.getThresholdConfigType()))
                 .collect(Collectors.toList());
         for (TimeSeriesThreshold timeSeriesThreshold : customThresholds) {
           String key = getKey(timeSeriesThreshold);
