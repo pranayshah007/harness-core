@@ -150,7 +150,6 @@ public class NextGenConfiguration extends Configuration {
   @JsonProperty("disableResourceValidation") private boolean disableResourceValidation;
   @JsonProperty("pmsSdkExecutionPoolConfig") private ThreadPoolConfig pmsSdkExecutionPoolConfig;
   @JsonProperty("pmsSdkOrchestrationEventPoolConfig") private ThreadPoolConfig pmsSdkOrchestrationEventPoolConfig;
-  @JsonProperty("pmsMongo") @ConfigSecret private MongoConfig pmsMongoConfig;
   @JsonProperty("allowedOrigins") private List<String> allowedOrigins = Lists.newArrayList();
   @JsonProperty("managerClientConfig") private ServiceHttpClientConfig managerClientConfig;
   @JsonProperty("grpcClient") private GrpcClientConfig grpcClientConfig;
