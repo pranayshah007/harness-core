@@ -13,6 +13,7 @@ import static io.harness.delegate.task.helm.HelmTaskHelperBase.RESOURCE_DIR_BASE
 import static io.harness.filesystem.FileIo.deleteDirectoryAndItsContentIfExists;
 import static io.harness.k8s.model.HelmVersion.V2;
 import static io.harness.k8s.model.HelmVersion.V3;
+import static io.harness.k8s.model.HelmVersion.V380;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.ACHYUTH;
@@ -464,7 +465,7 @@ public class HelmTaskHelperTest extends WingsBaseTest {
     doNothing()
         .when(helmTaskHelperBase)
         .loginOciRegistry(repoConfig.getChartRepoUrl(), repoConfig.getUsername(), repoConfig.getPassword(),
-            HelmVersion.V380, LONG_TIMEOUT_INTERVAL, outputTemporaryDir.toString());
+            V380, LONG_TIMEOUT_INTERVAL, outputTemporaryDir.toString());
     doReturn("cache").when(helmTaskHelper).getCacheDir(anyString(), anyBoolean(), eq(HelmVersion.V3));
     doReturn(successfulResult).when(processExecutor).execute();
     helmTaskHelper.downloadChartFiles(configParams, outputTemporaryDir.toString(), LONG_TIMEOUT_INTERVAL, null);
@@ -1073,7 +1074,11 @@ public class HelmTaskHelperTest extends WingsBaseTest {
             .serviceId(SERVICE_ID)
             .helmChartConfigParams(getHelmChartConfigParams(httpHelmRepoConfig))
             .build();
-    doReturn("cache").when(helmTaskHelper).getCacheDirForManifestCollection(helmChartCollectionParams.getHelmChartConfigParams().getHelmVersion(), anyString(), anyBoolean());
+
+    doReturn("cache")
+        .when(helmTaskHelper)
+        .getCacheDirForManifestCollection(
+            any(), anyString(), anyBoolean());
     doReturn(new ProcessResult(0, null)).when(processExecutor).execute();
     doAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class))
         .when(helmTaskHelper)
@@ -1124,7 +1129,11 @@ public class HelmTaskHelperTest extends WingsBaseTest {
         .executeCommandWithLogOutput(any(),
             eq(V_3_HELM_SEARCH_REPO_COMMAND + " --repository-config cache/repo-repoName.yaml"), eq("dir"), any(),
             any());
-    doReturn("cache").when(helmTaskHelper).getCacheDirForManifestCollection(helmChartCollectionParams.getHelmChartConfigParams().getHelmVersion(), anyString(), anyBoolean());
+
+    doReturn("cache")
+        .when(helmTaskHelper)
+        .getCacheDirForManifestCollection(
+            any(), anyString(), anyBoolean());
 
     List<HelmChart> helmCharts = helmTaskHelper.fetchChartVersions(helmChartCollectionParams, "dir", 10000);
     assertThat(helmCharts.size()).isEqualTo(2);
@@ -1209,7 +1218,10 @@ public class HelmTaskHelperTest extends WingsBaseTest {
                                                               .serviceId(SERVICE_ID)
                                                               .helmChartConfigParams(helmChartConfigParams)
                                                               .build();
-    doReturn("cache").when(helmTaskHelper).getCacheDirForManifestCollection(helmChartConfigParams.getHelmVersion(), anyString(), anyBoolean());
+
+   doReturn("cache")
+        .when(helmTaskHelper)
+        .getCacheDirForManifestCollection(any(), anyString(), anyBoolean());
     doReturn("helmHomePath").when(helmTaskHelperBase).getHelmHomePath(anyString());
     doReturn(new ProcessResult(0, null)).when(processExecutor).execute();
     doAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class))
@@ -1357,5 +1369,14 @@ public class HelmTaskHelperTest extends WingsBaseTest {
         .isInstanceOf(HelmClientRuntimeException.class)
         .hasMessageContaining("Failed to fetch chart")
         .hasMessageContaining("something went wrong executing command");
+  }
+
+  @Test
+  @Owner(developers = PRABU)
+  @Category(UnitTests.class)
+  public void testGetCacheDirForManifestCollection() throws Exception {
+    assertThat(helmTaskHelper.getCacheDirForManifestCollection(V2, "repo", true)).isEmpty();
+    assertThat(helmTaskHelper.getCacheDirForManifestCollection(V3, "repo", true)).endsWith("repo/cache");
+    assertThat(helmTaskHelper.getCacheDirForManifestCollection(V380, "repo", true)).endsWith("repo/cache");
   }
 }
