@@ -98,6 +98,7 @@ import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.scm.EntityObjectIdUtils;
 import io.harness.gitsync.sdk.EntityGitDetailsMapper;
 import io.harness.manage.GlobalContextManager;
+import io.harness.network.Http;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
@@ -114,16 +115,20 @@ import io.harness.perpetualtask.PerpetualTaskId;
 import io.harness.repositories.ConnectorRepository;
 import io.harness.utils.FullyQualifiedIdentifierHelper;
 import io.harness.utils.IdentifierRefHelper;
+import io.harness.utils.UrlField;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.lang.reflect.Field;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -447,6 +452,7 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
 
   private ConnectorResponseDTO createInternal(
       ConnectorDTO connectorRequestDTO, String accountIdentifier, ChangeType changeType) {
+    validateConnectorInputValues(connectorRequestDTO);
     assurePredefined(connectorRequestDTO, accountIdentifier);
     ConnectorInfoDTO connectorInfo = connectorRequestDTO.getConnectorInfo();
     final boolean isIdentifierUnique = validateTheIdentifierIsUnique(accountIdentifier,
@@ -482,6 +488,33 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
     }
     return getResponse(
         accountIdentifier, connectorEntity.getOrgIdentifier(), connectorEntity.getProjectIdentifier(), connectorEntity);
+  }
+
+  private void validateConnectorInputValues(ConnectorDTO connectorRequestDTO) {
+    ConnectorConfigDTO connectorConfigDTO = connectorRequestDTO.getConnectorInfo().getConnectorConfig();
+    if (Objects.isNull(connectorConfigDTO)) {
+      throw new ConnectorValidationException("No connector config passed");
+    }
+    Class<? extends ConnectorConfigDTO> clazz = connectorConfigDTO.getClass();
+    for (Field field : clazz.getDeclaredFields()) {
+      field.setAccessible(true);
+      String url;
+      if (field.isAnnotationPresent(UrlField.class)) {
+        try {
+          field.setAccessible(true);
+          url = field.get(connectorConfigDTO).toString();
+          if (!Http.validateUrl(url)) {
+            throw new ConnectorValidationException(
+                String.format("Malformed url %s passed for field %s", url, field.getName()));
+          }
+        } catch (MalformedURLException e) {
+          throw new ConnectorValidationException("Exception in URL: ", e);
+        } catch (IllegalAccessException ex) {
+          throw new ConnectorValidationException("Can't access the URL: ", ex);
+        }
+        field.setAccessible(false);
+      }
+    }
   }
 
   private Page<Connector> getConnectorsWithGivenName(
