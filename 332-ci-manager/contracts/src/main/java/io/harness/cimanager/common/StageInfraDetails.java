@@ -22,7 +22,7 @@ import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.TypeAlias;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-@StoreIn(DbAliases.CIMANAGER)
+@StoreIn(DbAliases.PMS)
 @Entity(value = "stageInfraDetails")
 @HarnessEntity(exportable = true)
 @TypeAlias("StageInfraDetails")
