@@ -178,7 +178,7 @@ public class TemplateMergeServiceHelper {
         throw new NGTemplateException("Yaml provided is not a template yaml.");
       }
       ObjectNode templateNode = (ObjectNode) templateYamlField.getNode().getCurrJsonNode();
-      String templateSpec = templateNode.retain(SPEC).toString();
+      String templateSpec = templateNode.retain(SPEC, "templateVariables").toString();
       if (isEmpty(templateSpec)) {
         log.error("Template yaml provided does not have spec in it.");
         throw new NGTemplateException("Template yaml provided does not have spec in it.");
