@@ -7,6 +7,7 @@
 
 package io.harness.network;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
@@ -375,6 +376,30 @@ public class Http {
     return urlValidator.isValid(url);
   }
 
+  public static boolean validateUrl(String url) throws MalformedURLException {
+    if (isEmpty(url)) {
+      log.info("URL is empty.");
+      return true;
+    }
+    if (validUrl(url)) {
+      return true;
+    }
+    throw new MalformedURLException(String.format("Malformed url %s . Please check the url", url));
+  }
+
+  public static String getUrlIfValid(String url) {
+    if (validUrl(url)) {
+      return url;
+    }
+    throw new RuntimeException(String.format("Url %s is invalid. Please check the url", url));
+  }
+
+  public static boolean checkValidUrls(List<String> urls) throws MalformedURLException {
+    for (String url : urls) {
+      validateUrl(url);
+    }
+    return true;
+  }
   public static HttpHost getHttpProxyHost() {
     String proxyHost = null;
     int proxyPort = -1;
