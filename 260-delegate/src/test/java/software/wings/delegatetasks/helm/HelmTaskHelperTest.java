@@ -464,8 +464,8 @@ public class HelmTaskHelperTest extends WingsBaseTest {
 
     doNothing()
         .when(helmTaskHelperBase)
-        .loginOciRegistry(repoConfig.getChartRepoUrl(), repoConfig.getUsername(), repoConfig.getPassword(),
-            V380, LONG_TIMEOUT_INTERVAL, outputTemporaryDir.toString());
+        .loginOciRegistry(repoConfig.getChartRepoUrl(), repoConfig.getUsername(), repoConfig.getPassword(), V380,
+            LONG_TIMEOUT_INTERVAL, outputTemporaryDir.toString());
     doReturn("cache").when(helmTaskHelper).getCacheDir(anyString(), anyBoolean(), eq(HelmVersion.V3));
     doReturn(successfulResult).when(processExecutor).execute();
     helmTaskHelper.downloadChartFiles(configParams, outputTemporaryDir.toString(), LONG_TIMEOUT_INTERVAL, null);
@@ -1075,10 +1075,7 @@ public class HelmTaskHelperTest extends WingsBaseTest {
             .helmChartConfigParams(getHelmChartConfigParams(httpHelmRepoConfig))
             .build();
 
-    doReturn("cache")
-        .when(helmTaskHelper)
-        .getCacheDirForManifestCollection(
-            any(), anyString(), anyBoolean());
+    doReturn("cache").when(helmTaskHelper).getCacheDirForManifestCollection(any(), anyString(), anyBoolean());
     doReturn(new ProcessResult(0, null)).when(processExecutor).execute();
     doAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class))
         .when(helmTaskHelper)
@@ -1130,10 +1127,7 @@ public class HelmTaskHelperTest extends WingsBaseTest {
             eq(V_3_HELM_SEARCH_REPO_COMMAND + " --repository-config cache/repo-repoName.yaml"), eq("dir"), any(),
             any());
 
-    doReturn("cache")
-        .when(helmTaskHelper)
-        .getCacheDirForManifestCollection(
-            any(), anyString(), anyBoolean());
+    doReturn("cache").when(helmTaskHelper).getCacheDirForManifestCollection(any(), anyString(), anyBoolean());
 
     List<HelmChart> helmCharts = helmTaskHelper.fetchChartVersions(helmChartCollectionParams, "dir", 10000);
     assertThat(helmCharts.size()).isEqualTo(2);
@@ -1219,9 +1213,7 @@ public class HelmTaskHelperTest extends WingsBaseTest {
                                                               .helmChartConfigParams(helmChartConfigParams)
                                                               .build();
 
-   doReturn("cache")
-        .when(helmTaskHelper)
-        .getCacheDirForManifestCollection(any(), anyString(), anyBoolean());
+    doReturn("cache").when(helmTaskHelper).getCacheDirForManifestCollection(any(), anyString(), anyBoolean());
     doReturn("helmHomePath").when(helmTaskHelperBase).getHelmHomePath(anyString());
     doReturn(new ProcessResult(0, null)).when(processExecutor).execute();
     doAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class))
