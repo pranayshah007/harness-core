@@ -11,7 +11,6 @@ import static io.harness.ConnectorConstants.INHERIT_FROM_DELEGATE_TYPE_ERROR_MSG
 import static io.harness.ConnectorConstants.INVALID_URL_MSG;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
-import io.harness.ConnectorConstants;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
