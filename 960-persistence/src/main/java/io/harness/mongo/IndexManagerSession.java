@@ -19,7 +19,6 @@ import static io.harness.mongo.IndexManagerSession.Type.NORMAL_INDEX;
 import static io.harness.mongo.IndexManagerSession.Type.SPARSE_INDEX;
 import static io.harness.mongo.IndexManagerSession.Type.UNIQUE_INDEX;
 
-import static com.google.common.base.MoreObjects.firstNonNull;
 import static java.lang.String.format;
 import static java.lang.String.join;
 import static java.lang.System.currentTimeMillis;
@@ -28,8 +27,8 @@ import static java.time.Duration.ofHours;
 import static java.util.stream.Collectors.toList;
 
 import io.harness.annotation.IgnoreUnusedIndex;
-import io.harness.annotation.StoreIn;
-import io.harness.annotation.StoreInMultiple;
+import io.harness.annotations.StoreIn;
+import io.harness.annotations.StoreInMultiple;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.ListUtils.OneAndOnlyOne;
@@ -42,7 +41,6 @@ import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.FdUniqueIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.migrator.Migrator;
-import io.harness.ng.DbAliases;
 import io.harness.persistence.Store;
 import io.harness.threading.Morpheus;
 
@@ -220,7 +218,6 @@ public class IndexManagerSession {
     }
   }
 
-  // TODO(KARAN): clean includeUnannotatedStoreIn variable after all collections have @StoreIn annotations
   public static List<IndexCreator> allIndexes(AdvancedDatastore datastore, Morphia morphia, Store store) {
     List<IndexCreator> result = new ArrayList<>();
     processIndexes(
