@@ -46,8 +46,10 @@ import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.servers.Server;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -180,5 +182,10 @@ public class CIManagerConfiguration extends Configuration implements AssetsBundl
     Set<String> packages = getUniquePackages(getOAS3ResourceClassesOnly());
     return new SwaggerConfiguration().openAPI(oas).prettyPrint(true).resourcePackages(packages).scannerClass(
         "io.swagger.v3.jaxrs2.integration.JaxrsAnnotationScanner");
+  }
+
+  public List<String> getDbAliases() {
+    return Arrays.asList(
+        harnessCIMongo.getAliasDBName(), harnessMongo.getAliasDBName(), pmsMongoConfig.getAliasDBName());
   }
 }

@@ -45,6 +45,7 @@ import io.swagger.v3.oas.models.servers.Server;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -196,5 +197,9 @@ public class TemplateServiceConfiguration extends Configuration {
 
   public static Collection<Class<?>> getOAS3ResourceClassesOnly() {
     return getResourceClasses().stream().filter(x -> x.isAnnotationPresent(Tag.class)).collect(Collectors.toList());
+  }
+
+  public List<String> getDbAliases() {
+    return Arrays.asList(mongoConfig.getAliasDBName());
   }
 }

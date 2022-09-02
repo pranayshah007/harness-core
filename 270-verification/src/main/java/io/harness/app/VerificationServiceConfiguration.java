@@ -37,6 +37,7 @@ import io.dropwizard.server.ServerFactory;
 import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import lombok.Data;
@@ -138,5 +139,9 @@ public class VerificationServiceConfiguration extends Configuration implements A
     fileAppenderFactory.setArchivedFileCount(14);
     logbackAccessRequestLogFactory.setAppenders(ImmutableList.of(fileAppenderFactory));
     return logbackAccessRequestLogFactory;
+  }
+
+  public List<String> getDbAliases() {
+    return Arrays.asList(mongoConnectionFactory.getAliasDBName());
   }
 }

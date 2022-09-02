@@ -45,6 +45,7 @@ import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.servers.Server;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -195,5 +196,11 @@ public class PlatformConfiguration extends Configuration {
 
   public static Collection<Class<?>> getOAS3ResourceClassesOnly(Collection<Class<?>> allResourceClasses) {
     return allResourceClasses.stream().filter(x -> x.isAnnotationPresent(Tag.class)).collect(Collectors.toList());
+  }
+
+  public List<String> getDbAliases() {
+    return Arrays.asList(notificationServiceConfig.getMongoConfig().getAliasDBName(),
+        auditServiceConfig.getMongoConfig().getAliasDBName(),
+        resoureGroupServiceConfig.getMongoConfig().getAliasDBName());
   }
 }

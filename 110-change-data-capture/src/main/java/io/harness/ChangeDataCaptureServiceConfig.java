@@ -18,7 +18,9 @@ import io.harness.timescaledb.TimeScaleDBConfig;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.inject.Singleton;
 import io.dropwizard.Configuration;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import javax.ws.rs.Path;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -46,5 +48,10 @@ public class ChangeDataCaptureServiceConfig extends Configuration {
   public static Collection<Class<?>> getResourceClasses() {
     Reflections reflections = new Reflections(RESOURCE_PACKAGE);
     return reflections.getTypesAnnotatedWith(Path.class);
+  }
+
+  public List<String> getDbAliases() {
+    return Arrays.asList(harnessMongo.getAliasDBName(), eventsMongo.getAliasDBName(), cdcMongo.getAliasDBName(),
+        pmsMongo.getAliasDBName(), ngMongo.getAliasDBName());
   }
 }

@@ -53,9 +53,11 @@ import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.servers.Server;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -200,5 +202,9 @@ public class VerificationConfiguration extends Configuration {
         .filter(
             klazz -> StringUtils.startsWithAny(klazz.getPackage().getName(), this.getClass().getPackage().getName()))
         .collect(Collectors.toSet());
+  }
+
+  public List<String> getDbAliases() {
+    return Arrays.asList(mongoConnectionFactory.getAliasDBName());
   }
 }

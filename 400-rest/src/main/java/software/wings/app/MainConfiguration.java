@@ -343,4 +343,8 @@ public class MainConfiguration extends Configuration implements AssetsBundleConf
   public boolean useCdnForDelegateStorage() {
     return !DeployMode.isOnPrem(getDeployMode().name());
   }
+
+  public List<String> getDbAliases() {
+    return Arrays.asList(mongoConnectionFactory.getAliasDBName(), eventsMongo.getAliasDBName());
+  }
 }
