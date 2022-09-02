@@ -43,7 +43,7 @@ events-mongo:
 
 cdc-mongo:
   uri: mongodb://localhost:27017/change-data-capture
-  aliasDBName: events
+  aliasDBName: change-data-capture
 
 pms-harness:
   uri: mongodb://localhost:27017/pms-harness
