@@ -84,6 +84,7 @@ public class AnalyserServiceApplication extends Application<AnalyserServiceConfi
   public void run(AnalyserServiceConfiguration configuration, Environment environment) throws Exception {
     log.info("Starting Pipeline Service Application ...");
     MaintenanceController.forceMaintenance(true);
+    configuration.populateDbAliases();
     List<Module> modules = new ArrayList<>();
     modules.add(new ProviderModule() {
       @Provides

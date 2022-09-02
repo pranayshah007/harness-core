@@ -22,6 +22,7 @@ import io.harness.enforcement.client.EnforcementClientConfiguration;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.grpc.client.GrpcClientConfig;
 import io.harness.grpc.server.GrpcServerConfig;
+import io.harness.mongo.DbAliases;
 import io.harness.mongo.MongoConfig;
 import io.harness.reflection.HarnessReflections;
 import io.harness.remote.client.ServiceHttpClientConfig;
@@ -46,10 +47,7 @@ import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.servers.Server;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import javax.ws.rs.Path;
 import lombok.AllArgsConstructor;
@@ -180,5 +178,10 @@ public class CIManagerConfiguration extends Configuration implements AssetsBundl
     Set<String> packages = getUniquePackages(getOAS3ResourceClassesOnly());
     return new SwaggerConfiguration().openAPI(oas).prettyPrint(true).resourcePackages(packages).scannerClass(
         "io.swagger.v3.jaxrs2.integration.JaxrsAnnotationScanner");
+  }
+
+  public void populateDbAliases() {
+    DbAliases.getInstance().setValues(
+        Arrays.asList(harnessCIMongo.getAliasDBName(), harnessMongo.getAliasDBName(), pmsMongoConfig.getAliasDBName()));
   }
 }

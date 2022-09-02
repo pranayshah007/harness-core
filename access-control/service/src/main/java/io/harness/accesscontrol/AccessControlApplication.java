@@ -148,6 +148,7 @@ public class AccessControlApplication extends Application<AccessControlConfigura
   public void run(AccessControlConfiguration appConfig, Environment environment) {
     log.info("Starting Access Control Application ...");
     MaintenanceController.forceMaintenance(true);
+    appConfig.populateDbAliases();
     Injector injector =
         Guice.createInjector(AccessControlModule.getInstance(appConfig), new MetricRegistryModule(metricRegistry));
     injector.getInstance(HPersistence.class);

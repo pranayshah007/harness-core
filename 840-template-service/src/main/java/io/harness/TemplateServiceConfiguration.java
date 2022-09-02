@@ -18,6 +18,7 @@ import io.harness.enforcement.client.EnforcementClientConfiguration;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.gitsync.GitSdkConfiguration;
 import io.harness.grpc.client.GrpcClientConfig;
+import io.harness.mongo.DbAliases;
 import io.harness.mongo.MongoConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
 
@@ -44,11 +45,7 @@ import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.servers.Server;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 import javax.ws.rs.Path;
@@ -196,5 +193,9 @@ public class TemplateServiceConfiguration extends Configuration {
 
   public static Collection<Class<?>> getOAS3ResourceClassesOnly() {
     return getResourceClasses().stream().filter(x -> x.isAnnotationPresent(Tag.class)).collect(Collectors.toList());
+  }
+
+  public void populateDbAliases() {
+    DbAliases.getInstance().setValues(Arrays.asList(mongoConfig.getAliasDBName()));
   }
 }

@@ -464,6 +464,7 @@ public class WingsApplication extends Application<MainConfiguration> {
     environment.lifecycle().addServerLifecycleListener(server -> {
       log.info("Leaving startup maintenance mode");
       MaintenanceController.forceMaintenance(false);
+      configuration.populateDbAliases();
       for (Connector connector : server.getConnectors()) {
         if (connector instanceof ServerConnector) {
           ServerConnector serverConnector = (ServerConnector) connector;

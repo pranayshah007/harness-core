@@ -304,6 +304,8 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
 
     log.info("Starting Next Gen Application ...");
 
+    appConfig.populateDbAliases();
+
     ConfigSecretUtils.resolveSecrets(appConfig.getSecretsConfiguration(), appConfig);
 
     ExecutorModule.getInstance().setExecutorService(ThreadPool.create(appConfig.getCommonPoolConfig().getCorePoolSize(),

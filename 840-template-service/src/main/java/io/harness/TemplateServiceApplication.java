@@ -161,6 +161,8 @@ public class TemplateServiceApplication extends Application<TemplateServiceConfi
 
     MaintenanceController.forceMaintenance(true);
 
+    templateServiceConfiguration.populateDbAliases();
+
     ExecutorModule.getInstance().setExecutorService(ThreadPool.create(
         10, 100, 500L, TimeUnit.MILLISECONDS, new ThreadFactoryBuilder().setNameFormat("main-app-pool-%d").build()));
 

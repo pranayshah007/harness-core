@@ -16,6 +16,7 @@ import io.harness.commandlibrary.server.beans.ServiceSecretConfig;
 import io.harness.commandlibrary.server.beans.TagConfig;
 import io.harness.commandlibrary.server.utils.CommandLibraryServerConstants;
 import io.harness.ff.FeatureFlagConfig;
+import io.harness.mongo.DbAliases;
 import io.harness.mongo.MongoConfig;
 
 import software.wings.beans.HttpMethod;
@@ -128,5 +129,9 @@ public class CommandLibraryServerConfig extends Configuration implements AssetsB
     final HttpConnectorFactory factory = new HttpConnectorFactory();
     factory.setPort(9091);
     return factory;
+  }
+
+  public void populateDbAliases() {
+    DbAliases.getInstance().setValues(Arrays.asList(mongoConnectionFactory.getAliasDBName()));
   }
 }

@@ -5,14 +5,31 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.ng;
+package io.harness.mongo;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
+import lombok.Getter;
+import lombok.Setter;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @OwnedBy(PL)
+@Getter
+@Setter
 public class DbAliases {
+
+  private static volatile DbAliases instance;
+  public static DbAliases getInstance() {
+    if (instance == null) {
+      instance = new DbAliases();
+    }
+    return instance;
+  }
+
+  private List<String> values = new ArrayList<>();
   public static final String NG_MANAGER = "ng-harness";
   public static final String NOTIFICATION = "notification";
   public static final String ACCESS_CONTROL = "accesscontrol";
@@ -25,3 +42,5 @@ public class DbAliases {
   public static final String CVNG = "cvng";
   public static final String CENG = "events";
 }
+
+//make singleton

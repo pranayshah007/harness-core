@@ -147,6 +147,7 @@ public class CENextGenApplication extends Application<CENextGenConfiguration> {
     ExecutorModule.getInstance().setExecutorService(ThreadPool.create(
         20, 100, 500L, TimeUnit.MILLISECONDS, new ThreadFactoryBuilder().setNameFormat("main-app-pool-%d").build()));
     log.info("Starting CE NextGen Application ...");
+    configuration.populateDbAliases();
     MaintenanceController.forceMaintenance(true);
 
     ConfigSecretUtils.resolveSecrets(configuration.getSecretsConfiguration(), configuration);

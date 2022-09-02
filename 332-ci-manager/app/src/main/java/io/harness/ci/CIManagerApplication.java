@@ -181,6 +181,7 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
     MaintenanceController.forceMaintenance(true);
 
     log.info("Leaving startup maintenance mode");
+    configuration.populateDbAliases();
     List<Module> modules = new ArrayList<>();
     modules.add(KryoModule.getInstance());
     modules.add(new SCMGrpcClientModule(configuration.getScmConnectionConfig()));

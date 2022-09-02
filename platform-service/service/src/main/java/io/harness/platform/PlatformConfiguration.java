@@ -15,6 +15,7 @@ import io.harness.AccessControlClientConfiguration;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.enforcement.client.EnforcementClientConfiguration;
+import io.harness.mongo.DbAliases;
 import io.harness.platform.audit.AuditServiceConfiguration;
 import io.harness.platform.notification.NotificationServiceConfiguration;
 import io.harness.reflection.HarnessReflections;
@@ -45,11 +46,7 @@ import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.servers.Server;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import javax.ws.rs.Path;
 import lombok.Getter;
@@ -195,5 +192,11 @@ public class PlatformConfiguration extends Configuration {
 
   public static Collection<Class<?>> getOAS3ResourceClassesOnly(Collection<Class<?>> allResourceClasses) {
     return allResourceClasses.stream().filter(x -> x.isAnnotationPresent(Tag.class)).collect(Collectors.toList());
+  }
+
+  public void populateDbAliases() {
+    DbAliases.getInstance().setValues(Arrays.asList(notificationServiceConfig.getMongoConfig().getAliasDBName(),
+        auditServiceConfig.getMongoConfig().getAliasDBName(),
+        resoureGroupServiceConfig.getMongoConfig().getAliasDBName()));
   }
 }

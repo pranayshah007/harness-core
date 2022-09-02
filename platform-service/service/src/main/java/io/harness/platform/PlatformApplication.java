@@ -135,6 +135,7 @@ public class PlatformApplication extends Application<PlatformConfiguration> {
         appConfig.getCommonPoolConfig().getTimeUnit(),
         new ThreadFactoryBuilder().setNameFormat("main-app-pool-%d").build()));
     log.info("Starting Platform Application ...");
+    appConfig.populateDbAliases();
     ConfigSecretUtils.resolveSecrets(appConfig.getSecretsConfiguration(), appConfig);
     MaintenanceController.forceMaintenance(true);
     GodInjector godInjector = new GodInjector();

@@ -215,6 +215,8 @@ public class VerificationServiceApplication extends Application<VerificationServ
     log.info("Entering startup maintenance mode");
     MaintenanceController.forceMaintenance(true);
 
+    configuration.populateDbAliases();
+
     ValidatorFactory validatorFactory = Validation.byDefaultProvider()
                                             .configure()
                                             .parameterNameProvider(new ReflectionParameterNameProvider())

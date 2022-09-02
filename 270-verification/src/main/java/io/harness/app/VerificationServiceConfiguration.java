@@ -14,6 +14,7 @@ import static java.util.Collections.singletonList;
 
 import io.harness.cf.CfClientConfig;
 import io.harness.ff.FeatureFlagConfig;
+import io.harness.mongo.DbAliases;
 import io.harness.mongo.MongoConfig;
 import io.harness.scheduler.SchedulerConfig;
 
@@ -138,5 +139,9 @@ public class VerificationServiceConfiguration extends Configuration implements A
     fileAppenderFactory.setArchivedFileCount(14);
     logbackAccessRequestLogFactory.setAppenders(ImmutableList.of(fileAppenderFactory));
     return logbackAccessRequestLogFactory;
+  }
+
+  public void populateDbAliases() {
+    DbAliases.getInstance().setValues(Arrays.asList(mongoConnectionFactory.getAliasDBName()));
   }
 }

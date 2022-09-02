@@ -305,6 +305,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
   public void run(VerificationConfiguration configuration, Environment environment) {
     log.info("Starting app ...");
     MaintenanceController.forceMaintenance(true);
+    configuration.populateDbAliases();
     ValidatorFactory validatorFactory = Validation.byDefaultProvider()
                                             .configure()
                                             .parameterNameProvider(new ReflectionParameterNameProvider())

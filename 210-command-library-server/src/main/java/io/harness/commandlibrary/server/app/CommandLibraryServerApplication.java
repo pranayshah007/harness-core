@@ -145,6 +145,8 @@ public class CommandLibraryServerApplication extends Application<CommandLibraryS
     log.info("Entering startup maintenance mode");
     MaintenanceController.forceMaintenance(true);
 
+    configuration.populateDbAliases();
+
     final List<Module> modules = new ArrayList<>();
     modules.add(MetricsInstrumentationModule.builder()
                     .withMetricRegistry(metricRegistry)

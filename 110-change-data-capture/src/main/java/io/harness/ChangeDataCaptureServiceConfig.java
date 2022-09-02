@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cf.CfClientConfig;
 import io.harness.ff.FeatureFlagConfig;
+import io.harness.mongo.DbAliases;
 import io.harness.mongo.MongoConfig;
 import io.harness.secret.ConfigSecret;
 import io.harness.timescaledb.TimeScaleDBConfig;
@@ -18,6 +19,7 @@ import io.harness.timescaledb.TimeScaleDBConfig;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.inject.Singleton;
 import io.dropwizard.Configuration;
+import java.util.Arrays;
 import java.util.Collection;
 import javax.ws.rs.Path;
 import lombok.Data;
@@ -46,5 +48,10 @@ public class ChangeDataCaptureServiceConfig extends Configuration {
   public static Collection<Class<?>> getResourceClasses() {
     Reflections reflections = new Reflections(RESOURCE_PACKAGE);
     return reflections.getTypesAnnotatedWith(Path.class);
+  }
+
+  public void populateDbAliases() {
+    DbAliases.getInstance().setValues(Arrays.asList(harnessMongo.getAliasDBName(), eventsMongo.getAliasDBName(),
+        cdcMongo.getAliasDBName(), pmsMongo.getAliasDBName(), ngMongo.getAliasDBName()));
   }
 }
