@@ -3,7 +3,7 @@ exports_files([
 ])
 
 filegroup(
-    name = "container_common_files",
+    name = "_container_common_files",
     srcs = glob([
         "AppServerAgent-1.8-21.11.2.33305.zip",
         "protocol.info",
