@@ -1104,6 +1104,9 @@ public class WatcherServiceImpl implements WatcherService {
   }
 
   private void downloadDelegateJar(String version) throws Exception {
+    if(version.equals("1.0.latest-000")) {
+      version = "1.0.latest";
+    }
     String minorVersion = getDelegateVersionWithPatch(version);
 
     File finalDestination = new File(version + "/delegate.jar");
