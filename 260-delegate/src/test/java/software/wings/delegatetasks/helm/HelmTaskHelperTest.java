@@ -1073,7 +1073,7 @@ public class HelmTaskHelperTest extends WingsBaseTest {
             .serviceId(SERVICE_ID)
             .helmChartConfigParams(getHelmChartConfigParams(httpHelmRepoConfig))
             .build();
-    doReturn("cache").when(helmTaskHelper).getCacheDirForManifestCollection(anyString(), anyBoolean());
+    doReturn("cache").when(helmTaskHelper).getCacheDirForManifestCollection(helmChartCollectionParams.getHelmChartConfigParams().getHelmVersion(), anyString(), anyBoolean());
     doReturn(new ProcessResult(0, null)).when(processExecutor).execute();
     doAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class))
         .when(helmTaskHelper)
@@ -1124,7 +1124,7 @@ public class HelmTaskHelperTest extends WingsBaseTest {
         .executeCommandWithLogOutput(any(),
             eq(V_3_HELM_SEARCH_REPO_COMMAND + " --repository-config cache/repo-repoName.yaml"), eq("dir"), any(),
             any());
-    doReturn("cache").when(helmTaskHelper).getCacheDirForManifestCollection(anyString(), anyBoolean());
+    doReturn("cache").when(helmTaskHelper).getCacheDirForManifestCollection(helmChartCollectionParams.getHelmChartConfigParams().getHelmVersion(), anyString(), anyBoolean());
 
     List<HelmChart> helmCharts = helmTaskHelper.fetchChartVersions(helmChartCollectionParams, "dir", 10000);
     assertThat(helmCharts.size()).isEqualTo(2);
@@ -1209,7 +1209,7 @@ public class HelmTaskHelperTest extends WingsBaseTest {
                                                               .serviceId(SERVICE_ID)
                                                               .helmChartConfigParams(helmChartConfigParams)
                                                               .build();
-    doReturn("cache").when(helmTaskHelper).getCacheDirForManifestCollection(anyString(), anyBoolean());
+    doReturn("cache").when(helmTaskHelper).getCacheDirForManifestCollection(helmChartConfigParams.getHelmVersion(), anyString(), anyBoolean());
     doReturn("helmHomePath").when(helmTaskHelperBase).getHelmHomePath(anyString());
     doReturn(new ProcessResult(0, null)).when(processExecutor).execute();
     doAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class))

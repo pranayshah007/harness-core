@@ -460,7 +460,10 @@ public class HelmTaskHelper {
         .toString();
   }
 
-  public String getCacheDirForManifestCollection(String repoName, boolean useCache) throws IOException {
+  public String getCacheDirForManifestCollection(HelmVersion helmVersion, String repoName, boolean useCache) throws IOException {
+    if(!HelmVersion.isHelmV3(helmVersion)){
+      return EMPTY;
+    }
     if (useCache) {
       return Paths.get(RESOURCE_DIR_BASE, repoName, "cache").toAbsolutePath().normalize().toString();
     }
@@ -600,7 +603,7 @@ public class HelmTaskHelper {
     HttpHelmRepoConfig httpHelmRepoConfig = (HttpHelmRepoConfig) helmChartConfigParams.getHelmRepoConfig();
     Map<String, String> environment = new HashMap<>();
     String cacheDir =
-        getCacheDirForManifestCollection(helmChartConfigParams.getRepoName(), helmChartConfigParams.isUseCache());
+        getCacheDirForManifestCollection(helmChartConfigParams.getHelmVersion(), helmChartConfigParams.getRepoName(), helmChartConfigParams.isUseCache());
     String commandOutput;
 
     try {
@@ -783,7 +786,7 @@ public class HelmTaskHelper {
     HelmChartConfigParams helmChartConfigParams = helmChartCollectionParams.getHelmChartConfigParams();
     String workingDirectory = Paths.get(destinationDirectory).toString();
     String cacheDir =
-        getCacheDirForManifestCollection(helmChartConfigParams.getRepoName(), helmChartConfigParams.isUseCache());
+        getCacheDirForManifestCollection(helmChartConfigParams.getHelmVersion(), helmChartConfigParams.getRepoName(), helmChartConfigParams.isUseCache());
     removeRepo(helmChartConfigParams.getRepoName(), workingDirectory, helmChartConfigParams.getHelmVersion(),
         timeoutInMillis, cacheDir);
     cleanup(workingDirectory);
