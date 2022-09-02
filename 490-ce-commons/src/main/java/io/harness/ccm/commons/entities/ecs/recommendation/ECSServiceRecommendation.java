@@ -9,6 +9,7 @@ package io.harness.ccm.commons.entities.ecs.recommendation;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
 
+import com.amazonaws.services.ecs.model.LaunchType;
 import io.harness.annotation.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.commons.beans.HarnessServiceInfo;
@@ -77,6 +78,7 @@ public final class ECSServiceRecommendation
 
   // Recommendation
   Map<String, String> currentResourceRequirements;
+  LaunchType launchType;
   //  @Deprecated ECSResourceRequirement burstable;
   //  @Deprecated ECSResourceRequirement guaranteed;
   //  @Deprecated ECSResourceRequirement recommended;

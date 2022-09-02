@@ -17,16 +17,20 @@ import static software.wings.graphql.datafetcher.ce.recommendation.entity.Resour
 import static java.math.RoundingMode.HALF_UP;
 import static java.util.Optional.ofNullable;
 
+import com.amazonaws.services.ecs.model.LaunchType;
 import io.harness.batch.processing.billing.timeseries.service.impl.BillingDataServiceImpl;
 import io.harness.batch.processing.billing.timeseries.service.impl.UtilizationDataServiceImpl;
 import io.harness.batch.processing.ccm.CCMJobConstants;
 import io.harness.batch.processing.cloudevents.aws.ecs.service.CEClusterDao;
 import io.harness.batch.processing.cloudevents.aws.ecs.service.util.ClusterIdAndServiceArn;
+import io.harness.batch.processing.cloudevents.aws.ecs.service.util.CpuMillsAndMemoryBytes;
 import io.harness.batch.processing.cloudevents.aws.ecs.service.util.ECSUtilizationData;
+import io.harness.batch.processing.cloudevents.aws.ecs.service.util.FargateResourceValues;
 import io.harness.batch.processing.dao.intfc.ECSServiceDao;
 import io.harness.ccm.commons.beans.JobConstants;
 import io.harness.ccm.commons.beans.Resource;
 import io.harness.ccm.commons.dao.recommendation.ECSRecommendationDAO;
+import io.harness.ccm.commons.entities.ecs.ECSService;
 import io.harness.ccm.commons.entities.ecs.recommendation.ECSPartialRecommendationHistogram;
 import io.harness.ccm.commons.entities.ecs.recommendation.ECSServiceRecommendation;
 import io.harness.ff.FeatureFlagService;
@@ -70,6 +74,7 @@ public class AwsECSServiceRecommendationTasklet implements Tasklet {
   @Autowired private ECSRecommendationDAO ecsRecommendationDAO;
   @Autowired private BillingDataServiceImpl billingDataService;
   @Autowired private FeatureFlagService featureFlagService;
+  @Autowired private FargateResourceValues fargateResourceValues;
 
   private static final int BATCH_SIZE = 20;
   private static final int MAX_UTILIZATION_WEIGHT = 1;
@@ -98,7 +103,7 @@ public class AwsECSServiceRecommendationTasklet implements Tasklet {
               accountId, ceClustersPartition, startTime.toString(), endTime.toString());
 
       // Fetch resource for services
-      Map<String, Resource> serviceArnToResourceMapping = ecsServiceDao.fetchResourceForServices(
+      Map<String, ECSService> ecsServiceMap = ecsServiceDao.fetchServices(
           accountId, utilMap.keySet().stream().map(ClusterIdAndServiceArn::getServiceArn).collect(Collectors.toList()));
 
       for (ClusterIdAndServiceArn clusterIdAndServiceArn : utilMap.keySet()) {
@@ -106,12 +111,13 @@ public class AwsECSServiceRecommendationTasklet implements Tasklet {
         String clusterName = ceClusters.get(clusterId);
         String serviceArn = clusterIdAndServiceArn.getServiceArn();
         String serviceName = serviceNameFromServiceArn(serviceArn);
-        if (!serviceArnToResourceMapping.containsKey(serviceArn)) {
+        LaunchType launchType = ecsServiceMap.get(clusterIdAndServiceArn.getServiceArn()).getLaunchType();
+        if (!ecsServiceMap.containsKey(serviceArn)) {
           log.debug("Skipping ECS recommendation as service info is not present for accountId: {}, service arn: {}",
               accountId, serviceArn);
           continue;
         }
-        Resource resource = serviceArnToResourceMapping.get(clusterIdAndServiceArn.getServiceArn());
+        Resource resource = ecsServiceMap.get(clusterIdAndServiceArn.getServiceArn()).getResource();
         if (resource.getCpuUnits().equals(0.0) || resource.getMemoryMb().equals(0.0)) {
           log.debug("Skipping ECS recommendation as resource value is zero for accountId : {}, service arn: {}",
               accountId, serviceArn);
@@ -134,7 +140,7 @@ public class AwsECSServiceRecommendationTasklet implements Tasklet {
 
         // Create ECSServiceRecommendation
         ECSServiceRecommendation recommendation =
-            getRecommendation(accountId, clusterId, clusterName, serviceName, serviceArn, cpuMilliUnits, memoryBytes);
+            getRecommendation(accountId, clusterId, clusterName, serviceName, serviceArn, launchType, cpuMilliUnits, memoryBytes);
 
         // Merge partial recommendations and compute recommendations
         mergePartialRecommendations(partialHistograms, recommendation, cpuMilliUnits, memoryBytes);
@@ -202,13 +208,14 @@ public class AwsECSServiceRecommendationTasklet implements Tasklet {
   }
 
   ECSServiceRecommendation getRecommendation(String accountId, String clusterId, String clusterName, String serviceName,
-      String serviceArn, long cpuMilliUnits, long memoryBytes) {
+      String serviceArn, LaunchType launchType, long cpuMilliUnits, long memoryBytes) {
     return ECSServiceRecommendation.builder()
         .accountId(accountId)
         .clusterId(clusterId)
         .clusterName(clusterName)
         .serviceName(serviceName)
         .serviceArn(serviceArn)
+        .launchType(launchType)
         .cpuHistogram(newHistogram(cpuMilliUnits).saveToCheckpoint())
         .memoryHistogram(newHistogram(memoryBytes).saveToCheckpoint())
         .build();
@@ -257,9 +264,15 @@ public class AwsECSServiceRecommendationTasklet implements Tasklet {
     // Compute percentile based recommendation
     Map<String, Map<String, String>> computedPercentiles = new HashMap<>();
     for (Integer percentile : requiredPercentiles) {
+      long cpuAmount = (long) cpuHistogram.getPercentile(percentile);
+      long memoryAmount = (long) (memoryHistogram.getPercentile(percentile));
+      if (recommendation.getLaunchType().equals(LaunchType.FARGATE)) {
+        CpuMillsAndMemoryBytes resourceValues = fargateResourceValues.get(cpuAmount, memoryAmount);
+        cpuAmount = resourceValues.getCpuMilliUnits();
+        memoryAmount = resourceValues.getMemoryBytes();
+      }
       computedPercentiles.put(String.format(PERCENTILE_KEY, percentile),
-          convertToReadableForm(makeResourceMap(
-              (long) cpuHistogram.getPercentile(percentile), (long) (memoryHistogram.getPercentile(percentile)))));
+          convertToReadableForm(makeResourceMap(cpuAmount, memoryAmount)));
     }
     recommendation.setPercentileBasedResourceRecommendation(computedPercentiles);
   }
