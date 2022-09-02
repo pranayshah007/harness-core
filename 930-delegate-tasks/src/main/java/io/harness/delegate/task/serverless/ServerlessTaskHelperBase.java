@@ -385,10 +385,12 @@ public class ServerlessTaskHelperBase {
         s3ArtifactConfig.getConnectorDTO().getConnectorConfig(), s3ArtifactConfig.getEncryptedDataDetails());
     AwsInternalConfig awsConfig = awsNgConfigMapper.createAwsInternalConfig(
         (AwsConnectorDTO) s3ArtifactConfig.getConnectorDTO().getConnectorConfig());
-    try (InputStream artifactInputStream = awsApiHelperService
-                                               .getObjectFromS3(awsConfig, AWS_DEFAULT_REGION,
-                                                   s3ArtifactConfig.getBucketName(), s3ArtifactConfig.getFilePath())
-                                               .getObjectContent();
+    String region =
+        EmptyPredicate.isNotEmpty(s3ArtifactConfig.getRegion()) ? s3ArtifactConfig.getRegion() : AWS_DEFAULT_REGION;
+    try (InputStream artifactInputStream =
+             awsApiHelperService
+                 .getObjectFromS3(awsConfig, region, s3ArtifactConfig.getBucketName(), s3ArtifactConfig.getFilePath())
+                 .getObjectContent();
          FileOutputStream outputStream = new FileOutputStream(artifactFile)) {
       if (artifactInputStream == null) {
         log.error("Failure in downloading artifact from S3");

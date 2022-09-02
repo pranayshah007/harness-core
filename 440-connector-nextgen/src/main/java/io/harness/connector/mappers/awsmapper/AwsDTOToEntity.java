@@ -43,7 +43,9 @@ public class AwsDTOToEntity implements ConnectorDTOToEntityMapper<AwsConnectorDT
       default:
         throw new InvalidRequestException("Invalid Credential type.");
     }
-    return awsConfigBuilder.crossAccountAccess(credential.getCrossAccountAccess()).build();
+    return awsConfigBuilder.crossAccountAccess(credential.getCrossAccountAccess())
+        .testRegion(credential.getTestRegion())
+        .build();
   }
 
   private AwsConfigBuilder buildInheritFromDelegate(AwsCredentialDTO connector) {

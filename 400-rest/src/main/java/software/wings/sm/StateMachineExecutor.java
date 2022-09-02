@@ -2184,11 +2184,13 @@ public class StateMachineExecutor implements StateInspectionListener {
         wingsPersistence.createUpdateOperations(StateExecutionInstance.class);
 
     StateExecutionData stateExecutionData = stateExecutionMap.get(stateExecutionInstance.getDisplayName());
-    ops.addToSet("stateExecutionDataHistory", stateExecutionData);
-    stateExecutionInstance.getStateExecutionDataHistory().add(stateExecutionData);
+    if (stateExecutionData != null) {
+      ops.addToSet("stateExecutionDataHistory", stateExecutionData);
+      stateExecutionInstance.getStateExecutionDataHistory().add(stateExecutionData);
 
-    stateExecutionMap.remove(stateExecutionInstance.getDisplayName());
-    ops.set("stateExecutionMap", stateExecutionMap);
+      stateExecutionMap.remove(stateExecutionInstance.getDisplayName());
+      ops.set("stateExecutionMap", stateExecutionMap);
+    }
 
     List<ContextElement> notifyElements = new ArrayList<>();
     String prevInstanceId = stateExecutionInstance.getPrevInstanceId();
@@ -2225,13 +2227,13 @@ public class StateMachineExecutor implements StateInspectionListener {
                   .filter(StateExecutionInstanceKeys.appId, stateExecutionInstance.getAppId())
                   .filter(ID_KEY, stateExecutionInstance.getUuid())
                   .field(StateExecutionInstanceKeys.status)
-                  .in(asList(WAITING, FAILED, ERROR, EXPIRED));
+                  .in(asList(WAITING, FAILED, ERROR, EXPIRED, STARTING));
     } else {
       query = wingsPersistence.createQuery(StateExecutionInstance.class)
                   .filter(StateExecutionInstanceKeys.appId, stateExecutionInstance.getAppId())
                   .filter(ID_KEY, stateExecutionInstance.getUuid())
                   .field(StateExecutionInstanceKeys.status)
-                  .in(asList(WAITING, FAILED, ERROR));
+                  .in(asList(WAITING, FAILED, ERROR, STARTING));
     }
 
     UpdateResults updateResult = wingsPersistence.update(query, ops);

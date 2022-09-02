@@ -63,7 +63,8 @@ public class InfrastructurePlanCreatorHelper {
     return infrastructureConfigs;
   }
 
-  public void setInfraIdentifierAndName(Infrastructure infrastructure, String infraIdentifier, String infraName) {
+  public void setInfraIdentifierAndName(
+      Infrastructure infrastructure, String infraIdentifier, String infraName, boolean skipInstances) {
     switch (infrastructure.getKind()) {
       case InfrastructureKind.KUBERNETES_DIRECT:
         K8SDirectInfrastructure k8SDirectInfrastructure = (K8SDirectInfrastructure) infrastructure;
@@ -94,18 +95,21 @@ public class InfrastructurePlanCreatorHelper {
         PdcInfrastructure pdcInfrastructure = (PdcInfrastructure) infrastructure;
         pdcInfrastructure.setInfraName(infraName);
         pdcInfrastructure.setInfraIdentifier(infraIdentifier);
+        pdcInfrastructure.setSkipInstances(skipInstances);
         return;
 
       case InfrastructureKind.SSH_WINRM_AWS:
         SshWinRmAwsInfrastructure sshWinRmAwsInfrastructure = (SshWinRmAwsInfrastructure) infrastructure;
         sshWinRmAwsInfrastructure.setInfraName(infraName);
         sshWinRmAwsInfrastructure.setInfraIdentifier(infraIdentifier);
+        sshWinRmAwsInfrastructure.setSkipInstances(skipInstances);
         return;
 
       case InfrastructureKind.SSH_WINRM_AZURE:
         SshWinRmAzureInfrastructure sshWinRmAzureInfrastructure = (SshWinRmAzureInfrastructure) infrastructure;
         sshWinRmAzureInfrastructure.setInfraName(infraName);
         sshWinRmAzureInfrastructure.setInfraIdentifier(infraIdentifier);
+        sshWinRmAzureInfrastructure.setSkipInstances(skipInstances);
         return;
 
       case InfrastructureKind.AZURE_WEB_APP:

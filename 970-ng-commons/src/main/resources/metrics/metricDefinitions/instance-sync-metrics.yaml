@@ -1,0 +1,22 @@
+name: Count of Instance Syncs
+identifier: instance_sync
+metricGroup: instance_sync_metric_group
+metrics:
+  - metricName: instance_sync_new_deployment
+    metricDefinition: Number of instance sync calls for new deployment
+    type: Count
+    unit: "1"
+  - metricName: instance_sync_perpetual_task
+    metricDefinition: Number of instance sync calls by perpetual task
+    type: Count
+    unit: "1"
+  - metricName: instance_sync_new_deployment_duration
+    metricDefinition: Time taken to complete the request.
+    type: Duration
+    distribution: [ 0m, 15s, 30s, 1m, 2m, 4m, 8m, 16m, 32m]
+    unit: "ms"
+  - metricName: instance_sync_perpetual_task_duration
+    metricDefinition: Time taken to complete the request.
+    type: Duration
+    distribution: [ 0m, 15s, 30s, 1m, 2m, 4m, 8m, 16m, 32m]
+    unit: "ms"

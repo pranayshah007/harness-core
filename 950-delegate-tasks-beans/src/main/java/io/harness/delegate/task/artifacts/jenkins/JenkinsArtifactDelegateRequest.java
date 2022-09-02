@@ -58,6 +58,7 @@ public class JenkinsArtifactDelegateRequest implements ArtifactSourceDelegateReq
   Map<String, String> jobParameter;
   boolean unstableStatusAsSuccess;
   boolean captureEnvironmentVariable;
+  boolean useConnectorUrlForJobExecution;
   private long timeout;
   private long startTs;
   List<String> delegateSelectors;

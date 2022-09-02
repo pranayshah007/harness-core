@@ -7,11 +7,14 @@
 
 package io.harness.delegate.task.azure.exception;
 
+import static io.harness.azure.model.AzureConstants.DEPLOY_TO_SLOT;
+
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.ExceptionUtils;
+import io.harness.exception.FailureType;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;
 import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionHandler;
@@ -24,6 +27,8 @@ import io.harness.exception.runtime.azure.AzureAppServicesWebAppNotFoundExceptio
 import io.harness.reflection.ReflectionUtils;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.UncheckedTimeoutException;
+import java.net.SocketTimeoutException;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -49,6 +54,12 @@ public class AzureAppServicesRuntimeExceptionHandler implements ExceptionHandler
   private static final String HINT_CHECK_CONTAINER_LOGS = "Check container logs for more details";
   private static final String HINT_CONTAINER_FAILED_DURING_STARTUP =
       "Verify docker image configuration and credentials";
+  private static final String HINT_CONFIGURE_TIMEOUT =
+      "If deployment is taking more time than configured timeout of %d minutes increase step timeout";
+  private static final String HINT_CONNECTION_ISSUE_KUDU_SERVICE =
+      "Check if application kudu service is available from delegate. For example if your application URL is http://mysite.azurewebsites.net/ then  kudu service URL would be https://mysite.scm.azurewebsites.net/";
+  private static final String HINT_GENERIC_ACTION_STEADY_STATE_FAILED =
+      "Check slot deployment logs for more details and application configuration";
 
   private static final String EXPLANATION_WEBAPP_NOT_FOUND =
       "Unable to find web app with name '%s' in resource group '%s'";
@@ -60,6 +71,14 @@ public class AzureAppServicesRuntimeExceptionHandler implements ExceptionHandler
   private static final String EXPLANATION_CONTAINER_FAILS_START = "Container failed to start with error log: %s";
   private static final String EXPLANATION_STOPPING_CONTAINER =
       "Site container was stopped because it failed during startup";
+  private static final String EXPLANATION_STEADY_STATE_CHECK_TIMEOUT =
+      "Configured timeout of %d minutes expired for operation %s";
+  private static final String EXPLANATION_GENERIC_ARTIFACT_DEPLOY_FAILED =
+      "Failed to upload artifact file to Kudu service";
+  private static final String EXPLANATION_CONNECTION_ISSUE_KUDU_SERVICE =
+      "Timed out while trying to connect to application kudu service to upload artifact file";
+  private static final String EXPLANATION_GENERIC_ACTION_STEADY_STATE_FAILED =
+      "Operation %s failed while waiting for operation to complete";
 
   public static Set<Class<? extends Exception>> exceptions() {
     return ImmutableSet.<Class<? extends Exception>>builder().add(AzureAppServicesRuntimeException.class).build();
@@ -99,8 +118,8 @@ public class AzureAppServicesRuntimeExceptionHandler implements ExceptionHandler
   private WingsException mapDeployArtifactFileException(
       AzureAppServicesDeployArtifactFileException artifactFileException) {
     HttpException retrofitHttpException = ExceptionUtils.cause(HttpException.class, artifactFileException.getCause());
-    resetExceptionCause(artifactFileException);
     if (retrofitHttpException != null) {
+      resetExceptionCause(artifactFileException);
       if (retrofitHttpException.response() != null && retrofitHttpException.response().raw() != null) {
         Request request = retrofitHttpException.response().raw().request();
         String url = request.url().toString();
@@ -115,15 +134,44 @@ public class AzureAppServicesRuntimeExceptionHandler implements ExceptionHandler
       }
     }
 
+    SocketTimeoutException socketTimeoutException =
+        ExceptionUtils.cause(SocketTimeoutException.class, artifactFileException);
+    if (socketTimeoutException != null) {
+      resetExceptionCause(artifactFileException);
+      return NestedExceptionUtils.hintWithExplanationException(HINT_CONNECTION_ISSUE_KUDU_SERVICE,
+          EXPLANATION_CONNECTION_ISSUE_KUDU_SERVICE,
+          new AzureAppServiceTaskException(artifactFileException.getMessage(), FailureType.TIMEOUT));
+    }
+
     return NestedExceptionUtils.hintWithExplanationException(
         format(HINT_INVALID_ARTIFACT_TYPE, artifactFileException.getArtifactFilePath(),
             artifactFileException.getArtifactType()),
         artifactFileException.getCause() != null ? artifactFileException.getCause().getMessage()
-                                                 : artifactFileException.getMessage(),
+                                                 : EXPLANATION_GENERIC_ARTIFACT_DEPLOY_FAILED,
         new AzureAppServiceTaskException(artifactFileException.getMessage()));
   }
 
-  public WingsException mapSlotSteadyStateException(AzureAppServicesSlotSteadyStateException slotSteadyStateException) {
+  private WingsException mapSlotSteadyStateException(
+      AzureAppServicesSlotSteadyStateException slotSteadyStateException) {
+    if (slotSteadyStateException.getCause() != null
+        && slotSteadyStateException.getCause() instanceof UncheckedTimeoutException) {
+      resetExceptionCause(slotSteadyStateException);
+      return NestedExceptionUtils.hintWithExplanationException(
+          format(HINT_CONFIGURE_TIMEOUT, slotSteadyStateException.getTimeoutIntervalInMin()),
+          format(EXPLANATION_STEADY_STATE_CHECK_TIMEOUT, slotSteadyStateException.getTimeoutIntervalInMin(),
+              slotSteadyStateException.getAction()),
+          new AzureAppServiceTaskException(slotSteadyStateException.getMessage(), FailureType.TIMEOUT));
+    }
+
+    if (DEPLOY_TO_SLOT.equals(slotSteadyStateException.getAction())) {
+      return mapContainerSlotSteadyStateException(slotSteadyStateException);
+    } else {
+      return mapActionBasedSlotSteadyStateException(slotSteadyStateException);
+    }
+  }
+
+  private WingsException mapContainerSlotSteadyStateException(
+      AzureAppServicesSlotSteadyStateException slotSteadyStateException) {
     Matcher portErrorMatcher = PORT_DIDNT_RESPOND_PATTERN.matcher(slotSteadyStateException.getMessage());
     if (portErrorMatcher.find()) {
       String containerName = portErrorMatcher.group(1);
@@ -141,6 +189,13 @@ public class AzureAppServicesRuntimeExceptionHandler implements ExceptionHandler
 
     return NestedExceptionUtils.hintWithExplanationException(HINT_CHECK_CONTAINER_LOGS,
         format(EXPLANATION_CONTAINER_FAILS_START, slotSteadyStateException.getMessage()),
+        new AzureAppServiceTaskException(slotSteadyStateException.getMessage()));
+  }
+
+  private WingsException mapActionBasedSlotSteadyStateException(
+      AzureAppServicesSlotSteadyStateException slotSteadyStateException) {
+    return NestedExceptionUtils.hintWithExplanationException(HINT_GENERIC_ACTION_STEADY_STATE_FAILED,
+        format(EXPLANATION_GENERIC_ACTION_STEADY_STATE_FAILED, slotSteadyStateException.getAction()),
         new AzureAppServiceTaskException(slotSteadyStateException.getMessage()));
   }
 

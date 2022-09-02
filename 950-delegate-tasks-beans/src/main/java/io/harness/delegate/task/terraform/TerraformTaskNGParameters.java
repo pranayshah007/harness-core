@@ -59,6 +59,7 @@ public class TerraformTaskNGParameters
   boolean saveTerraformStateJson;
   boolean tfModuleSourceInheritSSH;
   long timeoutInMillis;
+  boolean useOptimizedTfPlan;
 
   // For plan
   TerraformCommand terraformCommand;

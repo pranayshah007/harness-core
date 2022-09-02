@@ -23,7 +23,10 @@ public class DockerCapabilityHelper extends ConnectorCapabilityBaseHelper {
       ConnectorConfigDTO connectorConfigDTO, ExpressionEvaluator maskingEvaluator) {
     List<ExecutionCapability> capabilityList = new ArrayList<>();
     DockerConnectorDTO dockerConnectorDTO = (DockerConnectorDTO) connectorConfigDTO;
-    final String dockerRegistryUrl = dockerConnectorDTO.getDockerRegistryUrl();
+    String dockerRegistryUrl = dockerConnectorDTO.getDockerRegistryUrl();
+    if (!(dockerRegistryUrl.endsWith("/v2") || dockerRegistryUrl.endsWith("/v2/"))) {
+      dockerRegistryUrl = dockerRegistryUrl.concat("/v2");
+    }
     capabilityList.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
         dockerRegistryUrl.endsWith("/") ? dockerRegistryUrl : dockerRegistryUrl.concat("/"), maskingEvaluator));
     populateDelegateSelectorCapability(capabilityList, dockerConnectorDTO.getDelegateSelectors());

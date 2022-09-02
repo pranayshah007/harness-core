@@ -11,7 +11,12 @@ import io.harness.ModuleType;
 import io.harness.beans.FeatureName;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnsupportedOperationException;
-import io.harness.ff.FeatureFlagService;
+import io.harness.licensing.Edition;
+import io.harness.licensing.LicenseType;
+import io.harness.licensing.entities.modules.CFModuleLicense;
+import io.harness.licensing.entities.modules.ModuleLicense;
+import io.harness.licensing.helpers.ModuleLicenseHelper;
+import io.harness.repositories.ModuleLicenseRepository;
 import io.harness.repositories.StripeCustomerRepository;
 import io.harness.repositories.SubscriptionDetailRepository;
 import io.harness.subscription.constant.Prices;
@@ -33,7 +38,9 @@ import io.harness.subscription.params.CustomerParams;
 import io.harness.subscription.params.CustomerParams.CustomerParamsBuilder;
 import io.harness.subscription.params.ItemParams;
 import io.harness.subscription.params.SubscriptionParams;
+import io.harness.subscription.params.UsageKey;
 import io.harness.subscription.services.SubscriptionService;
+import io.harness.subscription.utils.NGFeatureFlagHelperService;
 
 import com.google.common.base.Strings;
 import com.google.inject.Inject;
@@ -41,6 +48,7 @@ import com.google.inject.Singleton;
 import com.stripe.model.Event;
 import com.stripe.net.ApiResource;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -50,21 +58,63 @@ import org.apache.commons.validator.routines.EmailValidator;
 @Singleton
 public class SubscriptionServiceImpl implements SubscriptionService {
   private final StripeHelper stripeHelper;
+  private final ModuleLicenseRepository licenseRepository;
   private final StripeCustomerRepository stripeCustomerRepository;
   private final SubscriptionDetailRepository subscriptionDetailRepository;
-  private final FeatureFlagService featureFlagService;
+  private final NGFeatureFlagHelperService nGFeatureFlagHelperService;
 
   private final Map<String, StripeEventHandler> eventHandlers;
 
+  private static final double RECOMMENDATION_MULTIPLIER = 1.2d;
+
   @Inject
-  public SubscriptionServiceImpl(StripeHelper stripeHelper, StripeCustomerRepository stripeCustomerRepository,
-      SubscriptionDetailRepository subscriptionDetailRepository, FeatureFlagService featureFlagService,
-      Map<String, StripeEventHandler> eventHandlers) {
+  public SubscriptionServiceImpl(StripeHelper stripeHelper, ModuleLicenseRepository licenseRepository,
+      StripeCustomerRepository stripeCustomerRepository, SubscriptionDetailRepository subscriptionDetailRepository,
+      NGFeatureFlagHelperService nGFeatureFlagHelperService, Map<String, StripeEventHandler> eventHandlers) {
     this.stripeHelper = stripeHelper;
+    this.licenseRepository = licenseRepository;
     this.stripeCustomerRepository = stripeCustomerRepository;
     this.subscriptionDetailRepository = subscriptionDetailRepository;
-    this.featureFlagService = featureFlagService;
+    this.nGFeatureFlagHelperService = nGFeatureFlagHelperService;
     this.eventHandlers = eventHandlers;
+  }
+
+  @Override
+  public EnumMap<UsageKey, Long> getRecommendation(String accountIdentifier, long numberOfMAUs, long numberOfUsers) {
+    List<ModuleLicense> currentLicenses =
+        licenseRepository.findByAccountIdentifierAndModuleType(accountIdentifier, ModuleType.CF);
+
+    if (currentLicenses.isEmpty()) {
+      throw new InvalidRequestException(
+          String.format("Cannot provide recommendation. No active license detected for module %s.", ModuleType.CF));
+    }
+
+    ModuleLicense latestLicense = ModuleLicenseHelper.getLatestLicense(currentLicenses);
+
+    CFModuleLicense cfLicense = (CFModuleLicense) latestLicense;
+
+    EnumMap<UsageKey, Long> recommendedValues = new EnumMap<>(UsageKey.class);
+
+    LicenseType licenseType = latestLicense.getLicenseType();
+    Edition edition = latestLicense.getEdition();
+    if (licenseType.equals(LicenseType.TRIAL)) {
+      double recommendedUsers = Math.max(cfLicense.getNumberOfUsers(), numberOfUsers) * RECOMMENDATION_MULTIPLIER;
+      double recommendedMAUs = Math.max(cfLicense.getNumberOfClientMAUs(), numberOfMAUs) * RECOMMENDATION_MULTIPLIER;
+
+      recommendedValues.put(UsageKey.NUMBER_OF_USERS, (long) recommendedUsers);
+      recommendedValues.put(UsageKey.NUMBER_OF_MAUS, (long) recommendedMAUs);
+    } else if (licenseType.equals(LicenseType.PAID) || edition.equals(Edition.FREE)) {
+      double recommendedUsers = Math.max(cfLicense.getNumberOfUsers(), numberOfUsers);
+      double recommendedMAUs = Math.max(cfLicense.getNumberOfClientMAUs(), numberOfMAUs);
+
+      recommendedValues.put(UsageKey.NUMBER_OF_USERS, (long) recommendedUsers);
+      recommendedValues.put(UsageKey.NUMBER_OF_MAUS, (long) recommendedMAUs);
+    } else {
+      throw new InvalidRequestException(
+          String.format("Cannot provide recommendation. No active license detected for module %s.", ModuleType.CF));
+    }
+
+    return recommendedValues;
   }
 
   @Override
@@ -172,7 +222,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                                           .accountIdentifier(accountIdentifier)
                                           .customerId(stripeCustomer.getCustomerId())
                                           .subscriptionId(subscription.getSubscriptionId())
-                                          .status(subscription.getStatus())
+                                          .status("incomplete")
                                           .latestInvoice(subscription.getLatestInvoice())
                                           .moduleType(ModuleType.CF)
                                           .build());
@@ -353,11 +403,10 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   }
 
   @Override
-  public CustomerDetailDTO getStripeCustomer(String accountIdentifier, String customerId) {
+  public CustomerDetailDTO getStripeCustomer(String accountIdentifier) {
     isSelfServiceEnable(accountIdentifier);
 
-    StripeCustomer stripeCustomer =
-        stripeCustomerRepository.findByAccountIdentifierAndCustomerId(accountIdentifier, customerId);
+    StripeCustomer stripeCustomer = stripeCustomerRepository.findByAccountIdentifier(accountIdentifier);
     if (stripeCustomer == null) {
       throw new InvalidRequestException("Customer doesn't exists");
     }
@@ -399,16 +448,15 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   //  }
 
   @Override
-  public PaymentMethodCollectionDTO listPaymentMethods(String accountIdentifier, String customerId) {
+  public PaymentMethodCollectionDTO listPaymentMethods(String accountIdentifier) {
     isSelfServiceEnable(accountIdentifier);
 
     // TODO: Might not needed any more because we request every time user input a payment method
-    StripeCustomer stripeCustomer =
-        stripeCustomerRepository.findByAccountIdentifierAndCustomerId(accountIdentifier, customerId);
+    StripeCustomer stripeCustomer = stripeCustomerRepository.findByAccountIdentifier(accountIdentifier);
     if (stripeCustomer == null) {
       throw new InvalidRequestException("Customer doesn't exists");
     }
-    return stripeHelper.listPaymentMethods(customerId);
+    return stripeHelper.listPaymentMethods(stripeCustomer.getCustomerId());
   }
 
   @Override
@@ -436,7 +484,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   }
 
   private void isSelfServiceEnable(String accountIdentifier) {
-    if (!featureFlagService.isEnabled(FeatureName.SELF_SERVICE_ENABLED, accountIdentifier)) {
+    if (!nGFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.SELF_SERVICE_ENABLED)) {
       throw new UnsupportedOperationException("Self Service is currently unavailable");
     }
   }

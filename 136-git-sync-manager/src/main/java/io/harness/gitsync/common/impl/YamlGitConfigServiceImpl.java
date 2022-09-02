@@ -208,7 +208,7 @@ public class YamlGitConfigServiceImpl implements YamlGitConfigService {
   public YamlGitConfigDTO save(YamlGitConfigDTO ygs) {
     // before saving the git config, check if branch exists
     // otherwise we end-up saving invalid git configs
-    if (!canEnableOldGitSync(ygs.getAccountIdentifier())) {
+    if (!canEnableOldGitSync(ygs.getAccountIdentifier(), ygs.getOrganizationIdentifier(), ygs.getProjectIdentifier())) {
       throw new InvalidRequestException(
           "Cannot enable Git Management for this project, please use new Git Simplified experience.");
     }
@@ -216,9 +216,10 @@ public class YamlGitConfigServiceImpl implements YamlGitConfigService {
     return saveInternal(ygs, ygs.getAccountIdentifier());
   }
 
-  private boolean canEnableOldGitSync(String accountIdentifier) {
-    return ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.USE_OLD_GIT_SYNC)
-        || ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.FF_GITSYNC);
+  private boolean canEnableOldGitSync(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    return ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.FF_GITSYNC)
+        || ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.USE_OLD_GIT_SYNC)
+        || isGitSyncEnabled(accountIdentifier, orgIdentifier, projectIdentifier);
   }
 
   void validatePresenceOfRequiredFields(Object... fields) {

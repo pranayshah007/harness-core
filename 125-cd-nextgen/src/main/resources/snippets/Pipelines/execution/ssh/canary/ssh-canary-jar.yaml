@@ -7,7 +7,6 @@ spec:
           strategy:
             repeat:
               items: <+stage.output.hosts>
-              maxConcurrency: <+maxConcurrency>
               start: <+start>
               end: <+end>
               unit: <+unit>
@@ -18,13 +17,12 @@ spec:
                 type: Command
                 timeout: 10m
                 spec:
-                  host: <+repeat.item>
                   onDelegate: false
                   environmentVariables: [ ]
                   outputVariables: [ ]
                   commandUnits:
                     - identifier: Setup_Runtime_Paths_<+phase>
-                      name: Setup Runtime Paths
+                      name: "Setup Runtime Paths"
                       type: Script
                       spec:
                         shell: Bash
@@ -37,7 +35,7 @@ spec:
                       name: "Stop Service"
                       type: Script
                       spec:
-                        workingDirectory: $HARNESS_RUNTIME_PATH/tomcat/bin
+                        workingDirectory: $HOME/<+service.name>/<+env.name>/tomcat/bin
                         shell: Bash
                         source:
                           type: Inline
@@ -47,7 +45,7 @@ spec:
                       name: "Process Stopped"
                       type: Script
                       spec:
-                        workingDirectory: $HARNESS_RUNTIME_PATH/tomcat/bin
+                        workingDirectory: $HOME/<+service.name>/<+env.name>/tomcat/bin
                         shell: Bash
                         source:
                           type: Inline
@@ -58,7 +56,7 @@ spec:
                       name: "Port Cleared"
                       type: Script
                       spec:
-                        workingDirectory: $HARNESS_RUNTIME_PATH/tomcat/bin
+                        workingDirectory: $HOME/<+service.name>/<+env.name>/tomcat/bin
                         shell: Bash
                         source:
                           type: Inline
@@ -70,18 +68,18 @@ spec:
                       type: Copy
                       spec:
                         sourceType: Artifact
-                        destinationPath: $HARNESS_RUNTIME_PATH
+                        destinationPath: $HOME/<+service.name>/<+env.name>
                     - identifier: Copy_Config_<+phase>
                       name: "Copy Config"
                       type: Copy
                       spec:
                         sourceType: Config
-                        destinationPath: $HARNESS_RUNTIME_PATH
+                        destinationPath: $HOME/<+service.name>/<+env.name>
                     - identifier: Start_Service_<+phase>
                       name: "Start Service"
                       type: Script
                       spec:
-                        workingDirectory: $HARNESS_RUNTIME_PATH/tomcat/bin
+                        workingDirectory: $HOME/<+service.name>/<+env.name>/tomcat/bin
                         shell: Bash
                         source:
                           type: Inline
@@ -91,7 +89,7 @@ spec:
                       name: "Process Running"
                       type: Script
                       spec:
-                        workingDirectory: $HARNESS_RUNTIME_PATH/tomcat/bin
+                        workingDirectory: $HOME/<+service.name>/<+env.name>/tomcat/bin
                         shell: Bash
                         source:
                           type: Inline
@@ -102,7 +100,7 @@ spec:
                       name: "Port Listening"
                       type: Script
                       spec:
-                        workingDirectory: $HARNESS_RUNTIME_PATH/tomcat/bin
+                        workingDirectory: $HOME/<+service.name>/<+env.name>/tomcat/bin
                         shell: Bash
                         source:
                           type: Inline

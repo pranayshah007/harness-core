@@ -23,12 +23,11 @@ public class CIExecutionConstants {
   public static final String PIPELINE_ID_ATTR = "pipelineID";
   public static final String PIPELINE_EXECUTION_ID_ATTR = "pipelineExecutionID";
   public static final String STAGE_ID_ATTR = "stageID";
+  public static final String STAGE_RUNTIME_ID_ATTR = "stageRuntimeID";
+
   public static final String STAGE_NAME_ATTR = "stageName";
   public static final String BUILD_NUMBER_ATTR = "buildNumber";
   public static final String LABEL_REGEX = "^[a-z0-9A-Z][a-z0-9A-Z\\-_.]*[a-z0-9A-Z]$";
-
-  // Pipeline constants
-  public static final String CI_PIPELINE_CONFIG = "CI_PIPELINE_CONFIG";
 
   public static final String STEP_VOLUME = "harness";
   public static final String STEP_MOUNT_PATH = "/harness";
@@ -40,7 +39,7 @@ public class CIExecutionConstants {
 
   // Constants for implicit git clone step
   public static final String GIT_CLONE_STEP_ID = "harness-git-clone";
-  public static final String GIT_CLONE_STEP_NAME = "Git clone";
+  public static final String GIT_CLONE_STEP_NAME = "Clone codebase";
   public static final Integer GIT_CLONE_MANUAL_DEPTH = 50;
   public static final String GIT_CLONE_DEPTH_ATTRIBUTE = "depth";
   public static final String PR_CLONE_STRATEGY_ATTRIBUTE = "PR_CLONE_STRATEGY";
@@ -121,6 +120,7 @@ public class CIExecutionConstants {
   public static final String HARNESS_SERVICE_ARGS = "HARNESS_SERVICE_ARGS";
 
   public static final String HARNESS_WORKSPACE = "HARNESS_WORKSPACE";
+  public static final String DRONE_WORKSPACE = "DRONE_WORKSPACE";
 
   public static final String PLUGIN_USERNAME = "PLUGIN_USERNAME";
   public static final String PLUGIN_PASSW = "PLUGIN_PASSWORD";

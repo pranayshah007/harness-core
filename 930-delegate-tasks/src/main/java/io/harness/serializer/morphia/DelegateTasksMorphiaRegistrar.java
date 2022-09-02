@@ -69,7 +69,7 @@ import software.wings.beans.BambooConfig;
 import software.wings.beans.BaseVaultConfig;
 import software.wings.beans.BastionConnectionAttributes;
 import software.wings.beans.BugsnagConfig;
-import software.wings.beans.CyberArkConfig;
+import software.wings.beans.CustomSecretNGManagerConfig;
 import software.wings.beans.DatadogConfig;
 import software.wings.beans.DockerConfig;
 import software.wings.beans.DynaTraceConfig;
@@ -191,7 +191,6 @@ public class DelegateTasksMorphiaRegistrar implements MorphiaRegistrar {
     set.add(DelegateConnectionResult.class);
     set.add(AwsSecretsManagerConfig.class);
     set.add(AzureVaultConfig.class);
-    set.add(CyberArkConfig.class);
     set.add(GcpKmsConfig.class);
     set.add(GcpSecretsManagerConfig.class);
     set.add(KmsConfig.class);
@@ -210,6 +209,7 @@ public class DelegateTasksMorphiaRegistrar implements MorphiaRegistrar {
     set.add(CommandUnit.class);
     set.add(CustomSecretsManagerConfig.class);
     set.add(ServiceVariable.class);
+    set.add(CustomSecretNGManagerConfig.class);
   }
 
   @Override
@@ -270,7 +270,6 @@ public class DelegateTasksMorphiaRegistrar implements MorphiaRegistrar {
     w.put("service.impl.logz.LogzDataCollectionInfo", LogzDataCollectionInfo.class);
     w.put("beans.AwsSecretsManagerConfig", AwsSecretsManagerConfig.class);
     w.put("beans.AzureVaultConfig", AzureVaultConfig.class);
-    w.put("beans.CyberArkConfig", CyberArkConfig.class);
     w.put("beans.GcpKmsConfig", GcpKmsConfig.class);
     w.put("beans.GcpSecretsManagerConfig", GcpSecretsManagerConfig.class);
     w.put("beans.KmsConfig", KmsConfig.class);

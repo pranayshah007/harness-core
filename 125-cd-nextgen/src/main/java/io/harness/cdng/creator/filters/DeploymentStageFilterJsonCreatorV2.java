@@ -147,7 +147,7 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
     } else if (deploymentStageConfig.getService() != null) {
       addFiltersFromServiceV2(filterCreationContext, filterBuilder, deploymentStageConfig.getService(),
           deploymentStageConfig.getDeploymentType());
-    } else {
+    } else if (deploymentStageConfig.getServices() == null) {
       throw new InvalidYamlRuntimeException(
           format("serviceConfig or Service should be present in stage [%s]. Please add it and try again",
               YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
@@ -207,7 +207,7 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
               infraService.get(filterCreationContext.getSetupMetadata().getAccountId(),
                   filterCreationContext.getSetupMetadata().getOrgId(),
                   filterCreationContext.getSetupMetadata().getProjectId(), entity.getIdentifier(),
-                  infraList.get(0).getIdentifier());
+                  infraList.get(0).getIdentifier().getValue());
           if (infrastructureEntity.isPresent()) {
             if (infrastructureEntity.get().getType() == null) {
               throw new InvalidRequestException(format(

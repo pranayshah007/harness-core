@@ -66,7 +66,7 @@ public class SshSessionConfigMapper {
             (SSHPasswordCredentialDTO) decryptionHelper.decrypt(sshPasswordCredentialDTO, encryptionDetails);
         builder.withAccessType(AccessType.USER_PASSWORD)
             .withUserName(passwordCredentialDTO.getUserName())
-            .withPassword(passwordCredentialDTO.getPassword().getDecryptedValue());
+            .withSshPassword(passwordCredentialDTO.getPassword().getDecryptedValue());
         break;
       case KeyReference:
         SSHKeyReferenceCredentialDTO sshKeyReferenceCredentialDTO =

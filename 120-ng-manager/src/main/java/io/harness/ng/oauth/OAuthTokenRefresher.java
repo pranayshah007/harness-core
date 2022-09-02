@@ -119,7 +119,7 @@ public class OAuthTokenRefresher implements Handler<GitlabConnector> {
     secretSpecDTO.setValue(newSecret);
     secretDTOV2.setSpec(secretSpecDTO);
 
-    Secret secret = secretDTOV2.toEntity();
+    Secret secret = Secret.fromDTO(secretDTOV2);
     ngSecretCrudService.update(entity.getAccountIdentifier(), secret.getOrgIdentifier(), secret.getProjectIdentifier(),
         secretDTOV2.getIdentifier(), secretDTOV2);
   }
@@ -153,21 +153,23 @@ public class OAuthTokenRefresher implements Handler<GitlabConnector> {
       }
 
       RefreshTokenResponse refreshTokenResponse = null;
+      String clientId = configuration.getGitlabConfig().getClientId();
+      String clientSecret = configuration.getGitlabConfig().getClientSecret();
+
+      String clientIdShort = clientId.substring(0, Math.min(clientId.length(), 3));
+      String clientSecretShort = clientSecret.substring(0, Math.min(clientSecret.length(), 3));
 
       try {
-        refreshTokenResponse = scmClient.refreshToken(null, configuration.getGitlabConfig().getClientId(),
-            configuration.getGitlabConfig().getClientSecret(), "https://gitlab.com/oauth/token",
+        refreshTokenResponse = scmClient.refreshToken(null, clientId, clientSecret, "https://gitlab.com/oauth/token",
             String.valueOf(gitlabOauthDTO.getRefreshTokenRef().getDecryptedValue()));
       } catch (Exception e) {
         log.error(
-            "[OAuth refresh] Error from SCM for refreshing token for connector:{}, clientID:{}, Account:{}, Error:{}",
-            entity.getIdentifier(), configuration.getGitlabConfig().getClientId(), entity.getAccountIdentifier(),
-            e.getMessage());
+            "[OAuth refresh] Error from SCM for refreshing token for connector:{}, clientID short:{}, client Secret short:{}, Account:{}, Error:{}",
+            entity.getIdentifier(), clientIdShort, clientSecretShort, entity.getAccountIdentifier(), e.getMessage());
         return;
       }
 
-      log.info("[OAuth refresh]:" + entity.getName() + " New AccessToken: " + refreshTokenResponse.getAccessToken()
-          + " New RefreshToken:" + refreshTokenResponse.getRefreshToken());
+      log.info("[OAuth refresh]:" + entity.getName() + "-Got new access & refresh token");
 
       updateSecretSecretValue(entity, tokenDTO, refreshTokenResponse.getAccessToken());
       updateSecretSecretValue(entity, refreshTokenDTO, refreshTokenResponse.getRefreshToken());

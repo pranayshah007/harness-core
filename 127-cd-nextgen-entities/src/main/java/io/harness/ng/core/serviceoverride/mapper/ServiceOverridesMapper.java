@@ -30,8 +30,8 @@ public class ServiceOverridesMapper {
             .accountId(accountId)
             .orgIdentifier(serviceOverrideRequestDTO.getOrgIdentifier())
             .projectIdentifier(serviceOverrideRequestDTO.getProjectIdentifier())
-            .environmentRef(serviceOverrideRequestDTO.getEnvironmentRef())
-            .serviceRef(serviceOverrideRequestDTO.getServiceRef())
+            .environmentRef(serviceOverrideRequestDTO.getEnvironmentIdentifier())
+            .serviceRef(serviceOverrideRequestDTO.getServiceIdentifier())
             .yaml(serviceOverrideRequestDTO.getYaml())
             .build();
 

@@ -3,6 +3,7 @@ io.harness.ngpipeline.status.BuildStatusUpdateParameter
 io.harness.yaml.core.properties.NGProperties
 io.harness.beans.steps.stepinfo.PluginStepInfo
 io.harness.beans.steps.stepinfo.SecurityStepInfo
+io.harness.beans.steps.stepinfo.GitCloneStepInfo
 io.harness.when.beans.StepWhenCondition
 io.harness.beans.sweepingoutputs.StageArtifacts
 io.harness.beans.sweepingoutputs.CodebaseSweepingOutput
@@ -48,6 +49,7 @@ io.harness.steps.common.NGSectionStepParameters
 io.harness.steps.fork.ForkStepParameters
 io.harness.beans.steps.stepinfo.DockerStepInfo
 io.harness.beans.steps.stepinfo.RunStepInfo
+io.harness.beans.steps.stepinfo.BackgroundStepInfo
 io.harness.plancreator.execution.ExecutionElementConfig
 io.harness.pms.sdk.core.plan.MapStepParameters
 io.harness.steps.section.chain.SectionChainPassThroughData
@@ -72,6 +74,7 @@ io.harness.yaml.core.failurestrategy.rollback.StageRollbackFailureActionConfig
 io.harness.advisers.rollback.RollbackTriggeredOutput
 io.harness.beans.stages.IntegrationStageNode
 io.harness.beans.steps.nodes.RunStepNode
+io.harness.beans.steps.nodes.BackgroundStepNode
 io.harness.beans.steps.nodes.RunTestsStepNode
 io.harness.beans.steps.nodes.ArtifactoryUploadNode
 io.harness.beans.steps.nodes.BuildAndPushDockerNode
@@ -86,6 +89,7 @@ io.harness.beans.steps.nodes.S3UploadNode
 io.harness.beans.steps.nodes.SaveCacheGCSNode
 io.harness.beans.steps.nodes.SaveCacheS3Node
 io.harness.beans.steps.nodes.SecurityNode
+io.harness.beans.steps.nodes.GitCloneStepNode
 io.harness.yaml.core.failurestrategy.abort.AbortFailureActionConfig
 io.harness.yaml.core.failurestrategy.ignore.IgnoreFailureActionConfig
 io.harness.yaml.core.failurestrategy.manualintervention.ManualFailureSpecConfig
@@ -187,3 +191,4 @@ io.harness.ci.beans.entities.CITelemetrySentStatus
 io.harness.plancreator.steps.TaskSelectorYaml
 io.harness.logging.CommandExecutionStatus
 io.harness.plancreator.strategy.ExpressionAxisConfig
+io.harness.yaml.core.failurestrategy.ProceedWithDefaultValuesFailureActionConfig

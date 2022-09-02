@@ -13,11 +13,11 @@ public enum EncryptionType {
   GCP_KMS("gcpkms"),
   AWS_SECRETS_MANAGER("awssecretsmanager"),
   AZURE_VAULT("azurevault"),
-  CYBERARK("cyberark"),
   VAULT("hashicorpvault"),
   GCP_SECRETS_MANAGER("gcpsecretsmanager"),
   CUSTOM("custom"),
-  VAULT_SSH("vaultssh");
+  VAULT_SSH("vaultssh"),
+  CUSTOM_NG("customNG");
 
   private final String yamlName;
 

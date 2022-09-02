@@ -81,6 +81,10 @@ public class StageElementConfig {
 
   @VariableExpression(skipVariableExpression = true) List<FailureStrategyConfig> failureStrategies;
 
+  @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
+  @JsonProperty("skipInstances")
+  ParameterField<Boolean> skipInstances;
+
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   @YamlSchemaTypes(value = {runtime})
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;

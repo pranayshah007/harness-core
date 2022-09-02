@@ -22,6 +22,8 @@ import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.InfrastructureDefinitionConfig;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureClustersDTO;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureDeploymentSlotsDTO;
+import io.harness.cdng.k8s.resources.azure.dtos.AzureLocationsDTO;
+import io.harness.cdng.k8s.resources.azure.dtos.AzureManagementGroupsDTO;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureResourceGroupsDTO;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureSubscriptionsDTO;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureWebAppNamesDTO;
@@ -301,5 +303,34 @@ public class AzureResource {
 
     return InfrastructureEntityConfigMapper.toInfrastructureConfig(infrastructureEntity)
         .getInfrastructureDefinitionConfig();
+  }
+
+  @GET
+  @Path("management-groups")
+  @ApiOperation(value = "Gets azure management groups", nickname = "getManagementGroups")
+  public ResponseDTO<AzureManagementGroupsDTO> getManagementGroups(
+      @NotNull @QueryParam("connectorRef") String azureConnectorIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+    return ResponseDTO.newResponse(
+        azureResourceService.getAzureManagementGroups(connectorRef, orgIdentifier, projectIdentifier));
+  }
+
+  @GET
+  @Path("locations")
+  @ApiOperation(value = "Gets azure locations defined for a subscription", nickname = "getLocationsBySubscription")
+  public ResponseDTO<AzureLocationsDTO> getLocations(
+      @NotNull @QueryParam("connectorRef") String azureConnectorIdentifier,
+      @QueryParam("subscriptionId") String subscriptionId,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+    return ResponseDTO.newResponse(
+        azureResourceService.getLocations(connectorRef, orgIdentifier, projectIdentifier, subscriptionId));
   }
 }

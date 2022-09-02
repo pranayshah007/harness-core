@@ -213,6 +213,7 @@ message GithubProvider {
     string access_token = 1;
     GithubApp github_app = 2;
   }
+  bool isGithubApp = 3;
 }
 
 message GitlabProvider {

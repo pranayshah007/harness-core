@@ -18,7 +18,6 @@ import io.harness.encryptors.VaultEncryptor;
 import io.harness.encryptors.clients.AwsKmsEncryptor;
 import io.harness.encryptors.clients.AwsSecretsManagerEncryptor;
 import io.harness.encryptors.clients.AzureVaultEncryptor;
-import io.harness.encryptors.clients.CyberArkVaultEncryptor;
 import io.harness.encryptors.clients.GcpKmsEncryptor;
 import io.harness.encryptors.clients.GcpSecretsManagerEncryptor;
 import io.harness.encryptors.clients.HashicorpVaultEncryptor;
@@ -196,11 +195,6 @@ public class SMCoreRule implements MethodRule, InjectorRuleMixin, MongoRuleMixin
             .to(GcpSecretsManagerEncryptor.class);
 
         binder()
-            .bind(VaultEncryptor.class)
-            .annotatedWith(Names.named(Encryptors.CYBERARK_VAULT_ENCRYPTOR.getName()))
-            .to(CyberArkVaultEncryptor.class);
-
-        binder()
             .bind(KmsEncryptor.class)
             .annotatedWith(Names.named(Encryptors.AWS_KMS_ENCRYPTOR.getName()))
             .to(AwsKmsEncryptor.class);
@@ -228,6 +222,11 @@ public class SMCoreRule implements MethodRule, InjectorRuleMixin, MongoRuleMixin
         binder()
             .bind(CustomEncryptor.class)
             .annotatedWith(Names.named(Encryptors.CUSTOM_ENCRYPTOR.getName()))
+            .toInstance(mock(CustomEncryptor.class));
+
+        binder()
+            .bind(CustomEncryptor.class)
+            .annotatedWith(Names.named(Encryptors.CUSTOM_ENCRYPTOR_NG.getName()))
             .toInstance(mock(CustomEncryptor.class));
 
         bind(SecretsFileService.class).toInstance(mock(SecretsFileService.class));

@@ -10,6 +10,7 @@ package io.harness.pms.pipeline.service;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.SAMARTH;
+import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -35,6 +36,7 @@ import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
+import io.harness.ng.core.template.TemplateReferenceSummary;
 import io.harness.pms.PmsFeatureFlagService;
 import io.harness.pms.contracts.governance.ExpansionRequestMetadata;
 import io.harness.pms.contracts.governance.ExpansionResponseBatch;
@@ -55,6 +57,7 @@ import io.harness.yaml.validator.InvalidYamlException;
 
 import com.google.protobuf.ByteString;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -156,6 +159,44 @@ public class PMSPipelineServiceHelperTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testUpdatePipelineInfoWithEmptyFilterValue() throws IOException {
+    FilterCreatorMergeServiceResponse response = FilterCreatorMergeServiceResponse.builder()
+                                                     .stageCount(1)
+                                                     .stageNames(Collections.singletonList("stage-1"))
+                                                     .filters(Collections.singletonMap("whatKey?", ""))
+                                                     .build();
+    doReturn(response).when(filterCreatorMergeService).getPipelineInfo(any());
+    PipelineEntity entity = PipelineEntity.builder().build();
+    PipelineEntity updatedEntity = pmsPipelineServiceHelper.updatePipelineInfo(entity);
+    assertThat(updatedEntity.getStageCount()).isEqualTo(1);
+    assertThat(updatedEntity.getStageNames().size()).isEqualTo(1);
+    assertThat(updatedEntity.getStageNames().contains("stage-1")).isTrue();
+    assertThat(updatedEntity.getFilters().size()).isEqualTo(1);
+    assertThat(updatedEntity.getFilters().containsKey("whatKey?")).isTrue();
+    assertThat(updatedEntity.getFilters().containsValue(Document.parse("{}"))).isTrue();
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testUpdatePipelineInfoWithInvalidFilterValue() throws IOException {
+    FilterCreatorMergeServiceResponse response = FilterCreatorMergeServiceResponse.builder()
+                                                     .stageCount(1)
+                                                     .stageNames(Collections.singletonList("stage-1"))
+                                                     .filters(Collections.singletonMap("whatKey?", "-`6^!"))
+                                                     .build();
+    doReturn(response).when(filterCreatorMergeService).getPipelineInfo(any());
+    PipelineEntity entity = PipelineEntity.builder().build();
+    PipelineEntity updatedEntity = pmsPipelineServiceHelper.updatePipelineInfo(entity);
+    assertThat(updatedEntity.getStageCount()).isEqualTo(1);
+    assertThat(updatedEntity.getStageNames().size()).isEqualTo(1);
+    assertThat(updatedEntity.getStageNames().contains("stage-1")).isTrue();
+    assertThat(updatedEntity.getFilters().size()).isEqualTo(0);
+  }
+
+  @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testPopulateFilterUsingIdentifier() {
@@ -232,8 +273,11 @@ public class PMSPipelineServiceHelperTest extends CategoryTest {
                                         .projectIdentifier(projectIdentifier)
                                         .yaml(yaml)
                                         .build();
-    TemplateMergeResponseDTO templateMergeResponseDTO =
-        TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build();
+    List<TemplateReferenceSummary> templateReferenceSummaryList = new ArrayList<>();
+    TemplateMergeResponseDTO templateMergeResponseDTO = TemplateMergeResponseDTO.builder()
+                                                            .mergedPipelineYaml(yaml)
+                                                            .templateReferenceSummaries(templateReferenceSummaryList)
+                                                            .build();
     doReturn(templateMergeResponseDTO)
         .when(pipelineTemplateHelper)
         .resolveTemplateRefsInPipeline(pipelineEntity, false);

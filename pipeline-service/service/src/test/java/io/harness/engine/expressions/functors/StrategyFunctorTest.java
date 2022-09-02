@@ -50,6 +50,8 @@ public class StrategyFunctorTest extends PipelineServiceTestBase {
     Map<String, Object> expected = new HashMap<>();
     expected.put("iteration", 0);
     expected.put("iterations", 0);
+    expected.put("totalIterations", 0);
+
     expected.put("identifierPostFix", "_1");
     Map<String, String> matrix = new HashMap<>();
     matrix.put("a", "1");

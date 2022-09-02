@@ -297,11 +297,15 @@ public class ApiKeyServiceImpl implements ApiKeyService {
   }
 
   @Override
-  public void validate(String apiKey, String accountId) {
+  public Boolean validate(String apiKey, String accountId) {
+    if (isEmpty(apiKey) || isEmpty(accountId)) {
+      return false;
+    }
     ApiKeyEntry apiKeyEntry = getApiKeyFromCacheOrDB(apiKey, accountId, true);
     if (apiKeyEntry == null) {
       throw new UnauthorizedException("Invalid Api Key", USER);
     }
+    return true;
   }
 
   @Override
@@ -507,10 +511,9 @@ public class ApiKeyServiceImpl implements ApiKeyService {
   @Override
   public Boolean isApiKeyValid(String apiKey, String accountId) {
     try {
-      validate(apiKey, accountId);
+      return validate(apiKey, accountId);
     } catch (UnauthorizedException | InvalidRequestException exception) {
       return false;
     }
-    return true;
   }
 }

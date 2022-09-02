@@ -13,6 +13,7 @@ import static java.util.stream.Collectors.toSet;
 
 import io.harness.AccessControlClientConfiguration;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.enforcement.client.EnforcementClientConfiguration;
 import io.harness.platform.audit.AuditServiceConfiguration;
 import io.harness.platform.notification.NotificationServiceConfiguration;
@@ -137,7 +138,9 @@ public class PlatformConfiguration extends Configuration {
     resources.addAll(ALL_HARNESS_RESOURCES.stream()
                          .filter(clazz -> StringUtils.startsWithAny(clazz.getPackage().getName(), ENFORCEMENT_PACKAGE))
                          .collect(Collectors.toSet()));
-    return resources;
+    return resources.stream()
+        .filter(clazz -> clazz.isInterface() || EmptyPredicate.isEmpty(clazz.getInterfaces()))
+        .collect(toSet());
   }
 
   public PlatformConfiguration() {

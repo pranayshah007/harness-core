@@ -45,6 +45,7 @@ import io.harness.cvng.core.entities.DatadogLogCVConfig;
 import io.harness.cvng.core.entities.DatadogMetricCVConfig;
 import io.harness.cvng.core.entities.DeploymentDataCollectionTask;
 import io.harness.cvng.core.entities.DynatraceCVConfig;
+import io.harness.cvng.core.entities.EntityDisableTime;
 import io.harness.cvng.core.entities.ErrorTrackingCVConfig;
 import io.harness.cvng.core.entities.HostRecord;
 import io.harness.cvng.core.entities.LogCVConfig;
@@ -206,6 +207,7 @@ public class CVNextGenMorphiaRegister implements MorphiaRegistrar {
     set.add(SLONotificationRule.class);
     set.add(MonitoredServiceNotificationRule.class);
     set.add(SplunkMetricCVConfig.class);
+    set.add(EntityDisableTime.class);
   }
 
   @Override

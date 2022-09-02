@@ -27,6 +27,7 @@ import com.slack.api.model.block.SectionBlock;
 import com.slack.api.model.block.composition.MarkdownTextObject;
 import com.slack.api.model.block.element.BlockElement;
 import com.slack.api.model.block.element.ButtonElement;
+import java.net.URISyntaxException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -212,7 +213,7 @@ public class SlackMessageGenerator {
   }
 
   public LayoutBlock fromAnomaly(AnomalyEntity anomaly) {
-    String templateString = "${ANOMALY_COST}`* (+${ANOMALY_COST_PERCENTAGE}%) ";
+    String templateString = "${ANOMALY_COST}`* (+${ANOMALY_COST_PERCENTAGE}) ";
     templateString = addClusterInfo(templateString, anomaly);
     templateString = addNamespaceInfo(templateString, anomaly);
     templateString = addWorkloadInfo(templateString, anomaly);
@@ -221,18 +222,19 @@ public class SlackMessageGenerator {
     templateString = addGcpSkuInfo(templateString, anomaly);
     templateString = addAwsAccountInfo(templateString, anomaly);
     templateString = addAwsServiceInfo(templateString, anomaly);
-    templateString = templateString + "\n Total spend of *$ ${" + AnomalyEntityKeys.actualCost
-        + "}* detected. Would be typically at *$ ${" + AnomalyEntityKeys.expectedCost + "}*";
+    templateString = templateString + "\n Total spend of *${" + AnomalyEntityKeys.actualCost
+        + "}* detected. Would be typically at *${" + AnomalyEntityKeys.expectedCost + "}*";
 
-    templateString = " *`$" + replace(templateString, AnomalyUtility.getEntityMap(anomaly));
+    templateString = " *`" + replace(templateString, AnomalyUtility.getEntityMap(anomaly));
     templateString = replace(templateString, AnomalyUtility.getURLMap(anomaly, mainConfiguration.getBaseUrl()));
     return SectionBlock.builder().text(MarkdownTextObject.builder().text(templateString).build()).build();
   }
 
-  public String getAnomalyDetailsTemplateString(AnomalyData anomaly) {
+  public String getAnomalyDetailsTemplateString(
+      String accountId, String perspectiveId, String perspectiveName, AnomalyData anomaly) throws URISyntaxException {
     AnomalyEntity anomalyEntity = convertToAnomalyEntity(anomaly);
 
-    String templateString = "${ANOMALY_COST}`* (+${ANOMALY_COST_PERCENTAGE}%)  ";
+    String templateString = "${ANOMALY_COST}`* (+${ANOMALY_COST_PERCENTAGE})  ";
     templateString = addClusterInfo(templateString, anomalyEntity);
     templateString = addNamespaceInfo(templateString, anomalyEntity);
     templateString = addWorkloadInfo(templateString, anomalyEntity);
@@ -241,12 +243,12 @@ public class SlackMessageGenerator {
     templateString = addGcpSkuInfo(templateString, anomalyEntity);
     templateString = addAwsAccountInfo(templateString, anomalyEntity);
     templateString = addAwsServiceInfo(templateString, anomalyEntity);
-    templateString = templateString + "\n Total spend of *$ ${" + AnomalyEntityKeys.actualCost
-        + "}* detected. Would be typically at *$ ${" + AnomalyEntityKeys.expectedCost + "}*\n\n";
+    templateString = templateString + "\n Total spend of *${" + AnomalyEntityKeys.actualCost
+        + "}* detected. Would be typically at *${" + AnomalyEntityKeys.expectedCost + "}*\n\n";
 
-    templateString = " *`$" + replace(templateString, AnomalyUtility.getEntityMap(anomalyEntity));
-    // Todo: NG Urls here
-    templateString = replace(templateString, AnomalyUtility.getURLMap(anomalyEntity, mainConfiguration.getBaseUrl()));
+    templateString = " *`" + replace(templateString, AnomalyUtility.getEntityMap(anomalyEntity));
+    templateString = replace(templateString,
+        AnomalyUtility.getNgURLMap(accountId, perspectiveId, perspectiveName, anomaly, mainConfiguration.getBaseUrl()));
     return templateString;
   }
 

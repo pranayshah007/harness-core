@@ -79,6 +79,7 @@ import software.wings.api.helm.HelmReleaseInfoElement;
 import software.wings.api.helm.ServiceHelmElements;
 import software.wings.api.instancedetails.InstanceInfoVariables;
 import software.wings.api.k8s.K8sApplicationManifestSourceInfo;
+import software.wings.api.k8s.K8sCanaryDeleteServiceElement;
 import software.wings.api.k8s.K8sElement;
 import software.wings.api.k8s.K8sExecutionSummary;
 import software.wings.api.k8s.K8sGitConfigMapInfo;
@@ -590,5 +591,6 @@ public class ManagerKryoRegistrar implements KryoRegistrar {
     kryo.register(RancherStateExecutionData.class, 50009);
     kryo.register(UserGroupEntityReference.class, 50010);
     kryo.register(EncryptedDataDetails.class, 50013);
+    kryo.register(K8sCanaryDeleteServiceElement.class, 50016);
   }
 }

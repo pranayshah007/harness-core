@@ -7,6 +7,7 @@
 
 package io.harness.ci.connector;
 
+import static io.harness.connector.SecretSpecBuilder.RANDOM_LENGTH;
 import static io.harness.connector.SecretSpecBuilder.SECRET_KEY;
 import static io.harness.data.encoding.EncodingUtils.encodeBase64;
 import static io.harness.delegate.beans.ci.pod.SecretParams.Type.TEXT;
@@ -274,15 +275,25 @@ public class SecretSpecBuilderTest extends CategoryTest {
     when(secretDecryptor.decrypt(any(), any())).thenReturn(azureRepoUsernameTokenDTO);
     Map<String, SecretParams> gitSecretVariables = secretSpecBuilder.decryptGitSecretVariables(connectorDetails);
     assertThat(gitSecretVariables).containsOnlyKeys("DRONE_NETRC_USERNAME", "DRONE_NETRC_PASSWORD");
-    assertThat(gitSecretVariables.get("DRONE_NETRC_USERNAME"))
+
+    final SecretParams droneNetrcUsername = gitSecretVariables.get("DRONE_NETRC_USERNAME");
+    final String usernameSecretKey = droneNetrcUsername.getSecretKey();
+    final String usernamePrefix = "DRONE_NETRC_USERNAME_";
+    assertThat(usernameSecretKey.startsWith(usernamePrefix));
+    assertThat(usernameSecretKey.length()).isEqualTo(usernamePrefix.length() + RANDOM_LENGTH);
+
+    final SecretParams droneNetrcPassword = gitSecretVariables.get("DRONE_NETRC_PASSWORD");
+    final String passwordSecretKey = droneNetrcPassword.getSecretKey();
+    final String passwordPrefix = "DRONE_NETRC_PASSWORD_";
+    assertThat(passwordSecretKey.startsWith(passwordPrefix));
+    assertThat(passwordSecretKey.length()).isEqualTo(passwordPrefix.length() + RANDOM_LENGTH);
+
+    assertThat(droneNetrcUsername)
+        .isEqualTo(
+            SecretParams.builder().secretKey(usernameSecretKey).value(encodeBase64("username")).type(TEXT).build());
+    assertThat(droneNetrcPassword)
         .isEqualTo(SecretParams.builder()
-                       .secretKey("DRONE_NETRC_USERNAME")
-                       .value(encodeBase64("username"))
-                       .type(TEXT)
-                       .build());
-    assertThat(gitSecretVariables.get("DRONE_NETRC_PASSWORD"))
-        .isEqualTo(SecretParams.builder()
-                       .secretKey("DRONE_NETRC_PASSWORD")
+                       .secretKey(passwordSecretKey)
                        .value(encodeBase64("S3CR3TKEYEXAMPLE"))
                        .type(TEXT)
                        .build());

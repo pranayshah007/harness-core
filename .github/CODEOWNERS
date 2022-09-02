@@ -95,3 +95,5 @@ bazel* diptiman.adak@harness.io udham.singh@harness.io
 /pipeline-service/service/src/main/java/io/harness/pms/servicenow/ vaibhav.si@harness.io archit.singla@harness.io sahil.hindwani@harness.io sanyasi.naidu@harness.io deepak.puthraya@harness.io abhinav.mittal@harness.io pooja.singhal@harness.io
 /pipeline-service/service/src/main/java/io/harness/pms/triggers/ vaibhav.si@harness.io archit.singla@harness.io sahil.hindwani@harness.io sanyasi.naidu@harness.io deepak.puthraya@harness.io abhinav.mittal@harness.io pooja.singhal@harness.io
 /pipeline-service/service/src/test/ vaibhav.si@harness.io archit.singla@harness.io sahil.hindwani@harness.io sanyasi.naidu@harness.io deepak.puthraya@harness.io abhinav.mittal@harness.io pooja.singhal@harness.io
+/pipeline-service/pms-sdk-core/ archit.singla@harness.io sahil.hindwani@harness.io vaibhav.si@harness.io sanyasi.naidu@harness.io
+/tools/build-cleaner/ gaurav.nanda@harness.io

@@ -7,6 +7,7 @@
 
 package io.harness.delegate.task.azure.arm.request;
 
+import static io.harness.delegate.task.azure.arm.AzureARMTaskType.BLUEPRINT_DEPLOYMENT;
 import static io.harness.expression.Expression.ALLOW_SECRETS;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -32,7 +33,7 @@ public class AzureBlueprintDeploymentParameters extends AzureARMTaskParameters {
   public AzureBlueprintDeploymentParameters(String appId, String accountId, String activityId, String blueprintJson,
       Map<String, String> artifacts, String assignmentJson, String assignmentName, String commandName,
       Integer timeoutIntervalInMin) {
-    super(appId, accountId, activityId, null, commandName, timeoutIntervalInMin, AzureARMTaskType.BLUEPRINT_DEPLOYMENT);
+    super(appId, accountId, activityId, null, commandName, timeoutIntervalInMin, BLUEPRINT_DEPLOYMENT);
     this.blueprintJson = blueprintJson;
     this.artifacts = artifacts;
     this.assignmentJson = assignmentJson;

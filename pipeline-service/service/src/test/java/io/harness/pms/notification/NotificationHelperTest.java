@@ -11,13 +11,17 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.notification.PipelineEventType.STAGE_FAILED;
 import static io.harness.notification.PipelineEventType.STAGE_SUCCESS;
 import static io.harness.rule.OwnerRule.BRIJESH;
+import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -39,6 +43,8 @@ import io.harness.execution.NodeExecution.NodeExecutionBuilder;
 import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.notification.PipelineEventType;
+import io.harness.notification.bean.NotificationRules;
+import io.harness.notification.channelDetails.NotificationChannelType;
 import io.harness.notification.channeldetails.EmailChannel;
 import io.harness.notification.channeldetails.NotificationChannel;
 import io.harness.notification.notificationclient.NotificationClient;
@@ -55,6 +61,7 @@ import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.rule.Owner;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -285,5 +292,32 @@ public class NotificationHelperTest extends CategoryTest {
       notificationHelper.sendNotification(ambiance, pipelineEventTypeList.get(idx), nodeExecution, 1L);
       verify(notificationClient, times(idx + 1)).sendNotificationAsync(any());
     }
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testcreateNotificationRules() {
+    NotificationRules notificationRules = notificationHelper.createNotificationRules(ambiance, pipelineEventType);
+    assertThat(notificationRules.isEnabled()).isTrue();
+    assertThat(notificationRules.getPipelineEvents().stream().findFirst().get().getType()).isEqualTo(pipelineEventType);
+    assertThat(notificationRules.getNotificationChannelWrapper().getValue().getType())
+        .isEqualTo(NotificationChannelType.EMAIL);
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testSendNotificationOnlyToUserWhoTriggeredPipeline() {
+    doNothing()
+        .when(notificationHelper)
+        .sendNotificationInternal(any(), any(), any(), any(), any(), any(), any(), any(), anyBoolean());
+    doReturn(Collections.EMPTY_MAP)
+        .when(notificationHelper)
+        .constructTemplateData(any(), any(), any(), any(), any(), any());
+    notificationHelper.sendNotificationOnlyToUserWhoTriggeredPipeline(ambiance, pipelineEventType, null, null, true);
+    verify(notificationHelper, times(1)).createNotificationRules(any(), any());
+    verify(notificationHelper, times(1))
+        .sendNotificationInternal(any(), any(), any(), any(), any(), any(), any(), any(), anyBoolean());
   }
 }

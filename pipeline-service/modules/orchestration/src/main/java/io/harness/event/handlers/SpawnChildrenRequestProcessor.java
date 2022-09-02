@@ -12,9 +12,9 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import io.harness.OrchestrationPublisherName;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.concurrency.ConcurrentChildInstance;
 import io.harness.concurrency.MaxConcurrentChildCallback;
+import io.harness.engine.OrchestrationEngine;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.pms.resume.EngineResumeCallback;
 import io.harness.execution.InitiateNodeHelper;
@@ -36,6 +36,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
@@ -49,14 +50,13 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
   @Inject private InitiateNodeHelper initiateNodeHelper;
   @Inject private PmsFeatureFlagService pmsFeatureFlagService;
   @Inject private PmsGraphStepDetailsService nodeExecutionInfoService;
+  @Inject private OrchestrationEngine orchestrationEngine;
   @Inject @Named(OrchestrationPublisherName.PUBLISHER_NAME) private String publisherName;
 
   @Override
   public void handleEvent(SdkResponseEventProto event) {
     SpawnChildrenRequest request = event.getSpawnChildrenRequest();
     Ambiance ambiance = event.getAmbiance();
-    boolean isMatrixFeatureEnabled =
-        pmsFeatureFlagService.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.PIPELINE_MATRIX);
     String nodeExecutionId = Objects.requireNonNull(AmbianceUtils.obtainCurrentRuntimeId(ambiance));
     try (AutoLogContext ignore = AmbianceUtils.autoLogContext(ambiance)) {
       List<String> callbackIds = new ArrayList<>();
@@ -70,22 +70,29 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
       for (int i = 0; i < request.getChildren().getChildrenList().size(); i++) {
         callbackIds.add(generateUuid());
       }
-      if (isMatrixFeatureEnabled) {
-        // Save the ConcurrentChildInstance in db first so that whenever callback is called, this information is readily
-        // available. If not done here, it could lead to race conditions
-        nodeExecutionInfoService.addConcurrentChildInformation(
-            ConcurrentChildInstance.builder().childrenNodeExecutionIds(callbackIds).cursor(maxConcurrency).build(),
-            nodeExecutionId);
+
+      if (callbackIds.isEmpty()) {
+        // If callbackIds are empty then it means that there are no children, we should just do a no-op and return to
+        // parent.
+        orchestrationEngine.resumeNodeExecution(ambiance, new HashMap<>(), false);
+        return;
       }
+
+      // Save the ConcurrentChildInstance in db first so that whenever callback is called, this information is readily
+      // available. If not done here, it could lead to race conditions
+      nodeExecutionInfoService.addConcurrentChildInformation(
+          ConcurrentChildInstance.builder().childrenNodeExecutionIds(callbackIds).cursor(maxConcurrency).build(),
+          nodeExecutionId);
+
       for (Child child : request.getChildren().getChildrenList()) {
         String uuid = callbackIds.get(currentChild);
-        if (isMatrixFeatureEnabled && child.hasStrategyMetadata()) {
+        if (child.hasStrategyMetadata()) {
           InitiateMode initiateMode = InitiateMode.CREATE;
           if (shouldCreateAndStart(maxConcurrency, currentChild)) {
             initiateMode = InitiateMode.CREATE_AND_START;
           }
           createAndStart(ambiance, nodeExecutionId, uuid, child.getChildNodeId(), child.getStrategyMetadata(),
-              maxConcurrency, initiateMode);
+              maxConcurrency, initiateMode, request.getChildren().getShouldProceedIfFailed());
         } else {
           initiateNodeHelper.publishEvent(ambiance, child.getChildNodeId(), uuid);
         }
@@ -120,13 +127,16 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
    * @param initiateMode
    */
   private void createAndStart(Ambiance ambiance, String parentNodeExecutionId, String childNodeExecutionId,
-      String childNodeId, StrategyMetadata strategyMetadata, int maxConcurrency, InitiateMode initiateMode) {
+      String childNodeId, StrategyMetadata strategyMetadata, int maxConcurrency, InitiateMode initiateMode,
+      Boolean proceedIfFailed) {
     initiateNodeHelper.publishEvent(ambiance, childNodeId, childNodeExecutionId, strategyMetadata, initiateMode);
     MaxConcurrentChildCallback maxConcurrentChildCallback = MaxConcurrentChildCallback.builder()
                                                                 .parentNodeExecutionId(parentNodeExecutionId)
                                                                 .ambiance(ambiance)
                                                                 .maxConcurrency(maxConcurrency)
+                                                                .proceedIfFailed(proceedIfFailed)
                                                                 .build();
+
     waitNotifyEngine.waitForAllOn(publisherName, maxConcurrentChildCallback, childNodeExecutionId);
   }
 }

@@ -31,6 +31,8 @@ import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubApiAccessType;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.delegate.task.scm.GitRefType;
@@ -221,6 +223,16 @@ public class SCMDataObtainer implements GitProviderBaseDataObtainer {
                                                   .build();
     boolean executeOnDelegate =
         connectorDetails.getExecuteOnDelegate() == null || connectorDetails.getExecuteOnDelegate();
+
+    if (!executeOnDelegate && scmConnector.getConnectorType() == GITHUB) {
+      GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) connectorDetails.getConnectorConfig();
+      GithubApiAccessDTO githubApiAccessDTO = githubConnectorDTO.getApiAccess();
+      if (githubApiAccessDTO != null && githubApiAccessDTO.getType() == GithubApiAccessType.GITHUB_APP) {
+        // execute on delegate if authentication type is GITHUB_APP
+        executeOnDelegate = true;
+        log.warn("Executing fetch commits via delegate since git auth type is GITHUB_APP");
+      }
+    }
 
     if (executeOnDelegate) {
       return fetchPrCommitsViaDelegate(connectorDetails, scmGitRefTaskParams, triggerDetails);

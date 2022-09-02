@@ -30,6 +30,7 @@ public class OutcomeExpressionConstants {
   public final String K8S_CANARY_DELETE_OUTCOME = "k8sCanaryDeleteOutcome";
   public final String K8S_BG_SWAP_SERVICES_OUTCOME = "k8sBGSwapServicesOutcome";
   public final String OUTPUT = "output";
+  public final String INFRA_TASK_EXECUTABLE_STEP_V2 = "INFRA_TASK_EXECUTABLE_STEP_V2";
   public final String TERRAFORM_CONFIG = "terraformConfig";
   public final String DEPLOYMENT_INFO_OUTCOME = "deploymentInfoOutcome";
   public final String HELM_DEPLOY_OUTCOME = "helmDeployOutcome";

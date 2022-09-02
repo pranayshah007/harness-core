@@ -21,7 +21,6 @@ import software.wings.beans.HarnessTag;
 import software.wings.beans.HarnessTagLink;
 import software.wings.beans.HarnessTagLink.HarnessTagLinkKeys;
 import software.wings.security.PermissionAttribute.PermissionType;
-import software.wings.security.annotations.ApiKeyAuthorized;
 import software.wings.security.annotations.AuthRule;
 import software.wings.service.intfc.HarnessTagService;
 
@@ -45,7 +44,6 @@ import javax.ws.rs.QueryParam;
 @Consumes(APPLICATION_JSON)
 @Produces(APPLICATION_JSON)
 @AuthRule(permissionType = PermissionType.LOGGED_IN)
-@ApiKeyAuthorized(permissionType = PermissionType.LOGGED_IN)
 public class HarnessTagResource {
   @Inject HarnessTagService harnessTagService;
 

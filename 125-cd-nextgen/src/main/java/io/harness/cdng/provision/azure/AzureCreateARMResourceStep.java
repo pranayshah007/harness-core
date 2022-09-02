@@ -38,7 +38,7 @@ import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.task.azure.arm.AzureARMTaskNGParameters;
-import io.harness.delegate.task.azure.arm.AzureTaskNGParameters;
+import io.harness.delegate.task.azure.arm.AzureResourceCreationTaskNGParameters;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.git.GitFetchResponse;
 import io.harness.eraro.ErrorCode;
@@ -95,7 +95,8 @@ public class AzureCreateARMResourceStep extends TaskChainExecutableWithRollbackA
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
     if (!cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.AZURE_ARM_BP_NG)) {
-      throw new AccessDeniedException("Azure NG is not enabled for this account. Please contact harness customer care.",
+      throw new AccessDeniedException("The creation of resources using Azure ARM in NG is not enabled for this account."
+              + " Please contact harness customer care.",
           ErrorCode.NG_ACCESS_DENIED, WingsException.USER);
     }
     List<EntityDetail> entityDetailList = new ArrayList<>();
@@ -106,11 +107,10 @@ public class AzureCreateARMResourceStep extends TaskChainExecutableWithRollbackA
     // Template file connector
     AzureCreateARMResourceStepConfigurationParameters spec =
         ((AzureCreateARMResourceStepParameters) stepParameters.getSpec()).getConfigurationParameters();
-    AzureCreateARMResourceTemplateFile azureCreateTemplateFile = spec.getTemplateFile();
+    AzureTemplateFile azureTemplateFile = spec.getTemplateFile();
 
-    if (ManifestStoreType.isInGitSubset(azureCreateTemplateFile.getStore().getSpec().getKind())) {
-      String connectorRef =
-          getParameterFieldValue(azureCreateTemplateFile.getStore().getSpec().getConnectorReference());
+    if (ManifestStoreType.isInGitSubset(azureTemplateFile.getStore().getSpec().getKind())) {
+      String connectorRef = getParameterFieldValue(azureTemplateFile.getStore().getSpec().getConnectorReference());
       IdentifierRef identifierRef =
           IdentifierRefHelper.getIdentifierRef(connectorRef, accountId, orgIdentifier, projectIdentifier);
       EntityDetail entityDetail = EntityDetail.builder().type(EntityType.CONNECTORS).entityRef(identifierRef).build();
@@ -149,8 +149,8 @@ public class AzureCreateARMResourceStep extends TaskChainExecutableWithRollbackA
 
     List<GitFetchFilesConfig> gitFetchFilesConfigs =
         azureCommonHelper.getParametersGitFetchFileConfigs(ambiance, stepConfigurationParameters);
-    AzureCreateARMResourceTemplateFile azureCreateTemplateFile = stepConfigurationParameters.getTemplateFile();
-    if (azureCommonHelper.isTemplateStoredOnGit(azureCreateTemplateFile)) {
+    AzureTemplateFile azureTemplateFile = stepConfigurationParameters.getTemplateFile();
+    if (azureCommonHelper.isTemplateStoredOnGit(azureTemplateFile)) {
       gitFetchFilesConfigs.add(getTemplateGitFetchFileConfig(ambiance, stepConfigurationParameters.getTemplateFile()));
     }
 
@@ -172,7 +172,7 @@ public class AzureCreateARMResourceStep extends TaskChainExecutableWithRollbackA
     //      // TODO: Add logic for harness store type
     //    }
     populatePassThroughData(passThroughData, templateBody, parametersBody);
-    AzureTaskNGParameters azureARMTaskNGParameters = getAzureTaskNGParams(
+    AzureResourceCreationTaskNGParameters azureARMTaskNGParameters = getAzureTaskNGParams(
         ambiance, stepParameters, (AzureConnectorDTO) connectorDTO.getConnectorConfig(), passThroughData);
     return executeCreateTask(ambiance, stepParameters, azureARMTaskNGParameters, passThroughData);
   }
@@ -212,7 +212,7 @@ public class AzureCreateARMResourceStep extends TaskChainExecutableWithRollbackA
   }
 
   private TaskChainResponse executeCreateTask(Ambiance ambiance, StepElementParameters stepParameters,
-      AzureTaskNGParameters parameters, PassThroughData passThroughData) {
+      AzureResourceCreationTaskNGParameters parameters, PassThroughData passThroughData) {
     TaskData taskData = TaskData.builder()
                             .async(true)
                             .taskType(TaskType.AZURE_NG_ARM.name())
@@ -234,8 +234,8 @@ public class AzureCreateARMResourceStep extends TaskChainExecutableWithRollbackA
     passThroughData.setParametersBody(parametersBody);
   }
 
-  private AzureTaskNGParameters getAzureTaskNGParams(Ambiance ambiance, StepElementParameters stepElementParameters,
-      AzureConnectorDTO connectorConfig, PassThroughData passThroughData) {
+  private AzureResourceCreationTaskNGParameters getAzureTaskNGParams(Ambiance ambiance,
+      StepElementParameters stepElementParameters, AzureConnectorDTO connectorConfig, PassThroughData passThroughData) {
     AzureCreateARMResourceStepParameters azureCreateStepParameters =
         (AzureCreateARMResourceStepParameters) stepElementParameters.getSpec();
     AzureCreateARMResourcePassThroughData azureCreatePassThroughData =
@@ -330,7 +330,7 @@ public class AzureCreateARMResourceStep extends TaskChainExecutableWithRollbackA
     AzureConnectorDTO connectorDTO = azureCommonHelper.getAzureConnectorConfig(
         ambiance, ParameterField.createValueField(spec.getConfigurationParameters().getConnectorRef().getValue()));
 
-    AzureTaskNGParameters azureTaskNGParameters =
+    AzureResourceCreationTaskNGParameters azureTaskNGParameters =
         getAzureTaskNGParams(ambiance, stepElementParameters, connectorDTO, passThroughData);
     return executeCreateTask(ambiance, stepElementParameters, azureTaskNGParameters, passThroughData);
   }
@@ -349,15 +349,14 @@ public class AzureCreateARMResourceStep extends TaskChainExecutableWithRollbackA
     }
   }
 
-  private GitFetchFilesConfig getTemplateGitFetchFileConfig(
-      Ambiance ambiance, AzureCreateARMResourceTemplateFile azureCreateTemplateFile) {
-    GitStoreConfig gitStoreConfig = (GitStoreConfig) azureCreateTemplateFile.getStore().getSpec();
+  private GitFetchFilesConfig getTemplateGitFetchFileConfig(Ambiance ambiance, AzureTemplateFile azureTemplateFile) {
+    GitStoreConfig gitStoreConfig = (GitStoreConfig) azureTemplateFile.getStore().getSpec();
     List<String> paths = new ArrayList<>(ParameterFieldHelper.getParameterFieldValue(gitStoreConfig.getPaths()));
     return GitFetchFilesConfig.builder()
         .manifestType(AZURE_TEMPLATE_TYPE)
         .identifier(TEMPLATE_FILE_IDENTIFIER)
         .gitStoreDelegateConfig(
-            azureCommonHelper.getGitStoreDelegateConfig(azureCreateTemplateFile.getStore().getSpec(), ambiance, paths))
+            azureCommonHelper.getGitStoreDelegateConfig(azureTemplateFile.getStore().getSpec(), ambiance, paths))
         .build();
   }
 }

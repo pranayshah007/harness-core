@@ -67,6 +67,7 @@ import software.wings.beans.SerializationFormat;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Duration;
@@ -220,6 +221,7 @@ public class StepUtils {
     LinkedHashMap<String, String> logAbstractionMap =
         withLogs ? generateLogAbstractions(ambiance) : new LinkedHashMap<>();
     units = withLogs ? units : new ArrayList<>();
+    logCommandUnits(units);
 
     TaskDetails.Builder taskDetailsBuilder =
         TaskDetails.newBuilder()
@@ -281,6 +283,14 @@ public class StepUtils {
                                                   .build();
 
     return TaskRequest.newBuilder().setDelegateTaskRequest(delegateTaskRequest).setTaskCategory(taskCategory).build();
+  }
+
+  private static void logCommandUnits(List<String> units) {
+    if (!isEmpty(units)) {
+      String commandUnits =
+          "Sending following command units to delegate task: [" + Joiner.on(", ").skipNulls().join(units) + "]";
+      log.info(commandUnits);
+    }
   }
 
   public static TaskRequest prepareTaskRequest(

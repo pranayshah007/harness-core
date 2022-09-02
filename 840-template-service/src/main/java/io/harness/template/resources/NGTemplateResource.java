@@ -41,10 +41,13 @@ import io.harness.ng.core.template.TemplateListType;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ng.core.template.TemplateMetadataSummaryResponseDTO;
 import io.harness.ng.core.template.TemplateReferenceRequestDTO;
+import io.harness.ng.core.template.TemplateRetainVariablesRequestDTO;
+import io.harness.ng.core.template.TemplateRetainVariablesResponse;
 import io.harness.ng.core.template.TemplateSummaryResponseDTO;
 import io.harness.pms.contracts.service.VariableMergeResponseProto;
 import io.harness.pms.contracts.service.VariablesServiceGrpc.VariablesServiceBlockingStub;
 import io.harness.pms.contracts.service.VariablesServiceRequest;
+import io.harness.pms.contracts.service.VariablesServiceRequestV2;
 import io.harness.pms.mappers.VariablesResponseDtoMapper;
 import io.harness.pms.variables.VariableMergeServiceResponse;
 import io.harness.security.annotations.NextGenManagerAuth;
@@ -574,6 +577,26 @@ public class NGTemplateResource {
   }
 
   @POST
+  @Path("/mergeTemplateInputs/")
+  @ApiOperation(value = "Gets merged template input yaml", nickname = "getsMergedTemplateInputYaml")
+  @Operation(operationId = "getsMergedTemplateInputYaml", summary = "Gets merged template input yaml",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns the Merged YAML")
+      })
+  @Hidden
+  public ResponseDTO<TemplateRetainVariablesResponse>
+  getMergedTemplateInputsYaml(
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @NotNull TemplateRetainVariablesRequestDTO templateRetainVariablesRequestDTO) {
+    log.info("Gets Merged Template Input yaml");
+    return ResponseDTO.newResponse(
+        templateMergeService.mergeTemplateInputs(templateRetainVariablesRequestDTO.getNewTemplateInputs(),
+            templateRetainVariablesRequestDTO.getOldTemplateInputs()));
+  }
+
+  @POST
   @Path("/applyTemplates")
   @ApiOperation(value = "Gets complete yaml with templateRefs resolved", nickname = "getYamlWithTemplateRefsResolved")
   @Operation(operationId = "getYamlWithTemplateRefsResolved", summary = "Gets complete yaml with templateRefs resolved",
@@ -668,6 +691,50 @@ public class NGTemplateResource {
     if (templateEntity.getTemplateEntityType().getOwnerTeam().equals(PIPELINE)) {
       VariablesServiceRequest request = VariablesServiceRequest.newBuilder().setYaml(entityYaml).build();
       VariableMergeResponseProto variables = variablesServiceBlockingStub.getVariables(request);
+      VariableMergeServiceResponse variableMergeServiceResponse = VariablesResponseDtoMapper.toDto(variables);
+      return ResponseDTO.newResponse(variableMergeServiceResponse);
+    } else {
+      return ResponseDTO.newResponse(
+          YamlVariablesUtils.getVariablesFromYaml(entityYaml, templateEntity.getTemplateEntityType()));
+    }
+  }
+
+  @POST
+  @Path("/v2/variables")
+  @Operation(operationId = "createVariablesV2",
+      summary = "Get all the Variables which can be used as expression in the Template.",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
+            description = "Returns all Variables used that are valid to be used as expression in template.")
+      })
+  @ApiOperation(value = "Create variables for Template", nickname = "createVariablesV2")
+  public ResponseDTO<VariableMergeServiceResponse>
+  createVariablesV2(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE,
+                        required = true) @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE, required = true) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) String orgId,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE, required = true) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) String projectId,
+      @RequestBody(required = true, description = "Template YAML") @NotNull @ApiParam(hidden = true) String yaml) {
+    log.info("Creating variables for template.");
+    String appliedTemplateYaml =
+        templateMergeService.applyTemplatesToYaml(accountId, orgId, projectId, yaml, false).getMergedPipelineYaml();
+    TemplateEntity templateEntity =
+        NGTemplateDtoMapper.toTemplateEntity(accountId, orgId, projectId, appliedTemplateYaml);
+    String entityYaml = templateYamlConversionHelper.convertTemplateYamlToEntityYaml(templateEntity);
+    if (templateEntity.getTemplateEntityType().getOwnerTeam().equals(PIPELINE)) {
+      VariablesServiceRequestV2.Builder requestBuilder = VariablesServiceRequestV2.newBuilder();
+      requestBuilder.setAccountId(accountId);
+      if (EmptyPredicate.isNotEmpty(orgId)) {
+        requestBuilder.setOrgId(orgId);
+      }
+      if (EmptyPredicate.isNotEmpty(projectId)) {
+        requestBuilder.setProjectId(projectId);
+      }
+      requestBuilder.setYaml(entityYaml);
+      VariablesServiceRequestV2 request = requestBuilder.build();
+      VariableMergeResponseProto variables = variablesServiceBlockingStub.getVariablesV2(request);
       VariableMergeServiceResponse variableMergeServiceResponse = VariablesResponseDtoMapper.toDto(variables);
       return ResponseDTO.newResponse(variableMergeServiceResponse);
     } else {

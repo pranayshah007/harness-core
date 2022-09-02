@@ -33,11 +33,11 @@ import lombok.extern.slf4j.Slf4j;
 public class CIFeatureFlagServiceImpl implements CIFeatureFlagService {
   @Inject private AccountClient accountClient;
 
-  private static final int CACHE_EVICTION_TIME_HOUR = 1;
+  private static final int CACHE_EVICTION_TIME_MINUTES = 10;
 
   private final LoadingCache<String, Set<String>> featureFlagCache =
       CacheBuilder.newBuilder()
-          .expireAfterWrite(CACHE_EVICTION_TIME_HOUR, TimeUnit.HOURS)
+          .expireAfterWrite(CACHE_EVICTION_TIME_MINUTES, TimeUnit.MINUTES)
           .build(new CacheLoader<String, Set<String>>() {
             @Override
             public Set<String> load(@org.jetbrains.annotations.NotNull final String accountId) {

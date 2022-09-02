@@ -1022,8 +1022,8 @@ go_repository(
 go_repository(
     name = "com_github_drone_go_scm",
     importpath = "github.com/drone/go-scm",
-    sum = "h1:tx7Xgpt64DYq90WFPVi9T/5c7IuNQ8ckbb8qUEK05gU=",
-    version = "v1.26.1-0.20220718061611-2e3f1a56c8dd",
+    sum = "h1:nXqrXP/edQDr0gaIIdohlayBSUrKWh0/C2E1VQcvokM=",
+    version = "v1.27.1-0.20220817160204-09a4fde5917c",
 )
 
 go_repository(
@@ -4665,6 +4665,7 @@ plain_artifacts = [
     "io.gsonfire:gson-fire:1.8.3",
     "io.harness.cv:data-collection-dsl:0.39-RELEASE",
     "io.harness:ff-java-server-sdk:1.0.5.1",
+    "io.harness:ng-manager-server-spec:1.0.10",
     "io.jsonwebtoken:jjwt:0.9.1",
     "io.kubernetes:client-java-api:16.0.0",
     "io.kubernetes:client-java-extended:16.0.0",

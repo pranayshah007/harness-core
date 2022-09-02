@@ -48,6 +48,9 @@ import io.harness.cdng.infra.beans.K8sDirectInfraMapping;
 import io.harness.cdng.infra.beans.K8sGcpInfraMapping;
 import io.harness.cdng.infra.beans.PdcInfraMapping;
 import io.harness.cdng.infra.beans.SshWinRmAzureInfraMapping;
+import io.harness.cdng.infra.beans.host.HostAttributesFilter;
+import io.harness.cdng.infra.beans.host.HostFilter;
+import io.harness.cdng.infra.beans.host.HostNamesFilter;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
@@ -66,6 +69,7 @@ import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorCredentialDT
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType;
 import io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO;
+import io.harness.delegate.beans.connector.pdcconnector.HostFilterType;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
 import io.harness.delegate.task.ssh.PdcSshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.PdcWinRmInfraDelegateConfig;
@@ -193,10 +197,11 @@ public class InfrastructureStepTest extends CategoryTest {
     Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions(SetupAbstractionKeys.accountId, ACCOUNT_ID).build();
 
     PdcSshInfraDelegateConfig pdcSshInfraDelegateConfig =
-        PdcSshInfraDelegateConfig.builder().hosts(Arrays.asList("host1")).build();
+        PdcSshInfraDelegateConfig.builder().hosts(Collections.singleton("host1")).build();
     Infrastructure infrastructureSpec = PdcInfrastructure.builder()
                                             .credentialsRef(ParameterField.createValueField("sshKeyRef"))
                                             .hosts(ParameterField.createValueField(Arrays.asList("host1", "host2")))
+                                            .hostFilter(HostFilter.builder().type(HostFilterType.ALL).build())
                                             .build();
 
     when(executionSweepingOutputService.resolve(
@@ -228,10 +233,11 @@ public class InfrastructureStepTest extends CategoryTest {
     Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions(SetupAbstractionKeys.accountId, ACCOUNT_ID).build();
 
     PdcWinRmInfraDelegateConfig pdcWinRmInfraDelegateConfig =
-        PdcWinRmInfraDelegateConfig.builder().hosts(Arrays.asList("host1")).build();
+        PdcWinRmInfraDelegateConfig.builder().hosts(Collections.singleton("host1")).build();
     Infrastructure infrastructureSpec = PdcInfrastructure.builder()
                                             .credentialsRef(ParameterField.createValueField("sshKeyRef"))
                                             .hosts(ParameterField.createValueField(Arrays.asList("host1", "host2")))
+                                            .hostFilter(HostFilter.builder().type(HostFilterType.ALL).build())
                                             .build();
 
     when(executionSweepingOutputService.resolve(
@@ -329,14 +335,25 @@ public class InfrastructureStepTest extends CategoryTest {
     String connectorRef = "some-connector-ref";
     List<String> hostFilters = Arrays.asList("filter-host1", "filter-host2");
 
-    Infrastructure infrastructureSpec = PdcInfrastructure.builder()
-                                            .credentialsRef(ParameterField.createValueField(sshKeyRef))
-                                            .connectorRef(ParameterField.createValueField(connectorRef))
-                                            .hostFilters(ParameterField.createValueField(hostFilters))
-                                            .build();
+    Infrastructure infrastructureSpec =
+        PdcInfrastructure.builder()
+            .credentialsRef(ParameterField.createValueField(sshKeyRef))
+            .connectorRef(ParameterField.createValueField(connectorRef))
+            .hostFilter(HostFilter.builder()
+                            .type(HostFilterType.HOST_NAMES)
+                            .spec(HostNamesFilter.builder().value(ParameterField.createValueField(hostFilters)).build())
+                            .build())
+            .build();
 
     InfraMapping expectedInfraMapping =
-        PdcInfraMapping.builder().credentialsRef(sshKeyRef).connectorRef(connectorRef).hostFilters(hostFilters).build();
+        PdcInfraMapping.builder()
+            .credentialsRef(sshKeyRef)
+            .connectorRef(connectorRef)
+            .hostFilter(HostFilter.builder()
+                            .type(HostFilterType.HOST_NAMES)
+                            .spec(HostNamesFilter.builder().value(ParameterField.createValueField(hostFilters)).build())
+                            .build())
+            .build();
 
     InfraMapping infraMapping = infrastructureStep.createInfraMappingObject(infrastructureSpec);
     assertThat(infraMapping).isEqualTo(expectedInfraMapping);
@@ -352,17 +369,29 @@ public class InfrastructureStepTest extends CategoryTest {
     attributeFilters.put("some-attribute", "some-value");
     attributeFilters.put("another-attribute", "another-value");
 
-    Infrastructure infrastructureSpec = PdcInfrastructure.builder()
-                                            .credentialsRef(ParameterField.createValueField(sshKeyRef))
-                                            .connectorRef(ParameterField.createValueField(connectorRef))
-                                            .attributeFilters(ParameterField.createValueField(attributeFilters))
-                                            .build();
+    Infrastructure infrastructureSpec =
+        PdcInfrastructure.builder()
+            .credentialsRef(ParameterField.createValueField(sshKeyRef))
+            .connectorRef(ParameterField.createValueField(connectorRef))
+            .hostFilter(
+                HostFilter.builder()
+                    .type(HostFilterType.HOST_ATTRIBUTES)
+                    .spec(
+                        HostAttributesFilter.builder().value(ParameterField.createValueField(attributeFilters)).build())
+                    .build())
+            .build();
 
-    InfraMapping expectedInfraMapping = PdcInfraMapping.builder()
-                                            .credentialsRef(sshKeyRef)
-                                            .connectorRef(connectorRef)
-                                            .attributeFilters(attributeFilters)
-                                            .build();
+    InfraMapping expectedInfraMapping =
+        PdcInfraMapping.builder()
+            .credentialsRef(sshKeyRef)
+            .connectorRef(connectorRef)
+            .hostFilter(
+                HostFilter.builder()
+                    .type(HostFilterType.HOST_ATTRIBUTES)
+                    .spec(
+                        HostAttributesFilter.builder().value(ParameterField.createValueField(attributeFilters)).build())
+                    .build())
+            .build();
 
     InfraMapping infraMapping = infrastructureStep.createInfraMappingObject(infrastructureSpec);
     assertThat(infraMapping).isEqualTo(expectedInfraMapping);

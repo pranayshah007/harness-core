@@ -944,6 +944,7 @@ public class CanaryWorkflowExecutionAdvisor implements ExecutionEventAdvisor {
     String phaseId = orchestrationWorkflow.getWorkflowPhases().get(index - 1).getUuid();
     WorkflowPhase rollbackPhase = orchestrationWorkflow.getRollbackWorkflowPhaseIdMap().get(phaseId);
     if (rollbackPhase == null) {
+      log.warn("Missing rollback phase to phase {}", phaseId);
       return null;
     }
     return anExecutionEventAdvice()

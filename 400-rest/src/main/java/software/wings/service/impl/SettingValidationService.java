@@ -667,7 +667,7 @@ public class SettingValidationService {
             .repoDisplayName(settingAttribute.getName())
             .useLatestChartMuseumVersion(
                 featureFlagService.isEnabled(USE_LATEST_CHARTMUSEUM_VERSION, settingAttribute.getAccountId()))
-            .useOCIHelmRepo(featureFlagService.isEnabled(FeatureName.HELM_OCI_SUPPORT, settingAttribute.getAccountId()))
+            .useOCIHelmRepo(true)
             .useNewHelmBinary(
                 featureFlagService.isEnabled(FeatureName.HELM_VERSION_3_8_0, settingAttribute.getAccountId()))
             .build();

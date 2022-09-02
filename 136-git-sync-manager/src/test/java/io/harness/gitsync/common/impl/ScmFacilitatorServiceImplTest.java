@@ -21,6 +21,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorInfoDTO;
+import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
@@ -79,6 +80,8 @@ import org.mockito.MockitoAnnotations;
 public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
   @Mock GitSyncConnectorHelper gitSyncConnectorHelper;
   @Mock ScmOrchestratorService scmOrchestratorService;
+
+  @Mock ConnectorService connectorService;
   ScmFacilitatorServiceImpl scmFacilitatorService;
   FileContent fileContent = FileContent.newBuilder().build();
   String accountIdentifier = "accountIdentifier";
@@ -104,7 +107,8 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
   @Before
   public void setup() throws Exception {
     MockitoAnnotations.initMocks(this);
-    scmFacilitatorService = new ScmFacilitatorServiceImpl(gitSyncConnectorHelper, scmOrchestratorService);
+    scmFacilitatorService =
+        new ScmFacilitatorServiceImpl(gitSyncConnectorHelper, connectorService, scmOrchestratorService);
     pageRequest = PageRequest.builder().build();
     GithubConnectorDTO githubConnector = GithubConnectorDTO.builder()
                                              .connectionType(GitConnectionType.ACCOUNT)

@@ -53,6 +53,7 @@ import io.harness.helm.HelmClient;
 import io.harness.helm.HelmClientImpl.HelmCliResponse;
 import io.harness.helm.HelmCommandResponseMapper;
 import io.harness.helm.HelmCommandType;
+import io.harness.k8s.K8sConstants;
 import io.harness.k8s.K8sGlobalConfigService;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.kubectl.Kubectl;
@@ -111,6 +112,8 @@ import com.google.inject.Singleton;
 import io.fabric8.kubernetes.api.model.Pod;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -300,6 +303,12 @@ public class HelmDeployServiceImpl implements HelmDeployService {
         Optional<String> ocPath = setupPathOfOcBinaries(entry.getValue());
         if (ocPath.isPresent()) {
           commandRequest.setOcPath(ocPath.get());
+        }
+        if (isNotEmpty(commandRequest.getGcpKeyPath())) {
+          Path oldPath = Paths.get(commandRequest.getGcpKeyPath());
+          Path newPath = Paths.get(commandRequest.getWorkingDir(), K8sConstants.GCP_JSON_KEY_FILE_NAME);
+          Files.move(oldPath, newPath);
+          commandRequest.setGcpKeyPath(newPath.toAbsolutePath().toString());
         }
         success = success
             && k8sTaskHelperBase.doStatusCheckAllResourcesForHelm(client, entry.getValue(), commandRequest.getOcPath(),
