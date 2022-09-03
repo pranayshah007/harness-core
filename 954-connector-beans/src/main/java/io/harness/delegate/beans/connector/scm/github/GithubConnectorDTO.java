@@ -15,6 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.connector.ManagerExecutable;
+import io.harness.data.validator.UrlField;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
@@ -58,13 +59,13 @@ public class GithubConnectorDTO
   @JsonProperty("type")
   @Schema(type = "string", allowableValues = {"Account", "Repo"})
   GitConnectionType connectionType;
-  @NotBlank @NotNull String url;
+  @UrlField @NotBlank @NotNull String url;
   String validationRepo;
   @Valid @NotNull GithubAuthenticationDTO authentication;
   @Valid GithubApiAccessDTO apiAccess;
   Set<String> delegateSelectors;
   Boolean executeOnDelegate;
-  String gitConnectionUrl;
+  @UrlField String gitConnectionUrl;
 
   @Builder
   public GithubConnectorDTO(GitConnectionType connectionType, String url, String validationRepo,

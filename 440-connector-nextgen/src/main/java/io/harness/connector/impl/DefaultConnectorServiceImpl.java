@@ -61,6 +61,7 @@ import io.harness.connector.services.ConnectorService;
 import io.harness.connector.stats.ConnectorStatistics;
 import io.harness.connector.stats.ConnectorStatusStats;
 import io.harness.connector.validator.ConnectionValidator;
+import io.harness.data.validator.UrlField;
 import io.harness.delegate.beans.connector.CcmConnectorFilter;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
@@ -115,7 +116,6 @@ import io.harness.perpetualtask.PerpetualTaskId;
 import io.harness.repositories.ConnectorRepository;
 import io.harness.utils.FullyQualifiedIdentifierHelper;
 import io.harness.utils.IdentifierRefHelper;
-import io.harness.utils.UrlField;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
@@ -128,7 +128,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -452,7 +451,6 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
 
   private ConnectorResponseDTO createInternal(
       ConnectorDTO connectorRequestDTO, String accountIdentifier, ChangeType changeType) {
-    validateConnectorInputValues(connectorRequestDTO);
     assurePredefined(connectorRequestDTO, accountIdentifier);
     ConnectorInfoDTO connectorInfo = connectorRequestDTO.getConnectorInfo();
     final boolean isIdentifierUnique = validateTheIdentifierIsUnique(accountIdentifier,
@@ -488,33 +486,6 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
     }
     return getResponse(
         accountIdentifier, connectorEntity.getOrgIdentifier(), connectorEntity.getProjectIdentifier(), connectorEntity);
-  }
-
-  private void validateConnectorInputValues(ConnectorDTO connectorRequestDTO) {
-    ConnectorConfigDTO connectorConfigDTO = connectorRequestDTO.getConnectorInfo().getConnectorConfig();
-    if (Objects.isNull(connectorConfigDTO)) {
-      throw new ConnectorValidationException("No connector config passed");
-    }
-    Class<? extends ConnectorConfigDTO> clazz = connectorConfigDTO.getClass();
-    for (Field field : clazz.getDeclaredFields()) {
-      field.setAccessible(true);
-      String url;
-      if (field.isAnnotationPresent(UrlField.class)) {
-        try {
-          field.setAccessible(true);
-          url = field.get(connectorConfigDTO).toString();
-          if (!Http.validateUrl(url)) {
-            throw new ConnectorValidationException(
-                String.format("Malformed url %s passed for field %s", url, field.getName()));
-          }
-        } catch (MalformedURLException e) {
-          throw new ConnectorValidationException("Exception in URL: ", e);
-        } catch (IllegalAccessException ex) {
-          throw new ConnectorValidationException("Can't access the URL: ", ex);
-        }
-        field.setAccessible(false);
-      }
-    }
   }
 
   private Page<Connector> getConnectorsWithGivenName(

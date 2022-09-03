@@ -20,6 +20,7 @@ import io.dropwizard.jersey.validation.JerseyViolationException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.validation.ConstraintViolation;
 import javax.validation.Path;
 import javax.ws.rs.container.ResourceInfo;
@@ -47,8 +48,10 @@ public class JerseyViolationExceptionMapperV2 implements ExceptionMapper<JerseyV
       }
       validationErrors.add(ValidationError.of(field, constraintViolation.getMessage()));
     });
+    String exceptionMessage =
+        validationErrors.stream().map(ValidationError::getError).collect(Collectors.joining(", "));
     FailureDTO failureDto =
-        FailureDTO.toBody(Status.FAILURE, ErrorCode.INVALID_REQUEST, exception.getMessage(), validationErrors);
+        FailureDTO.toBody(Status.FAILURE, ErrorCode.INVALID_REQUEST, exceptionMessage, validationErrors);
     return Response.status(Response.Status.BAD_REQUEST).entity(failureDto).type(MediaType.APPLICATION_JSON).build();
   }
 }
