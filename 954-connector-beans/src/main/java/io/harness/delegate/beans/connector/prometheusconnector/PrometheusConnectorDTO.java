@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
+import io.harness.data.validator.UrlField;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.customhealthconnector.CustomHealthKeyAndValue;
 import io.harness.encryption.SecretRefData;
@@ -43,7 +44,7 @@ import org.hibernate.validator.constraints.NotBlank;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(HarnessTeam.CV)
 public class PrometheusConnectorDTO extends ConnectorConfigDTO implements DecryptableEntity, DelegateSelectable {
-  @NotNull @NotBlank String url;
+  @UrlField @NotNull @NotBlank String url;
   String username;
   @ApiModelProperty(dataType = "string") @SecretReference SecretRefData passwordRef;
   List<CustomHealthKeyAndValue> headers;

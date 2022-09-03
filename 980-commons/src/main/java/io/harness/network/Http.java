@@ -58,8 +58,8 @@ import org.apache.http.HttpHost;
 @Slf4j
 @OwnedBy(HarnessTeam.PL)
 public class Http {
-  private static UrlValidator urlValidator =
-      new UrlValidator(new String[] {"http", "https"}, UrlValidator.ALLOW_LOCAL_URLS);
+  private static UrlValidator urlValidator = new UrlValidator(
+      new String[] {"http", "https", "ftp", "smtp"}, UrlValidator.ALLOW_LOCAL_URLS + UrlValidator.ALLOW_2_SLASHES);
   public static ConnectionPool connectionPool = new ConnectionPool(0, 5, TimeUnit.MINUTES);
 
   private static TrustManager[] trustAllCerts = getTrustManagers();
@@ -374,31 +374,6 @@ public class Http {
 
   public static boolean validUrl(String url) {
     return urlValidator.isValid(url);
-  }
-
-  public static boolean validateUrl(String url) throws MalformedURLException {
-    if (isEmpty(url)) {
-      log.info("URL is empty.");
-      return true;
-    }
-    if (validUrl(url)) {
-      return true;
-    }
-    throw new MalformedURLException(String.format("Malformed url %s . Please check the url", url));
-  }
-
-  public static String getUrlIfValid(String url) {
-    if (validUrl(url)) {
-      return url;
-    }
-    throw new RuntimeException(String.format("Url %s is invalid. Please check the url", url));
-  }
-
-  public static boolean checkValidUrls(List<String> urls) throws MalformedURLException {
-    for (String url : urls) {
-      validateUrl(url);
-    }
-    return true;
   }
   public static HttpHost getHttpProxyHost() {
     String proxyHost = null;
