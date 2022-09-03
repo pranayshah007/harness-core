@@ -11,6 +11,7 @@ import static io.harness.delegate.beans.connector.helm.OciHelmAuthType.ANONYMOUS
 
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
+import io.harness.data.validator.UrlField;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -38,7 +39,7 @@ import org.hibernate.validator.constraints.NotBlank;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Schema(name = "OciHelmConnector", description = "This contains Oci helm connector details")
 public class OciHelmConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable {
-  @NotNull @NotBlank String helmRepoUrl;
+  @UrlField @NotNull @NotBlank String helmRepoUrl;
   @Valid OciHelmAuthenticationDTO auth;
   Set<String> delegateSelectors;
 

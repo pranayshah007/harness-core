@@ -7,6 +7,8 @@
 
 package io.harness.delegate.beans.connector.k8Connector;
 
+import io.harness.data.validator.UrlField;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -23,6 +25,6 @@ import org.hibernate.validator.constraints.NotBlank;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Schema(name = "KubernetesClusterDetails", description = "This contains kubernetes cluster details")
 public class KubernetesClusterDetailsDTO implements KubernetesCredentialSpecDTO {
-  @NotBlank @NotNull String masterUrl;
+  @UrlField @NotBlank @NotNull String masterUrl;
   @JsonProperty("auth") @NotNull @Valid KubernetesAuthDTO auth;
 }

@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
+import io.harness.data.validator.UrlField;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.exception.InvalidRequestException;
 
@@ -39,7 +40,7 @@ import org.hibernate.validator.constraints.NotBlank;
 @ApiModel("NexusConnector")
 @Schema(name = "NexusConnector", description = "Nexus Connector details.")
 public class NexusConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable {
-  @NotNull @NotBlank String nexusServerUrl;
+  @UrlField @NotNull @NotBlank String nexusServerUrl;
   @NotNull @NotBlank String version;
   @Valid NexusAuthenticationDTO auth;
   Set<String> delegateSelectors;
