@@ -106,10 +106,12 @@ func (c *HTTPClient) SelectTests(ctx context.Context, org, project, pipeline, bu
 
 // UploadCg uploads avro encoded callgraph to server
 func (c *HTTPClient) UploadCg(ctx context.Context, org, project, pipeline, build, stage, step, repo, sha, source, target string, timeMs int64, cg []byte) error {
+	fmt.Println("ENTER HTTP UPLOAD CG", c.Endpoint)
 	path := fmt.Sprintf(cgEndpoint, c.AccountID, org, project, pipeline, build, stage, step, repo, sha, source, target, timeMs)
 	ctx = context.WithValue(ctx, "reqId", sha)
 	backoff := createBackoff(45 * 60 * time.Second)
 	_, err := c.retry(ctx, c.Endpoint+path, "POST", &cg, nil, false, backoff)
+	fmt.Println("EXIT HTTP UPLOAD CG", err)
 	return err
 }
 

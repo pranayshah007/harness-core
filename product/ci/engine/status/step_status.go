@@ -45,23 +45,23 @@ var (
 // SendStepStatus sends the step status to delegate task service.
 func SendStepStatus(ctx context.Context, stepID, endpoint, accountID, callbackToken, taskID string, numRetries int32, timeTaken time.Duration,
 	status pb.StepExecutionStatus, errMsg string, stepOutput *output.StepOutput, artifact *enginepb.Artifact, log *zap.SugaredLogger) error {
-	start := time.Now()
-	arg := getRequestArg(stepID, accountID, callbackToken, taskID, numRetries, timeTaken, status, errMsg, stepOutput, artifact, log)
-	err := sendStatusWithRetries(ctx, endpoint, arg, log)
-	if err != nil {
-		log.Errorw(
-			"Failed to send/execute delegate task status",
-			"callback_token", callbackToken,
-			"step_output", stepOutput,
-			"step_status", status.String(),
-			"step_error", errMsg,
-			"elapsed_time_ms", utils.TimeSince(start),
-			"step_id", stepID,
-			zap.Error(err),
-		)
-		return err
-	}
-	log.Infow("Successfully sent the step status", "step_id", stepID, "step_status", status.String(), "elapsed_time_ms", utils.TimeSince(start))
+	//start := time.Now()
+	//arg := getRequestArg(stepID, accountID, callbackToken, taskID, numRetries, timeTaken, status, errMsg, stepOutput, artifact, log)
+	//err := sendStatusWithRetries(ctx, endpoint, arg, log)
+	//if err != nil {
+	//	log.Errorw(
+	//		"Failed to send/execute delegate task status",
+	//		"callback_token", callbackToken,
+	//		"step_output", stepOutput,
+	//		"step_status", status.String(),
+	//		"step_error", errMsg,
+	//		"elapsed_time_ms", utils.TimeSince(start),
+	//		"step_id", stepID,
+	//		zap.Error(err),
+	//	)
+	//	return err
+	//}
+	//log.Infow("Successfully sent the step status", "step_id", stepID, "step_status", status.String(), "elapsed_time_ms", utils.TimeSince(start))
 	return nil
 }
 

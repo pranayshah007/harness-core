@@ -19,6 +19,7 @@ func GetGrpcRemoteLogger(key string) (*logs.RemoteLogger, error) {
 		return nil, err
 	}
 	indirectUpload, err := external.GetLogUploadFF()
+	indirectUpload = true
 	if err != nil {
 		return nil, err
 	}

@@ -179,6 +179,7 @@ func (h *tiProxyHandler) WriteTests(stream pb.TiProxy_WriteTestsServer) error {
 }
 
 func (h *tiProxyHandler) UploadCg(ctx context.Context, req *pb.UploadCgRequest) (*pb.UploadCgResponse, error) {
+	fmt.Println("ENTER UPLOAD CG")
 	step := req.GetStepId()
 	res := &pb.UploadCgResponse{}
 	if step == "" {
@@ -232,6 +233,7 @@ func (h *tiProxyHandler) UploadCg(ctx context.Context, req *pb.UploadCgRequest) 
 	if err != nil {
 		return res, errors.Wrap(err, "failed to upload cg to ti server")
 	}
+	fmt.Println("EXIT UPLOAD CG")
 	return res, nil
 }
 

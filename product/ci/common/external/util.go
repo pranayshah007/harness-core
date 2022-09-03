@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/harness/harness-core/commons/go/lib/exec"
@@ -46,6 +47,8 @@ const (
 	logUploadFf      = "HARNESS_CI_INDIRECT_LOG_UPLOAD_FF"
 	gitBin           = "git"
 	diffFilesCmd     = "%s diff --name-status --diff-filter=MADR HEAD@{1} HEAD -1"
+	harnessNodeIndex = "HARNESS_NODE_INDEX"
+	harnessNodeTotal = "HARNESS_NODE_TOTAL"
 )
 
 // GetChangedFiles executes a shell command and returns a list of files changed in the PR
@@ -171,7 +174,7 @@ func GetLogKey(id string) (string, error) {
 		return "", fmt.Errorf("log prefix variable not set %s", logPrefixEnv)
 	}
 
-	return fmt.Sprintf("%s/%s", logPrefix, id), nil
+	return fmt.Sprintf("%s-%s", logPrefix, id), nil
 }
 
 // GetServiceLogKey returns log key for service
@@ -338,6 +341,30 @@ func GetTiSvcToken() (string, error) {
 	return token, nil
 }
 
+func GetStepStrategyIteration() (int, error) {
+	idxStr, ok := os.LookupEnv(harnessNodeIndex)
+	if !ok {
+		return -1, fmt.Errorf("parallelism strategy iteration variable not set %s", harnessNodeIndex)
+	}
+	idx, err := strconv.Atoi(idxStr)
+	if err != nil {
+		return -1, fmt.Errorf("unable to convert %s from string to int", harnessNodeTotal)
+	}
+	return idx, nil
+}
+
+func GetStepStrategyIterations() (int, error) {
+	totalStr, ok := os.LookupEnv(harnessNodeTotal)
+	if !ok {
+		return -1, fmt.Errorf("parallelism total iteration variable not set %s", harnessNodeTotal)
+	}
+	total, err := strconv.Atoi(totalStr)
+	if err != nil {
+		return -1, fmt.Errorf("unable to convert %s from string to int", harnessNodeTotal)
+	}
+	return total, nil
+}
+
 func IsManualExecution() bool {
 	_, err1 := GetSourceBranch()
 	_, err2 := GetTargetBranch()
@@ -346,4 +373,13 @@ func IsManualExecution() bool {
 		return true // if any of them are not set, treat as a manual execution
 	}
 	return false
+}
+
+func IsParallelismEnabled() bool {
+	_, err1 := GetStepStrategyIteration()
+	_, err2 := GetStepStrategyIterations()
+	if err1 != nil || err2 != nil {
+		return false
+	}
+	return true
 }

@@ -155,32 +155,43 @@ func collectTestReports(ctx context.Context, reports []*pb.Report, stepID string
 	return nil
 }
 
+//func getTestTime(ctx context.Context, log *zap.SugaredLogger, splitStrategy string) (map[string]bool, error) {
+//
+//	timeMap := map[string]bool{}
+//	if splitStrategy == "file_size" {
+//		// get weights by line count
+//		return timeMap, nil
+//	}
+//
+//	req := types.GetTestTimesReq{}
+//	switch splitStrategy {
+//	case "class_timing":
+//		req.IncludeClassname = true
+//	case "file_size":
+//
+//	}
+//	return remote.GetTestTimes(ctx, log, tiReq)
+//}
+
 // selectTests takes a list of files which were changed as input and gets the tests
 // to be run corresponding to that.
 func selectTests(ctx context.Context, files []types.File, runSelected bool, stepID string, log *zap.SugaredLogger, fs filesystem.FileSystem) (types.SelectTestsResp, error) {
 	res := types.SelectTestsResp{}
-	isManual := external.IsManualExecution()
 	repo, err := external.GetRepo()
 	if err != nil {
 		return res, err
 	}
-	// For webhook executions, all the below variables should be set
 	sha, err := external.GetSha()
-	if err != nil && !isManual {
+	if err != nil {
 		return res, err
 	}
 	source, err := external.GetSourceBranch()
-	if err != nil && !isManual {
+	if err != nil {
 		return res, err
 	}
 	target, err := external.GetTargetBranch()
-	if err != nil && !isManual {
+	if err != nil {
 		return res, err
-	} else if isManual {
-		target, err = external.GetBranch()
-		if err != nil {
-			return res, err
-		}
 	}
 	// Create TI proxy client (lite engine)
 	client, err := grpcclient.NewTiProxyClient(consts.LiteEnginePort, log)

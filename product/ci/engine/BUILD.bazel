@@ -6,6 +6,8 @@ go_library(
     importpath = "github.com/harness/harness-core/product/ci/engine",
     visibility = ["//:__pkg__"],
     deps = [
+        "//product/ci/engine/proto",
+        "@com_github_golang_protobuf//proto:go_default_library",
         "//commons/go/lib/logs",
         "//commons/go/lib/metrics",
         "//product/ci/common/external",

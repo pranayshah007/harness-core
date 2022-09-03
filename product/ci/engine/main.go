@@ -9,15 +9,19 @@ package main
 	CI lite engine executes steps of stage provided as an input.
 */
 import (
+	"encoding/base64"
+	"fmt"
 	"os"
 
 	"github.com/alexflint/go-arg"
+	"github.com/golang/protobuf/proto"
 	"github.com/harness/harness-core/commons/go/lib/logs"
 	"github.com/harness/harness-core/commons/go/lib/metrics"
 	"github.com/harness/harness-core/product/ci/common/external"
 	"github.com/harness/harness-core/product/ci/engine/consts"
 	"github.com/harness/harness-core/product/ci/engine/grpc"
 	"github.com/harness/harness-core/product/ci/engine/legacy/executor"
+	pb "github.com/harness/harness-core/product/ci/engine/proto"
 	"go.uber.org/zap"
 )
 
@@ -63,11 +67,100 @@ func init() {
 	//TODO: perform any initialization
 }
 
+func generate() string {
+	// paths := []string{"/Users/vistaarjuneja/Downloads/step-exec/workspace/190-deployment-functional-tests",
+	// "/Users/vistaarjuneja/Downloads/step-exec/workspace/200-functional-test"}
+	command := `
+pwd
+cd ~/step-exec/.harness/tmp
+rm -rf jhttp-rutvij
+git clone https://github.com/rutvijmehta-harness/jhttp-rutvij.git
+cd jhttp-rutvij
+ls
+sleep 100
+pwd
+`
+	runStep := &pb.UnitStep_Run{
+		Run: &pb.RunStep{
+			//Command:       "echo $HARNESS_ACCOUNT_ID\nrm -rf harness-core\ngit clone https://github.com/harness/harness-core.git\ncd harness-core\ngit branch\npwd\n",
+			Command:       command,
+			ContainerPort: 8081,
+		},
+	}
+	step0 := &pb.UnitStep{
+		Id:          "step4",
+		DisplayName: "display_name",
+		Step:        runStep,
+		LogKey:      "omg2",
+	}
+	var steps []*pb.Step
+	steps = append(steps, &pb.Step{Step: &pb.Step_Unit{Unit: step0}})
+	execution := &pb.Execution{
+		Steps: steps,
+	}
+	data, err := proto.Marshal(execution)
+	if err != nil {
+		fmt.Println("marshaling error: %v", err)
+	}
+	encoded := base64.StdEncoding.EncodeToString(data)
+	return encoded
+}
+
+func generateRunTests() string {
+	runTestsStep := &pb.UnitStep_RunTests{
+		RunTests: &pb.RunTestsStep{
+			Args:                 " -Dmaven.repo.local=/Users/rutvijmehta/Desktop/harness/jhttp-rutvij test",
+			Language:             "java",
+			BuildTool:            "maven",
+			Packages:             "io.harness",
+			RunOnlySelectedTests: true,
+			ContainerPort:        8081,
+			PreTestCommand:       "cd /Users/rutvijmehta/Desktop/harness/jhttp-rutvij\nls",
+
+			//string args = 1;
+			//string language = 2;   // language used for running tests. Java | Python | Go etc.
+			//string buildTool = 3;  // build tool used for running tests. maven | bazel | gradle.
+			//string testAnnotations = 4;
+			//string packages = 5;
+			//bool runOnlySelectedTests = 6;
+			//StepContext context = 7;
+			//uint32 container_port = 8;           // Port of the container on which run step needs to be executed.
+			//repeated Report reports = 9;         // Spec for publishing junit reports
+			//string preTestCommand = 10;          // Pre-commands to setup environment before running tests
+			//string postTestCommand = 11;         // Post commands after running tests
+			//repeated string envVarOutputs = 12;  // produced output variables
+			//// TODO (Vistaar): Proxy this call from addon to LE.
+			//string diff_files = 13;
+			//map<string, string> environment = 14;
+			//string buildEnvironment = 15;  // Dot net build environment Core | Framework
+			//string frameworkVersion = 16;  // Dot net version 6.0 | 5.0
+			//string namespaces = 17;        // Same funtion as java package for namespace languages
+		},
+	}
+	step0 := &pb.UnitStep{
+		Id:          "step4",
+		DisplayName: "display_name",
+		Step:        runTestsStep,
+		LogKey:      "omgtest",
+	}
+	var steps []*pb.Step
+	steps = append(steps, &pb.Step{Step: &pb.Step_Unit{Unit: step0}})
+	execution := &pb.Execution{
+		Steps: steps,
+	}
+	data, err := proto.Marshal(execution)
+	if err != nil {
+		fmt.Println("marshaling error: %v", err)
+	}
+	encoded := base64.StdEncoding.EncodeToString(data)
+	return encoded
+}
+
 func main() {
 	parseArgs()
 
 	// Lite engine logs that are not part of any step are logged with ID engine:main
-	remoteLogger := getRemoteLogger("engine:main")
+	remoteLogger := getRemoteLogger("engine-main")
 	log := remoteLogger.BaseLogger
 	logs.InitLogger(log)
 	procWriter := remoteLogger.Writer
@@ -77,11 +170,17 @@ func main() {
 		metrics.Log(int32(os.Getpid()), "engine", log)
 	}
 
+	path := "/Users/rutvijmehta/step-exec/.harness/tmp/"
+	args.Stage = &stageSchema{Input: generateRunTests(), TmpFilePath: path, Debug: true}
+
 	if args.Stage != nil {
 		// Starting stage execution
 		startServer(remoteLogger, true)
 		log.Infow("Starting stage execution")
+		fmt.Println("Starting stage execution")
 		err := executeStage(args.Stage.Input, args.Stage.TmpFilePath, args.Stage.ServicePorts, args.Stage.Debug, log)
+		fmt.Println("rutvijdone")
+		fmt.Println("rutvijerror: ", err)
 		if err != nil {
 			remoteLogger.Writer.Close()
 			os.Exit(1) // Exit the lite engine with status code of 1

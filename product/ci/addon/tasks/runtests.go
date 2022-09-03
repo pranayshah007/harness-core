@@ -23,6 +23,7 @@ import (
 	"github.com/harness/harness-core/product/ci/addon/testintelligence/java"
 	"github.com/harness/harness-core/product/ci/common/external"
 	pb "github.com/harness/harness-core/product/ci/engine/proto"
+	stutils "github.com/harness/harness-core/product/ci/split_tests/utils"
 	"github.com/harness/harness-core/product/ci/ti-service/types"
 	"go.uber.org/zap"
 )
@@ -37,13 +38,16 @@ const (
 )
 
 var (
-	selectTestsFn        = selectTests
-	collectCgFn          = collectCg
-	collectTestReportsFn = collectTestReports
-	runCmdFn             = runCmd
-	isManualFn           = external.IsManualExecution
-	installAgentFn       = installAgents
-	getWorkspace         = external.GetWrkspcPath
+	selectTestsFn             = selectTests
+	collectCgFn               = collectCg
+	collectTestReportsFn      = collectTestReports
+	runCmdFn                  = runCmd
+	isManualFn                = external.IsManualExecution
+	installAgentFn            = installAgents
+	getWorkspace              = external.GetWrkspcPath
+	isParallelismEnabled      = external.IsParallelismEnabled
+	getStepStrategyIteration  = external.GetStepStrategyIteration
+	getStepStrategyIterations = external.GetStepStrategyIterations
 )
 
 // RunTestsTask represents an interface to run tests intelligently
@@ -282,6 +286,144 @@ func valid(tests []types.RunnableTest) bool {
 	return true
 }
 
+func (r *runTestsTask) getTestSelection(ctx context.Context, files []types.File, isManual bool) types.SelectTestsResp {
+	resp := types.SelectTestsResp{}
+	log := r.log
+
+	if isManual {
+		// Select all tests in case of manual execution
+		log.Infow("detected manual execution - for intelligence to be configured, a PR must be raised. Running all the tests")
+		r.runOnlySelectedTests = false
+	} else if len(files) == 0 {
+		// Select all tests if unable to find changed files list
+		log.Infow("unable to get changed files list")
+		r.runOnlySelectedTests = false
+	} else {
+		// Call TI svc only when there is a chance of running selected tests
+		resp, err := selectTestsFn(ctx, files, r.runOnlySelectedTests, r.id, r.log, r.fs)
+		if err != nil {
+			fmt.Println("GOT ERROR", err)
+			log.Errorw("there was some issue in trying to intelligently figure out tests to run. Running all the tests", "error", zap.Error(err))
+			r.runOnlySelectedTests = false
+		} else if !valid(resp.Tests) { // This shouldn't happen
+			log.Errorw("test intelligence did not return suitable tests")
+			r.runOnlySelectedTests = false
+		} else if resp.SelectAll == true {
+			log.Infow("intelligently determined to run all the tests")
+			r.runOnlySelectedTests = false
+			fmt.Println("RunSelected3", r.runOnlySelectedTests)
+		} else {
+			r.log.Infow(fmt.Sprintf("intelligently running tests: %s", resp.Tests))
+		}
+	}
+	fmt.Println("RunSelected2", r.runOnlySelectedTests)
+	return resp
+}
+
+func (r *runTestsTask) getSplitTests(ctx context.Context, tests []types.RunnableTest) ([]types.RunnableTest, error) {
+	if len(tests) == 0 {
+		return tests, nil
+	}
+
+	res := make([]types.RunnableTest, 0)
+
+	splitStrategy := "file_size"
+	idx, _ := getStepStrategyIteration()
+	total, _ := getStepStrategyIterations()
+
+	if idx >= total {
+		return tests, fmt.Errorf("split index greater than parallel count")
+	}
+
+	currentFileMap := make(map[string][]types.RunnableTest)
+	currentFileSet := make(map[string]bool)
+	var testId string
+	for _, t := range tests {
+		switch splitStrategy {
+		case "class_timing":
+			testId = t.Pkg + t.Class
+		case "file_size":
+			testId = t.Path
+		default:
+			msg := fmt.Sprintf("set one of %s / %s as split strategy", "class_timing", "file_size")
+			return []types.RunnableTest{}, fmt.Errorf(msg)
+		}
+		currentFileSet[testId] = true
+		currentFileMap[testId] = append(currentFileMap[testId], t)
+	}
+
+	// Estimate line count
+	fileTimes := map[string]float64{}
+	stutils.EstimateFileTimesByLineCount(r.log, currentFileSet, fileTimes)
+	fmt.Println("Printing weights", fileTimes)
+	stutils.ProcessFiles(fileTimes, currentFileSet, float64(1), false)
+
+	// Split tests into buckets
+	buckets, _ := stutils.SplitFiles(fileTimes, total)
+	// Return tests from the current node's bucket
+	for _, testId := range buckets[idx] {
+		if _, ok := currentFileMap[testId]; !ok {
+			continue
+		}
+		res = append(res, currentFileMap[testId]...)
+	}
+	return res, nil
+}
+
+func (r *runTestsTask) invokeParallelism(ctx context.Context, runner testintelligence.TestRunner, selection types.SelectTestsResp, ignoreInstr, skip bool) (types.SelectTestsResp, bool) {
+	if skip {
+		return selection, ignoreInstr
+	}
+	// TI returned zero test cases to run. Skip parallelism
+	if r.runOnlySelectedTests && (len(selection.Tests) == 0) {
+		return selection, ignoreInstr
+	}
+
+	tests := make([]types.RunnableTest, 0)
+	if !r.runOnlySelectedTests {
+		// For full runs, detect all the tests in the repo and split them
+		// If autodetect fails or detects no tests, we run all tests
+		tests, _ = runner.AutoDetectTestFiles()
+		if len(tests) == 0 {
+			// Error in auto-detecting test files, run all tests
+			r.runOnlySelectedTests = false
+		} else {
+			r.log.Infow(fmt.Sprintf("Autodetected test packages: %s", tests))
+			// Auto-detected tests, split them
+			splitTests, err := r.getSplitTests(ctx, tests)
+			fmt.Println("Comparing lengths", len(splitTests), len(tests))
+			if err != nil {
+				// Error while splitting, run the original set of tests
+				r.log.Infow("Error occurred while splitting the tests. Running all detected tests")
+				selection.Tests = tests
+			} else {
+				r.log.Infow(fmt.Sprintf("Test split for this run: %s", splitTests))
+				// Send the split slice to the runner instead of all tests
+				selection.Tests = splitTests
+				r.runOnlySelectedTests = true
+				ignoreInstr = false
+			}
+		}
+	} else if len(selection.Tests) > 0 {
+		// In case of intelligent runs, split the tests from TI SelectTests API response
+		tests = selection.Tests
+		splitTests, err := r.getSplitTests(ctx, tests)
+		if err != nil {
+			// Error while splitting, run the original set of tests
+			r.log.Infow("Error occurred while splitting the tests. Running all selected tests")
+			selection.Tests = tests
+		} else {
+			r.log.Infow(fmt.Sprintf("Test split for this run: %s", splitTests))
+			// Send the split slice to the runner instead of all tests
+			selection.Tests = splitTests
+			r.runOnlySelectedTests = true
+			ignoreInstr = false
+		}
+	}
+	fmt.Println("Test length", len(selection.Tests))
+	return selection, ignoreInstr
+}
+
 func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile string) (string, error) {
 	// Get the tests that need to be run if we are running selected tests
 	var selection types.SelectTestsResp
@@ -290,29 +432,13 @@ func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile stri
 	if err != nil {
 		return "", err
 	}
-	isManual := isManualFn()
-	if len(files) == 0 {
-		r.log.Errorw("unable to get changed files list")
-		r.runOnlySelectedTests = false // run all the tests if we could not find changed files list correctly
-	}
-	if isManual {
-		r.log.Infow("detected manual execution - for intelligence to be configured, a PR must be raised. Running all the tests.")
-		r.runOnlySelectedTests = false // run all the tests if it is a manual execution
-	}
-	selection, err = selectTestsFn(ctx, files, r.runOnlySelectedTests, r.id, r.log, r.fs)
-	if err != nil {
-		r.log.Errorw("there was some issue in trying to intelligently figure out tests to run. Running all the tests.", zap.Error(err))
-		r.runOnlySelectedTests = false // run all the tests if an error was encountered
-	} else if !valid(selection.Tests) { // This shouldn't happen
-		r.log.Warnw("test intelligence did not return suitable tests")
-		r.runOnlySelectedTests = false // TI did not return suitable tests
-	} else if selection.SelectAll == true {
-		r.log.Infow("intelligently determined to run all the tests")
-		r.runOnlySelectedTests = false // TI selected all the tests to be run
-	} else {
-		r.log.Infow(fmt.Sprintf("intelligently running tests: %s", selection.Tests))
-	}
 
+	// Test selection
+	isManual := isManualFn()
+	ignoreInstr := isManual
+	selection = r.getTestSelection(ctx, files, true)
+	fmt.Println("RunSelected1", r.runOnlySelectedTests)
+	// Runner selection
 	var runner testintelligence.TestRunner
 	switch r.language {
 	case "java":
@@ -341,13 +467,14 @@ func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile stri
 		return "", fmt.Errorf("language %s is not suported", r.language)
 	}
 
+	// Environment variables
 	outputVarCmd := ""
 	for _, o := range r.envVarOutputs {
 		outputVarCmd += fmt.Sprintf("\necho %s $%s >> %s", o, o, outputVarFile)
 	}
 
+	// Config file
 	var iniFilePath, agentArg string
-
 	switch r.language {
 	case "java":
 		{
@@ -367,7 +494,21 @@ func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile stri
 		}
 	}
 
-	testCmd, err := runner.GetCmd(ctx, selection.Tests, r.args, iniFilePath, isManual, !r.runOnlySelectedTests)
+	fmt.Println("Parallel", isParallelismEnabled())
+	fmt.Println("RunSelected", r.runOnlySelectedTests)
+	fmt.Println("Previous tests", len(selection.Tests), selection.Tests)
+	fmt.Println("RunNoTests", r.runOnlySelectedTests && (len(selection.Tests) == 0))
+
+	// Test splitting: only when parallelism is enabled
+	doNotSplit := false
+	if isParallelismEnabled() {
+		selection, ignoreInstr = r.invokeParallelism(ctx, runner, selection, ignoreInstr, doNotSplit)
+	}
+
+	fmt.Println("New tests", len(selection.Tests), selection.Tests, r.runOnlySelectedTests)
+
+	// Test command
+	testCmd, err := runner.GetCmd(ctx, selection.Tests, r.args, iniFilePath, ignoreInstr, !r.runOnlySelectedTests)
 	if err != nil {
 		return "", err
 	}

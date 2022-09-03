@@ -63,21 +63,21 @@ func NewUnitExecutor(tmpFilePath string, log *zap.SugaredLogger) UnitExecutor {
 }
 
 func (e *unitExecutor) validate(step *pb.UnitStep) error {
-	if step.GetId() == "" {
-		err := fmt.Errorf("Step ID should be non-empty")
-		e.log.Errorw("Step ID is not set", zap.Error(err))
-		return err
-	}
-	if step.GetCallbackToken() == "" {
-		err := fmt.Errorf("Callback token should be non-empty")
-		e.log.Errorw("Callback token is not set", zap.Error(err))
-		return err
-	}
-	if step.GetTaskId() == "" {
-		err := fmt.Errorf("Task ID should be non-empty")
-		e.log.Errorw("Task ID is not set", zap.Error(err))
-		return err
-	}
+	//if step.GetId() == "" {
+	//	err := fmt.Errorf("Step ID should be non-empty")
+	//	e.log.Errorw("Step ID is not set", zap.Error(err))
+	//	return err
+	//}
+	//if step.GetCallbackToken() == "" {
+	//	err := fmt.Errorf("Callback token should be non-empty")
+	//	e.log.Errorw("Callback token is not set", zap.Error(err))
+	//	return err
+	//}
+	//if step.GetTaskId() == "" {
+	//	err := fmt.Errorf("Task ID should be non-empty")
+	//	e.log.Errorw("Task ID is not set", zap.Error(err))
+	//	return err
+	//}
 	return nil
 }
 
