@@ -39,6 +39,10 @@ func (b *mavenRunner) AutoDetectPackages() ([]string, error) {
 	return DetectPkgs(b.log, b.fs)
 }
 
+func (m *mavenRunner) AutoDetectTestFiles() ([]types.RunnableTest, error) {
+	return GetTestFiles(m.log, m.fs)
+}
+
 func (m *mavenRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, userArgs, agentConfigPath string, ignoreInstr, runAll bool) (string, error) {
 	// If instrumentation needs to be ignored, we run all the tests without adding the agent config
 	if ignoreInstr {

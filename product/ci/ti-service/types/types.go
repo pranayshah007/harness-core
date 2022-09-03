@@ -133,6 +133,7 @@ type RunnableTest struct {
 	Class     string    `json:"class"`
 	Method    string    `json:"method"`
 	Selection Selection `json:"selection"` // information on why a test was selected
+	Path      string    `json:"path"`
 }
 
 type SelectTestsResp struct {

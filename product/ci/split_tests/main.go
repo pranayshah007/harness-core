@@ -9,8 +9,12 @@ import (
 	"context"
 	"fmt"
 	arg "github.com/alexflint/go-arg"
+	"github.com/harness/harness-core/commons/go/lib/utils"
 	"github.com/harness/harness-core/product/ci/split_tests/ti"
+	stutils "github.com/harness/harness-core/product/ci/split_tests/utils"
 	"github.com/harness/harness-core/product/ci/ti-service/types"
+
+	zglob "github.com/mattn/go-zglob"
 	"go.uber.org/zap"
 	"os"
 	"strconv"
@@ -24,11 +28,11 @@ const (
 	numSplitsEnv    = "HARNESS_NODE_TOTAL" // Environment variable for total number of splits
 	currentIndexEnv = "HARNESS_NODE_INDEX" // Environment variable for the current index
 
-	splitByFileTimeStr      = "file_timing"
-	splitByClassTimeStr     = "class_timing"
-	splitByTestcaseTimeStr  = "testcase_timing"
-	splitByTestSuiteTimeStr = "testsuite_timing"
-	splitByFileSizeStr      = "file_size"
+	splitByFileTimeStr      = stutils.SplitByFileTimeStr
+	splitByClassTimeStr     = stutils.SplitByClassTimeStr
+	splitByTestcaseTimeStr  = stutils.SplitByTestcaseTimeStr
+	splitByTestSuiteTimeStr = stutils.SplitByTestSuiteTimeStr
+	splitByFileSizeStr      = stutils.SplitByFileSizeStr
 )
 
 // CLI Arguments
@@ -105,22 +109,54 @@ func initLogger() {
 	log = zapLogger.Sugar()
 }
 
+func getFiles(path string) ([]string, error) {
+	fmt.Println("path: ", path)
+	matches, err := zglob.Glob(path)
+	if err != nil {
+		return []string{}, err
+	}
+	return matches, err
+}
+
+func getTestFiles() error {
+	wp := "/Users/rutvijmehta/Desktop/harness/jhttp-rutvij"
+	files, _ := getFiles(fmt.Sprintf("%s/**/*.java", wp))
+	fmt.Println("files: ", files)
+
+	n, err := utils.ParseFileNames(files)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+	for _, ni := range n {
+		fmt.Println(ni)
+	}
+	return fmt.Errorf("new error")
+}
+
 func main() {
+	err123 := getTestFiles()
+	if err123 != nil {
+		return
+	}
 	parseArgs()
 	initLogger()
 
 	// Get current file set from the glob pattern
-	currentFileSet := getTestData(args.IncludeFilePattern, args.ExcludeFilePattern)
+	currentFileSet, err := stutils.GetTestData(log, args.IncludeFilePattern, args.ExcludeFilePattern)
+	if err != nil {
+		log.Fatalw(err.Error())
+	}
 
 	// Construct a map of file times {fileName: Duration}
 	fileTimesMap, readTestData := getFileTimes(currentFileSet)
 	if readTestData {
-		currentFileSet = readTestDataFromFile(args.FilePath)
+		currentFileSet = stutils.ReadTestDataFromFile(log, args.FilePath)
 	}
-	processFiles(fileTimesMap, currentFileSet)
-	log.Debug(fmt.Sprintf("Test time map: %s", convertMapToJson(fileTimesMap)))
+	stutils.ProcessFiles(fileTimesMap, currentFileSet, float64(args.DefaultTime), args.UseJunitXml)
+	log.Debug(fmt.Sprintf("Test time map: %s", stutils.ConvertMapToJson(fileTimesMap)))
 
-	buckets, bucketTimes := splitFiles(fileTimesMap, args.SplitTotal)
+	buckets, bucketTimes := stutils.SplitFiles(fileTimesMap, args.SplitTotal)
 	if args.UseJunitXml {
 		log.Debug(fmt.Sprintf("Expected test time: %0.1fs\n", bucketTimes[args.SplitIndex]))
 	}
@@ -142,31 +178,31 @@ func getFileTimes(currentFileSet map[string]bool) (map[string]float64, bool) {
 		case splitByFileTimeStr:
 			req.IncludeFilename = true
 			res, err = ti.GetTestTimes(context.Background(), log, req)
-			fileTimesMap = convertMap(res.FileTimeMap)
+			fileTimesMap = stutils.ConvertMap(res.FileTimeMap)
 			if args.FilePath == "" {
 				readTestData = false
 			}
 		case splitByClassTimeStr:
 			req.IncludeClassname = true
 			res, err = ti.GetTestTimes(context.Background(), log, req)
-			fileTimesMap = convertMap(res.ClassTimeMap)
+			fileTimesMap = stutils.ConvertMap(res.ClassTimeMap)
 		case splitByTestcaseTimeStr:
 			req.IncludeTestCase = true
 			res, err = ti.GetTestTimes(context.Background(), log, req)
-			fileTimesMap = convertMap(res.TestTimeMap)
+			fileTimesMap = stutils.ConvertMap(res.TestTimeMap)
 		case splitByTestSuiteTimeStr:
 			req.IncludeTestSuite = true
 			res, err = ti.GetTestTimes(context.Background(), log, req)
-			fileTimesMap = convertMap(res.SuiteTimeMap)
+			fileTimesMap = stutils.ConvertMap(res.SuiteTimeMap)
 		case splitByFileSizeStr:
-			estimateFileTimesByLineCount(currentFileSet, fileTimesMap)
+			stutils.EstimateFileTimesByLineCount(log, currentFileSet, fileTimesMap)
 			return fileTimesMap, false
 		}
 
 		if err != nil || len(fileTimesMap) == 0 {
 			log.Warnw("error getting timing data with given arguments, falling back to splitting by file size")
 			fileTimesMap := make(map[string]float64)
-			estimateFileTimesByLineCount(currentFileSet, fileTimesMap)
+			stutils.EstimateFileTimesByLineCount(log, currentFileSet, fileTimesMap)
 			return fileTimesMap, false
 		}
 	}

@@ -39,6 +39,10 @@ func (b *bazelRunner) AutoDetectPackages() ([]string, error) {
 	return DetectPkgs(b.log, b.fs)
 }
 
+func (b *bazelRunner) AutoDetectTestFiles() ([]types.RunnableTest, error) {
+	return []types.RunnableTest{}, nil
+}
+
 func (b *bazelRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, userArgs, agentConfigPath string, ignoreInstr, runAll bool) (string, error) {
 	if ignoreInstr {
 		b.log.Infow("ignoring instrumentation and not attaching Java agent")

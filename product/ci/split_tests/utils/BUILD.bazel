@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "utils",
+    srcs = [
+        "consts.go",
+        "filetime.go",
+        "utils.go",
+    ],
+    importpath = "github.com/harness/harness-core/product/ci/split_tests/utils",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//commons/go/lib/logs",
+        "//product/ci/common/external",
+        "//product/ci/engine/consts",
+        "//product/ci/engine/grpc/client",
+        "//product/ci/engine/proto",
+        "//product/ci/ti-service/client",
+        "//product/ci/ti-service/types",
+        "@org_uber_go_zap//:zap",
+         "@com_github_bmatcuk_doublestar//:doublestar",
+    ],
+)
