@@ -446,12 +446,13 @@ public class DelegateAgentResource {
          AutoLogContext ignore2 = new DelegateLogContext(delegateParams.getDelegateId(), OVERRIDE_ERROR)) {
       // delegate.isPollingModeEnabled() will be true here.
       if ("ECS".equals(delegateParams.getDelegateType())) {
-        Delegate registeredDelegate = delegateService.handleEcsDelegateRequest(buildDelegateFromParams(delegateParams));
+        Delegate registeredDelegate =
+            delegateService.handleEcsDelegateRequest(Delegate.getDelegateFromParams(delegateParams, false));
 
         return new RestResponse<>(buildDelegateHBResponse(registeredDelegate));
       } else {
-        return new RestResponse<>(buildDelegateHBResponse(
-            delegateService.updateHeartbeatForDelegateWithPollingEnabled(buildDelegateFromParams(delegateParams))));
+        return new RestResponse<>(buildDelegateHBResponse(delegateService.updateHeartbeatForDelegateWithPollingEnabled(
+            Delegate.getDelegateFromParams(delegateParams, false))));
       }
     }
   }
@@ -580,30 +581,6 @@ public class DelegateAgentResource {
         .sequenceNumber(delegate.getSequenceNum())
         .status(delegate.getStatus().toString())
         .useCdn(delegate.isUseCdn())
-        .build();
-  }
-
-  private Delegate buildDelegateFromParams(DelegateParams delegateParams) {
-    return Delegate.builder()
-        .uuid(delegateParams.getDelegateId())
-        .accountId(delegateParams.getAccountId())
-        .description(delegateParams.getDescription())
-        .ip(delegateParams.getIp())
-        .hostName(delegateParams.getHostName())
-        .delegateGroupName(delegateParams.getDelegateGroupName())
-        .delegateName(delegateParams.getDelegateName())
-        .delegateProfileId(delegateParams.getDelegateProfileId())
-        .lastHeartBeat(delegateParams.getLastHeartBeat())
-        .version(delegateParams.getVersion())
-        .sequenceNum(delegateParams.getSequenceNum())
-        .delegateType(delegateParams.getDelegateType())
-        .delegateRandomToken(delegateParams.getDelegateRandomToken())
-        .keepAlivePacket(delegateParams.isKeepAlivePacket())
-        .polllingModeEnabled(delegateParams.isPollingModeEnabled())
-        .ng(delegateParams.isNg())
-        .sampleDelegate(delegateParams.isSampleDelegate())
-        .currentlyExecutingDelegateTasks(delegateParams.getCurrentlyExecutingDelegateTasks())
-        .location(delegateParams.getLocation())
         .build();
   }
 }

@@ -150,4 +150,35 @@ public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, Ac
     public static final String owner_identifier = owner + "." + DelegateEntityOwnerKeys.identifier;
     public static final String searchTermFilter = "searchTermFilter";
   }
+
+  public static Delegate getDelegateFromParams(DelegateParams delegateParams, boolean connectedUsingMtls) {
+    return Delegate.builder()
+        .uuid(delegateParams.getDelegateId())
+        .accountId(delegateParams.getAccountId())
+        .description(delegateParams.getDescription())
+        .ip(delegateParams.getIp())
+        .hostName(delegateParams.getHostName())
+        .delegateGroupName(delegateParams.getDelegateGroupName())
+        .delegateGroupId(delegateParams.getDelegateGroupId())
+        .delegateName(delegateParams.getDelegateName())
+        .delegateProfileId(delegateParams.getDelegateProfileId())
+        .lastHeartBeat(delegateParams.getLastHeartBeat())
+        .version(delegateParams.getVersion())
+        .sequenceNum(delegateParams.getSequenceNum())
+        .delegateType(delegateParams.getDelegateType())
+        .delegateRandomToken(delegateParams.getDelegateRandomToken())
+        .keepAlivePacket(delegateParams.isKeepAlivePacket())
+        .polllingModeEnabled(delegateParams.isPollingModeEnabled())
+        .ng(delegateParams.isNg())
+        .sampleDelegate(delegateParams.isSampleDelegate())
+        .currentlyExecutingDelegateTasks(delegateParams.getCurrentlyExecutingDelegateTasks())
+        .location(delegateParams.getLocation())
+        .heartbeatAsObject(delegateParams.isHeartbeatAsObject())
+        .supportedTaskTypes(delegateParams.getSupportedTaskTypes())
+        .proxy(delegateParams.isProxy())
+        .ceEnabled(delegateParams.isCeEnabled())
+        .immutable(delegateParams.isImmutable())
+        .tags(delegateParams.getTags())
+        .build();
+  }
 }

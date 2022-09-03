@@ -9,15 +9,20 @@ package io.harness.stream;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.delegate.beans.DelegateTaskEvent.DelegateTaskEventBuilder.aDelegateTaskEvent;
+import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.beans.DelegateHeartbeatResponseStreaming;
 import io.harness.delegate.beans.DelegateTaskAbortEvent;
+import io.harness.delegate.task.DelegateLogContext;
+import io.harness.logging.AccountLogContext;
+import io.harness.logging.AutoLogContext;
 import io.harness.serializer.JsonUtils;
 
 import software.wings.beans.DelegateTaskBroadcast;
 import software.wings.beans.PerpetualTaskBroadcastEvent;
+import software.wings.logcontext.WebsocketLogContext;
 import software.wings.service.intfc.DelegateService;
 import software.wings.service.intfc.DelegateTaskServiceClassic;
 
@@ -42,30 +47,34 @@ public class DelegateEventFilter extends BroadcastFilterAdapter {
 
     if (message instanceof DelegateTaskBroadcast) {
       DelegateTaskBroadcast broadcast = (DelegateTaskBroadcast) message;
+      try (AutoLogContext ignore1 = new AccountLogContext(broadcast.getAccountId(), OVERRIDE_ERROR);
+           AutoLogContext ignore2 = new DelegateLogContext(delegateId, OVERRIDE_ERROR);
+           AutoLogContext ignore3 = new WebsocketLogContext(r.uuid(), OVERRIDE_ERROR)) {
+        if (isNotBlank(broadcast.getPreAssignedDelegateId())
+            && !StringUtils.equals(broadcast.getPreAssignedDelegateId(), delegateId)) {
+          return abort(message);
+        }
 
-      if (isNotBlank(broadcast.getPreAssignedDelegateId())
-          && !StringUtils.equals(broadcast.getPreAssignedDelegateId(), delegateId)) {
-        return abort(message);
-      }
+        if (isEmpty(broadcast.getBroadcastToDelegatesIds())) {
+          return abort(message);
+        }
 
-      if (isEmpty(broadcast.getBroadcastToDelegatesIds())) {
-        return abort(message);
-      }
+        if (!broadcast.getBroadcastToDelegatesIds().contains(delegateId)) {
+          return abort(message);
+        }
 
-      if (!broadcast.getBroadcastToDelegatesIds().contains(delegateId)) {
-        return abort(message);
-      }
+        if (!delegateService.filter(broadcast.getAccountId(), delegateId)) {
+          return abort(message);
+        }
 
-      if (!delegateService.filter(broadcast.getAccountId(), delegateId)) {
-        return abort(message);
+        log.info("Broadcasting task {} to account: {} delegate: {} by {}", broadcast.getTaskId(),
+            broadcast.getAccountId(), delegateId, broadcasterId);
+        return new BroadcastAction(JsonUtils.asJson(aDelegateTaskEvent()
+                                                        .withDelegateTaskId(broadcast.getTaskId())
+                                                        .withSync(!broadcast.isAsync())
+                                                        .withAccountId(broadcast.getAccountId())
+                                                        .build()));
       }
-      log.info("Broadcasting task {} to account: {} delegate: {} by {}", broadcast.getTaskId(),
-          broadcast.getAccountId(), delegateId, broadcasterId);
-      return new BroadcastAction(JsonUtils.asJson(aDelegateTaskEvent()
-                                                      .withDelegateTaskId(broadcast.getTaskId())
-                                                      .withSync(!broadcast.isAsync())
-                                                      .withAccountId(broadcast.getAccountId())
-                                                      .build()));
     }
 
     if (message instanceof DelegateTaskAbortEvent) {
