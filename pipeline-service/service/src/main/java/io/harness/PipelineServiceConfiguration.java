@@ -23,7 +23,6 @@ import io.harness.grpc.client.GrpcClientConfig;
 import io.harness.grpc.server.GrpcServerConfig;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.logstreaming.LogStreamingServiceConfiguration;
-import io.harness.mongo.DbAliases;
 import io.harness.mongo.MongoConfig;
 import io.harness.ngtriggers.TriggerConfiguration;
 import io.harness.notification.NotificationClientConfiguration;
@@ -258,7 +257,7 @@ public class PipelineServiceConfiguration extends Configuration {
         .scannerClass("io.swagger.v3.jaxrs2.integration.JaxrsAnnotationScanner");
   }
 
-  public void populateDbAliases() {
-    DbAliases.getInstance().setValues(Arrays.asList(mongoConfig.getAliasDBName()));
+  public List<String> getDbAliases() {
+    return Arrays.asList(mongoConfig.getAliasDBName());
   }
 }

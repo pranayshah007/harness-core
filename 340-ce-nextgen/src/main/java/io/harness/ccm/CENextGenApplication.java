@@ -31,6 +31,7 @@ import io.harness.enforcement.client.usage.RestrictionUsageInterface;
 import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.ff.FeatureFlagConfig;
 import io.harness.ff.FeatureFlagService;
+import io.harness.govern.ProviderModule;
 import io.harness.health.HealthService;
 import io.harness.licensing.usage.resources.LicenseUsageResource;
 import io.harness.maintenance.MaintenanceController;
@@ -39,6 +40,7 @@ import io.harness.migration.MigrationProvider;
 import io.harness.migration.NGMigrationSdkInitHelper;
 import io.harness.migration.NGMigrationSdkModule;
 import io.harness.migration.beans.NGMigrationConfiguration;
+import io.harness.mongo.MongoConfig;
 import io.harness.ng.core.CorrelationFilter;
 import io.harness.ng.core.exceptionmappers.GenericExceptionMapperV2;
 import io.harness.ng.core.exceptionmappers.JerseyViolationExceptionMapperV2;
@@ -60,10 +62,9 @@ import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.google.inject.Guice;
-import com.google.inject.Injector;
-import com.google.inject.Key;
+import com.google.inject.*;
 import com.google.inject.Module;
+import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import io.dropwizard.Application;
 import io.dropwizard.configuration.ConfigurationSourceProvider;
@@ -147,12 +148,19 @@ public class CENextGenApplication extends Application<CENextGenConfiguration> {
     ExecutorModule.getInstance().setExecutorService(ThreadPool.create(
         20, 100, 500L, TimeUnit.MILLISECONDS, new ThreadFactoryBuilder().setNameFormat("main-app-pool-%d").build()));
     log.info("Starting CE NextGen Application ...");
-    configuration.populateDbAliases();
     MaintenanceController.forceMaintenance(true);
 
     ConfigSecretUtils.resolveSecrets(configuration.getSecretsConfiguration(), configuration);
 
     List<Module> modules = new ArrayList<>();
+    modules.add(new ProviderModule() {
+      @Provides
+      @Singleton
+      @Named("dbAliases")
+      public List<String> getDbAliases() {
+        return configuration.getDbAliases();
+      }
+    });
     modules.add(new CENextGenModule(configuration));
     modules.add(new MetricRegistryModule(metricRegistry));
     modules.add(NGMigrationSdkModule.getInstance());

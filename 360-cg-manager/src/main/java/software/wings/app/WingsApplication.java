@@ -464,7 +464,6 @@ public class WingsApplication extends Application<MainConfiguration> {
     environment.lifecycle().addServerLifecycleListener(server -> {
       log.info("Leaving startup maintenance mode");
       MaintenanceController.forceMaintenance(false);
-      configuration.populateDbAliases();
       for (Connector connector : server.getConnectors()) {
         if (connector instanceof ServerConnector) {
           ServerConnector serverConnector = (ServerConnector) connector;
@@ -906,6 +905,13 @@ public class WingsApplication extends Application<MainConfiguration> {
             .put(DelegateAsyncTaskResponse.class, "delegateAsyncTaskResponses")
             .put(DelegateTaskProgressResponse.class, "delegateTaskProgressResponses")
             .build();
+      }
+
+      @Provides
+      @Singleton
+      @Named("dbAliases")
+      public List<String> getDbAliases() {
+        return configuration.getDbAliases();
       }
     });
 

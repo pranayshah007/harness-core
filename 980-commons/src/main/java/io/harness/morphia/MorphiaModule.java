@@ -67,7 +67,7 @@ public class MorphiaModule extends AbstractModule {
   @Provides
   @Named("morphiaClasses")
   @Singleton
-  Set<Class> classes(Set<Class<? extends MorphiaRegistrar>> registrars) {
+  Set<Class> classes(Set<Class<? extends MorphiaRegistrar>> registrars, @Named("dbAliases") List<String> dbAliases) {
     Set<Class> classes = ConcurrentHashMap.newKeySet();
     registrars.forEach(registrar -> {
       try {
@@ -78,11 +78,10 @@ public class MorphiaModule extends AbstractModule {
         throw new GeneralException("Failed initializing morphia", e);
       }
     });
-    DbAliases dbAliases = DbAliases.getInstance();
-    if (dbAliases.getValues().isEmpty()) {
+    if (dbAliases.isEmpty()) {
       return classes;
     }
-    return classes.stream().filter(clazz -> hasClassInStores(clazz, dbAliases.getValues())).collect(Collectors.toSet());
+    return classes.stream().filter(clazz -> hasClassInStores(clazz, dbAliases)).collect(Collectors.toSet());
   }
 
   @HarnessTrace

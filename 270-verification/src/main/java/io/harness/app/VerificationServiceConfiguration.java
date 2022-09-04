@@ -14,7 +14,6 @@ import static java.util.Collections.singletonList;
 
 import io.harness.cf.CfClientConfig;
 import io.harness.ff.FeatureFlagConfig;
-import io.harness.mongo.DbAliases;
 import io.harness.mongo.MongoConfig;
 import io.harness.scheduler.SchedulerConfig;
 
@@ -38,6 +37,7 @@ import io.dropwizard.server.ServerFactory;
 import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import lombok.Data;
@@ -141,7 +141,7 @@ public class VerificationServiceConfiguration extends Configuration implements A
     return logbackAccessRequestLogFactory;
   }
 
-  public void populateDbAliases() {
-    DbAliases.getInstance().setValues(Arrays.asList(mongoConnectionFactory.getAliasDBName()));
+  public List<String> getDbAliases() {
+    return Arrays.asList(mongoConnectionFactory.getAliasDBName());
   }
 }

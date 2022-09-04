@@ -13,7 +13,6 @@ import static java.util.Collections.singletonList;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
-import io.harness.mongo.DbAliases;
 import io.harness.mongo.MongoConfig;
 
 import ch.qos.logback.access.spi.IAccessEvent;
@@ -83,7 +82,7 @@ public class AnalyserServiceConfiguration extends Configuration {
     return logbackAccessRequestLogFactory;
   }
 
-  public void populateDbAliases() {
-    DbAliases.getInstance().setValues(Arrays.asList(mongoConfig.getAliasDBName()));
+  public List<String> getDbAliases() {
+    return Arrays.asList(mongoConfig.getAliasDBName());
   }
 }

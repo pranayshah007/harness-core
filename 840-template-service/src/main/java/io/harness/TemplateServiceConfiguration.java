@@ -195,7 +195,7 @@ public class TemplateServiceConfiguration extends Configuration {
     return getResourceClasses().stream().filter(x -> x.isAnnotationPresent(Tag.class)).collect(Collectors.toList());
   }
 
-  public void populateDbAliases() {
-    DbAliases.getInstance().setValues(Arrays.asList(mongoConfig.getAliasDBName()));
+  public List<String> getDbAliases() {
+    return Arrays.asList(mongoConfig.getAliasDBName());
   }
 }

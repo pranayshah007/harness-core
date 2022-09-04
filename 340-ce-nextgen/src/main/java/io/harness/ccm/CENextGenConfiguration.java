@@ -208,7 +208,7 @@ public class CENextGenConfiguration extends Configuration {
         .scannerClass("io.swagger.v3.jaxrs2.integration.JaxrsAnnotationScanner");
   }
 
-  public void populateDbAliases() {
-    DbAliases.getInstance().setValues(Arrays.asList(eventsMongoConfig.getAliasDBName()));
+  public List<String> getDbAliases() {
+    return Arrays.asList(eventsMongoConfig.getAliasDBName());
   }
 }

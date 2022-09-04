@@ -28,7 +28,6 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.enforcement.client.EnforcementClientConfiguration;
 import io.harness.ff.FeatureFlagClientConfiguration;
 import io.harness.lock.DistributedLockImplementation;
-import io.harness.mongo.DbAliases;
 import io.harness.mongo.MongoConfig;
 import io.harness.outbox.OutboxPollConfiguration;
 import io.harness.redis.RedisConfig;
@@ -56,7 +55,11 @@ import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.servers.Server;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import javax.ws.rs.Path;
 import lombok.AccessLevel;
@@ -180,7 +183,7 @@ public class AccessControlConfiguration extends Configuration {
     return classes.stream().map(aClass -> aClass.getPackage().getName()).collect(toSet());
   }
 
-  public void populateDbAliases() {
-    DbAliases.getInstance().setValues(Arrays.asList(mongoConfig.getAliasDBName()));
+  public List<String> getDbAliases() {
+    return Arrays.asList(mongoConfig.getAliasDBName());
   }
 }

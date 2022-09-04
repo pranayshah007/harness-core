@@ -305,7 +305,6 @@ public class VerificationApplication extends Application<VerificationConfigurati
   public void run(VerificationConfiguration configuration, Environment environment) {
     log.info("Starting app ...");
     MaintenanceController.forceMaintenance(true);
-    configuration.populateDbAliases();
     ValidatorFactory validatorFactory = Validation.byDefaultProvider()
                                             .configure()
                                             .parameterNameProvider(new ReflectionParameterNameProvider())
@@ -376,6 +375,13 @@ public class VerificationApplication extends Application<VerificationConfigurati
       @Singleton
       MongoConfig mongoConfig() {
         return configuration.getMongoConnectionFactory();
+      }
+
+      @Provides
+      @Singleton
+      @Named("dbAliases")
+      public List<String> getDbAliases() {
+        return configuration.getDbAliases();
       }
     });
     modules.add(new AbstractMongoModule() {

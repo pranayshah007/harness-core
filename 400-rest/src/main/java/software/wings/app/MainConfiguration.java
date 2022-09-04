@@ -39,7 +39,6 @@ import io.harness.grpc.client.GrpcClientConfig;
 import io.harness.grpc.server.GrpcServerConfig;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.logstreaming.LogStreamingServiceConfig;
-import io.harness.mongo.DbAliases;
 import io.harness.mongo.MongoConfig;
 import io.harness.redis.RedisConfig;
 import io.harness.reflection.HarnessReflections;
@@ -345,8 +344,7 @@ public class MainConfiguration extends Configuration implements AssetsBundleConf
     return !DeployMode.isOnPrem(getDeployMode().name());
   }
 
-  public void populateDbAliases() {
-    DbAliases.getInstance().setValues(
-        Arrays.asList(mongoConnectionFactory.getAliasDBName(), eventsMongo.getAliasDBName()));
+  public List<String> getDbAliases() {
+    return Arrays.asList(mongoConnectionFactory.getAliasDBName(), eventsMongo.getAliasDBName());
   }
 }

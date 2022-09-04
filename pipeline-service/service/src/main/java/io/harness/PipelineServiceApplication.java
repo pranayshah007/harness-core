@@ -191,6 +191,7 @@ import com.google.inject.Module;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
+import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import io.dropwizard.Application;
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
@@ -279,7 +280,6 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
     log.info("Starting Pipeline Service Application ...");
     MaintenanceController.forceMaintenance(true);
 
-    appConfig.populateDbAliases();
     ExecutorModule.getInstance().setExecutorService(ThreadPool.create(appConfig.getCommonPoolConfig().getCorePoolSize(),
         appConfig.getCommonPoolConfig().getMaxPoolSize(), appConfig.getCommonPoolConfig().getIdleTime(),
         appConfig.getCommonPoolConfig().getTimeUnit(),
@@ -290,6 +290,13 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
       @Singleton
       PipelineServiceConfiguration configuration() {
         return appConfig;
+      }
+
+      @Provides
+      @Singleton
+      @Named("dbAliases")
+      public List<String> getDbAliases() {
+        return appConfig.getDbAliases();
       }
     });
     modules.add(new NotificationClientModule(appConfig.getNotificationClientConfiguration()));

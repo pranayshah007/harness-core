@@ -145,8 +145,6 @@ public class CommandLibraryServerApplication extends Application<CommandLibraryS
     log.info("Entering startup maintenance mode");
     MaintenanceController.forceMaintenance(true);
 
-    configuration.populateDbAliases();
-
     final List<Module> modules = new ArrayList<>();
     modules.add(MetricsInstrumentationModule.builder()
                     .withMetricRegistry(metricRegistry)
@@ -187,6 +185,13 @@ public class CommandLibraryServerApplication extends Application<CommandLibraryS
             .put(DelegateAsyncTaskResponse.class, "delegateAsyncTaskResponses")
             .put(DelegateTaskProgressResponse.class, "delegateTaskProgressResponses")
             .build();
+      }
+
+      @Provides
+      @Singleton
+      @Named("dbAliases")
+      public List<String> getDbAliases() {
+        return configuration.getDbAliases();
       }
     });
 

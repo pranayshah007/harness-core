@@ -215,8 +215,6 @@ public class VerificationServiceApplication extends Application<VerificationServ
     log.info("Entering startup maintenance mode");
     MaintenanceController.forceMaintenance(true);
 
-    configuration.populateDbAliases();
-
     ValidatorFactory validatorFactory = Validation.byDefaultProvider()
                                             .configure()
                                             .parameterNameProvider(new ReflectionParameterNameProvider())
@@ -272,6 +270,13 @@ public class VerificationServiceApplication extends Application<VerificationServ
       @Singleton
       MongoConfig mongoConfig() {
         return configuration.getMongoConnectionFactory();
+      }
+
+      @Provides
+      @Singleton
+      @Named("dbAliases")
+      public List<String> getDbAliases() {
+        return configuration.getDbAliases();
       }
     });
     modules.add(new AbstractMongoModule() {

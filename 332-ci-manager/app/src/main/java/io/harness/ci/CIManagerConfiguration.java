@@ -180,8 +180,8 @@ public class CIManagerConfiguration extends Configuration implements AssetsBundl
         "io.swagger.v3.jaxrs2.integration.JaxrsAnnotationScanner");
   }
 
-  public void populateDbAliases() {
-    DbAliases.getInstance().setValues(
-        Arrays.asList(harnessCIMongo.getAliasDBName(), harnessMongo.getAliasDBName(), pmsMongoConfig.getAliasDBName()));
+  public List<String> getDbAliases() {
+    return Arrays.asList(
+        harnessCIMongo.getAliasDBName(), harnessMongo.getAliasDBName(), pmsMongoConfig.getAliasDBName());
   }
 }

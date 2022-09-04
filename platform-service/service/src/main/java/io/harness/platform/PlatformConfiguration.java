@@ -15,7 +15,6 @@ import io.harness.AccessControlClientConfiguration;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.enforcement.client.EnforcementClientConfiguration;
-import io.harness.mongo.DbAliases;
 import io.harness.platform.audit.AuditServiceConfiguration;
 import io.harness.platform.notification.NotificationServiceConfiguration;
 import io.harness.reflection.HarnessReflections;
@@ -194,9 +193,9 @@ public class PlatformConfiguration extends Configuration {
     return allResourceClasses.stream().filter(x -> x.isAnnotationPresent(Tag.class)).collect(Collectors.toList());
   }
 
-  public void populateDbAliases() {
-    DbAliases.getInstance().setValues(Arrays.asList(notificationServiceConfig.getMongoConfig().getAliasDBName(),
+  public List<String> getDbAliases() {
+    return Arrays.asList(notificationServiceConfig.getMongoConfig().getAliasDBName(),
         auditServiceConfig.getMongoConfig().getAliasDBName(),
-        resoureGroupServiceConfig.getMongoConfig().getAliasDBName()));
+        resoureGroupServiceConfig.getMongoConfig().getAliasDBName());
   }
 }

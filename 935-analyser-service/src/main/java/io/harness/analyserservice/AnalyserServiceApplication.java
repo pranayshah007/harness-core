@@ -33,6 +33,7 @@ import com.google.inject.Key;
 import com.google.inject.Module;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import io.dropwizard.Application;
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
@@ -84,13 +85,19 @@ public class AnalyserServiceApplication extends Application<AnalyserServiceConfi
   public void run(AnalyserServiceConfiguration configuration, Environment environment) throws Exception {
     log.info("Starting Pipeline Service Application ...");
     MaintenanceController.forceMaintenance(true);
-    configuration.populateDbAliases();
     List<Module> modules = new ArrayList<>();
     modules.add(new ProviderModule() {
       @Provides
       @Singleton
       AnalyserServiceConfiguration configuration() {
         return configuration;
+      }
+
+      @Provides
+      @Singleton
+      @Named("dbAliases")
+      public List<String> getDbAliases() {
+        return configuration.getDbAliases();
       }
     });
     modules.add(AnalyserServiceModule.getInstance(configuration));

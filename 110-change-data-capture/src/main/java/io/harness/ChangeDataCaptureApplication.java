@@ -74,7 +74,6 @@ public class ChangeDataCaptureApplication extends Application<ChangeDataCaptureS
       throws Exception {
     log.info("Entering startup maintenance mode");
     MaintenanceController.forceMaintenance(true);
-    changeDataCaptureServiceConfig.populateDbAliases();
 
     ExecutorModule.getInstance().setExecutorService(ThreadPool.create(
         1, 10, 500L, TimeUnit.MILLISECONDS, new ThreadFactoryBuilder().setNameFormat("main-app-pool-%d").build()));
@@ -85,6 +84,13 @@ public class ChangeDataCaptureApplication extends Application<ChangeDataCaptureS
       @Singleton
       MongoConfig mongoConfig() {
         return changeDataCaptureServiceConfig.getHarnessMongo();
+      }
+
+      @Provides
+      @Singleton
+      @Named("dbAliases")
+      public List<String> getDbAliases() {
+        return changeDataCaptureServiceConfig.getDbAliases();
       }
     });
 
