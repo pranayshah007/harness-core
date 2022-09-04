@@ -8,10 +8,10 @@
 package software.wings.beans;
 
 import io.harness.annotation.HarnessEntity;
-
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.harness.annotation.StoreIn;
 import io.harness.ng.DbAliases;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.mongodb.morphia.annotations.Entity;

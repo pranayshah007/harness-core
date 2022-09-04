@@ -11,12 +11,11 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 
 import io.harness.annotation.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ng.DbAliases;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.List;
 import javax.validation.constraints.NotNull;
-
-import io.harness.ng.DbAliases;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;

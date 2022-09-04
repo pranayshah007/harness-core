@@ -14,8 +14,8 @@ import io.harness.annotation.StoreIn;
 import io.harness.beans.EmbeddedUser;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
-
 import io.harness.ng.DbAliases;
+
 import software.wings.beans.Base;
 import software.wings.beans.entityinterface.KeywordsAware;
 

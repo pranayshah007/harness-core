@@ -11,8 +11,8 @@ import io.harness.annotation.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cd.CDLicenseType;
-
 import io.harness.ng.DbAliases;
+
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;

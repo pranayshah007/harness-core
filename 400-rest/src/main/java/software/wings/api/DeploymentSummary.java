@@ -18,8 +18,8 @@ import io.harness.beans.EmbeddedUser;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
-
 import io.harness.ng.DbAliases;
+
 import software.wings.beans.Base;
 import software.wings.beans.infrastructure.instance.key.deployment.AwsAmiDeploymentKey;
 import software.wings.beans.infrastructure.instance.key.deployment.AwsCodeDeployDeploymentKey;

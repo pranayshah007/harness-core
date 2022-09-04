@@ -12,8 +12,8 @@ import io.harness.connector.entities.Connector;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.CustomCommitAttributes;
-
 import io.harness.ng.DbAliases;
+
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;

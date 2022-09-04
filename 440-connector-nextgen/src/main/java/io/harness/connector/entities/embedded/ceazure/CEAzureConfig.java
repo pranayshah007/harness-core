@@ -10,12 +10,11 @@ package io.harness.connector.entities.embedded.ceazure;
 import io.harness.annotation.StoreIn;
 import io.harness.connector.entities.Connector;
 import io.harness.delegate.beans.connector.CEFeatures;
+import io.harness.ng.DbAliases;
 
 import java.util.List;
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
-
-import io.harness.ng.DbAliases;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;

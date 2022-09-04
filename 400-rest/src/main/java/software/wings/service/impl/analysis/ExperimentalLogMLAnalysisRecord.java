@@ -16,8 +16,8 @@ import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
-
 import io.harness.ng.DbAliases;
+
 import software.wings.beans.Base;
 import software.wings.service.impl.splunk.LogMLClusterScores;
 import software.wings.service.impl.splunk.SplunkAnalysisCluster;

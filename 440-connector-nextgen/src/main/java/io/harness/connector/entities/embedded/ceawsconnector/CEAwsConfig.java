@@ -11,10 +11,9 @@ import io.harness.annotation.StoreIn;
 import io.harness.connector.entities.Connector;
 import io.harness.delegate.beans.connector.CEFeatures;
 import io.harness.delegate.beans.connector.awsconnector.CrossAccountAccessDTO;
+import io.harness.ng.DbAliases;
 
 import java.util.List;
-
-import io.harness.ng.DbAliases;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;

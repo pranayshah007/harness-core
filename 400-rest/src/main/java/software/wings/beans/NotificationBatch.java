@@ -8,12 +8,11 @@
 package software.wings.beans;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotation.StoreIn;
+import io.harness.ng.DbAliases;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import io.harness.annotation.StoreIn;
-import io.harness.ng.DbAliases;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;

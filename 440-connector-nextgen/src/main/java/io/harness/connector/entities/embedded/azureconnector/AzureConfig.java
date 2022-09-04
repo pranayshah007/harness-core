@@ -15,8 +15,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.azure.AzureEnvironmentType;
 import io.harness.connector.entities.Connector;
 import io.harness.delegate.beans.connector.azureconnector.AzureCredentialType;
-
 import io.harness.ng.DbAliases;
+
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;

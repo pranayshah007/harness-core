@@ -15,12 +15,11 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.alerts.AlertMetadata;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.ImmutableList;
 import java.util.List;
-
-import io.harness.ng.DbAliases;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;

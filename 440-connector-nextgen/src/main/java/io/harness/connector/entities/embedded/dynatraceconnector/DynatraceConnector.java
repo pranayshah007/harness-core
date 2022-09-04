@@ -9,8 +9,8 @@ package io.harness.connector.entities.embedded.dynatraceconnector;
 
 import io.harness.annotation.StoreIn;
 import io.harness.connector.entities.Connector;
-
 import io.harness.ng.DbAliases;
+
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;

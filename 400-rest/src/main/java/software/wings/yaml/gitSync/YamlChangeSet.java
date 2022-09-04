@@ -13,8 +13,8 @@ import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
-
 import io.harness.ng.DbAliases;
+
 import software.wings.beans.Base;
 import software.wings.beans.yaml.GitFileChange;
 

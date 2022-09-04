@@ -10,8 +10,8 @@ package io.harness.connector.entities.embedded.gcpconnector;
 import io.harness.annotation.StoreIn;
 import io.harness.connector.entities.Connector;
 import io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType;
-
 import io.harness.ng.DbAliases;
+
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;

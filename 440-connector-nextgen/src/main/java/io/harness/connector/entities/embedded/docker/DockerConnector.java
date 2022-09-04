@@ -11,8 +11,8 @@ import io.harness.annotation.StoreIn;
 import io.harness.connector.entities.Connector;
 import io.harness.delegate.beans.connector.docker.DockerAuthType;
 import io.harness.delegate.beans.connector.docker.DockerRegistryProviderType;
-
 import io.harness.ng.DbAliases;
+
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;

@@ -16,11 +16,10 @@ import io.harness.mongo.CollationStrength;
 import io.harness.mongo.index.Collation;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 
 import com.google.common.collect.ImmutableList;
 import java.util.List;
-
-import io.harness.ng.DbAliases;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

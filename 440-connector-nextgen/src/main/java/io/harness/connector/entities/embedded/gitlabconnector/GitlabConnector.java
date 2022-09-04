@@ -13,8 +13,8 @@ import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessType;
 import io.harness.iterator.PersistentRegularIterable;
-
 import io.harness.ng.DbAliases;
+
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;

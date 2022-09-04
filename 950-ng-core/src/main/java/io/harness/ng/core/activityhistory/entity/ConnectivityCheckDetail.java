@@ -9,8 +9,8 @@ package io.harness.ng.core.activityhistory.entity;
 
 import io.harness.annotation.StoreIn;
 import io.harness.connector.ConnectorValidationResult;
-
 import io.harness.ng.DbAliases;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
