@@ -15,9 +15,10 @@ import lombok.Value;
 @Builder
 public class GARrtifactInfo implements ArtifactInfo {
   String connectorRef;
+  String region;
   String project;
-  String version;
-
+  String repositoryName;
+  String pkg;
   @Override
   public ArtifactSourceType getType() {
     return ArtifactSourceType.GOOGLE_ARTIFACT_REGISTRY;
@@ -27,7 +28,10 @@ public class GARrtifactInfo implements ArtifactInfo {
   public ArtifactConfig toArtifactConfig() {
     return GoogleArtifactRegistryConfig.builder()
         .connectorRef(ParameterField.<String>builder().value(connectorRef).build())
-        .version(ParameterField.<String>builder().value(version).build())
+        .project(ParameterField.<String>builder().value(project).build())
+        .pkg(ParameterField.<String>builder().value(pkg).build())
+        .region(ParameterField.<String>builder().value(region).build())
+        .repositoryName(ParameterField.<String>builder().value(repositoryName).build())
         .build();
   }
 }

@@ -24,12 +24,20 @@ public class GARPollingItemGenerator implements PollingItemGenerator {
     NGTriggerEntity ngTriggerEntity = buildTriggerOpsData.getTriggerDetails().getNgTriggerEntity();
     PollingItem.Builder builder = getBaseInitializedPollingItem(ngTriggerEntity);
     String connectorRef = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.connectorRef");
-    String version = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.version");
+    String pkg = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.package");
+    String region = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.region");
+    String repositoryName = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.repositoryName");
+    String project = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.project");
     return builder
         .setPollingPayloadData(PollingPayloadData.newBuilder()
                                    .setConnectorRef(connectorRef)
                                    .setType(Type.GOOGLE_ARTIFACT_REGISTRY)
-                                   .setGarPayload(GARPayload.newBuilder().setVersion(version).build())
+                                   .setGarPayload(GARPayload.newBuilder()
+                                                      .setPkg(pkg)
+                                                      .setRegion(region)
+                                                      .setProject(project)
+                                                      .setRepositoryName(repositoryName)
+                                                      .build())
                                    .build())
         .build();
   }

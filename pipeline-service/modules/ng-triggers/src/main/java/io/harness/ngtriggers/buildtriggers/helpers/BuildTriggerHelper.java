@@ -281,7 +281,7 @@ public class BuildTriggerHelper {
   private void validatePollingItemForGoogleArtifactRegistry(PollingItem pollingItem) {
     GARPayload garPayload = pollingItem.getPollingPayloadData().getGarPayload();
 
-    String error = checkFiledValueError("Version", garPayload.getVersion());
+    String error = checkFiledValueError("Package", garPayload.getPkg());
 
     if (isNotBlank(error)) {
       throw new InvalidRequestException(error);

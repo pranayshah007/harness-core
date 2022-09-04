@@ -1,6 +1,7 @@
 package io.harness.delegate.task.artifacts.gar;
 
 import static io.harness.delegate.beans.connector.ConnectorCapabilityBaseHelper.populateDelegateSelectorCapability;
+import static io.harness.delegate.task.artifacts.ArtifactSourceType.GOOGLE_ARTIFACT_REGISTRY;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -61,5 +62,9 @@ public class GarDelegateRequest implements ArtifactSourceDelegateRequest {
       }
     }
     return capabilities;
+  }
+  @Override
+  public ArtifactSourceType getSourceType() {
+    return GOOGLE_ARTIFACT_REGISTRY;
   }
 }

@@ -10,7 +10,10 @@ public class GarArtifactInfoBuilder implements PollingInfoBuilder {
   public PollingInfo toPollingInfo(PollingPayloadData pollingPayloadData) {
     return GARrtifactInfo.builder()
         .connectorRef(pollingPayloadData.getConnectorRef())
-        .version(pollingPayloadData)
+        .pkg(pollingPayloadData.getGarPayload().getPkg())
+        .region(pollingPayloadData.getGarPayload().getRegion())
+        .repositoryName(pollingPayloadData.getGarPayload().getRepositoryName())
+        .project(pollingPayloadData.getGarPayload().getProject())
         .build();
   }
 }

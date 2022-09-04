@@ -124,5 +124,8 @@ message GitPollingPayload {
 }
 
 message GARPayload {
-  string version = 1;
+  string region = 1;
+  string project = 2;
+  string repositoryName = 3;
+  string pkg = 4;
 }

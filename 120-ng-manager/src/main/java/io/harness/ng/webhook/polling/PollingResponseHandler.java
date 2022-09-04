@@ -373,7 +373,7 @@ public class PollingResponseHandler {
         polledResponseResultBuilder.type(JENKINS);
         break;
       case GOOGLE_ARTIFACT_REGISTRY:
-        polledResponseResultBuilder.name(((GARrtifactInfo) artifactInfo).getVersion());
+        polledResponseResultBuilder.name(((GARrtifactInfo) artifactInfo).getPkg());
         polledResponseResultBuilder.type(GOOGLE_ARTIFACT_REGISTRY);
         break;
       default:
