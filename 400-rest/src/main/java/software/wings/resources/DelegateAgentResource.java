@@ -166,6 +166,10 @@ public class DelegateAgentResource {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
       DelegateConfiguration configuration = accountService.getDelegateConfiguration(accountId);
       String primaryDelegateVersion = configurationController.getPrimaryVersion();
+      if (("1.0.latest-000").equals(primaryDelegateVersion)) {
+        log.info("modifying the version in delegate watcher");
+        primaryDelegateVersion = "1.0.latest";
+      }
       // Adding primary delegate to the last element of delegate versions.
       if (isNotEmpty(configuration.getDelegateVersions())
           && configuration.getDelegateVersions().remove(primaryDelegateVersion)) {
