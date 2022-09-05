@@ -47,6 +47,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -83,24 +84,26 @@ public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
   }
 
   @Override
-  public List<String> getOutputVars(Map<String, Object> outputVariables) {
+  public List<String> getOutputVars(Map<String, Object> outputVariables, Set<String> secretOutputVariables) {
     if (EmptyPredicate.isEmpty(outputVariables)) {
       return emptyList();
     }
-
+    // secret variables are stored separately so ignoring them
     List<String> outputVars = new ArrayList<>();
     outputVariables.forEach((key, val) -> {
-      if (val instanceof ParameterField) {
-        ParameterField<?> parameterFieldValue = (ParameterField<?>) val;
-        if (parameterFieldValue.getValue() == null) {
-          throw new InvalidRequestException(String.format("Output variable [%s] value found to be null", key));
+      if (EmptyPredicate.isEmpty(secretOutputVariables) || !secretOutputVariables.contains(key)) {
+        if (val instanceof ParameterField) {
+          ParameterField<?> parameterFieldValue = (ParameterField<?>) val;
+          if (parameterFieldValue.getValue() == null) {
+            throw new InvalidRequestException(String.format("Output variable [%s] value found to be empty", key));
+          }
+          outputVars.add(((ParameterField<?>) val).getValue().toString());
+        } else if (val instanceof String) {
+          outputVars.add((String) val);
+        } else {
+          log.error(String.format(
+              "Value other than String or ParameterField found for output variable [%s]. value: [%s]", key, val));
         }
-        outputVars.add(((ParameterField<?>) val).getValue().toString());
-      } else if (val instanceof String) {
-        outputVars.add((String) val);
-      } else {
-        log.error(String.format(
-            "Value other than String or ParameterField found for output variable [%s]. value: [%s]", key, val));
       }
     });
     return outputVars;
@@ -210,7 +213,10 @@ public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
         .environmentVariables(
             shellScriptHelperService.getEnvironmentVariables(shellScriptStepParameters.getEnvironmentVariables()))
         .executionId(AmbianceUtils.obtainCurrentRuntimeId(ambiance))
-        .outputVars(shellScriptHelperService.getOutputVars(shellScriptStepParameters.getOutputVariables()))
+        .outputVars(shellScriptHelperService.getOutputVars(
+            shellScriptStepParameters.getOutputVariables(), shellScriptStepParameters.getSecretOutputVariables()))
+        .secretOutputVars(shellScriptHelperService.getSecretOutputVars(
+            shellScriptStepParameters.getOutputVariables(), shellScriptStepParameters.getSecretOutputVariables()))
         .script(shellScript)
         .scriptType(scriptType)
         .workingDirectory(shellScriptHelperService.getWorkingDirectory(
@@ -230,5 +236,31 @@ public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
       resolvedOutputVariables.put(name, sweepingOutputEnvVariables.get(value));
     });
     return ShellScriptOutcome.builder().outputVariables(resolvedOutputVariables).build();
+  }
+
+  @Override
+  public List<String> getSecretOutputVars(Map<String, Object> outputVariables, Set<String> secretOutputVariables) {
+    if (EmptyPredicate.isEmpty(outputVariables)) {
+      return emptyList();
+    }
+    // secret variables are stored separately so ignoring them
+    List<String> outputVars = new ArrayList<>();
+    outputVariables.forEach((key, val) -> {
+      if (secretOutputVariables.contains(key)) {
+        if (val instanceof ParameterField) {
+          ParameterField<?> parameterFieldValue = (ParameterField<?>) val;
+          if (parameterFieldValue.getValue() == null) {
+            throw new InvalidRequestException(String.format("Output variable [%s] value found to be empty", key));
+          }
+          outputVars.add(((ParameterField<?>) val).getValue().toString());
+        } else if (val instanceof String) {
+          outputVars.add((String) val);
+        } else {
+          log.error(String.format(
+              "Value other than String or ParameterField found for output variable [%s]. value: [%s]", key, val));
+        }
+      }
+    });
+    return outputVars;
   }
 }

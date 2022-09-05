@@ -31,6 +31,7 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.validation.constraints.NotNull;
@@ -55,6 +56,7 @@ public class CustomApprovalInstance extends ApprovalInstance implements Persiste
   @NotNull ShellScriptSourceWrapper source;
   ParameterField<Timeout> retryInterval;
   Map<String, Object> outputVariables;
+  Set<String> secretOutputVariables;
   Map<String, Object> environmentVariables;
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
   @NotNull CriteriaSpecWrapperDTO approvalCriteria;
@@ -76,6 +78,7 @@ public class CustomApprovalInstance extends ApprovalInstance implements Persiste
             .delegateSelectors(specParameters.getDelegateSelectors())
             .environmentVariables(specParameters.getEnvironmentVariables())
             .outputVariables(specParameters.getOutputVariables())
+            .secretOutputVariables(specParameters.getSecretOutputVariables())
             .approvalCriteria(
                 CriteriaSpecWrapperDTO.fromCriteriaSpecWrapper(specParameters.getApprovalCriteria(), false))
             .rejectionCriteria(
@@ -97,6 +100,7 @@ public class CustomApprovalInstance extends ApprovalInstance implements Persiste
         .shellType(getShellType())
         .delegateSelectors(getDelegateSelectors())
         .outputVariables(getOutputVariables())
+        .secretOutputVariables(secretOutputVariables)
         .onDelegate(ParameterField.createValueField(true))
         .source(getSource())
         .uuid(getUuid())

@@ -139,14 +139,13 @@ public class ShellScriptStepTest extends CategoryTest {
                                                     .status(CommandExecutionStatus.SUCCESS)
                                                     .executeCommandResponse(executeCommandResponse)
                                                     .build();
-    doReturn(null).when(shellScriptHelperService).prepareShellScriptOutcome(envVariables, outputVariables);
 
     StepResponse stepResponse =
         shellScriptStep.handleTaskResult(ambiance, stepElementParameters, () -> successResponse);
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
-    assertThat(stepResponse.getStepOutcomes()).isEmpty();
+    assertThat(stepResponse.getStepOutcomes()).hasSize(1);
 
-    ShellScriptOutcome shellScriptOutcome = ShellScriptOutcome.builder().build();
+    ShellScriptOutcome shellScriptOutcome = ShellScriptOutcome.builder().outputVariables(new HashMap<>()).build();
     doReturn(shellScriptOutcome)
         .when(shellScriptHelperService)
         .prepareShellScriptOutcome(envVariables, outputVariables);
