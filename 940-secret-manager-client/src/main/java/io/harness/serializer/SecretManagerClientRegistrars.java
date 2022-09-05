@@ -19,12 +19,14 @@ public class SecretManagerClientRegistrars {
   public final ImmutableSet<Class<? extends KryoRegistrar>> kryoRegistrars =
       ImmutableSet.<Class<? extends KryoRegistrar>>builder()
           .addAll(DelegateTasksBeansRegistrars.kryoRegistrars)
+          .addAll(ProjectAndOrgRegistrars.kryoRegistrars)
           .add(SecretManagerClientKryoRegistrar.class)
           .build();
 
   public final ImmutableSet<Class<? extends MorphiaRegistrar>> morphiaRegistrars =
       ImmutableSet.<Class<? extends MorphiaRegistrar>>builder()
           .addAll(DelegateTasksBeansRegistrars.morphiaRegistrars)
+          .addAll(ProjectAndOrgRegistrars.morphiaRegistrars)
           .add(SecretManagerClientMorphiaRegistrar.class)
           .build();
 }

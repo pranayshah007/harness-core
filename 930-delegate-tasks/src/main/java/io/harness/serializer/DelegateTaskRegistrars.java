@@ -23,7 +23,6 @@ public class DelegateTaskRegistrars {
           .addAll(ApiServicesRegistrars.kryoRegistrars)
           .addAll(CvNextGenBeansRegistrars.kryoRegistrars)
           .addAll(DelegateTasksBeansRegistrars.kryoRegistrars)
-          .addAll(SecretManagerClientRegistrars.kryoRegistrars)
           .build();
 
   public static final ImmutableSet<Class<? extends MorphiaRegistrar>> morphiaRegistrars =
@@ -32,6 +31,5 @@ public class DelegateTaskRegistrars {
           .addAll(ApiServicesRegistrars.morphiaRegistrars)
           .addAll(DelegateTasksBeansRegistrars.morphiaRegistrars)
           .addAll(FeatureFlagBeansRegistrars.morphiaRegistrars)
-          .addAll(SecretManagerClientRegistrars.morphiaRegistrars)
           .build();
 }

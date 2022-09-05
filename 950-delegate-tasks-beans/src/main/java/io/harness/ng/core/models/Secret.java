@@ -8,7 +8,6 @@
 package io.harness.ng.core.models;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.ng.core.mapper.TagMapper.convertToList;
 import static io.harness.ng.core.mapper.TagMapper.convertToMap;
 
 import io.harness.annotation.StoreIn;
@@ -19,7 +18,6 @@ import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
-import io.harness.ng.core.dto.secrets.SecretSpecDTO;
 import io.harness.secretmanagerclient.SecretType;
 import io.harness.security.dto.Principal;
 
@@ -60,7 +58,6 @@ public class Secret {
   }
 
   @Id @org.mongodb.morphia.annotations.Id String id;
-  @FdIndex Boolean migratedFromManager;
   String accountIdentifier;
   String orgIdentifier;
   String projectIdentifier;
@@ -75,6 +72,7 @@ public class Secret {
   public boolean isDraft() {
     return draft != null && draft;
   }
+
   @JsonTypeInfo(
       use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXTERNAL_PROPERTY, property = "type", visible = true)
   SecretSpec secretSpec;
@@ -96,17 +94,5 @@ public class Secret {
     return dto;
   }
 
-  public static Secret fromDTO(SecretDTOV2 secretDTO) {
-    return Secret.builder()
-        .orgIdentifier(secretDTO.getOrgIdentifier())
-        .projectIdentifier(secretDTO.getProjectIdentifier())
-        .identifier(secretDTO.getIdentifier())
-        .description(secretDTO.getDescription())
-        .name(secretDTO.getName())
-        .tags(convertToList(secretDTO.getTags()))
-        .type(secretDTO.getType())
-        .secretSpec(Optional.ofNullable(secretDTO.getSpec()).map(SecretSpecDTO::toEntity).orElse(null))
-        .owner(secretDTO.getOwner())
-        .build();
-  }
+  @FdIndex Boolean migratedFromManager;
 }

@@ -43,7 +43,6 @@ public class ConnectorNextGenRegistrars {
           .addAll(AccessControlClientRegistrars.kryoRegistrars)
           .addAll(NGCommonModuleRegistrars.kryoRegistrars)
           .add(NotificationBeansKryoRegistrar.class)
-          .addAll(ProjectAndOrgRegistrars.kryoRegistrars)
           .build();
 
   public static final ImmutableSet<Class<? extends MorphiaRegistrar>> morphiaRegistrars =
@@ -60,7 +59,6 @@ public class ConnectorNextGenRegistrars {
           .addAll(OutboxEventRegistrars.morphiaRegistrars)
           .addAll(DelegateTaskRegistrars.morphiaRegistrars)
           .addAll(NGCommonModuleRegistrars.morphiaRegistrars)
-          .addAll(ProjectAndOrgRegistrars.morphiaRegistrars)
           .build();
 
   public static final ImmutableList<Class<? extends Converter<?, ?>>> springConverters =
