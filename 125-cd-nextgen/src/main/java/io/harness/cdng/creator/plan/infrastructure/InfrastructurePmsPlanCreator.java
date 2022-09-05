@@ -94,18 +94,25 @@ public class InfrastructurePmsPlanCreator {
 
   public PlanNode getInfraTaskExecutableStepV2PlanNode(
       EnvironmentYamlV2 environmentYamlV2, List<AdviserObtainment> adviserObtainments) {
-    final ParameterField<String> infraRef = ParameterField.isNotNull(environmentYamlV2.getInfrastructureDefinitions())
-            && isNotEmpty(environmentYamlV2.getInfrastructureDefinitions().getValue())
-        ? environmentYamlV2.getInfrastructureDefinitions().getValue().get(0).getIdentifier()
-        : ParameterField.createValueField(null);
-    InfrastructureTaskExecutableStepV2Params params =
-        InfrastructureTaskExecutableStepV2Params.builder()
-            .envRef(environmentYamlV2.getEnvironmentRef())
-            .infraRef(infraRef)
-            .infraInputs(ParameterField.isNotNull(infraRef)
-                    ? environmentYamlV2.getInfrastructureDefinitions().getValue().get(0).getInputs()
-                    : null)
-            .build();
+    ParameterField<String> infraRef;
+    ParameterField<Map<String, Object>> infraInputs;
+
+    if (ParameterField.isNotNull(environmentYamlV2.getInfrastructureDefinitions())
+        && isNotEmpty(environmentYamlV2.getInfrastructureDefinitions().getValue())) {
+      infraRef = environmentYamlV2.getInfrastructureDefinitions().getValue().get(0).getIdentifier();
+      infraInputs = environmentYamlV2.getInfrastructureDefinitions().getValue().get(0).getInputs();
+    } else if (ParameterField.isNotNull(environmentYamlV2.getInfrastructureDefinition())) {
+      infraRef = environmentYamlV2.getInfrastructureDefinition().getValue().getIdentifier();
+      infraInputs = environmentYamlV2.getInfrastructureDefinition().getValue().getInputs();
+    } else {
+      infraRef = ParameterField.createValueField(null);
+      infraInputs = ParameterField.createValueField(null);
+    }
+    InfrastructureTaskExecutableStepV2Params params = InfrastructureTaskExecutableStepV2Params.builder()
+                                                          .envRef(environmentYamlV2.getEnvironmentRef())
+                                                          .infraRef(infraRef)
+                                                          .infraInputs(infraInputs)
+                                                          .build();
     return PlanNode.builder()
         .uuid(UUIDGenerator.generateUuid())
         .name(PlanCreatorConstants.INFRA_NODE_NAME)

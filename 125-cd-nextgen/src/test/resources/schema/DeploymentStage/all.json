@@ -2888,6 +2888,18 @@
             }
           ]
         },
+        "infrastructureDefinition": {
+          "oneOf": [
+            {
+              "$ref": "#/definitions/InfraStructureDefinitionYaml"
+            },
+            {
+              "type": "string",
+              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+              "minLength": 1
+            }
+          ]
+        },
         "infrastructureDefinitions": {
           "oneOf": [
             {
@@ -2931,6 +2943,7 @@
       "type": "object",
       "properties": {
         "metadata": {
+          "readOnly": true,
           "$ref": "#/definitions/EnvironmentsMetadata"
         },
         "values": {
@@ -3994,7 +4007,16 @@
           "type": "string"
         },
         "inputs": {
-          "$ref": "#/definitions/JsonNode"
+          "oneOf": [
+            {
+              "$ref": "#/definitions/JsonNode"
+            },
+            {
+              "type": "string",
+              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+              "minLength": 1
+            }
+          ]
         },
         "metadata": {
           "type": "string"
@@ -7462,6 +7484,7 @@
       "type": "object",
       "properties": {
         "metadata": {
+          "readOnly": true,
           "$ref": "#/definitions/ServicesMetadata"
         },
         "values": {

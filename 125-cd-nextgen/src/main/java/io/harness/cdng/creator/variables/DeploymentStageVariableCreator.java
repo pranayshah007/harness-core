@@ -61,6 +61,7 @@ import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.yaml.core.variables.NGVariable;
 
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -399,6 +400,10 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
             .filter(p -> !p.isExpression())
             .map(ParameterField::getValue)
             .collect(Collectors.toList());
+      }
+      if (ParameterField.isNotNull(environmentYamlV2.getInfrastructureDefinition())) {
+        return Lists.newArrayList(
+            environmentYamlV2.getInfrastructureDefinition().getValue().getIdentifier().getValue());
       }
     }
     return null;
