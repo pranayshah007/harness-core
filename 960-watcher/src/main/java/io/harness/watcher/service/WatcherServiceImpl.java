@@ -1104,7 +1104,8 @@ public class WatcherServiceImpl implements WatcherService {
   }
 
   private void downloadDelegateJar(String version) throws Exception {
-    if(version.equals("1.0.latest-000")) {
+    if (("1.0.latest-000").equals(version)) {
+      log.info("modifying the version in delegate watcher");
       version = "1.0.latest";
     }
     String minorVersion = getDelegateVersionWithPatch(version);
