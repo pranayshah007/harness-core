@@ -41,6 +41,7 @@ import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.FdUniqueIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.migrator.Migrator;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.Store;
 import io.harness.threading.Morpheus;
 
