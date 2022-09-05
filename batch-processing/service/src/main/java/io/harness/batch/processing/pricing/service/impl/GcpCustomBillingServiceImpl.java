@@ -54,8 +54,7 @@ public class GcpCustomBillingServiceImpl implements GcpCustomBillingService {
   public VMInstanceBillingData getComputeVMPricingInfo(InstanceData instanceData, Instant startTime, Instant endTime) {
     String resourceId = cloudResourceIdHelper.getResourceId(instanceData);
     if (null != resourceId) {
-      return gcpResourceBillingCache.getIfPresent(
-          new GcpCustomBillingServiceImpl.CacheKey(resourceId, startTime, endTime));
+      return gcpResourceBillingCache.getIfPresent(new CacheKey(resourceId, startTime, endTime));
     }
     return null;
   }
