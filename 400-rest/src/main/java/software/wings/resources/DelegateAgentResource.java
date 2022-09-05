@@ -173,11 +173,12 @@ public class DelegateAgentResource {
       // Adding primary delegate to the last element of delegate versions.
       if (isNotEmpty(configuration.getDelegateVersions())
           && configuration.getDelegateVersions().remove(primaryDelegateVersion)) {
+        log.info("Adding at the end of list");
         configuration.getDelegateVersions().add(primaryDelegateVersion);
       }
       List<String> delegateVersions = configuration.getDelegateVersions();
       int tot = delegateVersions.size();
-      log.info("the last version in the list is : {}", delegateVersions.get(tot-1));
+      log.info("the last version in the list is : {}", delegateVersions.get(tot - 1));
       return new RestResponse<>(configuration);
     } catch (InvalidRequestException ex) {
       if (isNotBlank(ex.getMessage()) && ex.getMessage().startsWith("Deleted AccountId")) {
