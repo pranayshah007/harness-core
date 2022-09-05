@@ -131,12 +131,11 @@ public class ArtifactConfigToDelegateReqMapper {
         garArtifactConfig.getVersionRegex() != null ? garArtifactConfig.getVersionRegex().getValue() : "";
     String version = garArtifactConfig.getVersion() != null ? garArtifactConfig.getVersion().getValue() : "";
     if (StringUtils.isBlank(version) && StringUtils.isBlank(versionRegex)) {
-      versionRegex = ACCEPT_ALL_REGEX;
+      versionRegex = "/*";
     }
     return ArtifactDelegateRequestUtils.getGoogleArtifactDelegateRequest(garArtifactConfig.getRegion().getValue(),
         garArtifactConfig.getRepositoryName().getValue(), garArtifactConfig.getProject().getValue(),
-        garArtifactConfig.getPkg().getValue(), garArtifactConfig.getVersion().getValue(),
-        garArtifactConfig.getVersionRegex().getValue(), gcpConnectorDTO, encryptedDataDetails,
+        garArtifactConfig.getPkg().getValue(), version, versionRegex, gcpConnectorDTO, encryptedDataDetails,
         ArtifactSourceType.GOOGLE_ARTIFACT_REGISTRY, Integer.MAX_VALUE);
   }
 
