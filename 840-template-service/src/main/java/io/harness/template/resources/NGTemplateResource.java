@@ -41,6 +41,8 @@ import io.harness.ng.core.template.TemplateListType;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ng.core.template.TemplateMetadataSummaryResponseDTO;
 import io.harness.ng.core.template.TemplateReferenceRequestDTO;
+import io.harness.ng.core.template.TemplateRetainVariablesRequestDTO;
+import io.harness.ng.core.template.TemplateRetainVariablesResponse;
 import io.harness.ng.core.template.TemplateSummaryResponseDTO;
 import io.harness.pms.contracts.service.VariableMergeResponseProto;
 import io.harness.pms.contracts.service.VariablesServiceGrpc.VariablesServiceBlockingStub;
@@ -572,6 +574,26 @@ public class NGTemplateResource {
         templateIdentifier, projectId, orgId, accountId));
     return ResponseDTO.newResponse(
         templateMergeService.getTemplateInputs(accountId, orgId, projectId, templateIdentifier, templateLabel));
+  }
+
+  @POST
+  @Path("/mergeTemplateInputs/")
+  @ApiOperation(value = "Gets merged template input yaml", nickname = "getsMergedTemplateInputYaml")
+  @Operation(operationId = "getsMergedTemplateInputYaml", summary = "Gets merged template input yaml",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns the Merged YAML")
+      })
+  @Hidden
+  public ResponseDTO<TemplateRetainVariablesResponse>
+  getMergedTemplateInputsYaml(
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @NotNull TemplateRetainVariablesRequestDTO templateRetainVariablesRequestDTO) {
+    log.info("Gets Merged Template Input yaml");
+    return ResponseDTO.newResponse(
+        templateMergeService.mergeTemplateInputs(templateRetainVariablesRequestDTO.getNewTemplateInputs(),
+            templateRetainVariablesRequestDTO.getOldTemplateInputs()));
   }
 
   @POST

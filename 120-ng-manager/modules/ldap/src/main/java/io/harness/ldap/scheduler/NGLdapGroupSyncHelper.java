@@ -226,7 +226,7 @@ public class NGLdapGroupSyncHelper {
 
   private void syncUserGroupMetadata(UserGroup userGroup, LdapGroupResponse groupResponse) {
     UserGroupDTO userGroupDTO = toDTO(userGroup);
-    userGroupDTO.setLinkedSsoDisplayName(groupResponse.getName());
+    userGroupDTO.setSsoGroupName(groupResponse.getName());
     log.info("NGLDAP: Updating user group {} in account {} with name: {}", userGroup.getIdentifier(),
         userGroup.getAccountIdentifier(), groupResponse.getName());
     userGroupService.update(userGroupDTO);

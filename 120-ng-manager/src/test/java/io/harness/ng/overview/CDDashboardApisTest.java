@@ -7,7 +7,6 @@
 
 package io.harness.ng.overview;
 
-import static io.harness.NGDateUtils.getStartTimeOfNextDay;
 import static io.harness.ng.core.activityhistory.dto.TimeGroupType.DAY;
 import static io.harness.ng.overview.service.CDOverviewDashboardServiceImpl.INVALID_CHANGE_RATE;
 import static io.harness.rule.OwnerRule.MEENAKSHI;
@@ -95,7 +94,7 @@ public class CDDashboardApisTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetHealthDeploymentDashboard() {
     long startInterval = 1619568000000L;
-    long endInterval = 1619913600000L;
+    long endInterval = 1619999940000L;
     long previousInterval = 1619136000000L;
 
     List<String> status = Arrays.asList(ExecutionStatus.SUCCESS.name(), ExecutionStatus.IGNOREFAILED.name(),
@@ -238,7 +237,7 @@ public class CDDashboardApisTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetExecutionDeploymentDashboard() {
     long startInterval = 1619136000000L;
-    long endInterval = 1619913600000L;
+    long endInterval = 1619999940000L;
 
     List<String> status = Arrays.asList(ExecutionStatus.SUCCESS.name(), ExecutionStatus.EXPIRED.name(),
         ExecutionStatus.RUNNING.name(), ExecutionStatus.ABORTED.name(), ExecutionStatus.SUCCESS.name(),
@@ -520,7 +519,7 @@ public class CDDashboardApisTest extends CategoryTest {
   public void testGetDeploymentsExecutionInfo() throws Exception {
     long prevStartInterval = 1619136000000L;
     long startInterval = 1619568000000L;
-    long endInterval = 1619913600000L;
+    long endInterval = 1619999940000L;
 
     Callable<DeploymentChangeRates> getDeploymentChangeRates = ()
         -> DeploymentChangeRates.builder()
@@ -591,7 +590,7 @@ public class CDDashboardApisTest extends CategoryTest {
 
     doReturn(serviceDeploymentListWrap)
         .when(cdOverviewDashboardServiceImpl)
-        .getServiceDeployments("acc", "org", "pro", startInterval, getStartTimeOfNextDay(endInterval), null, 1);
+        .getServiceDeployments("acc", "org", "pro", startInterval, endInterval, null, 1);
     doReturn(prevExecutionDeploymentWrap)
         .when(cdOverviewDashboardServiceImpl)
         .getServiceDeployments("acc", "org", "pro", prevStartInterval, startInterval, null, 1);

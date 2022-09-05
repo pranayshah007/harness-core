@@ -31,6 +31,7 @@ import io.harness.cdng.infra.InfrastructureDef;
 import io.harness.cdng.infra.beans.InfraUseFromStage;
 import io.harness.cdng.infra.steps.InfraSectionStepParameters;
 import io.harness.cdng.infra.steps.InfraStepParameters;
+import io.harness.cdng.infra.yaml.EcsInfrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
 import io.harness.cdng.infra.yaml.PdcInfrastructure;
@@ -187,8 +188,12 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(MergePRStepInfo.class, 12605);
     kryo.register(CustomFetchResponsePassThroughData.class, 12705);
     kryo.register(ConfigFilesOutcome.class, 12608);
+
     kryo.register(AzureCreateARMResourceStepInfo.class, 12609);
     kryo.register(AzureCreateBPStepInfo.class, 12610);
+
     kryo.register(AzureARMRollbackStepInfo.class, 12611);
+
+    kryo.register(EcsInfrastructure.class, 12612);
   }
 }

@@ -315,8 +315,9 @@ public interface AzureComputeClient {
    * @param resourceGroup
    * @param osType
    * @param tags
+   * @param usePublicDns
    * @return
    */
   List<VirtualMachineData> listHosts(AzureConfig azureConfig, String subscriptionId, String resourceGroup,
-      AzureOSType osType, Map<String, String> tags);
+      AzureOSType osType, Map<String, String> tags, boolean usePublicDns);
 }

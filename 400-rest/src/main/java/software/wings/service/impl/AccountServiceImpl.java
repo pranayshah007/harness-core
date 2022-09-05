@@ -1736,8 +1736,8 @@ public class AccountServiceImpl implements AccountService {
                                  WhitelistedDomainsYamlDTO.builder().whitelistedDomains(newWhitelistedDomains).build())
                              .build());
     } catch (Exception ex) {
-      log.error("For account {} Audit trails for LoginSettings update event failed with exception: {}",
-          accountIdentifier, ex);
+      log.error(
+          "For account {} Audit trails for LoginSettings update event failed with exception: ", accountIdentifier, ex);
     }
   }
 

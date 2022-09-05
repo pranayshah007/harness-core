@@ -164,7 +164,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     YamlField specField =
         Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
     stageParameters.specConfig(getSpecParameters(specField.getNode().getUuid(), ctx, stageNode));
-    String uuid = MultiDeploymentSpawnerUtils.getUuidForMultiDeployment(config);
+    String uuid = MultiDeploymentSpawnerUtils.getUuidForMultiDeployment(stageNode);
 
     // We need to swap the ids if strategy is present
     PlanNodeBuilder builder =
@@ -201,13 +201,11 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
 
       YamlField specField =
           Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
-      logStepYamlField(specField);
 
       if (useNewFlow(ctx)) {
         List<AdviserObtainment> adviserObtainments =
             addResourceConstraintDependencyWithWhenCondition(planCreationResponseMap, specField);
-        String infraNodeId =
-            addInfrastructureNode(ctx, planCreationResponseMap, specField, stageNode, adviserObtainments);
+        String infraNodeId = addInfrastructureNode(planCreationResponseMap, stageNode, adviserObtainments);
         String serviceNodeId = addServiceNode(planCreationResponseMap, stageNode, infraNodeId);
         addSpecNode(planCreationResponseMap, specField, serviceNodeId);
       } else {
@@ -250,7 +248,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       YamlField siblingField = yamlField.getNode().nextSiblingFromParentArray(
           yamlField.getName(), Arrays.asList(YAMLFieldNameConstants.STAGE, YAMLFieldNameConstants.PARALLEL));
       EdgeLayoutList edgeLayoutList;
-      String planNodeId = MultiDeploymentSpawnerUtils.getUuidForMultiDeployment(config.getDeploymentStageConfig());
+      String planNodeId = MultiDeploymentSpawnerUtils.getUuidForMultiDeployment(config);
       if (siblingField == null) {
         edgeLayoutList = EdgeLayoutList.newBuilder().addCurrentNodeChildren(planNodeId).build();
       } else {
@@ -297,24 +295,6 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     //    return featureFlagHelperService.isEnabled(
     //        ctx.getMetadata().getAccountIdentifier(), FeatureName.SERVICE_V2_EXPRESSION);
     return false;
-  }
-
-  private void logStepYamlField(YamlField specField) {
-    try {
-      YamlField infraField = specField.getNode().getField(YAMLFieldNameConstants.PIPELINE_INFRASTRUCTURE);
-      if (infraField != null) {
-        log.info("infraField : {}", infraField.getNode().getCurrJsonNode());
-        YamlField infrastructureDefField =
-            Preconditions.checkNotNull(infraField.getNode().getField(YamlTypes.INFRASTRUCTURE_DEF));
-        YamlField provisionerYamlField = infrastructureDefField.getNode().getField(YAMLFieldNameConstants.PROVISIONER);
-        if (provisionerYamlField != null) {
-          YamlField stepsYamlField = provisionerYamlField.getNode().getField(YAMLFieldNameConstants.STEPS);
-          log.info("stepsYamlField before : {}", stepsYamlField.getNode().getCurrJsonNode());
-        }
-      }
-    } catch (Exception e) {
-      // Ignoring
-    }
   }
 
   private void addEnvAndInfraDependency(PlanCreationContext ctx, DeploymentStageNode stageNode,
@@ -406,7 +386,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     MultiDeploymentStepParameters stepParameters =
         MultiDeploymentStepParameters.builder()
             .strategyType(StrategyType.MATRIX)
-            .childNodeId(MultiDeploymentSpawnerUtils.getUuidForMultiDeployment(stageConfig))
+            .childNodeId(MultiDeploymentSpawnerUtils.getUuidForMultiDeployment(stageNode))
             .environments(stageConfig.getEnvironments())
             .environmentGroup(stageConfig.getEnvironmentGroup())
             .services(stageConfig.getServices())
@@ -464,8 +444,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
         kryoSerializer, service, environment, serviceNodeId, nextNodeId, serviceType));
     return serviceNodeId;
   }
-  private String addInfrastructureNode(PlanCreationContext ctx,
-      LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, YamlField specField,
+  private String addInfrastructureNode(LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap,
       DeploymentStageNode stageNode, List<AdviserObtainment> adviserObtainments) throws IOException {
     PlanNode node = InfrastructurePmsPlanCreator.getInfraTaskExecutableStepV2PlanNode(
         stageNode.getDeploymentStageConfig().getEnvironment(), adviserObtainments);

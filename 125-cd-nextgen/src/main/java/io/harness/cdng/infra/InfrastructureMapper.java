@@ -7,6 +7,7 @@
 
 package io.harness.cdng.infra;
 
+import static io.harness.cdng.infra.beans.host.dto.HostFilterSpecDTO.HOSTS_SEPARATOR;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static java.lang.String.format;
@@ -14,6 +15,7 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome;
+import io.harness.cdng.infra.beans.EcsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureDetailsAbstract;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
@@ -23,7 +25,16 @@ import io.harness.cdng.infra.beans.PdcInfrastructureOutcome;
 import io.harness.cdng.infra.beans.ServerlessAwsLambdaInfrastructureOutcome;
 import io.harness.cdng.infra.beans.SshWinRmAwsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.SshWinRmAzureInfrastructureOutcome;
+import io.harness.cdng.infra.beans.host.HostAttributesFilter;
+import io.harness.cdng.infra.beans.host.HostFilter;
+import io.harness.cdng.infra.beans.host.HostFilterSpec;
+import io.harness.cdng.infra.beans.host.HostNamesFilter;
+import io.harness.cdng.infra.beans.host.dto.AllHostsFilterDTO;
+import io.harness.cdng.infra.beans.host.dto.HostAttributesFilterDTO;
+import io.harness.cdng.infra.beans.host.dto.HostFilterDTO;
+import io.harness.cdng.infra.beans.host.dto.HostNamesFilterDTO;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
+import io.harness.cdng.infra.yaml.EcsInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
@@ -34,6 +45,7 @@ import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.common.ParameterFieldHelper;
+import io.harness.delegate.beans.connector.pdcconnector.HostFilterType;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.pms.yaml.ParameterField;
@@ -41,12 +53,14 @@ import io.harness.steps.environment.EnvironmentOutcome;
 
 import java.util.List;
 import javax.annotation.Nonnull;
+import javax.validation.constraints.NotNull;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.tuple.Pair;
 
 @UtilityClass
 @OwnedBy(HarnessTeam.CDP)
 public class InfrastructureMapper {
+  @NotNull
   public InfrastructureOutcome toOutcome(
       @Nonnull Infrastructure infrastructure, EnvironmentOutcome environmentOutcome, ServiceStepOutcome service) {
     switch (infrastructure.getKind()) {
@@ -123,14 +137,14 @@ public class InfrastructureMapper {
 
       case InfrastructureKind.PDC:
         PdcInfrastructure pdcInfrastructure = (PdcInfrastructure) infrastructure;
+        setPdcInfrastructureHostValueSplittingStringToListIfNeeded(pdcInfrastructure);
         validatePdcInfrastructure(pdcInfrastructure);
         PdcInfrastructureOutcome pdcInfrastructureOutcome =
             PdcInfrastructureOutcome.builder()
                 .credentialsRef(ParameterFieldHelper.getParameterFieldValue(pdcInfrastructure.getCredentialsRef()))
                 .hosts(ParameterFieldHelper.getParameterFieldValue(pdcInfrastructure.getHosts()))
                 .connectorRef(ParameterFieldHelper.getParameterFieldValue(pdcInfrastructure.getConnectorRef()))
-                .hostFilters(ParameterFieldHelper.getParameterFieldValue(pdcInfrastructure.getHostFilters()))
-                .attributeFilters(ParameterFieldHelper.getParameterFieldValue(pdcInfrastructure.getAttributeFilters()))
+                .hostFilter(toHostFilterDTO(pdcInfrastructure.getHostFilter()))
                 .environment(environmentOutcome)
                 .infrastructureKey(InfrastructureKey.generate(
                     service, environmentOutcome, pdcInfrastructure.getInfrastructureKeyValues()))
@@ -200,8 +214,57 @@ public class InfrastructureMapper {
             azureWebAppInfrastructure.getInfraName());
         return azureWebAppInfrastructureOutcome;
 
+      case InfrastructureKind.ECS:
+        EcsInfrastructure ecsInfrastructure = (EcsInfrastructure) infrastructure;
+        validateEcsInfrastructure(ecsInfrastructure);
+        EcsInfrastructureOutcome ecsInfrastructureOutcome =
+            EcsInfrastructureOutcome.builder()
+                .connectorRef(ecsInfrastructure.getConnectorRef().getValue())
+                .region(ecsInfrastructure.getRegion().getValue())
+                .cluster(ecsInfrastructure.getCluster().getValue())
+                .environment(environmentOutcome)
+                .infrastructureKey(InfrastructureKey.generate(
+                    service, environmentOutcome, ecsInfrastructure.getInfrastructureKeyValues()))
+                .build();
+        setInfraIdentifierAndName(
+            ecsInfrastructureOutcome, ecsInfrastructure.getInfraIdentifier(), ecsInfrastructure.getInfraName());
+        return ecsInfrastructureOutcome;
+
       default:
         throw new InvalidArgumentsException(format("Unknown Infrastructure Kind : [%s]", infrastructure.getKind()));
+    }
+  }
+
+  private void setPdcInfrastructureHostValueSplittingStringToListIfNeeded(PdcInfrastructure pdcInfrastructure) {
+    if (pdcInfrastructure.getHosts() == null) {
+      return;
+    }
+
+    pdcInfrastructure.getHosts().setValue(
+        ParameterFieldHelper.getParameterFieldListValueBySeparator(pdcInfrastructure.getHosts(), HOSTS_SEPARATOR));
+  }
+
+  private HostFilterDTO toHostFilterDTO(HostFilter hostFilter) {
+    if (hostFilter == null) {
+      return HostFilterDTO.builder().spec(AllHostsFilterDTO.builder().build()).type(HostFilterType.ALL).build();
+    }
+
+    HostFilterType type = hostFilter.getType();
+    HostFilterSpec spec = hostFilter.getSpec();
+    if (type == HostFilterType.HOST_NAMES) {
+      return HostFilterDTO.builder()
+          .spec(HostNamesFilterDTO.builder().value(((HostNamesFilter) spec).getValue()).build())
+          .type(type)
+          .build();
+    } else if (type == HostFilterType.HOST_ATTRIBUTES) {
+      return HostFilterDTO.builder()
+          .spec(HostAttributesFilterDTO.builder().value(((HostAttributesFilter) spec).getValue()).build())
+          .type(type)
+          .build();
+    } else if (type == HostFilterType.ALL) {
+      return HostFilterDTO.builder().spec(AllHostsFilterDTO.builder().build()).type(type).build();
+    } else {
+      throw new InvalidArgumentsException(format("Unsupported host filter type found: %s", type));
     }
   }
 
@@ -286,7 +349,8 @@ public class InfrastructureMapper {
       throw new InvalidArgumentsException(Pair.of("credentialsRef", "cannot be empty"));
     }
 
-    if (!notEmptyOrExpression(infrastructure.getHosts()) && !hasValueOrExpression(infrastructure.getConnectorRef())) {
+    if (!hasValueListOrExpression(infrastructure.getHosts())
+        && !hasValueOrExpression(infrastructure.getConnectorRef())) {
       throw new InvalidArgumentsException(Pair.of("hosts", "cannot be empty"),
           Pair.of("connectorRef", "cannot be empty"),
           new IllegalArgumentException("hosts and connectorRef are not defined"));
@@ -334,6 +398,18 @@ public class InfrastructureMapper {
     }
   }
 
+  private static void validateEcsInfrastructure(EcsInfrastructure infrastructure) {
+    if (!hasValueOrExpression(infrastructure.getConnectorRef())) {
+      throw new InvalidArgumentsException(Pair.of("connectorRef", "cannot be empty"));
+    }
+    if (!hasValueOrExpression(infrastructure.getCluster())) {
+      throw new InvalidArgumentsException(Pair.of("cluster", "cannot be empty"));
+    }
+    if (!hasValueOrExpression(infrastructure.getRegion())) {
+      throw new InvalidArgumentsException(Pair.of("region", "cannot be empty"));
+    }
+  }
+
   private boolean hasValueOrExpression(ParameterField<String> parameterField) {
     if (ParameterField.isNull(parameterField)) {
       return false;
@@ -342,7 +418,7 @@ public class InfrastructureMapper {
     return parameterField.isExpression() || !isEmpty(ParameterFieldHelper.getParameterFieldValue(parameterField));
   }
 
-  private <T> boolean notEmptyOrExpression(ParameterField<List<T>> parameterField) {
+  private <T> boolean hasValueListOrExpression(ParameterField<List<T>> parameterField) {
     if (ParameterField.isNull(parameterField)) {
       return false;
     }

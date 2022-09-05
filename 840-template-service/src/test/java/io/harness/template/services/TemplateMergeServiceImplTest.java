@@ -27,6 +27,7 @@ import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ng.core.template.TemplateReferenceSummary;
+import io.harness.ng.core.template.TemplateRetainVariablesResponse;
 import io.harness.ng.core.template.exception.NGTemplateResolveException;
 import io.harness.rule.Owner;
 import io.harness.template.entity.TemplateEntity;
@@ -527,5 +528,98 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
     String resFile = "pipeline-with-template-with-opa-policy-response.yaml";
     String resPipeline = readFile(resFile);
     assertThat(finalPipelineYaml).isEqualTo(resPipeline);
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testUpdateTemplateInputs() {
+    String originalTemplateYamlFileName = "stage-template-with-one-runtime-input.yaml";
+    String originalTemplateYaml = readFile(originalTemplateYamlFileName);
+
+    String yamlToBeUpdated = "type: Approval\n"
+        + "spec:\n"
+        + "    execution:\n"
+        + "        steps:\n"
+        + "            - step:\n"
+        + "                  type: ShellScript\n"
+        + "                  name: ssh\n"
+        + "                  identifier: ssh\n"
+        + "                  spec:\n"
+        + "                      shell: Bash\n"
+        + "                      onDelegate: true\n"
+        + "                      source:\n"
+        + "                          type: Inline\n"
+        + "                          spec:\n"
+        + "                              script: cd harness\n"
+        + "                      environmentVariables: []\n"
+        + "                      outputVariables: []\n"
+        + "                      executionTarget: {}\n"
+        + "                  timeout: 10m";
+    String updatedYaml = "type: \"Approval\"\n"
+        + "spec:\n"
+        + "  execution:\n"
+        + "    steps:\n"
+        + "    - step:\n"
+        + "        identifier: \"ssh\"\n"
+        + "        type: \"ShellScript\"\n"
+        + "        spec:\n"
+        + "          source:\n"
+        + "            type: \"Inline\"\n"
+        + "            spec:\n"
+        + "              script: \"cd harness\"\n";
+
+    TemplateRetainVariablesResponse templateRetainVariablesResponse =
+        templateMergeService.mergeTemplateInputs(originalTemplateYaml, yamlToBeUpdated);
+    assertThat(updatedYaml).isEqualTo(templateRetainVariablesResponse.getMergedTemplateInputs());
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testUpdateTemplateWhenSourceYamlIsEmpty() {
+    String originalTemplateYaml = "";
+    String yamlToBeUpdated = "type: \"ShellScript\"\n"
+        + "spec:\n"
+        + "  source:\n"
+        + "    type: \"Inline\"\n"
+        + "    spec:\n"
+        + "      script: \"<+input>\"\n"
+        + "timeout: \"<+input>\"\n";
+    TemplateRetainVariablesResponse templateRetainVariablesResponse =
+        templateMergeService.mergeTemplateInputs(originalTemplateYaml, yamlToBeUpdated);
+    assertThat("").isEqualTo(templateRetainVariablesResponse.getMergedTemplateInputs());
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testUpdateTemplateWhenYamlToBeUpdatedIsEmpty() {
+    String originalTemplateYamlFileName = "stage-template-with-one-runtime-input.yaml";
+    String originalTemplateYaml = readFile(originalTemplateYamlFileName);
+
+    String yamlToBeUpdated = "";
+    String updatedYaml = "type: Approval\n"
+        + "spec:\n"
+        + "    execution:\n"
+        + "        steps:\n"
+        + "            - step:\n"
+        + "                  type: ShellScript\n"
+        + "                  name: ssh\n"
+        + "                  identifier: ssh\n"
+        + "                  spec:\n"
+        + "                      shell: Bash\n"
+        + "                      onDelegate: true\n"
+        + "                      source:\n"
+        + "                          type: Inline\n"
+        + "                          spec:\n"
+        + "                              script: <+input>\n"
+        + "                      environmentVariables: []\n"
+        + "                      outputVariables: []\n"
+        + "                      executionTarget: {}\n"
+        + "                  timeout: 10m\n";
+    TemplateRetainVariablesResponse templateRetainVariablesResponse =
+        templateMergeService.mergeTemplateInputs(originalTemplateYaml, yamlToBeUpdated);
+    assertThat(updatedYaml).isEqualTo(templateRetainVariablesResponse.getMergedTemplateInputs());
   }
 }

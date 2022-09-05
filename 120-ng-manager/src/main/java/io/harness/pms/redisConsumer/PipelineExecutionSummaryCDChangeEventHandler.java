@@ -132,7 +132,7 @@ public class PipelineExecutionSummaryCDChangeEventHandler extends RedisAbstractH
           }
 
           if (pullRequestObject.get(commits) != null && pullRequestObject.get(commits).size() > 0) {
-            commitsNode = branch.get(commits);
+            commitsNode = pullRequestObject.get(commits);
             firstCommit = commitsNode.get("_0");
             if (firstCommit != null) {
               if (firstCommit.get(PipelineExecutionSummaryKeys.commitId) != null) {

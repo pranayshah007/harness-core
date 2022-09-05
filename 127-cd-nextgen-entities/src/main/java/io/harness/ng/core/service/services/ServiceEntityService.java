@@ -51,7 +51,7 @@ public interface ServiceEntityService {
   Integer findActiveServicesCountAtGivenTimestamp(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, long timestampInMs);
 
-  String createServiceInputsYaml(String yaml);
+  String createServiceInputsYaml(String yaml, String serviceIdentifier);
 
   boolean forceDeleteAllInProject(String accountId, String orgIdentifier, String projectIdentifier);
 

@@ -256,7 +256,7 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
     endInterval = endInterval + DAY_IN_MS;
 
     StatusAndTime statusAndTime =
-        queryCalculatorForStatusAndTime(accountId, orgId, projectId, startInterval, endInterval);
+        queryCalculatorForStatusAndTime(accountId, orgId, projectId, previousStartInterval, endInterval);
     List<String> status = statusAndTime.getStatus();
     List<Long> time = statusAndTime.getTime();
 
@@ -367,6 +367,7 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
         while (resultSet != null && resultSet.next()) {
           buildFailureInfos.add(parseResultToBuildFailureInfo(resultSet));
         }
+        return buildFailureInfos;
       } catch (SQLException ex) {
         log.error(ex.getMessage());
         totalTries++;

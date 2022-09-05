@@ -143,13 +143,15 @@ public class NGScimUserServiceImpl implements ScimUserService {
     Optional<UserInfo> userInfo = ngUserService.getUserById(userId);
     if (userInfo.isPresent()) {
       Optional<UserMetadataDTO> userOptional = ngUserService.getUserByEmail(userInfo.get().getEmail(), false);
-      if (userOptional.isEmpty()) {
-        throw new InvalidRequestException("User does not exist in NG");
-      } else {
+      if (userOptional.isPresent()
+          && ngUserService.isUserAtScope(
+              userOptional.get().getUuid(), Scope.builder().accountIdentifier(accountId).build())) {
         return userInfo.map(this::buildUserResponse).get();
+      } else {
+        throw new InvalidRequestException("User does not exist in NG");
       }
     } else {
-      throw new InvalidRequestException("User does not exist in NG");
+      throw new InvalidRequestException("User does not exist in Harness");
     }
   }
 
@@ -157,11 +159,11 @@ public class NGScimUserServiceImpl implements ScimUserService {
   public ScimListResponse<ScimUser> searchUser(String accountId, String filter, Integer count, Integer startIndex) {
     log.info("NGSCIM: searching users accountId {}, search query {}", accountId, filter);
     ScimListResponse<ScimUser> result = ngUserService.searchScimUsersByEmailQuery(accountId, filter, count, startIndex);
-    log.info("NGSCIM: completed search. accountId {}, search query {}, resultSize: {}", accountId, filter,
-        result.getTotalResults());
     if (result.getTotalResults() > 0) {
       result = removeUsersNotinNG(result, accountId);
     }
+    log.info("NGSCIM: completed search. accountId {}, search query {}, resultSize: {}", accountId, filter,
+        result.getTotalResults());
     return result;
   }
 
@@ -170,6 +172,9 @@ public class NGScimUserServiceImpl implements ScimUserService {
     for (ScimUser scimUser : result.getResources()) {
       Optional<UserMetadataDTO> userOptional = ngUserService.getUserByEmail(scimUser.getUserName(), false);
       if (!userOptional.isPresent()) {
+        usersNotinNG.add(scimUser);
+      } else if (!ngUserService.isUserAtScope(
+                     userOptional.get().getUuid(), Scope.builder().accountIdentifier(accountId).build())) {
         usersNotinNG.add(scimUser);
       }
     }

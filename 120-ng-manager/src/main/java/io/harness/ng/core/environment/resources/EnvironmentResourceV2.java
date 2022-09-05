@@ -73,6 +73,7 @@ import io.harness.ng.core.serviceoverride.beans.ServiceOverrideResponseDTO;
 import io.harness.ng.core.serviceoverride.mapper.ServiceOverridesMapper;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
+import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideInfoConfig;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.rbac.CDNGRbacUtility;
 import io.harness.repositories.UpsertOptions;
@@ -526,19 +527,24 @@ public class EnvironmentResourceV2 {
       boolean ngManifestOverrideEnabled, boolean ngConfigOverrideEnabled) {
     final NGServiceOverrideConfig serviceOverrideConfig = toNGServiceOverrideConfig(serviceOverridesEntity);
     if (serviceOverrideConfig.getServiceOverrideInfoConfig() != null) {
-      if (!ngManifestOverrideEnabled
-          && isNotEmpty(serviceOverrideConfig.getServiceOverrideInfoConfig().getManifests())) {
+      final NGServiceOverrideInfoConfig serviceOverrideInfoConfig =
+          serviceOverrideConfig.getServiceOverrideInfoConfig();
+      if (!ngManifestOverrideEnabled && isNotEmpty(serviceOverrideInfoConfig.getManifests())) {
         throw new InvalidRequestException(
             "Manifest Override is not supported with FF disabled NG_SERVICE_MANIFEST_OVERRIDE");
       }
-      if (!ngConfigOverrideEnabled
-          && isNotEmpty(serviceOverrideConfig.getServiceOverrideInfoConfig().getConfigFiles())) {
+      if (!ngConfigOverrideEnabled && isNotEmpty(serviceOverrideInfoConfig.getConfigFiles())) {
         throw new InvalidRequestException(
             "Config Files Override is not supported with FF disabled NG_SERVICE_CONFIG_FILES_OVERRIDE");
       }
 
-      checkDuplicateManifestIdentifiersWithIn(serviceOverrideConfig.getServiceOverrideInfoConfig().getManifests());
-      checkDuplicateConfigFilesIdentifiersWithIn(serviceOverrideConfig.getServiceOverrideInfoConfig().getConfigFiles());
+      if (isEmpty(serviceOverrideInfoConfig.getManifests()) && isEmpty(serviceOverrideInfoConfig.getConfigFiles())
+          && isEmpty(serviceOverrideInfoConfig.getVariables())) {
+        throw new InvalidRequestException("No overrides found in request");
+      }
+
+      checkDuplicateManifestIdentifiersWithIn(serviceOverrideInfoConfig.getManifests());
+      checkDuplicateConfigFilesIdentifiersWithIn(serviceOverrideInfoConfig.getConfigFiles());
     }
   }
 

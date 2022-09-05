@@ -1916,12 +1916,16 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
       for (final String field : fields) {
         if (Objects.nonNull(clusterData)) {
           final java.lang.reflect.Field clusterField = clusterDataFields.get(field.toLowerCase());
-          clusterField.setAccessible(true);
-          try {
-            values.add((String) clusterField.get(clusterData));
-          } catch (final IllegalAccessException e) {
-            values.add("");
-            log.error("Unable to fetch field {} value for clusterData: {}", field, clusterData, e);
+          if (Objects.nonNull(clusterField)) {
+            clusterField.setAccessible(true);
+            try {
+              values.add((String) clusterField.get(clusterData));
+            } catch (final IllegalAccessException e) {
+              values.add("");
+              log.error("Unable to fetch field {} value for clusterData: {}", field, clusterData, e);
+            }
+          } else {
+            values.add(clusterData.getId());
           }
         } else {
           values.add(dataPoint.getId());

@@ -83,6 +83,7 @@ public class GitChangeSetRunnable implements Runnable {
         if (shouldPrintStatusLogs()) {
           lastTimestampForStatusLogPrint.set(System.currentTimeMillis());
           log.info("Not continuing with GitChangeSetRunnable job");
+          TimeUnit.SECONDS.sleep(1);
         }
         return;
       }

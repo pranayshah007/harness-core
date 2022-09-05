@@ -244,8 +244,17 @@ public abstract class CloudFormationState extends State {
           renderedExpression, expression, context.asMap());
       throw new InvalidRequestException("Infrastructure provider expression is invalid", USER);
     }
+
     SettingAttribute settingAttribute =
         settingsService.getSettingAttributeByName(context.getAccountId(), renderedExpression);
+
+    if (settingAttribute == null) {
+      log.error("[NOT_AWS_EXPRESSION] Rendered expression is: [{}]. Original Expression: [{}], Context: [{}]",
+          renderedExpression, expression, context.asMap());
+      throw new InvalidRequestException(
+          "Infrastructure provider expression doesn't contains valid AWS configuration", USER);
+    }
+
     return (AwsConfig) settingAttribute.getValue();
   }
 

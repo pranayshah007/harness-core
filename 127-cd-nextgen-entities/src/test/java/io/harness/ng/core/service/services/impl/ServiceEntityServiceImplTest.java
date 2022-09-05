@@ -10,6 +10,7 @@ package io.harness.ng.core.service.services.impl;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.DEEPAK;
 import static io.harness.rule.OwnerRule.HINGER;
+import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.MOHIT_GARG;
 import static io.harness.rule.OwnerRule.PRABU;
 import static io.harness.rule.OwnerRule.YOGESH;
@@ -80,6 +81,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
   private static final String ACCOUNT_ID = "ACCOUNT_ID";
   private static final String ORG_ID = "ORG_ID";
   private static final String PROJECT_ID = "PROJECT_ID";
+  private static final String SERVICE_ID = "serviceId";
 
   @Before
   public void setup() {
@@ -443,9 +445,9 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
   @Owner(developers = HINGER)
   @Category(UnitTests.class)
   public void testCreateServiceInputsForServiceWithNoRuntimeInputs() {
-    String filename = "service-without-runtime-inputs.yaml";
+    String filename = "service/service-without-runtime-inputs.yaml";
     String yaml = readFile(filename);
-    String templateYaml = serviceEntityService.createServiceInputsYaml(yaml);
+    String templateYaml = serviceEntityService.createServiceInputsYaml(yaml, SERVICE_ID);
     assertThat(templateYaml).isNullOrEmpty();
   }
 
@@ -453,14 +455,53 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
   @Owner(developers = HINGER)
   @Category(UnitTests.class)
   public void testCreateServiceInputsForServiceWithRuntimeInputs() {
-    String filename = "service-with-runtime-inputs.yaml";
+    String filename = "service/service-with-runtime-inputs.yaml";
     String yaml = readFile(filename);
-    String templateYaml = serviceEntityService.createServiceInputsYaml(yaml);
+    String templateYaml = serviceEntityService.createServiceInputsYaml(yaml, SERVICE_ID);
     assertThat(templateYaml).isNotNull();
 
-    String resFile = "service-with-runtime-inputs-res.yaml";
+    String resFile = "service/service-with-runtime-inputs-res.yaml";
     String resTemplate = readFile(resFile);
     assertThat(templateYaml).isEqualTo(resTemplate);
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void testCreateServiceInputsForServiceWithPrimaryArtifactRefFixed() {
+    String filename = "service/service-with-primaryArtifactRef-fixed.yaml";
+    String yaml = readFile(filename);
+    String templateYaml = serviceEntityService.createServiceInputsYaml(yaml, SERVICE_ID);
+    assertThat(templateYaml).isNotNull();
+
+    String resFile = "service/serviceInputs-with-primaryArtifactRef-fixed.yaml";
+    String resTemplate = readFile(resFile);
+    assertThat(templateYaml).isEqualTo(resTemplate);
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void testCreateServiceInputsForServiceWithPrimaryArtifactRefRuntime() {
+    String filename = "service/service-with-primaryArtifactRef-runtime.yaml";
+    String yaml = readFile(filename);
+    String templateYaml = serviceEntityService.createServiceInputsYaml(yaml, SERVICE_ID);
+    assertThat(templateYaml).isNotNull();
+
+    String resFile = "service/serviceInputs-with-primaryArtifactRef-runtime.yaml";
+    String resTemplate = readFile(resFile);
+    assertThat(templateYaml).isEqualTo(resTemplate);
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void testCreateServiceInputsForServiceWithPrimaryArtifactRefExpression() {
+    String filename = "service/service-with-primaryArtifactRef-expression.yaml";
+    String yaml = readFile(filename);
+    assertThatThrownBy(() -> serviceEntityService.createServiceInputsYaml(yaml, SERVICE_ID))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(String.format("Primary artifact ref cannot be an expression inside the service %s", SERVICE_ID));
   }
 
   @Test

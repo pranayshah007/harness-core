@@ -499,6 +499,24 @@ public class CloudFormationStateTest extends WingsBaseTest {
   @Test
   @Owner(developers = RAFAEL)
   @Category(UnitTests.class)
+  public void shouldThrowInvalidExpressionWhenRenderedExpressionIsNotEmpty() {
+    String expression = "${dummyExpression}";
+    cloudFormationCreateStackState.setInfraCloudProviderExpression(expression);
+    cloudFormationCreateStackState.setInfraCloudProviderAsExpression(true);
+
+    assertThatThrownBy(() -> {
+      when(executionContext.renderExpression(expression)).thenReturn("path/test");
+      when(settingsService.getSettingAttributeByName(ACCOUNT_ID, "path/test")).thenReturn(null);
+      cloudFormationCreateStackState.resolveInfraStructureProviderFromExpression(executionContext);
+    })
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Infrastructure provider expression doesn't contains valid AWS configuration")
+        .hasFieldOrPropertyWithValue("reportTargets", USER);
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
   public void shouldExecuteCreateStateWithAwsExpression() {
     cloudFormationCreateStackState.setRegion(Regions.US_EAST_1.name());
     cloudFormationCreateStackState.setTimeoutMillis(1000);

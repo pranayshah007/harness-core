@@ -526,13 +526,14 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testListHosts() {
     // Given
-    when(azureComputeClient.listHosts(any(), eq("subscriptionId"), eq("resourceGroup"), eq(AzureOSType.LINUX), any()))
+    when(azureComputeClient.listHosts(
+             any(), eq("subscriptionId"), eq("resourceGroup"), eq(AzureOSType.LINUX), any(), eq(true)))
         .thenReturn(Collections.singletonList(VirtualMachineData.builder().hostName("vm-hostname").build()));
 
     // When
     AzureHostsResponse response = azureAsyncTaskHelper.listHosts(Collections.emptyList(),
         getAzureConnectorDTOWithSecretType(AzureSecretType.SECRET_KEY), "subscriptionId", "resourceGroup",
-        AzureOSType.LINUX, Collections.emptyMap());
+        AzureOSType.LINUX, Collections.emptyMap(), true);
 
     // Then
     assertThat(response).isNotNull();

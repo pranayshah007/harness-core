@@ -19,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
   @JsonSubTypes.Type(value = K8sInfrastructureDetails.class, name = "K8S")
   , @JsonSubTypes.Type(value = ServerlessAwsLambdaInfrastructureDetails.class, name = "ServerlessAwsLambda"),
       @JsonSubTypes.Type(value = AzureWebAppInfrastructureDetails.class, name = "AzureWebApp"),
-      @JsonSubTypes.Type(value = SshWinrmInfrastructureDetails.class, name = "SshWinrm")
+      @JsonSubTypes.Type(value = SshWinrmInfrastructureDetails.class, name = "SshWinrm"),
+      @JsonSubTypes.Type(value = EcsInfrastructureDetails.class, name = "ECS")
 })
 public abstract class InfrastructureDetails {}

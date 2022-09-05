@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.dtos.instanceinfo.AwsSshWinrmInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.AzureSshWinrmInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.AzureWebAppInstanceInfoDTO;
+import io.harness.dtos.instanceinfo.EcsInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.GitOpsInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.InstanceInfoDTO;
 import io.harness.dtos.instanceinfo.K8sInstanceInfoDTO;
@@ -22,6 +23,7 @@ import io.harness.dtos.instanceinfo.ServerlessAwsLambdaInstanceInfoDTO;
 import io.harness.entities.instanceinfo.AwsSshWinrmInstanceInfo;
 import io.harness.entities.instanceinfo.AzureSshWinrmInstanceInfo;
 import io.harness.entities.instanceinfo.AzureWebAppNGInstanceInfo;
+import io.harness.entities.instanceinfo.EcsInstanceInfo;
 import io.harness.entities.instanceinfo.GitopsInstanceInfo;
 import io.harness.entities.instanceinfo.InstanceInfo;
 import io.harness.entities.instanceinfo.K8sInstanceInfo;
@@ -49,6 +51,8 @@ public class InstanceInfoMapper {
       return GitOpsInstanceInfoMapper.toDTO((GitopsInstanceInfo) instanceInfo);
     } else if (instanceInfo instanceof AzureWebAppNGInstanceInfo) {
       return AzureWebAppInstanceInfoMapper.toDTO((AzureWebAppNGInstanceInfo) instanceInfo);
+    } else if (instanceInfo instanceof EcsInstanceInfo) {
+      return EcsInstanceInfoMapper.toDTO((EcsInstanceInfo) instanceInfo);
     } else if (instanceInfo instanceof PdcInstanceInfo) {
       return PdcInstanceInfoMapper.toDTO((PdcInstanceInfo) instanceInfo);
     } else if (instanceInfo instanceof AzureSshWinrmInstanceInfo) {
@@ -72,6 +76,8 @@ public class InstanceInfoMapper {
       return GitOpsInstanceInfoMapper.toEntity((GitOpsInstanceInfoDTO) instanceInfoDTO);
     } else if (instanceInfoDTO instanceof AzureWebAppInstanceInfoDTO) {
       return AzureWebAppInstanceInfoMapper.toEntity((AzureWebAppInstanceInfoDTO) instanceInfoDTO);
+    } else if (instanceInfoDTO instanceof EcsInstanceInfoDTO) {
+      return EcsInstanceInfoMapper.toEntity((EcsInstanceInfoDTO) instanceInfoDTO);
     } else if (instanceInfoDTO instanceof PdcInstanceInfoDTO) {
       return PdcInstanceInfoMapper.toEntity((PdcInstanceInfoDTO) instanceInfoDTO);
     } else if (instanceInfoDTO instanceof AzureSshWinrmInstanceInfoDTO) {

@@ -70,11 +70,9 @@ import java.util.List;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
 import lombok.experimental.UtilityClass;
-import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDC)
 @UtilityClass
-@Slf4j
 public class InfrastructurePmsPlanCreator {
   public PlanNode getInfraStepPlanNode(Infrastructure pipelineInfrastructure) {
     return PlanNode.builder()
@@ -96,13 +94,17 @@ public class InfrastructurePmsPlanCreator {
 
   public PlanNode getInfraTaskExecutableStepV2PlanNode(
       EnvironmentYamlV2 environmentYamlV2, List<AdviserObtainment> adviserObtainments) {
+    final ParameterField<String> infraRef = ParameterField.isNotNull(environmentYamlV2.getInfrastructureDefinitions())
+            && isNotEmpty(environmentYamlV2.getInfrastructureDefinitions().getValue())
+        ? environmentYamlV2.getInfrastructureDefinitions().getValue().get(0).getIdentifier()
+        : ParameterField.createValueField(null);
     InfrastructureTaskExecutableStepV2Params params =
         InfrastructureTaskExecutableStepV2Params.builder()
             .envRef(environmentYamlV2.getEnvironmentRef())
-            .infraRef(ParameterField.isNotNull(environmentYamlV2.getInfrastructureDefinitions())
-                        && isNotEmpty(environmentYamlV2.getInfrastructureDefinitions().getValue())
-                    ? environmentYamlV2.getInfrastructureDefinitions().getValue().get(0).getIdentifier()
-                    : ParameterField.createValueField(null))
+            .infraRef(infraRef)
+            .infraInputs(ParameterField.isNotNull(infraRef)
+                    ? environmentYamlV2.getInfrastructureDefinitions().getValue().get(0).getInputs()
+                    : null)
             .build();
     return PlanNode.builder()
         .uuid(UUIDGenerator.generateUuid())
@@ -322,15 +324,12 @@ public class InfrastructurePmsPlanCreator {
     YamlField infraDefField = infraField.getNode().getField(YamlTypes.INFRASTRUCTURE_DEF);
     YamlField provisionerYamlField = infraDefField.getNode().getField(YAMLFieldNameConstants.PROVISIONER);
     YamlField stepsYamlField = provisionerYamlField.getNode().getField(YAMLFieldNameConstants.STEPS);
-    log.info("stepsYamlField after : {}", stepsYamlField.getNode().getCurrJsonNode());
 
     // Add each step dependency
     LinkedHashMap<String, PlanCreationResponse> responseMap = new LinkedHashMap<>();
 
     Map<String, YamlField> stepsYamlFieldMap = new HashMap<>();
     stepsYamlFieldMap.put(stepsYamlField.getNode().getUuid(), stepsYamlField);
-    log.info("stepsYamlField uuid : {}", stepsYamlField.getNode().getUuid());
-    log.info("stepsYamlField YamlPath : {}", stepsYamlField.getYamlPath());
     responseMap.put(stepsYamlField.getNode().getUuid(),
         PlanCreationResponse.builder().dependencies(DependenciesUtils.toDependenciesProto(stepsYamlFieldMap)).build());
 
