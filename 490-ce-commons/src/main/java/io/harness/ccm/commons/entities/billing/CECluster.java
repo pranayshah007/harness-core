@@ -9,7 +9,7 @@ package io.harness.ccm.commons.entities.billing;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;

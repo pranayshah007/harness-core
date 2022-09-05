@@ -7,7 +7,7 @@
 
 package io.harness.queue;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 

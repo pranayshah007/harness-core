@@ -10,7 +10,7 @@ package io.harness.migration;
 import static io.harness.migration.MigrationJobInstance.COLLECTION_NAME;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UpdatedAtAware;

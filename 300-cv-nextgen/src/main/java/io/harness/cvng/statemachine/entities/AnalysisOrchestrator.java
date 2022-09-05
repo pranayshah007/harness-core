@@ -8,7 +8,7 @@
 package io.harness.cvng.statemachine.entities;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.cvng.statemachine.beans.AnalysisOrchestratorStatus;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.FdIndex;

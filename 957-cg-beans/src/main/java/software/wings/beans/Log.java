@@ -22,7 +22,7 @@ import static software.wings.beans.Log.Builder.aLog;
 import static java.lang.System.currentTimeMillis;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EmbeddedUser;

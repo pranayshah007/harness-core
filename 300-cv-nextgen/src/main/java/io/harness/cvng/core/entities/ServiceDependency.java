@@ -10,7 +10,7 @@ package io.harness.cvng.core.entities;
 import static io.harness.annotations.dev.HarnessTeam.CV;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.core.beans.dependency.ServiceDependencyMetadata;
 import io.harness.data.validator.EntityIdentifier;

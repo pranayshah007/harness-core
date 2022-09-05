@@ -11,7 +11,7 @@ import static software.wings.common.VerificationConstants.CV_24x7_STATE_EXECUTIO
 import static software.wings.common.VerificationConstants.MAX_NUM_ALERT_OCCURRENCES;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.beans.FeatureName;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;

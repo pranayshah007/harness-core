@@ -9,7 +9,7 @@ package io.harness.ci.beans.entities;
 
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotation.RecasterAlias;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.ci.config.VmImageConfig;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.CreatedAtAware;

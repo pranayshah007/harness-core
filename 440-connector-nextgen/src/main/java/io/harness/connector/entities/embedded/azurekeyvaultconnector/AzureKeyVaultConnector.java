@@ -10,7 +10,7 @@ package io.harness.connector.entities.embedded.azurekeyvaultconnector;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.azure.AzureEnvironmentType.AZURE;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.azure.AzureEnvironmentType;
 import io.harness.connector.entities.Connector;

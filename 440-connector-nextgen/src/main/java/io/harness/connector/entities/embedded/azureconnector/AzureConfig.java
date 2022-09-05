@@ -9,7 +9,7 @@ package io.harness.connector.entities.embedded.azureconnector;
 
 import static io.harness.azure.AzureEnvironmentType.AZURE;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.azure.AzureEnvironmentType;

@@ -9,7 +9,7 @@ package io.harness.gitsync.core.fullsync.entity;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.FdIndex;

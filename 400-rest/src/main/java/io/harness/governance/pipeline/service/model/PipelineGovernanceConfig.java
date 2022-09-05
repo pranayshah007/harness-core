@@ -10,7 +10,7 @@ package io.harness.governance.pipeline.service.model;
 import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.CollectionUtils;

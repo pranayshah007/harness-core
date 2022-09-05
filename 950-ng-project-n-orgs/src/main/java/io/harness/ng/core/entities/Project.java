@@ -10,7 +10,7 @@ package io.harness.ng.core.entities;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.ModuleType;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.ChangeDataCapture;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.EntityIdentifier;

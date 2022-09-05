@@ -7,7 +7,7 @@
 
 package io.harness.connector.entities.embedded.ceawsconnector;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.connector.entities.Connector;
 import io.harness.delegate.beans.connector.CEFeatures;
 import io.harness.delegate.beans.connector.awsconnector.CrossAccountAccessDTO;

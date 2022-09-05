@@ -65,7 +65,7 @@ import static software.wings.settings.SettingVariableTypes.WINRM_CONNECTION_ATTR
 import static java.util.Arrays.stream;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;

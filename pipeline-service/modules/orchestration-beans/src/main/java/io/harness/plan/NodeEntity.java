@@ -9,7 +9,7 @@ package io.harness.plan;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.ng.DbAliases;
