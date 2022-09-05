@@ -14,6 +14,7 @@ import io.harness.walktree.visitor.Visitable;
 import io.harness.yaml.core.VariableExpression;
 import io.harness.yaml.core.variables.NGVariable;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.List;
 import javax.validation.constraints.NotNull;
@@ -35,6 +36,9 @@ public class ShellScriptSpec implements Visitable {
 
   // ENVIRONMENT VARIABLES
   List<NGVariable> environmentVariables;
+
+  // TIMEOUT
+  @JsonProperty(value = "timeout") String timeoutInMillisecond;
 
   // SOURCE
   @NotNull ShellScriptSourceWrapper source;

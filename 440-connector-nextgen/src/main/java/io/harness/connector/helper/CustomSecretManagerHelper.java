@@ -50,6 +50,7 @@ public class CustomSecretManagerHelper {
   private static final String ENVIRONMENT_VARIABLES = "environmentVariables";
   private static final String INPUT_VARIABLES = "inputVariables";
   private static final String SCRIPT = "Script";
+  private static final String TIMEOUT = "timeout";
   @Inject private TemplateResourceClient templateResourceClient;
   @Inject private NGConnectorSecretManagerService ngConnectorSecretManagerService;
   private final ObjectMapper objectMapper = HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
@@ -77,10 +78,14 @@ public class CustomSecretManagerHelper {
     shellScriptBaseDTO = (ShellScriptBaseDTO) shellScriptYamlExpressionEvaluator.resolve(shellScriptBaseDTO, false);
     // get the script out of resolved yaml
     String script = shellScriptBaseDTO.getShellScriptSpec().getSource().getSpec().getScript().getValue();
+    String timeout = shellScriptBaseDTO.getShellScriptSpec().getTimeoutInMillisecond();
     Set<EncryptedDataParams> encryptedDataParamsSet = new HashSet<>();
     encryptedDataParamsSet.add(EncryptedDataParams.builder().name(SCRIPT).value(script).build());
     encryptedDataParamsSet.add(
         EncryptedDataParams.builder().name(EXPRESSION_FUNCTOR_TOKEN).value(String.valueOf(functorToken)).build());
+    if (timeout != null) {
+      encryptedDataParamsSet.add(EncryptedDataParams.builder().name(TIMEOUT).value(timeout).build());
+    }
     return encryptedDataParamsSet;
   }
 

@@ -44,7 +44,8 @@ public class NGCustomSecretManagerEncryptor implements CustomEncryptor {
 
   private static final String OUTPUT_VARIABLE = "secret";
   private final TimeLimiter timeLimiter;
-
+  private static final String DEFAULT_TIMEOUT_IN_MILLISECOND = "20000";
+  private static final String TIMEOUT = "timeout";
   @Inject
   public NGCustomSecretManagerEncryptor(TimeLimiter timeLimiter, ShellScriptTaskHandlerNG shellScriptTaskHandlerNG) {
     this.timeLimiter = timeLimiter;
@@ -63,9 +64,15 @@ public class NGCustomSecretManagerEncryptor implements CustomEncryptor {
     CustomSecretNGManagerConfig customSecretsManagerConfig = (CustomSecretNGManagerConfig) encryptionConfig;
     final int NUM_OF_RETRIES = 3;
     int failedAttempts = 0;
+    int timeout = Integer.parseInt(encryptedRecord.getParameters()
+                                       .stream()
+                                       .filter(encryptedDataParams -> encryptedDataParams.getName().equals(TIMEOUT))
+                                       .findFirst()
+                                       .map(EncryptedDataParams::getValue)
+                                       .orElse(DEFAULT_TIMEOUT_IN_MILLISECOND));
     while (true) {
       try {
-        return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofSeconds(20),
+        return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofMillis(timeout),
             () -> fetchSecretValueInternal(accountId, encryptedRecord, customSecretsManagerConfig));
       } catch (SecretManagementDelegateException e) {
         throw e;
