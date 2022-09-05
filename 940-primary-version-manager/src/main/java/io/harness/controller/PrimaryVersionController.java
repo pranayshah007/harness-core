@@ -54,11 +54,13 @@ public class PrimaryVersionController implements QueueController, Runnable {
         primaryVersion = aConfiguration().withPrimaryVersion(MATCH_ALL_VERSION).build();
         persistence.save(primaryVersion);
       }
+
       if (!StringUtils.equals(this.primaryVersion.get(), primaryVersion.getPrimaryVersion())) {
         log.info(
             "Changing primary version from {} to {}", this.primaryVersion.get(), primaryVersion.getPrimaryVersion());
         this.primaryVersion.set(primaryVersion.getPrimaryVersion());
       }
+
       boolean isPrimary = StringUtils.equals(MATCH_ALL_VERSION, primaryVersion.getPrimaryVersion())
           || StringUtils.equals(versionInfoManager.getVersionInfo().getVersion(), primaryVersion.getPrimaryVersion());
       primary.set(isPrimary);

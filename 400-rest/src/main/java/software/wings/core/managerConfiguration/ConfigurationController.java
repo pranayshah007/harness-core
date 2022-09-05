@@ -107,9 +107,11 @@ public class ConfigurationController implements Managed, QueueController {
         managerConfiguration = aManagerConfiguration().withPrimaryVersion(MATCH_ALL_VERSION).build();
         persistence.save(managerConfiguration);
       }
+
       if (!StringUtils.equals(primaryVersion.get(), managerConfiguration.getPrimaryVersion())) {
         primaryVersion.set(managerConfiguration.getPrimaryVersion());
       }
+
       // With introduction of the patch version feature, we need to incorporate the patch version to calculate the
       // current primary version of manager. If the `primaryVersion` from DB doesn't have patch then we fall back to
       // using getVersion() like earlier. We always build the full version from buildNo and patch like below.
