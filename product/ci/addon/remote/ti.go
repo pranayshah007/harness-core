@@ -6,8 +6,13 @@
 package remote
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/harness/harness-core/product/ci/engine/consts"
+	grpcclient "github.com/harness/harness-core/product/ci/engine/grpc/client"
+	pb "github.com/harness/harness-core/product/ci/engine/proto"
+	"github.com/harness/harness-core/product/ci/ti-service/types"
 	"go.uber.org/zap"
 )
 
@@ -17,7 +22,7 @@ func GetTestTimes(ctx context.Context, log *zap.SugaredLogger, tiReq types.GetTe
 	var tiResp types.GetTestTimesResp
 
 	// Create TI proxy client (lite engine)
-	client, err := newEngineClient(consts.LiteEnginePort, log)
+	client, err := grpcclient.NewTiProxyClient(consts.LiteEnginePort, log)
 	if err != nil {
 		log.Errorw("Error occurred while requesting timing data: proxy connection failed")
 		return tiResp, err

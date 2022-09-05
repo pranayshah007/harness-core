@@ -86,6 +86,7 @@ type runTestsTask struct {
 	addonLogger          *zap.SugaredLogger
 	procWriter           io.Writer
 	cmdContextFactory    exec.CmdContextFactory
+	splitStrategy        string
 }
 
 func NewRunTestsTask(step *pb.UnitStep, tmpFilePath string, log *zap.SugaredLogger,
@@ -128,6 +129,7 @@ func NewRunTestsTask(step *pb.UnitStep, tmpFilePath string, log *zap.SugaredLogg
 		log:                  log,
 		procWriter:           w,
 		addonLogger:          addonLogger,
+		splitStrategy:        r.GetSplitStrategy(),
 	}
 }
 
@@ -320,20 +322,14 @@ func (r *runTestsTask) getTestSelection(ctx context.Context, files []types.File,
 	return resp
 }
 
-func (r *runTestsTask) getSplitTests(ctx context.Context, tests []types.RunnableTest) ([]types.RunnableTest, error) {
+func (r *runTestsTask) getSplitTests(ctx context.Context, tests []types.RunnableTest, splitStrategy string) ([]types.RunnableTest, error) {
 	if len(tests) == 0 {
 		return tests, nil
 	}
 
 	res := make([]types.RunnableTest, 0)
-
-	splitStrategy := "file_size"
 	idx, _ := getStepStrategyIteration()
 	total, _ := getStepStrategyIterations()
-
-	if idx >= total {
-		return tests, fmt.Errorf("split index greater than parallel count")
-	}
 
 	currentFileMap := make(map[string][]types.RunnableTest)
 	currentFileSet := make(map[string]bool)
@@ -343,24 +339,40 @@ func (r *runTestsTask) getSplitTests(ctx context.Context, tests []types.Runnable
 		case "class_timing":
 			testId = t.Pkg + t.Class
 		case "file_size":
-			testId = t.Path
+			testId = t.Autodetect.Path
 		default:
-			msg := fmt.Sprintf("set one of %s / %s as split strategy", "class_timing", "file_size")
-			return []types.RunnableTest{}, fmt.Errorf(msg)
+			testId = t.Pkg + t.Class
 		}
 		currentFileSet[testId] = true
 		currentFileMap[testId] = append(currentFileMap[testId], t)
 	}
 
-	// Estimate line count
 	fileTimes := map[string]float64{}
-	stutils.EstimateFileTimesByLineCount(r.log, currentFileSet, fileTimes)
+	var err error
+	// Estimate by strategy - line count
+	switch splitStrategy {
+	case "file_size":
+		stutils.EstimateFileTimesByLineCount(r.log, currentFileSet, fileTimes)
+	case "class_timing":
+		// Call TI to get the test times
+		fmt.Println("Not implemented")
+		fileTimes, err = getTestTime(ctx, r.log, splitStrategy)
+		if err != nil {
+			fmt.Println("Error while calling TI", err)
+			return tests, err
+		}
+		fmt.Println("File times", fileTimes)
+	case "split_equal":
+		// Send empty fileTimesMap while processing to assign equal weights
+	default:
+		// Send empty fileTimesMap while processing to assign equal weights
+	}
+
 	fmt.Println("Printing weights", fileTimes)
 	stutils.ProcessFiles(fileTimes, currentFileSet, float64(1), false)
 
-	// Split tests into buckets
+	// Split tests into buckets and return tests from the current node's bucket
 	buckets, _ := stutils.SplitFiles(fileTimes, total)
-	// Return tests from the current node's bucket
 	for _, testId := range buckets[idx] {
 		if _, ok := currentFileMap[testId]; !ok {
 			continue
@@ -370,31 +382,35 @@ func (r *runTestsTask) getSplitTests(ctx context.Context, tests []types.Runnable
 	return res, nil
 }
 
-func (r *runTestsTask) invokeParallelism(ctx context.Context, runner testintelligence.TestRunner, selection types.SelectTestsResp, ignoreInstr, skip bool) (types.SelectTestsResp, bool) {
+func (r *runTestsTask) invokeParallelism(ctx context.Context, runner testintelligence.TestRunner, selection *types.SelectTestsResp, ignoreInstr, skip bool) bool {
 	if skip {
-		return selection, ignoreInstr
+		return ignoreInstr
 	}
-	// TI returned zero test cases to run. Skip parallelism
+	// TI returned zero test cases to run. Skip parallelism as
+	// there are no tests to run
 	if r.runOnlySelectedTests && (len(selection.Tests) == 0) {
-		return selection, ignoreInstr
+		return ignoreInstr
 	}
 
 	tests := make([]types.RunnableTest, 0)
 	if !r.runOnlySelectedTests {
 		// For full runs, detect all the tests in the repo and split them
 		// If autodetect fails or detects no tests, we run all tests
-		tests, _ = runner.AutoDetectTestFiles()
-		if len(tests) == 0 {
+		tests, err := runner.AutoDetectTestFiles(ctx)
+		if err != nil || len(tests) == 0 {
 			// Error in auto-detecting test files, run all tests
+			// Run all tests if no tests are detected
 			r.runOnlySelectedTests = false
+			fmt.Println("Error in auto-detecting test files, run all tests")
 		} else {
 			r.log.Infow(fmt.Sprintf("Autodetected test packages: %s", tests))
 			// Auto-detected tests, split them
-			splitTests, err := r.getSplitTests(ctx, tests)
+			splitTests, err := r.getSplitTests(ctx, tests, "class_timing")
 			fmt.Println("Comparing lengths", len(splitTests), len(tests))
 			if err != nil {
-				// Error while splitting, run the original set of tests
-				r.log.Infow("Error occurred while splitting the tests. Running all detected tests")
+				// Error while splitting by input strategy, splitting tests equally
+				r.log.Infow("Error occurred while splitting the tests. Splitting detected tests equally")
+				splitTests, _ = r.getSplitTests(ctx, tests, "split_equal")
 				selection.Tests = tests
 			} else {
 				r.log.Infow(fmt.Sprintf("Test split for this run: %s", splitTests))
@@ -407,10 +423,11 @@ func (r *runTestsTask) invokeParallelism(ctx context.Context, runner testintelli
 	} else if len(selection.Tests) > 0 {
 		// In case of intelligent runs, split the tests from TI SelectTests API response
 		tests = selection.Tests
-		splitTests, err := r.getSplitTests(ctx, tests)
+		splitTests, err := r.getSplitTests(ctx, tests, "class_timing")
 		if err != nil {
-			// Error while splitting, run the original set of tests
-			r.log.Infow("Error occurred while splitting the tests. Running all selected tests")
+			// Error while splitting by input strategy, splitting tests equally
+			r.log.Infow("Error occurred while splitting the tests. Splitting selected tests equally")
+			splitTests, _ = r.getSplitTests(ctx, tests, "split_equal")
 			selection.Tests = tests
 		} else {
 			r.log.Infow(fmt.Sprintf("Test split for this run: %s", splitTests))
@@ -421,7 +438,7 @@ func (r *runTestsTask) invokeParallelism(ctx context.Context, runner testintelli
 		}
 	}
 	fmt.Println("Test length", len(selection.Tests))
-	return selection, ignoreInstr
+	return ignoreInstr
 }
 
 func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile string) (string, error) {
@@ -502,13 +519,15 @@ func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile stri
 	// Test splitting: only when parallelism is enabled
 	doNotSplit := false
 	if isParallelismEnabled() {
-		selection, ignoreInstr = r.invokeParallelism(ctx, runner, selection, ignoreInstr, doNotSplit)
+		ignoreInstr = r.invokeParallelism(ctx, runner, &selection, ignoreInstr, doNotSplit)
 	}
 
-	fmt.Println("New tests", len(selection.Tests), selection.Tests, r.runOnlySelectedTests)
+	//fmt.Println("New tests", len(selection.Tests), selection.Tests, r.runOnlySelectedTests)
 
 	// Test command
 	testCmd, err := runner.GetCmd(ctx, selection.Tests, r.args, iniFilePath, ignoreInstr, !r.runOnlySelectedTests)
+	fmt.Println("Command for bazel test", testCmd)
+	time.Sleep(100 * time.Second)
 	if err != nil {
 		return "", err
 	}

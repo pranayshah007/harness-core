@@ -28,5 +28,5 @@ type TestRunner interface {
 
 	// AutoDetectTestFiles detects the list of test files in the workspace
 	// Return an error if we could not detect or if it's unimplemented
-	AutoDetectTestFiles() ([]types.RunnableTest, error)
+	AutoDetectTestFiles(ctx context.Context) ([]types.RunnableTest, error)
 }

@@ -174,7 +174,7 @@ func GetLogKey(id string) (string, error) {
 		return "", fmt.Errorf("log prefix variable not set %s", logPrefixEnv)
 	}
 
-	return fmt.Sprintf("%s-%s", logPrefix, id), nil
+	return fmt.Sprintf("%s/%s", logPrefix, id), nil
 }
 
 // GetServiceLogKey returns log key for service
@@ -376,9 +376,9 @@ func IsManualExecution() bool {
 }
 
 func IsParallelismEnabled() bool {
-	_, err1 := GetStepStrategyIteration()
-	_, err2 := GetStepStrategyIterations()
-	if err1 != nil || err2 != nil {
+	v1, err1 := GetStepStrategyIteration()
+	v2, err2 := GetStepStrategyIterations()
+	if err1 != nil || err2 != nil || v1 >= v2 || v2 <= 1 {
 		return false
 	}
 	return true

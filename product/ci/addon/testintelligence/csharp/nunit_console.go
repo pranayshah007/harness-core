@@ -42,7 +42,7 @@ func (_ *nunitConsoleRunner) AutoDetectPackages() ([]string, error) {
 	return []string{}, errors.New("not implemented")
 }
 
-func (b *nunitConsoleRunner) AutoDetectTestFiles() ([]types.RunnableTest, error) {
+func (b *nunitConsoleRunner) AutoDetectTestFiles(ctx context.Context) ([]types.RunnableTest, error) {
 	return []types.RunnableTest{}, nil
 }
 
