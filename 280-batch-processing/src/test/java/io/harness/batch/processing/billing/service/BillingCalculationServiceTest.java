@@ -24,6 +24,7 @@ import io.harness.batch.processing.pricing.fargatepricing.EcsFargateInstancePric
 import io.harness.batch.processing.pricing.pricingprofile.PricingProfileService;
 import io.harness.batch.processing.pricing.service.intfc.AwsCustomBillingService;
 import io.harness.batch.processing.pricing.service.intfc.AzureCustomBillingService;
+import io.harness.batch.processing.pricing.service.intfc.GcpCustomBillingService;
 import io.harness.batch.processing.pricing.storagepricing.StoragePricingStrategy;
 import io.harness.batch.processing.pricing.vmpricing.ComputeInstancePricingStrategy;
 import io.harness.batch.processing.pricing.vmpricing.EcsFargatePricingInfo;
@@ -73,6 +74,8 @@ public class BillingCalculationServiceTest extends CategoryTest {
   @Mock private VMPricingServiceImpl vmPricingService;
   @Mock private AwsCustomBillingService awsCustomBillingService;
   @Mock private AzureCustomBillingService azureCustomBillingService;
+
+  @Mock private GcpCustomBillingService gcpCustomBillingService;
   @Mock private InstanceResourceService instanceResourceService;
   @Mock private EcsFargateInstancePricingStrategy ecsFargateInstancePricingStrategy;
   @Mock private CustomBillingMetaDataService customBillingMetaDataService;
@@ -620,8 +623,8 @@ public class BillingCalculationServiceTest extends CategoryTest {
 
   private ComputeInstancePricingStrategy getComputeInstancePricingStrategy() {
     return new ComputeInstancePricingStrategy(vmPricingService, awsCustomBillingService, azureCustomBillingService,
-        instanceResourceService, ecsFargateInstancePricingStrategy, customBillingMetaDataService,
-        pricingProfileService);
+        gcpCustomBillingService, instanceResourceService, ecsFargateInstancePricingStrategy,
+        customBillingMetaDataService, pricingProfileService);
   }
 
   @Test
