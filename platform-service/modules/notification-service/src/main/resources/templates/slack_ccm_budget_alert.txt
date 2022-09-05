@@ -1,0 +1,24 @@
+{
+	"blocks": [
+		{
+			"type": "section",
+			"text": {
+				"type": "mrkdwn",
+				"text": ":bell: The cost associated with *${BUDGET_NAME}* has reached a limit of ${THRESHOLD_PERCENTAGE}%."
+			}
+		},
+		{
+                "type": "actions",
+                "elements": [
+                    {
+                        "type": "button",
+                        "text": {
+                            "type": "plain_text",
+                            "text": "View Budget"
+                        },
+                        "url": "${BUDGET_URL}"
+                    }
+                ]
+            }
+	]
+}

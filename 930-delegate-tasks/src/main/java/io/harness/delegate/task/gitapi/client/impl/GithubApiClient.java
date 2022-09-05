@@ -33,13 +33,16 @@ import io.harness.delegate.beans.gitapi.GitApiTaskParams;
 import io.harness.delegate.beans.gitapi.GitApiTaskResponse;
 import io.harness.delegate.beans.gitapi.GitApiTaskResponse.GitApiTaskResponseBuilder;
 import io.harness.delegate.task.gitapi.client.GitApiClient;
+import io.harness.delegate.task.gitpolling.github.GitHubPollingDelegateRequest;
 import io.harness.exception.GitClientException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.gitpolling.github.GitPollingWebhookData;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.security.encryption.SecretDecryptionService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.AllArgsConstructor;
@@ -77,7 +80,7 @@ public class GithubApiClient implements GitApiClient {
         responseBuilder.commandExecutionStatus(CommandExecutionStatus.SUCCESS)
             .gitApiResult(GitApiFindPRTaskResponse.builder().prJson(prJson).build());
       } else {
-        responseBuilder.commandExecutionStatus(FAILURE).errorMessage("Received blank  pr details");
+        responseBuilder.commandExecutionStatus(FAILURE).errorMessage("Received blank pr details");
       }
     } catch (Exception e) {
       log.error(new StringBuilder("failed while fetching PR Details using connector: ")
@@ -124,6 +127,57 @@ public class GithubApiClient implements GitApiClient {
     return responseBuilder.build();
   }
 
+  @Override
+  public DelegateResponseData deleteRef(GitApiTaskParams gitApiTaskParams) {
+    GitApiTaskResponseBuilder responseBuilder = GitApiTaskResponse.builder();
+    ConnectorDetails gitConnector = gitApiTaskParams.getConnectorDetails();
+    try {
+      if (gitConnector == null
+          || !gitConnector.getConnectorConfig().getClass().isAssignableFrom(GithubConnectorDTO.class)) {
+        throw new InvalidRequestException(
+            format("Invalid Connector %s, Need GithubConfig: ", gitConnector.getIdentifier()));
+      }
+      GithubConnectorDTO gitConfigDTO = (GithubConnectorDTO) gitConnector.getConnectorConfig();
+      String token = retrieveAuthToken(gitConnector);
+      String gitApiURL = getGitApiURL(gitConfigDTO.getUrl());
+      String repo = gitApiTaskParams.getRepo();
+      String ref = gitApiTaskParams.getRef();
+
+      boolean success = githubService.deleteRef(gitApiURL, token, gitApiTaskParams.getOwner(), repo, ref);
+      if (!success) {
+        String err = format("Failed to delete reference %s for github connector %s", ref, gitConnector.getIdentifier());
+        log.info(err);
+        responseBuilder.commandExecutionStatus(FAILURE).errorMessage("Failed to delete");
+      } else {
+        responseBuilder.commandExecutionStatus(CommandExecutionStatus.SUCCESS);
+      }
+    } catch (Exception e) {
+      log.error(
+          new StringBuilder(format("Failed to delete reference %s for github connector ", gitApiTaskParams.getRef()))
+              .append(gitConnector.getIdentifier())
+              .toString(),
+          e);
+      responseBuilder.commandExecutionStatus(FAILURE).errorMessage(e.getMessage());
+    }
+    return responseBuilder.build();
+  }
+
+  public List<GitPollingWebhookData> getWebhookRecentDeliveryEvents(GitHubPollingDelegateRequest attributesRequest) {
+    ConnectorDetails gitConnector = attributesRequest.getConnectorDetails();
+    if (gitConnector == null
+        || !gitConnector.getConnectorConfig().getClass().isAssignableFrom(GithubConnectorDTO.class)) {
+      throw new InvalidRequestException(format("Invalid Connector %s, Need GithubConfig: ", gitConnector));
+    }
+    GithubConnectorDTO gitConfigDTO = (GithubConnectorDTO) gitConnector.getConnectorConfig();
+    String gitApiURL = getGitApiURL(gitConfigDTO.getUrl());
+    String repoOwner = gitConfigDTO.getGitRepositoryDetails().getOrg();
+    String repoName = gitConfigDTO.getGitRepositoryDetails().getName();
+    String webhookId = attributesRequest.getWebhookId();
+    String token = retrieveAuthToken(gitConnector);
+
+    return githubService.getWebhookRecentDeliveryEvents(gitApiURL, token, repoOwner, repoName, webhookId);
+  }
+
   private String getGitApiURL(String url) {
     Pattern GIT_URL = Pattern.compile(GIT_URL_REGEX);
     Matcher m = GIT_URL.matcher(url);
@@ -155,7 +209,7 @@ public class GithubApiClient implements GitApiClient {
     GithubConnectorDTO gitConfigDTO = (GithubConnectorDTO) gitConnector.getConnectorConfig();
     if (gitConfigDTO.getApiAccess() == null || gitConfigDTO.getApiAccess().getType() == null) {
       throw new InvalidRequestException(
-          format("Failed to retrieve token info for github connector: ", gitConnector.getIdentifier()));
+          format("Failed to retrieve token info for github connector: %s", gitConnector.getIdentifier()));
     }
 
     GithubApiAccessSpecDTO spec = gitConfigDTO.getApiAccess().getSpec();

@@ -199,8 +199,9 @@ public class K8sCanaryDeploy extends AbstractK8sState {
             .cleanUpIncompleteCanaryDeployRelease(
                 featureFlagService.isEnabled(CLEANUP_INCOMPLETE_CANARY_DEPLOY_RELEASE, infraMapping.getAccountId()))
             .build();
-
-    return queueK8sDelegateTask(context, k8sTaskParameters, appManifestMap);
+    ExecutionResponse response = queueK8sDelegateTask(context, k8sTaskParameters, appManifestMap);
+    saveK8sCanaryDeployRun(context);
+    return response;
   }
 
   @Override

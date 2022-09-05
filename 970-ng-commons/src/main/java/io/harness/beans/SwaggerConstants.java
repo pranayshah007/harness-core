@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 // TODO this should go to yaml commons
 public interface SwaggerConstants {
   String STRING_CLASSPATH = "java.lang.String";
+  String LONG_CLASSPATH = "java.lang.Long";
   String INTEGER_CLASSPATH = "java.lang.Integer";
   String DOUBLE_CLASSPATH = "java.lang.Double";
   String BOOLEAN_CLASSPATH = "java.lang.Boolean";
@@ -23,4 +24,10 @@ public interface SwaggerConstants {
   String INFRASTRUCTURE_DEFINITION_YAML_NODE_LIST_CLASSPATH =
       "[Lio.harness.cdng.infra.yaml.InfraStructureDefinitionYaml;";
   String CLUSTER_YAML_NODE_LIST_CLASSPATH = "[Lio.harness.cdng.gitops.yaml.ClusterYaml;";
+
+  String SERVICE_YAML_LIST_CLASSPATH = "[Lio.harness.cdng.service.beans.ServiceYamlV2;";
+
+  String ENVIRONMENT_YAML_LIST_CLASSPATH = "[Lio.harness.cdng.environment.yaml.EnvironmentYamlV2;";
+  String JENKINS_PARAMETER_FIELD_CLASSPATH = "[Lio.harness.cdng.jenkins.jenkinsstep.JenkinsParameterField;";
+  String INFRASTRUCTURE_DEFINITION_YAML_HOST_FILTER_CLASSPATH = "io.harness.cdng.infra.beans.host.HostFilter";
 }

@@ -20,12 +20,14 @@ import io.harness.engine.executions.node.NodeExecutionUpdateFailedException;
 import io.harness.engine.executions.plan.PlanService;
 import io.harness.engine.pms.commons.events.PmsEventSender;
 import io.harness.engine.pms.data.PmsEngineExpressionService;
+import io.harness.engine.utils.OrchestrationUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
 import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.ExecutionMode;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.start.NodeStartEvent;
@@ -34,9 +36,6 @@ import io.harness.pms.data.OrchestrationMap;
 import io.harness.pms.data.stepparameters.PmsStepParameters;
 import io.harness.pms.events.base.PmsEventCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.sdk.core.execution.NodeExecutionUtils;
-import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
-import io.harness.pms.timeout.SdkTimeoutTrackerParameters;
 import io.harness.pms.utils.OrchestrationMapBackwardCompatibilityUtils;
 import io.harness.serializer.KryoSerializer;
 import io.harness.springdata.TransactionHelper;
@@ -46,14 +45,15 @@ import io.harness.timeout.TimeoutInstance;
 import io.harness.timeout.TimeoutParameters;
 import io.harness.timeout.contracts.TimeoutObtainment;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
@@ -102,6 +102,7 @@ public class NodeStartHelper {
       resolveInputs(ambiance, planNode.getStepInputs(), planNode.isSkipUnresolvedExpressionsCheck());
       return nodeExecutionService.updateStatusWithOps(nodeExecutionId, targetStatus, ops -> {
         setUnset(ops, NodeExecutionKeys.timeoutInstanceIds, timeoutInstanceIds);
+        updateStartTsInNodeExecution(ops, ambiance);
       }, EnumSet.noneOf(Status.class));
     });
   }
@@ -128,35 +129,14 @@ public class NodeStartHelper {
         new NodeExecutionTimeoutCallback(ambiance.getPlanExecutionId(), AmbianceUtils.obtainCurrentRuntimeId(ambiance));
     EngineExpressionEvaluator evaluator = pmsEngineExpressionService.prepareExpressionEvaluator(ambiance);
     for (TimeoutObtainment timeoutObtainment : timeoutObtainments) {
-      TimeoutParameters timeoutParameters = buildTimeoutParameters(evaluator, timeoutObtainment);
+      TimeoutParameters timeoutParameters =
+          OrchestrationUtils.buildTimeoutParameters(kryoSerializer, evaluator, timeoutObtainment);
       TimeoutInstance instance =
           timeoutEngine.registerTimeout(timeoutObtainment.getDimension(), timeoutParameters, timeoutCallback);
       timeoutInstanceIds.add(instance.getUuid());
     }
     log.info(format("Registered node execution timeouts: %s", timeoutInstanceIds.toString()));
     return timeoutInstanceIds;
-  }
-
-  private TimeoutParameters buildTimeoutParameters(
-      EngineExpressionEvaluator evaluator, TimeoutObtainment timeoutObtainment) {
-    // TODO (prashant) : Change this this should not be kryo we should trat then exactly like step parameters. Should be
-    // json string bytes Evaluate timeout expressions and convert sdk timeout parameters to timeout engine specific
-    // parameters.
-    SdkTimeoutTrackerParameters sdkTimeoutTrackerParameters =
-        (SdkTimeoutTrackerParameters) kryoSerializer.asObject(timeoutObtainment.getParameters().toByteArray());
-    sdkTimeoutTrackerParameters = resolve(evaluator, sdkTimeoutTrackerParameters);
-    return sdkTimeoutTrackerParameters.prepareTimeoutParameters();
-  }
-
-  private <T> T resolve(EngineExpressionEvaluator evaluator, T o) {
-    if (o == null) {
-      return null;
-    }
-
-    Class<?> cls = o.getClass();
-    Map<String, Object> m = NodeExecutionUtils.extractObject(RecastOrchestrationUtils.toJson(o));
-    String json = RecastOrchestrationUtils.toJson(evaluator.resolve(m, false));
-    return (T) RecastOrchestrationUtils.fromJson(json, cls);
   }
 
   private void resolveInputs(Ambiance ambiance, OrchestrationMap stepInputs, boolean skipUnresolvedCheck) {
@@ -167,5 +147,16 @@ public class NodeStartHelper {
         PmsStepParameters.parse(OrchestrationMapBackwardCompatibilityUtils.extractToOrchestrationMap(resolvedInputs));
     pmsGraphStepDetailsService.addStepInputs(nodeExecutionId, ambiance.getPlanExecutionId(), parameterInputs);
     log.info("Resolved step Inputs");
+  }
+
+  @VisibleForTesting
+  protected void updateStartTsInNodeExecution(Update ops, Ambiance ambiance) {
+    long currentTimeMillis = System.currentTimeMillis();
+    Level updatedLevel =
+        ambiance.toBuilder().getLevelsBuilder(ambiance.getLevelsCount() - 1).setStartTs(currentTimeMillis).build();
+    ambiance = ambiance.toBuilder().setLevels(ambiance.getLevelsCount() - 1, updatedLevel).build();
+
+    ops.set(NodeExecutionKeys.startTs, currentTimeMillis);
+    ops.set(NodeExecutionKeys.ambiance, ambiance);
   }
 }

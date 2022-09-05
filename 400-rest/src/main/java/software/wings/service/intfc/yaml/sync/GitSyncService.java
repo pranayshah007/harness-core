@@ -54,7 +54,11 @@ public interface GitSyncService {
 
   boolean deleteGitCommits(List<String> gitFileActivitySummaryIds, String accountId);
 
+  boolean deleteGitCommitsBeforeTime(long expiryTime, String accountId);
+
   boolean deleteGitActivity(List<String> gitFileActivityIds, String accountId);
+
+  boolean deleteGitActivityBeforeTime(long time, String accountId);
 
   /**
    * @param changeList

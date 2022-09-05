@@ -8,7 +8,6 @@
 package software.wings.service;
 
 import static io.harness.beans.FeatureName.ARTIFACT_STREAM_REFACTOR;
-import static io.harness.beans.FeatureName.HELM_OCI_SUPPORT;
 import static io.harness.rule.OwnerRule.ANUBHAW;
 import static io.harness.rule.OwnerRule.RAGHU;
 
@@ -26,9 +25,6 @@ import static software.wings.beans.PluginCategory.Verification;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
@@ -105,7 +101,6 @@ public class PluginServiceTest extends CategoryTest {
     initMocks(this);
     FieldUtils.writeField(pluginService, "featureFlagService", mockFeatureFlagService, true);
     when(mockFeatureFlagService.isEnabled(ARTIFACT_STREAM_REFACTOR, accountId)).thenReturn(false);
-    doReturn(true).when(mockFeatureFlagService).isEnabled(eq(HELM_OCI_SUPPORT), any());
     when(mockFeatureFlagService.isEnabled(ARTIFACT_STREAM_REFACTOR, multiArtifactEnabledAccountId)).thenReturn(true);
   }
 

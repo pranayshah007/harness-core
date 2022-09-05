@@ -1022,8 +1022,8 @@ go_repository(
 go_repository(
     name = "com_github_drone_go_scm",
     importpath = "github.com/drone/go-scm",
-    sum = "h1:tx7Xgpt64DYq90WFPVi9T/5c7IuNQ8ckbb8qUEK05gU=",
-    version = "v1.26.1-0.20220718061611-2e3f1a56c8dd",
+    sum = "h1:nXqrXP/edQDr0gaIIdohlayBSUrKWh0/C2E1VQcvokM=",
+    version = "v1.27.1-0.20220817160204-09a4fde5917c",
 )
 
 go_repository(
@@ -4337,7 +4337,7 @@ plain_artifacts = [
     "ch.qos.logback:logback-core:1.2.11",
     "com.auth0:java-jwt:3.1.0",
     "com.azure:azure-core:1.29.1",
-    "com.azure:azure-identity:1.1.2",
+    "com.azure:azure-identity:1.4.4",
     "com.azure:azure-storage-blob:12.16.0",
     "com.azure:azure-storage-common:12.9.0",
     "com.bertramlabs.plugins:hcl4j:0.1.7",
@@ -4353,24 +4353,24 @@ plain_artifacts = [
     "com.esotericsoftware:kryo:4.0.2",
     "com.esotericsoftware:minlog:1.3.0",
     "com.esotericsoftware:reflectasm:1.11.3",
-    "com.fasterxml.jackson.core:jackson-annotations:2.13.1",
-    "com.fasterxml.jackson.core:jackson-core:2.13.1",
-    "com.fasterxml.jackson.core:jackson-databind:2.13.1",
-    "com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:2.13.1",
-    "com.fasterxml.jackson.dataformat:jackson-dataformat-smile:2.13.1",
-    "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.13.1",
-    "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.13.1",
-    "com.fasterxml.jackson.datatype:jackson-datatype-guava:2.13.1",
-    "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.13.1",
-    "com.fasterxml.jackson.datatype:jackson-datatype-joda:2.13.1",
-    "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.13.1",
-    "com.fasterxml.jackson.jaxrs:jackson-jaxrs-base:2.13.1",
-    "com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:2.13.1",
-    "com.fasterxml.jackson.jaxrs:jackson-jaxrs-yaml-provider:2.13.1",
-    "com.fasterxml.jackson.module:jackson-module-afterburner:2.13.1",
-    "com.fasterxml.jackson.module:jackson-module-jaxb-annotations:2.13.1",
-    "com.fasterxml.jackson.module:jackson-module-jsonSchema:2.13.1",
-    "com.fasterxml.jackson.module:jackson-module-parameter-names:2.13.1",
+    "com.fasterxml.jackson.core:jackson-annotations:2.13.3",
+    "com.fasterxml.jackson.core:jackson-core:2.13.3",
+    "com.fasterxml.jackson.core:jackson-databind:2.13.3",
+    "com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:2.13.3",
+    "com.fasterxml.jackson.dataformat:jackson-dataformat-smile:2.13.3",
+    "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.13.3",
+    "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.13.3",
+    "com.fasterxml.jackson.datatype:jackson-datatype-guava:2.13.3",
+    "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.13.3",
+    "com.fasterxml.jackson.datatype:jackson-datatype-joda:2.13.3",
+    "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.13.3",
+    "com.fasterxml.jackson.jaxrs:jackson-jaxrs-base:2.13.3",
+    "com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:2.13.3",
+    "com.fasterxml.jackson.jaxrs:jackson-jaxrs-yaml-provider:2.13.3",
+    "com.fasterxml.jackson.module:jackson-module-afterburner:2.13.3",
+    "com.fasterxml.jackson.module:jackson-module-jaxb-annotations:2.13.3",
+    "com.fasterxml.jackson.module:jackson-module-jsonSchema:2.13.3",
+    "com.fasterxml.jackson.module:jackson-module-parameter-names:2.13.3",
     "com.fasterxml.uuid:java-uuid-generator:4.0.1",
     "com.fasterxml.woodstox:woodstox-core:5.3.0",
     "com.fasterxml:classmate:1.4.0",
@@ -4464,9 +4464,9 @@ plain_artifacts = [
     "com.hazelcast:hazelcast:5.1",
     "com.healthmarketscience.sqlbuilder:sqlbuilder:3.0.0",
     "com.helger:profiler:1.1.1",
-    "com.hierynomus:asn-one:0.4.0",
-    "com.hierynomus:smbj:0.9.0",
-    "com.hierynomus:sshj:0.26.0",
+    "com.hierynomus:asn-one:0.6.0",
+    "com.hierynomus:smbj:0.11.5",
+    "com.hierynomus:sshj:0.34.0",
     "com.hubspot.jackson:jackson-datatype-protobuf:0.9.11-jackson2.7",
     "com.intellij:annotations:12.0",
     "com.j256.two-factor-auth:two-factor-auth:1.0",
@@ -4665,6 +4665,7 @@ plain_artifacts = [
     "io.gsonfire:gson-fire:1.8.3",
     "io.harness.cv:data-collection-dsl:0.39-RELEASE",
     "io.harness:ff-java-server-sdk:1.0.5.1",
+    "io.harness:ng-manager-server-spec:1.0.10",
     "io.jsonwebtoken:jjwt:0.9.1",
     "io.kubernetes:client-java-api:16.0.0",
     "io.kubernetes:client-java-extended:16.0.0",
@@ -4730,7 +4731,7 @@ plain_artifacts = [
     "net.arnx:nashorn-promise:0.1.1",
     "net.bytebuddy:byte-buddy:1.10.7",
     "net.engio:mbassador:1.3.0",
-    "net.i2p.crypto:eddsa:0.2.0",
+    "net.i2p.crypto:eddsa:0.3.0",
     "net.java.dev.jna:jna-platform:5.5.0",
     "net.java.dev.jna:jna:5.5.0",
     "net.jcip:jcip-annotations:1.0",
@@ -5007,8 +5008,6 @@ plain_artifacts = [
     "org.yaml:snakeyaml:1.28",
     "org.zeroturnaround:zt-exec:1.9",
     "ru.vyarus:guice-validator:1.2.0",
-    "software.amazon.awssdk:athena:2.10.18",
-    "software.amazon.awssdk:auth:2.10.18",
     "com.amazonaws:aws-encryption-sdk-java:2.3.3",
     "software.amazon.ion:ion-java:1.0.2",
     "stax:stax-api:1.0.1",
@@ -5066,6 +5065,27 @@ amazon_artifacts = [
     ]
 ]
 
+amazon_v2_artifacts = [
+    maven.artifact(
+        group = "software.amazon.awssdk",
+        artifact = x,
+        version = "2.17.220",
+        exclusions = [
+            "commons-logging:commons-logging",
+        ],
+    )
+    for x in [
+        "ecs",
+        "applicationautoscaling",
+        "aws-core",
+        "core",
+        "auth",
+        "sts",
+        "sdk-core",
+        "health",
+    ]
+]
+
 powermock_artifacts = [
     maven.artifact(
         group = "org.powermock",
@@ -5085,7 +5105,7 @@ powermock_artifacts = [
 
 maven_install(
     name = "maven",
-    artifacts = plain_artifacts + amazon_artifacts + powermock_artifacts + [
+    artifacts = plain_artifacts + amazon_artifacts + amazon_v2_artifacts + powermock_artifacts + [
         maven.artifact(
             group = "io.netty",
             artifact = "netty-transport-native-kqueue",
@@ -5235,7 +5255,7 @@ maven_install(
 maven_install(
     name = "batch",
     artifacts = [
-        "com.fasterxml.jackson.core:jackson-databind:2.13.1",
+        "com.fasterxml.jackson.core:jackson-databind:2.13.3",
         "com.azure:azure-core:1.25.0",
         "com.azure:azure-identity:1.4.4",
         "com.azure:azure-storage-blob:12.14.4",

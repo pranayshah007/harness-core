@@ -19,6 +19,7 @@ import io.harness.ci.buildstate.PluginSettingUtils;
 import io.harness.ci.execution.CIExecutionConfigService;
 import io.harness.ci.utils.CIStepInfoUtils;
 import io.harness.exception.ngexception.CIStageExecutionException;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.product.ci.engine.proto.PluginStep;
 import io.harness.product.ci.engine.proto.StepContext;
@@ -35,10 +36,11 @@ import java.util.function.Supplier;
 public class PluginCompatibleStepSerializer implements ProtobufStepSerializer<PluginCompatibleStep> {
   @Inject private Supplier<DelegateCallbackToken> delegateCallbackTokenSupplier;
   @Inject private CIExecutionConfigService ciExecutionConfigService;
+  @Inject private PluginSettingUtils pluginSettingUtils;
 
   public UnitStep serializeStepWithStepParameters(PluginCompatibleStep pluginCompatibleStep, Integer port,
       String callbackId, String logKey, String identifier, ParameterField<Timeout> parameterFieldTimeout,
-      String accountId, String stepName, OSType os) {
+      String accountId, String stepName, OSType os, Ambiance ambiance) {
     if (port == null) {
       throw new CIStageExecutionException("Port can not be null");
     }
@@ -51,8 +53,8 @@ public class PluginCompatibleStepSerializer implements ProtobufStepSerializer<Pl
     List<String> outputVarNames = CIStepInfoUtils.getOutputVariables(pluginCompatibleStep);
 
     StepContext stepContext = StepContext.newBuilder().setExecutionTimeoutSecs(timeout).build();
-    Map<String, String> envVarMap =
-        PluginSettingUtils.getPluginCompatibleEnvVariables(pluginCompatibleStep, identifier, timeout, Type.K8);
+    Map<String, String> envVarMap = pluginSettingUtils.getPluginCompatibleEnvVariables(
+        pluginCompatibleStep, identifier, timeout, ambiance, Type.K8);
     PluginStep pluginStep = PluginStep.newBuilder()
                                 .setContainerPort(port)
                                 .setImage(CIStepInfoUtils.getPluginCustomStepImage(

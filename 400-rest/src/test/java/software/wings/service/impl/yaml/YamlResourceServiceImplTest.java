@@ -8,7 +8,6 @@
 package software.wings.service.impl.yaml;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
-import static io.harness.beans.FeatureName.HELM_OCI_SUPPORT;
 import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
@@ -84,7 +83,6 @@ public class YamlResourceServiceImplTest extends CategoryTest {
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
-    doReturn(true).when(featureFlagService).isEnabled(eq(HELM_OCI_SUPPORT), any());
   }
 
   @Test

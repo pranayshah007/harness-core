@@ -10,6 +10,7 @@ package software.wings.yaml.gitSync;
 import io.harness.annotation.HarnessEntity;
 import io.harness.git.model.ChangeType;
 import io.harness.mongo.index.CompoundMongoIndex;
+import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.persistence.AccountAccess;
@@ -21,6 +22,8 @@ import io.harness.persistence.UuidAware;
 import software.wings.beans.GitRepositoryInfo;
 
 import com.google.common.collect.ImmutableList;
+import java.time.OffsetDateTime;
+import java.util.Date;
 import java.util.List;
 import javax.ws.rs.DefaultValue;
 import lombok.Builder;
@@ -100,4 +103,6 @@ public class GitFileActivity implements PersistentEntity, UuidAware, CreatedAtAw
   public enum Status { SUCCESS, FAILED, DISCARDED, EXPIRED, SKIPPED, QUEUED }
 
   public enum TriggeredBy { USER, GIT, FULL_SYNC }
+
+  @Builder.Default @FdTtlIndex private Date validUntil = Date.from(OffsetDateTime.now().plusMonths(12).toInstant());
 }

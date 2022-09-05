@@ -10,9 +10,11 @@ package io.harness.resourcegroup.framework.v2.service;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.resourcegroup.v2.model.ResourceGroup;
 import io.harness.resourcegroup.v2.remote.dto.ResourceGroupRequest;
 
 @OwnedBy(PL)
 public interface ResourceGroupValidator {
+  boolean sanitizeResourceSelectors(ResourceGroup resourceGroup);
   void validateResourceGroup(ResourceGroupRequest resourceGroupRequest);
 }

@@ -46,9 +46,10 @@ public class HelmChartConfigParams implements ExecutionCapabilityDemander {
 
   private HelmVersion helmVersion;
   private boolean useLatestChartMuseumVersion;
-  private boolean useRepoFlags;
   private boolean checkIncorrectChartVersion;
   private boolean bypassHelmFetch;
+  private boolean useCache;
+  private boolean useRepoFlags;
   private boolean deleteRepoCacheDir;
 
   @Override

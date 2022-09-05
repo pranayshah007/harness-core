@@ -15,13 +15,22 @@ import io.harness.cdng.envGroup.yaml.EnvGroupPlanCreatorConfig;
 import io.harness.cdng.environment.steps.EnvironmentStepParameters;
 import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
 import io.harness.data.structure.CollectionUtils;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.ng.core.envGroup.EnvironmentGroupOutcome;
+import io.harness.ng.core.environment.beans.Environment;
+import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
+import io.harness.ng.core.mapper.TagMapper;
+import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
 import io.harness.steps.environment.EnvironmentOutcome;
+import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.utils.NGVariablesUtils;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import lombok.experimental.UtilityClass;
+import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.CDC)
 @UtilityClass
@@ -75,12 +84,37 @@ public class EnvironmentMapper {
     }
   }
 
+  private Map<String, Object> overrideVariables(List<NGVariable> variables1, List<NGVariable> variables2) {
+    if (EmptyPredicate.isNotEmpty(variables1) && EmptyPredicate.isNotEmpty(variables2)) {
+      Map<String, Object> v1 = NGVariablesUtils.getMapOfVariables(variables1);
+      v1.putAll(NGVariablesUtils.getMapOfVariables(variables2));
+      return v1;
+    }
+    return Collections.emptyMap();
+  }
+
   public EnvironmentGroupOutcome toEnvironmentGroupOutcome(EnvironmentStepParameters stepParameters) {
     return EnvironmentGroupOutcome.builder()
         .identifier(stepParameters.getIdentifier())
         .name(stepParameters.getName() != null ? stepParameters.getName() : "")
         .description(stepParameters.getDescription() != null ? stepParameters.getDescription() : "")
         .tags(CollectionUtils.emptyIfNull(stepParameters.getTags()))
+        .build();
+  }
+
+  public static EnvironmentOutcome toEnvironmentOutcome(
+      Environment environment, NGEnvironmentConfig ngEnvironmentConfig, NGServiceOverrideConfig ngServiceOverrides) {
+    final Map<String, Object> variables =
+        overrideVariables(ngServiceOverrides.getServiceOverrideInfoConfig().getVariables(),
+            ngEnvironmentConfig.getNgEnvironmentInfoConfig().getVariables());
+    return EnvironmentOutcome.builder()
+        .identifier(environment.getIdentifier())
+        .name(StringUtils.defaultIfBlank(environment.getName(), ""))
+        .description(StringUtils.defaultIfBlank(environment.getDescription(), ""))
+        .tags(TagMapper.convertToMap(environment.getTags()))
+        .type(environment.getType())
+        .environmentRef(environment.getIdentifier())
+        .variables(variables)
         .build();
   }
 }

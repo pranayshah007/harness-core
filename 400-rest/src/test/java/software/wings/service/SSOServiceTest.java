@@ -7,6 +7,7 @@
 
 package software.wings.service;
 
+import static io.harness.rule.OwnerRule.PRATEEK;
 import static io.harness.rule.OwnerRule.RUSHABH;
 import static io.harness.rule.OwnerRule.UJJAWAL;
 
@@ -15,6 +16,7 @@ import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
@@ -25,6 +27,7 @@ import static org.mockito.Mockito.when;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.category.element.UnitTests;
+import io.harness.delegate.beans.ldap.LdapSettingsWithEncryptedDataAndPasswordDetail;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.WingsException;
 import io.harness.ng.core.account.AuthenticationMechanism;
@@ -265,5 +268,34 @@ public class SSOServiceTest extends WingsBaseTest {
     for (LdapGroupResponse response : responses) {
       assertThat(response.getName()).isEqualTo("testGroup");
     }
+  }
+
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void testGetLocallyEncryptedDataDetailForLdapAuth() {
+    String testLdapRecordName = "testLdapRecord";
+    String password = "password";
+    final EncryptedRecordData encryptedRecord = EncryptedRecordData.builder()
+                                                    .name(testLdapRecordName)
+                                                    .encryptedValue("encryptedTestPassword".toCharArray())
+                                                    .kmsId(ACCOUNT_ID)
+                                                    .build();
+    EncryptedDataDetail encryptedPwdDetail =
+        EncryptedDataDetail.builder().fieldName(password).encryptedData(encryptedRecord).build();
+
+    when(SECRET_MANAGER.saveSecretText(anyString(), any(), anyBoolean())).thenReturn("testEncryptedPwd");
+    when(SECRET_MANAGER.encryptedDataDetails(anyString(), anyString(), any(), any()))
+        .thenReturn(Optional.of(encryptedPwdDetail));
+    when(SECRET_MANAGER.deleteSecret(anyString(), anyString(), any(), anyBoolean())).thenReturn(true);
+    when(SSO_SETTING_SERVICE.getLdapSettingsByAccountId(anyString())).thenReturn(ldapSettings);
+
+    LdapSettingsWithEncryptedDataAndPasswordDetail withEncryptedDataAndPasswordDetail =
+        ssoService.getLdapSettingsWithEncryptedDataAndPasswordDetail(ACCOUNT_ID, testLdapRecordName);
+    assertThat(withEncryptedDataAndPasswordDetail.getEncryptedPwdDataDetail().getEncryptedData().getKmsId())
+        .isEqualTo(ACCOUNT_ID);
+    assertThat(withEncryptedDataAndPasswordDetail.getEncryptedPwdDataDetail().getEncryptedData().getName())
+        .isEqualTo(testLdapRecordName);
+    assertThat(withEncryptedDataAndPasswordDetail.getEncryptedPwdDataDetail().getFieldName()).isEqualTo(password);
   }
 }

@@ -224,6 +224,7 @@ public class K8BuildSetupUtils {
         .podMaxWaitUntilReadySecs(getPodWaitUntilReadTimeout(k8sDirectInfraYaml))
         .build();
   }
+
   private CIK8InitializeTaskParams buildHostedCIK8InitializeTaskParams(
       InitializeStepInfo initializeStepInfo, String logPrefix, Ambiance ambiance) {
     K8PodDetails k8PodDetails = (K8PodDetails) executionSweepingOutputResolver.resolve(
@@ -299,7 +300,8 @@ public class K8BuildSetupUtils {
     CodeBase ciCodebase = initializeStepInfo.getCiCodebase();
     ConnectorDetails gitConnector =
         codebaseUtils.getGitConnector(ngAccess, ciCodebase, initializeStepInfo.isSkipGitClone());
-    Map<String, String> gitEnvVars = codebaseUtils.getGitEnvVariables(gitConnector, ciCodebase);
+    Map<String, String> gitEnvVars =
+        codebaseUtils.getGitEnvVariables(gitConnector, ciCodebase, initializeStepInfo.isSkipGitClone());
     Map<String, String> runtimeCodebaseVars = codebaseUtils.getRuntimeCodebaseVars(ambiance);
 
     List<CIK8ContainerParams> containerParamsList =

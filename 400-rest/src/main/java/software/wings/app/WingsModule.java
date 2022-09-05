@@ -14,6 +14,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.audit.ResourceTypeConstants.DELEGATE;
 import static io.harness.audit.ResourceTypeConstants.DELEGATE_GROUPS;
 import static io.harness.audit.ResourceTypeConstants.DELEGATE_TOKEN;
+import static io.harness.audit.ResourceTypeConstants.NG_LOGIN_SETTINGS;
 import static io.harness.audit.ResourceTypeConstants.USER;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ORGANIZATION_ENTITY;
@@ -259,6 +260,7 @@ import software.wings.beans.config.ArtifactoryConfig;
 import software.wings.beans.config.NexusConfig;
 import software.wings.beans.loginSettings.LoginSettingsService;
 import software.wings.beans.loginSettings.LoginSettingsServiceImpl;
+import software.wings.beans.loginSettings.outbox.LoginSettingsOutboxEventHandler;
 import software.wings.beans.security.UserGroup;
 import software.wings.beans.settings.azureartifacts.AzureArtifactsPATConfig;
 import software.wings.cloudprovider.aws.AwsClusterService;
@@ -527,7 +529,6 @@ import software.wings.service.impl.prometheus.PrometheusAnalysisServiceImpl;
 import software.wings.service.impl.scalyr.ScalyrServiceImpl;
 import software.wings.service.impl.security.AwsSecretsManagerServiceImpl;
 import software.wings.service.impl.security.AzureSecretsManagerServiceImpl;
-import software.wings.service.impl.security.CyberArkServiceImpl;
 import software.wings.service.impl.security.EncryptionServiceImpl;
 import software.wings.service.impl.security.GcpSecretsManagerServiceImpl;
 import software.wings.service.impl.security.GcpSecretsManagerServiceV2Impl;
@@ -731,7 +732,6 @@ import software.wings.service.intfc.security.AwsSecretsManagerService;
 import software.wings.service.intfc.security.AzureSecretsManagerService;
 import software.wings.service.intfc.security.CustomEncryptedDataDetailBuilder;
 import software.wings.service.intfc.security.CustomSecretsManagerService;
-import software.wings.service.intfc.security.CyberArkService;
 import software.wings.service.intfc.security.EncryptedSettingAttributes;
 import software.wings.service.intfc.security.EncryptionService;
 import software.wings.service.intfc.security.GcpSecretsManagerService;
@@ -1477,6 +1477,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     outboxEventHandlerMapBinder.addBinding(DELEGATE_TOKEN).to(DelegateOutboxEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(DELEGATE_GROUPS).to(DelegateOutboxEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(USER).to(UserEventHandler.class);
+    outboxEventHandlerMapBinder.addBinding(NG_LOGIN_SETTINGS).to(LoginSettingsOutboxEventHandler.class);
   }
 
   private void bindFeatures() {
@@ -1625,7 +1626,6 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(SSHVaultService.class).to(SSHVaultServiceImpl.class);
     bind(AwsSecretsManagerService.class).to(AwsSecretsManagerServiceImpl.class);
     bind(KmsService.class).to(KmsServiceImpl.class);
-    bind(CyberArkService.class).to(CyberArkServiceImpl.class);
     bind(GcpSecretsManagerService.class).to(GcpSecretsManagerServiceImpl.class);
     bind(GcpSecretsManagerServiceV2.class).to(GcpSecretsManagerServiceV2Impl.class);
     bind(AzureSecretsManagerService.class).to(AzureSecretsManagerServiceImpl.class);
@@ -1656,11 +1656,6 @@ public class WingsModule extends AbstractModule implements ServersModule {
     binder()
         .bind(VaultEncryptor.class)
         .annotatedWith(Names.named(Encryptors.GCP_VAULT_ENCRYPTOR.getName()))
-        .to(ManagerVaultEncryptor.class);
-
-    binder()
-        .bind(VaultEncryptor.class)
-        .annotatedWith(Names.named(Encryptors.CYBERARK_VAULT_ENCRYPTOR.getName()))
         .to(ManagerVaultEncryptor.class);
 
     binder()

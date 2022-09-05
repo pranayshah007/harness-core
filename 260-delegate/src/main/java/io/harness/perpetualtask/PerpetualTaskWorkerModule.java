@@ -33,6 +33,7 @@ import io.harness.perpetualtask.instancesync.AzureWebAppInstanceSyncPerpetualPro
 import io.harness.perpetualtask.instancesync.AzureWebAppNGInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.instancesync.ContainerInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.instancesync.CustomDeploymentInstanceSyncTaskParams;
+import io.harness.perpetualtask.instancesync.EcsInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.instancesync.K8sInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.instancesync.NativeHelmInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.instancesync.PcfInstanceSyncPerpetualTaskParams;
@@ -49,8 +50,10 @@ import io.harness.perpetualtask.k8s.watch.WatcherFactory;
 import io.harness.perpetualtask.manifest.ManifestCollectionTaskParams;
 import io.harness.perpetualtask.manifest.ManifestPerpetualTaskExecutor;
 import io.harness.perpetualtask.polling.ArtifactCollectionTaskParamsNg;
+import io.harness.perpetualtask.polling.GitPollingTaskParamsNg;
 import io.harness.perpetualtask.polling.ManifestCollectionTaskParamsNg;
 import io.harness.perpetualtask.polling.artifact.ArtifactPerpetualTaskExecutorNg;
+import io.harness.perpetualtask.polling.gitpolling.GitPollingPerpetualTaskExecutorNg;
 import io.harness.perpetualtask.polling.manifest.ManifestPerpetualTaskExecutorNg;
 
 import com.google.inject.AbstractModule;
@@ -112,10 +115,13 @@ public class PerpetualTaskWorkerModule extends AbstractModule {
         .to(ManifestPerpetualTaskExecutorNg.class);
     mapBinder.addBinding(ArtifactCollectionTaskParamsNg.class.getSimpleName())
         .to(ArtifactPerpetualTaskExecutorNg.class);
+    mapBinder.addBinding(GitPollingTaskParamsNg.class.getSimpleName()).to(GitPollingPerpetualTaskExecutorNg.class);
     mapBinder.addBinding(ServerlessAwsLambdaInstanceSyncPerpetualTaskParams.class.getSimpleName())
         .to(ServerlessAwsLambdaInstanceSyncPerpetualTaskExecutor.class);
     mapBinder.addBinding(AzureWebAppNGInstanceSyncPerpetualTaskParams.class.getSimpleName())
         .to(AzureWebAppInstanceSyncPerpetualTaskExecutor.class);
+    mapBinder.addBinding(EcsInstanceSyncPerpetualTaskParams.class.getSimpleName())
+        .to(EcsInstanceSyncPerpetualTaskExecutor.class);
     mapBinder.addBinding(PdcPerpetualTaskParamsNg.class.getSimpleName()).to(PdcPerpetualTaskExecutorNg.class);
     mapBinder.addBinding(AzureSshInstanceSyncPerpetualTaskParamsNg.class.getSimpleName())
         .to(AzureSshWinrmInstanceSyncPerpetualTaskExecutor.class);

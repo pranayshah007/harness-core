@@ -8,10 +8,12 @@
 package io.harness.engine.interrupts.helpers;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.PRASHANT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -20,9 +22,11 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.OrchestrationEngine;
+import io.harness.engine.execution.ExecutionInputService;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanService;
 import io.harness.engine.utils.PmsLevelUtils;
+import io.harness.execution.ExecutionInputInstance;
 import io.harness.execution.NodeExecution;
 import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -38,11 +42,12 @@ import io.harness.pms.contracts.interrupts.ManualIssuer;
 import io.harness.pms.contracts.steps.SkipType;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.rule.Owner;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import org.junit.After;
 import org.junit.Before;
@@ -59,6 +64,7 @@ public class RetryHelperTest extends OrchestrationTestBase {
   @Mock NodeExecutionService nodeExecutionService;
   @Mock PlanService planService;
   @Mock ExecutorService executorService;
+  @Mock ExecutionInputService executionInputService;
   @Inject @InjectMocks RetryHelper retryHelper;
 
   @Before
@@ -127,6 +133,9 @@ public class RetryHelperTest extends OrchestrationTestBase {
     when(nodeExecutionService.markRetried(any())).thenReturn(true);
     when(planService.fetchNode(planId, nodeId)).thenReturn(planNode);
 
+    doReturn(ExecutionInputInstance.builder().build())
+        .when(executionInputService)
+        .getExecutionInputInstance(nodeExecutionId);
     retryHelper.retryNodeExecution(nodeExecution.getUuid(), interruptId, interruptConfig);
     verify(executorService).submit(any(Runnable.class));
   }
@@ -179,6 +188,9 @@ public class RetryHelperTest extends OrchestrationTestBase {
                              .setManualIssuer(ManualIssuer.newBuilder().setIdentifier("admin@admin").build())
                              .build())
             .build();
+    doReturn(ExecutionInputInstance.builder().build())
+        .when(executionInputService)
+        .getExecutionInputInstance(nodeExecutionId);
     NodeExecution clonedNodeExecution = retryHelper.cloneForRetry(
         nodeExecution, newNodeUuid, nodeExecution.getAmbiance(), interruptConfig, generateUuid());
 
@@ -187,10 +199,44 @@ public class RetryHelperTest extends OrchestrationTestBase {
     assertThat(clonedNodeExecution.getRetryIds()).containsExactly(nodeExecution.getUuid());
     assertThat(clonedNodeExecution.getInterruptHistories()).hasSize(1);
     assertThat(clonedNodeExecution.getInterruptHistories().get(0).getInterruptType()).isEqualTo(InterruptType.RETRY);
-    assertThat(clonedNodeExecution.getStartTs()).isEqualTo(AmbianceUtils.getCurrentLevelStartTs(ambiance));
+    assertThat(clonedNodeExecution.getStartTs()).isNull();
     assertThat(clonedNodeExecution.getEndTs()).isNull();
     assertThat(clonedNodeExecution.getStatus()).isEqualTo(Status.QUEUED);
     assertThat(clonedNodeExecution.getName()).isEqualTo("name");
     assertThat(clonedNodeExecution.getIdentifier()).isEqualTo("DUMMY");
+  }
+
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testCloneInputInstanceForRetry() {
+    String originalNodeExecutionId = "originalNodeExecutionId";
+    String newNodeExecutionId = "newNodeExecutionId";
+    Map<String, Object> mergedTemplateMap = ImmutableMap.of("key", "val");
+    ExecutionInputInstance executionInputInstance = ExecutionInputInstance.builder()
+                                                        .nodeExecutionId(originalNodeExecutionId)
+                                                        .template("template")
+                                                        .userInput("userinputyaml")
+                                                        .mergedInputTemplate(mergedTemplateMap)
+                                                        .build();
+    doReturn(executionInputInstance).when(executionInputService).getExecutionInputInstance(originalNodeExecutionId);
+
+    doReturn(ExecutionInputInstance.builder()
+                 .userInput(executionInputInstance.getUserInput())
+                 .template(executionInputInstance.getTemplate())
+                 .mergedInputTemplate(executionInputInstance.getMergedInputTemplate())
+                 .nodeExecutionId(newNodeExecutionId)
+                 .inputInstanceId("RandomUUID")
+                 .build())
+        .when(executionInputService)
+        .save(any());
+    ExecutionInputInstance clonedInstance =
+        retryHelper.cloneAndSaveInputInstanceForRetry(originalNodeExecutionId, newNodeExecutionId);
+
+    assertThat(executionInputInstance.getInputInstanceId()).isNotEqualTo(clonedInstance.getInputInstanceId());
+    assertThat(clonedInstance.getNodeExecutionId()).isEqualTo(newNodeExecutionId);
+    assertThat(clonedInstance.getMergedInputTemplate()).isEqualTo(executionInputInstance.getMergedInputTemplate());
+    assertThat(clonedInstance.getTemplate()).isEqualTo(executionInputInstance.getTemplate());
+    assertThat(clonedInstance.getUserInput()).isEqualTo(executionInputInstance.getUserInput());
   }
 }

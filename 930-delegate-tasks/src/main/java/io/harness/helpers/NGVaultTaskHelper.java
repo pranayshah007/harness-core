@@ -18,6 +18,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.SecretManagementDelegateException;
 import io.harness.helpers.ext.vault.VaultAppRoleLoginResult;
+import io.harness.security.encryption.AccessType;
 
 import software.wings.beans.BaseVaultConfig;
 import software.wings.helpers.ext.vault.VaultAppRoleLoginRequest;
@@ -239,6 +240,9 @@ public class NGVaultTaskHelper {
     } else if (vaultConfig.isUseK8sAuth()) {
       VaultK8sLoginResult vaultK8sLoginResult = getVaultK8sAuthLoginResult(vaultConfig);
       vaultConfig.setAuthToken(vaultK8sLoginResult.getClientToken());
+    } else if (AccessType.APP_ROLE.equals(vaultConfig.getAccessType()) && !vaultConfig.getRenewAppRoleToken()) {
+      VaultAppRoleLoginResult vaultAppRoleLoginResult = getVaultAppRoleLoginResult(vaultConfig);
+      vaultConfig.setAuthToken(vaultAppRoleLoginResult.getClientToken());
     }
     return vaultConfig.getAuthToken();
   }

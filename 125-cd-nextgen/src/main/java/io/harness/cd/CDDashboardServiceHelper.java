@@ -20,11 +20,14 @@ import java.util.List;
 public class CDDashboardServiceHelper {
   public static List<String> failedStatusList =
       Arrays.asList(ExecutionStatus.FAILED.name(), ExecutionStatus.ABORTED.name(), ExecutionStatus.EXPIRED.name(),
-          ExecutionStatus.IGNOREFAILED.name(), ExecutionStatus.ERRORED.name(), ExecutionStatus.APPROVALREJECTED.name());
+          ExecutionStatus.ERRORED.name(), ExecutionStatus.APPROVALREJECTED.name());
+
+  public static List<String> successStatusList =
+      Arrays.asList(ExecutionStatus.IGNOREFAILED.name(), ExecutionStatus.SUCCESS.name());
 
   public static List<String> getSuccessFailedStatusList() {
     List<String> successFailedList = new ArrayList<>(failedStatusList);
-    successFailedList.add(ExecutionStatus.SUCCESS.name());
+    successFailedList.addAll(successStatusList);
     return successFailedList;
   }
 }

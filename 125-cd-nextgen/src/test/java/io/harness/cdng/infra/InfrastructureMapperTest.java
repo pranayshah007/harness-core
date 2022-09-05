@@ -32,6 +32,11 @@ import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
 import io.harness.cdng.infra.beans.PdcInfrastructureOutcome;
 import io.harness.cdng.infra.beans.ServerlessAwsLambdaInfrastructureOutcome;
 import io.harness.cdng.infra.beans.SshWinRmAzureInfrastructureOutcome;
+import io.harness.cdng.infra.beans.host.HostFilter;
+import io.harness.cdng.infra.beans.host.HostNamesFilter;
+import io.harness.cdng.infra.beans.host.dto.AllHostsFilterDTO;
+import io.harness.cdng.infra.beans.host.dto.HostFilterDTO;
+import io.harness.cdng.infra.beans.host.dto.HostNamesFilterDTO;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
@@ -40,6 +45,7 @@ import io.harness.cdng.infra.yaml.PdcInfrastructure;
 import io.harness.cdng.infra.yaml.ServerlessAwsLambdaInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
+import io.harness.delegate.beans.connector.pdcconnector.HostFilterType;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.pms.yaml.ParameterField;
@@ -214,19 +220,30 @@ public class InfrastructureMapperTest extends CategoryTest {
         PdcInfrastructure.builder()
             .credentialsRef(ParameterField.createValueField("ssh-key-ref"))
             .connectorRef(ParameterField.createValueField("connector-ref"))
-            .hostFilters(ParameterField.createValueField(Arrays.asList("host1", "host2")))
+            .hostFilter(HostFilter.builder()
+                            .type(HostFilterType.HOST_NAMES)
+                            .spec(HostNamesFilter.builder()
+                                      .value(ParameterField.createValueField(Arrays.asList("host1", "host2")))
+                                      .build())
+                            .build())
             .build();
 
     InfrastructureOutcome infrastructureOutcome =
         InfrastructureMapper.toOutcome(infrastructure, environment, serviceOutcome);
 
     assertThat(infrastructureOutcome)
-        .isEqualToIgnoringGivenFields(PdcInfrastructureOutcome.builder()
-                                          .credentialsRef("ssh-key-ref")
-                                          .connectorRef("connector-ref")
-                                          .hostFilters(Arrays.asList("host1", "host2"))
-                                          .environment(environment)
-                                          .build(),
+        .isEqualToIgnoringGivenFields(
+            PdcInfrastructureOutcome.builder()
+                .credentialsRef("ssh-key-ref")
+                .connectorRef("connector-ref")
+                .hostFilter(HostFilterDTO.builder()
+                                .type(HostFilterType.HOST_NAMES)
+                                .spec(HostNamesFilterDTO.builder()
+                                          .value(ParameterField.createValueField(Arrays.asList("host1", "host2")))
+                                          .build())
+                                .build())
+                .environment(environment)
+                .build(),
             "infrastructureKey");
   }
 
@@ -244,11 +261,14 @@ public class InfrastructureMapperTest extends CategoryTest {
         InfrastructureMapper.toOutcome(infrastructure, environment, serviceOutcome);
 
     assertThat(infrastructureOutcome)
-        .isEqualToIgnoringGivenFields(PdcInfrastructureOutcome.builder()
-                                          .credentialsRef("ssh-key-ref")
-                                          .hosts(Arrays.asList("host1", "host2", "host3"))
-                                          .environment(environment)
-                                          .build(),
+        .isEqualToIgnoringGivenFields(
+            PdcInfrastructureOutcome.builder()
+                .credentialsRef("ssh-key-ref")
+                .hosts(Arrays.asList("host1", "host2", "host3"))
+                .environment(environment)
+                .hostFilter(
+                    HostFilterDTO.builder().spec(AllHostsFilterDTO.builder().build()).type(HostFilterType.ALL).build())
+                .build(),
             "infrastructureKey");
   }
 

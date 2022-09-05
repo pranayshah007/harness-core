@@ -57,6 +57,7 @@ public interface EntityTypeConstants {
   String K8S_BG_SWAP_SERVICES = "K8sBGSwapServices";
   String K8S_CANARY_DELETE = "K8sCanaryDelete";
   String RUN_STEP = "Run";
+  String BACKGROUND_STEP = "Background";
   String RUN_TEST = "RunTests";
   String PLUGIN = "Plugin";
   String RESTORE_CACHE_GCS = "RestoreCacheGCS";
@@ -66,6 +67,7 @@ public interface EntityTypeConstants {
   String SECURITY = "Security";
   String SECURITY_STAGE = "SecurityStage";
   String SECURITY_STEPS = "SecuritySteps";
+  String GIT_CLONE = "GitClone";
   String ARTIFACTORY_UPLOAD = "ArtifactoryUpload";
   String GCS_UPLOAD = "GCSUpload";
   String S3_UPLOAD = "S3Upload";
@@ -107,4 +109,11 @@ public interface EntityTypeConstants {
   String AZURE_WEBAPP_ROLLBACK = "AzureWebAppRollback";
   String QUEUE = "Queue";
   String JENKINS_BUILD = "JenkinsBuild";
+  String ECS_ROLLING_DEPLOY = "EcsRollingDeploy";
+  String ECS_ROLLING_ROLLBACK = "EcsRollingRollback";
+  String ECS_CANARY_DEPLOY = "EcsCanaryDeploy";
+  String ECS_CANARY_DELETE = "EcsCanaryDelete";
+  String AZURE_CREATE_ARM_RESOURCE_STEP = "AzureCreateARMResource";
+  String AZURE_CREATE_BP_RESOURCE_STEP = "AzureCreateBPResource";
+  String AZURE_ROLLBACK_ARM_RESOURCE_STEP = "AzureARMRollback";
 }

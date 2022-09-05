@@ -11,10 +11,14 @@ import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import static java.lang.String.format;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.PageRequestDTO;
 import io.harness.beans.Scope;
+import io.harness.connector.ConnectorValidationResult;
+import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
@@ -57,17 +61,29 @@ import io.harness.product.ci.scm.proto.UpdateFileResponse;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
-import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
-@AllArgsConstructor(onConstructor = @__({ @Inject }))
+@Slf4j
 @OwnedBy(HarnessTeam.PL)
 public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
   GitSyncConnectorHelper gitSyncConnectorHelper;
+  @Named("connectorDecoratorService") ConnectorService connectorService;
   ScmOrchestratorService scmOrchestratorService;
+
+  @Inject
+  public ScmFacilitatorServiceImpl(GitSyncConnectorHelper gitSyncConnectorHelper,
+      @Named("connectorDecoratorService") ConnectorService connectorService,
+      ScmOrchestratorService scmOrchestratorService) {
+    this.gitSyncConnectorHelper = gitSyncConnectorHelper;
+    this.connectorService = connectorService;
+    this.scmOrchestratorService = scmOrchestratorService;
+  }
 
   @Override
   public List<String> listBranchesUsingConnector(String accountIdentifier, String orgIdentifier,
@@ -115,6 +131,17 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
           ErrorMetadata.builder().connectorRef(connectorRef).build());
     }
 
+    CompletableFuture.runAsync(() -> {
+      try {
+        ConnectorValidationResult testConnectionResult =
+            connectorService.testConnection(accountIdentifier, null, null, "harnessImage");
+        log.info(
+            format("testConnectionResult for harnessImageConnector: %s, account %s" + testConnectionResult.getStatus(),
+                accountIdentifier));
+      } catch (Exception ex) {
+        log.info("failed to test connection for harnessImageConnector for account " + accountIdentifier, ex);
+      }
+    });
     return convertToUserRepo(response.getReposList());
   }
 
@@ -382,7 +409,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
         return GitClientHelper.getCompleteHTTPRepoUrlForAzureRepoSaas(gitConnectionUrl);
       default:
         throw new InvalidRequestException(
-            String.format("Connector of given type : %s isn't supported", scmConnector.getConnectorType()));
+            format("Connector of given type : %s isn't supported", scmConnector.getConnectorType()));
     }
   }
 

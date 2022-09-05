@@ -118,6 +118,7 @@ replace_key_value accessControlClient.accessControlServiceConfig.baseUrl "$ACCES
 replace_key_value accessControlClient.accessControlServiceSecret "$ACCESS_CONTROL_SECRET"
 replace_key_value accessControlAdminClient.accessControlServiceConfig.baseUrl "$ACCESS_CONTROL_BASE_URL"
 replace_key_value accessControlAdminClient.accessControlServiceSecret "$ACCESS_CONTROL_SECRET"
+replace_key_value accessControlAdminClient.mockAccessControlService "${MOCK_ACCESS_CONTROL_SERVICE:-true}"
 
 replace_key_value notificationClient.httpClient.baseUrl "$NOTIFICATION_BASE_URL"
 replace_key_value notificationClient.secrets.notificationClientSecret "$NEXT_GEN_MANAGER_SECRET"
@@ -160,3 +161,6 @@ replace_key_value outboxPollConfig.pollingIntervalInSeconds "$OUTBOX_POLL_INTERV
 replace_key_value outboxPollConfig.maximumRetryAttemptsForAnEvent "$OUTBOX_MAX_RETRY_ATTEMPTS"
 
 replace_key_value exportMetricsToStackDriver "$EXPORT_METRICS_TO_STACK_DRIVER"
+
+replace_key_value lightwingAutoCUDClientConfig.baseUrl "$LIGHTWING_AUTOCUD_CLIENT_CONFIG_BASEURL"
+replace_key_value enableLightwingAutoCUDDC "$ENABLE_LIGHTWING_AUTOCUD_DC"

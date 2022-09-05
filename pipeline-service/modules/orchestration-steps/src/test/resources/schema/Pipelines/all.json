@@ -915,7 +915,8 @@
             "Abort",
             "StageRollback",
             "StepGroupRollback",
-            "ManualIntervention"
+            "ManualIntervention",
+            "ProceedWithDefaultValue"
           ]
         }
       },
@@ -1036,6 +1037,31 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "HarnessFileStoreSource": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ShellScriptBaseSource"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "file": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string",
+                  "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "HarnessForConfig": {
       "type": "object",
       "properties": {
@@ -1069,6 +1095,20 @@
           ]
         },
         "maxConcurrency": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+              "minLength": 1
+            }
+          ]
+        },
+        "partitionSize": {
           "oneOf": [
             {
               "type": "integer",
@@ -1793,6 +1833,9 @@
               "$ref": "#/definitions/MarkAsSuccessFailureActionConfig"
             },
             {
+              "$ref": "#/definitions/ProceedWithDefaultValuesFailureActionConfig"
+            },
+            {
               "$ref": "#/definitions/RetryFailureActionConfig"
             },
             {
@@ -1816,7 +1859,8 @@
               "Authorization",
               "Verification",
               "DelegateProvisioning",
-              "PolicyEvaluationFailure"
+              "PolicyEvaluationFailure",
+              "ExecutionInputTimeoutError"
             ]
           }
         }
@@ -1839,6 +1883,9 @@
             },
             {
               "$ref": "#/definitions/MarkAsSuccessFailureActionConfig"
+            },
+            {
+              "$ref": "#/definitions/ProceedWithDefaultValuesFailureActionConfig"
             },
             {
               "$ref": "#/definitions/RetryFailureActionConfig"
@@ -1870,6 +1917,9 @@
             },
             {
               "$ref": "#/definitions/MarkAsSuccessFailureActionConfig"
+            },
+            {
+              "$ref": "#/definitions/ProceedWithDefaultValuesFailureActionConfig"
             },
             {
               "$ref": "#/definitions/RetryFailureActionConfig"
@@ -2354,6 +2404,28 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ProceedWithDefaultValuesFailureActionConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/FailureStrategyActionConfig"
+        },
+        {
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "ProceedWithDefaultValue"
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "QueueStepInfo": {
       "allOf": [
         {
@@ -2639,6 +2711,9 @@
             "approvalCriteria": {
               "$ref": "#/definitions/CriteriaSpecWrapper"
             },
+            "changeWindow": {
+              "$ref": "#/definitions/ServiceNowChangeWindowSpec"
+            },
             "connectorRef": {
               "type": "string"
             },
@@ -2669,6 +2744,22 @@
           }
         }
       ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ServiceNowChangeWindowSpec": {
+      "type": "object",
+      "required": [
+        "endField",
+        "startField"
+      ],
+      "properties": {
+        "endField": {
+          "type": "string"
+        },
+        "startField": {
+          "type": "string"
+        }
+      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "ServiceNowCreateStepInfo": {
@@ -3008,6 +3099,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "Harness"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/HarnessFileStoreSource"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "Inline"
               }
             }
@@ -3135,6 +3242,9 @@
               "type": "string",
               "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
             },
+            "skipInstances": {
+              "type": "boolean"
+            },
             "strategy": {
               "$ref": "#/definitions/StrategyConfig"
             },
@@ -3183,6 +3293,9 @@
             "name": {
               "type": "string",
               "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
+            },
+            "skipInstances": {
+              "type": "boolean"
             },
             "spec": { },
             "strategy": {

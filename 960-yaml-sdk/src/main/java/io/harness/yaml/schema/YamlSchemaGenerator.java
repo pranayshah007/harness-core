@@ -82,6 +82,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -98,15 +99,15 @@ public class YamlSchemaGenerator {
   List<YamlSchemaRootClass> rootClasses;
 
   public Map<EntityType, JsonNode> generateYamlSchema() {
-    Map<EntityType, JsonNode> schema = new HashMap<>();
-    for (YamlSchemaRootClass rootSchemaClass : rootClasses) {
+    Map<EntityType, JsonNode> schema = new ConcurrentHashMap<>();
+    rootClasses.parallelStream().forEach(rootSchemaClass -> {
       final Map<String, JsonNode> stringJsonNodeMap = generateJsonSchemaForRootClass(
           YamlSchemaConfiguration.builder().build(), swaggerGenerator, rootSchemaClass.getClazz());
       if (stringJsonNodeMap.size() != 1 || stringJsonNodeMap.get(YamlConstants.SCHEMA_FILE_NAME) == null) {
         throw new YamlSchemaException("Issue occurred while generation of schema.");
       }
       schema.put(rootSchemaClass.getEntityType(), stringJsonNodeMap.get(YamlConstants.SCHEMA_FILE_NAME));
-    }
+    });
     return schema;
   }
 

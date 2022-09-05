@@ -186,6 +186,7 @@ public class WatcherServiceImpl implements WatcherService {
   private static final String FILE_HANDLES_LOGS_FOLDER = "file_handle_logs";
   private final String watcherJreVersion = System.getProperty("java.version");
   private long delegateRestartedToUpgradeJreAt;
+  private static String WatcherVersion;
 
   private static final String DELEGATE_NAME =
       isNotBlank(System.getenv().get("DELEGATE_NAME")) ? System.getenv().get("DELEGATE_NAME") : "";
@@ -253,16 +254,19 @@ public class WatcherServiceImpl implements WatcherService {
         log.info(message != null ? "[New] Got go-ahead. Proceeding"
                                  : "[New] Timed out waiting for go-ahead. Proceeding anyway");
       }
-      if (chronicleEventTailer != null) {
-        chronicleEventTailer.startAsync().awaitRunning();
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-          // needed to satisfy infer since chronicleEventTailer is not final and it's nullable so it could be null
-          // technically when the hook is executed.
-          if (chronicleEventTailer != null) {
-            chronicleEventTailer.stopAsync().awaitTerminated();
-          }
-        }));
-      }
+
+      watchExecutor.submit(() -> {
+        if (chronicleEventTailer != null) {
+          chronicleEventTailer.startAsync().awaitRunning();
+          Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            // needed to satisfy infer since chronicleEventTailer is not final and it's nullable so it could be null
+            // technically when the hook is executed.
+            if (chronicleEventTailer != null) {
+              chronicleEventTailer.stopAsync().awaitTerminated();
+            }
+          }));
+        }
+      });
       messageService.removeData(WATCHER_DATA, NEXT_WATCHER);
 
       log.info(upgrade ? "[New] Watcher upgraded" : "Watcher started");
@@ -1331,6 +1335,7 @@ public class WatcherServiceImpl implements WatcherService {
 
   @VisibleForTesting
   void checkForWatcherUpgrade() {
+    log.info("Checking for watcher upgrade");
     try {
       if (!watcherConfiguration.isDoUpgrade()) {
         log.info("Auto upgrade is disabled in watcher configuration");
@@ -1338,6 +1343,7 @@ public class WatcherServiceImpl implements WatcherService {
         return;
       }
     } catch (VersionInfoException e) {
+      log.error("Exception while reading watcher configuration ", e);
       return;
     }
     try {
@@ -1426,9 +1432,11 @@ public class WatcherServiceImpl implements WatcherService {
           if (message != null && message.getMessage().equals(WATCHER_STARTED)) {
             log.info(
                 "[Old] Retrieved watcher-started message from new watcher {}. Sending go-ahead", newWatcherProcess);
-            if (chronicleEventTailer != null) {
-              chronicleEventTailer.stopAsync().awaitTerminated();
-            }
+            watchExecutor.submit(() -> {
+              if (chronicleEventTailer != null) {
+                chronicleEventTailer.stopAsync().awaitTerminated();
+              }
+            });
             messageService.writeMessageToChannel(WATCHER, newWatcherProcess, WATCHER_GO_AHEAD);
             log.info("[Old] Watcher upgraded. Stopping");
             removeWatcherVersionFromCapsule(version, newVersion);
@@ -1528,7 +1536,10 @@ public class WatcherServiceImpl implements WatcherService {
 
   @VisibleForTesting
   String getVersion() {
-    return (new VersionInfoManager()).getVersionInfo().getVersion();
+    if (isEmpty(WatcherVersion)) {
+      WatcherVersion = (new VersionInfoManager()).getVersionInfo().getVersion();
+    }
+    return WatcherVersion;
   }
 
   private void migrate(String newUrl) {

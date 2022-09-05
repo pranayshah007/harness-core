@@ -73,6 +73,7 @@ import io.harness.cvng.core.services.api.SideKickService;
 import io.harness.cvng.exception.BadRequestExceptionMapper;
 import io.harness.cvng.exception.ConstraintViolationExceptionMapper;
 import io.harness.cvng.exception.NotFoundExceptionMapper;
+import io.harness.cvng.exception.ServiceCallExceptionMapper;
 import io.harness.cvng.governance.beans.ExpansionKeysConstants;
 import io.harness.cvng.governance.services.SLOPolicyExpansionHandler;
 import io.harness.cvng.licenserestriction.MaxServiceRestrictionUsageImpl;
@@ -209,6 +210,7 @@ import io.dropwizard.setup.Environment;
 import io.federecio.dropwizard.swagger.SwaggerBundle;
 import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
 import io.serializer.HObjectMapper;
+import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
 import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.temporal.ChronoUnit;
@@ -267,6 +269,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     // Enable variable substitution with environment variables
     bootstrap.addCommand(new InspectCommand<>(this));
     bootstrap.addCommand(new ScanClasspathMetadataCommand());
+    bootstrap.addCommand(new GenerateOpenApiSpecCommand());
     bootstrap.setConfigurationSourceProvider(new SubstitutingSourceProvider(
         bootstrap.getConfigurationSourceProvider(), new EnvironmentVariableSubstitutor(false)));
     bootstrap.addBundle(new SwaggerBundle<VerificationConfiguration>() {
@@ -460,6 +463,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     scheduleSidekickProcessing(injector);
     scheduleMaintenanceActivities(injector, configuration);
     initializeEnforcementSdk(injector);
+    registerOasResource(configuration, environment, injector);
 
     log.info("Leaving startup maintenance mode");
     MaintenanceController.forceMaintenance(false);
@@ -561,6 +565,13 @@ public class VerificationApplication extends Application<VerificationConfigurati
 
   private void autoCreateCollectionsAndIndexes(Injector injector) {
     hPersistence = injector.getInstance(HPersistence.class);
+  }
+
+  private void registerOasResource(
+      VerificationConfiguration verificationConfiguration, Environment environment, Injector injector) {
+    OpenApiResource openApiResource = injector.getInstance(OpenApiResource.class);
+    openApiResource.setOpenApiConfiguration(verificationConfiguration.getOasConfig());
+    environment.jersey().register(openApiResource);
   }
 
   private void registerActivityIterator(Injector injector) {
@@ -1043,6 +1054,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     jersey.register(ConstraintViolationExceptionMapper.class);
     jersey.register(NotFoundExceptionMapper.class);
     jersey.register(BadRequestExceptionMapper.class);
+    jersey.register(ServiceCallExceptionMapper.class);
     jersey.register(WingsExceptionMapperV2.class);
     jersey.register(GenericExceptionMapperV2.class);
   }

@@ -18,7 +18,6 @@ import static io.harness.secrets.validation.SecretValidators.VAULT_SECRET_MANAGE
 import static io.harness.security.encryption.EncryptionType.AWS_SECRETS_MANAGER;
 import static io.harness.security.encryption.EncryptionType.AZURE_VAULT;
 import static io.harness.security.encryption.EncryptionType.CUSTOM;
-import static io.harness.security.encryption.EncryptionType.CYBERARK;
 import static io.harness.security.encryption.EncryptionType.GCP_KMS;
 import static io.harness.security.encryption.EncryptionType.GCP_SECRETS_MANAGER;
 import static io.harness.security.encryption.EncryptionType.KMS;
@@ -53,7 +52,6 @@ public class SecretValidatorsRegistry {
     registeredSecretValidators.put(VAULT, VAULT_SECRET_MANAGER_VALIDATOR);
     registeredSecretValidators.put(AZURE_VAULT, AZURE_SECRET_MANAGER_VALIDATOR);
     registeredSecretValidators.put(AWS_SECRETS_MANAGER, AWS_SECRET_MANAGAER_VALIDATOR);
-    registeredSecretValidators.put(CYBERARK, COMMON_SECRET_MANAGER_VALIDATOR);
     registeredSecretValidators.put(CUSTOM, COMMON_SECRET_MANAGER_VALIDATOR);
   }
 

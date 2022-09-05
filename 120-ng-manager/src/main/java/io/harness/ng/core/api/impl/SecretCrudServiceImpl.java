@@ -17,6 +17,7 @@ import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.secretmanagerclient.SecretType.SecretFile;
 import static io.harness.secretmanagerclient.SecretType.SecretText;
+import static io.harness.secretmanagerclient.ValueType.CustomSecretManagerValues;
 import static io.harness.secrets.SecretPermissions.SECRET_RESOURCE_TYPE;
 import static io.harness.secrets.SecretPermissions.SECRET_VIEW_PERMISSION;
 
@@ -140,7 +141,8 @@ public class SecretCrudServiceImpl implements SecretCrudService {
   private SecretResponseWrapper getResponseWrapper(@NotNull Secret secret) {
     if (secret.getType() == SecretText) {
       SecretTextSpec secretSpec = (SecretTextSpec) secret.getSecretSpec();
-      if (ValueType.Reference.equals(secretSpec.getValueType())) {
+      if (ValueType.Reference.equals(secretSpec.getValueType())
+          || CustomSecretManagerValues.equals(secretSpec.getValueType())) {
         NGEncryptedData encryptedData = encryptedDataService.get(secret.getAccountIdentifier(),
             secret.getOrgIdentifier(), secret.getProjectIdentifier(), secret.getIdentifier());
         secretSpec.setValue(encryptedData.getPath());
@@ -203,7 +205,12 @@ public class SecretCrudServiceImpl implements SecretCrudService {
   @Override
   public SecretResponseWrapper create(String accountIdentifier, SecretDTOV2 dto) {
     if (SecretText.equals(dto.getType()) && isEmpty(((SecretTextSpecDTO) dto.getSpec()).getValue())) {
-      throw new InvalidRequestException("value cannot be empty for a secret text.");
+      if ((((SecretTextSpecDTO) dto.getSpec()).getValueType()).equals(CustomSecretManagerValues)) {
+        log.info(String.format("Secret %s does not have any path for custom secret manager: %s", dto.getIdentifier(),
+            ((SecretTextSpecDTO) dto.getSpec()).getSecretManagerIdentifier()));
+      } else {
+        throw new InvalidRequestException("value cannot be empty for a secret text.");
+      }
     }
 
     SecretResponseWrapper secretResponseWrapper = SecretResponseWrapper.builder().build();

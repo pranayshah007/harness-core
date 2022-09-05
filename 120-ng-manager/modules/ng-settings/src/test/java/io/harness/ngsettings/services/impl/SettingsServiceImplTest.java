@@ -105,7 +105,7 @@ public class SettingsServiceImplTest extends CategoryTest {
     verify(settingRepository, times(1)).findAll(any(Criteria.class));
     verify(settingConfigurationRepository, times(1))
         .findByCategoryAndAllowedScopesIn(SettingCategory.CORE, List.of(ScopeLevel.ACCOUNT));
-    verify(settingsMapper, times(settingConfigurations.size())).writeSettingResponseDTO(any(), any(), any(), any());
+    verify(settingsMapper, times(settingConfigurations.size())).writeSettingResponseDTO(any(), any(), any());
     assertThat(dtoList.size()).isEqualTo(settingConfigurations.size());
   }
 
@@ -136,7 +136,7 @@ public class SettingsServiceImplTest extends CategoryTest {
     verify(settingRepository, times(1)).findAll(any(Criteria.class));
     verify(settingConfigurationRepository, times(1))
         .findByCategoryAndAllowedScopesIn(SettingCategory.CORE, List.of(ScopeLevel.ACCOUNT));
-    verify(settingsMapper, times(settings.size())).writeSettingResponseDTO(any(), any(), any(), any());
+    verify(settingsMapper, times(settings.size())).writeSettingResponseDTO(any(), any(), any());
     assertThat(dtoList.size()).isEqualTo(settingConfigurations.size());
   }
 
@@ -169,8 +169,9 @@ public class SettingsServiceImplTest extends CategoryTest {
     SettingDTO settingDTO = SettingDTO.builder().identifier(identifier).build();
     when(settingsMapper.writeNewDTO(setting, settingRequestDTO, settingConfiguration, true)).thenReturn(settingDTO);
     when(settingsMapper.toSetting(accountIdentifier, settingDTO)).thenReturn(updatedSetting);
-    when(settingsMapper.writeSettingResponseDTO(updatedSetting, settingConfiguration, true, defaultValue))
-        .thenReturn(settingResponseDTO);
+    when(settingsMapper.writeSettingDTO(settingConfiguration, true)).thenReturn(settingDTO);
+    when(settingsMapper.toSetting(null, settingDTO)).thenReturn(setting);
+    when(settingsMapper.writeSettingResponseDTO(setting, settingConfiguration, true)).thenReturn(settingResponseDTO);
     when(transactionTemplate.execute(any()))
         .thenAnswer(invocationOnMock
             -> invocationOnMock.getArgument(0, TransactionCallback.class)

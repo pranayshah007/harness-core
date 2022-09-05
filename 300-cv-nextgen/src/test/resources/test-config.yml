@@ -147,3 +147,6 @@ auditClientConfig:
   readTimeOutSeconds: 15
 
 enableAudit: false
+
+hostname: ${HOSTNAME:-localhost}
+basePathPrefix: ${BASE_PATH_PREFIX:-""}

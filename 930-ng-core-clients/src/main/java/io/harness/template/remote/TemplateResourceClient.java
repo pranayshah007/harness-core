@@ -66,7 +66,8 @@ public interface TemplateResourceClient {
       @Query(value = GitSyncApiConstants.BRANCH_KEY) String branch,
       @Query(value = GitSyncApiConstants.REPO_IDENTIFIER_KEY) String repoIdentifier,
       @Query(value = GitSyncApiConstants.DEFAULT_FROM_OTHER_REPO) Boolean defaultFromOtherRepo,
-      @Query(value = GitSyncApiConstants.PARENT_ENTITY_REPO_URL) String parentRepoUrl,
+      @Query(value = GitSyncApiConstants.PARENT_ENTITY_CONNECTOR_REF) String parentEntityConnectorRef,
+      @Query(value = GitSyncApiConstants.PARENT_ENTITY_REPO_NAME) String parentEntityRepoName,
       @Body TemplateApplyRequestDTO templateApplyRequestDTO);
 
   @POST(TEMPLATE_ENDPOINT + "templateReferences")

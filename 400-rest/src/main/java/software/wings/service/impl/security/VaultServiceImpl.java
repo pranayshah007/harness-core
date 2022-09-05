@@ -28,6 +28,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EncryptedData;
 import io.harness.beans.EncryptedData.EncryptedDataKeys;
+import io.harness.beans.FeatureName;
 import io.harness.beans.SecretChangeLog;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.beans.SecretManagerConfig.SecretManagerConfigKeys;
@@ -120,6 +121,7 @@ public class VaultServiceImpl extends BaseVaultServiceImpl implements VaultServi
     savedVaultConfig.setTemplatizedFields(vaultConfig.getTemplatizedFields());
     savedVaultConfig.setUsageRestrictions(vaultConfig.getUsageRestrictions());
     savedVaultConfig.setScopedToAccount(vaultConfig.isScopedToAccount());
+    savedVaultConfig.setRenewAppRoleToken(vaultConfig.getRenewAppRoleToken());
     savedVaultConfig.setDelegateSelectors(vaultConfig.getDelegateSelectors());
     // Handle vault Agent Properties
     updateVaultAgentConfiguration(vaultConfig, savedVaultConfig);
@@ -155,7 +157,6 @@ public class VaultServiceImpl extends BaseVaultServiceImpl implements VaultServi
     return !Objects.equals(savedVaultConfigWithCredentials.getAuthToken(), vaultConfig.getAuthToken())
         || !Objects.equals(savedVaultConfigWithCredentials.getSecretId(), vaultConfig.getSecretId())
         || !Objects.equals(savedVaultConfigWithCredentials.isUseVaultAgent(), vaultConfig.isUseVaultAgent())
-        || !Objects.equals(savedVaultConfigWithCredentials.isUseVaultAgent(), vaultConfig.isUseVaultAgent())
         || !Objects.equals(savedVaultConfigWithCredentials.getDelegateSelectors(), vaultConfig.getDelegateSelectors())
         || !Objects.equals(savedVaultConfigWithCredentials.getSinkPath(), vaultConfig.getSinkPath());
   }
@@ -164,7 +165,7 @@ public class VaultServiceImpl extends BaseVaultServiceImpl implements VaultServi
     // get encrypted secrets associated with this VaultConfig
     long count = getEncryptedSecretCount(accountId, savedVaultConfig.getUuid());
     boolean nameSpaceUpdated = !Objects.equals(savedVaultConfig.getNamespace(), vaultConfig.getNamespace());
-    log.info("User wants to update namespace for Hashicorp vault:{0} From:{1} To:{2} ", savedVaultConfig.getUuid(),
+    log.info("User wants to update namespace for Hashicorp vault:{} From:{} To:{} ", savedVaultConfig.getUuid(),
         savedVaultConfig.getNamespace(), vaultConfig.getNamespace());
     if (count > 0 && nameSpaceUpdated) {
       String message = "Cannot update vault config namespace since there are secrets encrypted with it. "
@@ -227,6 +228,10 @@ public class VaultServiceImpl extends BaseVaultServiceImpl implements VaultServi
     }
 
     checkIfTemplatizedSecretManagerCanBeCreatedOrUpdated(vaultConfig);
+
+    // App Role Token renew FF
+    vaultConfig.setRenewAppRoleToken(
+        !accountService.isFeatureFlagEnabled(FeatureName.DO_NOT_RENEW_APPROLE_TOKEN.name(), accountId));
 
     return isBlank(vaultConfig.getUuid()) ? saveVaultConfig(accountId, vaultConfig, validateBySavingTestSecret)
                                           : updateVaultConfig(accountId, vaultConfig, true, validateBySavingTestSecret);

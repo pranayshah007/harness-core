@@ -359,6 +359,7 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
                                                .occurrenceCount(timeSeriesThreshold.getCriteria().getOccurrenceCount())
                                                .thresholdType(timeSeriesThreshold.getCriteria().getThresholdType())
                                                .value(timeSeriesThreshold.getCriteria().getValue())
+                                               .thresholdConfigType(timeSeriesThreshold.getThresholdConfigType())
                                                .build()));
 
     // add data source level thresholds
@@ -368,8 +369,9 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
         .filter(MetricDefinition::isIncluded)
         .forEach(metricDefinition -> {
           if (isNotEmpty(metricDefinition.getThresholds())) {
-            metricDefinition.getThresholds().forEach(timeSeriesThreshold
-                -> timeSeriesMetricDefinitions.add(
+            metricDefinition.getThresholds().forEach(timeSeriesThreshold -> {
+              if (!ThresholdConfigType.CUSTOMER.equals(timeSeriesThreshold.getThresholdConfigType())) {
+                timeSeriesMetricDefinitions.add(
                     TimeSeriesMetricDefinition.builder()
                         .metricName(metricDefinition.getName())
                         .metricIdentifier(metricDefinition.getIdentifier())
@@ -381,7 +383,10 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
                         .occurrenceCount(timeSeriesThreshold.getCriteria().getOccurrenceCount())
                         .thresholdType(timeSeriesThreshold.getCriteria().getThresholdType())
                         .value(timeSeriesThreshold.getCriteria().getValue())
-                        .build()));
+                        .thresholdConfigType(timeSeriesThreshold.getThresholdConfigType())
+                        .build());
+              }
+            });
           }
         });
     return timeSeriesMetricDefinitions;

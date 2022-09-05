@@ -157,7 +157,7 @@ public class JiraTaskTest extends CategoryTest {
     taskParameters.setCustomFields(
         singletonMap("customfield_10633", new JiraCustomFieldValue("user", taskParameters.getUserQuery())));
     when(jiraNGClient.getIssue(JIRA_ISSUE_ID)).thenReturn(null);
-    List<JiraUserData> userDataList = Arrays.asList(new JiraUserData("accountId", "Lucas", true));
+    List<JiraUserData> userDataList = Arrays.asList(new JiraUserData("accountId", "Lucas", true, "id"));
 
     doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
     doReturn(userDataList).when(jiraNGClient).getUsers(anyString(), any(), any());
@@ -177,7 +177,8 @@ public class JiraTaskTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldFetchUserListInfo() {
     JiraTaskParameters taskParameters = getTaskParams(JiraAction.SEARCH_USER);
-    List<JiraUserData> mockUserList = new ArrayList<>(Arrays.asList(new JiraUserData("UserId", "User Name", true)));
+    List<JiraUserData> mockUserList =
+        new ArrayList<>(Arrays.asList(new JiraUserData("UserId", "User Name", true, "id")));
     doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
     doReturn(mockUserList).when(jiraNGClient).getUsers(any(), any(), any());
     doReturn(new JiraInstanceData(JiraInstanceData.JiraDeploymentType.CLOUD)).when(jiraNGClient).getInstanceData();
@@ -195,7 +196,8 @@ public class JiraTaskTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldFetchUserListInfoForJiraServer() {
     JiraTaskParameters taskParameters = getTaskParams(JiraAction.SEARCH_USER);
-    List<JiraUserData> mockUserList = new ArrayList<>(Arrays.asList(new JiraUserData("UserId", "User Name", true)));
+    List<JiraUserData> mockUserList =
+        new ArrayList<>(Arrays.asList(new JiraUserData("UserId", "User Name", true, "id")));
     doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
     doReturn(mockUserList).when(jiraNGClient).getUsers(any(), any(), any());
     doReturn(new JiraInstanceData(JiraInstanceData.JiraDeploymentType.SERVER)).when(jiraNGClient).getInstanceData();
@@ -218,7 +220,7 @@ public class JiraTaskTest extends CategoryTest {
     when(jiraNGClient.getIssue(JIRA_ISSUE_ID)).thenReturn(issueNG);
     when(issueNG.getKey()).thenReturn(JIRA_ISSUE_ID);
     when(issueNG.getFields()).thenReturn(singletonMap("Project Key", PROJECT_KEY));
-    List<JiraUserData> userDataList = Arrays.asList(new JiraUserData("accountId", "Lucas", true));
+    List<JiraUserData> userDataList = Arrays.asList(new JiraUserData("accountId", "Lucas", true, "id"));
 
     doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
     doReturn(userDataList).when(jiraNGClient).getUsers(any(), any(), any());
@@ -238,8 +240,8 @@ public class JiraTaskTest extends CategoryTest {
     when(jiraNGClient.getIssue(JIRA_ISSUE_ID)).thenReturn(issueNG);
     when(issueNG.getKey()).thenReturn(JIRA_ISSUE_ID);
     when(issueNG.getFields()).thenReturn(singletonMap("Project Key", PROJECT_KEY));
-    List<JiraUserData> userDataList =
-        Arrays.asList(new JiraUserData("accountId", "Lucas", true), new JiraUserData("accountI2d", "Lucas", true));
+    List<JiraUserData> userDataList = Arrays.asList(
+        new JiraUserData("accountId", "Lucas", true, "id1"), new JiraUserData("accountI2d", "Lucas", true, "id2"));
 
     doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
     doReturn(userDataList).when(jiraNGClient).getUsers(any(), any(), any());
@@ -253,7 +255,7 @@ public class JiraTaskTest extends CategoryTest {
     JiraTaskParameters taskParameters = getTaskParams(JiraAction.CREATE_TICKET_NG);
     taskParameters.setCustomFields(
         singletonMap("customfield_10633", new JiraCustomFieldValue("user", taskParameters.getUserQuery())));
-    List<JiraUserData> userDataList = Arrays.asList(new JiraUserData("accountId", "Lucas", true));
+    List<JiraUserData> userDataList = Arrays.asList(new JiraUserData("accountId", "Lucas", true, "id"));
 
     doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
     doReturn(issueNG).when(jiraNGClient).createIssue(any(), any(), anyMap(), anyBoolean());
@@ -271,7 +273,7 @@ public class JiraTaskTest extends CategoryTest {
     JiraTaskParameters taskParameters = getTaskParams(JiraAction.CREATE_TICKET_NG);
     taskParameters.setCustomFields(
         singletonMap("customfield_10633", new JiraCustomFieldValue("user", taskParameters.getUserQuery())));
-    List<JiraUserData> userDataList = Arrays.asList(new JiraUserData("accountId", "Lucas", true));
+    List<JiraUserData> userDataList = Arrays.asList(new JiraUserData("accountId", "Lucas", true, "id"));
 
     doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
     doReturn(issueNG).when(jiraNGClient).createIssue(any(), any(), anyMap(), anyBoolean());
@@ -300,7 +302,7 @@ public class JiraTaskTest extends CategoryTest {
     JiraTaskParameters taskParameters = getTaskParams(JiraAction.UPDATE_TICKET_NG);
     taskParameters.setCustomFields(
         singletonMap("customfield_10633", new JiraCustomFieldValue("user", taskParameters.getUserQuery())));
-    List<JiraUserData> userDataList = Arrays.asList(new JiraUserData("accountId", "Lucas", true));
+    List<JiraUserData> userDataList = Arrays.asList(new JiraUserData("accountId", "Lucas", true, "id"));
 
     doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
     when(jiraNGClient.getIssue(JIRA_ISSUE_ID)).thenReturn(issueNG);

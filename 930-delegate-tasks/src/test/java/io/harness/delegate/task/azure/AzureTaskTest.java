@@ -13,6 +13,7 @@ import static io.harness.rule.OwnerRule.VLICA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doReturn;
@@ -481,7 +482,7 @@ public class AzureTaskTest {
     hosts.add(AzureHostResponse.builder().hostName("host2").build());
     AzureHostsResponse result = AzureHostsResponse.builder().hosts(hosts).build();
 
-    doReturn(result).when(azureAsyncTaskHelper).listHosts(any(), any(), any(), any(), any(), any());
+    doReturn(result).when(azureAsyncTaskHelper).listHosts(any(), any(), any(), any(), any(), any(), anyBoolean());
 
     DelegateResponseData delegateResponseData = task.run(taskParameters);
 

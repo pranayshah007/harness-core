@@ -42,7 +42,6 @@ import com.google.common.collect.ImmutableList;
 import java.net.URISyntaxException;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -148,16 +147,24 @@ public abstract class VerificationJob
   protected abstract void validateParams();
   // TODO: Should this time range be configurable ?
   public abstract Optional<TimeRange> getPreActivityTimeRange(Instant deploymentStartTime);
+
+  public abstract List<TimeRange> getPreActivityDataCollectionTimeRanges(Instant deploymentStartTime);
+
   public abstract Optional<TimeRange> getPostActivityTimeRange(Instant deploymentStartTime);
   public abstract List<TimeRange> getDataCollectionTimeRanges(Instant startTime);
 
   protected List<TimeRange> getTimeRangesForDuration(Instant startTime) {
     Preconditions.checkArgument(
         !duration.isRuntimeParam(), "Duration is marked as a runtime arg that hasn't been resolved yet.");
+    Instant endTime = startTime.plus(getDuration());
+    return getDuration().toMinutes() < 30 ? getTimeRangeBuckets(startTime, endTime, Duration.ofMinutes(1))
+                                          : getTimeRangeBuckets(startTime, endTime, Duration.ofMinutes(5));
+  }
+
+  protected List<TimeRange> getTimeRangeBuckets(Instant startTime, Instant endTime, Duration bucketSize) {
     List<TimeRange> ranges = new ArrayList<>();
-    for (Instant current = startTime; current.compareTo(startTime.plusMillis(getDuration().toMillis())) < 0;
-         current = current.plus(1, ChronoUnit.MINUTES)) {
-      ranges.add(TimeRange.builder().startTime(current).endTime(current.plus(1, ChronoUnit.MINUTES)).build());
+    for (Instant current = startTime; current.compareTo(endTime) < 0; current = current.plus(bucketSize)) {
+      ranges.add(TimeRange.builder().startTime(current).endTime(current.plus(bucketSize)).build());
     }
     return ranges;
   }

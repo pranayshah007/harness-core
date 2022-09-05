@@ -17,6 +17,7 @@ import io.harness.engine.observers.StepDetailsUpdateInfo;
 import io.harness.engine.observers.StepDetailsUpdateObserver;
 import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
 import io.harness.observer.Subject;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.data.stepdetails.PmsStepDetails;
 import io.harness.pms.data.stepparameters.PmsStepParameters;
 import io.harness.repositories.stepDetail.NodeExecutionsInfoRepository;
@@ -121,9 +122,10 @@ public class PmsGraphStepDetailsServiceImpl implements PmsGraphStepDetailsServic
   }
 
   @Override
-  public ConcurrentChildInstance incrementCursor(String nodeExecutionId) {
+  public ConcurrentChildInstance incrementCursor(String nodeExecutionId, Status status) {
     Update update = new Update();
     update.inc(NodeExecutionsInfoKeys.concurrentChildInstance + ".cursor");
+    update.addToSet(NodeExecutionsInfoKeys.concurrentChildInstance + ".childStatuses", status);
     Criteria criteria = Criteria.where(NodeExecutionsInfoKeys.nodeExecutionId).is(nodeExecutionId);
     NodeExecutionsInfo nodeExecutionsInfo =
         mongoTemplate.findAndModify(new Query(criteria), update, NodeExecutionsInfo.class);

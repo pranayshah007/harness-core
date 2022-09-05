@@ -441,7 +441,8 @@ public class ServiceResourceV2 {
       if (EmptyPredicate.isEmpty(serviceEntity.get().getYaml())) {
         throw new InvalidRequestException("Service is not configured with a Service definition. Service Yaml is empty");
       }
-      String serviceInputYaml = serviceEntityService.createServiceInputsYaml(serviceEntity.get().getYaml());
+      String serviceInputYaml = serviceEntityService.createServiceInputsYaml(
+          serviceEntity.get().getYaml(), serviceEntity.get().getIdentifier());
       return ResponseDTO.newResponse(
           NGEntityTemplateResponseDTO.builder().inputSetTemplateYaml(serviceInputYaml).build());
     } else {

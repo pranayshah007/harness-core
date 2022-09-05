@@ -9,6 +9,8 @@ package io.harness.cvng;
 import static io.harness.cvng.CVConstants.SERVICE_BASE_URL;
 import static io.harness.swagger.SwaggerBundleConfigurationFactory.buildSwaggerBundleConfiguration;
 
+import static java.util.stream.Collectors.toSet;
+
 import io.harness.AccessControlClientConfiguration;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -32,6 +34,7 @@ import software.wings.app.PortalConfig;
 
 import ch.qos.logback.access.spi.IAccessEvent;
 import ch.qos.logback.classic.Level;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
 import io.dropwizard.Configuration;
@@ -41,6 +44,17 @@ import io.dropwizard.request.logging.RequestLogFactory;
 import io.dropwizard.server.DefaultServerFactory;
 import io.dropwizard.server.ServerFactory;
 import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.integration.SwaggerConfiguration;
+import io.swagger.v3.oas.integration.api.OpenAPIConfiguration;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Contact;
+import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.servers.Server;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -82,6 +96,8 @@ public class VerificationConfiguration extends Configuration {
   @JsonProperty("auditClientConfig") private ServiceHttpClientConfig auditClientConfig;
   @JsonProperty(value = "enableAudit") private boolean enableAudit;
   @JsonProperty @ConfigSecret private PortalConfig portal = new PortalConfig();
+  @JsonProperty("hostname") String hostname = "localhost";
+  @JsonProperty("basePathPrefix") String basePathPrefix = "";
 
   private String portalUrl;
   /**
@@ -144,5 +160,45 @@ public class VerificationConfiguration extends Configuration {
     fileAppenderFactory.setArchivedFileCount(14);
     logbackAccessRequestLogFactory.setAppenders(ImmutableList.of(fileAppenderFactory));
     return logbackAccessRequestLogFactory;
+  }
+
+  @JsonIgnore
+  public OpenAPIConfiguration getOasConfig() {
+    OpenAPI oas = new OpenAPI();
+    Info info = new Info()
+                    .title("SRM Service API Reference")
+                    .description("This is the Open Api Spec 3 for the SRM Service.")
+                    .termsOfService("https://harness.io/terms-of-use/")
+                    .version("3.0")
+                    .contact(new Contact().email("contact@harness.io"));
+    oas.info(info);
+    try {
+      URL baseurl = new URL("https", getHostname(), getBasePathPrefix());
+      Server server = new Server();
+      server.setUrl(baseurl.toString());
+      oas.servers(Collections.singletonList(server));
+    } catch (MalformedURLException e) {
+      log.error("failed to set baseurl for server, {}/{}", getHostname(), getBasePathPrefix());
+    }
+    final Set<String> resourceClasses =
+        getOAS3ResourceClassesOnly().stream().map(Class::getCanonicalName).collect(toSet());
+    return new SwaggerConfiguration()
+        .openAPI(oas)
+        .prettyPrint(true)
+        .resourceClasses(resourceClasses)
+        .scannerClass("io.swagger.v3.jaxrs2.integration.JaxrsAnnotationScanner");
+  }
+
+  private Collection<Class<?>> getOAS3ResourceClassesOnly() {
+    return getResourceClasses().stream().filter(x -> x.isAnnotationPresent(Tag.class)).collect(Collectors.toList());
+  }
+
+  public Set<Class<?>> getResourceClasses() {
+    return HarnessReflections.get()
+        .getTypesAnnotatedWith(Path.class)
+        .stream()
+        .filter(
+            klazz -> StringUtils.startsWithAny(klazz.getPackage().getName(), this.getClass().getPackage().getName()))
+        .collect(Collectors.toSet());
   }
 }

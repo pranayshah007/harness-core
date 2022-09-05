@@ -1,0 +1,37 @@
+service:
+  name: "manager"
+  identifier: "manager"
+  tags: {}
+  gitOpsEnabled: false
+  serviceDefinition:
+    type: "Kubernetes"
+    spec:
+      artifacts:
+        primary:
+          type: "DockerRegistry"
+          spec:
+            connectorRef: "https://registry.hub.docker.com/"
+            imagePath: "library/nginx"
+            tag: "1.20"
+        sidecars:
+        - sidecar:
+            identifier: "i3"
+            type: "DockerRegistry"
+            spec:
+              connectorRef: "https://registry.hub.docker.com/"
+              imagePath: "library/nginx"
+              tag: "1.19"
+      manifests:
+      - manifest:
+          identifier: "manifestIdentifier"
+          spec:
+            store:
+              type: "Git"
+              spec:
+                connectorRef: "org.GitConnectorForAutomationTest"
+                gitFetchType: "Branch"
+                repoName: "https://github.com/wings-software/sample-k8s-manifests.git"
+                paths:
+                - "ng-automation/k8s/templates/"
+                branch: "master"
+          type: "K8sManifest"

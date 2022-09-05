@@ -46,6 +46,7 @@ cvActivityLogs {"name": "validUntil_1", "background": true, "expireAfterSeconds"
 delegateCallbacks {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 delegateConnectionResults {"name": "criteria_1", "background": true} {"criteria": 1}
 delegateConnectionResults {"name": "delegateConnectionResultsIdx", "unique": true} {"accountId": 1, "delegateId": 1, "criteria": 1}
+delegateConnectionResults {"name": "delegateConnectionResultsMatchingCriteriaIdx", "background": true} {"accountId": 1, "criteria": 1}
 delegateConnectionResults {"name": "delegateId_1", "background": true} {"delegateId": 1}
 delegateConnectionResults {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 delegateProfiles {"name": "byAcctNgOwner", "background": true} {"accountId": 1, "ng": 1, "owner": 1}

@@ -23,6 +23,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.cd.CDLicenseType;
 import io.harness.cd.NgServiceInfraInfoUtils;
 import io.harness.cd.TimeScaleDAL;
+import io.harness.licensing.usage.beans.ReferenceDTO;
 import io.harness.licensing.usage.beans.cd.ServiceUsageDTO;
 import io.harness.licensing.usage.params.CDUsageRequestParams;
 import io.harness.rule.Owner;
@@ -33,6 +34,7 @@ import io.harness.timescaledb.tables.pojos.Services;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -441,5 +443,71 @@ public class CDLicenseUsageImplTest extends CategoryTest {
     assertThat(licenseUsage.getActiveServiceInstances().getCount()).isEqualTo(0);
     assertThat(licenseUsage.getActiveServiceInstances().getDisplayName()).isEqualTo(DISPLAY_NAME);
     assertThat(licenseUsage.getActiveServiceInstances().getReferences().size()).isEqualTo(0);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.SHUBHAM_MAHESHWARI)
+  @Category(UnitTests.class)
+  public void testGetLicenseUsageMultipleServicesAndOneDeletedService() {
+    long timeInMillis = 1234123412345L;
+    List<ServiceInfraInfo> activeServiceList = new ArrayList<>();
+    activeServiceList.add(new ServiceInfraInfo(null, serviceName, serviceIdentifier, null, null, null, null, null, null,
+        null, null, null, accountIdentifier, orgIdentifier, projectIdentifier, null));
+    activeServiceList.add(new ServiceInfraInfo(null, serviceName2, serviceIdentifier2, null, null, null, null, null,
+        null, null, null, null, accountIdentifier, orgIdentifier, projectIdentifier, null));
+    when(timeScaleDAL.getDistinctServiceWithExecutionInTimeRange(
+             accountIdentifier, timeInMillis - DAYS_30_IN_MILLIS, timeInMillis))
+        .thenReturn(activeServiceList);
+
+    List<AggregateNgServiceInstanceStats> activeServiceWithInstanceCountList = new ArrayList<>();
+    activeServiceWithInstanceCountList.add(
+        new AggregateNgServiceInstanceStats(orgIdentifier, projectIdentifier, serviceIdentifier, 9));
+    activeServiceWithInstanceCountList.add(
+        new AggregateNgServiceInstanceStats(orgIdentifier, projectIdentifier, serviceIdentifier2, 11));
+    when(timeScaleDAL.getServiceWith95PercentileServiceInstanceCount(accountIdentifier, 0.95,
+             timeInMillis - DAYS_30_IN_MILLIS, timeInMillis,
+             NgServiceInfraInfoUtils.getOrgProjectServiceTable(activeServiceList)))
+        .thenReturn(activeServiceWithInstanceCountList);
+
+    List<Services> servicesList = new ArrayList<>();
+    servicesList.add(new Services(
+        null, accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, serviceName, false, null, null));
+    when(timeScaleDAL.getNamesForServiceIds(
+             accountIdentifier, NgServiceInfraInfoUtils.getOrgProjectServiceTable(activeServiceList)))
+        .thenReturn(servicesList);
+
+    ServiceUsageDTO licenseUsage = (ServiceUsageDTO) cdLicenseUsage.getLicenseUsage(accountIdentifier, ModuleType.CD,
+        timeInMillis, CDUsageRequestParams.builder().cdLicenseType(CDLicenseType.SERVICES).build());
+
+    assertThat(licenseUsage.getAccountIdentifier()).isEqualTo(accountIdentifier);
+    assertThat(licenseUsage.getCdLicenseType()).isEqualTo(CDLicenseType.SERVICES);
+
+    assertThat(licenseUsage.getActiveServices().getCount()).isEqualTo(2);
+    assertThat(licenseUsage.getActiveServices().getDisplayName()).isEqualTo(DISPLAY_NAME);
+    assertThat(licenseUsage.getActiveServices().getReferences().size()).isEqualTo(2);
+
+    assertThat(licenseUsage.getServiceLicenses().getCount()).isEqualTo(2);
+    assertThat(licenseUsage.getServiceLicenses().getDisplayName()).isEqualTo(DISPLAY_NAME);
+    assertThat(licenseUsage.getServiceLicenses().getReferences().size()).isEqualTo(2);
+
+    assertThat(licenseUsage.getActiveServiceInstances().getCount()).isEqualTo(20);
+    assertThat(licenseUsage.getActiveServiceInstances().getDisplayName()).isEqualTo(DISPLAY_NAME);
+    assertThat(licenseUsage.getActiveServiceInstances().getReferences().size()).isEqualTo(2);
+
+    Optional<ReferenceDTO> aliveService = licenseUsage.getActiveServices()
+                                              .getReferences()
+                                              .stream()
+                                              .filter(service -> serviceIdentifier.equals(service.getIdentifier()))
+                                              .findFirst();
+    assertThat(aliveService.get()).isNotNull();
+    assertThat(aliveService.get().getName()).isEqualTo(serviceName);
+
+    Optional<ReferenceDTO> deletedService = licenseUsage.getActiveServices()
+                                                .getReferences()
+                                                .stream()
+                                                .filter(service -> serviceIdentifier2.equals(service.getIdentifier()))
+                                                .findFirst();
+    assertThat(deletedService.get()).isNotNull();
+    assertThat(deletedService.get().getName()).isEqualTo(StringUtils.EMPTY);
   }
 }

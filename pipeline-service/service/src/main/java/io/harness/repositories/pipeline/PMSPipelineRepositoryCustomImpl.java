@@ -121,7 +121,8 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
   PipelineEntity savePipelineEntity(PipelineEntity pipelineToSave) {
     GitAwareContextHelper.initDefaultScmGitMetaData();
     GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
-    if (gitEntityInfo == null || gitEntityInfo.getStoreType().equals(StoreType.INLINE)) {
+    if (gitEntityInfo == null || gitEntityInfo.getStoreType() == null
+        || gitEntityInfo.getStoreType().equals(StoreType.INLINE)) {
       pipelineToSave.setStoreType(StoreType.INLINE);
       PipelineEntity savedPipelineEntity = mongoTemplate.save(pipelineToSave);
       outboxService.save(getPipelineSaveEvent(savedPipelineEntity, false));

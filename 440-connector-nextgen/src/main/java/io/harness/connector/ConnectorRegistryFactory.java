@@ -19,6 +19,7 @@ import io.harness.connector.heartbeat.AzureValidationParamsProvider;
 import io.harness.connector.heartbeat.CEK8sConnectorValidationParamsProvider;
 import io.harness.connector.heartbeat.CVConnectorParamsProvider;
 import io.harness.connector.heartbeat.ConnectorValidationParamsProvider;
+import io.harness.connector.heartbeat.CustomSecretManagerValidationParamProvider;
 import io.harness.connector.heartbeat.DockerConnectorValidationParamsProvider;
 import io.harness.connector.heartbeat.GcpKmsConnectorValidationParamsProvider;
 import io.harness.connector.heartbeat.GcpValidationParamsProvider;
@@ -62,6 +63,8 @@ import io.harness.connector.mappers.docker.DockerDTOToEntity;
 import io.harness.connector.mappers.docker.DockerEntityToDTO;
 import io.harness.connector.mappers.dynatracemapper.DynatraceDTOToEntity;
 import io.harness.connector.mappers.dynatracemapper.DynatraceEntityToDTO;
+import io.harness.connector.mappers.elkmapper.ELKDTOToEntity;
+import io.harness.connector.mappers.elkmapper.ELKEntityToDTO;
 import io.harness.connector.mappers.errortrackingmapper.ErrorTrackingDTOToEntity;
 import io.harness.connector.mappers.errortrackingmapper.ErrorTrackingEntityToDTO;
 import io.harness.connector.mappers.gcpcloudcost.GcpCloudCostDTOToEntity;
@@ -100,6 +103,8 @@ import io.harness.connector.mappers.secretmanagermapper.AwsSecretManagerDTOToEnt
 import io.harness.connector.mappers.secretmanagermapper.AwsSecretManagerEntityToDTO;
 import io.harness.connector.mappers.secretmanagermapper.AzureKeyVaultDTOToEntity;
 import io.harness.connector.mappers.secretmanagermapper.AzureKeyVaultEntityToDTO;
+import io.harness.connector.mappers.secretmanagermapper.CustomSecretManagerDTOToEntity;
+import io.harness.connector.mappers.secretmanagermapper.CustomSecretManagerEntityToDTO;
 import io.harness.connector.mappers.secretmanagermapper.GcpKmsDTOToEntity;
 import io.harness.connector.mappers.secretmanagermapper.GcpKmsEntityToDTO;
 import io.harness.connector.mappers.secretmanagermapper.LocalDTOToEntity;
@@ -195,6 +200,10 @@ public class ConnectorRegistryFactory {
     registrar.put(ConnectorType.DYNATRACE,
         new ConnectorRegistrar(ConnectorCategory.MONITORING, CVConnectorValidator.class,
             CVConnectorParamsProvider.class, DynatraceDTOToEntity.class, DynatraceEntityToDTO.class,
+            NotSupportedValidationHandler.class));
+    registrar.put(ConnectorType.ELK,
+        new ConnectorRegistrar(ConnectorCategory.MONITORING, CVConnectorValidator.class,
+            CVConnectorParamsProvider.class, ELKDTOToEntity.class, ELKEntityToDTO.class,
             NotSupportedValidationHandler.class));
     registrar.put(ConnectorType.VAULT,
         new ConnectorRegistrar(ConnectorCategory.SECRET_MANAGER, SecretManagerConnectorValidator.class,
@@ -311,6 +320,10 @@ public class ConnectorRegistryFactory {
         new ConnectorRegistrar(ConnectorCategory.ARTIFACTORY, JenkinsConnectionValidator.class,
             JenkinsConnectorValidationsParamsProvider.class, JenkinsDTOToEntity.class, JenkinsEntityToDTO.class,
             NotSupportedValidationHandler.class));
+    registrar.put(ConnectorType.CUSTOM_SECRET_MANAGER,
+        new ConnectorRegistrar(ConnectorCategory.SECRET_MANAGER, SecretManagerConnectorValidator.class,
+            CustomSecretManagerValidationParamProvider.class, CustomSecretManagerDTOToEntity.class,
+            CustomSecretManagerEntityToDTO.class, NotSupportedValidationHandler.class));
   }
 
   public static Class<? extends ConnectionValidator> getConnectorValidator(ConnectorType connectorType) {

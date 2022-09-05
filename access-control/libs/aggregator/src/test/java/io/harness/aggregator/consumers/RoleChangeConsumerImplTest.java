@@ -45,6 +45,7 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import io.serializer.HObjectMapper;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
@@ -76,8 +77,8 @@ public class RoleChangeConsumerImplTest extends AggregatorTestBase {
     RoleAssignmentCRUDEventHandler roleAssignmentCRUDEventHandler = mock(RoleAssignmentCRUDEventHandler.class);
     UserGroupService userGroupService = mock(UserGroupService.class);
     scopeService = mock(ScopeService.class);
-    ChangeConsumerService changeConsumerService =
-        new ChangeConsumerServiceImpl(roleService, userGroupService, resourceGroupService, scopeService);
+    ChangeConsumerService changeConsumerService = new ChangeConsumerServiceImpl(
+        roleService, userGroupService, resourceGroupService, scopeService, new HashMap<>());
     roleChangeConsumer = new RoleChangeConsumerImpl(aclRepository, roleAssignmentRepository, roleRepository,
         AggregatorJobType.PRIMARY.name(), changeConsumerService);
     aclRepository.cleanCollection();

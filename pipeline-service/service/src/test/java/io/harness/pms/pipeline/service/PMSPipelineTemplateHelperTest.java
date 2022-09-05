@@ -22,7 +22,6 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
@@ -94,8 +93,8 @@ public class PMSPipelineTemplateHelperTest extends CategoryTest {
     Call<ResponseDTO<TemplateMergeResponseDTO>> callRequest = mock(Call.class);
     doReturn(callRequest)
         .when(templateResourceClient)
-        .applyTemplatesOnGivenYamlV2(
-            anyString(), anyString(), anyString(), any(), any(), any(), any(), any(TemplateApplyRequestDTO.class));
+        .applyTemplatesOnGivenYamlV2(anyString(), anyString(), anyString(), any(), any(), any(), any(), any(),
+            any(TemplateApplyRequestDTO.class));
     when(callRequest.execute())
         .thenReturn(Response.success(
             ResponseDTO.newResponse(TemplateMergeResponseDTO.builder().mergedPipelineYaml(givenYaml).build())));
@@ -115,7 +114,7 @@ public class PMSPipelineTemplateHelperTest extends CategoryTest {
     Call<ResponseDTO<TemplateMergeResponseDTO>> callRequest = mock(Call.class);
     doReturn(callRequest)
         .when(templateResourceClient)
-        .applyTemplatesOnGivenYamlV2(ACCOUNT_ID, ORG_ID, PROJECT_ID, null, null, null, null,
+        .applyTemplatesOnGivenYamlV2(ACCOUNT_ID, ORG_ID, PROJECT_ID, null, null, null, null, null,
             TemplateApplyRequestDTO.builder().originalEntityYaml(givenYaml).build());
     ValidateTemplateInputsResponseDTO validateTemplateInputsResponseDTO =
         ValidateTemplateInputsResponseDTO.builder().build();
@@ -132,7 +131,6 @@ public class PMSPipelineTemplateHelperTest extends CategoryTest {
   @Owner(developers = INDER)
   @Category(UnitTests.class)
   public void testGetTemplateReferencesForGivenYamlWhenFFIsOnAndGitSyncNotEnabled() throws IOException {
-    doReturn(true).when(pmsFeatureFlagHelper).isEnabled(ACCOUNT_ID, FeatureName.NG_TEMPLATE_REFERENCES_SUPPORT);
     Call<ResponseDTO<List<EntityDetailProtoDTO>>> callRequest = mock(Call.class);
     doReturn(callRequest)
         .when(templateResourceClient)

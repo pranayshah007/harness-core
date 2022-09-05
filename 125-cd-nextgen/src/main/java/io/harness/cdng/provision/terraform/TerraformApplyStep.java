@@ -162,7 +162,9 @@ public class TerraformApplyStep extends TaskExecutableWithRollbackAndRbac<Terraf
                 ? new HashMap<>()
                 : helper.getEnvironmentVariablesMap(spec.getEnvironmentVariables()))
         .timeoutInMillis(
-            StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT));
+            StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
+        .useOptimizedTfPlan(
+            cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.OPTIMIZED_TF_PLAN_NG));
 
     TaskData taskData =
         TaskData.builder()
@@ -206,7 +208,9 @@ public class TerraformApplyStep extends TaskExecutableWithRollbackAndRbac<Terraf
         .environmentVariables(
             inheritOutput.getEnvironmentVariables() == null ? new HashMap<>() : inheritOutput.getEnvironmentVariables())
         .timeoutInMillis(
-            StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT));
+            StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
+        .useOptimizedTfPlan(
+            cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.OPTIMIZED_TF_PLAN_NG));
 
     TaskData taskData =
         TaskData.builder()

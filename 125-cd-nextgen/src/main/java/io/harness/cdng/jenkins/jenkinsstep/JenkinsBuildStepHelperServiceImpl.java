@@ -13,6 +13,7 @@ import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.EnvironmentType;
+import io.harness.beans.ExecutionStatus;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildOutcome.JenkinsBuildOutcomeBuilder;
 import io.harness.common.NGTaskType;
@@ -132,7 +133,7 @@ public class JenkinsBuildStepHelperServiceImpl implements JenkinsBuildStepHelper
               .stream()
               .map(s -> TaskSelector.newBuilder().setSelector(s).build())
               .collect(Collectors.toList()),
-          Scope.PROJECT, EnvironmentType.ALL);
+          Scope.PROJECT, EnvironmentType.ALL, false, Collections.emptyList());
     } else {
       ILogStreamingStepClient logStreamingStepClient =
           logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
@@ -156,8 +157,12 @@ public class JenkinsBuildStepHelperServiceImpl implements JenkinsBuildStepHelper
             .queuedBuildUrl(jenkinsBuildTaskNGResponse.getQueuedBuildUrl())
             .executionStatus(jenkinsBuildTaskNGResponse.getExecutionStatus())
             .description(jenkinsBuildTaskNGResponse.getDescription());
+    Status status = Status.SUCCEEDED;
+    if (!ExecutionStatus.SUCCESS.equals(jenkinsBuildTaskNGResponse.getExecutionStatus())) {
+      status = Status.FAILED;
+    }
     return StepResponse.builder()
-        .status(Status.SUCCEEDED)
+        .status(status)
         .stepOutcome(
             StepResponse.StepOutcome.builder().name("build").outcome(jenkinsBuildOutcomeBuilder.build()).build())
         .build();

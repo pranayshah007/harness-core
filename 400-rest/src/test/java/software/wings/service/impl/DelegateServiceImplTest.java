@@ -65,6 +65,7 @@ import io.harness.beans.DelegateTask;
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.FeatureFlag;
 import io.harness.category.element.UnitTests;
+import io.harness.delegate.DelegateGlobalAccountController;
 import io.harness.delegate.NoEligibleDelegatesInAccountException;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.Delegate.DelegateBuilder;
@@ -127,6 +128,7 @@ import software.wings.beans.HttpStateExecutionResponse;
 import software.wings.beans.KmsConfig;
 import software.wings.beans.TaskType;
 import software.wings.beans.VaultConfig;
+import software.wings.events.TestUtils;
 import software.wings.expression.ManagerPreviewExpressionEvaluator;
 import software.wings.features.api.UsageLimitedFeature;
 import software.wings.helpers.ext.mail.EmailData;
@@ -186,6 +188,7 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   private static final String TEST_DELEGATE_GROUP_NAME = "testDelegateGroupName";
   private static final String TEST_DELEGATE_GROUP_NAME_IDENTIFIER = "_testDelegateGroupName";
   private static final String TOKEN_NAME = "tokenName";
+  public static final String GLOBAL_DELEGATE_ACCOUNT_ID = "GLOBAL_DELEGATE_ACCOUNT_ID";
 
   @Mock private UsageLimitedFeature delegatesFeature;
   @Mock private Broadcaster broadcaster;
@@ -203,6 +206,7 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   @InjectMocks @Inject private DelegateTaskServiceClassicImpl delegateTaskServiceClassic;
   @InjectMocks @Inject private DelegateSyncServiceImpl delegateSyncService;
   @InjectMocks @Inject private DelegateTaskServiceImpl delegateTaskService;
+  @InjectMocks @Inject private DelegateGlobalAccountController delegateGlobalAccountController;
 
   @Mock private AssignDelegateService assignDelegateService;
   @Mock private SettingsService settingsService;
@@ -213,6 +217,7 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   @Mock private Subject<DelegateTaskRetryObserver> retryObserverSubject;
   @Inject private HPersistence persistence;
   @Inject private OutboxService outboxService;
+  @Inject private TestUtils testUtils;
   @Rule public ExpectedException thrown = ExpectedException.none();
 
   @Before
@@ -1653,6 +1658,156 @@ public class DelegateServiceImplTest extends WingsBaseTest {
         "http://app.harness.io:9876", "https://app.harness.io:9090", "customer.agent.harness.io");
 
     assertThat(output).isEqualTo("https://customer.agent.harness.io");
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testGetConnectedDelegatesForGlobalDelegateAccount() {
+    List<String> delegateIds = new ArrayList<>();
+
+    Delegate delegate1 = createDelegateBuilder().accountId(GLOBAL_DELEGATE_ACCOUNT_ID).build();
+    String delegateId1 = persistence.save(delegate1);
+
+    DelegateConnection delegateConnection1 = DelegateConnection.builder()
+                                                 .accountId(GLOBAL_DELEGATE_ACCOUNT_ID)
+                                                 .delegateId(delegateId1)
+                                                 .version(versionInfoManager.getVersionInfo().getVersion())
+                                                 .disconnected(false)
+                                                 .lastHeartbeat(System.currentTimeMillis())
+                                                 .build();
+
+    persistence.save(delegateConnection1);
+
+    delegateIds.add(delegateId1);
+
+    Delegate delegate2 = createDelegateBuilder().accountId(GLOBAL_DELEGATE_ACCOUNT_ID).build();
+    String delegateId2 = persistence.save(delegate2);
+
+    DelegateConnection delegateConnection2 = DelegateConnection.builder()
+                                                 .accountId(GLOBAL_DELEGATE_ACCOUNT_ID)
+                                                 .delegateId(delegateId2)
+                                                 .version(versionInfoManager.getVersionInfo().getVersion())
+                                                 .disconnected(false)
+                                                 .lastHeartbeat(System.currentTimeMillis())
+                                                 .build();
+
+    persistence.save(delegateConnection2);
+
+    delegateIds.add(delegateId2);
+
+    when(accountService.getAccountPrimaryDelegateVersion(any())).thenReturn(versionInfoManager.getFullVersion());
+    List<String> connectedDelegates = delegateService.getConnectedDelegates(GLOBAL_DELEGATE_ACCOUNT_ID, delegateIds);
+
+    assertThat(connectedDelegates.size()).isEqualTo(2);
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  @HarnessAlwaysRun
+  public void shouldExecuteTaskForGlobalDelegate() {
+    Delegate delegate = createDelegateBuilder().accountId(GLOBAL_DELEGATE_ACCOUNT_ID).build();
+    persistence.save(delegate);
+    DelegateTask delegateTask =
+        DelegateTask.builder()
+            .uuid(generateUuid())
+            .accountId(ACCOUNT_ID)
+            .waitId(generateUuid())
+            .executeOnHarnessHostedDelegates(true)
+            .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, APP_ID)
+            .version(VERSION)
+            .data(TaskData.builder()
+                      .async(false)
+                      .taskType(TaskType.HTTP.name())
+                      .parameters(new Object[] {HttpTaskParameters.builder().url("https://www.google.com").build()})
+                      .timeout(DEFAULT_ASYNC_CALL_TIMEOUT)
+                      .build())
+            .tags(new ArrayList<>())
+            .build();
+    Account globalAccount = testUtils.createAccount();
+    globalAccount.setGlobalDelegateAccount(true);
+    persistence.save(globalAccount);
+    when(assignDelegateService.getEligibleDelegatesToExecuteTask(any()))
+        .thenReturn(new ArrayList<>(singletonList(DELEGATE_ID)));
+    when(assignDelegateService.getConnectedDelegateList(any(), any()))
+        .thenReturn(new ArrayList<>(singletonList(DELEGATE_ID)));
+    when(assignDelegateService.canAssign(eq(delegateTask.getDelegateId()), any())).thenReturn(true);
+    when(assignDelegateService.retrieveActiveDelegates(eq(delegateTask.getAccountId()), any()))
+        .thenReturn(Collections.singletonList(delegate.getUuid()));
+
+    RetryDelegate retryDelegate = RetryDelegate.builder().retryPossible(true).delegateTask(delegateTask).build();
+    when(retryObserverSubject.fireProcess(any(), any())).thenReturn(retryDelegate);
+
+    Thread thread = new Thread(() -> {
+      await().atMost(5L, TimeUnit.SECONDS).until(() -> isNotEmpty(delegateSyncService.syncTaskWaitMap));
+      DelegateTask task =
+          persistence.createQuery(DelegateTask.class).filter("accountId", delegateTask.getAccountId()).get();
+
+      delegateTaskService.processDelegateResponse(task.getAccountId(), delegate.getUuid(), task.getUuid(),
+          DelegateTaskResponse.builder()
+              .accountId(task.getAccountId())
+              .response(HttpStateExecutionResponse.builder().executionStatus(ExecutionStatus.SUCCESS).build())
+              .responseCode(ResponseCode.OK)
+              .build());
+      new Thread(delegateSyncService).start();
+    });
+    thread.start();
+    when(assignDelegateService.getEligibleDelegatesToExecuteTask(any(DelegateTask.class)))
+        .thenReturn(new ArrayList<>(singletonList(DELEGATE_ID)));
+
+    DelegateResponseData responseData = delegateTaskServiceClassic.executeTask(delegateTask);
+    assertThat(responseData).isInstanceOf(HttpStateExecutionResponse.class);
+    HttpStateExecutionResponse httpResponse = (HttpStateExecutionResponse) responseData;
+    assertThat(httpResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testHandleDriverSyncResponseForGlobalDelegate() {
+    DelegateTask delegateTask = DelegateTask.builder()
+                                    .uuid(generateUuid())
+                                    .accountId(GLOBAL_DELEGATE_ACCOUNT_ID)
+                                    .driverId(generateUuid())
+                                    .data(TaskData.builder().async(false).build())
+                                    .build();
+
+    DelegateTaskResponse delegateTaskResponse =
+        DelegateTaskResponse.builder().response(DelegateStringResponseData.builder().data("OK").build()).build();
+
+    DelegateCallbackService delegateCallbackService = mock(DelegateCallbackService.class);
+    when(delegateCallbackRegistry.obtainDelegateCallbackService(delegateTask.getDriverId()))
+        .thenReturn(delegateCallbackService);
+    byte[] responseData = kryoSerializer.asDeflatedBytes(delegateTaskResponse.getResponse());
+
+    delegateTaskServiceClassic.handleDriverResponse(delegateTask, delegateTaskResponse);
+
+    verify(delegateCallbackService).publishSyncTaskResponse(delegateTask.getUuid(), responseData);
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testHandleDriverAsyncResponseForGlobalDelegate() {
+    DelegateTask delegateTask = DelegateTask.builder()
+                                    .uuid(generateUuid())
+                                    .accountId(GLOBAL_DELEGATE_ACCOUNT_ID)
+                                    .driverId(generateUuid())
+                                    .data(TaskData.builder().async(true).build())
+                                    .build();
+
+    DelegateTaskResponse delegateTaskResponse =
+        DelegateTaskResponse.builder().response(DelegateStringResponseData.builder().data("OK").build()).build();
+
+    DelegateCallbackService delegateCallbackService = mock(DelegateCallbackService.class);
+    when(delegateCallbackRegistry.obtainDelegateCallbackService(delegateTask.getDriverId()))
+        .thenReturn(delegateCallbackService);
+    byte[] responseData = kryoSerializer.asDeflatedBytes(delegateTaskResponse.getResponse());
+
+    delegateTaskServiceClassic.handleDriverResponse(delegateTask, delegateTaskResponse);
+
+    verify(delegateCallbackService).publishAsyncTaskResponse(delegateTask.getUuid(), responseData);
   }
 
   private List<String> setUpDelegatesForInitializationTest() {

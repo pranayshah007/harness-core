@@ -10,43 +10,36 @@ spec:
             repeat:
               items: <+stage.output.hosts>
           spec:
-            host: <+repeat.item>
             onDelegate: false
             environmentVariables: [ ]
             outputVariables: [ ]
             commandUnits:
               - identifier: Setup_Runtime_Paths
-                name: Setup Runtime Paths
+                name: "Setup Runtime Paths"
                 type: Script
                 spec:
-                  shell: Bash
+                  shell: PowerShell
                   source:
                     type: Inline
                     spec:
                       script: |-
-                        # Execute as root and pass environment variables
-                        # su -p -
-                        # Execute as root via user credentials (with root privileges)
-                        # sudo -E su -p -
-                        # Env variables are defined with the following values: 
-                        # HARNESS_RUNTIME_PATH: deployment_type/service_name/env_name/runtime
-                        # HARNESS_BACKUP_PATH: deployment_type/service_name/env_name/backup
-                        # HARNESS_STAGING_PATH: deployment_type/service_name/env_name/staging
-                        New-Item -Path "$HARNESS_RUNTIME_PATH" -ItemType Directory
-                        New-Item -Path "$HARNESS_RUNTIME_PATH" -ItemType Directory
-                        New-Item -Path "$HARNESS_RUNTIME_PATH" -ItemType Directory
+                        # Creating runtime, backup and staging directories:
+
+                        New-Item -Path "$HOME\<+service.name>\<+env.name>\runtime" -ItemType Directory
+                        New-Item -Path "$HOME\<+service.name>\<+env.name>\backup" -ItemType Directory
+                        New-Item -Path "$HOME\<+service.name>\<+env.name>\staging" -ItemType Directory
               - identifier: Copy_Artifact
                 name: "Copy Artifact"
                 type: Copy
                 spec:
                   sourceType: Artifact
-                  destinationPath: $HARNESS_RUNTIME_PATH
+                  destinationPath: $HOME\<+service.name>\<+env.name>
               - identifier: Copy_Config
                 name: "Copy Config"
                 type: Copy
                 spec:
                   sourceType: Config
-                  destinationPath: $HARNESS_RUNTIME_PATH
+                  destinationPath: $HOME\<+service.name>\<+env.name>
     rollbackSteps:
       - step:
           name: "Rollback"
@@ -57,40 +50,33 @@ spec:
             repeat:
               items: <+stage.output.hosts>
           spec:
-            host: <+repeat.item>
             onDelegate: false
             environmentVariables: [ ]
             outputVariables: [ ]
             commandUnits:
               - identifier: Setup_Runtime_Paths_Rollback
-                name: Setup Runtime Paths Rollback
+                name: "Setup Runtime Paths Rollback"
                 type: Script
                 spec:
-                  shell: Bash
+                  shell: PowerShell
                   source:
                     type: Inline
                     spec:
                       script: |-
-                        # Execute as root and pass environment variables
-                        # su -p -
-                        # Execute as root via user credentials (with root privileges)
-                        # sudo -E su -p -
-                        # Env variables are defined with the following values: 
-                        # HARNESS_RUNTIME_PATH: deployment_type/service_name/env_name/runtime
-                        # HARNESS_BACKUP_PATH: deployment_type/service_name/env_name/backup
-                        # HARNESS_STAGING_PATH: deployment_type/service_name/env_name/staging
-                        New-Item -Path "$HARNESS_RUNTIME_PATH" -ItemType Directory
-                        New-Item -Path "$HARNESS_RUNTIME_PATH" -ItemType Directory
-                        New-Item -Path "$HARNESS_RUNTIME_PATH" -ItemType Directory
+                        # Creating runtime, backup and staging directories:
+
+                        New-Item -Path "$HOME\<+service.name>\<+env.name>\runtime" -ItemType Directory
+                        New-Item -Path "$HOME\<+service.name>\<+env.name>\backup" -ItemType Directory
+                        New-Item -Path "$HOME\<+service.name>\<+env.name>\staging" -ItemType Directory
               - identifier: Copy_Artifact_Rollback
                 name: "Copy Artifact Rollback"
                 type: Copy
                 spec:
                   sourceType: Artifact
-                  destinationPath: $HARNESS_RUNTIME_PATH
+                  destinationPath: $HOME\<+service.name>\<+env.name>
               - identifier: Copy_Config_Rollback
                 name: "Copy Config Rollback"
                 type: Copy
                 spec:
                   sourceType: Config
-                  destinationPath: $HARNESS_RUNTIME_PATH
+                  destinationPath: $HOME\<+service.name>\<+env.name>

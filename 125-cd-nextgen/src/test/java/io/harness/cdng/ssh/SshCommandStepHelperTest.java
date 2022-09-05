@@ -20,6 +20,7 @@ import static org.mockito.Mockito.doReturn;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.common.VariablesSweepingOutput;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
@@ -62,6 +63,7 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.refobjects.RefObject;
 import io.harness.pms.contracts.refobjects.RefType;
 import io.harness.pms.data.OrchestrationRefType;
+import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
@@ -69,6 +71,7 @@ import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.shell.ScriptType;
@@ -81,6 +84,7 @@ import io.harness.steps.shellscript.ShellType;
 import io.harness.steps.shellscript.SshInfraDelegateConfigOutput;
 import io.harness.steps.shellscript.WinRmInfraDelegateConfigOutput;
 
+import com.google.common.collect.Maps;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -113,6 +117,7 @@ public class SshCommandStepHelperTest extends CategoryTest {
   @Mock private SshWinRmConfigFileHelper sshWinRmConfigFileHelper;
   @Mock private CommandStepRollbackHelper commandStepRollbackHelper;
   @Mock private NGLogCallback ngLogCallback;
+  @Mock private EngineExpressionService engineExpressionService;
 
   @InjectMocks @Spy private SshCommandStepHelper helper;
 
@@ -196,10 +201,10 @@ public class SshCommandStepHelperTest extends CategoryTest {
   private final ServiceStepOutcome winRmServiceOutcome =
       ServiceStepOutcome.builder().type("WinRm").name("winrm-svc").build();
   private final PdcSshInfraDelegateConfig pdcSshInfraDelegateConfig =
-      PdcSshInfraDelegateConfig.builder().hosts(Collections.singletonList("host1")).build();
+      PdcSshInfraDelegateConfig.builder().hosts(Collections.singleton("host1")).build();
 
   private final PdcWinRmInfraDelegateConfig pdcWinRmInfraDelegateConfig =
-      PdcWinRmInfraDelegateConfig.builder().hosts(Collections.singletonList("host1")).build();
+      PdcWinRmInfraDelegateConfig.builder().hosts(Collections.singleton("host1")).build();
 
   private final ArtifactoryArtifactDelegateConfig artifactDelegateConfig =
       ArtifactoryArtifactDelegateConfig.builder().build();
@@ -218,6 +223,9 @@ public class SshCommandStepHelperTest extends CategoryTest {
               WinRmInfraDelegateConfigOutput.builder().winRmInfraDelegateConfig(pdcWinRmInfraDelegateConfig).build())
           .build();
 
+  private OptionalSweepingOutput variablesSweepingOutput =
+      OptionalSweepingOutput.builder().found(true).output(new VariablesSweepingOutput()).build();
+
   @Before
   public void prepare() {
     MockitoAnnotations.initMocks(this);
@@ -226,6 +234,15 @@ public class SshCommandStepHelperTest extends CategoryTest {
         .when(outcomeService)
         .resolveOptional(
             eq(ambiance), eq(RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME)));
+
+    doReturn(variablesSweepingOutput)
+        .when(executionSweepingOutputService)
+        .resolveOptional(
+            eq(ambiance), eq(RefObjectUtils.getOutcomeRefObject(YAMLFieldNameConstants.SERVICE_VARIABLES)));
+
+    doReturn(Maps.newLinkedHashMap())
+        .when(engineExpressionService)
+        .evaluateExpression(eq(ambiance), eq("<+stage.variables>"));
 
     HarnessStore harnessStore = getHarnessStore();
     configFilesOutCm.put("test", ConfigFileOutcome.builder().identifier("test").store(harnessStore).build());
@@ -279,7 +296,7 @@ public class SshCommandStepHelperTest extends CategoryTest {
     doReturn(pdcSshInfraDelegateConfig).when(sshEntityHelper).getSshInfraDelegateConfig(pdcInfrastructure, ambiance);
     PowerMockito.when(CommandStepUtils.getWorkingDirectory(eq(workingDirParam), any(ScriptType.class), anyBoolean()))
         .thenReturn(workingDir);
-    PowerMockito.when(CommandStepUtils.getEnvironmentVariables(eq(env), any())).thenReturn(taskEnv);
+    PowerMockito.when(CommandStepUtils.mergeEnvironmentVariables(eq(env), any())).thenReturn(taskEnv);
     CommandTaskParameters taskParameters = helper.buildCommandTaskParameters(ambiance, stepParameters);
     assertThat(taskParameters).isInstanceOf(SshCommandTaskParameters.class);
     SshCommandTaskParameters sshTaskParameters = (SshCommandTaskParameters) taskParameters;
@@ -310,7 +327,7 @@ public class SshCommandStepHelperTest extends CategoryTest {
             eq(RefObjectUtils.getSweepingOutputRefObject(
                 OutputExpressionConstants.SSH_INFRA_DELEGATE_CONFIG_OUTPUT_NAME)));
     doReturn(pdcSshInfraDelegateConfig).when(sshEntityHelper).getSshInfraDelegateConfig(pdcInfrastructure, ambiance);
-    PowerMockito.when(CommandStepUtils.getEnvironmentVariables(eq(env), any())).thenReturn(taskEnv);
+    PowerMockito.when(CommandStepUtils.mergeEnvironmentVariables(eq(env), any())).thenReturn(taskEnv);
     CommandTaskParameters taskParameters = helper.buildCommandTaskParameters(ambiance, stepParameters);
     assertThat(taskParameters).isInstanceOf(SshCommandTaskParameters.class);
     SshCommandTaskParameters sshTaskParameters = (SshCommandTaskParameters) taskParameters;
@@ -344,7 +361,7 @@ public class SshCommandStepHelperTest extends CategoryTest {
         .getWinRmInfraDelegateConfig(pdcInfrastructure, ambiance);
     PowerMockito.when(CommandStepUtils.getWorkingDirectory(eq(workingDirParam), any(ScriptType.class), anyBoolean()))
         .thenReturn(workingDir);
-    PowerMockito.when(CommandStepUtils.getEnvironmentVariables(eq(env), any())).thenReturn(taskEnv);
+    PowerMockito.when(CommandStepUtils.mergeEnvironmentVariables(eq(env), any())).thenReturn(taskEnv);
     CommandTaskParameters taskParameters = helper.buildCommandTaskParameters(ambiance, stepParameters);
     assertThat(taskParameters).isInstanceOf(WinrmTaskParameters.class);
     WinrmTaskParameters winrmTaskParameters = (WinrmTaskParameters) taskParameters;
@@ -377,7 +394,7 @@ public class SshCommandStepHelperTest extends CategoryTest {
     doReturn(pdcWinRmInfraDelegateConfig)
         .when(sshEntityHelper)
         .getWinRmInfraDelegateConfig(pdcInfrastructure, ambiance);
-    PowerMockito.when(CommandStepUtils.getEnvironmentVariables(eq(env), any())).thenReturn(taskEnv);
+    PowerMockito.when(CommandStepUtils.mergeEnvironmentVariables(eq(env), any())).thenReturn(taskEnv);
     CommandTaskParameters taskParameters = helper.buildCommandTaskParameters(ambiance, stepParameters);
     assertThat(taskParameters).isInstanceOf(WinrmTaskParameters.class);
     WinrmTaskParameters winRmTaskParameters = (WinrmTaskParameters) taskParameters;

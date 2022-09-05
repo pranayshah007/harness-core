@@ -834,6 +834,16 @@ public class GitSyncErrorServiceImpl implements GitSyncErrorService {
     return deleted;
   }
 
+  @Override
+  public boolean deleteGitSyncErrorsBeforeTime(long time, String accountId) {
+    Query<GitSyncError> query = wingsPersistence.createQuery(GitSyncError.class);
+    query.filter(GitSyncErrorKeys.accountId, accountId);
+    query.field(CREATED_AT_KEY).lessThan(time);
+    boolean deleted = wingsPersistence.delete(query);
+    alertsUtils.closeAlertIfApplicable(accountId);
+    return deleted;
+  }
+
   private GitProcessingError getGitProcessingError(Alert alert) {
     GitConnectionErrorAlert alertData = (GitConnectionErrorAlert) alert.getAlertData();
     if (alertData == null) {

@@ -10,6 +10,7 @@ package io.serializer.jackson;
 import io.harness.beans.InputSetValidatorType;
 import io.harness.common.NGExpressionUtils;
 import io.harness.expression.EngineExpressionEvaluator;
+import io.harness.jackson.JsonNodeUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.validation.InputSetValidator;
 import io.harness.serializer.JsonUtils;
@@ -22,11 +23,13 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.deser.ContextualDeserializer;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.jsontype.TypeDeserializer;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -95,10 +98,8 @@ public class ParameterFieldDeserializer extends StdDeserializer<ParameterField<?
       // value. This will be useful in current Runtime inputs. In Execution inputs, we give the input template with
       // pre-filled default values. So user will always provide value.
       return ParameterField.createFieldWithDefaultValue(defaultValue == null, isExecutionInput,
-          NGExpressionUtils.DEFAULT_INPUT_SET_EXPRESSION,
-          defaultValue == null ? null
-                               : JsonUtils.asObject("\"" + defaultValue + "\"", this.referenceType.getRawClass()),
-          inputSetValidator, isTypeString);
+          NGExpressionUtils.DEFAULT_INPUT_SET_EXPRESSION, extractDefaultValue(defaultValue), inputSetValidator,
+          isTypeString);
     }
     if (inputSetValidator != null && isTypeString) {
       String value = getLeftSideOfExpression(text);
@@ -180,5 +181,30 @@ public class ParameterFieldDeserializer extends StdDeserializer<ParameterField<?
       this.validatorType = validatorType;
       this.validatorPattern = validatorPattern;
     }
+  }
+  private Object extractDefaultValue(String defaultValuesString) {
+    if (defaultValuesString == null) {
+      return null;
+    }
+    defaultValuesString = processDefaultValueString(defaultValuesString);
+    JsonNode jsonNode = JsonUtils.readTree("{\"default\":" + defaultValuesString + "}").get("default");
+    if (jsonNode.isArray()) {
+      List<Object> array = new ArrayList<>();
+      for (JsonNode arrayElement : jsonNode) {
+        array.add(JsonNodeUtils.getValueFromJsonNode(arrayElement));
+      }
+      return array;
+    } else if (jsonNode.isTextual()) {
+      return jsonNode.asText();
+    }
+    return JsonUtils.asObject(defaultValuesString, this.referenceType.getRawClass());
+  }
+
+  private String processDefaultValueString(String defaultValuesString) {
+    if (!(defaultValuesString.charAt(0) == '[' && defaultValuesString.endsWith("]")
+            || defaultValuesString.charAt(0) == '"' && defaultValuesString.endsWith("\""))) {
+      return "\"" + defaultValuesString + "\"";
+    }
+    return defaultValuesString;
   }
 }

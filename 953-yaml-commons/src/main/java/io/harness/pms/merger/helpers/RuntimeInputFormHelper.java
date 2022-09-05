@@ -61,7 +61,7 @@ public class RuntimeInputFormHelper {
   }
 
   public String createExecutionInputFormAndUpdateYamlField(JsonNode jsonNode) {
-    YamlConfig yamlConfig = new YamlConfig(jsonNode);
+    YamlConfig yamlConfig = new YamlConfig(jsonNode, true);
     Map<FQN, Object> fullMap = yamlConfig.getFqnToValueMap();
     Map<FQN, Object> templateMap = new LinkedHashMap<>();
     fullMap.keySet().forEach(key -> {
@@ -89,7 +89,7 @@ public class RuntimeInputFormHelper {
         (ObjectNode) jsonNode.get(YAMLFieldNameConstants.STAGE).get(YAMLFieldNameConstants.SPEC),
         YAMLFieldNameConstants.EXECUTION);
 
-    YamlConfig yamlConfig = new YamlConfig(jsonNode);
+    YamlConfig yamlConfig = new YamlConfig(jsonNode, true);
 
     Map<FQN, Object> fullMap = yamlConfig.getFqnToValueMap();
     Map<FQN, Object> templateMap = new LinkedHashMap<>();

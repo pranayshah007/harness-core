@@ -7,6 +7,7 @@
 
 package io.harness.delegate.task.azure.exception;
 
+import static io.harness.azure.model.AzureConstants.DEPLOY_TO_SLOT;
 import static io.harness.rule.OwnerRule.ABOSII;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -99,7 +100,7 @@ public class AzureAppServicesRuntimeExceptionHandlerTest extends CategoryTest {
             "artifact.zip", "WAR", new RuntimeException("Something failed"));
     WingsException result = exceptionHandler.handleException(artifactFileException);
     assertExceptionMessage(result, "Check if deployed artifact 'artifact.zip' is packaged 'WAR' file",
-        "Failed to deploy artifact file: artifact.zip", "Failed to deploy artifact file: artifact.zip");
+        "Something failed", "Failed to deploy artifact file: artifact.zip");
   }
 
   @Test
@@ -107,7 +108,7 @@ public class AzureAppServicesRuntimeExceptionHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testHandlePortDidntRespondException() {
     final AzureAppServicesSlotSteadyStateException steadyStateException = new AzureAppServicesSlotSteadyStateException(
-        "Container test-container didn't respond to HTTP pings on port: 8989");
+        "Container test-container didn't respond to HTTP pings on port: 8989", DEPLOY_TO_SLOT, 10, null);
     WingsException result = exceptionHandler.handleException(steadyStateException);
     assertExceptionMessage(result,
         "If container listens to a different port than 80 or 8080 configure WEBSISTES_PORT in application settings",
@@ -119,8 +120,8 @@ public class AzureAppServicesRuntimeExceptionHandlerTest extends CategoryTest {
   @Owner(developers = ABOSII)
   @Category(UnitTests.class)
   public void testHandleContainerFailedDuringStartupException() {
-    final AzureAppServicesSlotSteadyStateException steadyStateException =
-        new AzureAppServicesSlotSteadyStateException("Stopping site test-container because it failed during startup");
+    final AzureAppServicesSlotSteadyStateException steadyStateException = new AzureAppServicesSlotSteadyStateException(
+        "Stopping site test-container because it failed during startup", DEPLOY_TO_SLOT, 10, null);
     WingsException result = exceptionHandler.handleException(steadyStateException);
     assertExceptionMessage(result, "Verify docker image configuration and credentials",
         "Site container was stopped because it failed during startup",

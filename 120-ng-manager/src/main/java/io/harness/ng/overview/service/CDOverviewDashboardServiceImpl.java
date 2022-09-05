@@ -10,7 +10,6 @@ package io.harness.ng.overview.service;
 import static io.harness.NGDateUtils.DAY_IN_MS;
 import static io.harness.NGDateUtils.HOUR_IN_MS;
 import static io.harness.NGDateUtils.getNumberOfDays;
-import static io.harness.NGDateUtils.getStartTimeOfNextDay;
 import static io.harness.NGDateUtils.getStartTimeOfPreviousInterval;
 import static io.harness.NGDateUtils.getStartTimeOfTheDayAsEpoch;
 import static io.harness.event.timeseries.processor.utils.DateUtils.getCurrentTime;
@@ -526,7 +525,6 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   @Override
   public io.harness.ng.overview.dto.HealthDeploymentDashboard getHealthDeploymentDashboard(String accountId,
       String orgId, String projectId, long startInterval, long endInterval, long previousStartInterval) {
-    endInterval = endInterval + getTimeUnitToGroupBy(DAY);
     String query = queryBuilderSelectStatusTime(accountId, orgId, projectId, previousStartInterval, endInterval);
 
     List<Long> time = new ArrayList<>();
@@ -569,7 +567,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
         currentTimeEpoch = getStartingDateEpochValue(currentTimeEpoch, startInterval);
         total++;
         totalCountMap.put(currentTimeEpoch, totalCountMap.get(currentTimeEpoch) + 1);
-        if (status.get(i).contentEquals(ExecutionStatus.SUCCESS.name())) {
+        if (CDDashboardServiceHelper.successStatusList.contains(status.get(i))) {
           currentSuccess++;
           successCountMap.put(currentTimeEpoch, successCountMap.get(currentTimeEpoch) + 1);
         } else if (activeStatusList.contains(status.get(i)) || pendingStatusList.contains(status.get(i))) {
@@ -581,7 +579,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
         }
       } else {
         previousDeployment++;
-        if (status.get(i).contentEquals(ExecutionStatus.SUCCESS.name())) {
+        if (CDDashboardServiceHelper.successStatusList.contains(status.get(i))) {
           previousSuccess++;
         } else if (activeStatusList.contains(status.get(i)) || pendingStatusList.contains(status.get(i))) {
           previousActive++;
@@ -745,7 +743,6 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   @Override
   public io.harness.ng.overview.dto.ExecutionDeploymentInfo getExecutionDeploymentDashboard(
       String accountId, String orgId, String projectId, long startInterval, long endInterval) {
-    endInterval = endInterval + DAY_IN_MS;
     String query = queryBuilderSelectStatusTime(accountId, orgId, projectId, startInterval, endInterval);
 
     HashMap<Long, Integer> totalCountMap = new HashMap<>();
@@ -773,7 +770,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
       long currentTimeEpoch = time.get(i);
       currentTimeEpoch = getStartingDateEpochValue(currentTimeEpoch, startInterval);
       totalCountMap.put(currentTimeEpoch, totalCountMap.get(currentTimeEpoch) + 1);
-      if (status.get(i).contentEquals(ExecutionStatus.SUCCESS.name())) {
+      if (CDDashboardServiceHelper.successStatusList.contains(status.get(i))) {
         successCountMap.put(currentTimeEpoch, successCountMap.get(currentTimeEpoch) + 1);
       } else if (CDDashboardServiceHelper.failedStatusList.contains(status.get(i))) {
         failedCountMap.put(currentTimeEpoch, failedCountMap.get(currentTimeEpoch) + 1);
@@ -913,9 +910,6 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   @Override
   public ServiceDetailsInfoDTO getServiceDetailsList(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, long startTime, long endTime, List<String> sort) throws Exception {
-    startTime = getStartTimeOfTheDayAsEpoch(startTime);
-    endTime = getStartTimeOfNextDay(endTime);
-
     long numberOfDays = getNumberOfDays(startTime, endTime);
     if (numberOfDays < 0) {
       throw new Exception("start date should be less than or equal to end date");
@@ -1101,7 +1095,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
           io.harness.ng.overview.dto.ServiceDeployment serviceDeployment = resultMap.get(bucketTime);
           io.harness.ng.overview.dto.DeploymentCount deployments = serviceDeployment.getDeployments();
           deployments.setTotal(deployments.getTotal() + numberOfRecords);
-          if ((ExecutionStatus.SUCCESS).toString().equals(status)) {
+          if (CDDashboardServiceHelper.successStatusList.contains(status)) {
             deployments.setSuccess(deployments.getSuccess() + numberOfRecords);
           } else if (CDDashboardServiceHelper.failedStatusList.contains(status)) {
             deployments.setFailure(deployments.getFailure() + numberOfRecords);
@@ -1228,8 +1222,6 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   public io.harness.ng.overview.dto.ServiceDeploymentListInfo getServiceDeploymentsInfo(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, long startTime, long endTime, String serviceIdentifier,
       long bucketSizeInDays) throws Exception {
-    startTime = getStartTimeOfTheDayAsEpoch(startTime);
-    endTime = getStartTimeOfNextDay(endTime);
     long numberOfDays = getNumberOfDays(startTime, endTime);
     validateBucketSize(numberOfDays, bucketSizeInDays);
     long prevStartTime = getStartTimeOfPreviousInterval(startTime, numberOfDays);
@@ -1470,7 +1462,6 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   @Override
   public DashboardExecutionStatusInfo getDeploymentActiveFailedRunningInfo(
       String accountId, String orgId, String projectId, long days, long startInterval, long endInterval) {
-    endInterval = endInterval + getTimeUnitToGroupBy(DAY);
     // failed
     String queryFailed = queryBuilderStatusNew(
         accountId, orgId, projectId, days, CDDashboardServiceHelper.failedStatusList, startInterval, endInterval);
@@ -1606,7 +1597,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
             currentTimeEpoch = getStartingDateEpochValue(currentTimeEpoch, startDate);
             totalDeployment++;
             deploymentCountMap.put(currentTimeEpoch, deploymentCountMap.get(currentTimeEpoch) + 1);
-            if (status.get(i).contentEquals(ExecutionStatus.SUCCESS.name())) {
+            if (CDDashboardServiceHelper.successStatusList.contains(status.get(i))) {
               success++;
             }
             if (CDDashboardServiceHelper.failedStatusList.contains(status.get(i))) {
@@ -1743,7 +1734,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   }
 
   public long getStartingDateEpochValue(long epochValue, long startInterval) {
-    return epochValue - epochValue % DAY_IN_MS;
+    return epochValue - (epochValue - startInterval) % DAY_IN_MS;
   }
 
   /*
@@ -1804,6 +1795,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     Map<String, Map<String, List<InstanceGroupedByArtifactList.InstanceGroupedByInfrastructure>>> buildEnvInfraMap =
         new HashMap<>();
     Map<String, String> envIdToEnvNameMap = new HashMap<>();
+    Map<String, String> buildIdToArtifactPathMap = new HashMap<>();
     List<ActiveServiceInstanceInfo> activeServiceInstanceInfoList =
         instanceDashboardService.getActiveServiceInstanceInfo(
             accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
@@ -1816,6 +1808,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
       final String envId = activeServiceInstanceInfo.getEnvIdentifier();
       final String envName = activeServiceInstanceInfo.getEnvName();
       final String buildId = activeServiceInstanceInfo.getTag();
+      final String artifactPath = getArtifactPathFromDisplayName(activeServiceInstanceInfo.getDisplayName());
       final int count = activeServiceInstanceInfo.getCount();
       buildEnvInfraMap.putIfAbsent(buildId, new HashMap<>());
       buildEnvInfraMap.get(buildId).putIfAbsent(envId, new ArrayList<>());
@@ -1830,51 +1823,58 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
               .lastPipelineExecutionName(lastPipelineExecutionName)
               .build());
       envIdToEnvNameMap.putIfAbsent(envId, envName);
+      buildIdToArtifactPathMap.putIfAbsent(buildId, artifactPath);
     });
     List<InstanceGroupedByArtifactList.InstanceGroupedByArtifact> instanceGroupedByArtifactList =
-        groupedByArtifacts(buildEnvInfraMap, envIdToEnvNameMap);
+        groupedByArtifacts(buildEnvInfraMap, envIdToEnvNameMap, buildIdToArtifactPathMap);
 
     return InstanceGroupedByArtifactList.builder().instanceGroupedByArtifactList(instanceGroupedByArtifactList).build();
   }
 
+  private String getArtifactPathFromDisplayName(String displayName) {
+    if (displayName != null) {
+      String[] res = displayName.split(":");
+      int count = res.length;
+      if (count > 1) {
+        return res[0];
+      }
+    }
+    return "";
+  }
+
   private List<InstanceGroupedByArtifactList.InstanceGroupedByArtifact> groupedByArtifacts(
       Map<String, Map<String, List<InstanceGroupedByArtifactList.InstanceGroupedByInfrastructure>>> buildEnvInfraMap,
-      Map<String, String> envIdToEnvNameMap) {
+      Map<String, String> envIdToEnvNameMap, Map<String, String> buildIdToArtifactPathMap) {
     List<InstanceGroupedByArtifactList.InstanceGroupedByArtifact> instanceGroupedByArtifactList = new ArrayList<>();
 
     for (Map.Entry<String, Map<String, List<InstanceGroupedByArtifactList.InstanceGroupedByInfrastructure>>> entry :
         buildEnvInfraMap.entrySet()) {
       String buildId = entry.getKey();
+      String artifactPath = buildIdToArtifactPathMap.get(buildId);
+      Map<String, List<InstanceGroupedByArtifactList.InstanceGroupedByInfrastructure>> envInfraMap = entry.getValue();
       List<InstanceGroupedByArtifactList.InstanceGroupedByEnvironment> instanceGroupedByEnvironmentList =
-          groupedByEnvironments(entry.getValue(), envIdToEnvNameMap);
+          new ArrayList<>();
+
+      for (Map.Entry<String, List<InstanceGroupedByArtifactList.InstanceGroupedByInfrastructure>> entry1 :
+          envInfraMap.entrySet()) {
+        String envId = entry1.getKey();
+        String envName = envIdToEnvNameMap.get(envId);
+        List<InstanceGroupedByArtifactList.InstanceGroupedByInfrastructure> instanceGroupedByInfrastructureList =
+            entry1.getValue();
+        instanceGroupedByEnvironmentList.add(InstanceGroupedByArtifactList.InstanceGroupedByEnvironment.builder()
+                                                 .envId(envId)
+                                                 .envName(envName)
+                                                 .instanceGroupedByInfraList(instanceGroupedByInfrastructureList)
+                                                 .build());
+      }
       instanceGroupedByArtifactList.add(InstanceGroupedByArtifactList.InstanceGroupedByArtifact.builder()
                                             .artifactVersion(buildId)
+                                            .artifactPath(artifactPath)
                                             .instanceGroupedByEnvironmentList(instanceGroupedByEnvironmentList)
                                             .build());
     }
 
     return instanceGroupedByArtifactList;
-  }
-
-  private List<InstanceGroupedByArtifactList.InstanceGroupedByEnvironment> groupedByEnvironments(
-      Map<String, List<InstanceGroupedByArtifactList.InstanceGroupedByInfrastructure>> envInfraMap,
-      Map<String, String> envIdToEnvNameMap) {
-    List<InstanceGroupedByArtifactList.InstanceGroupedByEnvironment> instanceGroupedByEnvironmentList =
-        new ArrayList<>();
-
-    for (Map.Entry<String, List<InstanceGroupedByArtifactList.InstanceGroupedByInfrastructure>> entry :
-        envInfraMap.entrySet()) {
-      String envId = entry.getKey();
-      String envName = envIdToEnvNameMap.get(envId);
-      List<InstanceGroupedByArtifactList.InstanceGroupedByInfrastructure> instanceGroupedByInfrastructureList =
-          entry.getValue();
-      instanceGroupedByEnvironmentList.add(InstanceGroupedByArtifactList.InstanceGroupedByEnvironment.builder()
-                                               .envId(envId)
-                                               .envName(envName)
-                                               .instanceGroupedByInfraList(instanceGroupedByInfrastructureList)
-                                               .build());
-    }
-    return instanceGroupedByEnvironmentList;
   }
 
   /*
@@ -1930,8 +1930,8 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     List<TimeValuePair<Integer>> timeValuePairList = new ArrayList<>();
     Map<Long, Integer> timeValuePairMap = new HashMap<>();
 
-    final long tunedStartTimeInMs = getStartTimeOfTheDayAsEpoch(startTimeInMs);
-    final long tunedEndTimeInMs = getStartTimeOfNextDay(endTimeInMs);
+    final long tunedStartTimeInMs = startTimeInMs;
+    final long tunedEndTimeInMs = endTimeInMs;
 
     final String query =
         "select reportedat, SUM(instancecount) as count from ng_instance_stats_day where accountid = ? and orgid = ? and projectid = ? and serviceid = ? and reportedat >= ? and reportedat <= ? group by reportedat order by reportedat asc";
@@ -1983,8 +1983,8 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     List<TimeValuePair<io.harness.ng.overview.dto.EnvIdCountPair>> timeValuePairList = new ArrayList<>();
     Map<String, Map<Long, Integer>> envIdToTimestampAndCountMap = new HashMap<>();
 
-    final long tunedStartTimeInMs = getStartTimeOfTheDayAsEpoch(startTimeInMs);
-    final long tunedEndTimeInMs = getStartTimeOfNextDay(endTimeInMs);
+    final long tunedStartTimeInMs = startTimeInMs;
+    final long tunedEndTimeInMs = endTimeInMs;
 
     final String query =
         "select reportedat, envid, SUM(instancecount) as count from ng_instance_stats_day where accountid = ? and orgid = ? and projectid = ? and serviceid = ? and reportedat >= ? and reportedat <= ? group by reportedat, envid order by reportedat asc";
@@ -2036,8 +2036,6 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
 
   public DeploymentsInfo getDeploymentsByServiceId(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String serviceId, long startTimeInMs, long endTimeInMs) {
-    startTimeInMs = getStartTimeOfTheDayAsEpoch(startTimeInMs);
-    endTimeInMs = getStartTimeOfNextDay(endTimeInMs);
     String query = queryBuilderDeployments(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceId, startTimeInMs, endTimeInMs);
     String queryServiceNameTagId =
@@ -2097,6 +2095,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     Map<String, Map<String, List<InstanceGroupedByArtifactList.InstanceGroupedByInfrastructure>>> buildEnvInfraMap =
         new HashMap<>();
     Map<String, String> envIdToEnvNameMap = new HashMap<>();
+    Map<String, String> buildIdToArtifactPathMap = new HashMap<>();
 
     String query = queryActiveServiceDeploymentsInfo(accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
     List<ActiveServiceDeploymentsInfo> deploymentsInfo = getActiveServiceDeploymentsInfo(query);
@@ -2115,6 +2114,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
       final String pipelineExecutionId = deploymentInfo.getPipelineExecutionId();
       final String infrastructureIdentifier = deploymentInfo.getInfrastructureIdentifier();
       final String infrastructureName = deploymentInfo.getInfrastructureName();
+      final String artifactPath = deploymentInfo.getArtifactPath();
       String lastPipelineExecutionId = null;
       String lastPipelineExecutionName = null;
       String lastDeployedAt = null;
@@ -2139,10 +2139,11 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
 
       buildEnvInfraMap.get(artifact).get(envId).add(deploymentPipelineInfo);
       envIdToEnvNameMap.putIfAbsent(envId, envName);
+      buildIdToArtifactPathMap.putIfAbsent(artifact, artifactPath);
     });
 
     List<InstanceGroupedByArtifactList.InstanceGroupedByArtifact> instanceGroupedByArtifactList =
-        groupedByArtifacts(buildEnvInfraMap, envIdToEnvNameMap);
+        groupedByArtifacts(buildEnvInfraMap, envIdToEnvNameMap, buildIdToArtifactPathMap);
 
     return InstanceGroupedByArtifactList.builder().instanceGroupedByArtifactList(instanceGroupedByArtifactList).build();
   }
@@ -2157,7 +2158,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   }
 
   public String queryActiveServiceDeploymentsInfo(String accountId, String orgId, String projectId, String serviceId) {
-    return "select distinct on (env_id,infrastructureIdentifier) tag, env_id, env_name, infrastructureIdentifier, infrastructureName, pipeline_execution_summary_cd_id"
+    return "select distinct on (env_id,infrastructureIdentifier) tag, env_id, env_name, infrastructureIdentifier, infrastructureName, artifact_image, pipeline_execution_summary_cd_id"
         + " from " + tableNameServiceAndInfra + " where " + String.format("accountid='%s' and ", accountId)
         + String.format("orgidentifier='%s' and ", orgId) + String.format("projectidentifier='%s' and ", projectId)
         + String.format("service_id='%s'", serviceId)
@@ -2214,6 +2215,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
                   .pipelineExecutionId(resultSet.getString("pipeline_execution_summary_cd_id"))
                   .infrastructureIdentifier(resultSet.getString("infrastructureIdentifier"))
                   .infrastructureName(resultSet.getString("infrastructureName"))
+                  .artifactPath(resultSet.getString("artifact_image"))
                   .build();
           activeServiceDeploymentsInfoList.add(activeServiceDeploymentsInfo);
         }

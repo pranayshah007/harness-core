@@ -21,6 +21,7 @@ pkg_tar(
     srcs = [
         "//332-ci-manager/config:ci-manager-config.yml",
         "//332-ci-manager/config:keystore.jks",
+        "//332-ci-manager/service/src/main/resources:enterprise-redisson-jcache.yaml",
         "//400-rest/src/main/resources:redisson-jcache.yaml",
     ],
     files = {

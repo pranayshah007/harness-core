@@ -8,14 +8,17 @@
 package io.harness.engine.pms.start;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.PRASHANT;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.data.mongodb.core.query.Update.update;
 
 import io.harness.OrchestrationTestBase;
 import io.harness.annotations.dev.HarnessTeam;
@@ -32,10 +35,12 @@ import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionBuilder;
 import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.ExecutionMode;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.facilitators.FacilitatorResponseProto;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.timeout.AbsoluteSdkTimeoutTrackerParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
@@ -47,10 +52,12 @@ import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import java.util.Collections;
 import java.util.EnumSet;
+import org.bson.Document;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class NodeStartHelperTest extends OrchestrationTestBase {
@@ -158,5 +165,24 @@ public class NodeStartHelperTest extends OrchestrationTestBase {
         ambiance, FacilitatorResponseProto.newBuilder().setExecutionMode(ExecutionMode.TASK).build());
 
     verify(pmsEventSender, times(1)).sendEvent(any(), any(), any(), any(), eq(true));
+  }
+
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testUpdateStartTsInNodeExecution() {
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .addLevels(Level.newBuilder().setStartTs(100L).build())
+                            .addLevels(Level.newBuilder().setStartTs(200L).build())
+                            .build();
+    Update update = update("key", "value");
+    nodeStartHelper.updateStartTsInNodeExecution(update, ambiance);
+    Ambiance updatedAmbiance = update.getUpdateObject().get("$set", Document.class).get("ambiance", Ambiance.class);
+
+    assertThat(updatedAmbiance.getLevels(0)).isEqualTo(ambiance.getLevels(0));
+    assertThat(updatedAmbiance.getLevels(1)).isNotEqualTo(ambiance.getLevels(1));
+    assertThat(update.getUpdateObject().get("$set", Document.class).get("startTs", Long.class))
+        .isEqualTo(AmbianceUtils.getCurrentLevelStartTs(updatedAmbiance));
+    assertThat(AmbianceUtils.getCurrentLevelStartTs(updatedAmbiance)).isGreaterThan(2000000000L);
   }
 }

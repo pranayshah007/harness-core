@@ -92,10 +92,11 @@ public class AzureSshWinrmInstanceSyncPerpetualTaskExecutor implements Perpetual
     AzureOSType azureOSType =
         ServiceSpecType.SSH.equals(taskParams.getServiceType()) ? AzureOSType.LINUX : AzureOSType.WINDOWS;
 
-    AzureHostsResponse azureHostsResponse = azureAsyncTaskHelper.listHosts(
-        infraConfig.getConnectorEncryptionDataDetails(), infraConfig.getAzureConnectorDTO(),
-        infraConfig.getSubscriptionId(), infraConfig.getResourceGroup(), azureOSType, infraConfig.getTags());
-    return azureHostsResponse.getHosts().stream().map(AzureHostResponse::getHostName).collect(Collectors.toSet());
+    AzureHostsResponse azureHostsResponse =
+        azureAsyncTaskHelper.listHosts(infraConfig.getConnectorEncryptionDataDetails(),
+            infraConfig.getAzureConnectorDTO(), infraConfig.getSubscriptionId(), infraConfig.getResourceGroup(),
+            azureOSType, infraConfig.getTags(), infraConfig.isUsePublicDns());
+    return azureHostsResponse.getHosts().stream().map(AzureHostResponse::getPublicAddress).collect(Collectors.toSet());
   }
 
   private List<ServerInstanceInfo> getServerInstanceInfoList(

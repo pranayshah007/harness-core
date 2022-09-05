@@ -35,8 +35,11 @@ public class CFLocalClient implements CFModuleLicenseClient {
     long expiryTime = Instant.now().plus(TRIAL_DURATION, ChronoUnit.DAYS).toEpochMilli();
     long currentTime = Instant.now().toEpochMilli();
 
-    CFModuleLicenseDTOBuilder<?, ?> builder =
-        CFModuleLicenseDTO.builder().startTime(currentTime).expiryTime(expiryTime).status(LicenseStatus.ACTIVE);
+    CFModuleLicenseDTOBuilder<?, ?> builder = CFModuleLicenseDTO.builder()
+                                                  .startTime(currentTime)
+                                                  .selfService(true)
+                                                  .expiryTime(expiryTime)
+                                                  .status(LicenseStatus.ACTIVE);
 
     switch (edition) {
       case ENTERPRISE:

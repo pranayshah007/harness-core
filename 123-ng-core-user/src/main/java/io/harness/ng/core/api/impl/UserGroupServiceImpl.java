@@ -7,8 +7,12 @@
 
 package io.harness.ng.core.api.impl;
 
+import static io.harness.NGConstants.DEFAULT_ACCOUNT_LEVEL_USER_GROUP_IDENTIFIER;
+import static io.harness.NGConstants.DEFAULT_ORGANIZATION_LEVEL_USER_GROUP_IDENTIFIER;
+import static io.harness.NGConstants.DEFAULT_PROJECT_LEVEL_USER_GROUP_IDENTIFIER;
 import static io.harness.accesscontrol.principals.PrincipalType.USER_GROUP;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.beans.FeatureName.NG_ENABLE_LDAP_CHECK;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.GROUP;
@@ -72,12 +76,14 @@ import io.harness.outbox.api.OutboxService;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.ng.core.spring.UserGroupRepository;
 import io.harness.user.remote.UserClient;
+import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.ScopeUtils;
 
 import software.wings.beans.sso.SSOSettings;
 import software.wings.beans.sso.SSOType;
 import software.wings.security.authentication.SSOConfig;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -115,13 +121,16 @@ public class UserGroupServiceImpl implements UserGroupService {
   private final AccessControlClient accessControlClient;
   private final ScopeNameMapper scopeNameMapper;
   private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_TRANSACTION_RETRY_POLICY;
+  private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
+  private static final List<String> defaultUserGroups = ImmutableList.of(DEFAULT_ACCOUNT_LEVEL_USER_GROUP_IDENTIFIER,
+      DEFAULT_ORGANIZATION_LEVEL_USER_GROUP_IDENTIFIER, DEFAULT_PROJECT_LEVEL_USER_GROUP_IDENTIFIER);
 
   @Inject
   public UserGroupServiceImpl(UserGroupRepository userGroupRepository, UserClient userClient,
       OutboxService outboxService, @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate,
       NgUserService ngUserService, AuthSettingsManagerClient managerClient, LastAdminCheckService lastAdminCheckService,
       AccessControlAdminClient accessControlAdminClient, AccessControlClient accessControlClient,
-      ScopeNameMapper scopeNameMapper) {
+      ScopeNameMapper scopeNameMapper, NGFeatureFlagHelperService ngFeatureFlagHelperService) {
     this.userGroupRepository = userGroupRepository;
     this.outboxService = outboxService;
     this.transactionTemplate = transactionTemplate;
@@ -131,10 +140,22 @@ public class UserGroupServiceImpl implements UserGroupService {
     this.accessControlAdminClient = accessControlAdminClient;
     this.accessControlClient = accessControlClient;
     this.scopeNameMapper = scopeNameMapper;
+    this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;
   }
 
   @Override
   public UserGroup create(UserGroupDTO userGroupDTO) {
+    if (userGroupDTO.isHarnessManaged() || defaultUserGroups.contains(userGroupDTO.getIdentifier())) {
+      throw new InvalidRequestException("Cannot create a harness managed user group");
+    }
+    return createInternal(userGroupDTO);
+  }
+
+  public UserGroup createDefaultUserGroup(UserGroupDTO userGroupDTO) {
+    return createInternal(userGroupDTO);
+  }
+
+  private UserGroup createInternal(UserGroupDTO userGroupDTO) {
     try {
       UserGroup userGroup = toEntity(userGroupDTO);
       validate(userGroup);
@@ -175,10 +196,18 @@ public class UserGroupServiceImpl implements UserGroupService {
   public UserGroup update(UserGroupDTO userGroupDTO) {
     UserGroup savedUserGroup = getOrThrow(userGroupDTO.getAccountIdentifier(), userGroupDTO.getOrgIdentifier(),
         userGroupDTO.getProjectIdentifier(), userGroupDTO.getIdentifier());
+    checkUpdateForHarnessManagedGroup(userGroupDTO, savedUserGroup);
     UserGroup userGroup = toEntity(userGroupDTO);
     userGroup.setId(savedUserGroup.getId());
     userGroup.setVersion(savedUserGroup.getVersion());
     return updateInternal(userGroup, toDTO(savedUserGroup));
+  }
+
+  @Override
+  public UserGroup updateDefaultUserGroup(UserGroupDTO userGroup) {
+    UserGroup savedUserGroup = getOrThrow(userGroup.getAccountIdentifier(), userGroup.getOrgIdentifier(),
+        userGroup.getProjectIdentifier(), userGroup.getIdentifier());
+    return updateInternal(toEntity(userGroup), toDTO(savedUserGroup));
   }
 
   @Override
@@ -195,15 +224,33 @@ public class UserGroupServiceImpl implements UserGroupService {
             toBeSavedUserGroup.getProjectIdentifier(), toBeSavedUserGroup.getIdentifier())) {
       return;
     }
+
+    cannotUpdateUsers(toBeSavedUserGroup, savedUserGroup, "Update is not supported for externally managed group ");
+    cannotChangeUserGroupName(
+        toBeSavedUserGroup, savedUserGroup, "The name cannot be updated for externally managed group");
+  }
+
+  private void checkUpdateForHarnessManagedGroup(UserGroupDTO toBeSavedUserGroup, UserGroup savedUserGroup) {
+    if (defaultUserGroups.contains(savedUserGroup.getIdentifier()) || savedUserGroup.isHarnessManaged()) {
+      cannotUpdateUsers(
+          toBeSavedUserGroup, savedUserGroup, "Updating users is not supported for harness managed group ");
+      cannotChangeUserGroupName(
+          toBeSavedUserGroup, savedUserGroup, "The name cannot be updated for harness managed group.");
+    }
+  }
+
+  private void cannotUpdateUsers(UserGroupDTO toBeSavedUserGroup, UserGroup savedUserGroup, String errorMessage) {
     List<String> newUsersToBeAdded = toBeSavedUserGroup.getUsers();
     List<String> savedUsers = savedUserGroup.getUsers();
     if (!CollectionUtils.isEqualCollection(newUsersToBeAdded, savedUsers)) {
-      throw new InvalidRequestException(
-          "Update is not supported for externally managed group " + toBeSavedUserGroup.getIdentifier());
+      throw new InvalidRequestException(errorMessage + toBeSavedUserGroup.getIdentifier());
     }
+  }
 
+  private void cannotChangeUserGroupName(
+      UserGroupDTO toBeSavedUserGroup, UserGroup savedUserGroup, String errorMessage) {
     if (!savedUserGroup.getName().equals(toBeSavedUserGroup.getName())) {
-      throw new InvalidRequestException("The name cannot be updated for externally managed group");
+      throw new InvalidRequestException(errorMessage);
     }
   }
 
@@ -304,9 +351,7 @@ public class UserGroupServiceImpl implements UserGroupService {
 
     Optional<UserGroup> userGroupOptional =
         get(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), identifier);
-    if (userGroupOptional.isPresent() && userGroupOptional.get().isHarnessManaged()) {
-      throw new InvalidRequestException("Cannot deleted a managed user group");
-    }
+    cannotDeleteHarnessManagedGroup(userGroupOptional);
     Criteria criteria = createUserGroupFetchCriteria(
         scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), identifier);
     return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
@@ -339,6 +384,19 @@ public class UserGroupServiceImpl implements UserGroupService {
 
   @Override
   public UserGroup addMember(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String userGroupIdentifier, String userIdentifier) {
+    UserGroup existingUserGroup = getOrThrow(accountIdentifier, orgIdentifier, projectIdentifier, userGroupIdentifier);
+    checkToHarnessManagedUserGroup(existingUserGroup);
+    return addMemberInternal(accountIdentifier, orgIdentifier, projectIdentifier, userGroupIdentifier, userIdentifier);
+  }
+
+  @Override
+  public UserGroup addMemberToDefaultUserGroup(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String userGroupIdentifier, String userIdentifier) {
+    return addMemberInternal(accountIdentifier, orgIdentifier, projectIdentifier, userGroupIdentifier, userIdentifier);
+  }
+
+  private UserGroup addMemberInternal(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String userGroupIdentifier, String userIdentifier) {
     UserGroup existingUserGroup = getOrThrow(accountIdentifier, orgIdentifier, projectIdentifier, userGroupIdentifier);
     UserGroupDTO oldUserGroup = (UserGroupDTO) HObjectMapper.clone(toDTO(existingUserGroup));
@@ -389,6 +447,19 @@ public class UserGroupServiceImpl implements UserGroupService {
   public UserGroup removeMember(Scope scope, String userGroupIdentifier, String userIdentifier) {
     UserGroup existingUserGroup = getOrThrow(
         scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), userGroupIdentifier);
+    checkToHarnessManagedUserGroup(existingUserGroup);
+    return removeMemberInternal(scope, userGroupIdentifier, userIdentifier);
+  }
+
+  private void checkToHarnessManagedUserGroup(UserGroup existingUserGroup) {
+    if (existingUserGroup.isHarnessManaged()) {
+      throw new InvalidRequestException("Cannot add or remove user from an harness managed user group.");
+    }
+  }
+
+  private UserGroup removeMemberInternal(Scope scope, String userGroupIdentifier, String userIdentifier) {
+    UserGroup existingUserGroup = getOrThrow(
+        scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), userGroupIdentifier);
     UserGroupDTO oldUserGroup = (UserGroupDTO) HObjectMapper.clone(toDTO(existingUserGroup));
     validateAtleastOneAdminExistAfterRemoval(scope, userGroupIdentifier, userIdentifier);
     existingUserGroup.getUsers().remove(userIdentifier);
@@ -419,7 +490,8 @@ public class UserGroupServiceImpl implements UserGroupService {
                       .projectIdentifier(projectIdentifier)
                       .build();
     List<String> userGroupIdentifiers = userGroups.stream().map(UserGroup::getIdentifier).collect(Collectors.toList());
-    userGroupIdentifiers.forEach(userGroupIdentifier -> removeMember(scope, userGroupIdentifier, userIdentifier));
+    userGroupIdentifiers.forEach(
+        userGroupIdentifier -> removeMemberInternal(scope, userGroupIdentifier, userIdentifier));
   }
 
   private Criteria createCriteriaByScopeAndUsersIn(
@@ -626,9 +698,21 @@ public class UserGroupServiceImpl implements UserGroupService {
   public UserGroup linkToSsoGroup(@NotBlank @AccountIdentifier String accountIdentifier, String orgIdentifier,
       String projectIdentifier, @NotBlank String userGroupIdentifier, @NotNull SSOType ssoType, @NotBlank String ssoId,
       @NotBlank String ssoGroupId, @NotBlank String ssoGroupName) {
+    boolean ngLdapEnabled = false;
+    if (SSOType.LDAP == ssoType) {
+      ngLdapEnabled = ngFeatureFlagHelperService.isEnabled(accountIdentifier, NG_ENABLE_LDAP_CHECK);
+      if (!ngLdapEnabled) {
+        throw new InvalidRequestException("Please enable feature flag NG_ENABLE_LDAP_CHECK for your account");
+      }
+    }
+
     UserGroup existingUserGroup = getOrThrow(accountIdentifier, orgIdentifier, projectIdentifier, userGroupIdentifier);
     UserGroupDTO oldUserGroup = (UserGroupDTO) HObjectMapper.clone(toDTO(existingUserGroup));
 
+    if (TRUE.equals(existingUserGroup.isHarnessManaged())
+        || defaultUserGroups.contains(existingUserGroup.getIdentifier())) {
+      throw new InvalidRequestException("Cannot link SSO Provider to the Harness Managed group.");
+    }
     if (TRUE.equals(existingUserGroup.getIsSsoLinked())) {
       throw new InvalidRequestException("SSO Provider already linked to the group. Try unlinking first.");
     }
@@ -709,5 +793,13 @@ public class UserGroupServiceImpl implements UserGroupService {
     List<String> userIds = ngUserService.listUserIds(scope);
     userIds = userIds == null ? new ArrayList<>() : userIds;
     return new HashSet<>(Sets.difference(currentUserIds, new HashSet<>(userIds)));
+  }
+
+  private void cannotDeleteHarnessManagedGroup(Optional<UserGroup> userGroupOptional) {
+    if (userGroupOptional.isPresent()
+        && (userGroupOptional.get().isHarnessManaged()
+            || defaultUserGroups.contains(userGroupOptional.get().getIdentifier()))) {
+      throw new InvalidRequestException("Cannot delete a harness managed user group.");
+    }
   }
 }

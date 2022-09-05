@@ -16,13 +16,13 @@ public class ChangeConsumerFactory {
 
   @SuppressWarnings("unchecked")
   public <T extends MongoCollectionChangeConsumer> T get(long sleepInterval, String collectionName,
-      ChangeConsumerConfig changeConsumerConfig, long producingCountPerBatch) {
+      ChangeConsumerConfig changeConsumerConfig, long producingCountPerBatch, int redisStreamSize) {
     ConsumerType consumerType = changeConsumerConfig.getConsumerType();
     if (consumerType != null) {
       switch (consumerType) {
         case EVENTS_FRAMEWORK:
           return (T) new EventsFrameworkChangeConsumer(
-              sleepInterval, collectionName, producerFactory, producingCountPerBatch);
+              sleepInterval, collectionName, producerFactory, producingCountPerBatch, redisStreamSize);
         default:
           throw new InvalidRequestException("Change Consumer not Supported for " + consumerType.toString());
       }

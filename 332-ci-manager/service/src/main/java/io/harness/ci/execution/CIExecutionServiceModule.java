@@ -12,11 +12,13 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.steps.nodes.ArtifactoryUploadNode;
+import io.harness.beans.steps.nodes.BackgroundStepNode;
 import io.harness.beans.steps.nodes.BuildAndPushACRNode;
 import io.harness.beans.steps.nodes.BuildAndPushDockerNode;
 import io.harness.beans.steps.nodes.BuildAndPushECRNode;
 import io.harness.beans.steps.nodes.BuildAndPushGCRNode;
 import io.harness.beans.steps.nodes.GCSUploadNode;
+import io.harness.beans.steps.nodes.GitCloneStepNode;
 import io.harness.beans.steps.nodes.PluginStepNode;
 import io.harness.beans.steps.nodes.RestoreCacheGCSNode;
 import io.harness.beans.steps.nodes.RestoreCacheS3Node;
@@ -59,6 +61,7 @@ public class CIExecutionServiceModule extends AbstractModule {
   public static Set<Class<?>> ciStepsMovedToNewSchema = new HashSet() {
     {
       add(RunStepNode.class);
+      add(BackgroundStepNode.class);
       add(RunTestStepNode.class);
       add(GCSUploadNode.class);
       add(S3UploadNode.class);
@@ -73,6 +76,7 @@ public class CIExecutionServiceModule extends AbstractModule {
       add(PluginStepNode.class);
       add(SecurityNode.class);
       add(ArtifactoryUploadNode.class);
+      add(GitCloneStepNode.class);
     }
   };
   @Inject

@@ -59,13 +59,13 @@ public class RuntimeInputValuesValidator {
     String error = "";
     String templateValue = ((JsonNode) templateObject).asText();
     String inputSetValue = ((JsonNode) inputSetObject).asText();
-    ParameterField<String> inputSetField;
+    ParameterField<?> inputSetField;
     inputSetField = getInputSetParameterField(inputSetValue);
     String inputSetFieldValue;
     if (inputSetField == null || inputSetField.getValue() == null) {
       inputSetFieldValue = inputSetValue;
     } else {
-      inputSetFieldValue = inputSetField.getValue();
+      inputSetFieldValue = inputSetField.getValue().toString();
     }
 
     if (NGExpressionUtils.matchesInputSetPattern(templateValue)
@@ -125,13 +125,13 @@ public class RuntimeInputValuesValidator {
 
     String sourceValue = ((JsonNode) sourceObject).asText();
     String objectToValidateValue = ((JsonNode) objectToValidate).asText();
-    ParameterField<String> inputSetField;
+    ParameterField<?> inputSetField;
     inputSetField = getInputSetParameterField(objectToValidateValue);
     String objectToValidateFieldValue;
     if (inputSetField == null || inputSetField.getValue() == null) {
       objectToValidateFieldValue = objectToValidateValue;
     } else {
-      objectToValidateFieldValue = inputSetField.getValue();
+      objectToValidateFieldValue = inputSetField.getValue().toString();
     }
 
     if (NGExpressionUtils.matchesInputSetPattern(sourceValue)) {

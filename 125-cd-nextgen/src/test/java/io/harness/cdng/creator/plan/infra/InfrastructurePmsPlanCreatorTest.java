@@ -66,8 +66,7 @@ public class InfrastructurePmsPlanCreatorTest extends CDNGTestBase {
       throw new InvalidRequestException("Exception while parsing yaml");
     }
 
-    PlanNode planNode =
-        InfrastructurePmsPlanCreator.planBuilderForInfraSection(yamlField.getNode(), "infraSectionUuid").build();
+    PlanNode planNode = InfrastructurePmsPlanCreator.planBuilderForInfraSection("infraSectionUuid").build();
     assertThat(planNode.getUuid()).isEqualTo("infraSectionUuid");
     assertThat(planNode.getName()).isEqualTo(PlanCreatorConstants.INFRA_SECTION_NODE_NAME);
     assertThat(planNode.getIdentifier()).isEqualTo(PlanCreatorConstants.INFRA_SECTION_NODE_IDENTIFIER);
@@ -94,7 +93,8 @@ public class InfrastructurePmsPlanCreatorTest extends CDNGTestBase {
 
     LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
     YamlField rcField = InfrastructurePmsPlanCreator.addResourceConstraintDependency(
-        yamlField.getNode().getField("spec").getNode().getField("environment").getNode(), planCreationResponseMap);
+        yamlField.getNode().getField("spec").getNode().getField("environment").getNode(), planCreationResponseMap, "");
+
     assertThat(planCreationResponseMap.size()).isEqualTo(1);
     Map<String, String> dependencyMap =
         planCreationResponseMap.get(rcField.getNode().getUuid()).getDependencies().getDependenciesMap();

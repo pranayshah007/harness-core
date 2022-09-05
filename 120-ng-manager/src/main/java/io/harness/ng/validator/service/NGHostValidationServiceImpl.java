@@ -225,7 +225,8 @@ public class NGHostValidationServiceImpl implements NGHostValidationService {
       return HostValidationDTO.builder()
           .host(hostName)
           .status(HostValidationDTO.HostValidationStatus.fromBoolean(false))
-          .error(buildErrorDetails(errorResponseData.getErrorMessage()))
+          .error(buildErrorDetails("Host connectivity validation failed.", errorResponseData.getErrorMessage(),
+              ngErrorHelper.getCode(errorResponseData.getErrorMessage())))
           .build();
     } else if (delegateResponseData instanceof BaseConfigValidationTaskResponse) {
       BaseConfigValidationTaskResponse responseData = (BaseConfigValidationTaskResponse) delegateResponseData;
@@ -358,13 +359,8 @@ public class NGHostValidationServiceImpl implements NGHostValidationService {
     } catch (DelegateServiceDriverException ex) {
       throw new HintException(
           String.format(HintException.DELEGATE_NOT_AVAILABLE, DocumentLinksConstants.DELEGATE_INSTALLATION_LINK),
-          new DelegateNotAvailableException(ex.getCause().getMessage(), ex, WingsException.USER));
-    }
-
-    if (delegateResponseData instanceof ErrorNotifyResponseData) {
-      throw new HintException(
-          String.format(HintException.DELEGATE_NOT_AVAILABLE, DocumentLinksConstants.DELEGATE_INSTALLATION_LINK),
-          new DelegateNotAvailableException("Delegates are not available", WingsException.USER));
+          new DelegateNotAvailableException(
+              ex.getCause() != null ? ex.getCause().getMessage() : ex.getMessage(), ex, WingsException.USER));
     }
     return delegateResponseData;
   }
@@ -375,6 +371,10 @@ public class NGHostValidationServiceImpl implements NGHostValidationService {
         .reason(ngErrorHelper.getReason(errorMsg))
         .code(ngErrorHelper.getCode(errorMsg))
         .build();
+  }
+
+  private ErrorDetail buildErrorDetails(final String errorMsg, final String errorReason, final int code) {
+    return ErrorDetail.builder().message(errorMsg).reason(errorReason).code(code).build();
   }
 
   private ErrorDetail buildErrorDetails() {

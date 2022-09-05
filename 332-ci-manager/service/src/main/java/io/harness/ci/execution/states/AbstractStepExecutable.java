@@ -32,6 +32,7 @@ import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.steps.outcome.CIStepArtifactOutcome;
 import io.harness.beans.steps.outcome.CIStepOutcome;
 import io.harness.beans.steps.outcome.StepArtifacts;
+import io.harness.beans.steps.stepinfo.BackgroundStepInfo;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
@@ -47,6 +48,7 @@ import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
+import io.harness.ci.serializer.BackgroundStepProtobufSerializer;
 import io.harness.ci.serializer.PluginCompatibleStepSerializer;
 import io.harness.ci.serializer.PluginStepProtobufSerializer;
 import io.harness.ci.serializer.RunStepProtobufSerializer;
@@ -130,6 +132,7 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
   public static final long bufferTimeMillis =
       5 * 1000; // These additional 5 seconds are approx time spent on creating delegate ask and receiving response
   @Inject private RunStepProtobufSerializer runStepProtobufSerializer;
+  @Inject private BackgroundStepProtobufSerializer backgroundStepProtobufSerializer;
   @Inject private PluginStepProtobufSerializer pluginStepProtobufSerializer;
   @Inject private RunTestsStepProtobufSerializer runTestsStepProtobufSerializer;
   @Inject private PluginCompatibleStepSerializer pluginCompatibleStepSerializer;
@@ -242,7 +245,7 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
     String parkedTaskId = queueParkedDelegateTask(ambiance, timeoutInMillis, accountId, ciDelegateTaskExecutor);
     OSType os = IntegrationStageUtils.getK8OS(k8StageInfraDetails.getInfrastructure());
     UnitStep unitStep = serialiseStep(ciStepInfo, parkedTaskId, logKey, stepIdentifier,
-        getPort(ambiance, stepIdentifier), accountId, stepParametersName, stringTimeout, os);
+        getPort(ambiance, stepIdentifier), accountId, stepParametersName, stringTimeout, os, ambiance);
     String liteEngineTaskId =
         queueK8DelegateTask(ambiance, timeoutInMillis, accountId, ciDelegateTaskExecutor, unitStep, runtimeId);
 
@@ -535,11 +538,14 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
       Ambiance ambiance, StepElementParameters stepParameters, AsyncExecutableResponse executableResponse) {}
 
   private UnitStep serialiseStep(CIStepInfo ciStepInfo, String taskId, String logKey, String stepIdentifier,
-      Integer port, String accountId, String stepName, String timeout, OSType os) {
+      Integer port, String accountId, String stepName, String timeout, OSType os, Ambiance ambiance) {
     switch (ciStepInfo.getNonYamlInfo().getStepInfoType()) {
       case RUN:
         return runStepProtobufSerializer.serializeStepWithStepParameters((RunStepInfo) ciStepInfo, port, taskId, logKey,
             stepIdentifier, ParameterField.createValueField(Timeout.fromString(timeout)), accountId, stepName);
+      case BACKGROUND:
+        return backgroundStepProtobufSerializer.serializeStepWithStepParameters(
+            (BackgroundStepInfo) ciStepInfo, port, taskId, logKey, stepIdentifier, accountId, stepName);
       case PLUGIN:
         return pluginStepProtobufSerializer.serializeStepWithStepParameters((PluginStepInfo) ciStepInfo, port, taskId,
             logKey, stepIdentifier, ParameterField.createValueField(Timeout.fromString(timeout)), accountId, stepName);
@@ -555,9 +561,10 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
       case SAVE_CACHE_S3:
       case SECURITY:
       case RESTORE_CACHE_S3:
+      case GIT_CLONE:
         return pluginCompatibleStepSerializer.serializeStepWithStepParameters((PluginCompatibleStep) ciStepInfo, port,
             taskId, logKey, stepIdentifier, ParameterField.createValueField(Timeout.fromString(timeout)), accountId,
-            stepName, os);
+            stepName, os, ambiance);
       case RUN_TESTS:
         return runTestsStepProtobufSerializer.serializeStepWithStepParameters((RunTestsStepInfo) ciStepInfo, port,
             taskId, logKey, stepIdentifier, ParameterField.createValueField(Timeout.fromString(timeout)), accountId,
@@ -566,7 +573,6 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
       case TEST:
       case BUILD:
       case SETUP_ENV:
-      case GIT_CLONE:
       case INITIALIZE_TASK:
       default:
         log.info("serialisation is not implemented");
@@ -599,10 +605,12 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
       CIExecuteStepTaskParams ciExecuteStepTaskParams, List<String> taskSelectors,
       List<String> eligibleToExecuteDelegateIds) {
     String taskType = CI_EXECUTE_STEP;
+    boolean executeOnHarnessHostedDelegates = false;
     SerializationFormat serializationFormat = SerializationFormat.KRYO;
     if (ciExecuteStepTaskParams.getType() == CIExecuteStepTaskParams.Type.DLITE_VM) {
       taskType = TaskType.DLITE_CI_VM_EXECUTE_TASK.getDisplayName();
       serializationFormat = SerializationFormat.JSON;
+      executeOnHarnessHostedDelegates = true;
     }
     final TaskData taskData = TaskData.builder()
                                   .async(true)
@@ -618,7 +626,8 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
 
     HDelegateTask task = (HDelegateTask) StepUtils.prepareDelegateTaskInput(accountId, taskData, abstractions);
 
-    return executor.queueTask(abstractions, task, taskSelectors, eligibleToExecuteDelegateIds);
+    return executor.queueTask(
+        abstractions, task, taskSelectors, eligibleToExecuteDelegateIds, executeOnHarnessHostedDelegates);
   }
 
   private String queueParkedDelegateTask(
@@ -634,7 +643,7 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
     Map<String, String> abstractions = buildAbstractions(ambiance, Scope.PROJECT);
     HDelegateTask task = (HDelegateTask) StepUtils.prepareDelegateTaskInput(accountId, taskData, abstractions);
 
-    return executor.queueTask(abstractions, task, new ArrayList<>(), new ArrayList<>());
+    return executor.queueTask(abstractions, task, new ArrayList<>(), new ArrayList<>(), false);
   }
 
   private String getLogKey(Ambiance ambiance) {

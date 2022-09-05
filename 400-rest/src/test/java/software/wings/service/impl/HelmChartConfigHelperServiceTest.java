@@ -30,6 +30,7 @@ import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 
 import software.wings.WingsBaseTest;
+import software.wings.api.InfraMappingElement;
 import software.wings.api.PhaseElement;
 import software.wings.api.ServiceElement;
 import software.wings.beans.HelmChartConfig;
@@ -99,6 +100,8 @@ public class HelmChartConfigHelperServiceTest extends WingsBaseTest {
                                                                        .build())
                                                   .storeType(StoreType.HelmChartRepo)
                                                   .build();
+    when(executionContext.fetchInfraMappingId()).thenReturn("svcId_envId");
+    when(executionContext.fetchInfraMappingElement()).thenReturn(InfraMappingElement.builder().name("infraId").build());
     HelmChartConfigParams helmChartConfigTaskParams =
         helmChartConfigHelperService.getHelmChartConfigTaskParams(executionContext, applicationManifest);
     assertThat(helmChartConfigTaskParams.getHelmVersion()).isNull();
@@ -230,6 +233,8 @@ public class HelmChartConfigHelperServiceTest extends WingsBaseTest {
 
     when(mockSettingsService.get(anyString())).thenReturn(settingAttribute);
     when(mockSettingsService.get("cloudProviderId")).thenReturn(null);
+    when(executionContext.fetchInfraMappingId()).thenReturn("svcId_envId");
+    when(executionContext.fetchInfraMappingElement()).thenReturn(InfraMappingElement.builder().name("infraId").build());
 
     try {
       helmChartConfigHelperService.getHelmChartConfigTaskParams(executionContext, appManifest);
@@ -246,7 +251,8 @@ public class HelmChartConfigHelperServiceTest extends WingsBaseTest {
   public void shouldHandleChartNamesProperly() {
     when(executionContext.renderExpression(anyString())).thenAnswer(i -> i.getArgument(0, String.class));
     when(mockFeatureFlagService.isEnabled(Matchers.eq(FeatureName.HELM_CHART_NAME_SPLIT), any())).thenReturn(true);
-
+    when(executionContext.fetchInfraMappingId()).thenReturn("svcId_envId");
+    when(executionContext.fetchInfraMappingElement()).thenReturn(InfraMappingElement.builder().name("infraId").build());
     handleChartNameForHelmRepo();
     handleChartNameForNoneRepoAndUrl();
     handleChartNameForRepoAlreadyInstalledOnDelegate();

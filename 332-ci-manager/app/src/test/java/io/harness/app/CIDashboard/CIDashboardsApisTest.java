@@ -11,6 +11,8 @@ import static io.harness.rule.OwnerRule.JAMIE;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -125,15 +127,13 @@ public class CIDashboardsApisTest extends CategoryTest {
     time.add(1619003421000L);
 
     StatusAndTime statusAndTime = StatusAndTime.builder().time(time).status(status).build();
-    String queryRequired =
-        "select status,startts from pipeline_execution_summary_ci where accountid='acc' and orgidentifier='org' and projectidentifier='pro' and startts>="
-        + previousInterval + " and startts<1619827200000;";
 
-    doReturn(statusAndTime).when(ciOverviewDashboardServiceImpl).queryCalculatorForStatusAndTime(queryRequired);
+    doReturn(statusAndTime)
+        .when(ciOverviewDashboardServiceImpl)
+        .queryCalculatorForStatusAndTime(anyString(), anyString(), anyString(), anyLong(), anyLong());
 
     DashboardBuildsHealthInfo resultBuildHealth = ciOverviewDashboardServiceImpl.getDashBoardBuildHealthInfoWithRate(
         "acc", "org", "pro", startInterval, endInterval, previousInterval);
-
     DashboardBuildsHealthInfo expectedBuildHealth =
         DashboardBuildsHealthInfo.builder()
             .builds(BuildInfo.builder()
@@ -176,11 +176,10 @@ public class CIDashboardsApisTest extends CategoryTest {
     time.add(1619349021000L);
 
     StatusAndTime statusAndTime = StatusAndTime.builder().time(time).status(status).build();
-    String queryRequired =
-        "select status,startts from pipeline_execution_summary_ci where accountid='acc' and orgidentifier='org' and projectidentifier='pro' and startts>="
-        + startInterval + " and startts<1619827200000;";
 
-    doReturn(statusAndTime).when(ciOverviewDashboardServiceImpl).queryCalculatorForStatusAndTime(queryRequired);
+    doReturn(statusAndTime)
+        .when(ciOverviewDashboardServiceImpl)
+        .queryCalculatorForStatusAndTime(anyString(), anyString(), anyString(), anyLong(), anyLong());
 
     DashboardBuildExecutionInfo resultBuildExecution = ciOverviewDashboardServiceImpl.getBuildExecutionBetweenIntervals(
         "acc", "org", "pro", startInterval, endInterval);
@@ -238,7 +237,9 @@ public class CIDashboardsApisTest extends CategoryTest {
                               .planExecutionId("plan")
                               .build());
 
-    doReturn(buildFailureInfos).when(ciOverviewDashboardServiceImpl).queryCalculatorBuildFailureInfo(queryRequired);
+    doReturn(buildFailureInfos)
+        .when(ciOverviewDashboardServiceImpl)
+        .queryCalculatorBuildFailureInfo("acc", "org", "pro", 5);
 
     assertThat(buildFailureInfos)
         .isEqualTo(ciOverviewDashboardServiceImpl.getDashboardBuildFailureInfo("acc", "org", "pro", 5));
@@ -267,7 +268,9 @@ public class CIDashboardsApisTest extends CategoryTest {
                              .planExecutionId("plan")
                              .build());
 
-    doReturn(buildActiveInfos).when(ciOverviewDashboardServiceImpl).queryCalculatorBuildActiveInfo(queryRequired);
+    doReturn(buildActiveInfos)
+        .when(ciOverviewDashboardServiceImpl)
+        .queryCalculatorBuildActiveInfo("acc", "org", "pro", 5);
 
     assertThat(buildActiveInfos)
         .isEqualTo(ciOverviewDashboardServiceImpl.getDashboardBuildActiveInfo("acc", "org", "pro", 5));
@@ -354,10 +357,6 @@ public class CIDashboardsApisTest extends CategoryTest {
     authorInfoList.add(AuthorInfo.builder().name("name8").url("url8").build());
     authorInfoList.add(AuthorInfo.builder().name("name9").url("url9").build());
 
-    String queryRequired =
-        "select moduleinfo_repository, status, startts, endts, moduleinfo_branch_commit_message, moduleinfo_author_id, author_avatar  from pipeline_execution_summary_ci where accountid='acc' and orgidentifier='org' and projectidentifier='pro' and moduleinfo_repository IS NOT NULL and startts>="
-        + previousInterval + " and startts<1619827200000;";
-
     RepositoryInformation repositoryInformation = RepositoryInformation.builder()
                                                       .repoName(repoName)
                                                       .status(status)
@@ -366,7 +365,9 @@ public class CIDashboardsApisTest extends CategoryTest {
                                                       .endTime(endTime)
                                                       .authorInfoList(authorInfoList)
                                                       .build();
-    doReturn(repositoryInformation).when(ciOverviewDashboardServiceImpl).queryRepositoryCalculator(queryRequired);
+    doReturn(repositoryInformation)
+        .when(ciOverviewDashboardServiceImpl)
+        .queryRepositoryCalculator(any(), any(), any(), any(), any());
 
     DashboardBuildRepositoryInfo resultRepoInfo = ciOverviewDashboardServiceImpl.getDashboardBuildRepository(
         "acc", "org", "pro", startInterval, endInterval, previousInterval);
