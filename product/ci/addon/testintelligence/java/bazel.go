@@ -39,7 +39,7 @@ func (b *bazelRunner) AutoDetectPackages() ([]string, error) {
 	return DetectPkgs(b.log, b.fs)
 }
 
-func (b *bazelRunner) AutoDetectTestFiles() ([]types.RunnableTest, error) {
+func (b *bazelRunner) AutoDetectTestFiles(ctx context.Context) ([]types.RunnableTest, error) {
 	return []types.RunnableTest{}, nil
 }
 

@@ -39,7 +39,7 @@ func (b *mavenRunner) AutoDetectPackages() ([]string, error) {
 	return DetectPkgs(b.log, b.fs)
 }
 
-func (m *mavenRunner) AutoDetectTestFiles() ([]types.RunnableTest, error) {
+func (m *mavenRunner) AutoDetectTestFiles(ctx context.Context) ([]types.RunnableTest, error) {
 	return GetTestFiles(m.log, m.fs)
 }
 

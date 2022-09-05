@@ -48,7 +48,7 @@ func (b *dotnetRunner) AutoDetectPackages() ([]string, error) {
 	return []string{}, errors.New("not implemented")
 }
 
-func (b *dotnetRunner) AutoDetectTestFiles() ([]types.RunnableTest, error) {
+func (b *dotnetRunner) AutoDetectTestFiles(ctx context.Context) ([]types.RunnableTest, error) {
 	return []types.RunnableTest{}, nil
 }
 

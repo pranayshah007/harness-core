@@ -21,7 +21,7 @@ import (
 
 var (
 	getWorkspace = external.GetWrkspcPath
-	javaAgentArg = "-Djavaagent:/Users/rutvijmehta/Desktop/harness/addon/bin/java-agent.jar=%s"
+	javaAgentArg = "-javaagent:/addon/bin/java-agent.jar=%s"
 )
 
 // get list of all file paths matching a provided regex
@@ -55,19 +55,18 @@ func GetTestFiles(log *zap.SugaredLogger, fs filesystem.FileSystem) ([]types.Run
 		if node.Type != utils.NodeType_TEST {
 			continue
 		}
-		fmt.Println(node)
 		test := types.RunnableTest{
 			Pkg:   node.Pkg,
 			Class: node.Class,
-			Path:  path,
 		}
+		test.Autodetect.Path = path
 		tests = append(tests, test)
 	}
 	fmt.Println(tests)
 	return tests, nil
 }
 
-// detect java packages by reading all the files and parsing their package names
+// DetectPkgs detects java packages by reading all the files and parsing their package names
 func DetectPkgs(log *zap.SugaredLogger, fs filesystem.FileSystem) ([]string, error) {
 	plist := []string{}
 	excludeList := []string{"com.google"} // exclude any instances of these packages from the package list

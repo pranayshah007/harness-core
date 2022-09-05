@@ -41,7 +41,7 @@ func (g *gradleRunner) AutoDetectPackages() ([]string, error) {
 	return DetectPkgs(g.log, g.fs)
 }
 
-func (g *gradleRunner) AutoDetectTestFiles() ([]types.RunnableTest, error) {
+func (g *gradleRunner) AutoDetectTestFiles(ctx context.Context) ([]types.RunnableTest, error) {
 	return []types.RunnableTest{}, nil
 }
 

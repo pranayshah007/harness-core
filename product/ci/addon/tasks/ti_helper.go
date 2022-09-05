@@ -13,12 +13,14 @@ import (
 	"github.com/ghodss/yaml"
 	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	"github.com/harness/harness-core/commons/go/lib/filesystem"
+	ti "github.com/harness/harness-core/product/ci/addon/remote"
 	"github.com/harness/harness-core/product/ci/addon/testreports"
 	"github.com/harness/harness-core/product/ci/addon/testreports/junit"
 	"github.com/harness/harness-core/product/ci/common/external"
 	"github.com/harness/harness-core/product/ci/engine/consts"
 	grpcclient "github.com/harness/harness-core/product/ci/engine/grpc/client"
 	pb "github.com/harness/harness-core/product/ci/engine/proto"
+	stutils "github.com/harness/harness-core/product/ci/split_tests/utils"
 	"github.com/harness/harness-core/product/ci/ti-service/types"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -155,23 +157,39 @@ func collectTestReports(ctx context.Context, reports []*pb.Report, stepID string
 	return nil
 }
 
-//func getTestTime(ctx context.Context, log *zap.SugaredLogger, splitStrategy string) (map[string]bool, error) {
-//
-//	timeMap := map[string]bool{}
-//	if splitStrategy == "file_size" {
-//		// get weights by line count
-//		return timeMap, nil
-//	}
-//
-//	req := types.GetTestTimesReq{}
-//	switch splitStrategy {
-//	case "class_timing":
-//		req.IncludeClassname = true
-//	case "file_size":
-//
-//	}
-//	return remote.GetTestTimes(ctx, log, tiReq)
-//}
+func getTestTime(ctx context.Context, log *zap.SugaredLogger, splitStrategy string) (map[string]float64, error) {
+	req := types.GetTestTimesReq{}
+	var res types.GetTestTimesResp
+	var err error
+	fileTimesMap := map[string]float64{}
+
+	switch splitStrategy {
+	case stutils.SplitByFileTimeStr:
+		req.IncludeFilename = true
+		res, err = ti.GetTestTimes(context.Background(), log, req)
+		fileTimesMap = stutils.ConvertMap(res.FileTimeMap)
+	case stutils.SplitByClassTimeStr:
+		req.IncludeClassname = true
+		res, err = ti.GetTestTimes(context.Background(), log, req)
+		fileTimesMap = stutils.ConvertMap(res.ClassTimeMap)
+	case stutils.SplitByTestcaseTimeStr:
+		req.IncludeTestCase = true
+		res, err = ti.GetTestTimes(context.Background(), log, req)
+		fileTimesMap = stutils.ConvertMap(res.TestTimeMap)
+	case stutils.SplitByTestSuiteTimeStr:
+		req.IncludeTestSuite = true
+		res, err = ti.GetTestTimes(context.Background(), log, req)
+		fileTimesMap = stutils.ConvertMap(res.SuiteTimeMap)
+	case stutils.SplitByFileSizeStr:
+		return map[string]float64{}, nil
+	default:
+		return map[string]float64{}, nil
+	}
+	if err != nil {
+		return map[string]float64{}, err
+	}
+	return fileTimesMap, nil
+}
 
 // selectTests takes a list of files which were changed as input and gets the tests
 // to be run corresponding to that.

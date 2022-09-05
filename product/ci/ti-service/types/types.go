@@ -129,11 +129,14 @@ type TestSuite struct {
 // This is different from TestCase struct which contains information
 // about a test case run. RunnableTest is used to run a test.
 type RunnableTest struct {
-	Pkg       string    `json:"pkg"`
-	Class     string    `json:"class"`
-	Method    string    `json:"method"`
-	Selection Selection `json:"selection"` // information on why a test was selected
-	Path      string    `json:"path"`
+	Pkg        string    `json:"pkg"`
+	Class      string    `json:"class"`
+	Method     string    `json:"method"`
+	Selection  Selection `json:"selection"` // information on why a test was selected
+	Autodetect struct {
+		Path string `json:"path"`
+		Rule string `json:"rule"`
+	} `json:"autodetect"`
 }
 
 type SelectTestsResp struct {
