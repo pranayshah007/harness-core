@@ -172,7 +172,7 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
 
   private Map<String, VMInstanceBillingData> convertToGcpInstanceBillingData(TableResult result) {
     List<VMInstanceServiceBillingData> vmInstanceServiceBillingDataList =
-            convertToGcpInstanceServiceBillingData(result);
+        convertToGcpInstanceServiceBillingData(result);
 
     Map<String, VMInstanceBillingData> vmInstanceBillingDataMap = new HashMap<>();
     vmInstanceServiceBillingDataList.forEach(vmInstanceServiceBillingData -> {
@@ -189,7 +189,7 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
       //      }
 
       if (BQConst.gcpComputeService.equals(vmInstanceServiceBillingData.getProductFamily())
-              || vmInstanceServiceBillingData.getProductFamily() == null) {
+          || vmInstanceServiceBillingData.getProductFamily() == null) {
         double cost = vmInstanceServiceBillingData.getCost();
         double rate = vmInstanceServiceBillingData.getRate();
         if (null != vmInstanceServiceBillingData.getEffectiveCost()) {
@@ -206,7 +206,6 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
   }
 
   private List<VMInstanceServiceBillingData> convertToGcpInstanceServiceBillingData(TableResult result) {
-
     FieldList fields = getFieldList(result);
     List<VMInstanceServiceBillingData> instanceServiceBillingDataList = new ArrayList<>();
     Iterable<FieldValueList> fieldValueLists = getFieldValueLists(result);
@@ -388,7 +387,6 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
   @Override
   public Map<String, VMInstanceBillingData> getGcpVMBillingData(
       List<String> resourceIds, Instant startTime, Instant endTime, String dataSetId) {
-
     String query = BQConst.GCP_VM_BILLING_QUERY;
     String resourceId = String.join("','", resourceIds);
     String projectTableName = getGcpProjectTableName(dataSetId);

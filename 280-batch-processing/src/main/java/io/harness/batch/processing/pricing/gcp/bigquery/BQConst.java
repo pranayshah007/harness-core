@@ -34,14 +34,14 @@ public class BQConst {
       + "GROUP BY  azureInstanceId, azureVMProviderId, azureMeterCategory; ";
 
   public static final String GCP_VM_BILLING_QUERY =
-          "SELECT SUM(cost) as cost, MAX(usage.amount_in_pricing_units) as gcpRate, resource.name as gcpResourceName, service.description gcpServiceName "
-                  + "FROM `%s` "
-                  + "WHERE gcpResourceName IN (`%s`) and usage_start_time >= `%s` and usage_end_time < `%s` and "
-                  + "(sku.description like '%E2 Instance Core running%' OR "
-                  + "sku.description like '%RAM cost%' OR "
-                  + "sku.description like '%CPU cost%' OR "
-                  + "sku.description like '%NETWORK%') "
-                  + "group by gcpResourceName, gcpServiceName";
+      "SELECT SUM(cost) as cost, MAX(usage.amount_in_pricing_units) as gcpRate, resource.name as gcpResourceName, service.description gcpServiceName "
+      + "FROM `%s` "
+      + "WHERE gcpResourceName IN (`%s`) and usage_start_time >= `%s` and usage_end_time < `%s` and "
+      + "(sku.description like '%E2 Instance Core running%' OR "
+      + "sku.description like '%RAM cost%' OR "
+      + "sku.description like '%CPU cost%' OR "
+      + "sku.description like '%NETWORK%') "
+      + "group by gcpResourceName, gcpServiceName";
 
   public static final String EKS_FARGATE_BILLING_QUERY = "SELECT SUM(unblendedcost) as cost, resourceid, usagetype  "
       + "FROM `%s` "
