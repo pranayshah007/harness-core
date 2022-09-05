@@ -175,6 +175,9 @@ public class DelegateAgentResource {
           && configuration.getDelegateVersions().remove(primaryDelegateVersion)) {
         configuration.getDelegateVersions().add(primaryDelegateVersion);
       }
+      List<String> delegateVersions = configuration.getDelegateVersions();
+      int tot = delegateVersions.size();
+      log.info("the last version in the list is : {}", delegateVersions.get(tot-1));
       return new RestResponse<>(configuration);
     } catch (InvalidRequestException ex) {
       if (isNotBlank(ex.getMessage()) && ex.getMessage().startsWith("Deleted AccountId")) {
