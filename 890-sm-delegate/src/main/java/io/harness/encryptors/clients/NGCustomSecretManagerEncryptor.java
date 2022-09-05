@@ -66,7 +66,7 @@ public class NGCustomSecretManagerEncryptor implements CustomEncryptor {
     int failedAttempts = 0;
     int timeout = Integer.parseInt(encryptedRecord.getParameters()
                                        .stream()
-                                       .filter(encryptedDataParams -> encryptedDataParams.getName().equals(TIMEOUT))
+                                       .filter(encryptedDataParams -> TIMEOUT.equals(encryptedDataParams.getName()))
                                        .findFirst()
                                        .map(EncryptedDataParams::getValue)
                                        .orElse(DEFAULT_TIMEOUT_IN_MILLISECOND));
