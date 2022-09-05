@@ -71,8 +71,10 @@ public class WinRmScriptCommandHandlerTest {
     when(winRmExecutorFactoryNG.getExecutor(any(), anyBoolean(), any(), any())).thenReturn(executor);
     when(executor.executeCommandString(command, outputVariables))
         .thenReturn(ExecuteCommandResponse.builder().status(CommandExecutionStatus.SUCCESS).build());
-    CommandExecutionStatus result = winRmScriptCommandHandler.handle(winrmTaskParameters, scriptCommandUnit,
-        iLogStreamingTaskClient, CommandUnitsProgress.builder().build(), taskContext);
+    CommandExecutionStatus result = winRmScriptCommandHandler
+                                        .handle(winrmTaskParameters, scriptCommandUnit, iLogStreamingTaskClient,
+                                            CommandUnitsProgress.builder().build(), taskContext)
+                                        .getStatus();
     assertThat(result).isEqualTo(CommandExecutionStatus.SUCCESS);
   }
 }

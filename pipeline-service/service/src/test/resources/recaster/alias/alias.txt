@@ -64,6 +64,7 @@ io.harness.steps.jira.create.JiraCreateSpecParameters
 io.harness.steps.cf.FlagConfigurationStepParameters
 io.harness.pms.yaml.validation.InputSetValidator
 io.harness.steps.shellscript.ShellScriptInlineSource
+io.harness.steps.shellscript.HarnessFileStoreSource
 parameterField
 io.harness.steps.approval.step.harness.HarnessApprovalOutcome
 io.harness.steps.common.steps.stepgroup.StepGroupStepParameters
@@ -139,3 +140,4 @@ io.harness.plancreator.steps.TaskSelectorYaml
 io.harness.logging.CommandExecutionStatus
 io.harness.steps.approval.step.harness.beans.HarnessApprovalAction
 io.harness.plancreator.strategy.ExpressionAxisConfig
+io.harness.yaml.core.failurestrategy.ProceedWithDefaultValuesFailureActionConfig

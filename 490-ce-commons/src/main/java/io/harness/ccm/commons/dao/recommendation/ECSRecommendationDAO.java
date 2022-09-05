@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CE;
 import static io.harness.ccm.commons.utils.TimeUtils.offsetDateTimeNow;
 import static io.harness.ccm.commons.utils.TimeUtils.toOffsetDateTime;
 import static io.harness.persistence.HPersistence.upsertReturnNewOptions;
+import static io.harness.persistence.HQuery.excludeValidate;
 import static io.harness.timescaledb.Tables.CE_RECOMMENDATIONS;
 
 import static software.wings.graphql.datafetcher.ce.recommendation.entity.RecommenderUtils.newCpuHistogramV2;
@@ -87,7 +88,7 @@ public class ECSRecommendationDAO {
   @NonNull
   public Optional<ECSServiceRecommendation> fetchECSRecommendationById(
       @NonNull String accountIdentifier, @NonNull String id) {
-    return Optional.ofNullable(hPersistence.createQuery(ECSServiceRecommendation.class)
+    return Optional.ofNullable(hPersistence.createQuery(ECSServiceRecommendation.class, excludeValidate)
                                    .filter(ECSServiceRecommendationKeys.accountId, accountIdentifier)
                                    .filter(ECSServiceRecommendationKeys.uuid, new ObjectId(id))
                                    .get());

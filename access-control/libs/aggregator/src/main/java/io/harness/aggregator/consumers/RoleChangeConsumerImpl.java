@@ -30,6 +30,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -164,9 +165,12 @@ public class RoleChangeConsumerImpl implements ChangeConsumer<RoleDBO> {
             -> existingPrincipals.forEach(principalIdentifier
                 -> existingResourceSelectors.forEach(resourceSelector
                     -> aclsToCreate.add(buildACL(permissionIdentifier, Principal.of(principalType, principalIdentifier),
-                        roleAssignmentDBO, resourceSelector)))));
+                        roleAssignmentDBO, resourceSelector, false)))));
       }
       numberOfACLsCreated += aclRepository.insertAllIgnoringDuplicates(aclsToCreate);
+      numberOfACLsCreated +=
+          aclRepository.insertAllIgnoringDuplicates(changeConsumerService.getImplicitACLsForRoleAssignment(
+              roleAssignmentDBO, new HashSet<>(), permissionsAddedToRole));
 
       return new Result(numberOfACLsCreated, numberOfACLsDeleted);
     }

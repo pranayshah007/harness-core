@@ -23,6 +23,7 @@ import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
 import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
+import io.harness.cdng.artifact.outcome.GarArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.JenkinsArtifactOutcome;
 import io.harness.cdng.artifact.outcome.NexusArtifactOutcome;
@@ -130,6 +131,9 @@ public class ImagePullSecretUtils {
       case ArtifactSourceConstants.JENKINS_NAME:
         getBuildDetailsFromJenkins((JenkinsArtifactOutcome) artifactOutcome, imageDetailsBuilder, ambiance);
         break;
+      case ArtifactSourceConstants.GOOGLE_ARTIFACT_REGISTRY_NAME:
+        getImageDetailsFromGar((GarArtifactOutcome) artifactOutcome, imageDetailsBuilder, ambiance);
+        break;
       default:
         throw new UnsupportedOperationException(
             String.format("Unknown Artifact Config type: [%s]", artifactOutcome.getArtifactType()));
@@ -198,6 +202,20 @@ public class ImagePullSecretUtils {
     ConnectorInfoDTO connectorDTO = getConnector(connectorRef, ambiance);
     GcpConnectorDTO connectorConfig = (GcpConnectorDTO) connectorDTO.getConnectorConfig();
     String imageName = gcrArtifactOutcome.getRegistryHostname() + "/" + gcrArtifactOutcome.getImagePath();
+    imageDetailsBuilder.registryUrl(imageName);
+    imageDetailsBuilder.username("_json_key");
+    if (connectorConfig.getCredential() != null
+        && connectorConfig.getCredential().getGcpCredentialType() == GcpCredentialType.MANUAL_CREDENTIALS) {
+      GcpManualDetailsDTO config = (GcpManualDetailsDTO) connectorConfig.getCredential().getConfig();
+      imageDetailsBuilder.password(getPasswordExpression(config.getSecretKeyRef().toSecretRefStringValue(), ambiance));
+    }
+  }
+  private void getImageDetailsFromGar(
+      GarArtifactOutcome garArtifactOutcome, ImageDetailsBuilder imageDetailsBuilder, Ambiance ambiance) {
+    String connectorRef = garArtifactOutcome.getConnectorRef();
+    ConnectorInfoDTO connectorInfoDTO = getConnector(connectorRef, ambiance);
+    GcpConnectorDTO connectorConfig = (GcpConnectorDTO) connectorInfoDTO.getConnectorConfig();
+    String imageName = garArtifactOutcome.getImage();
     imageDetailsBuilder.registryUrl(imageName);
     imageDetailsBuilder.username("_json_key");
     if (connectorConfig.getCredential() != null

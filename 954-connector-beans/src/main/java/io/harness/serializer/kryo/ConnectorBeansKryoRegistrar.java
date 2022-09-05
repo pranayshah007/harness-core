@@ -72,6 +72,8 @@ import io.harness.delegate.beans.connector.cek8s.CEKubernetesClusterConfigDTO;
 import io.harness.delegate.beans.connector.customhealthconnector.CustomHealthConnectorDTO;
 import io.harness.delegate.beans.connector.customhealthconnector.CustomHealthKeyAndValue;
 import io.harness.delegate.beans.connector.customhealthconnector.CustomHealthMethod;
+import io.harness.delegate.beans.connector.customsecretmanager.CustomSecretManagerConnectorDTO;
+import io.harness.delegate.beans.connector.customsecretmanager.TemplateLinkConfigForCustomSecretManager;
 import io.harness.delegate.beans.connector.datadog.DatadogConnectorDTO;
 import io.harness.delegate.beans.connector.docker.DockerAuthCredentialsDTO;
 import io.harness.delegate.beans.connector.docker.DockerAuthType;
@@ -79,6 +81,8 @@ import io.harness.delegate.beans.connector.docker.DockerAuthenticationDTO;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.beans.connector.docker.DockerUserNamePasswordDTO;
 import io.harness.delegate.beans.connector.dynatrace.DynatraceConnectorDTO;
+import io.harness.delegate.beans.connector.elkconnector.ELKAuthType;
+import io.harness.delegate.beans.connector.elkconnector.ELKConnectorDTO;
 import io.harness.delegate.beans.connector.errortracking.ErrorTrackingConnectorDTO;
 import io.harness.delegate.beans.connector.gcpccm.GcpCloudCostConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorCredentialDTO;
@@ -406,5 +410,9 @@ public class ConnectorBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(OciHelmConnectorDTO.class, 29134);
     kryo.register(OciHelmUsernamePasswordDTO.class, 29135);
     kryo.register(AzureRepoConnectionTypeDTO.class, 19854);
+    kryo.register(CustomSecretManagerConnectorDTO.class, 19875);
+    kryo.register(TemplateLinkConfigForCustomSecretManager.class, 19877);
+    kryo.register(ELKConnectorDTO.class, 10000001);
+    kryo.register(ELKAuthType.class, 10000002);
   }
 }

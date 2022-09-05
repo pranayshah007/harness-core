@@ -10,7 +10,6 @@ package io.harness.buildcleaner;
 import io.harness.buildcleaner.bazel.BuildFile;
 import io.harness.buildcleaner.bazel.JavaBinary;
 import io.harness.buildcleaner.bazel.JavaLibrary;
-import io.harness.buildcleaner.bazel.LoadStatement;
 import io.harness.buildcleaner.javaparser.ClassMetadata;
 import io.harness.buildcleaner.javaparser.ClasspathParser;
 import io.harness.buildcleaner.javaparser.PackageParser;
@@ -24,6 +23,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
@@ -88,10 +88,27 @@ public class BuildCleaner {
           try {
             Path modulePath = workspace().relativize(path);
             Optional<BuildFile> buildFile = generateBuildForModule(modulePath, harnessSymbolMap);
-
-            if (buildFile.isPresent()) {
-              logger.info("Writing Build file for Module: " + path);
-              buildFile.get().writeToPackage(workspace().resolve(path));
+            Path packagePath = workspace().resolve(path);
+            Path buildFilePath = Paths.get(packagePath.toString(), "/BUILD.bazel");
+            logger.info("Module {}; PackagePath {}; BuildFilePath {};", modulePath, packagePath, buildFilePath);
+            if (Files.exists(buildFilePath)) {
+              logger.info("BuildFile already exists at: {}", buildFilePath);
+              // Need to update the existing file with new content, after replacing the dependencies.
+              // Assumptions:
+              // - The BUILD file has at most one java_library rule
+              // - The BUILD file has at most one java_binary rule.
+              // - Empty dependencies are explicitly mentioned in the rules: Eg: deps = [] and runtime_deps = []
+              if (options.hasOption("updateExistingBuildFiles")) {
+                logger.info("Updating existing BUILD file at: {}", buildFilePath);
+                buildFile.get().updateDependencies(buildFilePath);
+              } else {
+                logger.info("Skipping update to existing BUILD file. Use --updateExistingBuildFiles to override");
+              }
+            } else {
+              if (buildFile.isPresent()) {
+                logger.info("Writing Build file for Module: {}", path);
+                buildFile.get().writeToPackage(workspace().resolve(path));
+              }
             }
           } catch (IOException e) {
             throw new RuntimeException(e);
@@ -116,7 +133,7 @@ public class BuildCleaner {
     logger.info("Creating index using sources matching: " + indexSourceGlob());
 
     ClasspathParser classpathParser = packageParser.getClassPathParser();
-    classpathParser.parseClasses(indexSourceGlob(), options.hasOption("findBuildInParent"));
+    classpathParser.parseClasses(indexSourceGlob(), assumedPackagePrefixesWithBuildFile());
 
     // Add repository java source code index to the cache.
     Set<ClassMetadata> fullyQualifiedClassNames = classpathParser.getFullyQualifiedClassNames();
@@ -146,7 +163,7 @@ public class BuildCleaner {
     // and don't care about the BUILD file paths.
     ClasspathParser classpathParser = this.packageParser.getClassPathParser();
     String parseClassPattern = path.toString().isEmpty() ? srcsGlob() : path.toString() + "/" + srcsGlob();
-    classpathParser.parseClasses(parseClassPattern, false);
+    classpathParser.parseClasses(parseClassPattern, new HashSet<>());
 
     Set<String> dependencies = new TreeSet<>();
     for (String importStatement : classpathParser.getUsedTypes()) {
@@ -184,7 +201,7 @@ public class BuildCleaner {
     // Find main files in the folder and create java binary targets.
     for (String className : classpathParser.getMainClasses()) {
       JavaBinary javaBinary = new JavaBinary(className, DEFAULT_VISIBILITY,
-          getPackageName(classpathParser) + "." + className, Collections.singleton(":" + path.getFileName().toString()),
+          getPackageName(classpathParser) + "." + className, /*runTimeDeps=*/Collections.singleton(":module"),
           /*deps=*/Collections.emptySet());
       buildFile.addJavaBinary(javaBinary);
     }
@@ -279,6 +296,12 @@ public class BuildCleaner {
     return options.hasOption("srcsGlob") ? options.getOptionValue("srcsGlob") : "*.java";
   }
 
+  private Set<String> assumedPackagePrefixesWithBuildFile() {
+    return options.hasOption("assumedPackagePrefixesWithBuildFile")
+        ? new HashSet<String>(Arrays.asList(options.getOptionValue("assumedPackagePrefixesWithBuildFile").split(",")))
+        : new HashSet<String>();
+  }
+
   private Path mavenManifestFile() {
     return options.hasOption("mavenManifestFile") ? Paths.get(options.getOptionValue("mavenManifestFile"))
                                                   : Paths.get(workspace() + "/maven-manifest.json");
@@ -301,7 +324,9 @@ public class BuildCleaner {
     options.addOption(new Option(null, "workspace", true, "Workspace root"));
     options.addOption(new Option(
         null, "indexSourceGlob", true, "Pattern for source files to build index. Defaults to '**/src/main/**/*.java'"));
-    options.addOption(new Option(null, "overrideIndex", true, "Override the existing index"));
+    options.addOption(new Option(null, "overrideIndex", false, "Override the existing index"));
+    options.addOption(
+        new Option(null, "updateExistingBuildFiles", false, "Update dependencies in existing BUILD file"));
     options.addOption(new Option(null, "module", true, "Relative path of the module from the workspace"));
     options.addOption(new Option(null, "srcsGlob", true, "Pattern to match for finding source files."));
     options.addOption(
@@ -311,10 +336,10 @@ public class BuildCleaner {
             + "Defaults to workspace/maven_manifest.json"));
     options.addOption(
         new Option(null, "mavenManifestOverrideFile", true, "Specify overrides for conflicting imports."));
-    options.addOption(new Option(null, "recursive", true, "Generate BUILD files for all folders inside the module"));
-    options.addOption(new Option(null, "findBuildInParent", true,
-        "Don't assume build file is present in every folder, rather keep going up the tree until a build file is found. "
-            + "This would not override the index file if already present."));
+    options.addOption(new Option(null, "recursive", false, "Generate BUILD files for all folders inside the module"));
+    options.addOption(new Option(null, "assumedPackagePrefixesWithBuildFile", true,
+        "Comma separate list of module prefixes for which we can assume BUILD file to be present. "
+            + "Set to 'all' if need same behavior for all folders"));
 
     CommandLine commandLineOptions = null;
     try {

@@ -30,5 +30,6 @@ public enum OrchestrationAdviserTypes {
   RESUME,
   MANUAL_INTERVENTION,
 
-  MARK_SUCCESS
+  MARK_SUCCESS,
+  PROCEED_WITH_DEFAULT;
 }

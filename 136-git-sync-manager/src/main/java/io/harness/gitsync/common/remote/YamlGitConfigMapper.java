@@ -23,6 +23,7 @@ import io.harness.gitsync.common.dtos.GitSyncConfigDTO;
 import io.harness.gitsync.common.dtos.GitSyncFolderConfigDTO;
 import io.harness.gitsync.common.dtos.GitSyncFolderConfigDTO.GitSyncFolderConfigDTOBuilder;
 import io.harness.gitsync.common.impl.GitUtils;
+import io.harness.utils.FilePathUtils;
 
 import java.util.List;
 
@@ -137,7 +138,8 @@ public class YamlGitConfigMapper {
     return rootFolders.stream()
         .map(rootFolder -> {
           GitSyncFolderConfigDTOBuilder gitSyncFolderDTOBuilder =
-              GitSyncFolderConfigDTO.builder().isDefault(false).rootFolder(rootFolder.getRootFolder());
+              GitSyncFolderConfigDTO.builder().isDefault(false).rootFolder(
+                  FilePathUtils.addStartingSlashIfMissing(rootFolder.getRootFolder()));
           if (rootFolder.equals(defaultRootFolder)) {
             gitSyncFolderDTOBuilder.isDefault(true);
           }

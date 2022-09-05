@@ -275,12 +275,33 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.JENKINS_BUILD)
   JENKINS_BUILD(
       ModuleType.CD, EntityTypeConstants.JENKINS_BUILD, IdentifierRef.class, EntityYamlRootNames.JENKINS_BUILD),
+  @JsonProperty(EntityTypeConstants.ECS_ROLLING_DEPLOY)
+  ECS_ROLLING_DEPLOY_STEP(ModuleType.CD, EntityTypeConstants.ECS_ROLLING_DEPLOY, IdentifierRef.class,
+      EntityYamlRootNames.ECS_ROLLING_DEPLOY),
+  @JsonProperty(EntityTypeConstants.ECS_ROLLING_ROLLBACK)
+  ECS_ROLLING_ROLLBACK_STEP(ModuleType.CD, EntityTypeConstants.ECS_ROLLING_ROLLBACK, IdentifierRef.class,
+      EntityYamlRootNames.ECS_ROLLING_ROLLBACK),
+  @JsonProperty(EntityTypeConstants.ECS_CANARY_DEPLOY)
+  ECS_CANARY_DEPLOY_STEP(
+      ModuleType.CD, EntityTypeConstants.ECS_CANARY_DEPLOY, IdentifierRef.class, EntityYamlRootNames.ECS_CANARY_DEPLOY),
+  @JsonProperty(EntityTypeConstants.ECS_CANARY_DELETE)
+  ECS_CANARY_DELETE_STEP(
+      ModuleType.CD, EntityTypeConstants.ECS_CANARY_DELETE, IdentifierRef.class, EntityYamlRootNames.ECS_CANARY_DELETE),
   @JsonProperty(EntityTypeConstants.AZURE_CREATE_ARM_RESOURCE_STEP)
   AZURE_CREATE_ARM_RESOURCE_STEP(ModuleType.CD, EntityTypeConstants.AZURE_CREATE_ARM_RESOURCE_STEP, IdentifierRef.class,
       EntityYamlRootNames.AZURE_CREATE_ARM_RESOURCE_STEP),
   @JsonProperty(EntityTypeConstants.BUILD_AND_PUSH_ACR)
   BUILD_AND_PUSH_ACR(ModuleType.CI, EntityTypeConstants.BUILD_AND_PUSH_ACR, IdentifierRef.class,
-      EntityYamlRootNames.BUILD_AND_PUSH_ACR);
+      EntityYamlRootNames.BUILD_AND_PUSH_ACR),
+  @JsonProperty(EntityTypeConstants.AZURE_CREATE_BP_RESOURCE_STEP)
+  AZURE_CREATE_BP_RESOURCE_STEP(ModuleType.CD, EntityTypeConstants.AZURE_CREATE_BP_RESOURCE_STEP, IdentifierRef.class,
+      EntityYamlRootNames.AZURE_CREATE_BP_RESOURCE_STEP),
+  @JsonProperty(EntityTypeConstants.AZURE_ROLLBACK_ARM_RESOURCE_STEP)
+  AZURE_ROLLBACK_ARM_RESOURCE_STEP(ModuleType.CD, EntityTypeConstants.AZURE_ROLLBACK_ARM_RESOURCE_STEP,
+      IdentifierRef.class, EntityYamlRootNames.AZURE_ROLLBACK_ARM_RESOURCE_STEP),
+  @JsonProperty(EntityTypeConstants.BACKGROUND_STEP)
+  BACKGROUND_STEP(
+      ModuleType.CI, EntityTypeConstants.BACKGROUND_STEP, IdentifierRef.class, EntityYamlRootNames.BACKGROUND_STEP);
 
   private final ModuleType moduleType;
   String yamlName;

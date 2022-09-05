@@ -147,6 +147,7 @@ public class ServerlessEntityHelper {
       connectorDTO = getConnectorInfoDTO(s3ArtifactOutcome.getConnectorRef(), ngAccess);
       return ServerlessS3ArtifactConfig.builder()
           .bucketName(s3ArtifactOutcome.getBucketName())
+          .region(s3ArtifactOutcome.getRegion())
           .filePath(s3ArtifactOutcome.getFilePath())
           .identifier(s3ArtifactOutcome.getIdentifier())
           .connectorDTO(connectorDTO)

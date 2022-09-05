@@ -25,6 +25,7 @@ import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.visitor.YamlTypes;
+import io.harness.common.NGExpressionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
@@ -36,6 +37,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
 import io.harness.exception.UnexpectedException;
 import io.harness.exception.YamlException;
+import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.ng.DuplicateKeyExceptionParser;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
@@ -46,6 +48,7 @@ import io.harness.ng.core.events.ServiceUpdateEvent;
 import io.harness.ng.core.events.ServiceUpsertEvent;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
+import io.harness.ng.core.service.mappers.ServiceFilterHelper;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
@@ -61,6 +64,8 @@ import io.harness.utils.PageUtils;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
@@ -428,14 +433,17 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   }
 
   @Override
-  public String createServiceInputsYaml(String yaml) {
+  public String createServiceInputsYaml(String yaml, String serviceIdentifier) {
     Map<String, Object> serviceInputs = new HashMap<>();
 
     try {
       YamlField serviceYamlField = YamlUtils.readTree(yaml).getNode().getField(YamlTypes.SERVICE_ENTITY);
       if (serviceYamlField == null) {
-        throw new YamlException("Yaml provided is not a service yaml.");
+        throw new YamlException(
+            String.format("Yaml provided for service %s does not have service root field.", serviceIdentifier));
       }
+
+      modifyServiceDefinitionNodeBeforeCreatingServiceInputs(serviceYamlField, serviceIdentifier);
       ObjectNode serviceNode = (ObjectNode) serviceYamlField.getNode().getCurrJsonNode();
       ObjectNode serviceDefinitionNode = serviceNode.retain(YamlTypes.SERVICE_DEFINITION);
       if (EmptyPredicate.isEmpty(serviceDefinitionNode)) {
@@ -450,8 +458,66 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       serviceInputs.put(YamlTypes.SERVICE_INPUTS, serviceDefinitionInputNode);
       return YamlPipelineUtils.writeYamlString(serviceInputs);
     } catch (IOException e) {
-      throw new InvalidRequestException("Error occurred while creating service inputs ", e);
+      throw new InvalidRequestException(
+          String.format("Error occurred while creating service inputs for service %s", serviceIdentifier), e);
     }
+  }
+
+  private void modifyServiceDefinitionNodeBeforeCreatingServiceInputs(
+      YamlField serviceYamlField, String serviceIdentifier) {
+    YamlField primaryArtifactField = ServiceFilterHelper.getPrimaryArtifactNodeFromServiceYaml(serviceYamlField);
+    if (primaryArtifactField == null) {
+      return;
+    }
+    if (!primaryArtifactField.getNode().isObject()) {
+      throw new InvalidRequestException(
+          String.format("Primary field inside service %s should be an OBJECT node but was %s", serviceIdentifier,
+              primaryArtifactField.getNode().getCurrJsonNode().getNodeType()));
+    }
+
+    YamlField primaryArtifactRef = primaryArtifactField.getNode().getField(YamlTypes.PRIMARY_ARTIFACT_REF);
+    YamlField artifactSourcesField = primaryArtifactField.getNode().getField(YamlTypes.ARTIFACT_SOURCES);
+    if (primaryArtifactRef == null || artifactSourcesField == null) {
+      return;
+    }
+
+    String primaryArtifactRefValue = primaryArtifactRef.getNode().asText();
+
+    if (!artifactSourcesField.getNode().isArray()) {
+      throw new InvalidRequestException(
+          String.format("Artifact sources inside service %s should be ARRAY node but was %s", serviceIdentifier,
+              artifactSourcesField.getNode().getCurrJsonNode().getNodeType()));
+    }
+
+    ObjectNode primaryArtifactObjectNode = (ObjectNode) primaryArtifactField.getNode().getCurrJsonNode();
+    if (NGExpressionUtils.matchesInputSetPattern(primaryArtifactRefValue)) {
+      primaryArtifactObjectNode.remove(YamlTypes.ARTIFACT_SOURCES);
+      primaryArtifactObjectNode.put(YamlTypes.ARTIFACT_SOURCES, "<+input>");
+      return;
+    }
+
+    if (EngineExpressionEvaluator.hasExpressions(primaryArtifactRefValue)) {
+      throw new InvalidRequestException(
+          String.format("Primary artifact ref cannot be an expression inside the service %s", serviceIdentifier));
+    }
+
+    ObjectMapper objectMapper = new ObjectMapper();
+    ArrayNode filteredArtifactSourcesNode = objectMapper.createArrayNode();
+    List<YamlNode> artifactSources = artifactSourcesField.getNode().asArray();
+    for (YamlNode artifactSource : artifactSources) {
+      String sourceIdentifier = artifactSource.getIdentifier();
+      if (primaryArtifactRefValue.equals(sourceIdentifier)) {
+        filteredArtifactSourcesNode.add(artifactSource.getCurrJsonNode());
+        break;
+      }
+    }
+
+    if (EmptyPredicate.isEmpty(filteredArtifactSourcesNode)) {
+      throw new InvalidRequestException(
+          String.format("Primary artifact ref value %s provided does not exist in sources in service %s",
+              primaryArtifactRefValue, serviceIdentifier));
+    }
+    primaryArtifactObjectNode.set(YamlTypes.ARTIFACT_SOURCES, filteredArtifactSourcesNode);
   }
 
   @Override

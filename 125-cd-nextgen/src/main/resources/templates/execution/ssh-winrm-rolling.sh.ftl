@@ -1,7 +1,7 @@
 ${failureStrategies}
 ${rollingSnippet
 ?replace("<+maxConcurrency>", maxConcurrency)
-?replace("<+end>", end)
+?replace("<+partitionSize>", partitionSize)
 ?replace("<+unit>", unitType)
 ?replace("<+setup_runtime_paths_script>", setupRuntimePathsScript)
 ?replace("<+setup_runtime_paths_script_war>", setupRuntimePathsScriptWar)

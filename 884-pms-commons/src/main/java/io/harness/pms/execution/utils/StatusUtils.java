@@ -61,7 +61,7 @@ public class StatusUtils {
       EnumSet.of(FAILED, ERRORED, EXPIRED, APPROVAL_REJECTED, ABORTED);
 
   private final EnumSet<Status> RESUMABLE_STATUSES = EnumSet.of(QUEUED, RUNNING, ASYNC_WAITING, APPROVAL_WAITING,
-      RESOURCE_WAITING, TASK_WAITING, TIMED_WAITING, INTERVENTION_WAITING, INPUT_WAITING);
+      RESOURCE_WAITING, TASK_WAITING, TIMED_WAITING, INTERVENTION_WAITING, INPUT_WAITING, PAUSED);
 
   private final EnumSet<Status> FLOWING_STATUSES =
       EnumSet.of(RUNNING, ASYNC_WAITING, TASK_WAITING, TIMED_WAITING, DISCONTINUING);
@@ -84,8 +84,15 @@ public class StatusUtils {
 
   private final EnumSet<Status> RETRYABLE_FAILED_STATUSES = EnumSet.of(FAILED, EXPIRED, APPROVAL_REJECTED, ABORTED);
 
+  private final EnumSet<Status> ADVISING_STATUSES = EnumSet.of(INPUT_WAITING);
+  private final EnumSet<Status> ABORTING_STATUSES = EnumSet.of(QUEUED);
+
   public EnumSet<Status> finalizableStatuses() {
     return FINALIZABLE_STATUSES;
+  }
+
+  public EnumSet<Status> abortingStatuses() {
+    return ABORTING_STATUSES;
   }
 
   public EnumSet<Status> getRetryableFailedStatuses() {
@@ -98,6 +105,10 @@ public class StatusUtils {
 
   public EnumSet<Status> brokeStatuses() {
     return BROKE_STATUSES;
+  }
+
+  public boolean isAdvisingStatus(Status status) {
+    return ADVISING_STATUSES.contains(status);
   }
 
   public EnumSet<Status> brokeAndAbortedStatuses() {

@@ -554,7 +554,8 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
 
     if (existingConnector.getIsFromDefaultBranch() == null || existingConnector.getIsFromDefaultBranch()) {
       if (existingConnector.getHeartbeatPerpetualTaskId() == null
-          && !harnessManagedConnectorHelper.isHarnessManagedSecretManager(connector) && executeOnDelegate) {
+          && !harnessManagedConnectorHelper.isHarnessManagedSecretManager(connector) && executeOnDelegate
+          && !ConnectorType.CUSTOM_SECRET_MANAGER.equals(connector.getConnectorType())) {
         PerpetualTaskId connectorHeartbeatTaskId = connectorHeartbeatService.createConnectorHeatbeatTask(
             accountIdentifier, existingConnector.getOrgIdentifier(), existingConnector.getProjectIdentifier(),
             existingConnector.getIdentifier());
@@ -1149,7 +1150,7 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
     filterProperties.setTypes(Arrays.asList(new ConnectorType[] {ConnectorType.CE_KUBERNETES_CLUSTER}));
     filterProperties.setCcmConnectorFilter(CcmConnectorFilter.builder().k8sConnectorRef(k8sConnectorRefList).build());
     Page<Connector> ccmk8sConnectors =
-        listHelper(page, size, accountIdentifier, filterProperties, orgIdentifier, projectIdentifier, filterIdentifier,
+        listHelper(0, size, accountIdentifier, filterProperties, orgIdentifier, projectIdentifier, filterIdentifier,
             searchTerm, includeAllConnectorsAccessibleAtScope, getDistinctFromBranches);
     log.info("ccmk8sConnectors count elements: {} pages: {}", ccmk8sConnectors.getTotalElements(),
         ccmk8sConnectors.getTotalPages());

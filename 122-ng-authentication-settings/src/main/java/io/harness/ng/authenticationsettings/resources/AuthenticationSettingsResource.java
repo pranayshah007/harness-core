@@ -34,6 +34,7 @@ import io.harness.stream.BoundedInputStream;
 import software.wings.app.MainConfiguration;
 import software.wings.beans.loginSettings.LoginSettings;
 import software.wings.beans.loginSettings.PasswordStrengthPolicy;
+import software.wings.helpers.ext.ldap.LdapResponse;
 import software.wings.security.authentication.LoginTypeResponse;
 import software.wings.security.authentication.SSOConfig;
 
@@ -435,7 +436,7 @@ public class AuthenticationSettingsResource {
   @Path("/ldap/settings")
   @ApiOperation(value = "Delete Ldap settings", nickname = "deleteLdapSettings")
   @Operation(operationId = "deleteLdapSettings", summary = "Delete Ldap settings",
-      description = "Delete configured Ldap settings on the account.",
+      description = "Delete configured Ldap settings on this account.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -446,6 +447,29 @@ public class AuthenticationSettingsResource {
       NGCommonEntityConstants.ACCOUNT_KEY) @NotBlank String accountId) {
     authenticationSettingsService.deleteLdapSettings(accountId);
     return new RestResponse<>(true);
+  }
+
+  @Multipart
+  @POST
+  @Path("/ldap-login-test")
+  @Consumes("multipart/form-data")
+  @ApiOperation(value = "Perform LDAP Login Test", nickname = "postLdapLoginTest")
+  @Operation(operationId = "postLdapLoginTest", summary = "Test LDAP authentication",
+      description = "Tests LDAP authentication for the given Account ID, with a valid test email and password",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns authentication status")
+      })
+  public RestResponse<LdapResponse>
+  postLdapLoginTest(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+                        NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountId,
+      @Parameter(description = "This should be a valid test email") @FormDataParam("email") String email,
+      @Parameter(description = "This should be a valid password for the test email") @FormDataParam(
+          "password") String password) {
+    accessControlClient.checkForAccessOrThrow(
+        ResourceScope.of(accountId, null, null), Resource.of(AUTHSETTING, null), VIEW_AUTHSETTING_PERMISSION);
+    return new RestResponse<>(authenticationSettingsService.testLDAPLogin(accountId, email, password));
   }
 
   @PUT

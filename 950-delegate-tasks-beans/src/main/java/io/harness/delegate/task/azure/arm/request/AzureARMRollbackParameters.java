@@ -7,6 +7,8 @@
 
 package io.harness.delegate.task.azure.arm.request;
 
+import static io.harness.delegate.task.azure.arm.AzureARMTaskType.ARM_ROLLBACK;
+
 import io.harness.delegate.task.azure.arm.AzureARMTaskParameters;
 
 import lombok.Builder;
@@ -19,7 +21,6 @@ public class AzureARMRollbackParameters extends AzureARMTaskParameters {
   @Builder
   public AzureARMRollbackParameters(String appId, String accountId, String activityId, String subscriptionId,
       String commandName, Integer timeoutIntervalInMin) {
-    super(
-        appId, accountId, activityId, subscriptionId, commandName, timeoutIntervalInMin, AzureARMTaskType.ARM_ROLLBACK);
+    super(appId, accountId, activityId, subscriptionId, commandName, timeoutIntervalInMin, ARM_ROLLBACK);
   }
 }

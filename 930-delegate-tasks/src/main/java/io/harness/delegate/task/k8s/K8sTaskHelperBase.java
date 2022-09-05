@@ -1062,8 +1062,16 @@ public class K8sTaskHelperBase {
   public ProcessResult executeCommandUsingUtils(K8sDelegateTaskParams k8sDelegateTaskParams,
       LogOutputStream statusInfoStream, LogOutputStream statusErrorStream, String command,
       Map<String, String> environment) throws Exception {
+    addGcpCredentialsToEnvironmentIfExist(k8sDelegateTaskParams.getWorkingDirectory(), environment);
     return executeCommandUsingUtils(
         k8sDelegateTaskParams.getWorkingDirectory(), statusInfoStream, statusErrorStream, command, environment);
+  }
+
+  private void addGcpCredentialsToEnvironmentIfExist(String directory, Map<String, String> environment) {
+    Path googleApplicationCredentialsPath = Paths.get(directory).resolve(K8sConstants.GCP_JSON_KEY_FILE_NAME);
+    if (Files.exists(googleApplicationCredentialsPath)) {
+      environment.put("GOOGLE_APPLICATION_CREDENTIALS", googleApplicationCredentialsPath.toAbsolutePath().toString());
+    }
   }
 
   public String getRolloutStatusCommandForDeploymentConfig(

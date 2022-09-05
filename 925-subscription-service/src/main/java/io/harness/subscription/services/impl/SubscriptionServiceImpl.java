@@ -11,15 +11,10 @@ import io.harness.ModuleType;
 import io.harness.beans.FeatureName;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnsupportedOperationException;
-import io.harness.ff.FeatureFlagService;
 import io.harness.licensing.Edition;
 import io.harness.licensing.LicenseType;
-import io.harness.licensing.entities.modules.CDModuleLicense;
-import io.harness.licensing.entities.modules.CEModuleLicense;
 import io.harness.licensing.entities.modules.CFModuleLicense;
-import io.harness.licensing.entities.modules.CIModuleLicense;
 import io.harness.licensing.entities.modules.ModuleLicense;
-import io.harness.licensing.entities.modules.STOModuleLicense;
 import io.harness.licensing.helpers.ModuleLicenseHelper;
 import io.harness.repositories.ModuleLicenseRepository;
 import io.harness.repositories.StripeCustomerRepository;
@@ -45,6 +40,7 @@ import io.harness.subscription.params.ItemParams;
 import io.harness.subscription.params.SubscriptionParams;
 import io.harness.subscription.params.UsageKey;
 import io.harness.subscription.services.SubscriptionService;
+import io.harness.subscription.utils.NGFeatureFlagHelperService;
 
 import com.google.common.base.Strings;
 import com.google.inject.Inject;
@@ -65,7 +61,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   private final ModuleLicenseRepository licenseRepository;
   private final StripeCustomerRepository stripeCustomerRepository;
   private final SubscriptionDetailRepository subscriptionDetailRepository;
-  private final FeatureFlagService featureFlagService;
+  private final NGFeatureFlagHelperService nGFeatureFlagHelperService;
 
   private final Map<String, StripeEventHandler> eventHandlers;
 
@@ -74,74 +70,48 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   @Inject
   public SubscriptionServiceImpl(StripeHelper stripeHelper, ModuleLicenseRepository licenseRepository,
       StripeCustomerRepository stripeCustomerRepository, SubscriptionDetailRepository subscriptionDetailRepository,
-      FeatureFlagService featureFlagService, Map<String, StripeEventHandler> eventHandlers) {
+      NGFeatureFlagHelperService nGFeatureFlagHelperService, Map<String, StripeEventHandler> eventHandlers) {
     this.stripeHelper = stripeHelper;
     this.licenseRepository = licenseRepository;
     this.stripeCustomerRepository = stripeCustomerRepository;
     this.subscriptionDetailRepository = subscriptionDetailRepository;
-    this.featureFlagService = featureFlagService;
+    this.nGFeatureFlagHelperService = nGFeatureFlagHelperService;
     this.eventHandlers = eventHandlers;
   }
 
   @Override
-  public EnumMap<UsageKey, Long> getRecommendation(
-      String accountIdentifier, ModuleType moduleType, EnumMap<UsageKey, Long> usage) {
+  public EnumMap<UsageKey, Long> getRecommendation(String accountIdentifier, long numberOfMAUs, long numberOfUsers) {
     List<ModuleLicense> currentLicenses =
-        licenseRepository.findByAccountIdentifierAndModuleType(accountIdentifier, moduleType);
+        licenseRepository.findByAccountIdentifierAndModuleType(accountIdentifier, ModuleType.CF);
 
     if (currentLicenses.isEmpty()) {
       throw new InvalidRequestException(
-          String.format("Cannot provide recommendation. No active license detected for module %s.", moduleType));
+          String.format("Cannot provide recommendation. No active license detected for module %s.", ModuleType.CF));
     }
 
     ModuleLicense latestLicense = ModuleLicenseHelper.getLatestLicense(currentLicenses);
 
-    EnumMap<UsageKey, Long> baseValues = new EnumMap<>(UsageKey.class);
-
-    switch (moduleType) {
-      case CD:
-        CDModuleLicense cdLicense = (CDModuleLicense) latestLicense;
-        baseValues.put(UsageKey.WORKLOADS, (long) cdLicense.getWorkloads());
-        baseValues.put(UsageKey.SERVICE_INSTANCE, (long) cdLicense.getServiceInstances());
-        break;
-      case CE:
-        CEModuleLicense ceLicense = (CEModuleLicense) latestLicense;
-        baseValues.put(UsageKey.SPEND_LIMIT, ceLicense.getSpendLimit());
-        break;
-      case CF:
-        CFModuleLicense cfLicense = (CFModuleLicense) latestLicense;
-        baseValues.put(UsageKey.NUMBER_OF_USERS, (long) cfLicense.getNumberOfUsers());
-        baseValues.put(UsageKey.NUMBER_OF_MAUS, cfLicense.getNumberOfClientMAUs());
-        break;
-      case CI:
-        CIModuleLicense ciLicense = (CIModuleLicense) latestLicense;
-        baseValues.put(UsageKey.NUMBER_OF_COMMITTERS, (long) ciLicense.getNumberOfCommitters());
-        break;
-      case STO:
-        STOModuleLicense stoLicense = (STOModuleLicense) latestLicense;
-        baseValues.put(UsageKey.NUMBER_OF_DEVELOPERS, (long) stoLicense.getNumberOfDevelopers());
-        break;
-      default:
-        throw new InvalidRequestException(String.format("Cannot get recommendation for module %s,", moduleType));
-    }
+    CFModuleLicense cfLicense = (CFModuleLicense) latestLicense;
 
     EnumMap<UsageKey, Long> recommendedValues = new EnumMap<>(UsageKey.class);
 
     LicenseType licenseType = latestLicense.getLicenseType();
     Edition edition = latestLicense.getEdition();
     if (licenseType.equals(LicenseType.TRIAL)) {
-      baseValues.forEach((key, value) -> {
-        double recommendedValue = Math.max(value, usage.get(key)) * RECOMMENDATION_MULTIPLIER;
-        recommendedValues.put(key, (long) recommendedValue);
-      });
+      double recommendedUsers = Math.max(cfLicense.getNumberOfUsers(), numberOfUsers) * RECOMMENDATION_MULTIPLIER;
+      double recommendedMAUs = Math.max(cfLicense.getNumberOfClientMAUs(), numberOfMAUs) * RECOMMENDATION_MULTIPLIER;
+
+      recommendedValues.put(UsageKey.NUMBER_OF_USERS, (long) recommendedUsers);
+      recommendedValues.put(UsageKey.NUMBER_OF_MAUS, (long) recommendedMAUs);
     } else if (licenseType.equals(LicenseType.PAID) || edition.equals(Edition.FREE)) {
-      baseValues.forEach((key, value) -> {
-        double recommendedValue = usage.get(key) * RECOMMENDATION_MULTIPLIER;
-        recommendedValues.put(key, (long) recommendedValue);
-      });
+      double recommendedUsers = Math.max(cfLicense.getNumberOfUsers(), numberOfUsers);
+      double recommendedMAUs = Math.max(cfLicense.getNumberOfClientMAUs(), numberOfMAUs);
+
+      recommendedValues.put(UsageKey.NUMBER_OF_USERS, (long) recommendedUsers);
+      recommendedValues.put(UsageKey.NUMBER_OF_MAUS, (long) recommendedMAUs);
     } else {
       throw new InvalidRequestException(
-          String.format("Cannot provide recommendation. No active license detected for module %s.", moduleType));
+          String.format("Cannot provide recommendation. No active license detected for module %s.", ModuleType.CF));
     }
 
     return recommendedValues;
@@ -252,7 +222,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                                           .accountIdentifier(accountIdentifier)
                                           .customerId(stripeCustomer.getCustomerId())
                                           .subscriptionId(subscription.getSubscriptionId())
-                                          .status(subscription.getStatus())
+                                          .status("incomplete")
                                           .latestInvoice(subscription.getLatestInvoice())
                                           .moduleType(ModuleType.CF)
                                           .build());
@@ -433,11 +403,10 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   }
 
   @Override
-  public CustomerDetailDTO getStripeCustomer(String accountIdentifier, String customerId) {
+  public CustomerDetailDTO getStripeCustomer(String accountIdentifier) {
     isSelfServiceEnable(accountIdentifier);
 
-    StripeCustomer stripeCustomer =
-        stripeCustomerRepository.findByAccountIdentifierAndCustomerId(accountIdentifier, customerId);
+    StripeCustomer stripeCustomer = stripeCustomerRepository.findByAccountIdentifier(accountIdentifier);
     if (stripeCustomer == null) {
       throw new InvalidRequestException("Customer doesn't exists");
     }
@@ -479,16 +448,15 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   //  }
 
   @Override
-  public PaymentMethodCollectionDTO listPaymentMethods(String accountIdentifier, String customerId) {
+  public PaymentMethodCollectionDTO listPaymentMethods(String accountIdentifier) {
     isSelfServiceEnable(accountIdentifier);
 
     // TODO: Might not needed any more because we request every time user input a payment method
-    StripeCustomer stripeCustomer =
-        stripeCustomerRepository.findByAccountIdentifierAndCustomerId(accountIdentifier, customerId);
+    StripeCustomer stripeCustomer = stripeCustomerRepository.findByAccountIdentifier(accountIdentifier);
     if (stripeCustomer == null) {
       throw new InvalidRequestException("Customer doesn't exists");
     }
-    return stripeHelper.listPaymentMethods(customerId);
+    return stripeHelper.listPaymentMethods(stripeCustomer.getCustomerId());
   }
 
   @Override
@@ -516,7 +484,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   }
 
   private void isSelfServiceEnable(String accountIdentifier) {
-    if (!featureFlagService.isEnabled(FeatureName.SELF_SERVICE_ENABLED, accountIdentifier)) {
+    if (!nGFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.SELF_SERVICE_ENABLED)) {
       throw new UnsupportedOperationException("Self Service is currently unavailable");
     }
   }

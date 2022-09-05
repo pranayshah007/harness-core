@@ -59,6 +59,7 @@ import software.wings.graphql.schema.type.artifactSource.QLNexusMavenProps;
 import software.wings.graphql.schema.type.artifactSource.QLNexusNpmProps;
 import software.wings.graphql.schema.type.artifactSource.QLNexusNugetProps;
 import software.wings.graphql.schema.type.artifactSource.QLNexusProps;
+import software.wings.graphql.schema.type.artifactSource.QLNexusRawProps;
 import software.wings.graphql.schema.type.artifactSource.QLNexusRepositoryFormat;
 import software.wings.graphql.schema.type.artifactSource.QLSFTPArtifactSource;
 import software.wings.graphql.schema.type.artifactSource.QLSMBArtifactSource;
@@ -318,6 +319,13 @@ public class ArtifactSourceController {
             .nexusConnectorId(artifactStream.getSettingId())
             .repository(artifactStream.getJobname())
             .repositoryFormat(QLNexusRepositoryFormat.NPM)
+            .packageName(artifactStream.getPackageName())
+            .build();
+      case raw:
+        return QLNexusRawProps.builder()
+            .nexusConnectorId(artifactStream.getSettingId())
+            .repository(artifactStream.getJobname())
+            .repositoryFormat(QLNexusRepositoryFormat.RAW)
             .packageName(artifactStream.getPackageName())
             .build();
       default:

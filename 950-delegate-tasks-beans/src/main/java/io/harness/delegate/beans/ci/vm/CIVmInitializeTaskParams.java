@@ -54,6 +54,8 @@ public class CIVmInitializeTaskParams
   @NotNull private String stageID;
   @NotNull private String buildID;
 
+  private Map<String, String> tags;
+
   @Expression(ALLOW_SECRETS) Map<String, String> environment;
   @Expression(ALLOW_SECRETS) private List<String> secrets;
   private ConnectorDetails gitConnector;

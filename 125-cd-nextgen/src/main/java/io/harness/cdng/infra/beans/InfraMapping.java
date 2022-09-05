@@ -8,6 +8,7 @@
 package io.harness.cdng.infra.beans;
 
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
+import io.harness.cdng.infra.yaml.EcsInfrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
 import io.harness.cdng.infra.yaml.PdcInfrastructure;
@@ -30,7 +31,8 @@ import org.mongodb.morphia.annotations.Entity;
       @JsonSubTypes.Type(value = SshWinRmAzureInfrastructure.class, name = "ssh-winrm-azure"),
       @JsonSubTypes.Type(value = SshWinRmAwsInfrastructure.class, name = "ssh-winrm-aws"),
       @JsonSubTypes.Type(value = ServerlessAwsLambdaInfrastructure.class, name = "serverless-aws-lambda"),
-      @JsonSubTypes.Type(value = AzureWebAppInfrastructure.class, name = "azure-webapp")
+      @JsonSubTypes.Type(value = AzureWebAppInfrastructure.class, name = "azure-webapp"),
+      @JsonSubTypes.Type(value = EcsInfrastructure.class, name = "ECS")
 })
 @Entity(value = "infrastructureMapping")
 public interface InfraMapping extends PersistentEntity, UuidAware, Outcome {

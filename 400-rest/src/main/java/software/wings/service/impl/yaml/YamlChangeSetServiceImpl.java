@@ -55,6 +55,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -545,7 +546,7 @@ public class YamlChangeSetServiceImpl implements YamlChangeSetService {
 
   @Override
   public YamlChangeSet pushYamlChangeSetForGitToHarness(
-      String accountId, String branchName, String connectorId, String repositoryName) {
+      String accountId, String branchName, String connectorId, String repositoryName, String appId) {
     if (!featureFlagService.isEnabled(FeatureName.CG_GIT_POLLING, accountId)) {
       return null;
     }
@@ -557,11 +558,12 @@ public class YamlChangeSetServiceImpl implements YamlChangeSetService {
                                       .gitWebhookRequestAttributes(GitWebhookRequestAttributes.builder()
                                                                        .branchName(branchName)
                                                                        .gitConnectorId(connectorId)
-                                                                       .headCommitId("HEAD")
                                                                        .repositoryFullName(repositoryName)
                                                                        .isPollingBased(true)
                                                                        .build())
                                       .queuedOn(System.currentTimeMillis())
+                                      .appId(appId)
+                                      .gitFileChanges(Collections.emptyList())
                                       .build();
     return save(yamlChangeSet);
   }

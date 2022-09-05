@@ -36,6 +36,25 @@ public class SettingsMapper {
         .build();
   }
 
+  public SettingDTO writeSettingDTO(
+      Setting setting, SettingConfiguration settingConfiguration, Boolean isSettingEditable) {
+    return SettingDTO.builder()
+        .identifier(setting.getIdentifier())
+        .name(settingConfiguration.getName())
+        .orgIdentifier(setting.getOrgIdentifier())
+        .projectIdentifier(setting.getProjectIdentifier())
+        .allowedValues(settingConfiguration.getAllowedValues())
+        .allowOverrides(setting.getAllowOverrides())
+        .category(settingConfiguration.getCategory())
+        .groupIdentifier(settingConfiguration.getGroupIdentifier())
+        .valueType(settingConfiguration.getValueType())
+        .defaultValue(setting.getValue())
+        .value(setting.getValue())
+        .settingSource(SettingUtils.getSettingSource(setting))
+        .isSettingEditable(isSettingEditable)
+        .build();
+  }
+
   public SettingDTO writeSettingDTO(SettingConfiguration settingConfiguration, Boolean isSettingEditable) {
     return SettingDTO.builder()
         .identifier(settingConfiguration.getIdentifier())
@@ -56,6 +75,14 @@ public class SettingsMapper {
       Setting setting, SettingConfiguration settingConfiguration, Boolean isSettingEditable, String defaultValue) {
     return SettingResponseDTO.builder()
         .setting(writeSettingDTO(setting, settingConfiguration, isSettingEditable, defaultValue))
+        .lastModifiedAt(setting.getLastModifiedAt())
+        .build();
+  }
+
+  public SettingResponseDTO writeSettingResponseDTO(
+      Setting setting, SettingConfiguration settingConfiguration, Boolean isSettingEditable) {
+    return SettingResponseDTO.builder()
+        .setting(writeSettingDTO(setting, settingConfiguration, isSettingEditable))
         .lastModifiedAt(setting.getLastModifiedAt())
         .build();
   }

@@ -26,7 +26,7 @@ import javax.validation.constraints.NotNull;
 import org.hibernate.validator.constraints.NotEmpty;
 
 public interface AwsClient {
-  void validateAwsAccountCredential(AwsConfig awsConfig);
+  void validateAwsAccountCredential(AwsConfig awsConfig, @NotNull String region);
 
   void validateAwsCodeCommitCredential(AwsConfig awsConfig, String region, String repo);
 

@@ -24,6 +24,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.harness.EntityType;
 import io.harness.TemplateServiceTestBase;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
@@ -32,7 +33,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.encryption.Scope;
 import io.harness.enforcement.client.services.EnforcementClientService;
+import io.harness.entitysetupusageclient.remote.EntitySetupUsageClient;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.ReferencedEntityException;
 import io.harness.exception.ngexception.NGTemplateException;
 import io.harness.git.model.ChangeType;
 import io.harness.gitsync.persistance.GitSyncSdkService;
@@ -98,6 +101,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
   @Mock private ProjectClient projectClient;
   @Mock private OrganizationClient organizationClient;
   @Mock private TemplateReferenceHelper templateReferenceHelper;
+  @Mock private EntitySetupUsageClient entitySetupUsageClient;
 
   @InjectMocks NGTemplateServiceImpl templateService;
 
@@ -263,6 +267,13 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, "version2", "");
     assertThat(updateStableTemplateVersion.isLastUpdatedTemplate()).isTrue();
 
+    Call<ResponseDTO<Boolean>> request = mock(Call.class);
+    try {
+      when(request.execute()).thenReturn(Response.success(ResponseDTO.newResponse(false)));
+    } catch (IOException ex) {
+    }
+    when(entitySetupUsageClient.isEntityReferenced(any(), any(), any())).thenReturn(request);
+
     // delete template stable template
     assertThatThrownBy(()
                            -> templateService.delete(
@@ -273,13 +284,41 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, "INVALID_YAML");
     assertThat(markEntityInvalid).isTrue();
     assertThatThrownBy(()
-                           -> templateService.getOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
-                               TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false))
+                           -> templateService.getMetadataOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_IDENTIFIER,
+                               PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false))
         .isInstanceOf(NGTemplateException.class);
 
     boolean delete = templateService.delete(
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, null, "");
     assertThat(delete).isTrue();
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testDeleteAlreadyReferencedTemplate() {
+    TemplateEntity entity = TemplateEntity.builder()
+                                .accountId(ACCOUNT_ID)
+                                .orgIdentifier(ORG_IDENTIFIER)
+                                .projectIdentifier(PROJ_IDENTIFIER)
+                                .identifier(TEMPLATE_IDENTIFIER)
+                                .versionLabel(TEMPLATE_VERSION_LABEL)
+                                .version((long) 1.0)
+                                .build();
+    Call<ResponseDTO<Boolean>> request = mock(Call.class);
+    try {
+      when(request.execute()).thenReturn(Response.success(ResponseDTO.newResponse(true)));
+    } catch (IOException ex) {
+    }
+    when(entitySetupUsageClient.isEntityReferenced(any(), any(), any())).thenReturn(request);
+    try {
+      templateService.deleteSingleTemplateHelper(
+          ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, entity, (long) 1.0, true, "");
+    } catch (ReferencedEntityException e) {
+      assertThat(e.getMessage())
+          .isEqualTo("Could not delete the template template1 as it is referenced by other entities");
+    }
+    verify(entitySetupUsageClient, times(1)).isEntityReferenced(anyString(), anyString(), any(EntityType.class));
   }
 
   @Test
@@ -304,6 +343,13 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
         templateService.create(entity.withVersionLabel("version3").withIdentifier("template2"), true, "");
     assertThat(template2EntityVersion3.isStableTemplate()).isTrue();
     assertThat(template2EntityVersion3.isLastUpdatedTemplate()).isTrue();
+
+    Call<ResponseDTO<Boolean>> request = mock(Call.class);
+    try {
+      when(request.execute()).thenReturn(Response.success(ResponseDTO.newResponse(false)));
+    } catch (IOException ex) {
+    }
+    when(entitySetupUsageClient.isEntityReferenced(any(), any(), any())).thenReturn(request);
 
     // Deleting a last updated version for a particular templateIdentifier.
     boolean delete =
@@ -546,6 +592,13 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     assertThat(updateStableTemplateVersion.getVersion()).isEqualTo(1L);
     assertThat(updateStableTemplateVersion.isStableTemplate()).isTrue();
 
+    Call<ResponseDTO<Boolean>> request = mock(Call.class);
+    try {
+      when(request.execute()).thenReturn(Response.success(ResponseDTO.newResponse(false)));
+    } catch (IOException ex) {
+    }
+    when(entitySetupUsageClient.isEntityReferenced(any(), any(), any())).thenReturn(request);
+
     // delete template stable template
     assertThatThrownBy(
         () -> templateService.delete(ACCOUNT_ID, ORG_IDENTIFIER, null, TEMPLATE_IDENTIFIER, "version2", 1L, ""))
@@ -688,6 +741,13 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     assertThat(templateEntities.getContent().get(1).getTemplateScope()).isEqualTo(Scope.PROJECT);
     assertThat(templateEntities.getContent().get(2).getTemplateScope()).isEqualTo(Scope.PROJECT);
 
+    Call<ResponseDTO<Boolean>> request = mock(Call.class);
+    try {
+      when(request.execute()).thenReturn(Response.success(ResponseDTO.newResponse(false)));
+    } catch (IOException ex) {
+    }
+
+    when(entitySetupUsageClient.isEntityReferenced(any(), any(), any())).thenReturn(request);
     // Test multiple template delete
 
     boolean deleteTemplates = templateService.deleteTemplates(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,

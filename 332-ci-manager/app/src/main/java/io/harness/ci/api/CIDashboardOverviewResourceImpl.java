@@ -30,8 +30,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class CIDashboardOverviewResourceImpl implements CIDashboardOverviewResource {
   private final CIOverviewDashboardService ciOverviewDashboardService;
-  private final String PROJECT_RESOURCE_TYPE = "PROJECT";
-  private final String VIEW_PROJECT_PERMISSION = "core_project_view";
   private final long HR_IN_MS = 60 * 60 * 1000;
   private final long DAY_IN_MS = 24 * HR_IN_MS;
 

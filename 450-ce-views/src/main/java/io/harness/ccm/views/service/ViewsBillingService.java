@@ -65,6 +65,10 @@ public interface ViewsBillingService {
       List<QLCEViewGroupBy> groupBy, List<QLCEViewSortCriteria> sort, String cloudProviderTableName,
       ViewQueryParams queryParams);
 
+  Map<Long, Double> getOthersTotalCostDataNg(BigQuery bigQuery, List<QLCEViewFilterWrapper> filters,
+      List<QLCEViewGroupBy> groupBy, List<QLCEViewSortCriteria> sort, String cloudProviderTableName,
+      ViewQueryParams queryParams);
+
   QLCEViewTrendInfo getForecastCostData(BigQuery bigQuery, List<QLCEViewFilterWrapper> filters,
       List<QLCEViewAggregation> aggregateFunction, String cloudProviderTableName, ViewQueryParams queryParams);
 

@@ -8,7 +8,6 @@
 package io.harness.cdng.infra.yaml;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.beans.SwaggerConstants.STRING_MAP_CLASSPATH;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
@@ -19,6 +18,7 @@ import io.harness.cdng.infra.beans.InfraMapping;
 import io.harness.cdng.infra.beans.InfrastructureDetailsAbstract;
 import io.harness.cdng.infra.beans.PdcInfraMapping;
 import io.harness.cdng.infra.beans.PdcInfraMapping.PdcInfraMappingBuilder;
+import io.harness.cdng.infra.beans.host.HostFilter;
 import io.harness.filters.ConnectorRefExtractorHelper;
 import io.harness.filters.WithConnectorRef;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
@@ -37,20 +37,19 @@ import io.swagger.annotations.ApiModelProperty;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Value;
 import lombok.experimental.Wither;
-import org.hibernate.validator.constraints.NotEmpty;
 import org.springframework.data.annotation.TypeAlias;
 
 @OwnedBy(CDP)
 @Value
 @Builder
 @JsonTypeName(InfrastructureKind.PDC)
-@OneOfSet(fields = {"hosts", "connectorRef", "connectorRef, hostFilters", "connectorRef, attributeFilters"},
-    requiredFieldNames = {"hosts", "connectorRef", "hostFilters", "attributeFilters"})
+@OneOfSet(fields = {"hosts", "connectorRef"}, requiredFieldNames = {"hosts", "connectorRef"})
 @SimpleVisitorHelper(helperClass = ConnectorRefExtractorHelper.class)
 @TypeAlias("PdcInfrastructure")
 @RecasterAlias("io.harness.cdng.infra.yaml.PdcInfrastructure")
@@ -74,15 +73,11 @@ public class PdcInfrastructure
 
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> connectorRef;
 
-  @YamlSchemaTypes({runtime})
-  @ApiModelProperty(dataType = STRING_MAP_CLASSPATH)
+  @NotNull
+  @NotEmpty
+  @ApiModelProperty(dataType = SwaggerConstants.INFRASTRUCTURE_DEFINITION_YAML_HOST_FILTER_CLASSPATH)
   @Wither
-  ParameterField<Map<String, String>> attributeFilters;
-
-  @YamlSchemaTypes({runtime})
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
-  @Wither
-  ParameterField<List<String>> hostFilters;
+  HostFilter hostFilter;
 
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
@@ -102,11 +97,8 @@ public class PdcInfrastructure
     if (connectorRef != null) {
       builder.connectorRef(connectorRef.getValue());
     }
-    if (attributeFilters != null) {
-      builder.attributeFilters(attributeFilters.getValue());
-    }
-    if (hostFilters != null) {
-      builder.hostFilters(hostFilters.getValue());
+    if (hostFilter != null) {
+      builder.hostFilter(hostFilter);
     }
 
     return builder.build();
@@ -144,11 +136,8 @@ public class PdcInfrastructure
     if (!ParameterField.isNull(config.getConnectorRef())) {
       resultantInfra = resultantInfra.withConnectorRef(config.getConnectorRef());
     }
-    if (!ParameterField.isNull(config.getAttributeFilters())) {
-      resultantInfra = resultantInfra.withAttributeFilters(config.getAttributeFilters());
-    }
-    if (!ParameterField.isNull(config.getHostFilters())) {
-      resultantInfra = resultantInfra.withHostFilters(config.getHostFilters());
+    if (config.hostFilter != null) {
+      resultantInfra = resultantInfra.withHostFilter(config.getHostFilter());
     }
     if (!ParameterField.isNull(config.getDelegateSelectors())) {
       resultantInfra = resultantInfra.withDelegateSelectors(config.getDelegateSelectors());

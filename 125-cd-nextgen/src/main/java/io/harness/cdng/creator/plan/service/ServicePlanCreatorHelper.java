@@ -17,6 +17,7 @@ import io.harness.cdng.service.beans.ServiceConfig;
 import io.harness.cdng.service.beans.ServiceUseFromStageV2;
 import io.harness.cdng.service.beans.ServiceYamlV2;
 import io.harness.cdng.visitor.YamlTypes;
+import io.harness.common.NGExpressionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
@@ -34,11 +35,13 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
 import io.harness.utils.YamlPipelineUtils;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javax.validation.constraints.NotNull;
@@ -86,6 +89,9 @@ public class ServicePlanCreatorHelper {
           YamlTypes.ENVIRONMENT_NODE_ID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(environmentUuid)));
       serviceDependencyMap.put(
           YamlTypes.NEXT_UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(infraSectionUuid)));
+      serviceDependencyMap.put(YamlTypes.ENVIRONMENT_REF,
+          ByteString.copyFrom(kryoSerializer.asDeflatedBytes(
+              stageNode.getDeploymentStageConfig().getEnvironment().getEnvironmentRef())));
     }
 
     Dependency serviceDependency = Dependency.newBuilder().putAllMetadata(serviceDependencyMap).build();
@@ -155,13 +161,8 @@ public class ServicePlanCreatorHelper {
         serviceEntityYaml =
             mergeServiceInputsIntoService(serviceEntityYaml, serviceYamlV2.getServiceInputs().getValue());
       }
-      YamlField yamlField = YamlUtils.injectUuidInYamlField(serviceEntityYaml);
-      if (yamlField.getNode().getField(YamlTypes.SERVICE_ENTITY).getNode().getField(YamlTypes.SERVICE_DEFINITION)
-          == null) {
-        throw new InvalidRequestException(
-            "Invalid Service being referred as serviceDefinition section is not there in DeploymentStage - "
-            + stageNode.getIdentifier() + " for service - " + serviceRef);
-      }
+      YamlField yamlField = validateAndModifyArtifactsInYaml(stageNode, serviceRef, serviceEntityYaml);
+
       return new YamlField(YamlTypes.SERVICE_ENTITY,
           new YamlNode(YamlTypes.SERVICE_ENTITY,
               yamlField.getNode().getField(YamlTypes.SERVICE_ENTITY).getNode().getCurrJsonNode(),
@@ -169,6 +170,74 @@ public class ServicePlanCreatorHelper {
     } catch (IOException e) {
       throw new InvalidRequestException("Invalid service yaml in stage - " + stageNode.getIdentifier(), e);
     }
+  }
+
+  @VisibleForTesting
+  YamlField validateAndModifyArtifactsInYaml(DeploymentStageNode stageNode, String serviceRef, String serviceEntityYaml)
+      throws IOException {
+    YamlField yamlField = YamlUtils.injectUuidInYamlField(serviceEntityYaml);
+    YamlField serviceDefField =
+        yamlField.getNode().getField(YamlTypes.SERVICE_ENTITY).getNode().getField(YamlTypes.SERVICE_DEFINITION);
+    if (serviceDefField == null) {
+      throw new InvalidRequestException(
+          "Invalid Service being referred as serviceDefinition section is not there in DeploymentStage - "
+          + stageNode.getIdentifier() + " for service - " + serviceRef);
+    }
+
+    YamlField serviceSpecField = serviceDefField.getNode().getField(YamlTypes.SERVICE_SPEC);
+    if (serviceSpecField == null) {
+      throw new InvalidRequestException(String.format(
+          "Invalid Service being referred as spec inside serviceDefinition section is not there in DeploymentStage - %s for service - %s",
+          stageNode.getIdentifier(), serviceRef));
+    }
+
+    YamlField artifactsField = serviceSpecField.getNode().getField(YamlTypes.ARTIFACT_LIST_CONFIG);
+    if (artifactsField == null) {
+      return yamlField;
+    }
+
+    YamlField primaryArtifactField = artifactsField.getNode().getField(YamlTypes.PRIMARY_ARTIFACT);
+    if (primaryArtifactField == null) {
+      return yamlField;
+    }
+
+    YamlField primaryArtifactRef = primaryArtifactField.getNode().getField(YamlTypes.PRIMARY_ARTIFACT_REF);
+    if (primaryArtifactRef == null) {
+      return yamlField;
+    }
+
+    YamlField artifactSourcesField = primaryArtifactField.getNode().getField(YamlTypes.ARTIFACT_SOURCES);
+    String primaryArtifactRefValue = primaryArtifactRef.getNode().asText();
+
+    if (artifactSourcesField != null && artifactSourcesField.getNode().isArray() && primaryArtifactRefValue != null) {
+      if (NGExpressionUtils.isRuntimeOrExpressionField(primaryArtifactRefValue)) {
+        // TODO: need to support primary artifact ref as expression.
+        throw new InvalidRequestException(String.format(
+            "Primary artifact ref cannot be runtime or expression inside service %s of DeploymentStage - %s",
+            serviceRef, stageNode.getIdentifier()));
+      }
+
+      ObjectNode artifactsNode = (ObjectNode) artifactsField.getNode().getCurrJsonNode();
+      List<YamlNode> artifactSources = artifactSourcesField.getNode().asArray();
+      ObjectNode primaryNode = null;
+      for (YamlNode artifactSource : artifactSources) {
+        String artifactSourceIdentifier = artifactSource.getIdentifier();
+        if (primaryArtifactRefValue.equals(artifactSourceIdentifier) && artifactSource.isObject()) {
+          primaryNode = (ObjectNode) artifactSource.getCurrJsonNode();
+          primaryNode.remove(YamlTypes.IDENTIFIER);
+          break;
+        }
+      }
+
+      if (primaryNode != null) {
+        artifactsNode.set(YamlTypes.PRIMARY_ARTIFACT, primaryNode);
+      } else {
+        throw new InvalidRequestException(
+            String.format("No artifact source exists with the identifier %s inside service %s of DeploymentStage - %s",
+                primaryArtifactRefValue, serviceRef, stageNode.getIdentifier()));
+      }
+    }
+    return yamlField;
   }
 
   private String mergeServiceInputsIntoService(String originalServiceYaml, Map<String, Object> serviceInputs) {

@@ -16,6 +16,7 @@ import static io.harness.ccm.commons.constants.ViewFieldConstants.NAMESPACE_FIEL
 import static io.harness.ccm.commons.constants.ViewFieldConstants.TASK_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.WORKLOAD_NAME_FIELD_ID;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.CLUSTER;
+import static io.harness.ccm.views.entities.ViewFieldIdentifier.COMMON;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.LABEL;
 import static io.harness.ccm.views.graphql.QLCEViewAggregateOperation.MAX;
 import static io.harness.ccm.views.graphql.QLCEViewAggregateOperation.MIN;
@@ -28,6 +29,8 @@ import static io.harness.ccm.views.graphql.ViewMetaDataConstants.entityConstantM
 import static io.harness.ccm.views.graphql.ViewMetaDataConstants.entityConstantMinStartTime;
 import static io.harness.ccm.views.graphql.ViewMetaDataConstants.entityConstantSystemCost;
 import static io.harness.ccm.views.graphql.ViewMetaDataConstants.entityConstantUnallocatedCost;
+import static io.harness.ccm.views.graphql.ViewsQueryBuilder.ECS_TASK_EC2;
+import static io.harness.ccm.views.graphql.ViewsQueryBuilder.ECS_TASK_FARGATE;
 import static io.harness.ccm.views.graphql.ViewsQueryBuilder.K8S_NODE;
 import static io.harness.ccm.views.graphql.ViewsQueryBuilder.K8S_POD;
 import static io.harness.ccm.views.graphql.ViewsQueryBuilder.K8S_POD_FARGATE;
@@ -113,6 +116,7 @@ import io.harness.ccm.views.entities.ViewRule;
 import io.harness.ccm.views.entities.ViewTimeGranularity;
 import io.harness.ccm.views.entities.ViewVisualization;
 import io.harness.ccm.views.graphql.EfficiencyScoreStats;
+import io.harness.ccm.views.graphql.QLCEInExpressionFilter;
 import io.harness.ccm.views.graphql.QLCEViewAggregateOperation;
 import io.harness.ccm.views.graphql.QLCEViewAggregation;
 import io.harness.ccm.views.graphql.QLCEViewDataPoint;
@@ -188,6 +192,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.Nullable;
 
 @Slf4j
 @Singleton
@@ -246,13 +251,6 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     List<QLCEViewFilter> idFilters =
         awsAccountFieldHelper.addAccountIdsByAwsAccountNameFilter(getIdFilters(filters), queryParams.getAccountId());
 
-    List<QLCEViewRule> rules = getRuleFilters(filters);
-    if (!rules.isEmpty()) {
-      for (QLCEViewRule rule : rules) {
-        viewRuleList.add(convertQLCEViewRuleToViewRule(rule));
-      }
-    }
-
     if (viewMetadataFilter.isPresent()) {
       QLCEViewMetadataFilter metadataFilter = viewMetadataFilter.get().getViewMetadataFilter();
       final String viewId = metadataFilter.getViewId();
@@ -276,7 +274,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     try {
       result = bigQuery.query(queryConfig);
     } catch (InterruptedException e) {
-      log.error("Failed to getViewFilterValueStats. {}", e);
+      log.error("Failed to getViewFilterValueStats for query {}", viewsQueryMetadata.getQuery(), e);
       Thread.currentThread().interrupt();
       return null;
     }
@@ -341,7 +339,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     try {
       result = bigQuery.query(queryConfig);
     } catch (InterruptedException e) {
-      log.error("Failed to getEntityStatsDataPoints. {}", e);
+      log.error("Failed to getEntityStatsDataPoints for query {}", query, e);
       Thread.currentThread().interrupt();
       return null;
     }
@@ -371,23 +369,19 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
   public TableResult getTimeSeriesStatsNg(BigQuery bigQuery, List<QLCEViewFilterWrapper> filters,
       List<QLCEViewGroupBy> groupBy, List<QLCEViewAggregation> aggregateFunction, List<QLCEViewSortCriteria> sort,
       String cloudProviderTableName, boolean includeOthers, Integer limit, ViewQueryParams queryParams) {
-    if (!includeOthers && !isMetricsQuery(aggregateFunction)) {
-      ViewQueryParams queryParamsForGrid = viewsQueryHelper.buildQueryParams(
-          queryParams.getAccountId(), false, true, queryParams.isClusterQuery(), false);
-      List<QLCEViewGroupBy> groupByExcludingGroupByTime =
-          groupBy.stream().filter(g -> g.getEntityGroupBy() != null).collect(Collectors.toList());
-      QLCEViewGridData gridData = getEntityStatsDataPointsNg(bigQuery, filters, groupByExcludingGroupByTime,
-          aggregateFunction, sort, cloudProviderTableName, limit, 0, queryParamsForGrid);
-      log.info("GRID DATA: {}", gridData);
-      filters = getModifiedFilters(filters, gridData);
-    }
-
-    SelectQuery query = getQuery(filters, groupBy, aggregateFunction, sort, cloudProviderTableName, queryParams);
+    ViewQueryParams queryParamsForGrid =
+        viewsQueryHelper.buildQueryParams(queryParams.getAccountId(), false, true, queryParams.isClusterQuery(), false);
+    List<QLCEViewGroupBy> groupByExcludingGroupByTime =
+        groupBy.stream().filter(g -> g.getEntityGroupBy() != null).collect(Collectors.toList());
+    QLCEViewGridData gridData = getEntityStatsDataPointsNg(bigQuery, filters, groupByExcludingGroupByTime,
+        aggregateFunction, sort, cloudProviderTableName, limit, 0, queryParamsForGrid);
+    SelectQuery query = getQuery(getModifiedFiltersForTimeSeriesStats(filters, gridData, groupByExcludingGroupByTime),
+        groupBy, aggregateFunction, sort, cloudProviderTableName, queryParams);
     QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query.toString()).build();
     try {
       return bigQuery.query(queryConfig);
     } catch (InterruptedException e) {
-      log.error("Failed to getTimeSeriesStats. {}", e);
+      log.error("Failed to getTimeSeriesStats for query: {}", query, e);
       Thread.currentThread().interrupt();
       return null;
     }
@@ -403,17 +397,51 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
                                         .operationType(QLCEViewAggregateOperation.SUM)
                                         .columnName(entityConstantUnallocatedCost)
                                         .build());
-      final SelectQuery query = getQuery(filters, modifyGroupByForUnallocatedCostData(groupBy), aggregateFunction, sort,
-          cloudProviderTableName, queryParams);
+      final SelectQuery query = getQuery(getModifiedFilters(filters, groupBy, true), getTimeTruncGroupBys(groupBy),
+          aggregateFunction, sort, cloudProviderTableName, queryParams);
       final QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query.toString()).build();
       try {
-        return convertToUnallocatedCostData(bigQuery.query(queryConfig));
+        return convertToCostData(bigQuery.query(queryConfig));
       } catch (final InterruptedException e) {
-        log.error("Failed to getUnallocatedCostDataNg.", e);
+        log.error("Failed to getUnallocatedCostDataNg for query: {}", query, e);
         Thread.currentThread().interrupt();
       }
     }
-    return null;
+    return Collections.emptyMap();
+  }
+
+  private List<QLCEViewFilterWrapper> getModifiedFilters(final List<QLCEViewFilterWrapper> filters,
+      final List<QLCEViewGroupBy> groupBy, final boolean isClusterTableQuery) {
+    final List<QLCEViewFilterWrapper> modifiedFilters = new ArrayList<>(filters);
+    if (isClusterTableQuery) {
+      final List<QLCEViewGroupBy> modifiedGroupBys = addAdditionalRequiredGroupBy(groupBy);
+      final List<QLCEViewFilter> modifiedIdFilters =
+          getModifiedIdFilters(addNotNullFilters(Collections.emptyList(), modifiedGroupBys), true);
+      modifiedIdFilters.forEach(
+          modifiedIdFilter -> modifiedFilters.add(QLCEViewFilterWrapper.builder().idFilter(modifiedIdFilter).build()));
+    }
+    return modifiedFilters;
+  }
+
+  @Override
+  public Map<Long, Double> getOthersTotalCostDataNg(final BigQuery bigQuery, final List<QLCEViewFilterWrapper> filters,
+      final List<QLCEViewGroupBy> groupBy, final List<QLCEViewSortCriteria> sort, final String cloudProviderTableName,
+      final ViewQueryParams queryParams) {
+    final List<QLCEViewAggregation> aggregateFunction =
+        Collections.singletonList(QLCEViewAggregation.builder()
+                                      .operationType(QLCEViewAggregateOperation.SUM)
+                                      .columnName(entityConstantCost)
+                                      .build());
+    final SelectQuery query = getQuery(getModifiedFilters(filters, groupBy, isClusterTableQuery(filters, queryParams)),
+        getTimeTruncGroupBys(groupBy), aggregateFunction, sort, cloudProviderTableName, queryParams);
+    final QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query.toString()).build();
+    try {
+      return convertToCostData(bigQuery.query(queryConfig));
+    } catch (final InterruptedException e) {
+      log.error("Failed to getOthersTotalCostDataNg for query: {}", query, e);
+      Thread.currentThread().interrupt();
+    }
+    return Collections.emptyMap();
   }
 
   @Override
@@ -477,65 +505,53 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
   }
 
   @Override
-  public boolean isClusterPerspective(List<QLCEViewFilterWrapper> filters) {
-    boolean dataSourceCondition = false;
-    boolean ruleCondition = true;
-    List<ViewRule> viewRuleList = new ArrayList<>();
-    Optional<QLCEViewFilterWrapper> viewMetadataFilter = getViewMetadataFilter(filters);
+  public boolean isClusterPerspective(final List<QLCEViewFilterWrapper> filters) {
+    Set<ViewFieldIdentifier> dataSources = null;
+    final Optional<QLCEViewFilterWrapper> viewMetadataFilter = getViewMetadataFilter(filters);
     if (viewMetadataFilter.isPresent()) {
-      QLCEViewMetadataFilter metadataFilter = viewMetadataFilter.get().getViewMetadataFilter();
-      final String viewId = metadataFilter.getViewId();
+      final QLCEViewMetadataFilter metadataFilter = viewMetadataFilter.get().getViewMetadataFilter();
       if (!metadataFilter.isPreview()) {
-        CEView ceView = viewService.get(viewId);
-        viewRuleList = ceView.getViewRules();
-        List<ViewFieldIdentifier> dataSources;
-        try {
-          dataSources = ceView.getDataSources();
-        } catch (Exception e) {
-          dataSources = null;
-        }
-        if (dataSources != null) {
-          dataSourceCondition = true;
-          for (ViewFieldIdentifier identifier : dataSources) {
-            if (!identifier.equals(CLUSTER) && !identifier.equals(LABEL)) {
-              dataSourceCondition = false;
-              break;
-            }
-          }
+        final CEView ceView = viewService.get(metadataFilter.getViewId());
+        if (Objects.nonNull(ceView) && Objects.nonNull(ceView.getDataSources())) {
+          dataSources = new HashSet<>(ceView.getDataSources());
         }
       } else {
-        dataSourceCondition = true;
-        ruleCondition = isClusterPerspectiveRules(getRuleFilters(filters));
-      }
-    }
-    for (ViewRule rule : viewRuleList) {
-      for (ViewCondition condition : rule.getViewConditions()) {
-        ViewIdCondition viewIdCondition = (ViewIdCondition) condition;
-        if (isNotClusterPerspective(viewIdCondition.getViewField().getIdentifier())) {
-          ruleCondition = false;
-          break;
-        }
+        dataSources = getDataSourcesFromFilters(filters);
       }
     }
 
-    return dataSourceCondition && ruleCondition;
+    return dataSources != null && isClusterDataSources(dataSources);
   }
 
-  private boolean isClusterPerspectiveRules(final List<QLCEViewRule> qlCEViewRules) {
-    boolean ruleCondition = true;
+  private Set<ViewFieldIdentifier> getDataSourcesFromFilters(final List<QLCEViewFilterWrapper> filters) {
+    final Set<ViewFieldIdentifier> dataSources = new HashSet<>();
+    dataSources.addAll(getDataSourcesFromViewFilters(getIdFilters(filters)));
+    dataSources.addAll(getDataSourcesFromViewRules(getRuleFilters(filters)));
+    return dataSources;
+  }
+
+  private Set<ViewFieldIdentifier> getDataSourcesFromViewFilters(final List<QLCEViewFilter> qlCEViewFilters) {
+    final Set<ViewFieldIdentifier> dataSources = new HashSet<>();
+    for (final QLCEViewFilter qlCEViewFilter : qlCEViewFilters) {
+      dataSources.add(qlCEViewFilter.getField().getIdentifier());
+    }
+    return dataSources;
+  }
+
+  private Set<ViewFieldIdentifier> getDataSourcesFromViewRules(final List<QLCEViewRule> qlCEViewRules) {
+    final Set<ViewFieldIdentifier> dataSources = new HashSet<>();
     for (final QLCEViewRule qlCEViewRule : qlCEViewRules) {
-      for (final QLCEViewFilter qlCEViewFilter : qlCEViewRule.getConditions()) {
-        if (isNotClusterPerspective(qlCEViewFilter.getField().getIdentifier())) {
-          ruleCondition = false;
-          break;
-        }
-      }
+      dataSources.addAll(getDataSourcesFromViewFilters(qlCEViewRule.getConditions()));
     }
-    return ruleCondition;
+    return dataSources;
   }
 
-  private boolean isNotClusterPerspective(final ViewFieldIdentifier viewFieldIdentifier) {
-    return !(viewFieldIdentifier.equals(CLUSTER) || viewFieldIdentifier.equals(LABEL));
+  public boolean isClusterDataSources(final Set<ViewFieldIdentifier> dataSources) {
+    return (dataSources.size() == 1 && dataSources.contains(CLUSTER))
+        || (dataSources.size() == 2 && dataSources.contains(CLUSTER)
+            && (dataSources.contains(COMMON) || dataSources.contains(LABEL)))
+        || (dataSources.size() == 3 && dataSources.contains(CLUSTER) && dataSources.contains(COMMON)
+            && dataSources.contains(LABEL));
   }
 
   @Override
@@ -734,30 +750,30 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     return shouldShowUnallocatedCost;
   }
 
-  private Map<Long, Double> convertToUnallocatedCostData(final TableResult result) {
-    Map<Long, Double> unallocatedCostMapping = new HashMap<>();
+  private Map<Long, Double> convertToCostData(final TableResult result) {
+    Map<Long, Double> costMapping = new HashMap<>();
     final Schema schema = result.getSchema();
     final FieldList fields = schema.getFields();
     for (final FieldValueList row : result.iterateAll()) {
       long timestamp = 0L;
-      double unallocatedCost = 0.0D;
+      double cost = 0.0D;
       for (final Field field : fields) {
         switch (field.getType().getStandardType()) {
           case TIMESTAMP:
             timestamp = row.get(field.getName()).getTimestampValue() / 1000;
             break;
           case FLOAT64:
-            unallocatedCost = getNumericValue(row, field, true);
+            cost = getNumericValue(row, field, true);
             break;
           default:
             break;
         }
       }
-      if (unallocatedCost != 0L) {
-        unallocatedCostMapping.put(timestamp, unallocatedCostMapping.getOrDefault(timestamp, 0.0D) + unallocatedCost);
+      if (cost != 0L) {
+        costMapping.put(timestamp, cost);
       }
     }
-    return unallocatedCostMapping;
+    return costMapping;
   }
 
   private QLCEViewTrendInfo getCostBillingStats(ViewCostData costData, ViewCostData prevCostData,
@@ -861,7 +877,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
         .build();
   }
 
-  private static List<QLCEViewGroupBy> modifyGroupByForUnallocatedCostData(final List<QLCEViewGroupBy> groupByList) {
+  private static List<QLCEViewGroupBy> getTimeTruncGroupBys(final List<QLCEViewGroupBy> groupByList) {
     return groupByList.stream()
         .filter(groupBy -> Objects.nonNull(groupBy.getTimeTruncGroupBy()))
         .collect(Collectors.toList());
@@ -942,7 +958,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     List<ViewRule> viewRuleList = new ArrayList<>();
 
     // Removing group by none if present
-    boolean skipDefaultGroupBy = false;
+    boolean skipDefaultGroupBy = queryParams.isSkipDefaultGroupBy();
     if (viewsQueryHelper.isGroupByNonePresent(groupBy)) {
       skipDefaultGroupBy = true;
       groupBy = viewsQueryHelper.removeGroupByNone(groupBy);
@@ -1004,8 +1020,8 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
           viewRuleList, idFilters, timeFilters, modifiedGroupBy, cloudProviderTableName);
     }
 
-    return viewsQueryBuilder.getQuery(viewRuleList, idFilters, timeFilters, modifiedGroupBy, aggregateFunction, sort,
-        cloudProviderTableName, queryParams.getTimeOffsetInDays());
+    return viewsQueryBuilder.getQuery(viewRuleList, idFilters, timeFilters, getInExpressionFilters(filters),
+        modifiedGroupBy, aggregateFunction, sort, cloudProviderTableName, queryParams.getTimeOffsetInDays());
   }
 
   private List<QLCEViewFilter> getModifiedIdFilters(
@@ -1083,6 +1099,13 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
   public static List<QLCEViewRule> getRuleFilters(@NotNull List<QLCEViewFilterWrapper> filters) {
     return filters.stream()
         .map(QLCEViewFilterWrapper::getRuleFilter)
+        .filter(Objects::nonNull)
+        .collect(Collectors.toList());
+  }
+
+  public static List<QLCEInExpressionFilter> getInExpressionFilters(@NotNull List<QLCEViewFilterWrapper> filters) {
+    return filters.stream()
+        .map(QLCEViewFilterWrapper::getInExpressionFilter)
         .filter(Objects::nonNull)
         .collect(Collectors.toList());
   }
@@ -1676,6 +1699,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     groupByList.forEach(groupBy -> {
       if (groupBy.getEntityGroupBy() != null) {
         switch (groupBy.getEntityGroupBy().getFieldName()) {
+          case GROUP_BY_ECS_TASK_ID:
           case GROUP_BY_INSTANCE_ID:
           case GROUP_BY_INSTANCE_NAME:
           case GROUP_BY_INSTANCE_TYPE:
@@ -1780,10 +1804,6 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
             || aggregationFunction.getColumnName().equalsIgnoreCase(MEMORY_LIMIT));
   }
 
-  private boolean isMetricsQuery(List<QLCEViewAggregation> aggregateFunctions) {
-    return !areAggregationsValidForPreAggregation(aggregateFunctions);
-  }
-
   // Check for pod/pv/cloudservicename/taskid/launchtype
   private boolean isValidGroupByForPreAggregation(List<QLCEViewFieldInput> groupByList) {
     if (groupByList.isEmpty()) {
@@ -1834,6 +1854,8 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
       values = new String[] {K8S_NODE};
     } else if (entityGroupBy.contains(GROUP_BY_STORAGE)) {
       values = new String[] {K8S_PV};
+    } else if (entityGroupBy.contains(GROUP_BY_ECS_TASK_ID)) {
+      values = new String[] {ECS_TASK_EC2, ECS_TASK_FARGATE};
     } else {
       values = new String[] {K8S_POD, K8S_POD_FARGATE};
     }
@@ -1857,48 +1879,90 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     return entityGroupByFieldName;
   }
 
-  private List<QLCEViewFilterWrapper> getModifiedFilters(
-      List<QLCEViewFilterWrapper> filters, QLCEViewGridData gridData) {
-    if (filters == null) {
-      filters = new ArrayList<>();
+  private List<QLCEViewFilterWrapper> getModifiedFiltersForTimeSeriesStats(
+      List<QLCEViewFilterWrapper> filters, final QLCEViewGridData gridData, final List<QLCEViewGroupBy> entityGroupBy) {
+    final List<QLCEViewFilterWrapper> modifiedFilters = new ArrayList<>();
+    if (filters != null) {
+      modifiedFilters.addAll(filters);
     }
+    final List<String> fields = gridData.getFields();
+    final List<List<String>> inValues = getInValuesList(gridData, fields);
+    if (!inValues.isEmpty()) {
+      final List<QLCEViewFieldInput> qlCEViewFieldInputs = getInFieldsList(fields);
+      final String nullValueField = getNullValueField(entityGroupBy, inValues);
+      modifiedFilters.add(QLCEViewFilterWrapper.builder()
+                              .inExpressionFilter(QLCEInExpressionFilter.builder()
+                                                      .fields(qlCEViewFieldInputs)
+                                                      .values(inValues)
+                                                      .nullValueField(nullValueField)
+                                                      .build())
+                              .build());
+    }
+    return modifiedFilters;
+  }
 
-    List<String> fields = gridData.getFields();
-    Map<String, java.lang.reflect.Field> clusterDataFields = new HashMap<>();
-    for (java.lang.reflect.Field clusterField : ClusterData.class.getDeclaredFields()) {
+  @NotNull
+  private List<List<String>> getInValuesList(final QLCEViewGridData gridData, final List<String> fields) {
+    final List<List<String>> inValues = new ArrayList<>();
+
+    final Map<String, java.lang.reflect.Field> clusterDataFields = new HashMap<>();
+    for (final java.lang.reflect.Field clusterField : ClusterData.class.getDeclaredFields()) {
       clusterDataFields.put(clusterField.getName().toLowerCase(), clusterField);
     }
 
-    for (String field : fields) {
-      Set<String> values = new HashSet<>();
-      try {
-        for (QLCEViewEntityStatsDataPoint dataPoint : gridData.getData()) {
-          ClusterData clusterData = dataPoint.getClusterData();
-          if (Objects.nonNull(clusterData)) {
-            java.lang.reflect.Field clusterField = clusterDataFields.get(field.toLowerCase());
+    for (final QLCEViewEntityStatsDataPoint dataPoint : gridData.getData()) {
+      final ClusterData clusterData = dataPoint.getClusterData();
+      final List<String> values = new ArrayList<>();
+      for (final String field : fields) {
+        if (Objects.nonNull(clusterData)) {
+          final java.lang.reflect.Field clusterField = clusterDataFields.get(field.toLowerCase());
+          if (Objects.nonNull(clusterField)) {
             clusterField.setAccessible(true);
-            values.add((String) clusterField.get(clusterData));
+            try {
+              values.add((String) clusterField.get(clusterData));
+            } catch (final IllegalAccessException e) {
+              values.add("");
+              log.error("Unable to fetch field {} value for clusterData: {}", field, clusterData, e);
+            }
+          } else {
+            values.add(clusterData.getId());
           }
+        } else {
+          values.add(dataPoint.getId());
         }
-      } catch (Exception e) {
-        log.error("Unable to fetch field values for filter: {}", e.toString());
       }
+      inValues.add(values);
+    }
+    return inValues;
+  }
 
-      if (!values.isEmpty()) {
-        filters.add(QLCEViewFilterWrapper.builder()
-                        .idFilter(QLCEViewFilter.builder()
-                                      .field(QLCEViewFieldInput.builder()
-                                                 .fieldId(field.toLowerCase())
-                                                 .fieldName(field.toLowerCase())
-                                                 .identifier(CLUSTER)
-                                                 .build())
-                                      .operator(IN)
-                                      .values(values.toArray(new String[0]))
-                                      .build())
-                        .build());
+  @NotNull
+  private List<QLCEViewFieldInput> getInFieldsList(final List<String> fields) {
+    final List<QLCEViewFieldInput> qlCEViewFieldInputs = new ArrayList<>();
+    for (final String field : fields) {
+      qlCEViewFieldInputs.add(
+          QLCEViewFieldInput.builder().fieldId(field.toLowerCase()).fieldName(field.toLowerCase()).build());
+    }
+    return qlCEViewFieldInputs;
+  }
+
+  @Nullable
+  private String getNullValueField(final List<QLCEViewGroupBy> entityGroupBy, final List<List<String>> inValues) {
+    String nullValueField = null;
+    final String groupByName = getEntityGroupByFieldName(entityGroupBy);
+    for (final List<String> values : inValues) {
+      if (values.contains(groupByName)) {
+        final Optional<String> groupByFieldId = entityGroupBy.stream()
+                                                    .filter(entry -> Objects.nonNull(entry.getEntityGroupBy()))
+                                                    .map(entry -> entry.getEntityGroupBy().getFieldId())
+                                                    .findFirst();
+        if (groupByFieldId.isPresent()) {
+          nullValueField = groupByFieldId.get();
+        }
+        break;
       }
     }
-    return filters;
+    return nullValueField;
   }
 
   private List<QLCEViewAggregation> getModifiedAggregations(List<QLCEViewAggregation> aggregateFunctions) {

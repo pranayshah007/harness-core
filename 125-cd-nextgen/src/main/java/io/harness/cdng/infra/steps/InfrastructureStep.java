@@ -10,8 +10,11 @@ package io.harness.cdng.infra.steps;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.logging.LogCallbackUtils.saveExecutionLogSafely;
 
 import static software.wings.beans.LogColor.Green;
+import static software.wings.beans.LogColor.Red;
 import static software.wings.beans.LogColor.Yellow;
 import static software.wings.beans.LogHelper.color;
 
@@ -30,6 +33,7 @@ import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
+import io.harness.cdng.infra.yaml.EcsInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
@@ -125,11 +129,11 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
     long startTime = System.currentTimeMillis();
 
     NGLogCallback logCallback = infrastructureStepHelper.getInfrastructureLogCallback(ambiance, true);
-    saveExecutionLog(logCallback, "Starting infrastructure step...");
+    saveExecutionLogSafely(logCallback, "Starting infrastructure step...");
 
     validateConnector(infrastructure, ambiance);
 
-    saveExecutionLog(logCallback, "Fetching environment information...");
+    saveExecutionLogSafely(logCallback, "Fetching environment information...");
 
     validateInfrastructure(infrastructure, ambiance);
     EnvironmentOutcome environmentOutcome = (EnvironmentOutcome) executionSweepingOutputService.resolve(
@@ -140,30 +144,33 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
         InfrastructureMapper.toOutcome(infrastructure, environmentOutcome, serviceOutcome);
 
     if (environmentOutcome != null) {
-      if (EmptyPredicate.isNotEmpty(environmentOutcome.getName())) {
-        saveExecutionLog(logCallback, color(format("Environment Name: %s", environmentOutcome.getName()), Yellow));
+      if (isNotEmpty(environmentOutcome.getName())) {
+        saveExecutionLogSafely(
+            logCallback, color(format("Environment Name: %s", environmentOutcome.getName()), Yellow));
       }
 
-      if (environmentOutcome.getType() != null && EmptyPredicate.isNotEmpty(environmentOutcome.getType().name())) {
-        saveExecutionLog(
+      if (environmentOutcome.getType() != null && isNotEmpty(environmentOutcome.getType().name())) {
+        saveExecutionLogSafely(
             logCallback, color(format("Environment Type: %s", environmentOutcome.getType().name()), Yellow));
       }
     }
 
-    if (infrastructureOutcome != null && EmptyPredicate.isNotEmpty(infrastructureOutcome.getKind())) {
-      saveExecutionLog(
+    if (infrastructureOutcome != null && isNotEmpty(infrastructureOutcome.getKind())) {
+      saveExecutionLogSafely(
           logCallback, color(format("Infrastructure Definition Type: %s", infrastructureOutcome.getKind()), Yellow));
     }
 
-    saveExecutionLog(logCallback, color("Environment information fetched", Green));
+    saveExecutionLogSafely(logCallback, color("Environment information fetched", Green));
+    boolean skipInstances = infrastructureStepHelper.getSkipInstances(infrastructure);
 
-    publishInfraDelegateConfigOutput(serviceOutcome, infrastructureOutcome, ambiance);
+    publishInfraDelegateConfigOutput(
+        serviceOutcome, environmentOutcome, infrastructureOutcome, skipInstances, ambiance);
 
     StepResponseBuilder stepResponseBuilder = StepResponse.builder();
     String infrastructureKind = infrastructure.getKind();
     if (stageExecutionHelper.shouldSaveStageExecutionInfo(infrastructureKind)) {
       ExecutionInfoKey executionInfoKey = ExecutionInfoKeyMapper.getExecutionInfoKey(
-          ambiance, infrastructureKind, environmentOutcome, serviceOutcome, infrastructureOutcome);
+          ambiance, environmentOutcome, serviceOutcome, infrastructureOutcome);
       stageExecutionHelper.saveStageExecutionInfoAndPublishExecutionInfoKey(
           ambiance, executionInfoKey, infrastructureKind);
       if (stageExecutionHelper.isRollbackArtifactRequiredPerInfrastructure(infrastructureKind)) {
@@ -192,15 +199,20 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
         .build();
   }
 
-  private void publishInfraDelegateConfigOutput(
-      ServiceStepOutcome serviceOutcome, InfrastructureOutcome infrastructureOutcome, Ambiance ambiance) {
+  private void publishInfraDelegateConfigOutput(ServiceStepOutcome serviceOutcome,
+      EnvironmentOutcome environmentOutcome, InfrastructureOutcome infrastructureOutcome, boolean skipInstances,
+      Ambiance ambiance) {
     if (ServiceSpecType.SSH.equals(serviceOutcome.getType())) {
-      publishSshInfraDelegateConfigOutput(infrastructureOutcome, ambiance);
+      ExecutionInfoKey executionInfoKey = ExecutionInfoKeyMapper.getExecutionInfoKey(
+          ambiance, environmentOutcome, serviceOutcome, infrastructureOutcome);
+      publishSshInfraDelegateConfigOutput(infrastructureOutcome, skipInstances, ambiance, executionInfoKey);
       return;
     }
 
     if (ServiceSpecType.WINRM.equals(serviceOutcome.getType())) {
-      publishWinRmInfraDelegateConfigOutput(infrastructureOutcome, ambiance);
+      ExecutionInfoKey executionInfoKey = ExecutionInfoKeyMapper.getExecutionInfoKey(
+          ambiance, environmentOutcome, serviceOutcome, infrastructureOutcome);
+      publishWinRmInfraDelegateConfigOutput(infrastructureOutcome, skipInstances, ambiance, executionInfoKey);
       return;
     }
 
@@ -217,7 +229,9 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
     }
   }
 
-  private void publishSshInfraDelegateConfigOutput(InfrastructureOutcome infrastructureOutcome, Ambiance ambiance) {
+  private void publishSshInfraDelegateConfigOutput(InfrastructureOutcome infrastructureOutcome, boolean skipInstances,
+      Ambiance ambiance, ExecutionInfoKey executionInfoKey) {
+    NGLogCallback logCallback = infrastructureStepHelper.getInfrastructureLogCallback(ambiance, false);
     SshInfraDelegateConfig sshInfraDelegateConfig =
         cdStepHelper.getSshInfraDelegateConfig(infrastructureOutcome, ambiance);
 
@@ -225,14 +239,24 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
         SshInfraDelegateConfigOutput.builder().sshInfraDelegateConfig(sshInfraDelegateConfig).build();
     executionSweepingOutputService.consume(ambiance, OutputExpressionConstants.SSH_INFRA_DELEGATE_CONFIG_OUTPUT_NAME,
         sshInfraDelegateConfigOutput, StepCategory.STAGE.name());
-    if (EmptyPredicate.isEmpty(sshInfraDelegateConfig.getHosts())) {
-      throw new InvalidRequestException("No hosts were provided for specified infrastructure");
+    Set<String> hosts = sshInfraDelegateConfig.getHosts();
+    if (EmptyPredicate.isEmpty(hosts)) {
+      saveExecutionLogSafely(logCallback,
+          color("No host(s) were provided for specified infrastructure or filter did not match any instance(s)", Red));
+    } else {
+      saveExecutionLogSafely(logCallback, color(format("Successfully fetched %s instance(s)", hosts.size()), Green));
+      saveExecutionLogSafely(logCallback, color(format("Fetched following instance(s) %s)", hosts), Green));
     }
+
+    Set<String> filteredHosts = stageExecutionHelper.saveAndExcludeHostsWithSameArtifactDeployedIfNeeded(
+        ambiance, executionInfoKey, infrastructureOutcome, hosts, ServiceSpecType.SSH, skipInstances, logCallback);
     executionSweepingOutputService.consume(ambiance, OutputExpressionConstants.OUTPUT,
-        HostsOutput.builder().hosts(sshInfraDelegateConfig.getHosts()).build(), StepCategory.STAGE.name());
+        HostsOutput.builder().hosts(filteredHosts).build(), StepCategory.STAGE.name());
   }
 
-  private void publishWinRmInfraDelegateConfigOutput(InfrastructureOutcome infrastructureOutcome, Ambiance ambiance) {
+  private void publishWinRmInfraDelegateConfigOutput(InfrastructureOutcome infrastructureOutcome, boolean skipInstances,
+      Ambiance ambiance, ExecutionInfoKey executionInfoKey) {
+    NGLogCallback logCallback = infrastructureStepHelper.getInfrastructureLogCallback(ambiance, false);
     WinRmInfraDelegateConfig winRmInfraDelegateConfig =
         cdStepHelper.getWinRmInfraDelegateConfig(infrastructureOutcome, ambiance);
 
@@ -240,11 +264,22 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
         WinRmInfraDelegateConfigOutput.builder().winRmInfraDelegateConfig(winRmInfraDelegateConfig).build();
     executionSweepingOutputService.consume(ambiance, OutputExpressionConstants.WINRM_INFRA_DELEGATE_CONFIG_OUTPUT_NAME,
         winRmInfraDelegateConfigOutput, StepCategory.STAGE.name());
-    if (EmptyPredicate.isEmpty(winRmInfraDelegateConfig.getHosts())) {
-      throw new InvalidRequestException("No hosts were provided for specified infrastructure");
+    Set<String> hosts = winRmInfraDelegateConfig.getHosts();
+    if (EmptyPredicate.isEmpty(hosts)) {
+      saveExecutionLogSafely(logCallback,
+          color("No host(s) were provided for specified infrastructure or filter did not match any instance(s)", Red));
+    } else {
+      saveExecutionLogSafely(logCallback, color(format("Successfully fetched %s instance(s)", hosts.size()), Green));
+      saveExecutionLogSafely(logCallback, color(format("Fetched following instance(s) %s)", hosts), Green));
     }
+
+    saveExecutionLogSafely(logCallback, color(format("Successfully fetched %s instance(s)", hosts.size()), Green));
+    saveExecutionLogSafely(logCallback, color(format("Fetched following instance(s) [%s])", hosts), Green));
+
+    Set<String> filteredHosts = stageExecutionHelper.saveAndExcludeHostsWithSameArtifactDeployedIfNeeded(
+        ambiance, executionInfoKey, infrastructureOutcome, hosts, ServiceSpecType.WINRM, skipInstances, logCallback);
     executionSweepingOutputService.consume(ambiance, OutputExpressionConstants.OUTPUT,
-        HostsOutput.builder().hosts(winRmInfraDelegateConfig.getHosts()).build(), StepCategory.STAGE.name());
+        HostsOutput.builder().hosts(filteredHosts).build(), StepCategory.STAGE.name());
   }
 
   @VisibleForTesting
@@ -300,7 +335,15 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
           ConnectorType.AZURE.name()));
     }
 
-    saveExecutionLog(logCallback, color("Connector validated", Green));
+    if (InfrastructureKind.ECS.equals(infrastructure.getKind())) {
+      if (!(connectorInfo.getConnectorConfig() instanceof AwsConnectorDTO)) {
+        throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+            connectorInfo.getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
+            ConnectorType.AWS.name()));
+      }
+    }
+
+    saveExecutionLogSafely(logCallback, color("Connector validated", Green));
   }
 
   @VisibleForTesting
@@ -319,8 +362,8 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
             k8SDirectInfrastructure.getConnectorRef(), k8SDirectInfrastructure.getNamespace());
 
         if (k8SDirectInfrastructure.getNamespace() != null
-            && EmptyPredicate.isNotEmpty(k8SDirectInfrastructure.getNamespace().getValue())) {
-          saveExecutionLog(logCallback,
+            && isNotEmpty(k8SDirectInfrastructure.getNamespace().getValue())) {
+          saveExecutionLogSafely(logCallback,
               color(format(k8sNamespaceLogLine, k8SDirectInfrastructure.getNamespace().getValue()), Yellow));
         }
         break;
@@ -330,9 +373,8 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
         infrastructureStepHelper.validateExpression(k8sGcpInfrastructure.getConnectorRef(),
             k8sGcpInfrastructure.getNamespace(), k8sGcpInfrastructure.getCluster());
 
-        if (k8sGcpInfrastructure.getNamespace() != null
-            && EmptyPredicate.isNotEmpty(k8sGcpInfrastructure.getNamespace().getValue())) {
-          saveExecutionLog(
+        if (k8sGcpInfrastructure.getNamespace() != null && isNotEmpty(k8sGcpInfrastructure.getNamespace().getValue())) {
+          saveExecutionLogSafely(
               logCallback, color(format(k8sNamespaceLogLine, k8sGcpInfrastructure.getNamespace().getValue()), Yellow));
         }
         break;
@@ -350,8 +392,8 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
             k8sAzureInfrastructure.getSubscriptionId(), k8sAzureInfrastructure.getResourceGroup());
 
         if (k8sAzureInfrastructure.getNamespace() != null
-            && EmptyPredicate.isNotEmpty(k8sAzureInfrastructure.getNamespace().getValue())) {
-          saveExecutionLog(logCallback,
+            && isNotEmpty(k8sAzureInfrastructure.getNamespace().getValue())) {
+          saveExecutionLogSafely(logCallback,
               color(format(k8sNamespaceLogLine, k8sAzureInfrastructure.getNamespace().getValue()), Yellow));
         }
         break;
@@ -379,6 +421,12 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
         infrastructureStepHelper.validateExpression(azureWebAppInfrastructure.getConnectorRef(),
             azureWebAppInfrastructure.getSubscriptionId(), azureWebAppInfrastructure.getResourceGroup());
         break;
+
+      case InfrastructureKind.ECS:
+        EcsInfrastructure ecsInfrastructure = (EcsInfrastructure) infrastructure;
+        infrastructureStepHelper.validateExpression(
+            ecsInfrastructure.getConnectorRef(), ecsInfrastructure.getCluster(), ecsInfrastructure.getRegion());
+        break;
       default:
         throw new InvalidArgumentsException(format("Unknown Infrastructure Kind : [%s]", infrastructure.getKind()));
     }
@@ -394,12 +442,6 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
     Set<EntityDetailProtoDTO> entityDetails =
         entityReferenceExtractorUtils.extractReferredEntities(ambiance, infrastructure);
     pipelineRbacHelper.checkRuntimePermissions(ambiance, entityDetails);
-  }
-
-  private void saveExecutionLog(NGLogCallback logCallback, String line) {
-    if (logCallback != null) {
-      logCallback.saveExecutionLog(line);
-    }
   }
 
   @Override

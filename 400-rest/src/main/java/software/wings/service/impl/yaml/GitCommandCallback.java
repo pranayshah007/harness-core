@@ -200,7 +200,9 @@ public class GitCommandCallback implements NotifyCallbackWithErrorHandling {
     log.info("Remote head commit did not match local head commit. Requeuing changeset [{}] again.", changeSetId);
     if (changeSetId != null) {
       if (featureFlagService.isEnabled(FeatureName.CG_GIT_POLLING, accountId)) {
-        yamlChangeSetService.pushYamlChangeSetForGitToHarness(accountId, branchName, gitConnectorId, repositoryName);
+        YamlChangeSet yamlChangeSet = yamlChangeSetService.get(accountId, changeSetId);
+        yamlChangeSetService.pushYamlChangeSetForGitToHarness(
+            accountId, branchName, gitConnectorId, repositoryName, yamlChangeSet.getAppId());
       }
       yamlChangeSetService.updateStatusAndIncrementPushCount(accountId, changeSetId, Status.QUEUED);
     }

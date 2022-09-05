@@ -10,8 +10,10 @@ package io.harness.service.instancesync;
 import static io.harness.instancesyncmonitoring.service.InstanceSyncMonitoringServiceImpl.FAILED_STATUS;
 import static io.harness.instancesyncmonitoring.service.InstanceSyncMonitoringServiceImpl.SUCCESS_STATUS;
 
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.delegate.beans.instancesync.InstanceSyncPerpetualTaskResponse;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.dtos.DeploymentSummaryDTO;
@@ -37,6 +39,7 @@ import io.harness.models.constants.InstanceSyncConstants;
 import io.harness.models.constants.InstanceSyncFlow;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.service.entity.ServiceEntity;
+import io.harness.remote.client.RestClientUtils;
 import io.harness.service.deploymentsummary.DeploymentSummaryService;
 import io.harness.service.infrastructuremapping.InfrastructureMappingService;
 import io.harness.service.instance.InstanceService;
@@ -75,6 +78,7 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
   private InstanceSyncHelper instanceSyncHelper;
   private InstanceSyncServiceUtils utils;
   private InstanceSyncMonitoringService instanceSyncMonitoringService;
+  private AccountClient accountClient;
   private static final int NEW_DEPLOYMENT_EVENT_RETRY = 3;
   private static final long TWO_WEEKS_IN_MILLIS = (long) 14 * 24 * 60 * 60 * 1000;
 
@@ -84,12 +88,6 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
     long startTime = System.currentTimeMillis();
     DeploymentSummaryDTO deploymentSummaryDTO = deploymentEvent.getDeploymentSummaryDTO();
     InfrastructureMappingDTO infrastructureMappingDTO = deploymentSummaryDTO.getInfrastructureMapping();
-    String infraIdentifier = deploymentEvent.getInfrastructureOutcome() == null
-        ? null
-        : deploymentEvent.getInfrastructureOutcome().getInfraIdentifier();
-    String infraName = deploymentEvent.getInfrastructureOutcome() == null
-        ? null
-        : deploymentEvent.getInfrastructureOutcome().getInfraName();
     log.info("processInstanceSyncForNewDeployment, deploymentEvent: {}", deploymentEvent);
     try (AutoLogContext ignore1 =
              new AccountLogContext(infrastructureMappingDTO.getAccountIdentifier(), OverrideBehavior.OVERRIDE_ERROR);
@@ -149,6 +147,11 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
 
           InstanceSyncLocalCacheManager.setDeploymentSummary(
               deploymentSummaryDTO.getInstanceSyncKey(), deploymentSummaryDTO);
+
+          if (RestClientUtils.getResponse(accountClient.isFeatureFlagEnabled(
+                  FeatureName.FIX_CORRUPTED_INSTANCES.name(), infrastructureMappingDTO.getAccountIdentifier()))) {
+            fixCorruptedInstances(infrastructureMappingDTO);
+          }
 
           // Sync only for deployment infos / instance sync handler keys from instances from server
           performInstanceSync(instanceSyncPerpetualTaskInfoDTO, infrastructureMappingDTO,
@@ -629,5 +632,26 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
         .deploymentType(deploymentType)
         .status(status)
         .build();
+  }
+
+  private void fixCorruptedInstances(InfrastructureMappingDTO infrastructureMappingDTO) {
+    List<InfrastructureMappingDTO> infrastructureMappingDTOs = infrastructureMappingService.getAllByInfrastructureKey(
+        infrastructureMappingDTO.getAccountIdentifier(), infrastructureMappingDTO.getInfrastructureKey());
+
+    // remove the new/correct infrastructureMapping
+    infrastructureMappingDTOs.remove(infrastructureMappingDTO);
+
+    infrastructureMappingDTOs.forEach(oldInfrastructureMappingDTO -> {
+      List<InstanceDTO> instancesInDB = instanceService.getActiveInstancesByInfrastructureMappingId(
+          infrastructureMappingDTO.getAccountIdentifier(), infrastructureMappingDTO.getOrgIdentifier(),
+          infrastructureMappingDTO.getProjectIdentifier(), oldInfrastructureMappingDTO.getId());
+
+      List<String> instanceIds = instancesInDB.stream().map(InstanceDTO::getUuid).collect(Collectors.toList());
+      if (!instanceIds.isEmpty()) {
+        instanceService.updateInfrastructureMapping(instanceIds, infrastructureMappingDTO.getId());
+        log.info("Updating instances {} from old infrastructureMappingId {} to new infrastructureMappingId {}",
+            instanceIds, oldInfrastructureMappingDTO.getId(), infrastructureMappingDTO.getId());
+      }
+    });
   }
 }

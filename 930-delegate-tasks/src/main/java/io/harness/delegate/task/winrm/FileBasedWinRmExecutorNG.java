@@ -10,7 +10,6 @@ package io.harness.delegate.task.winrm;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.encoding.EncodingUtils.encodeBase64;
 import static io.harness.delegate.task.shell.ArtifactoryUtils.getArtifactConfigRequest;
-import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.RUNNING;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
@@ -103,7 +102,6 @@ public class FileBasedWinRmExecutorNG extends FileBasedAbstractWinRmExecutor {
                                 .get(artifactoryArtifactDelegateConfig.getRepositoryName(),
                                     artifactoryArtifactDelegateConfig.getArtifactPath())
                                 .toString();
-      clearTargetArtifact(copyCommandUnit.getDestinationPath(), artifactPath, session, outputWriter, errorWriter);
 
       String command =
           getDownloadArtifactCommand(artifactoryConfigRequest, copyCommandUnit.getDestinationPath(), artifactPath);
@@ -141,8 +139,6 @@ public class FileBasedWinRmExecutorNG extends FileBasedAbstractWinRmExecutor {
               .get(jenkinsArtifactDelegateConfig.getJobName(), jenkinsArtifactDelegateConfig.getBuild(), "artifact",
                   "target", jenkinsArtifactDelegateConfig.getArtifactPath())
               .toString();
-      clearTargetArtifact(
-          copyCommandUnit.getDestinationPath(), artifactPathOnTarget, session, outputWriter, errorWriter);
 
       String command = getDownloadJenkinsArtifactCommand(
           jenkinsArtifactDelegateConfig, copyCommandUnit.getDestinationPath(), artifactPath, artifactPathOnTarget);
@@ -219,31 +215,26 @@ public class FileBasedWinRmExecutorNG extends FileBasedAbstractWinRmExecutor {
     return SUCCESS;
   }
 
-  protected void clearTargetArtifact(String destinationPath, String artifactPath, WinRmSession session,
-      ExecutionLogWriter outputWriter, ExecutionLogWriter errorWriter) throws IOException {
-    String command = getDeleteArtifactCommandStr(destinationPath, artifactPath);
-    final CommandExecutionStatus status = executeRemoteCommand(session, outputWriter, errorWriter, command, false);
-    if (status != SUCCESS) {
-      final String message = format("File %s could not cleared before writing", destinationPath + "\\" + artifactPath);
-      saveExecutionLog(message, ERROR, FAILURE);
-      throw new InvalidRequestException(message, USER);
-    }
-  }
-
   private String getDownloadArtifactCommand(
       ArtifactoryConfigRequest artifactoryConfigRequest, String destinationPath, String artifactPath) {
+    String artifactFileName = artifactPath;
+    int lastIndexOfSlash = artifactFileName.lastIndexOf('/');
+    if (lastIndexOfSlash > 0) {
+      artifactFileName = artifactFileName.substring(lastIndexOfSlash + 1);
+      log.info("Got filename: " + artifactFileName);
+    }
     if (artifactoryConfigRequest.isHasCredentials()) {
       return "$Headers = @{\n"
           + "    Authorization = \"" + getAuthHeader(artifactoryConfigRequest) + "\"\n"
           + "}\n [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12"
           + "\n $ProgressPreference = 'SilentlyContinue'"
           + "\n Invoke-WebRequest -Uri \"" + getArtifactoryUrl(artifactoryConfigRequest, artifactPath)
-          + "\" -Headers $Headers -OutFile \"" + destinationPath + "\\" + artifactPath + "\"";
+          + "\" -Headers $Headers -OutFile \"" + destinationPath + "\\" + artifactFileName + "\"";
     } else {
       return "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12\n "
           + "$ProgressPreference = 'SilentlyContinue'\n"
           + "Invoke-WebRequest -Uri \"" + getArtifactoryUrl(artifactoryConfigRequest, artifactPath) + "\" -OutFile \""
-          + destinationPath + "\\" + artifactPath + "\"";
+          + destinationPath + "\\" + artifactFileName + "\"";
     }
   }
 
@@ -326,14 +317,6 @@ public class FileBasedWinRmExecutorNG extends FileBasedAbstractWinRmExecutor {
     }
     return url + "job"
         + "/" + artifactPath;
-  }
-
-  private String getDeleteArtifactCommandStr(String destinationPath, String artifactPath) {
-    return "$artifact = '" + destinationPath + "\\" + artifactPath + "'\n"
-        + "Write-Host \"Clearing target artifact $artifact on the host.\"\n"
-        + "if ([IO.File]::Exists($decodedFile)) {\n"
-        + "  [IO.File]::Delete($decodedFile)\n"
-        + "}";
   }
 
   private JenkinsUserNamePasswordDTO decrypt(JenkinsUserNamePasswordDTO jenkinsUserNamePasswordDTO,

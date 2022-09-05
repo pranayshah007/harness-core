@@ -1230,6 +1230,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
                    .withAccountId(accountId)
                    .withDelegateTaskId(delegateTask.getUuid())
                    .withSync(sync)
+                   .withTaskType(delegateTask.getData().getTaskType())
                    .build())
         .collect(toList());
   }

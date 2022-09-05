@@ -487,4 +487,17 @@ public class MonitoredServiceResource {
     return ResponseDTO.newResponse(
         monitoredServiceService.getNotificationRules(projectParams, monitoredServiceIdentifier, pageParams));
   }
+
+  @POST
+  @Path("/template-input")
+  @Timed
+  @ExceptionMetered
+  @ApiOperation(
+      value = "saves monitored service from template input", nickname = "saveMonitoredServiceFromTemplateInput")
+  @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = EDIT_PERMISSION)
+  public RestResponse<MonitoredServiceResponse>
+  saveMonitoredServiceFromTemplateInput(
+      @ApiParam(required = true) @NotNull @BeanParam ProjectParams projectParam, @NotNull @Valid @Body String yaml) {
+    return new RestResponse<>(monitoredServiceService.createFromYaml(projectParam, yaml));
+  }
 }

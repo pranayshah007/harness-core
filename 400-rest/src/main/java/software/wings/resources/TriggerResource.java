@@ -12,7 +12,6 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.validation.Validator.notNullCheck;
 
-import static software.wings.security.PermissionAttribute.PermissionType.LOGGED_IN;
 import static software.wings.security.PermissionAttribute.ResourceType.APPLICATION;
 
 import io.harness.beans.PageRequest;
@@ -26,8 +25,6 @@ import software.wings.beans.trigger.Trigger;
 import software.wings.beans.trigger.WebhookEventType;
 import software.wings.beans.trigger.WebhookParameters;
 import software.wings.beans.trigger.WebhookSource;
-import software.wings.security.annotations.ApiKeyAuthorized;
-import software.wings.security.annotations.AuthRule;
 import software.wings.security.annotations.Scope;
 import software.wings.service.intfc.TriggerService;
 
@@ -60,8 +57,6 @@ import lombok.extern.slf4j.Slf4j;
 @Consumes("application/json")
 @Slf4j
 @Scope(APPLICATION)
-@AuthRule(permissionType = LOGGED_IN)
-@ApiKeyAuthorized(permissionType = LOGGED_IN)
 public class TriggerResource {
   private TriggerService triggerService;
 

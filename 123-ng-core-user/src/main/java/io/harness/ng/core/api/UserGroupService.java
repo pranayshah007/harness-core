@@ -31,6 +31,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 
+/**
+ * This interface exposes methods needed for User Group operations.
+ */
 @OwnedBy(PL)
 public interface UserGroupService {
   UserGroup create(UserGroupDTO userGroup);
@@ -92,4 +95,30 @@ public interface UserGroupService {
       @NotBlank String userGroupId, boolean retainMembers);
 
   void sanitize(Scope scope, String identifier);
+
+  /**
+   * This method is to be used only for Default User Group creation.
+   * @param userGroupDTO UserGroup to be created
+   * @return UserGroup This returns created user group.
+   */
+  UserGroup createDefaultUserGroup(UserGroupDTO userGroupDTO);
+
+  /**
+   * This method is to be used only for adding members to Default User Group.
+   * @param accountIdentifier
+   * @param orgIdentifier
+   * @param projectIdentifier
+   * @param userGroupIdentifier
+   * @param userIdentifier
+   * @return UserGroup This returns created user group.
+   */
+  UserGroup addMemberToDefaultUserGroup(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String userGroupIdentifier, String userIdentifier);
+
+  /**
+   * This method is to be used only to update Default User Group.
+   * @param userGroup UserGroup to be updated
+   * @return UserGroup This returns created user group.
+   */
+  UserGroup updateDefaultUserGroup(UserGroupDTO userGroup);
 }

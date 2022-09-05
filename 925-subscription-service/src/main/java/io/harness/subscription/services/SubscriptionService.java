@@ -23,8 +23,7 @@ import java.util.EnumMap;
 import java.util.List;
 
 public interface SubscriptionService {
-  EnumMap<UsageKey, Long> getRecommendation(
-      String accountIdentifier, ModuleType moduleType, EnumMap<UsageKey, Long> usage);
+  EnumMap<UsageKey, Long> getRecommendation(String accountIdentifier, long numberOfMAUs, long numberOfUsers);
   PriceCollectionDTO listPrices(String accountIdentifier, ModuleType moduleType);
   InvoiceDetailDTO previewInvoice(String accountIdentifier, SubscriptionDTO subscriptionDTO);
   void payInvoice(String invoiceId);
@@ -40,10 +39,10 @@ public interface SubscriptionService {
 
   CustomerDetailDTO createStripeCustomer(String accountIdentifier, CustomerDTO customerDTO);
   CustomerDetailDTO updateStripeCustomer(String accountIdentifier, String customerId, CustomerDTO customerDTO);
-  CustomerDetailDTO getStripeCustomer(String accountIdentifier, String customerId);
+  CustomerDetailDTO getStripeCustomer(String accountIdentifier);
   CustomerDetailDTO updateStripeBilling(String accountIdentifier, StripeBillingDTO stripeBillingDTO);
 
-  PaymentMethodCollectionDTO listPaymentMethods(String accountIdentifier, String customerId);
+  PaymentMethodCollectionDTO listPaymentMethods(String accountIdentifier);
 
   void syncStripeEvent(String event);
 }

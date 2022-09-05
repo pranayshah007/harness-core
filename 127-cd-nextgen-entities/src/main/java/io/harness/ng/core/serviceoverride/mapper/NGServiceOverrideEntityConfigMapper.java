@@ -11,6 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.configfile.ConfigFileWrapper;
+import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
@@ -34,12 +36,18 @@ public class NGServiceOverrideEntityConfigMapper {
   }
 
   public NGServiceOverrideConfig toNGServiceOverrideConfig(NGServiceOverridesEntity serviceOverridesEntity) {
+    // Todo : Refactor it (Tathagat)
     List<NGVariable> variableOverride = null;
+    List<ManifestConfigWrapper> manifestsList = null;
+    List<ConfigFileWrapper> configFiles = null;
     if (isNotEmpty(serviceOverridesEntity.getYaml())) {
       try {
         final NGServiceOverrideConfig config =
             YamlPipelineUtils.read(serviceOverridesEntity.getYaml(), NGServiceOverrideConfig.class);
-        variableOverride = config.getServiceOverrideInfoConfig().getVariables();
+        final NGServiceOverrideInfoConfig serviceOverrideInfoConfig = config.getServiceOverrideInfoConfig();
+        variableOverride = serviceOverrideInfoConfig.getVariables();
+        manifestsList = serviceOverrideInfoConfig.getManifests();
+        configFiles = serviceOverrideInfoConfig.getConfigFiles();
       } catch (IOException e) {
         throw new InvalidRequestException("Cannot create service ng service config due to " + e.getMessage());
       }
@@ -49,6 +57,8 @@ public class NGServiceOverrideEntityConfigMapper {
                                        .environmentRef(serviceOverridesEntity.getEnvironmentRef())
                                        .serviceRef(serviceOverridesEntity.getServiceRef())
                                        .variables(variableOverride)
+                                       .manifests(manifestsList)
+                                       .configFiles(configFiles)
                                        .build())
         .build();
   }

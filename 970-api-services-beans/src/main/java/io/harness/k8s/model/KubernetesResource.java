@@ -74,6 +74,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.constructor.ConstructorException;
@@ -82,6 +83,7 @@ import org.yaml.snakeyaml.constructor.ConstructorException;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Slf4j
 @OwnedBy(CDP)
 public class KubernetesResource {
   private static final String MISSING_DEPLOYMENT_SPEC_MSG = "Deployment does not have spec";
@@ -247,10 +249,18 @@ public class KubernetesResource {
       return false;
     }
 
-    Object k8sResource = getK8sResource();
-    V1Service v1Service = (V1Service) k8sResource;
-    notNullCheck("Service does not have spec", v1Service.getSpec());
-    return StringUtils.equals(v1Service.getSpec().getType(), "LoadBalancer");
+    try {
+      Object k8sResource = getK8sResource();
+      V1Service v1Service = (V1Service) k8sResource;
+      notNullCheck("Service does not have spec", v1Service.getSpec());
+      return StringUtils.equals(v1Service.getSpec().getType(), "LoadBalancer");
+    } catch (KubernetesYamlException ex) {
+      log.warn("Error loading YAML while checking if the service is of kind LoadBalancer. "
+              + "Ignoring this exception as kubectl apply is already successful and "
+              + "pipeline execution should not be marked as failed because of this. Spec: {}",
+          this.getSpec(), ex);
+    }
+    return false;
   }
 
   public KubernetesResource addColorSelectorInService(String color) {

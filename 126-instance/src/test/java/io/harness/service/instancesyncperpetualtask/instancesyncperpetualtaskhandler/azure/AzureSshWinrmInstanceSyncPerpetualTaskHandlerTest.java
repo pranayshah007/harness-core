@@ -89,6 +89,7 @@ public class AzureSshWinrmInstanceSyncPerpetualTaskHandlerTest extends Instances
     SshWinRmAzureInfrastructureOutcome outcome = SshWinRmAzureInfrastructureOutcome.builder()
                                                      .infrastructureKey(INFRASTRUCTURE_KEY)
                                                      .credentialsRef(CRED_REF)
+                                                     .usePublicDns(true)
                                                      .build();
     SecretSpec secretSpec = Mockito.mock(SecretSpec.class);
     doReturn(SSHKeySpecDTO.builder().port(PORT).build()).when(secretSpec).toDTO();

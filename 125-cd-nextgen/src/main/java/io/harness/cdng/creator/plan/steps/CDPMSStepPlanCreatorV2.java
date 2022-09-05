@@ -26,6 +26,7 @@ import io.harness.advisers.retry.RetryAdviserWithRollback;
 import io.harness.advisers.rollback.OnFailRollbackAdviser;
 import io.harness.advisers.rollback.OnFailRollbackParameters;
 import io.harness.advisers.rollback.OnFailRollbackParameters.OnFailRollbackParametersBuilder;
+import io.harness.advisers.rollback.ProceedWithDefaultValueAdviser;
 import io.harness.advisers.rollback.RollbackStrategy;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -48,6 +49,7 @@ import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.execution.utils.SkipInfoUtils;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
+import io.harness.pms.sdk.core.adviser.ProceedWithDefaultAdviserParameters;
 import io.harness.pms.sdk.core.adviser.abort.OnAbortAdviser;
 import io.harness.pms.sdk.core.adviser.abort.OnAbortAdviserParameters;
 import io.harness.pms.sdk.core.adviser.ignore.IgnoreAdviser;
@@ -112,7 +114,9 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
     Map<String, ByteString> metadataMap = new HashMap<>();
     StepParameters stepParameters = getStepParameters(ctx, stepElement);
     // Adds the strategy field as dependency if present
-    addStrategyFieldDependencyIfPresent(ctx, stepElement, dependenciesNodeMap, metadataMap);
+    StrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, stepElement.getUuid(),
+        stepElement.getIdentifier(), stepElement.getName(), dependenciesNodeMap, metadataMap,
+        StrategyUtils.getAdviserObtainmentFromMetaDataForStep(kryoSerializer, ctx.getCurrentField()));
     // We are swapping the uuid with strategy node if present.
     PlanNode stepPlanNode =
         PlanNode.builder()
@@ -381,6 +385,13 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
           adviserObtainmentList.add(getManualInterventionAdviserObtainment(
               failureTypes, adviserObtainmentBuilder, actionConfig, actionUnderManualIntervention));
           break;
+        case PROCEED_WITH_DEFAULT_VALUE:
+          adviserObtainmentList.add(
+              adviserObtainmentBuilder.setType(ProceedWithDefaultValueAdviser.ADVISER_TYPE)
+                  .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+                      ProceedWithDefaultAdviserParameters.builder().applicableFailureTypes(failureTypes).build())))
+                  .build());
+          break;
         default:
           Switch.unhandled(actionType);
       }
@@ -457,23 +468,23 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
       return Collections.emptyList();
     }
 
-    if (stages.asArray().get(0).getField(PARALLEL) != null) {
-      YamlNode parallelStages = stages.asArray().get(0).getField(PARALLEL).getNode();
-      for (YamlNode stageNode : parallelStages.asArray()) {
-        YamlNode stage = stageNode.getField(STAGE).getNode();
-        if (stage == null) {
-          continue;
-        }
+    for (YamlNode stageNode : stages.asArray()) {
+      if (stageNode.getField(PARALLEL) != null) {
+        YamlNode parallelStages = stageNode.getField(PARALLEL).getNode();
+        for (YamlNode stageParallelNode : parallelStages.asArray()) {
+          YamlNode stage = stageParallelNode.getField(STAGE).getNode();
+          if (stage == null) {
+            continue;
+          }
 
-        steps.addAll(findExecutionStepsFromStage(stage, filter));
-        steps.addAll(findProvisionerStepsFromStage(stage, filter));
+          steps.addAll(findExecutionStepsFromStage(stage, filter));
+          steps.addAll(findProvisionerStepsFromStage(stage, filter));
 
-        if (currentStageIdentifier.equals(stage.getIdentifier())) {
-          break;
+          if (currentStageIdentifier.equals(stage.getIdentifier())) {
+            break;
+          }
         }
-      }
-    } else {
-      for (YamlNode stageNode : stages.asArray()) {
+      } else {
         YamlNode stage = stageNode.getField(STAGE).getNode();
         if (stage == null) {
           continue;

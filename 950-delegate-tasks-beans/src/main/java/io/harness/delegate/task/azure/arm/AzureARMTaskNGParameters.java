@@ -30,7 +30,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @OwnedBy(CDP)
-public class AzureARMTaskNGParameters extends AzureTaskNGParameters {
+public class AzureARMTaskNGParameters extends AzureResourceCreationTaskNGParameters {
   @Expression(ALLOW_SECRETS) String templateBody;
   @Expression(ALLOW_SECRETS) String parametersBody;
   ARMScopeType deploymentScope;

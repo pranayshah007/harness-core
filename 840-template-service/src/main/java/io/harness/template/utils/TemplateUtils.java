@@ -23,7 +23,7 @@ public class TemplateUtils {
   }
 
   public boolean isInlineEntity(GitEntityInfo gitEntityInfo) {
-    return StoreType.INLINE.equals(gitEntityInfo.getStoreType());
+    return StoreType.INLINE.equals(gitEntityInfo.getStoreType()) || gitEntityInfo.getStoreType() == null;
   }
 
   public boolean isRemoteEntity(GitEntityInfo gitEntityInfo) {

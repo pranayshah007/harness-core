@@ -47,6 +47,9 @@ public class GitEntityInfo {
   @Setter String parentEntityRepoUrl;
   String parentEntityConnectorRef; // connector ref of entity under whose context actions are occurring
   String parentEntityRepoName; // repo name of entity under whose context actions are occurring
+  String parentEntityAccountIdentifier;
+  String parentEntityOrgIdentifier;
+  String parentEntityProjectIdentifier;
 
   public boolean isNull() {
     // todo @Abhinav Maybe we should use null in place of default

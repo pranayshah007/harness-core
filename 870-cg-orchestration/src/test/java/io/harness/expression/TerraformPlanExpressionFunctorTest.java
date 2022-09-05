@@ -96,12 +96,10 @@ public class TerraformPlanExpressionFunctorTest extends CategoryTest {
   @Owner(developers = ABOSII)
   @Category(UnitTests.class)
   public void testJsonFilePathNoPlan() {
-    assertExceptionMessage(()
-                               -> expressionFunctor.jsonFilePath(),
-        "Terraform plan 'terraformApply' is not available in current context. Terraform plan is available only after terraform step with run plan only option");
-    assertExceptionMessage(()
-                               -> expressionFunctor.destroy.jsonFilePath(),
-        "Terraform plan 'terraformDestroy' is not available in current context. Terraform plan is available only after terraform step with run plan only option");
+    String jsonPath = expressionFunctor.jsonFilePath();
+    assertThat(jsonPath).isEqualTo(null);
+    String destroyJsonPath = expressionFunctor.jsonFilePath();
+    assertThat(destroyJsonPath).isEqualTo(null);
   }
 
   @Test
@@ -111,12 +109,10 @@ public class TerraformPlanExpressionFunctorTest extends CategoryTest {
     doReturn(TerraformPlanParam.builder().build()).when(obtainTfPlanFunction).apply(TF_APPLY_VAR_NAME);
     doReturn(TerraformPlanParam.builder().build()).when(obtainTfPlanFunction).apply(TF_DESTROY_VAR_NAME);
 
-    assertExceptionMessage(()
-                               -> expressionFunctor.jsonFilePath(),
-        "Invalid usage of terraform plan functor. Missing tfPlanJsonFileId in terraform plan param 'terraformApply'");
-    assertExceptionMessage(()
-                               -> expressionFunctor.destroy.jsonFilePath(),
-        "Invalid usage of terraform plan functor. Missing tfPlanJsonFileId in terraform plan param 'terraformDestroy'");
+    String jsonPath = expressionFunctor.jsonFilePath();
+    assertThat(jsonPath).isEqualTo(null);
+    String destroyJsonPath = expressionFunctor.jsonFilePath();
+    assertThat(destroyJsonPath).isEqualTo(null);
   }
 
   @Test

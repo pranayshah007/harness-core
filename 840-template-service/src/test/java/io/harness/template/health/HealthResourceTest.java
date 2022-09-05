@@ -13,7 +13,6 @@ import static io.harness.rule.OwnerRule.ARCHIT;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
@@ -29,6 +28,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
@@ -43,7 +43,7 @@ public class HealthResourceTest extends CategoryTest {
   public void setup() {
     healthService = mock(HealthService.class);
     healthResource = new HealthResource(healthService);
-    mockStatic(MaintenanceController.class);
+    Mockito.mockStatic(MaintenanceController.class);
   }
 
   @Test

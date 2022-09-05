@@ -24,6 +24,7 @@ import io.harness.models.constants.InstanceSyncConstants;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -74,16 +75,16 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
 
   private List<Instance> getInstancesCreatedBefore(String accountIdentifier, long timestamp) {
     Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier).is(accountIdentifier);
-    criteria.andOperator(Criteria.where(InstanceKeys.isDeleted).is(false));
-    criteria.andOperator(Criteria.where(InstanceKeys.createdAt).lte(timestamp));
+    criteria.andOperator(
+        Criteria.where(InstanceKeys.isDeleted).is(false), Criteria.where(InstanceKeys.createdAt).lte(timestamp));
     Query query = new Query().addCriteria(criteria);
     return mongoTemplate.find(query, Instance.class);
   }
 
   private List<Instance> getInstancesDeletedAfter(String accountIdentifier, long timestamp) {
     Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier).is(accountIdentifier);
-    criteria.andOperator(Criteria.where(InstanceKeys.deletedAt).gte(timestamp));
-    criteria.andOperator(Criteria.where(InstanceKeys.createdAt).lte(timestamp));
+    criteria.andOperator(
+        Criteria.where(InstanceKeys.deletedAt).gte(timestamp), Criteria.where(InstanceKeys.createdAt).lte(timestamp));
     Query query = new Query().addCriteria(criteria);
     return mongoTemplate.find(query, Instance.class);
   }
@@ -231,7 +232,8 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
     MatchOperation matchStage = Aggregation.match(criteria);
     GroupOperation groupEnvId = group(InstanceKeys.infraIdentifier, InstanceKeys.infraName,
         InstanceKeys.lastPipelineExecutionId, InstanceKeys.lastPipelineExecutionName, InstanceKeys.lastDeployedAt,
-        InstanceKeys.envIdentifier, InstanceKeys.envName, InstanceSyncConstants.PRIMARY_ARTIFACT_TAG)
+        InstanceKeys.envIdentifier, InstanceKeys.envName, InstanceSyncConstants.PRIMARY_ARTIFACT_TAG,
+        InstanceSyncConstants.PRIMARY_ARTIFACT_DISPLAY_NAME)
                                     .count()
                                     .as(InstanceSyncConstants.COUNT);
     return mongoTemplate.aggregate(
@@ -338,5 +340,16 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
   public Instance findFirstInstance(Criteria criteria) {
     Query query = new Query().addCriteria(criteria);
     return mongoTemplate.findOne(query, Instance.class);
+  }
+
+  @Override
+  public UpdateResult updateInfrastructureMapping(List<String> instanceIds, String infrastructureMappingId) {
+    Criteria criteria = Criteria.where(InstanceKeys.id).in(instanceIds);
+    Query query = new Query();
+    query.addCriteria(criteria);
+
+    Update update = new Update();
+    update.set(InstanceKeys.infrastructureMappingId, infrastructureMappingId);
+    return mongoTemplate.updateMulti(query, update, Instance.class);
   }
 }
