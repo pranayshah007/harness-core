@@ -15,11 +15,14 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
+import io.harness.cvng.beans.DeviationType;
 import io.harness.cvng.beans.ThresholdConfigType;
 import io.harness.cvng.beans.TimeSeriesMetricType;
+import io.harness.cvng.beans.TimeSeriesThresholdType;
 import io.harness.cvng.core.beans.PrometheusMetricDefinition;
 import io.harness.cvng.core.beans.PrometheusMetricDefinition.PrometheusFilter;
 import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
+import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.AppDynamicsHealthSourceSpec;
 import io.harness.cvng.core.constant.MonitoredServiceConstants;
 import io.harness.cvng.core.entities.PrometheusCVConfig.MetricInfo;
 import io.harness.cvng.core.utils.analysisinfo.AnalysisInfoUtility;
@@ -32,8 +35,10 @@ import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -192,10 +197,13 @@ public class PrometheusCVConfig extends MetricCVConfig<MetricInfo> {
     this.setMetricPack(metricPack);
   }
 
-  public void addMetricThresholds(Set<TimeSeriesMetricPackDTO> timeSeriesMetricPacks) {
+  public void addMetricThresholds(
+      Set<TimeSeriesMetricPackDTO> timeSeriesMetricPacks, List<PrometheusMetricDefinition> metricDefinitions) {
     if (isEmpty(timeSeriesMetricPacks)) {
       return;
     }
+    Map<String, PrometheusMetricDefinition> mapOfMetricDefinitions = metricDefinitions.stream().collect(
+        Collectors.toMap(PrometheusMetricDefinition::getMetricName, metricDefinition -> metricDefinition));
     getMetricPack().getMetrics().forEach(metric -> {
       timeSeriesMetricPacks.stream()
           .filter(timeSeriesMetricPack
@@ -208,6 +216,9 @@ public class PrometheusCVConfig extends MetricCVConfig<MetricInfo> {
                   .forEach(metricPackDTO -> metricPackDTO.getTimeSeriesThresholdCriteria().forEach(criteria -> {
                     List<TimeSeriesThreshold> timeSeriesThresholds =
                         metric.getThresholds() != null ? metric.getThresholds() : new ArrayList<>();
+                    String metricName = metricPackDTO.getMetricName();
+                    List<TimeSeriesThresholdType> thresholdTypes =
+                        mapOfMetricDefinitions.get(metricName).getRiskProfile().getThresholdTypes();
                     TimeSeriesThreshold timeSeriesThreshold =
                         TimeSeriesThreshold.builder()
                             .accountId(getAccountId())
@@ -219,6 +230,7 @@ public class PrometheusCVConfig extends MetricCVConfig<MetricInfo> {
                             .action(metricPackDTO.getType().getTimeSeriesThresholdActionType())
                             .criteria(criteria)
                             .thresholdConfigType(ThresholdConfigType.USER_DEFINED)
+                            .deviationType(DeviationType.getDeviationType(thresholdTypes))
                             .build();
                     timeSeriesThresholds.add(timeSeriesThreshold);
                     metric.setThresholds(timeSeriesThresholds);

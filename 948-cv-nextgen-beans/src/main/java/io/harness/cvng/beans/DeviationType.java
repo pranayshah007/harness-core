@@ -7,4 +7,25 @@
 
 package io.harness.cvng.beans;
 
-public enum DeviationType { HIGHER_IS_RISKIER, LOWER_IS_RISKIER, BOTH_ARE_RISKY }
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
+import java.util.List;
+
+public enum DeviationType {
+  HIGHER_IS_RISKY,
+  LOWER_IS_RISKY,
+  BOTH_ARE_RISKY;
+
+  public static DeviationType getDeviationType(List<TimeSeriesThresholdType> thresholdTypes) {
+    if (isNotEmpty(thresholdTypes)) {
+      if (thresholdTypes.size() == 2) {
+        return DeviationType.BOTH_ARE_RISKY;
+      } else if (thresholdTypes.contains(TimeSeriesThresholdType.ACT_WHEN_HIGHER)) {
+        return DeviationType.HIGHER_IS_RISKY;
+      } else {
+        return DeviationType.LOWER_IS_RISKY;
+      }
+    }
+    return null;
+  }
+}

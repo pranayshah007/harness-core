@@ -14,6 +14,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import io.harness.cvng.beans.DeviationType;
 import io.harness.cvng.beans.ThresholdConfigType;
 import io.harness.cvng.beans.TimeSeriesMetricType;
 import io.harness.cvng.beans.TimeSeriesThresholdActionType;
@@ -107,6 +108,7 @@ public abstract class MetricCVConfig<I extends AnalysisInfo> extends CVConfig {
                              .action(TimeSeriesThresholdActionType.IGNORE)
                              .criteria(criteria)
                              .thresholdConfigType(ThresholdConfigType.DEFAULT)
+                             .deviationType(DeviationType.getDeviationType(thresholdTypes))
                              .build());
         });
       });

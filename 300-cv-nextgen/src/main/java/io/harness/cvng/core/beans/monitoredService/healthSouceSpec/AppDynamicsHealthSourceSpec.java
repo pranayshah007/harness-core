@@ -163,18 +163,17 @@ public class AppDynamicsHealthSourceSpec extends MetricHealthSourceSpec {
                            return appDynamicsCVConfig;
                          })
                          .collect(Collectors.toList()));
-    cvConfigs.forEach(appDynamicsCVConfig -> appDynamicsCVConfig.addMetricThresholds(metricPacks));
+    cvConfigs.forEach(appDynamicsCVConfig -> appDynamicsCVConfig.addMetricThresholds(metricPacks, metricDefinitions);
     cvConfigs.stream()
         .filter(cvConfig -> CollectionUtils.isNotEmpty(cvConfig.getMetricInfos()))
         .flatMap(cvConfig -> cvConfig.getMetricInfos().stream())
         .forEach(metricInfo -> {
-          if (metricInfo.getDeploymentVerification().isEnabled()) {
-            Preconditions.checkNotNull(metricInfo.getCompleteServiceInstanceMetricPath(),
-                "ServiceInstanceMetricPath should be set for Deployment Verification");
-            Preconditions.checkArgument(
-                metricInfo.getCompleteServiceInstanceMetricPath().contains("|Individual Nodes|*|"),
-                "ServiceInstanceMetricPath should contain |Individual Nodes|*|");
-          }
+      if (metricInfo.getDeploymentVerification().isEnabled()) {
+        Preconditions.checkNotNull(metricInfo.getCompleteServiceInstanceMetricPath(),
+            "ServiceInstanceMetricPath should be set for Deployment Verification");
+        Preconditions.checkArgument(metricInfo.getCompleteServiceInstanceMetricPath().contains("|Individual Nodes|*|"),
+            "ServiceInstanceMetricPath should contain |Individual Nodes|*|");
+      }
         });
     return cvConfigs;
   }

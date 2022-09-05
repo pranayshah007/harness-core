@@ -360,6 +360,7 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
                                                .thresholdType(timeSeriesThreshold.getCriteria().getThresholdType())
                                                .value(timeSeriesThreshold.getCriteria().getValue())
                                                .thresholdConfigType(timeSeriesThreshold.getThresholdConfigType())
+                                               .deviationType(timeSeriesThreshold.getDeviationType())
                                                .build()));
 
     // add data source level thresholds
@@ -384,6 +385,7 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
                         .thresholdType(timeSeriesThreshold.getCriteria().getThresholdType())
                         .value(timeSeriesThreshold.getCriteria().getValue())
                         .thresholdConfigType(timeSeriesThreshold.getThresholdConfigType())
+                        .deviationType(timeSeriesThreshold.getDeviationType())
                         .build());
               }
             });
