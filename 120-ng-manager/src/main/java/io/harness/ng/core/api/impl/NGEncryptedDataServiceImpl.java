@@ -546,7 +546,27 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
           String projectIdentifier = getProjectIdentifier(ngAccess.getProjectIdentifier(), secretScope);
 
           // get encrypted data from DB
-          NGEncryptedData encryptedData = get(accountIdentifier, orgIdentifier, projectIdentifier, secretIdentifier);
+          NGEncryptedData encryptedData = null;
+          boolean isSecretPath = secretIdentifier.contains(":");
+          if (isSecretPath) {
+            String[] secretDetails = secretIdentifier.split(":");
+            // EncryptionType encryptionType = EncryptionType.valueOf(secretDetails[0]);
+            String secretManagerId = secretDetails[1].substring(2, secretDetails[1].indexOf("/", 2));
+            String path = secretDetails[1].substring(secretDetails[1].indexOf("/", 2) + 1);
+            encryptedData = NGEncryptedData.builder()
+                                .accountIdentifier(accountIdentifier)
+                                .orgIdentifier(orgIdentifier)
+                                .projectIdentifier(projectIdentifier)
+                                .identifier(secretIdentifier)
+                                .name(secretIdentifier)
+                                .type(SettingVariableTypes.SECRET_TEXT)
+                                .path(path)
+                                .secretManagerIdentifier(secretManagerId)
+                                .encryptionType(EncryptionType.VAULT)
+                                .build();
+          } else {
+            encryptedData = get(accountIdentifier, orgIdentifier, projectIdentifier, secretIdentifier);
+          }
           if (encryptedData != null) {
             // if type is file and file is saved elsewhere, download and save contents in encryptedValue
             if (encryptedData.getType() == SettingVariableTypes.CONFIG_FILE
