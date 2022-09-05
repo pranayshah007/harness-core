@@ -28,7 +28,7 @@ import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.task.azure.arm.AzureBlueprintTaskNGParameters;
-import io.harness.delegate.task.azure.arm.AzureTaskNGParameters;
+import io.harness.delegate.task.azure.arm.AzureResourceCreationTaskNGParameters;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.git.GitFetchResponse;
 import io.harness.eraro.ErrorCode;
@@ -176,7 +176,7 @@ public class AzureCreateBPStep extends TaskChainExecutableWithRollbackAndRbac {
   }
 
   private TaskChainResponse executeCreateTask(Ambiance ambiance, StepElementParameters stepParameters,
-      AzureTaskNGParameters parameters, PassThroughData passThroughData) {
+      AzureResourceCreationTaskNGParameters parameters, PassThroughData passThroughData) {
     TaskData taskData =
         TaskData.builder()
             .async(true)
@@ -206,8 +206,8 @@ public class AzureCreateBPStep extends TaskChainExecutableWithRollbackAndRbac {
         .build();
   }
 
-  private AzureTaskNGParameters getAzureTaskNGParams(Ambiance ambiance, StepElementParameters stepElementParameters,
-      AzureConnectorDTO connectorConfig, PassThroughData passThroughData) {
+  private AzureResourceCreationTaskNGParameters getAzureTaskNGParams(Ambiance ambiance,
+      StepElementParameters stepElementParameters, AzureConnectorDTO connectorConfig, PassThroughData passThroughData) {
     AzureCreateBPStepParameters azureCreateStepParameters =
         (AzureCreateBPStepParameters) stepElementParameters.getSpec();
     AzureCreateBPPassThroughData azureCreateBPPassThroughData = (AzureCreateBPPassThroughData) passThroughData;
@@ -259,7 +259,7 @@ public class AzureCreateBPStep extends TaskChainExecutableWithRollbackAndRbac {
     AzureConnectorDTO connectorDTO = azureCommonHelper.getAzureConnectorConfig(
         ambiance, ParameterField.createValueField(spec.getConfiguration().getConnectorRef().getValue()));
 
-    AzureTaskNGParameters azureTaskNGParameters =
+    AzureResourceCreationTaskNGParameters azureTaskNGParameters =
         getAzureTaskNGParams(ambiance, stepElementParameters, connectorDTO, passThroughData);
     return executeCreateTask(ambiance, stepElementParameters, azureTaskNGParameters, passThroughData);
   }

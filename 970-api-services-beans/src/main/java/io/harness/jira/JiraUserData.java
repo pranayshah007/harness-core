@@ -24,6 +24,7 @@ public class JiraUserData {
   private String accountId;
   private String name;
   private String displayName;
+  private String emailAddress;
   private boolean active;
 
   public JiraUserData(JsonNode node) {
@@ -35,11 +36,13 @@ public class JiraUserData {
     }
     this.displayName = JsonNodeUtils.mustGetString(node, "displayName");
     this.active = JsonNodeUtils.mustGetBoolean(node, "active");
+    this.emailAddress = JsonNodeUtils.mustGetString(node, "emailAddress");
   }
 
-  public JiraUserData(String accountId, String displayName, boolean active) {
+  public JiraUserData(String accountId, String displayName, boolean active, String emailAddress) {
     this.accountId = accountId;
     this.displayName = displayName;
+    this.emailAddress = emailAddress;
     this.active = active;
   }
 }

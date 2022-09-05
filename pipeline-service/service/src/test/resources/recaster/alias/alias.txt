@@ -64,6 +64,7 @@ io.harness.steps.jira.create.JiraCreateSpecParameters
 io.harness.steps.cf.FlagConfigurationStepParameters
 io.harness.pms.yaml.validation.InputSetValidator
 io.harness.steps.shellscript.ShellScriptInlineSource
+io.harness.steps.shellscript.HarnessFileStoreSource
 parameterField
 io.harness.steps.approval.step.harness.HarnessApprovalOutcome
 io.harness.steps.common.steps.stepgroup.StepGroupStepParameters

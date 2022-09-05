@@ -7,6 +7,7 @@
 
 package io.harness.cdng.creator.plan.service;
 
+import static io.harness.cdng.creator.plan.manifest.ManifestsPlanCreator.SERVICE_ENTITY_DEFINITION_TYPE_KEY;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.TATHAGAT;
@@ -16,6 +17,7 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doReturn;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
@@ -24,6 +26,8 @@ import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.PrimaryArtifact;
 import io.harness.cdng.artifact.bean.yaml.SidecarArtifact;
 import io.harness.cdng.artifact.bean.yaml.SidecarArtifactWrapper;
+import io.harness.cdng.configfile.ConfigFile;
+import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.manifest.ManifestConfigType;
 import io.harness.cdng.manifest.yaml.ManifestConfig;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
@@ -53,10 +57,12 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -85,6 +91,21 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
       ManifestConfigWrapper.builder()
           .manifest(ManifestConfig.builder().identifier("values_test3").type(ManifestConfigType.VALUES).build())
           .build();
+  private static final ConfigFileWrapper configFile1a =
+      ConfigFileWrapper.builder().configFile(ConfigFile.builder().identifier("config_file1").uuid("a").build()).build();
+  private static final ConfigFileWrapper configFile1b =
+      ConfigFileWrapper.builder().configFile(ConfigFile.builder().identifier("config_file1").uuid("b").build()).build();
+  private static final ConfigFileWrapper configFile2a =
+      ConfigFileWrapper.builder().configFile(ConfigFile.builder().identifier("config_file2").uuid("a").build()).build();
+  private static final ConfigFileWrapper configFile2b =
+      ConfigFileWrapper.builder().configFile(ConfigFile.builder().identifier("config_file2").uuid("b").build()).build();
+  private static final ConfigFileWrapper configFile3a =
+      ConfigFileWrapper.builder().configFile(ConfigFile.builder().identifier("config_file3").uuid("a").build()).build();
+  private static final ConfigFileWrapper configFile3b =
+      ConfigFileWrapper.builder().configFile(ConfigFile.builder().identifier("config_file3").uuid("b").build()).build();
+
+  private static final Set<String> dependencyMetadataMapKeys =
+      new HashSet<>(Arrays.asList(YamlTypes.UUID, YamlTypes.SERVICE_CONFIG));
 
   @Before
   public void setUp() {
@@ -263,7 +284,7 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
     assertThat(planCreationResponseMap.size()).isEqualTo(1);
     assertThat(planCreationResponseMap.containsKey(nodeUuid)).isEqualTo(true);
     PlanCreationResponse planCreationResponse1 = planCreationResponseMap.get(nodeUuid);
-    checksForDependencies(planCreationResponse1, nodeUuid);
+    checksForDependencies(planCreationResponse1, nodeUuid, dependencyMetadataMapKeys);
     assertThat(planCreationResponse1.getDependencies().getDependenciesMap().get(nodeUuid))
         .isEqualTo("serviceDefinition/spec/artifacts");
     assertThat(planCreationResponse1.getYamlUpdates()).isNull();
@@ -291,7 +312,7 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
     assertThat(planCreationResponseMap.size()).isEqualTo(1);
     assertThat(planCreationResponseMap.containsKey(nodeUuid)).isEqualTo(true);
     PlanCreationResponse planCreationResponse1 = planCreationResponseMap.get(nodeUuid);
-    checksForDependencies(planCreationResponse1, nodeUuid);
+    checksForDependencies(planCreationResponse1, nodeUuid, dependencyMetadataMapKeys);
     assertThat(planCreationResponse1.getDependencies().getDependenciesMap().get(nodeUuid))
         .isEqualTo("stageOverrides/artifacts");
     assertThat(planCreationResponse1.getYamlUpdates().getFqnToYamlCount()).isEqualTo(1);
@@ -319,25 +340,23 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
     assertThat(planCreationResponseMap.size()).isEqualTo(1);
     assertThat(planCreationResponseMap.containsKey(nodeUuid)).isEqualTo(true);
     PlanCreationResponse planCreationResponse1 = planCreationResponseMap.get(nodeUuid);
-    checksForDependencies(planCreationResponse1, nodeUuid);
+    checksForDependencies(planCreationResponse1, nodeUuid, dependencyMetadataMapKeys);
     assertThat(planCreationResponse1.getDependencies().getDependenciesMap().get(nodeUuid))
         .isEqualTo("stageOverrides/artifacts");
 
     assertThat(planCreationResponse1.getYamlUpdates().getFqnToYamlCount()).isEqualTo(1);
   }
 
-  private void checksForDependencies(PlanCreationResponse planCreationResponse, String nodeUuid) {
+  private void checksForDependencies(
+      PlanCreationResponse planCreationResponse, String nodeUuid, Set<String> dependencyMetadataMapKeys) {
     assertThat(planCreationResponse.getDependencies().getDependenciesMap().containsKey(nodeUuid)).isEqualTo(true);
     assertThat(planCreationResponse.getDependencies().getDependencyMetadataMap().get(nodeUuid).getMetadataMap().size())
-        .isEqualTo(2);
+        .isEqualTo(dependencyMetadataMapKeys.size());
+
     assertThat(
-        planCreationResponse.getDependencies().getDependencyMetadataMap().get(nodeUuid).getMetadataMap().containsKey(
-            YamlTypes.UUID))
-        .isEqualTo(true);
-    assertThat(
-        planCreationResponse.getDependencies().getDependencyMetadataMap().get(nodeUuid).getMetadataMap().containsKey(
-            YamlTypes.SERVICE_CONFIG))
-        .isEqualTo(true);
+        new HashSet<>(
+            planCreationResponse.getDependencies().getDependencyMetadataMap().get(nodeUuid).getMetadataMap().keySet()))
+        .isEqualTo(dependencyMetadataMapKeys);
   }
 
   @Test
@@ -362,7 +381,7 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
     assertThat(planCreationResponseMap.size()).isEqualTo(1);
     assertThat(planCreationResponseMap.containsKey(nodeUuid)).isEqualTo(true);
     PlanCreationResponse planCreationResponse1 = planCreationResponseMap.get(nodeUuid);
-    checksForDependencies(planCreationResponse1, nodeUuid);
+    checksForDependencies(planCreationResponse1, nodeUuid, dependencyMetadataMapKeys);
     assertThat(planCreationResponse1.getDependencies().getDependenciesMap().get(nodeUuid))
         .isEqualTo("serviceDefinition/spec/manifests");
 
@@ -392,7 +411,7 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
     assertThat(planCreationResponseMap.size()).isEqualTo(1);
     assertThat(planCreationResponseMap.containsKey(nodeUuid)).isEqualTo(true);
     PlanCreationResponse planCreationResponse1 = planCreationResponseMap.get(nodeUuid);
-    checksForDependencies(planCreationResponse1, nodeUuid);
+    checksForDependencies(planCreationResponse1, nodeUuid, dependencyMetadataMapKeys);
     assertThat(planCreationResponse1.getDependencies().getDependenciesMap().get(nodeUuid))
         .isEqualTo("stageOverrides/manifests");
 
@@ -422,7 +441,7 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
     assertThat(planCreationResponseMap.size()).isEqualTo(1);
     assertThat(planCreationResponseMap.containsKey(nodeUuid)).isEqualTo(true);
     PlanCreationResponse planCreationResponse1 = planCreationResponseMap.get(nodeUuid);
-    checksForDependencies(planCreationResponse1, nodeUuid);
+    checksForDependencies(planCreationResponse1, nodeUuid, dependencyMetadataMapKeys);
     assertThat(planCreationResponse1.getDependencies().getDependenciesMap().get(nodeUuid))
         .isEqualTo("stageOverrides/manifests");
 
@@ -452,7 +471,7 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
     assertThat(planCreationResponseMap.size()).isEqualTo(1);
     assertThat(planCreationResponseMap.containsKey(nodeUuid)).isEqualTo(true);
     PlanCreationResponse planCreationResponse1 = planCreationResponseMap.get(nodeUuid);
-    checksForDependencies(planCreationResponse1, nodeUuid);
+    checksForDependencies(planCreationResponse1, nodeUuid, dependencyMetadataMapKeys);
     assertThat(planCreationResponse1.getDependencies().getDependenciesMap().get(nodeUuid))
         .isEqualTo("stageOverrides/manifests");
 
@@ -482,7 +501,7 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
     assertThat(planCreationResponseMap.size()).isEqualTo(1);
     assertThat(planCreationResponseMap.containsKey(nodeUuid)).isEqualTo(true);
     PlanCreationResponse planCreationResponse1 = planCreationResponseMap.get(nodeUuid);
-    checksForDependencies(planCreationResponse1, nodeUuid);
+    checksForDependencies(planCreationResponse1, nodeUuid, dependencyMetadataMapKeys);
     assertThat(planCreationResponse1.getDependencies().getDependenciesMap().get(nodeUuid))
         .isEqualTo("stageOverrides/manifests");
 
@@ -572,6 +591,48 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
 
     assertThat(finalManifests).hasSize(3);
     assertThat(finalManifests).containsExactly(valuesManifest1, valuesManifest3, valuesManifest2);
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testPrepareFinalConfigFiles() {
+    final NGServiceV2InfoConfig serviceInfoConfig =
+        NGServiceV2InfoConfig.builder()
+            .identifier(SVC_REF)
+            .serviceDefinition(ServiceDefinition.builder()
+                                   .serviceSpec(KubernetesServiceSpec.builder()
+                                                    .manifests(Collections.singletonList(valuesManifest1))
+                                                    .configFiles(Arrays.asList(configFile1a, configFile2a))
+                                                    .build())
+                                   .build())
+            .build();
+
+    final NGEnvironmentConfig environmentConfig =
+        NGEnvironmentConfig.builder()
+            .ngEnvironmentInfoConfig(
+                NGEnvironmentInfoConfig.builder()
+                    .identifier(ENV_REF)
+                    .ngEnvironmentGlobalOverride(NGEnvironmentGlobalOverride.builder()
+                                                     .configFiles(Arrays.asList(configFile2b, configFile3a))
+                                                     .build())
+                    .build())
+            .build();
+
+    final NGServiceOverrideConfig serviceOverrideConfig =
+        NGServiceOverrideConfig.builder()
+            .serviceOverrideInfoConfig(NGServiceOverrideInfoConfig.builder()
+                                           .serviceRef(SVC_REF)
+                                           .environmentRef(ENV_REF)
+                                           .configFiles(singletonList(configFile3b))
+                                           .build())
+            .build();
+
+    final List<ConfigFileWrapper> finalConfigFiles = ServiceDefinitionPlanCreatorHelper.prepareFinalConfigFiles(
+        serviceInfoConfig, serviceOverrideConfig, environmentConfig);
+
+    assertThat(finalConfigFiles).hasSize(3);
+    assertThat(finalConfigFiles).containsExactlyInAnyOrder(configFile1a, configFile2b, configFile3b);
   }
 
   @Test
@@ -706,6 +767,39 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
   @Test
   @Owner(developers = TATHAGAT)
   @Category(UnitTests.class)
+  public void testPrepareFinalConfigFilesEmptyOverrideFiles() {
+    final NGServiceV2InfoConfig serviceInfoConfig =
+        NGServiceV2InfoConfig.builder()
+            .identifier(SVC_REF)
+            .serviceDefinition(
+                ServiceDefinition.builder()
+                    .serviceSpec(KubernetesServiceSpec.builder()
+                                     .configFiles(Arrays.asList(configFile1a, configFile2a, configFile3a))
+                                     .build())
+                    .build())
+            .build();
+    final NGServiceOverrideConfig serviceOverrideConfig =
+        NGServiceOverrideConfig.builder()
+            .serviceOverrideInfoConfig(
+                NGServiceOverrideInfoConfig.builder().serviceRef(SVC_REF).environmentRef(ENV_REF).build())
+            .build();
+    final NGEnvironmentConfig environmentConfig =
+        NGEnvironmentConfig.builder()
+            .ngEnvironmentInfoConfig(NGEnvironmentInfoConfig.builder()
+                                         .identifier(ENV_REF)
+                                         .ngEnvironmentGlobalOverride(NGEnvironmentGlobalOverride.builder().build())
+                                         .build())
+            .build();
+
+    final List<ConfigFileWrapper> finalConfigFiles = ServiceDefinitionPlanCreatorHelper.prepareFinalConfigFiles(
+        serviceInfoConfig, serviceOverrideConfig, environmentConfig);
+    assertThat(finalConfigFiles).hasSize(3);
+    assertThat(finalConfigFiles).containsExactlyInAnyOrder(configFile1a, configFile2a, configFile3a);
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
   public void testPrepareFinalManifestsEmptyServiceManifests() {
     final NGServiceV2InfoConfig serviceInfoConfig =
         NGServiceV2InfoConfig.builder()
@@ -734,5 +828,130 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
         serviceInfoConfig, serviceOverrideConfig, environmentConfig);
     assertThat(finalManifests).hasSize(2);
     assertThat(finalManifests).containsExactly(valuesManifest2, valuesManifest1);
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testPrepareFinalConfigFilesEmptyServiceConfigFiles() {
+    final NGServiceV2InfoConfig serviceInfoConfig =
+        NGServiceV2InfoConfig.builder()
+            .identifier(SVC_REF)
+            .serviceDefinition(ServiceDefinition.builder().serviceSpec(KubernetesServiceSpec.builder().build()).build())
+            .build();
+    final NGServiceOverrideConfig serviceOverrideConfig =
+        NGServiceOverrideConfig.builder()
+            .serviceOverrideInfoConfig(NGServiceOverrideInfoConfig.builder()
+                                           .serviceRef(SVC_REF)
+                                           .environmentRef(ENV_REF)
+                                           .configFiles(Arrays.asList(configFile1a, configFile2a))
+                                           .build())
+            .build();
+    final NGEnvironmentConfig environmentConfig =
+        NGEnvironmentConfig.builder()
+            .ngEnvironmentInfoConfig(
+                NGEnvironmentInfoConfig.builder()
+                    .identifier(ENV_REF)
+                    .ngEnvironmentGlobalOverride(NGEnvironmentGlobalOverride.builder()
+                                                     .configFiles(Arrays.asList(configFile1b, configFile3a))
+                                                     .build())
+                    .build())
+            .build();
+
+    final List<ConfigFileWrapper> finalConfigFiles = ServiceDefinitionPlanCreatorHelper.prepareFinalConfigFiles(
+        serviceInfoConfig, serviceOverrideConfig, environmentConfig);
+    assertThat(finalConfigFiles).hasSize(3);
+    assertThat(finalConfigFiles).containsExactlyInAnyOrder(configFile3a, configFile1a, configFile2a);
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testAddDependenciesForManifestsForOverride() throws IOException {
+    LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
+
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    InputStream yamlFile = classLoader.getResourceAsStream("cdng/plan/configfiles/service-def.yml");
+    assertThat(yamlFile).isNotNull();
+
+    String yaml = new Scanner(yamlFile, "UTF-8").useDelimiter("\\A").next();
+    yaml = YamlUtils.injectUuid(yaml);
+    YamlField serviceField = YamlUtils.readTree(yaml);
+
+    NGServiceV2InfoConfig config = YamlUtils.read(serviceField.getNode().toString(), NGServiceV2InfoConfig.class);
+    NGServiceOverrideConfig serviceOverrideConfig =
+        NGServiceOverrideConfig.builder()
+            .serviceOverrideInfoConfig(
+                NGServiceOverrideInfoConfig.builder().manifests(Collections.singletonList(valuesManifest1)).build())
+            .build();
+
+    NGEnvironmentConfig ngEnvironmentConfig =
+        NGEnvironmentConfig.builder()
+            .ngEnvironmentInfoConfig(
+                NGEnvironmentInfoConfig.builder()
+                    .ngEnvironmentGlobalOverride(NGEnvironmentGlobalOverride.builder()
+                                                     .manifests(Collections.singletonList(valuesManifest2))
+                                                     .build())
+                    .build())
+            .build();
+
+    doReturn(new byte[] {}).when(kryoSerializer).asDeflatedBytes(any());
+
+    final String nodeUuid = ServiceDefinitionPlanCreatorHelper.addDependenciesForManifestV2(serviceField.getNode(),
+        planCreationResponseMap, config, serviceOverrideConfig, ngEnvironmentConfig, kryoSerializer);
+
+    assertThat(planCreationResponseMap.size()).isEqualTo(1);
+    assertThat(planCreationResponseMap.containsKey(nodeUuid)).isEqualTo(true);
+    PlanCreationResponse planCreationResponse = planCreationResponseMap.get(nodeUuid);
+    final HashSet<String> dependencyMetadataMapKeys = new HashSet<>();
+    dependencyMetadataMapKeys.add(YamlTypes.UUID);
+    dependencyMetadataMapKeys.add(YamlTypes.MANIFEST_LIST_CONFIG);
+    dependencyMetadataMapKeys.add(SERVICE_ENTITY_DEFINITION_TYPE_KEY);
+    checksForDependencies(planCreationResponse, nodeUuid, dependencyMetadataMapKeys);
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testAddDependenciesForConfigFilesForOverride() throws IOException {
+    LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
+
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    InputStream yamlFile = classLoader.getResourceAsStream("cdng/plan/configfiles/service-def.yml");
+    assertThat(yamlFile).isNotNull();
+
+    String yaml = new Scanner(yamlFile, "UTF-8").useDelimiter("\\A").next();
+    yaml = YamlUtils.injectUuid(yaml);
+    YamlField serviceField = YamlUtils.readTree(yaml);
+
+    NGServiceV2InfoConfig config = YamlUtils.read(serviceField.getNode().toString(), NGServiceV2InfoConfig.class);
+    NGServiceOverrideConfig serviceOverrideConfig =
+        NGServiceOverrideConfig.builder()
+            .serviceOverrideInfoConfig(
+                NGServiceOverrideInfoConfig.builder().configFiles(Collections.singletonList(configFile1a)).build())
+            .build();
+
+    NGEnvironmentConfig ngEnvironmentConfig =
+        NGEnvironmentConfig.builder()
+            .ngEnvironmentInfoConfig(
+                NGEnvironmentInfoConfig.builder()
+                    .ngEnvironmentGlobalOverride(NGEnvironmentGlobalOverride.builder()
+                                                     .configFiles(Collections.singletonList(configFile2a))
+                                                     .build())
+                    .build())
+            .build();
+
+    doReturn(new byte[] {}).when(kryoSerializer).asDeflatedBytes(any());
+
+    final String nodeUuid = ServiceDefinitionPlanCreatorHelper.addDependenciesForConfigFilesV2(serviceField.getNode(),
+        planCreationResponseMap, config, serviceOverrideConfig, ngEnvironmentConfig, kryoSerializer);
+
+    assertThat(planCreationResponseMap.size()).isEqualTo(1);
+    assertThat(planCreationResponseMap.containsKey(nodeUuid)).isEqualTo(true);
+    PlanCreationResponse planCreationResponse = planCreationResponseMap.get(nodeUuid);
+    final HashSet<String> dependencyMetadataMapKeys = new HashSet<>();
+    dependencyMetadataMapKeys.add(YamlTypes.UUID);
+    dependencyMetadataMapKeys.add(YamlTypes.CONFIG_FILES);
+    checksForDependencies(planCreationResponse, nodeUuid, dependencyMetadataMapKeys);
   }
 }

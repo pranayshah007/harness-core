@@ -13,7 +13,7 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 
-import java.util.List;
+import java.util.Set;
 import lombok.Builder;
 import lombok.Value;
 
@@ -22,5 +22,5 @@ import lombok.Value;
 @OwnedBy(CDP)
 @RecasterAlias("io.harness.steps.shellscript.HostsOutput")
 public class HostsOutput implements ExecutionSweepingOutput {
-  List<String> hosts;
+  Set<String> hosts;
 }

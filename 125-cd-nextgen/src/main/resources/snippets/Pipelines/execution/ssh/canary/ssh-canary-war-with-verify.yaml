@@ -7,7 +7,6 @@ spec:
           strategy:
             repeat:
               items: <+stage.output.hosts>
-              maxConcurrency: <+maxConcurrency>
               start: <+start>
               end: <+end>
               unit: <+unit>

@@ -14,11 +14,11 @@ public enum StoreType {
   // Will be used when entity is in git repo
   REMOTE;
 
-  public static StoreType getFromStringOrInline(String value) {
+  public static StoreType getFromStringOrNull(String value) {
     try {
       return StoreType.valueOf(value);
     } catch (Exception e) {
-      return INLINE;
+      return null;
     }
   }
 }

@@ -205,7 +205,6 @@ public enum TaskType {
   ARTIFACTORY_VALIDATE_ARTIFACT_STREAM(TaskGroup.ARTIFACTORY),
 
   // Secret Management (Old Tasks)
-  CYBERARK_VALIDATE_CONFIG(TaskGroup.KMS),
   VAULT_GET_CHANGELOG(TaskGroup.KMS),
   VAULT_RENEW_TOKEN(TaskGroup.KMS),
   VAULT_LIST_ENGINES(TaskGroup.KMS),
@@ -295,6 +294,7 @@ public enum TaskType {
   GIT_FETCH_NEXT_GEN_TASK(TaskGroup.GIT, "Git Fetch Files Task"),
   BUILD_SOURCE_TASK(TaskGroup.BUILD_SOURCE),
   DOCKER_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG, "DockerHub Task"),
+  GOOGLE_ARTIFACT_REGISTRY_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG, "Google Artifact Registry Task"),
   JENKINS_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG, "Jenkins Task"),
   GCR_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG, "GCR Task"),
   NEXUS_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG),
@@ -385,7 +385,10 @@ public enum TaskType {
   DLITE_CI_VM_EXECUTE_TASK(TaskGroup.CI, DliteVmExecuteStepTaskParams.class, VmTaskExecutionResponse.class, true),
   DLITE_CI_VM_CLEANUP_TASK(TaskGroup.CI, DliteVmCleanupTaskParams.class, VmTaskExecutionResponse.class, true),
   NG_LDAP_GROUPS_SYNC(TaskGroup.LDAP),
-  AZURE_NG_ARM(TaskGroup.AZURE_NG_ARM_BLUEPRINT, "Azure ARM");
+  AZURE_NG_ARM(TaskGroup.AZURE_NG_ARM_BLUEPRINT, "Azure ARM"),
+  NG_LDAP_TEST_AUTHENTICATION(TaskGroup.LDAP),
+  ECS_GIT_FETCH_TASK_NG(TaskGroup.ECS),
+  ECS_COMMAND_TASK_NG(TaskGroup.ECS);
 
   private final TaskGroup taskGroup;
   private final String displayName;

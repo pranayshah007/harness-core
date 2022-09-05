@@ -60,6 +60,7 @@ public class UserGroupMapper {
                                 .linkedSsoDisplayName(userGroup.getLinkedSsoDisplayName())
                                 .linkedSsoId(userGroup.getLinkedSsoId())
                                 .isSsoLinked(TRUE.equals(userGroup.getIsSsoLinked()))
+                                .harnessManaged(TRUE.equals(userGroup.isHarnessManaged()))
                                 .notificationConfigs(emptyIfNull(userGroup.getNotificationConfigs())
                                                          .stream()
                                                          .map(UserGroupMapper::toDTO)
@@ -98,6 +99,7 @@ public class UserGroupMapper {
             .ssoGroupName(userGroupDTO.getSsoGroupName())
             .linkedSsoDisplayName(userGroupDTO.getLinkedSsoDisplayName())
             .linkedSsoId(userGroupDTO.getLinkedSsoId())
+            .harnessManaged(TRUE.equals(userGroupDTO.isHarnessManaged()))
             .build();
 
     if (isNotEmpty(userGroupDTO.getLinkedSsoType())) {

@@ -1,0 +1,42 @@
+package io.harness.cdng.creator.plan.stage;
+
+import io.harness.cdng.pipeline.steps.MultiDeploymentSpawnerStep;
+import io.harness.data.structure.EmptyPredicate;
+import io.harness.exception.InvalidRequestException;
+import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
+import io.harness.pms.contracts.facilitators.FacilitatorType;
+import io.harness.pms.execution.OrchestrationFacilitatorType;
+import io.harness.pms.sdk.core.plan.PlanNode;
+import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
+import io.harness.pms.sdk.core.steps.io.StepParameters;
+
+import lombok.experimental.UtilityClass;
+import lombok.extern.slf4j.Slf4j;
+
+@UtilityClass
+@Slf4j
+public class MultiDeploymentStepPlanCreator {
+  public PlanNode createPlan(MultiDeploymentMetadata metadata) {
+    String childNodeId = metadata.getMultiDeploymentStepParameters().getChildNodeId();
+    String multiDeploymentNodeId = metadata.getMultiDeploymentNodeId();
+    if (EmptyPredicate.isEmpty(childNodeId) || EmptyPredicate.isEmpty(multiDeploymentNodeId)) {
+      log.error("childNodeId and multiDeploymentNodeId not passed from parent. Please pass it.");
+      throw new InvalidRequestException("Invalid use of strategy field. Please check");
+    }
+    StepParameters stepParameters = metadata.getMultiDeploymentStepParameters();
+    return PlanNode.builder()
+        .uuid(multiDeploymentNodeId)
+        .identifier(metadata.getStrategyNodeIdentifier())
+        .stepType(MultiDeploymentSpawnerStep.STEP_TYPE)
+        .group(StepOutcomeGroup.STRATEGY.name())
+        .name(metadata.getStrategyNodeName())
+        .stepParameters(stepParameters)
+        .facilitatorObtainment(
+            FacilitatorObtainment.newBuilder()
+                .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILDREN).build())
+                .build())
+        .skipExpressionChain(true)
+        .adviserObtainments(metadata.getAdviserObtainments())
+        .build();
+  }
+}

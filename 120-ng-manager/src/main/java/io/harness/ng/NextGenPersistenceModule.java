@@ -9,7 +9,6 @@ package io.harness.ng;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.gitsync.persistance.GitSyncablePersistenceConfig;
 import io.harness.ng.accesscontrol.migrations.AccessControlMigrationPersistenceConfig;
 import io.harness.notification.NotificationChannelPersistenceConfig;
 import io.harness.springdata.SpringPersistenceConfig;
@@ -23,9 +22,8 @@ import java.util.List;
 public class NextGenPersistenceModule extends SpringPersistenceModule {
   @Override
   protected Class<?>[] getConfigClasses() {
-    List<Class<?>> resultClasses =
-        Lists.newArrayList(ImmutableList.of(SpringPersistenceConfig.class, NotificationChannelPersistenceConfig.class,
-            AccessControlMigrationPersistenceConfig.class, GitSyncablePersistenceConfig.class));
+    List<Class<?>> resultClasses = Lists.newArrayList(ImmutableList.of(SpringPersistenceConfig.class,
+        NotificationChannelPersistenceConfig.class, AccessControlMigrationPersistenceConfig.class));
     Class<?>[] resultClassesArray = new Class<?>[ resultClasses.size() ];
     return resultClasses.toArray(resultClassesArray);
   }

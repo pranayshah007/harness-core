@@ -192,7 +192,7 @@ public class EnvironmentPlanCreatorHelper {
       List<String> infraIdentifierList = new ArrayList<>();
 
       for (InfraStructureDefinitionYaml infraYaml : environmentV2.getInfrastructureDefinitions().getValue()) {
-        String ref = infraYaml.getIdentifier();
+        String ref = infraYaml.getIdentifier().getValue();
         infraIdentifierList.add(ref);
         if (isNotEmpty(infraYaml.getInputs())) {
           refToInputMap.put(ref, infraYaml.getInputs());
@@ -227,7 +227,7 @@ public class EnvironmentPlanCreatorHelper {
   }
 
   public static Map<String, ByteString> prepareMetadata(String environmentUuid, String infraSectionUuid,
-      String serviceSpecNodeId, boolean gitOpsEnabled, KryoSerializer kryoSerializer) {
+      String serviceSpecNodeId, boolean gitOpsEnabled, boolean skipInstances, KryoSerializer kryoSerializer) {
     Map<String, ByteString> metadataDependency = new HashMap<>();
 
     metadataDependency.put(YamlTypes.NEXT_UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(serviceSpecNodeId)));
@@ -236,14 +236,16 @@ public class EnvironmentPlanCreatorHelper {
     metadataDependency.put(YamlTypes.UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(environmentUuid)));
     metadataDependency.put(
         YAMLFieldNameConstants.GITOPS_ENABLED, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(gitOpsEnabled)));
+    metadataDependency.put(
+        YAMLFieldNameConstants.SKIP_INSTANCES, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(skipInstances)));
 
     return metadataDependency;
   }
 
   public void addEnvironmentV2Dependency(Map<String, PlanCreationResponse> planCreationResponseMap,
       EnvironmentPlanCreatorConfig environmentPlanCreatorConfig, YamlField originalEnvironmentField,
-      boolean gitOpsEnabled, String environmentUuid, String infraSectionUuid, String serviceSpecNodeUuid,
-      KryoSerializer kryoSerializer) throws IOException {
+      boolean gitOpsEnabled, boolean skipInstances, String environmentUuid, String infraSectionUuid,
+      String serviceSpecNodeUuid, KryoSerializer kryoSerializer) throws IOException {
     YamlField updatedEnvironmentYamlField =
         fetchEnvironmentPlanCreatorConfigYaml(environmentPlanCreatorConfig, originalEnvironmentField);
     Map<String, YamlField> environmentYamlFieldMap = new HashMap<>();
@@ -252,7 +254,7 @@ public class EnvironmentPlanCreatorHelper {
     // preparing meta data
     final Dependency envDependency = Dependency.newBuilder()
                                          .putAllMetadata(prepareMetadata(environmentUuid, infraSectionUuid,
-                                             serviceSpecNodeUuid, gitOpsEnabled, kryoSerializer))
+                                             serviceSpecNodeUuid, gitOpsEnabled, skipInstances, kryoSerializer))
                                          .build();
 
     planCreationResponseMap.put(environmentUuid,

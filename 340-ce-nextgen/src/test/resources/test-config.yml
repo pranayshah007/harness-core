@@ -143,3 +143,10 @@ accessControlAdminClient:
     enableHttpLogging: ${ENABLE_HTTP_LOGGING:-false}
   accessControlServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
   mockAccessControlService: true
+
+enableLightwingAutoCUDDC: true
+
+lightwingAutoCUDClientConfig:
+  baseUrl: http://localhost:9090/
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15

@@ -175,17 +175,19 @@ public class LoginSettingsServiceImpl implements LoginSettingsService {
     loginSettings.setPasswordExpirationPolicy(passwordExpirationPolicy);
   }
 
-  private void ngAuditLoginSettings(String accountId, LoginSettings oldLoginSettings, LoginSettings newLoginSettings) {
+  private void ngAuditLoginSettings(
+      String accountIdentifier, LoginSettings oldLoginSettings, LoginSettings newLoginSettings) {
     try {
       outboxService.save(
           LoginSettingsHarnessUsernamePasswordUpdateEvent.builder()
-              .accountIdentifier(accountId)
+              .accountIdentifier(accountIdentifier)
               .loginSettingsId(newLoginSettings.getUuid())
               .oldLoginSettingsYamlDTO(LoginSettingsYamlDTO.builder().loginSettings(oldLoginSettings).build())
               .newLoginSettingsYamlDTO(LoginSettingsYamlDTO.builder().loginSettings(newLoginSettings).build())
               .build());
     } catch (Exception ex) {
-      log.error("Audit trails for LoginSettings update event failed with exception: ", ex);
+      log.error(
+          "For account {} Audit trails for LoginSettings update event failed with exception: ", accountIdentifier, ex);
     }
   }
 

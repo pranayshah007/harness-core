@@ -18,6 +18,7 @@ import io.harness.rest.RestResponse;
 import software.wings.beans.sso.LdapGroupResponse;
 import software.wings.beans.sso.LdapSettings;
 import software.wings.beans.sso.LdapTestResponse;
+import software.wings.helpers.ext.ldap.LdapResponse;
 
 import com.google.inject.Inject;
 import java.util.Collection;
@@ -69,5 +70,12 @@ public class NGLdapResourceImpl implements NGLdapResource {
   public RestResponse<Boolean> syncLdapGroups(String accountId, String orgIdentifier, String projectIdentifier) {
     ngLdapService.syncUserGroupsJob(accountId, orgIdentifier, projectIdentifier);
     return new RestResponse<>(true);
+  }
+
+  @Override
+  public RestResponse<LdapResponse> postLdapAuthenticationTest(
+      String accountId, String orgIdentifier, String projectIdentifier, String email, String password) {
+    return new RestResponse<>(
+        ngLdapService.testLDAPLogin(accountId, orgIdentifier, projectIdentifier, email, password));
   }
 }

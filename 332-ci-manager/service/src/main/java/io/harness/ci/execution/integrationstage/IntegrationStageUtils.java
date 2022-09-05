@@ -403,7 +403,7 @@ public class IntegrationStageUtils {
       }
     }
 
-    return null;
+    return ManualExecutionSource.builder().build();
   }
 
   public static List<StepElementConfig> getAllSteps(List<ExecutionWrapperConfig> executionWrapperConfigs) {

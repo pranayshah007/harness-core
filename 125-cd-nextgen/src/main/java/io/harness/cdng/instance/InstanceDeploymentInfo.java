@@ -13,13 +13,15 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.entities.ArtifactDetails;
 import io.harness.entities.instanceinfo.InstanceInfo;
+import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAware;
 
-import java.util.ArrayList;
+import com.google.common.collect.ImmutableList;
 import java.util.List;
+import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -58,13 +60,37 @@ public class InstanceDeploymentInfo implements PersistentEntity, UuidAware {
   @NotNull private String infraIdentifier;
   @NotNull private String serviceIdentifier;
 
-  @NotNull private String deploymentIdentifier;
+  @NotNull private String stageExecutionId;
+
+  @Nullable private String deploymentIdentifier;
 
   @NotNull private InstanceInfo instanceInfo;
   @NotNull private ArtifactDetails artifactDetails;
   @NotNull private InstanceDeploymentInfoStatus status;
 
   public static List<MongoIndex> mongoIndexes() {
-    return new ArrayList<>();
+    return ImmutableList.<MongoIndex>builder()
+        .add(CompoundMongoIndex.builder()
+                 .name("unique_instance_deployment_info_idx")
+                 .field(InstanceDeploymentInfoKeys.accountIdentifier)
+                 .field(InstanceDeploymentInfoKeys.orgIdentifier)
+                 .field(InstanceDeploymentInfoKeys.projectIdentifier)
+                 .field(InstanceDeploymentInfoKeys.envIdentifier)
+                 .field(InstanceDeploymentInfoKeys.infraIdentifier)
+                 .field(InstanceDeploymentInfoKeys.serviceIdentifier)
+                 .field(InstanceDeploymentInfoKeys.instanceInfo + ".host")
+                 .unique(true)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("stage_execution_instance_deployment_info_idx")
+                 .field(InstanceDeploymentInfoKeys.accountIdentifier)
+                 .field(InstanceDeploymentInfoKeys.orgIdentifier)
+                 .field(InstanceDeploymentInfoKeys.projectIdentifier)
+                 .field(InstanceDeploymentInfoKeys.envIdentifier)
+                 .field(InstanceDeploymentInfoKeys.infraIdentifier)
+                 .field(InstanceDeploymentInfoKeys.serviceIdentifier)
+                 .field(InstanceDeploymentInfoKeys.stageExecutionId)
+                 .build())
+        .build();
   }
 }

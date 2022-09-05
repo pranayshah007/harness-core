@@ -128,6 +128,9 @@ public class CENextGenConfiguration extends Configuration {
   @JsonProperty("secretsConfiguration") private SecretsConfiguration secretsConfiguration;
   @JsonProperty("notificationClient") private NotificationClientConfiguration notificationClientConfiguration;
 
+  @JsonProperty("lightwingAutoCUDClientConfig") private ServiceHttpClientConfig lightwingAutoCUDClientConfig;
+  @JsonProperty(value = "enableLightwingAutoCUDDC") private boolean enableLightwingAutoCUDDC;
+
   public SwaggerBundleConfiguration getSwaggerBundleConfiguration() {
     SwaggerBundleConfiguration defaultSwaggerConf = new SwaggerBundleConfiguration();
 

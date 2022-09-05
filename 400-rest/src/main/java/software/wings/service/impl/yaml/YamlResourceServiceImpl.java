@@ -34,11 +34,9 @@ import static software.wings.beans.yaml.YamlType.APPLICATION_MANIFEST_PCF_OVERRI
 import static software.wings.beans.yaml.YamlType.APPLICATION_MANIFEST_VALUES_ENV_OVERRIDE;
 import static software.wings.beans.yaml.YamlType.APPLICATION_MANIFEST_VALUES_ENV_SERVICE_OVERRIDE;
 import static software.wings.beans.yaml.YamlType.EVENT_RULE;
-import static software.wings.settings.SettingVariableTypes.OCI_HELM_REPO;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.CgEventConfig;
-import io.harness.beans.FeatureName;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
 import io.harness.exception.WingsException;
@@ -588,12 +586,6 @@ public class YamlResourceServiceImpl implements YamlResourceService {
   private SettingValueYamlHandler getSettingValueYamlHandler(SettingAttribute settingAttribute) {
     SettingValue settingValue = settingAttribute.getValue();
     SettingVariableTypes settingVariableType = settingValue.getSettingType();
-
-    if (!featureFlagService.isEnabled(FeatureName.HELM_OCI_SUPPORT, settingAttribute.getAccountId())
-        && settingVariableType.equals(OCI_HELM_REPO)) {
-      log.warn("Unknown SettingVariable type:" + settingVariableType);
-      return null;
-    }
 
     switch (settingVariableType) {
       // cloud providers

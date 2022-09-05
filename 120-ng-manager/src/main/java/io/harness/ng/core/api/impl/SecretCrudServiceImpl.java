@@ -141,7 +141,8 @@ public class SecretCrudServiceImpl implements SecretCrudService {
   private SecretResponseWrapper getResponseWrapper(@NotNull Secret secret) {
     if (secret.getType() == SecretText) {
       SecretTextSpec secretSpec = (SecretTextSpec) secret.getSecretSpec();
-      if (ValueType.Reference.equals(secretSpec.getValueType())) {
+      if (ValueType.Reference.equals(secretSpec.getValueType())
+          || CustomSecretManagerValues.equals(secretSpec.getValueType())) {
         NGEncryptedData encryptedData = encryptedDataService.get(secret.getAccountIdentifier(),
             secret.getOrgIdentifier(), secret.getProjectIdentifier(), secret.getIdentifier());
         secretSpec.setValue(encryptedData.getPath());

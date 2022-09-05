@@ -8,6 +8,10 @@
 package software.wings.search.framework;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.maintenance.MaintenanceController.getMaintenanceFlag;
+import static io.harness.threading.Morpheus.sleep;
+
+import static java.time.Duration.ofSeconds;
 
 import io.harness.annotations.dev.OwnedBy;
 
@@ -46,6 +50,9 @@ public class ElasticsearchSyncJob implements Runnable {
   @Override
   public void run() {
     try {
+      while (getMaintenanceFlag()) {
+        sleep(ofSeconds(30));
+      }
       ElasticsearchBulkSyncTask elasticsearchBulkSyncTask = elasticsearchBulkSyncTaskProvider.get();
       perpetualSearchLocker = perpetualSearchLockerProvider.get();
       scheduledExecutorService = Executors.newSingleThreadScheduledExecutor(

@@ -468,7 +468,7 @@ public class AzureWebAppStepHelperTest extends CDNGTestBase {
     assertThat(infraDelegateConfig.getAzureConnectorDTO()).isSameAs(azureConnectorDTO);
     assertThat(infraDelegateConfig.getSubscription()).isEqualTo(SUBSCRIPTION_ID);
     assertThat(infraDelegateConfig.getDeploymentSlot()).isEqualTo(DEPLOYMENT_SLOT);
-    assertThat(infraDelegateConfig.getAppName()).isEqualTo(APP_NAME);
+    assertThat(infraDelegateConfig.getAppName()).isEqualTo(APP_NAME.toLowerCase());
     assertThat(infraDelegateConfig.getEncryptionDataDetails()).isSameAs(encryptionDetails);
   }
 

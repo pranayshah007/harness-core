@@ -44,7 +44,6 @@ import software.wings.beans.Account;
 import software.wings.beans.AwsSecretsManagerConfig;
 import software.wings.beans.AzureVaultConfig;
 import software.wings.beans.BaseVaultConfig;
-import software.wings.beans.CyberArkConfig;
 import software.wings.beans.GcpKmsConfig;
 import software.wings.beans.GcpSecretsManagerConfig;
 import software.wings.beans.KmsConfig;
@@ -57,7 +56,6 @@ import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.security.AwsSecretsManagerService;
 import software.wings.service.intfc.security.AzureSecretsManagerService;
 import software.wings.service.intfc.security.CustomSecretsManagerService;
-import software.wings.service.intfc.security.CyberArkService;
 import software.wings.service.intfc.security.GcpSecretsManagerService;
 import software.wings.service.intfc.security.GcpSecretsManagerServiceV2;
 import software.wings.service.intfc.security.KmsService;
@@ -97,7 +95,6 @@ public class SecretManagerConfigServiceImpl implements SecretManagerConfigServic
   @Inject private AwsSecretsManagerService secretsManagerService;
   @Inject private LocalSecretManagerService localSecretManagerService;
   @Inject private AzureSecretsManagerService azureSecretsManagerService;
-  @Inject private CyberArkService cyberArkService;
   @Inject private CustomSecretsManagerService customSecretsManagerService;
   @Inject private SecretsManagerRBACService secretsManagerRBACService;
   @Inject private SecretsDao secretsDao;
@@ -390,10 +387,6 @@ public class SecretManagerConfigServiceImpl implements SecretManagerConfigServic
         break;
       case AZURE_VAULT:
         azureSecretsManagerService.decryptAzureConfigSecrets((AzureVaultConfig) secretManagerConfig, maskSecrets);
-        break;
-      case CYBERARK:
-        cyberArkService.decryptCyberArkConfigSecrets(accountId, (CyberArkConfig) secretManagerConfig, maskSecrets);
-        ((CyberArkConfig) secretManagerConfig).setCertValidationRequired(isCertValidationRequired);
         break;
       case CUSTOM:
         customSecretsManagerService.setAdditionalDetails((CustomSecretsManagerConfig) secretManagerConfig);

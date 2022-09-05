@@ -31,6 +31,8 @@ public interface ACLRepository {
 
   long deleteByRoleAssignmentIdAndPrincipals(String roleAssignmentId, Set<String> principals);
 
+  long deleteByRoleAssignmentIdAndImplicitForScope(String roleAssignmentId);
+
   List<String> getDistinctPermissionsInACLsForRoleAssignment(String roleAssignmentId);
 
   List<String> getDistinctPrincipalsInACLsForRoleAssignment(String id);

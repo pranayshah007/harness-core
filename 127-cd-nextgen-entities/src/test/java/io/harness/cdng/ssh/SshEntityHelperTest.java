@@ -31,6 +31,9 @@ import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
 import io.harness.cdng.infra.beans.PdcInfrastructureOutcome;
 import io.harness.cdng.infra.beans.SshWinRmAwsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.SshWinRmAzureInfrastructureOutcome;
+import io.harness.cdng.infra.beans.host.dto.HostAttributesFilterDTO;
+import io.harness.cdng.infra.beans.host.dto.HostFilterDTO;
+import io.harness.cdng.infra.beans.host.dto.HostNamesFilterDTO;
 import io.harness.cdng.serverless.ServerlessEntityHelper;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
@@ -40,7 +43,6 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.connector.pdcconnector.HostDTO;
-import io.harness.delegate.beans.connector.pdcconnector.HostFilterDTO;
 import io.harness.delegate.beans.connector.pdcconnector.HostFilterType;
 import io.harness.delegate.beans.connector.pdcconnector.PhysicalDataCenterConnectorDTO;
 import io.harness.delegate.task.ssh.AwsSshInfraDelegateConfig;
@@ -59,6 +61,7 @@ import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
 import io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.secretmanagerclient.SecretType;
 import io.harness.secretmanagerclient.services.SshKeySpecDTOHelper;
@@ -162,7 +165,7 @@ public class SshEntityHelperTest extends CategoryTest {
     PdcSshInfraDelegateConfig pdcSshInfraDelegateConfig = (PdcSshInfraDelegateConfig) infraDelegateConfig;
     assertThat(pdcSshInfraDelegateConfig.getSshKeySpecDto()).isEqualTo(sshKeySpecDTO);
     assertThat(pdcSshInfraDelegateConfig.getHosts()).isNotEmpty();
-    assertThat(pdcSshInfraDelegateConfig.getHosts().get(0)).isEqualTo("host1");
+    assertThat(pdcSshInfraDelegateConfig.getHosts()).containsOnly("host1");
     assertThat(pdcSshInfraDelegateConfig.getEncryptionDataDetails()).isNotEmpty();
   }
 
@@ -171,11 +174,17 @@ public class SshEntityHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetFilteredHostByHostName() throws IOException {
     doReturn(pdcConnectorDTO).when(connectorService).get(anyString(), anyString(), anyString(), anyString());
-    PdcInfrastructureOutcome pdcInfrastructure = PdcInfrastructureOutcome.builder()
-                                                     .connectorRef("pdcConnector")
-                                                     .credentialsRef("sshKeyRef")
-                                                     .hostFilters(Arrays.asList("host1"))
-                                                     .build();
+    PdcInfrastructureOutcome pdcInfrastructure =
+        PdcInfrastructureOutcome.builder()
+            .connectorRef("pdcConnector")
+            .credentialsRef("sshKeyRef")
+            .hostFilter(HostFilterDTO.builder()
+                            .type(HostFilterType.HOST_NAMES)
+                            .spec(HostNamesFilterDTO.builder()
+                                      .value(ParameterField.createValueField(Collections.singletonList("host1")))
+                                      .build())
+                            .build())
+            .build();
 
     List<HostDTO> hosts = Arrays.asList(new HostDTO("host1", new HashMap<>()));
     PageRequest pageRequest = PageRequest.builder().pageSize(hosts.size()).build();
@@ -199,14 +208,15 @@ public class SshEntityHelperTest extends CategoryTest {
     PdcSshInfraDelegateConfig pdcSshInfraDelegateConfig = (PdcSshInfraDelegateConfig) infraDelegateConfig;
     assertThat(pdcSshInfraDelegateConfig.getSshKeySpecDto()).isEqualTo(sshKeySpecDTO);
     assertThat(pdcSshInfraDelegateConfig.getHosts()).isNotEmpty();
-    assertThat(pdcSshInfraDelegateConfig.getHosts().get(0)).isEqualTo("host1");
+    assertThat(pdcSshInfraDelegateConfig.getHosts()).containsOnly("host1");
     assertThat(pdcSshInfraDelegateConfig.getEncryptionDataDetails()).isNotEmpty();
 
-    ArgumentCaptor<HostFilterDTO> filterCaptor = ArgumentCaptor.forClass(HostFilterDTO.class);
+    ArgumentCaptor<io.harness.delegate.beans.connector.pdcconnector.HostFilterDTO> filterCaptor =
+        ArgumentCaptor.forClass(io.harness.delegate.beans.connector.pdcconnector.HostFilterDTO.class);
     verify(ngHostService, times(1))
         .filterHostsByConnector(
             eq(accountId), eq(orgId), eq(projectId), eq("pdcConnector"), filterCaptor.capture(), any());
-    HostFilterDTO filter = filterCaptor.getValue();
+    io.harness.delegate.beans.connector.pdcconnector.HostFilterDTO filter = filterCaptor.getValue();
     assertThat(filter.getType()).isEqualTo(HostFilterType.HOST_NAMES);
     assertThat(filter.getFilter()).isEqualTo("host1");
   }
@@ -216,11 +226,17 @@ public class SshEntityHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetFilteredHostByHostNameNoMatch() throws IOException {
     doReturn(pdcConnectorDTO).when(connectorService).get(anyString(), anyString(), anyString(), anyString());
-    PdcInfrastructureOutcome pdcInfrastructure = PdcInfrastructureOutcome.builder()
-                                                     .connectorRef("pdcConnector")
-                                                     .credentialsRef("sshKeyRef")
-                                                     .hostFilters(Arrays.asList("undefined"))
-                                                     .build();
+    PdcInfrastructureOutcome pdcInfrastructure =
+        PdcInfrastructureOutcome.builder()
+            .connectorRef("pdcConnector")
+            .credentialsRef("sshKeyRef")
+            .hostFilter(HostFilterDTO.builder()
+                            .type(HostFilterType.HOST_NAMES)
+                            .spec(HostNamesFilterDTO.builder()
+                                      .value(ParameterField.createValueField(Collections.singletonList("undefined")))
+                                      .build())
+                            .build())
+            .build();
 
     List<HostDTO> hosts = Collections.emptyList();
     PageRequest pageRequest = PageRequest.builder().pageSize(1).build();
@@ -252,11 +268,17 @@ public class SshEntityHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetFilteredHostByHostAttributes() throws IOException {
     doReturn(pdcConnectorDTO).when(connectorService).get(anyString(), anyString(), anyString(), anyString());
-    PdcInfrastructureOutcome pdcInfrastructure = PdcInfrastructureOutcome.builder()
-                                                     .connectorRef("pdcConnector")
-                                                     .credentialsRef("sshKeyRef")
-                                                     .attributeFilters(ImmutableMap.of("type", "db"))
-                                                     .build();
+    PdcInfrastructureOutcome pdcInfrastructure =
+        PdcInfrastructureOutcome.builder()
+            .connectorRef("pdcConnector")
+            .credentialsRef("sshKeyRef")
+            .hostFilter(HostFilterDTO.builder()
+                            .type(HostFilterType.HOST_ATTRIBUTES)
+                            .spec(HostAttributesFilterDTO.builder()
+                                      .value(ParameterField.createValueField(ImmutableMap.of("type", "db")))
+                                      .build())
+                            .build())
+            .build();
 
     List<HostDTO> hosts = Arrays.asList(new HostDTO("host1", ImmutableMap.of("type", "db")));
     PageRequest pageRequest = PageRequest.builder().pageSize(hosts.size()).build();
@@ -280,14 +302,15 @@ public class SshEntityHelperTest extends CategoryTest {
     PdcSshInfraDelegateConfig pdcSshInfraDelegateConfig = (PdcSshInfraDelegateConfig) infraDelegateConfig;
     assertThat(pdcSshInfraDelegateConfig.getSshKeySpecDto()).isEqualTo(sshKeySpecDTO);
     assertThat(pdcSshInfraDelegateConfig.getHosts()).isNotEmpty();
-    assertThat(pdcSshInfraDelegateConfig.getHosts().get(0)).isEqualTo("host1");
+    assertThat(pdcSshInfraDelegateConfig.getHosts()).containsOnly("host1");
     assertThat(pdcSshInfraDelegateConfig.getEncryptionDataDetails()).isNotEmpty();
 
-    ArgumentCaptor<HostFilterDTO> filterCaptor = ArgumentCaptor.forClass(HostFilterDTO.class);
+    ArgumentCaptor<io.harness.delegate.beans.connector.pdcconnector.HostFilterDTO> filterCaptor =
+        ArgumentCaptor.forClass(io.harness.delegate.beans.connector.pdcconnector.HostFilterDTO.class);
     verify(ngHostService, times(1))
         .filterHostsByConnector(
             eq(accountId), eq(orgId), eq(projectId), eq("pdcConnector"), filterCaptor.capture(), any());
-    HostFilterDTO filter = filterCaptor.getValue();
+    io.harness.delegate.beans.connector.pdcconnector.HostFilterDTO filter = filterCaptor.getValue();
     assertThat(filter.getType()).isEqualTo(HostFilterType.HOST_ATTRIBUTES);
     assertThat(filter.getFilter()).isEqualTo("type:db");
   }
@@ -297,15 +320,21 @@ public class SshEntityHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetFilteredHostByHostAttributesNoMatch() throws IOException {
     doReturn(pdcConnectorDTO).when(connectorService).get(anyString(), anyString(), anyString(), anyString());
-    PdcInfrastructureOutcome pdcInfrastructure = PdcInfrastructureOutcome.builder()
-                                                     .connectorRef("pdcConnector")
-                                                     .credentialsRef("sshKeyRef")
-                                                     .attributeFilters(ImmutableMap.of("type", "node"))
-                                                     .build();
+    PdcInfrastructureOutcome pdcInfrastructure =
+        PdcInfrastructureOutcome.builder()
+            .connectorRef("pdcConnector")
+            .credentialsRef("sshKeyRef")
+            .hostFilter(HostFilterDTO.builder()
+                            .type(HostFilterType.HOST_ATTRIBUTES)
+                            .spec(HostAttributesFilterDTO.builder()
+                                      .value(ParameterField.createValueField(ImmutableMap.of("type", "node")))
+                                      .build())
+                            .build())
+            .build();
 
     List<HostDTO> hosts = Collections.emptyList();
     PageRequest pageRequest = PageRequest.builder().pageSize(1).build();
-    Page<HostDTO> pageResponse = new PageImpl<>(hosts, getPageRequest(pageRequest), hosts.size());
+    Page<HostDTO> pageResponse = new PageImpl<>(hosts, getPageRequest(pageRequest), 0);
     doReturn(pageResponse)
         .when(ngHostService)
         .filterHostsByConnector(eq(accountId), eq(orgId), eq(projectId), eq("pdcConnector"), any(), any());
@@ -351,7 +380,7 @@ public class SshEntityHelperTest extends CategoryTest {
     PdcSshInfraDelegateConfig pdcSshInfraDelegateConfig = (PdcSshInfraDelegateConfig) infraDelegateConfig;
     assertThat(pdcSshInfraDelegateConfig.getSshKeySpecDto()).isEqualTo(sshKeySpecDTO);
     assertThat(pdcSshInfraDelegateConfig.getHosts()).isNotEmpty();
-    assertThat(pdcSshInfraDelegateConfig.getHosts().get(0)).isEqualTo("host2");
+    assertThat(pdcSshInfraDelegateConfig.getHosts()).containsOnly("host2");
     assertThat(pdcSshInfraDelegateConfig.getEncryptionDataDetails()).isNotEmpty();
   }
 
@@ -366,6 +395,7 @@ public class SshEntityHelperTest extends CategoryTest {
                                                                  .subscriptionId("subscriptionId")
                                                                  .resourceGroup("resourceGroup")
                                                                  .tags(ImmutableMap.of("ENV", "Dev"))
+                                                                 .usePublicDns(false)
                                                                  .build();
 
     Call<ResponseDTO<SecretResponseWrapper>> getSecretCall = mock(Call.class);
@@ -475,7 +505,7 @@ public class SshEntityHelperTest extends CategoryTest {
     PdcWinRmInfraDelegateConfig pdcWinRmInfraDelegateConfig = (PdcWinRmInfraDelegateConfig) infraDelegateConfig;
     assertThat(pdcWinRmInfraDelegateConfig.getWinRmCredentials()).isEqualTo(winRmCredentials);
     assertThat(pdcWinRmInfraDelegateConfig.getHosts()).isNotEmpty();
-    assertThat(pdcWinRmInfraDelegateConfig.getHosts().get(0)).isEqualTo("host1");
+    assertThat(pdcWinRmInfraDelegateConfig.getHosts()).containsOnly("host1");
     assertThat(pdcWinRmInfraDelegateConfig.getEncryptionDataDetails()).isNotEmpty();
   }
 
@@ -502,7 +532,7 @@ public class SshEntityHelperTest extends CategoryTest {
     PdcWinRmInfraDelegateConfig pdcWinRmInfraDelegateConfig = (PdcWinRmInfraDelegateConfig) infraDelegateConfig;
     assertThat(pdcWinRmInfraDelegateConfig.getWinRmCredentials()).isEqualTo(winRmCredentials);
     assertThat(pdcWinRmInfraDelegateConfig.getHosts()).isNotEmpty();
-    assertThat(pdcWinRmInfraDelegateConfig.getHosts().get(0)).isEqualTo("host2");
+    assertThat(pdcWinRmInfraDelegateConfig.getHosts()).containsOnly("host2");
     assertThat(pdcWinRmInfraDelegateConfig.getEncryptionDataDetails()).isNotEmpty();
   }
 
@@ -517,6 +547,7 @@ public class SshEntityHelperTest extends CategoryTest {
                                                                  .subscriptionId("subscriptionId")
                                                                  .resourceGroup("resourceGroup")
                                                                  .tags(ImmutableMap.of("ENV", "Dev"))
+                                                                 .usePublicDns(true)
                                                                  .build();
 
     Call<ResponseDTO<SecretResponseWrapper>> getSecretCall = mock(Call.class);

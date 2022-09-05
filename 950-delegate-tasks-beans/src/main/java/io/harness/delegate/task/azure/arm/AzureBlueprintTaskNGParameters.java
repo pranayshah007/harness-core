@@ -24,7 +24,7 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @OwnedBy(HarnessTeam.CDP)
-public class AzureBlueprintTaskNGParameters extends AzureTaskNGParameters {
+public class AzureBlueprintTaskNGParameters extends AzureResourceCreationTaskNGParameters {
   @Expression(ALLOW_SECRETS) private String blueprintJson;
   @Expression(ALLOW_SECRETS) private Map<String, String> artifacts;
   @Expression(ALLOW_SECRETS) private String assignmentJson;

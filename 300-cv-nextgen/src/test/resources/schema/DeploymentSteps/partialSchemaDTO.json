@@ -319,7 +319,7 @@
                 "minLength" : 1
               } ]
             },
-            "partitions" : {
+            "partitionSize" : {
               "oneOf" : [ {
                 "type" : "integer",
                 "format" : "int32",

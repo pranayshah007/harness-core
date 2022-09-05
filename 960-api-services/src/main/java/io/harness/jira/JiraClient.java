@@ -81,7 +81,9 @@ public class JiraClient {
     JiraInstanceData jiraInstanceData = getInstanceData();
     switch (jiraInstanceData.deploymentType) {
       case SERVER:
-        return executeCall(restClient.getUsersForJiraServer(userQuery, accountId, "10", startAt), "fetching users");
+        return executeCall(
+            restClient.getUsersForJiraServer(userQuery.equals("") ? "\"\"" : userQuery, accountId, "10", startAt),
+            "fetching users");
       default:
         return executeCall(restClient.getUsers(userQuery, accountId, "10", startAt), "fetching users");
     }

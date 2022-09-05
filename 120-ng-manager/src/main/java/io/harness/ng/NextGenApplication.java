@@ -96,6 +96,7 @@ import io.harness.migration.NGMigrationSdkModule;
 import io.harness.migration.beans.NGMigrationConfiguration;
 import io.harness.migrations.InstanceMigrationProvider;
 import io.harness.ng.core.CorrelationFilter;
+import io.harness.ng.core.DefaultUserGroupsCreationJob;
 import io.harness.ng.core.EtagFilter;
 import io.harness.ng.core.event.NGEventConsumerService;
 import io.harness.ng.core.exceptionmappers.GenericExceptionMapperV2;
@@ -295,6 +296,13 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
 
   @Override
   public void run(NextGenConfiguration appConfig, Environment environment) {
+    log.info("Entering startup maintenance mode");
+    MaintenanceController.forceMaintenance(true);
+    environment.lifecycle().addServerLifecycleListener(server -> {
+      log.info("Leaving startup maintenance mode");
+      MaintenanceController.forceMaintenance(false);
+    });
+
     log.info("Starting Next Gen Application ...");
 
     ConfigSecretUtils.resolveSecrets(appConfig.getSecretsConfiguration(), appConfig);
@@ -426,8 +434,6 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     } else {
       log.info("NextGenApplication DEPLOY_VERSION is not COMMUNITY");
     }
-
-    MaintenanceController.forceMaintenance(false);
   }
 
   private void initializeNGMonitoring(NextGenConfiguration appConfig, Injector injector) {
@@ -709,6 +715,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     environment.lifecycle().manage(injector.getInstance(QueueListenerController.class));
     environment.lifecycle().manage(injector.getInstance(NotifierScheduledExecutorService.class));
     environment.lifecycle().manage(injector.getInstance(OutboxEventPollService.class));
+    environment.lifecycle().manage(injector.getInstance(DefaultUserGroupsCreationJob.class));
     createConsumerThreadsToListenToEvents(environment, injector);
   }
 

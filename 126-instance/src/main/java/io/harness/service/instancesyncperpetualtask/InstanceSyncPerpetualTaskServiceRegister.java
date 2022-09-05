@@ -10,6 +10,7 @@ package io.harness.service.instancesyncperpetualtask;
 import static io.harness.perpetualtask.PerpetualTaskType.AWS_SSH_WINRM_INSTANCE_SYNC_NG;
 import static io.harness.perpetualtask.PerpetualTaskType.AZURE_SSH_WINRM_INSTANCE_SYNC_NG;
 import static io.harness.perpetualtask.PerpetualTaskType.AZURE_WEB_APP_NG_INSTANCE_SYNC;
+import static io.harness.perpetualtask.PerpetualTaskType.ECS_INSTANCE_SYNC;
 import static io.harness.perpetualtask.PerpetualTaskType.K8S_INSTANCE_SYNC;
 import static io.harness.perpetualtask.PerpetualTaskType.NATIVE_HELM_INSTANCE_SYNC;
 import static io.harness.perpetualtask.PerpetualTaskType.PDC_INSTANCE_SYNC_NG;
@@ -22,6 +23,7 @@ import io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskhan
 import io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskhandler.aws.AwsSshWinrmInstanceSyncPerpetualTaskHandler;
 import io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskhandler.azure.AzureSshWinrmInstanceSyncPerpetualTaskHandler;
 import io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskhandler.azure.AzureWebAppInstanceSyncPerpetualTaskHandler;
+import io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskhandler.ecs.EcsInstanceSyncPerpetualTaskHandler;
 import io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskhandler.helm.NativeHelmInstanceSyncPerpetualTaskHandler;
 import io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskhandler.k8s.K8SInstanceSyncPerpetualTaskHandler;
 import io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskhandler.pdc.PdcInstanceSyncPerpetualTaskHandler;
@@ -39,6 +41,7 @@ public final class InstanceSyncPerpetualTaskServiceRegister {
   private final NativeHelmInstanceSyncPerpetualTaskHandler nativeHelmInstanceSyncPerpetualTaskHandler;
   private final ServerlessAwsLambdaInstanceSyncPerpetualTaskHandler serverlessAwsLambdaInstanceSyncPerpetualTaskHandler;
   private final AzureWebAppInstanceSyncPerpetualTaskHandler azureWebAppInstanceSyncPerpetualTaskHandler;
+  private final EcsInstanceSyncPerpetualTaskHandler ecsInstanceSyncPerpetualTaskHandler;
   private final PdcInstanceSyncPerpetualTaskHandler pdcInstanceSyncPerpetualTaskHandler;
   private final AzureSshWinrmInstanceSyncPerpetualTaskHandler azureSshWinrmInstanceSyncPerpetualTaskHandler;
 
@@ -54,6 +57,8 @@ public final class InstanceSyncPerpetualTaskServiceRegister {
         return serverlessAwsLambdaInstanceSyncPerpetualTaskHandler;
       case AZURE_WEB_APP_NG_INSTANCE_SYNC:
         return azureWebAppInstanceSyncPerpetualTaskHandler;
+      case ECS_INSTANCE_SYNC:
+        return ecsInstanceSyncPerpetualTaskHandler;
       case PDC_INSTANCE_SYNC_NG:
         return pdcInstanceSyncPerpetualTaskHandler;
       case AZURE_SSH_WINRM_INSTANCE_SYNC_NG:

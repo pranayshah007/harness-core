@@ -209,9 +209,6 @@ public class STOManagerServiceModule extends AbstractModule {
     bind(AwsClient.class).to(AwsClientImpl.class);
     bind(CILicenseService.class).to(CILicenseServiceImpl.class).in(Singleton.class);
 
-    install(NgLicenseHttpClientModule.getInstance(stoManagerConfiguration.getNgManagerClientConfig(),
-        stoManagerConfiguration.getNgManagerServiceSecret(), STO_MANAGER.getServiceId()));
-
     // Keeping it to 1 thread to start with. Assuming executor service is used only to
     // serve health checks. If it's being used for other tasks also, max pool size should be increased.
     bind(ExecutorService.class)

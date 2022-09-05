@@ -59,7 +59,7 @@ public abstract class QueueListener<T extends Queuable> implements Runnable {
 
     do {
       while (getMaintenanceFlag() || (primaryOnly && queueController.isNotPrimary())) {
-        sleep(ofSeconds(1));
+        sleep(ofSeconds(5));
       }
 
       if (!execute()) {

@@ -1,0 +1,4 @@
+Var authenticateUrl = concat(Env:baseUrl, "_security/_authenticate/")
+Var result = sync-call(url=Var:authenticateUrl, header=Env:commonHeaders)
+Var t = "true"
+return Var:t

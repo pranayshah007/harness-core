@@ -26,7 +26,6 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ExecutionStatus;
-import io.harness.beans.FeatureName;
 import io.harness.beans.TriggeredBy;
 import io.harness.context.ContextElementType;
 import io.harness.delegate.beans.TaskData;
@@ -83,7 +82,6 @@ import software.wings.sm.WorkflowStandardParamsExtensionService;
 import software.wings.sm.states.ManagerExecutionLogCallback;
 import software.wings.stencils.DefaultValue;
 
-import com.esotericsoftware.kryo.NotNull;
 import com.github.reinert.jjschema.Attributes;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
@@ -132,7 +130,7 @@ public abstract class CloudFormationState extends State {
   @Attributes(title = "Use Custom Stack Name") @Getter @Setter protected boolean useCustomStackName;
   @Attributes(title = "Custom Stack Name") @Getter @Setter protected String customStackName;
   @Attributes(title = "Is Cloud Provider as Expression") @Getter @Setter private boolean infraCloudProviderAsExpression;
-  @Attributes(title = "Cloud Provider Expression") @NotNull @Getter @Setter private String infraCloudProviderExpression;
+  @Attributes(title = "Cloud Provider Expression") @Getter @Setter private String infraCloudProviderExpression;
   private static final int IDSIZE = 8;
   private static final Set<Character> ALLOWED_CHARS =
       Sets.newHashSet(Lists.charactersOf("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-"));
@@ -223,8 +221,7 @@ public abstract class CloudFormationState extends State {
       } else {
         awsConfig = getAwsConfig(awsConfigId);
       }
-    } else if (featureFlagService.isEnabled(FeatureName.ENABLE_CLOUDFORMATION_AS_EXPRESSION, context.getAccountId())
-        && isInfraCloudProviderAsExpression()) {
+    } else if (isInfraCloudProviderAsExpression()) {
       awsConfig = resolveInfraStructureProviderFromExpression(context);
     } else {
       awsConfig = getAwsConfig(awsConfigId);
@@ -247,8 +244,17 @@ public abstract class CloudFormationState extends State {
           renderedExpression, expression, context.asMap());
       throw new InvalidRequestException("Infrastructure provider expression is invalid", USER);
     }
+
     SettingAttribute settingAttribute =
         settingsService.getSettingAttributeByName(context.getAccountId(), renderedExpression);
+
+    if (settingAttribute == null) {
+      log.error("[NOT_AWS_EXPRESSION] Rendered expression is: [{}]. Original Expression: [{}], Context: [{}]",
+          renderedExpression, expression, context.asMap());
+      throw new InvalidRequestException(
+          "Infrastructure provider expression doesn't contains valid AWS configuration", USER);
+    }
+
     return (AwsConfig) settingAttribute.getValue();
   }
 
