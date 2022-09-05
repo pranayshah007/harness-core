@@ -58,8 +58,6 @@ public class OrganizationEntityCRUDEventListener implements MessageListener {
 
   @Override
   public boolean handleMessage(@NonNull final Message message) {
-    log.info("Org event received. Entity type received {} and action is {}",
-        message.getMessage().getMetadataMap().get(ENTITY_TYPE), message.getMessage().getMetadataMap().get(ACTION));
     if (message.hasMessage()) {
       final Map<String, String> metadata = message.getMessage().getMetadataMap();
       final String entityType = metadata.get(ENTITY_TYPE);
@@ -95,7 +93,6 @@ public class OrganizationEntityCRUDEventListener implements MessageListener {
 
   private boolean handleCreateEvent(final OrganizationEntityChangeDTO organizationEntityChangeDTO) {
     try {
-      log.info("Create event for org is being handled for org {}", organizationEntityChangeDTO.getIdentifier());
       final DelegateEntityOwner owner =
           DelegateEntityOwnerHelper.buildOwner(organizationEntityChangeDTO.getIdentifier(), null);
       delegateNgTokenService.upsertDefaultToken(organizationEntityChangeDTO.getAccountIdentifier(), owner, false);
