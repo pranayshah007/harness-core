@@ -38,6 +38,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.context.GlobalContext;
 import io.harness.exception.InvalidRequestException;
 import io.harness.manage.GlobalContextManager;
+import io.harness.ng.core.api.DefaultUserGroupService;
 import io.harness.ng.core.dto.OrganizationDTO;
 import io.harness.ng.core.dto.OrganizationFilterDTO;
 import io.harness.ng.core.entities.Organization;
@@ -85,12 +86,14 @@ public class OrganizationServiceImplTest extends CategoryTest {
   @Mock private OrganizationInstrumentationHelper instrumentationHelper;
   private OrganizationServiceImpl organizationService;
   @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
+  @Mock private DefaultUserGroupService defaultUserGroupService;
 
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
     organizationService = spy(new OrganizationServiceImpl(organizationRepository, outboxService, transactionTemplate,
-        ngUserService, accessControlClient, scopeAccessHelper, instrumentationHelper, ngFeatureFlagHelperService));
+        ngUserService, accessControlClient, scopeAccessHelper, instrumentationHelper, ngFeatureFlagHelperService,
+        defaultUserGroupService));
     when(scopeAccessHelper.getPermittedScopes(any())).then(returnsFirstArg());
   }
 
@@ -121,7 +124,8 @@ public class OrganizationServiceImplTest extends CategoryTest {
     Organization createdOrganization = organizationService.create(accountIdentifier, organizationDTO);
 
     verify(transactionTemplate, times(1)).execute(any());
-
+    Scope scope = Scope.of(accountIdentifier, organizationDTO.getIdentifier(), null);
+    verify(defaultUserGroupService, times(1)).create(scope, emptyList());
     assertEquals(organization, createdOrganization);
   }
 

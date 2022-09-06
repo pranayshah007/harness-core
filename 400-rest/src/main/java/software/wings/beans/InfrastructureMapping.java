@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EmbeddedUser;
@@ -21,6 +22,7 @@ import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.NameAccess;
 import io.harness.validation.Update;
@@ -56,6 +58,7 @@ import org.mongodb.morphia.annotations.Entity;
 @JsonTypeInfo(use = Id.NAME, property = "infraMappingType")
 @NoArgsConstructor
 @RequiredArgsConstructor
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "infrastructureMapping")
 @HarnessEntity(exportable = true)
 @JsonIgnoreProperties(ignoreUnknown = true)

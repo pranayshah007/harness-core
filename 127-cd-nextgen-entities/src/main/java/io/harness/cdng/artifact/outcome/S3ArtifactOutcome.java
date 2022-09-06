@@ -31,6 +31,9 @@ public class S3ArtifactOutcome implements ArtifactOutcome {
   /** AWS connector. */
   String connectorRef;
 
+  /** region */
+  String region;
+
   /** Bucket in repos */
   String bucketName;
 

@@ -8,7 +8,7 @@
 package io.harness.cvng.core.entities;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.beans.MonitoredServiceType;
@@ -50,10 +50,10 @@ import org.mongodb.morphia.annotations.Id;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = false)
+@StoreIn(DbAliases.CVNG)
 @Entity(value = "monitoredServices", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @OwnedBy(HarnessTeam.CV)
-@StoreIn(DbAliases.CVNG)
 public final class MonitoredService
     implements PersistentEntity, UuidAware, AccountAccess, UpdatedAtAware, CreatedAtAware, PersistentRegularIterable {
   public static List<MongoIndex> mongoIndexes() {
@@ -83,6 +83,7 @@ public final class MonitoredService
   private long lastUpdatedAt;
   private long createdAt;
   private boolean enabled;
+  private long lastDisabledAt;
   List<NotificationRuleRef> notificationRuleRefs;
   @FdIndex private long nextNotificationIteration;
   String templateIdentifier;

@@ -361,6 +361,9 @@
         "crossAccountAccess": {
           "$ref": "#/definitions/CrossAccountAccess"
         },
+        "region": {
+          "type": "string"
+        },
         "type": {
           "type": "string",
           "enum": [
@@ -1925,7 +1928,8 @@
             "AzureRepo",
             "Jenkins",
             "OciHelmRepo",
-            "CustomSecretManager"
+            "CustomSecretManager",
+            "ELK"
           ]
         }
       },
@@ -2215,6 +2219,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/DynatraceConnectorDTO"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "ELK"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ELKConnectorDTO"
               }
             }
           }
@@ -2879,6 +2899,52 @@
               }
             },
             "url": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ELKConnectorDTO": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ConnectorConfigDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "url"
+          ],
+          "properties": {
+            "apiKeyId": {
+              "type": "string"
+            },
+            "apiKeyRef": {
+              "type": "string"
+            },
+            "authType": {
+              "type": "string",
+              "enum": [
+                "UsernamePassword",
+                "ApiClientToken",
+                "None"
+              ]
+            },
+            "delegateSelectors": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string"
+              }
+            },
+            "passwordRef": {
+              "type": "string"
+            },
+            "url": {
+              "type": "string"
+            },
+            "username": {
               "type": "string"
             }
           }
@@ -4733,6 +4799,28 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "NameValuePairWithDefault": {
+      "type": "object",
+      "required": [
+        "type",
+        "value"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "useAsDefault": {
+          "type": "boolean"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "NewRelicConnectorDTO": {
       "allOf": [
         {
@@ -5204,7 +5292,10 @@
         "templateInputs": {
           "type": "object",
           "additionalProperties": {
-            "type": "object"
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/NameValuePairWithDefault"
+            }
           }
         },
         "templateRef": {

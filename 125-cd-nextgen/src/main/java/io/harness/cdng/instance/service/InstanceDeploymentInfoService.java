@@ -10,6 +10,7 @@ package io.harness.cdng.instance.service;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.Scope;
 import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.instance.InstanceDeploymentInfo;
 import io.harness.cdng.instance.InstanceDeploymentInfoStatus;
@@ -22,10 +23,13 @@ import java.util.List;
 public interface InstanceDeploymentInfoService {
   void updateStatus(ExecutionInfoKey executionInfoKey, InstanceDeploymentInfoStatus status);
 
-  void updateStatus(ExecutionInfoKey executionInfoKey, String host, InstanceDeploymentInfoStatus status);
+  void updateStatus(Scope executionInfoKey, String stageExecutionId, InstanceDeploymentInfoStatus status);
+
+  List<InstanceDeploymentInfo> getByHostsAndArtifact(ExecutionInfoKey executionInfoKey, List<String> hosts,
+      ArtifactDetails artifactDetails, InstanceDeploymentInfoStatus status);
+
+  void createAndUpdate(ExecutionInfoKey executionInfoKey, List<InstanceInfo> instanceInfos,
+      ArtifactDetails artifactDetails, String stageExecutionId);
 
   List<InstanceDeploymentInfo> getByHosts(ExecutionInfoKey executionInfoKey, List<String> hosts);
-
-  void createAndUpdate(
-      ExecutionInfoKey executionInfoKey, List<InstanceInfo> instanceInfos, ArtifactDetails artifactDetails);
 }

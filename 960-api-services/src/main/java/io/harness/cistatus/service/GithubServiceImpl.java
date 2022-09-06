@@ -88,7 +88,11 @@ public class GithubServiceImpl implements GithubService {
     try {
       Response<StatusCreationResponse> githubStatusCreationResponseResponse =
           getGithubClient(githubAppConfig).createStatus(getAuthToken(token), owner, repo, sha, bodyObjectMap).execute();
-
+      if (!githubStatusCreationResponseResponse.isSuccessful()) {
+        log.error("Failed to send status for github url {} and sha {} error {}, message {}",
+            githubAppConfig.getGithubUrl(), sha, githubStatusCreationResponseResponse.errorBody().string(),
+            githubStatusCreationResponseResponse.message());
+      }
       return githubStatusCreationResponseResponse.isSuccessful();
 
     } catch (Exception e) {
@@ -106,6 +110,7 @@ public class GithubServiceImpl implements GithubService {
       if (response.isSuccessful()) {
         return new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(response.body());
       } else {
+        log.error("Failed to find pr error {}, message {}", response.errorBody().string(), response.message());
         return null;
       }
 
@@ -128,6 +133,7 @@ public class GithubServiceImpl implements GithubService {
         json.put("message", ((LinkedHashMap) response.body()).get("message"));
         return json;
       } else {
+        log.error("Failed to merge pr error {}, message {}", response.errorBody().string(), response.message());
         log.warn("Merge Request for merging PR returned with response code {}", prNumber, response.code());
         return new JSONObject();
       }
@@ -135,6 +141,22 @@ public class GithubServiceImpl implements GithubService {
       log.error("Failed to merge PR for github url {} and prNum {} ", apiUrl, prNumber, e);
       return new JSONObject();
     }
+  }
+
+  @Override
+  public boolean deleteRef(String apiUrl, String token, String owner, String repo, String ref) {
+    try {
+      Response<Object> response = getGithubClient(GithubAppConfig.builder().githubUrl(apiUrl).build())
+                                      .deleteRef(getAuthToken(token), owner, repo, ref)
+                                      .execute();
+
+      if (response.isSuccessful()) {
+        return true;
+      }
+    } catch (Exception e) {
+      log.error("Failed to delete ref for github url {} and ref {} ", apiUrl, ref, e);
+    }
+    return false;
   }
 
   public List<GitPollingWebhookData> getWebhookRecentDeliveryEvents(

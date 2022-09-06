@@ -447,7 +447,7 @@ public class AzureComputeClientImplTest extends CategoryTest {
 
     // When
     List<VirtualMachineData> result = azureComputeClient.listHosts(
-        getAzureComputeConfig(), "subscriptionId", "resourceGroup", AzureOSType.LINUX, Collections.emptyMap());
+        getAzureComputeConfig(), "subscriptionId", "resourceGroup", AzureOSType.LINUX, Collections.emptyMap(), true);
 
     // Then
     assertThat(result)
@@ -470,7 +470,7 @@ public class AzureComputeClientImplTest extends CategoryTest {
 
     // When
     List<VirtualMachineData> result = azureComputeClient.listHosts(
-        getAzureComputeConfig(), "subscriptionId", "resourceGroup", AzureOSType.LINUX, Collections.emptyMap());
+        getAzureComputeConfig(), "subscriptionId", "resourceGroup", AzureOSType.LINUX, Collections.emptyMap(), true);
 
     // Then
     assertThat(result).isNotNull().isEmpty();

@@ -17,8 +17,8 @@ import io.harness.rest.RestResponse;
 
 import software.wings.beans.sso.LdapGroupResponse;
 import software.wings.beans.sso.LdapSettings;
-import software.wings.beans.sso.LdapSettingsMapper;
 import software.wings.beans.sso.LdapTestResponse;
+import software.wings.helpers.ext.ldap.LdapResponse;
 
 import com.google.inject.Inject;
 import java.util.Collection;
@@ -37,24 +37,24 @@ public class NGLdapResourceImpl implements NGLdapResource {
   @Override
   public RestResponse<LdapTestResponse> validateLdapConnectionSettings(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, LdapSettings settings) {
-    LdapTestResponse ldapTestResponse = ngLdapService.validateLdapConnectionSettings(
-        accountIdentifier, orgIdentifier, projectIdentifier, LdapSettingsMapper.ldapSettingsDTO(settings));
+    LdapTestResponse ldapTestResponse =
+        ngLdapService.validateLdapConnectionSettings(accountIdentifier, orgIdentifier, projectIdentifier, settings);
     return new RestResponse<>(ldapTestResponse);
   }
 
   @Override
   public RestResponse<LdapTestResponse> validateLdapUserSettings(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, LdapSettings settings) {
-    LdapTestResponse ldapTestResponse = ngLdapService.validateLdapUserSettings(
-        accountIdentifier, orgIdentifier, projectIdentifier, LdapSettingsMapper.ldapSettingsDTO(settings));
+    LdapTestResponse ldapTestResponse =
+        ngLdapService.validateLdapUserSettings(accountIdentifier, orgIdentifier, projectIdentifier, settings);
     return new RestResponse<>(ldapTestResponse);
   }
 
   @Override
   public RestResponse<LdapTestResponse> validateLdapGroupSettings(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, LdapSettings settings) {
-    LdapTestResponse ldapTestResponse = ngLdapService.validateLdapGroupSettings(
-        accountIdentifier, orgIdentifier, projectIdentifier, LdapSettingsMapper.ldapSettingsDTO(settings));
+    LdapTestResponse ldapTestResponse =
+        ngLdapService.validateLdapGroupSettings(accountIdentifier, orgIdentifier, projectIdentifier, settings);
     return new RestResponse<>(ldapTestResponse);
   }
 
@@ -70,5 +70,12 @@ public class NGLdapResourceImpl implements NGLdapResource {
   public RestResponse<Boolean> syncLdapGroups(String accountId, String orgIdentifier, String projectIdentifier) {
     ngLdapService.syncUserGroupsJob(accountId, orgIdentifier, projectIdentifier);
     return new RestResponse<>(true);
+  }
+
+  @Override
+  public RestResponse<LdapResponse> postLdapAuthenticationTest(
+      String accountId, String orgIdentifier, String projectIdentifier, String email, String password) {
+    return new RestResponse<>(
+        ngLdapService.testLDAPLogin(accountId, orgIdentifier, projectIdentifier, email, password));
   }
 }

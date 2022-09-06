@@ -10,7 +10,7 @@ package io.harness.pms.pipeline;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.Trimmed;
 import io.harness.mongo.index.CompoundMongoIndex;
@@ -37,11 +37,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "PipelineMetadataV2Keys")
+@StoreIn(DbAliases.PMS)
 @Entity(value = "pipelineMetadataV2", noClassnameStored = true)
 @Document("pipelineMetadataV2")
 @TypeAlias("pipelineMetadataV2")
 @HarnessEntity(exportable = true)
-@StoreIn(DbAliases.PMS)
 public class PipelineMetadataV2 {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()

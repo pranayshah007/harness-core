@@ -41,6 +41,7 @@ import io.harness.ccm.views.graphql.ViewsQueryHelper;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.ccm.views.service.ViewsBillingService;
 
+import com.google.cloud.Timestamp;
 import com.google.cloud.bigquery.BigQuery;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -198,19 +199,32 @@ public class PerspectivesQuery {
     isClusterQuery = isClusterQuery && businessMappingId == null;
 
     ViewQueryParams viewQueryParams = viewsQueryHelper.buildQueryParams(accountId, true, false, isClusterQuery, false);
+    Map<String, Map<Timestamp, Double>> sharedCostFromFilters =
+        viewsBillingService.getSharedCostPerTimestampFromFilters(bigQuery, filters, groupBy, aggregateFunction,
+            sortCriteria, cloudProviderTableName, viewQueryParams, viewQueryParams.isSkipRoundOff());
+
+    ViewQueryParams viewQueryParamsWithSkipDefaultGroupBy =
+        viewsQueryHelper.buildQueryParams(accountId, true, false, isClusterQuery, false, true);
 
     PerspectiveTimeSeriesData data = perspectiveTimeSeriesHelper.fetch(
         viewsBillingService.getTimeSeriesStatsNg(bigQuery, filters, groupBy, aggregateFunction, sortCriteria,
             cloudProviderTableName, includeOthers, limit, viewQueryParams),
-        timePeriod, conversionField, businessMappingId, accountId, groupBy);
+        timePeriod, conversionField, businessMappingId, accountId, groupBy,
+        perspectiveTimeSeriesHelper.getSharedCostBucketsFromFilters(filters), sharedCostFromFilters);
 
-    Map<Long, Double> unallocatedCost = null;
-    if (includeUnallocatedCost) {
-      unallocatedCost = viewsBillingService.getUnallocatedCostDataNg(
-          bigQuery, filters, groupBy, Collections.emptyList(), cloudProviderTableName, viewQueryParams);
+    Map<Long, Double> othersTotalCost = Collections.emptyMap();
+    if (includeOthers) {
+      othersTotalCost = viewsBillingService.getOthersTotalCostDataNg(bigQuery, filters, groupBy,
+          Collections.emptyList(), cloudProviderTableName, viewQueryParamsWithSkipDefaultGroupBy);
     }
 
-    return perspectiveTimeSeriesHelper.postFetch(data, limit, includeOthers, includeUnallocatedCost, unallocatedCost);
+    Map<Long, Double> unallocatedCost = Collections.emptyMap();
+    if (includeUnallocatedCost) {
+      unallocatedCost = viewsBillingService.getUnallocatedCostDataNg(bigQuery, filters, groupBy,
+          Collections.emptyList(), cloudProviderTableName, viewQueryParamsWithSkipDefaultGroupBy);
+    }
+
+    return perspectiveTimeSeriesHelper.postFetch(data, includeOthers, othersTotalCost, unallocatedCost);
   }
 
   @GraphQLQuery(name = "perspectiveFields", description = "Fields for perspective explorer")

@@ -8,6 +8,7 @@
 package io.harness.steps.shellscript;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -46,10 +47,13 @@ import io.harness.steps.OutputExpressionConstants;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Rule;
 import org.junit.Test;
@@ -106,8 +110,8 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
   @Owner(developers = VAIBHAV_SI)
   @Category(UnitTests.class)
   public void testGetOutputVars() {
-    assertThat(shellScriptHelperServiceImpl.getOutputVars(null)).isEmpty();
-    assertThat(shellScriptHelperServiceImpl.getOutputVars(new HashMap<>())).isEmpty();
+    assertThat(shellScriptHelperServiceImpl.getOutputVars(null, new HashSet<>())).isEmpty();
+    assertThat(shellScriptHelperServiceImpl.getOutputVars(new HashMap<>(), new HashSet<>())).isEmpty();
 
     Map<String, Object> outputVariables = new LinkedHashMap<>();
     outputVariables.put("var1", Arrays.asList(1));
@@ -115,15 +119,49 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
     outputVariables.put("var3", ParameterField.createValueField("val3"));
     outputVariables.put("var4", ParameterField.createExpressionField(true, "<+unresolved>", null, true));
 
-    assertThatThrownBy(() -> shellScriptHelperServiceImpl.getOutputVars(outputVariables))
+    assertThatThrownBy(() -> shellScriptHelperServiceImpl.getOutputVars(outputVariables, new HashSet<>()))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessageContaining("Output variable [var4] value found to be null");
+        .hasMessageContaining("Output variable [var4] value found to be empty");
 
     outputVariables.remove("var4");
-    List<String> outputVariablesValues = shellScriptHelperServiceImpl.getOutputVars(outputVariables);
+    List<String> outputVariablesValues = shellScriptHelperServiceImpl.getOutputVars(outputVariables, new HashSet<>());
     assertThat(outputVariablesValues).hasSize(2);
     assertThat(outputVariablesValues.get(0)).isEqualTo("val2");
     assertThat(outputVariablesValues.get(1)).isEqualTo("val3");
+
+    Set<String> secretOutputVars = new HashSet<>();
+    secretOutputVars.add("var2");
+    outputVariablesValues = shellScriptHelperServiceImpl.getOutputVars(outputVariables, secretOutputVars);
+    assertThat(outputVariablesValues).hasSize(1);
+    assertThat(outputVariablesValues.get(0)).isEqualTo("val3");
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testGetSecretOutputVars() {
+    assertThat(shellScriptHelperServiceImpl.getSecretOutputVars(null, new HashSet<>())).isEmpty();
+    assertThat(shellScriptHelperServiceImpl.getSecretOutputVars(new HashMap<>(), new HashSet<>())).isEmpty();
+
+    Map<String, Object> outputVariables = new LinkedHashMap<>();
+    outputVariables.put("var1", Arrays.asList(1));
+    outputVariables.put("var2", "val2");
+    outputVariables.put("var3", ParameterField.createValueField("val3"));
+    outputVariables.put("var4", ParameterField.createExpressionField(true, "<+unresolved>", null, true));
+
+    Set<String> secretOutputVars = new HashSet<>();
+    secretOutputVars.add("var4");
+
+    assertThatThrownBy(() -> shellScriptHelperServiceImpl.getSecretOutputVars(outputVariables, secretOutputVars))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining("Output variable [var4] value found to be empty");
+
+    secretOutputVars.remove("var4");
+    secretOutputVars.add("var2");
+    List<String> outputVariablesValues =
+        shellScriptHelperServiceImpl.getSecretOutputVars(outputVariables, secretOutputVars);
+    assertThat(outputVariablesValues).hasSize(1);
+    assertThat(outputVariablesValues.get(0)).isEqualTo("val2");
   }
 
   @Test
@@ -288,11 +326,14 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
     inputVars.put("key1", "val1");
     Map<String, Object> outputVars = new LinkedHashMap<>();
     outputVars.put("key1", "val1");
+    outputVars.put("key2", "val2");
+
     ShellScriptStepParameters stepParameters = ShellScriptStepParameters.infoBuilder()
                                                    .shellType(ShellType.Bash)
                                                    .onDelegate(ParameterField.createValueField(true))
                                                    .environmentVariables(inputVars)
                                                    .outputVariables(outputVars)
+                                                   .secretOutputVariables(new HashSet<>())
                                                    .build();
     String script = "echo hey";
     DirectK8sInfraDelegateConfig k8sInfraDelegateConfig = DirectK8sInfraDelegateConfig.builder().build();
@@ -306,7 +347,7 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
         .prepareTaskParametersForExecutionTarget(eq(ambiance), eq(stepParameters), any());
     doReturn(k8sInfraDelegateConfig).when(shellScriptHelperService).getK8sInfraDelegateConfig(ambiance, script);
     doReturn(taskEnvVariables).when(shellScriptHelperService).getEnvironmentVariables(inputVars);
-    doReturn(taskOutputVars).when(shellScriptHelperService).getOutputVars(outputVars);
+    doReturn(taskOutputVars).when(shellScriptHelperService).getOutputVars(outputVars, new HashSet<>());
     doReturn("/tmp")
         .when(shellScriptHelperService)
         .getWorkingDirectory(ParameterField.ofNull(), ScriptType.BASH, stepParameters.onDelegate.getValue());
@@ -354,6 +395,50 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
     shellScriptOutcome = shellScriptHelperServiceImpl.prepareShellScriptOutcome(envVariables, outputVariables);
     assertThat(shellScriptOutcome.getOutputVariables()).hasSize(2);
     assertThat(shellScriptOutcome.getOutputVariables().get("output1")).isEqualTo("val1");
+    assertThat(shellScriptOutcome.getOutputVariables().get("output2")).isEqualTo("val2");
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testPrepareShellScriptOutcomeWithSecretVars() {
+    ShellScriptOutcome shellScriptOutcome =
+        ShellScriptHelperService.prepareShellScriptOutcome(null, new HashMap<>(), new HashSet<>());
+    assertThat(shellScriptOutcome).isNull();
+
+    shellScriptOutcome = ShellScriptHelperService.prepareShellScriptOutcome(new HashMap<>(), null, null);
+    assertThat(shellScriptOutcome).isNull();
+
+    Map<String, Object> outputVariables = new HashMap<>();
+    outputVariables.put("output1", ParameterField.createValueField("var1"));
+    outputVariables.put("output2", ParameterField.createValueField("var2"));
+
+    shellScriptOutcome = ShellScriptHelperService.prepareShellScriptOutcome(new HashMap<>(), outputVariables, null);
+    assertThat(shellScriptOutcome).isNotNull();
+    assertThat(shellScriptOutcome.getOutputVariables()).hasSize(2);
+    assertThat(shellScriptOutcome.getOutputVariables().get("output1")).isNull();
+
+    Map<String, String> envVariables = new HashMap<>();
+    envVariables.put("var1", "val1");
+    envVariables.put("var2", "val2");
+
+    shellScriptOutcome = ShellScriptHelperService.prepareShellScriptOutcome(envVariables, outputVariables, null);
+    assertThat(shellScriptOutcome).isNotNull();
+    assertThat(shellScriptOutcome.getOutputVariables()).hasSize(2);
+    assertThat(shellScriptOutcome.getOutputVariables().get("output1")).isEqualTo("val1");
+    assertThat(shellScriptOutcome.getOutputVariables().get("output2")).isEqualTo("val2");
+
+    Set<String> secretOutputVars = new HashSet<>();
+    secretOutputVars.add("output1");
+
+    // "${sweepingOutputSecrets.obtain("output1","sa32zupgqijF2be+H2lEAw7yfMwGDFtC5zciKbzQGEtm5Vq+cjo7RclAhPVLTig7")}">
+    String SECRET_REGEX = "\\$\\{sweepingOutputSecrets\\.obtain\\(\"[\\S|.]+\",\"[\\S|.]+\"\\)}";
+
+    shellScriptOutcome =
+        ShellScriptHelperService.prepareShellScriptOutcome(envVariables, outputVariables, secretOutputVars);
+    assertThat(shellScriptOutcome).isNotNull();
+    assertThat(shellScriptOutcome.getOutputVariables()).hasSize(2);
+    assertThat(shellScriptOutcome.getOutputVariables().get("output1")).containsPattern(Pattern.compile(SECRET_REGEX));
     assertThat(shellScriptOutcome.getOutputVariables().get("output2")).isEqualTo("val2");
   }
 }

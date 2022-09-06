@@ -1,0 +1,3 @@
+Var result = sync-call(url=Env:baseUrl, header=Env:commonHeaders)
+Var t = "true"
+return Var:t

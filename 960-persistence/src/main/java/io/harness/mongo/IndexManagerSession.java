@@ -28,8 +28,8 @@ import static java.time.Duration.ofHours;
 import static java.util.stream.Collectors.toList;
 
 import io.harness.annotation.IgnoreUnusedIndex;
-import io.harness.annotation.StoreIn;
-import io.harness.annotation.StoreInMultiple;
+import io.harness.annotations.StoreIn;
+import io.harness.annotations.StoreInMultiple;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.ListUtils.OneAndOnlyOne;
@@ -522,8 +522,10 @@ public class IndexManagerSession {
     AtomicBoolean actionPerformed = new AtomicBoolean(false);
     try {
       Map<String, IndexCreator> creators = indexCreators(mc, collection);
+      IndexManagerCollectionSession collectionSession = createCollectionSession(collection);
       // We should be attempting to drop indexes only if we successfully created all new ones
-      int created = createNewIndexes(createCollectionSession(collection), creators);
+
+      int created = createNewIndexes(collectionSession, creators);
       if (created > 0) {
         actionPerformed.set(true);
       }
@@ -531,9 +533,7 @@ public class IndexManagerSession {
       boolean okToDropIndexes = created == 0;
 
       Map<String, Accesses> accesses = fetchIndexAccesses(collection);
-
       if (okToDropIndexes) {
-        IndexManagerCollectionSession collectionSession = createCollectionSession(collection);
         List<String> obsoleteIndexes = collectionSession.obsoleteIndexes(creators.keySet());
         if (isNotEmpty(obsoleteIndexes)) {
           // Make sure that all indexes that we have are operational, we check that they have being seen since
@@ -555,7 +555,7 @@ public class IndexManagerSession {
       }
 
       if (mc.getClazz().getAnnotation(IgnoreUnusedIndex.class) == null) {
-        createCollectionSession(collection).checkForUnusedIndexes(accesses);
+        collectionSession.checkForUnusedIndexes(accesses);
       }
     } catch (MongoCommandException exception) {
       if (exception.getErrorCode() == 13) {

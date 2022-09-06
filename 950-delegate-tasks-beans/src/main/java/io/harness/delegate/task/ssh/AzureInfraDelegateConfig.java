@@ -27,4 +27,5 @@ public class AzureInfraDelegateConfig {
   String resourceGroup;
   Map<String, String> tags;
   String osType;
+  boolean usePublicDns;
 }

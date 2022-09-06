@@ -264,7 +264,8 @@ public class ViewsQueryHelper {
   }
 
   public ViewQueryParams buildQueryParams(String accountId, boolean isTimeTruncGroupByRequired,
-      boolean isUsedByTimeSeriesStats, boolean isClusterQuery, boolean isTotalCountQuery, int timeOffsetInDays) {
+      boolean isUsedByTimeSeriesStats, boolean isClusterQuery, boolean isTotalCountQuery, int timeOffsetInDays,
+      boolean skipDefaultGroupBy) {
     return ViewQueryParams.builder()
         .accountId(accountId)
         .isClusterQuery(isClusterQuery)
@@ -272,13 +273,20 @@ public class ViewsQueryHelper {
         .isTimeTruncGroupByRequired(isTimeTruncGroupByRequired)
         .isTotalCountQuery(isTotalCountQuery)
         .timeOffsetInDays(timeOffsetInDays)
+        .skipDefaultGroupBy(skipDefaultGroupBy)
         .build();
   }
 
   public ViewQueryParams buildQueryParams(String accountId, boolean isTimeTruncGroupByRequired,
       boolean isUsedByTimeSeriesStats, boolean isClusterQuery, boolean isTotalCountQuery) {
     return buildQueryParams(
-        accountId, isTimeTruncGroupByRequired, isUsedByTimeSeriesStats, isClusterQuery, isTotalCountQuery, 0);
+        accountId, isTimeTruncGroupByRequired, isUsedByTimeSeriesStats, isClusterQuery, isTotalCountQuery, 0, false);
+  }
+
+  public ViewQueryParams buildQueryParams(String accountId, boolean isTimeTruncGroupByRequired,
+      boolean isUsedByTimeSeriesStats, boolean isClusterQuery, boolean isTotalCountQuery, boolean skipDefaultGroupBy) {
+    return buildQueryParams(accountId, isTimeTruncGroupByRequired, isUsedByTimeSeriesStats, isClusterQuery,
+        isTotalCountQuery, 0, skipDefaultGroupBy);
   }
 
   public ViewQueryParams buildQueryParams(String accountId, boolean isClusterQuery) {
@@ -347,5 +355,36 @@ public class ViewsQueryHelper {
             .findFirst();
 
     return businessMappingGroupBy.map(filter -> filter.getIdFilter().getField().getFieldId()).orElse(null);
+  }
+
+  public List<String> getBusinessMappingIdsFromFilters(List<QLCEViewFilterWrapper> filters) {
+    if (filters == null) {
+      return Collections.emptyList();
+    }
+
+    List<QLCEViewFilterWrapper> businessMappingFilters =
+        filters.stream()
+            .filter(filter
+                -> filter.getIdFilter() != null
+                    && filter.getIdFilter().getField().getIdentifier() == ViewFieldIdentifier.BUSINESS_MAPPING)
+            .collect(Collectors.toList());
+
+    return businessMappingFilters.stream()
+        .map(filter -> filter.getIdFilter().getField().getFieldId())
+        .collect(Collectors.toList());
+  }
+
+  public List<QLCEViewFilterWrapper> removeBusinessMappingFilters(List<QLCEViewFilterWrapper> filters) {
+    if (filters == null) {
+      return Collections.emptyList();
+    }
+
+    return filters.stream()
+        .filter(filter
+            -> filter.getTimeFilter() != null || filter.getViewMetadataFilter() != null
+                || filter.getRuleFilter() != null
+                || (filter.getIdFilter() != null
+                    && filter.getIdFilter().getField().getIdentifier() != ViewFieldIdentifier.BUSINESS_MAPPING))
+        .collect(Collectors.toList());
   }
 }

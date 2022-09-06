@@ -20,7 +20,6 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.beans.dependencies.DependencyElement;
 import io.harness.beans.environment.BuildJobEnvInfo;
 import io.harness.beans.environment.VmBuildJobInfo;
@@ -47,7 +46,6 @@ import io.harness.plancreator.steps.ParallelStepElementConfig;
 import io.harness.plancreator.steps.StepElementConfig;
 import io.harness.plancreator.steps.StepGroupElementConfig;
 import io.harness.pms.contracts.ambiance.Ambiance;
-import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.ParameterField;
 
 import com.google.inject.Inject;
@@ -73,7 +71,6 @@ public class VmInitializeStepUtils {
     ArrayList<String> connectorIdentifiers = populateConnectorIdentifiers(steps);
 
     IntegrationStageConfig integrationStageConfig = IntegrationStageUtils.getIntegrationStageConfig(stageElementConfig);
-    validateStageConfig(integrationStageConfig, AmbianceUtils.getAccountId(ambiance));
     List<DependencyElement> serviceDependencies = null;
     if (integrationStageConfig.getServiceDependencies() != null
         && integrationStageConfig.getServiceDependencies().getValue() != null) {
@@ -151,12 +148,6 @@ public class VmInitializeStepUtils {
 
     VmPoolYaml vmPoolYaml = (VmPoolYaml) vmInfraYaml.getSpec();
     return resolveOSType(vmPoolYaml.getSpec().getOs());
-  }
-
-  private void validateStageConfig(IntegrationStageConfig integrationStageConfig, String accountId) {
-    if (!featureFlagService.isEnabled(FeatureName.CI_VM_INFRASTRUCTURE, accountId)) {
-      throw new CIStageExecutionException("infrastructure VM is not allowed");
-    }
   }
 
   private void validateStepConfig(StepElementConfig stepElementConfig) {

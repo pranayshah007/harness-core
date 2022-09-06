@@ -9,6 +9,8 @@ package io.harness.delegate.task.shell.winrm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.delegate.task.shell.winrm.WinRmCommandConstants.SESSION_TIMEOUT;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT_HINT;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_CONFIG_FILE_PROVIDED;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_CONFIG_FILE_PROVIDED_EXPLANATION;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_CONFIG_FILE_PROVIDED_HINT;
@@ -30,6 +32,7 @@ import io.harness.delegate.task.shell.WinrmTaskParameters;
 import io.harness.delegate.task.shell.ssh.CommandHandler;
 import io.harness.delegate.task.ssh.CopyCommandUnit;
 import io.harness.delegate.task.ssh.NgCommandUnit;
+import io.harness.delegate.task.ssh.artifact.CustomArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.SkipCopyArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.config.ConfigFileParameters;
 import io.harness.delegate.task.ssh.config.SecretConfigFile;
@@ -43,6 +46,7 @@ import io.harness.exception.runtime.WinRmCommandExecutionException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogLevel;
 import io.harness.security.encryption.SecretDecryptionService;
+import io.harness.shell.ExecuteCommandResponse;
 import io.harness.ssh.FileSourceType;
 
 import com.google.api.client.util.Lists;
@@ -62,7 +66,7 @@ public class WinRmCopyCommandHandler implements CommandHandler {
   @Inject private SecretDecryptionService secretDecryptionService;
 
   @Override
-  public CommandExecutionStatus handle(CommandTaskParameters parameters, NgCommandUnit commandUnit,
+  public ExecuteCommandResponse handle(CommandTaskParameters parameters, NgCommandUnit commandUnit,
       ILogStreamingTaskClient logStreamingTaskClient, CommandUnitsProgress commandUnitsProgress,
       Map<String, Object> taskContext) {
     if (!(parameters instanceof WinrmTaskParameters)) {
@@ -96,13 +100,14 @@ public class WinRmCopyCommandHandler implements CommandHandler {
           new WinRmCommandExecutionException(NO_DESTINATION_PATH_SPECIFIED));
     }
 
+    CommandExecutionStatus commandExecutionStatus = CommandExecutionStatus.SUCCESS;
     if (FileSourceType.ARTIFACT.equals(copyCommandUnit.getSourceType())) {
-      return copyArtifact(winRmCommandTaskParameters, copyCommandUnit, executor);
+      commandExecutionStatus = copyArtifact(winRmCommandTaskParameters, copyCommandUnit, executor);
     } else if (FileSourceType.CONFIG.equals(copyCommandUnit.getSourceType())) {
-      return copyConfigFiles(winRmCommandTaskParameters, copyCommandUnit, executor);
+      commandExecutionStatus = copyConfigFiles(winRmCommandTaskParameters, copyCommandUnit, executor);
     }
 
-    return CommandExecutionStatus.SUCCESS;
+    return ExecuteCommandResponse.builder().status(commandExecutionStatus).build();
   }
 
   private CommandExecutionStatus copyConfigFiles(WinrmTaskParameters winRmCommandTaskParameters,
@@ -136,6 +141,12 @@ public class WinRmCopyCommandHandler implements CommandHandler {
       executor.saveExecutionLog("Command finished with status " + SUCCESS, LogLevel.INFO, SUCCESS);
       return SUCCESS;
     }
+    if (taskParameters.getArtifactDelegateConfig() instanceof CustomArtifactDelegateConfig) {
+      throw NestedExceptionUtils.hintWithExplanationException(COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT_HINT,
+          COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT,
+          new WinRmCommandExecutionException(COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT));
+    }
+
     CommandExecutionStatus result;
     try {
       result = executor.copyArtifacts(taskParameters, copyCommandUnit);

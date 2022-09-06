@@ -15,6 +15,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.BreakDependencyOn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -34,6 +35,7 @@ import io.harness.mongo.index.FdSparseIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.CreatedByAware;
@@ -84,6 +86,7 @@ import org.mongodb.morphia.annotations.Transient;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "WorkflowExecutionKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "workflowExecutions", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -228,6 +231,11 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
                  .descSortField(WorkflowExecutionKeys.createdAt)
                  .rangeField(WorkflowExecutionKeys.appId)
                  .rangeField(WorkflowExecutionKeys.status)
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("appId_createdAt")
+                 .field(WorkflowExecutionKeys.appId)
+                 .descSortField(WorkflowExecutionKeys.createdAt)
                  .build())
         .build();
   }

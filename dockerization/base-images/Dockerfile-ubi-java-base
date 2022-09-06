@@ -20,3 +20,4 @@ RUN curl -OL https://github.com/adoptium/temurin11-binaries/releases/download/jd
 
 ENV JAVA_HOME=/opt/harness/OpenJDK11/jdk-11.0.15+10
 ENV PATH=$JAVA_HOME/bin:$PATH
+ENV CLASSPATH_LIMIT=400000

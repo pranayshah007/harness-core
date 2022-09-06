@@ -13,11 +13,8 @@ import static software.wings.beans.loginSettings.LoginSettingsConstants.RESOURCE
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.ResourceTypeConstants;
-import io.harness.event.Event;
-import io.harness.ng.core.AccountScope;
 import io.harness.ng.core.Resource;
 import io.harness.ng.core.ResourceConstants;
-import io.harness.ng.core.ResourceScope;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.HashMap;
@@ -31,16 +28,10 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class LoginSettingsHarnessUsernamePasswordUpdateEvent implements Event {
-  private String accountIdentifier;
+public class LoginSettingsHarnessUsernamePasswordUpdateEvent extends LoginSettingsAbstractEvent {
   private String loginSettingsId;
   private LoginSettingsYamlDTO oldLoginSettingsYamlDTO;
   private LoginSettingsYamlDTO newLoginSettingsYamlDTO;
-
-  @Override
-  public ResourceScope getResourceScope() {
-    return new AccountScope(accountIdentifier);
-  }
 
   @Override
   public Resource getResource() {

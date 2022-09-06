@@ -36,12 +36,11 @@ public interface NGSettingsClient {
       @Path(value = SettingConstants.IDENTIFIER_KEY) String identifier,
       @Query(value = ACCOUNT_KEY) String accountIdentifier, @Query(value = ORG_KEY) String orgIdentifier,
       @Query(value = PROJECT_KEY) String projectIdentifier);
-  @GET(SETTINGS + "category"
-      + "/{category}")
-  Call<ResponseDTO<List<SettingResponseDTO>>>
-  listSettings(@Query(value = ACCOUNT_KEY) String accountIdentifier, @Query(value = ORG_KEY) String orgIdentifier,
-      @Query(value = PROJECT_KEY) String projectIdentifier,
-      @Path(value = SettingConstants.CATEGORY_KEY) SettingCategory category);
+  @GET(SETTINGS)
+  Call<ResponseDTO<List<SettingResponseDTO>>> listSettings(@Query(value = ACCOUNT_KEY) String accountIdentifier,
+      @Query(value = ORG_KEY) String orgIdentifier, @Query(value = PROJECT_KEY) String projectIdentifier,
+      @Query(value = SettingConstants.CATEGORY_KEY) SettingCategory category,
+      @Query(value = SettingConstants.GROUP_KEY) String groupIdentifier);
   @PUT(SETTINGS)
   Call<ResponseDTO<List<SettingResponseDTO>>> updateSettings(@Query(value = ACCOUNT_KEY) String accountIdentifier,
       @Query(value = ORG_KEY) String orgIdentifier, @Query(value = PROJECT_KEY) String projectIdentifier,

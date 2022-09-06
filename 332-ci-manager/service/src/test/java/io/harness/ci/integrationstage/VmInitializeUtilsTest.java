@@ -11,14 +11,11 @@ import static io.harness.rule.OwnerRule.DEV_MITTAL;
 import static io.harness.rule.OwnerRule.SHUBHAM;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.when;
 
-import io.harness.beans.FeatureName;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.category.element.UnitTests;
 import io.harness.ci.executionplan.CIExecutionTestBase;
-import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
@@ -30,11 +27,8 @@ import java.util.Map;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
-import org.mockito.Mock;
 
 public class VmInitializeUtilsTest extends CIExecutionTestBase {
-  @Mock CIFeatureFlagService featureFlagService;
-
   @InjectMocks private VmInitializeUtils vmInitializeUtils;
 
   @Test
@@ -43,8 +37,6 @@ public class VmInitializeUtilsTest extends CIExecutionTestBase {
   public void validateStageConfig() {
     IntegrationStageConfig integrationStageConfig = VmInitializeTaskHelper.getIntegrationStageConfig();
     String accountId = "test";
-
-    when(featureFlagService.isEnabled(FeatureName.CI_VM_INFRASTRUCTURE, accountId)).thenReturn(true);
 
     vmInitializeUtils.validateStageConfig(integrationStageConfig, accountId);
   }
@@ -55,8 +47,6 @@ public class VmInitializeUtilsTest extends CIExecutionTestBase {
   public void testValidateStageConfigWithStepGroup() throws Exception {
     IntegrationStageConfig integrationStageConfig = VmInitializeTaskHelper.getIntegrationStageConfigWithStepGroup();
     String accountId = "test";
-
-    when(featureFlagService.isEnabled(FeatureName.CI_VM_INFRASTRUCTURE, accountId)).thenReturn(true);
 
     vmInitializeUtils.validateStageConfig(integrationStageConfig, accountId);
   }

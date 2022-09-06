@@ -9,7 +9,7 @@ package io.harness.delegate.beans;
 
 import static java.time.Duration.ofDays;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
@@ -38,10 +38,10 @@ import org.mongodb.morphia.annotations.Id;
 
 @Data
 @Builder
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "delegateTokensNG", noClassnameStored = true)
 @FieldNameConstants(innerTypeName = "DelegateNgTokenKeys")
 @OwnedBy(HarnessTeam.DEL)
-@StoreIn(DbAliases.ALL)
 public class DelegateNgToken
     implements PersistentEntity, UuidAware, CreatedAtAware, CreatedByAware, NameAndValueAccess {
   public static final Duration TTL = ofDays(30);

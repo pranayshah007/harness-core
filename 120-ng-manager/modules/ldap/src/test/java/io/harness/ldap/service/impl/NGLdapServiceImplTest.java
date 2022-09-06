@@ -33,13 +33,17 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
+import io.harness.delegate.beans.ldap.LdapSettingsWithEncryptedDataAndPasswordDetail;
 import io.harness.delegate.beans.ldap.LdapSettingsWithEncryptedDataDetail;
 import io.harness.delegate.beans.ldap.NGLdapDelegateTaskResponse;
 import io.harness.delegate.beans.ldap.NGLdapGroupSearchTaskResponse;
 import io.harness.delegate.beans.ldap.NGLdapGroupSyncTaskResponse;
+import io.harness.delegate.beans.ldap.NGLdapTestAuthenticationTaskResponse;
 import io.harness.delegate.utils.TaskSetupAbstractionHelper;
+import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.exception.exceptionmanager.exceptionhandler.DocumentLinksConstants;
 import io.harness.ldap.scheduler.NGLdapGroupSyncHelper;
 import io.harness.ng.authenticationsettings.remote.AuthSettingsManagerClient;
 import io.harness.ng.core.api.UserGroupService;
@@ -47,13 +51,15 @@ import io.harness.ng.core.user.entities.UserGroup;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.service.DelegateGrpcClientWrapper;
 
 import software.wings.beans.dto.LdapSettings;
+import software.wings.beans.sso.LdapConnectionSettings;
 import software.wings.beans.sso.LdapGroupResponse;
 import software.wings.beans.sso.LdapTestResponse;
 import software.wings.beans.sso.LdapUserResponse;
-import software.wings.service.impl.ldap.LdapDelegateException;
+import software.wings.helpers.ext.ldap.LdapResponse;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -73,8 +79,9 @@ import retrofit2.Response;
 @OwnedBy(HarnessTeam.PL)
 @RunWith(MockitoJUnitRunner.class)
 public class NGLdapServiceImplTest extends CategoryTest {
-  public static final String INVALID_CREDENTIALS = "Invalid Credentials";
-  public static final String UNKNOWN_RESPONSE_FROM_DELEGATE = "Unknown Response from delegate";
+  public static final String INVALID_CREDENTIALS = "INVALID_CREDENTIALS";
+  public static final String DELEGATE_NOT_AVAILABLE =
+      String.format(HintException.DELEGATE_NOT_AVAILABLE, DocumentLinksConstants.DELEGATE_INSTALLATION_LINK);
   TaskSetupAbstractionHelper taskSetupAbstractionHelper = mock(TaskSetupAbstractionHelper.class);
   DelegateGrpcClientWrapper delegateGrpcClientWrapper = mock(DelegateGrpcClientWrapper.class);
   AuthSettingsManagerClient managerClient = mock(AuthSettingsManagerClient.class);
@@ -101,11 +108,13 @@ public class NGLdapServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = SHASHANK)
   @Category(UnitTests.class)
-  public void testLdapConnectionSuccessfulAndUnsuccessful() {
+  public void testLdapConnectionSuccessfulAndUnsuccessful() throws IOException {
     final String accountId = "testAccountId";
-    LdapSettings ldapSettings = LdapSettings.builder().accountId(accountId).build();
+    software.wings.beans.sso.LdapSettings ldapSettings = getLdapSettings(accountId);
     LdapTestResponse successfulTestResponse =
         LdapTestResponse.builder().status(SUCCESS).message("Connection Successful").build();
+
+    mockCgClientCall();
 
     when(delegateGrpcClientWrapper.executeSyncTask(any()))
         .thenReturn(NGLdapDelegateTaskResponse.builder().ldapTestResponse(successfulTestResponse).build());
@@ -116,35 +125,41 @@ public class NGLdapServiceImplTest extends CategoryTest {
     assertNotNull(ldapTestResponse);
     assertEquals(successfulTestResponse.getStatus(), ldapTestResponse.getStatus());
 
+    // Test unsuccessful
+    ldapTestResponse = null;
     LdapTestResponse unsuccessfulTestResponse =
-        LdapTestResponse.builder().status(FAILURE).message("Invalid Credential").build();
+        LdapTestResponse.builder().status(FAILURE).message(INVALID_CREDENTIALS).build();
 
     when(delegateGrpcClientWrapper.executeSyncTask(any()))
         .thenReturn(NGLdapDelegateTaskResponse.builder().ldapTestResponse(unsuccessfulTestResponse).build());
 
-    ldapTestResponse = ngLdapService.validateLdapConnectionSettings(accountId, null, null, ldapSettings);
-
-    assertNotNull(ldapTestResponse);
-    assertEquals(unsuccessfulTestResponse.getStatus(), ldapTestResponse.getStatus());
+    try {
+      ldapTestResponse = ngLdapService.validateLdapConnectionSettings(accountId, null, null, ldapSettings);
+      failBecauseExceptionWasNotThrown(WingsException.class);
+    } catch (Exception ex) {
+      assertNull(ldapTestResponse);
+      assertThat(ex).isInstanceOf(HintException.class);
+      assertEquals(ex.getMessage(), HintException.CHECK_LDAP_CONNECTION);
+    }
   }
 
   @Test
   @Owner(developers = SHASHANK)
   @Category(UnitTests.class)
-  public void testLdapConnectionException() {
+  public void testLdapConnectionException() throws IOException {
     final String accountId = "testAccountId";
-    LdapSettings ldapSettings = LdapSettings.builder().accountId(accountId).build();
-
+    software.wings.beans.sso.LdapSettings ldapSettings = getLdapSettings(accountId);
+    mockCgClientCall();
     when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(buildErrorNotifyResponseData());
 
     LdapTestResponse ldapTestResponse = null;
     try {
       ldapTestResponse = ngLdapService.validateLdapConnectionSettings(accountId, null, null, ldapSettings);
       failBecauseExceptionWasNotThrown(WingsException.class);
-    } catch (Exception e) {
+    } catch (Exception ex) {
       assertNull(ldapTestResponse);
-      assertThat(e).isInstanceOf(LdapDelegateException.class);
-      assertEquals(e.getMessage(), UNKNOWN_RESPONSE_FROM_DELEGATE);
+      assertThat(ex).isInstanceOf(HintException.class);
+      assertEquals(ex.getMessage(), DELEGATE_NOT_AVAILABLE);
     }
   }
 
@@ -156,7 +171,7 @@ public class NGLdapServiceImplTest extends CategoryTest {
     Call<RestResponse<LdapSettingsWithEncryptedDataDetail>> request = mock(Call.class);
     RestResponse<LdapSettingsWithEncryptedDataDetail> mockResponse =
         new RestResponse<>(ldapSettingsWithEncryptedDataDetail);
-    doReturn(request).when(managerClient).getLdapSettingsWithEncryptedDataDetails(ACCOUNT_ID);
+    doReturn(request).when(managerClient).getLdapSettingsUsingAccountId(ACCOUNT_ID);
     doReturn(Response.success(mockResponse)).when(request).execute();
     final String groupNameQuery = "grpName";
     LdapGroupResponse response = LdapGroupResponse.builder()
@@ -180,7 +195,7 @@ public class NGLdapServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testSearchLdapGroupsEmptyListWhenLdapSettingsNotFound() {
     final String groupNameQuery = "grpName";
-    doReturn(null).when(managerClient).getLdapSettingsWithEncryptedDataDetails(ACCOUNT_ID);
+    doReturn(null).when(managerClient).getLdapSettingsUsingAccountId(ACCOUNT_ID);
     Collection<LdapGroupResponse> resultUserGroups = null;
     try {
       resultUserGroups =
@@ -199,7 +214,7 @@ public class NGLdapServiceImplTest extends CategoryTest {
     Call<RestResponse<LdapSettingsWithEncryptedDataDetail>> request = mock(Call.class);
     RestResponse<LdapSettingsWithEncryptedDataDetail> mockResponse =
         new RestResponse<>(ldapSettingsWithEncryptedDataDetail);
-    doReturn(request).when(managerClient).getLdapSettingsWithEncryptedDataDetails(ACCOUNT_ID);
+    doReturn(request).when(managerClient).getLdapSettingsUsingAccountId(ACCOUNT_ID);
     doReturn(Response.success(mockResponse)).when(request).execute();
     final String groupNameQuery = "grpName";
     when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(buildErrorNotifyResponseData());
@@ -211,23 +226,23 @@ public class NGLdapServiceImplTest extends CategoryTest {
       failBecauseExceptionWasNotThrown(WingsException.class);
     } catch (Exception exc) {
       assertNull(resultUserGroups);
-      assertThat(exc).isInstanceOf(LdapDelegateException.class);
-      assertEquals(exc.getMessage(), UNKNOWN_RESPONSE_FROM_DELEGATE);
+      assertThat(exc).isInstanceOf(HintException.class);
+      assertEquals(exc.getMessage(), DELEGATE_NOT_AVAILABLE);
     }
   }
 
   @Test
   @Owner(developers = SHASHANK)
   @Category(UnitTests.class)
-  public void testLdapUserQuerySuccessfulAndUnsuccessful() {
+  public void testLdapUserQuerySuccessfulAndUnsuccessful() throws IOException {
     final String accountId = "testAccountId";
-    LdapSettings ldapSettings = LdapSettings.builder().accountId(accountId).build();
+    software.wings.beans.sso.LdapSettings ldapSettings = getLdapSettings(accountId);
     LdapTestResponse successfulTestResponse =
         LdapTestResponse.builder()
             .status(SUCCESS)
             .message("Configuration looks good. Server returned non-zero number of records")
             .build();
-
+    mockCgClientCall();
     when(delegateGrpcClientWrapper.executeSyncTask(any()))
         .thenReturn(NGLdapDelegateTaskResponse.builder().ldapTestResponse(successfulTestResponse).build());
 
@@ -250,15 +265,15 @@ public class NGLdapServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = SHASHANK)
   @Category(UnitTests.class)
-  public void testLdapGroupQuerySuccessfulAndUnsuccessful() {
+  public void testLdapGroupQuerySuccessfulAndUnsuccessful() throws IOException {
     final String accountId = "testAccountId";
-    LdapSettings ldapSettings = LdapSettings.builder().accountId(accountId).build();
+    software.wings.beans.sso.LdapSettings ldapSettings = getLdapSettings(accountId);
     LdapTestResponse successfulTestResponse =
         LdapTestResponse.builder()
             .status(SUCCESS)
             .message("Configuration looks good. Server returned non-zero number of records")
             .build();
-
+    mockCgClientCall();
     when(delegateGrpcClientWrapper.executeSyncTask(any()))
         .thenReturn(NGLdapDelegateTaskResponse.builder().ldapTestResponse(successfulTestResponse).build());
 
@@ -276,49 +291,52 @@ public class NGLdapServiceImplTest extends CategoryTest {
     when(delegateGrpcClientWrapper.executeSyncTask(any()))
         .thenReturn(NGLdapDelegateTaskResponse.builder().ldapTestResponse(unsuccessfulTestResponse).build());
 
-    ldapTestResponse = ngLdapService.validateLdapGroupSettings(accountId, null, null, ldapSettings);
-
-    assertNotNull(ldapTestResponse);
-    assertEquals(unsuccessfulTestResponse.getStatus(), ldapTestResponse.getStatus());
-  }
-
-  @Test
-  @Owner(developers = SHASHANK)
-  @Category(UnitTests.class)
-  public void testLdapUserQueryException() {
-    final String accountId = "testAccountId";
-    LdapSettings ldapSettings = LdapSettings.builder().accountId(accountId).build();
-
-    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(buildErrorNotifyResponseData());
-
-    LdapTestResponse ldapTestResponse = null;
     try {
-      ldapTestResponse = ngLdapService.validateLdapUserSettings(accountId, null, null, ldapSettings);
+      ldapTestResponse = ngLdapService.validateLdapGroupSettings(accountId, null, null, ldapSettings);
       failBecauseExceptionWasNotThrown(WingsException.class);
-    } catch (Exception e) {
-      assertNull(ldapTestResponse);
-      assertThat(e).isInstanceOf(LdapDelegateException.class);
-      assertEquals(e.getMessage(), UNKNOWN_RESPONSE_FROM_DELEGATE);
+    } catch (Exception ex) {
+      assertThat(ex).isInstanceOf(HintException.class);
+      assertEquals(ex.getMessage(), HintException.LDAP_ATTRIBUTES_INCORRECT);
     }
   }
 
   @Test
   @Owner(developers = SHASHANK)
   @Category(UnitTests.class)
-  public void testLdapGroupQueryException() {
+  public void testLdapUserQueryException() throws IOException {
     final String accountId = "testAccountId";
-    LdapSettings ldapSettings = LdapSettings.builder().accountId(accountId).build();
+    software.wings.beans.sso.LdapSettings ldapSettings = getLdapSettings(accountId);
+    mockCgClientCall();
+    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(buildErrorNotifyResponseData());
 
+    LdapTestResponse ldapTestResponse = null;
+    try {
+      ldapTestResponse = ngLdapService.validateLdapUserSettings(accountId, null, null, ldapSettings);
+      failBecauseExceptionWasNotThrown(WingsException.class);
+    } catch (Exception ex) {
+      assertNull(ldapTestResponse);
+      assertThat(ex).isInstanceOf(HintException.class);
+      assertEquals(ex.getMessage(), DELEGATE_NOT_AVAILABLE);
+    }
+  }
+
+  @Test
+  @Owner(developers = SHASHANK)
+  @Category(UnitTests.class)
+  public void testLdapGroupQueryException() throws IOException {
+    final String accountId = "testAccountId";
+    software.wings.beans.sso.LdapSettings ldapSettings = getLdapSettings(accountId);
+    mockCgClientCall();
     when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(buildErrorNotifyResponseData());
 
     LdapTestResponse ldapTestResponse = null;
     try {
       ldapTestResponse = ngLdapService.validateLdapGroupSettings(accountId, null, null, ldapSettings);
       failBecauseExceptionWasNotThrown(WingsException.class);
-    } catch (Exception e) {
+    } catch (Exception ex) {
       assertNull(ldapTestResponse);
-      assertThat(e).isInstanceOf(LdapDelegateException.class);
-      assertEquals(e.getMessage(), UNKNOWN_RESPONSE_FROM_DELEGATE);
+      assertThat(ex).isInstanceOf(HintException.class);
+      assertEquals(ex.getMessage(), DELEGATE_NOT_AVAILABLE);
     }
   }
   private ErrorNotifyResponseData buildErrorNotifyResponseData() {
@@ -333,7 +351,7 @@ public class NGLdapServiceImplTest extends CategoryTest {
     Call<RestResponse<LdapSettingsWithEncryptedDataDetail>> request = mock(Call.class);
     RestResponse<LdapSettingsWithEncryptedDataDetail> mockResponse =
         new RestResponse<>(ldapSettingsWithEncryptedDataDetail);
-    doReturn(request).when(managerClient).getLdapSettingsWithEncryptedDataDetails(ACCOUNT_ID);
+    doReturn(request).when(managerClient).getLdapSettingsUsingAccountId(ACCOUNT_ID);
     doReturn(Response.success(mockResponse)).when(request).execute();
     final String groupDn = "testGrpDn";
     final String testUserEmail = "test123@hn.io";
@@ -363,8 +381,71 @@ public class NGLdapServiceImplTest extends CategoryTest {
         .thenReturn(NGLdapGroupSyncTaskResponse.builder().ldapGroupsResponse(response).build());
     when(userGroupService.getUserGroupsBySsoId(anyString(), anyString())).thenReturn(Collections.singletonList(ug1));
     ngLdapService.syncUserGroupsJob(ACCOUNT_ID, ORG_ID, PROJECT_ID);
-    verify(managerClient, times(1)).getLdapSettingsWithEncryptedDataDetails(ACCOUNT_ID);
+    verify(managerClient, times(1)).getLdapSettingsUsingAccountId(ACCOUNT_ID);
     verify(groupSyncHelper, times(1)).reconcileAllUserGroups(usrGroupToLdapGroupMap, LDAP_SETTINGS_ID, ACCOUNT_ID);
     verify(delegateGrpcClientWrapper, times(1)).executeSyncTask(any());
+  }
+
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void testLDAPAuthentication() throws IOException {
+    // Arrange
+    final EncryptedRecordData encryptedRecord = EncryptedRecordData.builder()
+                                                    .name("testLdapRecord")
+                                                    .encryptedValue("encryptedTestPassword".toCharArray())
+                                                    .kmsId(ACCOUNT_ID)
+                                                    .build();
+    EncryptedDataDetail encryptedPwdDetail =
+        EncryptedDataDetail.builder().fieldName("password").encryptedData(encryptedRecord).build();
+
+    Call<RestResponse<EncryptedDataDetail>> dataRequest = mock(Call.class);
+    RestResponse<EncryptedDataDetail> mockDataResponse = new RestResponse<>(encryptedPwdDetail);
+    String testPassword = "testPassword";
+    final String userName = "testUserName@test.io";
+    doReturn(Response.success(mockDataResponse)).when(dataRequest).execute();
+
+    Call<RestResponse<LdapSettingsWithEncryptedDataAndPasswordDetail>> request = mock(Call.class);
+    RestResponse<LdapSettingsWithEncryptedDataAndPasswordDetail> mockResponse =
+        new RestResponse<>(LdapSettingsWithEncryptedDataAndPasswordDetail.builder()
+                               .ldapSettings(ldapSettingsWithEncryptedDataDetail.getLdapSettings())
+                               .encryptedDataDetail(ldapSettingsWithEncryptedDataDetail.getEncryptedDataDetail())
+                               .encryptedPwdDataDetail(encryptedPwdDetail)
+                               .build());
+    doReturn(request).when(managerClient).getLdapSettingsAndEncryptedPassword(anyString(), any());
+    doReturn(Response.success(mockResponse)).when(request).execute();
+    String authSuccessMsg = "Authentication Successful";
+    LdapResponse ldapResponse =
+        LdapResponse.builder().status(LdapResponse.Status.SUCCESS).message(authSuccessMsg).build();
+    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+        .thenReturn(NGLdapTestAuthenticationTaskResponse.builder().ldapAuthenticationResponse(ldapResponse).build());
+
+    // Act
+    LdapResponse resultResponse = ngLdapService.testLDAPLogin(ACCOUNT_ID, ORG_ID, PROJECT_ID, userName, testPassword);
+
+    // Assert
+    assertNotNull(resultResponse);
+    assertThat(resultResponse.getStatus()).isEqualTo(LdapResponse.Status.SUCCESS);
+    assertThat(resultResponse.getMessage()).isEqualTo(authSuccessMsg);
+  }
+
+  private software.wings.beans.sso.LdapSettings getLdapSettings(String accountId) {
+    LdapConnectionSettings settings = new LdapConnectionSettings();
+    settings.setBindPassword("somePassword");
+    software.wings.beans.sso.LdapSettings ldapSettings = software.wings.beans.sso.LdapSettings.builder()
+                                                             .connectionSettings(settings)
+                                                             .displayName("someDisplayName")
+                                                             .accountId(accountId)
+                                                             .build();
+    ldapSettings.setUuid("someUuid");
+    return ldapSettings;
+  }
+
+  private void mockCgClientCall() throws IOException {
+    Call<RestResponse<LdapSettingsWithEncryptedDataDetail>> request = mock(Call.class);
+    RestResponse<LdapSettingsWithEncryptedDataDetail> mockResponse =
+        new RestResponse<>(ldapSettingsWithEncryptedDataDetail);
+    doReturn(request).when(managerClient).getLdapSettingsUsingAccountIdAndLdapSettings(any(), any());
+    doReturn(Response.success(mockResponse)).when(request).execute();
   }
 }

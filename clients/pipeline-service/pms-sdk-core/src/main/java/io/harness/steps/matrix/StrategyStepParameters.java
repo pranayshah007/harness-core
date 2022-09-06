@@ -22,4 +22,5 @@ public class StrategyStepParameters implements StepParameters {
   String childNodeId;
   ParameterField<Integer> maxConcurrency;
   StrategyType strategyType;
+  Boolean shouldProceedIfFailed;
 }

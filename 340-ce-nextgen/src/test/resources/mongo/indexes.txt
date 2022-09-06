@@ -8,6 +8,9 @@ batchJobInterval {"name": "accountId_batchJobType", "unique": true} {"accountId"
 batchJobScheduledData {"name": "accountId_batchJobType_validRun_endAt", "background": true} {"accountId": 1, "batchJobType": 1, "validRun": 1, "endAt": -1}
 batchJobScheduledData {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 budgets {"name": "accountId_1", "background": true} {"accountId": 1}
+cache {"name": "accountId_1", "background": true} {"accountId": 1}
+cache {"name": "unique_commutative", "unique": true} {"_id": 1, "contextValue": 1}
+cache {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 ceCloudAccount {"name": "no_dup_account", "unique": true} {"accountId": 1, "infraAccountId": 1, "infraMasterAccountId": 1, "masterAccountSettingId": 1}
 ceCluster {"name": "hash_1", "background": true} {"hash": 1}
 ceCluster {"name": "no_dup", "unique": true} {"accountId": 1, "infraAccountId": 1, "region": 1, "clusterName": 1}
@@ -17,19 +20,14 @@ ceReportSchedule {"name": "account_enabled_type", "background": true} {"accountI
 ceView {"name": "accountId_folderId", "background": true} {"accountId": 1, "folderId": 1}
 ceViewFolder {"name": "accountId", "background": true} {"accountId": 1}
 clusterRecords {"name": "accountId_k8sBaseConnectorRefIdentifier", "unique": true} {"accountId": 1, "k8sBaseConnectorRefIdentifier": 1}
-delegateTokens {"name": "byAccountAndName", "unique": true} {"accountId": 1, "name": 1}
-delegateTokens {"name": "byAccountAndNgAndOwnerAndStatus", "background": true} {"accountId": 1, "isNg": 1, "owner": 1, "status": 1}
-delegateTokens {"name": "byAccountAndStatus", "background": true} {"accountId": 1, "status": 1}
-delegateTokens {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-delegateTokensNG {"name": "byAccountAndStatus", "background": true} {"accountId": 1, "owner": 1, "status": 1}
-delegateTokensNG {"name": "byAccountOwnerAndName", "unique": true} {"accountId": 1, "owner": 1, "name": 1}
-delegateTokensNG {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 ecsPartialRecommendationHistogram {"name": "unique_accountId_clusterId_serviceArn_date", "unique": true} {"accountId": 1, "clusterId": 1, "serviceArn": 1, "date": 1}
 ecsService {"name": "accountId_serviceArn", "background": true} {"accountId": 1, "serviceArn": 1}
 ecsService {"name": "unique_accountId_clusterId_serviceArn", "unique": true} {"accountId": 1, "clusterId": 1, "serviceArn": 1}
 ecsServiceRecommendation {"name": "estimatedSavings_1", "background": true} {"estimatedSavings": 1}
 ecsServiceRecommendation {"name": "ttl_1", "background": true, "expireAfterSeconds": 0} {"ttl": 1}
 ecsServiceRecommendation {"name": "unique_accountId_clusterId_serviceArn", "unique": true} {"accountId": 1, "clusterId": 1, "serviceArn": 1}
+filters {"name": "unique_accountId_orgId_projectId_name_type_Index", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "name": 1, "filterType": 1}
+filters {"name": "unique_accountId_organizationId_projectId_type", "unique": true} {"fullyQualifiedIdentifier": 1, "filterType": 1}
 gcpServiceAccount {"name": "account_id_service_account_email", "background": true} {"accountId": 1, "email": 1}
 gitProcessRequestSdk {"name": "accountId_repo_branch_commit_index", "background": true} {"accountId": 1, "repoUrl": 1, "branch": 1, "commitId": 1}
 instanceData {"name": "accountId_activeInstanceIterator_usageStartTime_instanceType", "background": true} {"accountId": 1, "activeInstanceIterator": 1, "usageStartTime": 1, "instanceType": 1}

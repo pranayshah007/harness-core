@@ -63,6 +63,8 @@ import io.harness.connector.mappers.docker.DockerDTOToEntity;
 import io.harness.connector.mappers.docker.DockerEntityToDTO;
 import io.harness.connector.mappers.dynatracemapper.DynatraceDTOToEntity;
 import io.harness.connector.mappers.dynatracemapper.DynatraceEntityToDTO;
+import io.harness.connector.mappers.elkmapper.ELKDTOToEntity;
+import io.harness.connector.mappers.elkmapper.ELKEntityToDTO;
 import io.harness.connector.mappers.errortrackingmapper.ErrorTrackingDTOToEntity;
 import io.harness.connector.mappers.errortrackingmapper.ErrorTrackingEntityToDTO;
 import io.harness.connector.mappers.gcpcloudcost.GcpCloudCostDTOToEntity;
@@ -198,6 +200,10 @@ public class ConnectorRegistryFactory {
     registrar.put(ConnectorType.DYNATRACE,
         new ConnectorRegistrar(ConnectorCategory.MONITORING, CVConnectorValidator.class,
             CVConnectorParamsProvider.class, DynatraceDTOToEntity.class, DynatraceEntityToDTO.class,
+            NotSupportedValidationHandler.class));
+    registrar.put(ConnectorType.ELK,
+        new ConnectorRegistrar(ConnectorCategory.MONITORING, CVConnectorValidator.class,
+            CVConnectorParamsProvider.class, ELKDTOToEntity.class, ELKEntityToDTO.class,
             NotSupportedValidationHandler.class));
     registrar.put(ConnectorType.VAULT,
         new ConnectorRegistrar(ConnectorCategory.SECRET_MANAGER, SecretManagerConnectorValidator.class,

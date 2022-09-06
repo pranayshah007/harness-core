@@ -217,7 +217,7 @@ public class K8sCanaryStepTest extends AbstractK8sStepExecutorTestBase {
     ArgumentCaptor<K8sCanaryOutcome> argumentCaptor = ArgumentCaptor.forClass(K8sCanaryOutcome.class);
     verify(executionSweepingOutputService, times(1))
         .consume(eq(ambiance), eq(OutcomeExpressionConstants.K8S_CANARY_OUTCOME), argumentCaptor.capture(),
-            eq(StepOutcomeGroup.STEP.name()));
+            eq(StepOutcomeGroup.STAGE.name()));
     assertThat(argumentCaptor.getValue().getReleaseName()).isEqualTo("releaseName");
     assertThat(argumentCaptor.getValue().getCanaryWorkload()).isEqualTo("canaryWorkload");
   }
@@ -261,7 +261,7 @@ public class K8sCanaryStepTest extends AbstractK8sStepExecutorTestBase {
     ArgumentCaptor<K8sCanaryOutcome> canaryOutcomeCaptor = ArgumentCaptor.forClass(K8sCanaryOutcome.class);
     verify(executionSweepingOutputService, times(1))
         .consume(eq(ambiance), eq(OutcomeExpressionConstants.K8S_CANARY_OUTCOME), canaryOutcomeCaptor.capture(),
-            eq(StepOutcomeGroup.STEP.name()));
+            eq(StepOutcomeGroup.STAGE.name()));
     K8sCanaryOutcome canaryOutcome = canaryOutcomeCaptor.getValue();
     assertThat(canaryOutcome.getCanaryWorkload()).isEqualTo(canaryWorkload);
     assertThat(canaryOutcome.isCanaryWorkloadDeployed()).isTrue();

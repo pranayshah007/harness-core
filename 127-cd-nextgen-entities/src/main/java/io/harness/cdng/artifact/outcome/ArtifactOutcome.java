@@ -26,7 +26,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
       @JsonSubTypes.Type(value = ArtifactoryGenericArtifactOutcome.class, name = "ArtifactoryGenericRegistry"),
       @JsonSubTypes.Type(value = AcrArtifactOutcome.class, name = "Acr"),
       @JsonSubTypes.Type(value = S3ArtifactOutcome.class, name = "S3"),
-      @JsonSubTypes.Type(value = JenkinsArtifactOutcome.class, name = "Jenkins")
+      @JsonSubTypes.Type(value = JenkinsArtifactOutcome.class, name = "Jenkins"),
+      @JsonSubTypes.Type(value = CustomArtifactOutcome.class, name = "CustomArtifact"),
 })
 @OwnedBy(HarnessTeam.CDP)
 public interface ArtifactOutcome extends Outcome, WithIdentifier, WithArtifactSummary {

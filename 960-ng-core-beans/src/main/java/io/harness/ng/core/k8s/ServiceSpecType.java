@@ -11,7 +11,7 @@ public interface ServiceSpecType {
   String GITOPS = "GitOps";
   String KUBERNETES = "Kubernetes";
   String SSH = "Ssh";
-  String ECS = "Ecs";
+  String ECS = "ECS";
   String NATIVE_HELM = "NativeHelm";
   String PCF = "Pcf";
   String SERVERLESS_AWS_LAMBDA = "ServerlessAwsLambda";

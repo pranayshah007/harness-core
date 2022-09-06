@@ -7,7 +7,7 @@
 
 package io.harness.ccm.commons.entities.notifications;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.beans.EmbeddedUser;
 import io.harness.mongo.index.FdIndex;
 import io.harness.ng.DbAliases;

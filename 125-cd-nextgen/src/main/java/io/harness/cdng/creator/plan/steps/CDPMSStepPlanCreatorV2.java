@@ -114,7 +114,9 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
     Map<String, ByteString> metadataMap = new HashMap<>();
     StepParameters stepParameters = getStepParameters(ctx, stepElement);
     // Adds the strategy field as dependency if present
-    addStrategyFieldDependencyIfPresent(ctx, stepElement, dependenciesNodeMap, metadataMap);
+    StrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, stepElement.getUuid(),
+        stepElement.getIdentifier(), stepElement.getName(), dependenciesNodeMap, metadataMap,
+        StrategyUtils.getAdviserObtainmentFromMetaDataForStep(kryoSerializer, ctx.getCurrentField()));
     // We are swapping the uuid with strategy node if present.
     PlanNode stepPlanNode =
         PlanNode.builder()
@@ -537,7 +539,7 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
   private String getFqnFromStepNode(YamlNode stepsNode, String stepNodeType) {
     YamlNode stepNode = stepsNode.getField(STEP).getNode();
     if (stepNodeType.equals(stepNode.getType())) {
-      return YamlUtils.getFullyQualifiedName(stepNode);
+      return YamlUtils.getFullyQualifiedName(stepNode, true);
     }
 
     return null;

@@ -10,9 +10,11 @@ package io.harness.beans;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.FdIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
@@ -37,6 +39,7 @@ import org.mongodb.morphia.annotations.Id;
 @OwnedBy(CDC)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "EventsKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "events", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 public class Event implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, ApplicationAccess,

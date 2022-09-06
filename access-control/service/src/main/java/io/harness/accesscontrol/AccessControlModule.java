@@ -8,6 +8,9 @@
 package io.harness.accesscontrol;
 
 import static io.harness.AuthorizationServiceHeader.ACCESS_CONTROL_SERVICE;
+import static io.harness.accesscontrol.AccessControlPermissions.VIEW_ACCOUNT_PERMISSION;
+import static io.harness.accesscontrol.AccessControlPermissions.VIEW_ORGANIZATION_PERMISSION;
+import static io.harness.accesscontrol.AccessControlPermissions.VIEW_PROJECT_PERMISSION;
 import static io.harness.accesscontrol.principals.PrincipalType.SERVICE_ACCOUNT;
 import static io.harness.accesscontrol.principals.PrincipalType.USER;
 import static io.harness.accesscontrol.principals.PrincipalType.USER_GROUP;
@@ -28,7 +31,6 @@ import io.harness.accesscontrol.acl.ResourceAttributeProvider;
 import io.harness.accesscontrol.acl.api.ACLResource;
 import io.harness.accesscontrol.acl.api.ACLResourceImpl;
 import io.harness.accesscontrol.acl.api.ResourceAttributeProviderImpl;
-import io.harness.accesscontrol.aggregator.AggregatorStackDriverMetricsPublisherImpl;
 import io.harness.accesscontrol.aggregator.api.AggregatorResource;
 import io.harness.accesscontrol.aggregator.api.AggregatorResourceImpl;
 import io.harness.accesscontrol.aggregator.consumers.AccessControlChangeEventFailureHandler;
@@ -102,7 +104,6 @@ import io.harness.ff.FeatureFlagClientModule;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
 import io.harness.metrics.modules.MetricsModule;
-import io.harness.metrics.service.api.MetricsPublisher;
 import io.harness.migration.NGMigrationSdkModule;
 import io.harness.organization.OrganizationClientModule;
 import io.harness.outbox.TransactionOutboxModule;
@@ -121,11 +122,11 @@ import io.harness.usergroups.UserGroupClientModule;
 import io.harness.usermembership.UserMembershipClientModule;
 import io.harness.version.VersionModule;
 
+import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
-import com.google.inject.Scopes;
 import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.MapBinder;
@@ -133,11 +134,14 @@ import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import java.time.Duration;
+import java.util.Collections;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 import javax.validation.Validation;
 import javax.validation.ValidatorFactory;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 import org.hibernate.validator.parameternameprovider.ReflectionParameterNameProvider;
 import org.redisson.api.RedissonClient;
 import ru.vyarus.guice.validator.ValidationModule;
@@ -326,6 +330,21 @@ public class AccessControlModule extends AbstractModule {
     bind(UserGroupCRUDEventHandler.class).to(PrivilegedRoleAssignmentHandler.class);
     bind(RoleAssignmentCRUDEventHandler.class).to(PrivilegedRoleAssignmentHandler.class);
 
+    MapBinder<Pair<ScopeLevel, Boolean>, Set<String>> implicitPermissionsByScope = MapBinder.newMapBinder(
+        binder(), new TypeLiteral<Pair<ScopeLevel, Boolean>>() {}, new TypeLiteral<Set<String>>() {});
+    implicitPermissionsByScope.addBinding(Pair.of(ACCOUNT, true))
+        .toInstance(Sets.newHashSet(VIEW_ACCOUNT_PERMISSION, VIEW_ORGANIZATION_PERMISSION, VIEW_PROJECT_PERMISSION));
+    implicitPermissionsByScope.addBinding(Pair.of(ACCOUNT, false))
+        .toInstance(Collections.singleton(VIEW_ACCOUNT_PERMISSION));
+    implicitPermissionsByScope.addBinding(Pair.of(ORGANIZATION, true))
+        .toInstance(Sets.newHashSet(VIEW_ORGANIZATION_PERMISSION, VIEW_PROJECT_PERMISSION));
+    implicitPermissionsByScope.addBinding(Pair.of(ORGANIZATION, false))
+        .toInstance(Collections.singleton(VIEW_ORGANIZATION_PERMISSION));
+    implicitPermissionsByScope.addBinding(Pair.of(PROJECT, true))
+        .toInstance(Collections.singleton(VIEW_PROJECT_PERMISSION));
+    implicitPermissionsByScope.addBinding(Pair.of(PROJECT, false))
+        .toInstance(Collections.singleton(VIEW_PROJECT_PERMISSION));
+
     MapBinder<PrincipalType, PrincipalValidator> validatorByPrincipalType =
         MapBinder.newMapBinder(binder(), PrincipalType.class, PrincipalValidator.class);
     validatorByPrincipalType.addBinding(USER).to(UserValidator.class);
@@ -362,11 +381,5 @@ public class AccessControlModule extends AbstractModule {
     bind(AccessControlPreferenceResource.class).to(AccessControlPreferenceResourceImpl.class);
     bind(RoleAssignmentResource.class).to(RoleAssignmentResourceImpl.class);
     bind(RoleResource.class).to(RoleResourceImpl.class);
-
-    if (config.getAggregatorConfiguration().isExportMetricsToStackDriver()) {
-      bind(MetricsPublisher.class).to(AggregatorStackDriverMetricsPublisherImpl.class).in(Scopes.SINGLETON);
-    } else {
-      log.info("No configuration provided for Stack Driver, aggregator metrics will not be recorded");
-    }
   }
 }

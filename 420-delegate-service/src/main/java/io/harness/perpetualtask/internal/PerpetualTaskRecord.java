@@ -14,12 +14,14 @@ import static java.time.Duration.ofMinutes;
 import static java.time.Duration.ofSeconds;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.iterator.PersistentFibonacciIterable;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.perpetualtask.PerpetualTaskClientContext.PerpetualTaskClientContextKeys;
 import io.harness.perpetualtask.PerpetualTaskState;
@@ -50,6 +52,7 @@ import org.mongodb.morphia.annotations.Id;
 @AllArgsConstructor
 @FieldNameConstants(innerTypeName = "PerpetualTaskRecordKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "perpetualTask", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 @Slf4j

@@ -1,0 +1,293 @@
+package io.harness.ng.core.api.impl;
+
+import static io.harness.NGConstants.ACCOUNT_BASIC_ROLE;
+import static io.harness.NGConstants.ACCOUNT_VIEWER_ROLE;
+import static io.harness.NGConstants.DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER;
+import static io.harness.NGConstants.DEFAULT_ACCOUNT_LEVEL_USER_GROUP_IDENTIFIER;
+import static io.harness.NGConstants.DEFAULT_ORGANIZATION_LEVEL_RESOURCE_GROUP_IDENTIFIER;
+import static io.harness.NGConstants.DEFAULT_ORGANIZATION_LEVEL_USER_GROUP_IDENTIFIER;
+import static io.harness.NGConstants.DEFAULT_PROJECT_LEVEL_RESOURCE_GROUP_IDENTIFIER;
+import static io.harness.NGConstants.DEFAULT_PROJECT_LEVEL_USER_GROUP_IDENTIFIER;
+import static io.harness.NGConstants.ORGANIZATION_VIEWER_ROLE;
+import static io.harness.NGConstants.PROJECT_VIEWER_ROLE;
+import static io.harness.accesscontrol.principals.PrincipalType.USER_GROUP;
+import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.ng.core.utils.UserGroupMapper.toDTO;
+
+import static java.util.Collections.emptyList;
+
+import io.harness.accesscontrol.AccessControlAdminClient;
+import io.harness.accesscontrol.principals.PrincipalDTO;
+import io.harness.accesscontrol.roleassignments.api.RoleAssignmentCreateRequestDTO;
+import io.harness.accesscontrol.roleassignments.api.RoleAssignmentDTO;
+import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
+import io.harness.beans.Scope;
+import io.harness.beans.ScopeLevel;
+import io.harness.ng.core.api.DefaultUserGroupService;
+import io.harness.ng.core.api.UserGroupService;
+import io.harness.ng.core.dto.UserGroupDTO;
+import io.harness.ng.core.user.entities.UserGroup;
+import io.harness.ng.core.user.entities.UserMembership.UserMembershipKeys;
+import io.harness.remote.client.NGRestUtils;
+import io.harness.repositories.user.spring.UserMembershipRepository;
+import io.harness.utils.NGFeatureFlagHelperService;
+
+import com.google.common.collect.Sets;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.core.query.Criteria;
+
+@OwnedBy(PL)
+@Singleton
+@Slf4j
+public class DefaultUserGroupServiceImpl implements DefaultUserGroupService {
+  private final UserGroupService userGroupService;
+  private final AccessControlAdminClient accessControlAdminClient;
+  private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
+  private final UserMembershipRepository userMembershipRepository;
+  private static final String DEBUG_MESSAGE = "DefaultUserGroupServiceImpl: ";
+
+  @Inject
+  public DefaultUserGroupServiceImpl(UserGroupService userGroupService,
+      AccessControlAdminClient accessControlAdminClient, NGFeatureFlagHelperService ngFeatureFlagHelperService,
+      UserMembershipRepository userMembershipRepository) {
+    this.userGroupService = userGroupService;
+    this.accessControlAdminClient = accessControlAdminClient;
+    this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;
+    this.userMembershipRepository = userMembershipRepository;
+  }
+
+  @Override
+  public UserGroup create(Scope scope, List<String> userIds) {
+    String userGroupIdentifier = getUserGroupIdentifier(scope);
+    String userGroupName = getUserGroupName(scope);
+    String userGroupDescription = getUserGroupDescription(scope);
+    try {
+      UserGroupDTO userGroupDTO = UserGroupDTO.builder()
+                                      .accountIdentifier(scope.getAccountIdentifier())
+                                      .orgIdentifier(scope.getOrgIdentifier())
+                                      .projectIdentifier(scope.getProjectIdentifier())
+                                      .name(userGroupName)
+                                      .description(userGroupDescription)
+                                      .identifier(userGroupIdentifier)
+                                      .isSsoLinked(false)
+                                      .externallyManaged(false)
+                                      .users(userIds == null ? emptyList() : userIds)
+                                      .harnessManaged(true)
+                                      .build();
+
+      UserGroup userGroup = userGroupService.createDefaultUserGroup(userGroupDTO);
+      if (isNotEmpty(scope.getProjectIdentifier())) {
+        createRoleAssignmentForProject(userGroupIdentifier, scope);
+      } else if (isNotEmpty(scope.getOrgIdentifier())) {
+        createRoleAssignmentsForOrganization(userGroupIdentifier, scope);
+      } else {
+        createRoleAssignmentsForAccount(userGroupIdentifier, scope);
+      }
+      log.info("Created default user group {} at scope {}", userGroupIdentifier, scope);
+      return userGroup;
+    } catch (Exception ex) {
+      log.error(DEBUG_MESSAGE + "Default User Group Creation failed at scope: " + scope, ex);
+      throw ex;
+    }
+  }
+
+  private String getUserGroupIdentifier(Scope scope) {
+    String userGroupIdentifier = DEFAULT_ACCOUNT_LEVEL_USER_GROUP_IDENTIFIER;
+    if (isNotEmpty(scope.getProjectIdentifier())) {
+      userGroupIdentifier = DEFAULT_PROJECT_LEVEL_USER_GROUP_IDENTIFIER;
+    } else if (isNotEmpty(scope.getOrgIdentifier())) {
+      userGroupIdentifier = DEFAULT_ORGANIZATION_LEVEL_USER_GROUP_IDENTIFIER;
+    }
+    return userGroupIdentifier;
+  }
+
+  @Override
+  public boolean isDefaultUserGroup(Scope scope, String identifier) {
+    return getUserGroupIdentifier(scope).equals(identifier);
+  }
+
+  private String getUserGroupName(Scope scope) {
+    String userGroupName = "All Account Users";
+    if (isNotEmpty(scope.getProjectIdentifier())) {
+      userGroupName = "All Project Users";
+    } else if (isNotEmpty(scope.getOrgIdentifier())) {
+      userGroupName = "All Organization Users";
+    }
+    return userGroupName;
+  }
+
+  private String getUserGroupDescription(Scope scope) {
+    String userGroupDescription = "Harness managed User Group containing all the users in the account.";
+    if (isNotEmpty(scope.getProjectIdentifier())) {
+      userGroupDescription = "Harness managed User Group containing all the users in the project.";
+    } else if (isNotEmpty(scope.getOrgIdentifier())) {
+      userGroupDescription = "Harness managed User Group containing all the users in the organization.";
+    }
+    return userGroupDescription;
+  }
+
+  private void createRoleAssignmentsForOrganization(String userGroupIdentifier, Scope scope) {
+    createRoleAssignment(userGroupIdentifier, scope, true, ORGANIZATION_VIEWER_ROLE,
+        DEFAULT_ORGANIZATION_LEVEL_RESOURCE_GROUP_IDENTIFIER);
+  }
+
+  private void createRoleAssignmentForProject(String userGroupIdentifier, Scope scope) {
+    createRoleAssignment(
+        userGroupIdentifier, scope, true, PROJECT_VIEWER_ROLE, DEFAULT_PROJECT_LEVEL_RESOURCE_GROUP_IDENTIFIER);
+  }
+
+  private void createRoleAssignment(
+      String userGroupIdentifier, Scope scope, boolean managed, String roleIdentifier, String resourceGroupIdentifier) {
+    try {
+      List<RoleAssignmentDTO> roleAssignmentDTOList = new ArrayList<>();
+      roleAssignmentDTOList.add(
+          RoleAssignmentDTO.builder()
+              .resourceGroupIdentifier(resourceGroupIdentifier)
+              .roleIdentifier(roleIdentifier)
+              .disabled(false)
+              .managed(managed)
+              .principal(PrincipalDTO.builder()
+                             .identifier(userGroupIdentifier)
+                             .scopeLevel(ScopeLevel
+                                             .of(scope.getAccountIdentifier(), scope.getOrgIdentifier(),
+                                                 scope.getProjectIdentifier())
+                                             .name()
+                                             .toLowerCase())
+                             .type(USER_GROUP)
+                             .build())
+              .build());
+
+      RoleAssignmentCreateRequestDTO roleAssignmentCreateRequestDTO =
+          RoleAssignmentCreateRequestDTO.builder().roleAssignments(roleAssignmentDTOList).build();
+
+      NGRestUtils.getResponseWithRetry(accessControlAdminClient.createMultiRoleAssignment(scope.getAccountIdentifier(),
+          scope.getOrgIdentifier(), scope.getProjectIdentifier(), managed, roleAssignmentCreateRequestDTO));
+      log.info("Created role assignment for all users usergroup {} at scope {}", userGroupIdentifier, scope);
+    } catch (Exception ex) {
+      log.error(
+          "Creation of role assignment for all users usergroup {} at scope {} failed", userGroupIdentifier, scope);
+    }
+  }
+
+  private void createRoleAssignmentsForAccount(String principalIdentifier, Scope scope) {
+    createRoleAssignment(
+        principalIdentifier, scope, true, ACCOUNT_BASIC_ROLE, DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER);
+    boolean isAccountBasicFeatureFlagEnabled =
+        ngFeatureFlagHelperService.isEnabled(scope.getAccountIdentifier(), FeatureName.ACCOUNT_BASIC_ROLE_ONLY);
+    if (!isAccountBasicFeatureFlagEnabled) {
+      createRoleAssignment(
+          principalIdentifier, scope, false, ACCOUNT_VIEWER_ROLE, DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER);
+    }
+  }
+
+  @Override
+  public void addUserToDefaultUserGroup(Scope scope, String userId) {
+    addUserToDefaultUserGroup(
+        scope.getAccountIdentifier(), null, null, DEFAULT_ACCOUNT_LEVEL_USER_GROUP_IDENTIFIER, userId);
+    if (!isEmpty(scope.getOrgIdentifier())) {
+      addUserToDefaultUserGroup(scope.getAccountIdentifier(), scope.getOrgIdentifier(), null,
+          DEFAULT_ORGANIZATION_LEVEL_USER_GROUP_IDENTIFIER, userId);
+    }
+    if (!isEmpty(scope.getProjectIdentifier())) {
+      addUserToDefaultUserGroup(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(),
+          DEFAULT_PROJECT_LEVEL_USER_GROUP_IDENTIFIER, userId);
+    }
+  }
+
+  private void addUserToDefaultUserGroup(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String userGroupId, String userId) {
+    Optional<UserGroup> userGroupOptional =
+        userGroupService.get(accountIdentifier, orgIdentifier, projectIdentifier, userGroupId);
+    if (userGroupOptional.isPresent()
+        && !userGroupService.checkMember(accountIdentifier, orgIdentifier, projectIdentifier, userGroupId, userId)) {
+      userGroupService.addMemberToDefaultUserGroup(
+          accountIdentifier, orgIdentifier, projectIdentifier, userGroupId, userId);
+    }
+  }
+
+  @Override
+  public Optional<UserGroup> get(Scope scope) {
+    String identifier = getUserGroupIdentifier(scope);
+    return userGroupService.get(
+        scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), identifier);
+  }
+
+  @Override
+  public UserGroup createOrUpdateUserGroupAtScope(Scope scope) {
+    List<String> allUsersAtScope = getAllUsersAtScope(scope);
+
+    try {
+      Optional<UserGroup> optionalUserGroup = get(scope);
+      if (optionalUserGroup.isPresent()) {
+        return addUsersToExistingGroup(scope, optionalUserGroup.get(), allUsersAtScope);
+      }
+      return create(scope, allUsersAtScope);
+
+    } catch (Exception ex) {
+      log.error(String.format("Something went wrong while create/update User Group at scope: %s", scope), ex);
+      throw ex;
+    }
+  }
+
+  private UserGroup addUsersToExistingGroup(Scope scope, UserGroup userGroup, List<String> allUsersAtScope) {
+    try {
+      List<String> currentUsers = userGroup.getUsers();
+      HashSet<String> existingUsers = new HashSet<>(currentUsers);
+      HashSet<String> newUsers = new HashSet<>(allUsersAtScope);
+      HashSet<String> usersToAdd = new HashSet<>(Sets.difference(newUsers, existingUsers));
+      if (isNotEmpty(usersToAdd)) {
+        currentUsers = new ArrayList<>(currentUsers);
+        currentUsers.addAll(usersToAdd);
+        userGroup.setUsers(currentUsers);
+        UserGroup updatedUserGroup = userGroupService.updateDefaultUserGroup(toDTO(userGroup));
+        log.info(DEBUG_MESSAGE + String.format("Added %s users to user group at scope %s", usersToAdd.size(), scope));
+        return updatedUserGroup;
+      } else {
+        log.info(DEBUG_MESSAGE + String.format("No users left to be added in user group at scope %s", scope));
+        return userGroup;
+      }
+    } catch (Exception ex) {
+      log.error(DEBUG_MESSAGE + "Failed to update User Group at scope: " + scope, ex);
+      throw ex;
+    }
+  }
+
+  private List<String> getAllUsersAtScope(Scope scope) {
+    try {
+      int pageIndex = 0;
+      int pageSize = 1000;
+      List<String> allUsersAtScope = new ArrayList<>();
+      do {
+        Pageable pageable = PageRequest.of(pageIndex, pageSize);
+        Criteria criteria = Criteria.where(UserMembershipKeys.ACCOUNT_IDENTIFIER_KEY)
+                                .is(scope.getAccountIdentifier())
+                                .and(UserMembershipKeys.ORG_IDENTIFIER_KEY)
+                                .is(scope.getOrgIdentifier())
+                                .and(UserMembershipKeys.PROJECT_IDENTIFIER_KEY)
+                                .is(scope.getProjectIdentifier());
+        List<String> userIds = userMembershipRepository.findAllUserIds(criteria, pageable).getContent();
+        if (isEmpty(userIds)) {
+          break;
+        }
+        log.info(DEBUG_MESSAGE + String.format("Fetched %s users at scope %s", userIds.size(), scope));
+        allUsersAtScope.addAll(userIds);
+        pageIndex++;
+      } while (true);
+      return allUsersAtScope;
+    } catch (Exception ex) {
+      log.error(DEBUG_MESSAGE + String.format("Fetching all users failed at scope %s", scope));
+      return emptyList();
+    }
+  }
+}

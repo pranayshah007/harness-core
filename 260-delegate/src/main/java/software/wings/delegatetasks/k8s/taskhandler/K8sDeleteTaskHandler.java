@@ -9,6 +9,7 @@ package software.wings.delegatetasks.k8s.taskhandler;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.task.k8s.K8sTaskHelperBase.getResourcesInStringFormat;
 import static io.harness.delegate.task.k8s.K8sTaskHelperBase.getTimeoutMillisFromMinutes;
 import static io.harness.k8s.K8sCommandUnitConstants.Delete;
@@ -16,10 +17,13 @@ import static io.harness.k8s.K8sCommandUnitConstants.FetchFiles;
 import static io.harness.k8s.K8sCommandUnitConstants.Init;
 import static io.harness.k8s.K8sConstants.MANIFEST_FILES_DIR;
 import static io.harness.k8s.model.KubernetesResourceId.createKubernetesResourceIdsFromKindName;
+import static io.harness.k8s.model.Release.Status.Failed;
+import static io.harness.k8s.model.Release.Status.InProgress;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
+import static io.harness.logging.LogLevel.WARN;
 
 import static software.wings.beans.LogColor.Gray;
 import static software.wings.beans.LogColor.GrayDark;
@@ -36,13 +40,17 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.k8s.K8sConstants;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
+import io.harness.k8s.model.Release;
+import io.harness.k8s.model.ReleaseHistory;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.LogCallback;
 
 import software.wings.beans.LogColor;
 import software.wings.beans.LogWeight;
@@ -59,6 +67,7 @@ import com.google.inject.Inject;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
@@ -159,6 +168,23 @@ public class K8sDeleteTaskHandler extends K8sTaskHandler {
       kubernetesConfig =
           containerDeploymentDelegateHelper.getKubernetesConfig(k8sDeleteTaskParameters.getK8sClusterConfig(), false);
 
+      String resourcesToDelete = k8sDeleteTaskParameters.getResources();
+
+      if (k8sDeleteTaskParameters.isK8sCanaryDelete() && resourcesToDelete.contains("${k8s.canaryWorkload}")) {
+        executionLogCallback.saveExecutionLog(
+            "Unable to find canary workloads from existing canary deployment. Trying to find canary workloads from existing in-progress or failed release",
+            WARN);
+        resourceIdsToDelete = getCanaryResourceIdsFromReleaseHistory(releaseName, executionLogCallback);
+
+        if (isNotEmpty(resourceIdsToDelete)) {
+          executionLogCallback.saveExecutionLog(color("\nResources to delete are: ", White, Bold)
+              + color(getResourcesInStringFormat(resourceIdsToDelete), Gray));
+        } else {
+          executionLogCallback.saveExecutionLog(color("No canary workloads to be deleted. Skipping.\n", White, Bold));
+        }
+        executionLogCallback.saveExecutionLog("\nDone.", INFO, SUCCESS);
+        return true;
+      }
       if (StringUtils.isEmpty(k8sDeleteTaskParameters.getResources())) {
         executionLogCallback.saveExecutionLog("\nNo resources found to delete.");
         return true;
@@ -240,5 +266,37 @@ public class K8sDeleteTaskHandler extends K8sTaskHandler {
   List<KubernetesResourceId> fetchAllCreatedResourceIdsForDeletion(
       K8sDeleteTaskParameters k8sDeleteTaskParameters, ExecutionLogCallback executionLogCallback) throws IOException {
     return k8sTaskHelper.getResourceIdsForDeletion(k8sDeleteTaskParameters, kubernetesConfig, executionLogCallback);
+  }
+  private List<KubernetesResourceId> getCanaryResourceIdsFromReleaseHistory(String releaseName, LogCallback logCallback)
+      throws IOException {
+    logCallback.saveExecutionLog(format("Getting canary workloads from release %s\n", releaseName));
+    String releaseHistoryData = k8sTaskHelperBase.getReleaseHistoryData(kubernetesConfig, releaseName);
+
+    if (isEmpty(releaseHistoryData)) {
+      logCallback.saveExecutionLog(format("Empty or missing release history for release %s", releaseName), WARN);
+      return Collections.emptyList();
+    }
+
+    ReleaseHistory releaseHistory = ReleaseHistory.createFromData(releaseHistoryData);
+    if (isEmpty(releaseHistory.getReleases())) {
+      logCallback.saveExecutionLog(format("No previous deployments found for release %s", releaseName), WARN);
+      return Collections.emptyList();
+    }
+
+    // In canary deployment we're leaving current release as in progress (it will be completed by rolling deployment).
+    // Since we may catch some interrupted exceptions during task abortions it may happen that we will fail the canary
+    // release. To ensure that the latest release is actually a canary release we have a more deep logic
+    // in K8s Canary Delete Step (we will rely on release history only when we queued K8s Canary Task and step expire)
+    Release release = releaseHistory.getLatestRelease();
+    if (InProgress != release.getStatus() && Failed != release.getStatus()) {
+      logCallback.saveExecutionLog(
+          format("Unable to identify any canary deployments for release %s.", releaseName), WARN);
+      return Collections.emptyList();
+    }
+
+    return release.getResources()
+        .stream()
+        .filter(resource -> resource.getName().endsWith(K8sConstants.CANARY_WORKLOAD_SUFFIX_NAME))
+        .collect(Collectors.toList());
   }
 }

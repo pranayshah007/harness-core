@@ -60,7 +60,6 @@ public class CDNGPipelineExecutionStrategyHelperTest extends CategoryTest {
     assertThat(result).contains("start: 50");
     assertThat(result).contains("end: 100");
     assertThat(result).contains("unit: Percentage");
-    assertThat(result).contains("maxConcurrency: 1");
   }
 
   @Test
@@ -76,7 +75,7 @@ public class CDNGPipelineExecutionStrategyHelperTest extends CategoryTest {
         ServiceDefinitionType.SSH, strategyParameters, false);
     assertThat(result).contains(STRATEGY);
     assertThat(result).contains("maxConcurrency: 1");
-    assertThat(result).contains("partitions: 50");
+    assertThat(result).contains("partitionSize: 50");
     assertThat(result).contains("unit: Percentage");
   }
 
@@ -93,7 +92,7 @@ public class CDNGPipelineExecutionStrategyHelperTest extends CategoryTest {
         ServiceDefinitionType.SSH, strategyParameters, false);
     assertThat(result).contains(STRATEGY);
     assertThat(result).contains("maxConcurrency: 1");
-    assertThat(result).contains("partitions: 50");
+    assertThat(result).contains("partitionSize: 50");
     assertThat(result).contains("unit: Percentage");
   }
 
@@ -110,7 +109,7 @@ public class CDNGPipelineExecutionStrategyHelperTest extends CategoryTest {
         ServiceDefinitionType.WINRM, strategyParameters, false);
     assertThat(result).contains(STRATEGY);
     assertThat(result).contains("maxConcurrency: 1");
-    assertThat(result).contains("partitions: 1");
+    assertThat(result).contains("partitionSize: 1");
     assertThat(result).contains("unit: Count");
   }
 
@@ -132,6 +131,5 @@ public class CDNGPipelineExecutionStrategyHelperTest extends CategoryTest {
     assertThat(result).contains("start: 50");
     assertThat(result).contains("end: 100");
     assertThat(result).contains("unit: Percentage");
-    assertThat(result).contains("maxConcurrency: 1");
   }
 }

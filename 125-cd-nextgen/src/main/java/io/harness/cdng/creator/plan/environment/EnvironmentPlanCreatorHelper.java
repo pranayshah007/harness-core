@@ -45,6 +45,7 @@ import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.DependenciesUtils;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -191,18 +192,28 @@ public class EnvironmentPlanCreatorHelper {
     if (!environmentV2.getDeployToAll().getValue()) {
       List<String> infraIdentifierList = new ArrayList<>();
 
-      for (InfraStructureDefinitionYaml infraYaml : environmentV2.getInfrastructureDefinitions().getValue()) {
-        String ref = infraYaml.getIdentifier();
+      if (ParameterField.isNotNull(environmentV2.getInfrastructureDefinitions())) {
+        for (InfraStructureDefinitionYaml infraYaml : environmentV2.getInfrastructureDefinitions().getValue()) {
+          String ref = infraYaml.getIdentifier().getValue();
+          infraIdentifierList.add(ref);
+          if (isNotEmpty(infraYaml.getInputs().getValue())) {
+            refToInputMap.put(ref, infraYaml.getInputs().getValue());
+          }
+        }
+      } else {
+        InfraStructureDefinitionYaml infraYaml = environmentV2.getInfrastructureDefinition().getValue();
+        String ref = infraYaml.getIdentifier().getValue();
         infraIdentifierList.add(ref);
-        if (isNotEmpty(infraYaml.getInputs())) {
-          refToInputMap.put(ref, infraYaml.getInputs());
+        if (isNotEmpty(infraYaml.getInputs().getValue())) {
+          refToInputMap.put(ref, infraYaml.getInputs().getValue());
         }
       }
       infrastructureEntityList = infrastructure.getAllInfrastructureFromIdentifierList(
           accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, infraIdentifierList);
 
     } else {
-      if (isNotEmpty(environmentV2.getInfrastructureDefinitions().getValue())) {
+      if (isNotEmpty(environmentV2.getInfrastructureDefinitions().getValue())
+          || ParameterField.isBlank(environmentV2.getInfrastructureDefinition())) {
         throw new InvalidRequestException(String.format("DeployToAll is enabled along with specific Infrastructures %s",
             environmentV2.getInfrastructureDefinitions().getValue()));
       }
@@ -227,7 +238,7 @@ public class EnvironmentPlanCreatorHelper {
   }
 
   public static Map<String, ByteString> prepareMetadata(String environmentUuid, String infraSectionUuid,
-      String serviceSpecNodeId, boolean gitOpsEnabled, KryoSerializer kryoSerializer) {
+      String serviceSpecNodeId, boolean gitOpsEnabled, boolean skipInstances, KryoSerializer kryoSerializer) {
     Map<String, ByteString> metadataDependency = new HashMap<>();
 
     metadataDependency.put(YamlTypes.NEXT_UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(serviceSpecNodeId)));
@@ -236,14 +247,16 @@ public class EnvironmentPlanCreatorHelper {
     metadataDependency.put(YamlTypes.UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(environmentUuid)));
     metadataDependency.put(
         YAMLFieldNameConstants.GITOPS_ENABLED, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(gitOpsEnabled)));
+    metadataDependency.put(
+        YAMLFieldNameConstants.SKIP_INSTANCES, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(skipInstances)));
 
     return metadataDependency;
   }
 
   public void addEnvironmentV2Dependency(Map<String, PlanCreationResponse> planCreationResponseMap,
       EnvironmentPlanCreatorConfig environmentPlanCreatorConfig, YamlField originalEnvironmentField,
-      boolean gitOpsEnabled, String environmentUuid, String infraSectionUuid, String serviceSpecNodeUuid,
-      KryoSerializer kryoSerializer) throws IOException {
+      boolean gitOpsEnabled, boolean skipInstances, String environmentUuid, String infraSectionUuid,
+      String serviceSpecNodeUuid, KryoSerializer kryoSerializer) throws IOException {
     YamlField updatedEnvironmentYamlField =
         fetchEnvironmentPlanCreatorConfigYaml(environmentPlanCreatorConfig, originalEnvironmentField);
     Map<String, YamlField> environmentYamlFieldMap = new HashMap<>();
@@ -252,7 +265,7 @@ public class EnvironmentPlanCreatorHelper {
     // preparing meta data
     final Dependency envDependency = Dependency.newBuilder()
                                          .putAllMetadata(prepareMetadata(environmentUuid, infraSectionUuid,
-                                             serviceSpecNodeUuid, gitOpsEnabled, kryoSerializer))
+                                             serviceSpecNodeUuid, gitOpsEnabled, skipInstances, kryoSerializer))
                                          .build();
 
     planCreationResponseMap.put(environmentUuid,

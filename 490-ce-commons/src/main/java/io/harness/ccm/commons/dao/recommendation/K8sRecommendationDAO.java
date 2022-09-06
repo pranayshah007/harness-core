@@ -28,6 +28,7 @@ import static org.jooq.impl.DSL.val;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.retry.RetryOnException;
+import io.harness.ccm.commons.beans.InstanceState;
 import io.harness.ccm.commons.beans.InstanceType;
 import io.harness.ccm.commons.beans.JobConstants;
 import io.harness.ccm.commons.beans.billing.InstanceCategory;
@@ -56,6 +57,7 @@ import io.harness.persistence.HPersistence;
 import io.harness.timescaledb.Keys;
 import io.harness.timescaledb.Routines;
 import io.harness.timescaledb.tables.pojos.CeRecommendations;
+import io.harness.timescaledb.tables.records.CeRecommendationsRecord;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
@@ -63,6 +65,7 @@ import com.google.inject.Singleton;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -72,6 +75,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
+import org.jooq.DeleteConditionStep;
 import org.jooq.Field;
 import org.jooq.Record;
 import org.jooq.SelectFinalStep;
@@ -298,8 +302,8 @@ public class K8sRecommendationDAO {
 
   @NonNull
   public K8sServiceProvider getServiceProvider(JobConstants jobConstants, NodePoolId nodePoolId) {
-    InstanceData instanceData = instanceDataDao.fetchInstanceData(
-        jobConstants.getAccountId(), nodePoolId.getClusterid(), InstanceType.K8S_NODE, nodePoolId.getNodepoolname());
+    InstanceData instanceData = instanceDataDao.fetchInstanceData(jobConstants.getAccountId(),
+        nodePoolId.getClusterid(), InstanceType.K8S_NODE, nodePoolId.getNodepoolname(), InstanceState.RUNNING);
     try {
       Map<String, String> metaData = instanceData.getMetaData();
       String region = metaData.get(InstanceMetaDataConstants.REGION);
@@ -386,6 +390,19 @@ public class K8sRecommendationDAO {
         .set(CE_RECOMMENDATIONS.LASTPROCESSEDAT, toOffsetDateTime(lastReceivedUntilAt))
         .set(CE_RECOMMENDATIONS.UPDATEDAT, offsetDateTimeNow())
         .execute();
+  }
+
+  public boolean deleteOldRecommendationData() {
+    DeleteConditionStep<CeRecommendationsRecord> deleteConditionStep = getDeleteCeRecommendationsRecordSql();
+    log.info("Delete Sql for recommendation data {}", deleteConditionStep.getSQL());
+    deleteConditionStep.execute();
+    return true;
+  }
+
+  private DeleteConditionStep<CeRecommendationsRecord> getDeleteCeRecommendationsRecordSql() {
+    return dslContext.deleteFrom(CE_RECOMMENDATIONS)
+        .where(CE_RECOMMENDATIONS.ISVALID.eq(false),
+            CE_RECOMMENDATIONS.UPDATEDAT.lessThan(toOffsetDateTime(Instant.now().minus(180, ChronoUnit.DAYS))));
   }
 
   @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)

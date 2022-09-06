@@ -145,7 +145,6 @@ public class CommonStepInfo {
                                .addFolderPaths(FolderPathConstants.SERVICENOW)
                                .build())
           .setFeatureRestrictionName(FeatureRestrictionName.INTEGRATED_APPROVALS_WITH_SERVICE_NOW.name())
-          .setFeatureFlag(FeatureName.SERVICENOW_CREATE_UPDATE_NG.name())
           .build();
 
   StepInfo serviceNowUpdateStepInfo =
@@ -157,7 +156,6 @@ public class CommonStepInfo {
                                .addFolderPaths(FolderPathConstants.SERVICENOW)
                                .build())
           .setFeatureRestrictionName(FeatureRestrictionName.INTEGRATED_APPROVALS_WITH_SERVICE_NOW.name())
-          .setFeatureFlag(FeatureName.SERVICENOW_CREATE_UPDATE_NG.name())
           .build();
 
   public List<StepInfo> getCommonSteps(String category) {

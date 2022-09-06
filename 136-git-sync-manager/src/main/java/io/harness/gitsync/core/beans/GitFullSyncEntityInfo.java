@@ -9,6 +9,7 @@ package io.harness.gitsync.core.beans;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.CollationLocale;
@@ -17,6 +18,7 @@ import io.harness.mongo.index.Collation;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.EntityDetail.EntityDetailKeys;
 import io.harness.persistence.PersistentEntity;
@@ -43,6 +45,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "gitFullSyncEntityInfo", noClassnameStored = true)
 @Document("gitFullSyncEntityInfo")
 @TypeAlias("io.harness.gitsync.core.beans.gitFullSyncEntityInfo")

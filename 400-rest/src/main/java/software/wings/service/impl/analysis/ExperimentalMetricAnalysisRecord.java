@@ -9,10 +9,12 @@ package software.wings.service.impl.analysis;
 
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotation.IgnoreUnusedIndex;
+import io.harness.annotations.StoreIn;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
+import io.harness.ng.DbAliases;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.ImmutableList;
@@ -35,6 +37,7 @@ import org.mongodb.morphia.annotations.Entity;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "ExperimentalMetricAnalysisRecordKeys")
 @IgnoreUnusedIndex
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "experimentalTimeSeriesAnalysisRecords", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 public class ExperimentalMetricAnalysisRecord extends MetricAnalysisRecord {

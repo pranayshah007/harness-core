@@ -22,6 +22,9 @@ public interface GithubService {
   String findPR(String apiUrl, String token, String owner, String repo, String prNumber);
 
   JSONObject mergePR(String apiUrl, String token, String owner, String repo, String prNumber);
+
+  boolean deleteRef(String apiUrl, String token, String owner, String repo, String ref);
+
   List<GitPollingWebhookData> getWebhookRecentDeliveryEvents(
       String apiUrl, String token, String repoOwner, String repoName, String webhookId);
 }

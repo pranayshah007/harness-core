@@ -8,6 +8,7 @@
 package io.harness.ccm.views.service.impl;
 
 import static io.harness.rule.OwnerRule.ROHIT;
+import static io.harness.rule.OwnerRule.SAHILDEEP;
 import static io.harness.rule.OwnerRule.SHUBHANSHU;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -71,6 +72,7 @@ import com.google.cloud.bigquery.FieldValueList;
 import com.google.cloud.bigquery.LegacySQLTypeName;
 import com.google.cloud.bigquery.Schema;
 import com.google.cloud.bigquery.TableResult;
+import com.google.common.collect.ImmutableSet;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -137,7 +139,10 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
     doCallRealMethod().when(viewsQueryBuilder).getQuery(any(), any(), any(), any(), any(), any(), anyString());
     doCallRealMethod()
         .when(viewsQueryBuilder)
-        .getQuery(any(), any(), any(), any(), any(), any(), anyString(), anyInt());
+        .getQuery(any(), any(), any(), any(), any(), any(), any(), anyString(), anyInt());
+    doCallRealMethod()
+        .when(viewsQueryBuilder)
+        .getQuery(any(), any(), any(), any(), any(), any(), any(), anyString(), anyInt(), any());
     doCallRealMethod().when(viewsQueryBuilder).getTotalCountQuery(any(), any(), any(), any(), anyString());
     doReturn(resultSet).when(bigQuery).query(any());
     doCallRealMethod().when(viewsQueryHelper).buildQueryParams(any(), anyBoolean());
@@ -147,7 +152,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
         .buildQueryParams(any(), anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean());
     doCallRealMethod()
         .when(viewsQueryHelper)
-        .buildQueryParams(any(), anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean(), anyInt());
+        .buildQueryParams(any(), anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean(), anyInt(), anyBoolean());
     doCallRealMethod().when(viewsQueryBuilder).getViewFieldInput(any());
     doCallRealMethod().when(viewsQueryBuilder).mapConditionToFilter(any());
     doCallRealMethod().when(viewsQueryBuilder).getModifiedQLCEViewFieldInput(any(), anyBoolean());
@@ -287,6 +292,40 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
     List<String> filterValueStats =
         viewsBillingService.getFilterValueStats(bigQuery, filters, cloudProviderTable, 10, 0);
     assertThat(filterValueStats.get(0)).isEqualTo(LABEL_VALUE);
+  }
+
+  @Test
+  @Owner(developers = SAHILDEEP)
+  @Category(UnitTests.class)
+  public void clusterDatSourcesTrue() {
+    assertThat(viewsBillingService.isClusterDataSources(ImmutableSet.of(ViewFieldIdentifier.CLUSTER))).isTrue();
+    assertThat(viewsBillingService.isClusterDataSources(
+                   ImmutableSet.of(ViewFieldIdentifier.CLUSTER, ViewFieldIdentifier.COMMON)))
+        .isTrue();
+    assertThat(viewsBillingService.isClusterDataSources(
+                   ImmutableSet.of(ViewFieldIdentifier.CLUSTER, ViewFieldIdentifier.LABEL)))
+        .isTrue();
+    assertThat(viewsBillingService.isClusterDataSources(
+                   ImmutableSet.of(ViewFieldIdentifier.CLUSTER, ViewFieldIdentifier.COMMON, ViewFieldIdentifier.LABEL)))
+        .isTrue();
+  }
+
+  @Test
+  @Owner(developers = SAHILDEEP)
+  @Category(UnitTests.class)
+  public void clusterDatSourcesFalse() {
+    assertThat(viewsBillingService.isClusterDataSources(ImmutableSet.of(ViewFieldIdentifier.AWS))).isFalse();
+    assertThat(viewsBillingService.isClusterDataSources(ImmutableSet.of(ViewFieldIdentifier.COMMON))).isFalse();
+    assertThat(viewsBillingService.isClusterDataSources(ImmutableSet.of(ViewFieldIdentifier.LABEL))).isFalse();
+    assertThat(viewsBillingService.isClusterDataSources(
+                   ImmutableSet.of(ViewFieldIdentifier.COMMON, ViewFieldIdentifier.LABEL)))
+        .isFalse();
+    assertThat(
+        viewsBillingService.isClusterDataSources(ImmutableSet.of(ViewFieldIdentifier.AZURE, ViewFieldIdentifier.GCP)))
+        .isFalse();
+    assertThat(viewsBillingService.isClusterDataSources(
+                   ImmutableSet.of(ViewFieldIdentifier.AZURE, ViewFieldIdentifier.COMMON, ViewFieldIdentifier.LABEL)))
+        .isFalse();
   }
 
   @Test

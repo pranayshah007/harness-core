@@ -8,10 +8,13 @@
 package software.wings.yaml.errorhandling;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
+import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 
 import software.wings.beans.Base;
 import software.wings.beans.GitRepositoryInfo;
@@ -20,12 +23,13 @@ import software.wings.yaml.errorhandling.GitToHarnessErrorDetails.GitToHarnessEr
 import software.wings.yaml.errorhandling.HarnessToGitErrorDetails.HarnessToGitErrorDetailsKeys;
 
 import com.google.common.collect.ImmutableList;
+import java.time.OffsetDateTime;
+import java.util.Date;
 import java.util.List;
 import javax.ws.rs.DefaultValue;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.UtilityClass;
@@ -37,9 +41,9 @@ import org.mongodb.morphia.annotations.Transient;
  */
 
 @Data
-@NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @FieldNameConstants(innerTypeName = "GitSyncErrorKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "gitSyncError")
 @HarnessEntity(exportable = false)
 public class GitSyncError extends Base implements PersistentRegularIterable {
@@ -109,13 +113,14 @@ public class GitSyncError extends Base implements PersistentRegularIterable {
   private GitSyncErrorDetails additionalErrorDetails;
   private String gitSyncDirection;
   @Transient @DefaultValue("false") private boolean userDoesNotHavePermForFile;
+  @Builder.Default @FdTtlIndex private Date validUntil = Date.from(OffsetDateTime.now().plusMonths(1).toInstant());
 
   @Builder
   public GitSyncError(String accountId, String yamlFilePath, String changeType, String failureReason,
       String gitConnectorId, String branchName, String repositoryName, String yamlGitConfigId,
       GitSyncErrorDetails additionalErrorDetails, String gitSyncDirection, Long commitTime, String lastAttemptedYaml,
       boolean fullSyncPath, String yamlContent, String gitCommitId, GitSyncErrorStatus status,
-      boolean userDoesNotHavePermForFile) {
+      boolean userDoesNotHavePermForFile, Date validUntil) {
     this.accountId = accountId;
     this.yamlFilePath = yamlFilePath;
     this.changeType = changeType;
@@ -134,6 +139,7 @@ public class GitSyncError extends Base implements PersistentRegularIterable {
     this.gitCommitId = gitCommitId;
     this.status = status;
     this.userDoesNotHavePermForFile = userDoesNotHavePermForFile;
+    this.validUntil = validUntil;
   }
 
   @Override

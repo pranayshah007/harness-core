@@ -10,7 +10,7 @@ package io.harness.cvng.servicelevelobjective.entities;
 import static java.time.temporal.ChronoUnit.DAYS;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.notification.beans.NotificationRuleRef;
@@ -70,10 +70,10 @@ import org.mongodb.morphia.annotations.Id;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
+@StoreIn(DbAliases.CVNG)
 @Entity(value = "serviceLevelObjectives", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @OwnedBy(HarnessTeam.CV)
-@StoreIn(DbAliases.CVNG)
 public class ServiceLevelObjective
     implements PersistentEntity, UuidAware, AccountAccess, UpdatedAtAware, CreatedAtAware, PersistentRegularIterable {
   String accountId;

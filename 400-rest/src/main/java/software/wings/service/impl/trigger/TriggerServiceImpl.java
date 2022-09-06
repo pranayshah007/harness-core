@@ -10,6 +10,7 @@ package software.wings.service.impl.trigger;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.FeatureName.BYPASS_HELM_FETCH;
 import static io.harness.beans.FeatureName.GITHUB_WEBHOOK_AUTHENTICATION;
+import static io.harness.beans.FeatureName.SERVICE_ID_FILTER_FOR_TRIGGERS;
 import static io.harness.beans.OrchestrationWorkflowType.BUILD;
 import static io.harness.beans.WorkflowType.ORCHESTRATION;
 import static io.harness.beans.WorkflowType.PIPELINE;
@@ -1038,7 +1039,13 @@ public class TriggerServiceImpl implements TriggerService {
   }
 
   private List<Artifact> getLastDeployedArtifacts(String appId, String workflowId, String serviceId) {
-    List<Artifact> lastDeployedArtifacts = workflowExecutionService.obtainLastGoodDeployedArtifacts(appId, workflowId);
+    String accountId = appService.getAccountIdByAppId(appId);
+    List<Artifact> lastDeployedArtifacts;
+    if (featureFlagService.isEnabled(SERVICE_ID_FILTER_FOR_TRIGGERS, accountId)) {
+      lastDeployedArtifacts = workflowExecutionService.obtainLastGoodDeployedArtifacts(appId, workflowId, serviceId);
+    } else {
+      lastDeployedArtifacts = workflowExecutionService.obtainLastGoodDeployedArtifacts(appId, workflowId);
+    }
     if (lastDeployedArtifacts != null && serviceId != null) {
       List<String> artifactStreamIds = artifactStreamServiceBindingService.listArtifactStreamIds(appId, serviceId);
       if (isEmpty(artifactStreamIds)) {

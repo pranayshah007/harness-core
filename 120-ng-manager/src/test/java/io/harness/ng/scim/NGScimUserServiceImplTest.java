@@ -26,6 +26,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.api.UserGroupService;
 import io.harness.ng.core.dto.GatewayAccountRequestDTO;
 import io.harness.ng.core.invites.api.InviteService;
@@ -52,6 +53,7 @@ import org.junit.experimental.categories.Category;
 @OwnedBy(PL)
 public class NGScimUserServiceImplTest extends NgManagerTestBase {
   private NgUserService ngUserService;
+
   private UserGroupService userGroupService;
   private InviteService inviteService;
   private NGScimUserServiceImpl scimUserService;
@@ -223,10 +225,79 @@ public class NGScimUserServiceImplTest extends NgManagerTestBase {
     when(ngUserService.searchScimUsersByEmailQuery(anyString(), anyString(), any(), any()))
         .thenReturn(scimUserScimListResponse);
     when(ngUserService.getUserByEmail(anyString(), anyBoolean())).thenReturn(Optional.ofNullable(userMetadataDTO));
+    when(ngUserService.isUserAtScope(anyString(), any())).thenReturn(true);
     ScimListResponse<ScimUser> result = scimUserService.searchUser("accountId", "filter", 1, 0);
     assertThat(result.getTotalResults()).isEqualTo(1);
     assertThat(result.getResources().size()).isEqualTo(1);
     assertThat(result.getResources().get(0).getDisplayName()).isEqualTo("randomDisplayname");
     assertThat(result.getResources().get(0).getUserName()).isEqualTo("randomEmail.com");
+  }
+
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void testNGScimSearchForNGUserButInDifferentAccount() {
+    ScimUser scimUser = new ScimUser();
+    scimUser.setUserName("randomEmail.com");
+    scimUser.setDisplayName("randomDisplayname");
+    ScimListResponse<ScimUser> scimUserScimListResponse = new ScimListResponse<>();
+    List<ScimUser> resources = new ArrayList<>();
+    resources.add(scimUser);
+    scimUserScimListResponse.setResources(resources);
+    scimUserScimListResponse.setTotalResults(1);
+    UserMetadataDTO userMetadataDTO = new UserMetadataDTO();
+    userMetadataDTO.setEmail("randomEmail.com");
+    userMetadataDTO.setUuid("random");
+    when(ngUserService.searchScimUsersByEmailQuery(anyString(), anyString(), any(), any()))
+        .thenReturn(scimUserScimListResponse);
+    when(ngUserService.getUserByEmail(anyString(), anyBoolean())).thenReturn(Optional.ofNullable(userMetadataDTO));
+    when(ngUserService.isUserAtScope(anyString(), any())).thenReturn(false);
+    ScimListResponse<ScimUser> result = scimUserService.searchUser("accountId", "filter", 1, 0);
+    assertThat(result.getTotalResults()).isEqualTo(0);
+    assertThat(result.getResources().size()).isEqualTo(0);
+  }
+
+  @Test(expected = InvalidRequestException.class)
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void testGetUserInCGNotInNG() {
+    UserInfo userInfo =
+        UserInfo.builder().admin(true).email("username@harness.io").name("display_name").uuid("someRandom").build();
+    when(ngUserService.getUserById(userInfo.getUuid())).thenReturn(Optional.of(userInfo));
+    when(ngUserService.isUserAtScope(anyString(), any())).thenReturn(true);
+    scimUserService.getUser(userInfo.getUuid(), "someRandom");
+  }
+
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void testGetUserInBothCGAndNG() {
+    UserInfo userInfo =
+        UserInfo.builder().admin(true).email("username@harness.io").name("display_name").uuid("someRandom").build();
+    UserMetadataDTO userMetadataDTO = new UserMetadataDTO();
+    userMetadataDTO.setEmail("username@harness.io");
+    userMetadataDTO.setUuid("someRandom");
+    when(ngUserService.getUserById(userInfo.getUuid())).thenReturn(Optional.of(userInfo));
+    when(ngUserService.getUserByEmail(userInfo.getEmail(), false)).thenReturn(Optional.of(userMetadataDTO));
+    when(ngUserService.isUserAtScope(anyString(), any())).thenReturn(true);
+    ScimUser scimUser = scimUserService.getUser(userInfo.getUuid(), "someRandom");
+    assertThat(scimUser).isNotNull();
+    assertThat(scimUser.getUserName().equals("someRandom"));
+    assertThat(scimUser.getDisplayName().equals("display_name"));
+  }
+
+  @Test(expected = InvalidRequestException.class)
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void testGetUserInBothCGAndNGButDifferentAccountInNg() {
+    UserInfo userInfo =
+        UserInfo.builder().admin(true).email("username@harness.io").name("display_name").uuid("someRandom").build();
+    UserMetadataDTO userMetadataDTO = new UserMetadataDTO();
+    userMetadataDTO.setEmail("username@harness.io");
+    userMetadataDTO.setUuid("someRandom");
+    when(ngUserService.getUserById(userInfo.getUuid())).thenReturn(Optional.of(userInfo));
+    when(ngUserService.getUserByEmail(userInfo.getEmail(), false)).thenReturn(Optional.of(userMetadataDTO));
+    when(ngUserService.isUserAtScope(anyString(), any())).thenReturn(false);
+    ScimUser scimUser = scimUserService.getUser(userInfo.getUuid(), "someRandom");
   }
 }

@@ -109,8 +109,9 @@ public class ShellScriptStep extends TaskExecutableWithRollback<ShellScriptTaskR
       if (taskResponse.getStatus() == CommandExecutionStatus.SUCCESS) {
         ShellExecutionData commandExecutionData =
             (ShellExecutionData) taskResponse.getExecuteCommandResponse().getCommandExecutionData();
-        ShellScriptOutcome shellScriptOutcome = shellScriptHelperService.prepareShellScriptOutcome(
-            commandExecutionData.getSweepingOutputEnvVariables(), shellScriptStepParameters.getOutputVariables());
+        ShellScriptOutcome shellScriptOutcome =
+            ShellScriptHelperService.prepareShellScriptOutcome(commandExecutionData.getSweepingOutputEnvVariables(),
+                shellScriptStepParameters.getOutputVariables(), shellScriptStepParameters.getSecretOutputVariables());
         if (shellScriptOutcome != null) {
           stepResponseBuilder.stepOutcome(StepResponse.StepOutcome.builder()
                                               .name(OutputExpressionConstants.OUTPUT)

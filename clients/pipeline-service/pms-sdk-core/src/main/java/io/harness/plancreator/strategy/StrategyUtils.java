@@ -16,6 +16,7 @@ import static io.harness.plancreator.strategy.StrategyConstants.ITERATIONS;
 import static io.harness.plancreator.strategy.StrategyConstants.MATRIX;
 import static io.harness.plancreator.strategy.StrategyConstants.PARTITION;
 import static io.harness.plancreator.strategy.StrategyConstants.REPEAT;
+import static io.harness.plancreator.strategy.StrategyConstants.TOTAL_ITERATIONS;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.IDENTIFIER;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.NAME;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.ROLLBACK_STEPS;
@@ -40,6 +41,7 @@ import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
+import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.JsonUtils;
 import io.harness.serializer.KryoSerializer;
@@ -63,6 +65,11 @@ import lombok.experimental.UtilityClass;
 public class StrategyUtils {
   public boolean isWrappedUnderStrategy(YamlField yamlField) {
     YamlField strategyField = yamlField.getNode().getField(YAMLFieldNameConstants.STRATEGY);
+    return strategyField != null;
+  }
+
+  public boolean isWrappedUnderStrategy(YamlNode yamlField) {
+    YamlField strategyField = yamlField.getField(YAMLFieldNameConstants.STRATEGY);
     return strategyField != null;
   }
 
@@ -177,6 +184,13 @@ public class StrategyUtils {
   public void addStrategyFieldDependencyIfPresent(KryoSerializer kryoSerializer, PlanCreationContext ctx, String uuid,
       String name, String identifier, LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap,
       Map<String, ByteString> metadataMap, List<AdviserObtainment> adviserObtainments) {
+    addStrategyFieldDependencyIfPresent(
+        kryoSerializer, ctx, uuid, name, identifier, planCreationResponseMap, metadataMap, adviserObtainments, true);
+  }
+
+  public void addStrategyFieldDependencyIfPresent(KryoSerializer kryoSerializer, PlanCreationContext ctx, String uuid,
+      String name, String identifier, LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap,
+      Map<String, ByteString> metadataMap, List<AdviserObtainment> adviserObtainments, Boolean shouldProceedIfFailed) {
     YamlField strategyField = ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.STRATEGY);
     if (strategyField != null) {
       // This is mandatory because it is the parent's responsibility to pass the nodeId and the childNodeId to the
@@ -188,6 +202,7 @@ public class StrategyUtils {
                                                                  .childNodeId(strategyField.getNode().getUuid())
                                                                  .strategyNodeName(refineIdentifier(name))
                                                                  .strategyNodeIdentifier(refineIdentifier(identifier))
+                                                                 .shouldProceedIfFailed(shouldProceedIfFailed)
                                                                  .build())));
       planCreationResponseMap.put(uuid,
           PlanCreationResponse.builder()
@@ -203,6 +218,13 @@ public class StrategyUtils {
   public void addStrategyFieldDependencyIfPresent(KryoSerializer kryoSerializer, PlanCreationContext ctx,
       String fieldUuid, String fieldIdentifier, String fieldName, Map<String, YamlField> dependenciesNodeMap,
       Map<String, ByteString> metadataMap, List<AdviserObtainment> adviserObtainments) {
+    addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, fieldUuid, fieldIdentifier, fieldName, dependenciesNodeMap,
+        metadataMap, adviserObtainments, true);
+  }
+
+  public void addStrategyFieldDependencyIfPresent(KryoSerializer kryoSerializer, PlanCreationContext ctx,
+      String fieldUuid, String fieldIdentifier, String fieldName, Map<String, YamlField> dependenciesNodeMap,
+      Map<String, ByteString> metadataMap, List<AdviserObtainment> adviserObtainments, Boolean shouldProceedIfFailed) {
     YamlField strategyField = ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.STRATEGY);
     if (strategyField != null) {
       dependenciesNodeMap.put(fieldUuid, strategyField);
@@ -216,6 +238,7 @@ public class StrategyUtils {
                                                  .childNodeId(strategyField.getNode().getUuid())
                                                  .strategyNodeIdentifier(refineIdentifier(fieldIdentifier))
                                                  .strategyNodeName(refineIdentifier(fieldName))
+                                                 .shouldProceedIfFailed(shouldProceedIfFailed)
                                                  .build())));
     }
   }
@@ -236,6 +259,8 @@ public class StrategyUtils {
     }
     return result;
   }
+
+  // Todo: Replace with our expression engine after the change
   public Map<String, String> createExpressions(
       Map<String, String> combinations, int currentIteration, int totalIteration, String itemValue) {
     Map<String, String> expressionsMap = new HashMap<>();
@@ -249,6 +274,8 @@ public class StrategyUtils {
     }
     expressionsMap.put(EXPR_START_ESC + "strategy.iteration" + EXPR_END_ESC, String.valueOf(currentIteration));
     expressionsMap.put(EXPR_START_ESC + "strategy.iterations" + EXPR_END, String.valueOf(totalIteration));
+    expressionsMap.put(EXPR_START_ESC + "strategy.totalIterations" + EXPR_END, String.valueOf(totalIteration));
+
     expressionsMap.put(repeatExpression, itemValue == null ? "" : itemValue);
     return expressionsMap;
   }
@@ -270,6 +297,9 @@ public class StrategyUtils {
     if (level.hasStrategyMetadata()) {
       return fetchStrategyObjectMap(Lists.newArrayList(level));
     }
+    strategyObjectMap.put(ITERATION, 0);
+    strategyObjectMap.put(ITERATIONS, 1);
+    strategyObjectMap.put(TOTAL_ITERATIONS, 1);
     return strategyObjectMap;
   }
 
@@ -306,6 +336,7 @@ public class StrategyUtils {
       }
       strategyObjectMap.put(ITERATION, level.getStrategyMetadata().getCurrentIteration());
       strategyObjectMap.put(ITERATIONS, level.getStrategyMetadata().getTotalIterations());
+      strategyObjectMap.put(TOTAL_ITERATIONS, level.getStrategyMetadata().getTotalIterations());
       strategyObjectMap.put("identifierPostFix", AmbianceUtils.getStrategyPostfix(level));
     }
     strategyObjectMap.put(MATRIX, matrixValuesMap);

@@ -64,5 +64,6 @@ public class DelegateStatus {
     private boolean tokenActive;
     private long delegateExpirationTime;
     List<DelegateConnectionDetails> connections;
+    boolean autoUpgrade;
   }
 }

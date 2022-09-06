@@ -16,6 +16,8 @@ import io.harness.ci.creator.variables.STOStepVariableCreator;
 import io.harness.ci.creator.variables.SecurityStepVariableCreator;
 import io.harness.ci.plancreator.SecurityStepPlanCreator;
 import io.harness.enforcement.constants.FeatureRestrictionName;
+import io.harness.filters.ExecutionPMSFilterJsonCreator;
+import io.harness.filters.ParallelGenericFilterJsonCreator;
 import io.harness.plancreator.execution.ExecutionPmsPlanCreator;
 import io.harness.plancreator.stages.parallel.ParallelPlanCreator;
 import io.harness.plancreator.steps.NGStageStepsPlanCreator;
@@ -64,6 +66,8 @@ public class STOPipelineServiceInfoProvider implements PipelineServiceInfoProvid
     filterJsonCreators.add(new STOStageFilterJsonCreator());
     filterJsonCreators.add(new STOPMSStepFilterJsonCreator());
     filterJsonCreators.add(new STOStepFilterJsonCreatorV2());
+    filterJsonCreators.add(new ExecutionPMSFilterJsonCreator());
+    filterJsonCreators.add(new ParallelGenericFilterJsonCreator());
     injectorUtils.injectMembers(filterJsonCreators);
 
     return filterJsonCreators;

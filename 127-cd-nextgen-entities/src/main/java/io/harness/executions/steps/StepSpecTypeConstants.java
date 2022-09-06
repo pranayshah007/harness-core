@@ -36,6 +36,8 @@ public interface StepSpecTypeConstants {
 
   String AZURE_CREATE_ARM_RESOURCE = "AzureCreateARMResource";
   String AZURE_CREATE_BP_RESOURCE = "AzureCreateBPResource";
+  String AZURE_ROLLBACK_ARM_RESOURCE = "AzureARMRollback";
+
   String PLACEHOLDER = "Placeholder";
 
   String HELM_DEPLOY = "HelmDeploy";
@@ -51,4 +53,9 @@ public interface StepSpecTypeConstants {
   String AZURE_WEBAPP_ROLLBACK = "AzureWebAppRollback";
   String DEPLOYMENT_STAGE = "Deployment";
   String JENKINS_BUILD = "JenkinsBuild";
+
+  String ECS_ROLLING_DEPLOY = "EcsRollingDeploy";
+  String ECS_ROLLING_ROLLBACK = "EcsRollingRollback";
+  String ECS_CANARY_DEPLOY = "EcsCanaryDeploy";
+  String ECS_CANARY_DELETE = "EcsCanaryDelete";
 }

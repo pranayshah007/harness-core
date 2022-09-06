@@ -10,10 +10,12 @@ package software.wings.service.impl.analysis;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 
 import software.wings.beans.Base;
@@ -37,6 +39,7 @@ import org.mongodb.morphia.annotations.Entity;
 @Data
 @EqualsAndHashCode(callSuper = false)
 @FieldNameConstants(innerTypeName = "TimeSeriesMetricTemplatesKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "timeSeriesMetricTemplates", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 public class TimeSeriesMetricTemplates extends Base implements AccountAccess {

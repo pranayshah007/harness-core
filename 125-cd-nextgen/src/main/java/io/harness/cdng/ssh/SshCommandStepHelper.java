@@ -18,16 +18,21 @@ import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
+import static io.harness.steps.shellscript.ShellScriptBaseSource.HARNESS;
+import static io.harness.steps.shellscript.ShellScriptBaseSource.INLINE;
+import static io.harness.utils.IdentifierRefHelper.getIdentifierRef;
 
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
+import io.harness.beans.FileReference;
 import io.harness.beans.common.VariablesSweepingOutput;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.service.steps.ServiceOutcomeHelper;
@@ -35,6 +40,7 @@ import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.ssh.rollback.CommandStepRollbackHelper;
 import io.harness.cdng.ssh.rollback.SshWinRmRollbackData;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.shell.CommandTaskParameters;
@@ -49,11 +55,16 @@ import io.harness.delegate.task.ssh.ScriptCommandUnit;
 import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.config.FileDelegateConfig;
 import io.harness.eraro.Level;
+import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.SkipRollbackException;
+import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.logging.UnitProgress;
 import io.harness.logging.UnitStatus;
+import io.harness.ng.core.api.NGSecretServiceV2;
 import io.harness.ng.core.k8s.ServiceSpecType;
+import io.harness.ng.core.models.Secret;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -61,13 +72,15 @@ import io.harness.pms.contracts.execution.failure.FailureData;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
+import io.harness.secretmanagerclient.SecretType;
 import io.harness.steps.OutputExpressionConstants;
+import io.harness.steps.shellscript.HarnessFileStoreSource;
 import io.harness.steps.shellscript.ShellScriptInlineSource;
 import io.harness.steps.shellscript.ShellScriptSourceWrapper;
 import io.harness.steps.shellscript.SshInfraDelegateConfigOutput;
@@ -76,11 +89,14 @@ import io.harness.steps.shellscript.WinRmInfraDelegateConfigOutput;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -91,12 +107,15 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(CDP)
 @Slf4j
 public class SshCommandStepHelper extends CDStepHelper {
+  private static final Pattern SECRETS_GET_VALUE_PATTERN = Pattern.compile("\\<\\+secrets\\.getValue\\(\"(.*?)\"\\)");
+
   @Inject protected CDFeatureFlagHelper cdFeatureFlagHelper;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private CommandStepRollbackHelper commandStepRollbackHelper;
   @Inject private SshWinRmConfigFileHelper sshWinRmConfigFileHelper;
   @Inject private SshWinRmArtifactHelper sshWinRmArtifactHelper;
-  @Inject private EngineExpressionService engineExpressionService;
+  @Inject private CDExpressionResolver cdExpressionResolver;
+  @Inject private NGSecretServiceV2 ngSecretServiceV2;
 
   public CommandTaskParameters buildCommandTaskParameters(
       @Nonnull Ambiance ambiance, @Nonnull CommandStepParameters commandStepParameters) {
@@ -157,9 +176,7 @@ public class SshCommandStepHelper extends CDStepHelper {
     if (!optionalInfraOutput.isFound()) {
       throw new InvalidRequestException("No infrastructure output found.");
     }
-    // Rollback Logic
-    // Get the rollback data from the latest successful deployment, getting it from DB.
-    // If there are no rollback data, use the artifact and config files from the current deployment (the same in CG)
+
     SshInfraDelegateConfigOutput delegateConfig = (SshInfraDelegateConfigOutput) optionalInfraOutput.getOutput();
     if (commandStepParameters.isRollback) {
       return createRollbackSshTaskParameters(ambiance, commandStepParameters, mergedEnvVariables, delegateConfig);
@@ -176,9 +193,6 @@ public class SshCommandStepHelper extends CDStepHelper {
       throw new InvalidRequestException("No infrastructure output found.");
     }
 
-    // Rollback Logic
-    // Get the rollback data from the latest successful deployment, getting it from DB.
-    // If there are no rollback data, use the artifact and config files from the current deployment (the same in CG)
     WinRmInfraDelegateConfigOutput delegateConfig = (WinRmInfraDelegateConfigOutput) optionalInfraOutput.getOutput();
     if (commandStepParameters.isRollback) {
       return createRollbackWinRmTaskParameters(ambiance, commandStepParameters, mergedEnvVariables, delegateConfig);
@@ -189,20 +203,61 @@ public class SshCommandStepHelper extends CDStepHelper {
 
   private Map<String, String> getMergedEnvVariablesMap(
       Ambiance ambiance, CommandStepParameters commandStepParameters, InfrastructureOutcome infrastructure) {
+    LinkedHashMap<String, Object> evaluatedStageVariables =
+        cdExpressionResolver.evaluateExpression(ambiance, "<+stage.variables>", LinkedHashMap.class);
+
     Map<String, String> finalEnvVariables = new HashMap<>();
-
-    Object evaluatedStageVariables = engineExpressionService.evaluateExpression(ambiance, "<+stage.variables>");
-    if (evaluatedStageVariables instanceof LinkedHashMap) {
-      finalEnvVariables =
-          mergeEnvironmentVariables((LinkedHashMap<String, Object>) evaluatedStageVariables, finalEnvVariables);
-    }
-
-    VariablesSweepingOutput serviceVariablesOutput = ServiceOutcomeHelper.getVariablesSweepingOutput(
-        ambiance, executionSweepingOutputService, YAMLFieldNameConstants.SERVICE_VARIABLES);
-    finalEnvVariables = mergeEnvironmentVariables(serviceVariablesOutput, finalEnvVariables);
-
+    finalEnvVariables = mergeEnvironmentVariables(evaluatedStageVariables, finalEnvVariables);
+    finalEnvVariables = mergeEnvironmentVariables(getServiceVariables(ambiance), finalEnvVariables);
     finalEnvVariables = mergeEnvironmentVariables(infrastructure.getEnvironment().getVariables(), finalEnvVariables);
     return mergeEnvironmentVariables(commandStepParameters.getEnvironmentVariables(), finalEnvVariables);
+  }
+
+  private HashMap<String, Object> getServiceVariables(Ambiance ambiance) {
+    HashMap<String, Object> serviceVariablesMap = new HashMap<>();
+    VariablesSweepingOutput serviceVariablesOutput = ServiceOutcomeHelper.getVariablesSweepingOutput(
+        ambiance, executionSweepingOutputService, YAMLFieldNameConstants.SERVICE_VARIABLES);
+
+    serviceVariablesOutput.entrySet().stream().filter(e -> e.getValue() instanceof String).forEach(entry -> {
+      String value = (String) entry.getValue();
+
+      if (EngineExpressionEvaluator.hasExpressions(value)) {
+        serviceVariablesMap.putAll(evaluateExpression(ambiance, entry, value));
+      } else {
+        serviceVariablesMap.put(entry.getKey(), value);
+      }
+    });
+    return serviceVariablesMap;
+  }
+
+  private HashMap<String, Object> evaluateExpression(Ambiance ambiance, Map.Entry<String, Object> entry, String value) {
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
+    String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
+    Optional<String> scopedIdentifier = extractIdentifier(value);
+    HashMap<String, Object> serviceVariablesMap = new HashMap<>();
+    if (scopedIdentifier.isPresent()) {
+      Secret secret =
+          ngSecretServiceV2.get(getIdentifierRef(scopedIdentifier.get(), accountId, orgIdentifier, projectIdentifier))
+              .orElseThrow(
+                  () -> new EntityNotFoundException(format("Secret with id: %s not found.", scopedIdentifier.get())));
+
+      if (!secret.getType().equals(SecretType.SecretFile)) {
+        serviceVariablesMap.put(entry.getKey(), cdExpressionResolver.renderExpression(ambiance, value));
+      }
+    }
+    return serviceVariablesMap;
+  }
+
+  private Optional<String> extractIdentifier(String expression) {
+    if (isEmpty(expression)) {
+      return Optional.empty();
+    }
+    Matcher matcher = SECRETS_GET_VALUE_PATTERN.matcher(expression);
+    if (matcher.find()) {
+      return Optional.of(matcher.group(1));
+    }
+    return Optional.empty();
   }
 
   private SshCommandTaskParameters createSshTaskParameters(Ambiance ambiance,
@@ -221,14 +276,16 @@ public class SshCommandStepHelper extends CDStepHelper {
         .sshInfraDelegateConfig(sshInfraDelegateConfigOutput.getSshInfraDelegateConfig())
         .artifactDelegateConfig(getArtifactDelegateConfig(ambiance))
         .fileDelegateConfig(getFileDelegateConfig(ambiance))
-        .commandUnits(mapCommandUnits(commandStepParameters.getCommandUnits(), onDelegate))
-        .host(getHost(commandStepParameters))
+        .commandUnits(mapCommandUnits(ambiance, commandStepParameters.getCommandUnits(), onDelegate))
+        .host(onDelegate ? null : getHost(commandStepParameters))
         .build();
   }
 
   private SshCommandTaskParameters createRollbackSshTaskParameters(Ambiance ambiance,
       CommandStepParameters commandStepParameters, Map<String, String> mergedEnvVariables,
       SshInfraDelegateConfigOutput sshInfraDelegateConfigOutput) {
+    // Rollback Logic
+    // Get the rollback data from the latest successful deployment, getting it from DB.
     SshWinRmRollbackData sshWinRmRollbackData = getSshWinRmRollbackData(ambiance, mergedEnvVariables);
     Boolean onDelegate = getBooleanParameterFieldValue(commandStepParameters.onDelegate);
     return SshCommandTaskParameters.builder()
@@ -240,8 +297,8 @@ public class SshCommandStepHelper extends CDStepHelper {
         .sshInfraDelegateConfig(sshInfraDelegateConfigOutput.getSshInfraDelegateConfig())
         .artifactDelegateConfig(sshWinRmRollbackData.getArtifactDelegateConfig())
         .fileDelegateConfig(sshWinRmRollbackData.getFileDelegateConfig())
-        .commandUnits(mapCommandUnits(commandStepParameters.getCommandUnits(), onDelegate))
-        .host(getHost(commandStepParameters))
+        .commandUnits(mapCommandUnits(ambiance, commandStepParameters.getCommandUnits(), onDelegate))
+        .host(onDelegate ? null : getHost(commandStepParameters))
         .build();
   }
 
@@ -260,8 +317,8 @@ public class SshCommandStepHelper extends CDStepHelper {
         .winRmInfraDelegateConfig(winRmInfraDelegateConfigOutput.getWinRmInfraDelegateConfig())
         .artifactDelegateConfig(getArtifactDelegateConfig(ambiance))
         .fileDelegateConfig(getFileDelegateConfig(ambiance))
-        .commandUnits(mapCommandUnits(commandStepParameters.getCommandUnits(), onDelegate))
-        .host(getHost(commandStepParameters))
+        .commandUnits(mapCommandUnits(ambiance, commandStepParameters.getCommandUnits(), onDelegate))
+        .host(onDelegate ? null : getHost(commandStepParameters))
         .useWinRMKerberosUniqueCacheFile(
             cdFeatureFlagHelper.isEnabled(accountId, FeatureName.WINRM_KERBEROS_CACHE_UNIQUE_FILE))
         .disableWinRMCommandEncodingFFSet(
@@ -272,6 +329,8 @@ public class SshCommandStepHelper extends CDStepHelper {
   private WinrmTaskParameters createRollbackWinRmTaskParameters(Ambiance ambiance,
       CommandStepParameters commandStepParameters, Map<String, String> mergedEnvVariables,
       WinRmInfraDelegateConfigOutput winRmInfraDelegateConfigOutput) {
+    // Rollback Logic
+    // Get the rollback data from the latest successful deployment, getting it from DB.
     SshWinRmRollbackData sshWinRmRollbackData = getSshWinRmRollbackData(ambiance, mergedEnvVariables);
     Boolean onDelegate = getBooleanParameterFieldValue(commandStepParameters.onDelegate);
     String accountId = AmbianceUtils.getAccountId(ambiance);
@@ -284,8 +343,8 @@ public class SshCommandStepHelper extends CDStepHelper {
         .winRmInfraDelegateConfig(winRmInfraDelegateConfigOutput.getWinRmInfraDelegateConfig())
         .artifactDelegateConfig(sshWinRmRollbackData.getArtifactDelegateConfig())
         .fileDelegateConfig(sshWinRmRollbackData.getFileDelegateConfig())
-        .commandUnits(mapCommandUnits(commandStepParameters.getCommandUnits(), onDelegate))
-        .host(getHost(commandStepParameters))
+        .commandUnits(mapCommandUnits(ambiance, commandStepParameters.getCommandUnits(), onDelegate))
+        .host(onDelegate ? null : getHost(commandStepParameters))
         .useWinRMKerberosUniqueCacheFile(
             cdFeatureFlagHelper.isEnabled(accountId, FeatureName.WINRM_KERBEROS_CACHE_UNIQUE_FILE))
         .disableWinRMCommandEncodingFFSet(
@@ -300,7 +359,7 @@ public class SshCommandStepHelper extends CDStepHelper {
         commandStepRollbackHelper.getRollbackData(ambiance, mergedEnvVariables);
     if (!rollbackData.isPresent()) {
       log.info("Not found rollback data from DB, hence skipping rollback, stageExecutionId: {}", stageExecutionId);
-      throw new InvalidRequestException("Not found previous successful rollback data, hence skipping rollback");
+      throw new SkipRollbackException("Not found previous successful rollback data, hence skipping rollback");
     }
 
     log.info("Found rollback data in DB, stageExecutionId: {}", stageExecutionId);
@@ -322,7 +381,8 @@ public class SshCommandStepHelper extends CDStepHelper {
         .orElse(null);
   }
 
-  private List<NgCommandUnit> mapCommandUnits(List<CommandUnitWrapper> stepCommandUnits, boolean onDelegate) {
+  private List<NgCommandUnit> mapCommandUnits(
+      Ambiance ambiance, List<CommandUnitWrapper> stepCommandUnits, boolean onDelegate) {
     if (isEmpty(stepCommandUnits)) {
       throw new InvalidRequestException("No command units found for configured step");
     }
@@ -332,7 +392,7 @@ public class SshCommandStepHelper extends CDStepHelper {
     List<NgCommandUnit> commandUnitsFromStep =
         stepCommandUnits.stream()
             .map(stepCommandUnit
-                -> (stepCommandUnit.isScript()) ? mapScriptCommandUnit(stepCommandUnit, onDelegate)
+                -> (stepCommandUnit.isScript()) ? mapScriptCommandUnit(ambiance, stepCommandUnit, onDelegate)
                                                 : mapCopyCommandUnit(stepCommandUnit))
             .collect(Collectors.toList());
 
@@ -341,7 +401,8 @@ public class SshCommandStepHelper extends CDStepHelper {
     return commandUnits;
   }
 
-  private ScriptCommandUnit mapScriptCommandUnit(CommandUnitWrapper stepCommandUnit, boolean onDelegate) {
+  private ScriptCommandUnit mapScriptCommandUnit(
+      Ambiance ambiance, CommandUnitWrapper stepCommandUnit, boolean onDelegate) {
     if (stepCommandUnit == null) {
       throw new InvalidRequestException("Invalid command unit format specified");
     }
@@ -353,7 +414,7 @@ public class SshCommandStepHelper extends CDStepHelper {
     ScriptCommandUnitSpec spec = (ScriptCommandUnitSpec) stepCommandUnit.getSpec();
     return ScriptCommandUnit.builder()
         .name(stepCommandUnit.getName())
-        .script(getShellScript(spec.getSource()))
+        .script(getShellScript(ambiance, spec.getSource()))
         .scriptType(spec.getShell().getScriptType())
         .tailFilePatterns(mapTailFilePatterns(spec.getTailFiles()))
         .workingDirectory(getWorkingDirectory(spec.getWorkingDirectory(), spec.getShell().getScriptType(), onDelegate))
@@ -391,8 +452,33 @@ public class SshCommandStepHelper extends CDStepHelper {
         .collect(Collectors.toList());
   }
 
-  private String getShellScript(@Nonnull ShellScriptSourceWrapper shellScriptSourceWrapper) {
-    ShellScriptInlineSource shellScriptInlineSource = (ShellScriptInlineSource) shellScriptSourceWrapper.getSpec();
-    return (String) shellScriptInlineSource.getScript().fetchFinalValue();
+  private String getShellScript(Ambiance ambiance, @Nonnull ShellScriptSourceWrapper shellScriptSourceWrapper) {
+    if (INLINE.equals(shellScriptSourceWrapper.getType())) {
+      ShellScriptInlineSource shellScriptInlineSource = (ShellScriptInlineSource) shellScriptSourceWrapper.getSpec();
+      return (String) shellScriptInlineSource.getScript().fetchFinalValue();
+    } else if (HARNESS.equals(shellScriptSourceWrapper.getType())) {
+      HarnessFileStoreSource spec =
+          (HarnessFileStoreSource) cdExpressionResolver.updateExpressions(ambiance, shellScriptSourceWrapper.getSpec());
+      String script = sshWinRmConfigFileHelper.fetchFileContent(
+          FileReference.of(spec.getFile().getValue(), AmbianceUtils.getAccountId(ambiance),
+              AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance)));
+      return cdExpressionResolver.renderExpression(ambiance, script);
+    } else {
+      throw new InvalidRequestException("Unsupported source type: " + shellScriptSourceWrapper.getType());
+    }
+  }
+
+  public Map<String, String> prepareOutputVariables(
+      Map<String, String> sweepingOutputEnvVariables, Map<String, Object> outputVariables) {
+    if (EmptyPredicate.isEmpty(outputVariables) || EmptyPredicate.isEmpty(sweepingOutputEnvVariables)) {
+      return Collections.EMPTY_MAP;
+    }
+
+    Map<String, String> resolvedOutputVariables = new HashMap<>();
+    outputVariables.keySet().forEach(name -> {
+      Object value = ((ParameterField<?>) outputVariables.get(name)).getValue();
+      resolvedOutputVariables.put(name, sweepingOutputEnvVariables.get(value));
+    });
+    return resolvedOutputVariables;
   }
 }

@@ -359,6 +359,7 @@ public class CommandStepTest extends CategoryTest {
     assertThatThrownBy(
         () -> commandStep.obtainTaskAfterRbac(ambiance, stepElementParameters, StepInputPackage.builder().build()))
         .isInstanceOf(InvalidArgumentsException.class)
-        .hasMessage("Host information is missing in Command Step.");
+        .hasMessage(
+            "Host information is missing in Command Step. Please make sure the looping strategy (repeat) is provided.");
   }
 }

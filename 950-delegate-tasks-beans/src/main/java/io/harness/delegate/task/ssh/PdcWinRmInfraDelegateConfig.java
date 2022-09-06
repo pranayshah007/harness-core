@@ -15,6 +15,7 @@ import io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.List;
+import java.util.Set;
 import lombok.Builder;
 import lombok.Value;
 
@@ -22,7 +23,7 @@ import lombok.Value;
 @Builder
 @OwnedBy(CDP)
 public class PdcWinRmInfraDelegateConfig implements WinRmInfraDelegateConfig {
-  List<String> hosts;
+  Set<String> hosts;
   PhysicalDataCenterConnectorDTO physicalDataCenterConnectorDTO;
   List<EncryptedDataDetail> encryptionDataDetails;
   WinRmCredentialsSpecDTO winRmCredentials;

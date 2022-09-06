@@ -394,17 +394,15 @@ public class PluginServiceImpl implements PluginService {
                        .withPluginCategories(asList(HelmRepo))
                        .withUiSchema(readUiSchema(SettingVariableTypes.HTTP_HELM_REPO.name()))
                        .build());
-    if (featureFlagService.isEnabled(FeatureName.HELM_OCI_SUPPORT, accountId)) {
-      pluginList.add(anAccountPlugin()
-                         .withSettingClass(OciHelmRepoConfig.class)
-                         .withAccountId(accountId)
-                         .withIsEnabled(true)
-                         .withDisplayName(SettingVariableTypes.OCI_HELM_REPO.getDisplayName())
-                         .withType(SettingVariableTypes.OCI_HELM_REPO.name())
-                         .withPluginCategories(asList(HelmRepo))
-                         .withUiSchema(readUiSchema(SettingVariableTypes.OCI_HELM_REPO.name()))
-                         .build());
-    }
+    pluginList.add(anAccountPlugin()
+                       .withSettingClass(OciHelmRepoConfig.class)
+                       .withAccountId(accountId)
+                       .withIsEnabled(true)
+                       .withDisplayName(SettingVariableTypes.OCI_HELM_REPO.getDisplayName())
+                       .withType(SettingVariableTypes.OCI_HELM_REPO.name())
+                       .withPluginCategories(asList(HelmRepo))
+                       .withUiSchema(readUiSchema(SettingVariableTypes.OCI_HELM_REPO.name()))
+                       .build());
     pluginList.add(anAccountPlugin()
                        .withSettingClass(AmazonS3HelmRepoConfig.class)
                        .withAccountId(accountId)

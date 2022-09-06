@@ -13,9 +13,7 @@ import static io.harness.rule.OwnerRule.ALEKSANDAR;
 import static io.harness.rule.OwnerRule.SHUBHAM;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.when;
 
-import io.harness.beans.FeatureName;
 import io.harness.beans.environment.BuildJobEnvInfo;
 import io.harness.beans.environment.VmBuildJobInfo;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
@@ -25,7 +23,6 @@ import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml.VmPoolYamlSpec;
 import io.harness.category.element.UnitTests;
 import io.harness.ci.executionplan.CIExecutionTestBase;
-import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.yaml.ParameterField;
@@ -38,12 +35,10 @@ import java.util.Map;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.Spy;
 
 public class BuildJobEnvInfoBuilderTest extends CIExecutionTestBase {
   public static final String ACCOUNT_ID = "accountId";
-  @Mock CIFeatureFlagService featureFlagService;
   @Inject VmBuildJobTestHelper vmBuildJobTestHelper;
   @Spy @InjectMocks private VmInitializeStepUtils vmInitializeStepUtils;
   @InjectMocks BuildJobEnvInfoBuilder buildJobEnvInfoBuilder;
@@ -77,7 +72,6 @@ public class BuildJobEnvInfoBuilderTest extends CIExecutionTestBase {
   @Owner(developers = SHUBHAM)
   @Category(UnitTests.class)
   public void getVmBuildJobEnvInfo() {
-    when(featureFlagService.isEnabled(FeatureName.CI_VM_INFRASTRUCTURE, "accountId")).thenReturn(true);
     Ambiance ambiance = getAmbiance();
     StageElementConfig stageElementConfig = vmBuildJobTestHelper.getVmStage("test");
     Map<String, String> volToMountPath = new HashMap<>();
@@ -99,7 +93,6 @@ public class BuildJobEnvInfoBuilderTest extends CIExecutionTestBase {
   @Owner(developers = SHUBHAM)
   @Category(UnitTests.class)
   public void getVmBuildJobEnvInfoOSX() {
-    when(featureFlagService.isEnabled(FeatureName.CI_VM_INFRASTRUCTURE, "accountId")).thenReturn(true);
     Ambiance ambiance = getAmbiance();
     StageElementConfig stageElementConfig = vmBuildJobTestHelper.getVmStage("test");
     Map<String, String> volToMountPath = new HashMap<>();

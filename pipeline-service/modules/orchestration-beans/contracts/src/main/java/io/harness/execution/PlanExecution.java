@@ -10,7 +10,7 @@ package io.harness.execution;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.governance.GovernanceMetadata;
@@ -54,11 +54,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Value
 @Builder
 @FieldNameConstants(innerTypeName = "PlanExecutionKeys")
+@StoreIn(DbAliases.PMS)
 @Entity(value = "planExecutions", noClassnameStored = true)
 @Document("planExecutions")
 @JsonIgnoreProperties(ignoreUnknown = true, value = {"plan"})
 @TypeAlias("planExecution")
-@StoreIn(DbAliases.PMS)
 public class PlanExecution implements PersistentRegularIterable, UuidAccess, PmsNodeExecution {
   public static final String EXEC_TAG_SET_BY_TRIGGER = "execution_trigger_tag_needed_for_abort";
   public static final long TTL_MONTHS = 6;
