@@ -374,6 +374,7 @@ public class Http {
   public static boolean validUrl(String url) {
     return urlValidator.isValid(url);
   }
+
   public static HttpHost getHttpProxyHost() {
     String proxyHost = null;
     int proxyPort = -1;
