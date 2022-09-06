@@ -243,7 +243,9 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
           }
           return result;
         }));
-    entitySetupUsageHelper.updateSetupUsages(upsertedService);
+    if (upsertOptions.isPublishSetupUsages()) {
+      entitySetupUsageHelper.updateSetupUsages(upsertedService);
+    }
     publishEvent(requestService.getAccountId(), requestService.getOrgIdentifier(),
         requestService.getProjectIdentifier(), requestService.getIdentifier(),
         EventsFrameworkMetadataConstants.UPSERT_ACTION);
