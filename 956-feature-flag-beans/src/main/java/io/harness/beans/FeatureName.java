@@ -317,7 +317,7 @@ public enum FeatureName {
   CHAOS_ENABLED,
   DEPLOYMENT_SUBFORMIK_APPLICATION_DROPDOWN,
   USAGE_SCOPE_RBAC,
-  ALLOW_USER_TYPE_FIELDS_JIRA,
+  ALLOW_USER_TYPE_FIELDS_JIRA("used to hide jira userfields input in ui in both cg and ng", HarnessTeam.SPG),
   HARD_DELETE_ENTITIES,
   ACTIVITY_ID_BASED_TF_BASE_DIR,
   INHERITED_USER_GROUP,
@@ -358,6 +358,7 @@ public enum FeatureName {
   TEMPLATE_SCHEMA_VALIDATION,
   YAML_APIS_GRANULAR_PERMISSION,
   JENKINS_BUILD,
+  GITHUB_PACKAGES,
   DO_NOT_RENEW_APPROLE_TOKEN(
       "CAUTION: USE THIS ONLY WHEN THE CUSTOMER DELEGATE IS IN VERSION HIGHER OR EQUAL TO 764xx. Used for disabling appRole token renewal and fetching token on the fly before CRUD",
       HarnessTeam.PL),
@@ -388,6 +389,7 @@ public enum FeatureName {
       HarnessTeam.SPG),
   HOSTED_BUILDS("Used to enabled Hosted builds in paid accounts", HarnessTeam.CI),
   CD_ONBOARDING_ENABLED,
+  ECS_NG,
   ATTRIBUTE_TYPE_ACL_ENABLED("Enable attribute filter on NG UI for ACL", HarnessTeam.PL),
   CREATE_DEFAULT_PROJECT("Enables auto create default project after user signup", HarnessTeam.GTM),
   ANALYSE_TF_PLAN_SUMMARY(
@@ -426,13 +428,15 @@ public enum FeatureName {
   VALIDATE_PHASES_AND_ROLLBACK("Validate that each phase has your own rollback phase", HarnessTeam.SPG),
   OPTIMIZED_TF_PLAN_NG(
       "Enables uploading Terraform plan to GCS/MongoGridFS instead of saving to sweeping output", HarnessTeam.CDP),
-
   SERVICE_V2_EXPRESSION(
       "Allow service reference to be an expression in a pipeline for the new service entity", HarnessTeam.CDC),
   CIE_HOSTED_VMS(
-      "Enabled hosted VMs in favor of hosted K8s for CIE. This flag will be deprecated once all the feature work has been checked in",
+      "Enables hosted VMs in favor of hosted K8s for CIE. This flag will be deprecated once all the feature work has been checked in",
       HarnessTeam.CI),
-  CHANGE_INSTANCE_QUERY_OPERATOR_TO_NE("Change instance service query operator from $exists to $ne", HarnessTeam.SPG);
+  CHANGE_INSTANCE_QUERY_OPERATOR_TO_NE("Change instance service query operator from $exists to $ne", HarnessTeam.SPG),
+  NEXUS3_RAW_REPOSITORY("Enable support for Nexus3 raw repository format on CG", HarnessTeam.SPG),
+  NG_ARTIFACT_SOURCES("Flag to support multi artifact sources for service V2", HarnessTeam.CDC),
+  UPDATE_EMAILS_VIA_SCIM("Will enable updating emails in Harness via SCIM", HarnessTeam.PL);
 
   @Deprecated
   FeatureName() {

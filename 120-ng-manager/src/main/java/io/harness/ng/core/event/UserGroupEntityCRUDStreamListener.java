@@ -9,6 +9,7 @@ package io.harness.ng.core.event;
 
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACCOUNT_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACTION;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CREATE_ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DELETE_ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ENTITY_TYPE;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ORGANIZATION_ENTITY;
@@ -22,6 +23,7 @@ import io.harness.eventsframework.entity_crud.account.AccountEntityChangeDTO;
 import io.harness.eventsframework.entity_crud.organization.OrganizationEntityChangeDTO;
 import io.harness.eventsframework.entity_crud.project.ProjectEntityChangeDTO;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.api.DefaultUserGroupService;
 import io.harness.ng.core.api.UserGroupService;
 
 import com.google.inject.Inject;
@@ -34,10 +36,13 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 public class UserGroupEntityCRUDStreamListener implements MessageListener {
   private final UserGroupService userGroupService;
+  private final DefaultUserGroupService defaultUserGroupService;
 
   @Inject
-  public UserGroupEntityCRUDStreamListener(UserGroupService userGroupService) {
+  public UserGroupEntityCRUDStreamListener(
+      UserGroupService userGroupService, DefaultUserGroupService defaultUserGroupService) {
     this.userGroupService = userGroupService;
+    this.defaultUserGroupService = defaultUserGroupService;
   }
 
   @Override
@@ -69,9 +74,14 @@ public class UserGroupEntityCRUDStreamListener implements MessageListener {
           String.format("Exception in unpacking AccountEntityChangeDTO for key %s", message.getId()), e);
     }
     String action = message.getMessage().getMetadataMap().get(ACTION);
-    if (action != null && action.equals(DELETE_ACTION)) {
-      Scope scope = Scope.builder().accountIdentifier(stripToNull(accountEntityChangeDTO.getAccountId())).build();
-      return processDeleteEvent(scope);
+    Scope scope = Scope.builder().accountIdentifier(stripToNull(accountEntityChangeDTO.getAccountId())).build();
+    if (action != null) {
+      if (action.equals(DELETE_ACTION)) {
+        return processDeleteEvent(scope);
+      }
+      if (action.equals(CREATE_ACTION)) {
+        return processCreateEvent(scope);
+      }
     }
     return true;
   }
@@ -85,12 +95,17 @@ public class UserGroupEntityCRUDStreamListener implements MessageListener {
           String.format("Exception in unpacking EntityChangeDTO for key %s", message.getId()), e);
     }
     String action = message.getMessage().getMetadataMap().get(ACTION);
-    if (action != null && action.equals(DELETE_ACTION)) {
-      Scope scope = Scope.builder()
-                        .accountIdentifier(stripToNull(organizationEntityChangeDTO.getAccountIdentifier()))
-                        .orgIdentifier(stripToNull(organizationEntityChangeDTO.getIdentifier()))
-                        .build();
-      return processDeleteEvent(scope);
+    Scope scope = Scope.builder()
+                      .accountIdentifier(stripToNull(organizationEntityChangeDTO.getAccountIdentifier()))
+                      .orgIdentifier(stripToNull(organizationEntityChangeDTO.getIdentifier()))
+                      .build();
+    if (action != null) {
+      if (action.equals(DELETE_ACTION)) {
+        return processDeleteEvent(scope);
+      }
+      if (action.equals(CREATE_ACTION)) {
+        processCreateEvent(scope);
+      }
     }
     return true;
   }
@@ -104,13 +119,18 @@ public class UserGroupEntityCRUDStreamListener implements MessageListener {
           String.format("Exception in unpacking ProjectEntityChangeDTO for key %s", message.getId()), e);
     }
     String action = message.getMessage().getMetadataMap().get(ACTION);
-    if (action != null && action.equals(DELETE_ACTION)) {
-      Scope scope = Scope.builder()
-                        .accountIdentifier(stripToNull(projectEntityChangeDTO.getAccountIdentifier()))
-                        .orgIdentifier(stripToNull(projectEntityChangeDTO.getOrgIdentifier()))
-                        .projectIdentifier(stripToNull(projectEntityChangeDTO.getIdentifier()))
-                        .build();
-      return processDeleteEvent(scope);
+    Scope scope = Scope.builder()
+                      .accountIdentifier(stripToNull(projectEntityChangeDTO.getAccountIdentifier()))
+                      .orgIdentifier(stripToNull(projectEntityChangeDTO.getOrgIdentifier()))
+                      .projectIdentifier(stripToNull(projectEntityChangeDTO.getIdentifier()))
+                      .build();
+    if (action != null) {
+      if (action.equals(DELETE_ACTION)) {
+        return processDeleteEvent(scope);
+      }
+      if (action.equals(CREATE_ACTION)) {
+        return processCreateEvent(scope);
+      }
     }
     return true;
   }
@@ -120,6 +140,17 @@ public class UserGroupEntityCRUDStreamListener implements MessageListener {
       userGroupService.deleteByScope(scope);
     } catch (Exception e) {
       log.error("Could not process scope delete event for user group. Exception", e);
+      return false;
+    }
+    return true;
+  }
+
+  private boolean processCreateEvent(Scope scope) {
+    try {
+      defaultUserGroupService.createOrUpdateUserGroupAtScope(scope);
+      log.info("processed scope create event for user group.");
+    } catch (Exception ex) {
+      log.error("Could not process scope create event for user group.", ex);
       return false;
     }
     return true;

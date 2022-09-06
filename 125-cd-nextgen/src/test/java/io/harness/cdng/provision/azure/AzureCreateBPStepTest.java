@@ -9,6 +9,7 @@ package io.harness.cdng.provision.azure;
 
 import static io.harness.rule.OwnerRule.NGONZALEZ;
 
+import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -23,6 +24,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
+import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.yaml.GithubStore;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.provision.azure.beans.AzureCreateARMResourcePassThroughData;
@@ -34,20 +36,28 @@ import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
+import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.task.azure.arm.AzureARMTaskType;
 import io.harness.delegate.task.azure.arm.AzureBlueprintTaskNGParameters;
+import io.harness.delegate.task.azure.arm.AzureBlueprintTaskNGResponse;
 import io.harness.delegate.task.cloudformation.CloudformationTaskNGResponse;
 import io.harness.delegate.task.git.GitFetchResponse;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.git.model.GitFile;
+import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.UnitProgress;
+import io.harness.logging.UnitStatus;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.rbac.PipelineRbacHelper;
+import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
+import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
@@ -85,6 +95,7 @@ public class AzureCreateBPStepTest extends CategoryTest {
   @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   @Mock private AzureCommonHelper azureCommonHelper;
+  @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
   @Captor ArgumentCaptor<List<EntityDetail>> captor;
 
   @InjectMocks private AzureCreateBPStep azureCreateBPStep;
@@ -201,6 +212,46 @@ public class AzureCreateBPStepTest extends CategoryTest {
     assertThat(taskSelectorsArgumentCaptor.getValue().get(0).getSelector()).isEqualTo("create-d-selector-1");
   }
 
+  @Test
+  @Owner(developers = NGONZALEZ)
+  @Category(UnitTests.class)
+  public void testFinalizeExecutionWithException() throws Exception {
+    StepExceptionPassThroughData exception =
+        StepExceptionPassThroughData.builder()
+            .errorMessage("error_msg")
+            .unitProgressData(
+                UnitProgressData.builder()
+                    .unitProgresses(asList(
+                        UnitProgress.newBuilder().setUnitName("Fetch Files").setStatus(UnitStatus.FAILURE).build()))
+                    .build())
+            .build();
+    azureCreateBPStep.finalizeExecutionWithSecurityContext(azureHelperTest.getAmbiance(), createStep(), exception,
+        () -> getTaskNGResponse(CommandExecutionStatus.FAILURE, UnitStatus.FAILURE, ""));
+    verify(cdStepHelper, times(1)).handleStepExceptionFailure(any());
+  }
+
+  @Test
+  @Owner(developers = NGONZALEZ)
+  @Category(UnitTests.class)
+  public void testFinalizeExecutionWithFailureStep() throws Exception {
+    AzureCreateARMResourcePassThroughData passThroughData = AzureCreateARMResourcePassThroughData.builder().build();
+    azureCreateBPStep.finalizeExecutionWithSecurityContext(azureHelperTest.getAmbiance(), createStep(), passThroughData,
+        () -> getTaskNGResponse(CommandExecutionStatus.FAILURE, UnitStatus.SUCCESS, "foobar"));
+    verify(azureCommonHelper, times(1)).getFailureResponse(any(), any());
+  }
+
+  @Test
+  @Owner(developers = NGONZALEZ)
+  @Category(UnitTests.class)
+  public void testFinalizeExecutionWithSucceededStep() throws Exception {
+    AzureCreateBPPassThroughData passThroughData = AzureCreateBPPassThroughData.builder().build();
+    StepResponse response = azureCreateBPStep.finalizeExecutionWithSecurityContext(azureHelperTest.getAmbiance(),
+        createStep(), passThroughData, () -> getTaskNGResponse(CommandExecutionStatus.SUCCESS, UnitStatus.SUCCESS, ""));
+
+    assertThat(response.getStatus()).isEqualTo(Status.SUCCEEDED);
+    assertThat(response.getStepOutcomes().size()).isEqualTo(0);
+  }
+
   private StepElementParameters createStep() {
     AzureCreateBPStepParameters stepParameters = new AzureCreateBPStepParameters();
     AzureTemplateFile templateFileBuilder = new AzureTemplateFile();
@@ -224,5 +275,19 @@ public class AzureCreateBPStepTest extends CategoryTest {
     TaskSelectorYaml taskSelectorYaml = new TaskSelectorYaml("create-d-selector-1");
     stepParameters.setDelegateSelectors(ParameterField.createValueField(Arrays.asList(taskSelectorYaml)));
     return StepElementParameters.builder().spec(stepParameters).build();
+  }
+
+  private AzureBlueprintTaskNGResponse getTaskNGResponse(
+      CommandExecutionStatus status, UnitStatus unitStatus, String errorMsg) {
+    return AzureBlueprintTaskNGResponse.builder()
+        .errorMsg(errorMsg)
+        .outputs("")
+        .commandExecutionStatus(status)
+        .unitProgressData(
+            UnitProgressData.builder()
+                .unitProgresses(
+                    asList(UnitProgress.newBuilder().setUnitName("Azure BP Stuff").setStatus(unitStatus).build()))
+                .build())
+        .build();
   }
 }

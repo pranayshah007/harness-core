@@ -9,9 +9,11 @@ package io.harness.connector.entities.embedded.awskmsconnector;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.entities.Connector;
 import io.harness.delegate.beans.connector.awskmsconnector.AwsKmsCredentialType;
+import io.harness.ng.DbAliases;
 
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -26,6 +28,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @EqualsAndHashCode(callSuper = true)
 @FieldNameConstants(innerTypeName = "AwsKmsConnectorKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "connectors", noClassnameStored = true)
 @Persistent
 @TypeAlias("io.harness.connector.entities.embedded.awskmsconnector.AwsKmsConnector")

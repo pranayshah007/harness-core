@@ -167,7 +167,7 @@ public class K8sCanaryDeleteStep extends TaskExecutableWithRollbackAndRbac<K8sDe
 
     if (!StepUtils.isStepInRollbackSection(ambiance)) {
       executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.K8S_CANARY_DELETE_OUTCOME,
-          K8sCanaryDeleteOutcome.builder().build(), StepOutcomeGroup.STEP.name());
+          K8sCanaryDeleteOutcome.builder().build(), StepOutcomeGroup.STAGE.name());
     }
 
     return responseBuilder.status(Status.SUCCEEDED).build();

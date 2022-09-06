@@ -143,7 +143,6 @@ import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
 import io.harness.validation.Validator;
 
-import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.io.IOException;
@@ -160,8 +159,6 @@ import org.apache.commons.lang3.tuple.Pair;
 
 @Slf4j
 public class CDStepHelper {
-  private static final Set<String> VALUES_YAML_SUPPORTED_MANIFEST_TYPES =
-      ImmutableSet.of(ManifestType.K8Manifest, ManifestType.HelmChart);
   public static final String MISSING_INFRASTRUCTURE_ERROR = "Infrastructure section is missing or is not configured";
   @Inject private GitConfigAuthenticationInfoHelper gitConfigAuthenticationInfoHelper;
   @Named("PRIVILEGED") @Inject private SecretManagerClientService secretManagerClientService;

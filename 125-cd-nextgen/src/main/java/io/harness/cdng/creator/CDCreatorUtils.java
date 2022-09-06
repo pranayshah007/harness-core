@@ -37,6 +37,8 @@ public class CDCreatorUtils {
         StepSpecTypeConstants.AZURE_CREATE_ARM_RESOURCE, StepSpecTypeConstants.AZURE_CREATE_BP_RESOURCE,
         StepSpecTypeConstants.AZURE_ROLLBACK_ARM_RESOURCE, StepSpecTypeConstants.AZURE_SLOT_DEPLOYMENT,
         StepSpecTypeConstants.AZURE_TRAFFIC_SHIFT, StepSpecTypeConstants.AZURE_SWAP_SLOT,
-        StepSpecTypeConstants.AZURE_WEBAPP_ROLLBACK, StepSpecTypeConstants.JENKINS_BUILD);
+        StepSpecTypeConstants.AZURE_WEBAPP_ROLLBACK, StepSpecTypeConstants.JENKINS_BUILD,
+        StepSpecTypeConstants.ECS_ROLLING_DEPLOY, StepSpecTypeConstants.ECS_ROLLING_ROLLBACK,
+        StepSpecTypeConstants.ECS_CANARY_DEPLOY, StepSpecTypeConstants.ECS_CANARY_DELETE);
   }
 }

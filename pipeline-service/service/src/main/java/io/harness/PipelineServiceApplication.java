@@ -41,6 +41,7 @@ import io.harness.engine.expressions.OrchestrationConstants;
 import io.harness.engine.interrupts.InterruptMonitor;
 import io.harness.engine.interrupts.OrchestrationEndInterruptHandler;
 import io.harness.engine.pms.execution.strategy.plan.PlanExecutionStrategy;
+import io.harness.engine.pms.start.NodeStartHelper;
 import io.harness.engine.timeouts.TimeoutInstanceRemover;
 import io.harness.event.OrchestrationEndGraphHandler;
 import io.harness.event.OrchestrationLogPublisher;
@@ -429,6 +430,8 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
     NodeExecutionServiceImpl nodeExecutionService =
         (NodeExecutionServiceImpl) injector.getInstance(Key.get(NodeExecutionService.class));
 
+    NodeStartHelper nodeStartHelper = injector.getInstance(Key.get(NodeStartHelper.class));
+
     // NodeStatusUpdateObserver
     nodeExecutionService.getStepStatusUpdateSubject().register(
         injector.getInstance(Key.get(PlanExecutionService.class)));
@@ -455,7 +458,7 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
     }
 
     // NodeExecutionStartObserver
-    nodeExecutionService.getNodeExecutionStartSubject().register(
+    nodeStartHelper.getNodeExecutionStartSubject().register(
         injector.getInstance(Key.get(StageStartNotificationHandler.class)));
 
     PlanStatusEventEmitterHandler planStatusEventEmitterHandler =

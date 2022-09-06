@@ -51,6 +51,7 @@ import io.harness.licensing.services.LicenseService;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.AccountOrgProjectHelper;
+import io.harness.ng.core.api.DefaultUserGroupService;
 import io.harness.ng.core.api.UserGroupService;
 import io.harness.ng.core.dto.GatewayAccountRequestDTO;
 import io.harness.ng.core.dto.UserGroupFilterDTO;
@@ -163,6 +164,7 @@ public class NgUserServiceImpl implements NgUserService {
   private final LicenseService licenseService;
   private final LastAdminCheckService lastAccountAdminCheckService;
   private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
+  private final DefaultUserGroupService defaultUserGroupService;
   private static final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_TRANSACTION_RETRY_POLICY;
 
   private static final RetryPolicy<Object> harnessSupportUsersFetchRetryPolicy =
@@ -178,7 +180,7 @@ public class NgUserServiceImpl implements NgUserService {
       UserGroupService userGroupService, UserMetadataRepository userMetadataRepository, InviteService inviteService,
       NotificationClient notificationClient, AccountOrgProjectHelper accountOrgProjectHelper,
       LicenseService licenseService, LastAdminCheckService lastAccountAdminCheckService,
-      NGFeatureFlagHelperService ngFeatureFlagHelperService) {
+      NGFeatureFlagHelperService ngFeatureFlagHelperService, DefaultUserGroupService defaultUserGroupService) {
     this.userClient = userClient;
     this.accountClient = accountClient;
     this.userMembershipRepository = userMembershipRepository;
@@ -193,6 +195,7 @@ public class NgUserServiceImpl implements NgUserService {
     this.licenseService = licenseService;
     this.lastAccountAdminCheckService = lastAccountAdminCheckService;
     this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;
+    this.defaultUserGroupService = defaultUserGroupService;
   }
 
   @Override
@@ -550,6 +553,7 @@ public class NgUserServiceImpl implements NgUserService {
     addUserToParentScope(userId, scope, source, isAccountBasicFeatureFlagEnabled);
     createRoleAssignments(
         userId, scope, createRoleAssignmentDTOs(roleBindings, userId, scope), isAccountBasicFeatureFlagEnabled);
+    defaultUserGroupService.addUserToDefaultUserGroup(scope, userId);
     userGroupService.addUserToUserGroups(scope, userId, getValidUserGroups(scope, userGroups));
   }
 

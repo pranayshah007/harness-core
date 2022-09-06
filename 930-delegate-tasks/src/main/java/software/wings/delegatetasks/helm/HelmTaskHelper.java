@@ -312,7 +312,7 @@ public class HelmTaskHelper {
         chartmuseumClient.stop(chartMuseumServer);
       }
       removeRepo(modifiedRepoName, chartDirectory, helmChartConfigParams.getHelmVersion(), timeoutInMillis, cacheDir);
-      if (!helmChartConfigParams.isUseCache()) {
+      if (!helmChartConfigParams.isUseCache() && isNotEmpty(cacheDir)) {
         try {
           deleteDirectoryAndItsContentIfExists(Paths.get(cacheDir).getParent().toString());
         } catch (IOException ie) {

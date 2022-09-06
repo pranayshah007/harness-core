@@ -12,6 +12,7 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
+import io.harness.cdng.infra.yaml.EcsInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
@@ -116,6 +117,12 @@ public class InfrastructurePlanCreatorHelper {
         AzureWebAppInfrastructure azureWebAppInfrastructure = (AzureWebAppInfrastructure) infrastructure;
         azureWebAppInfrastructure.setInfraName(infraName);
         azureWebAppInfrastructure.setInfraIdentifier(infraIdentifier);
+        return;
+
+      case InfrastructureKind.ECS:
+        EcsInfrastructure ecsInfrastructure = (EcsInfrastructure) infrastructure;
+        ecsInfrastructure.setInfraName(infraName);
+        ecsInfrastructure.setInfraIdentifier(infraIdentifier);
         return;
 
       default:

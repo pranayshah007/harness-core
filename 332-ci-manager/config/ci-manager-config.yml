@@ -53,6 +53,7 @@ harness-mongo:
   serverSelectionTimeout: 90000
   maxConnectionIdleTime: 600000
   connectionsPerHost: 50
+  aliasDBName: harness
 cimanager-mongo:
   uri: mongodb://localhost:27017/harnessci
   connectTimeout: 30000
@@ -68,6 +69,7 @@ pmsMongo:
   maxConnectionIdleTime: 600000
   connectionsPerHost: 300
   indexManagerMode: AUTO
+  aliasDBName: pms-harness
 
 enableAuth: false
 

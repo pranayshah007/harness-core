@@ -284,6 +284,22 @@ public class ForLoopStrategyConfigServiceTest extends NGCommonUtilitiesTestBase 
     assertThat(children.size()).isEqualTo(1);
   }
 
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testFetchChildrenWithForParamWithOnePercent() throws IOException {
+    List<YamlNode> stepNodes = getStepNodes();
+
+    YamlField stepFiled = stepNodes.get(7).getField("step");
+    YamlField strategyFiled = stepFiled.getNode().getField("strategy");
+
+    StrategyConfig strategyConfig = YamlUtils.read(strategyFiled.getNode().toString(), StrategyConfig.class);
+
+    List<ChildrenExecutableResponse.Child> children =
+        forLoopStrategyConfigService.fetchChildren(strategyConfig, "childNodeId");
+    assertThat(children.size()).isEqualTo(1);
+  }
+
   private List<YamlNode> getStepNodes() throws IOException {
     ClassLoader classLoader = this.getClass().getClassLoader();
     final URL testFile = classLoader.getResource("pipeline-with-repeat-strategy.yaml");

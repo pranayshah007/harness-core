@@ -11,7 +11,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.cvng.CVConstants;
 import io.harness.cvng.analysis.beans.ServiceGuardTxnMetricAnalysisDataDTO.MetricSumDTO;
 import io.harness.mongo.index.CompoundMongoIndex;
@@ -48,9 +48,9 @@ import org.mongodb.morphia.annotations.Id;
 @FieldNameConstants(innerTypeName = "TimeSeriesCumulativeSumsKeys")
 @EqualsAndHashCode(callSuper = false, exclude = {"transactionMetricSums"})
 @JsonIgnoreProperties(ignoreUnknown = true)
+@StoreIn(DbAliases.CVNG)
 @Entity(value = "timeseriesCumulativeSums", noClassnameStored = true)
 @HarnessEntity(exportable = false)
-@StoreIn(DbAliases.CVNG)
 public final class TimeSeriesCumulativeSums implements PersistentEntity, UuidAware {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()

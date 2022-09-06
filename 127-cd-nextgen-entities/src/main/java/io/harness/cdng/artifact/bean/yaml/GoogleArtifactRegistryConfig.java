@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.cdng.artifact.bean.yaml;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
@@ -7,7 +14,6 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
-import io.harness.cdng.artifact.bean.GoogleArtifactRegistryType;
 import io.harness.cdng.artifact.utils.ArtifactUtils;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
@@ -80,11 +86,11 @@ public class GoogleArtifactRegistryConfig implements ArtifactConfig, Visitable, 
    * Version regex is used to get latest build from builds matching regex.
    */
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> versionRegex;
+
   @JsonProperty("repositoryType")
   @NotNull
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  @Wither
-  ParameterField<GoogleArtifactRegistryType> googleArtifactRegistryType;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH, allowableValues = "docker")
+  ParameterField<String> googleArtifactRegistryType;
 
   @Override
   public ArtifactSourceType getSourceType() {

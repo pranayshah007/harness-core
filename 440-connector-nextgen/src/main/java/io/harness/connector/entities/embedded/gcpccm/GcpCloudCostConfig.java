@@ -9,9 +9,11 @@ package io.harness.connector.entities.embedded.gcpccm;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
 
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.entities.Connector;
 import io.harness.delegate.beans.connector.CEFeatures;
+import io.harness.ng.DbAliases;
 
 import java.util.List;
 import javax.annotation.Nullable;
@@ -30,6 +32,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Persistent
 @EqualsAndHashCode(callSuper = false)
 @FieldNameConstants(innerTypeName = "GcpCloudCostConfigKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "connectors", noClassnameStored = true)
 @TypeAlias("io.harness.connector.entities.embedded.gcpccm.GcpCloudCostConfig")
 @OwnedBy(CE)

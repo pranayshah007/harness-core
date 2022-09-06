@@ -595,7 +595,7 @@ public class HelmTaskHelperBase {
           manifest.getChartName(), manifest.getChartVersion(), destinationDirectory, manifest.getHelmVersion(),
           manifest.getHelmCommandFlag(), timeoutInMillis, manifest.isCheckIncorrectChartVersion(), cacheDir);
     } finally {
-      if (!manifest.isUseCache()) {
+      if (isNotEmpty(cacheDir) && !manifest.isUseCache()) {
         try {
           deleteDirectoryAndItsContentIfExists(Paths.get(cacheDir).getParent().toString());
         } catch (IOException ie) {
@@ -699,7 +699,7 @@ public class HelmTaskHelperBase {
 
       cleanup(resourceDirectory);
 
-      if (!manifest.isUseCache()) {
+      if (isNotEmpty(cacheDir) && !manifest.isUseCache()) {
         try {
           deleteDirectoryAndItsContentIfExists(Paths.get(cacheDir).getParent().toString());
         } catch (IOException ie) {

@@ -57,6 +57,8 @@ import io.harness.exception.TerraformCommandExecutionException;
 import io.harness.exception.UnresolvedExpressionsException;
 import io.harness.exception.VerificationOperationException;
 import io.harness.exception.ngexception.AzureAppServiceTaskException;
+import io.harness.exception.ngexception.beans.templateservice.TemplateInputsErrorDTO;
+import io.harness.exception.ngexception.beans.templateservice.TemplateInputsErrorMetadataDTO;
 import io.harness.exception.runtime.SshCommandExecutionException;
 import io.harness.exception.runtime.serverless.ServerlessAwsLambdaRuntimeException;
 import io.harness.exception.runtime.serverless.ServerlessCommandExecutionException;
@@ -153,5 +155,7 @@ public class CommonsKryoRegistrar implements KryoRegistrar {
     kryo.register(InterruptedRuntimeException.class, 980030);
     kryo.register(InvalidIdentifierRefException.class, 980031);
     kryo.register(AzureAppServiceTaskException.class, 980032);
+    kryo.register(TemplateInputsErrorDTO.class, 980033);
+    kryo.register(TemplateInputsErrorMetadataDTO.class, 980034);
   }
 }

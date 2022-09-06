@@ -17,7 +17,6 @@ import static org.mockito.Mockito.when;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.sweepingoutputs.ContextElement;
 import io.harness.beans.sweepingoutputs.StageDetails;
-import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.category.element.UnitTests;
 import io.harness.ci.beans.entities.LogServiceConfig;
 import io.harness.ci.beans.entities.TIServiceConfig;
@@ -87,7 +86,6 @@ public class VmInitializeTaskParamsBuilderTest extends CIExecutionTestBase {
     String stageRuntimeId = "test";
 
     doNothing().when(vmInitializeUtils).validateStageConfig(any(), any());
-    when(vmInitializeUtils.getOS(initializeStepInfo.getInfrastructure())).thenReturn(OSType.Linux);
     when(vmInitializeUtils.getVolumeToMountPath(any(), any())).thenReturn(volToMountPath);
     when(executionSweepingOutputService.resolveOptional(any(), any()))
         .thenReturn(OptionalSweepingOutput.builder().found(false).build());
@@ -133,7 +131,6 @@ public class VmInitializeTaskParamsBuilderTest extends CIExecutionTestBase {
     String stageRuntimeId = "test";
 
     doNothing().when(vmInitializeUtils).validateStageConfig(any(), any());
-    when(vmInitializeUtils.getOS(initializeStepInfo.getInfrastructure())).thenReturn(OSType.Linux);
     when(vmInitializeUtils.getVolumeToMountPath(any(), any())).thenReturn(volToMountPath);
     when(executionSweepingOutputService.resolveOptional(any(), any()))
         .thenReturn(OptionalSweepingOutput.builder().found(false).build());

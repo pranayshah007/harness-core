@@ -164,7 +164,7 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
     } else if (deploymentStageConfig.getEnvironmentGroup() != null) {
       addFiltersFromEnvironmentGroup(filterCreationContext, filterBuilder, deploymentStageConfig.getEnvironmentGroup(),
           deploymentStageConfig.getGitOpsEnabled());
-    } else {
+    } else if (deploymentStageConfig.getEnvironments() == null) {
       throw new InvalidYamlRuntimeException(format(
           "Infrastructure or Environment or EnvironmentGroup should be present in stage [%s]. Please add it and try again",
           YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));

@@ -18,6 +18,8 @@ import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.node.NodeExecutionTimeoutCallback;
 import io.harness.engine.executions.node.NodeExecutionUpdateFailedException;
 import io.harness.engine.executions.plan.PlanService;
+import io.harness.engine.observers.NodeExecutionStartObserver;
+import io.harness.engine.observers.NodeStartInfo;
 import io.harness.engine.pms.commons.events.PmsEventSender;
 import io.harness.engine.pms.data.PmsEngineExpressionService;
 import io.harness.engine.utils.OrchestrationUtils;
@@ -25,8 +27,10 @@ import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
+import io.harness.observer.Subject;
 import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.ExecutionMode;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.start.NodeStartEvent;
@@ -44,16 +48,21 @@ import io.harness.timeout.TimeoutInstance;
 import io.harness.timeout.TimeoutParameters;
 import io.harness.timeout.contracts.TimeoutObtainment;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
+@Singleton
 public class NodeStartHelper {
   @Inject private PmsEventSender eventSender;
   @Inject private NodeExecutionService nodeExecutionService;
@@ -63,6 +72,7 @@ public class NodeStartHelper {
   @Inject private PmsEngineExpressionService pmsEngineExpressionService;
   @Inject private TransactionHelper transactionHelper;
   @Inject private PmsGraphStepDetailsService pmsGraphStepDetailsService;
+  @Getter private final Subject<NodeExecutionStartObserver> nodeExecutionStartSubject = new Subject<>();
 
   public void startNode(Ambiance ambiance, FacilitatorResponseProto facilitatorResponse) {
     String nodeExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
@@ -76,6 +86,8 @@ public class NodeStartHelper {
       log.warn("Not Starting node execution. Cannot transition from {} to {}", nodeExecution.getStatus(), targetStatus);
       throw new NodeExecutionUpdateFailedException("Cannot Start node Execution");
     }
+    nodeExecutionStartSubject.fireInform(
+        NodeExecutionStartObserver::onNodeStart, NodeStartInfo.builder().nodeExecution(nodeExecution).build());
     log.info("Sending NodeExecution START event");
     sendEvent(nodeExecution, node, facilitatorResponse.getPassThroughDataBytes());
   }
@@ -99,6 +111,7 @@ public class NodeStartHelper {
       resolveInputs(ambiance, planNode.getStepInputs(), planNode.isSkipUnresolvedExpressionsCheck());
       return nodeExecutionService.updateStatusWithOps(nodeExecutionId, targetStatus, ops -> {
         setUnset(ops, NodeExecutionKeys.timeoutInstanceIds, timeoutInstanceIds);
+        updateStartTsInNodeExecution(ops, ambiance);
       }, EnumSet.noneOf(Status.class));
     });
   }
@@ -143,5 +156,16 @@ public class NodeStartHelper {
         PmsStepParameters.parse(OrchestrationMapBackwardCompatibilityUtils.extractToOrchestrationMap(resolvedInputs));
     pmsGraphStepDetailsService.addStepInputs(nodeExecutionId, ambiance.getPlanExecutionId(), parameterInputs);
     log.info("Resolved step Inputs");
+  }
+
+  @VisibleForTesting
+  protected void updateStartTsInNodeExecution(Update ops, Ambiance ambiance) {
+    long currentTimeMillis = System.currentTimeMillis();
+    Level updatedLevel =
+        ambiance.toBuilder().getLevelsBuilder(ambiance.getLevelsCount() - 1).setStartTs(currentTimeMillis).build();
+    ambiance = ambiance.toBuilder().setLevels(ambiance.getLevelsCount() - 1, updatedLevel).build();
+
+    ops.set(NodeExecutionKeys.startTs, currentTimeMillis);
+    ops.set(NodeExecutionKeys.ambiance, ambiance);
   }
 }

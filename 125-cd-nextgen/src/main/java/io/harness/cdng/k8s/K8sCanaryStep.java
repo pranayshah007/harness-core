@@ -186,9 +186,12 @@ public class K8sCanaryStep extends TaskChainExecutableWithRollbackAndRbac implem
                 .canaryWorkload(k8sCanaryDataException.getCanaryWorkload())
                 .canaryWorkloadDeployed(k8sCanaryDataException.isCanaryWorkloadDeployed())
                 .build();
-
-        executionSweepingOutputService.consume(
-            ambiance, OutcomeExpressionConstants.K8S_CANARY_OUTCOME, k8sCanaryOutcome, StepOutcomeGroup.STEP.name());
+        OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputService.resolveOptional(
+            ambiance, RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.K8S_CANARY_OUTCOME));
+        if (optionalSweepingOutput == null || !optionalSweepingOutput.isFound()) {
+          executionSweepingOutputService.consume(
+              ambiance, OutcomeExpressionConstants.K8S_CANARY_OUTCOME, k8sCanaryOutcome, StepOutcomeGroup.STAGE.name());
+        }
       }
 
       return k8sStepHelper.handleTaskException(ambiance, executionPassThroughData, e);
@@ -207,8 +210,12 @@ public class K8sCanaryStep extends TaskChainExecutableWithRollbackAndRbac implem
                                             .canaryWorkloadDeployed(k8sCanaryDeployResponse.isCanaryWorkloadDeployed())
                                             .build();
 
-    executionSweepingOutputService.consume(
-        ambiance, OutcomeExpressionConstants.K8S_CANARY_OUTCOME, k8sCanaryOutcome, StepOutcomeGroup.STEP.name());
+    OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputService.resolveOptional(
+        ambiance, RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.K8S_CANARY_OUTCOME));
+    if (optionalSweepingOutput == null || !optionalSweepingOutput.isFound()) {
+      executionSweepingOutputService.consume(
+          ambiance, OutcomeExpressionConstants.K8S_CANARY_OUTCOME, k8sCanaryOutcome, StepOutcomeGroup.STAGE.name());
+    }
 
     if (k8sTaskExecutionResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
       return K8sStepHelper.getFailureResponseBuilder(k8sTaskExecutionResponse, responseBuilder).build();

@@ -42,7 +42,6 @@ import io.harness.pms.contracts.interrupts.ManualIssuer;
 import io.harness.pms.contracts.steps.SkipType;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.rule.Owner;
 
 import com.google.common.collect.ImmutableMap;
@@ -200,7 +199,7 @@ public class RetryHelperTest extends OrchestrationTestBase {
     assertThat(clonedNodeExecution.getRetryIds()).containsExactly(nodeExecution.getUuid());
     assertThat(clonedNodeExecution.getInterruptHistories()).hasSize(1);
     assertThat(clonedNodeExecution.getInterruptHistories().get(0).getInterruptType()).isEqualTo(InterruptType.RETRY);
-    assertThat(clonedNodeExecution.getStartTs()).isEqualTo(AmbianceUtils.getCurrentLevelStartTs(ambiance));
+    assertThat(clonedNodeExecution.getStartTs()).isNull();
     assertThat(clonedNodeExecution.getEndTs()).isNull();
     assertThat(clonedNodeExecution.getStatus()).isEqualTo(Status.QUEUED);
     assertThat(clonedNodeExecution.getName()).isEqualTo("name");

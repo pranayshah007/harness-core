@@ -7,7 +7,7 @@
 
 package io.harness.entities;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.entities.instanceinfo.InstanceInfo;
@@ -34,10 +34,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "InstanceKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "instanceNG", noClassnameStored = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Document("instanceNG")
-@StoreIn(DbAliases.NG_MANAGER)
 @OwnedBy(HarnessTeam.DX)
 public class Instance {
   public static List<MongoIndex> mongoIndexes() {

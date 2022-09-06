@@ -128,15 +128,21 @@ public class ForLoopStrategyConfigService implements StrategyConfigService {
     int start = 0;
     List<String> params = harnessForConfig.getItems().getValue();
     validateItems(params);
-    int end = params.size() - 1;
+    int itemsSize = params.size();
+    int end = itemsSize - 1;
     if (!ParameterField.isBlank(harnessForConfig.getStart())) {
-      start = Math.round(((harnessForConfig.getStart().getValue().floatValue()) / 100) * params.size());
+      start = Math.round(((harnessForConfig.getStart().getValue().floatValue()) / 100) * itemsSize);
     }
     if (!ParameterField.isBlank(harnessForConfig.getEnd())) {
-      end = Math.round(((harnessForConfig.getEnd().getValue().floatValue()) / 100) * params.size());
+      end = Math.round(((harnessForConfig.getEnd().getValue().floatValue()) / 100) * itemsSize);
     }
 
-    validateStartEnd(start, end, params.size());
+    // fix end, if provided percentage value is greater than 0
+    if (end == 0 && itemsSize > 0) {
+      end = 1;
+    }
+
+    validateStartEnd(start, end, itemsSize);
     return params.subList(start, end);
   }
 

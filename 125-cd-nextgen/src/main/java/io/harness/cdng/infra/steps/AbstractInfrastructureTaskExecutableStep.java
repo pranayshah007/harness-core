@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.cdng.infra.steps;
 
 import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.INFRA_TASK_EXECUTABLE_STEP_V2;
@@ -444,11 +451,11 @@ abstract class AbstractInfrastructureTaskExecutableStep {
             .parameters(new Object[] {azureTaskParamsTaskParams})
             .build();
 
-    List<TaskSelectorYaml> taskSelectorYamlList = azureInfraDelegateConfig.getAzureConnectorDTO()
-                                                      .getDelegateSelectors()
-                                                      .stream()
-                                                      .map(delegateSelector -> new TaskSelectorYaml(delegateSelector))
-                                                      .collect(Collectors.toList());
+    List<TaskSelectorYaml> taskSelectorYamlList =
+        emptyIfNull(azureInfraDelegateConfig.getAzureConnectorDTO().getDelegateSelectors())
+            .stream()
+            .map(TaskSelectorYaml::new)
+            .collect(Collectors.toList());
 
     return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer, Collections.singletonList("Execute"),
         taskData.getTaskType(), TaskSelectorYaml.toTaskSelector(emptyIfNull(taskSelectorYamlList)),

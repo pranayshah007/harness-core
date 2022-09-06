@@ -7,8 +7,10 @@
 
 package io.harness.licensing.entities.modules;
 
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ng.DbAliases;
 
 import lombok.Builder;
 import lombok.Data;
@@ -21,6 +23,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Data
 @Builder
 @EqualsAndHashCode(callSuper = true)
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "moduleLicenses", noClassnameStored = true)
 @Persistent
 @TypeAlias("io.harness.license.entities.module.CVModuleLicense")

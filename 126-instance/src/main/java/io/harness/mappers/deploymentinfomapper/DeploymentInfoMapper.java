@@ -13,6 +13,7 @@ import io.harness.dtos.deploymentinfo.AwsSshWinrmDeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.AzureSshWinrmDeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.AzureWebAppDeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
+import io.harness.dtos.deploymentinfo.EcsDeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.K8sDeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.NativeHelmDeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.PdcDeploymentInfoDTO;
@@ -22,6 +23,7 @@ import io.harness.entities.deploymentinfo.AwsSshWinrmDeploymentInfo;
 import io.harness.entities.deploymentinfo.AzureSshWinrmDeploymentInfo;
 import io.harness.entities.deploymentinfo.AzureWebAppNGDeploymentInfo;
 import io.harness.entities.deploymentinfo.DeploymentInfo;
+import io.harness.entities.deploymentinfo.EcsDeploymentInfo;
 import io.harness.entities.deploymentinfo.K8sDeploymentInfo;
 import io.harness.entities.deploymentinfo.NativeHelmDeploymentInfo;
 import io.harness.entities.deploymentinfo.PdcDeploymentInfo;
@@ -45,6 +47,8 @@ public class DeploymentInfoMapper {
       return ServerlessAwsLambdaDeploymentInfoMapper.toDTO((ServerlessAwsLambdaDeploymentInfo) deploymentInfo);
     } else if (deploymentInfo instanceof AzureWebAppNGDeploymentInfo) {
       return AzureWebAppDeploymentInfoMapper.toDTO((AzureWebAppNGDeploymentInfo) deploymentInfo);
+    } else if (deploymentInfo instanceof EcsDeploymentInfo) {
+      return EcsDeploymentInfoMapper.toDTO((EcsDeploymentInfo) deploymentInfo);
     } else if (deploymentInfo instanceof PdcDeploymentInfo) {
       return PdcDeploymentInfoMapper.toDTO((PdcDeploymentInfo) deploymentInfo);
     } else if (deploymentInfo instanceof AzureSshWinrmDeploymentInfo) {
@@ -66,6 +70,8 @@ public class DeploymentInfoMapper {
       return ServerlessAwsLambdaDeploymentInfoMapper.toEntity((ServerlessAwsLambdaDeploymentInfoDTO) deploymentInfoDTO);
     } else if (deploymentInfoDTO instanceof AzureWebAppDeploymentInfoDTO) {
       return AzureWebAppDeploymentInfoMapper.toEntity((AzureWebAppDeploymentInfoDTO) deploymentInfoDTO);
+    } else if (deploymentInfoDTO instanceof EcsDeploymentInfoDTO) {
+      return EcsDeploymentInfoMapper.toEntity((EcsDeploymentInfoDTO) deploymentInfoDTO);
     } else if (deploymentInfoDTO instanceof PdcDeploymentInfoDTO) {
       return PdcDeploymentInfoMapper.toEntity((PdcDeploymentInfoDTO) deploymentInfoDTO);
     } else if (deploymentInfoDTO instanceof AzureSshWinrmDeploymentInfoDTO) {

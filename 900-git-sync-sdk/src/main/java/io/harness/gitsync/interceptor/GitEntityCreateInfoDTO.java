@@ -12,11 +12,9 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.encryption.Scope;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.sdk.GitSyncApiConstants;
 
-import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
 import javax.ws.rs.DefaultValue;
@@ -69,8 +67,4 @@ public class GitEntityCreateInfoDTO {
   @Parameter(description = GitSyncApiConstants.REPO_NAME_PARAM_MESSAGE)
   @QueryParam(GitSyncApiConstants.REPO_NAME)
   String repoName;
-  @Hidden
-  @Parameter(description = GitSyncApiConstants.PARENT_ENTITY_SCOPE_MESSAGE)
-  @QueryParam(GitSyncApiConstants.PARENT_ENTITY_SCOPE)
-  Scope parentEntityScope;
 }

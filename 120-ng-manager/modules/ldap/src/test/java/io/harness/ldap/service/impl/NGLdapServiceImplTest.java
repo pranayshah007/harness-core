@@ -40,8 +40,10 @@ import io.harness.delegate.beans.ldap.NGLdapGroupSearchTaskResponse;
 import io.harness.delegate.beans.ldap.NGLdapGroupSyncTaskResponse;
 import io.harness.delegate.beans.ldap.NGLdapTestAuthenticationTaskResponse;
 import io.harness.delegate.utils.TaskSetupAbstractionHelper;
+import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.exception.exceptionmanager.exceptionhandler.DocumentLinksConstants;
 import io.harness.ldap.scheduler.NGLdapGroupSyncHelper;
 import io.harness.ng.authenticationsettings.remote.AuthSettingsManagerClient;
 import io.harness.ng.core.api.UserGroupService;
@@ -58,7 +60,6 @@ import software.wings.beans.sso.LdapGroupResponse;
 import software.wings.beans.sso.LdapTestResponse;
 import software.wings.beans.sso.LdapUserResponse;
 import software.wings.helpers.ext.ldap.LdapResponse;
-import software.wings.service.impl.ldap.LdapDelegateException;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -78,8 +79,9 @@ import retrofit2.Response;
 @OwnedBy(HarnessTeam.PL)
 @RunWith(MockitoJUnitRunner.class)
 public class NGLdapServiceImplTest extends CategoryTest {
-  public static final String INVALID_CREDENTIALS = "Invalid Credentials";
-  public static final String UNKNOWN_RESPONSE_FROM_DELEGATE = "Unknown Response from delegate";
+  public static final String INVALID_CREDENTIALS = "INVALID_CREDENTIALS";
+  public static final String DELEGATE_NOT_AVAILABLE =
+      String.format(HintException.DELEGATE_NOT_AVAILABLE, DocumentLinksConstants.DELEGATE_INSTALLATION_LINK);
   TaskSetupAbstractionHelper taskSetupAbstractionHelper = mock(TaskSetupAbstractionHelper.class);
   DelegateGrpcClientWrapper delegateGrpcClientWrapper = mock(DelegateGrpcClientWrapper.class);
   AuthSettingsManagerClient managerClient = mock(AuthSettingsManagerClient.class);
@@ -123,16 +125,22 @@ public class NGLdapServiceImplTest extends CategoryTest {
     assertNotNull(ldapTestResponse);
     assertEquals(successfulTestResponse.getStatus(), ldapTestResponse.getStatus());
 
+    // Test unsuccessful
+    ldapTestResponse = null;
     LdapTestResponse unsuccessfulTestResponse =
-        LdapTestResponse.builder().status(FAILURE).message("Invalid Credential").build();
+        LdapTestResponse.builder().status(FAILURE).message(INVALID_CREDENTIALS).build();
 
     when(delegateGrpcClientWrapper.executeSyncTask(any()))
         .thenReturn(NGLdapDelegateTaskResponse.builder().ldapTestResponse(unsuccessfulTestResponse).build());
 
-    ldapTestResponse = ngLdapService.validateLdapConnectionSettings(accountId, null, null, ldapSettings);
-
-    assertNotNull(ldapTestResponse);
-    assertEquals(unsuccessfulTestResponse.getStatus(), ldapTestResponse.getStatus());
+    try {
+      ldapTestResponse = ngLdapService.validateLdapConnectionSettings(accountId, null, null, ldapSettings);
+      failBecauseExceptionWasNotThrown(WingsException.class);
+    } catch (Exception ex) {
+      assertNull(ldapTestResponse);
+      assertThat(ex).isInstanceOf(HintException.class);
+      assertEquals(ex.getMessage(), HintException.CHECK_LDAP_CONNECTION);
+    }
   }
 
   @Test
@@ -148,10 +156,10 @@ public class NGLdapServiceImplTest extends CategoryTest {
     try {
       ldapTestResponse = ngLdapService.validateLdapConnectionSettings(accountId, null, null, ldapSettings);
       failBecauseExceptionWasNotThrown(WingsException.class);
-    } catch (Exception e) {
+    } catch (Exception ex) {
       assertNull(ldapTestResponse);
-      assertThat(e).isInstanceOf(LdapDelegateException.class);
-      assertEquals(e.getMessage(), UNKNOWN_RESPONSE_FROM_DELEGATE);
+      assertThat(ex).isInstanceOf(HintException.class);
+      assertEquals(ex.getMessage(), DELEGATE_NOT_AVAILABLE);
     }
   }
 
@@ -218,8 +226,8 @@ public class NGLdapServiceImplTest extends CategoryTest {
       failBecauseExceptionWasNotThrown(WingsException.class);
     } catch (Exception exc) {
       assertNull(resultUserGroups);
-      assertThat(exc).isInstanceOf(LdapDelegateException.class);
-      assertEquals(exc.getMessage(), UNKNOWN_RESPONSE_FROM_DELEGATE);
+      assertThat(exc).isInstanceOf(HintException.class);
+      assertEquals(exc.getMessage(), DELEGATE_NOT_AVAILABLE);
     }
   }
 
@@ -283,10 +291,13 @@ public class NGLdapServiceImplTest extends CategoryTest {
     when(delegateGrpcClientWrapper.executeSyncTask(any()))
         .thenReturn(NGLdapDelegateTaskResponse.builder().ldapTestResponse(unsuccessfulTestResponse).build());
 
-    ldapTestResponse = ngLdapService.validateLdapGroupSettings(accountId, null, null, ldapSettings);
-
-    assertNotNull(ldapTestResponse);
-    assertEquals(unsuccessfulTestResponse.getStatus(), ldapTestResponse.getStatus());
+    try {
+      ldapTestResponse = ngLdapService.validateLdapGroupSettings(accountId, null, null, ldapSettings);
+      failBecauseExceptionWasNotThrown(WingsException.class);
+    } catch (Exception ex) {
+      assertThat(ex).isInstanceOf(HintException.class);
+      assertEquals(ex.getMessage(), HintException.LDAP_ATTRIBUTES_INCORRECT);
+    }
   }
 
   @Test
@@ -302,10 +313,10 @@ public class NGLdapServiceImplTest extends CategoryTest {
     try {
       ldapTestResponse = ngLdapService.validateLdapUserSettings(accountId, null, null, ldapSettings);
       failBecauseExceptionWasNotThrown(WingsException.class);
-    } catch (Exception e) {
+    } catch (Exception ex) {
       assertNull(ldapTestResponse);
-      assertThat(e).isInstanceOf(LdapDelegateException.class);
-      assertEquals(e.getMessage(), UNKNOWN_RESPONSE_FROM_DELEGATE);
+      assertThat(ex).isInstanceOf(HintException.class);
+      assertEquals(ex.getMessage(), DELEGATE_NOT_AVAILABLE);
     }
   }
 
@@ -322,10 +333,10 @@ public class NGLdapServiceImplTest extends CategoryTest {
     try {
       ldapTestResponse = ngLdapService.validateLdapGroupSettings(accountId, null, null, ldapSettings);
       failBecauseExceptionWasNotThrown(WingsException.class);
-    } catch (Exception e) {
+    } catch (Exception ex) {
       assertNull(ldapTestResponse);
-      assertThat(e).isInstanceOf(LdapDelegateException.class);
-      assertEquals(e.getMessage(), UNKNOWN_RESPONSE_FROM_DELEGATE);
+      assertThat(ex).isInstanceOf(HintException.class);
+      assertEquals(ex.getMessage(), DELEGATE_NOT_AVAILABLE);
     }
   }
   private ErrorNotifyResponseData buildErrorNotifyResponseData() {

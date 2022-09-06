@@ -20,6 +20,7 @@ import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceServi
 
 import com.google.common.base.Preconditions;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -66,6 +67,11 @@ public class TestVerificationJob extends VerificationJob {
   @Override
   public Optional<TimeRange> getPreActivityTimeRange(Instant deploymentStartTime) {
     return Optional.empty();
+  }
+
+  @Override
+  public List<TimeRange> getPreActivityDataCollectionTimeRanges(Instant deploymentStartTime) {
+    return Collections.emptyList();
   }
 
   @Override

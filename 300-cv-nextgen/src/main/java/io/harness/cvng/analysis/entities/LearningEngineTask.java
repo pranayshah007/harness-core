@@ -10,7 +10,7 @@ package io.harness.cvng.analysis.entities;
 import static io.harness.cvng.analysis.entities.LearningEngineTask.TaskPriority.P1;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.cvng.beans.cvnglog.ExecutionLogDTO.LogLevel;
 import io.harness.cvng.core.entities.VerificationTaskExecutionInstance;
 import io.harness.mongo.index.CompoundMongoIndex;
@@ -52,9 +52,9 @@ import org.mongodb.morphia.annotations.Id;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
 @JsonIgnoreProperties(ignoreUnknown = true)
+@StoreIn(DbAliases.CVNG)
 @Entity(value = "learningEngineTasks")
 @HarnessEntity(exportable = true)
-@StoreIn(DbAliases.CVNG)
 public abstract class LearningEngineTask implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware,
                                                     AccountAccess, VerificationTaskExecutionInstance {
   public static List<MongoIndex> mongoIndexes() {

@@ -25,6 +25,7 @@ import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsIAMRolesResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsListASGInstancesTaskParamsRequest;
 import io.harness.delegate.beans.connector.awsconnector.AwsListASGNamesTaskResponse;
+import io.harness.delegate.beans.connector.awsconnector.AwsListClustersTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskParamsRequest;
 import io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsListLoadBalancersTaskResponse;
@@ -37,6 +38,7 @@ import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.exception.AwsAutoScaleException;
 import io.harness.exception.AwsCFException;
+import io.harness.exception.AwsECSException;
 import io.harness.exception.AwsIAMRolesException;
 import io.harness.exception.AwsInstanceException;
 import io.harness.exception.AwsLoadBalancerException;
@@ -304,6 +306,26 @@ public class AwsResourceServiceImpl implements AwsResourceService {
     return getASGNamesTaskExecutionResponse(responseData);
   }
 
+  @Override
+  public List<String> getClusterNames(
+      IdentifierRef awsConnectorRef, String orgIdentifier, String projectIdentifier, String region) {
+    BaseNGAccess access =
+        serviceHelper.getBaseNGAccess(awsConnectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
+
+    AwsConnectorDTO awsConnector = serviceHelper.getAwsConnector(awsConnectorRef);
+    List<EncryptedDataDetail> encryptedData = serviceHelper.getAwsEncryptionDetails(awsConnector, access);
+    AwsTaskParams awsTaskParams = AwsTaskParams.builder()
+                                      .awsConnector(awsConnector)
+                                      .awsTaskType(AwsTaskType.LIST_ECS_CLUSTERS)
+                                      .encryptionDetails(encryptedData)
+                                      .region(region)
+                                      .build();
+
+    DelegateResponseData responseData =
+        serviceHelper.getResponseData(access, awsTaskParams, TaskType.NG_AWS_TASK.name());
+    return getECSClusterNamesTaskExecutionResponse(responseData);
+  }
+
   private AwsIAMRolesResponse executeSyncTask(AwsTaskParams awsTaskParams, BaseNGAccess baseNGAccess) {
     DelegateResponseData responseData =
         serviceHelper.getResponseData(baseNGAccess, awsTaskParams, TaskType.NG_AWS_TASK.name());
@@ -406,5 +428,18 @@ public class AwsResourceServiceImpl implements AwsResourceService {
       throw new AwsAutoScaleException("Failed to get aws autoscaling groups");
     }
     return response.getNames();
+  }
+
+  private List<String> getECSClusterNamesTaskExecutionResponse(DelegateResponseData responseData) {
+    if (responseData instanceof ErrorNotifyResponseData) {
+      ErrorNotifyResponseData errorNotifyResponseData = (ErrorNotifyResponseData) responseData;
+      throw new AwsECSException("Failed to get aws ecs clusters"
+          + " : " + errorNotifyResponseData.getErrorMessage());
+    }
+    AwsListClustersTaskResponse response = (AwsListClustersTaskResponse) responseData;
+    if (response.getCommandExecutionStatus() != SUCCESS) {
+      throw new AwsECSException("Failed to get aws ecs clusters");
+    }
+    return response.getClusters();
   }
 }
