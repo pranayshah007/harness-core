@@ -64,13 +64,13 @@ public class BitbucketConnectorDTO
   @JsonProperty("type")
   @Schema(type = "string", allowableValues = {"Account", "Repo"})
   private GitConnectionType connectionType;
-  @UrlField @NotNull @NotBlank private String url;
+  @NotNull @NotBlank private String url;
   private String validationRepo;
   @Valid @NotNull private BitbucketAuthenticationDTO authentication;
   @Valid private BitbucketApiAccessDTO apiAccess;
   private Set<String> delegateSelectors;
   Boolean executeOnDelegate = true;
-  @UrlField private String gitConnectionUrl;
+  private String gitConnectionUrl;
 
   @Builder
   public BitbucketConnectorDTO(GitConnectionType connectionType, String url, String validationRepo,

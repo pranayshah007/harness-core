@@ -47,7 +47,7 @@ import org.hibernate.validator.constraints.NotBlank;
 public class AppDynamicsConnectorDTO extends ConnectorConfigDTO implements DecryptableEntity, DelegateSelectable {
   String username;
   @NotNull String accountname;
-  @UrlField @NotNull @NotBlank String controllerUrl;
+  @NotNull @NotBlank String controllerUrl;
   Set<String> delegateSelectors;
 
   @ApiModelProperty(dataType = "string") @SecretReference SecretRefData passwordRef;

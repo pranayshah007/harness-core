@@ -41,7 +41,7 @@ import org.hibernate.validator.constraints.NotBlank;
 @OwnedBy(HarnessTeam.CV)
 public class NewRelicConnectorDTO extends ConnectorConfigDTO implements DecryptableEntity, DelegateSelectable {
   @NotNull String newRelicAccountId;
-  @UrlField @NotNull @NotBlank String url;
+  @NotNull @NotBlank String url;
   @ApiModelProperty(dataType = "string") @NotNull @SecretReference SecretRefData apiKeyRef;
   Set<String> delegateSelectors;
   @Override

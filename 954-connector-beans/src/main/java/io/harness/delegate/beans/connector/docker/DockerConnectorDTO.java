@@ -44,7 +44,7 @@ import org.hibernate.validator.constraints.NotBlank;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Schema(name = "DockerConnector", description = "Docker Connector details.")
 public class DockerConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable, ManagerExecutable {
-  @UrlField @NotNull @NotBlank String dockerRegistryUrl;
+  @NotNull @NotBlank String dockerRegistryUrl;
   @NotNull DockerRegistryProviderType providerType;
   @Valid DockerAuthenticationDTO auth;
   Set<String> delegateSelectors;

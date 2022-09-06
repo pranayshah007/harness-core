@@ -59,13 +59,13 @@ public class GithubConnectorDTO
   @JsonProperty("type")
   @Schema(type = "string", allowableValues = {"Account", "Repo"})
   GitConnectionType connectionType;
-  @UrlField @NotBlank @NotNull String url;
+  @NotBlank @NotNull String url;
   String validationRepo;
   @Valid @NotNull GithubAuthenticationDTO authentication;
   @Valid GithubApiAccessDTO apiAccess;
   Set<String> delegateSelectors;
   Boolean executeOnDelegate;
-  @UrlField String gitConnectionUrl;
+  String gitConnectionUrl;
 
   @Builder
   public GithubConnectorDTO(GitConnectionType connectionType, String url, String validationRepo,

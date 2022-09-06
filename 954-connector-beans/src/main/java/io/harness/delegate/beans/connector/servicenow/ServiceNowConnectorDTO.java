@@ -45,7 +45,7 @@ import org.hibernate.validator.constraints.NotBlank;
 @OneOfField(fields = {"username", "usernameRef"})
 @Schema(name = "ServiceNowConnector", description = "ServiceNow Connector details.")
 public class ServiceNowConnectorDTO extends ConnectorConfigDTO implements DecryptableEntity, DelegateSelectable {
-  @UrlField @NotNull @NotBlank String serviceNowUrl;
+  @NotNull @NotBlank String serviceNowUrl;
   String username;
   @ApiModelProperty(dataType = "string") @SecretReference SecretRefData usernameRef;
   @ApiModelProperty(dataType = "string") @NotNull @SecretReference SecretRefData passwordRef;

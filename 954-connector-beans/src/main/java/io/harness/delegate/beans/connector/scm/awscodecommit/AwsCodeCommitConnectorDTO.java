@@ -43,7 +43,7 @@ import org.hibernate.validator.constraints.NotBlank;
 @Schema(name = "AwsCodeCommitConnector", description = "This contains details of the AWS Code Commit connector")
 public class AwsCodeCommitConnectorDTO extends ConnectorConfigDTO implements ScmConnector, DelegateSelectable {
   @NotNull @JsonProperty("type") AwsCodeCommitUrlType urlType;
-  @UrlField @NotNull @NotBlank String url;
+  @NotNull @NotBlank String url;
   @Valid @NotNull AwsCodeCommitAuthenticationDTO authentication;
   Set<String> delegateSelectors;
   String gitConnectionUrl;

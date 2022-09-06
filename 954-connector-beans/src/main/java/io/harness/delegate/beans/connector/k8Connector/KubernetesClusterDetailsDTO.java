@@ -25,6 +25,6 @@ import org.hibernate.validator.constraints.NotBlank;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Schema(name = "KubernetesClusterDetails", description = "This contains kubernetes cluster details")
 public class KubernetesClusterDetailsDTO implements KubernetesCredentialSpecDTO {
-  @UrlField @NotBlank @NotNull String masterUrl;
+  @NotBlank @NotNull String masterUrl;
   @JsonProperty("auth") @NotNull @Valid KubernetesAuthDTO auth;
 }

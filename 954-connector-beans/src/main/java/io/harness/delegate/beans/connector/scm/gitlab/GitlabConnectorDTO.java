@@ -52,13 +52,13 @@ import org.hibernate.validator.constraints.NotBlank;
 public class GitlabConnectorDTO
     extends ConnectorConfigDTO implements ScmConnector, DelegateSelectable, ManagerExecutable {
   @NotNull @JsonProperty("type") GitConnectionType connectionType;
-  @UrlField @NotNull @NotBlank String url;
+  @NotNull @NotBlank String url;
   private String validationRepo;
   @Valid @NotNull GitlabAuthenticationDTO authentication;
   @Valid GitlabApiAccessDTO apiAccess;
   Set<String> delegateSelectors;
   Boolean executeOnDelegate = true;
-  @UrlField String gitConnectionUrl;
+  String gitConnectionUrl;
 
   @Builder
   public GitlabConnectorDTO(GitConnectionType connectionType, String url, String validationRepo,

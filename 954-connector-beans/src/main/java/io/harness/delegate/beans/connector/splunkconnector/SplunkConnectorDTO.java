@@ -39,7 +39,7 @@ import org.hibernate.validator.constraints.NotBlank;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Schema(name = "SplunkConnector", description = "This contains the Splunk Connector configuration")
 public class SplunkConnectorDTO extends ConnectorConfigDTO implements DecryptableEntity, DelegateSelectable {
-  @UrlField @NotNull @NotBlank String splunkUrl;
+  @NotNull @NotBlank String splunkUrl;
   String username;
   @NotNull String accountId;
   Set<String> delegateSelectors;

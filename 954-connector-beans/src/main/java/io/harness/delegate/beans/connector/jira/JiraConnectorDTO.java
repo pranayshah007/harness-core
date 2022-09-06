@@ -49,7 +49,7 @@ import org.hibernate.validator.constraints.NotBlank;
 @OneOfField(fields = {"username", "usernameRef"})
 @Schema(name = "JiraConnector", description = "JIRA Connector details.")
 public class JiraConnectorDTO extends ConnectorConfigDTO implements DecryptableEntity, DelegateSelectable {
-  @UrlField @NotNull @NotBlank String jiraUrl;
+  @NotNull @NotBlank String jiraUrl;
   String username;
   @ApiModelProperty(dataType = "string") @SecretReference SecretRefData usernameRef;
   @ApiModelProperty(dataType = "string") @NotNull @SecretReference SecretRefData passwordRef;

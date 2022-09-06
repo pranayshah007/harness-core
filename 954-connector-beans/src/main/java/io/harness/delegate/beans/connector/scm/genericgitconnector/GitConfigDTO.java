@@ -50,12 +50,12 @@ import org.hibernate.validator.constraints.NotBlank;
 public class GitConfigDTO extends ConnectorConfigDTO implements ScmConnector, DelegateSelectable, ManagerExecutable {
   @NotNull @JsonProperty("type") private GitAuthType gitAuthType;
   @NotNull @JsonProperty("connectionType") private GitConnectionType gitConnectionType;
-  @UrlField @NotNull @NotBlank String url;
+  @NotNull @NotBlank String url;
   private String validationRepo;
   private String branchName;
   private Set<String> delegateSelectors;
   private Boolean executeOnDelegate;
-  @UrlField private String gitConnectionUrl;
+  private String gitConnectionUrl;
 
   @JsonProperty("spec")
   @JsonTypeInfo(

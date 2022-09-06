@@ -41,7 +41,7 @@ import org.hibernate.validator.constraints.NotBlank;
 @ApiModel("ArtifactoryConnector")
 @Schema(name = "ArtifactoryConnector", description = "This entity contains the details of the Artifactory Connectors")
 public class ArtifactoryConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable, ManagerExecutable {
-  @UrlField @NotNull @NotBlank String artifactoryServerUrl;
+  @NotNull @NotBlank String artifactoryServerUrl;
   @Valid ArtifactoryAuthenticationDTO auth;
   Set<String> delegateSelectors;
   @Builder.Default Boolean executeOnDelegate = true;

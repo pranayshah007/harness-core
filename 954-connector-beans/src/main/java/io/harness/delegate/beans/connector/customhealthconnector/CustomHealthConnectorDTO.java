@@ -43,7 +43,7 @@ import org.hibernate.validator.constraints.NotBlank;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(HarnessTeam.CV)
 public class CustomHealthConnectorDTO extends ConnectorConfigDTO implements DecryptableEntity, DelegateSelectable {
-  @UrlField @NotNull @NotBlank String baseURL;
+  @NotNull @NotBlank String baseURL;
   List<CustomHealthKeyAndValue> headers;
   List<CustomHealthKeyAndValue> params;
   @NotNull CustomHealthMethod method;

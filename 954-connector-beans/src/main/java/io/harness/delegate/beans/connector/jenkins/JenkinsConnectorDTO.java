@@ -42,7 +42,7 @@ import org.hibernate.validator.constraints.NotBlank;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Schema(name = "JenkinsConnector", description = "Jenkins Connector details.")
 public class JenkinsConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable {
-  @UrlField @NotNull @NotBlank String jenkinsUrl;
+  @NotNull @NotBlank String jenkinsUrl;
   @Valid JenkinsAuthenticationDTO auth;
   Set<String> delegateSelectors;
 

@@ -40,7 +40,7 @@ import org.hibernate.validator.constraints.NotBlank;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(HarnessTeam.CV)
 public class DynatraceConnectorDTO extends ConnectorConfigDTO implements DecryptableEntity, DelegateSelectable {
-  @UrlField @NotNull @NotBlank String url;
+  @NotNull @NotBlank String url;
   @ApiModelProperty(dataType = "string") @NotNull @SecretReference SecretRefData apiTokenRef;
   Set<String> delegateSelectors;
 

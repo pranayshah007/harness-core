@@ -39,7 +39,7 @@ import org.hibernate.validator.constraints.NotBlank;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Schema(name = "HttpHelmConnector", description = "This contains http helm connector details")
 public class HttpHelmConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable {
-  @UrlField @NotNull @NotBlank String helmRepoUrl;
+  @NotNull @NotBlank String helmRepoUrl;
   @Valid HttpHelmAuthenticationDTO auth;
   Set<String> delegateSelectors;
 

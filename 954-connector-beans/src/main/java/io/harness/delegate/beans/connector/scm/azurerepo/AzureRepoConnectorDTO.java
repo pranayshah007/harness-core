@@ -60,7 +60,7 @@ public class AzureRepoConnectorDTO
   @JsonProperty("type")
   @Schema(description = "Project | Repository connector type")
   AzureRepoConnectionTypeDTO connectionType;
-  @UrlField @NotBlank @NotNull @Schema(description = "SSH | HTTP URL based on type of connection") String url;
+  @NotBlank @NotNull @Schema(description = "SSH | HTTP URL based on type of connection") String url;
   @Schema(description = "The repo to validate AzureRepo credentials. Only valid for Account type connector")
   String validationRepo;
   @Valid
@@ -72,7 +72,7 @@ public class AzureRepoConnectorDTO
   AzureRepoApiAccessDTO apiAccess;
   @Schema(description = "Selected Connectivity Modes") Set<String> delegateSelectors;
   Boolean executeOnDelegate = true;
-  @UrlField @Schema(description = "Connection URL for connecting Azure Repo") String gitConnectionUrl;
+  @Schema(description = "Connection URL for connecting Azure Repo") String gitConnectionUrl;
   private static final String AZURE_REPO_NAME_SEPARATOR = "_git/";
 
   @Builder

@@ -40,7 +40,7 @@ import org.hibernate.validator.constraints.NotBlank;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(HarnessTeam.CV)
 public class SumoLogicConnectorDTO extends ConnectorConfigDTO implements DecryptableEntity, DelegateSelectable {
-  @UrlField @NotNull @NotBlank String url;
+  @NotNull @NotBlank String url;
   @NotNull @SecretReference @ApiModelProperty(dataType = "string") SecretRefData accessIdRef;
   @NotNull @SecretReference @ApiModelProperty(dataType = "string") SecretRefData accessKeyRef;
   Set<String> delegateSelectors;
