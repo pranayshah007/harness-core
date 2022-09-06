@@ -72,34 +72,29 @@ public class DefaultUserGroupServiceImpl implements DefaultUserGroupService {
     String userGroupIdentifier = getUserGroupIdentifier(scope);
     String userGroupName = getUserGroupName(scope);
     String userGroupDescription = getUserGroupDescription(scope);
-    try {
-      UserGroupDTO userGroupDTO = UserGroupDTO.builder()
-                                      .accountIdentifier(scope.getAccountIdentifier())
-                                      .orgIdentifier(scope.getOrgIdentifier())
-                                      .projectIdentifier(scope.getProjectIdentifier())
-                                      .name(userGroupName)
-                                      .description(userGroupDescription)
-                                      .identifier(userGroupIdentifier)
-                                      .isSsoLinked(false)
-                                      .externallyManaged(false)
-                                      .users(userIds == null ? emptyList() : userIds)
-                                      .harnessManaged(true)
-                                      .build();
+    UserGroupDTO userGroupDTO = UserGroupDTO.builder()
+                                    .accountIdentifier(scope.getAccountIdentifier())
+                                    .orgIdentifier(scope.getOrgIdentifier())
+                                    .projectIdentifier(scope.getProjectIdentifier())
+                                    .name(userGroupName)
+                                    .description(userGroupDescription)
+                                    .identifier(userGroupIdentifier)
+                                    .isSsoLinked(false)
+                                    .externallyManaged(false)
+                                    .users(userIds == null ? emptyList() : userIds)
+                                    .harnessManaged(true)
+                                    .build();
 
-      UserGroup userGroup = userGroupService.createDefaultUserGroup(userGroupDTO);
-      if (isNotEmpty(scope.getProjectIdentifier())) {
-        createRoleAssignmentForProject(userGroupIdentifier, scope);
-      } else if (isNotEmpty(scope.getOrgIdentifier())) {
-        createRoleAssignmentsForOrganization(userGroupIdentifier, scope);
-      } else {
-        createRoleAssignmentsForAccount(userGroupIdentifier, scope);
-      }
-      log.info("Created default user group {} at scope {}", userGroupIdentifier, scope);
-      return userGroup;
-    } catch (Exception ex) {
-      log.error(DEBUG_MESSAGE + "Default User Group Creation failed at scope: " + scope, ex);
-      throw ex;
+    UserGroup userGroup = userGroupService.createDefaultUserGroup(userGroupDTO);
+    if (isNotEmpty(scope.getProjectIdentifier())) {
+      createRoleAssignmentForProject(userGroupIdentifier, scope);
+    } else if (isNotEmpty(scope.getOrgIdentifier())) {
+      createRoleAssignmentsForOrganization(userGroupIdentifier, scope);
+    } else {
+      createRoleAssignmentsForAccount(userGroupIdentifier, scope);
     }
+    log.info("Created default user group {} at scope {}", userGroupIdentifier, scope);
+    return userGroup;
   }
 
   private String getUserGroupIdentifier(Scope scope) {

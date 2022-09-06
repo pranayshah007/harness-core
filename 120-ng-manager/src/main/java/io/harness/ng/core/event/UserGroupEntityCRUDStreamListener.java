@@ -22,6 +22,7 @@ import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.entity_crud.account.AccountEntityChangeDTO;
 import io.harness.eventsframework.entity_crud.organization.OrganizationEntityChangeDTO;
 import io.harness.eventsframework.entity_crud.project.ProjectEntityChangeDTO;
+import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.api.DefaultUserGroupService;
 import io.harness.ng.core.api.UserGroupService;
@@ -29,6 +30,7 @@ import io.harness.ng.core.api.UserGroupService;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.protobuf.InvalidProtocolBufferException;
+import java.util.Collections;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
@@ -147,8 +149,11 @@ public class UserGroupEntityCRUDStreamListener implements MessageListener {
 
   private boolean processCreateEvent(Scope scope) {
     try {
-      defaultUserGroupService.createOrUpdateUserGroupAtScope(scope);
+      defaultUserGroupService.create(scope, Collections.emptyList());
       log.info("processed scope create event for user group.");
+    } catch (DuplicateFieldException ex) {
+      // Safe to assume Default User Group is created.
+      log.info(String.format("Safe to assume Default User Group is created at scope %s", scope));
     } catch (Exception ex) {
       log.error("Could not process scope create event for user group.", ex);
       return false;
