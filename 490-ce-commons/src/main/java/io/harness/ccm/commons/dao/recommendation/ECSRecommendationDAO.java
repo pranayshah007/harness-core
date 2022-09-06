@@ -142,6 +142,7 @@ public class ECSRecommendationDAO {
             .set(ECSServiceRecommendationKeys.clusterName, ecsServiceRecommendation.getClusterName())
             .set(ECSServiceRecommendationKeys.serviceArn, ecsServiceRecommendation.getServiceArn())
             .set(ECSServiceRecommendationKeys.serviceName, ecsServiceRecommendation.getServiceName())
+            .set(ECSServiceRecommendationKeys.launchType, ecsServiceRecommendation.getLaunchType())
             .set(ECSServiceRecommendationKeys.currentResourceRequirements,
                 ecsServiceRecommendation.getCurrentResourceRequirements())
             .set(ECSServiceRecommendationKeys.percentileBasedResourceRecommendation,
