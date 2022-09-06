@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.Builder.Default;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.ToString;
 import lombok.Value;
 import lombok.experimental.FieldDefaults;
@@ -88,7 +89,7 @@ public class MongoConfig {
   private byte[] encryptedUri;
   private byte[] encryptedLocksUri;
 
-  private String aliasDBName;
+  @NonNull private String aliasDBName;
 
   @JsonProperty(defaultValue = "30000") @Default @NotEmpty private int connectTimeout = 30000;
 
