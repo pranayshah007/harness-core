@@ -9,7 +9,6 @@ package io.harness.delegate.beans.connector.scm.awscodecommit;
 
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
-import io.harness.data.validator.UrlField;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
@@ -33,6 +32,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.hibernate.validator.constraints.NotBlank;
+import org.hibernate.validator.constraints.URL;
 
 @Data
 @NoArgsConstructor
@@ -43,7 +43,7 @@ import org.hibernate.validator.constraints.NotBlank;
 @Schema(name = "AwsCodeCommitConnector", description = "This contains details of the AWS Code Commit connector")
 public class AwsCodeCommitConnectorDTO extends ConnectorConfigDTO implements ScmConnector, DelegateSelectable {
   @NotNull @JsonProperty("type") AwsCodeCommitUrlType urlType;
-  @UrlField @NotNull @NotBlank String url;
+  @URL @NotNull @NotBlank String url;
   @Valid @NotNull AwsCodeCommitAuthenticationDTO authentication;
   Set<String> delegateSelectors;
   String gitConnectionUrl;

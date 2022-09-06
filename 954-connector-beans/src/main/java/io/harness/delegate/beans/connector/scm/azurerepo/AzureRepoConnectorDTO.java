@@ -15,7 +15,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.connector.ManagerExecutable;
-import io.harness.data.validator.UrlField;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
@@ -45,6 +44,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.validator.constraints.NotBlank;
+import org.hibernate.validator.constraints.URL;
 
 @Data
 @NoArgsConstructor
@@ -60,7 +60,7 @@ public class AzureRepoConnectorDTO
   @JsonProperty("type")
   @Schema(description = "Project | Repository connector type")
   AzureRepoConnectionTypeDTO connectionType;
-  @UrlField @NotBlank @NotNull @Schema(description = "SSH | HTTP URL based on type of connection") String url;
+  @URL @NotBlank @NotNull @Schema(description = "SSH | HTTP URL based on type of connection") String url;
   @Schema(description = "The repo to validate AzureRepo credentials. Only valid for Account type connector")
   String validationRepo;
   @Valid
@@ -72,7 +72,7 @@ public class AzureRepoConnectorDTO
   AzureRepoApiAccessDTO apiAccess;
   @Schema(description = "Selected Connectivity Modes") Set<String> delegateSelectors;
   Boolean executeOnDelegate = true;
-  @UrlField @Schema(description = "Connection URL for connecting Azure Repo") String gitConnectionUrl;
+  @URL @Schema(description = "Connection URL for connecting Azure Repo") String gitConnectionUrl;
   private static final String AZURE_REPO_NAME_SEPARATOR = "_git/";
 
   @Builder

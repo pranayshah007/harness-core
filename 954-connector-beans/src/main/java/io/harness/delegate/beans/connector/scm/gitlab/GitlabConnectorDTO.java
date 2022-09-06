@@ -14,7 +14,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.connector.ManagerExecutable;
-import io.harness.data.validator.UrlField;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
@@ -40,6 +39,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.hibernate.validator.constraints.NotBlank;
+import org.hibernate.validator.constraints.URL;
 
 @Data
 @NoArgsConstructor
@@ -52,13 +52,13 @@ import org.hibernate.validator.constraints.NotBlank;
 public class GitlabConnectorDTO
     extends ConnectorConfigDTO implements ScmConnector, DelegateSelectable, ManagerExecutable {
   @NotNull @JsonProperty("type") GitConnectionType connectionType;
-  @UrlField @NotNull @NotBlank String url;
+  @URL @NotNull @NotBlank String url;
   private String validationRepo;
   @Valid @NotNull GitlabAuthenticationDTO authentication;
   @Valid GitlabApiAccessDTO apiAccess;
   Set<String> delegateSelectors;
   Boolean executeOnDelegate = true;
-  @UrlField String gitConnectionUrl;
+  @URL String gitConnectionUrl;
 
   @Builder
   public GitlabConnectorDTO(GitConnectionType connectionType, String url, String validationRepo,

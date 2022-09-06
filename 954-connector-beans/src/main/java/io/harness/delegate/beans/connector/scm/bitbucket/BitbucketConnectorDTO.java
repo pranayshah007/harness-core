@@ -16,7 +16,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.connector.ManagerExecutable;
-import io.harness.data.validator.UrlField;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
@@ -64,13 +63,13 @@ public class BitbucketConnectorDTO
   @JsonProperty("type")
   @Schema(type = "string", allowableValues = {"Account", "Repo"})
   private GitConnectionType connectionType;
-  @UrlField @NotNull @NotBlank private String url;
+  @org.hibernate.validator.constraints.URL @NotNull @NotBlank private String url;
   private String validationRepo;
   @Valid @NotNull private BitbucketAuthenticationDTO authentication;
   @Valid private BitbucketApiAccessDTO apiAccess;
   private Set<String> delegateSelectors;
   Boolean executeOnDelegate = true;
-  @UrlField private String gitConnectionUrl;
+  @org.hibernate.validator.constraints.URL private String gitConnectionUrl;
 
   @Builder
   public BitbucketConnectorDTO(GitConnectionType connectionType, String url, String validationRepo,
