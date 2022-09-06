@@ -9,7 +9,6 @@ package io.harness.delegate.beans.connector.splunkconnector;
 
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
-import io.harness.data.validator.UrlField;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.encryption.SecretReference;

@@ -58,8 +58,8 @@ import org.apache.http.HttpHost;
 @Slf4j
 @OwnedBy(HarnessTeam.PL)
 public class Http {
-  private static UrlValidator urlValidator = new UrlValidator(
-      new String[] {"http", "https", "ftp", "smtp"}, UrlValidator.ALLOW_LOCAL_URLS + UrlValidator.ALLOW_2_SLASHES);
+  private static UrlValidator urlValidator =
+      new UrlValidator(new String[] {"http", "https"}, UrlValidator.ALLOW_LOCAL_URLS);
   public static ConnectionPool connectionPool = new ConnectionPool(0, 5, TimeUnit.MINUTES);
 
   private static TrustManager[] trustAllCerts = getTrustManagers();
@@ -375,6 +375,7 @@ public class Http {
   public static boolean validUrl(String url) {
     return urlValidator.isValid(url);
   }
+
   public static HttpHost getHttpProxyHost() {
     String proxyHost = null;
     int proxyPort = -1;

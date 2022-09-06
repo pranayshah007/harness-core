@@ -9,7 +9,6 @@ package io.harness.delegate.beans.connector.scm.awscodecommit;
 
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
-import io.harness.data.validator.UrlField;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;

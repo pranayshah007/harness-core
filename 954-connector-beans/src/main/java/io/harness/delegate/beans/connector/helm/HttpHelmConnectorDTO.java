@@ -11,7 +11,6 @@ import static io.harness.delegate.beans.connector.helm.HttpHelmAuthType.ANONYMOU
 
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
-import io.harness.data.validator.UrlField;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
