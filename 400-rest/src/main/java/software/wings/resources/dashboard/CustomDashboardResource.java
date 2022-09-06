@@ -584,8 +584,7 @@ public class CustomDashboardResource {
       return Builder.aRestResponse()
           .withResponseMessages(Lists.newArrayList(
               ResponseMessage.builder()
-                  .message("User with id not allowed to add account Ids to timescaleIndex : "
-                      + authUser.getUuid())
+                  .message("User with id not allowed to add account Ids to timescaleIndex : " + authUser.getUuid())
                   .build()))
           .build();
     }

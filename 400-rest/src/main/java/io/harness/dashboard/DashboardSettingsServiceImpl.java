@@ -38,7 +38,6 @@ import software.wings.timescale.framework.TimeScaleEntityIndexState;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
