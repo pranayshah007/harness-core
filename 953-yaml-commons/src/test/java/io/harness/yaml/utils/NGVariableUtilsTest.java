@@ -7,7 +7,6 @@
 
 package io.harness.yaml.utils;
 
-import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -16,16 +15,8 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.encryption.SecretRefData;
-import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
-import io.harness.yaml.core.variables.NGVariable;
-import io.harness.yaml.core.variables.SecretNGVariable;
-import io.harness.yaml.core.variables.StringNGVariable;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -59,30 +50,5 @@ public class NGVariableUtilsTest extends CategoryTest {
         NGVariablesUtils.fetchSecretExpressionWithExpressionToken(secretValueConstant, expressionToken);
     assertThat(expectedSecretExpression)
         .isEqualTo("${ngSecretManager.obtain(\"" + secretValueConstant + "\", " + expressionToken + ")}");
-  }
-
-  @Test
-  @Owner(developers = HINGER)
-  @Category(UnitTests.class)
-  public void testGetSetOfSecretVars() {
-    Set<String> secretVars = NGVariablesUtils.getSetOfSecretVars(null);
-    assertThat(secretVars).isNotNull();
-
-    List<NGVariable> variableList = new ArrayList<>();
-    secretVars = NGVariablesUtils.getSetOfSecretVars(variableList);
-    assertThat(secretVars).isNotNull();
-
-    variableList.add(StringNGVariable.builder().name("var1").value(ParameterField.createValueField("val1")).build());
-    secretVars = NGVariablesUtils.getSetOfSecretVars(variableList);
-    assertThat(secretVars).isNotNull();
-    assertThat(secretVars.size()).isEqualTo(0);
-
-    variableList.add(SecretNGVariable.builder()
-                         .name("var2")
-                         .value(ParameterField.createValueField(SecretRefData.builder().identifier("val1").build()))
-                         .build());
-    secretVars = NGVariablesUtils.getSetOfSecretVars(variableList);
-    assertThat(secretVars).isNotNull();
-    assertThat(secretVars).contains("var2");
   }
 }

@@ -42,7 +42,6 @@ import software.wings.beans.LogColor;
 import software.wings.beans.LogHelper;
 
 import com.google.inject.Inject;
-import java.util.HashMap;
 import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
@@ -114,13 +113,10 @@ public class CustomApprovalCallback extends AbstractApprovalCallback implements 
     try {
       ShellExecutionData shellExecutionData =
           (ShellExecutionData) scriptTaskResponse.getExecuteCommandResponse().getCommandExecutionData();
-      ShellScriptOutcome shellScriptOutcome =
-          ShellScriptHelperService.prepareShellScriptOutcome(shellExecutionData.getSweepingOutputEnvVariables(),
-              instance.getOutputVariables(), instance.getSecretOutputVariables());
+      ShellScriptOutcome shellScriptOutcome = shellScriptHelperService.prepareShellScriptOutcome(
+          shellExecutionData.getSweepingOutputEnvVariables(), instance.getOutputVariables());
       CustomApprovalTicketNG ticketNG =
-          CustomApprovalTicketNG.builder()
-              .fields(shellScriptOutcome != null ? shellScriptOutcome.getOutputVariables() : new HashMap<>())
-              .build();
+          CustomApprovalTicketNG.builder().fields(shellScriptOutcome.getOutputVariables()).build();
       checkApprovalAndRejectionCriteriaAndWithinChangeWindow(
           ticketNG, instance, logCallback, instance.getApprovalCriteria(), instance.getRejectionCriteria());
     } catch (Exception ex) {

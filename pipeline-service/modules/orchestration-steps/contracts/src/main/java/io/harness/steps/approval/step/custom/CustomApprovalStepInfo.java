@@ -98,9 +98,8 @@ public class CustomApprovalStepInfo implements PMSStepInfo, WithDelegateSelector
   public SpecParameters getSpecParameters() {
     return io.harness.steps.approval.step.custom.CustomApprovalSpecParameters.builder()
         .retryInterval(getRetryInterval())
-        .outputVariables(NGVariablesUtils.getMapOfVariablesWithoutSecretExpression(outputVariables))
+        .outputVariables(NGVariablesUtils.getMapOfVariables(outputVariables, 0L))
         .environmentVariables(NGVariablesUtils.getMapOfVariables(environmentVariables, 0L))
-        .secretOutputVariables(NGVariablesUtils.getSetOfSecretVars(outputVariables))
         .shellType(getShell())
         .source(getSource())
         .delegateSelectors(getDelegateSelectors())

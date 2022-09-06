@@ -21,7 +21,6 @@ import io.harness.yaml.core.timeout.Timeout;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -40,26 +39,9 @@ public class CustomApprovalSpecParameters implements SpecParameters {
   @NotNull ShellScriptSourceWrapper source;
   @NotNull ParameterField<Timeout> retryInterval;
   Map<String, Object> outputVariables;
-  Set<String> secretOutputVariables;
   Map<String, Object> environmentVariables;
   @NotNull CriteriaSpecWrapper approvalCriteria;
   CriteriaSpecWrapper rejectionCriteria;
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
   ParameterField<Timeout> scriptTimeout;
-
-  @Override
-  public SpecParameters getViewJsonObject() {
-    // omit secretOutputVars since they should not be visible to users
-    return CustomApprovalSpecParameters.builder()
-        .retryInterval(this.retryInterval)
-        .outputVariables(this.outputVariables)
-        .environmentVariables(this.environmentVariables)
-        .shellType(this.shellType)
-        .source(this.source)
-        .delegateSelectors(this.delegateSelectors)
-        .approvalCriteria(this.approvalCriteria)
-        .rejectionCriteria(this.rejectionCriteria)
-        .scriptTimeout(this.scriptTimeout)
-        .build();
-  }
 }
