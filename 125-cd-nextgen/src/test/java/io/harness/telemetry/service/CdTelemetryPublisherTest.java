@@ -25,6 +25,7 @@ import static org.mockito.Mockito.verify;
 import io.harness.CategoryTest;
 import io.harness.ModuleType;
 import io.harness.account.AccountClient;
+import io.harness.account.AccountConfig;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdlicense.bean.CgActiveServicesUsageInfo;
@@ -60,6 +61,7 @@ public class CdTelemetryPublisherTest extends CategoryTest {
   @Mock private TelemetryReporter telemetryReporter;
   @Mock private AccountClient accountClient;
   @Mock private CdTelemetryStatusRepository cdTelemetryStatusRepository;
+  @Mock private AccountConfig accountConfig;
 
   @InjectMocks @Spy CdTelemetryPublisher telemetryPublisher;
   @Test
@@ -75,12 +77,13 @@ public class CdTelemetryPublisherTest extends CategoryTest {
         .getLicenseUsage(anyString(), eq(ModuleType.CD), anyLong(),
             eq(CDUsageRequestParams.builder().cdLicenseType(SERVICES).build()));
     doReturn(true).when(cdTelemetryStatusRepository).updateTimestampIfOlderThan(anyString(), anyLong(), anyLong());
-    AccountDTO accountDTO1 = AccountDTO.builder().identifier("acc1").cluster("someCluster").build();
-    AccountDTO accountDTO2 = AccountDTO.builder().identifier("acc2").cluster("someCluster").build();
+    AccountDTO accountDTO1 = AccountDTO.builder().identifier("acc1").build();
+    AccountDTO accountDTO2 = AccountDTO.builder().identifier("acc2").build();
     List<AccountDTO> accountDTOList = new ArrayList<>();
     accountDTOList.add(accountDTO1);
     accountDTOList.add(accountDTO2);
     doReturn(accountDTOList).when(telemetryPublisher).getAllAccounts();
+    doReturn("someCluster").when(accountConfig).getDeploymentClusterName();
 
     CgActiveServicesUsageInfo cgLicenseUsage =
         CgActiveServicesUsageInfo.builder()
@@ -101,7 +104,7 @@ public class CdTelemetryPublisherTest extends CategoryTest {
     firstAccountExpectedMap.put("account_deploy_type", null);
     firstAccountExpectedMap.put("cd_license_cg_services_used", 2L);
     firstAccountExpectedMap.put("cd_license_cg_service_instances_used", 31L);
-    firstAccountExpectedMap.put("harness_prod_cluster_id", "someCluster");
+    firstAccountExpectedMap.put("harness_prod_cd_cluster_id", "someCluster");
 
     HashMap<String, Object> secondAccountExpectedMap = new HashMap<>();
     secondAccountExpectedMap.put("group_type", "Account");
@@ -112,7 +115,7 @@ public class CdTelemetryPublisherTest extends CategoryTest {
     secondAccountExpectedMap.put("account_deploy_type", null);
     secondAccountExpectedMap.put("cd_license_cg_services_used", 2L);
     secondAccountExpectedMap.put("cd_license_cg_service_instances_used", 31L);
-    secondAccountExpectedMap.put("harness_prod_cluster_id", "someCluster");
+    secondAccountExpectedMap.put("harness_prod_cd_cluster_id", "someCluster");
 
     telemetryPublisher.recordTelemetry();
     verify(telemetryReporter, times(1))
