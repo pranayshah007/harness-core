@@ -99,7 +99,7 @@ public class MorphiaModule extends AbstractModule {
       if (storeInMultiple != null
           && Arrays.stream(storeInMultiple.value())
                  .map(StoreIn::value)
-                 .anyMatch(storeInVal -> storeInVal.equals(storeName) || storeIn.value().equals(ALL))) {
+                 .anyMatch(storeInVal -> storeInVal.equals(storeName) || storeInVal.equals(ALL))) {
         return true;
       }
     }
