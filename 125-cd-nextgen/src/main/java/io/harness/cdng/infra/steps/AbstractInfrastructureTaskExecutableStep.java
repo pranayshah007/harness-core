@@ -444,11 +444,11 @@ abstract class AbstractInfrastructureTaskExecutableStep {
             .parameters(new Object[] {azureTaskParamsTaskParams})
             .build();
 
-    List<TaskSelectorYaml> taskSelectorYamlList = azureInfraDelegateConfig.getAzureConnectorDTO()
-                                                      .getDelegateSelectors()
-                                                      .stream()
-                                                      .map(delegateSelector -> new TaskSelectorYaml(delegateSelector))
-                                                      .collect(Collectors.toList());
+    List<TaskSelectorYaml> taskSelectorYamlList =
+        emptyIfNull(azureInfraDelegateConfig.getAzureConnectorDTO().getDelegateSelectors())
+            .stream()
+            .map(TaskSelectorYaml::new)
+            .collect(Collectors.toList());
 
     return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer, Collections.singletonList("Execute"),
         taskData.getTaskType(), TaskSelectorYaml.toTaskSelector(emptyIfNull(taskSelectorYamlList)),

@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.accesscontrol.aggregator;
+package io.harness.accesscontrol.commons.metrics;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
@@ -18,8 +18,8 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @OwnedBy(PL)
-public class AggregatorMetricsContext extends AutoMetricContext {
-  public AggregatorMetricsContext(String namespace, String containerName) {
+public class AccessControlMetricsContext extends AutoMetricContext {
+  public AccessControlMetricsContext(String namespace, String containerName) {
     put("namespace", namespace);
     put("containerName", containerName);
   }

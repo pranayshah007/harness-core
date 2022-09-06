@@ -301,6 +301,7 @@ mongo:
   analyticNodeConfig:
     mongoTagKey: none
     mongoTagValue: none
+  aliasDBName: harness
 
 events-mongo:
   uri: mongodb://localhost:27017/events
@@ -309,6 +310,7 @@ events-mongo:
   maxConnectionIdleTime: 600000
   connectionsPerHost: 300
   indexManagerMode: AUTO
+  aliasDBName: events
 
 searchEnabled: false
 graphQLEnabled: true
@@ -328,7 +330,7 @@ deployMode: KUBERNETES
 deployVariant: SAAS
 envPath: ""
 
-scmVersion: 72b37b4b
+scmVersion: 7a906f61
 
 ngAuthUIEnabled: false
 

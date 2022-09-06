@@ -2888,6 +2888,18 @@
             }
           ]
         },
+        "infrastructureDefinition": {
+          "oneOf": [
+            {
+              "$ref": "#/definitions/InfraStructureDefinitionYaml"
+            },
+            {
+              "type": "string",
+              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+              "minLength": 1
+            }
+          ]
+        },
         "infrastructureDefinitions": {
           "oneOf": [
             {
@@ -2931,6 +2943,7 @@
       "type": "object",
       "properties": {
         "metadata": {
+          "readOnly": true,
           "$ref": "#/definitions/EnvironmentsMetadata"
         },
         "values": {
@@ -3437,7 +3450,10 @@
               "type": "string"
             },
             "repositoryType": {
-              "type": "string"
+              "type": "string",
+              "enum": [
+                "docker"
+              ]
             },
             "version": {
               "type": "string"
@@ -3473,16 +3489,7 @@
           "type": "object",
           "properties": {
             "file": {
-              "oneOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "string",
-                  "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
-                  "minLength": 1
-                }
-              ]
+              "type": "string"
             }
           }
         }
@@ -3994,7 +4001,16 @@
           "type": "string"
         },
         "inputs": {
-          "$ref": "#/definitions/JsonNode"
+          "oneOf": [
+            {
+              "$ref": "#/definitions/JsonNode"
+            },
+            {
+              "type": "string",
+              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+              "minLength": 1
+            }
+          ]
         },
         "metadata": {
           "type": "string"
@@ -5105,7 +5121,7 @@
         },
         {
           "type": "object",
-          "properties": { }
+          "properties": {}
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -5705,7 +5721,7 @@
         },
         {
           "type": "object",
-          "properties": { }
+          "properties": {}
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -6325,7 +6341,7 @@
         {
           "$ref": "#/definitions/Infrastructure"
         },
-        { }
+        {}
       ],
       "$schema": "http://json-schema.org/draft-07/schema#",
       "oneOf": [
@@ -7114,7 +7130,7 @@
         },
         {
           "type": "object",
-          "properties": { }
+          "properties": {}
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -7462,6 +7478,7 @@
       "type": "object",
       "properties": {
         "metadata": {
+          "readOnly": true,
           "$ref": "#/definitions/ServicesMetadata"
         },
         "values": {
@@ -7762,7 +7779,7 @@
         },
         {
           "type": "object",
-          "properties": { }
+          "properties": {}
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"

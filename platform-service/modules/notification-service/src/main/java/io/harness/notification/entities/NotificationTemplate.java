@@ -9,7 +9,7 @@ package io.harness.notification.entities;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
@@ -33,10 +33,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "TemplateKeys")
+@StoreIn(DbAliases.NOTIFICATION)
 @Document("notificationTemplates")
 @Entity("notificationTemplates")
 @TypeAlias("notificationTemplate")
-@StoreIn(DbAliases.NOTIFICATION)
 @OwnedBy(PL)
 public class NotificationTemplate {
   public static List<MongoIndex> mongoIndexes() {

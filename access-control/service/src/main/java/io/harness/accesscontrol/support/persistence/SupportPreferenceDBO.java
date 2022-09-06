@@ -10,7 +10,7 @@ package io.harness.accesscontrol.support.persistence;
 import static io.harness.ng.DbAliases.ACCESS_CONTROL;
 
 import io.harness.accesscontrol.AccessControlEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
@@ -46,10 +46,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @ToString
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @FieldNameConstants(innerTypeName = "SupportPreferenceDBOKeys")
+@StoreIn(ACCESS_CONTROL)
 @Entity(value = "supportPreferences", noClassnameStored = true)
 @Document("supportPreferences")
 @TypeAlias("supportPreferences")
-@StoreIn(ACCESS_CONTROL)
 public class SupportPreferenceDBO implements PersistentRegularIterable, AccessControlEntity {
   @Setter @Id @org.mongodb.morphia.annotations.Id String id;
   @EqualsAndHashCode.Include @FdUniqueIndex @NotEmpty final String accountIdentifier;

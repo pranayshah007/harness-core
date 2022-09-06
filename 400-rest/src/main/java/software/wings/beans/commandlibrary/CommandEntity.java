@@ -8,6 +8,8 @@
 package software.wings.beans.commandlibrary;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UpdatedAtAware;
@@ -28,6 +30,7 @@ import org.mongodb.morphia.annotations.Id;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @FieldNameConstants(innerTypeName = "CommandEntityKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "clCommands", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 public class CommandEntity implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware {

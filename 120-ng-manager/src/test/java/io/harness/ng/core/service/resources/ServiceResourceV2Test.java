@@ -11,10 +11,15 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rbac.CDNGRbacPermissions.SERVICE_CREATE_PERMISSION;
 import static io.harness.rbac.CDNGRbacPermissions.SERVICE_UPDATE_PERMISSION;
 import static io.harness.rule.OwnerRule.SHIVAM;
+import static io.harness.rule.OwnerRule.TATHAGAT;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -25,7 +30,12 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.OrgAndProjectValidationHelper;
+import io.harness.ng.core.beans.ServiceV2YamlMetadata;
+import io.harness.ng.core.beans.ServicesV2YamlMetadataDTO;
+import io.harness.ng.core.beans.ServicesYamlMetadataApiInput;
+import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.service.dto.ServiceRequestDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.ServiceEntityService;
@@ -35,8 +45,11 @@ import io.harness.rule.Owner;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -176,5 +189,69 @@ public class ServiceResourceV2Test extends CategoryTest {
             Resource.of(NGResourceType.SERVICE, serviceRequestDTO.getIdentifier()), SERVICE_UPDATE_PERMISSION);
     verify(orgAndProjectValidationHelper, times(1))
         .checkThatTheOrganizationAndProjectExists(ORG_IDENTIFIER, PROJ_IDENTIFIER, ACCOUNT_ID);
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testGetServicesYamlAndRuntimeInputs() {
+    String svcId1 = "svcId1";
+    String svcId2 = "svcId2";
+
+    final ServicesYamlMetadataApiInput servicesYamlMetadataApiInput =
+        ServicesYamlMetadataApiInput.builder().serviceIdentifiers(Arrays.asList(svcId1, svcId2)).build();
+
+    ServiceEntity service1 = ServiceEntity.builder().identifier(svcId1).yaml("dummy-yaml1").build();
+    ServiceEntity service2 = ServiceEntity.builder().identifier(svcId2).yaml("dummy-yaml2").build();
+
+    doReturn(Arrays.asList(service1, service2))
+        .when(serviceEntityService)
+        .getServices(anyString(), anyString(), anyString(), anyList());
+    doReturn("input-set1", "input-set2").when(serviceEntityService).createServiceInputsYaml(anyString(), anyString());
+
+    final ResponseDTO<ServicesV2YamlMetadataDTO> servicesYamlAndRuntimeInputsResponse =
+        serviceResourceV2.getServicesYamlAndRuntimeInputs(
+            servicesYamlMetadataApiInput, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER);
+
+    final ServicesV2YamlMetadataDTO data = servicesYamlAndRuntimeInputsResponse.getData();
+    assertThat(data).isNotNull();
+    assertThat(data.getServiceV2YamlMetadataList()).hasSize(2);
+    assertThat(data.getServiceV2YamlMetadataList()
+                   .stream()
+                   .map(io.harness.ng.core.beans.ServiceV2YamlMetadata::getServiceYaml)
+                   .collect(Collectors.toList()))
+        .containsExactlyInAnyOrder("dummy-yaml1", "dummy-yaml2");
+    assertThat(data.getServiceV2YamlMetadataList()
+                   .stream()
+                   .map(io.harness.ng.core.beans.ServiceV2YamlMetadata::getServiceIdentifier)
+                   .collect(Collectors.toList()))
+        .containsExactlyInAnyOrder(svcId1, svcId2);
+
+    assertThat(data.getServiceV2YamlMetadataList()
+                   .stream()
+                   .map(ServiceV2YamlMetadata::getInputSetTemplateYaml)
+                   .collect(Collectors.toList()))
+        .containsExactlyInAnyOrder("input-set1", "input-set2");
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testGetServicesYamlAndRuntimeInputsFail() {
+    final ServicesYamlMetadataApiInput servicesYamlMetadataApiInput =
+        ServicesYamlMetadataApiInput.builder().serviceIdentifiers(Collections.singletonList("svcId1")).build();
+
+    ServiceEntity service1 = ServiceEntity.builder().identifier("svcId1").build();
+
+    doReturn(Collections.singletonList(service1))
+        .when(serviceEntityService)
+        .getServices(anyString(), anyString(), anyString(), anyList());
+
+    assertThatThrownBy(()
+                           -> serviceResourceV2.getServicesYamlAndRuntimeInputs(
+                               servicesYamlMetadataApiInput, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining(
+            "Service with identifier svcId1 is not configured with a Service definition. Service Yaml is empty");
   }
 }

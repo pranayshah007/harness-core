@@ -356,4 +356,35 @@ public class ViewsQueryHelper {
 
     return businessMappingGroupBy.map(filter -> filter.getIdFilter().getField().getFieldId()).orElse(null);
   }
+
+  public List<String> getBusinessMappingIdsFromFilters(List<QLCEViewFilterWrapper> filters) {
+    if (filters == null) {
+      return Collections.emptyList();
+    }
+
+    List<QLCEViewFilterWrapper> businessMappingFilters =
+        filters.stream()
+            .filter(filter
+                -> filter.getIdFilter() != null
+                    && filter.getIdFilter().getField().getIdentifier() == ViewFieldIdentifier.BUSINESS_MAPPING)
+            .collect(Collectors.toList());
+
+    return businessMappingFilters.stream()
+        .map(filter -> filter.getIdFilter().getField().getFieldId())
+        .collect(Collectors.toList());
+  }
+
+  public List<QLCEViewFilterWrapper> removeBusinessMappingFilters(List<QLCEViewFilterWrapper> filters) {
+    if (filters == null) {
+      return Collections.emptyList();
+    }
+
+    return filters.stream()
+        .filter(filter
+            -> filter.getTimeFilter() != null || filter.getViewMetadataFilter() != null
+                || filter.getRuleFilter() != null
+                || (filter.getIdFilter() != null
+                    && filter.getIdFilter().getField().getIdentifier() != ViewFieldIdentifier.BUSINESS_MAPPING))
+        .collect(Collectors.toList());
+  }
 }

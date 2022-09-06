@@ -14,6 +14,7 @@ import io.harness.beans.Scope;
 import io.harness.ng.accesscontrol.scopes.ScopeNameDTO;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
+import io.harness.ng.core.dto.ScopeSelector;
 import io.harness.ng.core.dto.UserGroupDTO;
 import io.harness.ng.core.dto.UserGroupFilterDTO;
 import io.harness.ng.core.user.entities.UserGroup;
@@ -62,6 +63,8 @@ public interface UserGroupService {
   List<UserGroup> list(Criteria criteria, Integer skip, Integer limit);
 
   List<UserGroup> list(UserGroupFilterDTO userGroupFilterDTO);
+
+  Page<UserGroup> list(List<ScopeSelector> scopeFilter, String userIdentifier, String searchTerm, Pageable pageable);
 
   PageResponse<UserMetadataDTO> listUsersInUserGroup(
       Scope scope, String userGroupIdentifier, UserFilter userFilter, PageRequest pageRequest);

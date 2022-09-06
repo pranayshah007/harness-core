@@ -16,7 +16,6 @@ import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.producer.Message;
 import io.harness.eventsframework.protohelper.IdentifierRefProtoDTOHelper;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
-import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.eventsframework.schemas.entitysetupusage.EntitySetupUsageCreateV2DTO;
 
 import com.google.common.collect.ImmutableMap;
@@ -83,18 +82,14 @@ public class SetupUsageHelper {
     EntitySetupUsageCreateV2DTO entityReferenceDTO = EntitySetupUsageCreateV2DTO.newBuilder()
                                                          .setAccountIdentifier(entity.getAccountId())
                                                          .setReferredByEntity(entityDetail)
-                                                         .addAllReferredEntities(new ArrayList<>())
                                                          .setDeleteOldReferredByRecords(true)
                                                          .build();
     // Send Events for all referredEntitiesType to delete them
-    for (EntityTypeProtoEnum protoEnum : EntityTypeProtoEnum.values()) {
-      producer.send(
-          Message.newBuilder()
-              .putAllMetadata(ImmutableMap.of("accountId", entity.getAccountId(),
-                  EventsFrameworkMetadataConstants.REFERRED_ENTITY_TYPE, protoEnum.name(),
-                  EventsFrameworkMetadataConstants.ACTION, EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION))
-              .setData(entityReferenceDTO.toByteString())
-              .build());
-    }
+    producer.send(
+        Message.newBuilder()
+            .putAllMetadata(ImmutableMap.of("accountId", entity.getAccountId(), EventsFrameworkMetadataConstants.ACTION,
+                EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION))
+            .setData(entityReferenceDTO.toByteString())
+            .build());
   }
 }

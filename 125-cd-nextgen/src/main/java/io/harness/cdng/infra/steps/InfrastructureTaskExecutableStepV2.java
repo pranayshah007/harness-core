@@ -93,7 +93,7 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
       Ambiance ambiance, InfrastructureTaskExecutableStepV2Params stepParameters, StepInputPackage inputPackage) {
     validateStepParameters(stepParameters);
 
-    final InfrastructureConfig infrastructureConfig = fetchInfraConfigFromDB(ambiance, stepParameters);
+    final InfrastructureConfig infrastructureConfig = fetchInfraConfigFromDBorThrow(ambiance, stepParameters);
     final Infrastructure infraSpec = infrastructureConfig.getInfrastructureDefinitionConfig().getSpec();
 
     validateResources(ambiance, infraSpec);
@@ -158,6 +158,7 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
                          .name(OutcomeExpressionConstants.OUTPUT)
                          .group(OutcomeExpressionConstants.INFRASTRUCTURE_GROUP)
                          .build())
+
         .unitProgressList(Collections.singletonList(UnitProgress.newBuilder()
                                                         .setUnitName("Execute")
                                                         .setStatus(UnitStatus.SUCCESS)
@@ -205,7 +206,7 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     return InfrastructureKind.SSH_WINRM_AZURE.equals(infraKind) || InfrastructureKind.SSH_WINRM_AWS.equals(infraKind);
   }
 
-  private InfrastructureConfig fetchInfraConfigFromDB(
+  private InfrastructureConfig fetchInfraConfigFromDBorThrow(
       Ambiance ambiance, InfrastructureTaskExecutableStepV2Params stepParameters) {
     Optional<InfrastructureEntity> infrastructureEntityOpt =
         infrastructureEntityService.get(AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
@@ -217,8 +218,9 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     }
 
     final InfrastructureEntity infrastructureEntity = infrastructureEntityOpt.get();
-    if (isNotEmpty(stepParameters.getInfraInputs())) {
-      String mergedYaml = mergeInfraInputs(infrastructureEntity.getYaml(), stepParameters.getInfraInputs());
+    if (ParameterField.isNotNull(stepParameters.getInfraInputs())
+        && isNotEmpty(stepParameters.getInfraInputs().getValue())) {
+      String mergedYaml = mergeInfraInputs(infrastructureEntity.getYaml(), stepParameters.getInfraInputs().getValue());
       infrastructureEntity.setYaml(mergedYaml);
     }
 
@@ -252,21 +254,21 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
 
   private void validateStepParameters(InfrastructureTaskExecutableStepV2Params stepParameters) {
     if (ParameterField.isNull(stepParameters.getEnvRef())) {
-      throw new InvalidRequestException("Environment reference is not specified");
+      throw new InvalidRequestException("environment reference is not specified");
     }
 
     if (ParameterField.isNull(stepParameters.getInfraRef())) {
-      throw new InvalidRequestException("Infrastructure Definition reference is not specified");
+      throw new InvalidRequestException("infrastructure definition reference is not specified");
     }
 
     if (stepParameters.getEnvRef().isExpression()) {
       throw new InvalidRequestException(
-          "Environment reference " + stepParameters.getEnvRef().getExpressionValue() + " not resolved");
+          "environment reference " + stepParameters.getEnvRef().getExpressionValue() + " not resolved");
     }
 
     if (stepParameters.getInfraRef().isExpression()) {
       throw new InvalidRequestException(
-          "Infrastructure Definition reference" + stepParameters.getInfraRef().getExpressionValue() + " not resolved");
+          "infrastructure definition reference" + stepParameters.getInfraRef().getExpressionValue() + " not resolved");
     }
   }
 

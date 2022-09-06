@@ -138,6 +138,7 @@ public class AccessControlApplication extends Application<AccessControlConfigura
     });
     bootstrap.addCommand(new ScanClasspathMetadataCommand());
     bootstrap.addCommand(new GenerateOpenApiSpecCommand());
+    bootstrap.setMetricRegistry(metricRegistry);
     // Enable variable substitution with environment variables
     bootstrap.setConfigurationSourceProvider(new SubstitutingSourceProvider(
         bootstrap.getConfigurationSourceProvider(), new EnvironmentVariableSubstitutor(false)));

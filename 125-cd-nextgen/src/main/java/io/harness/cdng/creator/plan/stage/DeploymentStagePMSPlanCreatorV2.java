@@ -20,6 +20,7 @@ import io.harness.cdng.envGroup.yaml.EnvGroupPlanCreatorConfig;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
 import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
+import io.harness.cdng.environment.yaml.EnvironmentsYaml;
 import io.harness.cdng.pipeline.PipelineInfrastructure;
 import io.harness.cdng.pipeline.beans.DeploymentStageStepParameters;
 import io.harness.cdng.pipeline.beans.MultiDeploymentStepParameters;
@@ -244,7 +245,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   public GraphLayoutResponse getLayoutNodeInfo(PlanCreationContext context, DeploymentStageNode config) {
     Map<String, GraphLayoutNode> stageYamlFieldMap = new LinkedHashMap<>();
     YamlField yamlField = context.getCurrentField();
-    if (config.getDeploymentStageConfig().getServices() != null) {
+    if (config.getDeploymentStageConfig().getServices() != null
+        || config.getDeploymentStageConfig().getEnvironments() != null) {
       YamlField siblingField = yamlField.getNode().nextSiblingFromParentArray(
           yamlField.getName(), Arrays.asList(YAMLFieldNameConstants.STAGE, YAMLFieldNameConstants.PARALLEL));
       EdgeLayoutList edgeLayoutList;
@@ -303,13 +305,15 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       String serviceSpecNodeUuid, String envGroupUuid) throws IOException {
     YamlField infraField = specField.getNode().getField(YamlTypes.PIPELINE_INFRASTRUCTURE);
     EnvironmentYamlV2 environmentV2 = stageNode.getDeploymentStageConfig().getEnvironment();
+    EnvironmentsYaml environments = stageNode.getDeploymentStageConfig().getEnvironments();
+
     EnvironmentGroupYaml envGroupYaml = stageNode.getDeploymentStageConfig().getEnvironmentGroup();
 
     if (infraField != null && environmentV2 != null) {
       throw new InvalidRequestException("Infrastructure and Environment cannot be siblings of each other");
     }
 
-    if (infraField == null && environmentV2 == null && envGroupYaml == null) {
+    if (infraField == null && environmentV2 == null && envGroupYaml == null && environments == null) {
       throw new InvalidRequestException("Infrastructure Or Environment or Environment Group section is missing");
     }
 
@@ -436,9 +440,19 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       DeploymentStageNode stageNode, String nextNodeId) throws IOException {
     // Adding service child by resolving the serviceField
     ServiceDefinitionType serviceType = stageNode.getDeploymentStageConfig().getDeploymentType();
-    ServiceYamlV2 service = stageNode.getDeploymentStageConfig().getService();
-    EnvironmentYamlV2 environment = stageNode.getDeploymentStageConfig().getEnvironment();
+    ServiceYamlV2 service;
+    if (stageNode.getDeploymentStageConfig().getServices() != null) {
+      service = MultiDeploymentSpawnerUtils.getServiceYamlV2Node();
+    } else {
+      service = stageNode.getDeploymentStageConfig().getService();
+    }
 
+    EnvironmentYamlV2 environment;
+    if (stageNode.getDeploymentStageConfig().getEnvironments() != null) {
+      environment = MultiDeploymentSpawnerUtils.getEnvironmentYamlV2Node();
+    } else {
+      environment = stageNode.getDeploymentStageConfig().getEnvironment();
+    }
     String serviceNodeId = service.getUuid();
     planCreationResponseMap.putAll(ServiceAllInOnePlanCreatorUtils.addServiceNode(
         kryoSerializer, service, environment, serviceNodeId, nextNodeId, serviceType));
@@ -446,8 +460,13 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   }
   private String addInfrastructureNode(LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap,
       DeploymentStageNode stageNode, List<AdviserObtainment> adviserObtainments) throws IOException {
-    PlanNode node = InfrastructurePmsPlanCreator.getInfraTaskExecutableStepV2PlanNode(
-        stageNode.getDeploymentStageConfig().getEnvironment(), adviserObtainments);
+    EnvironmentYamlV2 environment;
+    if (stageNode.getDeploymentStageConfig().getEnvironments() != null) {
+      environment = MultiDeploymentSpawnerUtils.getEnvironmentYamlV2Node();
+    } else {
+      environment = stageNode.getDeploymentStageConfig().getEnvironment();
+    }
+    PlanNode node = InfrastructurePmsPlanCreator.getInfraTaskExecutableStepV2PlanNode(environment, adviserObtainments);
     planCreationResponseMap.put(node.getUuid(), PlanCreationResponse.builder().planNode(node).build());
     return node.getUuid();
   }

@@ -7,6 +7,7 @@
 
 package io.harness.cdng.infra.beans;
 
+import io.harness.annotations.StoreIn;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.EcsInfrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
@@ -15,6 +16,7 @@ import io.harness.cdng.infra.yaml.PdcInfrastructure;
 import io.harness.cdng.infra.yaml.ServerlessAwsLambdaInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAware;
 import io.harness.pms.sdk.core.data.Outcome;
@@ -34,6 +36,7 @@ import org.mongodb.morphia.annotations.Entity;
       @JsonSubTypes.Type(value = AzureWebAppInfrastructure.class, name = "azure-webapp"),
       @JsonSubTypes.Type(value = EcsInfrastructure.class, name = "ECS")
 })
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "infrastructureMapping")
 public interface InfraMapping extends PersistentEntity, UuidAware, Outcome {
   void setUuid(String uuid);

@@ -8,8 +8,10 @@
 package software.wings.beans;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.distribution.idempotence.IdempotentResult;
 import io.harness.mongo.index.FdTtlIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 
 import java.time.OffsetDateTime;
@@ -25,6 +27,7 @@ import org.mongodb.morphia.annotations.Id;
 @Value
 @Builder
 @FieldNameConstants(innerTypeName = "IdempotentKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "idempotent_locks", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 public class Idempotent implements PersistentEntity {

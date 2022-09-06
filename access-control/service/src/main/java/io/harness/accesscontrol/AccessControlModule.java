@@ -31,7 +31,6 @@ import io.harness.accesscontrol.acl.ResourceAttributeProvider;
 import io.harness.accesscontrol.acl.api.ACLResource;
 import io.harness.accesscontrol.acl.api.ACLResourceImpl;
 import io.harness.accesscontrol.acl.api.ResourceAttributeProviderImpl;
-import io.harness.accesscontrol.aggregator.AggregatorStackDriverMetricsPublisherImpl;
 import io.harness.accesscontrol.aggregator.api.AggregatorResource;
 import io.harness.accesscontrol.aggregator.api.AggregatorResourceImpl;
 import io.harness.accesscontrol.aggregator.consumers.AccessControlChangeEventFailureHandler;
@@ -105,7 +104,6 @@ import io.harness.ff.FeatureFlagClientModule;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
 import io.harness.metrics.modules.MetricsModule;
-import io.harness.metrics.service.api.MetricsPublisher;
 import io.harness.migration.NGMigrationSdkModule;
 import io.harness.organization.OrganizationClientModule;
 import io.harness.outbox.TransactionOutboxModule;
@@ -129,7 +127,6 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
-import com.google.inject.Scopes;
 import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.MapBinder;
@@ -384,11 +381,5 @@ public class AccessControlModule extends AbstractModule {
     bind(AccessControlPreferenceResource.class).to(AccessControlPreferenceResourceImpl.class);
     bind(RoleAssignmentResource.class).to(RoleAssignmentResourceImpl.class);
     bind(RoleResource.class).to(RoleResourceImpl.class);
-
-    if (config.getAggregatorConfiguration().isExportMetricsToStackDriver()) {
-      bind(MetricsPublisher.class).to(AggregatorStackDriverMetricsPublisherImpl.class).in(Scopes.SINGLETON);
-    } else {
-      log.info("No configuration provided for Stack Driver, aggregator metrics will not be recorded");
-    }
   }
 }

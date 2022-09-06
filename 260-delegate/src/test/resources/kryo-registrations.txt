@@ -1424,6 +1424,7 @@
 19479:io.harness.delegate.task.azure.appservice.webapp.response.AzureAppDeploymentData
 19480:io.harness.delegate.task.azure.appservice.webapp.response.AzureWebAppSlotShiftTrafficResponse
 19481:io.harness.delegate.task.azure.appservice.webapp.response.AzureWebAppSwapSlotsResponse
+19482:io.harness.delegate.task.shell.WinRmShellScriptTaskParametersNG
 19483:io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifactDelegateRequest
 19484:io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifactDelegateResponse
 19485:io.harness.delegate.beans.azure.appservicesettings.AzureAppServiceSettingConstants
@@ -1746,6 +1747,7 @@
 55419:io.harness.delegate.task.azure.appservice.webapp.ng.exception.AzureWebAppRollbackExceptionData
 55420:io.harness.delegate.task.artifacts.gar.GarDelegateRequest
 55421:io.harness.delegate.task.artifacts.gar.GarDelegateResponse
+55422:io.harness.delegate.task.azure.artifact.AwsS3AzureArtifactRequestDetails
 55470:io.harness.delegate.task.ssh.artifact.CustomArtifactDelegateConfig
 55501:io.harness.delegate.beans.instancesync.info.PdcServerInstanceInfo
 55502:io.harness.delegate.beans.instancesync.info.AzureSshWinrmServerInstanceInfo
