@@ -388,8 +388,7 @@ public enum TaskType {
   AZURE_NG_ARM(TaskGroup.AZURE_NG_ARM_BLUEPRINT, "Azure ARM"),
   NG_LDAP_TEST_AUTHENTICATION(TaskGroup.LDAP),
   ECS_GIT_FETCH_TASK_NG(TaskGroup.ECS),
-  ECS_COMMAND_TASK_NG(TaskGroup.ECS),
-  WIN_RM_SHELL_SCRIPT_TASK_NG(TaskGroup.SHELL_SCRIPT_NG, "Shell Script Task");
+  ECS_COMMAND_TASK_NG(TaskGroup.ECS);
 
   private final TaskGroup taskGroup;
   private final String displayName;

@@ -7,7 +7,6 @@
 
 package io.harness.steps.shellscript;
 
-import static io.harness.rule.OwnerRule.FILIP;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -91,8 +90,7 @@ public class ShellScriptStepTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testObtainTask() {
     Ambiance ambiance = buildAmbiance();
-    ShellScriptStepParameters stepParameters =
-        ShellScriptStepParameters.infoBuilder().shellType(ShellType.Bash).build();
+    ShellScriptStepParameters stepParameters = ShellScriptStepParameters.infoBuilder().build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(stepParameters).build();
     ShellScriptTaskParametersNG taskParametersNG = ShellScriptTaskParametersNG.builder().build();
     doReturn(taskParametersNG)
@@ -100,26 +98,6 @@ public class ShellScriptStepTest extends CategoryTest {
         .buildShellScriptTaskParametersNG(ambiance, stepParameters);
     MockedStatic<StepUtils> aStatic = Mockito.mockStatic(StepUtils.class);
     aStatic.when(() -> StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any(), any()))
-        .thenReturn(TaskRequest.newBuilder().build());
-
-    TaskRequest taskRequest = shellScriptStep.obtainTask(ambiance, stepElementParameters, null);
-    assertThat(taskRequest).isNotNull();
-  }
-
-  @Test
-  @Owner(developers = FILIP)
-  @Category(UnitTests.class)
-  public void testObtainTaskForPowerShell() {
-    Ambiance ambiance = buildAmbiance();
-    ShellScriptStepParameters stepParameters =
-        ShellScriptStepParameters.infoBuilder().shellType(ShellType.PowerShell).build();
-    StepElementParameters stepElementParameters = StepElementParameters.builder().spec(stepParameters).build();
-    ShellScriptTaskParametersNG taskParametersNG = ShellScriptTaskParametersNG.builder().build();
-    doReturn(taskParametersNG)
-        .when(shellScriptHelperService)
-        .buildShellScriptTaskParametersNG(ambiance, stepParameters);
-    MockedStatic<StepUtils> aStatic = Mockito.mockStatic(StepUtils.class);
-    aStatic.when(() -> StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
 
     TaskRequest taskRequest = shellScriptStep.obtainTask(ambiance, stepElementParameters, null);

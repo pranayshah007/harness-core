@@ -617,7 +617,6 @@ import io.harness.delegate.task.shell.ShellScriptTaskParametersNG;
 import io.harness.delegate.task.shell.ShellScriptTaskResponseNG;
 import io.harness.delegate.task.shell.SshCommandTaskParameters;
 import io.harness.delegate.task.shell.TailFilePatternDto;
-import io.harness.delegate.task.shell.WinRmShellScriptTaskParametersNG;
 import io.harness.delegate.task.shell.WinrmTaskParameters;
 import io.harness.delegate.task.spotinst.request.SpotInstDeployTaskParameters;
 import io.harness.delegate.task.spotinst.request.SpotInstGetElastigroupJsonParameters;
@@ -1157,7 +1156,6 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
 
     kryo.register(DeploymentSlotData.class, 19457);
     kryo.register(ShellScriptTaskParametersNG.class, 19463);
-    kryo.register(WinRmShellScriptTaskParametersNG.class, 19482);
     kryo.register(ShellScriptTaskResponseNG.class, 19464);
     kryo.register(AzureWebAppSlotSetupParameters.class, 19465);
     kryo.register(AzureWebAppRollbackParameters.class, 19466);

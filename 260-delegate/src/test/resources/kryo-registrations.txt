@@ -1424,7 +1424,6 @@
 19479:io.harness.delegate.task.azure.appservice.webapp.response.AzureAppDeploymentData
 19480:io.harness.delegate.task.azure.appservice.webapp.response.AzureWebAppSlotShiftTrafficResponse
 19481:io.harness.delegate.task.azure.appservice.webapp.response.AzureWebAppSwapSlotsResponse
-19482:io.harness.delegate.task.shell.WinRmShellScriptTaskParametersNG
 19483:io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifactDelegateRequest
 19484:io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifactDelegateResponse
 19485:io.harness.delegate.beans.azure.appservicesettings.AzureAppServiceSettingConstants

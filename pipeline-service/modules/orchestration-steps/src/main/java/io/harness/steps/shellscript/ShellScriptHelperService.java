@@ -10,8 +10,9 @@ package io.harness.steps.shellscript;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.task.TaskParameters;
+
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
+import io.harness.delegate.task.shell.ShellScriptTaskParametersNG;
 import io.harness.delegate.task.shell.ShellScriptTaskParametersNG.ShellScriptTaskParametersNGBuilder;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.yaml.ParameterField;
@@ -38,7 +39,7 @@ public interface ShellScriptHelperService {
   String getWorkingDirectory(
       ParameterField<String> workingDirectory, @Nonnull ScriptType scriptType, boolean onDelegate);
 
-  TaskParameters buildShellScriptTaskParametersNG(
+  ShellScriptTaskParametersNG buildShellScriptTaskParametersNG(
       @Nonnull Ambiance ambiance, @Nonnull ShellScriptStepParameters shellScriptStepParameters);
 
   ShellScriptOutcome prepareShellScriptOutcome(

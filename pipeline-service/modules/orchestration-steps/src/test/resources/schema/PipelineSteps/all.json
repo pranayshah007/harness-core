@@ -672,7 +672,16 @@
           "type": "object",
           "properties": {
             "file": {
-              "type": "string"
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string",
+                  "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+                  "minLength": 1
+                }
+              ]
             }
           }
         }
