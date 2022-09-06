@@ -45,26 +45,6 @@ public class HttpTest extends CategoryTest {
     assertThat(Http.validUrl("invalidUrl")).isFalse();
     assertThat(Http.validUrl("abc://invalid.com")).isFalse();
     assertThat(Http.validUrl("abc://invalid.com")).isFalse();
-    // Test null
-    assertThat(Http.validUrl(null)).isFalse();
-    // Test empty
-    assertThat(Http.validUrl("")).isFalse();
-    // Test XSS points
-    assertThat(Http.validUrl("javascript:alert(33)")).isFalse();
-    assertThat(Http.validUrl("javascript:alert(document.domain)")).isFalse();
-    assertThat(Http.validUrl("javascript:alert(document.cookie)")).isFalse();
-    // Test double slash
-    assertThat(Http.validUrl("https://test//url")).isTrue();
-    // Test FTP
-    assertThat(Http.validUrl("ftp://testing.com")).isTrue();
-    // Test FTPS
-    assertThat(Http.validUrl("ftps://testing.com")).isTrue();
-    // Test FTP with double slash
-    assertThat(Http.validUrl("ftp://test//url")).isTrue();
-    // Test FTPS with double slash
-    assertThat(Http.validUrl("ftps://test//url")).isTrue();
-    // Test local url with double slash
-    assertThat(Http.validUrl("https://localhost:8080/test/url")).isTrue();
   }
 
   @Test
