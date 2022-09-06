@@ -111,12 +111,12 @@ public class AwsECSServiceRecommendationTasklet implements Tasklet {
         String clusterName = ceClusters.get(clusterId);
         String serviceArn = clusterIdAndServiceArn.getServiceArn();
         String serviceName = serviceNameFromServiceArn(serviceArn);
-        LaunchType launchType = ecsServiceMap.get(clusterIdAndServiceArn.getServiceArn()).getLaunchType();
         if (!ecsServiceMap.containsKey(serviceArn)) {
           log.debug("Skipping ECS recommendation as service info is not present for accountId: {}, service arn: {}",
               accountId, serviceArn);
           continue;
         }
+        LaunchType launchType = ecsServiceMap.get(clusterIdAndServiceArn.getServiceArn()).getLaunchType();
         Resource resource = ecsServiceMap.get(clusterIdAndServiceArn.getServiceArn()).getResource();
         if (resource.getCpuUnits().equals(0.0) || resource.getMemoryMb().equals(0.0)) {
           log.debug("Skipping ECS recommendation as resource value is zero for accountId : {}, service arn: {}",
