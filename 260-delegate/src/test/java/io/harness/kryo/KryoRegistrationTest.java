@@ -27,6 +27,7 @@ import com.esotericsoftware.kryo.util.ObjectMap;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -36,6 +37,8 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
+
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.junit.Test;
@@ -179,6 +182,8 @@ public class KryoRegistrationTest extends CategoryTest {
 
     log(String.format("Load expected kryo registrations from resources file '%s'.", KRYO_REGISTRATION_FILE));
     Map<Integer, String> expectedRegisteredClasses = loadAllExpectedKryoRegistrations();
+    
+    Collection<String> diff = CollectionUtils.disjunction(expectedRegisteredClasses.values(), registeredClasses.values());
 
     // ensure all registered classes match the expected registrations
     for (Map.Entry<Integer, String> registeredEntry : registeredClasses.entrySet()) {

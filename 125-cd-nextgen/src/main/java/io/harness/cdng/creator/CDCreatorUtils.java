@@ -14,6 +14,8 @@ import io.harness.executions.steps.StepSpecTypeConstants;
 import com.google.common.collect.Sets;
 import java.util.Collections;
 import java.util.Set;
+
+import io.harness.pms.sdk.core.steps.Step;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -39,6 +41,8 @@ public class CDCreatorUtils {
         StepSpecTypeConstants.AZURE_TRAFFIC_SHIFT, StepSpecTypeConstants.AZURE_SWAP_SLOT,
         StepSpecTypeConstants.AZURE_WEBAPP_ROLLBACK, StepSpecTypeConstants.JENKINS_BUILD,
         StepSpecTypeConstants.ECS_ROLLING_DEPLOY, StepSpecTypeConstants.ECS_ROLLING_ROLLBACK,
-        StepSpecTypeConstants.ECS_CANARY_DEPLOY, StepSpecTypeConstants.ECS_CANARY_DELETE);
+        StepSpecTypeConstants.ECS_CANARY_DEPLOY, StepSpecTypeConstants.ECS_CANARY_DELETE,
+        StepSpecTypeConstants.ECS_BLUE_GREEN_CREATE_SERVICE, StepSpecTypeConstants.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS,
+        StepSpecTypeConstants.ECS_BLUE_GREEN_ROLLBACK);
   }
 }

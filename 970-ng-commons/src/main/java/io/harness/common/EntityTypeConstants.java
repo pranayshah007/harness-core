@@ -116,4 +116,10 @@ public interface EntityTypeConstants {
   String AZURE_CREATE_ARM_RESOURCE_STEP = "AzureCreateARMResource";
   String AZURE_CREATE_BP_RESOURCE_STEP = "AzureCreateBPResource";
   String AZURE_ROLLBACK_ARM_RESOURCE_STEP = "AzureARMRollback";
+  String ECS_BLUE_GREEN_CREATE_SERVICE = "EcsBlueGreenCreateService";
+  String ECS_BLUE_GREEN_SWAP_TARGET_GROUPS = "EcsBlueGreenSwapTargetGroups";
+  String ECS_BLUE_GREEN_ROLLBACK = "EcsBlueGreenRollback";
+
+
+
 }

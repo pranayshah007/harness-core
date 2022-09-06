@@ -14,6 +14,9 @@ import io.harness.cdng.azure.webapp.AzureWebAppRollbackStep;
 import io.harness.cdng.azure.webapp.AzureWebAppSlotDeploymentStep;
 import io.harness.cdng.azure.webapp.AzureWebAppSwapSlotStep;
 import io.harness.cdng.azure.webapp.AzureWebAppTrafficShiftStep;
+import io.harness.cdng.ecs.EcsBlueGreenCreateServiceStepInfo;
+import io.harness.cdng.ecs.EcsBlueGreenRollbackStepInfo;
+import io.harness.cdng.ecs.EcsBlueGreenSwapTargetGroupsStepInfo;
 import io.harness.cdng.ecs.EcsCanaryDeleteStepInfo;
 import io.harness.cdng.ecs.EcsCanaryDeployStepInfo;
 import io.harness.cdng.ecs.EcsRollingDeployStepInfo;
@@ -67,7 +70,9 @@ import io.swagger.annotations.ApiModel;
               AzureWebAppSlotDeploymentStep.class, AzureWebAppTrafficShiftStep.class, AzureWebAppSwapSlotStep.class,
               AzureWebAppRollbackStep.class, JenkinsBuildStepInfo.class, AzureCreateARMResourceStepInfo.class,
               AzureCreateBPStepInfo.class, AzureARMRollbackStepInfo.class, EcsRollingDeployStepInfo.class,
-              EcsRollingRollbackStepInfo.class, EcsCanaryDeployStepInfo.class, EcsCanaryDeleteStepInfo.class})
+              EcsRollingRollbackStepInfo.class, EcsCanaryDeployStepInfo.class, EcsCanaryDeleteStepInfo.class,
+        EcsBlueGreenCreateServiceStepInfo.class, EcsBlueGreenSwapTargetGroupsStepInfo.class,
+        EcsBlueGreenRollbackStepInfo.class})
 
 @OwnedBy(HarnessTeam.CDC)
 public interface CDStepInfo extends StepSpecType, WithStepElementParameters, WithDelegateSelector {

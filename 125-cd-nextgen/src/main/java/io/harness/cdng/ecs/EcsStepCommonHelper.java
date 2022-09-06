@@ -323,6 +323,12 @@ public class EcsStepCommonHelper extends EcsStepUtils {
     return taskChainResponse;
   }
 
+  public TaskChainResponse executeNextLinkBlueGreen(EcsStepExecutor ecsStepExecutor, Ambiance ambiance,
+                                                 StepElementParameters stepElementParameters, PassThroughData passThroughData,
+                                                 ThrowingSupplier<ResponseData> responseDataSupplier, EcsStepHelper ecsStepHelper) throws Exception {
+    return null;
+  }
+
   public EcsInfraConfig getEcsInfraConfig(InfrastructureOutcome infrastructure, Ambiance ambiance) {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     return ecsEntityHelper.getEcsInfraConfig(infrastructure, ngAccess);

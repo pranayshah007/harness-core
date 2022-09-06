@@ -30,5 +30,11 @@ public enum EcsCommandUnitConstants {
     public String toString() {
       return "Delete Service";
     }
+  },
+  swapTargetGroup {
+    @Override
+    public String toString() {
+      return "Swap Target Group";
+    }
   }
 }
