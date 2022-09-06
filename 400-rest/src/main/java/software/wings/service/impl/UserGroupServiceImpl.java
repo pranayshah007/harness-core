@@ -21,6 +21,7 @@ import static io.harness.validation.Validator.unEqualCheck;
 import static software.wings.beans.security.UserGroup.DEFAULT_ACCOUNT_ADMIN_USER_GROUP_NAME;
 import static software.wings.beans.security.UserGroupSearchTermType.APPLICATION_NAME;
 import static software.wings.scheduler.LdapGroupSyncJob.add;
+import static software.wings.security.PermissionAttribute.Action.ABORT_WORKFLOW;
 import static software.wings.security.PermissionAttribute.Action.EXECUTE;
 import static software.wings.security.PermissionAttribute.Action.EXECUTE_PIPELINE;
 import static software.wings.security.PermissionAttribute.Action.EXECUTE_WORKFLOW;
@@ -649,6 +650,7 @@ public class UserGroupServiceImpl implements UserGroupService {
             actionSet.add(EXECUTE_PIPELINE);
             actionSet.add(EXECUTE_WORKFLOW);
             actionSet.add(EXECUTE_WORKFLOW_ROLLBACK);
+            actionSet.add(ABORT_WORKFLOW);
           }
           actionSet.add(action);
         });
