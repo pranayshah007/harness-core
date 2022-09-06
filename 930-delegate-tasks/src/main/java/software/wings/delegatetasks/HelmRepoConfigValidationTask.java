@@ -118,11 +118,6 @@ public class HelmRepoConfigValidationTask extends AbstractDelegateRunnableTask {
       ((GCSHelmRepoConfig) helmRepoConfig).setUseLatestChartMuseumVersion(taskParams.isUseLatestChartMuseumVersion());
     }
 
-    if (!taskParams.isUseOCIHelmRepo() && helmRepoConfig.getSettingType().equals(OCI_HELM_REPO)) {
-      unhandled(helmRepoConfig.getSettingType());
-      throw new WingsException("Unhandled type of helm repo config. Type : " + helmRepoConfig.getSettingType());
-    }
-
     switch (helmRepoConfig.getSettingType()) {
       case HTTP_HELM_REPO:
         tryAddingHttpHelmRepo(helmRepoConfig, repoName, taskParams.getRepoDisplayName(), workingDirectory);

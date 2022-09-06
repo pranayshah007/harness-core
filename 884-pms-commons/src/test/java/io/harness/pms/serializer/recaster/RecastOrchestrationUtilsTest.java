@@ -8,12 +8,18 @@
 package io.harness.pms.serializer.recaster;
 
 import static io.harness.rule.OwnerRule.ALEXEI;
+import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.GARVIT;
 import static io.harness.rule.OwnerRule.PRASHANT;
 
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertFalse;
+import static junit.framework.TestCase.assertNotNull;
+import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
+import io.harness.annotation.RecasterFieldName;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
@@ -35,6 +41,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.Value;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -309,5 +316,116 @@ public class RecastOrchestrationUtilsTest extends CategoryTest {
   private static class ProtoAsAFieldClass {
     private ExecutionErrorInfo executionErrorInfo;
     private Set<FailureType> failureTypeSet;
+  }
+
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testRecasterWithRecasterFieldName() {
+    InnerClassForTestingRecasterFieldName innerObject =
+        InnerClassForTestingRecasterFieldName.builder().f1("foo").f2("bar").f3("fooBar").build();
+    TestRecasterWithRecasterFieldName object = TestRecasterWithRecasterFieldName.builder()
+                                                   .name("foo")
+                                                   .value("bar")
+                                                   .email("foo.bar")
+                                                   .f1("f1 foo")
+                                                   .f2(2)
+                                                   .f3(3)
+                                                   .innerObject1(innerObject)
+                                                   .innerObject2(innerObject)
+                                                   .build();
+    Map map = RecastOrchestrationUtils.toMap(object);
+
+    // Recasting again to object from the map.
+    TestRecasterWithRecasterFieldName responseObject =
+        RecastOrchestrationUtils.fromMap(map, TestRecasterWithRecasterFieldName.class);
+    // Assert that recasted object has exact values as original object for all fields. This ensures that we can retrieve
+    // the original object from recasted map.
+    assertRecastedObject(object, responseObject);
+
+    Map recastedMap = RecastOrchestrationUtils.toMap(responseObject);
+    // Assert that first map(created from original object) and again recastedMap(Original object -> map,
+    // map->recasterObject then recastedObject -> recastedMap) are exact same. This ensures reversible conversion
+    // between object and map using recaster.
+    assertEquals(map, recastedMap);
+    assertNotNull(map);
+
+    // Checking that map has the keys that were provided by annotation RecasterFieldName. If not provoded by annotation
+    // then fieldName to be used as key.
+    assertTrue(map.containsKey("name"));
+    assertTrue(map.containsKey("value"));
+    assertTrue(map.containsKey("contact"));
+    assertFalse(map.containsKey("email"));
+
+    assertTrue(map.containsKey("recasterF3"));
+    assertTrue(map.containsKey("innerObject1"));
+    assertTrue(map.containsKey("recasterInnerObject"));
+    assertFalse(map.containsKey("innerObject2"));
+
+    assertEquals(map.get("name"), "foo");
+    assertEquals(map.get("value"), "bar");
+    assertEquals(map.get("contact"), "foo.bar");
+    assertEquals(map.get("f1"), "f1 foo");
+    assertEquals(map.get("f2"), 2);
+    assertEquals(map.get("recasterF3"), 3);
+
+    Map innerMap1 = (Map) map.get("innerObject1");
+
+    assertTrue(innerMap1.containsKey("recasterF1"));
+    assertTrue(innerMap1.containsKey("f2"));
+    assertTrue(innerMap1.containsKey("f3"));
+
+    assertEquals(innerMap1.get("recasterF1"), "foo");
+    assertEquals(innerMap1.get("f2"), "bar");
+    assertEquals(innerMap1.get("f3"), "fooBar");
+
+    Map innerMap2 = (Map) map.get("recasterInnerObject");
+
+    assertTrue(innerMap2.containsKey("recasterF1"));
+    assertTrue(innerMap2.containsKey("f2"));
+    assertTrue(innerMap2.containsKey("f3"));
+
+    assertEquals(innerMap2.get("recasterF1"), "foo");
+    assertEquals(innerMap2.get("f2"), "bar");
+    assertEquals(innerMap2.get("f3"), "fooBar");
+  }
+
+  private void assertRecastedObject(
+      TestRecasterWithRecasterFieldName object, TestRecasterWithRecasterFieldName responseObject) {
+    assertEquals(object.getName(), responseObject.getName());
+    assertEquals(object.getValue(), responseObject.getValue());
+    assertEquals(object.getEmail(), responseObject.getEmail());
+    assertEquals(object.getF1(), responseObject.getF1());
+    assertEquals(object.getF2(), responseObject.getF2());
+    assertEquals(object.getF3(), responseObject.getF3());
+
+    assertEquals(object.getInnerObject1().getF1(), responseObject.getInnerObject1().getF1());
+    assertEquals(object.getInnerObject1().getF2(), responseObject.getInnerObject1().getF2());
+    assertEquals(object.getInnerObject1().getF3(), responseObject.getInnerObject1().getF3());
+
+    assertEquals(object.getInnerObject2().getF1(), responseObject.getInnerObject2().getF1());
+    assertEquals(object.getInnerObject2().getF2(), responseObject.getInnerObject2().getF2());
+    assertEquals(object.getInnerObject2().getF3(), responseObject.getInnerObject2().getF3());
+  }
+
+  @Value
+  @Builder
+  private static class TestRecasterWithRecasterFieldName {
+    @RecasterFieldName(name = "name") String name;
+    @RecasterFieldName(name = "") String value;
+    @RecasterFieldName(name = "contact") String email;
+    String f1;
+    int f2;
+    @RecasterFieldName(name = "recasterF3") int f3;
+    InnerClassForTestingRecasterFieldName innerObject1;
+    @RecasterFieldName(name = "recasterInnerObject") InnerClassForTestingRecasterFieldName innerObject2;
+  }
+
+  @Value
+  @Builder
+  private static class InnerClassForTestingRecasterFieldName {
+    @RecasterFieldName(name = "recasterF1") String f1;
+    @RecasterFieldName(name = "") String f2;
+    String f3;
   }
 }

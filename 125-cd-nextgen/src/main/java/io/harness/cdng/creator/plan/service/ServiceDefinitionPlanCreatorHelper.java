@@ -16,6 +16,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static java.lang.String.format;
 import static java.util.Collections.EMPTY_LIST;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
 import io.harness.cdng.azure.config.yaml.ApplicationSettingsConfiguration;
@@ -24,7 +25,6 @@ import io.harness.cdng.azure.config.yaml.StartupCommandConfiguration;
 import io.harness.cdng.azure.webapp.ApplicationSettingsParameters;
 import io.harness.cdng.azure.webapp.ConnectionStringsParameters;
 import io.harness.cdng.azure.webapp.StartupCommandParameters;
-import io.harness.cdng.configfile.ConfigFile;
 import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
 import io.harness.cdng.manifest.ManifestConfigType;
@@ -64,6 +64,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.NonNull;
 import lombok.experimental.UtilityClass;
@@ -368,13 +369,13 @@ public class ServiceDefinitionPlanCreatorHelper {
 
   @NonNull
   private static List<ManifestConfigWrapper> getEnvGlobalManifests(NGEnvironmentConfig ngEnvironmentConfig) {
-    if (checkManifestAvailability(ngEnvironmentConfig)) {
+    if (isNoManifestAvailable(ngEnvironmentConfig)) {
       return EMPTY_LIST;
     }
     return ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride().getManifests();
   }
 
-  private static boolean checkManifestAvailability(NGEnvironmentConfig ngEnvironmentConfig) {
+  private static boolean isNoManifestAvailable(NGEnvironmentConfig ngEnvironmentConfig) {
     return ngEnvironmentConfig == null || ngEnvironmentConfig.getNgEnvironmentInfoConfig() == null
         || ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride() == null
         || ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride().getManifests() == null;
@@ -422,8 +423,12 @@ public class ServiceDefinitionPlanCreatorHelper {
     }
   }
 
-  private static List<ConfigFileWrapper> getSvcConfigFiles(NGServiceV2InfoConfig serviceV2Config) {
-    return emptyIfNull(serviceV2Config.getServiceDefinition().getServiceSpec().getConfigFiles());
+  private static Map<String, ConfigFileWrapper> getSvcConfigFiles(NGServiceV2InfoConfig serviceV2Config) {
+    if (isNotEmpty(serviceV2Config.getServiceDefinition().getServiceSpec().getConfigFiles())) {
+      return serviceV2Config.getServiceDefinition().getServiceSpec().getConfigFiles().stream().collect(Collectors.toMap(
+          configFileWrapper -> configFileWrapper.getConfigFile().getIdentifier(), Function.identity()));
+    }
+    return emptyMap();
   }
 
   private List<ManifestConfigWrapper> getSvcManifests(NGServiceV2InfoConfig serviceV2Config) {
@@ -523,86 +528,42 @@ public class ServiceDefinitionPlanCreatorHelper {
   @VisibleForTesting
   List<ConfigFileWrapper> prepareFinalConfigFiles(NGServiceV2InfoConfig serviceV2Config,
       NGServiceOverrideConfig serviceOverrideConfig, NGEnvironmentConfig ngEnvironmentConfig) {
-    final List<ConfigFileWrapper> svcConfigFiles = getSvcConfigFiles(serviceV2Config);
-    final List<ConfigFileWrapper> envGlobalConfigFiles =
-        getAndValidateEnvGlobalConfigFiles(serviceV2Config, ngEnvironmentConfig, svcConfigFiles);
-    final List<ConfigFileWrapper> svcOverrideConfigFiles = getAndValidateSvcOverrideConfigFiles(
-        serviceV2Config, serviceOverrideConfig, ngEnvironmentConfig, svcConfigFiles);
+    final Map<String, ConfigFileWrapper> svcConfigFiles = getSvcConfigFiles(serviceV2Config);
+    final Map<String, ConfigFileWrapper> envGlobalConfigFiles = getEnvironmentGlobalConfigFiles(ngEnvironmentConfig);
+    final Map<String, ConfigFileWrapper> svcOverrideConfigFiles = getSvcOverrideConfigFiles(serviceOverrideConfig);
 
-    checkCrossLocationDuplicateConfigFilesIdentifiers(svcOverrideConfigFiles, envGlobalConfigFiles,
-        serviceV2Config.getIdentifier(), ngEnvironmentConfig.getNgEnvironmentInfoConfig().getIdentifier(),
-        SERVICE_OVERRIDES);
+    Map<String, ConfigFileWrapper> finalManifestsMap = new HashMap<>();
+    finalManifestsMap.putAll(svcConfigFiles);
+    finalManifestsMap.putAll(envGlobalConfigFiles);
+    finalManifestsMap.putAll(svcOverrideConfigFiles);
 
-    final List<ConfigFileWrapper> finalConfigFiles = new ArrayList<>();
-
-    finalConfigFiles.addAll(svcConfigFiles);
-    finalConfigFiles.addAll(envGlobalConfigFiles);
-    finalConfigFiles.addAll(svcOverrideConfigFiles);
-    return finalConfigFiles;
+    return new ArrayList<>(finalManifestsMap.values());
   }
 
-  private static void checkCrossLocationDuplicateConfigFilesIdentifiers(List<ConfigFileWrapper> configFilesA,
-      List<ConfigFileWrapper> configFilesB, String svcIdentifier, String envIdentifier, String overrideLocation) {
-    if (isEmpty(configFilesA) || isEmpty(configFilesB)) {
-      return;
+  private static Map<String, ConfigFileWrapper> getSvcOverrideConfigFiles(
+      NGServiceOverrideConfig serviceOverrideConfig) {
+    if (serviceOverrideConfig == null || serviceOverrideConfig.getServiceOverrideInfoConfig() == null
+        || isEmpty(serviceOverrideConfig.getServiceOverrideInfoConfig().getConfigFiles())) {
+      return emptyMap();
     }
+    return serviceOverrideConfig.getServiceOverrideInfoConfig().getConfigFiles().stream().collect(
+        Collectors.toMap(configFileWrapper -> configFileWrapper.getConfigFile().getIdentifier(), Function.identity()));
+  }
 
-    Set<String> overridesIdentifiers = configFilesB.stream()
-                                           .map(ConfigFileWrapper::getConfigFile)
-                                           .map(ConfigFile::getIdentifier)
-                                           .collect(Collectors.toSet());
-    List<String> duplicateManifestIds = configFilesA.stream()
-                                            .map(ConfigFileWrapper::getConfigFile)
-                                            .map(ConfigFile::getIdentifier)
-                                            .filter(overridesIdentifiers::contains)
-                                            .collect(Collectors.toList());
-
-    if (isNotEmpty(duplicateManifestIds)) {
-      throw new InvalidRequestException(
-          format("Found duplicate config file identifiers [%s] in %s for service [%s] and environment [%s]",
-              duplicateManifestIds.stream().map(Object::toString).collect(Collectors.joining(",")), overrideLocation,
-              svcIdentifier, envIdentifier));
+  private static Map<String, ConfigFileWrapper> getEnvironmentGlobalConfigFiles(
+      NGEnvironmentConfig ngEnvironmentConfig) {
+    if (isNoEnvGlobalConfigFileOverridePresent(ngEnvironmentConfig)) {
+      return emptyMap();
     }
+    return ngEnvironmentConfig.getNgEnvironmentInfoConfig()
+        .getNgEnvironmentGlobalOverride()
+        .getConfigFiles()
+        .stream()
+        .collect(Collectors.toMap(
+            configFileWrapper -> configFileWrapper.getConfigFile().getIdentifier(), Function.identity()));
   }
 
-  private static List<ConfigFileWrapper> getAndValidateSvcOverrideConfigFiles(NGServiceV2InfoConfig serviceV2Config,
-      NGServiceOverrideConfig serviceOverrideConfig, NGEnvironmentConfig ngEnvironmentConfig,
-      List<ConfigFileWrapper> svcConfigFiles) {
-    if (serviceOverrideConfig == null) {
-      return EMPTY_LIST;
-    }
-
-    List<ConfigFileWrapper> svcOverrideConfigFiles = getSvcOverrideConfigFiles(serviceOverrideConfig);
-    checkCrossLocationDuplicateConfigFilesIdentifiers(svcConfigFiles, svcOverrideConfigFiles,
-        serviceV2Config.getIdentifier(), ngEnvironmentConfig.getNgEnvironmentInfoConfig().getIdentifier(),
-        SERVICE_OVERRIDES);
-    return svcOverrideConfigFiles;
-  }
-
-  private static List<ConfigFileWrapper> getSvcOverrideConfigFiles(NGServiceOverrideConfig serviceOverrideConfig) {
-    if (serviceOverrideConfig.getServiceOverrideInfoConfig() == null) {
-      return emptyList();
-    }
-    return emptyIfNull(serviceOverrideConfig.getServiceOverrideInfoConfig().getConfigFiles());
-  }
-
-  private static List<ConfigFileWrapper> getAndValidateEnvGlobalConfigFiles(NGServiceV2InfoConfig serviceV2Config,
-      NGEnvironmentConfig ngEnvironmentConfig, List<ConfigFileWrapper> svcConfigFiles) {
-    final List<ConfigFileWrapper> envGlobalConfigFiles = getEnvironmentGlobalConfigFiles(ngEnvironmentConfig);
-    checkCrossLocationDuplicateConfigFilesIdentifiers(svcConfigFiles, envGlobalConfigFiles,
-        serviceV2Config.getIdentifier(), ngEnvironmentConfig.getNgEnvironmentInfoConfig().getIdentifier(),
-        ServiceDefinitionPlanCreatorHelper.ENVIRONMENT_GLOBAL_OVERRIDES);
-    return envGlobalConfigFiles;
-  }
-
-  private static List<ConfigFileWrapper> getEnvironmentGlobalConfigFiles(NGEnvironmentConfig ngEnvironmentConfig) {
-    if (checkConfigFileAvailability(ngEnvironmentConfig)) {
-      return EMPTY_LIST;
-    }
-    return ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride().getConfigFiles();
-  }
-
-  private static boolean checkConfigFileAvailability(NGEnvironmentConfig ngEnvironmentConfig) {
+  private static boolean isNoEnvGlobalConfigFileOverridePresent(NGEnvironmentConfig ngEnvironmentConfig) {
     return ngEnvironmentConfig == null || ngEnvironmentConfig.getNgEnvironmentInfoConfig() == null
         || ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride() == null
         || ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride().getConfigFiles() == null;

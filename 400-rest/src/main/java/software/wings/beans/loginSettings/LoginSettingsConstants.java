@@ -19,4 +19,7 @@ public class LoginSettingsConstants {
   public static final String OAUTH_PROVIDER_UPDATED = "OAuthProviderUpdated";
   public static final String OAUTH_PROVIDER_DELETED = "OAuthProviderDeleted";
   public static final String AUTHENTICATION_MECHANISM_UPDATED = "AuthenticationMechanismUpdated";
+  public static final String LDAP_SSO_CREATED = "LdapSSOCreated";
+  public static final String LDAP_SSO_UPDATED = "LdapSSOUpdated";
+  public static final String LDAP_SSO_DELETED = "LdapSSODeleted";
 }

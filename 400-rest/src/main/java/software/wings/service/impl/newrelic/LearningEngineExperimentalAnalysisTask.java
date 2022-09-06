@@ -9,11 +9,13 @@ package software.wings.service.impl.newrelic;
 
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotation.IgnoreUnusedIndex;
+import io.harness.annotations.StoreIn;
 import io.harness.beans.ExecutionStatus;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.version.ServiceApiVersion;
 
 import software.wings.beans.Base;
@@ -46,6 +48,7 @@ import org.mongodb.morphia.annotations.Entity;
 @EqualsAndHashCode(callSuper = false, exclude = {"validUntil"})
 @FieldNameConstants(innerTypeName = "LearningEngineExperimentalAnalysisTaskKeys")
 @IgnoreUnusedIndex
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "learningEngineExperimentalAnalysisTask", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 public class LearningEngineExperimentalAnalysisTask extends Base {

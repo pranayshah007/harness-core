@@ -8,6 +8,8 @@
 package software.wings.api;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
+import io.harness.ng.DbAliases;
 import io.harness.queue.Queuable;
 
 import software.wings.api.ondemandrollback.OnDemandRollbackInfo;
@@ -28,6 +30,7 @@ import org.mongodb.morphia.annotations.Entity;
 @Data
 @Builder
 @EqualsAndHashCode(callSuper = true)
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "deploymentEventQueue", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 public class DeploymentEvent extends Queuable {

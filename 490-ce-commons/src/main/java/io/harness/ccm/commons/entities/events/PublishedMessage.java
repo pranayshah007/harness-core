@@ -7,7 +7,7 @@
 
 package io.harness.ccm.commons.entities.events;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
@@ -35,8 +35,8 @@ import org.mongodb.morphia.annotations.Entity;
 import org.mongodb.morphia.annotations.Id;
 import org.mongodb.morphia.annotations.PostLoad;
 
-@StoreIn(DbAliases.CENG)
 @Data
+@StoreIn(DbAliases.CENG)
 @Entity(value = "publishedMessages", noClassnameStored = true)
 @FieldNameConstants(innerTypeName = "PublishedMessageKeys")
 @Slf4j

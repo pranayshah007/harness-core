@@ -98,6 +98,6 @@ public enum TaskGroup {
   AZURE,
   SERVERLESS_NG,
   COMMAND_TASK_NG,
-
+  ECS,
   AZURE_NG_ARM_BLUEPRINT
 }

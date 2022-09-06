@@ -91,12 +91,18 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
       ManifestConfigWrapper.builder()
           .manifest(ManifestConfig.builder().identifier("values_test3").type(ManifestConfigType.VALUES).build())
           .build();
-  private static final ConfigFileWrapper configFile1 =
-      ConfigFileWrapper.builder().configFile(ConfigFile.builder().identifier("config_file1").build()).build();
-  private static final ConfigFileWrapper configFile2 =
-      ConfigFileWrapper.builder().configFile(ConfigFile.builder().identifier("config_file2").build()).build();
-  private static final ConfigFileWrapper configFile3 =
-      ConfigFileWrapper.builder().configFile(ConfigFile.builder().identifier("config_file3").build()).build();
+  private static final ConfigFileWrapper configFile1a =
+      ConfigFileWrapper.builder().configFile(ConfigFile.builder().identifier("config_file1").uuid("a").build()).build();
+  private static final ConfigFileWrapper configFile1b =
+      ConfigFileWrapper.builder().configFile(ConfigFile.builder().identifier("config_file1").uuid("b").build()).build();
+  private static final ConfigFileWrapper configFile2a =
+      ConfigFileWrapper.builder().configFile(ConfigFile.builder().identifier("config_file2").uuid("a").build()).build();
+  private static final ConfigFileWrapper configFile2b =
+      ConfigFileWrapper.builder().configFile(ConfigFile.builder().identifier("config_file2").uuid("b").build()).build();
+  private static final ConfigFileWrapper configFile3a =
+      ConfigFileWrapper.builder().configFile(ConfigFile.builder().identifier("config_file3").uuid("a").build()).build();
+  private static final ConfigFileWrapper configFile3b =
+      ConfigFileWrapper.builder().configFile(ConfigFile.builder().identifier("config_file3").uuid("b").build()).build();
 
   private static final Set<String> dependencyMetadataMapKeys =
       new HashSet<>(Arrays.asList(YamlTypes.UUID, YamlTypes.SERVICE_CONFIG));
@@ -594,36 +600,39 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
     final NGServiceV2InfoConfig serviceInfoConfig =
         NGServiceV2InfoConfig.builder()
             .identifier(SVC_REF)
-            .serviceDefinition(
-                ServiceDefinition.builder()
-                    .serviceSpec(
-                        KubernetesServiceSpec.builder().manifests(Collections.singletonList(valuesManifest1)).build())
-                    .build())
+            .serviceDefinition(ServiceDefinition.builder()
+                                   .serviceSpec(KubernetesServiceSpec.builder()
+                                                    .manifests(Collections.singletonList(valuesManifest1))
+                                                    .configFiles(Arrays.asList(configFile1a, configFile2a))
+                                                    .build())
+                                   .build())
             .build();
-    final NGServiceOverrideConfig serviceOverrideConfig =
-        NGServiceOverrideConfig.builder()
-            .serviceOverrideInfoConfig(NGServiceOverrideInfoConfig.builder()
-                                           .serviceRef(SVC_REF)
-                                           .environmentRef(ENV_REF)
-                                           .configFiles(Collections.singletonList(configFile1))
-                                           .build())
-            .build();
+
     final NGEnvironmentConfig environmentConfig =
         NGEnvironmentConfig.builder()
             .ngEnvironmentInfoConfig(
                 NGEnvironmentInfoConfig.builder()
                     .identifier(ENV_REF)
                     .ngEnvironmentGlobalOverride(NGEnvironmentGlobalOverride.builder()
-                                                     .configFiles(Arrays.asList(configFile2, configFile3))
+                                                     .configFiles(Arrays.asList(configFile2b, configFile3a))
                                                      .build())
                     .build())
+            .build();
+
+    final NGServiceOverrideConfig serviceOverrideConfig =
+        NGServiceOverrideConfig.builder()
+            .serviceOverrideInfoConfig(NGServiceOverrideInfoConfig.builder()
+                                           .serviceRef(SVC_REF)
+                                           .environmentRef(ENV_REF)
+                                           .configFiles(singletonList(configFile3b))
+                                           .build())
             .build();
 
     final List<ConfigFileWrapper> finalConfigFiles = ServiceDefinitionPlanCreatorHelper.prepareFinalConfigFiles(
         serviceInfoConfig, serviceOverrideConfig, environmentConfig);
 
     assertThat(finalConfigFiles).hasSize(3);
-    assertThat(finalConfigFiles).containsExactly(configFile2, configFile3, configFile1);
+    assertThat(finalConfigFiles).containsExactlyInAnyOrder(configFile1a, configFile2b, configFile3b);
   }
 
   @Test
@@ -725,55 +734,6 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
   @Test
   @Owner(developers = TATHAGAT)
   @Category(UnitTests.class)
-  public void testPrepareFinalConfigFilesDuplicateConfigFilesIdentifiers() {
-    final NGServiceV2InfoConfig serviceInfoConfig =
-        NGServiceV2InfoConfig.builder()
-            .identifier(SVC_REF)
-            .serviceDefinition(ServiceDefinition.builder()
-                                   .serviceSpec(KubernetesServiceSpec.builder()
-                                                    .configFiles(Arrays.asList(configFile1, configFile2, configFile3))
-                                                    .build())
-                                   .build())
-            .build();
-    final NGServiceOverrideConfig serviceOverrideConfig =
-        NGServiceOverrideConfig.builder()
-            .serviceOverrideInfoConfig(NGServiceOverrideInfoConfig.builder()
-                                           .serviceRef(SVC_REF)
-                                           .environmentRef(ENV_REF)
-                                           .configFiles(Collections.singletonList(configFile1))
-                                           .build())
-            .build();
-    final NGEnvironmentConfig environmentConfig =
-        NGEnvironmentConfig.builder()
-            .ngEnvironmentInfoConfig(NGEnvironmentInfoConfig.builder()
-                                         .identifier(ENV_REF)
-                                         .ngEnvironmentGlobalOverride(NGEnvironmentGlobalOverride.builder().build())
-                                         .build())
-            .build();
-
-    // service overrides config files identifier duplication
-    assertThatThrownBy(()
-                           -> ServiceDefinitionPlanCreatorHelper.prepareFinalConfigFiles(
-                               serviceInfoConfig, serviceOverrideConfig, environmentConfig))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessage(
-            "Found duplicate config file identifiers [config_file1] in service overrides for service [SVC_REF] and environment [ENV_REF]");
-
-    // environment global overrides config files identifier duplication
-    serviceOverrideConfig.getServiceOverrideInfoConfig().setConfigFiles(EMPTY_LIST);
-    environmentConfig.getNgEnvironmentInfoConfig().setNgEnvironmentGlobalOverride(
-        NGEnvironmentGlobalOverride.builder().configFiles(Arrays.asList(configFile1, configFile2)).build());
-    assertThatThrownBy(()
-                           -> ServiceDefinitionPlanCreatorHelper.prepareFinalConfigFiles(
-                               serviceInfoConfig, serviceOverrideConfig, environmentConfig))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessage(
-            "Found duplicate config file identifiers [config_file1,config_file2] in environment global overrides for service [SVC_REF] and environment [ENV_REF]");
-  }
-
-  @Test
-  @Owner(developers = TATHAGAT)
-  @Category(UnitTests.class)
   public void testPrepareFinalManifestsEmptyOverrideManifests() {
     final NGServiceV2InfoConfig serviceInfoConfig =
         NGServiceV2InfoConfig.builder()
@@ -811,11 +771,12 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
     final NGServiceV2InfoConfig serviceInfoConfig =
         NGServiceV2InfoConfig.builder()
             .identifier(SVC_REF)
-            .serviceDefinition(ServiceDefinition.builder()
-                                   .serviceSpec(KubernetesServiceSpec.builder()
-                                                    .configFiles(Arrays.asList(configFile1, configFile2, configFile3))
-                                                    .build())
-                                   .build())
+            .serviceDefinition(
+                ServiceDefinition.builder()
+                    .serviceSpec(KubernetesServiceSpec.builder()
+                                     .configFiles(Arrays.asList(configFile1a, configFile2a, configFile3a))
+                                     .build())
+                    .build())
             .build();
     final NGServiceOverrideConfig serviceOverrideConfig =
         NGServiceOverrideConfig.builder()
@@ -833,7 +794,7 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
     final List<ConfigFileWrapper> finalConfigFiles = ServiceDefinitionPlanCreatorHelper.prepareFinalConfigFiles(
         serviceInfoConfig, serviceOverrideConfig, environmentConfig);
     assertThat(finalConfigFiles).hasSize(3);
-    assertThat(finalConfigFiles).containsExactly(configFile1, configFile2, configFile3);
+    assertThat(finalConfigFiles).containsExactlyInAnyOrder(configFile1a, configFile2a, configFile3a);
   }
 
   @Test
@@ -883,7 +844,7 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
             .serviceOverrideInfoConfig(NGServiceOverrideInfoConfig.builder()
                                            .serviceRef(SVC_REF)
                                            .environmentRef(ENV_REF)
-                                           .configFiles(Arrays.asList(configFile1, configFile2))
+                                           .configFiles(Arrays.asList(configFile1a, configFile2a))
                                            .build())
             .build();
     final NGEnvironmentConfig environmentConfig =
@@ -891,15 +852,16 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
             .ngEnvironmentInfoConfig(
                 NGEnvironmentInfoConfig.builder()
                     .identifier(ENV_REF)
-                    .ngEnvironmentGlobalOverride(
-                        NGEnvironmentGlobalOverride.builder().configFiles(singletonList(configFile3)).build())
+                    .ngEnvironmentGlobalOverride(NGEnvironmentGlobalOverride.builder()
+                                                     .configFiles(Arrays.asList(configFile1b, configFile3a))
+                                                     .build())
                     .build())
             .build();
 
     final List<ConfigFileWrapper> finalConfigFiles = ServiceDefinitionPlanCreatorHelper.prepareFinalConfigFiles(
         serviceInfoConfig, serviceOverrideConfig, environmentConfig);
     assertThat(finalConfigFiles).hasSize(3);
-    assertThat(finalConfigFiles).containsExactly(configFile3, configFile1, configFile2);
+    assertThat(finalConfigFiles).containsExactlyInAnyOrder(configFile3a, configFile1a, configFile2a);
   }
 
   @Test
@@ -966,7 +928,7 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
     NGServiceOverrideConfig serviceOverrideConfig =
         NGServiceOverrideConfig.builder()
             .serviceOverrideInfoConfig(
-                NGServiceOverrideInfoConfig.builder().configFiles(Collections.singletonList(configFile1)).build())
+                NGServiceOverrideInfoConfig.builder().configFiles(Collections.singletonList(configFile1a)).build())
             .build();
 
     NGEnvironmentConfig ngEnvironmentConfig =
@@ -974,7 +936,7 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
             .ngEnvironmentInfoConfig(
                 NGEnvironmentInfoConfig.builder()
                     .ngEnvironmentGlobalOverride(NGEnvironmentGlobalOverride.builder()
-                                                     .configFiles(Collections.singletonList(configFile2))
+                                                     .configFiles(Collections.singletonList(configFile2a))
                                                      .build())
                     .build())
             .build();

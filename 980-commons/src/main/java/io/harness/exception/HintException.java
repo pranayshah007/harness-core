@@ -128,6 +128,9 @@ public class HintException extends WingsException {
       "Check if delegate is able to communicate with harness.io and outbound network is enabled for delegate";
   public static final String HINT_FILE_CREATION_ERROR =
       "Check if delegate instance has enough free space or enough write permissions";
+  public static final String CHECK_LDAP_CONNECTION = "Please check your credentials under Ldap Connection Settings";
+  public static final String LDAP_ATTRIBUTES_INCORRECT =
+      "Verify configuration provided in Base DN or Search Filter are correct";
 
   public HintException(String message) {
     super(message, null, HINT, INFO, null, null);

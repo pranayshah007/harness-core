@@ -7,6 +7,7 @@
 
 package io.harness.cdng.provision.azure;
 
+import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.cdng.provision.azure.AzureCommonHelper.BLUEPRINT_IDENTIFIER;
 import static io.harness.cdng.provision.azure.AzureCommonHelper.BP_TEMPLATE_TYPE;
 import static io.harness.cdng.provision.azure.AzureCommonHelper.DEFAULT_TIMEOUT;
@@ -14,6 +15,7 @@ import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.delegate.task.azure.arm.AzureARMTaskType.BLUEPRINT_DEPLOYMENT;
 
 import io.harness.EntityType;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.CDStepHelper;
@@ -27,7 +29,9 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
+import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.azure.arm.AzureBlueprintTaskNGParameters;
+import io.harness.delegate.task.azure.arm.AzureBlueprintTaskNGResponse;
 import io.harness.delegate.task.azure.arm.AzureResourceCreationTaskNGParameters;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.git.GitFetchResponse;
@@ -38,11 +42,13 @@ import io.harness.exception.WingsException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.git.model.GitFile;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.ng.core.EntityDetail;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.rollback.TaskChainExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
@@ -68,7 +74,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 
+@OwnedBy(CDP)
+@Slf4j
 public class AzureCreateBPStep extends TaskChainExecutableWithRollbackAndRbac {
   private static final String BLUEPRINT_JSON = "blueprint.json";
   private static final String ASSIGN_JSON = "assign.json";
@@ -148,8 +157,24 @@ public class AzureCreateBPStep extends TaskChainExecutableWithRollbackAndRbac {
       StepExceptionPassThroughData stepExceptionPassThroughData = (StepExceptionPassThroughData) passThroughData;
       return cdStepHelper.handleStepExceptionFailure(stepExceptionPassThroughData);
     }
-    // TODO: To implement after the DelegateTask is implemented.
-    return null;
+    AzureBlueprintTaskNGResponse azureBlueprintTaskNGResponse;
+    try {
+      azureBlueprintTaskNGResponse = (AzureBlueprintTaskNGResponse) responseDataSupplier.get();
+      if (azureBlueprintTaskNGResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
+        return azureCommonHelper.getFailureResponse(
+            azureBlueprintTaskNGResponse.getUnitProgressData().getUnitProgresses(),
+            azureBlueprintTaskNGResponse.getErrorMsg());
+      }
+      return StepResponse.builder()
+          .unitProgressList(azureBlueprintTaskNGResponse.getUnitProgressData().getUnitProgresses())
+          .status(Status.SUCCEEDED)
+          .build();
+    } catch (TaskNGDataException ex) {
+      String errorMsg =
+          String.format("Error while processing Azure Create ARM Resource Task response %s", ex.getMessage());
+      log.error(errorMsg, ex);
+      throw ex;
+    }
   }
 
   @Override

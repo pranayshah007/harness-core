@@ -148,6 +148,7 @@ public class MetricServiceImpl implements MetricService {
     }
     List<MetricConfiguration> metricConfigDefinitions = new ArrayList<>();
     long startTime = Instant.now().toEpochMilli();
+
     Set<String> metricFiles =
         new Reflections("metrics", new ResourcesScanner()).getResources(Pattern.compile(".*\\.yaml"));
     Set<String> metricDefinitionFileNames =

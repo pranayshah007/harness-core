@@ -8,6 +8,8 @@
 package io.harness.batch.processing;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
+import io.harness.ng.DbAliases;
 
 import software.wings.beans.Base;
 
@@ -24,6 +26,7 @@ import org.mongodb.morphia.annotations.Entity;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
+@StoreIn(DbAliases.TEST)
 @Entity(value = "!!!testDummies", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 public class Dummy extends Base {

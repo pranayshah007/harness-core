@@ -9,7 +9,7 @@ package io.harness.resourcegroup.v2.model;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
 import io.harness.iterator.PersistentRegularIterable;
@@ -49,10 +49,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "ResourceGroupKeys")
+@StoreIn(DbAliases.RESOURCEGROUP)
 @Document("resourceGroupV2")
 @Entity("resourceGroupV2")
 @TypeAlias("resourceGroupV2")
-@StoreIn(DbAliases.RESOURCEGROUP)
 public class ResourceGroup implements PersistentRegularIterable, PersistentEntity {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()

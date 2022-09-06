@@ -9,6 +9,7 @@ package io.harness.buildcleaner.bazel;
 
 import static io.harness.buildcleaner.bazel.WriteUtil.INDENTATION;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import java.util.Set;
 
@@ -28,6 +29,38 @@ public class JavaBinary {
     this.deps = ImmutableSortedSet.copyOf(deps);
   }
 
+  public String getName() {
+    return this.name;
+  }
+
+  /* Returns the deps section as a s string. Eg:
+    deps = [
+      "dependency1",
+      "dependency2",
+    ]
+  */
+  public String getDepsSection() {
+    StringBuilder response = new StringBuilder();
+    WriteUtil.updateResponseWithSet(this.deps, "deps", response, false);
+    return response.toString();
+  }
+
+  /* Returns the runtime_deps section as a s string. Eg:
+  runtime_deps = [
+    "dependency1",
+    "dependency2",
+  ]
+*/
+  public String getRunTimeDepsSection() {
+    StringBuilder response = new StringBuilder();
+    WriteUtil.updateResponseWithSet(this.runTimeDeps, "runtime_deps", response, false);
+    return response.toString();
+  }
+
+  public ImmutableSet<String> getDeps() {
+    return (ImmutableSet<String>) this.deps;
+  }
+
   public String toString() {
     StringBuilder response = new StringBuilder();
     response.append("java_binary(\n");
@@ -42,10 +75,10 @@ public class JavaBinary {
     response.append(INDENTATION).append("visibility = [\"//visibility:public\"],\n");
 
     // Add runtime_deps.
-    WriteUtil.updateResponseWithSet(runTimeDeps, "runtime_deps", response);
+    WriteUtil.updateResponseWithSet(runTimeDeps, "runtime_deps", response, true);
 
     // Add deps.
-    WriteUtil.updateResponseWithSet(deps, "deps", response);
+    WriteUtil.updateResponseWithSet(deps, "deps", response, true);
 
     response.append(")");
     return response.toString();

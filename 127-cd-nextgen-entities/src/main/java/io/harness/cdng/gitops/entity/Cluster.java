@@ -9,7 +9,7 @@ package io.harness.cdng.gitops.entity;
 
 import static io.harness.annotations.dev.HarnessTeam.GITOPS;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.Trimmed;
@@ -37,10 +37,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "ClusterKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "gitopsClusters", noClassnameStored = true)
 @Document("gitopsClusters")
 @TypeAlias("io.harness.cdng.gitops.entity.Cluster")
-@StoreIn(DbAliases.NG_MANAGER)
 public class Cluster implements PersistentEntity {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()

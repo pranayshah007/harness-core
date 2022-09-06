@@ -41,7 +41,8 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
 @Singleton
 @Slf4j
 public class GARApiServiceImpl implements GarApiService {
-  private static final int PAGESIZE = 30;
+  // For now google api is supporting 500 page size, but in future they may decrease api response page limit.
+  private static final int PAGESIZE = 500;
   private GarRestClient getGarRestClient(GarInternalConfig garinternalConfig) {
     String url = getUrl();
     OkHttpClient okHttpClient = Http.getOkHttpClient(url, garinternalConfig.isCertValidationRequired());

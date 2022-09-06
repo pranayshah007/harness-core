@@ -61,13 +61,16 @@ public class TemplateGitXHelperTest {
                                    .branch(BranchName)
                                    .parentEntityRepoName(PARENT_ENTITY_REPO)
                                    .parentEntityConnectorRef(PARENT_ENTITY_CONNECTOR_REF)
+                                   .parentEntityAccountIdentifier(ACCOUNT_IDENTIFIER)
+                                   .parentEntityOrgIdentifier(ORG_IDENTIFIER)
+                                   .parentEntityProjectIdentifier(PROJECT_IDENTIFIER)
                                    .build();
     setupGitContext(branchInfo);
     Scope scope = Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
     doReturn(ScmGetRepoUrlResponse.builder().repoUrl(ENTITY_REPO_URL).build())
         .when(scmGitSyncHelper)
         .getRepoUrl(any(), any(), any(), any());
-    assertThat(templateGitXHelper.getWorkingBranch(scope, ENTITY_REPO_URL)).isEqualTo(BranchName);
+    assertThat(templateGitXHelper.getWorkingBranch(ENTITY_REPO_URL)).isEqualTo(BranchName);
 
     branchInfo = GitEntityInfo.builder()
                      .branch(BranchName)
@@ -75,10 +78,10 @@ public class TemplateGitXHelperTest {
                      .parentEntityConnectorRef(PARENT_ENTITY_CONNECTOR_REF)
                      .build();
     setupGitContext(branchInfo);
-    assertThat(templateGitXHelper.getWorkingBranch(scope, "random repo url")).isEqualTo("");
+    assertThat(templateGitXHelper.getWorkingBranch("random repo url")).isEqualTo("");
     branchInfo = GitEntityInfo.builder().branch(BranchName).parentEntityRepoUrl(ENTITY_REPO_URL).build();
     setupGitContext(branchInfo);
-    assertThat(templateGitXHelper.getWorkingBranch(scope, ENTITY_REPO_URL)).isEqualTo(BranchName);
+    assertThat(templateGitXHelper.getWorkingBranch(ENTITY_REPO_URL)).isEqualTo(BranchName);
   }
 
   @Test
@@ -88,7 +91,7 @@ public class TemplateGitXHelperTest {
     GitEntityInfo branchInfo = GitEntityInfo.builder().branch(BranchName).build();
     setupGitContext(branchInfo);
     Scope scope = Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
-    assertThat(templateGitXHelper.getWorkingBranch(scope, ENTITY_REPO_URL)).isEqualTo(BranchName);
+    assertThat(templateGitXHelper.getWorkingBranch(ENTITY_REPO_URL)).isEqualTo(BranchName);
   }
 
   private void setupGitContext(GitEntityInfo branchInfo) {

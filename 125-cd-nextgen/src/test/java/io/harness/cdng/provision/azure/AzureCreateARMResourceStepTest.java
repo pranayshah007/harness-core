@@ -7,9 +7,12 @@
 
 package io.harness.cdng.provision.azure;
 
+import static io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
 import static io.harness.rule.OwnerRule.NGONZALEZ;
 
+import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
@@ -24,11 +27,13 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
+import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.yaml.GithubStore;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.provision.azure.AzureCreateARMResourceStepScope.AzureCreateARMResourceStepScopeBuilder;
 import io.harness.cdng.provision.azure.AzureResourceGroupSpec.AzureResourceGroupSpecBuilder;
+import io.harness.cdng.provision.azure.beans.AzureARMTemplateDataOutput;
 import io.harness.cdng.provision.azure.beans.AzureCreateARMResourcePassThroughData;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.validator.scmValidators.GitConfigAuthenticationInfoHelper;
@@ -37,21 +42,32 @@ import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
+import io.harness.delegate.beans.logstreaming.UnitProgressData;
+import io.harness.delegate.exception.TaskNGDataException;
+import io.harness.delegate.task.azure.arm.AzureARMPreDeploymentData;
 import io.harness.delegate.task.azure.arm.AzureARMTaskNGParameters;
+import io.harness.delegate.task.azure.arm.AzureARMTaskNGResponse;
 import io.harness.delegate.task.azure.arm.AzureARMTaskType;
 import io.harness.delegate.task.cloudformation.CloudformationTaskNGResponse;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.git.GitFetchResponse;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.git.model.GitFile;
+import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.UnitProgress;
+import io.harness.logging.UnitStatus;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.rbac.PipelineRbacHelper;
+import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
+import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
@@ -66,6 +82,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -84,6 +101,8 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
   AzureTestHelper azureHelperTest = new AzureTestHelper();
   @Mock private GitConfigAuthenticationInfoHelper gitConfigAuthenticationInfoHelper;
   @Mock private SecretManagerClientService secretManagerClientService;
+
+  @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
 
   @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
 
@@ -251,21 +270,7 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
   public void testExecuteNextLinkWithSecurityContextResourceGroup() throws Exception {
     StepInputPackage inputPackage = StepInputPackage.builder().build();
     StepElementParameters step = createStep("RG");
-    GitFetchResponse response =
-        GitFetchResponse.builder()
-            .filesFromMultipleRepo(new HashMap<String, FetchFilesResult>() {
-              {
-                put("parameterFile",
-                    FetchFilesResult.builder()
-                        .files(new ArrayList<>(Arrays.asList(GitFile.builder().fileContent("file").build())))
-                        .build());
-                put("templateFile",
-                    FetchFilesResult.builder()
-                        .files(new ArrayList<>(Arrays.asList(GitFile.builder().fileContent("template").build())))
-                        .build());
-              }
-            })
-            .build();
+    GitFetchResponse response = getGitFetchResponse();
     Mockito.mockStatic(StepUtils.class);
     when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
@@ -302,21 +307,7 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
   public void testExecuteNextLinkWithSecurityContextSubscription() throws Exception {
     StepInputPackage inputPackage = StepInputPackage.builder().build();
     StepElementParameters step = createStep("SUBS");
-    GitFetchResponse response =
-        GitFetchResponse.builder()
-            .filesFromMultipleRepo(new HashMap<String, FetchFilesResult>() {
-              {
-                put("parameterFile",
-                    FetchFilesResult.builder()
-                        .files(new ArrayList<>(Arrays.asList(GitFile.builder().fileContent("file").build())))
-                        .build());
-                put("templateFile",
-                    FetchFilesResult.builder()
-                        .files(new ArrayList<>(Arrays.asList(GitFile.builder().fileContent("template").build())))
-                        .build());
-              }
-            })
-            .build();
+    GitFetchResponse response = getGitFetchResponse();
     Mockito.mockStatic(StepUtils.class);
     when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
@@ -353,21 +344,7 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
   public void testExecuteNextLinkWithSecurityContextManagement() throws Exception {
     StepInputPackage inputPackage = StepInputPackage.builder().build();
     StepElementParameters step = createStep("MNG");
-    GitFetchResponse response =
-        GitFetchResponse.builder()
-            .filesFromMultipleRepo(new HashMap<String, FetchFilesResult>() {
-              {
-                put("parameterFile",
-                    FetchFilesResult.builder()
-                        .files(new ArrayList<>(Arrays.asList(GitFile.builder().fileContent("file").build())))
-                        .build());
-                put("templateFile",
-                    FetchFilesResult.builder()
-                        .files(new ArrayList<>(Arrays.asList(GitFile.builder().fileContent("template").build())))
-                        .build());
-              }
-            })
-            .build();
+    GitFetchResponse response = getGitFetchResponse();
     Mockito.mockStatic(StepUtils.class);
     when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
@@ -404,21 +381,7 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
   public void testExecuteNextLinkWithSecurityContextTenant() throws Exception {
     StepInputPackage inputPackage = StepInputPackage.builder().build();
     StepElementParameters step = createStep("SUBS");
-    GitFetchResponse response =
-        GitFetchResponse.builder()
-            .filesFromMultipleRepo(new HashMap<String, FetchFilesResult>() {
-              {
-                put("parameterFile",
-                    FetchFilesResult.builder()
-                        .files(new ArrayList<>(Arrays.asList(GitFile.builder().fileContent("file").build())))
-                        .build());
-                put("templateFile",
-                    FetchFilesResult.builder()
-                        .files(new ArrayList<>(Arrays.asList(GitFile.builder().fileContent("template").build())))
-                        .build());
-              }
-            })
-            .build();
+    GitFetchResponse response = getGitFetchResponse();
     Mockito.mockStatic(StepUtils.class);
     when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
@@ -447,6 +410,74 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
     assertThat(taskNGParameters.getAzureARMTaskType()).isEqualTo(AzureARMTaskType.ARM_DEPLOYMENT);
     assertThat(taskDataArgumentCaptor.getValue().getTaskType()).isEqualTo(TaskType.AZURE_NG_ARM.name());
     assertThat(taskSelectorsArgumentCaptor.getValue().get(0).getSelector()).isEqualTo("create-d-selector-1");
+  }
+
+  @Test
+  @Owner(developers = NGONZALEZ)
+  @Category(UnitTests.class)
+  public void testFinalizeExecutionWithException() throws Exception {
+    StepExceptionPassThroughData exception =
+        StepExceptionPassThroughData.builder()
+            .errorMessage("error_msg")
+            .unitProgressData(
+                UnitProgressData.builder()
+                    .unitProgresses(asList(
+                        UnitProgress.newBuilder().setUnitName("Fetch Files").setStatus(UnitStatus.FAILURE).build()))
+                    .build())
+            .build();
+    azureCreateStep.finalizeExecutionWithSecurityContext(azureHelperTest.getAmbiance(), createStep("RG"), exception,
+        () -> getTaskNGResponse(CommandExecutionStatus.FAILURE, UnitStatus.FAILURE, ""));
+    verify(cdStepHelper, times(1)).handleStepExceptionFailure(any());
+  }
+
+  @Test
+  @Owner(developers = NGONZALEZ)
+  @Category(UnitTests.class)
+  public void testFinalizeExecutionWithFailureStep() throws Exception {
+    AzureCreateARMResourcePassThroughData passThroughData = AzureCreateARMResourcePassThroughData.builder().build();
+    azureCreateStep.finalizeExecutionWithSecurityContext(azureHelperTest.getAmbiance(), createStep("RG"),
+        passThroughData, () -> getTaskNGResponse(CommandExecutionStatus.FAILURE, UnitStatus.SUCCESS, "foobar"));
+    verify(azureCommonHelper, times(1)).getFailureResponse(any(), any());
+  }
+
+  @Test
+  @Owner(developers = NGONZALEZ)
+  @Category(UnitTests.class)
+  public void testFinalizeExecutionWithSucceededStep() throws Exception {
+    AzureCreateARMResourcePassThroughData passThroughData = AzureCreateARMResourcePassThroughData.builder().build();
+    when(azureCommonHelper.generateIdentifier(any(), any())).thenReturn("foobar");
+    ArgumentCaptor<AzureARMTemplateDataOutput> taskDataArgumentCaptor =
+        ArgumentCaptor.forClass(AzureARMTemplateDataOutput.class);
+    when(executionSweepingOutputService.consume(any(), any(), taskDataArgumentCaptor.capture(), any())).thenReturn("");
+
+    StepResponse response =
+        azureCreateStep.finalizeExecutionWithSecurityContext(azureHelperTest.getAmbiance(), createStep("RG"),
+            passThroughData, () -> getTaskNGResponse(CommandExecutionStatus.SUCCESS, UnitStatus.SUCCESS, ""));
+
+    assertThat(taskDataArgumentCaptor.getValue().getResourceGroup()).isEqualTo("123");
+    assertThat(taskDataArgumentCaptor.getValue().getSubscriptionId()).isEqualTo("234");
+    assertThat(taskDataArgumentCaptor.getValue().getResourceGroupTemplateJson()).isEqualTo("345");
+    assertThat(response.getStatus()).isEqualTo(Status.SUCCEEDED);
+    StepOutcome outcome = response.getStepOutcomes().stream().collect(Collectors.toList()).get(0);
+    assertThat(response.getStepOutcomes().size()).isEqualTo(1);
+    assertThat(outcome.getOutcome()).isInstanceOf(AzureCreateARMResourceOutcome.class);
+  }
+
+  @Test
+  @Owner(developers = NGONZALEZ)
+  @Category(UnitTests.class)
+  public void testFinalizeExecutionWithSucceededThowsException() throws Exception {
+    AzureCreateARMResourcePassThroughData passThroughData = AzureCreateARMResourcePassThroughData.builder().build();
+    when(azureCommonHelper.generateIdentifier(any(), any())).thenReturn("foobar");
+    ArgumentCaptor<AzureARMTemplateDataOutput> taskDataArgumentCaptor =
+        ArgumentCaptor.forClass(AzureARMTemplateDataOutput.class);
+    when(executionSweepingOutputService.consume(any(), any(), taskDataArgumentCaptor.capture(), any())).thenReturn("");
+    InvalidArgumentsException exception = new InvalidArgumentsException("Foobar");
+    assertThatThrownBy(()
+                           -> azureCreateStep.finalizeExecutionWithSecurityContext(azureHelperTest.getAmbiance(),
+                               createStep("RG"), passThroughData,
+                               () -> { throw new TaskNGDataException(UnitProgressData.builder().build(), exception); }))
+        .isInstanceOf(TaskNGDataException.class);
   }
 
   private StepElementParameters createStep(String type) {
@@ -501,5 +532,45 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
     TaskSelectorYaml taskSelectorYaml = new TaskSelectorYaml("create-d-selector-1");
     stepParameters.setDelegateSelectors(ParameterField.createValueField(Arrays.asList(taskSelectorYaml)));
     return StepElementParameters.builder().spec(stepParameters).build();
+  }
+
+  private GitFetchResponse getGitFetchResponse() {
+    return GitFetchResponse.builder()
+        .filesFromMultipleRepo(new HashMap<String, FetchFilesResult>() {
+          {
+            put("parameterFile",
+                FetchFilesResult.builder()
+                    .files(new ArrayList<>(Arrays.asList(GitFile.builder().fileContent("file").build())))
+                    .build());
+            put("templateFile",
+                FetchFilesResult.builder()
+                    .files(new ArrayList<>(Arrays.asList(GitFile.builder().fileContent("template").build())))
+                    .build());
+          }
+        })
+        .build();
+  }
+
+  private AzureARMTaskNGResponse getTaskNGResponse(
+      CommandExecutionStatus status, UnitStatus unitStatus, String errorMsg) {
+    return AzureARMTaskNGResponse.builder()
+        .errorMsg(errorMsg)
+        .outputs("{\n"
+            + "    \"nameResult\": {\n"
+            + "      \"type\": \"string\",\n"
+            + "      \"value\": \"[variables('user')['user-name']]\"\n"
+            + "    }\n"
+            + "  }")
+        .azureARMPreDeploymentData(AzureARMPreDeploymentData.builder()
+                                       .resourceGroup("123")
+                                       .subscriptionId("234")
+                                       .resourceGroupTemplateJson("345")
+                                       .build())
+        .commandExecutionStatus(status)
+        .unitProgressData(UnitProgressData.builder()
+                              .unitProgresses(asList(
+                                  UnitProgress.newBuilder().setUnitName("Azure Stuff").setStatus(unitStatus).build()))
+                              .build())
+        .build();
   }
 }

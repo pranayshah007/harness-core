@@ -49,7 +49,7 @@ public class AwsAccountFieldHelper {
   public static String removeAwsAccountNameFromValue(final String value) {
     String accountId = value;
     final Matcher matcher = ACCOUNT_ID_EXTRACT_PATTERN.matcher(value);
-    if (matcher.find()) {
+    while (matcher.find()) {
       accountId = matcher.group(1);
     }
     return accountId;

@@ -139,6 +139,14 @@ public class ViewsQueryBuilder {
       List<QLCEInExpressionFilter> inExpressionFilters, List<QLCEViewGroupBy> groupByList,
       List<QLCEViewAggregation> aggregations, List<QLCEViewSortCriteria> sortCriteriaList,
       String cloudProviderTableName, int timeOffsetInDays) {
+    return getQuery(rules, filters, timeFilters, inExpressionFilters, groupByList, aggregations, sortCriteriaList,
+        cloudProviderTableName, timeOffsetInDays, Collections.emptyList());
+  }
+
+  public SelectQuery getQuery(List<ViewRule> rules, List<QLCEViewFilter> filters, List<QLCEViewTimeFilter> timeFilters,
+      List<QLCEInExpressionFilter> inExpressionFilters, List<QLCEViewGroupBy> groupByList,
+      List<QLCEViewAggregation> aggregations, List<QLCEViewSortCriteria> sortCriteriaList,
+      String cloudProviderTableName, int timeOffsetInDays, List<BusinessMapping> sharedCostBusinessMappings) {
     SelectQuery selectQuery = new SelectQuery();
     selectQuery.addCustomFromTable(cloudProviderTableName);
     List<QLCEViewFieldInput> groupByEntity = getGroupByEntity(groupByList);
@@ -166,7 +174,7 @@ public class ViewsQueryBuilder {
     }
 
     if (!inExpressionFilters.isEmpty()) {
-      decorateQueryWithInExpressionFilters(selectQuery, inExpressionFilters);
+      decorateQueryWithInExpressionFilters(selectQuery, inExpressionFilters, groupByEntity);
     }
 
     if (!groupByEntity.isEmpty()) {
@@ -199,9 +207,12 @@ public class ViewsQueryBuilder {
     }
 
     if (!aggregations.isEmpty()) {
-      // TODO: Add Shared Cost Aggregations
       decorateQueryWithAggregations(selectQuery, aggregations);
       decorateQueryWithSharedCostAggregations(selectQuery, groupByEntity);
+    }
+
+    if (!sharedCostBusinessMappings.isEmpty()) {
+      decorateQueryWithSharedCostBusinessMappings(selectQuery, sharedCostBusinessMappings);
     }
 
     if (!sortCriteriaList.isEmpty()) {
@@ -958,6 +969,16 @@ public class ViewsQueryBuilder {
     }
   }
 
+  private void decorateQueryWithSharedCostBusinessMappings(
+      SelectQuery selectQuery, List<BusinessMapping> sharedCostBusinessMappings) {
+    sharedCostBusinessMappings.forEach(businessMapping -> {
+      List<SharedCost> sharedCosts = businessMapping.getSharedCosts();
+      if (sharedCosts != null) {
+        sharedCosts.forEach(sharedCost -> decorateQueryWithSharedCostAggregation(selectQuery, sharedCost));
+      }
+    });
+  }
+
   private void decorateQueryWithSharedCostAggregations(
       SelectQuery selectQuery, List<QLCEViewFieldInput> groupByEntity) {
     List<QLCEViewFieldInput> groupByBusinessMapping =
@@ -1215,9 +1236,21 @@ public class ViewsQueryBuilder {
     }
   }
 
-  private void decorateQueryWithInExpressionFilters(SelectQuery selectQuery, List<QLCEInExpressionFilter> filters) {
-    for (QLCEInExpressionFilter filter : filters) {
-      selectQuery.addCondition(getCondition(filter));
+  private void decorateQueryWithInExpressionFilters(
+      SelectQuery selectQuery, List<QLCEInExpressionFilter> filters, List<QLCEViewFieldInput> groupByEntity) {
+    final Optional<QLCEViewFieldInput> groupBy = groupByEntity.stream().filter(Objects::nonNull).findFirst();
+    final Optional<QLCEInExpressionFilter> filter = filters.stream().filter(Objects::nonNull).findFirst();
+    if (filter.isPresent() && groupBy.isPresent()) {
+      final Object sqlObjectFromField = getSQLObjectFromField(groupBy.get());
+      final ViewFieldIdentifier groupByIdentifier = groupBy.get().getIdentifier();
+      if (groupByIdentifier == BUSINESS_MAPPING) {
+        selectQuery.addCondition(getCondition(filter.get(), sqlObjectFromField));
+      } else if (groupByIdentifier == ViewFieldIdentifier.LABEL) {
+        String labelSubQuery = String.format(labelsSubQuery, groupBy.get().getFieldName());
+        selectQuery.addCondition(getCondition(filter.get(), labelSubQuery));
+      } else {
+        selectQuery.addCondition(getCondition(filter.get()));
+      }
     }
   }
 
@@ -1287,6 +1320,15 @@ public class ViewsQueryBuilder {
         Converter.toCustomColumnSqlObject(new InValuesExpression(filter.getValues())));
     if (Objects.nonNull(filter.getNullValueField())) {
       condition = ComboCondition.or(condition, UnaryCondition.isNull(new CustomSql(filter.getNullValueField())));
+    }
+    return condition;
+  }
+
+  private Condition getCondition(QLCEInExpressionFilter filter, Object sqlObjectFromField) {
+    Condition condition = new InCondition(Converter.toCustomColumnSqlObject(sqlObjectFromField),
+        Converter.toCustomColumnSqlObject(new InValuesExpression(filter.getValues())));
+    if (Objects.nonNull(filter.getNullValueField())) {
+      condition = ComboCondition.or(condition, UnaryCondition.isNull(new CustomSql(sqlObjectFromField)));
     }
     return condition;
   }

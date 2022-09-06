@@ -8,6 +8,8 @@
 package software.wings.api;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
+import io.harness.ng.DbAliases;
 import io.harness.queue.Queuable;
 
 import software.wings.service.impl.event.timeseries.TimeSeriesEventInfo;
@@ -27,6 +29,7 @@ import org.mongodb.morphia.annotations.Entity;
 @Data
 @Builder
 @EqualsAndHashCode(callSuper = true)
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "deploymentTimeSeriesEventQueue", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 public class DeploymentTimeSeriesEvent extends Queuable {

@@ -23,6 +23,8 @@ import org.springframework.data.repository.PagingAndSortingRepository;
 public interface UserGroupRepository extends PagingAndSortingRepository<UserGroupDBO, String> {
   Optional<UserGroupDBO> findByIdentifierAndScopeIdentifier(String identifier, String scopeIdentifier);
 
+  List<UserGroupDBO> findByUsersIn(String userIdentifier);
+
   Page<UserGroupDBO> findByScopeIdentifier(String scopeIdentifier, Pageable pageable);
 
   List<UserGroupDBO> deleteByIdentifierAndScopeIdentifier(String identifier, String scopeIdentifier);

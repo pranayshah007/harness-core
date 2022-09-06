@@ -7,7 +7,7 @@
 
 package io.harness.ng.core.migration.schema;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.migration.beans.MigrationType;
 import io.harness.migration.entities.NGSchema;
 import io.harness.ng.DbAliases;
