@@ -14,37 +14,23 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.network.Http;
 
 import java.net.MalformedURLException;
+import java.net.URL;
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
 
 @OwnedBy(HarnessTeam.PL)
 public class UrlFieldValidator implements ConstraintValidator<UrlField, String> {
-  private boolean allowBlank;
-
-  @Override
-  public void initialize(UrlField constraintAnnotation) {
-    allowBlank = constraintAnnotation.allowBlank();
-  }
-
   @Override
   public boolean isValid(String s, ConstraintValidatorContext context) {
-    // check for blank
-    if (allowBlank && isBlank(s)) {
+    if (isBlank(s)) {
+      // If the url string is empty - return true
       return true;
     }
-    if (!allowBlank && isBlank(s)) {
-      context.disableDefaultConstraintViolation();
-      context.buildConstraintViolationWithTemplate("Url cannot be empty").addConstraintViolation();
+    try {
+      new URL(s);
+      return true;
+    } catch (MalformedURLException e) {
       return false;
     }
-    if (Http.validUrl(s)) {
-      return true;
-    }
-    // As a hack - we are removing the path, so that it doesn't get propagated to the UI
-    // TODO: Find the right way to implement it
-
-    context.disableDefaultConstraintViolation();
-    context.buildConstraintViolationWithTemplate(String.format("Invalid url : %s", s)).addConstraintViolation();
-    return false;
   }
 }

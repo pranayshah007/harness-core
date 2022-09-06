@@ -24,8 +24,7 @@ import javax.validation.ReportAsSingleViolation;
 @Retention(RetentionPolicy.RUNTIME)
 @ReportAsSingleViolation
 public @interface UrlField {
-  String message() default "Invalid URL";
+  String message() default "Invalid URL: ${validatedValue}";
   Class<?>[] groups() default {};
   Class<? extends Payload>[] payload() default {};
-  boolean allowBlank() default true;
 }
