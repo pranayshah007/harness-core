@@ -985,6 +985,7 @@ public class DelegateServiceImpl implements DelegateService {
     }
   }
 
+  // ??? why need such a function while Delegate is already a bean ?
   private UpdateOperations<Delegate> getDelegateUpdateOperations(final Delegate delegate) {
     final UpdateOperations<Delegate> updateOperations = persistence.createUpdateOperations(Delegate.class);
     setUnset(updateOperations, DelegateKeys.ip, delegate.getIp());
@@ -2557,6 +2558,7 @@ public class DelegateServiceImpl implements DelegateService {
 
   @Override
   public DelegateRegisterResponse register(final DelegateParams delegateParams, final boolean isConnectedUsingMtls) {
+    // keep
     if (licenseService.isAccountDeleted(delegateParams.getAccountId())) {
       delegateMetricsService.recordDelegateMetrics(
           Delegate.builder().accountId(delegateParams.getAccountId()).version(delegateParams.getVersion()).build(),
@@ -2566,6 +2568,7 @@ public class DelegateServiceImpl implements DelegateService {
       return DelegateRegisterResponse.builder().action(DelegateRegisterResponse.Action.SELF_DESTRUCT).build();
     }
 
+    // keep
     if (isNotBlank(delegateParams.getDelegateGroupId())) {
       final DelegateGroup delegateGroup = persistence.get(DelegateGroup.class, delegateParams.getDelegateGroupId());
 
@@ -2576,6 +2579,7 @@ public class DelegateServiceImpl implements DelegateService {
       }
     }
 
+    // keep
     if (accountService.isAccountMigrated(delegateParams.getAccountId())) {
       String migrateMsg = MIGRATE + accountService.get(delegateParams.getAccountId()).getMigratedToClusterUrl();
       broadcasterFactory.lookup(STREAM_DELEGATE + delegateParams.getAccountId(), true).broadcast(migrateMsg);
@@ -2587,7 +2591,8 @@ public class DelegateServiceImpl implements DelegateService {
 
     final Delegate existingDelegate = getExistingDelegate(delegateParams.getAccountId(), delegateParams.getHostName(),
         delegateParams.isNg(), delegateParams.getDelegateType(), delegateParams.getIp());
-
+    // keep
+    // ??? why broadcast
     if (existingDelegate != null && existingDelegate.getStatus() == DelegateInstanceStatus.DELETED) {
       broadcasterFactory.lookup(STREAM_DELEGATE + delegateParams.getAccountId(), true)
           .broadcast(SELF_DESTRUCT + existingDelegate.getUuid());
@@ -2602,6 +2607,7 @@ public class DelegateServiceImpl implements DelegateService {
     String delegateTypeMetric = delegateParams.isImmutable() ? IMMUTABLE_DELEGATES : MUTABLE_DELEGATES;
     delegateMetricsService.recordDelegateMetricsPerAccount(delegateParams.getAccountId(), delegateTypeMetric);
 
+    // keep, move up to line 2571
     String delegateGroupId = delegateParams.getDelegateGroupId();
     if (isBlank(delegateGroupId) && isNotBlank(delegateParams.getDelegateGroupName())) {
       final DelegateGroup delegateGroup =
@@ -2634,19 +2640,21 @@ public class DelegateServiceImpl implements DelegateService {
                                                     .build();
 
     // TODO: ARPIT for cg grouped delegates we should save tags only in delegateGroup
-
+    // keep
+    // merge with block at line 2609
     if (delegateParams.isNg()) {
       final DelegateGroup delegateGroup =
           upsertDelegateGroup(delegateParams.getDelegateName(), delegateParams.getAccountId(), delegateSetupDetails);
       delegateGroupId = delegateGroup.getUuid();
       delegateGroupName = delegateGroup.getName();
     }
-
+    // update tag only -- can remove ?
     if (isNotBlank(delegateGroupId) && isNotEmpty(delegateParams.getTags())) {
       persistence.update(persistence.createQuery(DelegateGroup.class).filter(DelegateGroupKeys.uuid, delegateGroupId),
           persistence.createUpdateOperations(DelegateGroup.class)
               .set(DelegateGroupKeys.tags, new HashSet<>(delegateParams.getTags())));
     }
+// ---- deleteGate groups -----
 
     final DelegateEntityOwner owner = DelegateEntityOwnerHelper.buildOwner(orgIdentifier, projectIdentifier);
 
@@ -2745,6 +2753,7 @@ public class DelegateServiceImpl implements DelegateService {
     return upsertDelegateOperation(existingDelegate, delegate, null);
   }
 
+  // ??? we should keep the upsert functions only db related.
   @VisibleForTesting
   Delegate upsertDelegateOperation(
       Delegate existingDelegate, Delegate delegate, DelegateSetupDetails delegateSetupDetails) {
@@ -2789,6 +2798,7 @@ public class DelegateServiceImpl implements DelegateService {
     }
 
     // Not needed to be done when polling is enabled for delegate
+    // ??? why broadcast
     if (isDelegateWithoutPollingEnabled(delegate)) {
       if (delegate.isHeartbeatAsObject()) {
         broadcastDelegateHeartBeatResponse(delegate, registeredDelegate);
@@ -3117,6 +3127,7 @@ public class DelegateServiceImpl implements DelegateService {
         throw new InvalidRequestException(getMessage(exception));
       }
     }
+    // ??? too ternary statements, replace with one Optional block
     String description = delegateSetupDetails != null ? delegateSetupDetails.getDescription() : null;
     String orgIdentifier = delegateSetupDetails != null ? delegateSetupDetails.getOrgIdentifier() : null;
     String projectIdentifier = delegateSetupDetails != null ? delegateSetupDetails.getProjectIdentifier() : null;
@@ -3152,7 +3163,7 @@ public class DelegateServiceImpl implements DelegateService {
     if (existingEntity != null && uuidToIdentifier(existingEntity.getUuid()).equals(existingEntity.getIdentifier())) {
       delegateGroupIdentifier = existingEntity.getIdentifier();
     }
-
+    // ??? why DelegateGroup has both uuid and identifier ?
     UpdateOperations<DelegateGroup> updateOperations =
         this.persistence.createUpdateOperations(DelegateGroup.class)
             .setOnInsert(DelegateGroupKeys.uuid, generateUuid())

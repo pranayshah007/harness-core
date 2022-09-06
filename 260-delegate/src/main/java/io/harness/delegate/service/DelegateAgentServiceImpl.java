@@ -732,7 +732,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   private RequestBuilder prepareRequestBuilder() {
     try {
       URIBuilder uriBuilder =
-          new URIBuilder(delegateConfiguration.getManagerUrl().replace("/api/", "/stream/") + "delegate/" + accountId)
+          new URIBuilder(delegateConfiguration.getWebSocketUrl(accountId))
               .addParameter("delegateId", delegateId)
               .addParameter("delegateTokenName", DelegateAgentCommonVariables.getDelegateTokenName())
               .addParameter("delegateConnectionId", delegateConnectionId)

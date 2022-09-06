@@ -18,6 +18,8 @@ import lombok.Data;
 import lombok.ToString;
 import org.apache.commons.lang3.StringUtils;
 
+import javax.validation.constraints.NotNull;
+
 @Data
 @Builder
 @ToString
@@ -90,5 +92,9 @@ public class DelegateConfiguration {
 
   public String getQueueFilePath() {
     return Optional.ofNullable(queueFilePath).orElse(EventPublisherConstants.DEFAULT_QUEUE_FILE_PATH);
+  }
+
+  public String getWebSocketUrl(@NotNull  final String accountId) {
+    return managerUrl.replace("/api/", "/stream/") + "delegate/" + accountId;
   }
 }
