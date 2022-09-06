@@ -7,6 +7,7 @@
 
 package io.harness.ccm.graphql.dto.recommendation;
 
+import com.amazonaws.services.ecs.model.LaunchType;
 import software.wings.graphql.datafetcher.ce.recommendation.entity.Cost;
 
 import java.util.Map;
@@ -20,6 +21,7 @@ public class ECSRecommendationDTO implements RecommendationDetailsDTO {
   String clusterName;
   String serviceArn;
   String serviceName;
+  LaunchType launchType;
   Map<String, String> current;
   Map<String, Map<String, String>> percentileBased;
   Cost lastDayCost;

@@ -82,6 +82,7 @@ public class ECSRecommendationService {
         .clusterName(recommendation.getClusterName())
         .serviceArn(recommendation.getServiceArn())
         .serviceName(recommendation.getServiceName())
+        .launchType(recommendation.getLaunchType())
         .current(recommendation.getCurrentResourceRequirements())
         .percentileBased(recommendation.getPercentileBasedResourceRecommendation())
         .lastDayCost(recommendation.getLastDayCost())
