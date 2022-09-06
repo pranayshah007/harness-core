@@ -11,7 +11,6 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.network.Http;
 
 import java.net.MalformedURLException;
 import java.net.URL;
