@@ -43,12 +43,14 @@ import java.util.Collections;
 import java.util.Optional;
 import lombok.SneakyThrows;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 @OwnedBy(PL)
+@Ignore
 public class MailServiceImplTest extends CategoryTest {
   @Mock private NotificationSettingsService notificationSettingsService;
   @Mock private NotificationTemplateService notificationTemplateService;

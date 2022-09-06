@@ -20,6 +20,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.delegate.beans.MailTaskParams;
 import io.harness.delegate.beans.NotificationProcessingResponse;
+import io.harness.delegate.beans.NotificationTaskResponse;
 import io.harness.exception.ExceptionUtils;
 import io.harness.notification.NotificationChannelType;
 import io.harness.notification.NotificationRequest;
@@ -153,9 +154,9 @@ public class MailServiceImpl implements ChannelService {
                                   .build())
               .executionTimeout(Duration.ofMinutes(1L))
               .build();
-      String taskId = delegateGrpcClientWrapper.submitAsyncTask(delegateTaskRequest, Duration.ZERO);
-      log.info("Async delegate task created with taskID {}", taskId);
-      notificationProcessingResponse = NotificationProcessingResponse.allSent(emailIds.size());
+      NotificationTaskResponse notificationTaskResponse = (NotificationTaskResponse) delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+      log.info("sync delegate task created with taskID");
+      notificationProcessingResponse = notificationTaskResponse.getProcessingResponse();
     } else {
       notificationProcessingResponse = mailSender.send(emailIds, subject, body, notificationId, smtpConfigDefault);
     }
