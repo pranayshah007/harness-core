@@ -13,8 +13,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.network.Http;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
 
@@ -23,14 +21,9 @@ public class UrlFieldValidator implements ConstraintValidator<UrlField, String> 
   @Override
   public boolean isValid(String s, ConstraintValidatorContext context) {
     if (isBlank(s)) {
-      // If the url string is empty - return true
+      // If the url string is null / empty - return true.
       return true;
     }
-    try {
-      new URL(s);
-      return true;
-    } catch (MalformedURLException e) {
-      return false;
-    }
+    return Http.validUrl(s);
   }
 }

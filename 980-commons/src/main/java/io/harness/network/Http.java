@@ -7,7 +7,6 @@
 
 package io.harness.network;
 
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
@@ -59,7 +58,7 @@ import org.apache.http.HttpHost;
 @OwnedBy(HarnessTeam.PL)
 public class Http {
   private static UrlValidator urlValidator = new UrlValidator(
-      new String[] {"http", "https", "ftp", "smtp"}, UrlValidator.ALLOW_LOCAL_URLS + UrlValidator.ALLOW_2_SLASHES);
+      new String[] {"http", "https", "ftp", "ftps"}, UrlValidator.ALLOW_LOCAL_URLS + UrlValidator.ALLOW_2_SLASHES);
   public static ConnectionPool connectionPool = new ConnectionPool(0, 5, TimeUnit.MINUTES);
 
   private static TrustManager[] trustAllCerts = getTrustManagers();

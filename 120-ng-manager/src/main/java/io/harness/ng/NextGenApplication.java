@@ -549,8 +549,8 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
   }
 
   public void registerIterators(NgIteratorsConfig ngIteratorsConfig, Injector injector) {
-    injector.getInstance(NGVaultSecretManagerRenewalHandler.class)
-        .registerIterators(ngIteratorsConfig.getNgVaultSecretManagerRenewalIteratorConfig().getThreadPoolSize());
+    /*injector.getInstance(NGVaultSecretManagerRenewalHandler.class)
+        .registerIterators(ngIteratorsConfig.getNgVaultSecretManagerRenewalIteratorConfig().getThreadPoolSize());*/
     injector.getInstance(WebhookEventProcessingService.class)
         .registerIterators(ngIteratorsConfig.getWebhookEventProcessingServiceIteratorConfig().getThreadPoolSize());
     injector.getInstance(InstanceStatsIteratorHandler.class).registerIterators();
