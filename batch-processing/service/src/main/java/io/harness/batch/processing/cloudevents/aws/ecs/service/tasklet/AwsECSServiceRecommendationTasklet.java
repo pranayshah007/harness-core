@@ -266,7 +266,7 @@ public class AwsECSServiceRecommendationTasklet implements Tasklet {
     for (Integer percentile : requiredPercentiles) {
       long cpuAmount = (long) cpuHistogram.getPercentile(percentile);
       long memoryAmount = (long) (memoryHistogram.getPercentile(percentile));
-      if (recommendation.getLaunchType().equals(LaunchType.FARGATE)) {
+      if (recommendation.getLaunchType() != null && recommendation.getLaunchType().equals(LaunchType.FARGATE)) {
         CpuMillsAndMemoryBytes resourceValues = fargateResourceValues.get(cpuAmount, memoryAmount);
         cpuAmount = resourceValues.getCpuMilliUnits();
         memoryAmount = resourceValues.getMemoryBytes();
