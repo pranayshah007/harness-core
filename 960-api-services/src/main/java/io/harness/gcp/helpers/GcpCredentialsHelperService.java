@@ -19,7 +19,6 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import lombok.extern.slf4j.Slf4j;
@@ -29,7 +28,6 @@ import org.apache.commons.io.IOUtils;
 @Slf4j
 public class GcpCredentialsHelperService {
   @Inject private GcpHttpTransportHelperService gcpHttpTransportHelperService;
-  public static final String USERINFO_EMAIL = "https://www.googleapis.com/auth/userinfo.email";
 
   public GoogleCredential getGoogleCredentialWithDefaultHttpTransport(char[] serviceAccountKeyFileContent)
       throws IOException {
@@ -61,7 +59,7 @@ public class GcpCredentialsHelperService {
 
   private static GoogleCredential appendScopesIfRequired(GoogleCredential googleCredential) {
     if (googleCredential.createScopedRequired()) {
-      return googleCredential.createScoped(Arrays.asList(ContainerScopes.CLOUD_PLATFORM, USERINFO_EMAIL));
+      return googleCredential.createScoped(Collections.singletonList(ContainerScopes.CLOUD_PLATFORM));
     }
     return googleCredential;
   }

@@ -19,6 +19,11 @@ import java.io.IOException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -30,6 +35,7 @@ public class GcpAccessTokenSupplier implements Supplier<String> {
   private final DataStore<StoredCredential> cache;
   private final Clock clock;
   private final GoogleCredential googleCredential;
+  public static final String USERINFO_EMAIL = "https://www.googleapis.com/auth/userinfo.email";
 
   @Builder
   public GcpAccessTokenSupplier(String serviceAccountJsonKey, Function<String, GoogleCredential> jsonKeyToCredential,
@@ -81,12 +87,15 @@ public class GcpAccessTokenSupplier implements Supplier<String> {
     if (googleCredential.getServiceAccountId() == null) {
       return googleCredential;
     }
+    Collection<String> scopes = new java.util.ArrayList<>(Collections.emptyList());
+    scopes.addAll(googleCredential.getServiceAccountScopes());
+    scopes.add(USERINFO_EMAIL);
 
     return new GoogleCredential.Builder()
         .setJsonFactory(googleCredential.getJsonFactory())
         .setTransport(googleCredential.getTransport())
         .setServiceAccountId(googleCredential.getServiceAccountId())
-        .setServiceAccountScopes(googleCredential.getServiceAccountScopes())
+        .setServiceAccountScopes(scopes)
         .setServiceAccountPrivateKey(googleCredential.getServiceAccountPrivateKey())
         .setServiceAccountPrivateKeyId(googleCredential.getServiceAccountPrivateKeyId())
         .setTokenServerEncodedUrl(googleCredential.getTokenServerEncodedUrl())
