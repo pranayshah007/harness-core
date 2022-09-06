@@ -565,7 +565,7 @@ public class CustomDashboardResource {
       try {
         dashboardSettingsService.addToToMigrateAccountIds(accountIds);
       } catch (Exception ex) {
-        log.error("Deployment migration per account Failure", ex);
+        log.error("Adding account Ids to timescaleIndex failed", ex);
         return Builder.aRestResponse()
             .withResponseMessages(Lists.newArrayList(ResponseMessage.builder().message(ex.toString()).build()))
             .build();
@@ -575,7 +575,7 @@ public class CustomDashboardResource {
           .withResponseMessages(Lists.newArrayList(ResponseMessage
                                                        .builder()
                                                        //                      .message(accountId + ":" + status.name())
-                                                       .message("RECON COMPLETED")
+                                                       .message("ACCOUNTIDS_ADDED")
                                                        .code(null)
                                                        .level(Level.INFO)
                                                        .build()))
@@ -584,7 +584,7 @@ public class CustomDashboardResource {
       return Builder.aRestResponse()
           .withResponseMessages(Lists.newArrayList(
               ResponseMessage.builder()
-                  .message("User not allowed to perform the deployment-migration-per-account operation : "
+                  .message("User with id not allowed to add account Ids to timescaleIndex : "
                       + authUser.getUuid())
                   .build()))
           .build();
