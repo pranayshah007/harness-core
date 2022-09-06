@@ -84,6 +84,6 @@ public class CalenderSLOTargetSpec extends SLOTargetSpec {
 
   @Override
   public SLOTargetType getType() {
-    return SLOTargetType.CALENDER;
+    return SLOTargetType.CALENDAR;
   }
 }

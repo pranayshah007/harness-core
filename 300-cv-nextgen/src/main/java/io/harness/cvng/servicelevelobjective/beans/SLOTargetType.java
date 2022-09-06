@@ -19,7 +19,7 @@ import org.apache.commons.collections4.MapUtils;
 @AllArgsConstructor
 public enum SLOTargetType {
   @JsonProperty("Rolling") ROLLING("Rolling"),
-  @JsonProperty("Calender") CALENDER("Calender");
+  @JsonProperty("Calendar") CALENDAR("Calendar");
 
   private static Map<String, SLOTargetType> STRING_TO_TYPE_MAP;
 

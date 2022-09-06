@@ -216,7 +216,7 @@ public class ServiceLevelObjective
   @Data
   @SuperBuilder
   public abstract static class CalenderSLOTarget extends SLOTarget {
-    private final SLOTargetType type = SLOTargetType.CALENDER;
+    private final SLOTargetType type = SLOTargetType.CALENDAR;
     public abstract SLOCalenderType getCalenderType();
   }
 

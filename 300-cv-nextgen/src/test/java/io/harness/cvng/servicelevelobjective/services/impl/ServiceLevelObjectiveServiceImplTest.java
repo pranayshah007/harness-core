@@ -196,7 +196,7 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
                     .build();
 
     calendarSloTarget = SLOTarget.builder()
-                            .type(SLOTargetType.CALENDER)
+                            .type(SLOTargetType.CALENDAR)
                             .sloTargetPercentage(80.0)
                             .spec(CalenderSLOTargetSpec.builder()
                                       .type(SLOCalenderType.WEEKLY)
@@ -848,7 +848,7 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
                  .userJourneyRef("uj1")
                  .type(ServiceLevelIndicatorType.AVAILABILITY)
                  .target(SLOTarget.builder()
-                             .type(SLOTargetType.CALENDER)
+                             .type(SLOTargetType.CALENDAR)
                              .sloTargetPercentage(80.0)
                              .spec(CalenderSLOTargetSpec.builder()
                                        .type(SLOCalenderType.WEEKLY)

@@ -154,7 +154,7 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
                                                          .build();
 
     SLOTarget calendarSloTarget = SLOTarget.builder()
-                                      .type(SLOTargetType.CALENDER)
+                                      .type(SLOTargetType.CALENDAR)
                                       .sloTargetPercentage(80.0)
                                       .spec(CalenderSLOTargetSpec.builder()
                                                 .type(SLOCalenderType.QUARTERLY)
@@ -337,7 +337,7 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
                                                          .build();
 
     SLOTarget calendarSloTarget = SLOTarget.builder()
-                                      .type(SLOTargetType.CALENDER)
+                                      .type(SLOTargetType.CALENDAR)
                                       .sloTargetPercentage(80.0)
                                       .spec(CalenderSLOTargetSpec.builder()
                                                 .type(SLOCalenderType.QUARTERLY)

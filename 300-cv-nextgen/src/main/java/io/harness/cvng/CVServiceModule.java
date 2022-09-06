@@ -775,7 +775,7 @@ public class CVServiceModule extends AbstractModule {
 
     MapBinder<SLOTargetType, SLOTargetTransformer> sloTargetTypeSLOTargetTransformerMapBinder =
         MapBinder.newMapBinder(binder(), SLOTargetType.class, SLOTargetTransformer.class);
-    sloTargetTypeSLOTargetTransformerMapBinder.addBinding(SLOTargetType.CALENDER)
+    sloTargetTypeSLOTargetTransformerMapBinder.addBinding(SLOTargetType.CALENDAR)
         .to(CalenderSLOTargetTransformer.class)
         .in(Scopes.SINGLETON);
     sloTargetTypeSLOTargetTransformerMapBinder.addBinding(SLOTargetType.ROLLING).to(RollingSLOTargetTransformer.class);
