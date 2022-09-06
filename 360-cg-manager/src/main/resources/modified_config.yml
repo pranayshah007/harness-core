@@ -264,11 +264,11 @@ mongo:
   maxConnectionIdleTime: 600000
   connectionsPerHost: 300
   indexManagerMode: AUTO
+  aliasDBName: harness
   mongoSSLConfig:
     mongoSSLEnabled: false
     mongoTrustStorePath:
     mongoTrustStorePassword:
-  aliasDBName: harness
 
 events-mongo:
   uri: mongodb://localhost:27017/events
