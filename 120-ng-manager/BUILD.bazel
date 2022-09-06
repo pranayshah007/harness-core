@@ -44,6 +44,7 @@ shared_dependencies = [
     "//930-ng-license-manager:module",
     "//937-persistence-tracer:module",
     "//940-primary-version-manager:module",
+    "//940-secret-manager-client:module",
     "//942-enforcement-sdk:module",
     "//947-scim-core:module",
     "//950-ng-core:module",

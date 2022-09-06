@@ -319,6 +319,8 @@ java_library(
         "@maven//:com_microsoft_azure_azure_mgmt_storage",
         "@maven//:com_microsoft_azure_azure_mgmt_trafficmanager",
         "@maven//:com_microsoft_azure_azure_storage",
+        "@maven//:com_azure_azure_storage_blob",
+        "@maven//:com_azure_azure_storage_common",
         "@maven//:com_microsoft_rest_client_runtime",
         "@maven//:com_nimbusds_lang_tag",
         "@maven//:com_nimbusds_nimbus_jose_jwt",

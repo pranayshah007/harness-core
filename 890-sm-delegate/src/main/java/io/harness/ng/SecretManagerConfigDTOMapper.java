@@ -10,6 +10,7 @@ package io.harness.ng;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.ng.AwsKmsConfigDTOMapper.getAwsKmsConfigDTO;
 import static io.harness.ng.AwsSMConfigDTOMapper.getAwsSMConfigDTO;
+import static io.harness.ng.AzureBlobConfigDTOMapper.getAzureBlobConfigDTO;
 import static io.harness.ng.AzureKeyVaultConfigDTOMapper.getAzureKeyVaultConfigDTO;
 import static io.harness.ng.CustomSecretManagerConfigDTOMapper.getCustomSecretManagerConfigDTO;
 import static io.harness.ng.GcpKmsConfigDTOMapper.getGcpKmsConfigDTO;
@@ -22,6 +23,7 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.awskmsconnector.AwsKmsConnectorDTO;
 import io.harness.delegate.beans.connector.awssecretmanager.AwsSecretManagerDTO;
+import io.harness.delegate.beans.connector.azureblobconnector.AzureBlobConnectorDTO;
 import io.harness.delegate.beans.connector.azurekeyvaultconnector.AzureKeyVaultConnectorDTO;
 import io.harness.delegate.beans.connector.customsecretmanager.CustomSecretManagerConnectorDTO;
 import io.harness.delegate.beans.connector.gcpkmsconnector.GcpKmsConnectorDTO;
@@ -44,6 +46,8 @@ public class SecretManagerConfigDTOMapper {
         return getGcpKmsConfigDTO(accountIdentifier, connectorRequestDTO, (GcpKmsConnectorDTO) connectorConfigDTO);
       case AWS_KMS:
         return getAwsKmsConfigDTO(accountIdentifier, connectorRequestDTO, (AwsKmsConnectorDTO) connectorConfigDTO);
+      case AZURE_BLOB:
+        return getAzureBlobConfigDTO(accountIdentifier, connectorRequestDTO, (AzureBlobConnectorDTO) connectorConfigDTO);
       case AZURE_KEY_VAULT:
         return getAzureKeyVaultConfigDTO(
             accountIdentifier, connectorRequestDTO, (AzureKeyVaultConnectorDTO) connectorConfigDTO);
