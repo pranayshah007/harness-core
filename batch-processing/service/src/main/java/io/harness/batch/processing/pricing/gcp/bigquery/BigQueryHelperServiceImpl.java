@@ -174,9 +174,12 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
     List<VMInstanceServiceBillingData> vmInstanceServiceBillingDataList =
         convertToGcpInstanceServiceBillingData(result);
 
+    log.info("GCP: vmInstanceServiceBillingDataList size for GCP: {}", vmInstanceServiceBillingDataList.size());
+
     Map<String, VMInstanceBillingData> vmInstanceBillingDataMap = new HashMap<>();
     vmInstanceServiceBillingDataList.forEach(vmInstanceServiceBillingData -> {
       String resourceId = vmInstanceServiceBillingData.getResourceId();
+      log.info("GCP: Processing for resourceId: {}", resourceId);
       VMInstanceBillingData vmInstanceBillingData = VMInstanceBillingData.builder().resourceId(resourceId).build();
       if (vmInstanceBillingDataMap.containsKey(resourceId)) {
         vmInstanceBillingData = vmInstanceBillingDataMap.get(resourceId);
@@ -195,6 +198,7 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
         if (null != vmInstanceServiceBillingData.getEffectiveCost()) {
           cost = vmInstanceServiceBillingData.getEffectiveCost();
         }
+        log.info("GCP: Cost: {}, Rate: {} for resourceId: {}", cost, rate, resourceId);
         vmInstanceBillingData = vmInstanceBillingData.toBuilder().computeCost(cost).rate(rate).build();
       }
 
@@ -231,7 +235,7 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
       }
       instanceServiceBillingDataList.add(dataBuilder.build());
     }
-    log.info("Resource Id data {} ", instanceServiceBillingDataList);
+    log.info("GCP: Resource Id data {} ", instanceServiceBillingDataList);
     return instanceServiceBillingDataList;
   }
 
@@ -391,6 +395,9 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
     String resourceId = String.join("','", resourceIds);
     String projectTableName = getGcpProjectTableName(dataSetId);
     String formattedQuery = format(query, projectTableName, resourceId, startTime, endTime);
+
+    log.info("GCP CUR Data Query: {}", formattedQuery);
+
     return query(formattedQuery, "GCP");
   }
 

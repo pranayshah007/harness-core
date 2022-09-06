@@ -64,6 +64,7 @@ public class GcpCustomBillingServiceImpl implements GcpCustomBillingService {
       List<String> resourceIds, Instant startTime, Instant endTime, String dataSetId) {
     Map<String, VMInstanceBillingData> gcpVMBillingData =
         bigQueryHelperService.getGcpVMBillingData(resourceIds, startTime, endTime, dataSetId);
+    log.info("GCPVMBillingData size fetched from BQ: {}", gcpVMBillingData.size());
     gcpVMBillingData.forEach(
         (resourceId, vmInstanceBillingData)
             -> gcpResourceBillingCache.put(new CacheKey(resourceId, startTime, endTime), vmInstanceBillingData));

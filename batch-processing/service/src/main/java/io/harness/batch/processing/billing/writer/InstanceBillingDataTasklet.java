@@ -177,6 +177,9 @@ public class InstanceBillingDataTasklet implements Tasklet {
       Map<String, InstanceBillingData> claimRefToPVInstanceBillingData, Map<String, MutableInt> pvcClaimCount) {
     Set<String> parentInstanceIds = new HashSet<>();
     Instant prevStartTime = startTime.minus(3, ChronoUnit.DAYS);
+
+    log.info("instanceDataLists Size: {}", instanceDataLists.size());
+
     instanceDataLists.forEach(instanceData -> {
       if (null == instanceData.getActiveInstanceIterator() && null == instanceData.getUsageStopTime()) {
         instanceDataDao.updateInstanceActiveIterationTime(instanceData);
@@ -263,7 +266,11 @@ public class InstanceBillingDataTasklet implements Tasklet {
           resourceIds.add(resourceId);
         }
       });
+
+      log.info("GCP: ResourceIds check.");
+
       if (isNotEmpty(resourceIds)) {
+        log.info("GCP: ResourceIds Size: {}", resourceIds.size());
         gcpCustomBillingService.updateGcpVMBillingDataCache(
             new ArrayList<>(resourceIds), startTime, endTime, gcpDataSetId);
       }
