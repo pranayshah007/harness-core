@@ -76,7 +76,7 @@ public class AzureArtifactUtils {
         return ArtifactType.JAR;
       case WAR_EXTENSION:
         log.info("Detected war artifact type for file {}", artifactPath);
-        logCallback.saveExecutionLog("Detected artifact type: jar");
+        logCallback.saveExecutionLog("Detected artifact type: war");
         return ArtifactType.WAR;
       case ZIP_EXTENSION:
         log.info("Detected zip artifact type for file {}", artifactPath);

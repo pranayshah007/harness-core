@@ -754,10 +754,13 @@ public class IntegrationStageUtils {
       infraOSType = getK8OS(infrastructure).toString();
       infraHostType = SELF_HOSTED;
     } else if (infrastructure.getType() == VM) {
-      infraOSType = VmInitializeStepUtils.getVmOS(infrastructure).toString();
+      infraOSType = VmInitializeUtils.getOS(infrastructure).toString();
       infraHostType = SELF_HOSTED;
     } else if (infrastructure.getType() == KUBERNETES_HOSTED) {
       infraOSType = getK8OS(infrastructure).toString();
+      infraHostType = HARNESS_HOSTED;
+    } else if (infrastructure.getType() == HOSTED_VM) {
+      infraOSType = VmInitializeUtils.getOS(infrastructure).toString();
       infraHostType = HARNESS_HOSTED;
     }
 

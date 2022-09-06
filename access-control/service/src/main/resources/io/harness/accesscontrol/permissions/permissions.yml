@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: permissionsConfiguration
-version: 35
+version: 36
 permissions:
   - identifier: core_project_delete
     name: Delete Project
@@ -1025,24 +1025,24 @@ permissions:
       - account
       - organization
       - project
-  - identifier: chaos_chaosagent_view
-    name: View a Chaos Agent
+  - identifier: chaos_chaosdelegate_view
+    name: View a Chaos Delegate
     status: ACTIVE
     includeInAllRoles: false
     allowedScopeLevels:
       - account
       - organization
       - project
-  - identifier: chaos_chaosagent_edit
-    name: Edit a Chaos Agent
+  - identifier: chaos_chaosdelegate_edit
+    name: Edit a Chaos Delegate
     status: ACTIVE
     includeInAllRoles: false
     allowedScopeLevels:
       - account
       - organization
       - project
-  - identifier: chaos_chaosagent_delete
-    name: Delete a Chaos Agent
+  - identifier: chaos_chaosdelegate_delete
+    name: Delete a Chaos Delegate
     status: ACTIVE
     includeInAllRoles: false
     allowedScopeLevels:
@@ -1065,24 +1065,24 @@ permissions:
       - account
       - organization
       - project
-  - identifier: chaos_chaosworkflow_view
-    name: View a Chaos Workflow
+  - identifier: chaos_chaosscenario_view
+    name: View a Chaos Scenario
     status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account
       - organization
       - project
-  - identifier: chaos_chaosworkflow_edit
-    name: Edit a Chaos Workflow
+  - identifier: chaos_chaosscenario_edit
+    name: Edit a Chaos Scenario
     status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account
       - organization
       - project
-  - identifier: chaos_chaosworkflow_delete
-    name: Delete a Chaos Workflow
+  - identifier: chaos_chaosscenario_delete
+    name: Delete a Chaos Scenario
     status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:

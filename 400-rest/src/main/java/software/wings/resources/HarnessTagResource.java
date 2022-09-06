@@ -9,6 +9,7 @@ package software.wings.resources;
 
 import static io.harness.beans.SearchFilter.Operator.IN;
 
+import static software.wings.security.PermissionAttribute.PermissionType.LOGGED_IN;
 import static software.wings.security.PermissionAttribute.PermissionType.MANAGE_TAGS;
 
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
@@ -20,7 +21,7 @@ import io.harness.rest.RestResponse;
 import software.wings.beans.HarnessTag;
 import software.wings.beans.HarnessTagLink;
 import software.wings.beans.HarnessTagLink.HarnessTagLinkKeys;
-import software.wings.security.PermissionAttribute.PermissionType;
+import software.wings.security.annotations.ApiKeyAuthorized;
 import software.wings.security.annotations.AuthRule;
 import software.wings.service.intfc.HarnessTagService;
 
@@ -43,7 +44,7 @@ import javax.ws.rs.QueryParam;
 @Path("tags")
 @Consumes(APPLICATION_JSON)
 @Produces(APPLICATION_JSON)
-@AuthRule(permissionType = PermissionType.LOGGED_IN)
+@AuthRule(permissionType = LOGGED_IN)
 public class HarnessTagResource {
   @Inject HarnessTagService harnessTagService;
 
@@ -71,6 +72,7 @@ public class HarnessTagResource {
   @Path("for-key")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<HarnessTag> get(@QueryParam("accountId") String accountId,
       @QueryParam("includeInUseValues") boolean includeInUseValues, @NotNull @QueryParam("key") String key) {
     if (includeInUseValues) {
@@ -92,6 +94,7 @@ public class HarnessTagResource {
   @GET
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<PageResponse<HarnessTag>> list(@QueryParam("accountId") String accountId,
       @QueryParam("includeInUseValues") boolean includeInUseValues, @BeanParam PageRequest<HarnessTag> request) {
     request.addFilter(HarnessTagLinkKeys.accountId, IN, accountId);
@@ -133,6 +136,7 @@ public class HarnessTagResource {
   @Path("links")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<PageResponse<HarnessTagLink>> listResourcesWithTag(
       @QueryParam("accountId") String accountId, @BeanParam PageRequest<HarnessTagLink> request) {
     request.addFilter(HarnessTagLinkKeys.accountId, IN, accountId);

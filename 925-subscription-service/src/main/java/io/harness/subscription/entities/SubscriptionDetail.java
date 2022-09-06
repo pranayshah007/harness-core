@@ -8,7 +8,7 @@
 package io.harness.subscription.entities;
 
 import io.harness.ModuleType;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
@@ -35,9 +35,9 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "SubscriptionDetailKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "subscriptionDetails", noClassnameStored = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@StoreIn(DbAliases.NG_MANAGER)
 @Document("subscriptionDetails")
 @Persistent
 public class SubscriptionDetail implements PersistentEntity, NGAccountAccess {

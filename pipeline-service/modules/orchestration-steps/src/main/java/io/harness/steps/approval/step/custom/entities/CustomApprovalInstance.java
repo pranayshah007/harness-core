@@ -9,9 +9,11 @@ package io.harness.steps.approval.step.custom.entities;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.iterator.PersistentIrregularIterable;
+import io.harness.ng.DbAliases;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -31,6 +33,7 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.validation.constraints.NotNull;
@@ -47,6 +50,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @FieldNameConstants(innerTypeName = "CustomApprovalInstanceKeys")
 @EqualsAndHashCode(callSuper = false)
+@StoreIn(DbAliases.PMS)
 @Entity(value = "approvalInstances", noClassnameStored = true)
 @Persistent
 @TypeAlias("customApprovalInstances")
@@ -55,6 +59,7 @@ public class CustomApprovalInstance extends ApprovalInstance implements Persiste
   @NotNull ShellScriptSourceWrapper source;
   ParameterField<Timeout> retryInterval;
   Map<String, Object> outputVariables;
+  Set<String> secretOutputVariables;
   Map<String, Object> environmentVariables;
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
   @NotNull CriteriaSpecWrapperDTO approvalCriteria;
@@ -76,6 +81,7 @@ public class CustomApprovalInstance extends ApprovalInstance implements Persiste
             .delegateSelectors(specParameters.getDelegateSelectors())
             .environmentVariables(specParameters.getEnvironmentVariables())
             .outputVariables(specParameters.getOutputVariables())
+            .secretOutputVariables(specParameters.getSecretOutputVariables())
             .approvalCriteria(
                 CriteriaSpecWrapperDTO.fromCriteriaSpecWrapper(specParameters.getApprovalCriteria(), false))
             .rejectionCriteria(
@@ -97,6 +103,7 @@ public class CustomApprovalInstance extends ApprovalInstance implements Persiste
         .shellType(getShellType())
         .delegateSelectors(getDelegateSelectors())
         .outputVariables(getOutputVariables())
+        .secretOutputVariables(secretOutputVariables)
         .onDelegate(ParameterField.createValueField(true))
         .source(getSource())
         .uuid(getUuid())

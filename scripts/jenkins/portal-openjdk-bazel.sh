@@ -340,28 +340,6 @@ fi
 
 cd ../..
 
-mkdir -p dist/accesscontrol-service
-cd dist/accesscontrol-service
-
-cp ${HOME}/.bazel-dirs/bin/access-control/service/module_deploy.jar accesscontrol-service-capsule.jar
-cp ../../access-control/config/config.yml .
-cp ../../access-control/config/keystore.jks .
-cp ../../access-control/build/container/Dockerfile-accesscontrol-service-jenkins-k8-openjdk ./Dockerfile
-cp ../../access-control/build/container/Dockerfile-accesscontrol-service-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
-cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
-cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
-cp -r ../../access-control/build/container/scripts/ .
-cp ../../protocol.info .
-echo ${JDK} > jdk.txt
-echo ${VERSION} > version.txt
-if [ ! -z ${PURPOSE} ]
-then
-    echo ${PURPOSE} > purpose.txt
-fi
-java -jar accesscontrol-service-capsule.jar scan-classpath-metadata
-
-cd ../..
-
 mkdir -p dist/migrator ;
 cd dist/migrator
 

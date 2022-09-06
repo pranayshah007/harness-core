@@ -129,7 +129,7 @@ public class K8sBGSwapServicesStep extends TaskExecutableWithRollbackAndRbac<K8s
       stepResponseBuilder.stepOutcome(StepResponse.StepOutcome.builder()
                                           .name(OutcomeExpressionConstants.K8S_BG_SWAP_SERVICES_OUTCOME)
                                           .outcome(bgSwapServicesOutcome)
-                                          .group(StepOutcomeGroup.STEP.name())
+                                          .group(StepOutcomeGroup.STAGE.name())
                                           .build());
     }
 

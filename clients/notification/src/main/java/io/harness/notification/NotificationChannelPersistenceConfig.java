@@ -29,6 +29,7 @@ import org.springframework.data.mongodb.MongoDbFactory;
 import org.springframework.data.mongodb.MongoTransactionManager;
 import org.springframework.data.mongodb.config.AbstractMongoConfiguration;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.SimpleMongoDbFactory;
 import org.springframework.data.mongodb.core.convert.DbRefResolver;
 import org.springframework.data.mongodb.core.convert.DefaultDbRefResolver;
 import org.springframework.data.mongodb.core.convert.MappingMongoConverter;
@@ -82,7 +83,7 @@ public class NotificationChannelPersistenceConfig extends AbstractMongoConfigura
 
   @Bean(name = "notification-channel")
   public MongoTemplate mongoTemplate() throws Exception {
-    MongoDbFactory mongoDbFactory = mongoDbFactory();
+    MongoDbFactory mongoDbFactory = new SimpleMongoDbFactory(mongoClient(), getDatabaseName());
     DbRefResolver dbRefResolver = new DefaultDbRefResolver(mongoDbFactory);
     MongoMappingContext mappingContext = this.mongoMappingContext();
     mappingContext.setAutoIndexCreation(false);

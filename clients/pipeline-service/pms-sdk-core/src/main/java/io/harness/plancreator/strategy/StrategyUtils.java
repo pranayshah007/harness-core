@@ -41,6 +41,7 @@ import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
+import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.JsonUtils;
 import io.harness.serializer.KryoSerializer;
@@ -64,6 +65,11 @@ import lombok.experimental.UtilityClass;
 public class StrategyUtils {
   public boolean isWrappedUnderStrategy(YamlField yamlField) {
     YamlField strategyField = yamlField.getNode().getField(YAMLFieldNameConstants.STRATEGY);
+    return strategyField != null;
+  }
+
+  public boolean isWrappedUnderStrategy(YamlNode yamlField) {
+    YamlField strategyField = yamlField.getField(YAMLFieldNameConstants.STRATEGY);
     return strategyField != null;
   }
 

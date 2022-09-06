@@ -38,6 +38,7 @@ import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.entitysetupusage.impl.EntitySetupUsageServiceImpl;
 import io.harness.ng.core.service.dto.ServiceResponseDTO;
+import io.harness.ng.core.service.entity.ArtifactSourcesResponseDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.mappers.ServiceElementMapper;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
@@ -502,6 +503,55 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     assertThatThrownBy(() -> serviceEntityService.createServiceInputsYaml(yaml, SERVICE_ID))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(String.format("Primary artifact ref cannot be an expression inside the service %s", SERVICE_ID));
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void testGetArtifactSourceInputsWithServiceV2() {
+    String filename = "service/service-with-primaryArtifactRef-runtime.yaml";
+    String yaml = readFile(filename);
+    ArtifactSourcesResponseDTO responseDTO = serviceEntityService.getArtifactSourceInputs(yaml, SERVICE_ID);
+    assertThat(responseDTO).isNotNull();
+    assertThat(responseDTO.getSourceIdentifiers()).isNotNull().isNotEmpty().hasSize(2);
+    assertThat(responseDTO.getSourceIdentifiers()).hasSameElementsAs(Arrays.asList("i1", "i2"));
+    assertThat(responseDTO.getSourceIdentifierToSourceInputMap()).isNotNull().isNotEmpty().hasSize(2);
+    String runForm1 = "identifier: \"i1\"\n"
+        + "type: \"DockerRegistry\"\n"
+        + "spec:\n"
+        + "  tag: \"<+input>\"\n";
+    String runForm2 = "identifier: \"i2\"\n"
+        + "type: \"DockerRegistry\"\n"
+        + "spec:\n"
+        + "  tag: \"<+input>\"\n";
+    assertThat(responseDTO.getSourceIdentifierToSourceInputMap()).hasFieldOrPropertyWithValue("i1", runForm1);
+    assertThat(responseDTO.getSourceIdentifierToSourceInputMap()).hasFieldOrPropertyWithValue("i2", runForm2);
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void testGetArtifactSourceInputsWithServiceV1() {
+    String filename = "service/serviceWith3ConnectorReferences.yaml";
+    String yaml = readFile(filename);
+    ArtifactSourcesResponseDTO responseDTO = serviceEntityService.getArtifactSourceInputs(yaml, SERVICE_ID);
+    assertThat(responseDTO).isNotNull();
+    assertThat(responseDTO.getSourceIdentifiers()).isNull();
+    assertThat(responseDTO.getSourceIdentifierToSourceInputMap()).isNull();
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void testGetArtifactSourceInputsWithServiceV2AndSourcesHasNoRuntimeInput() {
+    String filename = "service/service-with-no-runtime-input-in-sources.yaml";
+    String yaml = readFile(filename);
+    ArtifactSourcesResponseDTO responseDTO = serviceEntityService.getArtifactSourceInputs(yaml, SERVICE_ID);
+    assertThat(responseDTO).isNotNull();
+    assertThat(responseDTO.getSourceIdentifiers()).isNotNull().isNotEmpty().hasSize(2);
+    assertThat(responseDTO.getSourceIdentifiers()).hasSameElementsAs(Arrays.asList("i1", "i2"));
+    assertThat(responseDTO.getSourceIdentifierToSourceInputMap()).hasFieldOrPropertyWithValue("i1", null);
+    assertThat(responseDTO.getSourceIdentifierToSourceInputMap()).hasFieldOrPropertyWithValue("i2", null);
   }
 
   @Test

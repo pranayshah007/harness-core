@@ -10,7 +10,7 @@ package io.harness.cvng.core.entities;
 import static io.harness.cvng.core.services.CVNextGenConstants.DATA_COLLECTION_DELAY;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.cvng.beans.DataCollectionExecutionStatus;
 import io.harness.cvng.beans.DataCollectionInfo;
 import io.harness.cvng.beans.cvnglog.ExecutionLogDTO.LogLevel;
@@ -52,9 +52,9 @@ import org.mongodb.morphia.annotations.PrePersist;
 @Data
 @SuperBuilder
 @JsonIgnoreProperties(ignoreUnknown = true)
+@StoreIn(DbAliases.CVNG)
 @Entity(value = "dataCollectionTasks")
 @HarnessEntity(exportable = false)
-@StoreIn(DbAliases.CVNG)
 public abstract class DataCollectionTask
     implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, AccountAccess, PersistentRegularIterable,
                VerificationTaskExecutionInstance {

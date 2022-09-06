@@ -9,9 +9,11 @@ package software.wings.beans.ce.depricated;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
 
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
@@ -32,6 +34,7 @@ import org.mongodb.morphia.annotations.Id;
 @Data
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @FieldNameConstants(innerTypeName = "GcpServiceAccountKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "gcpServiceAccount", noClassnameStored = true)
 @OwnedBy(CE)
 public class GcpServiceAccountOld

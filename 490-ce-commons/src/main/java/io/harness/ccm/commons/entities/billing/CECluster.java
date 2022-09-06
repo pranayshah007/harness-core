@@ -9,7 +9,7 @@ package io.harness.ccm.commons.entities.billing;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
@@ -35,9 +35,9 @@ import org.mongodb.morphia.annotations.Id;
 
 @Data
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@StoreIn(DbAliases.CENG)
 @Entity(value = "ceCluster", noClassnameStored = true)
 @FieldNameConstants(innerTypeName = "CEClusterKeys")
-@StoreIn(DbAliases.CENG)
 public final class CECluster implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, AccountAccess {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
