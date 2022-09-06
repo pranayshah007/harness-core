@@ -284,8 +284,9 @@ public class GitSyncResource {
 
   @GET
   @Path("queuedCount")
-  public long getQueueCountByApplication(
+  public RestResponse<Long> getQueueCountByApplication(
       @QueryParam("accountId") String accountId, @QueryParam("appId") @DefaultValue("__GLOBAL_APP_ID__") String appId) {
-    return yamlChangeSetService.getItemsInQueueKey(appId, accountId);
+    Long queueCount = yamlChangeSetService.getItemsInQueueKey(appId, accountId);
+    return new RestResponse<>(queueCount);
   }
 }
