@@ -172,6 +172,7 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
   }
 
   private Map<String, VMInstanceBillingData> convertToGcpInstanceBillingData(TableResult result) {
+    log.info("GCP: BQ fetched result rows: {}", result.getTotalRows());
     List<VMInstanceServiceBillingData> vmInstanceServiceBillingDataList =
         convertToGcpInstanceServiceBillingData(result);
 

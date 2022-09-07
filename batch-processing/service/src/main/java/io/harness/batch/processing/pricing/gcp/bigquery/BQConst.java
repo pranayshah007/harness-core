@@ -38,7 +38,7 @@ public class BQConst {
       + "FROM `%s` "
       + "WHERE DATE(_PARTITIONTIME) >= Date('%s') and "
       + "%s and "
-      + "usage_start_time >= '%s' and usage_end_time < '%s' and %s "
+      + "usage_start_time >= '%s' and usage_end_time <= '%s' and %s "
       + "group by gcpResourceName, gcpServiceName";
 
   public static final String GCP_DESCRIPTION_CONDITION = "(sku.description like '%E2 Instance Core running%' OR "
