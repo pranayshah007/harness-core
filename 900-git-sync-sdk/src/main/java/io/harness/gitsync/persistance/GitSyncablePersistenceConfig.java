@@ -8,12 +8,10 @@
 package io.harness.gitsync.persistance;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
-import static io.harness.springdata.PersistenceStoreUtils.getMatchingEntities;
 
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.MongoConfig;
-import io.harness.persistence.Store;
 import io.harness.reflection.HarnessReflections;
 import io.harness.springdata.HMongoTemplate;
 
@@ -23,7 +21,6 @@ import com.mongodb.MongoClient;
 import com.mongodb.MongoClientOptions;
 import com.mongodb.MongoClientURI;
 import com.mongodb.ReadPreference;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.context.annotation.Bean;

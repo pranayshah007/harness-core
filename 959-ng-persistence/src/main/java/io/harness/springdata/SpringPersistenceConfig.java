@@ -8,7 +8,6 @@
 package io.harness.springdata;
 
 import static io.harness.mongo.MongoConfig.DOT_REPLACEMENT;
-import static io.harness.springdata.PersistenceStoreUtils.getMatchingEntities;
 
 import io.harness.annotation.HarnessRepo;
 import io.harness.annotations.StoreIn;
@@ -16,7 +15,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
 import io.harness.mongo.MongoConfig;
-import io.harness.persistence.Store;
 import io.harness.reflection.HarnessReflections;
 
 import com.google.inject.Injector;
@@ -25,7 +23,6 @@ import com.mongodb.MongoClientOptions;
 import com.mongodb.MongoClientURI;
 import com.mongodb.ReadPreference;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.context.annotation.Bean;
