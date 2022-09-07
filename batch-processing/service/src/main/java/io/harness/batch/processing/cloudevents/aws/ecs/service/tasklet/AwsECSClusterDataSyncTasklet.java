@@ -129,7 +129,6 @@ public class AwsECSClusterDataSyncTasklet implements Tasklet {
 
   @Override
   public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) throws Exception {
-    log.info("ECS Cluster Data Sync: Starting job");
     final JobConstants jobConstants = CCMJobConstants.fromContext(chunkContext);
     String accountId = jobConstants.getAccountId();
     Instant startTime = Instant.ofEpochMilli(jobConstants.getJobStartTime());
@@ -149,7 +148,6 @@ public class AwsECSClusterDataSyncTasklet implements Tasklet {
           AwsCrossAccountAttributes awsCrossArn = infraAccCrossArnMap.get(ceCluster.getInfraAccountId());
 
           log.info("Sync for cluster {}", ceCluster.getUuid());
-          log.info("ECS Cluster Data Sync: Running job");
           syncECSClusterData(accountId, awsCrossArn, ceCluster, startTime);
           lastReceivedPublishedMessageDao.upsert(accountId, ceCluster.getUuid());
         }
@@ -182,7 +180,6 @@ public class AwsECSClusterDataSyncTasklet implements Tasklet {
     Map<String, List<Tag>> serviceArnTagsMap = getServiceArnTagsMap(services);
     List<Task> tasks = listTask(awsCrossAccountAttributes, ceCluster.getClusterArn(), ceCluster.getRegion());
     log.debug("Task list {}", tasks);
-    log.info("ECS Cluster Data Sync: Sync ECS Cluster Data");
     updateTasks(accountId, ceCluster, tasks, deploymentIdServiceMap, serviceArnTagsMap, startTime);
     publishUtilizationMetrics(awsCrossAccountAttributes, ceCluster, services);
   }
@@ -299,7 +296,6 @@ public class AwsECSClusterDataSyncTasklet implements Tasklet {
   @VisibleForTesting
   void updateTasks(String accountId, CECluster ceCluster, List<Task> tasks, Map<String, String> deploymentIdServiceMap,
       Map<String, List<Tag>> serviceArnTagsMap, Instant startTime) {
-    log.info("ECS Cluster Data Sync: Updating Tasks");
     Instant stopTime = Instant.now();
     String clusterId = ceCluster.getUuid();
     String settingId = ceCluster.getParentAccountSettingId();
@@ -326,7 +322,6 @@ public class AwsECSClusterDataSyncTasklet implements Tasklet {
           String taskId = getIdFromArn(task.getTaskArn());
           if (null != activeInstanceDataMap.get(taskId)) {
             InstanceData instanceData = activeInstanceDataMap.get(taskId);
-            log.info("ECS Cluster Data Sync: Getting ECS Service with launch Type");
             ECSService ecsService = getECSService(accountId, clusterId, task, deploymentIdServiceMap, getLaunchType(task));
             boolean updated = updateInstanceStopTimeForTask(instanceData, task);
             boolean updatedLabels = false;
@@ -336,7 +331,6 @@ public class AwsECSClusterDataSyncTasklet implements Tasklet {
                   updateLabels(instanceData, ecsService, task, ceCluster, serviceArnTagsMap, deploymentIdServiceMap);
             }
             if (updated || updatedLabels) {
-              log.info("ECS Cluster Data Sync: Creating/Updating ECS Service");
               instanceDataDao.create(instanceData);
               ecsServiceDao.create(ecsService);
             }
@@ -411,7 +405,6 @@ public class AwsECSClusterDataSyncTasklet implements Tasklet {
             updateInstanceStopTimeForTask(instanceData, task);
             updateLabels(instanceData, ecsService, task, ceCluster, serviceArnTagsMap, deploymentIdServiceMap);
             log.debug("Creating task {} ", taskId);
-            log.info("ECS Cluster Data Sync: Creating/Updating ECS Service");
             instanceDataService.create(instanceData);
             ecsServiceDao.create(ecsService);
           }
