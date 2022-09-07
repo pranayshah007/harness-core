@@ -23,27 +23,34 @@ import (
 	"github.com/harness/harness-core/product/ci/addon/testintelligence/java"
 	"github.com/harness/harness-core/product/ci/common/external"
 	pb "github.com/harness/harness-core/product/ci/engine/proto"
+	stutils "github.com/harness/harness-core/product/ci/split_tests/utils"
 	"github.com/harness/harness-core/product/ci/ti-service/types"
 	"go.uber.org/zap"
 )
 
 const (
-	defaultRunTestsTimeout int64 = 14400 // 4 hour
-	defaultRunTestsRetries int32 = 1
-	outDir                       = "ti/callgraph/"    // path passed as outDir in the config.ini file
-	cgDir                        = "ti/callgraph/cg/" // path where callgraph files will be generated
-	javaAgentArg                 = "-javaagent:/addon/bin/java-agent.jar=%s"
-	tiConfigPath                 = ".ticonfig.yaml"
+	defaultRunTestsTimeout   int64 = 14400 // 4 hour
+	defaultRunTestsRetries   int32 = 1
+	outDir                         = "ti/callgraph/"    // path passed as outDir in the config.ini file
+	cgDir                          = "ti/callgraph/cg/" // path where callgraph files will be generated
+	javaAgentArg                   = "-javaagent:/addon/bin/java-agent.jar=%s"
+	tiConfigPath                   = ".ticonfig.yaml"
+	classTimingSplitStrategy       = stutils.SplitByClassTimeStr
+	countSplitStrategy             = stutils.SplitByCount
+	defaultSplitStrategy           = classTimingSplitStrategy
 )
 
 var (
-	selectTestsFn        = selectTests
-	collectCgFn          = collectCg
-	collectTestReportsFn = collectTestReports
-	runCmdFn             = runCmd
-	isManualFn           = external.IsManualExecution
-	installAgentFn       = installAgents
-	getWorkspace         = external.GetWrkspcPath
+	selectTestsFn             = selectTests
+	collectCgFn               = collectCg
+	collectTestReportsFn      = collectTestReports
+	runCmdFn                  = runCmd
+	isManualFn                = external.IsManualExecution
+	installAgentFn            = installAgents
+	getWorkspace              = external.GetWrkspcPath
+	isParallelismEnabled      = external.IsParallelismEnabled
+	getStepStrategyIteration  = external.GetStepStrategyIteration
+	getStepStrategyIterations = external.GetStepStrategyIterations
 )
 
 // RunTestsTask represents an interface to run tests intelligently
@@ -82,6 +89,7 @@ type runTestsTask struct {
 	addonLogger          *zap.SugaredLogger
 	procWriter           io.Writer
 	cmdContextFactory    exec.CmdContextFactory
+	splitStrategy        string
 }
 
 func NewRunTestsTask(step *pb.UnitStep, tmpFilePath string, log *zap.SugaredLogger,
@@ -96,6 +104,10 @@ func NewRunTestsTask(step *pb.UnitStep, tmpFilePath string, log *zap.SugaredLogg
 	numRetries := r.GetContext().GetNumRetries()
 	if numRetries == 0 {
 		numRetries = defaultRunTestsRetries
+	}
+	splitStrategy := r.GetSplitStrategy()
+	if splitStrategy == "" {
+		splitStrategy = defaultSplitStrategy
 	}
 	return &runTestsTask{
 		id:                   step.GetId(),
@@ -124,6 +136,7 @@ func NewRunTestsTask(step *pb.UnitStep, tmpFilePath string, log *zap.SugaredLogg
 		log:                  log,
 		procWriter:           w,
 		addonLogger:          addonLogger,
+		splitStrategy:        splitStrategy,
 	}
 }
 
@@ -313,6 +326,138 @@ func (r *runTestsTask) getTestSelection(ctx context.Context, files []types.File,
 	return resp
 }
 
+func (r *runTestsTask) getSplitTests(ctx context.Context, tests []types.RunnableTest, splitStrategy string, idx, total int) ([]types.RunnableTest, error) {
+	if len(tests) == 0 {
+		return tests, nil
+	}
+
+	res := make([]types.RunnableTest, 0)
+
+	currentTestMap := make(map[string][]types.RunnableTest)
+	currentTestSet := make(map[string]bool)
+	var testID string
+	for _, t := range tests {
+		switch splitStrategy {
+		case classTimingSplitStrategy:
+			testID = t.Pkg + t.Class
+		case countSplitStrategy:
+			testID = t.Pkg + t.Class
+		default:
+			testID = t.Pkg + t.Class
+		}
+		currentTestSet[testID] = true
+		currentTestMap[testID] = append(currentTestMap[testID], t)
+	}
+
+	fileTimes := map[string]float64{}
+	var err error
+
+	// Get weights for each test depending on the strategy
+	switch splitStrategy {
+	case classTimingSplitStrategy:
+		// Call TI svc to get the test timing data
+		fileTimes, err = getTestTime(ctx, r.log, splitStrategy)
+		if err != nil {
+			return tests, err
+		}
+		r.log.Infow("Successfully retrieved timing data for splitting")
+	case countSplitStrategy:
+		// Send empty fileTimesMap while processing to assign equal weights
+		r.log.Infow("Assigning all tests equal weight for splitting")
+	default:
+		// Send empty fileTimesMap while processing to assign equal weights
+		r.log.Infow("Assigning all tests equal weight for splitting as default strategy")
+	}
+
+	// Assign weights to the current test set if present, else average. If there are no
+	// weights for taking average, set the weight as 1 to all the tests
+	stutils.ProcessFiles(fileTimes, currentTestSet, float64(1), false)
+
+	// Split tests into buckets and return tests from the current node's bucket
+	buckets, _ := stutils.SplitFiles(fileTimes, total)
+	for _, id := range buckets[idx] {
+		if _, ok := currentTestMap[id]; !ok {
+			// This should not happen
+			r.log.Warnw(fmt.Sprintf("Test %s from the split not present in the original set of tests, skipping", id))
+			continue
+		}
+		res = append(res, currentTestMap[id]...)
+	}
+	return res, nil
+}
+
+func formatTests(tests []types.RunnableTest) string {
+	testStrings := make([]string, 0)
+	for _, t := range tests {
+		tString := fmt.Sprintf("%s.%s", t.Pkg, t.Class)
+		if t.Autodetect.Rule != "" {
+			tString += fmt.Sprintf(" %s", t.Autodetect.Rule)
+		}
+		testStrings = append(testStrings, tString)
+	}
+	return strings.Join(testStrings, ", ")
+}
+
+func (r *runTestsTask) invokeParallelism(ctx context.Context, runner testintelligence.TestRunner, selection *types.SelectTestsResp, ignoreInstr, skip bool) bool {
+	if skip {
+		r.log.Info("Skipping test splitting as requested")
+		return ignoreInstr
+	}
+
+	if r.runOnlySelectedTests && len(selection.Tests) == 0 {
+		// TI returned zero test cases to run. Skip parallelism as
+		// there are no tests to run
+		return ignoreInstr
+	}
+
+	r.log.Info("Splitting the tests as parallelism is enabled")
+	idx, _ := getStepStrategyIteration()
+	total, _ := getStepStrategyIterations()
+	tests := make([]types.RunnableTest, 0)
+	if !r.runOnlySelectedTests {
+		// For full runs, detect all the tests in the repo and split them
+		// If autodetect fails or detects no tests, we run all tests in step 0
+		var err error
+		tests, err = runner.AutoDetectTests(ctx)
+		if err != nil || len(tests) == 0 {
+			// AutoDetectTests output should be same across all the parallel steps. If one of the step
+			// receives error / no tests to run, all the other steps should have the same output
+			if idx == 0 {
+				// Error while auto-detecting, run all tests for parallel step 0
+				r.runOnlySelectedTests = false
+				r.log.Errorw("Error in auto-detecting tests for splitting, running all tests")
+			} else {
+				// Error while auto-detecting, no tests for other parallel steps
+				selection.Tests = []types.RunnableTest{}
+				r.runOnlySelectedTests = true
+				ignoreInstr = false // TODO: (Rutvij) Ignore instrumentation for manual runs with split tests
+				r.log.Errorw("Error in auto-detecting tests for splitting, running all tests in parallel step 0")
+			}
+			return ignoreInstr
+		}
+		// Auto-detected tests successfully
+		r.log.Infow(fmt.Sprintf("Autodetected tests: %s", formatTests(tests)))
+	} else if len(selection.Tests) > 0 {
+		// In case of intelligent runs, split the tests from TI SelectTests API response
+		tests = selection.Tests
+	}
+
+	// Split the tests and send the split slice to the runner
+	splitTests, err := r.getSplitTests(ctx, tests, r.splitStrategy, idx, total)
+	if err != nil {
+		// Error while splitting by input strategy, splitting tests equally
+		r.log.Errorw("Error occurred while splitting the tests by input strategy. Splitting detected tests equally")
+		splitTests, _ = r.getSplitTests(ctx, tests, countSplitStrategy, idx, total)
+	}
+	r.log.Infow(fmt.Sprintf("Test split for this run: %s", formatTests(splitTests)))
+
+	// Modify runner input to run selected tests
+	selection.Tests = splitTests
+	r.runOnlySelectedTests = true
+	ignoreInstr = false
+	return ignoreInstr
+}
+
 func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile string) (string, error) {
 	// Get the tests that need to be run if we are running selected tests
 	var selection types.SelectTestsResp
@@ -321,9 +466,13 @@ func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile stri
 	if err != nil {
 		return "", err
 	}
+
+	// Test selection
 	isManual := isManualFn()
+	ignoreInstr := isManual
 	selection = r.getTestSelection(ctx, files, isManual)
 
+	// Runner selection
 	var runner testintelligence.TestRunner
 	switch r.language {
 	case "java":
@@ -352,13 +501,14 @@ func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile stri
 		return "", fmt.Errorf("language %s is not suported", r.language)
 	}
 
+	// Environment variables
 	outputVarCmd := ""
 	for _, o := range r.envVarOutputs {
 		outputVarCmd += fmt.Sprintf("\necho %s $%s >> %s", o, o, outputVarFile)
 	}
 
+	// Config file
 	var iniFilePath, agentArg string
-
 	switch r.language {
 	case "java":
 		{
@@ -378,7 +528,14 @@ func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile stri
 		}
 	}
 
-	testCmd, err := runner.GetCmd(ctx, selection.Tests, r.args, iniFilePath, isManual, !r.runOnlySelectedTests)
+	// Test splitting: only when parallelism is enabled
+	doNotSplit := false // Take from config as per design. Rename after review
+	if isParallelismEnabled() {
+		ignoreInstr = r.invokeParallelism(ctx, runner, &selection, ignoreInstr, doNotSplit)
+	}
+
+	// Test command
+	testCmd, err := runner.GetCmd(ctx, selection.Tests, r.args, iniFilePath, ignoreInstr, !r.runOnlySelectedTests)
 	if err != nil {
 		return "", err
 	}

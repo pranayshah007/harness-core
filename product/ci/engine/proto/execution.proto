@@ -57,7 +57,8 @@ message RunTestsStep {
   map<string, string> environment = 14;
   string buildEnvironment = 15;  // Dot net build environment Core | Framework
   string frameworkVersion = 16;  // Dot net version 6.0 | 5.0
-  string namespaces = 17;        // Same funtion as java package for namespace languages
+  string namespaces = 17;        // Same function as java package for namespace languages
+  string split_strategy = 18;
 }
 
 message RunStep {

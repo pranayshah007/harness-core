@@ -8,6 +8,7 @@ package tasks
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"path/filepath"
 
 	"encoding/json"
@@ -16,13 +17,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/harness/harness-core/product/ci/addon/testintelligence/mocks"
-
 	"github.com/golang/mock/gomock"
 	"github.com/harness/harness-core/commons/go/lib/exec"
 	mexec "github.com/harness/harness-core/commons/go/lib/exec"
 	"github.com/harness/harness-core/commons/go/lib/filesystem"
 	"github.com/harness/harness-core/commons/go/lib/logs"
+	"github.com/harness/harness-core/product/ci/addon/testintelligence/mocks"
 	pb "github.com/harness/harness-core/product/ci/engine/proto"
 	"github.com/harness/harness-core/product/ci/ti-service/types"
 	"github.com/stretchr/testify/assert"
@@ -385,6 +385,255 @@ echo y`
 	assert.Nil(t, err)
 	assert.Equal(t, r.runOnlySelectedTests, false) // Since it's a manual execution
 	assert.Equal(t, got, want)
+}
+
+func TestInvokeParallelism_ManualAutodetectPass(t *testing.T) {
+	ctrl, ctx := gomock.WithContext(context.Background(), t)
+	defer ctrl.Finish()
+
+	log, _ := logs.GetObservedLogger(zap.InfoLevel)
+	runner := mocks.NewMockTestRunner(ctrl)
+	t1 := types.RunnableTest{
+		Pkg:   "p1",
+		Class: "c1",
+	}
+	t2 := types.RunnableTest{
+		Pkg:   "p2",
+		Class: "c2",
+	}
+	runner.EXPECT().AutoDetectTests(ctx).Return([]types.RunnableTest{t1, t2}, nil)
+
+	oldIsManual := isManualFn
+	oldGetStepStrategyIteration := getStepStrategyIteration
+	oldGetStepStrategyIterations := getStepStrategyIterations
+	oldIsParallelismEnabled := isParallelismEnabled
+	defer func() {
+		isManualFn = oldIsManual
+		getStepStrategyIteration = oldGetStepStrategyIteration
+		getStepStrategyIterations = oldGetStepStrategyIterations
+		isParallelismEnabled = oldIsParallelismEnabled
+	}()
+	isManualFn = func() bool {
+		return true
+	}
+	getStepStrategyIteration = func() (int, error) {
+		return 0, nil
+	}
+	getStepStrategyIterations = func() (int, error) {
+		return 2, nil
+	}
+
+	r := runTestsTask{
+		id:                   "id",
+		runOnlySelectedTests: false,
+		preCommand:           "echo x",
+		args:                 "test",
+		postCommand:          "echo y",
+		buildTool:            "maven",
+		language:             "java",
+		log:                  log.Sugar(),
+		addonLogger:          log.Sugar(),
+		splitStrategy:        defaultSplitStrategy,
+	}
+	ignoreInstr := true
+	selectTestsResponse := types.SelectTestsResp{}
+
+	ignoreInstrResp := r.invokeParallelism(ctx, runner, &selectTestsResponse, ignoreInstr, false)
+	assert.Equal(t, r.runOnlySelectedTests, true)
+	assert.Equal(t, len(selectTestsResponse.Tests), 1)
+	assert.False(t, ignoreInstrResp)
+}
+
+func TestInvokeParallelism_ManualAutodetectFailStepZero(t *testing.T) {
+	ctrl, ctx := gomock.WithContext(context.Background(), t)
+	defer ctrl.Finish()
+
+	log, _ := logs.GetObservedLogger(zap.InfoLevel)
+	runner := mocks.NewMockTestRunner(ctrl)
+	runner.EXPECT().AutoDetectTests(ctx).Return([]types.RunnableTest{}, fmt.Errorf("error"))
+
+	oldIsManual := isManualFn
+	oldGetStepStrategyIteration := getStepStrategyIteration
+	oldGetStepStrategyIterations := getStepStrategyIterations
+	oldIsParallelismEnabled := isParallelismEnabled
+	defer func() {
+		isManualFn = oldIsManual
+		getStepStrategyIteration = oldGetStepStrategyIteration
+		getStepStrategyIterations = oldGetStepStrategyIterations
+		isParallelismEnabled = oldIsParallelismEnabled
+	}()
+	isManualFn = func() bool {
+		return true
+	}
+	getStepStrategyIteration = func() (int, error) {
+		return 0, nil
+	}
+	getStepStrategyIterations = func() (int, error) {
+		return 2, nil
+	}
+
+	r := runTestsTask{
+		id:                   "id",
+		runOnlySelectedTests: false,
+		preCommand:           "echo x",
+		args:                 "test",
+		postCommand:          "echo y",
+		buildTool:            "maven",
+		language:             "java",
+		log:                  log.Sugar(),
+		addonLogger:          log.Sugar(),
+		splitStrategy:        defaultSplitStrategy,
+	}
+	ignoreInstr := true
+	selectTestsResponse := types.SelectTestsResp{}
+
+	ignoreInstrResp := r.invokeParallelism(ctx, runner, &selectTestsResponse, ignoreInstr, false)
+	assert.Equal(t, r.runOnlySelectedTests, false)
+	assert.Equal(t, len(selectTestsResponse.Tests), 0)
+	assert.Equal(t, ignoreInstrResp, ignoreInstr)
+}
+
+func TestInvokeParallelism_ManualAutodetectFailStepNonZero(t *testing.T) {
+	ctrl, ctx := gomock.WithContext(context.Background(), t)
+	defer ctrl.Finish()
+
+	log, _ := logs.GetObservedLogger(zap.InfoLevel)
+	runner := mocks.NewMockTestRunner(ctrl)
+	runner.EXPECT().AutoDetectTests(ctx).Return([]types.RunnableTest{}, fmt.Errorf("error"))
+
+	oldIsManual := isManualFn
+	oldGetStepStrategyIteration := getStepStrategyIteration
+	oldGetStepStrategyIterations := getStepStrategyIterations
+	oldIsParallelismEnabled := isParallelismEnabled
+	defer func() {
+		isManualFn = oldIsManual
+		getStepStrategyIteration = oldGetStepStrategyIteration
+		getStepStrategyIterations = oldGetStepStrategyIterations
+		isParallelismEnabled = oldIsParallelismEnabled
+	}()
+	isManualFn = func() bool {
+		return true
+	}
+	getStepStrategyIteration = func() (int, error) {
+		return 1, nil
+	}
+	getStepStrategyIterations = func() (int, error) {
+		return 2, nil
+	}
+
+	r := runTestsTask{
+		id:                   "id",
+		runOnlySelectedTests: false,
+		preCommand:           "echo x",
+		args:                 "test",
+		postCommand:          "echo y",
+		buildTool:            "maven",
+		language:             "java",
+		log:                  log.Sugar(),
+		addonLogger:          log.Sugar(),
+		splitStrategy:        defaultSplitStrategy,
+	}
+	ignoreInstr := true
+	selectTestsResponse := types.SelectTestsResp{}
+
+	ignoreInstrResp := r.invokeParallelism(ctx, runner, &selectTestsResponse, ignoreInstr, false)
+	assert.Equal(t, r.runOnlySelectedTests, true)
+	assert.Equal(t, len(selectTestsResponse.Tests), 0)
+	assert.Equal(t, ignoreInstrResp, false)
+}
+
+func TestInvokeParallelism_TestSelectionRunSelected(t *testing.T) {
+	ctrl, ctx := gomock.WithContext(context.Background(), t)
+	defer ctrl.Finish()
+
+	log, _ := logs.GetObservedLogger(zap.InfoLevel)
+	runner := mocks.NewMockTestRunner(ctrl)
+	t1 := types.RunnableTest{
+		Pkg:   "p1",
+		Class: "c1",
+	}
+	t2 := types.RunnableTest{
+		Pkg:   "p2",
+		Class: "c2",
+	}
+
+	oldIsManual := isManualFn
+	oldGetStepStrategyIteration := getStepStrategyIteration
+	oldGetStepStrategyIterations := getStepStrategyIterations
+	oldIsParallelismEnabled := isParallelismEnabled
+	defer func() {
+		isManualFn = oldIsManual
+		getStepStrategyIteration = oldGetStepStrategyIteration
+		getStepStrategyIterations = oldGetStepStrategyIterations
+		isParallelismEnabled = oldIsParallelismEnabled
+	}()
+	isManualFn = func() bool {
+		return true
+	}
+	getStepStrategyIteration = func() (int, error) {
+		return 0, nil
+	}
+	getStepStrategyIterations = func() (int, error) {
+		return 2, nil
+	}
+
+	r := runTestsTask{
+		id:                   "id",
+		runOnlySelectedTests: true,
+		preCommand:           "echo x",
+		args:                 "test",
+		postCommand:          "echo y",
+		buildTool:            "maven",
+		language:             "java",
+		log:                  log.Sugar(),
+		addonLogger:          log.Sugar(),
+		splitStrategy:        defaultSplitStrategy,
+	}
+	ignoreInstr := true
+	selectTestsResponse := types.SelectTestsResp{}
+	selectTestsResponse.Tests = append(selectTestsResponse.Tests, t1, t2)
+
+	ignoreInstrResp := r.invokeParallelism(ctx, runner, &selectTestsResponse, ignoreInstr, false)
+	assert.Equal(t, r.runOnlySelectedTests, true)
+	assert.Equal(t, len(selectTestsResponse.Tests), 1)
+	assert.False(t, ignoreInstrResp)
+}
+
+func TestInvokeParallelism_Skip(t *testing.T) {
+	ctrl, ctx := gomock.WithContext(context.Background(), t)
+	defer ctrl.Finish()
+
+	log, _ := logs.GetObservedLogger(zap.InfoLevel)
+	runner := mocks.NewMockTestRunner(ctrl)
+	t1 := types.RunnableTest{
+		Pkg:   "p1",
+		Class: "c1",
+	}
+	t2 := types.RunnableTest{
+		Pkg:   "p2",
+		Class: "c2",
+	}
+
+	r := runTestsTask{
+		id:                   "id",
+		runOnlySelectedTests: false,
+		preCommand:           "echo x",
+		args:                 "test",
+		postCommand:          "echo y",
+		buildTool:            "maven",
+		language:             "java",
+		log:                  log.Sugar(),
+		addonLogger:          log.Sugar(),
+		splitStrategy:        defaultSplitStrategy,
+	}
+	ignoreInstr := true
+	selectTestsResponse := types.SelectTestsResp{}
+	selectTestsResponse.Tests = append(selectTestsResponse.Tests, t1, t2)
+
+	ignoreInstrResp := r.invokeParallelism(ctx, runner, &selectTestsResponse, ignoreInstr, true)
+	assert.Equal(t, r.runOnlySelectedTests, false)
+	assert.Equal(t, len(selectTestsResponse.Tests), 2)
+	assert.Equal(t, ignoreInstrResp, ignoreInstr)
 }
 
 func TestGetCmd_ErrorIncorrectBuildTool(t *testing.T) {
