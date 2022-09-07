@@ -89,6 +89,7 @@ import io.dropwizard.request.logging.RequestLogFactory;
 import io.dropwizard.server.DefaultServerFactory;
 import io.dropwizard.server.ServerFactory;
 import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -343,5 +344,16 @@ public class MainConfiguration extends Configuration implements AssetsBundleConf
   @JsonIgnore
   public boolean useCdnForDelegateStorage() {
     return !DeployMode.isOnPrem(getDeployMode().name());
+  }
+
+  public List<String> getDbAliases() {
+    List<String> dbAliases = new ArrayList<>();
+    if (mongoConnectionFactory != null) {
+      dbAliases.add(mongoConnectionFactory.getAliasDBName());
+    }
+    if (eventsMongo != null) {
+      dbAliases.add(eventsMongo.getAliasDBName());
+    }
+    return dbAliases;
   }
 }

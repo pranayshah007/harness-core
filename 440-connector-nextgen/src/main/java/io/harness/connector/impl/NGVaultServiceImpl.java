@@ -170,6 +170,7 @@ public class NGVaultServiceImpl implements NGVaultService {
     if (ngVaultRenewalTaskResponse.isSuccessful()) {
       vaultConnector.setRenewedAt(System.currentTimeMillis());
       connectorRepository.save(vaultConnector, ChangeType.NONE);
+      updatePerpetualTaskWhenTokenIsRenewed(vaultConnector);
     }
   }
 
@@ -242,6 +243,7 @@ public class NGVaultServiceImpl implements NGVaultService {
     }
     vaultConnector.setRenewedAt(System.currentTimeMillis());
     connectorRepository.save(vaultConnector, ChangeType.NONE);
+    updatePerpetualTaskWhenTokenIsRenewed(vaultConnector);
   }
 
   @Override
@@ -832,5 +834,12 @@ public class NGVaultServiceImpl implements NGVaultService {
         .encryptionType(encryptedData.getEncryptionType())
         .base64Encoded(encryptedData.isBase64Encoded())
         .build();
+  }
+
+  private void updatePerpetualTaskWhenTokenIsRenewed(VaultConnector vaultConnector) {
+    String heartBeatPerpetualTaskId =
+        ngConnectorSecretManagerService.getPerpetualTaskId(vaultConnector.getAccountIdentifier(),
+            vaultConnector.getOrgIdentifier(), vaultConnector.getProjectIdentifier(), vaultConnector.getIdentifier());
+    ngConnectorSecretManagerService.resetHeartBeatTask(vaultConnector.getAccountIdentifier(), heartBeatPerpetualTaskId);
   }
 }

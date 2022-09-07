@@ -1022,8 +1022,8 @@ go_repository(
 go_repository(
     name = "com_github_drone_go_scm",
     importpath = "github.com/drone/go-scm",
-    sum = "h1:nXqrXP/edQDr0gaIIdohlayBSUrKWh0/C2E1VQcvokM=",
-    version = "v1.27.1-0.20220817160204-09a4fde5917c",
+    sum = "h1:GtaXU0cd9/KrzT/Mdn0+72nUFez4QTroNaL1HCVDNnk=",
+    version = "v1.27.1-0.20220905103106-531cb95bd122",
 )
 
 go_repository(
@@ -5008,8 +5008,6 @@ plain_artifacts = [
     "org.yaml:snakeyaml:1.28",
     "org.zeroturnaround:zt-exec:1.9",
     "ru.vyarus:guice-validator:1.2.0",
-    "software.amazon.awssdk:athena:2.10.18",
-    "software.amazon.awssdk:auth:2.10.18",
     "com.amazonaws:aws-encryption-sdk-java:2.3.3",
     "software.amazon.ion:ion-java:1.0.2",
     "stax:stax-api:1.0.1",
@@ -5067,6 +5065,27 @@ amazon_artifacts = [
     ]
 ]
 
+amazon_v2_artifacts = [
+    maven.artifact(
+        group = "software.amazon.awssdk",
+        artifact = x,
+        version = "2.17.220",
+        exclusions = [
+            "commons-logging:commons-logging",
+        ],
+    )
+    for x in [
+        "ecs",
+        "applicationautoscaling",
+        "aws-core",
+        "core",
+        "auth",
+        "sts",
+        "sdk-core",
+        "health",
+    ]
+]
+
 powermock_artifacts = [
     maven.artifact(
         group = "org.powermock",
@@ -5086,7 +5105,7 @@ powermock_artifacts = [
 
 maven_install(
     name = "maven",
-    artifacts = plain_artifacts + amazon_artifacts + powermock_artifacts + [
+    artifacts = plain_artifacts + amazon_artifacts + amazon_v2_artifacts + powermock_artifacts + [
         maven.artifact(
             group = "io.netty",
             artifact = "netty-transport-native-kqueue",

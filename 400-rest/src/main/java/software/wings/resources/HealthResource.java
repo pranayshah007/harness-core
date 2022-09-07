@@ -26,7 +26,9 @@ import software.wings.search.framework.ElasticsearchConfig;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
+import com.codahale.metrics.health.HealthCheck;
 import com.codahale.metrics.health.HealthCheck.Result;
+import com.codahale.metrics.health.jvm.ThreadDeadlockHealthCheck;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import java.security.InvalidKeyException;
@@ -55,6 +57,7 @@ public class HealthResource {
   private MainConfiguration mainConfiguration;
   private AsymmetricEncryptor asymmetricEncryptor;
   private HealthService healthService;
+  private final ThreadDeadlockHealthCheck threadDeadlockHealthCheck;
 
   @Inject
   public HealthResource(
@@ -62,12 +65,13 @@ public class HealthResource {
     this.mainConfiguration = mainConfiguration;
     this.asymmetricEncryptor = asymmetricEncryptor;
     this.healthService = healthService;
+    this.threadDeadlockHealthCheck = new ThreadDeadlockHealthCheck();
   }
 
   @GET
   @Timed
   @ExceptionMetered
-  public RestResponse<String> get() throws Exception {
+  public RestResponse<String> doReadinessCheck() throws Exception {
     if (getMaintenanceFlag()) {
       log.info("In maintenance mode. Throwing exception to prevent traffic.");
       throw new WingsException(RESOURCE_NOT_FOUND, USER);
@@ -78,6 +82,19 @@ public class HealthResource {
       return new RestResponse<>("healthy");
     }
 
+    throw new HealthException(check.getMessage(), check.getError());
+  }
+
+  @GET
+  @Path("liveness")
+  @Timed
+  @ExceptionMetered
+  public RestResponse<String> doLivenessCheck() {
+    HealthCheck.Result check = threadDeadlockHealthCheck.execute();
+    if (check.isHealthy()) {
+      return new RestResponse<>("live");
+    }
+    log.info(check.getMessage());
     throw new HealthException(check.getMessage(), check.getError());
   }
 

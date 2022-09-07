@@ -31,7 +31,6 @@ public enum FeatureName {
   ARTIFACT_STREAM_REFACTOR,
   ARTIFACT_STREAM_DELEGATE_SCOPING,
   ARTIFACT_STREAM_DELEGATE_TIMEOUT,
-  AUDIT_TRAIL_WEB_INTERFACE,
   AUTO_ACCEPT_SAML_ACCOUNT_INVITES,
   AZURE_US_GOV_CLOUD,
   AZURE_VMSS,
@@ -48,7 +47,6 @@ public enum FeatureName {
   CFNG_ENABLED,
   CF_CUSTOM_EXTRACTION,
   CF_ROLLBACK_CONFIG_FILTER,
-  CG_RBAC_EXCLUSION,
   CING_ENABLED,
   CI_INDIRECT_LOG_UPLOAD,
   CLOUD_FORMATION_CREATE_REFACTOR,
@@ -149,7 +147,6 @@ public enum FeatureName {
   STOP_INSTANCE_SYNC_VIA_ITERATOR_FOR_CONTAINER_DEPLOYMENTS,
   STOP_INSTANCE_SYNC_VIA_ITERATOR_FOR_PCF_DEPLOYMENTS,
   SUPERVISED_TS_THRESHOLD,
-  TEMPLATIZED_SECRET_MANAGER,
   THREE_PHASE_SECRET_DECRYPTION,
   TIME_RANGE_FREEZE_GOVERNANCE,
   TRIGGER_FOR_ALL_ARTIFACTS,
@@ -263,6 +260,7 @@ public enum FeatureName {
   DYNATRACE_APM_ENABLED,
   CUSTOM_POLICY_STEP,
   CCM_AS_DRY_RUN("Dry Run functionality of the AutoStopping Rules", HarnessTeam.CE),
+  CCM_COMMORCH("Commitment Orchestration", HarnessTeam.CE),
   DONT_RESTRICT_PARALLEL_STAGE_COUNT,
   NG_EXECUTION_INPUT,
   HELM_CHART_VERSION_STRICT_MATCH,
@@ -302,7 +300,6 @@ public enum FeatureName {
   WINRM_KERBEROS_CACHE_UNIQUE_FILE,
   HIDE_ABORT,
   CUSTOM_ARTIFACT_NG,
-  NG_TEMPLATE_REFERENCES_SUPPORT,
   APPLICATION_DROPDOWN_MULTISELECT,
   NG_GIT_EXPERIENCE,
   LDAP_SECRET_AUTH,
@@ -314,14 +311,12 @@ public enum FeatureName {
   NEW_PIPELINE_STUDIO,
   EARLY_ACCESS_ENABLED,
   AZURE_REPO_CONNECTOR,
-  HELM_OCI_SUPPORT,
   HELP_PANEL,
   CHAOS_ENABLED,
   DEPLOYMENT_SUBFORMIK_APPLICATION_DROPDOWN,
   USAGE_SCOPE_RBAC,
-  ALLOW_USER_TYPE_FIELDS_JIRA,
+  ALLOW_USER_TYPE_FIELDS_JIRA("used to hide jira userfields input in ui in both cg and ng", HarnessTeam.SPG),
   HARD_DELETE_ENTITIES,
-  PIPELINE_MATRIX,
   ACTIVITY_ID_BASED_TF_BASE_DIR,
   INHERITED_USER_GROUP,
   JDK11_UPGRADE_BANNER,
@@ -361,6 +356,7 @@ public enum FeatureName {
   TEMPLATE_SCHEMA_VALIDATION,
   YAML_APIS_GRANULAR_PERMISSION,
   JENKINS_BUILD,
+  GITHUB_PACKAGES,
   DO_NOT_RENEW_APPROLE_TOKEN(
       "CAUTION: USE THIS ONLY WHEN THE CUSTOMER DELEGATE IS IN VERSION HIGHER OR EQUAL TO 764xx. Used for disabling appRole token renewal and fetching token on the fly before CRUD",
       HarnessTeam.PL),
@@ -368,6 +364,7 @@ public enum FeatureName {
   NG_SETTINGS("Enable Settings at various scopes in NG", HarnessTeam.PL),
   QUEUED_COUNT_FOR_QUEUEKEY("Used to display the count of the queue in CG git sync", HarnessTeam.SPG),
   NG_EMAIL_STEP,
+  NG_GOOGLE_ARTIFACT_REGISTRY,
   PRUNE_KUBERNETES_RESOURCES_NG,
   USE_OLD_GIT_SYNC("Used for enabling old Git Experience on projects", HarnessTeam.PL),
   DISABLE_PIPELINE_SCHEMA_VALIDATION(
@@ -390,6 +387,7 @@ public enum FeatureName {
       HarnessTeam.SPG),
   HOSTED_BUILDS("Used to enabled Hosted builds in paid accounts", HarnessTeam.CI),
   CD_ONBOARDING_ENABLED,
+  ECS_NG,
   ATTRIBUTE_TYPE_ACL_ENABLED("Enable attribute filter on NG UI for ACL", HarnessTeam.PL),
   CREATE_DEFAULT_PROJECT("Enables auto create default project after user signup", HarnessTeam.GTM),
   ANALYSE_TF_PLAN_SUMMARY(
@@ -412,6 +410,7 @@ public enum FeatureName {
   AZURE_ARM_BP_NG("Used to allow customers to access ARM/BP capabilities", HarnessTeam.CDP),
   CV_AWS_PROMETHEUS("Enable AWS Prometheus for CV State", HarnessTeam.CV),
   GIT_WEBHOOK_POLLING("Used to poll git webhook recent delivery events", HarnessTeam.CDP),
+  MULTI_SERVICE_INFRA("Enable multiple service/environment support in NG", HarnessTeam.CDP),
   TRIGGERS_REFACTOR("Enable NG Triggers UI refactoring", HarnessTeam.CDP),
   NG_SERVICE_MANIFEST_OVERRIDE("Enable Service Manifests override from Environment", HarnessTeam.CDP),
   NG_SERVICE_CONFIG_FILES_OVERRIDE("Enable Service Config Files override from Environment", HarnessTeam.CDP),
@@ -427,10 +426,16 @@ public enum FeatureName {
   VALIDATE_PHASES_AND_ROLLBACK("Validate that each phase has your own rollback phase", HarnessTeam.SPG),
   OPTIMIZED_TF_PLAN_NG(
       "Enables uploading Terraform plan to GCS/MongoGridFS instead of saving to sweeping output", HarnessTeam.CDP),
-
-  ENABLE_CLOUDFORMATION_AS_EXPRESSION("Used to enabled solve cloud formation by expression", HarnessTeam.SPG),
   SERVICE_V2_EXPRESSION(
-      "Allow service reference to be an expression in a pipeline for the new service entity", HarnessTeam.CDC);
+      "Allow service reference to be an expression in a pipeline for the new service entity", HarnessTeam.CDC),
+  CIE_HOSTED_VMS(
+      "Enables hosted VMs in favor of hosted K8s for CIE. This flag will be deprecated once all the feature work has been checked in",
+      HarnessTeam.CI),
+  CHANGE_INSTANCE_QUERY_OPERATOR_TO_NE("Change instance service query operator from $exists to $ne", HarnessTeam.SPG),
+  NEXUS3_RAW_REPOSITORY("Enable support for Nexus3 raw repository format on CG", HarnessTeam.SPG),
+  NG_ARTIFACT_SOURCES("Flag to support multi artifact sources for service V2", HarnessTeam.CDC),
+  UPDATE_EMAILS_VIA_SCIM("Will enable updating emails in Harness via SCIM", HarnessTeam.PL);
+
   @Deprecated
   FeatureName() {
     scope = Scope.PER_ACCOUNT;

@@ -170,7 +170,6 @@ import io.harness.threading.ExecutorModule;
 import io.harness.threading.Schedulable;
 import io.harness.threading.ThreadPool;
 import io.harness.timeout.TimeoutEngine;
-import io.harness.timescaledb.TimeScaleDBService;
 import io.harness.tracing.AbstractPersistenceTracerModule;
 import io.harness.tracing.MongoRedisTracer;
 import io.harness.validation.SuppressValidation;
@@ -459,10 +458,25 @@ public class WingsApplication extends Application<MainConfiguration> {
 
   @Override
   public void run(final MainConfiguration configuration, Environment environment) throws Exception {
-    log.info("Starting app ...");
     log.info("Entering startup maintenance mode");
     MaintenanceController.forceMaintenance(true);
+    environment.lifecycle().addServerLifecycleListener(server -> {
+      log.info("Leaving startup maintenance mode");
+      MaintenanceController.forceMaintenance(false);
+      for (Connector connector : server.getConnectors()) {
+        if (connector instanceof ServerConnector) {
+          ServerConnector serverConnector = (ServerConnector) connector;
+          if (serverConnector.getName().equalsIgnoreCase("application")) {
+            configuration.setSslEnabled(
+                serverConnector.getDefaultConnectionFactory().getProtocol().equalsIgnoreCase("ssl"));
+            configuration.setApplicationPort(serverConnector.getLocalPort());
+            return;
+          }
+        }
+      }
+    });
 
+    log.info("Starting app...");
     ConfigSecretUtils.resolveSecrets(configuration.getSecretsConfiguration(), configuration);
 
     ExecutorModule.getInstance().setExecutorService(ThreadPool.create(
@@ -675,37 +689,8 @@ public class WingsApplication extends Application<MainConfiguration> {
 
     registerResources(configuration, environment, injector);
 
-    // Managed beans
-    registerManagedBeansCommon(configuration, environment, injector);
-    if (isManager()) {
-      registerManagedBeansManager(configuration, environment, injector);
-    }
-
-    registerWaitEnginePublishers(injector);
-    if (isManager()) {
-      registerQueueListeners(configuration, injector);
-    }
-
-    // Schedule jobs
-    ScheduledExecutorService delegateExecutor =
-        injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("delegatePool")));
-    if (isManager()) {
-      scheduleJobsManager(injector, configuration, delegateExecutor);
-    }
-    if (shouldEnableDelegateMgmt) {
-      scheduleJobsDelegateService(injector, configuration, delegateExecutor);
-    }
-
-    registerEventConsumers(injector);
-
-    registerObservers(configuration, injector, environment);
-
     if (shouldEnableDelegateMgmt) {
       registerInprocPerpetualTaskServiceClients(injector);
-    }
-
-    if (isManager()) {
-      registerCronJobs(injector);
     }
 
     // common for both manager and dms
@@ -717,29 +702,6 @@ public class WingsApplication extends Application<MainConfiguration> {
     registerAuthFilters(configuration, environment, injector);
     registerCorrelationFilter(environment, injector);
     registerRequestContextFilter(environment);
-    // Register collection iterators
-    if (configuration.isEnableIterators()) {
-      if (isManager()) {
-        registerIteratorsManager(configuration.getIteratorsConfig(), injector);
-      }
-      if (shouldEnableDelegateMgmt) {
-        registerIteratorsDelegateService(configuration.getIteratorsConfig(), injector);
-      }
-    }
-
-    environment.lifecycle().addServerLifecycleListener(server -> {
-      for (Connector connector : server.getConnectors()) {
-        if (connector instanceof ServerConnector) {
-          ServerConnector serverConnector = (ServerConnector) connector;
-          if (serverConnector.getName().equalsIgnoreCase("application")) {
-            configuration.setSslEnabled(
-                serverConnector.getDefaultConnectionFactory().getProtocol().equalsIgnoreCase("ssl"));
-            configuration.setApplicationPort(serverConnector.getLocalPort());
-            return;
-          }
-        }
-      }
-    });
 
     if (isManager()) {
       harnessMetricRegistry = injector.getInstance(HarnessMetricRegistry.class);
@@ -749,7 +711,6 @@ public class WingsApplication extends Application<MainConfiguration> {
     }
 
     String deployMode = configuration.getDeployMode().name();
-
     if (DeployMode.isOnPrem(deployMode)) {
       LicenseService licenseService = injector.getInstance(LicenseService.class);
       String encryptedLicenseInfoBase64String = System.getenv(LicenseService.LICENSE_INFO);
@@ -774,8 +735,44 @@ public class WingsApplication extends Application<MainConfiguration> {
 
     initMetrics(injector);
 
-    log.info("Leaving startup maintenance mode");
-    MaintenanceController.resetForceMaintenance();
+    registerWaitEnginePublishers(injector);
+    if (isManager()) {
+      registerQueueListeners(configuration, injector);
+    }
+
+    // Managed beans
+    registerManagedBeansCommon(configuration, environment, injector);
+    if (isManager()) {
+      registerManagedBeansManager(configuration, environment, injector);
+    }
+
+    // Schedule jobs
+    ScheduledExecutorService delegateExecutor =
+        injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("delegatePool")));
+    if (isManager()) {
+      scheduleJobsManager(injector, configuration, delegateExecutor);
+    }
+    if (shouldEnableDelegateMgmt) {
+      scheduleJobsDelegateService(injector, configuration, delegateExecutor);
+    }
+
+    registerEventConsumers(injector);
+
+    registerObservers(configuration, injector, environment);
+
+    if (isManager()) {
+      registerCronJobs(injector);
+    }
+
+    // Register collection iterators
+    if (configuration.isEnableIterators()) {
+      if (isManager()) {
+        registerIteratorsManager(configuration.getIteratorsConfig(), injector);
+      }
+      if (shouldEnableDelegateMgmt) {
+        registerIteratorsDelegateService(configuration.getIteratorsConfig(), injector);
+      }
+    }
   }
 
   private void initializeGrpcServer(Injector injector) {
@@ -907,6 +904,13 @@ public class WingsApplication extends Application<MainConfiguration> {
             .put(DelegateAsyncTaskResponse.class, "delegateAsyncTaskResponses")
             .put(DelegateTaskProgressResponse.class, "delegateTaskProgressResponses")
             .build();
+      }
+
+      @Provides
+      @Singleton
+      @Named("dbAliases")
+      public List<String> getDbAliases() {
+        return configuration.getDbAliases();
       }
     });
 
@@ -1084,11 +1088,6 @@ public class WingsApplication extends Application<MainConfiguration> {
 
     if (!injector.getInstance(FeatureFlagService.class).isGlobalEnabled(GLOBAL_DISABLE_HEALTH_CHECK)) {
       healthService.registerMonitor(injector.getInstance(HPersistence.class));
-      healthService.registerMonitor((HealthMonitor) injector.getInstance(PersistentLocker.class));
-      TimeScaleDBService timeScaleDBService = injector.getInstance(TimeScaleDBService.class);
-      if (timeScaleDBService.getTimeScaleDBConfig().isHealthCheckNeeded()) {
-        healthService.registerMonitor(injector.getInstance(TimeScaleDBService.class));
-      }
     }
   }
 
@@ -1244,7 +1243,7 @@ public class WingsApplication extends Application<MainConfiguration> {
             injector.getInstance(NotifyResponseCleaner.class), random.nextInt(300), 300L, TimeUnit.SECONDS);
     injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("gitChangeSet")))
         .scheduleWithFixedDelay(
-            injector.getInstance(GitChangeSetRunnable.class), random.nextInt(4), 4L, TimeUnit.SECONDS);
+            injector.getInstance(GitChangeSetRunnable.class), random.nextInt(5), 5L, TimeUnit.SECONDS);
 
     injector.getInstance(DeploymentReconExecutorService.class)
         .scheduleWithFixedDelay(
@@ -1272,12 +1271,12 @@ public class WingsApplication extends Application<MainConfiguration> {
     taskPollExecutor.scheduleAtFixedRate(new Schedulable("Failed ensure data retention", () -> {
       Map<String, Long> dataRetentionMap = injector.getInstance(AccountService.class).obtainAccountDataRetentionMap();
       injector.getInstance(DataStoreService.class).purgeDataRetentionOlderRecords(dataRetentionMap);
-    }), 0, 60L, TimeUnit.MINUTES);
+    }), 5, 60L, TimeUnit.MINUTES);
 
     // Cleanup delegate versions from global account
     taskPollExecutor.scheduleWithFixedDelay(
         new Schedulable("Failed cleaning up manager versions.", injector.getInstance(ManagerVersionsCleanUpJob.class)),
-        0L, 5L, TimeUnit.MINUTES);
+        1, 5L, TimeUnit.MINUTES);
   }
 
   private void scheduleJobsDelegateService(

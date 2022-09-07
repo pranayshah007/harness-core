@@ -23,4 +23,5 @@ public class ViewQueryParams {
   boolean isTotalCountQuery; // only true while calculating total number of rows returned by query
   int timeOffsetInDays; // time offset in case of budget timeSeries query
   boolean skipRoundOff;
+  boolean skipDefaultGroupBy;
 }

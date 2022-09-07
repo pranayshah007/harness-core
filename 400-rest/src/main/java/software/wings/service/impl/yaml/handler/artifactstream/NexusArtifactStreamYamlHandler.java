@@ -72,6 +72,9 @@ public class NexusArtifactStreamYamlHandler
     if (isEmpty(yaml.getRepositoryName())) {
       throw new InvalidRequestException("Repository Name is mandatory");
     }
+    if (yaml.getRepositoryFormat().equals(RepositoryFormat.raw.name()) && isEmpty(yaml.getPackageName())) {
+      throw new InvalidRequestException("Package Name is mandatory");
+    }
     if (isNotEmpty(yaml.getArtifactPaths())) {
       bean.setArtifactPaths(yaml.getArtifactPaths());
       bean.setGroupId(yaml.getGroupId());

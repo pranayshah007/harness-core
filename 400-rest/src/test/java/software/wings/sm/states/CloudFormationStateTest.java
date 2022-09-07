@@ -54,7 +54,6 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
@@ -500,13 +499,30 @@ public class CloudFormationStateTest extends WingsBaseTest {
   @Test
   @Owner(developers = RAFAEL)
   @Category(UnitTests.class)
+  public void shouldThrowInvalidExpressionWhenRenderedExpressionIsNotEmpty() {
+    String expression = "${dummyExpression}";
+    cloudFormationCreateStackState.setInfraCloudProviderExpression(expression);
+    cloudFormationCreateStackState.setInfraCloudProviderAsExpression(true);
+
+    assertThatThrownBy(() -> {
+      when(executionContext.renderExpression(expression)).thenReturn("path/test");
+      when(settingsService.getSettingAttributeByName(ACCOUNT_ID, "path/test")).thenReturn(null);
+      cloudFormationCreateStackState.resolveInfraStructureProviderFromExpression(executionContext);
+    })
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Infrastructure provider expression doesn't contains valid AWS configuration")
+        .hasFieldOrPropertyWithValue("reportTargets", USER);
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
   public void shouldExecuteCreateStateWithAwsExpression() {
     cloudFormationCreateStackState.setRegion(Regions.US_EAST_1.name());
     cloudFormationCreateStackState.setTimeoutMillis(1000);
     cloudFormationCreateStackState.setInfraCloudProviderExpression(CLOUD_PROVIDER_EXPRESSION);
     cloudFormationCreateStackState.setInfraCloudProviderAsExpression(true);
 
-    when(featureFlagService.isEnabled(eq(FeatureName.ENABLE_CLOUDFORMATION_AS_EXPRESSION), any())).thenReturn(true);
     when(settingsService.getSettingAttributeByName(
              ACCOUNT_ID, "InfraMappingSweepingOutput(infraMappingId=INFRA_MAPPING_ID)"))
         .thenReturn(awsConfig);
@@ -528,7 +544,6 @@ public class CloudFormationStateTest extends WingsBaseTest {
     cloudFormationDeleteStackState.setInfraCloudProviderExpression(CLOUD_PROVIDER_EXPRESSION);
     cloudFormationDeleteStackState.setInfraCloudProviderAsExpression(true);
 
-    when(featureFlagService.isEnabled(eq(FeatureName.ENABLE_CLOUDFORMATION_AS_EXPRESSION), any())).thenReturn(true);
     when(settingsService.getSettingAttributeByName(
              ACCOUNT_ID, "InfraMappingSweepingOutput(infraMappingId=INFRA_MAPPING_ID)"))
         .thenReturn(awsConfig);

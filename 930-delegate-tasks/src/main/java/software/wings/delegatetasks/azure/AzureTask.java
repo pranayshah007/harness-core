@@ -146,7 +146,8 @@ public class AzureTask extends AbstractDelegateRunnableTask {
             azureTaskParams.getAdditionalParams().get(AzureAdditionalParams.SUBSCRIPTION_ID),
             azureTaskParams.getAdditionalParams().get(AzureAdditionalParams.RESOURCE_GROUP),
             AzureOSType.fromString(azureTaskParams.getAdditionalParams().get(AzureAdditionalParams.OS_TYPE)),
-            (Map<String, String>) azureTaskParams.getParams().get("tags"));
+            (Map<String, String>) azureTaskParams.getParams().get("tags"),
+            Boolean.parseBoolean(azureTaskParams.getAdditionalParams().get(AzureAdditionalParams.USE_PUBLIC_DNS)));
       default:
         throw new InvalidRequestException("Task type not identified");
     }

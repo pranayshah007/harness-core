@@ -73,6 +73,7 @@ import io.harness.ng.core.serviceoverride.beans.ServiceOverrideResponseDTO;
 import io.harness.ng.core.serviceoverride.mapper.ServiceOverridesMapper;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
+import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideInfoConfig;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.rbac.CDNGRbacUtility;
 import io.harness.repositories.UpsertOptions;
@@ -526,19 +527,24 @@ public class EnvironmentResourceV2 {
       boolean ngManifestOverrideEnabled, boolean ngConfigOverrideEnabled) {
     final NGServiceOverrideConfig serviceOverrideConfig = toNGServiceOverrideConfig(serviceOverridesEntity);
     if (serviceOverrideConfig.getServiceOverrideInfoConfig() != null) {
-      if (!ngManifestOverrideEnabled
-          && isNotEmpty(serviceOverrideConfig.getServiceOverrideInfoConfig().getManifests())) {
+      final NGServiceOverrideInfoConfig serviceOverrideInfoConfig =
+          serviceOverrideConfig.getServiceOverrideInfoConfig();
+      if (!ngManifestOverrideEnabled && isNotEmpty(serviceOverrideInfoConfig.getManifests())) {
         throw new InvalidRequestException(
             "Manifest Override is not supported with FF disabled NG_SERVICE_MANIFEST_OVERRIDE");
       }
-      if (!ngConfigOverrideEnabled
-          && isNotEmpty(serviceOverrideConfig.getServiceOverrideInfoConfig().getConfigFiles())) {
+      if (!ngConfigOverrideEnabled && isNotEmpty(serviceOverrideInfoConfig.getConfigFiles())) {
         throw new InvalidRequestException(
             "Config Files Override is not supported with FF disabled NG_SERVICE_CONFIG_FILES_OVERRIDE");
       }
 
-      checkDuplicateManifestIdentifiersWithIn(serviceOverrideConfig.getServiceOverrideInfoConfig().getManifests());
-      checkDuplicateConfigFilesIdentifiersWithIn(serviceOverrideConfig.getServiceOverrideInfoConfig().getConfigFiles());
+      if (isEmpty(serviceOverrideInfoConfig.getManifests()) && isEmpty(serviceOverrideInfoConfig.getConfigFiles())
+          && isEmpty(serviceOverrideInfoConfig.getVariables())) {
+        throw new InvalidRequestException("No overrides found in request");
+      }
+
+      checkDuplicateManifestIdentifiersWithIn(serviceOverrideInfoConfig.getManifests());
+      checkDuplicateConfigFilesIdentifiersWithIn(serviceOverrideInfoConfig.getConfigFiles());
     }
   }
 
@@ -696,7 +702,7 @@ public class EnvironmentResourceV2 {
 
   private void checkForServiceOverrideUpdateAccess(
       String accountId, String orgIdentifier, String projectIdentifier, String environmentRef, String serviceRef) {
-    List<PermissionCheckDTO> permissionCheckDTOList = new ArrayList<>();
+    final List<PermissionCheckDTO> permissionCheckDTOList = new ArrayList<>();
     permissionCheckDTOList.add(PermissionCheckDTO.builder()
                                    .permission(ENVIRONMENT_UPDATE_PERMISSION)
                                    .resourceIdentifier(environmentRef)
@@ -710,18 +716,19 @@ public class EnvironmentResourceV2 {
                                    .resourceScope(ResourceScope.of(accountId, orgIdentifier, projectIdentifier))
                                    .build());
 
-    AccessCheckResponseDTO accessCheckResponse = accessControlClient.checkForAccess(permissionCheckDTOList);
-    AccessControlDTO accessControlDTO = accessCheckResponse.getAccessControlList().get(0);
-    if (!accessControlDTO.isPermitted()) {
-      String errorMessage;
-      errorMessage = String.format("Missing permission %s on %s", accessControlDTO.getPermission(),
-          accessControlDTO.getResourceType().toLowerCase());
-      if (!StringUtils.isEmpty(accessControlDTO.getResourceIdentifier())) {
-        errorMessage =
-            errorMessage.concat(String.format(" with identifier %s", accessControlDTO.getResourceIdentifier()));
+    final AccessCheckResponseDTO accessCheckResponse = accessControlClient.checkForAccess(permissionCheckDTOList);
+    accessCheckResponse.getAccessControlList().forEach(accessControlDTO -> {
+      if (!accessControlDTO.isPermitted()) {
+        String errorMessage;
+        errorMessage = String.format("Missing permission %s on %s", accessControlDTO.getPermission(),
+            accessControlDTO.getResourceType().toLowerCase());
+        if (!StringUtils.isEmpty(accessControlDTO.getResourceIdentifier())) {
+          errorMessage =
+              errorMessage.concat(String.format(" with identifier %s", accessControlDTO.getResourceIdentifier()));
+        }
+        throw new InvalidRequestException(errorMessage, WingsException.USER);
       }
-      throw new InvalidRequestException(errorMessage, WingsException.USER);
-    }
+    });
   }
 
   private List<EnvironmentResponse> filterEnvironmentResponseByPermissionAndId(

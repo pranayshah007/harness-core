@@ -77,8 +77,9 @@ public class ScmFetchFilesHelperNG {
   public void downloadFilesUsingScm(
       String manifestFilesDirectory, GitStoreDelegateConfig gitStoreDelegateConfig, LogCallback executionLogCallback) {
     String directoryPath = Paths.get(manifestFilesDirectory).toString();
-    gitStoreDelegateConfig.getPaths().forEach(
-        filePath -> downloadFilesForFilePath(gitStoreDelegateConfig, filePath, executionLogCallback, directoryPath));
+    gitStoreDelegateConfig.getPaths().forEach(filePath
+        -> downloadFilesForFilePath(
+            gitStoreDelegateConfig, filePath.replaceAll("^/+", ""), executionLogCallback, directoryPath));
   }
 
   private List<GitFile> fetchFilesFromRepo(

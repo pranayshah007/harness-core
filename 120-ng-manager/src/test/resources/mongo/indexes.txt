@@ -4,146 +4,14 @@
 !!!custom_delegateTaskProgressResponses {"name": "processAfter_1", "background": true} {"processAfter": 1}
 !!!custom_delegateTaskProgressResponses {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 accountSettings {"name": "accountId_orgId_projectId_type_unique_Index", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "type": 1}
-accounts {"name": "accountBackgroundJobCheckIteration_1", "background": true} {"accountBackgroundJobCheckIteration": 1}
-accounts {"name": "accountDeletionIteration_1", "background": true} {"accountDeletionIteration": 1}
-accounts {"name": "accountName_1", "unique": true} {"accountName": 1}
-accounts {"name": "appId_1", "background": true} {"appId": 1}
-accounts {"name": "ceLicenseExpiryIteration_1", "background": true} {"ceLicenseExpiryIteration": 1}
-accounts {"name": "createdAt_1", "background": true} {"createdAt": 1}
-accounts {"name": "delegateTaskFailIteration_1", "background": true} {"delegateTaskFailIteration": 1}
-accounts {"name": "delegateTaskRebroadcastIteration_1", "background": true} {"delegateTaskRebroadcastIteration": 1}
-accounts {"name": "delegateTelemetryPublisherIteration_1", "background": true} {"delegateTelemetryPublisherIteration": 1}
-accounts {"name": "gitSyncExpiryCheckIteration_1", "background": true} {"gitSyncExpiryCheckIteration": 1}
-accounts {"name": "globalDelegateAccount_1", "background": true} {"globalDelegateAccount": 1}
-accounts {"name": "isHarnessSupportAccessAllowed_1", "background": true} {"isHarnessSupportAccessAllowed": 1}
-accounts {"name": "licenseExpiryCheckIteration_1", "background": true} {"licenseExpiryCheckIteration": 1}
-accounts {"name": "next_iteration_license_info2", "background": true} {"licenseExpiryCheckIteration": 1, "encryptedLicenseInfo": 1}
-accounts {"name": "perpetualTaskRebalanceIteration_1", "background": true} {"perpetualTaskRebalanceIteration": 1}
-accounts {"name": "resourceLookupSyncIteration_1", "background": true} {"resourceLookupSyncIteration": 1}
-accounts {"name": "secretManagerValidationIterator_1", "background": true} {"secretManagerValidationIterator": 1}
-accounts {"name": "serviceGuardDataAnalysisIteration_1", "background": true} {"serviceGuardDataAnalysisIteration": 1}
-accounts {"name": "serviceGuardDataCollectionIteration_1", "background": true} {"serviceGuardDataCollectionIteration": 1}
-accounts {"name": "usageMetricsTaskIteration_1", "background": true} {"usageMetricsTaskIteration": 1}
-accounts {"name": "workflowDataCollectionIteration_1", "background": true} {"workflowDataCollectionIteration": 1}
 aclMigrations {"name": "accountIdentifierOrgIdentifierProjectIdentifierIdx", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1}
-activities {"name": "accountId_1", "background": true} {"accountId": 1}
-activities {"name": "appId_1", "background": true} {"appId": 1}
-activities {"name": "app_status_createdAt", "background": true} {"appId": 1, "serviceInstanceId": 1, "status": 1, "createdAt": -1}
-activities {"name": "createdAt_1", "background": true} {"createdAt": 1}
-activities {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-agentMtlsEndpoint {"name": "accountId_1", "unique": true} {"accountId": 1}
-agentMtlsEndpoint {"name": "fqdn_1", "unique": true} {"fqdn": 1}
-alertNotificationRules {"name": "accountId_1", "background": true} {"accountId": 1}
-alertNotificationRules {"name": "alertCategory_1", "background": true} {"alertCategory": 1}
-alertNotificationRules {"name": "appId_1", "background": true} {"appId": 1}
-alertNotificationRules {"name": "createdAt_1", "background": true} {"createdAt": 1}
-alerts {"name": "accountAppTypeStatusIdx", "background": true} {"accountId": 1, "appId": 1, "type": 1, "status": 1}
-alerts {"name": "accountTypeStatusIdx", "background": true} {"accountId": 1, "type": 1, "status": 1}
-alerts {"name": "appId_1", "background": true} {"appId": 1}
-alerts {"name": "createdAtTypeIndex", "background": true} {"type": 1, "createdAt": 1}
-alerts {"name": "cvCleanUpIteration_1", "background": true} {"cvCleanUpIteration": 1}
-alerts {"name": "reconciliationIterator", "background": true} {"status": 1, "alertReconciliation.needed": 1, "alertReconciliation.nextIteration": 1}
-alerts {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-allowedLimits {"name": "unique_key_idx", "unique": true} {"key": 1, "accountId": 1}
-apiKeys {"name": "createdAt_1", "background": true} {"createdAt": 1}
-apiKeys {"name": "uniqueName", "unique": true} {"accountId": 1, "name": 1}
-appContainers {"name": "appId_1", "background": true} {"appId": 1}
-appContainers {"name": "createdAt_1", "background": true} {"createdAt": 1}
-appContainers {"name": "unique_yaml", "unique": true} {"accountId": 1, "name": 1}
-applicationManifests {"name": "accountId_1", "background": true} {"accountId": 1}
-applicationManifests {"name": "accountId_connectorId", "background": true} {"accountId": 1, "helmChartConfig.connectorId": 1}
-applicationManifests {"name": "appId_1", "background": true} {"appId": 1}
-applicationManifests {"name": "appManifestIdx2", "background": true} {"appId": 1, "envId": 1, "serviceId": 1, "kind": 1}
-applicationManifests {"name": "createdAt_1", "background": true} {"createdAt": 1}
-applications {"name": "appId_1", "background": true} {"appId": 1}
-applications {"name": "createdAt_1", "background": true} {"createdAt": 1}
-applications {"name": "yaml", "unique": true, "collation": {"locale": "en", "strength": 1}} {"accountId": 1, "name": 1}
-approvalPollingJob {"name": "nextIteration_1", "background": true} {"nextIteration": 1}
 artifactSourceNG {"name": "createdAt_1", "background": true} {"createdAt": 1}
 artifactSourceNG {"name": "uniqueHash", "unique": true} {"uniqueHash": 1}
-artifactStream {"name": "accountId_1", "background": true} {"accountId": 1}
-artifactStream {"name": "appId_1", "background": true} {"appId": 1}
-artifactStream {"name": "artifactStream_cleanup", "background": true} {"artifactStreamType": 1, "collectionEnabled": 1, "nextCleanupIteration": 1}
-artifactStream {"name": "artifactStream_collection", "background": true} {"collectionEnabled": 1, "nextIteration": 1}
-artifactStream {"name": "createdAt_1", "background": true} {"createdAt": 1}
-artifactStream {"name": "nextCleanupIteration_1", "background": true} {"nextCleanupIteration": 1}
-artifactStream {"name": "nextIteration_1", "background": true} {"nextIteration": 1}
-artifactStream {"name": "perpetualTaskId_1", "background": true} {"perpetualTaskId": 1}
-artifactStream {"name": "serviceId_1", "background": true} {"serviceId": 1}
-artifactStream {"name": "templateUuid_1", "background": true} {"templateUuid": 1}
-artifactStream {"name": "yaml", "unique": true} {"appId": 1, "serviceId": 1, "name": 1}
-artifacts {"name": "accountId_1", "background": true} {"accountId": 1}
-artifacts {"name": "accountId_artifactStreamId_createdAt", "background": true} {"accountId": 1, "artifactStreamId": 1, "createdAt": -1}
-artifacts {"name": "appId_1", "background": true} {"appId": 1}
-artifacts {"name": "appId_artifactStreamId_status_createdAt", "background": true} {"appId": 1, "artifactStreamId": 1, "status": 1, "createdAt": -1}
-artifacts {"name": "artifactStream_artifactPath", "background": true} {"artifactStreamId": 1, "metadata.artifactPath": 1}
-artifacts {"name": "artifactStream_buildNo", "background": true} {"artifactStreamId": 1, "metadata.buildNo": 1}
-artifacts {"name": "artifactStream_revision", "background": true} {"artifactStreamId": 1, "revision": 1}
-artifacts {"name": "createdAt_1", "background": true} {"createdAt": 1}
-artifacts {"name": "owners", "background": true} {"artifactStreamId": 1, "appId": 1}
-audits {"name": "accountId_1", "background": true} {"accountId": 1}
-audits {"name": "appId_1", "background": true} {"appId": 1}
-audits {"name": "createdAt_1", "background": true} {"createdAt": 1}
-audits {"name": "entityRecordIndex_1", "background": true} {"accountId": 1, "entityAuditRecords.appId": 1, "entityAuditRecords.affectedResourceType": 1, "entityAuditRecords.affectedResourceOperation": 1, "createdAt": -1}
-audits {"name": "entityRecordIndex_2", "background": true} {"accountId": 1, "entityAuditRecords.appId": 1, "entityAuditRecords.affectedResourceId": 1, "entityAuditRecords.affectedResourceOperation": 1, "createdAt": -1}
-audits {"name": "entityRecordIndex_3", "background": true} {"accountId": 1, "entityAuditRecords.affectedResourceType": 1, "entityAuditRecords.affectedResourceOperation": 1, "createdAt": -1}
-audits {"name": "entityRecordIndex_4", "background": true} {"accountId": 1, "entityAuditRecords.appId": 1, "createdAt": -1}
-authTokens {"name": "appId_1", "background": true} {"appId": 1}
-authTokens {"name": "createdAt_1", "background": true} {"createdAt": 1}
-authTokens {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-barrierInstances {"name": "accountId_1", "background": true} {"accountId": 1}
-barrierInstances {"name": "appId_1", "background": true} {"appId": 1}
-barrierInstances {"name": "next", "background": true} {"state": 1, "nextIteration": 1}
-barrierInstances {"name": "search2", "unique": true} {"name": 1, "pipeline.executionId": 1, "pipeline.parallelIndex": 1}
-barrierInstances {"name": "state_1", "background": true} {"state": 1}
-barrierInstances {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 cache {"name": "accountId_1", "background": true} {"accountId": 1}
 cache {"name": "unique_commutative", "unique": true} {"_id": 1, "contextValue": 1}
 cache {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-cacheEntities {"name": "createdAt_1", "background": true} {"createdAt": 1}
-cacheEntities {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-capabilityRequirement {"name": "accountId_1", "background": true} {"accountId": 1}
-capabilityRequirement {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-capabilitySubjectPermission {"name": "accountId_1", "background": true} {"accountId": 1}
-capabilitySubjectPermission {"name": "byDelegate", "unique": true} {"delegateId": 1, "capabilityId": 1}
-capabilitySubjectPermission {"name": "capabilityId_1", "background": true} {"capabilityId": 1}
-capabilitySubjectPermission {"name": "maxValidUntil_1", "background": true} {"maxValidUntil": 1}
-capabilitySubjectPermission {"name": "revalidateAfter_1", "background": true} {"revalidateAfter": 1}
-capabilitySubjectPermission {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-capabilityTaskSelectionDetails {"name": "accountId_1", "background": true} {"accountId": 1}
-capabilityTaskSelectionDetails {"name": "blocked_1", "background": true} {"blocked": 1}
-capabilityTaskSelectionDetails {"name": "capabilityId_1", "background": true} {"capabilityId": 1}
-capabilityTaskSelectionDetails {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 cdTelemetrySentStatus {"name": "no_dup_cd", "unique": true} {"accountId": 1}
-ceCloudAccount {"name": "no_dup_account", "unique": true} {"accountId": 1, "infraAccountId": 1, "infraMasterAccountId": 1, "masterAccountSettingId": 1}
-ceCommunications {"name": "account_email_type", "unique": true} {"accountId": 1, "emailId": 1, "type": 1}
-ceCommunications {"name": "account_enabled_type", "background": true} {"accountId": 1, "enabled": 1, "type": 1}
-cgEventConfig {"name": "accountId_1", "background": true} {"accountId": 1}
-cgEventConfig {"name": "appId_1", "background": true} {"appId": 1}
-cgEventConfig {"name": "createdAt_1", "background": true} {"createdAt": 1}
-cgEventConfig {"name": "yaml", "unique": true} {"appId": 1, "name": 1}
-cloudFormationRollbackConfig {"name": "accountId_1", "background": true} {"accountId": 1}
-cloudFormationRollbackConfig {"name": "appId_1", "background": true} {"appId": 1}
-cloudFormationRollbackConfig {"name": "byAppAndEntityAndAwsConfig", "background": true} {"appId": 1, "entityId": 1, "awsConfigId": 1, "createdAt": 1}
-cloudFormationRollbackConfig {"name": "createdAt_1", "background": true} {"createdAt": 1}
-cloudFormationRollbackConfig {"name": "entityId_1", "background": true} {"entityId": 1}
 cloudformationConfig {"name": "accountId_orgId_projectId_provisionerIdentifier_stageExecutionId_createdAt", "background": true} {"accountId": 1, "orgId": 1, "projectId": 1, "provisionerIdentifier": 1, "stageExecutionId": 1, "createdAt": -1}
-clusterRecords {"name": "accountId_1", "background": true} {"accountId": 1}
-collectorQueue2 {"name": "earliestGet_1", "background": true, "expireAfterSeconds": 86400} {"earliestGet": 1}
-collectorQueue2 {"name": "next4", "background": true} {"topic": 1, "earliestGet": 1}
-commandLogs {"name": "accountId_1", "background": true} {"accountId": 1}
-commandLogs {"name": "activityIdCreatedAt", "background": true} {"activityId": 1, "createdAt": 1}
-commandLogs {"name": "appId_activityId", "background": true} {"appId": 1, "activityId": 1}
-commandLogs {"name": "createdAt_1", "background": true} {"createdAt": 1}
-commandLogs {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-commands {"name": "accountId_1", "background": true} {"accountId": 1}
-commands {"name": "appId_1", "background": true} {"appId": 1}
-commands {"name": "createdAt_1", "background": true} {"createdAt": 1}
-commands {"name": "yaml", "unique": true} {"appId": 1, "originEntityId": 1, "version": 1}
-configFiles {"name": "appId_1", "background": true} {"appId": 1}
-configFiles {"name": "app_template_entityId", "background": true} {"appId": 1, "templateId": 1, "entityId": 1}
-configFiles {"name": "createdAt_1", "background": true} {"createdAt": 1}
-configFiles {"name": "entityId_1_templateId_1_relativeFilePath_1_OType_1_instances_1_OExpression_1", "unique": true} {"entityId": 1, "templateId": 1, "relativeFilePath": 1, "configOverrideType": 1, "instances": 1, "configOverrideExpression": 1}
 connectors {"name": "accountId_orgId_projectId_identifier_repo_branch_unique_index", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1, "yamlGitConfigRef": 1, "branch": 1}
 connectors {"name": "accountId_orgId_projectId_name_Index", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "name": 1}
 connectors {"name": "accountId_orgId_projectId_type_status_deletedAt_decreasing_sort_Index", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "type": 1, "connectivityDetails.status": 1, "deleted": 1, "createdAt": -1}
@@ -153,139 +21,17 @@ connectors {"name": "accountId_project_org_repo_branch_Index", "background": tru
 connectors {"name": "fullyQualifiedIdentifier_deleted_Index", "background": true} {"fullyQualifiedIdentifier": 1, "deleted": 1}
 connectors {"name": "nextTokenRenewIteration", "background": true} {"nextTokenRenewIteration": 1}
 connectors {"name": "type_nextTokenRenewIteration", "background": true} {"type": 1, "nextTokenRenewIteration": 1}
-containerDeploymentInfo {"name": "appId_1", "background": true} {"appId": 1}
-containerDeploymentInfo {"name": "containerSvcNameNoRevision_1", "background": true} {"containerSvcNameNoRevision": 1}
-containerDeploymentInfo {"name": "createdAt_1", "background": true} {"createdAt": 1}
-containerTasks {"name": "accountId_1", "background": true} {"accountId": 1}
-containerTasks {"name": "appId_1", "background": true} {"appId": 1}
-containerTasks {"name": "createdAt_1", "background": true} {"createdAt": 1}
-containerTasks {"name": "service", "unique": true} {"serviceId": 1, "deploymentType": 1}
-cvActivityLogs {"name": "accountId_1", "background": true} {"accountId": 1}
-cvActivityLogs {"name": "cvConfigId_1", "background": true} {"cvConfigId": 1}
-cvActivityLogs {"name": "dataCollectionMinute_1", "background": true} {"dataCollectionMinute": 1}
-cvActivityLogs {"name": "service_guard_idx", "background": true} {"cvConfigId": 1, "dataCollectionMinute": -1, "createdAt": 1}
-cvActivityLogs {"name": "stateExecutionId_1", "background": true} {"stateExecutionId": 1}
-cvActivityLogs {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-cvExecutionData {"name": "accountId_1", "background": true} {"accountId": 1}
-cvExecutionData {"name": "appId_1", "background": true} {"appId": 1}
-cvExecutionData {"name": "applicationId_1", "background": true} {"applicationId": 1}
-cvExecutionData {"name": "createdAt_1", "background": true} {"createdAt": 1}
-cvExecutionData {"name": "cv_certified_index", "background": true} {"pipelineExecutionId": 1, "accountId": 1}
-cvExecutionData {"name": "stateExecutionId_1", "background": true} {"stateExecutionId": 1}
-cvExecutionData {"name": "stateHostIdx", "background": true} {"workflowId": 1, "stateType": 1, "executionStatus": 1, "workflowStartTs": -1}
-cvExecutionData {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-cvExecutionData {"name": "workflowExec_idx", "background": true} {"workflowExecutionId": 1, "createdAt": -1}
-cvExecutionData {"name": "workflowStartTs_1", "background": true} {"workflowStartTs": 1}
-cvFeedbackRecords {"name": "accountId_1", "background": true} {"accountId": 1}
-cvFeedbackRecords {"name": "cvConfigId_1", "background": true} {"cvConfigId": 1}
-cvFeedbackRecords {"name": "envId_1", "background": true} {"envId": 1}
-cvFeedbackRecords {"name": "serviceId_1", "background": true} {"serviceId": 1}
-cvFeedbackRecords {"name": "stateExecutionId_1", "background": true} {"stateExecutionId": 1}
-dashboardSettings {"name": "accountId_1", "background": true} {"accountId": 1}
 delayQueue {"name": "earliestGet_1", "background": true, "expireAfterSeconds": 86400} {"earliestGet": 1}
 delayQueue {"name": "next4", "background": true} {"topic": 1, "earliestGet": 1}
-delegateCallbacks {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-delegateConnectionResults {"name": "criteria_1", "background": true} {"criteria": 1}
-delegateConnectionResults {"name": "delegateConnectionResultsIdx", "unique": true} {"accountId": 1, "delegateId": 1, "criteria": 1}
-delegateConnectionResults {"name": "delegateId_1", "background": true} {"delegateId": 1}
-delegateConnectionResults {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-delegateConnections {"name": "index2", "background": true} {"accountId": 1, "delegateId": 1, "version": 1}
-delegateConnections {"name": "lastHeartbeatIndex", "background": true} {"disconnected": 1, "lastHeartbeat": 1}
-delegateConnections {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-delegateGroups {"name": "byAccount", "unique": true} {"accountId": 1, "name": 1, "ng": 1}
-delegateGroups {"name": "byAcctNgOwner", "background": true} {"accountId": 1, "ng": 1, "owner": 1}
-delegateGroups {"name": "unique_identification", "unique": true} {"accountId": 1, "owner": 1, "identifier": 1}
-delegateGroups {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-delegateInsightsSummary {"name": "byAcctGrpTimeType", "background": true} {"accountId": 1, "delegateGroupId": 1, "periodStartTime": 1, "insightsType": 1}
-delegateInsightsSummary {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-delegatePerpetualTaskUsageInsights {"name": "timestamp_1", "background": true} {"timestamp": 1}
-delegateProfiles {"name": "byAcctNgOwner", "background": true} {"accountId": 1, "ng": 1, "owner": 1}
-delegateProfiles {"name": "createdAt_1", "background": true} {"createdAt": 1}
-delegateProfiles {"name": "uniqueName", "unique": true} {"accountId": 1, "name": 1, "owner": 1}
-delegateProfiles {"name": "unique_identification", "unique": true} {"accountId": 1, "owner": 1, "identifier": 1}
-delegateScopes {"name": "createdAt_1", "background": true} {"createdAt": 1}
-delegateScopes {"name": "uniqueName", "unique": true} {"accountId": 1, "name": 1}
-delegateSelectionLogRecords {"name": "selectionLogsGroup", "background": true} {"accountId": 1, "taskId": 1, "message": 1, "groupId": 1}
-delegateSelectionLogRecords {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-delegateSelectionLogTaskMetadata {"name": "accountId_1", "background": true} {"accountId": 1}
-delegateSelectionLogTaskMetadata {"name": "taskId_1", "unique": true} {"taskId": 1}
-delegateSelectionLogTaskMetadata {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-delegateSequenceConfig {"name": "appId_1", "background": true} {"appId": 1}
-delegateSequenceConfig {"name": "createdAt_1", "background": true} {"createdAt": 1}
-delegateSequenceConfig {"name": "uniqueDelegateSequenceIdx", "unique": true} {"accountId": 1, "hostName": 1, "sequenceNum": 1}
-delegateTaskUsageInsights {"name": "byAcctTaskDelType", "unique": true} {"accountId": 1, "taskId": 1, "delegateId": 1, "eventType": 1}
-delegateTaskUsageInsights {"name": "timestamp_1", "background": true} {"timestamp": 1}
-delegateTasks {"name": "index", "background": true} {"status": 1, "expiry": 1}
-delegateTasks {"name": "pulling", "background": true} {"accountId": 1, "status": 1, "data.async": 1, "expiry": 1}
-delegateTasks {"name": "rebroadcast", "background": true} {"version": 1, "status": 1, "delegateId": 1, "nextBroadcast": 1}
-delegateTasks {"name": "rebroadcast1", "background": true} {"status": 1, "delegateId": 1, "nextBroadcast": 1}
-delegateTasks {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-delegateTokens {"name": "byAccountAndName", "unique": true} {"accountId": 1, "name": 1}
-delegateTokens {"name": "byAccountAndNgAndOwnerAndStatus", "background": true} {"accountId": 1, "isNg": 1, "owner": 1, "status": 1}
-delegateTokens {"name": "byAccountAndStatus", "background": true} {"accountId": 1, "status": 1}
-delegateTokens {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-delegateTokensNG {"name": "byAccountAndStatus", "background": true} {"accountId": 1, "owner": 1, "status": 1}
-delegateTokensNG {"name": "byAccountOwnerAndName", "unique": true} {"accountId": 1, "owner": 1, "name": 1}
-delegateTokensNG {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-delegates {"name": "accountId_1", "background": true} {"accountId": 1}
-delegates {"name": "byAcctNgGroupIdOwner", "background": true} {"accountId": 1, "ng": 1, "delegateGroupId": 1, "owner": 1}
-delegates {"name": "capabilitiesCheckNextIteration_1", "background": true} {"capabilitiesCheckNextIteration": 1}
-delegates {"name": "createdAt_1", "background": true} {"createdAt": 1}
-delegates {"name": "taskExpiryCheckNextIteration_1", "background": true} {"taskExpiryCheckNextIteration": 1}
-delegates {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-deletedEntities {"name": "entityId_1", "unique": true} {"entityId": 1}
-deletedEntities {"name": "nextIteration_1", "background": true} {"nextIteration": 1}
 deploymentAccounts {"name": "instanceStatsMetricsPublisherIteration_1", "background": true} {"instanceStatsMetricsPublisherIteration": 1}
 deploymentAccounts {"name": "unique_account_id", "unique": true} {"accountIdentifier": 1}
-deploymentEventQueue {"name": "earliestGet_1", "background": true, "expireAfterSeconds": 86400} {"earliestGet": 1}
-deploymentEventQueue {"name": "next4", "background": true} {"topic": 1, "earliestGet": 1}
-deploymentReconciliation {"name": "accountId_durationEndTs", "background": true} {"accountId": 1, "durationEndTs": 1}
-deploymentReconciliation {"name": "accountId_reconciliationStatus", "background": true} {"accountId": 1, "reconciliationStatus": 1}
-deploymentReconciliation {"name": "ttl_1", "background": true, "expireAfterSeconds": 0} {"ttl": 1}
-deploymentSummary {"name": "accountId_containerDeploymentInfo", "background": true} {"accountId": 1, "deploymentInfo.clusterName": 1, "deploymentInfo.containerSvcName": 1, "createdAt": -1}
-deploymentSummary {"name": "accountId_createdAtAsc", "background": true} {"accountId": 1, "createdAt": 1}
-deploymentSummary {"name": "accountId_infraMappingId_createdAtDesc", "background": true} {"accountId": 1, "infraMappingId": 1, "createdAt": -1}
-deploymentSummary {"name": "accountId_k8sDeploymentInfo", "background": true} {"accountId": 1, "deploymentInfo.releaseName": 1, "createdAt": -1}
-deploymentSummary {"name": "appId_1", "background": true} {"appId": 1}
-deploymentSummary {"name": "containerSvcName_inframappingId_createdAt", "background": true} {"containerDeploymentKey.containerServiceName": 1, "infraMappingId": 1, "createdAt": -1}
-deploymentSummary {"name": "createdAt_1", "background": true} {"createdAt": 1}
-deploymentSummary {"name": "infraMappingId_1", "background": true} {"infraMappingId": 1}
-deploymentSummary {"name": "infraMappingId_k8sDeploymentKeyReleaseNameAndNumber", "background": true} {"infraMappingId": 1, "k8sDeploymentKey.releaseName": 1, "k8sDeploymentKey.releaseNumber": 1, "createdAt": -1}
-deploymentSummary {"name": "inframappingId_awsAmiDeploymentKeyAsgName_createdAtDesc", "background": true} {"infraMappingId": 1, "awsAmiDeploymentKey.autoScalingGroupName": 1, "createdAt": -1}
-deploymentSummary {"name": "inframappingId_awsCodeDeployDeploymentKeyKey_createdAtDesc", "background": true} {"infraMappingId": 1, "awsCodeDeployDeploymentKey.key": 1, "createdAt": -1}
-deploymentSummary {"name": "inframappingId_containerlabelsAndVersion", "background": true} {"infraMappingId": 1, "containerDeploymentKey.labels": 1, "containerDeploymentKey.newVersion": 1, "createdAt": -1}
 deploymentSummaryNG {"name": "idx_accountIdentifier_orgIdentifier_projectIdentifier", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1}
 deploymentSummaryNG {"name": "idx_instanceSyncKey_createdAt", "background": true} {"instanceSyncKey": 1, "createdAt": -1}
-deploymentTimeSeriesEventQueue {"name": "earliestGet_1", "background": true, "expireAfterSeconds": 86400} {"earliestGet": 1}
-deploymentTimeSeriesEventQueue {"name": "next4", "background": true} {"topic": 1, "earliestGet": 1}
-ecsServiceSpecification {"name": "accountId_1", "background": true} {"accountId": 1}
-ecsServiceSpecification {"name": "appId_1", "background": true} {"appId": 1}
-ecsServiceSpecification {"name": "createdAt_1", "background": true} {"createdAt": 1}
-emailQueue2 {"name": "earliestGet_1", "background": true, "expireAfterSeconds": 86400} {"earliestGet": 1}
-emailQueue2 {"name": "next4", "background": true} {"topic": 1, "earliestGet": 1}
-emailVerificationTokens {"name": "appId_1", "background": true} {"appId": 1}
-emailVerificationTokens {"name": "createdAt_1", "background": true} {"createdAt": 1}
-encryptedRecords {"name": "acctKmsIdx", "background": true} {"accountId": 1, "kmsId": 1}
-encryptedRecords {"name": "acctNameIdx", "unique": true} {"accountId": 1, "name": 1, "ngMetadata.accountIdentifier": 1, "ngMetadata.orgIdentifier": 1, "ngMetadata.projectIdentifier": 1, "ngMetadata.identifier": 1}
-encryptedRecords {"name": "createdAt_1", "background": true} {"createdAt": 1}
-encryptedRecords {"name": "encryptionKey_1", "background": true} {"encryptionKey": 1}
-encryptedRecords {"name": "keywords_1", "background": true} {"keywords": 1}
-encryptedRecords {"name": "name_1", "background": true} {"name": 1}
-encryptedRecords {"name": "nextAwsKmsToGcpKmsMigrationIteration_1", "background": true} {"nextAwsKmsToGcpKmsMigrationIteration": 1}
-encryptedRecords {"name": "nextAwsToGcpKmsMigrationIteration_1", "background": true} {"nextAwsToGcpKmsMigrationIteration": 1}
-encryptedRecords {"name": "nextLocalToGcpKmsMigrationIteration_1", "background": true} {"nextLocalToGcpKmsMigrationIteration": 1}
-encryptedRecords {"name": "nextMigrationIteration_1", "background": true} {"nextMigrationIteration": 1}
-encryptedRecords {"name": "ngSecretManagerIdx", "background": true} {"ngMetadata.accountIdentifier": 1, "ngMetadata.orgIdentifier": 1, "ngMetadata.projectIdentifier": 1, "ngMetadata.secretManagerIdentifier": 1}
-encryptedRecords {"name": "ngSecretManagerTypeIdx", "background": true} {"accountId": 1, "type": 1, "createdAt": 1}
-encryptedRecords {"name": "parents_1", "background": true} {"parents": 1}
-encryptedRecords {"name": "path_1", "background": true} {"path": 1}
 entityActivity {"name": "accountIdentifier_1", "background": true} {"accountIdentifier": 1}
 entityActivity {"name": "referredEntityFQN_1", "background": true} {"referredEntityFQN": 1}
 entityActivity {"name": "referredFqn_type_referredByType", "background": true} {"referredEntityFQN": 1, "referredEntityType": 1, "referredByEntityType": 1}
 entityActivity {"name": "referredFqn_type_time_referredByType", "background": true} {"referredEntityFQN": 1, "referredEntityType": 1, "activityTime": 1, "referredByEntityType": 1}
 entityActivity {"name": "type_referredFqn_referredByType_desSort_Index", "background": true} {"type": 1, "referredEntityFQN": 1, "referredEntityType": 1, "referredByEntityType": 1, "activityTime": -1}
-entityAuditRecords {"name": "entityRecordIndex_1", "background": true} {"auditHeaderId": 1, "createdAt": -1}
-entityAuditRecords {"name": "nextIteration_1", "background": true} {"nextIteration": 1}
 entitySetupUsage {"name": "EntitySetupUsage_unique_index", "unique": true} {"referredByEntityType": 1, "referredByEntityFQN": 1, "referredByEntityRepoIdentifier": 1, "referredByEntityBranch": 1, "referredEntityType": 1, "referredEntityFQN": 1, "referredEntityRepoIdentifier": 1, "referredEntityBranch": 1, "accountIdentifier": 1}
 entitySetupUsage {"name": "ReferredByEntityIndex", "background": true} {"accountIdentifier": 1, "referredByEntityType": 1, "referredByEntityFQN": 1}
 entitySetupUsage {"name": "ReferredEntityIndex", "background": true} {"accountIdentifier": 1, "referredEntityType": 1, "referredEntityFQN": 1}
@@ -296,70 +42,10 @@ entitySetupUsage {"name": "account_referredBy_referred_index", "background": tru
 entitySetupUsage {"name": "account_referredBy_referred_type_index", "background": true} {"accountIdentifier": 1, "referredByEntityFQN": 1, "referredByEntityType": 1, "referredEntityType": 1, "createdAt": 1}
 entitySetupUsage {"name": "referredByEntityFQN_1", "background": true} {"referredByEntityFQN": 1}
 entitySetupUsage {"name": "referredEntityFQN_1", "background": true} {"referredEntityFQN": 1}
-entityVersions {"name": "accountId_1", "background": true} {"accountId": 1}
-entityVersions {"name": "appId_1", "background": true} {"appId": 1}
-entityVersions {"name": "app_type_uuid_createdAt", "background": true} {"appId": 1, "entityType": 1, "entityUuid": 1, "createdAt": -1}
-entityVersions {"name": "app_type_uuid_version", "background": true} {"appId": 1, "entityType": 1, "entityUuid": 1, "version": -1}
-entityVersions {"name": "createdAt_1", "background": true} {"createdAt": 1}
-entityVersions {"name": "unique_locate", "unique": true} {"entityType": 1, "entityUuid": 1, "version": 1}
-entityYamlRecord {"name": "index_1", "background": true} {"accountId": 1, "entityId": 1, "entityType": 1, "createdAt": -1}
-entityYamlRecord {"name": "index_2", "background": true} {"accountId": 1, "entityType": 1, "createdAt": -1}
 environmentGroupNG {"name": "unique_accountId_organizationIdentifier_projectIdentifier_envGroupIdentifier", "unique": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1}
-environments {"name": "accountIdCreatedAt", "background": true} {"accountId": 1, "createdAt": -1}
-environments {"name": "accountId_1", "background": true} {"accountId": 1}
-environments {"name": "accountId_name", "background": true} {"accountId": 1, "name": 1}
-environments {"name": "appId_1", "background": true} {"appId": 1}
-environments {"name": "createdAt_1", "background": true} {"createdAt": 1}
-environments {"name": "yaml", "unique": true} {"appId": 1, "name": 1}
 environmentsNG {"name": "unique_accountId_organizationIdentifier_projectIdentifier_envIdentifier_repo_branch", "unique": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1, "yamlGitConfigRef": 1, "branch": 1}
-events {"name": "accountId_1", "background": true} {"accountId": 1}
-events {"name": "appId_1", "background": true} {"appId": 1}
-events {"name": "createdAt_1", "background": true} {"createdAt": 1}
-events {"name": "eventConfigId_1", "background": true} {"eventConfigId": 1}
-events {"name": "nextIteration_1", "background": true} {"nextIteration": 1}
-events {"name": "status_1", "background": true} {"status": 1}
-executionInterrupts {"name": "accountId_1", "background": true} {"accountId": 1}
-executionInterrupts {"name": "appId_seized_executionUuid_createdAt", "background": true} {"appId": 1, "seized": 1, "executionUuid": 1, "createdAt": -1}
-executionInterrupts {"name": "createdAt_1", "background": true} {"createdAt": 1}
-executionInterrupts {"name": "executionUuid_1", "background": true} {"executionUuid": 1}
-executionInterrupts {"name": "stateExecutionInstanceId_1", "background": true} {"stateExecutionInstanceId": 1}
-executionQueue {"name": "earliestGet_1", "background": true, "expireAfterSeconds": 86400} {"earliestGet": 1}
-executionQueue {"name": "next4", "background": true} {"topic": 1, "earliestGet": 1}
-experimentalLogAnalysisRecords {"name": "appId_1", "background": true} {"appId": 1}
-experimentalLogAnalysisRecords {"name": "createdAt_1", "background": true} {"createdAt": 1}
-experimentalLogAnalysisRecords {"name": "cvConfigId_1", "background": true} {"cvConfigId": 1}
-experimentalLogAnalysisRecords {"name": "stateExecutionId_1", "background": true} {"stateExecutionId": 1}
-experimentalLogAnalysisRecords {"name": "stateExecutionIdx", "background": true} {"stateExecutionId": 1, "logCollectionMinute": -1}
-experimentalLogAnalysisRecords {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-experimentalLogMessageComparisonResult {"name": "cvConfigId_1", "background": true} {"cvConfigId": 1}
-experimentalLogMessageComparisonResult {"name": "stateExecutionId_1", "background": true} {"stateExecutionId": 1}
-experimentalTimeSeriesAnalysisRecords {"name": "ExperimentalMetricListIdx", "background": true} {"analysisMinute": 1, "mismatched": 1, "createdAt": -1}
-experimentalTimeSeriesAnalysisRecords {"name": "MetricAnalysisUniqueIdx", "unique": true} {"workflowExecutionId": 1, "stateExecutionId": 1, "analysisMinute": 1, "groupName": 1}
-experimentalTimeSeriesAnalysisRecords {"name": "accountId_1", "background": true} {"accountId": 1}
-experimentalTimeSeriesAnalysisRecords {"name": "analysisMinStateExecutionIdIndex", "background": true} {"analysisMinute": 1, "stateExecutionId": 1}
-experimentalTimeSeriesAnalysisRecords {"name": "appId_1", "background": true} {"appId": 1}
-experimentalTimeSeriesAnalysisRecords {"name": "createdAt_1", "background": true} {"createdAt": 1}
-experimentalTimeSeriesAnalysisRecords {"name": "mismatched_1", "background": true} {"mismatched": 1}
-experimentalTimeSeriesAnalysisRecords {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-exportExecutionsRequests {"name": "accountId_status", "background": true} {"accountId": 1, "status": 1}
-exportExecutionsRequests {"name": "status_expiresAt_nextCleanupIteration", "background": true} {"status": 1, "expiresAt": 1, "nextCleanupIteration": 1}
-exportExecutionsRequests {"name": "status_nextIteration", "background": true} {"status": 1, "nextIteration": 1}
-externalServiceAuthTokens {"name": "appId_1", "background": true} {"appId": 1}
-externalServiceAuthTokens {"name": "createdAt_1", "background": true} {"createdAt": 1}
-featureFlag {"name": "name_1", "background": true} {"name": 1}
 filters {"name": "unique_accountId_orgId_projectId_name_type_Index", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "name": 1, "filterType": 1}
 filters {"name": "unique_accountId_organizationId_projectId_type", "unique": true} {"fullyQualifiedIdentifier": 1, "filterType": 1}
-gcpBillingAccount {"name": "no_dup", "unique": true} {"accountId": 1, "organizationSettingId": 1}
-gcpBillingJobEntity {"name": "accountId_1", "background": true} {"accountId": 1}
-gcpBillingJobEntity {"name": "nextIteration_1", "background": true} {"nextIteration": 1}
-gcpServiceAccount {"name": "no_dup", "unique": true} {"accountId": 1, "serviceAccountId": 1}
-gcpUsageReport {"name": "accountId_startTimestamp_unique_idx", "unique": true} {"accountId": 1, "startTimestamp": 1}
-gcsFileMetadata {"name": "accountId_1", "background": true} {"accountId": 1}
-gcsFileMetadata {"name": "appId_1", "background": true} {"appId": 1}
-gcsFileMetadata {"name": "createdAt_1", "background": true} {"createdAt": 1}
-gcsFileMetadata {"name": "entityId_1", "background": true} {"entityId": 1}
-gcsFileMetadata {"name": "fileId_1", "background": true} {"fileId": 1}
-gcsFileMetadata {"name": "gcsFileId_1", "background": true} {"gcsFileId": 1}
 genericEvent {"name": "earliestGet_1", "background": true, "expireAfterSeconds": 86400} {"earliestGet": 1}
 genericEvent {"name": "next4", "background": true} {"topic": 1, "earliestGet": 1}
 gitBranches {"name": "unique_accountIdentifier_repoURL_branchName_idx", "unique": true} {"accountIdentifier": 1, "repoURL": 1, "branchName": 1}
@@ -367,125 +53,27 @@ gitCommitNG {"name": "accountIdentifier_repoURL_branchName_gitsyncdirection_crea
 gitCommitNG {"name": "commitId_1", "background": true} {"commitId": 1}
 gitCommitNG {"name": "status_1", "background": true} {"status": 1}
 gitCommitNG {"name": "unique_commitId_repoURL_gitSyncDirection_idx", "unique": true} {"commitId": 1, "repoURL": 1, "gitSyncDirection": 1}
-gitCommits {"name": "appId_1", "background": true} {"appId": 1}
-gitCommits {"name": "createdAt_1", "background": true} {"createdAt": 1}
-gitCommits {"name": "gitCommitAccountIdCreatedAtDesc", "background": true} {"accountId": 1, "createdAt": -1}
-gitCommits {"name": "gitCommitAccountIdLastUpdatedAT", "background": true} {"accountId": 1, "lastUpdatedAt": -1}
-gitCommits {"name": "gitCommitAccountIdStatusYgLastUpdatedIdx", "background": true} {"accountId": 1, "status": 1, "yamlGitConfigId": 1, "lastUpdatedAt": -1}
-gitCommits {"name": "gitCommitAccountIdStatusYgcLastUpdatedIdx", "background": true} {"accountId": 1, "status": 1, "yamlGitConfigIds": 1, "lastUpdatedAt": -1}
-gitCommits {"name": "gitCommitAccountIdYamlConfigIdsStatusLastUpdatedIdx", "background": true} {"accountId": 1, "yamlGitConfigIds": 1, "status": 1, "lastUpdatedAt": -1}
-gitCommits {"name": "gitCommitIdx", "unique": true} {"accountId": 1, "commitId": 1}
-gitCommits {"name": "gitCommitStatusLastUpdatedIdx", "background": true} {"accountId": 1, "status": 1, "lastUpdatedAt": -1}
-gitCommits {"name": "status_1", "background": true} {"status": 1}
-gitFileActivity {"name": "accountId_appId_createdAt_Idx", "background": true} {"accountId": 1, "appId": 1, "createdAt": -1}
-gitFileActivity {"name": "accountId_commitId_Idx", "background": true} {"accountId": 1, "commitId": 1}
-gitFileActivity {"name": "accountId_filePath", "background": true} {"accountId": 1, "filePath": 1}
-gitFileActivity {"name": "accountId_procCommitId_filePath_status", "background": true} {"accountId": 1, "processingCommitId": 1, "filePath": 1, "status": 1}
-gitFileActivity {"name": "accountId_procCommitId_status", "background": true} {"accountId": 1, "processingCommitId": 1, "status": 1}
-gitFileActivity {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 gitFileActivityNG {"name": "lastUpdatedAt_1", "background": true} {"lastUpdatedAt": 1}
-gitFileActivitySummary {"name": "gitCommits_createdAt_direction_indx", "background": true} {"accountId": 1, "createdAt": 1, "gitToHarness": 1}
-gitFileActivitySummary {"name": "gitCommits_for_appId_indx", "background": true} {"accountId": 1, "appId": 1, "gitToHarness": 1}
-gitFileActivitySummary {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 gitFullSyncConfig {"name": "unique_accountIdentifier_organizationIdentifier_projectIdentifier", "unique": true, "collation": {"locale": "en", "strength": 1}} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1}
 gitFullSyncEntityInfo {"name": "account_org_project_entityType_status_filePath_name_repo_branch_idx", "background": true, "collation": {"locale": "en", "strength": 1}} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "entityDetail.type": 1, "syncStatus": 1, "filePath": 1, "entityDetail.name": 1, "repoName": 1, "branchName": 1}
 gitFullSyncEntityInfo {"name": "nextRuntime_1", "background": true} {"nextRuntime": 1}
 gitFullSyncJob {"name": "messageId_1", "unique": true} {"messageId": 1}
 gitFullSyncJob {"name": "nextRuntime_1", "background": true} {"nextRuntime": 1}
 gitProcessRequestSdk {"name": "accountId_repo_branch_commit_index", "background": true} {"accountId": 1, "repoUrl": 1, "branch": 1, "commitId": 1}
-gitSyncError {"name": "accountId_createdAt", "background": true} {"accountId": 1, "createdAt": 1}
-gitSyncError {"name": "account_filepath_direction_idx", "unique": true} {"accountId": 1, "yamlFilePath": 1, "gitSyncDirection": 1}
-gitSyncError {"name": "appId_1", "background": true} {"appId": 1}
-gitSyncError {"name": "createdAt_1", "background": true} {"createdAt": 1}
-gitSyncError {"name": "gitCommitId_idx", "background": true} {"accountId": 1, "gitSyncDirection": 1, "additionalErrorDetails.gitCommitId": 1}
-gitSyncError {"name": "gitCommitId_idx_for_app_filter", "background": true} {"accountId": 1, "appId": 1, "gitSyncDirection": 1, "additionalErrorDetails.gitCommitId": 1}
-gitSyncError {"name": "nextIteration_1", "background": true} {"nextIteration": 1}
-gitSyncError {"name": "previousErrors_idx", "background": true} {"accountId": 1, "gitSyncDirection": 1, "additionalErrorDetails.previousCommitIdsWithError": 1}
-gitSyncError {"name": "previousErrors_idx_for_app_filter", "background": true} {"accountId": 1, "appId": 1, "gitSyncDirection": 1, "additionalErrorDetails.previousCommitIdsWithError": 1}
-gitSyncError {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 gitSyncErrorNG {"name": "accountId_commitId_repo_branch_errorType_filePath_unique_Index", "unique": true} {"accountIdentifier": 1, "additionalErrorDetails.gitCommitId": 1, "repoUrl": 1, "branchName": 1, "errorType": 1, "completeFilePath": 1, "createdAt": -1}
 gitSyncErrorNG {"name": "accountId_orgIdentifier_projectIdentifier_Index", "background": true} {"accountIdentifier": 1, "scopes.projectIdentifier": 1, "scopes.orgIdentifier": 1}
 gitSyncErrorNG {"name": "accountId_repo_branch_errorType_status_filePath_sort_Index", "background": true} {"accountIdentifier": 1, "repoUrl": 1, "branchName": 1, "errorType": 1, "status": 1, "completeFilePath": 1, "createdAt": -1}
 gitSyncErrorNG {"name": "accountId_repo_errorType_status_sort_Index", "background": true} {"accountIdentifier": 1, "repoUrl": 1, "errorType": 1, "status": 1, "createdAt": -1}
 gitSyncSettings {"name": "account_org_project_index", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1}
-gitSyncWebhook {"name": "appId_1", "background": true} {"appId": 1}
-gitSyncWebhook {"name": "createdAt_1", "background": true} {"createdAt": 1}
 gitToHarnessProgress {"name": "yamlChangeSetId_1", "background": true} {"yamlChangeSetId": 1}
 gitopsClusters {"name": "accountId_orgId_projId_envRef_createdAt", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "envRef": 1, "createdAt": 1}
 gitopsClusters {"name": "unique_accountId_orgId_projId_envRef_id", "unique": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "envRef": 1, "clusterRef": 1}
 gitopsproviders {"name": "unique_accIdentifier_orgIdentifier_projectIdentifier_gitOpsProvider_idx", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1}
-governanceConfig {"name": "accountId_1", "background": true} {"accountId": 1}
-governanceConfig {"name": "enableNextCloseIterations_nextCloseIterations", "background": true} {"enableNextCloseIterations": 1, "nextCloseIterations": 1}
-governanceConfig {"name": "enableNextIterations_nextIterations", "background": true} {"enableNextIterations": 1, "nextIterations": 1}
-governanceConfig {"name": "nextCloseIterations_1", "background": true} {"nextCloseIterations": 1}
-governanceConfig {"name": "nextIterations_1", "background": true} {"nextIterations": 1}
-harnessApiKeys {"name": "clientType_1", "background": true} {"clientType": 1}
-harnessUserGroups {"name": "appId_1", "background": true} {"appId": 1}
-harnessUserGroups {"name": "createdAt_1", "background": true} {"createdAt": 1}
-harnessUserGroups {"name": "memberIds_1", "background": true} {"memberIds": 1}
-helmChartSpecifications {"name": "accountId_1", "background": true} {"accountId": 1}
-helmChartSpecifications {"name": "appId_1", "background": true} {"appId": 1}
-helmChartSpecifications {"name": "createdAt_1", "background": true} {"createdAt": 1}
-helmChartSpecifications {"name": "serviceId_1", "unique": true} {"serviceId": 1}
-helmCharts {"name": "accountId_1", "background": true} {"accountId": 1}
-helmCharts {"name": "account_appManifestId", "background": true} {"accountId": 1, "applicationManifestId": 1}
-helmCharts {"name": "appId_appManifestId", "background": true} {"appId": 1, "applicationManifestId": 1}
-helmCharts {"name": "appId_serviceId", "background": true} {"appId": 1, "serviceId": 1}
-helmCharts {"name": "applicationManifestId_1", "background": true} {"applicationManifestId": 1}
-hosts {"name": "appId_1", "background": true} {"appId": 1}
-hosts {"name": "app_inframappingid", "background": true} {"appId": 1, "infraMappingId": 1}
-hosts {"name": "createdAt_1", "background": true} {"createdAt": 1}
-hosts {"name": "hostName_1", "background": true} {"hostName": 1}
-hosts {"name": "serviceTemplateId_1", "background": true} {"serviceTemplateId": 1}
-idempotent_locks {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-importedTemplates {"name": "account_app_command_idx", "background": true} {"accountId": 1, "appId": 1, "commandStoreName": 1, "commandName": 1}
-importedTemplates {"name": "appId_1", "background": true} {"appId": 1}
-importedTemplates {"name": "createdAt_1", "background": true} {"createdAt": 1}
-importedTemplates {"name": "template_idx", "unique": true} {"templateId": 1}
-infrastructureDefinitions {"name": "accountId_1", "background": true} {"accountId": 1}
-infrastructureDefinitions {"name": "infraDefinitionIdx", "unique": true} {"appId": 1, "envId": 1, "name": 1}
-infrastructureDefinitions {"name": "infrastructure_cloudProviderId", "background": true} {"infrastructure.cloudProviderId": 1}
-infrastructureMapping {"name": "accountId_1", "background": true} {"accountId": 1}
-infrastructureMapping {"name": "appId_1", "background": true} {"appId": 1}
-infrastructureMapping {"name": "appId_createdAt", "background": true} {"appId": 1, "createdAt": -1}
-infrastructureMapping {"name": "app_envId_serviceTemplateId", "background": true} {"appId": 1, "envId": 1, "serviceTemplateId": 1, "createdAt": -1}
-infrastructureMapping {"name": "app_infratype", "background": true} {"appId": 1, "infraMappingType": 1}
-infrastructureMapping {"name": "computeProviderSettingId_1", "background": true} {"computeProviderSettingId": 1}
-infrastructureMapping {"name": "createdAt_1", "background": true} {"createdAt": 1}
-infrastructureMapping {"name": "infra_mapping_appId_envId_serviceId", "background": true} {"appId": 1, "envId": 1, "serviceId": 1, "createdAt": -1}
-infrastructureMapping {"name": "infra_mapping_appId_infrastructureDefinitionId_idx", "background": true} {"appId": 1, "infrastructureDefinitionId": 1}
-infrastructureMapping {"name": "nextIteration_1", "background": true} {"nextIteration": 1}
-infrastructureMapping {"name": "yaml", "unique": true} {"appId": 1, "envId": 1, "name": 1}
 infrastructureMappingNG {"name": "accountId_orgId_projectId_infrastructureKey_unique_idx", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "infrastructureKey": 1}
-infrastructureProvisioner {"name": "accountIdCreatedAtIdx", "background": true} {"accountId": 1, "createdAt": -1}
-infrastructureProvisioner {"name": "accountId_1", "background": true} {"accountId": 1}
-infrastructureProvisioner {"name": "appId_1", "background": true} {"appId": 1}
-infrastructureProvisioner {"name": "createdAt_1", "background": true} {"createdAt": 1}
 infrastructures {"name": "accountId_organizationIdentifier_projectIdentifier_envIdentifier_createdAt", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "envIdentifier": 1, "createdAt": 1}
 infrastructures {"name": "accountId_organizationIdentifier_projectIdentifier_envIdentifier_infraIdentifier", "unique": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "envIdentifier": 1, "identifier": 1}
-instance {"name": "accountId_computeProviderId_instanceInfoNamespace_instanceInfoPodName_createdAt", "background": true} {"accountId": 1, "computeProviderId": 1, "instanceInfo.namespace": 1, "instanceInfo.podName": 1, "createdAt": -1}
-instance {"name": "appId_1", "background": true} {"appId": 1}
-instance {"name": "createdAt_1", "background": true} {"createdAt": 1}
-instance {"name": "inframapping_lastUpdated", "background": true} {"infraMappingId": 1, "lastUpdatedAt": -1}
-instance {"name": "instance_index1", "background": true} {"appId": 1, "isDeleted": 1, "deletedAt": 1}
-instance {"name": "instance_index10", "background": true} {"accountId": 1, "infraMappingId": 1}
-instance {"name": "instance_index11", "background": true} {"infraMappingId": 1, "appId": 1, "createdAt": 1, "isDeleted": 1}
-instance {"name": "instance_index12", "background": true} {"accountId": 1, "createdAt": 1, "isDeleted": 1}
-instance {"name": "instance_index13", "background": true} {"appId": 1, "isDeleted": 1, "envId": 1}
-instance {"name": "instance_index2", "background": true} {"appId": 1, "infraMappingId": 1, "isDeleted": 1, "deletedAt": 1}
-instance {"name": "instance_index3", "background": true} {"accountId": 1, "createdAt": 1, "isDeleted": 1, "deletedAt": 1}
-instance {"name": "instance_index5", "background": true} {"appId": 1, "serviceId": 1, "createdAt": 1, "isDeleted": 1, "deletedAt": 1}
-instance {"name": "instance_index6", "background": true} {"accountId": 1, "isDeleted": 1}
-instance {"name": "instance_index7", "background": true} {"accountId": 1, "createdAt": 1, "deletedAt": 1}
-instance {"name": "instance_index8", "background": true} {"appId": 1, "serviceId": 1, "isDeleted": 1}
-instance {"name": "instance_index9", "background": true} {"accountId": 1, "isDeleted": 1, "deletedAt": 1}
-instance {"name": "instance_index_appId_infraMappingId_lastWorkflowExecutionId_lastUpdatedAt", "background": true} {"appId": 1, "infraMappingId": 1, "lastWorkflowExecutionId": 1, "lastUpdatedAt": -1}
-instance {"name": "isDeleted_1", "background": true} {"isDeleted": 1}
-instance {"name": "needRetry_1", "background": true} {"needRetry": 1}
-instanceChangeQueue {"name": "earliestGet_1", "background": true, "expireAfterSeconds": 86400} {"earliestGet": 1}
-instanceChangeQueue {"name": "next4", "background": true} {"topic": 1, "earliestGet": 1}
-instanceEventQueue {"name": "earliestGet_1", "background": true, "expireAfterSeconds": 86400} {"earliestGet": 1}
-instanceEventQueue {"name": "next4", "background": true} {"topic": 1, "earliestGet": 1}
+instanceDeploymentInfo {"name": "stage_execution_instance_deployment_info_idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "envIdentifier": 1, "infraIdentifier": 1, "serviceIdentifier": 1, "stageExecutionId": 1}
+instanceDeploymentInfo {"name": "unique_instance_deployment_info_idx", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "envIdentifier": 1, "infraIdentifier": 1, "serviceIdentifier": 1, "instanceInfo.host": 1}
 instanceNG {"name": "accountId_instanceInfo.Namespace_instanceInfoPodName_createdAt_idx", "background": true} {"accountIdentifier": 1, "instanceInfo.namespace": 1, "instanceInfo.podName": 1, "createdAt": 1}
 instanceNG {"name": "accountId_isDeleted_createdAt_deletedAt_idx", "background": true} {"accountIdentifier": 1, "isDeleted": 1, "createdAt": 1, "deletedAt": 1}
 instanceNG {"name": "accountId_lastDeployedAt_idx", "background": true} {"accountIdentifier": 1, "lastDeployedAt": 1}
@@ -496,117 +84,12 @@ instanceNG {"name": "accountId_organizationId_projectId_serviceId_envId_isDelete
 instanceNG {"name": "accountId_organizationId_projectId_serviceId_isDeleted_createdAt_deletedAt_idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "serviceIdentifier": 1, "isDeleted": 1, "createdAt": 1, "deletedAt": 1}
 instanceNG {"name": "accountIdentifier_1_deletedAt_1_createdAt_1", "background": true} {"accountIdentifier": 1, "deletedAt": 1, "createdAt": 1}
 instanceNG {"name": "unique_instanceKey_infrastructureMappingId_idx", "unique": true} {"instanceKey": 1, "infrastructureMappingId": 1}
-instanceStats {"name": "appId_1", "background": true} {"appId": 1}
-instanceStats {"name": "createdAt_1", "background": true} {"createdAt": 1}
-instanceStats {"name": "timestamp_1", "background": true} {"timestamp": 1}
-instanceStats {"name": "unique_account_timestamp", "unique": true} {"accountId": 1, "timestamp": 1}
-instanceStats {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-instanceSyncPerpetualTasksInfo {"name": "accountId_1", "background": true} {"accountId": 1}
-instanceSyncPerpetualTasksInfo {"name": "infrastructureMappingId_1", "background": true} {"infrastructureMappingId": 1}
 instanceSyncPerpetualTasksInfoNG {"name": "infrastructureMappingId_1", "unique": true} {"infrastructureMappingId": 1}
 instanceSyncPerpetualTasksInfoNG {"name": "perpetualTaskId_1", "unique": true} {"perpetualTaskId": 1}
 invites {"name": "ng_invite_account_org_project_identifiers_email_role_deleted", "background": true} {"deleted": 1, "email": 1, "accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1}
 invites {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-kmsTransitionEvent2 {"name": "earliestGet_1", "background": true, "expireAfterSeconds": 86400} {"earliestGet": 1}
-kmsTransitionEvent2 {"name": "next4", "background": true} {"topic": 1, "earliestGet": 1}
-lambdaSpecifications {"name": "accountId_1", "background": true} {"accountId": 1}
-lambdaSpecifications {"name": "appId_1", "background": true} {"appId": 1}
-lambdaSpecifications {"name": "createdAt_1", "background": true} {"createdAt": 1}
-lambdaSpecifications {"name": "serviceId_1", "unique": true} {"serviceId": 1}
-learningEngineAnalysisTask {"name": "accountId_1", "background": true} {"accountId": 1}
-learningEngineAnalysisTask {"name": "appId_1", "background": true} {"appId": 1}
-learningEngineAnalysisTask {"name": "createdAt_1", "background": true} {"createdAt": 1}
-learningEngineAnalysisTask {"name": "cv_config_status_index", "background": true} {"cvConfigId": 1, "executionStatus": 1, "analysis_minute": -1}
-learningEngineAnalysisTask {"name": "executionStatus_1", "background": true} {"executionStatus": 1}
-learningEngineAnalysisTask {"name": "taskFetchPriorityIdx", "background": true} {"state_execution_id": 1, "priority": 1, "executionStatus": 1, "ml_analysis_type": 1, "cluster_level": 1, "group_name": 1, "version": 1, "createdAt": -1}
-learningEngineAnalysisTask {"name": "task_fetch_idx", "background": true} {"state_execution_id": 1, "analysis_minute": 1, "executionStatus": 1, "ml_analysis_type": 1, "cluster_level": 1, "group_name": 1, "version": 1, "createdAt": -1}
-learningEngineAnalysisTask {"name": "usageMetricsIndex", "background": true} {"executionStatus": 1, "ml_analysis_type": 1, "is24x7Task": 1, "createdAt": -1}
-learningEngineAnalysisTask {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-learningEngineExperimentalAnalysisTask {"name": "appId_1", "background": true} {"appId": 1}
-learningEngineExperimentalAnalysisTask {"name": "createdAt_1", "background": true} {"createdAt": 1}
-learningEngineExperimentalAnalysisTask {"name": "cvConfigStatusIdx", "background": true} {"cvConfigId": 1, "executionStatus": 1, "analysis_minute": -1}
-learningEngineExperimentalAnalysisTask {"name": "executionStatus_1", "background": true} {"executionStatus": 1}
-learningEngineExperimentalAnalysisTask {"name": "state_execution_id_1", "background": true} {"state_execution_id": 1}
-learningEngineExperimentalAnalysisTask {"name": "taskFetchIdx", "background": true} {"experiment_name": 1, "executionStatus": 1, "retry": 1, "createdAt": -1}
-learningEngineExperimentalAnalysisTask {"name": "taskQueueIdx", "background": true} {"state_execution_id": 1, "executionStatus": 1, "ml_analysis_type": 1, "cluster_level": 1, "group_name": 1, "version": 1, "analysis_minute": -1, "createdAt": -1}
-learningEngineExperimentalAnalysisTask {"name": "usageMetricsIndex", "background": true} {"executionStatus": 1, "ml_analysis_type": 1, "is24x7Task": 1, "createdAt": -1}
-learningEngineExperimentalAnalysisTask {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-licenses {"name": "appId_1", "background": true} {"appId": 1}
-licenses {"name": "createdAt_1", "background": true} {"createdAt": 1}
-limitCounters {"name": "accountId_1", "background": true} {"accountId": 1}
-limitCounters {"name": "appId_1", "background": true} {"appId": 1}
-limitCounters {"name": "createdAt_1", "background": true} {"createdAt": 1}
-limitCounters {"name": "key_1", "unique": true} {"key": 1}
-logAnalysisRecords {"name": "accountId_1", "background": true} {"accountId": 1}
-logAnalysisRecords {"name": "analysisSummaryIndex", "background": true} {"stateExecutionId": 1, "logCollectionMinute": 1, "analysisStatus": 1, "lastUpdatedAt": -1}
-logAnalysisRecords {"name": "appId_1", "background": true} {"appId": 1}
-logAnalysisRecords {"name": "createdAt_1", "background": true} {"createdAt": 1}
-logAnalysisRecords {"name": "cvConfigId_1_analysisStatus_1_logCollectionMinute_-1", "background": true} {"cvConfigId": 1, "analysisStatus": 1, "logCollectionMinute": -1}
-logAnalysisRecords {"name": "cvConfigId_1_deprecated_1_logCollectionMinute_-1_lastUpdatedAt_-1", "background": true} {"cvConfigId": 1, "deprecated": 1, "logCollectionMinute": -1, "lastUpdatedAt": -1}
-logAnalysisRecords {"name": "stateExecStatusIdx", "background": true} {"stateExecutionId": 1, "analysisStatus": 1}
-logAnalysisRecords {"name": "stateExecutionId_1_analysisStatus_1_logCollectionMinute_-1", "background": true} {"stateExecutionId": 1, "analysisStatus": 1, "logCollectionMinute": -1}
-logAnalysisRecords {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-logAnalysisRecords {"name": "workflowExecutionId_1", "background": true} {"workflowExecutionId": 1}
-logDataRecords {"name": "accountId_1", "background": true} {"accountId": 1}
-logDataRecords {"name": "appId_1", "background": true} {"appId": 1}
-logDataRecords {"name": "createdAt_1", "background": true} {"createdAt": 1}
-logDataRecords {"name": "cvBumpIdx", "background": true} {"cvConfigId": 1, "clusterLevel": 1, "logCollectionMinute": 1, "host": 1, "createdAt": -1}
-logDataRecords {"name": "cvRawRecordIdx", "background": true} {"cvConfigId": 1, "logCollectionMinute": 1, "clusterLevel": 1}
-logDataRecords {"name": "cv_config_created_at_idx", "background": true} {"cvConfigId": 1, "createdAt": -1}
-logDataRecords {"name": "cv_raw_record_index", "background": true} {"cvConfigId": 1, "clusterLevel": 1, "logCollectionMinute": 1}
-logDataRecords {"name": "serviceId_1", "background": true} {"serviceId": 1}
-logDataRecords {"name": "stateBumpIndex", "background": true} {"stateExecutionId": 1, "clusterLevel": 1, "logCollectionMinute": 1, "host": 1}
-logDataRecords {"name": "stateHostIdx", "background": true} {"stateExecutionId": 1, "logCollectionMinute": 1}
-logDataRecords {"name": "state_Prev_Ex_Idx", "background": true} {"workflowExecutionId": 1, "clusterLevel": 1, "stateType": 1}
-logDataRecords {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-logMlFeedbackRecords {"name": "appId_1", "background": true} {"appId": 1}
-logMlFeedbackRecords {"name": "createdAt_1", "background": true} {"createdAt": 1}
-logMlFeedbackRecords {"name": "serviceId_1", "background": true} {"serviceId": 1}
-logMlFeedbackRecords {"name": "stateExecutionId_1", "background": true} {"stateExecutionId": 1}
-logMlFeedbackRecords {"name": "unique_log_feedback", "unique": true} {"applicationId": 1, "stateExecutionId": 1, "clusterType": 1, "clusterLabel": 1}
-logMlFeedbackRecords {"name": "workflowExecutionId_1", "background": true} {"workflowExecutionId": 1}
-loginSettings {"name": "accountId_1", "background": true} {"accountId": 1}
-managerConfiguration {"name": "appId_1", "background": true} {"appId": 1}
-managerConfiguration {"name": "createdAt_1", "background": true} {"createdAt": 1}
-manifestFile {"name": "accountId_1", "background": true} {"accountId": 1}
-manifestFile {"name": "appId_1", "background": true} {"appId": 1}
-manifestFile {"name": "createdAt_1", "background": true} {"createdAt": 1}
-manifestFile {"name": "manifestFileIdx", "unique": true} {"applicationManifestId": 1, "fileName": 1}
-manualSyncJobStatus {"name": "appId_1", "background": true} {"appId": 1}
-manualSyncJobStatus {"name": "createdAt_1", "background": true} {"createdAt": 1}
-marketPlaces {"name": "createdAt_1", "background": true} {"createdAt": 1}
-marketPlaces {"name": "customerIdentificationCode_1", "unique": true} {"customerIdentificationCode": 1}
-migratedEntityMapping {"name": "accountId_1", "background": true} {"accountId": 1}
-migratedEntityMapping {"name": "accountIdentifier_1", "background": true} {"accountIdentifier": 1}
-migratedEntityMapping {"name": "appId_1", "background": true} {"appId": 1}
-migratedEntityMapping {"name": "cgEntityId_1", "background": true} {"cgEntityId": 1}
-migratedEntityMapping {"name": "entityType_1", "background": true} {"entityType": 1}
-migratedEntityMapping {"name": "fullyQualifiedIdentifier_1", "background": true} {"fullyQualifiedIdentifier": 1}
-migratedEntityMapping {"name": "identifier_1", "background": true} {"identifier": 1}
-migratedEntityMapping {"name": "orgIdentifier_1", "background": true} {"orgIdentifier": 1}
-migratedEntityMapping {"name": "projectIdentifier_1", "background": true} {"projectIdentifier": 1}
-migratedEntityMapping {"name": "scope_1", "background": true} {"scope": 1}
-migrationAsyncTracker {"name": "accountId_1", "background": true} {"accountId": 1}
-migrationAsyncTracker {"name": "appId_1", "background": true} {"appId": 1}
-mlExperiments {"name": "appId_1", "background": true} {"appId": 1}
-mlExperiments {"name": "createdAt_1", "background": true} {"createdAt": 1}
-mlExperiments {"name": "unique_experiment", "unique": true} {"ml_analysis_type": 1, "experimentName": 1}
 mockRoleAssignments {"name": "uniqueMockRoleAssignment", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "roleAssignment.roleIdentifier": 1, "roleAssignment.resourceGroupIdentifier": 1, "roleAssignment.resourceGroupIdentifier.identifier": 1, "roleAssignment.resourceGroupIdentifier.type": 1}
 moduleLicenses {"name": "accountIdentifier_moduleLicense_query_index", "background": true} {"accountIdentifier": 1}
-newRelicMetricAnalysisRecords {"name": "accountId_1", "background": true} {"accountId": 1}
-newRelicMetricAnalysisRecords {"name": "appId_1", "background": true} {"appId": 1}
-newRelicMetricAnalysisRecords {"name": "createdAt_1", "background": true} {"createdAt": 1}
-newRelicMetricAnalysisRecords {"name": "stateExecutionId_1", "background": true} {"stateExecutionId": 1}
-newRelicMetricAnalysisRecords {"name": "unique_analysis", "unique": true} {"workflowExecutionId": 1, "stateExecutionId": 1, "groupName": 1, "analysisMinute": 1}
-newRelicMetricAnalysisRecords {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-newRelicMetricRecords {"name": "accountId_1", "background": true} {"accountId": 1}
-newRelicMetricRecords {"name": "appId_1", "background": true} {"appId": 1}
-newRelicMetricRecords {"name": "createdAt_1", "background": true} {"createdAt": 1}
-newRelicMetricRecords {"name": "cvConfigId_1", "background": true} {"cvConfigId": 1}
-newRelicMetricRecords {"name": "serviceGuardIndex", "background": true} {"cvConfigId": 1, "dataCollectionMinute": -1}
-newRelicMetricRecords {"name": "stateExIdx", "background": true} {"stateExecutionId": 1, "groupName": 1, "dataCollectionMinute": -1}
-newRelicMetricRecords {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-newRelicMetricRecords {"name": "workflowExIdx", "background": true} {"workflowExecutionId": 1, "groupName": 1, "dataCollectionMinute": -1}
 ngApiKeys {"name": "list_keys_idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "parentIdentifier": 1}
 ngApiKeys {"name": "unique_idx", "unique": true, "collation": {"locale": "en", "strength": 1}} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1, "parentIdentifier": 1, "apiKeyType": 1}
 ngEncryptedRecords {"name": "uniqueNGEncryptedDataIdx", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1}
@@ -617,14 +100,6 @@ ngGcsFileMetadata {"name": "accountId_1", "background": true} {"accountId": 1}
 ngGcsFileMetadata {"name": "entityId_1", "background": true} {"entityId": 1}
 ngGcsFileMetadata {"name": "fileId_1", "background": true} {"fileId": 1}
 ngGcsFileMetadata {"name": "gcsFileId_1", "background": true} {"gcsFileId": 1}
-notificationBatch {"name": "appId_1", "background": true} {"appId": 1}
-notificationBatch {"name": "createdAt_1", "background": true} {"createdAt": 1}
-notificationGroups {"name": "appId_1", "background": true} {"appId": 1}
-notificationGroups {"name": "createdAt_1", "background": true} {"createdAt": 1}
-notificationGroups {"name": "unique_yaml", "unique": true} {"accountId": 1, "name": 1}
-notifications {"name": "accountId_1", "background": true} {"accountId": 1}
-notifications {"name": "appId_1", "background": true} {"appId": 1}
-notifications {"name": "createdAt_1", "background": true} {"createdAt": 1}
 notifyQueue {"name": "earliestGet_1", "background": true, "expireAfterSeconds": 86400} {"earliestGet": 1}
 notifyQueue {"name": "next4", "background": true} {"topic": 1, "earliestGet": 1}
 notifyQueue {"name": "waitInstanceId_1", "unique": true} {"waitInstanceId": 1}
@@ -637,35 +112,8 @@ organizations {"name": "identifier_1", "background": true} {"identifier": 1}
 organizations {"name": "unique_accountIdentifier_organizationIdentifier", "unique": true, "collation": {"locale": "en", "strength": 1}} {"accountIdentifier": 1, "identifier": 1}
 outboxEvents {"name": "blocked_createdAt_nextUnblockAttemptAt_outbox_Idx", "background": true} {"blocked": 1, "createdAt": 1, "nextUnblockAttemptAt": 1}
 outboxEvents {"name": "eventType_blocked_outbox_Idx", "background": true} {"eventType": 1, "blocked": 1}
-pcfServiceSpecification {"name": "accountId_1", "background": true} {"accountId": 1}
-pcfServiceSpecification {"name": "appId_1", "background": true} {"appId": 1}
-pcfServiceSpecification {"name": "createdAt_1", "background": true} {"createdAt": 1}
-permits {"name": "accountId_1", "background": true} {"accountId": 1}
-permits {"name": "appId_1", "background": true} {"appId": 1}
-permits {"name": "createdAt_1", "background": true} {"createdAt": 1}
-permits {"name": "expireAt_1", "background": true, "expireAfterSeconds": 0} {"expireAt": 1}
-permits {"name": "key_1", "unique": true} {"key": 1}
-perpetualTask {"name": "accountId_1", "background": true} {"accountId": 1}
-perpetualTask {"name": "assignerIterator", "background": true} {"state": 1, "assignAfterMs": 1, "assignerIterations": 1}
-perpetualTask {"name": "assignerIterator_1", "background": true} {"state": 1, "assignerIterations": 1}
-perpetualTask {"name": "delegateId_1", "background": true} {"delegateId": 1}
-perpetualTask {"name": "rebalanceIterator", "background": true} {"state": 1, "rebalanceIteration": 1}
-perpetualTaskScheduleConfig {"name": "unique_perpetualTaskScheduleConfig_index1", "unique": true} {"accountId": 1, "perpetualTaskType": 1}
-personalization {"name": "unique_identification", "unique": true} {"accountId": 1, "userId": 1}
-pipelineExecutions {"name": "appId_1", "background": true} {"appId": 1}
-pipelineExecutions {"name": "createdAt_1", "background": true} {"createdAt": 1}
-pipelineExecutions {"name": "pipelineId_1", "background": true} {"pipelineId": 1}
-pipelineGovernanceConfigs {"name": "accountId_1", "background": true} {"accountId": 1}
-pipelines {"name": "accountIdCreatedAt", "background": true} {"accountId": 1, "createdAt": -1}
-pipelines {"name": "accountId_name", "background": true} {"accountId": 1, "name": 1}
-pipelines {"name": "appId_1", "background": true} {"appId": 1}
-pipelines {"name": "appId_name", "background": true} {"appId": 1, "name": 1}
-pipelines {"name": "createdAt_1", "background": true} {"createdAt": 1}
 pollingDocuments {"name": "accountId", "background": true} {"accountId": 1}
 pollingDocuments {"name": "accountId_organizationIdentifier_projectIdentifier_pollingType_pollingItem", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "pollingType": 1, "pollingInfo": 1, "signatures": 1}
-preferences {"name": "appId_1", "background": true} {"appId": 1}
-preferences {"name": "createdAt_1", "background": true} {"createdAt": 1}
-preferences {"name": "preference_index", "background": true} {"accountId": 1, "userId": 1, "name": 1}
 primaryVersion {"name": "createdAt_1", "background": true} {"createdAt": 1}
 primaryVersion {"name": "lastUpdatedAt_1", "background": true} {"lastUpdatedAt": 1}
 progressUpdate {"name": "correlation", "background": true} {"correlationId": 1, "createdAt": -1}
@@ -676,111 +124,13 @@ projects {"name": "accountDeletedModulesLastModifiedAtIdx", "background": true} 
 projects {"name": "accountDeletedOrgIdentifierLastModifiedAtIdx", "background": true} {"accountIdentifier": 1, "deleted": 1, "orgIdentifier": 1, "identifier": 1, "lastModifiedAt": 1}
 projects {"name": "accountOrgIdentifierDeletedLastModifiedAtCreatedAtIdx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "identifier": 1, "deleted": 1, "lastModifiedAt": 1, "createdAt": 1}
 projects {"name": "unique_accountIdentifier_organizationIdentifier_projectIdentifier", "unique": true, "collation": {"locale": "en", "strength": 1}} {"accountIdentifier": 1, "orgIdentifier": 1, "identifier": 1}
-pruneQueue2 {"name": "earliestGet_1", "background": true, "expireAfterSeconds": 86400} {"earliestGet": 1}
-pruneQueue2 {"name": "next4", "background": true} {"topic": 1, "earliestGet": 1}
-resourceConstraint {"name": "createdAt_1", "background": true} {"createdAt": 1}
-resourceConstraint {"name": "uniqueName", "unique": true} {"accountId": 1, "name": 1}
-resourceConstraintInstances {"name": "accountId_1", "background": true} {"accountId": 1}
-resourceConstraintInstances {"name": "app_release_entity", "background": true} {"appId": 1, "releaseEntityType": 1, "releaseEntityId": 1}
-resourceConstraintInstances {"name": "constraintStateUnitOrderIdx", "background": true} {"resourceConstraintId": 1, "state": 1, "resourceUnit": 1, "order": 1}
-resourceConstraintInstances {"name": "iterationIndex", "background": true} {"state": 1, "nextIteration": 1}
-resourceConstraintInstances {"name": "releaseEntity_state", "background": true} {"releaseEntityId": 1, "state": 1}
-resourceConstraintInstances {"name": "uniqueUnitOrder", "unique": true} {"resourceConstraintId": 1, "resourceUnit": 1, "order": 1}
-resourceConstraintInstances {"name": "usageIndex", "background": true} {"resourceConstraintId": 1, "order": 1}
-resourceConstraintInstances {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-resourceLookup {"name": "accountId_createdAt_ResourceLookup_Index", "background": true} {"accountId": 1, "createdAt": -1}
-resourceLookup {"name": "createdAt_1", "background": true} {"createdAt": 1}
-resourceLookup {"name": "resourceIdResourceLookupIndex", "background": true} {"accountId": 1, "resourceId": 1}
-resourceLookup {"name": "resourceId_1", "background": true} {"resourceId": 1}
-resourceLookup {"name": "resourceIndex_1", "background": true} {"accountId": 1, "resourceType": 1, "appId": 1, "resourceName": 1}
-resourceLookup {"name": "resourceIndex_3", "background": true} {"accountId": 1, "resourceName": 1, "resourceType": 1}
-resourceLookup {"name": "tagsNameResourceLookupIndex", "background": true} {"accountId": 1, "tags.name": 1}
-roles {"name": "appId_1", "background": true} {"appId": 1}
-roles {"name": "createdAt_1", "background": true} {"createdAt": 1}
-roles {"name": "roleType_accountId_1", "background": true} {"roleType": 1, "accountId": 1}
-schema {"name": "createdAt_1", "background": true} {"createdAt": 1}
-searchDistributedLocks {"name": "heartbeat_1", "background": true, "expireAfterSeconds": 70} {"heartbeat": 1}
-searchDistributedLocks {"name": "uuid_1", "background": true} {"uuid": 1}
-secretChangeLogs {"name": "acctEncryptedDataIdx", "background": true} {"accountId": 1, "encryptedDataId": 1}
-secretChangeLogs {"name": "createdAt_1", "background": true} {"createdAt": 1}
-secretManagerRuntimeParameters {"name": "executionId_1", "background": true} {"executionId": 1}
-secretManagers {"name": "accountId_1", "background": true} {"accountId": 1}
-secretManagers {"name": "createdAt_1", "background": true} {"createdAt": 1}
-secretManagers {"name": "identifierCheckIdx", "background": true} {"ngMetadata.accountIdentifier": 1, "ngMetadata.orgIdentifier": 1, "ngMetadata.projectIdentifier": 1, "ngMetadata.identifier": 1}
-secretManagers {"name": "manuallyEnteredSecretEngineMigrationIteration_1", "background": true} {"manuallyEnteredSecretEngineMigrationIteration": 1}
-secretManagers {"name": "nextTokenRenewIteration_1", "background": true} {"nextTokenRenewIteration": 1}
-secretManagers {"name": "renewCheckIdx", "background": true} {"encryptionType": 1, "nextTokenRenewIteration": 1}
-secretManagers {"name": "uniqueIdx", "unique": true} {"name": 1, "accountId": 1, "encryptionType": 1, "ngMetadata.accountIdentifier": 1, "ngMetadata.orgIdentifier": 1, "ngMetadata.projectIdentifier": 1, "ngMetadata.identifier": 1}
-secretUsageLogs {"name": "acctEncryptedDataIdx", "background": true} {"accountId": 1, "encryptedDataId": 1}
-secretUsageLogs {"name": "appId_1", "background": true} {"appId": 1}
-secretUsageLogs {"name": "createdAt_1", "background": true} {"createdAt": 1}
-secretUsageLogs {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 secrets {"name": "migratedFromManager_1", "background": true} {"migratedFromManager": 1}
 secrets {"name": "unique_identification", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1}
-segmentGroupEventJobContexts {"name": "nextIteration_1", "background": true} {"nextIteration": 1}
-serverless-instance-stats {"name": "accountId_timestamp_unique_idx", "unique": true} {"accountId": 1, "timestamp": 1}
-serverless-instance-stats {"name": "createdAt_1", "background": true} {"createdAt": 1}
-serverless-instance-stats {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-serverlessInstance {"name": "accountId_1", "background": true} {"accountId": 1}
-serverlessInstance {"name": "appId_1", "background": true} {"appId": 1}
-serverlessInstance {"name": "createdAt_1", "background": true} {"createdAt": 1}
-serverlessInstance {"name": "deletedAt_1", "background": true} {"deletedAt": 1}
-serverlessInstance {"name": "isDeleted_1", "background": true} {"isDeleted": 1}
-serverlessInstance {"name": "serverless_instance_index1", "background": true} {"appId": 1, "isDeleted": 1, "deletedAt": 1}
-serverlessInstance {"name": "serverless_instance_index2", "background": true} {"appId": 1, "infraMappingId": 1, "isDeleted": 1, "deletedAt": 1}
-serverlessInstance {"name": "serverless_instance_index3", "background": true} {"accountId": 1, "createdAt": 1, "isDeleted": 1, "deletedAt": 1}
-serverlessInstance {"name": "serverless_instance_index5", "background": true} {"appId": 1, "serviceId": 1, "createdAt": 1, "isDeleted": 1, "deletedAt": 1}
-serverlessInstance {"name": "serverless_instance_index7", "background": true} {"accountId": 1, "isDeleted": 1}
-serverlessInstance {"name": "serverless_instance_index8", "background": true} {"appId": 1, "serviceId": 1, "isDeleted": 1}
 serviceAccounts {"name": "list_accounts_idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1}
 serviceAccounts {"name": "unique_sa_idx", "unique": true, "collation": {"locale": "en", "strength": 1}} {"accountIdentifier": 1, "identifier": 1}
-serviceCommands {"name": "accountId_1", "background": true} {"accountId": 1}
-serviceCommands {"name": "appId_1", "background": true} {"appId": 1}
-serviceCommands {"name": "createdAt_1", "background": true} {"createdAt": 1}
-serviceCommands {"name": "serviceId_1", "background": true} {"serviceId": 1}
-serviceCommands {"name": "templateUuid_1", "background": true} {"templateUuid": 1}
-serviceInstance {"name": "accountId_1", "background": true} {"accountId": 1}
-serviceInstance {"name": "appId_1", "background": true} {"appId": 1}
-serviceInstance {"name": "createdAt_1", "background": true} {"createdAt": 1}
-serviceInstance {"name": "hostId_1", "background": true} {"hostId": 1}
-serviceInstance {"name": "infraMappingId_1", "background": true} {"infraMappingId": 1}
-serviceInstance {"name": "publicDns_1", "background": true} {"publicDns": 1}
 serviceOverridesNG {"name": "unique_accountId_organizationIdentifier_projectIdentifier_environmentRef_serviceRef", "unique": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "environmentRef": 1, "serviceRef": 1}
-serviceSecrets {"name": "serviceType_1", "unique": true} {"serviceType": 1}
-serviceTemplates {"name": "accountId_1", "background": true} {"accountId": 1}
-serviceTemplates {"name": "appId_1", "background": true} {"appId": 1}
-serviceTemplates {"name": "appId_serviceId_createdAt", "background": true} {"appId": 1, "serviceId": 1, "createdAt": -1}
-serviceTemplates {"name": "app_env_createdAt", "background": true} {"appId": 1, "envId": 1, "createdAt": -1}
-serviceTemplates {"name": "createdAt_1", "background": true} {"createdAt": 1}
-serviceTemplates {"name": "yaml", "unique": true} {"appId": 1, "envId": 1, "name": 1}
-serviceVariables {"name": "appEntityIdx", "background": true} {"appId": 1, "entityId": 1, "createdAt": -1}
-serviceVariables {"name": "appId_1", "background": true} {"appId": 1}
-serviceVariables {"name": "app_entityId", "background": true} {"appId": 1, "entityId": 1}
-serviceVariables {"name": "app_env_templateId", "background": true} {"appId": 1, "envId": 1, "templateId": 1}
-serviceVariables {"name": "createdAt_1", "background": true} {"createdAt": 1}
-serviceVariables {"name": "encryptedValue_1", "background": true} {"encryptedValue": 1}
-serviceVariables {"name": "serviceVariableUniqueIdx", "unique": true} {"entityId": 1, "templateId": 1, "overrideType": 1, "instances": 1, "expression": 1, "type": 1, "name": 1}
-services {"name": "accountCreatedAtIndex", "background": true} {"accountId": 1, "createdAt": -1}
-services {"name": "accountId_1", "background": true} {"accountId": 1}
-services {"name": "accountId_name", "background": true} {"accountId": 1, "name": 1}
-services {"name": "account_deploymentTypeIndex", "background": true} {"accountId": 1, "deploymentType": 1}
-services {"name": "appId_1", "background": true} {"appId": 1}
-services {"name": "artifactStreamIds_1", "background": true} {"artifactStreamIds": 1}
-services {"name": "createdAt_1", "background": true} {"createdAt": 1}
-services {"name": "yaml", "unique": true} {"appId": 1, "name": 1}
 servicesNG {"name": "index_accountId_orgId_projectId_createdAt_deleted_deletedAt", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "createdAt": 1, "deleted": 1, "deletedAt": 1}
 servicesNG {"name": "unique_accountId_organizationIdentifier_projectIdentifier_serviceIdentifier", "unique": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1}
-settingAttributes {"name": "accountIdAppIdCategoryCreatedAt", "background": true} {"accountId": 1, "appId": 1, "category": 1, "createdAt": -1}
-settingAttributes {"name": "accountIdAppIdCategoryNameIdx", "background": true, "collation": {"locale": "en", "strength": 1}} {"accountId": 1, "appId": 1, "category": 1, "name": 1}
-settingAttributes {"name": "acctCatTypeIdx", "background": true} {"accountId": 1, "category": 1, "value.type": 1}
-settingAttributes {"name": "acctValTypeIdx", "background": true} {"accountId": 1, "value.type": 1}
-settingAttributes {"name": "appId_1", "background": true} {"appId": 1}
-settingAttributes {"name": "createdAt_1", "background": true} {"createdAt": 1}
-settingAttributes {"name": "locate", "unique": true} {"accountId": 1, "appId": 1, "envId": 1, "name": 1, "value.type": 1}
-settingAttributes {"name": "nextIteration_1", "background": true} {"nextIteration": 1}
-settingAttributes {"name": "secretsMigrationIdx", "background": true} {"value.type": 1, "nextSecretMigrationIteration": 1}
-settingAttributes {"name": "secretsMigrationPerAccountIdx", "background": true} {"value.type": 1, "secretsMigrated": 1, "accountId": 1}
-settingAttributes {"name": "typeNextIterationIdx", "background": true} {"value.type": 1, "nextIteration": 1}
 settingConfigurations {"name": "category_idx", "background": true} {"category": 1}
 settingConfigurations {"name": "identifier_unique_idx", "unique": true} {"identifier": 1}
 settings {"name": "accountIdentifier_orgIdentifier_projectIdentifier_category_idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "category": 1}
@@ -789,154 +139,16 @@ settingsConfigurationState {"name": "identifier_1", "background": true} {"identi
 signupVerificationTokens {"name": "token_signupVerificationToken_query_index", "background": true} {"token": 1}
 sourceCodeManagers {"name": "accountIdentifier_1", "background": true} {"accountIdentifier": 1}
 sourceCodeManagers {"name": "uniqueIndex", "unique": true} {"userIdentifier": 1, "name": 1, "accountIdentifier": 1}
-ssoSettings {"name": "accountIdTypeIdx", "background": true} {"accountId": 1, "type": 1}
-ssoSettings {"name": "appId_1", "background": true} {"appId": 1}
-ssoSettings {"name": "createdAt_1", "background": true} {"createdAt": 1}
-ssoSettings {"name": "nextIterations_1", "background": true} {"nextIterations": 1}
-ssoSettings {"name": "typeNextIterations", "background": true} {"type": 1, "nextIterations": 1}
 stageExecutionInfo {"name": "sorted_stage_execution_info_idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "envIdentifier": 1, "infraIdentifier": 1, "serviceIdentifier": 1, "stageExecutionId": 1, "createdAt": -1}
 stageExecutionInfo {"name": "unique_stage_execution_info_deployment_identifier_idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "envIdentifier": 1, "infraIdentifier": 1, "serviceIdentifier": 1, "deploymentIdentifier": 1, "stageExecutionId": 1}
 stageExecutionInfo {"name": "unique_stage_execution_info_idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "envIdentifier": 1, "infraIdentifier": 1, "serviceIdentifier": 1, "stageExecutionId": 1}
-stateExecutionInstances {"name": "accountId_1", "background": true} {"accountId": 1}
-stateExecutionInstances {"name": "appIdExecutionIdStatus", "background": true} {"appId": 1, "executionUuid": 1, "status": 1}
-stateExecutionInstances {"name": "appId_1", "background": true} {"appId": 1}
-stateExecutionInstances {"name": "createdAt_1", "background": true} {"createdAt": 1}
-stateExecutionInstances {"name": "executionUuid_1", "background": true} {"executionUuid": 1}
-stateExecutionInstances {"name": "parentInstanceId_1", "background": true} {"parentInstanceId": 1}
-stateExecutionInstances {"name": "parentInstances2", "background": true} {"executionUuid": 1, "parentInstanceId": 1, "createdAt": 1}
-stateExecutionInstances {"name": "stateTypes2", "background": true} {"executionUuid": 1, "stateType": 1, "createdAt": 1}
-stateExecutionInstances {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-stateInspections {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-stateMachines {"name": "accountId_1", "background": true} {"accountId": 1}
-stateMachines {"name": "appId_1", "background": true} {"appId": 1}
-stateMachines {"name": "appId_origin", "background": true} {"appId": 1, "originId": 1, "originVersion": 1}
-stateMachines {"name": "createdAt_1", "background": true} {"createdAt": 1}
-stateMachines {"name": "originId_1", "background": true} {"originId": 1}
-sweepingOutput2 {"name": "phaseExecutionIdNamePrefix", "background": true} {"appId": 1, "phaseExecutionId": 1, "name": 1, "createdAt": -1}
-sweepingOutput2 {"name": "pipelineExecutionIdNamePrefix", "background": true} {"appId": 1, "pipelineExecutionId": 1, "createdAt": 1, "name": 1}
-sweepingOutput2 {"name": "pipelineStateExecution", "background": true} {"appId": 1, "pipelineExecutionId": 1, "stateExecutionId": 1}
-sweepingOutput2 {"name": "uniquePhaseExecution", "unique": true} {"appId": 1, "name": 1, "phaseExecutionId": 1}
-sweepingOutput2 {"name": "uniquePipelineExecution", "unique": true} {"appId": 1, "name": 1, "pipelineExecutionId": 1}
-sweepingOutput2 {"name": "uniqueStateExecution", "unique": true} {"appId": 1, "name": 1, "stateExecutionId": 1}
-sweepingOutput2 {"name": "uniqueWorkflowExecution", "unique": true} {"appId": 1, "name": 1, "workflowExecutionIds": 1}
-sweepingOutput2 {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-sweepingOutput2 {"name": "workflowExecutionIdsNamePrefix", "background": true} {"appId": 1, "workflowExecutionIds": 1, "name": 1, "createdAt": -1}
-syncStatus {"name": "appId_1", "background": true} {"appId": 1}
-syncStatus {"name": "compositeIdx1", "unique": true} {"appId": 1, "serviceId": 1, "envId": 1, "infraMappingId": 1}
-syncStatus {"name": "compositeIdx2", "background": true} {"appId": 1, "infraMappingId": 1}
-syncStatus {"name": "createdAt_1", "background": true} {"createdAt": 1}
-systemCatalogs {"name": "appId_1", "background": true} {"appId": 1}
-systemCatalogs {"name": "createdAt_1", "background": true} {"createdAt": 1}
-tagLinks {"name": "entityTagIdx", "unique": true} {"accountId": 1, "entityId": 1, "key": 1}
-tagLinks {"name": "tagValueIdx", "background": true} {"accountId": 1, "key": 1, "value": 1}
-tags {"name": "tagIdx", "unique": true} {"accountId": 1, "key": 1}
-taskSelectorMaps {"name": "createdAt_1", "background": true} {"createdAt": 1}
-taskSelectorMaps {"name": "uniqueGroup", "unique": true} {"accountId": 1, "taskGroup": 1}
-templateFolders {"name": "account_gallery_app_idx", "background": true} {"accountId": 1, "galleryId": 1, "appId": 1}
-templateFolders {"name": "appId_1", "background": true} {"appId": 1}
-templateFolders {"name": "createdAt_1", "background": true} {"createdAt": 1}
-templateFolders {"name": "duplicateKey", "unique": true} {"accountId": 1, "name": 1, "pathId": 1, "appId": 1}
-templateGalleries {"name": "account_gallery_key_idx", "background": true} {"accountId": 1, "galleryKey": 1}
-templateGalleries {"name": "appId_1", "background": true} {"appId": 1}
-templateGalleries {"name": "createdAt_1", "background": true} {"createdAt": 1}
-templateVersions {"name": "account_imported_template_version", "background": true} {"accountId": 1, "templateUuid": 1, "importedTemplateVersion": 1}
-templateVersions {"name": "account_template_version", "background": true} {"accountId": 1, "templateUuid": 1, "version": -1}
-templateVersions {"name": "appId_1", "background": true} {"appId": 1}
-templateVersions {"name": "createdAt_1", "background": true} {"createdAt": 1}
-templateVersions {"name": "yaml", "unique": true} {"templateUuid": 1, "version": 1}
-templates {"name": "account_gallery_app_idx", "background": true} {"accountId": 1, "galleryId": 1, "appId": 1}
-templates {"name": "appId_1", "background": true} {"appId": 1}
-templates {"name": "createdAt_1", "background": true} {"createdAt": 1}
-templates {"name": "folderId_1", "background": true} {"folderId": 1}
-templates {"name": "name_1", "background": true} {"name": 1}
-templates {"name": "yaml", "unique": true} {"accountId": 1, "name": 1, "folderId": 1, "appId": 1}
-terraformConfig {"name": "accountId_1", "background": true} {"accountId": 1}
-terraformConfig {"name": "appId_1", "background": true} {"appId": 1}
-terraformConfig {"name": "createdAt_1", "background": true} {"createdAt": 1}
-terraformConfig {"name": "entityId_1", "background": true} {"entityId": 1}
-thirdPartyApiCallLog {"name": "accountId_1", "background": true} {"accountId": 1}
-thirdPartyApiCallLog {"name": "queryIdx", "background": true} {"stateExecutionId": 1, "createdAt": -1}
-thirdPartyApiCallLog {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-timeSeriesAnalysisRecords {"name": "accountId_1", "background": true} {"accountId": 1}
-timeSeriesAnalysisRecords {"name": "appId_1", "background": true} {"appId": 1}
-timeSeriesAnalysisRecords {"name": "createdAt_1", "background": true} {"createdAt": 1}
-timeSeriesAnalysisRecords {"name": "service_guard_idx", "background": true} {"cvConfigId": 1, "analysisMinute": -1}
-timeSeriesAnalysisRecords {"name": "stateExIdx", "background": true} {"stateExecutionId": 1, "groupName": 1, "analysisMinute": -1}
-timeSeriesAnalysisRecords {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-timeSeriesAnalysisRecords {"name": "workflow_exec_appId_index", "background": true} {"workflowExecutionId": 1, "appId": 1}
-timeSeriesKeyTransactions {"name": "accountId_1", "background": true} {"accountId": 1}
-timeSeriesKeyTransactions {"name": "cvConfigId_1", "background": true} {"cvConfigId": 1}
-timeSeriesKeyTransactions {"name": "serviceId_1", "background": true} {"serviceId": 1}
-timeSeriesMLScores {"name": "accountId_1", "background": true} {"accountId": 1}
-timeSeriesMLScores {"name": "appId_1", "background": true} {"appId": 1}
-timeSeriesMLScores {"name": "createdAt_1", "background": true} {"createdAt": 1}
-timeSeriesMLScores {"name": "stateExecutionId_1", "background": true} {"stateExecutionId": 1}
-timeSeriesMLScores {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-timeSeriesMetricGroup {"name": "accountId_1", "background": true} {"accountId": 1}
-timeSeriesMetricGroup {"name": "appId_1", "background": true} {"appId": 1}
-timeSeriesMetricGroup {"name": "createdAt_1", "background": true} {"createdAt": 1}
-timeSeriesMetricGroup {"name": "stateExecutionId_1", "background": true} {"stateExecutionId": 1}
-timeSeriesMetricGroup {"name": "unique_state_execution_per_type", "unique": true} {"stateType": 1, "stateExecutionId": 1}
-timeSeriesMetricGroup {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-timeSeriesMetricRecords {"name": "accountId_1", "background": true} {"accountId": 1}
-timeSeriesMetricRecords {"name": "service_guard_idx", "background": true} {"cvConfigId": 1, "dataCollectionMinute": -1}
-timeSeriesMetricRecords {"name": "stateExIdx", "background": true} {"stateExecutionId": 1, "groupName": 1, "dataCollectionMinute": -1}
-timeSeriesMetricRecords {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-timeSeriesMetricRecords {"name": "workflowExIdx", "background": true} {"workflowExecutionId": 1, "groupName": 1, "dataCollectionMinute": -1}
-timeSeriesMetricTemplates {"name": "accountId_1", "background": true} {"accountId": 1}
-timeSeriesMetricTemplates {"name": "appId_1", "background": true} {"appId": 1}
-timeSeriesMetricTemplates {"name": "createdAt_1", "background": true} {"createdAt": 1}
-timeSeriesMetricTemplates {"name": "cvConfigId_1", "background": true} {"cvConfigId": 1}
-timeSeriesMetricTemplates {"name": "unique_state_execution_per_config", "unique": true} {"stateExecutionId": 1, "cvConfigId": 1}
-timeSeriesMetricTemplates {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-timeSeriesRawData {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-timeSeriesRiskSummary {"name": "accountId_1", "background": true} {"accountId": 1}
-timeSeriesRiskSummary {"name": "appId_1", "background": true} {"appId": 1}
-timeSeriesRiskSummary {"name": "createdAt_1", "background": true} {"createdAt": 1}
-timeSeriesRiskSummary {"name": "minute_idx", "background": true} {"cvConfigId": 1, "analysisMinute": 1, "tag": 1}
-timeSeriesRiskSummary {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-timeoutInstances {"name": "createdAt_1", "background": true} {"createdAt": 1}
-timeoutInstances {"name": "nextIteration_1", "background": true} {"nextIteration": 1}
-timeoutInstances {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-timeseriesTransactionThresholds {"name": "accountId_1", "background": true} {"accountId": 1}
-timeseriesTransactionThresholds {"name": "appId_1", "background": true} {"appId": 1}
-timeseriesTransactionThresholds {"name": "createdAt_1", "background": true} {"createdAt": 1}
-timeseriesTransactionThresholds {"name": "timeseriesThresholdsQueryIndex", "background": true} {"appId": 1, "serviceId": 1, "stateType": 1, "groupName": 1, "transactionName": 1, "metricName": 1, "cvConfigId": 1, "thresholdType": 1}
+terraformConfig {"name": "accountId_orgId_projectId_entityId_createdAt", "background": true} {"accountId": 1, "orgId": 1, "projectId": 1, "entityId": 1, "createdAt": -1}
 tokens {"name": "encodedPassword_1", "background": true} {"encodedPassword": 1}
 tokens {"name": "list_tokens_idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "apiKeyType": 1, "parentIdentifier": 1, "apiKeyIdentifier": 1}
 tokens {"name": "unique_idx", "unique": true, "collation": {"locale": "en", "strength": 1}} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1, "apiKeyType": 1, "parentIdentifier": 1, "apiKeyIdentifier": 1}
 tokens {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-triggerExecutions {"name": "accountId_1", "background": true} {"accountId": 1}
-triggerExecutions {"name": "appId_1", "background": true} {"appId": 1}
-triggerExecutions {"name": "createdAt_1", "background": true} {"createdAt": 1}
-triggerExecutions {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-triggers {"name": "accountId_1", "background": true} {"accountId": 1}
-triggers {"name": "appId_1", "background": true} {"appId": 1}
-triggers {"name": "artifactSelectionsArtifactStreamId", "background": true} {"artifactSelections.artifactStreamId": 1}
-triggers {"name": "conditionAppManifestId", "background": true} {"condition.conditionType": 1, "condition.appManifestId": 1}
-triggers {"name": "conditionArtifactStreamId", "background": true} {"condition.conditionType": 1, "condition.artifactStreamId": 1}
-triggers {"name": "createdAt_1", "background": true} {"createdAt": 1}
-triggers {"name": "nextIterations_1", "background": true} {"nextIterations": 1}
-triggers {"name": "triggerConditionNextIterations", "background": true} {"condition.conditionType": 1, "nextIterations": 1}
-triggers {"name": "webHookToken_1", "background": true} {"webHookToken": 1}
-triggers {"name": "yaml", "unique": true} {"appId": 1, "name": 1}
 user-groups {"name": "unique_user_groups_index", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1}
 user-groups {"name": "user_groups_ssoid_index", "background": true} {"linkedSsoId": 1, "isSsoLinked": 1}
-userDataSpecifications {"name": "accountId_1", "background": true} {"accountId": 1}
-userDataSpecifications {"name": "appId_1", "background": true} {"appId": 1}
-userDataSpecifications {"name": "createdAt_1", "background": true} {"createdAt": 1}
-userDataSpecifications {"name": "serviceId_1", "unique": true} {"serviceId": 1}
-userGroups {"name": "accountAndMemberIds", "background": true} {"accountId": 1, "memberIds": 1}
-userGroups {"name": "accountIdAndFilterTypeAndAppIds", "background": true} {"accountId": 1, "appPermissions.appFilter.filterType": 1, "appPermissions.appFilter.ids": 1}
-userGroups {"name": "accountIdAndImportedByScim", "background": true} {"accountId": 1, "importedByScim": 1}
-userGroups {"name": "accountIdAndName", "background": true} {"accountId": 1, "name": 1}
-userGroups {"name": "accountId_1", "background": true} {"accountId": 1}
-userGroups {"name": "appId_1", "background": true} {"appId": 1}
-userGroups {"name": "createdAt_1", "background": true} {"createdAt": 1}
-userGroups {"name": "name_1", "background": true} {"name": 1}
-userInvites {"name": "accountId_email_1", "background": true} {"accountId": 1, "email": 1}
-userInvites {"name": "appId_1", "background": true} {"appId": 1}
-userInvites {"name": "createdAt_1", "background": true} {"createdAt": 1}
 userMemberships {"name": "nextIteration_1", "background": true} {"nextIteration": 1}
 userMemberships {"name": "uniqueUserMembershipUserId", "unique": true} {"userId": 1}
 userMemberships {"name": "userMembershipAccountOrgProject", "background": true} {"scopes.accountIdentifier": 1, "scopes.orgIdentifier": 1, "scopes.projectIdentifier": 1}
@@ -947,119 +159,19 @@ userMetadata {"name": "uniqueUserMetadataEmailId", "unique": true} {"email": 1}
 userProjectMaps {"name": "accountOrgProjectMapIdx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1}
 userProjectMaps {"name": "uniqueUserProjectMap", "unique": true} {"userId": 1, "accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1}
 userProjectMaps {"name": "userProjectMapMigrationIdx", "background": true} {"moved": 1, "tries": 1}
-users {"name": "accountsIdx", "background": true} {"accounts": 1}
-users {"name": "appId_1", "background": true} {"appId": 1}
-users {"name": "createdAt_1", "background": true} {"createdAt": 1}
-users {"name": "email_1", "unique": true} {"email": 1}
-users {"name": "externalUserId_1", "background": true} {"externalUserId": 1}
-users {"name": "name_1", "background": true} {"name": 1}
-users {"name": "pendingAccountsIdx", "background": true} {"pendingAccounts": 1}
-users {"name": "userIdAccountIdx", "background": true} {"accounts": 1, "externalUserId": 1}
 variables {"name": "accountId_orgId_projectId_createdAt_decreasing_sort_Index", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "createdAt": -1}
 variables {"name": "accountId_orgId_projectId_identifier_unique_idx", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1}
-verificationServiceConfigurations {"name": "accountId_1", "background": true} {"accountId": 1}
-verificationServiceConfigurations {"name": "appId_1", "background": true} {"appId": 1}
-verificationServiceConfigurations {"name": "createdAt_1", "background": true} {"createdAt": 1}
-verificationServiceConfigurations {"name": "envId_1", "background": true} {"envId": 1}
-verificationServiceConfigurations {"name": "serviceId_1", "background": true} {"serviceId": 1}
-verificationServiceConfigurations {"name": "unique_name", "unique": true} {"appId": 1, "envId": 1, "name": 1}
-verificationServiceConfigurations {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-verificationServiceTask {"name": "accountId_1", "background": true} {"accountId": 1}
-verificationServiceTask {"name": "appId_1", "background": true} {"appId": 1}
-verificationServiceTask {"name": "createdAt_1", "background": true} {"createdAt": 1}
-verificationServiceTask {"name": "cvTaskCreationIndex", "background": true} {"cvTasksCreated": 1, "cvTaskCreationIteration": 1}
-verificationServiceTask {"name": "cvTaskCreationIteration_1", "background": true} {"cvTaskCreationIteration": 1}
-verificationServiceTask {"name": "executionStatus_1", "background": true} {"executionStatus": 1}
-verificationServiceTask {"name": "feedbackIteration_1", "background": true} {"feedbackIteration": 1}
-verificationServiceTask {"name": "logAnalysisIterationIdx", "background": true} {"analysisType": 1, "executionStatus": 1, "logAnalysisIteration": 1}
-verificationServiceTask {"name": "logAnalysisIteration_1", "background": true} {"logAnalysisIteration": 1}
-verificationServiceTask {"name": "logClusterIteration_1", "background": true} {"logClusterIteration": 1}
-verificationServiceTask {"name": "stateExecutionId_1", "background": true} {"stateExecutionId": 1}
-verificationServiceTask {"name": "task_Unique_Idx", "unique": true} {"stateExecutionId": 1, "executionStatus": 1}
-verificationServiceTask {"name": "timeSeriesAnalysisIterationIdx", "background": true} {"analysisType": 1, "executionStatus": 1, "timeSeriesAnalysisIteration": 1}
-verificationServiceTask {"name": "timeSeriesAnalysisIteration_1", "background": true} {"timeSeriesAnalysisIteration": 1}
-verificationServiceTask {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-verificationServiceTask {"name": "workflowDataCollectionIdx", "background": true} {"stateType": 1, "perMinCollectionFinished": 1}
-verificationServiceTask {"name": "workflowDataCollectionIteration_1", "background": true} {"workflowDataCollectionIteration": 1}
-versionOverride {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-versionedTemplate {"name": "appId_1", "background": true} {"appId": 1}
-versionedTemplate {"name": "createdAt_1", "background": true} {"createdAt": 1}
-versionedTemplate {"name": "referencedTemplates", "background": true} {"templateObject.referencedTemplateList.templateReference.templateUuid": 1}
-versionedTemplate {"name": "yaml", "unique": true} {"accountId": 1, "templateId": 1, "version": 1}
 waitInstances {"name": "correlationIds_1", "background": true} {"correlationIds": 1}
 waitInstances {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 waitInstances {"name": "waitingOnCorrelationIds_1", "background": true} {"waitingOnCorrelationIds": 1}
 webhookEvents {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-whitelist {"name": "accountId_1", "background": true} {"accountId": 1}
-whitelist {"name": "appId_1", "background": true} {"appId": 1}
-whitelist {"name": "createdAt_1", "background": true} {"createdAt": 1}
-workflowExecutionBaselines {"name": "accountId_1", "background": true} {"accountId": 1}
-workflowExecutionBaselines {"name": "appId_1", "background": true} {"appId": 1}
-workflowExecutionBaselines {"name": "createdAt_1", "background": true} {"createdAt": 1}
-workflowExecutionBaselines {"name": "unique_baseline", "unique": true} {"workflowId": 1, "envId": 1, "serviceId": 1}
-workflowExecutionBaselines {"name": "workflowExecutionId_1", "background": true} {"workflowExecutionId": 1}
-workflowExecutions {"name": "accountId_1_deployedServices_1_createdAt_-1_appId_1_status_1", "background": true} {"accountId": 1, "deployedServices": 1, "createdAt": -1, "appId": 1, "status": 1}
-workflowExecutions {"name": "accountId_appId_cdPageCandidate_pipelineSummary.pipelineId_envIds_createdAt", "background": true} {"accountId": 1, "appId": 1, "cdPageCandidate": 1, "pipelineSummary.pipelineId": 1, "envIds": 1, "createdAt": -1}
-workflowExecutions {"name": "accountId_appId_tags_createdAt", "background": true} {"accountId": 1, "appId": 1, "tags.name": 1, "createdAt": -1}
-workflowExecutions {"name": "accountId_cdPageCandidate_createdAt", "background": true} {"accountId": 1, "cdPageCandidate": 1, "createdAt": -1}
-workflowExecutions {"name": "accountId_createdAt2", "background": true} {"accountId": 1, "createdAt": -1}
-workflowExecutions {"name": "accountId_endTs", "background": true} {"accountId": 1, "endTs": -1}
-workflowExecutions {"name": "accountId_pipExecutionId_createdAt", "background": true} {"accountId": 1, "pipelineExecutionId": 1, "createdAt": -1}
-workflowExecutions {"name": "accountId_startTs_serviceIds", "background": true} {"accountId": 1, "startTs": 1, "serviceIds": 1}
-workflowExecutions {"name": "accountId_status_pipelineExecutionId_endTs", "background": true} {"accountId": 1, "status": 1, "pipelineExecutionId": 1, "endTs": 1}
-workflowExecutions {"name": "accountId_status_pipelineExecutionId_startTs", "background": true} {"accountId": 1, "status": 1, "pipelineExecutionId": 1, "startTs": 1}
-workflowExecutions {"name": "accountId_tags_createdAt", "background": true} {"accountId": 1, "tags.name": 1, "createdAt": -1}
-workflowExecutions {"name": "appId_endTs", "background": true} {"appId": 1, "endTs": 1}
-workflowExecutions {"name": "app_pipExecutionId_createdAt", "background": true} {"appId": 1, "pipelineExecutionId": 1, "createdAt": -1}
-workflowExecutions {"name": "appid_status_workflowid_infraMappingIds_createdat", "background": true} {"appId": 1, "status": 1, "workflowId": 1, "infraMappingIds": 1, "createdAt": -1}
-workflowExecutions {"name": "appid_workflowid_infraMappingIds_status_createdat", "background": true} {"appId": 1, "workflowId": 1, "infraMappingIds": 1, "status": 1, "createdAt": -1}
-workflowExecutions {"name": "appid_workflowid_status_deployedServices_createdat", "background": true} {"appId": 1, "workflowId": 1, "status": 1, "deployedServices": 1, "createdAt": -1}
-workflowExecutions {"name": "createdAt_1", "background": true} {"createdAt": 1}
-workflowExecutions {"name": "infraDefinitionIds_1", "background": true} {"infraDefinitionIds": 1}
-workflowExecutions {"name": "infraMappingIds_1", "background": true} {"infraMappingIds": 1}
-workflowExecutions {"name": "lastInfraMappingSearch", "background": true} {"appId": 1, "workflowType": 1, "status": 1, "infraMappingIds": 1, "createdAt": -1}
-workflowExecutions {"name": "pipelineResumeId_1", "background": true, "sparse": true} {"pipelineResumeId": 1}
-workflowExecutions {"name": "search", "background": true} {"workflowId": 1, "status": 1}
-workflowExecutions {"name": "searchByServiceIds", "background": true} {"appId": 1, "workflowId": 1, "status": 1, "serviceIds": 1, "createdAt": -1}
-workflowExecutions {"name": "serviceIds_1", "background": true} {"serviceIds": 1}
-workflowExecutions {"name": "service_guard", "background": true} {"appId": 1, "startTs": 1}
-workflowExecutions {"name": "status_1", "background": true} {"status": 1}
-workflowExecutions {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-workflowExecutions {"name": "workflowExecutionMonitor", "background": true} {"status": 1, "nextIteration": 1}
-workflowVerificationResults {"name": "accountId_1", "background": true} {"accountId": 1}
-workflowVerificationResults {"name": "createdAt_1", "background": true} {"createdAt": 1}
-workflowVerificationResults {"name": "lastUpdatedAt_1", "background": true} {"lastUpdatedAt": 1}
-workflowVerificationResults {"name": "stateExecutionId_1", "unique": true} {"stateExecutionId": 1}
-workflowVerificationResults {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-workflows {"name": "accountIdCreatedAt", "background": true} {"accountId": 1, "createdAt": -1}
-workflows {"name": "accountId_name", "background": true} {"accountId": 1, "name": 1}
-workflows {"name": "account_orchestrationWorkflowTypeIndex", "background": true} {"accountId": 1, "orchestration.orchestrationWorkflowType": 1}
-workflows {"name": "appId_1", "background": true} {"appId": 1}
-workflows {"name": "appId_name", "background": true} {"appId": 1, "name": 1}
-workflows {"name": "createdAt_1", "background": true} {"createdAt": 1}
-workflows {"name": "linkedArtifactStreamIds_1", "background": true} {"linkedArtifactStreamIds": 1}
-workflows {"name": "linkedTemplateUuids_1", "background": true} {"linkedTemplateUuids": 1}
-yamlChangeSet {"name": "accountId_createdAt_index", "background": true} {"accountId": 1, "createdAt": -1}
-yamlChangeSet {"name": "accountId_queuekey_status_createdAt_index", "background": true} {"accountId": 1, "queueKey": 1, "status": 1, "createdAt": -1}
-yamlChangeSet {"name": "accountId_status_gitToHarness_createdAt_index", "background": true} {"accountId": 1, "status": 1, "gitToHarness": 1, "createdAt": 1}
-yamlChangeSet {"name": "appId_1", "background": true} {"appId": 1}
-yamlChangeSet {"name": "createdAt_1", "background": true} {"createdAt": 1}
-yamlChangeSet {"name": "searchIdx_1", "background": true} {"accountId": 1, "status": 1, "retryCount": 1}
-yamlChangeSet {"name": "status_1", "background": true} {"status": 1}
 yamlChangeSetNG {"name": "accountId_createdAt_index", "background": true} {"accountId": 1, "createdAt": -1}
 yamlChangeSetNG {"name": "accountId_queuekey_status_queuedOn_index", "background": true} {"accountId": 1, "queueKey": 1, "status": 1, "queuedOn": -1}
 yamlChangeSetNG {"name": "accountId_status_createdAt_index", "background": true} {"accountId": 1, "status": 1, "createdAt": 1}
 yamlChangeSetNG {"name": "accountId_status_retryCount_index", "background": true} {"accountId": 1, "status": 1, "retryCount": 1}
 yamlChangeSetNG {"name": "status_1", "background": true} {"status": 1}
-yamlGitConfig {"name": "appId_1", "background": true} {"appId": 1}
-yamlGitConfig {"name": "createdAt_1", "background": true} {"createdAt": 1}
-yamlGitConfig {"name": "unique_locate", "unique": true} {"accountId": 1, "entityId": 1, "entityType": 1}
 yamlGitConfigs {"name": "accountId_orgId_projectId_Index", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1}
 yamlGitConfigs {"name": "accountId_orgId_projectId_identifier_unique_Index", "unique": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1}
 yamlGitConfigs {"name": "accountId_orgId_projectId_repo_unique_Index", "unique": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "repo": 1}
 yamlGitConfigs {"name": "repo_1", "background": true} {"repo": 1}
 yamlGitConfigs {"name": "repo_branch_index", "background": true} {"repo": 1, "branch": 1}
-yamlSuccessfulChange {"name": "unique_yaml_file_path", "unique": true} {"accountId": 1, "yamlFilePath": 1}
-yamlSuccessfulChange {"name": "validUntil_1", "background": true, "expireAfterSeconds": 86400} {"validUntil": 1}
-yamlVersion {"name": "appId_1", "background": true} {"appId": 1}
-yamlVersion {"name": "createdAt_1", "background": true} {"createdAt": 1}

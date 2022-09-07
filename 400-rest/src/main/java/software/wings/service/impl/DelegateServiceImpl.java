@@ -3323,6 +3323,13 @@ public class DelegateServiceImpl implements DelegateService {
       }
     }
 
+    String delegateGroupId = delegate.getDelegateGroupId();
+    if (isBlank(delegateGroupId) && isNotBlank(delegate.getDelegateGroupName())) {
+      final DelegateGroup delegateGroup =
+          upsertDelegateGroup(delegate.getDelegateGroupName(), delegate.getAccountId(), null);
+      delegate.setDelegateGroupId(delegateGroup.getUuid());
+    }
+
     // can not proceed unless we receive valid token
     if (isBlank(delegate.getDelegateRandomToken()) || "null".equalsIgnoreCase(delegate.getDelegateRandomToken())) {
       throw new GeneralException("Received invalid token from ECS delegate");

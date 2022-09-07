@@ -237,6 +237,20 @@ public class AwsHelperResource {
         awsHelperService.getASGNames(connectorRef, orgIdentifier, projectIdentifier, region));
   }
 
+  @GET
+  @Path("clusters")
+  @ApiOperation(value = "Get clusters", nickname = "clusters")
+  public ResponseDTO<List<String>> getClusterNames(@NotNull @QueryParam("awsConnectorRef") String awsConnectorRef,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @NotNull @QueryParam("region") String region) {
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(awsConnectorRef, accountIdentifier, orgIdentifier, projectIdentifier);
+    return ResponseDTO.newResponse(
+        awsHelperService.getClusterNames(connectorRef, orgIdentifier, projectIdentifier, region));
+  }
+
   private InfrastructureDefinitionConfig getInfrastructureDefinitionConfig(
       String accountId, String orgIdentifier, String projectIdentifier, String envId, String infraDefinitionId) {
     if (isEmpty(envId)) {

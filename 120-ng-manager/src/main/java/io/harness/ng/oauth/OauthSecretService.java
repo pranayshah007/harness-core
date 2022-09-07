@@ -59,7 +59,7 @@ public class OauthSecretService {
         SecretDTOV2.builder()
             .identifier(format(oauthRefreshTokenSecretName, provider, (new Date()).getTime()))
             .name("Harness Oauth refresh token")
-            .spec(accessTokenSecretDTO)
+            .spec(refreshTokenSecretDTO)
             .type(SecretType.SecretText)
             .build());
     return OauthAccessTokenResponseDTO.builder()

@@ -9,6 +9,7 @@ import io.harness.cdng.azure.AzureHelperService;
 import io.harness.cdng.azure.config.ApplicationSettingsOutcome;
 import io.harness.cdng.azure.config.ConnectionStringsOutcome;
 import io.harness.cdng.azure.config.StartupCommandOutcome;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.service.beans.AzureWebAppServiceSpec;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
@@ -22,7 +23,6 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.SyncExecutable;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
@@ -49,6 +49,7 @@ public class AzureServiceSettingsStep implements SyncExecutable<EmptyStepParamet
   @Inject private ServiceStepsHelper serviceStepsHelper;
   @Inject private AzureHelperService azureHelperService;
   @Inject private CDStepHelper cdStepHelper;
+  @Inject private CDExpressionResolver expressionResolver;
 
   @Override
   public Class<EmptyStepParameters> getStepParametersClass() {
@@ -72,6 +73,8 @@ public class AzureServiceSettingsStep implements SyncExecutable<EmptyStepParamet
 
     final AzureWebAppServiceSpec serviceSpec = (AzureWebAppServiceSpec) service.getServiceDefinition().getServiceSpec();
 
+    expressionResolver.updateExpressions(ambiance, serviceSpec);
+
     final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
 
     final List<StepResponse.StepOutcome> outcomes = new ArrayList<>();
@@ -93,7 +96,7 @@ public class AzureServiceSettingsStep implements SyncExecutable<EmptyStepParamet
     return StepResponse.StepOutcome.builder()
         .name(CONNECTION_STRINGS)
         .outcome(ConnectionStringsOutcome.builder().store(storeConfig.getSpec()).build())
-        .group(StepOutcomeGroup.STAGE.name())
+        .group(StepCategory.STAGE.name())
         .build();
   }
 
@@ -106,7 +109,7 @@ public class AzureServiceSettingsStep implements SyncExecutable<EmptyStepParamet
     return StepResponse.StepOutcome.builder()
         .name(APPLICATION_SETTINGS)
         .outcome(ApplicationSettingsOutcome.builder().store(storeConfig.getSpec()).build())
-        .group(StepOutcomeGroup.STAGE.name())
+        .group(StepCategory.STAGE.name())
         .build();
   }
 
@@ -119,7 +122,7 @@ public class AzureServiceSettingsStep implements SyncExecutable<EmptyStepParamet
     return StepResponse.StepOutcome.builder()
         .name(STARTUP_COMMAND)
         .outcome(StartupCommandOutcome.builder().store(storeConfig.getSpec()).build())
-        .group(StepOutcomeGroup.STAGE.name())
+        .group(StepCategory.STAGE.name())
         .build();
   }
 }

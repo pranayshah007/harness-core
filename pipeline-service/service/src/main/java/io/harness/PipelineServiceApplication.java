@@ -41,6 +41,7 @@ import io.harness.engine.expressions.OrchestrationConstants;
 import io.harness.engine.interrupts.InterruptMonitor;
 import io.harness.engine.interrupts.OrchestrationEndInterruptHandler;
 import io.harness.engine.pms.execution.strategy.plan.PlanExecutionStrategy;
+import io.harness.engine.pms.start.NodeStartHelper;
 import io.harness.engine.timeouts.TimeoutInstanceRemover;
 import io.harness.event.OrchestrationEndGraphHandler;
 import io.harness.event.OrchestrationLogPublisher;
@@ -191,6 +192,7 @@ import com.google.inject.Module;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
+import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import io.dropwizard.Application;
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
@@ -289,6 +291,13 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
       @Singleton
       PipelineServiceConfiguration configuration() {
         return appConfig;
+      }
+
+      @Provides
+      @Singleton
+      @Named("dbAliases")
+      public List<String> getDbAliases() {
+        return appConfig.getDbAliases();
       }
     });
     modules.add(new NotificationClientModule(appConfig.getNotificationClientConfiguration()));
@@ -429,6 +438,8 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
     NodeExecutionServiceImpl nodeExecutionService =
         (NodeExecutionServiceImpl) injector.getInstance(Key.get(NodeExecutionService.class));
 
+    NodeStartHelper nodeStartHelper = injector.getInstance(Key.get(NodeStartHelper.class));
+
     // NodeStatusUpdateObserver
     nodeExecutionService.getStepStatusUpdateSubject().register(
         injector.getInstance(Key.get(PlanExecutionService.class)));
@@ -455,7 +466,7 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
     }
 
     // NodeExecutionStartObserver
-    nodeExecutionService.getNodeExecutionStartSubject().register(
+    nodeStartHelper.getNodeExecutionStartSubject().register(
         injector.getInstance(Key.get(StageStartNotificationHandler.class)));
 
     PlanStatusEventEmitterHandler planStatusEventEmitterHandler =

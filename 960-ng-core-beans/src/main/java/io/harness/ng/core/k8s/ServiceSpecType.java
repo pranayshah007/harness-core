@@ -11,10 +11,11 @@ public interface ServiceSpecType {
   String GITOPS = "GitOps";
   String KUBERNETES = "Kubernetes";
   String SSH = "Ssh";
-  String ECS = "Ecs";
+  String ECS = "ECS";
   String NATIVE_HELM = "NativeHelm";
   String PCF = "Pcf";
   String SERVERLESS_AWS_LAMBDA = "ServerlessAwsLambda";
   String WINRM = "WinRm";
   String AZURE_WEBAPP = "AzureWebApp";
+  String CUSTOM_DEPLOYMENT = "CustomDeployment";
 }

@@ -18,8 +18,10 @@ import io.harness.serializer.kryo.DelegateTasksKryoRegistrar;
 import io.harness.serializer.kryo.NGCoreKryoRegistrar;
 import io.harness.serializer.kryo.NotificationBeansKryoRegistrar;
 import io.harness.serializer.kryo.NotificationDelegateTasksKryoRegistrar;
+import io.harness.serializer.kryo.YamlKryoRegistrar;
 import io.harness.serializer.morphia.NotificationBeansMorphiaRegistrar;
 import io.harness.serializer.morphia.NotificationRegistrar;
+import io.harness.serializer.morphia.YamlMorphiaRegistrar;
 
 import com.google.common.collect.ImmutableSet;
 import org.mongodb.morphia.converters.TypeConverter;
@@ -39,6 +41,7 @@ public class NotificationRegistrars {
           .addAll(CvNextGenBeansRegistrars.kryoRegistrars)
           .addAll(ProjectAndOrgRegistrars.kryoRegistrars)
           .addAll(FiltersRegistrars.kryoRegistrars)
+          .add(YamlKryoRegistrar.class)
           .add(NGCoreKryoRegistrar.class)
           .add(DelegateTasksKryoRegistrar.class)
           .add(DelegateServiceBeansKryoRegistrar.class)
@@ -54,6 +57,7 @@ public class NotificationRegistrars {
           .addAll(io.harness.serializer.DelegateTaskRegistrars.morphiaRegistrars)
           .addAll(ProjectAndOrgRegistrars.morphiaRegistrars)
           .addAll(FiltersRegistrars.morphiaRegistrars)
+          .add(YamlMorphiaRegistrar.class)
           .build();
 
   public static final ImmutableSet<Class<? extends TypeConverter>> morphiaConverters =

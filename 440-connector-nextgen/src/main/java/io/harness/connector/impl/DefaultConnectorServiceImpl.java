@@ -1036,6 +1036,10 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
     }
   }
 
+  public void resetHeartBeatTask(String accountId, String taskId) {
+    connectorHeartbeatService.resetPerpetualTask(accountId, taskId);
+  }
+
   @Override
   public List<ConnectorResponseDTO> listbyFQN(String accountIdentifier, List<String> connectorFQN) {
     if (isEmpty(connectorFQN)) {
@@ -1150,7 +1154,7 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
     filterProperties.setTypes(Arrays.asList(new ConnectorType[] {ConnectorType.CE_KUBERNETES_CLUSTER}));
     filterProperties.setCcmConnectorFilter(CcmConnectorFilter.builder().k8sConnectorRef(k8sConnectorRefList).build());
     Page<Connector> ccmk8sConnectors =
-        listHelper(page, size, accountIdentifier, filterProperties, orgIdentifier, projectIdentifier, filterIdentifier,
+        listHelper(0, size, accountIdentifier, filterProperties, orgIdentifier, projectIdentifier, filterIdentifier,
             searchTerm, includeAllConnectorsAccessibleAtScope, getDistinctFromBranches);
     log.info("ccmk8sConnectors count elements: {} pages: {}", ccmk8sConnectors.getTotalElements(),
         ccmk8sConnectors.getTotalPages());

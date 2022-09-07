@@ -52,6 +52,7 @@ import io.harness.connector.entities.embedded.datadogconnector.DatadogConnector;
 import io.harness.connector.entities.embedded.docker.DockerConnector;
 import io.harness.connector.entities.embedded.docker.DockerUserNamePasswordAuthentication;
 import io.harness.connector.entities.embedded.dynatraceconnector.DynatraceConnector;
+import io.harness.connector.entities.embedded.elkconnector.ELKConnector;
 import io.harness.connector.entities.embedded.errortrackingconnector.ErrorTrackingConnector;
 import io.harness.connector.entities.embedded.gcpccm.GcpBillingExportDetails;
 import io.harness.connector.entities.embedded.gcpccm.GcpCloudCostConfig;
@@ -150,6 +151,7 @@ public class ConnectorMorphiaClassesRegistrar implements MorphiaRegistrar {
     set.add(JenkinsConnector.class);
     set.add(OciHelmConnector.class);
     set.add(CustomSecretManagerConnector.class);
+    set.add(ELKConnector.class);
   }
 
   @Override

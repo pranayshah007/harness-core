@@ -7,6 +7,7 @@
 
 package software.wings.service.impl.instance;
 
+import static io.harness.beans.FeatureName.CHANGE_INSTANCE_QUERY_OPERATOR_TO_NE;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.SearchFilter.Operator.EQ;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -25,6 +26,7 @@ import io.harness.beans.SortOrder.OrderType;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.WingsException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
 import io.harness.persistence.HIterator;
@@ -77,6 +79,7 @@ import org.mongodb.morphia.query.UpdateOperations;
 @Slf4j
 @OwnedBy(HarnessTeam.DX)
 public class InstanceServiceImpl implements InstanceService {
+  @Inject FeatureFlagService featureFlagService;
   @Inject private WingsPersistence wingsPersistence;
   @Inject private WingsMongoPersistence wingsMongoPersistence;
   @Inject private AppService appService;
@@ -499,13 +502,21 @@ public class InstanceServiceImpl implements InstanceService {
     pageRequest.addFilter(InstanceKeys.appId, Operator.EQ, appId);
     pageRequest.addOrder(SortOrder.Builder.aSortOrder().withField(InstanceKeys.lastUpdatedAt, OrderType.DESC).build());
     pageRequest.setLimit("1");
-    Instance instance = wingsPersistence.convertToQuery(Instance.class, pageRequest).get();
-    if (instance.getLastWorkflowExecutionId() == null) {
-      log.error("Got last workflow execution Id null which is not expected. Details: appid:{}, inframapping id: {}.",
-          appId, infrastructureDefinitionId);
-      pageRequest.addFilter(InstanceKeys.lastWorkflowExecutionId, Operator.EXISTS);
+    Instance instance;
+    // todo: GA this FF if works good and remove else clause
+    if (featureFlagService.isGlobalEnabled(CHANGE_INSTANCE_QUERY_OPERATOR_TO_NE)) {
+      pageRequest.addFilter(InstanceKeys.lastWorkflowExecutionId, Operator.NOT_EQ, new Object[] {null});
       instance = wingsPersistence.convertToQuery(Instance.class, pageRequest).get();
+    } else {
+      instance = wingsPersistence.convertToQuery(Instance.class, pageRequest).get();
+      if (instance.getLastWorkflowExecutionId() == null) {
+        log.error("Got last workflow execution Id null which is not expected. Details: appid:{}, inframapping id: {}.",
+            appId, infrastructureDefinitionId);
+        pageRequest.addFilter(InstanceKeys.lastWorkflowExecutionId, Operator.EXISTS);
+        instance = wingsPersistence.convertToQuery(Instance.class, pageRequest).get();
+      }
     }
+
     return instance;
   }
 }

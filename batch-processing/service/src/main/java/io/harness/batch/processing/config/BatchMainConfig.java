@@ -21,6 +21,8 @@ import software.wings.security.authentication.AwsS3SyncConfig;
 import software.wings.security.authentication.BatchQueryConfig;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
@@ -57,4 +59,15 @@ public class BatchMainConfig {
   private AwsAccountTagsCollectionJobConfig awsAccountTagsCollectionJobConfig;
   @JsonProperty("gcpConfig") private GcpConfig gcpConfig;
   @JsonProperty("notificationClient") private NotificationClientConfiguration notificationClientConfiguration;
+
+  public List<String> getDbAliases() {
+    List<String> dbAliases = new ArrayList<>();
+    if (harnessMongo != null) {
+      dbAliases.add(harnessMongo.getAliasDBName());
+    }
+    if (eventsMongo != null) {
+      dbAliases.add(eventsMongo.getAliasDBName());
+    }
+    return dbAliases;
+  }
 }

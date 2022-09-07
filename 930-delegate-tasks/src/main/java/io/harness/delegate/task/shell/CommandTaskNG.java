@@ -32,12 +32,15 @@ import io.harness.shell.ScriptType;
 import io.harness.shell.ShellExecutionData;
 import io.harness.shell.SshSessionManager;
 
+import com.google.common.base.Joiner;
 import com.google.inject.Inject;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.tuple.Pair;
@@ -105,6 +108,7 @@ public class CommandTaskNG extends AbstractDelegateRunnableTask {
     CommandExecutionData commandExecutionData = null;
     Map<String, String> outputVariables = new HashMap<>();
     Map<String, Object> taskContext = new LinkedHashMap<>();
+    logCommandUnits(parameters.getCommandUnits());
     for (NgCommandUnit commandUnit : parameters.getCommandUnits()) {
       CommandHandler handler = commandUnitHandlers.get(Pair.of(commandUnit.getCommandUnitType(), scriptType.name()));
       ExecuteCommandResponse executeCommandResponse =
@@ -132,6 +136,13 @@ public class CommandTaskNG extends AbstractDelegateRunnableTask {
         .errorMessage(getErrorMessage(status))
         .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
         .build();
+  }
+
+  private void logCommandUnits(List<NgCommandUnit> units) {
+    String commandUnits = "Received command units to execute on delegate: ["
+        + Joiner.on(", ").skipNulls().join(units.stream().map(NgCommandUnit::getName).collect(Collectors.toList()))
+        + "]";
+    log.info(commandUnits);
   }
 
   private String getErrorMessage(CommandExecutionStatus status) {

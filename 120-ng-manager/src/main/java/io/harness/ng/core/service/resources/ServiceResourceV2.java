@@ -19,7 +19,10 @@ import static io.harness.utils.PageUtils.getNGPageResponse;
 import static software.wings.beans.Service.ServiceKeys;
 
 import static java.lang.Long.parseLong;
+import static java.lang.String.format;
+import static java.util.Objects.isNull;
 import static javax.ws.rs.core.HttpHeaders.IF_MATCH;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNumeric;
 
 import io.harness.NGCommonEntityConstants;
@@ -43,11 +46,15 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.OrgAndProjectValidationHelper;
 import io.harness.ng.core.beans.NGEntityTemplateResponseDTO;
+import io.harness.ng.core.beans.ServiceV2YamlMetadata;
+import io.harness.ng.core.beans.ServicesV2YamlMetadataDTO;
+import io.harness.ng.core.beans.ServicesYamlMetadataApiInput;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.service.dto.ServiceRequestDTO;
 import io.harness.ng.core.service.dto.ServiceResponse;
+import io.harness.ng.core.service.entity.ArtifactSourcesResponseDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
 import io.harness.ng.core.service.mappers.NGServiceEntityMapper;
@@ -56,12 +63,14 @@ import io.harness.ng.core.service.mappers.ServiceFilterHelper;
 import io.harness.ng.core.service.services.ServiceEntityManagementService;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
+import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.rbac.NGResourceType;
 import io.harness.rbac.CDNGRbacUtility;
 import io.harness.repositories.UpsertOptions;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.utils.PageUtils;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -94,6 +103,7 @@ import javax.ws.rs.QueryParam;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -139,6 +149,7 @@ public class ServiceResourceV2 {
   private final OrgAndProjectValidationHelper orgAndProjectValidationHelper;
 
   public static final String SERVICE_PARAM_MESSAGE = "Service Identifier for the entity";
+  public static final String SERVICE_YAML_METADATA_INPUT_PARAM_MESSAGE = "List of Service Identifiers for the entities";
 
   @GET
   @Path("{serviceIdentifier}")
@@ -171,7 +182,7 @@ public class ServiceResourceV2 {
         serviceEntity.get().setYaml(NGServiceEntityMapper.toYaml(ngServiceConfig));
       }
     } else {
-      throw new NotFoundException(String.format("Service with identifier [%s] in project [%s], org [%s] not found",
+      throw new NotFoundException(format("Service with identifier [%s] in project [%s], org [%s] not found",
           serviceIdentifier, projectIdentifier, orgIdentifier));
     }
     return ResponseDTO.newResponse(version, serviceEntity.map(ServiceElementMapper::toResponseWrapper).orElse(null));
@@ -321,7 +332,9 @@ public class ServiceResourceV2 {
           description =
               "Specifies the sorting criteria of the list. Like sorting based on the last updated entity, alphabetical sorting in an ascending or descending order")
       @QueryParam("sort") List<String> sort,
-      @QueryParam("type") ServiceDefinitionType type, @QueryParam("gitOpsEnabled") Boolean gitOpsEnabled) {
+      @QueryParam("type") ServiceDefinitionType type, @QueryParam("gitOpsEnabled") Boolean gitOpsEnabled,
+      @QueryParam("deploymentTemplateIdentifier") String deploymentTemplateIdentifier,
+      @QueryParam("versionLabel") String versionLabel) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
         Resource.of(NGResourceType.SERVICE, null), SERVICE_VIEW_PERMISSION, "Unauthorized to list services");
 
@@ -337,6 +350,11 @@ public class ServiceResourceV2 {
       pageRequest = PageUtils.getPageRequest(page, size, sort);
     }
     Page<ServiceEntity> serviceEntities = serviceEntityService.list(criteria, pageRequest);
+    if (ServiceDefinitionType.CUSTOM_DEPLOYMENT == type && !isEmpty(deploymentTemplateIdentifier)
+        && !isEmpty(versionLabel)) {
+      serviceEntities =
+          getFilteredServiceEntities(page, size, sort, deploymentTemplateIdentifier, versionLabel, serviceEntities);
+    }
     serviceEntities.forEach(serviceEntity -> {
       if (EmptyPredicate.isEmpty(serviceEntity.getYaml())) {
         NGServiceConfig ngServiceConfig = NGServiceEntityMapper.toNGServiceConfig(serviceEntity);
@@ -441,11 +459,82 @@ public class ServiceResourceV2 {
       if (EmptyPredicate.isEmpty(serviceEntity.get().getYaml())) {
         throw new InvalidRequestException("Service is not configured with a Service definition. Service Yaml is empty");
       }
-      String serviceInputYaml = serviceEntityService.createServiceInputsYaml(serviceEntity.get().getYaml());
+      String serviceInputYaml = serviceEntityService.createServiceInputsYaml(
+          serviceEntity.get().getYaml(), serviceEntity.get().getIdentifier());
       return ResponseDTO.newResponse(
           NGEntityTemplateResponseDTO.builder().inputSetTemplateYaml(serviceInputYaml).build());
     } else {
-      throw new NotFoundException(String.format("Service with identifier [%s] in project [%s], org [%s] not found",
+      throw new NotFoundException(format("Service with identifier [%s] in project [%s], org [%s] not found",
+          serviceIdentifier, projectIdentifier, orgIdentifier));
+    }
+  }
+
+  @POST
+  @Path("/servicesYamlMetadata")
+  @ApiOperation(
+      value = "This api returns service YAML and runtime input YAML", nickname = "getServicesYamlAndRuntimeInputs")
+  @Hidden
+  public ResponseDTO<ServicesV2YamlMetadataDTO>
+  getServicesYamlAndRuntimeInputs(@Parameter(description = SERVICE_YAML_METADATA_INPUT_PARAM_MESSAGE) @Valid
+                                  @NotNull ServicesYamlMetadataApiInput servicesYamlMetadataApiInput,
+      @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier) {
+    List<ServiceEntity> serviceEntities = serviceEntityService.getServices(
+        accountId, orgIdentifier, projectIdentifier, servicesYamlMetadataApiInput.getServiceIdentifiers());
+
+    List<ServiceV2YamlMetadata> serviceV2YamlMetadataList = new ArrayList<>();
+    serviceEntities.forEach(serviceEntity -> serviceV2YamlMetadataList.add(createServiceV2YamlMetadata(serviceEntity)));
+
+    return ResponseDTO.newResponse(
+        ServicesV2YamlMetadataDTO.builder().serviceV2YamlMetadataList(serviceV2YamlMetadataList).build());
+  }
+
+  private ServiceV2YamlMetadata createServiceV2YamlMetadata(ServiceEntity serviceEntity) {
+    if (isBlank(serviceEntity.getYaml())) {
+      throw new InvalidRequestException(
+          format("Service with identifier %s is not configured with a Service definition. Service Yaml is empty",
+              serviceEntity.getIdentifier()));
+    }
+
+    final String serviceInputSetYaml =
+        serviceEntityService.createServiceInputsYaml(serviceEntity.getYaml(), serviceEntity.getIdentifier());
+    return ServiceV2YamlMetadata.builder()
+        .serviceIdentifier(serviceEntity.getIdentifier())
+        .serviceYaml(serviceEntity.getYaml())
+        .inputSetTemplateYaml(serviceInputSetYaml)
+        .build();
+  }
+
+  @GET
+  @Path("/artifactSourceInputs/{serviceIdentifier}")
+  @ApiOperation(value = "This api returns artifact source identifiers and their runtime inputs YAML",
+      nickname = "getArtifactSourceInputs")
+  @Hidden
+  public ResponseDTO<ArtifactSourcesResponseDTO>
+  getArtifactSourceInputs(@Parameter(description = SERVICE_PARAM_MESSAGE) @PathParam(
+                              "serviceIdentifier") @ResourceIdentifier String serviceIdentifier,
+      @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier) {
+    Optional<ServiceEntity> serviceEntity =
+        serviceEntityService.get(accountId, orgIdentifier, projectIdentifier, serviceIdentifier, false);
+
+    if (serviceEntity.isPresent()) {
+      if (EmptyPredicate.isEmpty(serviceEntity.get().getYaml())) {
+        throw new InvalidRequestException(
+            format("Service %s is not configured with a Service definition. Service Yaml is empty", serviceIdentifier));
+      }
+      return ResponseDTO.newResponse(
+          serviceEntityService.getArtifactSourceInputs(serviceEntity.get().getYaml(), serviceIdentifier));
+    } else {
+      throw new NotFoundException(format("Service with identifier [%s] in project [%s], org [%s] not found",
           serviceIdentifier, projectIdentifier, orgIdentifier));
     }
   }
@@ -476,5 +565,36 @@ public class ServiceResourceV2 {
       throw new InvalidRequestException(
           "No request body sent in the API. Following field is required: identifier. Other optional fields: name, orgIdentifier, projectIdentifier, tags, description, version");
     }
+  }
+
+  private boolean isDTService(String deploymentTemplateIdentifier, String versionLabel, ServiceEntity serviceEntity) {
+    String yaml = serviceEntity.getYaml();
+    YamlConfig yamlConfig = new YamlConfig(yaml);
+    JsonNode service = yamlConfig.getYamlMap().get("service");
+    if (!isNull(service)) {
+      JsonNode serviceDef = service.get("serviceDefinition");
+      if (!isNull(serviceDef)) {
+        JsonNode serviceSpec = serviceDef.get("spec");
+        if (!isNull(serviceSpec)) {
+          JsonNode customDeploymentRef = serviceSpec.get("customDeploymentRef");
+          if (!isNull(customDeploymentRef)) {
+            JsonNode ref = customDeploymentRef.get("ref");
+            JsonNode versionLabelNode = customDeploymentRef.get("versionLabel");
+            return ref.asText().equals(deploymentTemplateIdentifier) && versionLabelNode.asText().equals(versionLabel);
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  @NotNull
+  private Page<ServiceEntity> getFilteredServiceEntities(int page, int size, List<String> sort,
+      String deploymentTemplateIdentifier, String versionLabel, Page<ServiceEntity> serviceEntities) {
+    List<ServiceEntity> entities = serviceEntities.getContent()
+                                       .stream()
+                                       .filter(s -> isDTService(deploymentTemplateIdentifier, versionLabel, s))
+                                       .collect(Collectors.toList());
+    return new PageImpl<>(entities, PageUtils.getPageRequest(page, size, sort), entities.size());
   }
 }

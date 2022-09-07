@@ -43,6 +43,7 @@ import io.harness.delegate.task.scm.ScmPushTaskResponseData;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.GitSyncTestBase;
 import io.harness.gitsync.common.dtos.CreateGitFileRequestDTO;
+import io.harness.gitsync.common.dtos.GetLatestCommitOnFileRequestDTO;
 import io.harness.gitsync.common.dtos.GitFileContent;
 import io.harness.gitsync.common.dtos.UpdateGitFileRequestDTO;
 import io.harness.gitsync.common.helper.GitSyncConnectorHelper;
@@ -52,6 +53,7 @@ import io.harness.product.ci.scm.proto.CreateBranchResponse;
 import io.harness.product.ci.scm.proto.CreateFileResponse;
 import io.harness.product.ci.scm.proto.CreatePRResponse;
 import io.harness.product.ci.scm.proto.FileContent;
+import io.harness.product.ci.scm.proto.GetLatestCommitOnFileResponse;
 import io.harness.product.ci.scm.proto.GetUserRepoResponse;
 import io.harness.product.ci.scm.proto.GetUserReposResponse;
 import io.harness.product.ci.scm.proto.ListBranchesResponse;
@@ -311,6 +313,32 @@ public class ScmDelegateFacilitatorServiceImplTest extends GitSyncTestBase {
     updateFileResponse = scmDelegateFacilitatorService.updateFile(updateGitFileRequestDTO);
     assertThat(updateFileResponse.getStatus()).isEqualTo(200);
     assertThat(updateFileResponse.getCommitId()).isEqualTo(commitId);
+  }
+
+  @Test
+  @Owner(developers = MOHIT_GARG)
+  @Category(UnitTests.class)
+  public void testGetLatestCommitOnFile() {
+    GetLatestCommitOnFileResponse getLatestCommitOnFileResponse =
+        GetLatestCommitOnFileResponse.newBuilder().setCommitId(commitId).build();
+    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+        .thenReturn(ScmGitRefTaskResponseData.builder()
+                        .getLatestCommitOnFileResponse(getLatestCommitOnFileResponse.toByteArray())
+                        .build());
+    GetLatestCommitOnFileRequestDTO getLatestCommitOnFileRequestDTO =
+        GetLatestCommitOnFileRequestDTO.builder()
+            .branchName(branch)
+            .filePath(filePath)
+            .scmConnector((ScmConnector) connectorInfo.getConnectorConfig())
+            .scope(Scope.builder()
+                       .accountIdentifier(accountIdentifier)
+                       .orgIdentifier(orgIdentifier)
+                       .projectIdentifier(projectIdentifier)
+                       .build())
+            .build();
+    getLatestCommitOnFileResponse =
+        scmDelegateFacilitatorService.getLatestCommitOnFile(getLatestCommitOnFileRequestDTO);
+    assertThat(getLatestCommitOnFileResponse.getCommitId()).isEqualTo(commitId);
   }
 
   @Test

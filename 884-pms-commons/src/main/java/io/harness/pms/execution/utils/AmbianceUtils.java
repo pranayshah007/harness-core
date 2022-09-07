@@ -18,6 +18,7 @@ import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
+import io.harness.pms.contracts.plan.TriggeredBy;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
@@ -278,5 +279,10 @@ public class AmbianceUtils {
       return true;
     }
     return false;
+  }
+
+  public String getEmail(Ambiance ambiance) {
+    TriggeredBy triggeredBy = ambiance.getMetadata().getTriggerInfo().getTriggeredBy();
+    return triggeredBy.getExtraInfoOrDefault("email", null);
   }
 }

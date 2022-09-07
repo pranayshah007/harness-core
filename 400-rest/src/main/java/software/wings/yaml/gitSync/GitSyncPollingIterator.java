@@ -59,7 +59,7 @@ public class GitSyncPollingIterator implements MongoPersistenceIterator.Handler<
 
   @Override
   public void handle(YamlGitConfig entity) {
-    yamlChangeSetService.pushYamlChangeSetForGitToHarness(
-        entity.getAccountId(), entity.getBranchName(), entity.getGitConnectorId(), entity.getRepositoryName());
+    yamlChangeSetService.pushYamlChangeSetForGitToHarness(entity.getAccountId(), entity.getBranchName(),
+        entity.getGitConnectorId(), entity.getRepositoryName(), entity.getAppId());
   }
 }

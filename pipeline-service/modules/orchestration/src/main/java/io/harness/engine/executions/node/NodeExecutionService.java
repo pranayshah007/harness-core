@@ -116,6 +116,9 @@ public interface NodeExecutionService {
 
   boolean errorOutActiveNodes(String planExecutionId);
 
+  List<NodeExecution> extractChildExecutions(
+      String parentId, boolean includeParent, List<NodeExecution> finalList, List<NodeExecution> allExecutions);
+
   boolean removeTimeoutInstances(String nodeExecutionId);
 
   List<RetryStageInfo> getStageDetailFromPlanExecutionId(String planExecutionId);

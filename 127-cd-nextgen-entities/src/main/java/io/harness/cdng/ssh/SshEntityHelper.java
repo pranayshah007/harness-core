@@ -30,6 +30,8 @@ import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.PdcInfrastructureOutcome;
 import io.harness.cdng.infra.beans.SshWinRmAwsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.SshWinRmAzureInfrastructureOutcome;
+import io.harness.cdng.infra.beans.host.dto.HostAttributesFilterDTO;
+import io.harness.cdng.infra.beans.host.dto.HostNamesFilterDTO;
 import io.harness.cdng.serverless.ServerlessEntityHelper;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.connector.ConnectorInfoDTO;
@@ -134,6 +136,7 @@ public class SshEntityHelper {
             .subscriptionId(azureInfrastructureOutcome.getSubscriptionId())
             .resourceGroup(azureInfrastructureOutcome.getResourceGroup())
             .tags(filterInfraTags(azureInfrastructureOutcome.getTags()))
+            .usePublicDns(azureInfrastructureOutcome.getUsePublicDns())
             .build();
       case SSH_WINRM_AWS:
         SshWinRmAwsInfrastructureOutcome awsInfrastructureOutcome = (SshWinRmAwsInfrastructureOutcome) infrastructure;
@@ -191,6 +194,7 @@ public class SshEntityHelper {
             .subscriptionId(azureInfrastructureOutcome.getSubscriptionId())
             .resourceGroup(azureInfrastructureOutcome.getResourceGroup())
             .tags(filterInfraTags(azureInfrastructureOutcome.getTags()))
+            .usePublicDns(azureInfrastructureOutcome.getUsePublicDns())
             .build();
       case SSH_WINRM_AWS:
         SshWinRmAwsInfrastructureOutcome awsInfrastructureOutcome = (SshWinRmAwsInfrastructureOutcome) infrastructure;
@@ -237,7 +241,8 @@ public class SshEntityHelper {
       return emptySet();
     }
 
-    if (isNotEmpty(pdcDirectInfrastructure.getHostFilters())) {
+    if (pdcDirectInfrastructure.getHostFilter() != null
+        && HostFilterType.HOST_NAMES.equals(pdcDirectInfrastructure.getHostFilter().getType())) {
       // filter hosts based on host names
       List<List<HostDTO>> batches = Lists.partition(hosts, BATCH_SIZE);
       return IntStream.range(0, batches.size())
@@ -247,7 +252,8 @@ public class SshEntityHelper {
           .collect(Collectors.toSet());
     }
 
-    if (isNotEmpty(pdcDirectInfrastructure.getAttributeFilters())) {
+    if (pdcDirectInfrastructure.getHostFilter() != null
+        && HostFilterType.HOST_ATTRIBUTES.equals(pdcDirectInfrastructure.getHostFilter().getType())) {
       // filter hosts based on host attributes
       List<List<HostDTO>> batches = Lists.partition(hosts, BATCH_SIZE);
       return IntStream.range(0, batches.size())
@@ -263,32 +269,47 @@ public class SshEntityHelper {
   private List<HostDTO> filterConnectorHostsByAttributes(
       NGAccess ngAccess, PdcInfrastructureOutcome pdcDirectInfrastructure, List<HostDTO> batch, int currentPageIndex) {
     PageRequest pageRequest = PageRequest.builder().pageIndex(currentPageIndex).pageSize(batch.size()).build();
+    HostAttributesFilterDTO filter = (HostAttributesFilterDTO) pdcDirectInfrastructure.getHostFilter().getSpec();
     Page<HostDTO> result = ngHostService.filterHostsByConnector(ngAccess.getAccountIdentifier(),
         ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier(), pdcDirectInfrastructure.getConnectorRef(),
-        HostFilterDTO.builder()
-            .type(HostFilterType.HOST_ATTRIBUTES)
-            .filter(pdcDirectInfrastructure.getAttributeFilters()
-                        .entrySet()
-                        .stream()
-                        .filter(e -> !YamlTypes.UUID.equals(e.getKey()))
-                        .map(e -> e.getKey() + ":" + e.getValue())
-                        .collect(joining(",")))
-            .build(),
-        pageRequest);
+        getHostFilterDTO(filter), pageRequest);
     return result.getContent();
   }
 
   private List<HostDTO> filterConnectorHostsByHostName(
       NGAccess ngAccess, PdcInfrastructureOutcome pdcDirectInfrastructure, List<HostDTO> batch, int currentPageIndex) {
     PageRequest pageRequest = PageRequest.builder().pageIndex(currentPageIndex).pageSize(batch.size()).build();
+    HostNamesFilterDTO filter = (HostNamesFilterDTO) pdcDirectInfrastructure.getHostFilter().getSpec();
     Page<HostDTO> result = ngHostService.filterHostsByConnector(ngAccess.getAccountIdentifier(),
         ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier(), pdcDirectInfrastructure.getConnectorRef(),
-        HostFilterDTO.builder()
-            .type(HostFilterType.HOST_NAMES)
-            .filter(pdcDirectInfrastructure.getHostFilters().stream().collect(joining(",")))
-            .build(),
-        pageRequest);
+        getHostFilterDTO(filter), pageRequest);
     return result.getContent();
+  }
+
+  private HostFilterDTO getHostFilterDTO(HostNamesFilterDTO filter) {
+    HostFilterDTO hostFilterDTO = null;
+    if (filter != null) {
+      List<String> hostNames = filter.getValue();
+      hostFilterDTO =
+          HostFilterDTO.builder().type(HostFilterType.HOST_NAMES).filter(String.join(",", hostNames)).build();
+    }
+    return hostFilterDTO;
+  }
+
+  private HostFilterDTO getHostFilterDTO(HostAttributesFilterDTO filter) {
+    HostFilterDTO filterDTO = null;
+    if (filter != null) {
+      Map<String, String> parameterField = filter.getValue();
+      filterDTO = HostFilterDTO.builder()
+                      .type(HostFilterType.HOST_ATTRIBUTES)
+                      .filter(parameterField.entrySet()
+                                  .stream()
+                                  .filter(e -> !YamlTypes.UUID.equals(e.getKey()))
+                                  .map(e -> e.getKey() + ":" + e.getValue())
+                                  .collect(joining(",")))
+                      .build();
+    }
+    return filterDTO;
   }
 
   private Set<String> toStringHostNames(Collection<HostDTO> hosts) {

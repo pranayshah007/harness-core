@@ -109,6 +109,7 @@ public class CustomApprovalStepTest extends CategoryTest {
   @Owner(developers = DEEPAK_PUTHRAYA)
   @Category(UnitTests.class)
   public void testSyncResponseSuccess() {
+    Ambiance ambiance = Ambiance.newBuilder().setMetadata(ExecutionMetadata.newBuilder().build()).build();
     ApprovalInstance instance = CustomApprovalInstance.builder().build();
     instance.setStatus(ApprovalStatus.APPROVED);
     when(approvalInstanceService.get(anyString())).thenReturn(instance);
@@ -119,8 +120,8 @@ public class CustomApprovalStepTest extends CategoryTest {
             .build();
 
     StepResponse stepResponse =
-        customApprovalStep.handleAsyncResponse(null, null, ImmutableMap.of("xyz", responseData));
-    verify(logStreamingStepClient).closeStream(ShellScriptTaskNG.COMMAND_UNIT);
+        customApprovalStep.handleAsyncResponse(ambiance, null, ImmutableMap.of("xyz", responseData));
+    verify(logStreamingStepClient).closeAllOpenStreamsWithPrefix(any());
     assertThat(stepResponse).isNotNull();
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
     assertThat(stepResponse.getFailureInfo()).isNull();
@@ -135,16 +136,18 @@ public class CustomApprovalStepTest extends CategoryTest {
   @Owner(developers = DEEPAK_PUTHRAYA)
   @Category(UnitTests.class)
   public void testSyncResponseFailure() {
+    Ambiance ambiance = Ambiance.newBuilder().setMetadata(ExecutionMetadata.newBuilder().build()).build();
     ApprovalInstance instance = CustomApprovalInstance.builder().build();
     instance.setStatus(ApprovalStatus.FAILED);
     instance.setErrorMessage("Custom Approval has no output fields. At least one output field must be set");
     when(approvalInstanceService.get(anyString())).thenReturn(instance);
     ResponseData responseData = CustomApprovalResponseData.builder().instanceId(UUID.randomUUID().toString()).build();
 
-    assertThatThrownBy(() -> customApprovalStep.handleAsyncResponse(null, null, ImmutableMap.of("xyz", responseData)))
+    assertThatThrownBy(
+        () -> customApprovalStep.handleAsyncResponse(ambiance, null, ImmutableMap.of("xyz", responseData)))
         .isInstanceOf(ApprovalStepNGException.class)
         .hasMessage("Custom Approval has no output fields. At least one output field must be set");
-    verify(logStreamingStepClient).closeStream(ShellScriptTaskNG.COMMAND_UNIT);
+    verify(logStreamingStepClient).closeAllOpenStreamsWithPrefix(any());
   }
 
   @Test
@@ -154,6 +157,6 @@ public class CustomApprovalStepTest extends CategoryTest {
     Ambiance ambiance = Ambiance.newBuilder().setMetadata(ExecutionMetadata.newBuilder().build()).build();
     customApprovalStep.handleAbort(ambiance, null, null);
     verify(approvalInstanceService).abortByNodeExecutionId(any());
-    verify(logStreamingStepClient).closeStream(ShellScriptTaskNG.COMMAND_UNIT);
+    verify(logStreamingStepClient).closeAllOpenStreamsWithPrefix(any());
   }
 }

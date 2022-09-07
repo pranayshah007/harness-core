@@ -303,13 +303,13 @@ public class AzureAsyncTaskHelper {
   }
 
   public AzureHostsResponse listHosts(List<EncryptedDataDetail> encryptionDetails, AzureConnectorDTO azureConnector,
-      String subscriptionId, String resourceGroup, AzureOSType osType, Map<String, String> tags) {
+      String subscriptionId, String resourceGroup, AzureOSType osType, Map<String, String> tags, boolean usePublicDns) {
     AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(azureConnector.getCredential(),
         encryptionDetails, azureConnector.getCredential().getAzureCredentialType(),
         azureConnector.getAzureEnvironmentType(), secretDecryptionService);
 
     return AzureHostsResponse.builder()
-        .hosts(azureComputeClient.listHosts(azureConfig, subscriptionId, resourceGroup, osType, tags)
+        .hosts(azureComputeClient.listHosts(azureConfig, subscriptionId, resourceGroup, osType, tags, usePublicDns)
                    .stream()
                    .map(this::toAzureHost)
                    .collect(Collectors.toList()))
@@ -319,7 +319,10 @@ public class AzureAsyncTaskHelper {
 
   @NotNull
   private AzureHostResponse toAzureHost(VirtualMachineData virtualMachineData) {
-    return AzureHostResponse.builder().hostName(virtualMachineData.getHostName()).build();
+    return AzureHostResponse.builder()
+        .hostName(virtualMachineData.getHostName())
+        .publicAddress(virtualMachineData.getPublicAddress())
+        .build();
   }
 
   public KubernetesConfig getClusterConfig(AzureConnectorDTO azureConnector, String subscriptionId,

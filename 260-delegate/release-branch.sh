@@ -60,22 +60,22 @@ git fetch origin refs/heads/develop; git checkout develop && git branch
 check_branch_name "develop"
 
 # Check for not merged hot fixes
-# echo "STEP1: INFO: Checking for Not Merged Hot Fixes in Master."
+echo "STEP1: INFO: Checking for Not Merged Hot Fixes in Master."
 
-# PROJFILE="jira-projects.txt"
-# check_file_present $PROJFILE
-# PROJECTS=$(<$PROJFILE)
+PROJFILE="jira-projects.txt"
+check_file_present $PROJFILE
+PROJECTS=$(<$PROJFILE)
 
-# git log --remotes=origin/release/${PURPOSE}/* --pretty=oneline --abbrev-commit | grep -iE "\[(${PROJECTS})-[0-9]+]:" -o | sort | uniq > release.txt
-# git log --remotes=origin/[d]evelop --pretty=oneline --abbrev-commit | grep -iE "\[(${PROJECTS})-[0-9]+]:" -o | sort | uniq > develop.txt
+git log --remotes=origin/release/${PURPOSE}/* --pretty=oneline --abbrev-commit | grep -iE "\[(${PROJECTS})-[0-9]+]:" -o | sort | uniq > release.txt
+git log --remotes=origin/[d]evelop --pretty=oneline --abbrev-commit | grep -iE "\[(${PROJECTS})-[0-9]+]:" -o | sort | uniq > develop.txt
 
-# NOT_MERGED=`comm -23 release.txt develop.txt`
+NOT_MERGED=`comm -23 release.txt develop.txt`
 
-# if [ ! -z "$NOT_MERGED" ]
-# then
-#     echo "ERROR: There are jira issues in access control release branches that are not reflected in develop."
-#     exit 1
-# fi
+if [ ! -z "$NOT_MERGED" ]
+then
+    echo "ERROR: There are jira issues in delegate release branches that are not reflected in develop."
+    exit 1
+fi
 
 # Bumping version in build.properties in develop branch.
 echo "STEP2: INFO: Bumping version in build.properties in develop branch."
@@ -105,6 +105,7 @@ print_err "$?" "Pushing build.properties to develop branch failed"
 echo "STEP3: INFO: Creating a release branch for ${PURPOSE}"
 
 # git checkout ${SHA}
+git checkout master
 git checkout -b release/${PURPOSE}/${VERSION}xx
 
 sed -i "s:build.number=???00:build.number=${VERSION}00:g" ${VERSION_FILE}

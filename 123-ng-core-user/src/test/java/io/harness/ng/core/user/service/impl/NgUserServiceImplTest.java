@@ -40,6 +40,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.licensing.services.LicenseService;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.core.AccountOrgProjectHelper;
+import io.harness.ng.core.api.DefaultUserGroupService;
 import io.harness.ng.core.api.UserGroupService;
 import io.harness.ng.core.dto.UserGroupFilterDTO;
 import io.harness.ng.core.invites.dto.RoleBinding;
@@ -105,6 +106,7 @@ public class NgUserServiceImplTest extends CategoryTest {
   @Mock private LicenseService licenseService;
   @Mock private LastAdminCheckService lastAdminCheckService;
   @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
+  @Mock private DefaultUserGroupService defaultUserGroupService;
   @Spy @Inject @InjectMocks private NgUserServiceImpl ngUserService;
   private String accountIdentifier;
   private String orgIdentifier;

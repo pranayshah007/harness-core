@@ -31,6 +31,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.concurrency.ConcurrentChildInstance;
 import io.harness.engine.observers.StepDetailsUpdateObserver;
 import io.harness.observer.Subject;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.data.stepdetails.PmsStepDetails;
 import io.harness.pms.data.stepparameters.PmsStepParameters;
 import io.harness.repositories.stepDetail.NodeExecutionsInfoRepository;
@@ -239,7 +240,7 @@ public class PmsGraphStepDetailsServiceImplTest extends OrchestrationTestBase {
     String nodeExecutionId = generateUuid();
     List<String> childrenNodeExecutionIds = new ArrayList<>();
     childrenNodeExecutionIds.add("ID1");
-    assertNull(pmsGraphStepDetailsService.incrementCursor(nodeExecutionId));
+    assertNull(pmsGraphStepDetailsService.incrementCursor(nodeExecutionId, Status.SUCCEEDED));
     NodeExecutionsInfo nodeExecutionsInfo =
         NodeExecutionsInfo.builder()
             .nodeExecutionId(nodeExecutionId)
@@ -249,7 +250,7 @@ public class PmsGraphStepDetailsServiceImplTest extends OrchestrationTestBase {
                 ConcurrentChildInstance.builder().cursor(4).childrenNodeExecutionIds(childrenNodeExecutionIds).build())
             .build();
     mongoTemplate.save(nodeExecutionsInfo);
-    pmsGraphStepDetailsService.incrementCursor(nodeExecutionId);
+    pmsGraphStepDetailsService.incrementCursor(nodeExecutionId, Status.SUCCEEDED);
     int cursor = mongoTemplate
                      .find(new Query(Criteria.where(NodeExecutionsInfoKeys.nodeExecutionId).is(nodeExecutionId)),
                          NodeExecutionsInfo.class)

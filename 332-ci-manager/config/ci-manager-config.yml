@@ -53,6 +53,7 @@ harness-mongo:
   serverSelectionTimeout: 90000
   maxConnectionIdleTime: 600000
   connectionsPerHost: 50
+  aliasDBName: harness
 cimanager-mongo:
   uri: mongodb://localhost:27017/harnessci
   connectTimeout: 30000
@@ -68,6 +69,7 @@ pmsMongo:
   maxConnectionIdleTime: 600000
   connectionsPerHost: 300
   indexManagerMode: AUTO
+  aliasDBName: pms-harness
 
 enableAuth: false
 
@@ -117,26 +119,26 @@ ciExecutionServiceConfig:
     # The below config is for K8 steps
     gitCloneConfig:
       # Use rootless image only for K8 git clone
-      image: harness/drone-git:1.2.3-rootless
+      image: harness/drone-git:1.2.4-rootless
       entrypoint:
         - /usr/local/bin/clone
       windowsEntrypoint:
         - "pwsh"
         - "C:\\bin\\clone.ps1"
     buildAndPushDockerRegistryConfig:
-      image: plugins/kaniko:1.6.1
+      image: plugins/kaniko:1.6.6
       entrypoint:
         - /kaniko/kaniko-docker
     buildAndPushECRConfig:
-      image: plugins/kaniko-ecr:1.6.1
+      image: plugins/kaniko-ecr:1.6.6
       entrypoint:
         - /kaniko/kaniko-ecr
     buildAndPushGCRConfig:
-      image: plugins/kaniko-gcr:1.6.1
+      image: plugins/kaniko-gcr:1.6.6
       entrypoint:
         - /kaniko/kaniko-gcr
     buildAndPushACRConfig:
-      image: plugins/kaniko-acr:1.6.4-linux-amd64
+      image: plugins/kaniko-acr:1.6.6
       entrypoint:
         - /kaniko/kaniko-acr
     gcsUploadConfig:
@@ -177,7 +179,7 @@ ciExecutionServiceConfig:
         - "C:\\drone-cache.exe"
     vmImageConfig:
       # Use root image for VM git clone
-      gitClone: harness/drone-git:1.2.3
+      gitClone: harness/drone-git:1.2.4
       buildAndPushDockerRegistry: plugins/docker:20.13.0
       buildAndPushACR: plugins/acr:20.13.0
       buildAndPushECR: plugins/ecr:20.13.0
