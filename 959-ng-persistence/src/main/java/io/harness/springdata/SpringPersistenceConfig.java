@@ -100,8 +100,8 @@ public class SpringPersistenceConfig extends AbstractMongoConfiguration {
         .stream()
         .filter(clazz
             -> clazz.isAnnotationPresent(StoreIn.class)
-                && mongoConfig.getAliasDBName().equals(clazz.getAnnotation(StoreIn.class).value())
-                && !clazz.getName().equals(clazz.getAnnotation(TypeAlias.class).value()))
+                && clazz.getAnnotation(StoreIn.class).value().equals(mongoConfig.getAliasDBName())
+                && !clazz.getAnnotation(TypeAlias.class).value().equals(clazz.getName()))
         .collect(Collectors.toSet());
   }
 
