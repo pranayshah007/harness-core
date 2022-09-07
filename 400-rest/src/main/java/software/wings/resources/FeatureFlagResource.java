@@ -16,6 +16,7 @@ import io.harness.beans.FeatureFlag;
 import io.harness.beans.FeatureName;
 import io.harness.eraro.ResponseMessage;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnauthorizedException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.rest.RestResponse;
@@ -33,6 +34,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import lombok.extern.slf4j.Slf4j;
 
@@ -78,5 +80,24 @@ public class FeatureFlagResource {
   @InternalApi
   public RestResponse<FeatureFlag> getFeatureFlag(@PathParam("featureFlagName") String featureFlagName) {
     return new RestResponse<>(featureFlagService.getFeatureFlag(FeatureName.valueOf(featureFlagName)).orElse(null));
+  }
+
+  @GET
+  @Path("evict-cache")
+  public RestResponse<Boolean> evictAccountNameFromCache(@QueryParam("accountId") String accountId) {
+    User existingUser = UserThreadLocal.get();
+    if (existingUser == null) {
+      throw new InvalidRequestException("Invalid User");
+    }
+    if (!harnessUserGroupService.isHarnessSupportUser(existingUser.getUuid())) {
+      return RestResponse.Builder.aRestResponse()
+          .withResponseMessages(
+              Lists.newArrayList(ResponseMessage.builder().message("User not allowed to reset cache").build()))
+          .build();
+    }
+
+    featureFlagService.evictAccountNameFromCache(accountId);
+    log.info("Reset cache successful for account id {}", accountId);
+    return new RestResponse<>(Boolean.TRUE);
   }
 }

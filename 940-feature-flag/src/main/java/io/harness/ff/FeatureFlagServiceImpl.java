@@ -79,11 +79,11 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
   private Optional<AccountClient> optionalAccountClient;
   // Caffeine cache
   private final Cache<String, String> accountIdToAccountNameCache =
-      Caffeine.newBuilder().initialCapacity(10).maximumSize(200).expireAfterWrite(1, TimeUnit.HOURS).build();
+      Caffeine.newBuilder().initialCapacity(10).maximumSize(1500).expireAfterWrite(7, TimeUnit.DAYS).build();
 
   private static final RetryPolicy<Object> fetchAccountNameRetryPolicy =
       RetryUtils.getRetryPolicy("Failed attempt: Could not fetch account name", "Failure: Could not fetch account name",
-          Lists.newArrayList(InvalidRequestException.class), Duration.ofSeconds(5), 3, log);
+          Lists.newArrayList(InvalidRequestException.class), Duration.ofSeconds(1), 3, log);
 
   @Inject
   public FeatureFlagServiceImpl(HPersistence hPersistence, CfMigrationService cfMigrationService,
@@ -266,6 +266,7 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
   }
 
   private String getAccountNameFromClient(Optional<AccountClient> optionalAccountClient, String accountId) {
+    String accountName;
     try {
       AccountDTO accountDTO =
           Failsafe.with(fetchAccountNameRetryPolicy)
@@ -273,23 +274,24 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
       if (accountDTO == null) {
         log.info(String.format(
             "Can not fetch account name for accountId %s . Setting account name same as account id", accountId));
-        return accountId;
+        accountName = accountId;
+      } else {
+        accountName = accountDTO.getName();
+        log.info(String.format("Received account name %s corresponding to account id %s ", accountName, accountId));
+        if (isEmpty(accountName)) {
+          log.info(String.format("Account name is empty, using account id %s as accountName", accountId));
+          accountName = accountId;
+        }
       }
-      String accountName = accountDTO.getName();
-      log.info(String.format("Received account name %s corresponding to account id %s ", accountName, accountId));
-      if (isEmpty(accountName)) {
-        log.info(String.format("Account name is empty, using account id %s as accountName", accountId));
-        return accountId;
-      }
-      // put value in cache
-      accountIdToAccountNameCache.put(accountId, accountName);
-      return accountName;
     } catch (Exception e) {
       log.info(String.format("Can not fetch account name corresponding to accountId %s . "
               + "Using account id as account name",
           accountId));
-      return accountId;
+      accountName = accountId;
     }
+    // put value in cache
+    accountIdToAccountNameCache.put(accountId, accountName);
+    return accountName;
   }
 
   private Target buildStaticIdAndNameTarget() {
@@ -495,5 +497,15 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
 
     cfMigrationService.syncFeatureFlagWithCF(featureFlag);
     return Optional.of(featureFlag);
+  }
+
+  /**
+   * Used to invalidate cache. Should be used if account name has changed for any account. Or one of situation
+   * where account name could not be loaded in cache because account service was down, and account id was loaded.
+   * @param accountId: accountId for which cache has to be invalidated.
+   */
+  @Override
+  public void evictAccountNameFromCache(String accountId) {
+    accountIdToAccountNameCache.invalidate(accountId);
   }
 }
