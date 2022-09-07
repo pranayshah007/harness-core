@@ -199,6 +199,7 @@ public class InstanceBillingDataTasklet implements Tasklet {
             .collect(Collectors.groupingBy(InstanceData::getClusterId));
     String awsDataSetId = customBillingMetaDataService.getAwsDataSetId(accountId);
     log.debug("AWS data set {}", awsDataSetId);
+    log.info("AWS data set {}", awsDataSetId);
     if (awsDataSetId != null) {
       Set<String> resourceIds = new HashSet<>();
       Set<String> eksFargateResourceIds = new HashSet<>();
@@ -235,6 +236,7 @@ public class InstanceBillingDataTasklet implements Tasklet {
 
     String azureDataSetId = customBillingMetaDataService.getAzureDataSetId(accountId);
     log.debug("Azure data set {}", azureDataSetId);
+    log.info("Azure data set {}", azureDataSetId);
     if (azureDataSetId != null) {
       Set<String> resourceIds = new HashSet<>();
       instanceDataLists.forEach(instanceData -> {
@@ -254,6 +256,7 @@ public class InstanceBillingDataTasklet implements Tasklet {
     }
 
     String gcpDataSetId = customBillingMetaDataService.getGcpDataSetId(accountId);
+    log.info("GCP: gcpDataSetId: {}", gcpDataSetId);
     if (gcpDataSetId != null) {
       Set<String> resourceIds = new HashSet<>();
       instanceDataLists.forEach(instanceData -> {
@@ -262,13 +265,14 @@ public class InstanceBillingDataTasklet implements Tasklet {
             getValueForKeyFromInstanceMetaData(InstanceMetaDataConstants.CLOUD_PROVIDER_INSTANCE_ID, instanceData);
         String cloudProvider =
             getValueForKeyFromInstanceMetaData(InstanceMetaDataConstants.CLOUD_PROVIDER, instanceData);
+
+        log.info("GCP: resourceId: {} and cloudProvider: {}.", resourceId, cloudProvider);
         if (null != resourceId && cloudProvider.equals(CloudProvider.GCP.name())) {
           resourceIds.add(resourceId);
         }
       });
 
       log.info("GCP: ResourceIds check.");
-
       if (isNotEmpty(resourceIds)) {
         log.info("GCP: ResourceIds Size: {}", resourceIds.size());
         gcpCustomBillingService.updateGcpVMBillingDataCache(
