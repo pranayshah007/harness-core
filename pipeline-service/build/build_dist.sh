@@ -12,7 +12,8 @@ mkdir -p dist/pipeline-service
 cd dist/pipeline-service
 
 curl https://storage.googleapis.com/harness-prod-public/public/shared/tools/alpn/release/8.1.13.v20181017/alpn-boot-8.1.13.v20181017.jar  --output alpn-boot-8.1.13.v20181017.jar
-
+apt-get install -y wget
+wget -qO- https://get.et.harness.io/releases/latest/nix/harness-et-agent.tar.gz | tar -xz
 echo ${JDK} > jdk.txt
 echo ${VERSION} > version.txt
 if [ ! -z ${PURPOSE} ]

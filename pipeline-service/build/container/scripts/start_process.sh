@@ -55,6 +55,19 @@ if [[ "${ENABLE_OPENTELEMETRY}" == "true" ]] ; then
     echo "Using OpenTelemetry Java Agent"
 fi
 
+if [[ "${ENABLE_OVEROPS}" == "true" ]] ; then
+    echo "OverOps is enabled"
+    export ET_COLLECTOR_URL="https://app.harness.io/gratis/et-collector"
+    export ET_PROJECT_ID="Harness_Error_Tracking"
+    export ET_ACCOUNT_ID="vpCkHKsDSxK9_KYfjCTMKA"
+    export ET_ORG_ID="default"
+    export ET_ENV_ID="qa"
+    export ET_APPLICATION_NAME="pipeline-service"
+    export ET_DEPLOYMENT_NAME="1.0.0" #figure out how to pass the deployment version
+    export JAVA_TOOL_OPTIONS="-agentpath:/opt/harness-delegate/harness/lib/libETAgent.so=debug.logconsole -Xshare:off -XX:-UseTypeSpeculation -XX:ReservedCodeCacheSize=512m"
+    #export INIT_SCRIPT="apt-get install -y wget ;  wget -qO- https://get.et.harness.io/releases/latest/nix/harness-et-agent.tar.gz | tar -xz"
+fi
+
 if [[ "${DEPLOY_MODE}" == "KUBERNETES" || "${DEPLOY_MODE}" == "KUBERNETES_ONPREM" || "${DEPLOY_VERSION}" == "COMMUNITY" ]]; then
     java $JAVA_OPTS -jar $CAPSULE_JAR $COMMAND /opt/harness/config.yml
 else
