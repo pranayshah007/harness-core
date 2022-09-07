@@ -10,6 +10,7 @@ package io.harness.gitsync.persistance;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.springdata.PersistenceStoreUtils.getMatchingEntities;
 
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.MongoConfig;
 import io.harness.persistence.Store;
@@ -24,6 +25,7 @@ import com.mongodb.MongoClientURI;
 import com.mongodb.ReadPreference;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -83,12 +85,14 @@ public class GitSyncablePersistenceConfig extends AbstractMongoConfiguration {
 
   @Override
   protected Set<Class<?>> getInitialEntitySet() {
-    Set<Class<?>> classes = HarnessReflections.get().getTypesAnnotatedWith(TypeAlias.class);
-    Store store = null;
-    if (Objects.nonNull(mongoConfig.getAliasDBName())) {
-      store = Store.builder().name(mongoConfig.getAliasDBName()).build();
-    }
-    return getMatchingEntities(classes, store);
+    return HarnessReflections.get()
+        .getTypesAnnotatedWith(TypeAlias.class)
+        .stream()
+        .filter(clazz
+            -> clazz.isAnnotationPresent(StoreIn.class)
+                && mongoConfig.getAliasDBName().equals(clazz.getAnnotation(StoreIn.class).value())
+                && !clazz.getName().equals(clazz.getAnnotation(TypeAlias.class).value()))
+        .collect(Collectors.toSet());
   }
 
   @Override

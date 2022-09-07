@@ -11,6 +11,7 @@ import static io.harness.mongo.MongoConfig.DOT_REPLACEMENT;
 import static io.harness.springdata.PersistenceStoreUtils.getMatchingEntities;
 
 import io.harness.annotation.HarnessRepo;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
@@ -97,17 +98,14 @@ public class SpringPersistenceConfig extends AbstractMongoConfiguration {
 
   @Override
   protected Set<Class<?>> getInitialEntitySet() {
-    Set<Class<?>> classes =
-        HarnessReflections.get()
-            .getTypesAnnotatedWith(TypeAlias.class)
-            .stream()
-            .filter(aClass -> !aClass.getName().equals(aClass.getAnnotation(TypeAlias.class).value()))
-            .collect(Collectors.toSet());
-    Store store = null;
-    if (Objects.nonNull(mongoConfig.getAliasDBName())) {
-      store = Store.builder().name(mongoConfig.getAliasDBName()).build();
-    }
-    return getMatchingEntities(classes, store);
+    return HarnessReflections.get()
+        .getTypesAnnotatedWith(TypeAlias.class)
+        .stream()
+        .filter(clazz
+            -> clazz.isAnnotationPresent(StoreIn.class)
+                && mongoConfig.getAliasDBName().equals(clazz.getAnnotation(StoreIn.class).value())
+                && !clazz.getName().equals(clazz.getAnnotation(TypeAlias.class).value()))
+        .collect(Collectors.toSet());
   }
 
   @Bean
