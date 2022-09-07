@@ -20,7 +20,7 @@ import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.exception.TaskNGDataException;
-import io.harness.delegate.task.AbstractDelegateRunnableTask;
+import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.azure.arm.handlers.AzureResourceCreationAbstractTaskHandler;
 import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
