@@ -171,8 +171,8 @@ import software.wings.delegatetasks.DelegateLogService;
 import software.wings.delegatetasks.GenericLogSanitizer;
 import software.wings.delegatetasks.LogSanitizer;
 import software.wings.delegatetasks.delegatecapability.CapabilityCheckController;
-import software.wings.delegatetasks.validation.DelegateConnectionResult;
-import software.wings.delegatetasks.validation.DelegateValidateTask;
+import software.wings.delegatetasks.validation.core.DelegateConnectionResult;
+import software.wings.delegatetasks.validation.core.DelegateValidateTask;
 import software.wings.misc.MemoryHelper;
 import software.wings.service.intfc.security.EncryptionService;
 

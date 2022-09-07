@@ -119,7 +119,7 @@ import software.wings.beans.LicenseInfo;
 import software.wings.beans.TaskType;
 import software.wings.cdn.CdnConfig;
 import software.wings.delegatetasks.cv.RateLimitExceededException;
-import software.wings.delegatetasks.validation.DelegateConnectionResult;
+import software.wings.delegatetasks.validation.core.DelegateConnectionResult;
 import software.wings.events.TestUtils;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
 import software.wings.jre.JreConfig;

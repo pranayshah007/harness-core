@@ -47,7 +47,7 @@ import io.harness.rule.Owner;
 import software.wings.WingsBaseTest;
 import software.wings.beans.Account;
 import software.wings.beans.TaskType;
-import software.wings.delegatetasks.validation.DelegateConnectionResult;
+import software.wings.delegatetasks.validation.core.DelegateConnectionResult;
 import software.wings.service.impl.DelegateTaskServiceClassicImpl;
 import software.wings.service.intfc.AssignDelegateService;
 

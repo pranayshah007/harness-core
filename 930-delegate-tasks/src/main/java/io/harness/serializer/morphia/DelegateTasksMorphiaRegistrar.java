@@ -137,7 +137,7 @@ import software.wings.beans.settings.azureartifacts.AzureArtifactsPATConfig;
 import software.wings.beans.yaml.GitFetchFilesFromMultipleRepoResult;
 import software.wings.delegatetasks.buildsource.BuildSourceExecutionResponse;
 import software.wings.delegatetasks.cv.beans.CustomLogResponseMapper;
-import software.wings.delegatetasks.validation.DelegateConnectionResult;
+import software.wings.delegatetasks.validation.core.DelegateConnectionResult;
 import software.wings.delegatetasks.validation.capabilities.ClusterMasterUrlValidationCapability;
 import software.wings.delegatetasks.validation.capabilities.GitConnectionCapability;
 import software.wings.delegatetasks.validation.capabilities.SSHHostValidationCapability;

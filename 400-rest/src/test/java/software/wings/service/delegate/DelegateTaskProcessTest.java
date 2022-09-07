@@ -127,7 +127,7 @@ import software.wings.beans.delegation.TerraformProvisionParameters;
 import software.wings.beans.settings.helm.HelmRepoConfigValidationTaskParams;
 import software.wings.beans.yaml.GitCommand.GitCommandType;
 import software.wings.core.managerConfiguration.ConfigurationController;
-import software.wings.delegatetasks.validation.DelegateConnectionResult;
+import software.wings.delegatetasks.validation.core.DelegateConnectionResult;
 import software.wings.helpers.ext.k8s.request.K8sClusterConfig;
 import software.wings.helpers.ext.k8s.request.K8sInstanceSyncTaskParameters;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;

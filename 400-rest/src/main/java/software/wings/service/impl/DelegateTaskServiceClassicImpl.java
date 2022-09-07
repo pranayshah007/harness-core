@@ -145,7 +145,7 @@ import software.wings.common.AuditHelper;
 import software.wings.core.managerConfiguration.ConfigurationController;
 import software.wings.delegatetasks.cv.RateLimitExceededException;
 import software.wings.delegatetasks.delegatecapability.CapabilityHelper;
-import software.wings.delegatetasks.validation.DelegateConnectionResult;
+import software.wings.delegatetasks.validation.core.DelegateConnectionResult;
 import software.wings.expression.EncryptedDataDetails;
 import software.wings.expression.ManagerPreExecutionExpressionEvaluator;
 import software.wings.expression.ManagerPreviewExpressionEvaluator;
