@@ -49,7 +49,9 @@ public class JerseyViolationExceptionMapperV2 implements ExceptionMapper<JerseyV
       validationErrors.add(ValidationError.of(field, constraintViolation.getMessage()));
     });
     String exceptionMessage =
-        validationErrors.stream().map(ValidationError::getError).collect(Collectors.joining(", "));
+        validationErrors.stream()
+            .map(validationError -> validationError.getFieldId() + ": " + validationError.getError())
+            .collect(Collectors.joining(", "));
     FailureDTO failureDto =
         FailureDTO.toBody(Status.FAILURE, ErrorCode.INVALID_REQUEST, exceptionMessage, validationErrors);
     return Response.status(Response.Status.BAD_REQUEST).entity(failureDto).type(MediaType.APPLICATION_JSON).build();
