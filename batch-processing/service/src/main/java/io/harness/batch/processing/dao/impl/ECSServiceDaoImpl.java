@@ -73,8 +73,6 @@ public class ECSServiceDaoImpl implements ECSServiceDao {
                                      .equal(accountId)
                                      .field(ECSServiceKeys.serviceArn)
                                      .in(serviceArns)
-                                     .project(ECSServiceKeys.serviceArn, true)
-                                     .project(ECSServiceKeys.resource, true)
                                      .fetch()) {
       resourceMap.put(ecsService.getServiceArn(), ecsService);
     }
