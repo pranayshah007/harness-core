@@ -15,6 +15,7 @@ go_library(
         "//commons/go/lib/filesystem",
         "//product/ci/common/external",
         "//product/ci/ti-service/types",
+        "//commons/go/lib/utils",
         "@com_github_mattn_go_zglob//:go-zglob",
         "@org_uber_go_zap//:zap",
     ],

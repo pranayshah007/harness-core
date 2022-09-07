@@ -374,3 +374,12 @@ func IsManualExecution() bool {
 	}
 	return false
 }
+
+func IsParallelismEnabled() bool {
+	v1, err1 := GetStepStrategyIteration()
+	v2, err2 := GetStepStrategyIterations()
+	if err1 != nil || err2 != nil || v1 >= v2 || v2 <= 1 {
+		return false
+	}
+	return true
+}
