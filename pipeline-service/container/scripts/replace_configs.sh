@@ -22,8 +22,8 @@ fi
 
 yq -i '.server.adminConnectors="[]"' $CONFIG_FILE
 
-yq 'del(.'grpcServerConfig.connectors.(secure==true)')' $CONFIG_FILE
-yq 'del(.'gitSdkConfiguration.gitSdkGrpcServerConfig.connectors.(secure==true)')' $CONFIG_FILE
+yq -i 'del(.grpcServerConfig.connectors | select(.secure == "true"))' $CONFIG_FILE
+yq -i 'del(.gitSdkConfiguration.gitSdkGrpcServerConfig.connectors | select(.secure == "true"))' $CONFIG_FILE
 
 if [[ "" != "$LOGGING_LEVEL" ]]; then
     yq -i '.logging.level="$LOGGING_LEVEL"' $CONFIG_FILE
@@ -219,10 +219,10 @@ if [[ "" != "$PMS_API_BASE_URL" ]]; then
 fi
 
 if [[ "$STACK_DRIVER_LOGGING_ENABLED" == "true" ]]; then
-  yq 'del(.'logging.appenders.(type==console)')' $CONFIG_FILE
-  yq -i '.'logging.appenders.(type==gke-console).stackdriverLogEnabled'="true"' $CONFIG_FILE
+  yq -i 'del(.logging.appenders | select(.type == "console"))' $CONFIG_FILE
+  yq -i '(.logging.appenders | select(.type == "gke-console") | .stackdriverLogEnabled) = "true"' $CONFIG_FILE
 else
-  yq 'del(.'logging.appenders.(type==gke-console)')' $CONFIG_FILE
+  yq -i 'del(.logging.appenders | select(.type == "gke-console"))' $CONFIG_FILE
 fi
 
 if [[ "" != "$JWT_AUTH_SECRET" ]]; then
@@ -270,7 +270,7 @@ if [[ "" != "$ENABLE_DASHBOARD_TIMESCALE" ]]; then
   yq -i '.enableDashboardTimescale="$ENABLE_DASHBOARD_TIMESCALE"' $CONFIG_FILE
 fi
 
-yq 'del(.codec)' $REDISSON_CACHE_FILE
+yq -i 'del(.codec)' $REDISSON_CACHE_FILE
 
 if [[ "$REDIS_SCRIPT_CACHE" == "false" ]]; then
   yq -i '.useScriptCache="false"' $REDISSON_CACHE_FILE
@@ -282,7 +282,7 @@ if [[ "" != "$CACHE_CONFIG_REDIS_URL" ]]; then
 fi
 
 if [[ "$CACHE_CONFIG_USE_SENTINEL" == "true" ]]; then
-  yq 'del(.singleServerConfig)' $REDISSON_CACHE_FILE
+  yq -i 'del(.singleServerConfig)' $REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$CACHE_CONFIG_SENTINEL_MASTER_NAME" ]]; then
@@ -302,7 +302,7 @@ if [[ "" != "$REDIS_NETTY_THREADS" ]]; then
   yq -i '.nettyThreads="$REDIS_NETTY_THREADS"' $REDISSON_CACHE_FILE
 fi
 
-yq 'del(.codec)' $ENTERPRISE_REDISSON_CACHE_FILE
+yq -i 'del(.codec)' $ENTERPRISE_REDISSON_CACHE_FILE
 
 if [[ "$REDIS_SCRIPT_CACHE" == "false" ]]; then
   yq -i '.useScriptCache="false"' $ENTERPRISE_REDISSON_CACHE_FILE
@@ -333,7 +333,7 @@ if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD" ]]; then
 fi
 
 if [[ "$EVENTS_FRAMEWORK_USE_SENTINEL" == "true" ]]; then
-  yq 'del(.singleServerConfig)' $ENTERPRISE_REDISSON_CACHE_FILE
+  yq -i 'del(.singleServerConfig)' $ENTERPRISE_REDISSON_CACHE_FILE
 
   if [[ "" != "$EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME" ]]; then
     yq -i '.sentinelServersConfig.masterName="$EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME"' $ENTERPRISE_REDISSON_CACHE_FILE

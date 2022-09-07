@@ -38,8 +38,8 @@ write_mongo_params() {
   done
 }
 
-yq 'del(.'server.applicationConnectors.(type==h2)')' $CONFIG_FILE
-yq 'del(.'cg.grpcServerConfig.connectors.(secure==true)')' $CONFIG_FILE
+yq -i 'del(.server.applicationConnectors | select(.type == "h2"))' $CONFIG_FILE
+yq -i 'del(.cg.grpcServerConfig.connectors | select(.secure == "true"))' $CONFIG_FILE
 
 yq -i '.server.adminConnectors="[]"' $CONFIG_FILE
 
@@ -103,7 +103,7 @@ if [[ "" != "$MONGO_URI" ]]; then
 fi
 
 if [[ "" != "$MONGO_HOSTS_AND_PORTS" ]]; then
-  yq 'del(.cg.mongo.uri)' $CONFIG_FILE
+  yq -i 'del(.cg.mongo.uri)' $CONFIG_FILE
   yq -i '.cg.mongo.username="$MONGO_USERNAME"' $CONFIG_FILE
   yq -i '.cg.mongo.password="$MONGO_PASSWORD"' $CONFIG_FILE
   yq -i '.cg.mongo.database="$MONGO_DATABASE"' $CONFIG_FILE
@@ -156,7 +156,7 @@ if [[ "" != "$EVENTS_MONGO_URI" ]]; then
   yq -i '.cg.events-mongo.uri="$EVENTS_MONGO_URI"' $CONFIG_FILE
 else
   if [[ "" != "$EVENTS_MONGO_HOSTS_AND_PORTS" ]]; then
-    yq 'del(.cg.events-mongo.uri)' $CONFIG_FILE
+    yq -i 'del(.cg.events-mongo.uri)' $CONFIG_FILE
     yq -i '.cg.events-mongo.username="$EVENTS_MONGO_USERNAME"' $CONFIG_FILE
     yq -i '.cg.events-mongo.password="$EVENTS_MONGO_PASSWORD"' $CONFIG_FILE
     yq -i '.cg.events-mongo.database="$EVENTS_MONGO_DATABASE"' $CONFIG_FILE
@@ -164,7 +164,7 @@ else
     write_mongo_hosts_and_ports cg.events-mongo "$EVENTS_MONGO_HOSTS_AND_PORTS"
     write_mongo_params cg.events-mongo "$EVENTS_MONGO_PARAMS"
   else
-    yq 'del(.cg.events-mongo)' $CONFIG_FILE
+    yq -i 'del(.cg.events-mongo)' $CONFIG_FILE
   fi
 fi
 
@@ -247,17 +247,17 @@ fi
 yq -i '.server.requestLog.appenders[0].threshold="TRACE"' $CONFIG_FILE
 
 if [[ "$STACK_DRIVER_LOGGING_ENABLED" == "true" ]]; then
-  yq 'del(.'logging.appenders.(type==file)')' $CONFIG_FILE
-  yq 'del(.'logging.appenders.(type==console)')' $CONFIG_FILE
-  yq -i '.'logging.appenders.(type==gke-console).stackdriverLogEnabled'="true"' $CONFIG_FILE
+  yq -i 'del(.logging.appenders | select(.type == "file"))' $CONFIG_FILE
+  yq -i 'del(.logging.appenders | select(.type == "console"))' $CONFIG_FILE
+  yq -i '(.logging.appenders | select(.type == "gke-console") | .stackdriverLogEnabled) = "true"' $CONFIG_FILE
 else
   if [[ "$ROLLING_FILE_LOGGING_ENABLED" == "true" ]]; then
-    yq 'del(.'logging.appenders.(type==gke-console)')' $CONFIG_FILE
-    yq -i '.'logging.appenders.(type==file).currentLogFilename'="/opt/harness/logs/portal.log"' $CONFIG_FILE
-    yq -i '.'logging.appenders.(type==file).archivedLogFilenamePattern'="/opt/harness/logs/portal.%d.%i.log"' $CONFIG_FILE
+    yq -i 'del(.logging.appenders | select(.type == "gke-console"))' $CONFIG_FILE
+    yq -i '(.logging.appenders | select(.type == "file") | .currentLogFilename) = "/opt/harness/logs/portal.log"' $CONFIG_FILE
+    yq -i '(.logging.appenders | select(.type == "file") | .archivedLogFilenamePattern) = "/opt/harness/logs/portal.%d.%i.log"' $CONFIG_FILE
   else
-    yq 'del(.'logging.appenders.(type==file)')' $CONFIG_FILE
-    yq 'del(.'logging.appenders.(type==gke-console)')' $CONFIG_FILE
+    yq -i 'del(.logging.appenders | select(.type == "file"))' $CONFIG_FILE
+    yq -i 'del(.logging.appenders | select(.type == "gke-console"))' $CONFIG_FILE
   fi
 fi
 
@@ -670,7 +670,7 @@ if [[ "" != "$ATMOSPHERE_BACKEND" ]]; then
   yq -i '.cg.atmosphereBroadcaster="$ATMOSPHERE_BACKEND"' $CONFIG_FILE
 fi
 
-yq 'del(.codec)' $REDISSON_CACHE_FILE
+yq -i 'del(.codec)' $REDISSON_CACHE_FILE
 
 if [[ "" != "$REDIS_URL" ]]; then
   yq -i '.cg.redisLockConfig.redisUrl="$REDIS_URL"' $CONFIG_FILE
@@ -681,7 +681,7 @@ fi
 if [[ "$REDIS_SENTINEL" == "true" ]]; then
   yq -i '.cg.redisLockConfig.sentinel="true"' $CONFIG_FILE
   yq -i '.cg.redisAtmosphereConfig.sentinel="true"' $CONFIG_FILE
-  yq 'del(.singleServerConfig)' $REDISSON_CACHE_FILE
+  yq -i 'del(.singleServerConfig)' $REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$REDIS_MASTER_NAME" ]]; then

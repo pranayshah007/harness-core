@@ -16,10 +16,10 @@ replace_key_value () {
   fi
 }
 
-yq 'del(.server.applicationConnectors[0])' $CONFIG_FILE
+yq -i 'del(.server.applicationConnectors[0])' $CONFIG_FILE
 yq -i '.server.adminConnectors="[]"' $CONFIG_FILE
 
-yq 'del(.pmsSdkGrpcServerConfig.connectors[0])' $CONFIG_FILE
+yq -i 'del(.pmsSdkGrpcServerConfig.connectors[0])' $CONFIG_FILE
 
 if [[ "" != "$LOGGING_LEVEL" ]]; then
     yq -i '.logging.level="$LOGGING_LEVEL"' $CONFIG_FILE
@@ -156,7 +156,7 @@ if [[ "" != "$SERVER_MAX_THREADS" ]]; then
 fi
 
 if [[ "" != "$ALLOWED_ORIGINS" ]]; then
-  yq 'del(.allowedOrigins)' $CONFIG_FILE
+  yq -i 'del(.allowedOrigins)' $CONFIG_FILE
   yq -i '.allowedOrigins="$ALLOWED_ORIGINS"' $CONFIG_FILE
 fi
 
@@ -245,10 +245,10 @@ if [[ "" != "$MANAGER_SECRET" ]]; then
 fi
 
 if [[ "$STACK_DRIVER_LOGGING_ENABLED" == "true" ]]; then
-  yq 'del(.logging.appenders[0])' $CONFIG_FILE
+  yq -i 'del(.logging.appenders[0])' $CONFIG_FILE
   yq -i '.logging.appenders[0].stackdriverLogEnabled="true"' $CONFIG_FILE
 else
-  yq 'del(.logging.appenders[1])' $CONFIG_FILE
+  yq -i 'del(.logging.appenders[1])' $CONFIG_FILE
 fi
 
 replace_key_value accessControlClient.enableAccessControl "$ACCESS_CONTROL_ENABLED"
@@ -266,7 +266,7 @@ if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then
   done
 fi
 
-yq 'del(.codec)' $REDISSON_CACHE_FILE
+yq -i 'del(.codec)' $REDISSON_CACHE_FILE
 
 if [[ "$REDIS_SCRIPT_CACHE" == "false" ]]; then
   yq -i '.useScriptCache="false"' $REDISSON_CACHE_FILE
@@ -278,7 +278,7 @@ if [[ "" != "$CACHE_CONFIG_REDIS_URL" ]]; then
 fi
 
 if [[ "$CACHE_CONFIG_USE_SENTINEL" == "true" ]]; then
-  yq 'del(.singleServerConfig)' $REDISSON_CACHE_FILE
+  yq -i 'del(.singleServerConfig)' $REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$CACHE_CONFIG_SENTINEL_MASTER_NAME" ]]; then
@@ -298,7 +298,7 @@ if [[ "" != "$REDIS_NETTY_THREADS" ]]; then
   yq -i '.nettyThreads="$REDIS_NETTY_THREADS"' $REDISSON_CACHE_FILE
 fi
 
-yq 'del(.codec)' $ENTERPRISE_REDISSON_CACHE_FILE
+yq -i 'del(.codec)' $ENTERPRISE_REDISSON_CACHE_FILE
 
 if [[ "$REDIS_SCRIPT_CACHE" == "false" ]]; then
   yq -i '.useScriptCache="false"' $ENTERPRISE_REDISSON_CACHE_FILE
@@ -329,7 +329,7 @@ if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD" ]]; then
 fi
 
 if [[ "$EVENTS_FRAMEWORK_USE_SENTINEL" == "true" ]]; then
-  yq 'del(.singleServerConfig)' $ENTERPRISE_REDISSON_CACHE_FILE
+  yq -i 'del(.singleServerConfig)' $ENTERPRISE_REDISSON_CACHE_FILE
 
   if [[ "" != "$EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME" ]]; then
     yq -i '.sentinelServersConfig.masterName="$EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME"' $ENTERPRISE_REDISSON_CACHE_FILE

@@ -15,14 +15,14 @@ replace_key_value () {
 }
 
 if [[ "$STACK_DRIVER_LOGGING_ENABLED" == "true" ]]; then
-  yq 'del(.'logging.appenders.(type==console)')' $CONFIG_FILE
-  yq -i '.'logging.appenders.(type==gke-console).stackdriverLogEnabled'="true"' $CONFIG_FILE
+  yq -i 'del(.logging.appenders | select(.type == "console"))' $CONFIG_FILE
+  yq -i '(.logging.appenders | select(.type == "gke-console") | .stackdriverLogEnabled) = "true"' $CONFIG_FILE
 else
-  yq 'del(.'logging.appenders.(type==gke-console)')' $CONFIG_FILE
+  yq -i 'del(.logging.appenders | select(.type == "gke-console"))' $CONFIG_FILE
 fi
 
 # Remove the TLS connector (as ingress terminates TLS)
-yq 'del(.connectors[0])' $CONFIG_FILE
+yq -i 'del(.connectors[0])' $CONFIG_FILE
 
 if [[ "" != "$MONGO_URI" ]]; then
   yq -i '.harness-mongo.uri="$MONGO_URI"' $CONFIG_FILE

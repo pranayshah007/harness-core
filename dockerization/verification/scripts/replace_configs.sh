@@ -14,8 +14,8 @@ replace_key_value () {
   fi
 }
 
-yq 'del(.server.adminConnectors)' /opt/harness/verification-config.yml
-yq 'del(.'server.applicationConnectors.(type==h2)')' $CONFIG_FILE
+yq -i 'del(.server.adminConnectors)' /opt/harness/verification-config.yml
+yq -i 'del(.server.applicationConnectors | select(.type == "h2"))' $CONFIG_FILE
 
 if [[ "" != "$LOGGING_LEVEL" ]]; then
   yq -i '.logging.level="$LOGGING_LEVEL"' /opt/harness/verification-config.yml
@@ -52,17 +52,17 @@ fi
   yq -i '.server.requestLog.appenders[0].target="STDOUT"' /opt/harness/verification-config.yml
 
 if [[ "$STACK_DRIVER_LOGGING_ENABLED" == "true" ]]; then
-  yq 'del(.'logging.appenders.(type==file)')' $CONFIG_FILE
-  yq 'del(.'logging.appenders.(type==console)')' $CONFIG_FILE
-  yq -i '.'logging.appenders.(type==gke-console).stackdriverLogEnabled'="true"' $CONFIG_FILE
+  yq -i 'del(.logging.appenders | select(.type == "file"))' $CONFIG_FILE
+  yq -i 'del(.logging.appenders | select(.type == "console"))' $CONFIG_FILE
+  yq -i '(.logging.appenders | select(.type == "gke-console") | .stackdriverLogEnabled) = "true"' $CONFIG_FILE
 else
   if [[ "$ROLLING_FILE_LOGGING_ENABLED" == "true" ]]; then
-    yq 'del(.'logging.appenders.(type==gke-console)')' $CONFIG_FILE
-    yq -i '.'logging.appenders.(type==file).currentLogFilename'="/opt/harness/logs/verification.log"' $CONFIG_FILE
-    yq -i '.'logging.appenders.(type==file).archivedLogFilenamePattern'="/opt/harness/logs/verification.%d.%i.log"' $CONFIG_FILE
+    yq -i 'del(.logging.appenders | select(.type == "gke-console"))' $CONFIG_FILE
+    yq -i '(.logging.appenders | select(.type == "file") | .currentLogFilename) = "/opt/harness/logs/verification.log"' $CONFIG_FILE
+    yq -i '(.logging.appenders | select(.type == "file") | .archivedLogFilenamePattern) = "/opt/harness/logs/verification.%d.%i.log"' $CONFIG_FILE
   else
-    yq 'del(.'logging.appenders.(type==file)')' $CONFIG_FILE
-    yq 'del(.'logging.appenders.(type==gke-console)')' $CONFIG_FILE
+    yq -i 'del(.logging.appenders | select(.type == "file"))' $CONFIG_FILE
+    yq -i 'del(.logging.appenders | select(.type == "gke-console"))' $CONFIG_FILE
   fi
 fi
 

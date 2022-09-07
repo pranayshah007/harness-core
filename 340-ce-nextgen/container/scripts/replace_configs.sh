@@ -15,8 +15,8 @@ replace_key_value () {
 }
 
 #
-yq 'del(.server.adminConnectors)' $CONFIG_FILE
-yq 'del(.server.applicationConnectors[0])' $CONFIG_FILE
+yq -i 'del(.server.adminConnectors)' $CONFIG_FILE
+yq -i 'del(.server.applicationConnectors[0])' $CONFIG_FILE
 
 replace_key_value logging.level $LOGGING_LEVEL
 
@@ -95,10 +95,10 @@ if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then
 fi
 
 if [[ "$STACK_DRIVER_LOGGING_ENABLED" == "true" ]]; then
-  yq 'del(.logging.appenders[0])' $CONFIG_FILE
+  yq -i 'del(.logging.appenders[0])' $CONFIG_FILE
   yq -i '.logging.appenders[0].stackdriverLogEnabled="true"' $CONFIG_FILE
 else
-  yq 'del(.logging.appenders[1])' $CONFIG_FILE
+  yq -i 'del(.logging.appenders[1])' $CONFIG_FILE
 fi
 
 if [[ "" != "$SEGMENT_ENABLED" ]]; then

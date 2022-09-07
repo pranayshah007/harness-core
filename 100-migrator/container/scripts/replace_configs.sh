@@ -16,8 +16,8 @@ replace_key_value () {
   fi
 }
 
-yq 'del(.server.applicationConnectors[0])' $CONFIG_FILE
-yq 'del(.grpcServerConfig.connectors[0])' $CONFIG_FILE
+yq -i 'del(.server.applicationConnectors[0])' $CONFIG_FILE
+yq -i 'del(.grpcServerConfig.connectors[0])' $CONFIG_FILE
 
 yq -i '.server.adminConnectors="[]"' $CONFIG_FILE
 
@@ -123,7 +123,7 @@ fi
 if [[ "" != "$EVENTS_MONGO_URI" ]]; then
   yq -i '.events-mongo.uri="$EVENTS_MONGO_URI"' $CONFIG_FILE
 else
-  yq 'del(.events-mongo)' $CONFIG_FILE
+  yq -i 'del(.events-mongo)' $CONFIG_FILE
 fi
 
 if [[ "" != "$CF_CLIENT_API_KEY" ]]; then
@@ -209,17 +209,17 @@ fi
 yq -i '.server.requestLog.appenders[0].threshold="TRACE"' $CONFIG_FILE
 
 if [[ "$STACK_DRIVER_LOGGING_ENABLED" == "true" ]]; then
-  yq 'del(.logging.appenders[2])' $CONFIG_FILE
-  yq 'del(.logging.appenders[0])' $CONFIG_FILE
+  yq -i 'del(.logging.appenders[2])' $CONFIG_FILE
+  yq -i 'del(.logging.appenders[0])' $CONFIG_FILE
   yq -i '.logging.appenders[0].stackdriverLogEnabled="true"' $CONFIG_FILE
 else
   if [[ "$ROLLING_FILE_LOGGING_ENABLED" == "true" ]]; then
-    yq 'del(.logging.appenders[1])' $CONFIG_FILE
+    yq -i 'del(.logging.appenders[1])' $CONFIG_FILE
     yq -i '.logging.appenders[1].currentLogFilename="/opt/harness/logs/portal.log"' $CONFIG_FILE
     yq -i '.logging.appenders[1].archivedLogFilenamePattern="/opt/harness/logs/portal.%d.%i.log"' $CONFIG_FILE
   else
-    yq 'del(.logging.appenders[2])' $CONFIG_FILE
-    yq 'del(.logging.appenders[1])' $CONFIG_FILE
+    yq -i 'del(.logging.appenders[2])' $CONFIG_FILE
+    yq -i 'del(.logging.appenders[1])' $CONFIG_FILE
   fi
 fi
 
@@ -660,7 +660,7 @@ if [[ "" != "$ATMOSPHERE_BACKEND" ]]; then
   yq -i '.atmosphereBroadcaster="$ATMOSPHERE_BACKEND"' $CONFIG_FILE
 fi
 
-yq 'del(.codec)' $REDISSON_CACHE_FILE
+yq -i 'del(.codec)' $REDISSON_CACHE_FILE
 
 if [[ "" != "$REDIS_URL" ]]; then
   yq -i '.redisLockConfig.redisUrl="$REDIS_URL"' $CONFIG_FILE
@@ -671,7 +671,7 @@ fi
 if [[ "$REDIS_SENTINEL" == "true" ]]; then
   yq -i '.redisLockConfig.sentinel="true"' $CONFIG_FILE
   yq -i '.redisAtmosphereConfig.sentinel="true"' $CONFIG_FILE
-  yq 'del(.singleServerConfig)' $REDISSON_CACHE_FILE
+  yq -i 'del(.singleServerConfig)' $REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$REDIS_MASTER_NAME" ]]; then

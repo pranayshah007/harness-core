@@ -15,9 +15,9 @@ replace_key_value () {
   fi
 }
 
-yq 'del(.'server.applicationConnectors.(type==h2)')' $CONFIG_FILE
-yq 'del(.'grpcServerConfig.connectors.(secure==true)')' $CONFIG_FILE
-yq 'del(.'grpcServerClassicConfig.connectors.(secure==true)')' $CONFIG_FILE
+yq -i 'del(.server.applicationConnectors | select(.type == "h2"))' $CONFIG_FILE
+yq -i 'del(.grpcServerConfig.connectors | select(.secure == "true"))' $CONFIG_FILE
+yq -i 'del(.grpcServerClassicConfig.connectors | select(.secure == "true"))' $CONFIG_FILE
 
 
 yq -i '.server.adminConnectors="[]"' $CONFIG_FILE
@@ -128,7 +128,7 @@ fi
 if [[ "" != "$EVENTS_MONGO_URI" ]]; then
   yq -i '.events-mongo.uri="$EVENTS_MONGO_URI"' $CONFIG_FILE
 else
-  yq 'del(.events-mongo)' $CONFIG_FILE
+  yq -i 'del(.events-mongo)' $CONFIG_FILE
 fi
 
 if [[ "" != "$CF_CLIENT_API_KEY" ]]; then
@@ -198,17 +198,17 @@ fi
 yq -i '.server.requestLog.appenders[0].threshold="TRACE"' $CONFIG_FILE
 
 if [[ "$STACK_DRIVER_LOGGING_ENABLED" == "true" ]]; then
-  yq 'del(.'logging.appenders.(type==file)')' $CONFIG_FILE
-  yq 'del(.'logging.appenders.(type==console)')' $CONFIG_FILE
-  yq -i '.'logging.appenders.(type==gke-console).stackdriverLogEnabled'="true"' $CONFIG_FILE
+  yq -i 'del(.logging.appenders | select(.type == "file"))' $CONFIG_FILE
+  yq -i 'del(.logging.appenders | select(.type == "console"))' $CONFIG_FILE
+  yq -i '(.logging.appenders | select(.type == "gke-console") | .stackdriverLogEnabled) = "true"' $CONFIG_FILE
 else
   if [[ "$ROLLING_FILE_LOGGING_ENABLED" == "true" ]]; then
-    yq 'del(.'logging.appenders.(type==gke-console)')' $CONFIG_FILE
-    yq -i '.'logging.appenders.(type==file).currentLogFilename'="/opt/harness/logs/delegate-service.log"' $CONFIG_FILE
-    yq -i '.'logging.appenders.(type==file).archivedLogFilenamePattern'="/opt/harness/logs/delegate-service.%d.%i.log"' $CONFIG_FILE
+    yq -i 'del(.logging.appenders | select(.type == "gke-console"))' $CONFIG_FILE
+    yq -i '(.logging.appenders | select(.type == "file") | .currentLogFilename) = "/opt/harness/logs/delegate-service.log"' $CONFIG_FILE
+    yq -i '(.logging.appenders | select(.type == "file") | .archivedLogFilenamePattern) = "/opt/harness/logs/delegate-service.%d.%i.log"' $CONFIG_FILE
   else
-    yq 'del(.'logging.appenders.(type==file)')' $CONFIG_FILE
-    yq 'del(.'logging.appenders.(type==gke-console)')' $CONFIG_FILE
+    yq -i 'del(.logging.appenders | select(.type == "file"))' $CONFIG_FILE
+    yq -i 'del(.logging.appenders | select(.type == "gke-console"))' $CONFIG_FILE
   fi
 fi
 
@@ -317,7 +317,7 @@ if [[ "" != "$ATMOSPHERE_BACKEND" ]]; then
   yq -i '.atmosphereBroadcaster="$ATMOSPHERE_BACKEND"' $CONFIG_FILE
 fi
 
-yq 'del(.codec)' $REDISSON_CACHE_FILE
+yq -i 'del(.codec)' $REDISSON_CACHE_FILE
 
 if [[ "" != "$REDIS_URL" ]]; then
   yq -i '.redisLockConfig.redisUrl="$REDIS_URL"' $CONFIG_FILE
@@ -328,7 +328,7 @@ fi
 if [[ "$REDIS_SENTINEL" == "true" ]]; then
   yq -i '.redisLockConfig.sentinel="true"' $CONFIG_FILE
   yq -i '.redisAtmosphereConfig.sentinel="true"' $CONFIG_FILE
-  yq 'del(.singleServerConfig)' $REDISSON_CACHE_FILE
+  yq -i 'del(.singleServerConfig)' $REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$REDIS_MASTER_NAME" ]]; then

@@ -62,7 +62,7 @@ if [[ "" != "$SERVER_MAX_THREADS" ]]; then
 fi
 
 if [[ "" != "$ALLOWED_ORIGINS" ]]; then
-  yq 'del(.allowedOrigins)' $CONFIG_FILE
+  yq -i 'del(.allowedOrigins)' $CONFIG_FILE
   yq -i '.allowedOrigins="$ALLOWED_ORIGINS"' $CONFIG_FILE
 fi
 
@@ -151,10 +151,10 @@ if [[ "" != "$GRPC_MANAGER_AUTHORITY" ]]; then
 fi
 
 if [[ "$STACK_DRIVER_LOGGING_ENABLED" == "true" ]]; then
-  yq 'del(.'logging.appenders.(type==console)')' $CONFIG_FILE
-  yq -i '.'logging.appenders.(type==gke-console).stackdriverLogEnabled'="true"' $CONFIG_FILE
+  yq -i 'del(.logging.appenders | select(.type == "console"))' $CONFIG_FILE
+  yq -i '(.logging.appenders | select(.type == "gke-console") | .stackdriverLogEnabled) = "true"' $CONFIG_FILE
 else
-  yq 'del(.'logging.appenders.(type==gke-console)')' $CONFIG_FILE
+  yq -i 'del(.logging.appenders | select(.type == "gke-console"))' $CONFIG_FILE
 fi
 
 if [[ "" != "$AUDIT_MONGO_URI" ]]; then
@@ -239,19 +239,19 @@ if [[ "" != "$LOCK_CONFIG_REDIS_SENTINELS" ]]; then
 fi
 
 if [[ "" != "$NOTIFICATION_MONGO_HOSTS_AND_PORTS" ]]; then
-  yq 'del(.notificationServiceConfig.mongo.uri)' $CONFIG_FILE
+  yq -i 'del(.notificationServiceConfig.mongo.uri)' $CONFIG_FILE
   write_mongo_hosts_and_ports notificationServiceConfig.mongo "$NOTIFICATION_MONGO_HOSTS_AND_PORTS"
   write_mongo_params notificationServiceConfig.mongo "$NOTIFICATION_MONGO_PARAMS"
 fi
 
 if [[ "" != "$AUDIT_MONGO_HOSTS_AND_PORTS" ]]; then
-  yq 'del(.auditServiceConfig.mongo.uri)' $CONFIG_FILE
+  yq -i 'del(.auditServiceConfig.mongo.uri)' $CONFIG_FILE
   write_mongo_hosts_and_ports auditServiceConfig.mongo "$AUDIT_MONGO_HOSTS_AND_PORTS"
   write_mongo_params auditServiceConfig.mongo "$AUDIT_MONGO_PARAMS"
 fi
 
 if [[ "" != "$RESOURCE_GROUP_MONGO_HOSTS_AND_PORTS" ]]; then
-  yq 'del(.resourceGroupServiceConfig.mongo.uri)' $CONFIG_FILE
+  yq -i 'del(.resourceGroupServiceConfig.mongo.uri)' $CONFIG_FILE
   write_mongo_hosts_and_ports resourceGroupServiceConfig.mongo "$RESOURCE_GROUP_MONGO_HOSTS_AND_PORTS"
   write_mongo_params resourceGroupServiceConfig.mongo "$RESOURCE_GROUP_MONGO_PARAMS"
 fi

@@ -38,12 +38,12 @@ write_mongo_params() {
   done
 }
 
-yq 'del(.'server.applicationConnectors.(type==https)')' $CONFIG_FILE
+yq -i 'del(.server.applicationConnectors | select(.type == "https"))' $CONFIG_FILE
 yq -i '.server.adminConnectors="[]"' $CONFIG_FILE
 
-yq 'del(.'grpcServer.connectors.(secure==true)')' $CONFIG_FILE
-yq 'del(.'pmsSdkGrpcServerConfig.connectors.(secure==true)')' $CONFIG_FILE
-yq 'del(.'gitSyncServerConfig.connectors.(secure==true)')' $CONFIG_FILE
+yq -i 'del(.grpcServer.connectors | select(.secure == "true"))' $CONFIG_FILE
+yq -i 'del(.pmsSdkGrpcServerConfig.connectors | select(.secure == "true"))' $CONFIG_FILE
+yq -i 'del(.gitSyncServerConfig.connectors | select(.secure == "true"))' $CONFIG_FILE
 
 if [[ "" != "$LOGGING_LEVEL" ]]; then
     yq -i '.logging.level="$LOGGING_LEVEL"' $CONFIG_FILE
@@ -70,7 +70,7 @@ if [[ "" != "$SERVER_MAX_THREADS" ]]; then
 fi
 
 if [[ "" != "$ALLOWED_ORIGINS" ]]; then
-  yq 'del(.allowedOrigins)' $CONFIG_FILE
+  yq -i 'del(.allowedOrigins)' $CONFIG_FILE
   yq -i '.allowedOrigins="$ALLOWED_ORIGINS"' $CONFIG_FILE
 fi
 
@@ -79,7 +79,7 @@ if [[ "" != "$MONGO_URI" ]]; then
 fi
 
 if [[ "" != "$MONGO_HOSTS_AND_PORTS" ]]; then
-  yq 'del(.mongo.uri)' $CONFIG_FILE
+  yq -i 'del(.mongo.uri)' $CONFIG_FILE
   yq -i '.mongo.username="$MONGO_USERNAME"' $CONFIG_FILE
   yq -i '.mongo.password="$MONGO_PASSWORD"' $CONFIG_FILE
   yq -i '.mongo.database="$MONGO_DATABASE"' $CONFIG_FILE
@@ -123,7 +123,7 @@ if [[ "" != "$PMS_MONGO_URI" ]]; then
 fi
 
 if [[ "" != "$PMS_MONGO_HOSTS_AND_PORTS" ]]; then
-  yq 'del(.pmsMongo.uri)' $CONFIG_FILE
+  yq -i 'del(.pmsMongo.uri)' $CONFIG_FILE
   yq -i '.pmsMongo.username="$PMS_MONGO_USERNAME"' $CONFIG_FILE
   yq -i '.pmsMongo.password="$PMS_MONGO_PASSWORD"' $CONFIG_FILE
   yq -i '.pmsMongo.database="$PMS_MONGO_DATABASE"' $CONFIG_FILE
@@ -297,10 +297,10 @@ if [[ "" != "$LOG_STREAMING_SERVICE_TOKEN" ]]; then
 fi
 
 if [[ "$STACK_DRIVER_LOGGING_ENABLED" == "true" ]]; then
-  yq 'del(.'logging.appenders.(type==console)')' $CONFIG_FILE
-  yq -i '.'logging.appenders.(type==gke-console).stackdriverLogEnabled'="true"' $CONFIG_FILE
+  yq -i 'del(.logging.appenders | select(.type == "console"))' $CONFIG_FILE
+  yq -i '(.logging.appenders | select(.type == "gke-console") | .stackdriverLogEnabled) = "true"' $CONFIG_FILE
 else
-  yq 'del(.'logging.appenders.(type==gke-console)')' $CONFIG_FILE
+  yq -i 'del(.logging.appenders | select(.type == "gke-console"))' $CONFIG_FILE
 fi
 
 if [[ "" != "$TIMESCALE_PASSWORD" ]]; then
@@ -327,7 +327,7 @@ if [[ "" != "$FILE_STORAGE_CLUSTER_NAME" ]]; then
   yq -i '.fileServiceConfiguration.clusterName="$FILE_STORAGE_CLUSTER_NAME"' $CONFIG_FILE
 fi
 
-yq 'del(.codec)' $REDISSON_CACHE_FILE
+yq -i 'del(.codec)' $REDISSON_CACHE_FILE
 
 if [[ "$REDIS_SCRIPT_CACHE" == "false" ]]; then
   yq -i '.redisLockConfig.useScriptCache="false"' $CONFIG_FILE
@@ -377,7 +377,7 @@ if [[ "" != "$SIGNUP_TARGET_ENV" ]]; then
 fi
 
 if [[ "$LOCK_CONFIG_USE_SENTINEL" == "true" ]]; then
-  yq 'del(.singleServerConfig)' $REDISSON_CACHE_FILE
+  yq -i 'del(.singleServerConfig)' $REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$LOCK_CONFIG_SENTINEL_MASTER_NAME" ]]; then
@@ -398,7 +398,7 @@ if [[ "" != "$REDIS_NETTY_THREADS" ]]; then
   yq -i '.nettyThreads="$REDIS_NETTY_THREADS"' $REDISSON_CACHE_FILE
 fi
 
-yq 'del(.codec)' $ENTERPRISE_REDISSON_CACHE_FILE
+yq -i 'del(.codec)' $ENTERPRISE_REDISSON_CACHE_FILE
 
 if [[ "$REDIS_SCRIPT_CACHE" == "false" ]]; then
   yq -i '.useScriptCache="false"' $ENTERPRISE_REDISSON_CACHE_FILE
@@ -429,7 +429,7 @@ if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD" ]]; then
 fi
 
 if [[ "$EVENTS_FRAMEWORK_USE_SENTINEL" == "true" ]]; then
-  yq 'del(.singleServerConfig)' $ENTERPRISE_REDISSON_CACHE_FILE
+  yq -i 'del(.singleServerConfig)' $ENTERPRISE_REDISSON_CACHE_FILE
 
   if [[ "" != "$EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME" ]]; then
     yq -i '.sentinelServersConfig.masterName="$EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME"' $ENTERPRISE_REDISSON_CACHE_FILE

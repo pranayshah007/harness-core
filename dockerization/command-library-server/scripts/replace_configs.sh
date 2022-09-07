@@ -24,8 +24,8 @@ yq -i '.	yq="write"'
 		done
 }
 
-yq 'del(.server.adminConnectors)' /opt/harness/command-library-server-config.yml
-yq 'del(.'server.applicationConnectors.(type==h2)')' $CONFIG_FILE
+yq -i 'del(.server.adminConnectors)' /opt/harness/command-library-server-config.yml
+yq -i 'del(.server.applicationConnectors | select(.type == "h2"))' $CONFIG_FILE
 
 if [[ "" != "$LOGGING_LEVEL" ]]; then
   yq -i '.logging.level="$LOGGING_LEVEL"' /opt/harness/command-library-server-config.yml
@@ -46,10 +46,10 @@ yq -i '.server.requestLog.appenders[0].threshold="TRACE"' /opt/harness/command-l
 yq -i '.server.requestLog.appenders[0].target="STDOUT"' /opt/harness/command-library-server-config.yml
 
 if [[ "$STACK_DRIVER_LOGGING_ENABLED" == "true" ]]; then
-  yq 'del(.'logging.appenders.(type==console)')' $CONFIG_FILE
-  yq -i '.'logging.appenders.(type==gke-console).stackdriverLogEnabled'="true"' $CONFIG_FILE
+  yq -i 'del(.logging.appenders | select(.type == "console"))' $CONFIG_FILE
+  yq -i '(.logging.appenders | select(.type == "gke-console") | .stackdriverLogEnabled) = "true"' $CONFIG_FILE
 else
-  yq 'del(.'logging.appenders.(type==gke-console)')' $CONFIG_FILE
+  yq -i 'del(.logging.appenders | select(.type == "gke-console"))' $CONFIG_FILE
 fi
 
 if [[ "" != "$MANAGER_TO_COMMAND_LIBRARY_SERVICE_SECRET" ]]; then

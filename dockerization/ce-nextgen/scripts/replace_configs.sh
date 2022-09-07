@@ -37,8 +37,8 @@ write_mongo_params() {
 }
 
 #
-yq 'del(.server.adminConnectors)' $CONFIG_FILE
-yq 'del(.'server.applicationConnectors.(type==https)')' $CONFIG_FILE
+yq -i 'del(.server.adminConnectors)' $CONFIG_FILE
+yq -i 'del(.server.applicationConnectors | select(.type == "https"))' $CONFIG_FILE
 
 replace_key_value logging.level $LOGGING_LEVEL
 
@@ -47,7 +47,7 @@ replace_key_value server.applicationConnectors[0].port $CE_NEXTGEN_PORT
 replace_key_value events-mongo.uri "${EVENTS_MONGO_DB_URL//\\&/&}"
 
 if [[ "" != "$EVENTS_MONGO_HOSTS_AND_PORTS" ]]; then
-  yq 'del(.events-mongo.uri)' $CONFIG_FILE
+  yq -i 'del(.events-mongo.uri)' $CONFIG_FILE
   replace_key_value events-mongo.username "$EVENTS_MONGO_USERNAME"
   replace_key_value events-mongo.password "$EVENTS_MONGO_PASSWORD"
   replace_key_value events-mongo.database "$EVENTS_MONGO_DATABASE"
@@ -139,10 +139,10 @@ if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then
 fi
 
 if [[ "$STACK_DRIVER_LOGGING_ENABLED" == "true" ]]; then
-  yq 'del(.'logging.appenders.(type==console)')' $CONFIG_FILE
-  yq -i '.'logging.appenders.(type==gke-console).stackdriverLogEnabled'="true"' $CONFIG_FILE
+  yq -i 'del(.logging.appenders | select(.type == "console"))' $CONFIG_FILE
+  yq -i '(.logging.appenders | select(.type == "gke-console") | .stackdriverLogEnabled) = "true"' $CONFIG_FILE
 else
-  yq 'del(.'logging.appenders.(type==gke-console)')' $CONFIG_FILE
+  yq -i 'del(.logging.appenders | select(.type == "gke-console"))' $CONFIG_FILE
 fi
 
 if [[ "" != "$SEGMENT_ENABLED" ]]; then

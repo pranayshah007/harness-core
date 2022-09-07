@@ -24,8 +24,8 @@ yq -i '.	yq="write"'
 		done
 }
 
-yq 'del(.server.adminConnectors)' /opt/harness/command-library-server-config.yml
-yq 'del(.server.applicationConnectors[0])' /opt/harness/command-library-server-config.yml
+yq -i 'del(.server.adminConnectors)' /opt/harness/command-library-server-config.yml
+yq -i 'del(.server.applicationConnectors[0])' /opt/harness/command-library-server-config.yml
 
 if [[ "" != "$LOGGING_LEVEL" ]]; then
   yq -i '.logging.level="$LOGGING_LEVEL"' /opt/harness/command-library-server-config.yml
@@ -46,10 +46,10 @@ yq -i '.server.requestLog.appenders[0].threshold="TRACE"' /opt/harness/command-l
 yq -i '.server.requestLog.appenders[0].target="STDOUT"' /opt/harness/command-library-server-config.yml
 
 if [[ "$STACK_DRIVER_LOGGING_ENABLED" == "true" ]]; then
-  yq 'del(.logging.appenders[0])' /opt/harness/command-library-server-config.yml
+  yq -i 'del(.logging.appenders[0])' /opt/harness/command-library-server-config.yml
   yq -i '.logging.appenders[0].stackdriverLogEnabled="true"' /opt/harness/command-library-server-config.yml
 else
-  yq 'del(.logging.appenders[1])' /opt/harness/command-library-server-config.yml
+  yq -i 'del(.logging.appenders[1])' /opt/harness/command-library-server-config.yml
 fi
 
 if [[ "" != "$MANAGER_TO_COMMAND_LIBRARY_SERVICE_SECRET" ]]; then

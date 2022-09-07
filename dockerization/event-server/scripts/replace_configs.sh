@@ -29,14 +29,14 @@ write_mongo_params() {
 }
 
 # Remove the TLS connector (as ingress terminates TLS)
-yq 'del(.'connectors.(secure==true)')' $CONFIG_FILE
+yq -i 'del(.connectors | select(.secure == "true"))' $CONFIG_FILE
 
 if [[ "" != "$MONGO_URI" ]]; then
   yq -i '.harness-mongo.uri="$MONGO_URI"' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_HOSTS_AND_PORTS" ]]; then
-  yq 'del(.harness-mongo.uri)' $CONFIG_FILE
+  yq -i 'del(.harness-mongo.uri)' $CONFIG_FILE
   yq -i '.harness-mongo.username="$MONGO_USERNAME"' $CONFIG_FILE
   yq -i '.harness-mongo.password="$MONGO_PASSWORD"' $CONFIG_FILE
   yq -i '.harness-mongo.database="$MONGO_DATABASE"' $CONFIG_FILE
@@ -71,7 +71,7 @@ if [[ "" != "$EVENTS_MONGO_URI" ]]; then
 fi
 
 if [[ "" != "$EVENTS_MONGO_HOSTS_AND_PORTS" ]]; then
-  yq 'del(.events-mongo.uri)' $CONFIG_FILE
+  yq -i 'del(.events-mongo.uri)' $CONFIG_FILE
   yq -i '.events-mongo.username="$EVENTS_MONGO_USERNAME"' $CONFIG_FILE
   yq -i '.events-mongo.password="$EVENTS_MONGO_PASSWORD"' $CONFIG_FILE
   yq -i '.events-mongo.database="$EVENTS_MONGO_DATABASE"' $CONFIG_FILE

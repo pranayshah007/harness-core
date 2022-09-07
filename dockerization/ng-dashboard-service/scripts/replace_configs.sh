@@ -7,14 +7,14 @@
 CONFIG_FILE=/opt/harness/config.yml
 
 if [[ "$STACK_DRIVER_LOGGING_ENABLED" == "true" ]]; then
-  yq 'del(.'logging.appenders.(type==console)')' $CONFIG_FILE
-  yq -i '.'logging.appenders.(type==gke-console).stackdriverLogEnabled'="true"' $CONFIG_FILE
+  yq -i 'del(.logging.appenders | select(.type == "console"))' $CONFIG_FILE
+  yq -i '(.logging.appenders | select(.type == "gke-console") | .stackdriverLogEnabled) = "true"' $CONFIG_FILE
 else
-  yq 'del(.'logging.appenders.(type==gke-console)')' $CONFIG_FILE
+  yq -i 'del(.logging.appenders | select(.type == "gke-console"))' $CONFIG_FILE
 fi
 
 # Remove the TLS connector (as ingress terminates TLS)
-yq 'del(.connectors[0])' $CONFIG_FILE
+yq -i 'del(.connectors[0])' $CONFIG_FILE
 
 
 if [[ "" != "$SERVER_PORT" ]]; then
@@ -55,6 +55,6 @@ if [[ "" != "$JWT_IDENTITY_SERVICE_SECRET" ]]; then
 fi
 
 if [[ "" != "$ALLOWED_ORIGINS" ]]; then
-  yq 'del(.allowedOrigins)' $CONFIG_FILE
+  yq -i 'del(.allowedOrigins)' $CONFIG_FILE
   yq -i '.allowedOrigins="$ALLOWED_ORIGINS"' $CONFIG_FILE
 fi

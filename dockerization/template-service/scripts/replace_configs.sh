@@ -17,7 +17,7 @@ replace_key_value () {
 
 yq -i '.server.adminConnectors="[]"' $CONFIG_FILE
 
-yq 'del(.'gitSdkConfiguration.gitSdkGrpcServerConfig.connectors.(secure==true)')' $CONFIG_FILE
+yq -i 'del(.gitSdkConfiguration.gitSdkGrpcServerConfig.connectors | select(.secure == "true"))' $CONFIG_FILE
 
 if [[ "" != "$LOGGING_LEVEL" ]]; then
     yq -i '.logging.level="$LOGGING_LEVEL"' $CONFIG_FILE
@@ -111,10 +111,10 @@ if [[ "" != "$SCM_SERVICE_URI" ]]; then
 fi
 
 if [[ "$STACK_DRIVER_LOGGING_ENABLED" == "true" ]]; then
-  yq 'del(.'logging.appenders.(type==console)')' $CONFIG_FILE
-  yq -i '.'logging.appenders.(type==gke-console).stackdriverLogEnabled'="true"' $CONFIG_FILE
+  yq -i 'del(.logging.appenders | select(.type == "console"))' $CONFIG_FILE
+  yq -i '(.logging.appenders | select(.type == "gke-console") | .stackdriverLogEnabled) = "true"' $CONFIG_FILE
 else
-  yq 'del(.'logging.appenders.(type==gke-console)')' $CONFIG_FILE
+  yq -i 'del(.logging.appenders | select(.type == "gke-console"))' $CONFIG_FILE
 fi
 
 if [[ "" != "$JWT_AUTH_SECRET" ]]; then
@@ -134,7 +134,7 @@ if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then
   done
 fi
 
-yq 'del(.codec)' $REDISSON_CACHE_FILE
+yq -i 'del(.codec)' $REDISSON_CACHE_FILE
 
 if [[ "$REDIS_SCRIPT_CACHE" == "false" ]]; then
   yq -i '.useScriptCache="false"' $REDISSON_CACHE_FILE
@@ -146,7 +146,7 @@ if [[ "" != "$CACHE_CONFIG_REDIS_URL" ]]; then
 fi
 
 if [[ "$CACHE_CONFIG_USE_SENTINEL" == "true" ]]; then
-  yq 'del(.singleServerConfig)' $REDISSON_CACHE_FILE
+  yq -i 'del(.singleServerConfig)' $REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$CACHE_CONFIG_SENTINEL_MASTER_NAME" ]]; then
