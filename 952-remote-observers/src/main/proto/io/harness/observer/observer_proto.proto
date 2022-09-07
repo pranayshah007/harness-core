@@ -22,6 +22,7 @@ message Informant {
     Informant2 informant2 = 4;
     Informant3 informant3 = 5;
     Informant4 informant4 = 6;
+    Informant5 informant5 = 7;
   }
 }
 
@@ -57,6 +58,19 @@ message Informant4 {
   string type2 = 6;
   string type3 = 7;
   string type4 = 8;
+}
+
+message Informant5 {
+  bytes param1 = 1;
+  bytes param2 = 2;
+  bytes param3 = 3;
+  bytes param4 = 4;
+  bytes param5 = 5;
+  string type1 = 6;
+  string type2 = 7;
+  string type3 = 8;
+  string type4 = 9;
+  string type5 = 10;
 }
 
 message Response {}

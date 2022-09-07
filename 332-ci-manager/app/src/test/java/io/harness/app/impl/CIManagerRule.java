@@ -29,6 +29,7 @@ import io.harness.ci.execution.OrchestrationExecutionEventHandlerRegistrar;
 import io.harness.ci.registrars.ExecutionAdvisers;
 import io.harness.ci.registrars.ExecutionRegistrar;
 import io.harness.ci.serializer.CiExecutionRegistrars;
+import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.factory.ClosingFactory;
 import io.harness.factory.ClosingFactoryModule;
 import io.harness.govern.ProviderModule;
@@ -37,6 +38,7 @@ import io.harness.morphia.MorphiaRegistrar;
 import io.harness.pms.sdk.PmsSdkConfiguration;
 import io.harness.pms.sdk.PmsSdkModule;
 import io.harness.pms.sdk.core.SdkDeployMode;
+import io.harness.redis.RedisConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.rule.Cache;
 import io.harness.rule.InjectorRuleMixin;
@@ -147,6 +149,10 @@ public class CIManagerRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
 
     CIManagerConfiguration configuration =
         CIManagerConfiguration.builder()
+            .eventsFrameworkConfiguration(
+                EventsFrameworkConfiguration.builder()
+                    .redisConfig(RedisConfig.builder().envNamespace("blah").redisUrl("dummyRedisUrl").build())
+                    .build())
             .managerAuthority("localhost")
             .managerTarget("localhost:9880")
             .accessControlClientConfiguration(AccessControlClientConfiguration.builder()
