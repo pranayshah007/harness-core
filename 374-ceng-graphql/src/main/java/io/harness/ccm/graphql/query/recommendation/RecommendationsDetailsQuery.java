@@ -56,11 +56,12 @@ public class RecommendationsDetailsQuery {
   public RecommendationDetailsDTO recommendationDetails(@GraphQLContext RecommendationItemDTO nodeDTO,
       @GraphQLArgument(name = "startTime", description = "defaults to Now().minusDays(7)") OffsetDateTime startTime,
       @GraphQLArgument(name = "endTime", description = "defaults to Now()") OffsetDateTime endTime,
+      @GraphQLArgument(name = "bufferPercentage", description = "defaults to zero", defaultValue = "0") Integer bufferPercentage,
       @GraphQLEnvironment final ResolutionEnvironment env) {
     final String accountIdentifier = graphQLUtils.getAccountIdentifier(env);
 
     return recommendationDetailsInternal(
-        accountIdentifier, nodeDTO.getResourceType(), nodeDTO.getId(), startTime, endTime);
+        accountIdentifier, nodeDTO.getResourceType(), nodeDTO.getId(), startTime, endTime, bufferPercentage);
   }
 
   @GraphQLQuery(description = "recommendation details/drillDown")
@@ -68,10 +69,11 @@ public class RecommendationsDetailsQuery {
       @GraphQLNonNull @GraphQLArgument(name = "resourceType") ResourceType resourceType,
       @GraphQLArgument(name = "startTime", description = "defaults to Now().minusDays(7)") OffsetDateTime startTime,
       @GraphQLArgument(name = "endTime", description = "defaults to Now()") OffsetDateTime endTime,
+      @GraphQLArgument(name = "bufferPercentage", description = "defaults to zero", defaultValue = "0") Integer bufferPercentage,
       @GraphQLEnvironment final ResolutionEnvironment env) {
     final String accountIdentifier = graphQLUtils.getAccountIdentifier(env);
 
-    return recommendationDetailsInternal(accountIdentifier, resourceType, id, startTime, endTime);
+    return recommendationDetailsInternal(accountIdentifier, resourceType, id, startTime, endTime, bufferPercentage);
   }
 
   @GraphQLQuery(name = "nodeRecommendationRequest")
@@ -88,7 +90,7 @@ public class RecommendationsDetailsQuery {
 
   private RecommendationDetailsDTO recommendationDetailsInternal(@NotNull final String accountIdentifier,
       @NotNull ResourceType resourceType, @NotNull String id, @Nullable OffsetDateTime startTime,
-      @Nullable OffsetDateTime endTime) {
+      @Nullable OffsetDateTime endTime, @Nullable Integer bufferPercentage) {
     switch (resourceType) {
       case WORKLOAD:
         return workloadRecommendationService.getWorkloadRecommendationById(accountIdentifier, id,
@@ -97,7 +99,7 @@ public class RecommendationsDetailsQuery {
         return nodeRecommendationService.getRecommendation(accountIdentifier, id);
       case ECS_SERVICE:
         return ecsRecommendationService.getECSRecommendationById(accountIdentifier, id,
-            firstNonNull(startTime, OffsetDateTime.now().minusDays(7)), firstNonNull(endTime, OffsetDateTime.now()));
+            firstNonNull(startTime, OffsetDateTime.now().minusDays(7)), firstNonNull(endTime, OffsetDateTime.now()), bufferPercentage);
       default:
         throw new InvalidRequestException(String.format("Recommendation not yet implemented for %s", resourceType));
     }

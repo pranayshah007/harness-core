@@ -96,7 +96,7 @@ public class RESTWrapperRecommendationDetails {
     final ResolutionEnvironment env = GraphQLToRESTHelper.createResolutionEnv(accountId);
 
     NodeRecommendationDTO nodeRecommendation =
-        (NodeRecommendationDTO) detailsQuery.recommendationDetails(id, ResourceType.NODE_POOL, null, null, env);
+        (NodeRecommendationDTO) detailsQuery.recommendationDetails(id, ResourceType.NODE_POOL, null, null, 0, env);
     return ResponseDTO.newResponse(nodeRecommendation);
   }
 
@@ -145,7 +145,7 @@ public class RESTWrapperRecommendationDetails {
 
     WorkloadRecommendationDTO workloadRecommendation =
         (WorkloadRecommendationDTO) detailsQuery.recommendationDetails(id, ResourceType.WORKLOAD,
-            TimeUtils.toOffsetDateTime(startTime.getMillis()), TimeUtils.toOffsetDateTime(endTime.getMillis()), env);
+            TimeUtils.toOffsetDateTime(startTime.getMillis()), TimeUtils.toOffsetDateTime(endTime.getMillis()), 0, env);
     return ResponseDTO.newResponse(workloadRecommendation);
   }
 
@@ -173,7 +173,9 @@ public class RESTWrapperRecommendationDetails {
       @Parameter(required = false, description = DATETIME_DESCRIPTION + " Defaults to Today-7days") @QueryParam(
           "from") @Nullable @Valid String from,
       @Parameter(required = false, description = DATETIME_DESCRIPTION + " Defaults to Today") @QueryParam(
-          "to") @Nullable @Valid String to) {
+          "to") @Nullable @Valid String to,
+      @Parameter(required = false, description = "Buffer Percentage defaults to zero") @QueryParam("buffer")
+          @Nullable @Valid Integer bufferPercentage) {
     final ResolutionEnvironment env = GraphQLToRESTHelper.createResolutionEnv(accountId);
 
     DateTime endTime = DateTime.now().withTimeAtStartOfDay();
@@ -186,6 +188,10 @@ public class RESTWrapperRecommendationDetails {
       endTime = DateTime.parse(to);
     }
 
+    if (bufferPercentage == null) {
+      bufferPercentage = 0;
+    }
+
     if (startTime.isAfter(endTime)) {
       throw new InvalidArgumentsException(
           String.format(INVALID_DATETIME_INPUT, startTime.toString(), endTime.toString()));
@@ -193,7 +199,7 @@ public class RESTWrapperRecommendationDetails {
 
     ECSRecommendationDTO ecsRecommendation =
         (ECSRecommendationDTO) detailsQuery.recommendationDetails(id, ResourceType.ECS_SERVICE,
-            TimeUtils.toOffsetDateTime(startTime.getMillis()), TimeUtils.toOffsetDateTime(endTime.getMillis()), env);
+            TimeUtils.toOffsetDateTime(startTime.getMillis()), TimeUtils.toOffsetDateTime(endTime.getMillis()), bufferPercentage, env);
     return ResponseDTO.newResponse(ecsRecommendation);
   }
 }
