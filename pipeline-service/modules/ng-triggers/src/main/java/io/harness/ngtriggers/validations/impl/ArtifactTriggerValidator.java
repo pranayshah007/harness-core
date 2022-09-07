@@ -49,7 +49,7 @@ public class ArtifactTriggerValidator implements TriggerValidator {
   }
 
   @Override
-  public ValidationResult validate(TriggerDetails triggerDetails) {
+  public ValidationResult validate(TriggerDetails triggerDetails, Optional<Boolean> serviceV2) {
     ValidationResultBuilder builder = ValidationResult.builder().success(true);
     try {
       Optional<String> pipelineYmlOptional =
@@ -60,19 +60,21 @@ public class ArtifactTriggerValidator implements TriggerValidator {
       }
 
       // make sure, stage and artifact identifiers are given
-      validationHelper.verifyStageAndBuildRef(triggerDetails, ARTIFACT_REF);
+      if(!serviceV2.isPresent() || serviceV2.get().equals(Boolean.FALSE)) {
+        validationHelper.verifyStageAndBuildRef(triggerDetails, ARTIFACT_REF);
+      }
 
       String pipelineYml = pipelineYmlOptional.get();
       BuildTriggerOpsData buildTriggerOpsData =
           validationHelper.generateBuildTriggerOpsDataForArtifact(triggerDetails, pipelineYml);
       // stageRef & manifestRef exists
-      if (isEmpty(buildTriggerOpsData.getPipelineBuildSpecMap())) {
+      if (!serviceV2.isPresent() || serviceV2.get().equals(Boolean.FALSE) && isEmpty(buildTriggerOpsData.getPipelineBuildSpecMap())) {
         throw new InvalidRequestException(
             "Artifact With Given StageIdentifier and ArtifactRef in Trigger does not exist in Pipeline");
       }
 
       // type is validated {Gcr, DockerRegistry}
-      validationHelper.validateBuildType(buildTriggerOpsData);
+      validationHelper.validateBuildType(buildTriggerOpsData, serviceV2);
 
       validateBasedOnArtifactType(buildTriggerOpsData);
     } catch (Exception e) {

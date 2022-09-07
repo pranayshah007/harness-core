@@ -26,6 +26,8 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+
 import lombok.AllArgsConstructor;
 
 @Singleton
@@ -38,7 +40,7 @@ public class TriggerValidationHandler {
   private final ManifestTriggerValidator manifestTriggerValidator;
   private final ArtifactTriggerValidator artifactTriggerValidator;
 
-  public ValidationResult applyValidations(TriggerDetails triggerDetails) {
+  public ValidationResult applyValidations(TriggerDetails triggerDetails, Optional<Boolean> serviceV2) {
     List<TriggerValidator> applicableValidators = getApplicableValidators(triggerDetails);
 
     // Remove it later, as this should not happen
@@ -48,7 +50,7 @@ public class TriggerValidationHandler {
 
     ValidationResult validationResult = null;
     for (TriggerValidator triggerValidator : applicableValidators) {
-      validationResult = triggerValidator.validate(triggerDetails);
+      validationResult = triggerValidator.validate(triggerDetails, serviceV2);
       if (!validationResult.isSuccess()) {
         break;
       }

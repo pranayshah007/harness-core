@@ -28,6 +28,8 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -74,7 +76,7 @@ public class BuildTriggerValidationFilter implements TriggerFilter {
   boolean checkTriggerEligibility(TriggerDetails triggerDetails) {
     boolean result = false;
     try {
-      ValidationResult validationResult = triggerValidationHandler.applyValidations(triggerDetails);
+      ValidationResult validationResult = triggerValidationHandler.applyValidations(triggerDetails, Optional.empty());
       ngTriggerService.updateTriggerWithValidationStatus(triggerDetails.getNgTriggerEntity(), validationResult);
 
       if (!validationResult.isSuccess()) {

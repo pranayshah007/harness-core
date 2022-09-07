@@ -27,14 +27,14 @@ import org.springframework.data.mongodb.core.query.Criteria;
 
 @OwnedBy(PIPELINE)
 public interface NGTriggerService {
-  NGTriggerEntity create(NGTriggerEntity ngTriggerEntity);
+  NGTriggerEntity create(NGTriggerEntity ngTriggerEntity, boolean serviceV1);
 
   Optional<NGTriggerEntity> get(String accountId, String orgIdentifier, String projectIdentifier,
       String targetIdentifier, String identifier, boolean deleted);
 
-  NGTriggerEntity update(NGTriggerEntity ngTriggerEntity);
+  NGTriggerEntity update(NGTriggerEntity ngTriggerEntity, boolean serviceV2);
 
-  boolean updateTriggerStatus(NGTriggerEntity ngTriggerEntity, boolean status);
+  boolean updateTriggerStatus(NGTriggerEntity ngTriggerEntity, boolean status, boolean serviceV2);
 
   Page<NGTriggerEntity> list(Criteria criteria, Pageable pageable);
 
@@ -56,7 +56,7 @@ public interface NGTriggerService {
   void deleteTriggerWebhookEvent(TriggerWebhookEvent webhookEventQueueRecord);
   List<ConnectorResponseDTO> fetchConnectorsByFQN(String accountId, List<String> fqns);
 
-  void validateTriggerConfig(TriggerDetails triggerDetails);
+  void validateTriggerConfig(TriggerDetails triggerDetails, boolean serviceV2);
   void validateInputSets(TriggerDetails triggerDetails);
   boolean deleteAllForPipeline(
       String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier);

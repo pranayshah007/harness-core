@@ -12,7 +12,9 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
 
+import java.util.Optional;
+
 @OwnedBy(PIPELINE)
 public interface TriggerValidator {
-  ValidationResult validate(TriggerDetails triggerDetails);
+  ValidationResult validate(TriggerDetails triggerDetails, Optional<Boolean> serviceV2);
 }

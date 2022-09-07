@@ -65,18 +65,18 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
   public ResponseDTO<NGTriggerResponseDTO> create(@NotNull @AccountIdentifier String accountIdentifier,
       @NotNull @OrgIdentifier String orgIdentifier, @NotNull @ProjectIdentifier String projectIdentifier,
-      @NotNull @ResourceIdentifier String targetIdentifier, @NotNull String yaml, boolean ignoreError) {
+      @NotNull @ResourceIdentifier String targetIdentifier, @NotNull String yaml, boolean ignoreError, boolean serviceV2) {
     NGTriggerEntity createdEntity = null;
     try {
       TriggerDetails triggerDetails =
           ngTriggerElementMapper.toTriggerDetails(accountIdentifier, orgIdentifier, projectIdentifier, yaml);
-      ngTriggerService.validateTriggerConfig(triggerDetails);
+      ngTriggerService.validateTriggerConfig(triggerDetails, serviceV2);
 
       if (ignoreError) {
-        createdEntity = ngTriggerService.create(triggerDetails.getNgTriggerEntity());
+        createdEntity = ngTriggerService.create(triggerDetails.getNgTriggerEntity(), serviceV2);
       } else {
         ngTriggerService.validateInputSets(triggerDetails);
-        createdEntity = ngTriggerService.create(triggerDetails.getNgTriggerEntity());
+        createdEntity = ngTriggerService.create(triggerDetails.getNgTriggerEntity(), serviceV2);
       }
       return ResponseDTO.newResponse(
           createdEntity.getVersion().toString(), ngTriggerElementMapper.toResponseDTO(createdEntity));
@@ -106,7 +106,7 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
   public ResponseDTO<NGTriggerResponseDTO> update(String ifMatch, @NotNull @AccountIdentifier String accountIdentifier,
       @NotNull @OrgIdentifier String orgIdentifier, @NotNull @ProjectIdentifier String projectIdentifier,
       @NotNull @ResourceIdentifier String targetIdentifier, String triggerIdentifier, @NotNull String yaml,
-      boolean ignoreError) {
+      boolean ignoreError, boolean serviceV2) {
     Optional<NGTriggerEntity> ngTriggerEntity = ngTriggerService.get(
         accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier, triggerIdentifier, false);
     if (!ngTriggerEntity.isPresent()) {
@@ -117,15 +117,15 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
       TriggerDetails triggerDetails = ngTriggerService.fetchTriggerEntity(
           accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier, triggerIdentifier, yaml);
 
-      ngTriggerService.validateTriggerConfig(triggerDetails);
+      ngTriggerService.validateTriggerConfig(triggerDetails, serviceV2);
       triggerDetails.getNgTriggerEntity().setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
       NGTriggerEntity updatedEntity;
 
       if (ignoreError) {
-        updatedEntity = ngTriggerService.update(triggerDetails.getNgTriggerEntity());
+        updatedEntity = ngTriggerService.update(triggerDetails.getNgTriggerEntity(), serviceV2);
       } else {
         ngTriggerService.validateInputSets(triggerDetails);
-        updatedEntity = ngTriggerService.update(triggerDetails.getNgTriggerEntity());
+        updatedEntity = ngTriggerService.update(triggerDetails.getNgTriggerEntity(), serviceV2);
       }
       return ResponseDTO.newResponse(
           updatedEntity.getVersion().toString(), ngTriggerElementMapper.toResponseDTO(updatedEntity));
@@ -139,10 +139,10 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
   public ResponseDTO<Boolean> updateTriggerStatus(@NotNull @AccountIdentifier String accountIdentifier,
       @NotNull @OrgIdentifier String orgIdentifier, @NotNull @ProjectIdentifier String projectIdentifier,
-      @NotNull @ResourceIdentifier String targetIdentifier, String triggerIdentifier, @NotNull boolean status) {
+      @NotNull @ResourceIdentifier String targetIdentifier, String triggerIdentifier, @NotNull boolean status, boolean serviceV2) {
     Optional<NGTriggerEntity> ngTriggerEntity = ngTriggerService.get(
         accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier, triggerIdentifier, false);
-    return ResponseDTO.newResponse(ngTriggerService.updateTriggerStatus(ngTriggerEntity.get(), status));
+    return ResponseDTO.newResponse(ngTriggerService.updateTriggerStatus(ngTriggerEntity.get(), status, serviceV2));
   }
 
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)

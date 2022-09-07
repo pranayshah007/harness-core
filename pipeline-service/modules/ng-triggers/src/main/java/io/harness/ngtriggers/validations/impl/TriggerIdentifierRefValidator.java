@@ -19,10 +19,12 @@ import io.harness.ngtriggers.validations.TriggerValidator;
 import io.harness.ngtriggers.validations.ValidationResult;
 import io.harness.ngtriggers.validations.ValidationResult.ValidationResultBuilder;
 
+import java.util.Optional;
+
 @OwnedBy(PIPELINE)
 public class TriggerIdentifierRefValidator implements TriggerValidator {
   @Override
-  public ValidationResult validate(TriggerDetails triggerDetails) {
+  public ValidationResult validate(TriggerDetails triggerDetails, Optional<Boolean> serviceV2) {
     ValidationResultBuilder builder = ValidationResult.builder().success(true);
     boolean success = true;
     StringBuilder message = new StringBuilder(512);
