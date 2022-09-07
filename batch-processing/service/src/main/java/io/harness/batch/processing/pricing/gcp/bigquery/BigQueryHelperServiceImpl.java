@@ -7,6 +7,7 @@
 
 package io.harness.batch.processing.pricing.gcp.bigquery;
 
+import static io.harness.batch.processing.pricing.gcp.bigquery.BQConst.GCP_DESCRIPTION_CONDITION;
 import static io.harness.ccm.billing.GcpServiceAccountServiceImpl.getCredentials;
 
 import static java.lang.String.format;
@@ -391,14 +392,27 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
   @Override
   public Map<String, VMInstanceBillingData> getGcpVMBillingData(
       List<String> resourceIds, Instant startTime, Instant endTime, String dataSetId) {
+    String resourceIdSubQuery = createSubQuery(resourceIds);
     String query = BQConst.GCP_VM_BILLING_QUERY;
-    String resourceId = String.join("','", resourceIds);
     String projectTableName = getGcpProjectTableName(dataSetId);
-    String formattedQuery = format(query, projectTableName, resourceId, startTime, endTime);
+    String formattedQuery =
+        format(query, projectTableName, startTime, resourceIdSubQuery, startTime, endTime, GCP_DESCRIPTION_CONDITION);
 
     log.info("GCP CUR Data Query: {}", formattedQuery);
-
     return query(formattedQuery, "GCP");
+  }
+
+  private static String createSubQuery(List<String> resourceIds) {
+    StringBuffer sb = new StringBuffer();
+    sb.append(" (");
+    for (int i = 0; i < resourceIds.size(); i++) {
+      sb.append("resource.name like '%" + resourceIds.get(i) + "%' ");
+      if (i < resourceIds.size() - 1) {
+        sb.append("OR ");
+      }
+    }
+    sb.append(") ");
+    return sb.toString();
   }
 
   private String getGcpProjectTableName(String dataSetId) {
