@@ -60,12 +60,11 @@ public class StepParametersUtilsTest extends CategoryTest {
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
   public void testGetStageParameters() {
-    StageElementConfig config =
-        StageElementConfig.builder()
+    TestAbstractStageNode config =
+        TestAbstractStageNode.builder()
             .identifier("IDENTIFIER")
             .name("NAME")
             .description(ParameterField.createValueField("DESCRIPTION"))
-            .type("TYPE")
             .skipCondition(ParameterField.createValueField("SKIPCONDITION"))
             .when(StageWhenCondition.builder().pipelineStatus(WhenConditionStatus.SUCCESS).build())
             .build();
