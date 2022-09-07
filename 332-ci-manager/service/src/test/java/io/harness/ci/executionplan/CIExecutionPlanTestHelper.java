@@ -53,6 +53,7 @@ import io.harness.beans.execution.WebhookEvent;
 import io.harness.beans.execution.WebhookExecutionSource;
 import io.harness.beans.executionargs.CIExecutionArgs;
 import io.harness.beans.script.ScriptInfo;
+import io.harness.beans.stages.IntegrationStageNode;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.yaml.extended.CustomSecretVariable;
 import io.harness.beans.yaml.extended.CustomTextVariable;
@@ -134,8 +135,6 @@ import io.harness.encryption.SecretRefData;
 import io.harness.k8s.model.ImageDetails;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
-import io.harness.plancreator.stages.stage.AbstractStageNode;
-import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.yaml.core.variables.NGVariable;
@@ -284,7 +283,7 @@ public class CIExecutionPlanTestHelper {
   }
 
   public InitializeStepInfo getExpectedLiteEngineTaskInfoOnFirstPod(
-      ExecutionSource executionSource, AbstractStageNode stageElementConfig) {
+      ExecutionSource executionSource, IntegrationStageNode stageElementConfig) {
     return InitializeStepInfo.builder()
         .identifier("liteEngineTask")
         .name("liteEngineTask")
@@ -325,7 +324,7 @@ public class CIExecutionPlanTestHelper {
   }
 
   public InitializeStepInfo getExpectedLiteEngineTaskInfoOnOtherPods(
-      ExecutionSource executionSource, AbstractStageNode stageElementConfig) {
+      ExecutionSource executionSource, IntegrationStageNode stageElementConfig) {
     return InitializeStepInfo.builder()
         .identifier("liteEngineTask")
         .name("liteEngineTask")
@@ -1358,11 +1357,10 @@ public class CIExecutionPlanTestHelper {
     return envVarMap;
   }
 
-  public StageElementConfig getIntegrationStageElementConfig() {
-    return StageElementConfig.builder()
+  public IntegrationStageNode getIntegrationStageElementConfig() {
+    return IntegrationStageNode.builder()
         .identifier("ciStage")
-        .type("CI")
-        .stageType(getIntegrationStageConfig())
+        .integrationStageConfig(getIntegrationStageConfig())
         .variables(getStageNGVariables())
         .build();
   }

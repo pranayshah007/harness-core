@@ -47,20 +47,16 @@ import lombok.SneakyThrows;
 
 @OwnedBy(PIPELINE)
 @TargetModule(HarnessModule._882_PMS_SDK_CORE)
-public abstract class GenericStagePlanCreator extends ChildrenPlanCreator<AbstractStageNode> {
+public abstract class GenericStagePlanCreator<T extends AbstractStageNode> extends ChildrenPlanCreator<T> {
   @Inject private KryoSerializer kryoSerializer;
 
   public abstract Set<String> getSupportedStageTypes();
 
-  public abstract StepType getStepType(AbstractStageNode stageElementConfig);
+  public abstract StepType getStepType(T stageElementConfig);
 
-  public abstract SpecParameters getSpecParameters(
-      String childNodeId, PlanCreationContext ctx, AbstractStageNode stageElementConfig);
+  public abstract SpecParameters getSpecParameters(String childNodeId, PlanCreationContext ctx, T stageElementConfig);
 
-  @Override
-  public Class<AbstractStageNode> getFieldClass() {
-    return AbstractStageNode.class;
-  }
+  @Override public abstract Class<T> getFieldClass();
 
   @Override
   public Map<String, Set<String>> getSupportedTypes() {
@@ -73,8 +69,7 @@ public abstract class GenericStagePlanCreator extends ChildrenPlanCreator<Abstra
 
   @SneakyThrows
   @Override
-  public PlanNode createPlanForParentNode(
-      PlanCreationContext ctx, AbstractStageNode stageElementConfig, List<String> childrenNodeIds) {
+  public PlanNode createPlanForParentNode(PlanCreationContext ctx, T stageElementConfig, List<String> childrenNodeIds) {
     stageElementConfig.setIdentifier(
         StrategyUtils.getIdentifierWithExpression(ctx, stageElementConfig.getIdentifier()));
     stageElementConfig.setName(StrategyUtils.getIdentifierWithExpression(ctx, stageElementConfig.getName()));

@@ -35,6 +35,7 @@ import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.quantity.unit.DecimalQuantityUnit;
 import io.harness.beans.quantity.unit.StorageQuantityUnit;
 import io.harness.beans.serializer.RunTimeInputHandler;
+import io.harness.beans.stages.IntegrationStageNode;
 import io.harness.beans.steps.CIStepInfo;
 import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.steps.stepinfo.BackgroundStepInfo;
@@ -64,7 +65,6 @@ import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.filters.WithConnectorRef;
 import io.harness.ng.core.NGAccess;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
-import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
 import io.harness.plancreator.steps.StepElementConfig;
 import io.harness.plancreator.steps.StepGroupElementConfig;
@@ -103,7 +103,7 @@ public class K8InitializeStepUtils {
   private final String AXA_ACCOUNT_ID = "UVxMDMhNQxOCvroqqImWdQ";
 
   public List<ContainerDefinitionInfo> createStepContainerDefinitions(InitializeStepInfo initializeStepInfo,
-      StageElementConfig integrationStage, CIExecutionArgs ciExecutionArgs, PortFinder portFinder, String accountId,
+      IntegrationStageNode integrationStage, CIExecutionArgs ciExecutionArgs, PortFinder portFinder, String accountId,
       OSType os, Ambiance ambiance, int stepIndex) {
     List<ExecutionWrapperConfig> steps = initializeStepInfo.getExecutionElementConfig().getSteps();
     List<ContainerDefinitionInfo> containerDefinitionInfos = new ArrayList<>();
@@ -151,7 +151,7 @@ public class K8InitializeStepUtils {
   }
 
   private ContainerDefinitionInfo handleSingleStep(ExecutionWrapperConfig executionWrapper,
-      StageElementConfig integrationStage, CIExecutionArgs ciExecutionArgs, PortFinder portFinder, String accountId,
+      IntegrationStageNode integrationStage, CIExecutionArgs ciExecutionArgs, PortFinder portFinder, String accountId,
       OSType os, Ambiance ambiance, int maxAllocatableMemoryRequest, int maxAllocatableCpuRequest, int stepIndex,
       String stepGroupIdOfParent) {
     StepElementConfig stepElementConfig = IntegrationStageUtils.getStepElementConfig(executionWrapper);
@@ -173,7 +173,7 @@ public class K8InitializeStepUtils {
   }
 
   private List<ContainerDefinitionInfo> handleStepGroup(ExecutionWrapperConfig executionWrapper,
-      StageElementConfig integrationStage, CIExecutionArgs ciExecutionArgs, PortFinder portFinder, String accountId,
+      IntegrationStageNode integrationStage, CIExecutionArgs ciExecutionArgs, PortFinder portFinder, String accountId,
       OSType os, Ambiance ambiance, int maxAllocatableMemoryRequest, int maxAllocatableCpuRequest, int stepIndex) {
     List<ContainerDefinitionInfo> containerDefinitionInfos = new ArrayList<>();
     StepGroupElementConfig stepGroupElementConfig = IntegrationStageUtils.getStepGroupElementConfig(executionWrapper);
@@ -208,7 +208,7 @@ public class K8InitializeStepUtils {
   }
 
   private List<ContainerDefinitionInfo> handleParallelStep(ExecutionWrapperConfig executionWrapper,
-      StageElementConfig integrationStage, CIExecutionArgs ciExecutionArgs, PortFinder portFinder, String accountId,
+      IntegrationStageNode integrationStage, CIExecutionArgs ciExecutionArgs, PortFinder portFinder, String accountId,
       OSType os, Ambiance ambiance, int extraMemory, int extraCPU, int stepIndex, String stepGroupIdOfParent) {
     List<ContainerDefinitionInfo> containerDefinitionInfos = new ArrayList<>();
     ParallelStepElementConfig parallelStepElementConfig =
@@ -259,7 +259,7 @@ public class K8InitializeStepUtils {
   }
 
   private ContainerDefinitionInfo createStepContainerDefinition(StepElementConfig stepElement,
-      StageElementConfig integrationStage, CIExecutionArgs ciExecutionArgs, PortFinder portFinder, int stepIndex,
+      IntegrationStageNode integrationStage, CIExecutionArgs ciExecutionArgs, PortFinder portFinder, int stepIndex,
       String accountId, OSType os, Ambiance ambiance, Integer extraMemoryPerStep, Integer extraCPUPerStep) {
     if (!(stepElement.getStepSpecType() instanceof CIStepInfo)) {
       return null;
@@ -323,7 +323,7 @@ public class K8InitializeStepUtils {
   }
 
   private ContainerDefinitionInfo createPluginCompatibleStepContainerDefinition(PluginCompatibleStep stepInfo,
-      StageElementConfig integrationStage, CIExecutionArgs ciExecutionArgs, PortFinder portFinder, int stepIndex,
+      IntegrationStageNode integrationStage, CIExecutionArgs ciExecutionArgs, PortFinder portFinder, int stepIndex,
       String identifier, String stepName, String stepType, long timeout, String accountId, OSType os, Ambiance ambiance,
       Integer extraMemoryPerStep, Integer extraCPUPerStep) {
     Integer port = portFinder.getNextPort();
@@ -367,8 +367,8 @@ public class K8InitializeStepUtils {
   }
 
   private void setEnvVariablesForHostedBuids(
-      StageElementConfig integrationStage, PluginCompatibleStep stepInfo, Map<String, String> envVarMap) {
-    IntegrationStageConfig stage = (IntegrationStageConfig) integrationStage.getStageType();
+      IntegrationStageNode integrationStage, PluginCompatibleStep stepInfo, Map<String, String> envVarMap) {
+    IntegrationStageConfig stage = integrationStage.getIntegrationStageConfig();
     if (stage != null && stage.getInfrastructure() != null
         && stage.getInfrastructure().getType() == Infrastructure.Type.KUBERNETES_HOSTED) {
       switch (stepInfo.getNonYamlInfo().getStepInfoType()) {
@@ -385,7 +385,7 @@ public class K8InitializeStepUtils {
   }
 
   private ContainerDefinitionInfo createRunStepContainerDefinition(RunStepInfo runStepInfo,
-      StageElementConfig integrationStage, CIExecutionArgs ciExecutionArgs, PortFinder portFinder, int stepIndex,
+      IntegrationStageNode integrationStage, CIExecutionArgs ciExecutionArgs, PortFinder portFinder, int stepIndex,
       String identifier, String name, String accountId, OSType os, Integer extraMemoryPerStep,
       Integer extraCPUPerStep) {
     if (runStepInfo.getImage() == null) {
@@ -434,7 +434,7 @@ public class K8InitializeStepUtils {
   }
 
   private ContainerDefinitionInfo createBackgroundStepContainerDefinition(BackgroundStepInfo backgroundStepInfo,
-      StageElementConfig integrationStage, CIExecutionArgs ciExecutionArgs, PortFinder portFinder, int stepIndex,
+      IntegrationStageNode integrationStage, CIExecutionArgs ciExecutionArgs, PortFinder portFinder, int stepIndex,
       String identifier, String name, String accountId, OSType os, Integer extraMemoryPerStep,
       Integer extraCPUPerStep) {
     String image = resolveStringParameter("Image", "Background", identifier, backgroundStepInfo.getImage(), true);
@@ -491,7 +491,7 @@ public class K8InitializeStepUtils {
   }
 
   private ContainerDefinitionInfo createRunTestsStepContainerDefinition(RunTestsStepInfo runTestsStepInfo,
-      StageElementConfig integrationStage, CIExecutionArgs ciExecutionArgs, PortFinder portFinder, int stepIndex,
+      IntegrationStageNode integrationStage, CIExecutionArgs ciExecutionArgs, PortFinder portFinder, int stepIndex,
       String identifier, String accountId, OSType os, Integer extraMemoryPerStep, Integer extraCPUPerStep) {
     Integer port = portFinder.getNextPort();
 
@@ -538,7 +538,7 @@ public class K8InitializeStepUtils {
   }
 
   private ContainerDefinitionInfo createPluginStepContainerDefinition(PluginStepInfo pluginStepInfo,
-      StageElementConfig integrationStage, CIExecutionArgs ciExecutionArgs, PortFinder portFinder, int stepIndex,
+      IntegrationStageNode integrationStage, CIExecutionArgs ciExecutionArgs, PortFinder portFinder, int stepIndex,
       String identifier, String name, String accountId, OSType os, Integer extraMemoryPerStep,
       Integer extraCPUPerStep) {
     Integer port = portFinder.getNextPort();
@@ -630,7 +630,7 @@ public class K8InitializeStepUtils {
         .build();
   }
 
-  private Map<String, String> getEnvVariables(StageElementConfig stageElementConfig) {
+  private Map<String, String> getEnvVariables(IntegrationStageNode stageElementConfig) {
     if (isEmpty(stageElementConfig.getVariables())) {
       return Collections.emptyMap();
     }
@@ -646,7 +646,7 @@ public class K8InitializeStepUtils {
                 ngVariable.getValue(), false, ngVariable.getDefaultValue())));
   }
 
-  private List<SecretNGVariable> getSecretVariables(StageElementConfig stageElementConfig) {
+  private List<SecretNGVariable> getSecretVariables(IntegrationStageNode stageElementConfig) {
     if (isEmpty(stageElementConfig.getVariables())) {
       return Collections.emptyList();
     }

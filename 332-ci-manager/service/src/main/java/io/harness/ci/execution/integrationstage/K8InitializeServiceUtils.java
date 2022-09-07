@@ -26,6 +26,7 @@ import io.harness.beans.environment.pod.container.ContainerImageDetails;
 import io.harness.beans.quantity.unit.DecimalQuantityUnit;
 import io.harness.beans.quantity.unit.StorageQuantityUnit;
 import io.harness.beans.serializer.RunTimeInputHandler;
+import io.harness.beans.stages.IntegrationStageNode;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.ci.buildstate.ServiceContainerUtils;
 import io.harness.ci.config.CIExecutionServiceConfig;
@@ -36,7 +37,6 @@ import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.delegate.beans.ci.pod.CIContainerType;
 import io.harness.delegate.beans.ci.pod.ContainerResourceParams;
 import io.harness.exception.ngexception.CIStageExecutionException;
-import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.yaml.extended.ci.container.ContainerResource;
 
 import com.google.inject.Inject;
@@ -56,9 +56,9 @@ public class K8InitializeServiceUtils {
   private static final String SEPARATOR = ",";
 
   public List<ContainerDefinitionInfo> createServiceContainerDefinitions(
-      StageElementConfig stageElementConfig, PortFinder portFinder, OSType os) {
+      IntegrationStageNode stageElementConfig, PortFinder portFinder, OSType os) {
     List<ContainerDefinitionInfo> containerDefinitionInfos = new ArrayList<>();
-    IntegrationStageConfig integrationStage = (IntegrationStageConfig) stageElementConfig.getStageType();
+    IntegrationStageConfig integrationStage = stageElementConfig.getIntegrationStageConfig();
     if (integrationStage.getServiceDependencies() == null
         || isEmpty(integrationStage.getServiceDependencies().getValue())) {
       return containerDefinitionInfos;

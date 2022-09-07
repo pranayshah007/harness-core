@@ -17,6 +17,7 @@ import static io.harness.walktree.visitor.utilities.VisitorParentPathUtils.PATH_
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.stages.SecurityStageNode;
 import io.harness.beans.steps.StepSpecTypeConstants;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
@@ -33,7 +34,6 @@ import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.filters.FilterCreatorHelper;
 import io.harness.filters.GenericStageFilterJsonCreator;
 import io.harness.ng.core.BaseNGAccess;
-import io.harness.plancreator.stages.stage.AbstractStageNode;
 import io.harness.pms.pipeline.filter.PipelineFilter;
 import io.harness.pms.sdk.core.filter.creation.beans.FilterCreationContext;
 import io.harness.pms.yaml.ParameterField;
@@ -52,7 +52,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(HarnessTeam.STO)
-public class STOStageFilterJsonCreator extends GenericStageFilterJsonCreator {
+public class STOStageFilterJsonCreator extends GenericStageFilterJsonCreator<SecurityStageNode> {
   @Inject ConnectorUtils connectorUtils;
   @Inject private SimpleVisitorFactory simpleVisitorFactory;
   @Inject ValidationUtils validationUtils;
@@ -62,7 +62,12 @@ public class STOStageFilterJsonCreator extends GenericStageFilterJsonCreator {
     return ImmutableSet.of(StepSpecTypeConstants.SECURITY_STAGE);
   }
 
-  public PipelineFilter getFilter(FilterCreationContext filterCreationContext, AbstractStageNode stageElementConfig) {
+  @Override
+  public Class<SecurityStageNode> getFieldClass() {
+    return SecurityStageNode.class;
+  }
+
+  public PipelineFilter getFilter(FilterCreationContext filterCreationContext, SecurityStageNode stageElementConfig) {
     log.info("Received filter creation request for security tests stage {}", stageElementConfig.getIdentifier());
     String accountId = filterCreationContext.getSetupMetadata().getAccountId();
     String orgIdentifier = filterCreationContext.getSetupMetadata().getOrgId();
@@ -112,7 +117,7 @@ public class STOStageFilterJsonCreator extends GenericStageFilterJsonCreator {
     return ciFilterBuilder.build();
   }
 
-  private void validateStage(AbstractStageNode stageElementConfig) {
+  private void validateStage(SecurityStageNode stageElementConfig) {
     IntegrationStageConfig integrationStageConfig = (IntegrationStageConfig) stageElementConfig.getStageInfoConfig();
 
     Infrastructure infrastructure = integrationStageConfig.getInfrastructure();
@@ -125,7 +130,7 @@ public class STOStageFilterJsonCreator extends GenericStageFilterJsonCreator {
   }
 
   public Set<EntityDetailProtoDTO> getReferredEntities(
-      FilterCreationContext filterCreationContext, AbstractStageNode stageElementConfig) {
+      FilterCreationContext filterCreationContext, SecurityStageNode stageElementConfig) {
     CodeBase ciCodeBase = null;
     String accountIdentifier = filterCreationContext.getSetupMetadata().getAccountId();
     String orgIdentifier = filterCreationContext.getSetupMetadata().getOrgId();

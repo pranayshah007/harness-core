@@ -43,18 +43,14 @@ import java.util.Set;
 import javax.validation.constraints.NotNull;
 
 @OwnedBy(PIPELINE)
-public abstract class GenericStageFilterJsonCreator implements FilterJsonCreator<AbstractStageNode> {
+public abstract class GenericStageFilterJsonCreator<T extends AbstractStageNode> implements FilterJsonCreator<T> {
   @Inject private SimpleVisitorFactory simpleVisitorFactory;
 
   public abstract Set<String> getSupportedStageTypes();
 
-  public abstract PipelineFilter getFilter(
-      FilterCreationContext filterCreationContext, AbstractStageNode stageElementConfig);
+  public abstract PipelineFilter getFilter(FilterCreationContext filterCreationContext, T stageElementConfig);
 
-  @Override
-  public Class<AbstractStageNode> getFieldClass() {
-    return AbstractStageNode.class;
-  }
+  @Override public abstract Class<T> getFieldClass();
 
   @Override
   public Map<String, Set<String>> getSupportedTypes() {
@@ -66,8 +62,7 @@ public abstract class GenericStageFilterJsonCreator implements FilterJsonCreator
   }
 
   @Override
-  public FilterCreationResponse handleNode(
-      FilterCreationContext filterCreationContext, AbstractStageNode stageElementConfig) {
+  public FilterCreationResponse handleNode(FilterCreationContext filterCreationContext, T stageElementConfig) {
     if (stageElementConfig.getStrategy() != null) {
       StrategyValidationUtils.validateStrategyNode(stageElementConfig.getStrategy());
     }
@@ -99,7 +94,7 @@ public abstract class GenericStageFilterJsonCreator implements FilterJsonCreator
   }
 
   public Set<EntityDetailProtoDTO> getReferredEntities(
-      FilterCreationContext filterCreationContext, AbstractStageNode stageElementConfig) {
+      FilterCreationContext filterCreationContext, T stageElementConfig) {
     Set<EntityDetailProtoDTO> referredEntities = getReferences(filterCreationContext.getSetupMetadata().getAccountId(),
         filterCreationContext.getSetupMetadata().getOrgId(), filterCreationContext.getSetupMetadata().getProjectId(),
         stageElementConfig.getStageInfoConfig(), filterCreationContext.getCurrentField());

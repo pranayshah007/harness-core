@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.beans.environment.K8BuildJobEnvInfo;
 import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
 import io.harness.beans.executionargs.CIExecutionArgs;
+import io.harness.beans.stages.IntegrationStageNode;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.category.element.UnitTests;
@@ -30,7 +31,6 @@ import io.harness.cimanager.stages.IntegrationStageConfigImpl;
 import io.harness.delegate.beans.ci.pod.ContainerResourceParams;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
-import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.rule.Owner;
 import io.harness.steps.matrix.StrategyExpansionData;
@@ -59,7 +59,7 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
   @Category(UnitTests.class)
   public void createStepContainerDefinitions() {
     List<ExecutionWrapperConfig> steps = K8InitializeStepUtilsHelper.getExecutionWrapperConfigList();
-    StageElementConfig integrationStageConfig = K8InitializeStepUtilsHelper.getIntegrationStageElementConfig();
+    IntegrationStageNode integrationStageConfig = K8InitializeStepUtilsHelper.getIntegrationStageElementConfig();
     PortFinder portFinder = PortFinder.builder().startingPort(PORT_STARTING_RANGE).usedPorts(new HashSet<>()).build();
     CIExecutionArgs ciExecutionArgs = K8InitializeStepUtilsHelper.getCIExecutionArgs();
 
@@ -83,9 +83,9 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
         Collections.singletonList(ExecutionWrapperConfig.builder()
                                       .step(K8InitializeStepUtilsHelper.getBackgroundStepElementConfigAsJsonNode())
                                       .build());
-    StageElementConfig integrationStageConfig = K8InitializeStepUtilsHelper.getIntegrationStageElementConfig();
+    IntegrationStageNode integrationStageConfig = K8InitializeStepUtilsHelper.getIntegrationStageElementConfig();
     IntegrationStageConfigImpl integrationStageConfigImpl =
-        (IntegrationStageConfigImpl) integrationStageConfig.getStageType();
+        (IntegrationStageConfigImpl) integrationStageConfig.getIntegrationStageConfig();
     integrationStageConfigImpl.setExecution(ExecutionElementConfig.builder().steps(steps).build());
     PortFinder portFinder = PortFinder.builder().startingPort(PORT_STARTING_RANGE).usedPorts(new HashSet<>()).build();
     CIExecutionArgs ciExecutionArgs = K8InitializeStepUtilsHelper.getCIExecutionArgs();
@@ -115,7 +115,7 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
   @Category(UnitTests.class)
   public void testStepGroupWithParallelSteps() throws Exception {
     List<ExecutionWrapperConfig> steps = K8InitializeStepUtilsHelper.getExecutionWrapperConfigListWithStepGroup();
-    StageElementConfig integrationStageConfig =
+    IntegrationStageNode integrationStageConfig =
         K8InitializeStepUtilsHelper.getIntegrationStageElementConfigWithStepGroup();
     PortFinder portFinder = PortFinder.builder().startingPort(PORT_STARTING_RANGE).usedPorts(new HashSet<>()).build();
     CIExecutionArgs ciExecutionArgs = K8InitializeStepUtilsHelper.getCIExecutionArgs();
@@ -153,7 +153,7 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
   @Category(UnitTests.class)
   public void testStepGroup() throws Exception {
     List<ExecutionWrapperConfig> steps = K8InitializeStepUtilsHelper.getExecutionWrapperConfigListWithStepGroup2();
-    StageElementConfig integrationStageConfig =
+    IntegrationStageNode integrationStageConfig =
         K8InitializeStepUtilsHelper.getIntegrationStageElementConfigWithStepGroup1();
     PortFinder portFinder = PortFinder.builder().startingPort(PORT_STARTING_RANGE).usedPorts(new HashSet<>()).build();
     CIExecutionArgs ciExecutionArgs = K8InitializeStepUtilsHelper.getCIExecutionArgs();
@@ -183,7 +183,7 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
   @Category(UnitTests.class)
   public void testParallelStepGroups() throws Exception {
     List<ExecutionWrapperConfig> steps = K8InitializeStepUtilsHelper.getExecutionWrapperConfigListWithStepGroup1();
-    StageElementConfig integrationStageConfig =
+    IntegrationStageNode integrationStageConfig =
         K8InitializeStepUtilsHelper.getIntegrationStageElementConfigWithStepGroup1();
     PortFinder portFinder = PortFinder.builder().startingPort(PORT_STARTING_RANGE).usedPorts(new HashSet<>()).build();
     CIExecutionArgs ciExecutionArgs = K8InitializeStepUtilsHelper.getCIExecutionArgs();
@@ -223,7 +223,7 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
   @Category(UnitTests.class)
   public void testStepsWithStrategy() throws Exception {
     List<ExecutionWrapperConfig> steps = K8InitializeStepUtilsHelper.getExecutionWrapperConfigListWithStrategy();
-    StageElementConfig integrationStageConfig =
+    IntegrationStageNode integrationStageConfig =
         K8InitializeStepUtilsHelper.getIntegrationStageElementConfigWithStepGroup1();
     Map<String, StrategyExpansionData> strategyExpansionMap = new HashMap<>();
     strategyExpansionMap.put("MAB-xgo2QTyxGP5ER1ZHdg", StrategyExpansionData.builder().maxConcurrency(2).build());
@@ -251,7 +251,7 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
   @Category(UnitTests.class)
   public void createWinStepContainerDefinitions() {
     List<ExecutionWrapperConfig> steps = K8InitializeStepUtilsHelper.getExecutionWrapperConfigList();
-    StageElementConfig integrationStageConfig = K8InitializeStepUtilsHelper.getIntegrationStageElementConfig();
+    IntegrationStageNode integrationStageConfig = K8InitializeStepUtilsHelper.getIntegrationStageElementConfig();
     PortFinder portFinder = PortFinder.builder().startingPort(PORT_STARTING_RANGE).usedPorts(new HashSet<>()).build();
     CIExecutionArgs ciExecutionArgs = K8InitializeStepUtilsHelper.getCIExecutionArgs();
 

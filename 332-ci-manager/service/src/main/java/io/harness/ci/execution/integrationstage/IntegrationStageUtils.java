@@ -45,6 +45,7 @@ import io.harness.beans.execution.PRWebhookEvent;
 import io.harness.beans.execution.WebhookExecutionSource;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.serializer.RunTimeInputHandler;
+import io.harness.beans.stages.IntegrationStageNode;
 import io.harness.beans.steps.CIStepInfo;
 import io.harness.beans.steps.stepinfo.BackgroundStepInfo;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
@@ -87,7 +88,6 @@ import io.harness.licensing.Edition;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
-import io.harness.plancreator.stages.stage.AbstractStageNode;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
 import io.harness.plancreator.steps.StepElementConfig;
 import io.harness.plancreator.steps.StepGroupElementConfig;
@@ -131,7 +131,7 @@ public class IntegrationStageUtils {
   private static final String HARNESS_HOSTED = "Harness Hosted";
   private static final String SELF_HOSTED = "Self Hosted";
 
-  public static IntegrationStageConfig getIntegrationStageConfig(AbstractStageNode stageElementConfig) {
+  public static IntegrationStageConfig getIntegrationStageConfig(IntegrationStageNode stageElementConfig) {
     return (IntegrationStageConfig) stageElementConfig.getStageInfoConfig();
   }
 

@@ -25,6 +25,7 @@ import io.harness.beans.environment.BuildJobEnvInfo;
 import io.harness.beans.environment.VmBuildJobInfo;
 import io.harness.beans.executionargs.CIExecutionArgs;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
+import io.harness.beans.stages.IntegrationStageNode;
 import io.harness.beans.steps.CIStepInfo;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
@@ -41,7 +42,6 @@ import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
-import io.harness.plancreator.stages.stage.AbstractStageNode;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
 import io.harness.plancreator.steps.StepElementConfig;
 import io.harness.plancreator.steps.StepGroupElementConfig;
@@ -65,7 +65,7 @@ public class VmInitializeStepUtils {
   @Inject CIFeatureFlagService featureFlagService;
   @Inject ValidationUtils validationUtils;
 
-  public BuildJobEnvInfo getInitializeStepInfoBuilder(AbstractStageNode stageElementConfig,
+  public BuildJobEnvInfo getInitializeStepInfoBuilder(IntegrationStageNode stageElementConfig,
       Infrastructure infrastructure, CIExecutionArgs ciExecutionArgs, List<ExecutionWrapperConfig> steps,
       Ambiance ambiance) {
     ArrayList<String> connectorIdentifiers = populateConnectorIdentifiers(steps);

@@ -12,13 +12,13 @@ import static io.harness.rule.OwnerRule.ALEKSANDAR;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.beans.executionargs.CIExecutionArgs;
+import io.harness.beans.stages.IntegrationStageNode;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.category.element.UnitTests;
 import io.harness.ci.executionplan.CIExecutionPlanTestHelper;
 import io.harness.ci.executionplan.CIExecutionTestBase;
 import io.harness.plancreator.execution.ExecutionElementConfig;
-import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
@@ -36,7 +36,7 @@ public class InitializeStepGeneratorTest extends CIExecutionTestBase {
   public void shouldCreateLiteEngineTaskStepInfoFirstPod() {
     // input
     ExecutionElementConfig executionElementConfig = ciExecutionPlanTestHelper.getExecutionElementConfig();
-    StageElementConfig stageElementConfig = ciExecutionPlanTestHelper.getIntegrationStageElementConfig();
+    IntegrationStageNode stageElementConfig = ciExecutionPlanTestHelper.getIntegrationStageElementConfig();
     Infrastructure infrastructure = ciExecutionPlanTestHelper.getInfrastructureWithVolume();
     String podName = "pod";
     Integer liteEngineCounter = 1;
@@ -62,7 +62,7 @@ public class InitializeStepGeneratorTest extends CIExecutionTestBase {
   public void shouldCreateLiteEngineTaskStepInfoOtherPod() {
     // input
     ExecutionElementConfig executionElementConfig = ciExecutionPlanTestHelper.getExecutionElementConfig();
-    StageElementConfig stageElementConfig = ciExecutionPlanTestHelper.getIntegrationStageElementConfig();
+    IntegrationStageNode stageElementConfig = ciExecutionPlanTestHelper.getIntegrationStageElementConfig();
     Infrastructure infrastructure = ciExecutionPlanTestHelper.getInfrastructureWithVolume();
 
     CIExecutionArgs ciExecutionArgs = ciExecutionPlanTestHelper.getCIExecutionArgs();

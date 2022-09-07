@@ -16,6 +16,7 @@ import static org.assertj.core.util.Lists.newArrayList;
 
 import io.harness.beans.execution.ManualExecutionSource;
 import io.harness.beans.executionargs.CIExecutionArgs;
+import io.harness.beans.stages.IntegrationStageNode;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.beans.yaml.extended.infrastrucutre.VmInfraYaml;
@@ -27,7 +28,6 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.k8s.model.ImageDetails;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
-import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.pms.yaml.ParameterField;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -63,8 +63,11 @@ public class VmInitializeTaskHelper {
   private static final String PLUGIN_ENV_VAR = "foo";
   private static final String PLUGIN_ENV_VAL = "bar";
 
-  public static StageElementConfig getIntegrationStageElementConfig() {
-    return StageElementConfig.builder().identifier("ciStage").type("CI").stageType(getIntegrationStageConfig()).build();
+  public static IntegrationStageNode getIntegrationStageElementConfig() {
+    return IntegrationStageNode.builder()
+        .identifier("ciStage")
+        .integrationStageConfig(getIntegrationStageConfig())
+        .build();
   }
 
   public static IntegrationStageConfig getIntegrationStageConfig() {
