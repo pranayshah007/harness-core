@@ -142,7 +142,7 @@ public class InputSetErrorsHelper {
   // place.
   public Map<FQN, String> getInvalidFQNsInInputSet(String templateYaml, String inputSetPipelineCompYaml) {
     YamlConfig inputSetConfig = new YamlConfig(inputSetPipelineCompYaml);
-    YamlConfig templateConfig = new YamlConfig(templateYaml);
+    YamlConfig templateConfig = EmptyPredicate.isNotEmpty(templateYaml) ? new YamlConfig(templateYaml) : null;
     return getInvalidFQNsInInputSetFromTemplateConfig(templateConfig, inputSetConfig);
   }
 
@@ -154,7 +154,7 @@ public class InputSetErrorsHelper {
   Map<FQN, String> getInvalidFQNsInInputSetFromTemplateConfig(YamlConfig templateConfig, YamlConfig inputSetConfig) {
     Map<FQN, String> errorMap = new LinkedHashMap<>();
     Set<FQN> inputSetFQNs = new LinkedHashSet<>(inputSetConfig.getFqnToValueMap().keySet());
-    if (EmptyPredicate.isEmpty(templateConfig.getFqnToValueMap())) {
+    if (templateConfig == null || EmptyPredicate.isEmpty(templateConfig.getFqnToValueMap())) {
       inputSetFQNs.forEach(fqn -> errorMap.put(fqn, "Pipeline no longer contains any runtime input"));
       return errorMap;
     }

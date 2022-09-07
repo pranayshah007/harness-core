@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -182,6 +183,11 @@ public class InputSetErrorsHelperTest extends CategoryTest {
 
     Set<FQN> invalidFQNs = InputSetErrorsHelper.getInvalidFQNsInInputSet(templateYaml, inputSetYaml).keySet();
     assertThat(invalidFQNs).isEmpty();
+
+    Map<FQN, String> allInvalid = getInvalidFQNsInInputSet(null, inputSetYaml);
+    assertThat(allInvalid).isNotEmpty();
+    Set<String> allErrorMessages = new HashSet<>(allInvalid.values());
+    assertThat(allErrorMessages).containsExactly("Pipeline no longer contains any runtime input");
 
     String inputSetWrong = "runtimeInputWrong1.yml";
     String inputSetYamlWrong = readFile(inputSetWrong);
