@@ -502,7 +502,7 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
   /**
    * Used to invalidate cache. Should be used if account name has changed for any account. Or one of situation
    * where account name could not be loaded in cache because account service was down, and account id was loaded.
-   * @param accountId: accountId for which cache has to be invalidated.
+   * @param accountId for which cache has to be invalidated.
    */
   @Override
   public void evictAccountNameFromCache(String accountId) {
