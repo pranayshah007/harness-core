@@ -273,6 +273,12 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
         .build();
   }
 
+  private PageResponse<ServiceLevelObjective> getResponse(
+      ProjectParams projectParams, Integer offset, Integer pageSize, Filter filter) {
+    List<ServiceLevelObjective> serviceLevelObjectiveList = get(projectParams, filter);
+    return PageUtils.offsetAndLimit(serviceLevelObjectiveList, offset, pageSize);
+  }
+
   private List<ServiceLevelObjective> get(ProjectParams projectParams, Filter filter) {
     Query<ServiceLevelObjective> sloQuery =
         hPersistence.createQuery(ServiceLevelObjective.class)
@@ -360,6 +366,19 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
   public PageResponse<ServiceLevelObjectiveResponse> getSLOForDashboard(
       ProjectParams projectParams, SLODashboardApiFilter filter, PageParams pageParams) {
     return get(projectParams, pageParams.getPage(), pageParams.getSize(),
+        Filter.builder()
+            .monitoredServiceIdentifier(filter.getMonitoredServiceIdentifier())
+            .userJourneys(filter.getUserJourneyIdentifiers())
+            .sliTypes(filter.getSliTypes())
+            .errorBudgetRisks(filter.getErrorBudgetRisks())
+            .targetTypes(filter.getTargetTypes())
+            .build());
+  }
+
+  @Override
+  public PageResponse<ServiceLevelObjective> getSLOForListView(
+      ProjectParams projectParams, SLODashboardApiFilter filter, PageParams pageParams) {
+    return getResponse(projectParams, pageParams.getPage(), pageParams.getSize(),
         Filter.builder()
             .monitoredServiceIdentifier(filter.getMonitoredServiceIdentifier())
             .userJourneys(filter.getUserJourneyIdentifiers())

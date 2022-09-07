@@ -14,6 +14,7 @@ import static io.harness.telemetry.Destination.ALL;
 
 import io.harness.ModuleType;
 import io.harness.account.AccountClient;
+import io.harness.account.AccountConfig;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cd.license.CdLicenseUsageCgClient;
 import io.harness.cdlicense.bean.CgActiveServicesUsageInfo;
@@ -44,11 +45,12 @@ public class CdTelemetryPublisher {
   @Inject private AccountClient accountClient;
   @Inject private CdLicenseUsageCgClient licenseUsageCgClient;
   @Inject private CdTelemetryStatusRepository cdTelemetryStatusRepository;
+  @Inject private AccountConfig accountConfig;
 
   private static final String COUNT_ACTIVE_SERVICES = "cd_license_services_used";
   private static final String COUNT_ACTIVE_SERVICE_INSTANCES = "cd_license_service_instances_used";
   private static final String ACCOUNT_DEPLOY_TYPE = "account_deploy_type";
-  private static final String HARNESS_PROD_CLUSTER_ID = "harness_prod_cluster_id";
+  private static final String HARNESS_PROD_CLUSTER_ID = "harness_cluster_id";
   private static final String CG_COUNT_ACTIVE_SERVICES = "cd_license_cg_services_used";
   private static final String CG_COUNT_ACTIVE_SERVICE_INSTANCES = "cd_license_cg_service_instances_used";
   // Locking for a bit less than one day. It's ok to send a bit more than less considering downtime/etc
@@ -66,7 +68,7 @@ public class CdTelemetryPublisher {
       for (AccountDTO accountDTO : accountDTOList) {
         String accountId = accountDTO.getIdentifier();
         try {
-          sendEvent(accountId, accountDTO.getCluster());
+          sendEvent(accountId);
         } catch (Exception e) {
           log.error("Failed to send telemetry event for account {}", accountId, e);
         }
@@ -78,14 +80,14 @@ public class CdTelemetryPublisher {
     }
   }
 
-  private void sendEvent(String accountId, String prodCluster) {
+  private void sendEvent(String accountId) {
     if (EmptyPredicate.isNotEmpty(accountId) && !accountId.equals(GLOBAL_ACCOUNT_ID)) {
       if (cdTelemetryStatusRepository.updateTimestampIfOlderThan(
               accountId, System.currentTimeMillis() - A_DAY_MINUS_TEN_MINS_IN_MILLIS, System.currentTimeMillis())) {
         CDLicenseUsageDTO cdLicenseUsage = (CDLicenseUsageDTO) licenseUsageInterface.getLicenseUsage(accountId,
             ModuleType.CD, new Date().getTime(), CDUsageRequestParams.builder().cdLicenseType(SERVICES).build());
         HashMap<String, Object> map = new HashMap<>();
-        map.put(HARNESS_PROD_CLUSTER_ID, prodCluster);
+        map.put(HARNESS_PROD_CLUSTER_ID, accountConfig.getDeploymentClusterName());
         map.put(GROUP_TYPE, ACCOUNT);
         map.put(GROUP_ID, accountId);
         map.put(COUNT_ACTIVE_SERVICES, cdLicenseUsage.getActiveServices().getCount());

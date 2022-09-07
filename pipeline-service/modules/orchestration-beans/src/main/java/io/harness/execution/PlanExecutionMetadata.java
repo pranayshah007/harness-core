@@ -9,7 +9,7 @@ package io.harness.execution;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdTtlIndex;
@@ -38,10 +38,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder(builderClassName = "Builder")
 @FieldNameConstants(innerTypeName = "PlanExecutionMetadataKeys")
+@StoreIn(DbAliases.PMS)
 @Entity(value = "planExecutionsMetadata", noClassnameStored = true)
 @Document("planExecutionsMetadata")
 @TypeAlias("planExecutionMetadata")
-@StoreIn(DbAliases.PMS)
 public class PlanExecutionMetadata implements PersistentEntity, UuidAware, PmsNodeExecutionMetadata {
   public static final long TTL_MONTHS = 6;
 

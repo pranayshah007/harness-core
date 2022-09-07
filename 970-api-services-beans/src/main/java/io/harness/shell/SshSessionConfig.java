@@ -37,7 +37,7 @@ public class SshSessionConfig implements EncryptableSetting, ScriptExecutionCont
   @NotEmpty private String host;
   private Integer port = 22;
   private String userName;
-  @Encrypted(fieldName = "password") private char[] password;
+  @Encrypted(fieldName = "password") private char[] password; // used for Kerberos/Bastion host authentication
   private String keyName;
   @Encrypted(fieldName = "key") private char[] key;
   @Encrypted(fieldName = "key_passphrase") private char[] keyPassphrase;
@@ -58,7 +58,7 @@ public class SshSessionConfig implements EncryptableSetting, ScriptExecutionCont
 
   private AuthenticationScheme authenticationScheme;
   private KerberosConfig kerberosConfig;
-  @Encrypted(fieldName = "ssh_password") private char[] sshPassword;
+  @Encrypted(fieldName = "ssh_password") private char[] sshPassword; // used to SSH into remote host
   @SchemaIgnore private String encryptedSshPassword;
   private AccessType accessType;
 

@@ -10,7 +10,7 @@ package io.harness.ccm.commons.entities.ecs.recommendation;
 import static io.harness.annotations.dev.HarnessTeam.CE;
 
 import com.amazonaws.services.ecs.model.LaunchType;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.commons.beans.HarnessServiceInfo;
 import io.harness.data.structure.MongoMapSanitizer;

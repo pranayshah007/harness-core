@@ -569,7 +569,6 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
                                       .levelCount(1)
                                       .status(Status.QUEUED)
                                       .unitProgresses(new ArrayList<>())
-                                      .startTs(startTs)
                                       .name(AmbianceUtils.modifyIdentifier(ambiance, node.getName()))
                                       .identifier(AmbianceUtils.modifyIdentifier(ambiance, node.getIdentifier()))
                                       .notifyId("NID")

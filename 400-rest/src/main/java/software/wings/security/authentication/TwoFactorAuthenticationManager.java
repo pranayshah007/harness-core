@@ -151,7 +151,7 @@ public class TwoFactorAuthenticationManager {
                                  TwoFactorAuthYamlDTO.builder().isTwoFactorAuthEnabled(newTwoFactorAuthEnabled).build())
                              .build());
     } catch (Exception ex) {
-      log.error("For account {} Audit trails for Two Factor Authentication Update event failed with exception: {}",
+      log.error("For account {} Audit trails for Two Factor Authentication Update event failed with exception: ",
           accountIdentifier, ex);
     }
   }

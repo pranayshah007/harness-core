@@ -7,7 +7,6 @@
 
 package io.harness.serializer.kryo;
 
-import io.harness.cdng.artifact.bean.GoogleArtifactRegistryType;
 import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
@@ -47,6 +46,7 @@ import io.harness.cdng.configfile.ConfigFile;
 import io.harness.cdng.configfile.ConfigFileAttributes;
 import io.harness.cdng.configfile.ConfigFileOutcome;
 import io.harness.cdng.configfile.ConfigFileWrapper;
+import io.harness.cdng.infra.beans.EcsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
 import io.harness.cdng.infra.beans.ServerlessAwsLambdaInfrastructureOutcome;
@@ -56,6 +56,10 @@ import io.harness.cdng.manifest.yaml.ArtifactoryStoreConfig;
 import io.harness.cdng.manifest.yaml.AzureRepoStore;
 import io.harness.cdng.manifest.yaml.BitbucketStore;
 import io.harness.cdng.manifest.yaml.CustomRemoteStoreConfig;
+import io.harness.cdng.manifest.yaml.EcsScalableTargetDefinitionManifestOutcome;
+import io.harness.cdng.manifest.yaml.EcsScalingPolicyDefinitionManifestOutcome;
+import io.harness.cdng.manifest.yaml.EcsServiceDefinitionManifestOutcome;
+import io.harness.cdng.manifest.yaml.EcsTaskDefinitionManifestOutcome;
 import io.harness.cdng.manifest.yaml.GcsStoreConfig;
 import io.harness.cdng.manifest.yaml.GitLabStore;
 import io.harness.cdng.manifest.yaml.GitStore;
@@ -81,6 +85,10 @@ import io.harness.cdng.manifest.yaml.S3StoreConfig;
 import io.harness.cdng.manifest.yaml.ServerlessAwsLambdaManifestOutcome;
 import io.harness.cdng.manifest.yaml.ValuesManifestOutcome;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
+import io.harness.cdng.manifest.yaml.kinds.EcsScalableTargetDefinitionManifest;
+import io.harness.cdng.manifest.yaml.kinds.EcsScalingPolicyDefinitionManifest;
+import io.harness.cdng.manifest.yaml.kinds.EcsServiceDefinitionManifest;
+import io.harness.cdng.manifest.yaml.kinds.EcsTaskDefinitionManifest;
 import io.harness.cdng.manifest.yaml.kinds.HelmChartManifest;
 import io.harness.cdng.manifest.yaml.kinds.K8sManifest;
 import io.harness.cdng.manifest.yaml.kinds.KustomizeManifest;
@@ -97,6 +105,7 @@ import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.service.beans.AzureWebAppServiceSpec;
+import io.harness.cdng.service.beans.EcsServiceSpec;
 import io.harness.cdng.service.beans.KubernetesServiceSpec;
 import io.harness.cdng.service.beans.NativeHelmServiceSpec;
 import io.harness.cdng.service.beans.ServerlessAwsLambdaServiceSpec;
@@ -218,23 +227,37 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(AzureWebAppServiceSpec.class, 12599);
     kryo.register(AmazonS3ArtifactConfig.class, 12569);
     kryo.register(AzureRepoStore.class, 12570);
+
     kryo.register(CustomRemoteStoreConfig.class, 12589);
     kryo.register(OverlayConfiguration.class, 12591);
     kryo.register(JenkinsArtifactConfig.class, 130012);
+
     kryo.register(CustomArtifactSpecInfo.class, 130017);
     kryo.register(CustomArtifactSpecVisitorHelper.class, 130018);
     kryo.register(CustomScriptInlineSource.class, 130019);
     kryo.register(FetchAllArtifacts.class, 130020);
     kryo.register(ConfigFileOutcome.class, 130013);
+
     kryo.register(ApplicationSettingsConfiguration.class, 130014);
     kryo.register(ConnectionStringsConfiguration.class, 130015);
     kryo.register(StartupCommandConfiguration.class, 130016);
+
+    kryo.register(EcsServiceDefinitionManifest.class, 140001);
+    kryo.register(EcsTaskDefinitionManifest.class, 140002);
+    kryo.register(EcsTaskDefinitionManifestOutcome.class, 140003);
+    kryo.register(EcsServiceDefinitionManifestOutcome.class, 140004);
+    kryo.register(EcsScalingPolicyDefinitionManifestOutcome.class, 140005);
+    kryo.register(EcsScalableTargetDefinitionManifestOutcome.class, 140006);
+    kryo.register(EcsInfrastructureOutcome.class, 140007);
+    kryo.register(EcsServiceSpec.class, 140008);
+    kryo.register(EcsScalableTargetDefinitionManifest.class, 140009);
+    kryo.register(EcsScalingPolicyDefinitionManifest.class, 140010);
+
     kryo.register(CustomArtifactScriptInfo.class, 140017);
     kryo.register(CustomArtifactScripts.class, 140018);
     kryo.register(CustomArtifactScriptSourceWrapper.class, 140019);
     kryo.register(CustomScriptBaseSource.class, 140020);
     kryo.register(GoogleArtifactRegistryConfig.class, 130021);
     kryo.register(GarArtifactOutcome.class, 130022);
-    kryo.register(GoogleArtifactRegistryType.class, 130023);
   }
 }

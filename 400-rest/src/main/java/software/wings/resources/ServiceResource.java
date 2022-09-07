@@ -12,6 +12,8 @@ import static io.harness.beans.SearchFilter.Operator.IN;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
 
+import static software.wings.security.PermissionAttribute.PermissionType.LOGGED_IN;
+
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -44,6 +46,7 @@ import software.wings.beans.container.UserDataSpecification;
 import software.wings.security.PermissionAttribute.Action;
 import software.wings.security.PermissionAttribute.PermissionType;
 import software.wings.security.PermissionAttribute.ResourceType;
+import software.wings.security.annotations.ApiKeyAuthorized;
 import software.wings.security.annotations.AuthRule;
 import software.wings.security.annotations.ListAPI;
 import software.wings.security.annotations.Scope;
@@ -112,6 +115,7 @@ public class ServiceResource {
   @Timed
   @ExceptionMetered
   @ListAPI(ResourceType.SERVICE)
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<PageResponse<Service>> list(@QueryParam("accountId") String accountId,
       @QueryParam("appId") List<String> appIds, @QueryParam("tagFilter") String tagFilter,
       @QueryParam("withTags") @DefaultValue("false") boolean withTags, @BeanParam PageRequest<Service> pageRequest,
@@ -137,6 +141,7 @@ public class ServiceResource {
   @Path("{serviceId}")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<Service> get(@QueryParam("appId") String appId, @PathParam("serviceId") String serviceId,
       @QueryParam("status") SetupStatus status) {
     if (status == null) {
@@ -246,6 +251,7 @@ public class ServiceResource {
   @Path("{serviceId}/commands/{commandName}")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<ServiceCommand> getCommand(@QueryParam("appId") String appId,
       @PathParam("serviceId") String serviceId, @PathParam("commandName") String commandName,
       @QueryParam("version") int version) {
@@ -310,7 +316,8 @@ public class ServiceResource {
   @Path("{serviceId}/commands/stencils")
   @Timed
   @ExceptionMetered
-  @AuthRule(permissionType = PermissionType.LOGGED_IN)
+  @AuthRule(permissionType = LOGGED_IN)
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<List<Stencil>> stencils(@QueryParam("appId") String appId,
       @PathParam("serviceId") String serviceId, @QueryParam("filterCommand") String commandName) {
     return new RestResponse<>(serviceResourceService.getCommandStencils(appId, serviceId, commandName, true));
@@ -332,6 +339,7 @@ public class ServiceResource {
   @Path("{serviceId}/containers/tasks")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<PageResponse<ContainerTask>> listContainerTask(@QueryParam("appId") String appId,
       @PathParam("serviceId") String serviceId, @BeanParam PageRequest<ContainerTask> pageRequest) {
     pageRequest.addFilter("appId", EQ, appId);
@@ -367,7 +375,8 @@ public class ServiceResource {
   @Path("{serviceId}/containers/tasks/stencils")
   @Timed
   @ExceptionMetered
-  @AuthRule(permissionType = PermissionType.LOGGED_IN)
+  @AuthRule(permissionType = LOGGED_IN)
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<List<Stencil>> listTaskStencils(
       @QueryParam("appId") String appId, @PathParam("serviceId") String serviceId) {
     return new RestResponse<>(serviceResourceService.getContainerTaskStencils(appId, serviceId));
@@ -389,6 +398,7 @@ public class ServiceResource {
   @Path("{serviceId}/containers/charts")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<PageResponse<HelmChartSpecification>> listHelmChartSpecification(
       @QueryParam("appId") String appId, @PathParam("serviceId") String serviceId,
       @BeanParam PageRequest<HelmChartSpecification> pageRequest) {
@@ -426,6 +436,7 @@ public class ServiceResource {
   @Path("{serviceId}/pcfspecification")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<PcfServiceSpecification> getPcfServiceSpecification(@QueryParam("appId") String appId,
       @PathParam("serviceId") String serviceId, @BeanParam PageRequest<PcfServiceSpecification> pageRequest) {
     return new RestResponse<>(serviceResourceService.getExistingOrDefaultPcfServiceSpecification(appId, serviceId));
@@ -473,6 +484,7 @@ public class ServiceResource {
   @Path("{serviceId}/ecsSpecification")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<EcsServiceSpecification> getEcsServiceSpecification(@QueryParam("appId") String appId,
       @PathParam("serviceId") String serviceId, @BeanParam PageRequest<EcsServiceSpecification> pageRequest) {
     return new RestResponse<>(serviceResourceService.getExistingOrDefaultEcsServiceSpecification(appId, serviceId));
@@ -530,6 +542,7 @@ public class ServiceResource {
   @Path("{serviceId}/lambda-specifications")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<PageResponse<LambdaSpecification>> listLambdaSpecification(@QueryParam("appId") String appId,
       @PathParam("serviceId") String serviceId, @BeanParam PageRequest<LambdaSpecification> pageRequest) {
     pageRequest.addFilter("appId", EQ, appId);
@@ -566,6 +579,7 @@ public class ServiceResource {
   @Path("{serviceId}/user-data-specifications")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<PageResponse<UserDataSpecification>> listUserDataSpecification(@QueryParam("appId") String appId,
       @PathParam("serviceId") String serviceId, @BeanParam PageRequest<UserDataSpecification> pageRequest) {
     pageRequest.addFilter("appId", EQ, appId);
@@ -651,7 +665,8 @@ public class ServiceResource {
   @Path("{serviceId}/commands/categories")
   @Timed
   @ExceptionMetered
-  @AuthRule(permissionType = PermissionType.LOGGED_IN)
+  @AuthRule(permissionType = LOGGED_IN)
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<List<CommandCategory>> getCommandUnitItems(@QueryParam("appId") String appId,
       @PathParam("serviceId") String serviceId, @QueryParam("filterCommand") String commandName) {
     return new RestResponse<>(serviceResourceService.getCommandCategories(appId, serviceId, commandName));
@@ -661,6 +676,7 @@ public class ServiceResource {
   @Path("{serviceId}/app-manifest")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<ApplicationManifest> getAppManifest(
       @QueryParam("appId") String appId, @PathParam("serviceId") String serviceId) {
     return new RestResponse<>(applicationManifestService.getManifestByServiceId(appId, serviceId));
@@ -681,6 +697,7 @@ public class ServiceResource {
   @Path("{serviceId}/k8s-values/{manifestFileId}")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<ManifestFile> getManifestFile(@QueryParam("appId") String appId,
       @PathParam("serviceId") String serviceId, @PathParam("manifestFileId") String manifestFileId) {
     return new RestResponse<>(serviceResourceService.getManifestFile(appId, serviceId, manifestFileId));
@@ -720,6 +737,7 @@ public class ServiceResource {
   @Path("{serviceId}/k8s-values/app-manifest/{appManifestId}")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<ApplicationManifest> getK8sValueAppManifest(@QueryParam("appId") String appId,
       @PathParam("serviceId") String serviceId, @PathParam("appManifestId") String appManifestId) {
     return new RestResponse<>(serviceResourceService.getValuesAppManifest(appId, serviceId, appManifestId));
@@ -750,6 +768,7 @@ public class ServiceResource {
   @Path("{serviceId}/app-manifests")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<List<ApplicationManifest>> listAppManifests(
       @QueryParam("appId") String appId, @PathParam("serviceId") String serviceId) {
     return new RestResponse<>(applicationManifestService.listAppManifests(appId, serviceId));
@@ -759,6 +778,7 @@ public class ServiceResource {
   @Path("{serviceId}/artifact-streams")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<List<ArtifactStream>> listArtifactStreams(
       @QueryParam("appId") String appId, @PathParam("serviceId") String serviceId) {
     return new RestResponse<>(artifactStreamServiceBindingService.listArtifactStreams(appId, serviceId));
@@ -768,6 +788,7 @@ public class ServiceResource {
   @Path("{serviceId}/artifact-stream-bindings")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<List<ArtifactStreamBinding>> listArtifactStreamBindings(
       @QueryParam("appId") String appId, @PathParam("serviceId") String serviceId) {
     return new RestResponse<>(artifactStreamServiceBindingService.list(appId, serviceId));
@@ -777,6 +798,7 @@ public class ServiceResource {
   @Path("{serviceId}/artifact-stream-bindings/{name}")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<ArtifactStreamBinding> getArtifactStreamBinding(
       @QueryParam("appId") String appId, @PathParam("serviceId") String serviceId, @PathParam("name") String name) {
     return new RestResponse<>(artifactStreamServiceBindingService.get(appId, serviceId, name));
@@ -819,6 +841,7 @@ public class ServiceResource {
   @Path("forDeployment")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<List<Service>> getServices(@QueryParam("appId") String appId,
       @NotEmpty @QueryParam("deploymentType") String deploymentType,
       @QueryParam("deploymentTypeTemplateId") String deploymentTypeTemplateId) {
@@ -831,6 +854,7 @@ public class ServiceResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = PermissionType.SERVICE, action = Action.READ)
+  @ApiKeyAuthorized(permissionType = PermissionType.SERVICE, action = Action.READ)
   public RestResponse<Map<String, List<HelmChart>>> getHelmChartVersions(@QueryParam("appId") String appId,
       @PathParam("serviceId") String serviceId, @QueryParam("manifestSearchString") String manifestSearchString,
       @BeanParam PageRequest<HelmChart> pageRequest,
@@ -855,6 +879,7 @@ public class ServiceResource {
   @Path("{serviceId}/helm-command-flag")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<Set<HelmSubCommand>> getHelmCommandFlags(@QueryParam("appId") String appId,
       @QueryParam("version") HelmVersion version, @QueryParam("storeType") StoreType storeType,
       @PathParam("serviceId") String serviceId) {

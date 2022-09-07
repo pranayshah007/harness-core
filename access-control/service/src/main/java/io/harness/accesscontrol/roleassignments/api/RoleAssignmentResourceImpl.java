@@ -47,6 +47,7 @@ import io.harness.accesscontrol.principals.PrincipalType;
 import io.harness.accesscontrol.principals.serviceaccounts.HarnessServiceAccountService;
 import io.harness.accesscontrol.principals.serviceaccounts.ServiceAccountService;
 import io.harness.accesscontrol.principals.usergroups.HarnessUserGroupService;
+import io.harness.accesscontrol.principals.usergroups.UserGroup;
 import io.harness.accesscontrol.principals.usergroups.UserGroupService;
 import io.harness.accesscontrol.principals.users.HarnessUserService;
 import io.harness.accesscontrol.principals.users.UserService;
@@ -67,6 +68,8 @@ import io.harness.accesscontrol.roles.RoleService;
 import io.harness.accesscontrol.roles.api.RoleDTOMapper;
 import io.harness.accesscontrol.roles.api.RoleResponseDTO;
 import io.harness.accesscontrol.roles.filter.RoleFilter;
+import io.harness.accesscontrol.scopes.ScopeFilterType;
+import io.harness.accesscontrol.scopes.ScopeSelector;
 import io.harness.accesscontrol.scopes.core.Scope;
 import io.harness.accesscontrol.scopes.core.ScopeLevel;
 import io.harness.accesscontrol.scopes.core.ScopeService;
@@ -124,6 +127,8 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
   UserService userService;
   ServiceAccountService serviceAccountService;
   RoleAssignmentDTOMapper roleAssignmentDTOMapper;
+
+  RoleAssignmentAggregateMapper roleAssignmentAggregateMapper;
   RoleDTOMapper roleDTOMapper;
   TransactionTemplate transactionTemplate;
   HarnessActionValidator<RoleAssignment> actionValidator;
@@ -139,7 +144,8 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
       HarnessScopeService harnessScopeService, ScopeService scopeService, RoleService roleService,
       ResourceGroupService resourceGroupService, UserGroupService userGroupService, UserService userService,
       ServiceAccountService serviceAccountService, RoleAssignmentDTOMapper roleAssignmentDTOMapper,
-      RoleDTOMapper roleDTOMapper, @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate,
+      RoleAssignmentAggregateMapper roleAssignmentAggregateMapper, RoleDTOMapper roleDTOMapper,
+      @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate,
       @Named(MODEL_NAME) HarnessActionValidator<RoleAssignment> actionValidator, OutboxService outboxService,
       AccessControlClient accessControlClient) {
     this.roleAssignmentService = roleAssignmentService;
@@ -155,6 +161,7 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
     this.userService = userService;
     this.serviceAccountService = serviceAccountService;
     this.roleAssignmentDTOMapper = roleAssignmentDTOMapper;
+    this.roleAssignmentAggregateMapper = roleAssignmentAggregateMapper;
     this.roleDTOMapper = roleDTOMapper;
     this.transactionTemplate = transactionTemplate;
     this.actionValidator = actionValidator;
@@ -203,6 +210,56 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
     }
     PageResponse<RoleAssignment> pageResponse = roleAssignmentService.list(pageRequest, filter.get());
     return ResponseDTO.newResponse(pageResponse.map(roleAssignmentDTOMapper::toResponseDTO));
+  }
+
+  @Override
+  public ResponseDTO<PageResponse<RoleAssignmentAggregate>> getList(
+      PageRequest pageRequest, HarnessScopeParams harnessScopeParams, RoleAssignmentFilterV2 roleAssignmentFilterV2) {
+    PrincipalDTO principalFilter = roleAssignmentFilterV2.getPrincipalFilter();
+    if (USER.equals(principalFilter.getType())) {
+      boolean hasAccessToUserRoleAssignments = checkViewPermission(harnessScopeParams, USER);
+      if (!hasAccessToUserRoleAssignments) {
+        throw new UnauthorizedException("Current principal is not authorized to the view the role assignments",
+            USER_NOT_AUTHORIZED, WingsException.USER);
+      }
+      Set<ScopeSelector> scopeFilter = roleAssignmentFilterV2.getScopeFilters();
+      if (isEmpty(scopeFilter)) {
+        scopeFilter.add(ScopeSelector.builder()
+                            .accountIdentifier(harnessScopeParams.getAccountIdentifier())
+                            .orgIdentifier(harnessScopeParams.getOrgIdentifier())
+                            .projectIdentifier(harnessScopeParams.getProjectIdentifier())
+                            .filter(ScopeFilterType.EXCLUDING_CHILD_SCOPES)
+                            .build());
+      }
+      roleAssignmentFilterV2.setScopeFilters(scopeFilter);
+      List<UserGroup> userGroups = userGroupService.list(principalFilter.getIdentifier());
+      RoleAssignmentFilter filter =
+          roleAssignmentDTOMapper.fromDTO(principalFilter.getIdentifier(), userGroups, roleAssignmentFilterV2);
+      PageResponse<RoleAssignment> pageResponse = roleAssignmentService.list(pageRequest, filter);
+      PageResponse<RoleAssignmentAggregate> roleAssignmentAggregateWithScope = pageResponse.map(response -> {
+        String userGroupName = null;
+        if (USER_GROUP.equals(response.getPrincipalType())) {
+          UserGroup principal =
+              userGroups.stream()
+                  .filter(userGroup
+                      -> userGroup.getIdentifier().equals(response.getPrincipalIdentifier())
+                          && scopeService.buildScopeFromScopeIdentifier(userGroup.getScopeIdentifier())
+                                 .getLevel()
+                                 .toString()
+                                 .equals(response.getPrincipalScopeLevel()))
+                  .findAny()
+                  .orElse(null);
+          if (principal != null) {
+            userGroupName = principal.getName();
+          }
+        }
+
+        return roleAssignmentAggregateMapper.toDTO(response, userGroupName);
+      });
+
+      return ResponseDTO.newResponse(roleAssignmentAggregateWithScope);
+    }
+    throw new InvalidRequestException("Current principal is not supported to the view the role assignments");
   }
 
   @Override

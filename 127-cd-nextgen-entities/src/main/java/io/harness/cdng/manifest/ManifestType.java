@@ -20,6 +20,9 @@ public interface ManifestType {
   Set<String> K8S_SUPPORTED_MANIFEST_TYPES = ImmutableSet.of(
       ManifestType.K8Manifest, ManifestType.HelmChart, ManifestType.Kustomize, ManifestType.OpenshiftTemplate);
   Set<String> HELM_SUPPORTED_MANIFEST_TYPES = ImmutableSet.of(ManifestType.HelmChart);
+  Set<String> ECS_SUPPORTED_MANIFEST_TYPES =
+      ImmutableSet.of(ManifestType.EcsTaskDefinition, ManifestType.EcsServiceDefinition,
+          ManifestType.EcsScalableTargetDefinition, ManifestType.EcsScalingPolicyDefinition);
   Set<String> SERVICE_OVERRIDE_SUPPORTED_MANIFEST_TYPES =
       ImmutableSet.of(ManifestType.VALUES, ManifestType.KustomizePatches, ManifestType.OpenshiftParam);
 
@@ -33,10 +36,16 @@ public interface ManifestType {
   String KustomizePatches = "KustomizePatches";
   String ServerlessAwsLambda = "ServerlessAwsLambda";
   String ReleaseRepo = "ReleaseRepo";
+  String EcsTaskDefinition = "EcsTaskDefinition";
+  String EcsServiceDefinition = "EcsServiceDefinition";
+  String EcsScalingPolicyDefinition = "EcsScalingPolicyDefinition";
+  String EcsScalableTargetDefinition = "EcsScalableTargetDefinition";
 
   static HashSet<String> getAllManifestTypes() {
     return new HashSet<>(Arrays.asList(ManifestType.K8Manifest, ManifestType.VALUES, ManifestType.OpenshiftTemplate,
         ManifestType.KustomizePatches, ManifestType.Kustomize, ManifestType.HelmChart, ManifestType.CONFIG_FILE,
-        ManifestType.OpenshiftParam, ManifestType.ServerlessAwsLambda, ManifestType.ReleaseRepo));
+        ManifestType.OpenshiftParam, ManifestType.ServerlessAwsLambda, ManifestType.ReleaseRepo,
+        ManifestType.EcsTaskDefinition, ManifestType.EcsServiceDefinition, ManifestType.EcsScalableTargetDefinition,
+        ManifestType.EcsScalingPolicyDefinition));
   }
 }

@@ -12,8 +12,12 @@ import java.util.SortedSet;
 public class WriteUtil {
   public static final String INDENTATION = "    ";
 
-  public static void updateResponseWithSet(SortedSet<String> collection, String name, StringBuilder response) {
-    response.append(INDENTATION).append(name).append(" = [");
+  public static void updateResponseWithSet(
+      SortedSet<String> collection, String name, StringBuilder response, boolean leadingIndent) {
+    if (leadingIndent) {
+      response.append(INDENTATION);
+    }
+    response.append(name).append(" = [");
     if (collection.size() > 1) {
       response.append("\n");
     }
@@ -29,6 +33,10 @@ public class WriteUtil {
     if (collection.size() > 1) {
       response.append(INDENTATION);
     }
-    response.append("],\n");
+    response.append("]");
+
+    if (leadingIndent) {
+      response.append(",\n");
+    }
   }
 }

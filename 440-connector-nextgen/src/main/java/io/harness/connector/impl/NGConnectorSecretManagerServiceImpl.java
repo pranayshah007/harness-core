@@ -134,4 +134,14 @@ public class NGConnectorSecretManagerServiceImpl implements NGConnectorSecretMan
         customEncryptor.resolveSecretManagerConfig(accountIdentifier, encryptedDataParamsSet, encryptionConfig);
     encryptionConfig.setScript(script);
   }
+
+  public String getPerpetualTaskId(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
+    return connectorService.getHeartbeatPerpetualTaskId(
+        accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+  }
+
+  public void resetHeartBeatTask(String accountId, String taskId) {
+    connectorService.resetHeartBeatTask(accountId, taskId);
+  }
 }

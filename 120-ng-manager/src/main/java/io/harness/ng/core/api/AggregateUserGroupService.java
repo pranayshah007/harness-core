@@ -13,9 +13,11 @@ import io.harness.accesscontrol.scopes.ScopeDTO;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
+import io.harness.ng.core.dto.ScopeSelector;
 import io.harness.ng.core.dto.UserGroupAggregateDTO;
 import io.harness.ng.core.usergroups.filter.UserGroupFilterType;
 
+import java.util.List;
 import javax.validation.constraints.NotNull;
 import org.hibernate.validator.constraints.NotEmpty;
 
@@ -24,6 +26,9 @@ public interface AggregateUserGroupService {
   PageResponse<UserGroupAggregateDTO> listAggregateUserGroups(@NotNull PageRequest pageRequest,
       @NotEmpty String accountIdentifier, String orgIdentifier, String projectIdentifier, String searchTerm,
       int userSize, UserGroupFilterType filterType);
+  PageResponse<UserGroupAggregateDTO> listAggregateUserGroupsForUser(@NotNull PageRequest pageRequest,
+      @NotEmpty String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      List<ScopeSelector> scopeFilter, String userIdentifier, String searchTerm, int userCount);
 
   UserGroupAggregateDTO getAggregatedUserGroup(@NotEmpty String accountIdentifier, String orgIdentifier,
       String projectIdentifier, @NotEmpty String userGroupIdentifier, ScopeDTO roleAssignmentScope);

@@ -9,7 +9,7 @@ package io.harness.ng.core.infrastructure.entity;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.EntityName;
@@ -42,10 +42,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "InfrastructureEntityKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "infrastructures", noClassnameStored = true)
 @Document("infrastructures")
 @TypeAlias("io.harness.ng.core.infrastructure.entity.InfrastructureEntity")
-@StoreIn(DbAliases.NG_MANAGER)
 public class InfrastructureEntity implements PersistentEntity {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()

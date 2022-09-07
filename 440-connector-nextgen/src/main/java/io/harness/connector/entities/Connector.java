@@ -7,7 +7,7 @@
 
 package io.harness.connector.entities;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
@@ -57,9 +57,9 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
 @FieldNameConstants(innerTypeName = "ConnectorKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "connectors", noClassnameStored = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@StoreIn(DbAliases.NG_MANAGER)
 @Document("connectors")
 @Persistent
 @OwnedBy(HarnessTeam.DX)

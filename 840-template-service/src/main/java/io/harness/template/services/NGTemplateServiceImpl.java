@@ -39,6 +39,7 @@ import io.harness.exception.ReferencedEntityException;
 import io.harness.exception.ScmException;
 import io.harness.exception.UnexpectedException;
 import io.harness.git.model.ChangeType;
+import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.common.utils.GitEntityFilePath;
 import io.harness.gitsync.common.utils.GitSyncFilePathUtils;
 import io.harness.gitsync.helpers.GitContextHelper;
@@ -216,6 +217,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     try {
       TemplateMergeResponseDTO templateMergeResponseDTO = null;
       if (TemplateRefHelper.hasTemplateRef(templateEntity.getYaml())) {
+        setupGitParentEntityDetails(templateEntity);
         templateMergeResponseDTO = templateMergeService.applyTemplatesToYamlV2(templateEntity.getAccountId(),
             templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier(), templateEntity.getYaml(), false);
         populateLinkedTemplatesModules(templateEntity, templateMergeResponseDTO);
@@ -1011,5 +1013,23 @@ public class NGTemplateServiceImpl implements NGTemplateService {
       return format("Error while retrieving template with identifier [%s] and versionLabel [%s]", templateIdentifier,
           versionLabel);
     }
+  }
+
+  private void setupGitParentEntityDetails(TemplateEntity templateEntity) {
+    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    if (null != gitEntityInfo.getRepoName()) {
+      gitEntityInfo.setParentEntityRepoName(gitEntityInfo.getRepoName());
+    }
+    if (null != gitEntityInfo.getConnectorRef()) {
+      gitEntityInfo.setParentEntityConnectorRef(gitEntityInfo.getConnectorRef());
+    }
+    if (null != templateEntity.getOrgIdentifier()) {
+      gitEntityInfo.setParentEntityOrgIdentifier(templateEntity.getOrgIdentifier());
+    }
+    if (null != templateEntity.getProjectIdentifier()) {
+      gitEntityInfo.setParentEntityProjectIdentifier(templateEntity.getProjectIdentifier());
+    }
+    gitEntityInfo.setParentEntityAccountIdentifier(templateEntity.getAccountIdentifier());
+    GitAwareContextHelper.updateGitEntityContext(gitEntityInfo);
   }
 }

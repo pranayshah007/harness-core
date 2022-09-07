@@ -11,8 +11,10 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.WingsException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.scim.PatchOperation;
 import io.harness.scim.PatchRequest;
 import io.harness.scim.ScimListResponse;
@@ -55,6 +57,7 @@ import org.mongodb.morphia.query.UpdateOperations;
 public class ScimUserServiceImpl implements ScimUserService {
   @Inject private UserService userService;
   @Inject private WingsPersistence wingsPersistence;
+  @Inject private FeatureFlagService featureFlagService;
 
   private static final Integer MAX_RESULT_COUNT = 20;
   private static final String GIVEN_NAME = "givenName";
@@ -245,18 +248,26 @@ public class ScimUserServiceImpl implements ScimUserService {
       throw new WingsException(ErrorCode.USER_DOES_NOT_EXIST);
     }
     if ("displayName".equals(patchOperation.getPath())) {
-      UpdateOperations<User> updateOperation = wingsPersistence.createUpdateOperations(User.class);
-      updateOperation.set(UserKeys.name, patchOperation.getValue(String.class));
-      userService.updateUser(user.getUuid(), updateOperation);
+      updateUser(patchOperation, user, UserKeys.name);
+      log.info("SCIM: Updated user's {}, displayName from {} to {}", userId, user.getName(),
+          patchOperation.getValue(String.class));
     }
-    if (patchOperation.getValue(ScimMultiValuedObject.class) != null
-        && patchOperation.getValue(ScimMultiValuedObject.class).getDisplayName() != null) {
-      UpdateOperations<User> updateOperation = wingsPersistence.createUpdateOperations(User.class);
-      updateOperation.set(UserKeys.name, patchOperation.getValue(String.class));
-      userService.updateUser(user.getUuid(), updateOperation);
+
+    if (featureFlagService.isEnabled(FeatureName.UPDATE_EMAILS_VIA_SCIM, accountId)
+        && "userName".equals(patchOperation.getPath()) && patchOperation.getValue(String.class) != null
+        && !user.getEmail().equals(patchOperation.getValue(String.class))) {
+      updateUser(patchOperation, user, UserKeys.email);
+      log.info("SCIM: Updated user's {}, email from {} to email id: {}", userId, user.getEmail(),
+          patchOperation.getValue(String.class));
     }
+
     if ("active".equals(patchOperation.getPath()) && patchOperation.getValue(Boolean.class) != null) {
       changeScimUserDisabled(accountId, user.getUuid(), !(patchOperation.getValue(Boolean.class)));
+    }
+
+    if (patchOperation.getValue(ScimMultiValuedObject.class) != null
+        && patchOperation.getValue(ScimMultiValuedObject.class).getDisplayName() != null) {
+      updateUser(patchOperation, user, UserKeys.name);
     }
 
     if (patchOperation.getValue(ScimUserValuedObject.class) != null) {
@@ -267,6 +278,12 @@ public class ScimUserServiceImpl implements ScimUserService {
       log.error("SCIM: Unexpected patch operation received: accountId: {}, userId: {}, patchOperation: {}", accountId,
           userId, patchOperation);
     }
+  }
+
+  private void updateUser(PatchOperation patchOperation, User user, String key) throws JsonProcessingException {
+    UpdateOperations<User> updateOperation = wingsPersistence.createUpdateOperations(User.class);
+    updateOperation.set(key, patchOperation.getValue(String.class));
+    userService.updateUser(user.getUuid(), updateOperation);
   }
 
   private void removeUserFromAllScimGroups(String accountId, String userId) {
@@ -314,7 +331,7 @@ public class ScimUserServiceImpl implements ScimUserService {
       if (StringUtils.isNotEmpty(displayName) && !displayName.equals(user.getName())) {
         userUpdate = true;
         updateOperations.set(UserKeys.name, displayName);
-        log.info("SCIM: Updated user's {} name: {}", userId, displayName);
+        log.info("SCIM: Updating user's {} name: {}", userId, displayName);
       }
 
       if (userResource.getName() != null) {
@@ -322,25 +339,37 @@ public class ScimUserServiceImpl implements ScimUserService {
             && !StringUtils.equals(userResource.getName().get(GIVEN_NAME).asText(), user.getGivenName())) {
           userUpdate = true;
           updateOperations.set(UserKeys.givenName, userResource.getName().get(GIVEN_NAME).asText());
-          log.info("SCIM: Updated user's {} given name: {}", userId, userResource.getName().get(GIVEN_NAME).asText());
+          log.info("SCIM: Updating user's {} given name: {}", userId, userResource.getName().get(GIVEN_NAME).asText());
         }
         if (userResource.getName().get(FAMILY_NAME) != null
             && !StringUtils.equals(userResource.getName().get(FAMILY_NAME).asText(), user.getFamilyName())) {
           userUpdate = true;
           updateOperations.set(UserKeys.familyName, userResource.getName().get(FAMILY_NAME).asText());
-          log.info("SCIM: Updated user's {} family name: {}", userId, userResource.getName().get(FAMILY_NAME).asText());
+          log.info(
+              "SCIM: Updating user's {} family name: {}", userId, userResource.getName().get(FAMILY_NAME).asText());
         }
       }
 
       if (userResource.getActive() != null && userResource.getActive() == user.isDisabled()) {
         userUpdate = true;
-        log.info("SCIM: Updated user's {}, enabled: {}", userId, userResource.getActive());
+        log.info("SCIM: Updating user's {}, enabled: {}", userId, userResource.getActive());
         updateOperations.set(UserKeys.disabled, !userResource.getActive());
+      }
+      if (featureFlagService.isEnabled(FeatureName.UPDATE_EMAILS_VIA_SCIM, accountId)
+          && userResource.getEmails() != null && userResource.getEmails().get(0) != null
+          && userResource.getEmails().get(0).get("value") != null
+          && userResource.getEmails().get(0).get("value").asText() != null
+          && !user.getEmail().equals(userResource.getEmails().get(0).get("value").asText())) {
+        userUpdate = true;
+        String emailFromScim = userResource.getEmails().get(0).get("value").asText();
+        updateOperations.set(UserKeys.email, emailFromScim);
+        log.info("SCIM: Updating user's {}, email from {} to email id: {}", userId, user.getEmail(), emailFromScim);
       }
       if (userUpdate) {
         updateOperations.set(UserKeys.imported, true);
         userService.updateUser(user.getUuid(), updateOperations);
       }
+      log.info("SCIM: user {} was updated {} with updateOperations {}", user.getUuid(), userUpdate, updateOperations);
       return Response.status(Status.OK).entity(getUser(user.getUuid(), accountId)).build();
     }
   }

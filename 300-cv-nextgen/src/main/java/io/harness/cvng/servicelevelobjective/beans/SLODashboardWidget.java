@@ -80,7 +80,7 @@ public class SLODashboardWidget {
     int errorBudgetRemaining;
     List<Point> errorBudgetBurndown;
     List<Point> sloPerformanceTrend;
-    @Deprecated boolean isRecalculatingSLI;
+    boolean isRecalculatingSLI;
     boolean isCalculatingSLI;
     public double errorBudgetSpentPercentage() {
       return 100 - errorBudgetRemainingPercentage;

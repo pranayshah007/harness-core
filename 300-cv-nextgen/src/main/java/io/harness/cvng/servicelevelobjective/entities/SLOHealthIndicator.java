@@ -8,7 +8,7 @@
 package io.harness.cvng.servicelevelobjective.entities;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
@@ -43,10 +43,10 @@ import org.mongodb.morphia.annotations.Id;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
+@StoreIn(DbAliases.CVNG)
 @Entity(value = "sloHealthIndicators", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @OwnedBy(HarnessTeam.CV)
-@StoreIn(DbAliases.CVNG)
 public class SLOHealthIndicator implements PersistentEntity, UuidAware, UpdatedAtAware, CreatedAtAware {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()

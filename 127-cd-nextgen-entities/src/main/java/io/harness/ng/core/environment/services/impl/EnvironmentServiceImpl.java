@@ -193,6 +193,8 @@ public class EnvironmentServiceImpl implements EnvironmentService {
                                    .orgIdentifier(requestEnvironment.getOrgIdentifier())
                                    .projectIdentifier(requestEnvironment.getProjectIdentifier())
                                    .newEnvironment(requestEnvironment)
+                                   .resourceType(EnvironmentUpdatedEvent.ResourceType.ENVIRONMENT)
+                                   .status(EnvironmentUpdatedEvent.Status.UPDATED)
                                    .oldEnvironment(environmentOptional.get())
                                    .build());
             return tempResult;

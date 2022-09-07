@@ -8,7 +8,7 @@
 package io.harness.cvng.core.entities;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.ng.DbAliases;
@@ -31,9 +31,9 @@ import org.mongodb.morphia.annotations.Id;
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "SidekickKeys")
+@StoreIn(DbAliases.CVNG)
 @Entity(value = "sidekicks", noClassnameStored = true)
 @HarnessEntity(exportable = false)
-@StoreIn(DbAliases.CVNG)
 public final class SideKick implements UuidAware, CreatedAtAware, UpdatedAtAware, PersistentEntity {
   @Id private String uuid;
   @FdIndex private long createdAt;

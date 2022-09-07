@@ -45,6 +45,7 @@ import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.DependenciesUtils;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -191,18 +192,28 @@ public class EnvironmentPlanCreatorHelper {
     if (!environmentV2.getDeployToAll().getValue()) {
       List<String> infraIdentifierList = new ArrayList<>();
 
-      for (InfraStructureDefinitionYaml infraYaml : environmentV2.getInfrastructureDefinitions().getValue()) {
+      if (ParameterField.isNotNull(environmentV2.getInfrastructureDefinitions())) {
+        for (InfraStructureDefinitionYaml infraYaml : environmentV2.getInfrastructureDefinitions().getValue()) {
+          String ref = infraYaml.getIdentifier().getValue();
+          infraIdentifierList.add(ref);
+          if (isNotEmpty(infraYaml.getInputs().getValue())) {
+            refToInputMap.put(ref, infraYaml.getInputs().getValue());
+          }
+        }
+      } else {
+        InfraStructureDefinitionYaml infraYaml = environmentV2.getInfrastructureDefinition().getValue();
         String ref = infraYaml.getIdentifier().getValue();
         infraIdentifierList.add(ref);
-        if (isNotEmpty(infraYaml.getInputs())) {
-          refToInputMap.put(ref, infraYaml.getInputs());
+        if (isNotEmpty(infraYaml.getInputs().getValue())) {
+          refToInputMap.put(ref, infraYaml.getInputs().getValue());
         }
       }
       infrastructureEntityList = infrastructure.getAllInfrastructureFromIdentifierList(
           accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, infraIdentifierList);
 
     } else {
-      if (isNotEmpty(environmentV2.getInfrastructureDefinitions().getValue())) {
+      if (isNotEmpty(environmentV2.getInfrastructureDefinitions().getValue())
+          || ParameterField.isBlank(environmentV2.getInfrastructureDefinition())) {
         throw new InvalidRequestException(String.format("DeployToAll is enabled along with specific Infrastructures %s",
             environmentV2.getInfrastructureDefinitions().getValue()));
       }

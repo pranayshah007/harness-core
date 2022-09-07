@@ -36,7 +36,6 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialType;
-import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.UnexpectedException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.licensing.Edition;
@@ -51,8 +50,6 @@ import io.harness.ng.core.delegate.client.DelegateNgManagerCgManagerClient;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
 import io.harness.ng.trialsignup.ProvisionResponse.DelegateStatus;
-import io.harness.product.ci.scm.proto.GetUserReposResponse;
-import io.harness.product.ci.scm.proto.Repository;
 import io.harness.rest.RestResponse;
 import io.harness.service.ScmClient;
 import io.harness.telemetry.TelemetryReporter;
@@ -88,7 +85,6 @@ public class ProvisionService {
   @Inject LicenseService licenseService;
   @Inject @Named(CONNECTOR_DECORATOR_SERVICE) private ConnectorService connectorService;
   @Inject private ScmClient scmClient;
-  //  @Inject private GitSyncConnectorHelper gitSyncConnectorHelper;
   @Inject TelemetryReporter telemetryReporter;
 
   private static final String K8S_CONNECTOR_NAME = "Harness Kubernetes Cluster";
@@ -133,14 +129,6 @@ public class ProvisionService {
     Boolean delegateInstallStatus = installDelegate(accountId);
     if (!delegateInstallStatus) {
       return ProvisionResponse.SetupStatus.DELEGATE_PROVISION_FAILURE;
-    }
-
-    try {
-      ConnectorValidationResult testConnectionResult =
-          connectorService.testConnection(accountId, null, null, "harnessImage");
-      log.info("testConnectionResult for harnessImageConnector: " + testConnectionResult.getStatus());
-    } catch (Exception ex) {
-      log.info("failed to test connection for harnessImageConnector", ex);
     }
     return ProvisionResponse.SetupStatus.SUCCESS;
   }
@@ -372,28 +360,8 @@ public class ProvisionService {
         .build();
   }
 
-  public List<UserRepoResponse> getAllUserRepos(
-      String accountId, String orgIdentifier, String projectIdentifier, String repoRef) {
-    Optional<ConnectorResponseDTO> connector =
-        connectorService.getByRef(accountId, orgIdentifier, projectIdentifier, repoRef);
-    connector.orElseThrow(
-        () -> new InvalidArgumentsException(format("connector %s was not found in account %s", repoRef, accountId)));
-    //    ScmConnector decryptedConnector = gitSyncConnectorHelper.getDecryptedConnector(
-    //        accountId, null, null, (ScmConnector) connector.get().getConnector().getConnectorConfig());
-    return convertToUserRepo(scmClient.getAllUserRepos(null));
-  }
-
   public void refreshCode(String clientId, String clientSecret, String endpoint, String refreshCode) {
     scmClient.refreshToken(null, clientId, clientSecret, endpoint, refreshCode);
-  }
-
-  private List<UserRepoResponse> convertToUserRepo(GetUserReposResponse allUserRepos) {
-    ArrayList userRepoResponses = new ArrayList();
-    for (Repository userRepo : allUserRepos.getReposList()) {
-      userRepoResponses.add(
-          UserRepoResponse.builder().namespace(userRepo.getNamespace()).name(userRepo.getName()).build());
-    }
-    return userRepoResponses;
   }
 
   private boolean provisioningAllowed(String accountId) {

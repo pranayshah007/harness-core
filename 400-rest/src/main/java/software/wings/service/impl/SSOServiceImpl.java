@@ -28,6 +28,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.FeatureName;
 import io.harness.beans.SecretText;
+import io.harness.delegate.beans.ldap.LdapSettingsWithEncryptedDataAndPasswordDetail;
 import io.harness.delegate.beans.ldap.LdapSettingsWithEncryptedDataDetail;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.InvalidRequestException;
@@ -86,6 +87,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import javax.validation.constraints.NotNull;
@@ -234,7 +236,7 @@ public class SSOServiceImpl implements SSOService {
               .newAuthMechanismYamlDTO(AuthMechanismYamlDTO.builder().authenticationMechanism(newAuthMechanism).build())
               .build());
     } catch (Exception ex) {
-      log.error("For account {} Audit trails for Authentication Mechanism Update event failed with exception: {}",
+      log.error("For account {} Audit trails for Authentication Mechanism Update event failed with exception: ",
           accountIdentifier, ex);
     }
   }
@@ -563,7 +565,7 @@ public class SSOServiceImpl implements SSOService {
       }
       return false;
     }
-    if (!settings.getConnectionSettings().getBindPassword().equals(LdapConstants.MASKED_STRING)) {
+    if (!LdapConstants.MASKED_STRING.equals(settings.getConnectionSettings().getBindPassword())) {
       return false;
     }
     LdapSettings savedSettings = ssoSettingService.getLdapSettingsByUuid(settings.getUuid());
@@ -592,6 +594,39 @@ public class SSOServiceImpl implements SSOService {
   @Override
   public List<Long> getIterationsFromCron(String accountId, String cron) {
     return ssoSettingService.getIterationsFromCron(accountId, cron);
+  }
+
+  @Override
+  public LdapSettingsWithEncryptedDataAndPasswordDetail getLdapSettingsWithEncryptedDataAndPasswordDetail(
+      String accountId, String password) {
+    LdapSettingsWithEncryptedDataDetail settingWithEncryptedDataDetail =
+        getLdapSettingWithEncryptedDataDetail(accountId, null);
+    SecretText secretText = SecretText.builder()
+                                .value(password)
+                                .hideFromListing(true)
+                                .name(UUID.randomUUID().toString())
+                                .scopedToAccount(true)
+                                .kmsId(accountId) // for local encryption
+                                .build();
+    String encryptedPassword = secretManager.saveSecretText(accountId, secretText, false);
+    EncryptedDataDetail encryptedPwdDataDetail = null;
+    try {
+      Optional<EncryptedDataDetail> optionalEncryptedDataDetail =
+          secretManager.encryptedDataDetails(accountId, LdapConstants.USER_PASSWORD_KEY, encryptedPassword, null);
+      if (optionalEncryptedDataDetail.isPresent()) {
+        encryptedPwdDataDetail = optionalEncryptedDataDetail.get();
+      }
+    } finally {
+      if (null != encryptedPwdDataDetail && null != encryptedPwdDataDetail.getEncryptedData()) {
+        secretManager.deleteSecret(
+            accountId, encryptedPwdDataDetail.getEncryptedData().getUuid(), new HashMap<>(), false);
+      }
+    }
+    return LdapSettingsWithEncryptedDataAndPasswordDetail.builder()
+        .ldapSettings(settingWithEncryptedDataDetail.getLdapSettings())
+        .encryptedDataDetail(settingWithEncryptedDataDetail.getEncryptedDataDetail())
+        .encryptedPwdDataDetail(encryptedPwdDataDetail)
+        .build();
   }
 
   private boolean deleteSamlSettings(String accountId, String targetAccountType) {
