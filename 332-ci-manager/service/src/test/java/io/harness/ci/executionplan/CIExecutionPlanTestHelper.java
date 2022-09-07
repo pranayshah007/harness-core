@@ -134,6 +134,7 @@ import io.harness.encryption.SecretRefData;
 import io.harness.k8s.model.ImageDetails;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
+import io.harness.plancreator.stages.stage.AbstractStageNode;
 import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -283,14 +284,14 @@ public class CIExecutionPlanTestHelper {
   }
 
   public InitializeStepInfo getExpectedLiteEngineTaskInfoOnFirstPod(
-      ExecutionSource executionSource, StageElementConfig stageElementConfig) {
+      ExecutionSource executionSource, AbstractStageNode stageElementConfig) {
     return InitializeStepInfo.builder()
         .identifier("liteEngineTask")
         .name("liteEngineTask")
         .executionSource(executionSource)
         .stageIdentifier(stageElementConfig.getIdentifier())
         .variables(stageElementConfig.getVariables())
-        .stageElementConfig((IntegrationStageConfig) stageElementConfig.getStageType())
+        .stageElementConfig((IntegrationStageConfig) stageElementConfig.getStageInfoConfig())
         .executionElementConfig(getExecutionElementConfig())
         .ciCodebase(getCICodebase())
         .infrastructure(getInfrastructureWithVolume())
@@ -324,14 +325,14 @@ public class CIExecutionPlanTestHelper {
   }
 
   public InitializeStepInfo getExpectedLiteEngineTaskInfoOnOtherPods(
-      ExecutionSource executionSource, StageElementConfig stageElementConfig) {
+      ExecutionSource executionSource, AbstractStageNode stageElementConfig) {
     return InitializeStepInfo.builder()
         .identifier("liteEngineTask")
         .name("liteEngineTask")
         .executionSource(executionSource)
         .stageIdentifier(stageElementConfig.getIdentifier())
         .variables(stageElementConfig.getVariables())
-        .stageElementConfig((IntegrationStageConfig) stageElementConfig.getStageType())
+        .stageElementConfig((IntegrationStageConfig) stageElementConfig.getStageInfoConfig())
         .executionElementConfig(getExecutionElementConfig())
         .infrastructure(getInfrastructureWithVolume())
         .strategyExpansionMap(new HashMap<>())

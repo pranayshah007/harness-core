@@ -11,7 +11,7 @@ import io.harness.advisers.rollback.OnFailRollbackParameters;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.CollectionUtils;
-import io.harness.plancreator.stages.stage.StageElementConfig;
+import io.harness.plancreator.stages.stage.AbstractStageNode;
 import io.harness.plancreator.steps.common.StageElementParameters;
 import io.harness.plancreator.steps.common.StageElementParameters.StageElementParametersBuilder;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -50,7 +50,7 @@ public class StepParameterCommonUtils {
     return stepBuilder;
   }
 
-  public StageElementParametersBuilder getStageParameters(StageElementConfig stageElementConfig) {
+  public StageElementParametersBuilder getStageParameters(AbstractStageNode stageElementConfig) {
     TagUtils.removeUuidFromTags(stageElementConfig.getTags());
 
     StageElementParametersBuilder stageBuilder = StageElementParameters.builder();

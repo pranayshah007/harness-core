@@ -41,7 +41,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
-import io.harness.plancreator.stages.stage.StageElementConfig;
+import io.harness.plancreator.stages.stage.AbstractStageNode;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
 import io.harness.plancreator.steps.StepElementConfig;
 import io.harness.pms.yaml.ParameterField;
@@ -70,7 +70,7 @@ public class CIStepGroupUtils {
   @Inject private CIExecutionServiceConfig ciExecutionServiceConfig;
   @Inject private VmInitializeTaskParamsBuilder vmInitializeTaskParamsBuilder;
 
-  public List<ExecutionWrapperConfig> createExecutionWrapperWithInitializeStep(StageElementConfig stageElementConfig,
+  public List<ExecutionWrapperConfig> createExecutionWrapperWithInitializeStep(AbstractStageNode stageElementConfig,
       CIExecutionArgs ciExecutionArgs, CodeBase ciCodebase, Infrastructure infrastructure, String accountId) {
     List<ExecutionWrapperConfig> mainEngineExecutionSections = new ArrayList<>();
 
@@ -109,7 +109,7 @@ public class CIStepGroupUtils {
   }
 
   private ExecutionWrapperConfig fetchInitializeStepExecutionWrapper(
-      List<ExecutionWrapperConfig> liteEngineExecutionSections, StageElementConfig integrationStage,
+      List<ExecutionWrapperConfig> liteEngineExecutionSections, AbstractStageNode integrationStage,
       CIExecutionArgs ciExecutionArgs, CodeBase ciCodebase, Infrastructure infrastructure, String accountId) {
     // TODO Do not generate new id
     InitializeStepInfo initializeStepInfo = initializeStepGenerator.createInitializeStepInfo(

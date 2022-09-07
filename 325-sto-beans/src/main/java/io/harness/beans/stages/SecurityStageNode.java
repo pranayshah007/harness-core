@@ -15,6 +15,7 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.StepSpecTypeConstants;
+import io.harness.plancreator.stages.stage.AbstractStageNode;
 import io.harness.plancreator.stages.stage.StageInfoConfig;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -34,7 +35,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("SecurityStageNode")
 @OwnedBy(STO)
 @RecasterAlias("io.harness.beans.stages.SecurityStageNode")
-public class SecurityStageNode extends IntegrationAbstractStageNode {
+public class SecurityStageNode extends AbstractStageNode {
   @JsonProperty("type") @NotNull StepType type = StepType.SecurityTests;
 
   @JsonProperty("spec")

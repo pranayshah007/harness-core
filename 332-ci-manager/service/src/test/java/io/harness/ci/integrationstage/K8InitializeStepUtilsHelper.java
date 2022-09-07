@@ -84,7 +84,7 @@ public class K8InitializeStepUtilsHelper {
   private static final String BACKGROUND_STEP_LIMIT_MEM = "500Mi";
   private static final String BACKGROUND_STEP_LIMIT_CPU = "300m";
 
-  public static StageElementConfig getIntegrationStageElementConfig() {
+  public static AbstractStageNode getIntegrationStageElementConfig() {
     return StageElementConfig.builder().identifier("ciStage").type("CI").stageType(getIntegrationStageConfig()).build();
   }
 

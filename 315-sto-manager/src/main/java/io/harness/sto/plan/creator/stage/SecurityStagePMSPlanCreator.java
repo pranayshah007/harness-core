@@ -35,7 +35,7 @@ import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.exception.InvalidRequestException;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.stages.GenericStagePlanCreator;
-import io.harness.plancreator.stages.stage.StageElementConfig;
+import io.harness.plancreator.stages.stage.AbstractStageNode;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
@@ -78,7 +78,7 @@ public class SecurityStagePMSPlanCreator extends GenericStagePlanCreator {
 
   @Override
   public LinkedHashMap<String, PlanCreationResponse> createPlanForChildrenNodes(
-      PlanCreationContext ctx, StageElementConfig stageElementConfig) {
+      PlanCreationContext ctx, AbstractStageNode stageElementConfig) {
     log.info("Received plan creation request for security stage {}", stageElementConfig.getIdentifier());
     LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
 
@@ -123,14 +123,13 @@ public class SecurityStagePMSPlanCreator extends GenericStagePlanCreator {
     return ImmutableSet.of(StepSpecTypeConstants.SECURITY_STAGE);
   }
 
-  @Override
-  public StepType getStepType(StageElementConfig stageElementConfig) {
+  public StepType getStepType(AbstractStageNode stageElementConfig) {
     return SecurityStageStepPMS.STEP_TYPE;
   }
 
   @Override
   public SpecParameters getSpecParameters(
-      String childNodeId, PlanCreationContext ctx, StageElementConfig stageElementConfig) {
+      String childNodeId, PlanCreationContext ctx, AbstractStageNode stageElementConfig) {
     ExecutionSource executionSource = buildExecutionSource(ctx, stageElementConfig);
     BuildStatusUpdateParameter buildStatusUpdateParameter =
         obtainBuildStatusUpdateParameter(ctx, stageElementConfig, executionSource);
@@ -138,9 +137,8 @@ public class SecurityStagePMSPlanCreator extends GenericStagePlanCreator {
         stageElementConfig, childNodeId, buildStatusUpdateParameter, ctx);
   }
 
-  @Override
-  public Class<StageElementConfig> getFieldClass() {
-    return StageElementConfig.class;
+  public Class<AbstractStageNode> getFieldClass() {
+    return AbstractStageNode.class;
   }
 
   private void putNewExecutionYAMLInResponseMap(YamlField executionField,
@@ -165,7 +163,7 @@ public class SecurityStagePMSPlanCreator extends GenericStagePlanCreator {
   }
 
   private ExecutionElementConfig modifyYAMLWithImplicitSteps(PlanCreationContext ctx, ExecutionSource executionSource,
-      YamlField executionYAMLField, StageElementConfig stageElementConfig) {
+      YamlField executionYAMLField, AbstractStageNode stageElementConfig) {
     ExecutionElementConfig executionElementConfig;
     try {
       executionElementConfig = YamlUtils.read(executionYAMLField.getNode().toString(), ExecutionElementConfig.class);
@@ -210,7 +208,7 @@ public class SecurityStagePMSPlanCreator extends GenericStagePlanCreator {
         .build();
   }
 
-  private ExecutionSource buildExecutionSource(PlanCreationContext ctx, StageElementConfig stageElementConfig) {
+  private ExecutionSource buildExecutionSource(PlanCreationContext ctx, AbstractStageNode stageElementConfig) {
     PlanCreationContextValue planCreationContextValue = ctx.getGlobalContext().get("metadata");
 
     CodeBase codeBase = getCICodebase(ctx);
@@ -227,7 +225,7 @@ public class SecurityStagePMSPlanCreator extends GenericStagePlanCreator {
   }
 
   private BuildStatusUpdateParameter obtainBuildStatusUpdateParameter(
-      PlanCreationContext ctx, StageElementConfig stageElementConfig, ExecutionSource executionSource) {
+      PlanCreationContext ctx, AbstractStageNode stageElementConfig, ExecutionSource executionSource) {
     CodeBase codeBase = getCICodebase(ctx);
 
     if (codeBase == null) {

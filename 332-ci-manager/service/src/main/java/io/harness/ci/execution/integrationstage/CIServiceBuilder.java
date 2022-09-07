@@ -34,7 +34,7 @@ import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.delegate.beans.ci.pod.CIContainerType;
 import io.harness.delegate.beans.ci.pod.ContainerResourceParams;
 import io.harness.exception.ngexception.CIStageExecutionException;
-import io.harness.plancreator.stages.stage.StageElementConfig;
+import io.harness.plancreator.stages.stage.AbstractStageNode;
 import io.harness.yaml.extended.ci.container.ContainerResource;
 
 import java.util.ArrayList;
@@ -46,7 +46,7 @@ import java.util.Map;
 @OwnedBy(HarnessTeam.CI)
 public class CIServiceBuilder {
   private static final String SEPARATOR = ",";
-  public static List<ContainerDefinitionInfo> createServicesContainerDefinition(StageElementConfig stageElementConfig,
+  public static List<ContainerDefinitionInfo> createServicesContainerDefinition(AbstractStageNode stageElementConfig,
       PortFinder portFinder, CIExecutionServiceConfig ciExecutionServiceConfig, OSType os) {
     List<ContainerDefinitionInfo> containerDefinitionInfos = new ArrayList<>();
     IntegrationStageConfig integrationStage = IntegrationStageUtils.getIntegrationStageConfig(stageElementConfig);
@@ -163,7 +163,7 @@ public class CIServiceBuilder {
         .build();
   }
 
-  public static List<String> getServiceIdList(StageElementConfig stageElementConfig) {
+  public static List<String> getServiceIdList(AbstractStageNode stageElementConfig) {
     List<String> serviceIdList = new ArrayList<>();
     IntegrationStageConfig integrationStage = IntegrationStageUtils.getIntegrationStageConfig(stageElementConfig);
 
@@ -183,7 +183,7 @@ public class CIServiceBuilder {
     return serviceIdList;
   }
 
-  public static List<Integer> getServiceGrpcPortList(StageElementConfig stageElementConfig) {
+  public static List<Integer> getServiceGrpcPortList(AbstractStageNode stageElementConfig) {
     List<Integer> grpcPortList = new ArrayList<>();
     IntegrationStageConfig integrationStage = IntegrationStageUtils.getIntegrationStageConfig(stageElementConfig);
 

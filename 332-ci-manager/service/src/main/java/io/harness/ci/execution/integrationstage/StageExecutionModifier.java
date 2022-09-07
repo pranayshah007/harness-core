@@ -13,7 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.execution.ExecutionSource;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.plancreator.execution.ExecutionElementConfig;
-import io.harness.plancreator.stages.stage.StageElementConfig;
+import io.harness.plancreator.stages.stage.AbstractStageNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
 
@@ -26,9 +26,9 @@ public interface StageExecutionModifier {
    * Modifies saved integration stage execution plan by appending pre and post execution steps or any custom steps.
    * Additional steps may include cleanup or setup step and other operations that are needed for complete execution.
    * @param execution Execution object that holds current steps
-   * @param stageConfig StageElementConfig object that holds info
+   * @param stageConfig AbstractStageNode object that holds info
    * @return modified execution
    */
-  ExecutionElementConfig modifyExecutionPlan(ExecutionElementConfig execution, StageElementConfig stageConfig,
+  ExecutionElementConfig modifyExecutionPlan(ExecutionElementConfig execution, AbstractStageNode stageConfig,
       PlanCreationContext context, CodeBase ciCodeBase, Infrastructure infrastructure, ExecutionSource executionSource);
 }

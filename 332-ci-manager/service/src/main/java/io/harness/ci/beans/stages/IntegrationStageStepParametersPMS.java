@@ -22,7 +22,7 @@ import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
-import io.harness.plancreator.stages.stage.StageElementConfig;
+import io.harness.plancreator.stages.stage.AbstractStageNode;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
 import io.harness.plancreator.steps.StepElementConfig;
 import io.harness.plancreator.steps.StepGroupElementConfig;
@@ -54,12 +54,12 @@ public class IntegrationStageStepParametersPMS implements SpecParameters, StepPa
   List<String> stepIdentifiers;
   String childNodeID;
 
-  public static IntegrationStageStepParametersPMS getStepParameters(StageElementConfig stageElementConfig,
+  public static IntegrationStageStepParametersPMS getStepParameters(AbstractStageNode stageElementConfig,
       String childNodeID, BuildStatusUpdateParameter buildStatusUpdateParameter, PlanCreationContext ctx) {
     if (stageElementConfig == null) {
       return IntegrationStageStepParametersPMS.builder().childNodeID(childNodeID).build();
     }
-    IntegrationStageConfig integrationStageConfig = (IntegrationStageConfig) stageElementConfig.getStageType();
+    IntegrationStageConfig integrationStageConfig = (IntegrationStageConfig) stageElementConfig.getStageInfoConfig();
 
     Infrastructure infrastructure = getInfrastructure(stageElementConfig, ctx);
 
@@ -76,8 +76,8 @@ public class IntegrationStageStepParametersPMS implements SpecParameters, StepPa
         .build();
   }
 
-  public static Infrastructure getInfrastructure(StageElementConfig stageElementConfig, PlanCreationContext ctx) {
-    IntegrationStageConfig integrationStageConfig = (IntegrationStageConfig) stageElementConfig.getStageType();
+  public static Infrastructure getInfrastructure(AbstractStageNode stageElementConfig, PlanCreationContext ctx) {
+    IntegrationStageConfig integrationStageConfig = (IntegrationStageConfig) stageElementConfig.getStageInfoConfig();
 
     Infrastructure infrastructure = integrationStageConfig.getInfrastructure();
     if (infrastructure == null) {
@@ -106,9 +106,9 @@ public class IntegrationStageStepParametersPMS implements SpecParameters, StepPa
   private static IntegrationStageConfig getIntegrationStageConfig(YamlField yamlField, String identifier) {
     try {
       YamlField stageYamlField = PlanCreatorUtils.getStageConfig(yamlField, identifier);
-      StageElementConfig stageElementConfig =
-          YamlUtils.read(YamlUtils.writeYamlString(stageYamlField), StageElementConfig.class);
-      return (IntegrationStageConfig) stageElementConfig.getStageType();
+      AbstractStageNode stageElementConfig =
+          YamlUtils.read(YamlUtils.writeYamlString(stageYamlField), AbstractStageNode.class);
+      return (IntegrationStageConfig) stageElementConfig.getStageInfoConfig();
 
     } catch (Exception ex) {
       throw new CIStageExecutionException(

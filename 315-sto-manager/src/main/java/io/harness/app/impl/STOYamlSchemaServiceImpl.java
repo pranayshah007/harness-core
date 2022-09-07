@@ -21,8 +21,8 @@ import io.harness.beans.stages.SecurityStageConfigImpl;
 import io.harness.beans.stages.SecurityStageNode;
 import io.harness.encryption.Scope;
 import io.harness.jackson.JsonNodeUtils;
+import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
-import io.harness.plancreator.steps.StepElementConfig;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.remote.client.RestClientUtils;
@@ -58,8 +58,8 @@ import java.util.stream.Collectors;
 @OwnedBy(HarnessTeam.STO)
 public class STOYamlSchemaServiceImpl implements STOYamlSchemaService {
   private static final String SECURITY_STAGE_NODE = YamlSchemaUtils.getSwaggerName(SecurityStageNode.class);
-  private static final String STEP_ELEMENT_CONFIG = YamlSchemaUtils.getSwaggerName(StepElementConfig.class);
-  private static final Class<StepElementConfig> STEP_ELEMENT_CONFIG_CLASS = StepElementConfig.class;
+  private static final String STEP_ELEMENT_CONFIG = YamlSchemaUtils.getSwaggerName(AbstractStepNode.class);
+  private static final Class<AbstractStepNode> STEP_ELEMENT_CONFIG_CLASS = AbstractStepNode.class;
   private static final String STO_NAMESPACE = "security";
 
   private final YamlSchemaProvider yamlSchemaProvider;
@@ -123,7 +123,7 @@ public class STOYamlSchemaServiceImpl implements STOYamlSchemaService {
     yamlSchemaProvider.mergeAllV2StepsDefinitions(projectIdentifier, orgIdentifier, scope, (ObjectNode) definitions,
         YamlSchemaUtils.getNodeEntityTypesByYamlGroup(yamlSchemaRootClasses, StepCategory.STEP.name()));
 
-    JsonNode jsonNode = definitions.get(StepElementConfig.class.getSimpleName());
+    JsonNode jsonNode = definitions.get(AbstractStepNode.class.getSimpleName());
     modifyStepElementSchema((ObjectNode) jsonNode);
 
     jsonNode = definitions.get(ParallelStepElementConfig.class.getSimpleName());

@@ -8,7 +8,7 @@
 package io.harness.plancreator.approval;
 
 import io.harness.filters.GenericStageFilterJsonCreator;
-import io.harness.plancreator.stages.stage.StageElementConfig;
+import io.harness.plancreator.stages.stage.AbstractStageNode;
 import io.harness.pms.pipeline.filter.PipelineFilter;
 import io.harness.pms.sdk.core.filter.creation.beans.FilterCreationContext;
 
@@ -23,8 +23,7 @@ public class ApprovalStageFilterJsonCreator extends GenericStageFilterJsonCreato
     return Collections.singleton("Approval");
   }
 
-  @Override
-  public PipelineFilter getFilter(FilterCreationContext filterCreationContext, StageElementConfig stageElementConfig) {
+  public PipelineFilter getFilter(FilterCreationContext filterCreationContext, AbstractStageNode stageElementConfig) {
     return null;
   }
 }

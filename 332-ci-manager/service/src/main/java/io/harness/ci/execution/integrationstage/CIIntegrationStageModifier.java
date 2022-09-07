@@ -13,7 +13,7 @@ import io.harness.beans.execution.ExecutionSource;
 import io.harness.beans.executionargs.CIExecutionArgs;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.plancreator.execution.ExecutionElementConfig;
-import io.harness.plancreator.stages.stage.StageElementConfig;
+import io.harness.plancreator.stages.stage.AbstractStageNode;
 import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
@@ -33,9 +33,8 @@ import lombok.extern.slf4j.Slf4j;
 public class CIIntegrationStageModifier implements StageExecutionModifier {
   @Inject private CIStepGroupUtils ciStepGroupUtils;
 
-  @Override
   public ExecutionElementConfig modifyExecutionPlan(ExecutionElementConfig execution,
-      StageElementConfig stageElementConfig, PlanCreationContext context, CodeBase ciCodeBase,
+      AbstractStageNode stageElementConfig, PlanCreationContext context, CodeBase ciCodeBase,
       Infrastructure infrastructure, ExecutionSource executionSource) {
     log.info("Modifying execution plan to prepend initialize step for integration stage {}",
         stageElementConfig.getIdentifier());

@@ -87,7 +87,7 @@ import io.harness.licensing.Edition;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
-import io.harness.plancreator.stages.stage.StageElementConfig;
+import io.harness.plancreator.stages.stage.AbstractStageNode;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
 import io.harness.plancreator.steps.StepElementConfig;
 import io.harness.plancreator.steps.StepGroupElementConfig;
@@ -131,8 +131,8 @@ public class IntegrationStageUtils {
   private static final String HARNESS_HOSTED = "Harness Hosted";
   private static final String SELF_HOSTED = "Self Hosted";
 
-  public static IntegrationStageConfig getIntegrationStageConfig(StageElementConfig stageElementConfig) {
-    return (IntegrationStageConfig) stageElementConfig.getStageType();
+  public static IntegrationStageConfig getIntegrationStageConfig(AbstractStageNode stageElementConfig) {
+    return (IntegrationStageConfig) stageElementConfig.getStageInfoConfig();
   }
 
   public static ParallelStepElementConfig getParallelStepElementConfig(ExecutionWrapperConfig executionWrapperConfig) {

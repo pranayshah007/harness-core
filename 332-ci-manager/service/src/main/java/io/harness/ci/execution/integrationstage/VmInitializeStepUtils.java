@@ -41,7 +41,7 @@ import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
-import io.harness.plancreator.stages.stage.StageElementConfig;
+import io.harness.plancreator.stages.stage.AbstractStageNode;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
 import io.harness.plancreator.steps.StepElementConfig;
 import io.harness.plancreator.steps.StepGroupElementConfig;
@@ -65,7 +65,7 @@ public class VmInitializeStepUtils {
   @Inject CIFeatureFlagService featureFlagService;
   @Inject ValidationUtils validationUtils;
 
-  public BuildJobEnvInfo getInitializeStepInfoBuilder(StageElementConfig stageElementConfig,
+  public BuildJobEnvInfo getInitializeStepInfoBuilder(AbstractStageNode stageElementConfig,
       Infrastructure infrastructure, CIExecutionArgs ciExecutionArgs, List<ExecutionWrapperConfig> steps,
       Ambiance ambiance) {
     ArrayList<String> connectorIdentifiers = populateConnectorIdentifiers(steps);

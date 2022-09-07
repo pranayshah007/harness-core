@@ -58,7 +58,7 @@ public class K8InitializeServiceUtils {
   public List<ContainerDefinitionInfo> createServiceContainerDefinitions(
       StageElementConfig stageElementConfig, PortFinder portFinder, OSType os) {
     List<ContainerDefinitionInfo> containerDefinitionInfos = new ArrayList<>();
-    IntegrationStageConfig integrationStage = IntegrationStageUtils.getIntegrationStageConfig(stageElementConfig);
+    IntegrationStageConfig integrationStage = (IntegrationStageConfig) stageElementConfig.getStageType();
     if (integrationStage.getServiceDependencies() == null
         || isEmpty(integrationStage.getServiceDependencies().getValue())) {
       return containerDefinitionInfos;

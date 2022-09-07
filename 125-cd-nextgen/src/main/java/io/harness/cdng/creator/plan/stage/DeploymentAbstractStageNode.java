@@ -20,7 +20,6 @@ import lombok.Data;
 
 @Data
 public abstract class DeploymentAbstractStageNode extends AbstractStageNode {
-  @VariableExpression(skipVariableExpression = true) List<FailureStrategyConfig> failureStrategies;
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
   @JsonProperty("skipInstances")
   ParameterField<Boolean> skipInstances;

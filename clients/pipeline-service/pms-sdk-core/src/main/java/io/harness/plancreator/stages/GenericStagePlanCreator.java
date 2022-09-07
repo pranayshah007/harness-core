@@ -13,7 +13,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.plancreator.stages.stage.StageElementConfig;
+import io.harness.plancreator.stages.stage.AbstractStageNode;
 import io.harness.plancreator.steps.StepParameterCommonUtils;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.plancreator.steps.common.StageElementParameters.StageElementParametersBuilder;
@@ -47,19 +47,19 @@ import lombok.SneakyThrows;
 
 @OwnedBy(PIPELINE)
 @TargetModule(HarnessModule._882_PMS_SDK_CORE)
-public abstract class GenericStagePlanCreator extends ChildrenPlanCreator<StageElementConfig> {
+public abstract class GenericStagePlanCreator extends ChildrenPlanCreator<AbstractStageNode> {
   @Inject private KryoSerializer kryoSerializer;
 
   public abstract Set<String> getSupportedStageTypes();
 
-  public abstract StepType getStepType(StageElementConfig stageElementConfig);
+  public abstract StepType getStepType(AbstractStageNode stageElementConfig);
 
   public abstract SpecParameters getSpecParameters(
-      String childNodeId, PlanCreationContext ctx, StageElementConfig stageElementConfig);
+      String childNodeId, PlanCreationContext ctx, AbstractStageNode stageElementConfig);
 
   @Override
-  public Class<StageElementConfig> getFieldClass() {
-    return StageElementConfig.class;
+  public Class<AbstractStageNode> getFieldClass() {
+    return AbstractStageNode.class;
   }
 
   @Override
@@ -74,7 +74,7 @@ public abstract class GenericStagePlanCreator extends ChildrenPlanCreator<StageE
   @SneakyThrows
   @Override
   public PlanNode createPlanForParentNode(
-      PlanCreationContext ctx, StageElementConfig stageElementConfig, List<String> childrenNodeIds) {
+      PlanCreationContext ctx, AbstractStageNode stageElementConfig, List<String> childrenNodeIds) {
     stageElementConfig.setIdentifier(
         StrategyUtils.getIdentifierWithExpression(ctx, stageElementConfig.getIdentifier()));
     stageElementConfig.setName(StrategyUtils.getIdentifierWithExpression(ctx, stageElementConfig.getName()));
@@ -109,7 +109,7 @@ public abstract class GenericStagePlanCreator extends ChildrenPlanCreator<StageE
    * @param field
    * @param metadataMap
    */
-  protected void addStrategyFieldDependencyIfPresent(PlanCreationContext ctx, StageElementConfig field,
+  protected void addStrategyFieldDependencyIfPresent(PlanCreationContext ctx, AbstractStageNode field,
       LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, Map<String, ByteString> metadataMap) {
     StrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, field.getUuid(), field.getIdentifier(),
         field.getName(), planCreationResponseMap, metadataMap,
@@ -117,7 +117,7 @@ public abstract class GenericStagePlanCreator extends ChildrenPlanCreator<StageE
   }
 
   @Override
-  public GraphLayoutResponse getLayoutNodeInfo(PlanCreationContext context, StageElementConfig config) {
+  public GraphLayoutResponse getLayoutNodeInfo(PlanCreationContext context, AbstractStageNode config) {
     Map<String, GraphLayoutNode> stageYamlFieldMap = new LinkedHashMap<>();
     YamlField stageYamlField = context.getCurrentField();
     if (StrategyUtils.isWrappedUnderStrategy(context.getCurrentField())) {

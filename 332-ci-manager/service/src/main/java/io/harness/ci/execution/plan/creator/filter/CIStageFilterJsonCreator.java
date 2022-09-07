@@ -37,7 +37,7 @@ import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.filters.FilterCreatorHelper;
 import io.harness.filters.GenericStageFilterJsonCreator;
 import io.harness.ng.core.BaseNGAccess;
-import io.harness.plancreator.stages.stage.StageElementConfig;
+import io.harness.plancreator.stages.stage.AbstractStageNode;
 import io.harness.pms.pipeline.filter.PipelineFilter;
 import io.harness.pms.sdk.core.filter.creation.beans.FilterCreationContext;
 import io.harness.pms.yaml.ParameterField;
@@ -68,8 +68,7 @@ public class CIStageFilterJsonCreator extends GenericStageFilterJsonCreator {
     return ImmutableSet.of(StepSpecTypeConstants.CI_STAGE);
   }
 
-  @Override
-  public PipelineFilter getFilter(FilterCreationContext filterCreationContext, StageElementConfig stageElementConfig) {
+  public PipelineFilter getFilter(FilterCreationContext filterCreationContext, AbstractStageNode stageElementConfig) {
     log.info("Received filter creation request for integration stage {}", stageElementConfig.getIdentifier());
     String accountId = filterCreationContext.getSetupMetadata().getAccountId();
     String orgIdentifier = filterCreationContext.getSetupMetadata().getOrgId();
@@ -119,8 +118,8 @@ public class CIStageFilterJsonCreator extends GenericStageFilterJsonCreator {
     return ciFilterBuilder.build();
   }
 
-  private void validateStage(StageElementConfig stageElementConfig) {
-    IntegrationStageConfig integrationStageConfig = (IntegrationStageConfig) stageElementConfig.getStageType();
+  private void validateStage(AbstractStageNode stageElementConfig) {
+    IntegrationStageConfig integrationStageConfig = (IntegrationStageConfig) stageElementConfig.getStageInfoConfig();
 
     Infrastructure infrastructure = integrationStageConfig.getInfrastructure();
     if (infrastructure == null) {
@@ -141,7 +140,7 @@ public class CIStageFilterJsonCreator extends GenericStageFilterJsonCreator {
   }
 
   public Set<EntityDetailProtoDTO> getReferredEntities(
-      FilterCreationContext filterCreationContext, StageElementConfig stageElementConfig) {
+      FilterCreationContext filterCreationContext, AbstractStageNode stageElementConfig) {
     CodeBase ciCodeBase = null;
     String accountIdentifier = filterCreationContext.getSetupMetadata().getAccountId();
     String orgIdentifier = filterCreationContext.getSetupMetadata().getOrgId();
@@ -167,7 +166,7 @@ public class CIStageFilterJsonCreator extends GenericStageFilterJsonCreator {
           fullQualifiedDomainName, ciCodeBase.getConnectorRef(), EntityTypeProtoEnum.CONNECTORS));
     }
 
-    IntegrationStageConfig integrationStage = (IntegrationStageConfig) stageElementConfig.getStageType();
+    IntegrationStageConfig integrationStage = (IntegrationStageConfig) stageElementConfig.getStageInfoConfig();
     if (integrationStage.getInfrastructure() == null) {
       Runtime runtime = integrationStage.getRuntime();
       if (runtime == null || runtime.getType() != Runtime.Type.CLOUD) {

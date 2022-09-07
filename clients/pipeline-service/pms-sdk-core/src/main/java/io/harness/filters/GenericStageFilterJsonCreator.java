@@ -13,7 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.SecretRefData;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
-import io.harness.plancreator.stages.stage.StageElementConfig;
+import io.harness.plancreator.stages.stage.AbstractStageNode;
 import io.harness.plancreator.stages.stage.StageInfoConfig;
 import io.harness.pms.exception.runtime.InvalidYamlRuntimeException;
 import io.harness.pms.filter.creation.FilterCreationResponse;
@@ -43,17 +43,17 @@ import java.util.Set;
 import javax.validation.constraints.NotNull;
 
 @OwnedBy(PIPELINE)
-public abstract class GenericStageFilterJsonCreator implements FilterJsonCreator<StageElementConfig> {
+public abstract class GenericStageFilterJsonCreator implements FilterJsonCreator<AbstractStageNode> {
   @Inject private SimpleVisitorFactory simpleVisitorFactory;
 
   public abstract Set<String> getSupportedStageTypes();
 
   public abstract PipelineFilter getFilter(
-      FilterCreationContext filterCreationContext, StageElementConfig stageElementConfig);
+      FilterCreationContext filterCreationContext, AbstractStageNode stageElementConfig);
 
   @Override
-  public Class<StageElementConfig> getFieldClass() {
-    return StageElementConfig.class;
+  public Class<AbstractStageNode> getFieldClass() {
+    return AbstractStageNode.class;
   }
 
   @Override
@@ -67,7 +67,7 @@ public abstract class GenericStageFilterJsonCreator implements FilterJsonCreator
 
   @Override
   public FilterCreationResponse handleNode(
-      FilterCreationContext filterCreationContext, StageElementConfig stageElementConfig) {
+      FilterCreationContext filterCreationContext, AbstractStageNode stageElementConfig) {
     if (stageElementConfig.getStrategy() != null) {
       StrategyValidationUtils.validateStrategyNode(stageElementConfig.getStrategy());
     }
@@ -79,7 +79,8 @@ public abstract class GenericStageFilterJsonCreator implements FilterJsonCreator
       FilterCreatorHelper.checkIfVariableNamesAreValid(variablesField);
     }
 
-    if (stageElementConfig.getStageType() == null || stageElementConfig.getStageType().getExecution() == null) {
+    if (stageElementConfig.getStageInfoConfig() == null
+        || stageElementConfig.getStageInfoConfig().getExecution() == null) {
       throw new InvalidYamlRuntimeException(String.format(
           "Execution section is required in %s stage [%s]. Please add it and try again", stageElementConfig.getType(),
           YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
@@ -98,10 +99,10 @@ public abstract class GenericStageFilterJsonCreator implements FilterJsonCreator
   }
 
   public Set<EntityDetailProtoDTO> getReferredEntities(
-      FilterCreationContext filterCreationContext, StageElementConfig stageElementConfig) {
+      FilterCreationContext filterCreationContext, AbstractStageNode stageElementConfig) {
     Set<EntityDetailProtoDTO> referredEntities = getReferences(filterCreationContext.getSetupMetadata().getAccountId(),
         filterCreationContext.getSetupMetadata().getOrgId(), filterCreationContext.getSetupMetadata().getProjectId(),
-        stageElementConfig.getStageType(), filterCreationContext.getCurrentField());
+        stageElementConfig.getStageInfoConfig(), filterCreationContext.getCurrentField());
     referredEntities.addAll(extractSecretRefs(filterCreationContext));
     return referredEntities;
   }
