@@ -16,9 +16,7 @@ import io.harness.repositories.infrastructuremapping.InfrastructureMappingReposi
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;
@@ -53,13 +51,5 @@ public class InfrastructureMappingServiceImpl implements InfrastructureMappingSe
                   infrastructureMappingDTO.getProjectIdentifier(), infrastructureMappingDTO.getInfrastructureKey());
       return infrastructureMappingOptional.map(InfrastructureMappingMapper::toDTO);
     }
-  }
-
-  @Override
-  public List<InfrastructureMappingDTO> getAllByInfrastructureKey(String accountIdentifier, String infrastructureKey) {
-    List<InfrastructureMapping> infrastructureMappings =
-        infrastructureMappingRepository.findAllByAccountIdentifierAndInfrastructureKey(
-            accountIdentifier, infrastructureKey);
-    return infrastructureMappings.stream().map(InfrastructureMappingMapper::toDTO).collect(Collectors.toList());
   }
 }

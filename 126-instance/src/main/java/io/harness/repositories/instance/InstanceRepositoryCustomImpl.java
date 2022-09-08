@@ -24,7 +24,6 @@ import io.harness.models.constants.InstanceSyncConstants;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -340,16 +339,5 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
   public Instance findFirstInstance(Criteria criteria) {
     Query query = new Query().addCriteria(criteria);
     return mongoTemplate.findOne(query, Instance.class);
-  }
-
-  @Override
-  public UpdateResult updateInfrastructureMapping(List<String> instanceIds, String infrastructureMappingId) {
-    Criteria criteria = Criteria.where(InstanceKeys.id).in(instanceIds);
-    Query query = new Query();
-    query.addCriteria(criteria);
-
-    Update update = new Update();
-    update.set(InstanceKeys.infrastructureMappingId, infrastructureMappingId);
-    return mongoTemplate.updateMulti(query, update, Instance.class);
   }
 }

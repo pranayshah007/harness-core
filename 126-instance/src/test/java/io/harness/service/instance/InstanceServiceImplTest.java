@@ -22,7 +22,6 @@ import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyList;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -42,7 +41,6 @@ import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.repositories.instance.InstanceRepository;
 import io.harness.rule.Owner;
 
-import com.mongodb.client.result.UpdateResult;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -376,16 +374,5 @@ public class InstanceServiceImplTest extends InstancesTestBase {
     when(instanceRepository.findAndReplace(any(), any())).thenReturn(null);
     Optional<InstanceDTO> responseDTO = instanceService.findAndReplace(instanceDTO);
     assertFalse(responseDTO.isPresent());
-  }
-
-  @Test
-  @Owner(developers = VIKYATH_HAREKAL)
-  @Category(UnitTests.class)
-  public void testUpdateInfrastructureMapping() {
-    List<String> instanceIds = Arrays.asList("1", "2", "3");
-    String infrastructureMappingId = "2";
-    UpdateResult updateResult = mock(UpdateResult.class);
-    when(instanceRepository.updateInfrastructureMapping(instanceIds, infrastructureMappingId)).thenReturn(updateResult);
-    instanceService.updateInfrastructureMapping(instanceIds, infrastructureMappingId);
   }
 }

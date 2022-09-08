@@ -74,6 +74,4 @@ public interface InstanceService {
 
   AggregationResults<CountByServiceIdAndEnvType> getActiveServiceInstanceCountBreakdown(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, List<String> serviceId, long timestampInMs);
-
-  void updateInfrastructureMapping(List<String> instanceIds, String id);
 }

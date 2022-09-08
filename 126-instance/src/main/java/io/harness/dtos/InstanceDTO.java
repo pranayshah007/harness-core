@@ -14,7 +14,6 @@ import io.harness.entities.ArtifactDetails;
 import io.harness.entities.InstanceType;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.Map;
 import lombok.Builder;
 import lombok.Setter;
@@ -25,7 +24,6 @@ import lombok.experimental.NonFinal;
 @Value
 @Builder
 public class InstanceDTO {
-  @JsonIgnore String uuid;
   String accountIdentifier;
   String orgIdentifier;
   String projectIdentifier;

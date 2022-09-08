@@ -11,7 +11,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.dtos.InfrastructureMappingDTO;
 
-import java.util.List;
 import java.util.Optional;
 
 @OwnedBy(HarnessTeam.DX)
@@ -20,6 +19,4 @@ public interface InfrastructureMappingService {
 
   Optional<InfrastructureMappingDTO> createNewOrReturnExistingInfrastructureMapping(
       InfrastructureMappingDTO infrastructureMappingDTO);
-
-  List<InfrastructureMappingDTO> getAllByInfrastructureKey(String accountIdentifier, String infrastructureKey);
 }

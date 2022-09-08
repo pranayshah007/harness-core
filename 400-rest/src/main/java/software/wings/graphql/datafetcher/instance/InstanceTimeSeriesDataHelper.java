@@ -525,7 +525,7 @@ public class InstanceTimeSeriesDataHelper {
         if (retryCount >= MAX_RETRY) {
           log.error("Failed to execute query=[{}]", query, e);
         } else {
-          log.warn("Failed to execute query=[{}], retryCount=[{}]", query, retryCount, e);
+          log.warn("Failed to execute query=[{}], retryCount=[{}]", query, retryCount);
         }
         retryCount++;
       }

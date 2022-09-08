@@ -15,18 +15,14 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.InstancesTestBase;
-import io.harness.account.AccountClient;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
@@ -57,7 +53,6 @@ import io.harness.models.constants.InstanceSyncConstants;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.ng.core.service.entity.ServiceEntity;
-import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.service.deploymentsummary.DeploymentSummaryService;
 import io.harness.service.infrastructuremapping.InfrastructureMappingService;
@@ -67,7 +62,6 @@ import io.harness.service.instancesynchandlerfactory.InstanceSyncHandlerFactoryS
 import io.harness.service.instancesyncperpetualtask.InstanceSyncPerpetualTaskService;
 import io.harness.service.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTaskInfoService;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -82,8 +76,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.stubbing.Answer;
-import retrofit2.Call;
-import retrofit2.Response;
 
 public class InstanceSyncServiceImplTest extends InstancesTestBase {
   @Mock AbstractInstanceSyncHandler abstractInstanceSyncHandler;
@@ -99,7 +91,6 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
   @Spy @InjectMocks InstanceSyncServiceUtils instanceSyncServiceUtils;
   @InjectMocks InstanceSyncServiceImpl instanceSyncService;
   @Mock private InstanceSyncMonitoringService instanceSyncMonitoringService;
-  @Mock private AccountClient accountClient;
 
   private final String ACCOUNT_IDENTIFIER = "acc";
   private final String PERPETUAL_TASK = "perp";
@@ -169,7 +160,7 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
   @Test
   @Owner(developers = ARVIND)
   @Category(UnitTests.class)
-  public void processInstanceSyncForNewDeploymentTestWithSuccessAdd() throws IOException {
+  public void processInstanceSyncForNewDeploymentTestWithSuccessAdd() {
     InfrastructureMappingDTO infrastructureMappingDTO = InfrastructureMappingDTO.builder()
                                                             .accountIdentifier(ACCOUNT_IDENTIFIER)
                                                             .id(INFRASTRUCTURE_MAPPING_ID)
@@ -230,9 +221,6 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
     when(instanceSyncHandlerFactoryService.getInstanceSyncHandler(
              deploymentSummaryDTO.getDeploymentInfoDTO().getType(), infrastructureOutcome.getKind()))
         .thenReturn(abstractInstanceSyncHandler);
-    Call<RestResponse<Boolean>> request = mock(Call.class);
-    when(request.execute()).thenReturn(Response.success(new RestResponse<>(false)));
-    when(accountClient.isFeatureFlagEnabled(eq(FeatureName.FIX_CORRUPTED_INSTANCES.name()), any())).thenReturn(request);
 
     List<InstanceDTO> instanceDTOS = new ArrayList<>();
     instanceDTOS.add(
@@ -288,7 +276,7 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
   @Test
   @Owner(developers = ARVIND)
   @Category(UnitTests.class)
-  public void processInstanceSyncForNewDeploymentTestWithSuccessUpdate() throws IOException {
+  public void processInstanceSyncForNewDeploymentTestWithSuccessUpdate() {
     ArtifactDetails artifactDetails = ArtifactDetails.builder().artifactId(ID).build();
     InfrastructureMappingDTO infrastructureMappingDTO = InfrastructureMappingDTO.builder()
                                                             .accountIdentifier(ACCOUNT_IDENTIFIER)
@@ -351,9 +339,6 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
     when(instanceSyncHandlerFactoryService.getInstanceSyncHandler(
              deploymentSummaryDTO.getDeploymentInfoDTO().getType(), infrastructureOutcome.getKind()))
         .thenReturn(abstractInstanceSyncHandler);
-    Call<RestResponse<Boolean>> request = mock(Call.class);
-    when(request.execute()).thenReturn(Response.success(new RestResponse<>(false)));
-    when(accountClient.isFeatureFlagEnabled(eq(FeatureName.FIX_CORRUPTED_INSTANCES.name()), any())).thenReturn(request);
 
     List<InstanceDTO> instanceDTOS = new ArrayList<>();
     instanceDTOS.add(
