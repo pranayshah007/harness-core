@@ -270,7 +270,7 @@ public abstract class FileBasedAbstractWinRmExecutor {
         + "$DecodedString = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String(\"" + encodedFile
         + "\"))\n"
         + "Write-Host \"Decoding config file on the host.\"\n"
-        + "$decodedFile = \'" + destinationDirectoryPath + "\\" + filename + "\'\n"
+        + "$decodedFile = \"" + destinationDirectoryPath + "\\" + filename + "\"\n"
         + "[IO.File]::AppendAllText($decodedFile, $DecodedString) \n"
         + "Write-Host \"Appended to config file on the host.\"\n";
   }
@@ -282,7 +282,7 @@ public abstract class FileBasedAbstractWinRmExecutor {
   }
 
   private String getDeleteFileCommand(String destinationDirectoryPath, String filename) {
-    return "$decodedFile = \'" + destinationDirectoryPath + "\\" + filename + "\'\n"
+    return "$decodedFile = \"" + destinationDirectoryPath + "\\" + filename + "\"\n"
         + "Write-Host \"Clearing target config file $decodedFile  on the host.\"\n"
         + "if ([IO.File]::Exists($decodedFile)) {\n"
         + "  [IO.File]::Delete($decodedFile)\n"

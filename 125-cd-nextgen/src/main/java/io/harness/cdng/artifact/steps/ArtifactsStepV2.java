@@ -15,6 +15,7 @@ import io.harness.cdng.artifact.outcome.ArtifactsOutcome.ArtifactsOutcomeBuilder
 import io.harness.cdng.artifact.outcome.SidecarsOutcome;
 import io.harness.cdng.artifact.utils.ArtifactStepHelper;
 import io.harness.cdng.artifact.utils.ArtifactUtils;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.service.steps.ServiceStepsHelper;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
@@ -53,6 +54,7 @@ import software.wings.beans.LogWeight;
 
 import com.google.inject.Inject;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -80,6 +82,7 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
 
   @Inject private CDStepHelper cdStepHelper;
+  @Inject private CDExpressionResolver cdExpressionResolver;
 
   @Override
   public Class<EmptyStepParameters> getStepParametersClass() {
@@ -102,12 +105,13 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
       return AsyncExecutableResponse.newBuilder().build();
     }
 
-    final Set<String> taskIds = new HashSet<>();
-    final Map<String, ArtifactConfig> artifactConfigMap = new HashMap<>();
-
-    String primaryArtifactTaskId = null;
     final ArtifactListConfig artifacts = service.getServiceDefinition().getServiceSpec().getArtifacts();
 
+    resolveExpressions(ambiance, artifacts);
+
+    final Set<String> taskIds = new HashSet<>();
+    String primaryArtifactTaskId = null;
+    final Map<String, ArtifactConfig> artifactConfigMap = new HashMap<>();
     final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
     if (artifacts.getPrimary() != null) {
       primaryArtifactTaskId =
@@ -127,6 +131,17 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
     sweepingOutputService.consume(
         ambiance, ARTIFACTS_STEP_V_2, new ArtifactsStepV2SweepingOutput(primaryArtifactTaskId, artifactConfigMap), "");
     return AsyncExecutableResponse.newBuilder().addAllCallbackIds(taskIds).build();
+  }
+
+  private void resolveExpressions(Ambiance ambiance, ArtifactListConfig artifacts) {
+    final List<Object> toResolve = new ArrayList<>();
+    if (artifacts.getPrimary() != null) {
+      toResolve.add(artifacts.getPrimary());
+    }
+    if (isNotEmpty(artifacts.getSidecars())) {
+      toResolve.add(artifacts.getSidecars());
+    }
+    cdExpressionResolver.updateExpressions(ambiance, toResolve);
   }
 
   @Override

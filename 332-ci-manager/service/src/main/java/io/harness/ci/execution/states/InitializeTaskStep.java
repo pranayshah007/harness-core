@@ -145,7 +145,10 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
     CIInitializeTaskParams buildSetupTaskParams =
         buildSetupUtils.getBuildSetupTaskParams(initializeStepInfo, ambiance, logPrefix);
     boolean executeOnHarnessHostedDelegates = false;
+    boolean emitEvent = false;
+    String stageId = ambiance.getStageExecutionId();
     List<TaskSelector> taskSelectors = new ArrayList<>();
+
     // Secrets are in decrypted format for DLITE_VM type
     if (buildSetupTaskParams.getType() != DLITE_VM) {
       log.info("Created params for build task: {}", buildSetupTaskParams);
@@ -156,11 +159,13 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
       TaskSelector taskSelector = TaskSelector.newBuilder().setSelector(platformSelector).build();
       taskSelectors.add(taskSelector);
       executeOnHarnessHostedDelegates = true;
+
+      emitEvent = true;
     }
 
     return StepUtils.prepareTaskRequest(ambiance, getTaskData(stepElementParameters, buildSetupTaskParams),
         kryoSerializer, TaskCategory.DELEGATE_TASK_V2, Collections.emptyList(), true, null, taskSelectors,
-        Scope.PROJECT, EnvironmentType.ALL, executeOnHarnessHostedDelegates, new ArrayList<>());
+        Scope.PROJECT, EnvironmentType.ALL, executeOnHarnessHostedDelegates, new ArrayList<>(), emitEvent, stageId);
   }
 
   @Override

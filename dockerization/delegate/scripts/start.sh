@@ -127,7 +127,9 @@ fi
 
 if [ -e init.sh ]; then
     echo "Starting initialization script for delegate"
+    CURRENT_WORKING_DIRECTORY=$(pwd)
     source ./init.sh
+    cd "$CURRENT_WORKING_DIRECTORY"
     if [ $? -eq 0 ];
     then
       echo "Completed executing initialization script"

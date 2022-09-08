@@ -347,8 +347,10 @@ public class EcsCommandTaskNGHelper {
         createServiceRequest.serviceName(), ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
 
     if (!(optionalService.isPresent() && isServiceActive(optionalService.get()))) {
-      logCallback.saveExecutionLog(
-          format("Creating Service with name %s %n", createServiceRequest.serviceName()), LogLevel.INFO);
+      logCallback.saveExecutionLog(format("Creating Service %s with task definition %s and desired count %s %n",
+                                       createServiceRequest.serviceName(), createServiceRequest.taskDefinition(),
+                                       createServiceRequest.desiredCount()),
+          LogLevel.INFO);
       CreateServiceResponse createServiceResponse =
           createService(createServiceRequest, ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
 
@@ -378,7 +380,9 @@ public class EcsCommandTaskNGHelper {
       UpdateServiceRequest updateServiceRequest =
           EcsMapper.createServiceRequestToUpdateServiceRequest(createServiceRequest);
       logCallback.saveExecutionLog(
-          format("Updating Service with name %s %n", updateServiceRequest.service()), LogLevel.INFO);
+          format("Updating Service %s with task definition %s and desired count %s %n", updateServiceRequest.service(),
+              updateServiceRequest.taskDefinition(), updateServiceRequest.desiredCount()),
+          LogLevel.INFO);
       UpdateServiceResponse updateServiceResponse =
           updateService(updateServiceRequest, ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
 
@@ -423,8 +427,10 @@ public class EcsCommandTaskNGHelper {
           format("Deleted existing Service with name %s %n", createServiceRequest.serviceName()), LogLevel.INFO);
     }
 
-    logCallback.saveExecutionLog(
-        format("Creating Service with name %s %n", createServiceRequest.serviceName()), LogLevel.INFO);
+    logCallback.saveExecutionLog(format("Creating Service %s with task definition %s and desired count %s %n",
+                                     createServiceRequest.serviceName(), createServiceRequest.taskDefinition(),
+                                     createServiceRequest.desiredCount()),
+        LogLevel.INFO);
     CreateServiceResponse createServiceResponse =
         createService(createServiceRequest, ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
 

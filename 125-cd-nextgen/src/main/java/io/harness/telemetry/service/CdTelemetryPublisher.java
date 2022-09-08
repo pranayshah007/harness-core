@@ -50,7 +50,7 @@ public class CdTelemetryPublisher {
   private static final String COUNT_ACTIVE_SERVICES = "cd_license_services_used";
   private static final String COUNT_ACTIVE_SERVICE_INSTANCES = "cd_license_service_instances_used";
   private static final String ACCOUNT_DEPLOY_TYPE = "account_deploy_type";
-  private static final String HARNESS_PROD_CLUSTER_ID = "harness_prod_cd_cluster_id";
+  private static final String HARNESS_PROD_CLUSTER_ID = "harness_cluster_id";
   private static final String CG_COUNT_ACTIVE_SERVICES = "cd_license_cg_services_used";
   private static final String CG_COUNT_ACTIVE_SERVICE_INSTANCES = "cd_license_cg_service_instances_used";
   // Locking for a bit less than one day. It's ok to send a bit more than less considering downtime/etc

@@ -105,6 +105,7 @@ import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.service.beans.AzureWebAppServiceSpec;
+import io.harness.cdng.service.beans.CustomDeploymentServiceSpec;
 import io.harness.cdng.service.beans.EcsServiceSpec;
 import io.harness.cdng.service.beans.KubernetesServiceSpec;
 import io.harness.cdng.service.beans.NativeHelmServiceSpec;
@@ -237,7 +238,7 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(CustomScriptInlineSource.class, 130019);
     kryo.register(FetchAllArtifacts.class, 130020);
     kryo.register(ConfigFileOutcome.class, 130013);
-
+    kryo.register(CustomDeploymentServiceSpec.class, 130100);
     kryo.register(ApplicationSettingsConfiguration.class, 130014);
     kryo.register(ConnectionStringsConfiguration.class, 130015);
     kryo.register(StartupCommandConfiguration.class, 130016);

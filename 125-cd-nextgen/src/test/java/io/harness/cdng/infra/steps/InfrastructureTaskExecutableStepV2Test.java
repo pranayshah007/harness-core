@@ -558,7 +558,8 @@ public class InfrastructureTaskExecutableStepV2Test {
             .build())
         .when(sweepingOutputService)
         .resolveOptional(any(Ambiance.class),
-            eq(RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.INFRA_TASK_EXECUTABLE_STEP_V2)));
+            eq(RefObjectUtils.getSweepingOutputRefObject(
+                OutcomeExpressionConstants.INFRA_TASK_EXECUTABLE_STEP_OUTPUT)));
   }
 
   private InfrastructureConfig testPdcInfra() {

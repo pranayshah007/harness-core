@@ -58,9 +58,13 @@ public class DelegateMetricsServiceImpl implements DelegateMetricsService {
   public static final String SECRETS_CACHE_LOOKUPS = "delegate_secret_cache_lookups";
   public static final String SECRETS_CACHE_INSERTS = "delegate_secret_cache_inserts";
 
-  public static final String IMMUTABLE_DELEGATES = "immutable_delegates";
+  public static final String IMMUTABLE_DELEGATES = "immutable_delegate";
+  public static final String MUTABLE_DELEGATES = "mutable_delegate";
 
-  public static final String MUTABLE_DELEGATES = "mutable_delegates";
+  public static final String PERPETUAL_TASKS = "perpetual_tasks_num";
+  public static final String PERPETUAL_TASKS_ASSIGNED = "perpetual_tasks_assigned_num";
+  public static final String PERPETUAL_TASKS_UNASSIGNED = "perpetual_tasks_unassigned_num";
+  public static final String PERPETUAL_TASKS_TO_REBALANCE = "perpetual_tasks_to_rebalance_num";
 
   @Inject private MetricService metricService;
   @Inject private DelegateTaskMetricContextBuilder metricContextBuilder;

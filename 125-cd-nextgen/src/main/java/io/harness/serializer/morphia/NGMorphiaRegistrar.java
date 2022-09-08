@@ -15,6 +15,7 @@ import io.harness.cdng.artifact.steps.ArtifactStepParameters;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.execution.StageExecutionInfo;
 import io.harness.cdng.infra.beans.AzureWebAppInfraMapping;
+import io.harness.cdng.infra.beans.CustomDeploymentInfraMapping;
 import io.harness.cdng.infra.beans.EcsInfraMapping;
 import io.harness.cdng.infra.beans.InfraMapping;
 import io.harness.cdng.infra.beans.InfraUseFromStage;
@@ -58,6 +59,7 @@ public class NGMorphiaRegistrar implements MorphiaRegistrar {
     set.add(ServerlessAwsLambdaInfraMapping.class);
     set.add(SshWinRmAwsInfraMapping.class);
     set.add(AzureWebAppInfraMapping.class);
+    set.add(CustomDeploymentInfraMapping.class);
     set.add(EcsInfraMapping.class);
     set.add(CdTelemetrySentStatus.class);
     set.add(StageExecutionInfo.class);

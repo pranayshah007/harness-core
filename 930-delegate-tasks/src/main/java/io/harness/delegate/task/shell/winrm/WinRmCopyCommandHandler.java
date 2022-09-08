@@ -19,6 +19,8 @@ import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_DE
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_DESTINATION_PATH_SPECIFIED_HINT;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 
+import static software.wings.common.Constants.WINDOWS_HOME_DIR;
+
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -82,7 +84,7 @@ public class WinRmCopyCommandHandler implements CommandHandler {
     WinRmSessionConfigBuilder configBuilder = WinRmSessionConfig.builder()
                                                   .accountId(winRmCommandTaskParameters.getAccountId())
                                                   .executionId(winRmCommandTaskParameters.getExecutionId())
-                                                  .workingDirectory(copyCommandUnit.getWorkingDirectory())
+                                                  .workingDirectory(WINDOWS_HOME_DIR)
                                                   .commandUnitName(copyCommandUnit.getName())
                                                   .environment(winRmCommandTaskParameters.getEnvironmentVariables())
                                                   .hostname(winRmCommandTaskParameters.getHost())

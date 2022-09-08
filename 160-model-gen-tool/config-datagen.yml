@@ -99,6 +99,7 @@ mongo:
     mongoSSLEnabled: false
     mongoTrustStorePath:
     mongoTrustStorePassword:
+  aliasDBName: harness
 
 watcherMetadataUrl: file:///local-storage/wingswatchers/watcherlocal.txt
 delegateMetadataUrl: file:///local-storage/wingsdelegates/delegatelocal.txt

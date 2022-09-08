@@ -10,6 +10,7 @@ package io.harness.service.instancesyncperpetualtask;
 import static io.harness.perpetualtask.PerpetualTaskType.AWS_SSH_WINRM_INSTANCE_SYNC_NG;
 import static io.harness.perpetualtask.PerpetualTaskType.AZURE_SSH_WINRM_INSTANCE_SYNC_NG;
 import static io.harness.perpetualtask.PerpetualTaskType.AZURE_WEB_APP_NG_INSTANCE_SYNC;
+import static io.harness.perpetualtask.PerpetualTaskType.CUSTOM_DEPLOYMENT_INSTANCE_SYNC_NG;
 import static io.harness.perpetualtask.PerpetualTaskType.ECS_INSTANCE_SYNC;
 import static io.harness.perpetualtask.PerpetualTaskType.K8S_INSTANCE_SYNC;
 import static io.harness.perpetualtask.PerpetualTaskType.NATIVE_HELM_INSTANCE_SYNC;
@@ -23,6 +24,7 @@ import io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskhan
 import io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskhandler.aws.AwsSshWinrmInstanceSyncPerpetualTaskHandler;
 import io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskhandler.azure.AzureSshWinrmInstanceSyncPerpetualTaskHandler;
 import io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskhandler.azure.AzureWebAppInstanceSyncPerpetualTaskHandler;
+import io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskhandler.customDeployment.CustomDeploymentInstanceSyncPerpetualTaskHandler;
 import io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskhandler.ecs.EcsInstanceSyncPerpetualTaskHandler;
 import io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskhandler.helm.NativeHelmInstanceSyncPerpetualTaskHandler;
 import io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskhandler.k8s.K8SInstanceSyncPerpetualTaskHandler;
@@ -44,8 +46,8 @@ public final class InstanceSyncPerpetualTaskServiceRegister {
   private final EcsInstanceSyncPerpetualTaskHandler ecsInstanceSyncPerpetualTaskHandler;
   private final PdcInstanceSyncPerpetualTaskHandler pdcInstanceSyncPerpetualTaskHandler;
   private final AzureSshWinrmInstanceSyncPerpetualTaskHandler azureSshWinrmInstanceSyncPerpetualTaskHandler;
-
   private final AwsSshWinrmInstanceSyncPerpetualTaskHandler awsSshWinrmInstanceSyncPerpetualTaskHandler;
+  private final CustomDeploymentInstanceSyncPerpetualTaskHandler CustomDeploymentInstanceSyncPerpetualTaskHandler;
 
   public InstanceSyncPerpetualTaskHandler getInstanceSyncPerpetualService(String perpetualTaskType) {
     switch (perpetualTaskType) {
@@ -65,6 +67,8 @@ public final class InstanceSyncPerpetualTaskServiceRegister {
         return azureSshWinrmInstanceSyncPerpetualTaskHandler;
       case AWS_SSH_WINRM_INSTANCE_SYNC_NG:
         return awsSshWinrmInstanceSyncPerpetualTaskHandler;
+      case CUSTOM_DEPLOYMENT_INSTANCE_SYNC_NG:
+        return CustomDeploymentInstanceSyncPerpetualTaskHandler;
       default:
         throw new UnexpectedException(
             "No instance sync service registered for perpetual task type: " + perpetualTaskType);

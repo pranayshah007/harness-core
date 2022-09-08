@@ -89,13 +89,13 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
   public ResponseDTO<InputSetResponseDTOPMS> getInputSet(String inputSetIdentifier,
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgIdentifier,
       @NotNull @ProjectIdentifier String projectIdentifier, @NotNull @ResourceIdentifier String pipelineIdentifier,
-      GitEntityFindInfoDTO gitEntityBasicInfo) {
+      String pipelineBranch, String pipelineRepoId, GitEntityFindInfoDTO gitEntityBasicInfo) {
     log.info(String.format("Retrieving input set with identifier %s for pipeline %s in project %s, org %s, account %s",
         inputSetIdentifier, pipelineIdentifier, projectIdentifier, orgIdentifier, accountId));
     Optional<InputSetEntity> optionalInputSetEntity;
     try {
-      optionalInputSetEntity = pmsInputSetService.get(
-          accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetIdentifier, false);
+      optionalInputSetEntity = pmsInputSetService.get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+          inputSetIdentifier, false, pipelineBranch, pipelineRepoId);
     } catch (InvalidInputSetException e) {
       return ResponseDTO.newResponse(PMSInputSetElementMapper.toInputSetResponseDTOPMSWithErrors(
           e.getInputSetEntity(), (InputSetErrorWrapperDTOPMS) e.getMetadata()));
@@ -114,14 +114,14 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
   public ResponseDTO<OverlayInputSetResponseDTOPMS> getOverlayInputSet(String inputSetIdentifier,
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgIdentifier,
       @NotNull @ProjectIdentifier String projectIdentifier, @NotNull @ResourceIdentifier String pipelineIdentifier,
-      GitEntityFindInfoDTO gitEntityBasicInfo) {
+      String pipelineBranch, String pipelineRepoId, GitEntityFindInfoDTO gitEntityBasicInfo) {
     log.info(String.format(
         "Retrieving overlay input set with identifier %s for pipeline %s in project %s, org %s, account %s",
         inputSetIdentifier, pipelineIdentifier, projectIdentifier, orgIdentifier, accountId));
     Optional<InputSetEntity> optionalInputSetEntity;
     try {
-      optionalInputSetEntity = pmsInputSetService.get(
-          accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetIdentifier, false);
+      optionalInputSetEntity = pmsInputSetService.get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+          inputSetIdentifier, false, pipelineBranch, pipelineRepoId);
     } catch (InvalidOverlayInputSetException e) {
       return ResponseDTO.newResponse(PMSInputSetElementMapper.toOverlayInputSetResponseDTOPMS(
           e.getInputSetEntity(), true, ((OverlayInputSetErrorWrapperDTOPMS) e.getMetadata()).getInvalidReferences()));

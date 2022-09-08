@@ -50,6 +50,7 @@ public class CIDefaultEntityManager {
       DockerConnectorDTO dockerConnectorDTO = DockerConnectorDTO.builder()
                                                   .dockerRegistryUrl("https://index.docker.io/v2/")
                                                   .auth(authenticationDTO)
+                                                  .executeOnDelegate(false)
                                                   .providerType(DockerRegistryProviderType.DOCKER_HUB)
                                                   .build();
       ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder()

@@ -80,13 +80,6 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep implements SyncExe
     sweepingOutputService.consume(
         ambiance, OutcomeExpressionConstants.CONFIG_FILES, configFilesOutcome, StepCategory.STAGE.name());
 
-    return StepResponse.builder()
-        .status(Status.SUCCEEDED)
-        .stepOutcome(StepResponse.StepOutcome.builder()
-                         .name(OutcomeExpressionConstants.CONFIG_FILES)
-                         .outcome(configFilesOutcome)
-                         .group(StepCategory.STAGE.name())
-                         .build())
-        .build();
+    return StepResponse.builder().status(Status.SUCCEEDED).build();
   }
 }
