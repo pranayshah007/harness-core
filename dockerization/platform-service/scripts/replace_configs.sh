@@ -10,7 +10,7 @@ replace_key_value () {
   CONFIG_KEY="$1";
   CONFIG_VALUE="$2";
   if [[ "" != "$CONFIG_VALUE" ]]; then
-    yq -i '.$CONFIG_KEY="$CONFIG_VALUE"' $CONFIG_FILE
+    yq -i '.env(CONFIG_KEY)=env(CONFIG_VALUE)' $CONFIG_FILE
   fi
 }
 
@@ -19,7 +19,7 @@ write_mongo_params() {
   for PARAM_PAIR in "${PARAMS[@]}"; do
     NAME=$(cut -d= -f 1 <<< "$PARAM_PAIR")
     VALUE=$(cut -d= -f 2 <<< "$PARAM_PAIR")
-    yq -i '.$1.params.$NAME="$VALUE"' $CONFIG_FILE
+    yq -i '.env(1.params.$NAME)=env(VALUE)' $CONFIG_FILE
   done
 }
 
@@ -29,17 +29,17 @@ write_mongo_hosts_and_ports() {
     HOST=$(cut -d: -f 1 <<< "${HOST_AND_PORT[$INDEX]}")
     PORT=$(cut -d: -f 2 -s <<< "${HOST_AND_PORT[$INDEX]}")
 
-    yq -i '.$1.hosts[$INDEX].host="$HOST"' $CONFIG_FILE
+    yq -i '.env(1.hosts[$INDEX].host)=env(HOST)' $CONFIG_FILE
     if [[ "" != "$PORT" ]]; then
-      yq -i '.$1.hosts[$INDEX].port="$PORT"' $CONFIG_FILE
+      yq -i '.env(1.hosts[$INDEX].port)=env(PORT)' $CONFIG_FILE
     fi
   done
 }
 
-yq -i '.server.adminConnectors="[]"' $CONFIG_FILE
+yq -i '.server.adminConnectors=[]' $CONFIG_FILE
 
 if [[ "" != "$LOGGING_LEVEL" ]]; then
-    yq -i '.logging.level="$LOGGING_LEVEL"' $CONFIG_FILE
+    yq -i '.logging.level=env(LOGGING_LEVEL)' $CONFIG_FILE
 fi
 
 if [[ "" != "$LOGGERS" ]]; then
@@ -47,107 +47,107 @@ if [[ "" != "$LOGGERS" ]]; then
   for ITEM in "${LOGGER_ITEMS[@]}"; do
     LOGGER=`echo $ITEM | awk -F= '{print $1}'`
     LOGGER_LEVEL=`echo $ITEM | awk -F= '{print $2}'`
-    yq -i '.logging.loggers.[$LOGGER]="${LOGGER_LEVEL}"' $CONFIG_FILE
+    yq -i '.logging.loggers.[env(LOGGER)]=env(LOGGER_LEVEL)' $CONFIG_FILE
   done
 fi
 
 if [[ "" != "$SERVER_PORT" ]]; then
-  yq -i '.server.applicationConnectors[0].port="$SERVER_PORT"' $CONFIG_FILE
+  yq -i '.server.applicationConnectors[0].port=env(SERVER_PORT)' $CONFIG_FILE
 else
   yq -i '.server.applicationConnectors[0].port="9005"' $CONFIG_FILE
 fi
 
 if [[ "" != "$SERVER_MAX_THREADS" ]]; then
-  yq -i '.server.maxThreads="$SERVER_MAX_THREADS"' $CONFIG_FILE
+  yq -i '.server.maxThreads=env(SERVER_MAX_THREADS)' $CONFIG_FILE
 fi
 
 if [[ "" != "$ALLOWED_ORIGINS" ]]; then
   yq -i 'del(.allowedOrigins)' $CONFIG_FILE
-  yq -i '.allowedOrigins="$ALLOWED_ORIGINS"' $CONFIG_FILE
+  yq -i '.allowedOrigins=env(ALLOWED_ORIGINS)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_URI" ]]; then
-  yq -i '.notificationServiceConfig.mongo.uri="${MONGO_URI//\\&/&}"' $CONFIG_FILE
+  yq -i '.notificationServiceConfig.mongo.uri=env(MONGO_URI)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_CONNECT_TIMEOUT" ]]; then
-  yq -i '.notificationServiceConfig.mongo.connectTimeout="$MONGO_CONNECT_TIMEOUT"' $CONFIG_FILE
+  yq -i '.notificationServiceConfig.mongo.connectTimeout=env(MONGO_CONNECT_TIMEOUT)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_SERVER_SELECTION_TIMEOUT" ]]; then
-  yq -i '.notificationServiceConfig.mongo.serverSelectionTimeout="$MONGO_SERVER_SELECTION_TIMEOUT"' $CONFIG_FILE
+  yq -i '.notificationServiceConfig.mongo.serverSelectionTimeout=env(MONGO_SERVER_SELECTION_TIMEOUT)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MAX_CONNECTION_IDLE_TIME" ]]; then
-  yq -i '.notificationServiceConfig.mongo.maxConnectionIdleTime="$MAX_CONNECTION_IDLE_TIME"' $CONFIG_FILE
+  yq -i '.notificationServiceConfig.mongo.maxConnectionIdleTime=env(MAX_CONNECTION_IDLE_TIME)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_CONNECTIONS_PER_HOST" ]]; then
-  yq -i '.notificationServiceConfig.mongo.connectionsPerHost="$MONGO_CONNECTIONS_PER_HOST"' $CONFIG_FILE
+  yq -i '.notificationServiceConfig.mongo.connectionsPerHost=env(MONGO_CONNECTIONS_PER_HOST)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MANAGER_CLIENT_SECRET" ]]; then
-  yq -i '.secrets.managerServiceSecret="$MANAGER_CLIENT_SECRET"' $CONFIG_FILE
+  yq -i '.secrets.managerServiceSecret=env(MANAGER_CLIENT_SECRET)' $CONFIG_FILE
 fi
 
 if [[ "" != "$AUTH_ENABLED" ]]; then
-  yq -i '.enableAuth="$AUTH_ENABLED"' $CONFIG_FILE
+  yq -i '.enableAuth=env(AUTH_ENABLED)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MANAGER_CLIENT_BASEURL" ]]; then
-  yq -i '.managerClientConfig.baseUrl="$MANAGER_CLIENT_BASEURL"' $CONFIG_FILE
+  yq -i '.managerClientConfig.baseUrl=env(MANAGER_CLIENT_BASEURL)' $CONFIG_FILE
 fi
 
 if [[ "" != "$SMTP_HOST" ]]; then
-  yq -i '.notificationServiceConfig.smtp.host="$SMTP_HOST"' $CONFIG_FILE
+  yq -i '.notificationServiceConfig.smtp.host=env(SMTP_HOST)' $CONFIG_FILE
 fi
 
 if [[ "" != "$SMTP_PORT" ]]; then
-  yq -i '.notificationServiceConfig.smtp.port="$SMTP_PORT"' $CONFIG_FILE
+  yq -i '.notificationServiceConfig.smtp.port=env(SMTP_PORT)' $CONFIG_FILE
 fi
 
 if [[ "" != "$SMTP_USERNAME" ]]; then
-  yq -i '.notificationServiceConfig.smtp.username="$SMTP_USERNAME"' $CONFIG_FILE
+  yq -i '.notificationServiceConfig.smtp.username=env(SMTP_USERNAME)' $CONFIG_FILE
 fi
 
 if [[ "" != "$SMTP_PASSWORD" ]]; then
-  yq -i '.notificationServiceConfig.smtp.password="$SMTP_PASSWORD"' $CONFIG_FILE
+  yq -i '.notificationServiceConfig.smtp.password=env(SMTP_PASSWORD)' $CONFIG_FILE
 fi
 
 if [[ "" != "$SMTP_USE_SSL" ]]; then
-  yq -i '.notificationServiceConfig.smtp.useSSL="$SMTP_USE_SSL"' $CONFIG_FILE
+  yq -i '.notificationServiceConfig.smtp.useSSL=env(SMTP_USE_SSL)' $CONFIG_FILE
 fi
 
 if [[ "" != "$OVERRIDE_PREDEFINED_TEMPLATES" ]]; then
-  yq -i '.notificationServiceConfig.seedDataConfiguration.shouldOverrideAllPredefinedTemplates="$OVERRIDE_PREDEFINED_TEMPLATES"' $CONFIG_FILE
+  yq -i '.notificationServiceConfig.seedDataConfiguration.shouldOverrideAllPredefinedTemplates=env(OVERRIDE_PREDEFINED_TEMPLATES)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_MESSAGE_BROKER_URI" ]]; then
-  yq -i '.notificationClient.messageBroker.uri="$MONGO_MESSAGE_BROKER_URI"' $CONFIG_FILE
+  yq -i '.notificationClient.messageBroker.uri=env(MONGO_MESSAGE_BROKER_URI)' $CONFIG_FILE
 fi
 
 if [[ "" != "$RBAC_URL" ]]; then
-  yq -i '.rbacServiceConfig.baseUrl="$RBAC_URL"' $CONFIG_FILE
+  yq -i '.rbacServiceConfig.baseUrl=env(RBAC_URL)' $CONFIG_FILE
 fi
 
 if [[ "" != "$NEXT_GEN_MANAGER_SECRET" ]]; then
-  yq -i '.secrets.ngManagerServiceSecret="$NEXT_GEN_MANAGER_SECRET"' $CONFIG_FILE
+  yq -i '.secrets.ngManagerServiceSecret=env(NEXT_GEN_MANAGER_SECRET)' $CONFIG_FILE
 fi
 
 if [[ "" != "$JWT_AUTH_SECRET" ]]; then
-  yq -i '.secrets.jwtAuthSecret="$JWT_AUTH_SECRET"' $CONFIG_FILE
+  yq -i '.secrets.jwtAuthSecret=env(JWT_AUTH_SECRET)' $CONFIG_FILE
 fi
 
 if [[ "" != "$JWT_IDENTITY_SERVICE_SECRET" ]]; then
-  yq -i '.secrets.jwtIdentityServiceSecret="$JWT_IDENTITY_SERVICE_SECRET"' $CONFIG_FILE
+  yq -i '.secrets.jwtIdentityServiceSecret=env(JWT_IDENTITY_SERVICE_SECRET)' $CONFIG_FILE
 fi
 
 if [[ "" != "$GRPC_MANAGER_TARGET" ]]; then
-  yq -i '.notificationServiceConfig.delegateServiceGrpcConfig.target="$GRPC_MANAGER_TARGET"' $CONFIG_FILE
+  yq -i '.notificationServiceConfig.delegateServiceGrpcConfig.target=env(GRPC_MANAGER_TARGET)' $CONFIG_FILE
 fi
 
 if [[ "" != "$GRPC_MANAGER_AUTHORITY" ]]; then
-  yq -i '.notificationServiceConfig.delegateServiceGrpcConfig.authority="$GRPC_MANAGER_AUTHORITY"' $CONFIG_FILE
+  yq -i '.notificationServiceConfig.delegateServiceGrpcConfig.authority=env(GRPC_MANAGER_AUTHORITY)' $CONFIG_FILE
 fi
 
 if [[ "$STACK_DRIVER_LOGGING_ENABLED" == "true" ]]; then
@@ -158,73 +158,73 @@ else
 fi
 
 if [[ "" != "$AUDIT_MONGO_URI" ]]; then
-  yq -i '.auditServiceConfig.mongo.uri="${AUDIT_MONGO_URI//\\&/&}"' $CONFIG_FILE
+  yq -i '.auditServiceConfig.mongo.uri=env(AUDIT_MONGO_URI)' $CONFIG_FILE
 fi
 
 if [[ "" != "$AUDIT_MONGO_CONNECT_TIMEOUT" ]]; then
-  yq -i '.auditServiceConfig.mongo.connectTimeout="$AUDIT_MONGO_CONNECT_TIMEOUT"' $CONFIG_FILE
+  yq -i '.auditServiceConfig.mongo.connectTimeout=env(AUDIT_MONGO_CONNECT_TIMEOUT)' $CONFIG_FILE
 fi
 
 if [[ "" != "$AUDIT_MONGO_SERVER_SELECTION_TIMEOUT" ]]; then
-  yq -i '.auditServiceConfig.mongo.serverSelectionTimeout="$AUDIT_MONGO_SERVER_SELECTION_TIMEOUT"' $CONFIG_FILE
+  yq -i '.auditServiceConfig.mongo.serverSelectionTimeout=env(AUDIT_MONGO_SERVER_SELECTION_TIMEOUT)' $CONFIG_FILE
 fi
 
 if [[ "" != "$AUDIT_MAX_CONNECTION_IDLE_TIME" ]]; then
-  yq -i '.auditServiceConfig.mongo.maxConnectionIdleTime="$AUDIT_MAX_CONNECTION_IDLE_TIME"' $CONFIG_FILE
+  yq -i '.auditServiceConfig.mongo.maxConnectionIdleTime=env(AUDIT_MAX_CONNECTION_IDLE_TIME)' $CONFIG_FILE
 fi
 
 if [[ "" != "$AUDIT_MONGO_CONNECTIONS_PER_HOST" ]]; then
-  yq -i '.auditServiceConfig.mongo.connectionsPerHost="$AUDIT_MONGO_CONNECTIONS_PER_HOST"' $CONFIG_FILE
+  yq -i '.auditServiceConfig.mongo.connectionsPerHost=env(AUDIT_MONGO_CONNECTIONS_PER_HOST)' $CONFIG_FILE
 fi
 
 if [[ "" != "$AUDIT_MONGO_INDEX_MANAGER_MODE" ]]; then
-  yq -i '.auditServiceConfig.mongo.indexManagerMode="$AUDIT_MONGO_INDEX_MANAGER_MODE"' $CONFIG_FILE
+  yq -i '.auditServiceConfig.mongo.indexManagerMode=env(AUDIT_MONGO_INDEX_MANAGER_MODE)' $CONFIG_FILE
 fi
 
 if [[ "" != "$ENABLE_AUDIT_SERVICE" ]]; then
-  yq -i '.auditServiceConfig.enableAuditService="$ENABLE_AUDIT_SERVICE"' $CONFIG_FILE
+  yq -i '.auditServiceConfig.enableAuditService=env(ENABLE_AUDIT_SERVICE)' $CONFIG_FILE
 fi
 
 if [[ "" != "$ACCESS_CONTROL_ENABLED" ]]; then
-  yq -i '.accessControlClient.enableAccessControl="$ACCESS_CONTROL_ENABLED"' $CONFIG_FILE
+  yq -i '.accessControlClient.enableAccessControl=env(ACCESS_CONTROL_ENABLED)' $CONFIG_FILE
 fi
 
 if [[ "" != "$ACCESS_CONTROL_BASE_URL" ]]; then
-  yq -i '.accessControlClient.accessControlServiceConfig.baseUrl="$ACCESS_CONTROL_BASE_URL"' $CONFIG_FILE
+  yq -i '.accessControlClient.accessControlServiceConfig.baseUrl=env(ACCESS_CONTROL_BASE_URL)' $CONFIG_FILE
 fi
 
 if [[ "" != "$ACCESS_CONTROL_SECRET" ]]; then
-  yq -i '.accessControlClient.accessControlServiceSecret="$ACCESS_CONTROL_SECRET"' $CONFIG_FILE
+  yq -i '.accessControlClient.accessControlServiceSecret=env(ACCESS_CONTROL_SECRET)' $CONFIG_FILE
 fi
 if [[ "" != "$EVENTS_FRAMEWORK_REDIS_URL" ]]; then
-  yq -i '.resourceGroupServiceConfig.redis.redisUrl="$EVENTS_FRAMEWORK_REDIS_URL"' $CONFIG_FILE
+  yq -i '.resourceGroupServiceConfig.redis.redisUrl=env(EVENTS_FRAMEWORK_REDIS_URL)' $CONFIG_FILE
 fi
 
 if [[ "" != "$EVENTS_FRAMEWORK_ENV_NAMESPACE" ]]; then
-  yq -i '.resourceGroupServiceConfig.redis.envNamespace="$EVENTS_FRAMEWORK_ENV_NAMESPACE"' $CONFIG_FILE
+  yq -i '.resourceGroupServiceConfig.redis.envNamespace=env(EVENTS_FRAMEWORK_ENV_NAMESPACE)' $CONFIG_FILE
 fi
 
 if [[ "" != "$EVENTS_FRAMEWORK_USE_SENTINEL" ]]; then
-  yq -i '.resourceGroupServiceConfig.redis.sentinel="$EVENTS_FRAMEWORK_USE_SENTINEL"' $CONFIG_FILE
+  yq -i '.resourceGroupServiceConfig.redis.sentinel=env(EVENTS_FRAMEWORK_USE_SENTINEL)' $CONFIG_FILE
 fi
 
 if [[ "" != "$EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME" ]]; then
-  yq -i '.resourceGroupServiceConfig.redis.masterName="$EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME"' $CONFIG_FILE
+  yq -i '.resourceGroupServiceConfig.redis.masterName=env(EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME)' $CONFIG_FILE
 fi
 
 if [[ "" != "$EVENTS_FRAMEWORK_REDIS_USERNAME" ]]; then
-  yq -i '.resourceGroupServiceConfig.redis.userName="$EVENTS_FRAMEWORK_REDIS_USERNAME"' $CONFIG_FILE
+  yq -i '.resourceGroupServiceConfig.redis.userName=env(EVENTS_FRAMEWORK_REDIS_USERNAME)' $CONFIG_FILE
 fi
 
 if [[ "" != "$EVENTS_FRAMEWORK_REDIS_PASSWORD" ]]; then
-  yq -i '.resourceGroupServiceConfig.redis.password="$EVENTS_FRAMEWORK_REDIS_PASSWORD"' $CONFIG_FILE
+  yq -i '.resourceGroupServiceConfig.redis.password=env(EVENTS_FRAMEWORK_REDIS_PASSWORD)' $CONFIG_FILE
 fi
 
 if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then
   IFS=',' read -ra SENTINEL_URLS <<< "$EVENTS_FRAMEWORK_REDIS_SENTINELS"
   INDEX=0
   for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
-    yq -i '.resourceGroupServiceConfig.redis.sentinelUrls.[$INDEX]="${REDIS_SENTINEL_URL}"' $CONFIG_FILE
+    yq -i '.resourceGroupServiceConfig.redis.sentinelUrls.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
     INDEX=$(expr $INDEX + 1)
   done
 fi
@@ -233,7 +233,7 @@ if [[ "" != "$LOCK_CONFIG_REDIS_SENTINELS" ]]; then
   IFS=',' read -ra SENTINEL_URLS <<< "$LOCK_CONFIG_REDIS_SENTINELS"
   INDEX=0
   for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
-    yq -i '.resourceGroupServiceConfig.redisLockConfig.sentinelUrls.[$INDEX]="${REDIS_SENTINEL_URL}"' $CONFIG_FILE
+    yq -i '.resourceGroupServiceConfig.redisLockConfig.sentinelUrls.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
     INDEX=$(expr $INDEX + 1)
   done
 fi

@@ -10,7 +10,7 @@ replace_key_value () {
   CONFIG_KEY="$1";
   CONFIG_VALUE="$2";
   if [[ "" != "$CONFIG_VALUE" ]]; then
-    yq -i '.$CONFIG_KEY="$CONFIG_VALUE"' $CONFIG_FILE
+    yq -i '.env(CONFIG_KEY)=env(CONFIG_VALUE)' $CONFIG_FILE
   fi
 }
 
@@ -20,9 +20,9 @@ write_mongo_hosts_and_ports() {
     HOST=$(cut -d: -f 1 <<< "${HOST_AND_PORT[$INDEX]}")
     PORT=$(cut -d: -f 2 -s <<< "${HOST_AND_PORT[$INDEX]}")
 
-    yq -i '.$1.hosts[$INDEX].host="$HOST"' $CONFIG_FILE
+    yq -i '.env(1.hosts[$INDEX].host)=env(HOST)' $CONFIG_FILE
     if [[ "" != "$PORT" ]]; then
-      yq -i '.$1.hosts[$INDEX].port="$PORT"' $CONFIG_FILE
+      yq -i '.env(1.hosts[$INDEX].port)=env(PORT)' $CONFIG_FILE
     fi
   done
 }
@@ -32,7 +32,7 @@ write_mongo_params() {
   for PARAM_PAIR in "${PARAMS[@]}"; do
     NAME=$(cut -d= -f 1 <<< "$PARAM_PAIR")
     VALUE=$(cut -d= -f 2 <<< "$PARAM_PAIR")
-    yq -i '.$1.params.$NAME="$VALUE"' $CONFIG_FILE
+    yq -i '.env(1.params.$NAME)=env(VALUE)' $CONFIG_FILE
   done
 }
 
@@ -133,7 +133,7 @@ if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then
   IFS=',' read -ra SENTINEL_URLS <<< "$EVENTS_FRAMEWORK_REDIS_SENTINELS"
   INDEX=0
   for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
-    yq -i '.eventsFramework.redis.sentinelUrls.[$INDEX]="${REDIS_SENTINEL_URL}"' $CONFIG_FILE
+    yq -i '.eventsFramework.redis.sentinelUrls.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
     INDEX=$(expr $INDEX + 1)
   done
 fi
@@ -146,19 +146,19 @@ else
 fi
 
 if [[ "" != "$SEGMENT_ENABLED" ]]; then
-  yq -i '.segmentConfiguration.enabled="$SEGMENT_ENABLED"' $CONFIG_FILE
+  yq -i '.segmentConfiguration.enabled=env(SEGMENT_ENABLED)' $CONFIG_FILE
 fi
 
 if [[ "" != "$SEGMENT_APIKEY" ]]; then
-  yq -i '.segmentConfiguration.apiKey="$SEGMENT_APIKEY"' $CONFIG_FILE
+  yq -i '.segmentConfiguration.apiKey=env(SEGMENT_APIKEY)' $CONFIG_FILE
 fi
 
 if [[ "" != "$AUDIT_CLIENT_BASEURL" ]]; then
-  yq -i '.auditClientConfig.baseUrl="$AUDIT_CLIENT_BASEURL"' $CONFIG_FILE
+  yq -i '.auditClientConfig.baseUrl=env(AUDIT_CLIENT_BASEURL)' $CONFIG_FILE
 fi
 
 if [[ "" != "$AUDIT_ENABLED" ]]; then
-  yq -i '.enableAudit="$AUDIT_ENABLED"' $CONFIG_FILE
+  yq -i '.enableAudit=env(AUDIT_ENABLED)' $CONFIG_FILE
 fi
 
 replace_key_value outboxPollConfig.initialDelayInSeconds "$OUTBOX_POLL_INITIAL_DELAY"
