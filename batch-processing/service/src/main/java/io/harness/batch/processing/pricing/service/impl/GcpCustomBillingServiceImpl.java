@@ -53,6 +53,7 @@ public class GcpCustomBillingServiceImpl implements GcpCustomBillingService {
   @Override
   public VMInstanceBillingData getComputeVMPricingInfo(InstanceData instanceData, Instant startTime, Instant endTime) {
     String resourceId = cloudResourceIdHelper.getResourceId(instanceData);
+    log.info("GCP: FETCHED Key (resourceId) is: {}", resourceId);
     if (null != resourceId) {
       VMInstanceBillingData vmInstanceBillingData =
           gcpResourceBillingCache.getIfPresent(new CacheKey(resourceId, startTime, endTime));
@@ -74,8 +75,9 @@ public class GcpCustomBillingServiceImpl implements GcpCustomBillingService {
     Map<String, VMInstanceBillingData> gcpVMBillingData =
         bigQueryHelperService.getGcpVMBillingData(resourceIds, startTime, endTime, dataSetId);
     log.info("GCPVMBillingData size fetched from BQ: {}", gcpVMBillingData.size());
-    gcpVMBillingData.forEach(
-        (resourceId, vmInstanceBillingData)
-            -> gcpResourceBillingCache.put(new CacheKey(resourceId, startTime, endTime), vmInstanceBillingData));
+    gcpVMBillingData.forEach((resourceId, vmInstanceBillingData) -> {
+      log.info("GCP: Updated Key (resourceId) is: {}", resourceId);
+      gcpResourceBillingCache.put(new CacheKey(resourceId, startTime, endTime), vmInstanceBillingData);
+    });
   }
 }
