@@ -199,7 +199,6 @@ public class ViewsQueryBuilder {
     }
 
     if (!aggregations.isEmpty()) {
-      // TODO: Add Shared Cost Aggregations
       decorateQueryWithAggregations(selectQuery, aggregations);
       decorateQueryWithSharedCostAggregations(selectQuery, groupByEntity);
     }
