@@ -54,7 +54,16 @@ public class GcpCustomBillingServiceImpl implements GcpCustomBillingService {
   public VMInstanceBillingData getComputeVMPricingInfo(InstanceData instanceData, Instant startTime, Instant endTime) {
     String resourceId = cloudResourceIdHelper.getResourceId(instanceData);
     if (null != resourceId) {
-      return gcpResourceBillingCache.getIfPresent(new CacheKey(resourceId, startTime, endTime));
+      VMInstanceBillingData vmInstanceBillingData =
+          gcpResourceBillingCache.getIfPresent(new CacheKey(resourceId, startTime, endTime));
+      if (vmInstanceBillingData == null) {
+        log.info("GCP: fetching custom data from cache. RETURNED NULL");
+        return null;
+      }
+      log.info("GCP: fetching custom data from cache. ComputeCost: {}, CPU Cost: {}, MemoryCost: {}",
+          vmInstanceBillingData.getComputeCost(), vmInstanceBillingData.getCpuCost(),
+          vmInstanceBillingData.getMemoryCost());
+      return vmInstanceBillingData;
     }
     return null;
   }

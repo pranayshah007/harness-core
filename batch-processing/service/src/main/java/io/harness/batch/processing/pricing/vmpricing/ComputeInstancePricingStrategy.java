@@ -160,6 +160,10 @@ public class ComputeInstancePricingStrategy implements InstancePricingStrategy {
     String awsDataSetId = customBillingMetaDataService.getAwsDataSetId(instanceData.getAccountId());
     String azureDataSetId = customBillingMetaDataService.getAzureDataSetId(instanceData.getAccountId());
     String gcpDataSetId = customBillingMetaDataService.getGcpDataSetId(instanceData.getAccountId());
+
+    log.info("awsDataSetId : {}, azureDataSetId: {}, gcpDataSetId: {} and cloudProvider: {}", awsDataSetId,
+        azureDataSetId, gcpDataSetId, cloudProvider);
+
     if (cloudProvider == CloudProvider.AWS && null != awsDataSetId) {
       vmInstanceBillingData = awsCustomBillingService.getComputeVMPricingInfo(instanceData, startTime, endTime);
     } else if (cloudProvider == CloudProvider.AZURE && null != azureDataSetId) {
@@ -170,6 +174,7 @@ public class ComputeInstancePricingStrategy implements InstancePricingStrategy {
 
     if (null != vmInstanceBillingData && !Double.isNaN(vmInstanceBillingData.getComputeCost())) {
       double pricePerHr = (vmInstanceBillingData.getComputeCost() * 3600) / parentInstanceActiveSecond;
+      log.info("CUR Pricing, pricePerHour: {}", pricePerHr);
       if (!Double.isNaN(vmInstanceBillingData.getRate()) && vmInstanceBillingData.getRate() > 0.0) {
         pricePerHr = vmInstanceBillingData.getRate();
       }
