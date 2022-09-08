@@ -14,9 +14,12 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
+import io.harness.cvng.beans.ThresholdConfigType;
 import io.harness.cvng.beans.TimeSeriesMetricType;
 import io.harness.cvng.core.beans.HealthSourceQueryType;
+import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.DynatraceHealthSourceSpec;
+import io.harness.cvng.core.constant.MonitoredServiceConstants;
 import io.harness.cvng.core.entities.DynatraceCVConfig.DynatraceMetricInfo;
 import io.harness.cvng.core.services.CVNextGenConstants;
 import io.harness.cvng.core.utils.analysisinfo.AnalysisInfoUtility;
@@ -115,6 +118,42 @@ public class DynatraceCVConfig extends MetricCVConfig<DynatraceMetricInfo> {
                                   .build());
     });
     this.setMetricPack(metricPack);
+  }
+
+  public void addMetricThresholds(Set<TimeSeriesMetricPackDTO> timeSeriesMetricPacks) {
+    if (isEmpty(timeSeriesMetricPacks)) {
+      return;
+    }
+    getMetricPack().getMetrics().forEach(metric -> {
+      timeSeriesMetricPacks.stream()
+          .filter(timeSeriesMetricPack
+              -> timeSeriesMetricPack.getIdentifier().equalsIgnoreCase(MonitoredServiceConstants.CUSTOM_METRIC_PACK))
+          .forEach(timeSeriesMetricPackDTO -> {
+            if (!isEmpty(timeSeriesMetricPackDTO.getMetricThresholds())) {
+              timeSeriesMetricPackDTO.getMetricThresholds()
+                  .stream()
+                  .filter(metricPackDTO -> metric.getName().equals(metricPackDTO.getMetricName()))
+                  .forEach(metricPackDTO -> metricPackDTO.getTimeSeriesThresholdCriteria().forEach(criteria -> {
+                    List<TimeSeriesThreshold> timeSeriesThresholds =
+                        metric.getThresholds() != null ? metric.getThresholds() : new ArrayList<>();
+                    TimeSeriesThreshold timeSeriesThreshold =
+                        TimeSeriesThreshold.builder()
+                            .accountId(getAccountId())
+                            .projectIdentifier(getProjectIdentifier())
+                            .dataSourceType(getType())
+                            .metricIdentifier(metric.getIdentifier())
+                            .metricType(metric.getType())
+                            .metricName(metricPackDTO.getMetricName())
+                            .action(metricPackDTO.getType().getTimeSeriesThresholdActionType())
+                            .criteria(criteria)
+                            .thresholdConfigType(ThresholdConfigType.CUSTOMER)
+                            .build();
+                    timeSeriesThresholds.add(timeSeriesThreshold);
+                    metric.setThresholds(timeSeriesThresholds);
+                  }));
+            }
+          });
+    });
   }
 
   @Override

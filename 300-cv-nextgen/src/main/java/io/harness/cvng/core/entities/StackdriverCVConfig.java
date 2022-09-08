@@ -8,14 +8,18 @@
 package io.harness.cvng.core.entities;
 
 import static io.harness.cvng.core.utils.ErrorMessageUtils.generateErrorMessageFromParam;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
+import io.harness.cvng.beans.ThresholdConfigType;
 import io.harness.cvng.beans.TimeSeriesMetricType;
 import io.harness.cvng.beans.stackdriver.StackDriverMetricDefinition;
 import io.harness.cvng.core.beans.StackdriverDefinition;
+import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
+import io.harness.cvng.core.constant.MonitoredServiceConstants;
 import io.harness.cvng.core.entities.MetricPack.MetricDefinition;
 import io.harness.cvng.core.entities.StackdriverCVConfig.MetricInfo;
 import io.harness.cvng.core.utils.analysisinfo.AnalysisInfoUtility;
@@ -115,7 +119,7 @@ public class StackdriverCVConfig extends MetricCVConfig<MetricInfo> {
         metricInfo -> { StackDriverMetricDefinition.extractFromJson(metricInfo.getJsonMetricDefinition()); });
   }
 
-  public void fromStackdriverDefinitions(
+  public void populateFromMetricDefinitions(
       List<StackdriverDefinition> stackdriverDefinitions, CVMonitoringCategory category) {
     Preconditions.checkNotNull(stackdriverDefinitions);
     if (metricInfoList == null) {
@@ -158,6 +162,42 @@ public class StackdriverCVConfig extends MetricCVConfig<MetricInfo> {
                                   .build());
     });
     this.setMetricPack(metricPack);
+  }
+
+  public void addMetricThresholds(Set<TimeSeriesMetricPackDTO> timeSeriesMetricPacks) {
+    if (isEmpty(timeSeriesMetricPacks)) {
+      return;
+    }
+    getMetricPack().getMetrics().forEach(metric -> {
+      timeSeriesMetricPacks.stream()
+          .filter(timeSeriesMetricPack
+              -> timeSeriesMetricPack.getIdentifier().equalsIgnoreCase(MonitoredServiceConstants.CUSTOM_METRIC_PACK))
+          .forEach(timeSeriesMetricPackDTO -> {
+            if (!isEmpty(timeSeriesMetricPackDTO.getMetricThresholds())) {
+              timeSeriesMetricPackDTO.getMetricThresholds()
+                  .stream()
+                  .filter(metricPackDTO -> metric.getName().equals(metricPackDTO.getMetricName()))
+                  .forEach(metricPackDTO -> metricPackDTO.getTimeSeriesThresholdCriteria().forEach(criteria -> {
+                    List<TimeSeriesThreshold> timeSeriesThresholds =
+                        metric.getThresholds() != null ? metric.getThresholds() : new ArrayList<>();
+                    TimeSeriesThreshold timeSeriesThreshold =
+                        TimeSeriesThreshold.builder()
+                            .accountId(getAccountId())
+                            .projectIdentifier(getProjectIdentifier())
+                            .dataSourceType(getType())
+                            .metricIdentifier(metric.getIdentifier())
+                            .metricType(metric.getType())
+                            .metricName(metricPackDTO.getMetricName())
+                            .action(metricPackDTO.getType().getTimeSeriesThresholdActionType())
+                            .criteria(criteria)
+                            .thresholdConfigType(ThresholdConfigType.CUSTOMER)
+                            .build();
+                    timeSeriesThresholds.add(timeSeriesThreshold);
+                    metric.setThresholds(timeSeriesThresholds);
+                  }));
+            }
+          });
+    });
   }
 
   public static class StackDriverCVConfigUpdatableEntity

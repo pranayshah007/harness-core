@@ -25,6 +25,8 @@ import io.harness.serializer.kryo.DelegateServiceBeansKryoRegistrar;
 import io.harness.serializer.kryo.DelegateTasksBeansKryoRegister;
 import io.harness.serializer.kryo.DelegateTasksKryoRegistrar;
 import io.harness.serializer.kryo.NGCoreKryoRegistrar;
+import io.harness.serializer.kryo.NotificationBeansKryoRegistrar;
+import io.harness.serializer.kryo.YamlKryoRegistrar;
 
 import com.google.common.collect.ImmutableSet;
 import lombok.experimental.UtilityClass;
@@ -42,6 +44,8 @@ public class ResourceGroupSerializer {
           .add(DelegateTasksKryoRegistrar.class)
           .addAll(CvNextGenBeansRegistrars.kryoRegistrars)
           .add(DelegateServiceBeansKryoRegistrar.class)
+          .add(YamlKryoRegistrar.class)
+          .add(NotificationBeansKryoRegistrar.class)
           .build();
 
   public final ImmutableSet<Class<? extends MorphiaRegistrar>> morphiaRegistrars =

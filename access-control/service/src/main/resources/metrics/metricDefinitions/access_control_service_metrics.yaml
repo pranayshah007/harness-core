@@ -58,6 +58,22 @@ metrics:
     metricDefinition: Request Thread Pool size
     type: LastValue
     unit: count
+  - metricName: access_control_org_eclipse_jetty_util_thread_QueuedThreadPool_dw_utilization
+    metricDefinition: Request Thread Pool Utilization
+    type: LastValue
+    unit: count
+  - metricName: access_control_org_eclipse_jetty_util_thread_QueuedThreadPool_dw_admin_utilization_max
+    metricDefinition: Request Thread Pool Utilization relative to Max Capacity
+    type: LastValue
+    unit: count
+  - metricName: access_control_org_eclipse_jetty_util_thread_QueuedThreadPool_dw_jobs_queue_utilization
+    metricDefinition: Request Thread Pool Pending Job Queue Utilization
+    type: LastValue
+    unit: count
+  - metricName: access_control_org_eclipse_jetty_util_thread_QueuedThreadPool_dw_jobs
+    metricDefinition: Request Thread Pool Pending Jobs
+    type: LastValue
+    unit: count
   - metricName: access_control_io_dropwizard_jetty_MutableServletContextHandler_requests_count
     metricDefinition: Total requests received
     type: LastValue

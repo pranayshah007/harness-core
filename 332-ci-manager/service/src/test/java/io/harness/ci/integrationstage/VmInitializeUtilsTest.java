@@ -56,7 +56,7 @@ public class VmInitializeUtilsTest extends CIExecutionTestBase {
   @Category(UnitTests.class)
   public void testLinuxOS() {
     InitializeStepInfo initializeStepInfo = VmInitializeTaskHelper.getInitializeStepWithLinuxPoolName();
-    OSType os = vmInitializeUtils.getOS(initializeStepInfo.getInfrastructure());
+    OSType os = VmInitializeUtils.getOS(initializeStepInfo.getInfrastructure());
 
     assertThat(os).isEqualTo(OSType.Linux);
   }
@@ -66,7 +66,7 @@ public class VmInitializeUtilsTest extends CIExecutionTestBase {
   @Category(UnitTests.class)
   public void testMacOS() {
     InitializeStepInfo initializeStepInfo = VmInitializeTaskHelper.getInitializeStepWithMacPoolName();
-    OSType os = vmInitializeUtils.getOS(initializeStepInfo.getInfrastructure());
+    OSType os = VmInitializeUtils.getOS(initializeStepInfo.getInfrastructure());
 
     assertThat(os).isEqualTo(OSType.MacOS);
   }

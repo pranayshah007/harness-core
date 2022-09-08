@@ -94,6 +94,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.AvailableDelegateSizes;
 import io.harness.delegate.beans.ConnectionMode;
 import io.harness.delegate.beans.Delegate;
+import io.harness.delegate.beans.Delegate.DelegateBuilder;
 import io.harness.delegate.beans.Delegate.DelegateKeys;
 import io.harness.delegate.beans.DelegateApproval;
 import io.harness.delegate.beans.DelegateApprovalResponse;
@@ -257,12 +258,15 @@ import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -855,9 +859,11 @@ public class DelegateServiceImpl implements DelegateService {
         .entrySet()
         .stream()
         .map(entry -> {
+          final boolean isImmutable = isNotEmpty(entry.getValue()) && entry.getValue().get(0).isImmutable();
           return DelegateScalingGroup.builder()
               .groupName(entry.getKey())
               .upgraderLastUpdated(delegateGroupMap.getOrDefault(entry.getKey(), 0L))
+              .immutable(isImmutable)
               .autoUpgrade(setAutoUpgrade(delegateGroupMap.getOrDefault(entry.getKey(), 0L)))
               .delegateGroupExpirationTime(setDelegateScalingGroupExpiration(entry.getValue()))
               .delegates(buildInnerDelegates(accountId, entry.getValue(), activeDelegateConnections, true))
@@ -873,7 +879,7 @@ public class DelegateServiceImpl implements DelegateService {
   }
 
   private boolean setAutoUpgrade(Long upgraderLastUpdated) {
-    return TimeUnit.MILLISECONDS.toMinutes(System.currentTimeMillis() - upgraderLastUpdated) <= 1;
+    return TimeUnit.MILLISECONDS.toMinutes(System.currentTimeMillis() - upgraderLastUpdated) <= 90;
   }
 
   private List<Delegate> getDelegatesWithoutScalingGroup(String accountId) {
@@ -906,6 +912,7 @@ public class DelegateServiceImpl implements DelegateService {
         .map(delegate -> {
           List<DelegateConnectionDetails> connections =
               perDelegateConnections.computeIfAbsent(delegate.getUuid(), uuid -> emptyList());
+
           DelegateStatus.DelegateInner.DelegateInnerBuilder delegateInnerBuilder =
               DelegateStatus.DelegateInner.builder()
                   .uuid(delegate.getUuid())
@@ -936,7 +943,8 @@ public class DelegateServiceImpl implements DelegateService {
                   .tokenActive(delegate.getDelegateTokenName() == null
                       || (delegateTokenStatusMap.containsKey(delegate.getDelegateTokenName())
                           && delegateTokenStatusMap.get(delegate.getDelegateTokenName())))
-                  .delegateExpirationTime(delegate.getExpirationTime());
+                  .delegateExpirationTime(delegate.getExpirationTime())
+                  .version(delegate.getVersion());
           // Set autoUpgrade as true for legacy delegate.
           if (!delegate.isImmutable()) {
             delegateInnerBuilder.autoUpgrade(true);
@@ -995,6 +1003,11 @@ public class DelegateServiceImpl implements DelegateService {
     setUnset(updateOperations, DelegateKeys.validUntil,
         Date.from(OffsetDateTime.now().plusDays(Delegate.TTL.toDays()).toInstant()));
     setUnset(updateOperations, DelegateKeys.version, delegate.getVersion());
+    // expiration time is only valid for immutable delegates.
+    if (delegate.isImmutable()) {
+      setUnset(updateOperations, DelegateKeys.expirationTime,
+          setDelegateExpirationTime(delegate.getVersion(), delegate.getUuid()));
+    }
     setUnset(updateOperations, DelegateKeys.description, delegate.getDescription());
     if (delegate.getDelegateType() != null) {
       setUnset(updateOperations, DelegateKeys.delegateType, delegate.getDelegateType());
@@ -2657,37 +2670,44 @@ public class DelegateServiceImpl implements DelegateService {
       log.warn("No delegate configuration (profile) with id {} exists: {}", delegateProfileId, e);
     }
 
-    final Delegate delegate = Delegate.builder()
-                                  .uuid(delegateParams.getDelegateId())
-                                  .accountId(delegateParams.getAccountId())
-                                  .owner(owner)
-                                  .ng(delegateParams.isNg())
-                                  .description(delegateParams.getDescription())
-                                  .ip(delegateParams.getIp())
-                                  .hostName(delegateParams.getHostName())
-                                  .delegateGroupName(isNotBlank(delegateGroupName) ? delegateGroupName : null)
-                                  .delegateGroupId(isNotBlank(delegateGroupId) ? delegateGroupId : null)
-                                  .delegateName(delegateParams.getDelegateName())
-                                  .delegateProfileId(delegateProfileId)
-                                  .lastHeartBeat(delegateParams.getLastHeartBeat())
-                                  .version(delegateParams.getVersion())
-                                  .sequenceNum(delegateParams.getSequenceNum())
-                                  .delegateType(delegateParams.getDelegateType())
-                                  .supportedTaskTypes(delegateParams.getSupportedTaskTypes())
-                                  .delegateRandomToken(delegateParams.getDelegateRandomToken())
-                                  .keepAlivePacket(delegateParams.isKeepAlivePacket())
-                                  // if delegate is ng then save tags only in delegate group.
-                                  .tags(delegateParams.isNg() ? null : delegateParams.getTags())
-                                  .polllingModeEnabled(delegateParams.isPollingModeEnabled())
-                                  .proxy(delegateParams.isProxy())
-                                  .sampleDelegate(delegateParams.isSampleDelegate())
-                                  .currentlyExecutingDelegateTasks(delegateParams.getCurrentlyExecutingDelegateTasks())
-                                  .ceEnabled(delegateParams.isCeEnabled())
-                                  .delegateTokenName(delegateTokenName.orElse(null))
-                                  .heartbeatAsObject(delegateParams.isHeartbeatAsObject())
-                                  .immutable(delegateParams.isImmutable())
-                                  .mtls(isConnectedUsingMtls)
-                                  .build();
+    DelegateBuilder delegateBuilder =
+        Delegate.builder()
+            .uuid(delegateParams.getDelegateId())
+            .accountId(delegateParams.getAccountId())
+            .owner(owner)
+            .ng(delegateParams.isNg())
+            .description(delegateParams.getDescription())
+            .ip(delegateParams.getIp())
+            .hostName(delegateParams.getHostName())
+            .delegateGroupName(isNotBlank(delegateGroupName) ? delegateGroupName : null)
+            .delegateGroupId(isNotBlank(delegateGroupId) ? delegateGroupId : null)
+            .delegateName(delegateParams.getDelegateName())
+            .delegateProfileId(delegateProfileId)
+            .lastHeartBeat(delegateParams.getLastHeartBeat())
+            .version(delegateParams.getVersion())
+            .sequenceNum(delegateParams.getSequenceNum())
+            .delegateType(delegateParams.getDelegateType())
+            .supportedTaskTypes(delegateParams.getSupportedTaskTypes())
+            .delegateRandomToken(delegateParams.getDelegateRandomToken())
+            .keepAlivePacket(delegateParams.isKeepAlivePacket())
+            // if delegate is ng then save tags only in delegate group.
+            .tags(delegateParams.isNg() ? null : delegateParams.getTags())
+            .polllingModeEnabled(delegateParams.isPollingModeEnabled())
+            .proxy(delegateParams.isProxy())
+            .sampleDelegate(delegateParams.isSampleDelegate())
+            .currentlyExecutingDelegateTasks(delegateParams.getCurrentlyExecutingDelegateTasks())
+            .ceEnabled(delegateParams.isCeEnabled())
+            .delegateTokenName(delegateTokenName.orElse(null))
+            .heartbeatAsObject(delegateParams.isHeartbeatAsObject())
+            .immutable(delegateParams.isImmutable())
+            .mtls(isConnectedUsingMtls);
+
+    // ExpirationTime is not applicable for mutable delegates.
+    if (delegateParams.isImmutable()) {
+      delegateBuilder.expirationTime(
+          setDelegateExpirationTime(delegateParams.getVersion(), delegateParams.getDelegateId()));
+    }
+    final Delegate delegate = delegateBuilder.build();
 
     if (ECS.equals(delegateParams.getDelegateType())) {
       DelegateRegisterResponse delegateRegisterResponse =
@@ -2700,6 +2720,18 @@ public class DelegateServiceImpl implements DelegateService {
     } else {
       return registerResponseFromDelegate(upsertDelegateOperation(existingDelegate, delegate, delegateSetupDetails));
     }
+  }
+
+  private long setDelegateExpirationTime(String version, String delegateId) {
+    Calendar calendar = Calendar.getInstance();
+    SimpleDateFormat sdf = new SimpleDateFormat("yy.MM");
+    try {
+      calendar.setTime(sdf.parse(version));
+    } catch (ParseException e) {
+      log.error("Unable to parse version {} for delegateId {}", version, delegateId, e);
+    }
+    calendar.add(Calendar.MONTH, 3);
+    return calendar.getTimeInMillis();
   }
 
   private Delegate getExistingDelegate(

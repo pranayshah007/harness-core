@@ -1,0 +1,164 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "oneOf": [
+      {
+        "type": "object",
+        "required": [
+          "identifier",
+          "name",
+          "template"
+        ],
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "identifier": {
+            "type": "string",
+            "pattern": "^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$"
+          },
+          "name": {
+            "type": "string",
+            "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
+          },
+          "skipInstances": {
+            "type": "boolean"
+          },
+          "strategy": {
+            "$ref": "#/definitions/StrategyConfig"
+          },
+          "template": {
+            "$ref": "#/definitions/TemplateLinkConfig"
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "required": [
+          "identifier",
+          "name",
+          "type"
+        ],
+        "properties": {
+          "delegateSelectors": {
+            "oneOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              {
+                "type": "string",
+                "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                "minLength": 1
+              }
+            ]
+          },
+          "description": {
+            "type": "string"
+          },
+          "failureStrategies": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/FailureStrategyConfig"
+            }
+          },
+          "identifier": {
+            "type": "string",
+            "pattern": "^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$"
+          },
+          "name": {
+            "type": "string",
+            "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
+          },
+          "skipInstances": {
+            "type": "boolean"
+          },
+          "spec": {},
+          "strategy": {
+            "$ref": "#/definitions/StrategyConfig"
+          },
+          "tags": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "type": {
+            "type": "string"
+          },
+          "variables": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/NumberNGVariable"
+                },
+                {
+                  "$ref": "#/definitions/SecretNGVariable"
+                },
+                {
+                  "$ref": "#/definitions/StringNGVariable"
+                }
+              ]
+            }
+          },
+          "when": {
+            "$ref": "#/definitions/StageWhenCondition"
+          }
+        },
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "Approval"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "spec": {
+                  "$ref": "#/definitions/ApprovalStageConfig"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "Custom"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "spec": {
+                  "$ref": "#/definitions/CustomStageConfig"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "FeatureFlag"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "spec": {
+                  "$ref": "#/definitions/FeatureFlagStageConfig"
+                }
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }

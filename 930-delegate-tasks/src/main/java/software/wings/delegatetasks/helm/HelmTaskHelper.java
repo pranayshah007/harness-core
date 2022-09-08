@@ -617,11 +617,14 @@ public class HelmTaskHelper {
       String command = fetchHelmChartVersionsCommand(helmChartConfigParams.getHelmVersion(),
           helmChartConfigParams.getChartName(), helmChartConfigParams.getRepoName(), destinationDirectory);
 
-      environment.putIfAbsent(HELM_CACHE_HOME,
-          HELM_CACHE_HOME_PATH.replace(REPO_NAME, helmChartConfigParams.getRepoName())
-              .replace(HELM_CACHE_HOME_PLACEHOLDER, cacheDir));
-      command = fetchHelmChartVersionsCommandWithRepoFlags(helmChartConfigParams.getHelmVersion(),
-          helmChartConfigParams.getChartName(), helmChartConfigParams.getRepoName(), destinationDirectory, cacheDir);
+      if (!HelmVersion.V2.equals(helmChartConfigParams.getHelmVersion())) {
+        // repo flags are supported only from helm v3
+        environment.putIfAbsent(HELM_CACHE_HOME,
+            HELM_CACHE_HOME_PATH.replace(REPO_NAME, helmChartConfigParams.getRepoName())
+                .replace(HELM_CACHE_HOME_PLACEHOLDER, cacheDir));
+        command = fetchHelmChartVersionsCommandWithRepoFlags(helmChartConfigParams.getHelmVersion(),
+            helmChartConfigParams.getChartName(), helmChartConfigParams.getRepoName(), destinationDirectory, cacheDir);
+      }
 
       if (isNotEmpty(helmChartConfigParams.getChartVersion()) && !helmChartCollectionParams.isRegex()) {
         command =
@@ -635,7 +638,7 @@ public class HelmTaskHelper {
       }
     } finally {
       deleteDirectoryAndItsContentIfExists(workingDirectory + "/helm");
-      if (!helmChartConfigParams.isUseCache()) {
+      if (!helmChartConfigParams.isUseCache() && isNotEmpty(cacheDir)) {
         deleteQuietlyWithErrorLog(cacheDir);
       }
     }
@@ -645,7 +648,14 @@ public class HelmTaskHelper {
 
   private void deleteQuietlyWithErrorLog(String tempDir) {
     try {
-      FileUtils.forceDelete(new File(tempDir));
+      if (isNotEmpty(tempDir)) {
+        /*
+          adding this check as deleting an empty directory causes delegate to behave erratically
+          i.e. it deletes root folder and shuts down
+         */
+        log.info("Deleting directory at path(deleteQuietlyWithErrorLog) " + tempDir);
+        FileUtils.forceDelete(new File(tempDir));
+      }
     } catch (IOException ie) {
       log.error(
           "Deletion of charts folder failed due to : {}", ExceptionMessageSanitizer.sanitizeException(ie).getMessage());

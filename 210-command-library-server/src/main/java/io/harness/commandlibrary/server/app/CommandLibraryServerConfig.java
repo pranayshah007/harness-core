@@ -35,8 +35,10 @@ import io.dropwizard.request.logging.RequestLogFactory;
 import io.dropwizard.server.DefaultServerFactory;
 import io.dropwizard.server.ServerFactory;
 import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import lombok.Data;
@@ -128,5 +130,13 @@ public class CommandLibraryServerConfig extends Configuration implements AssetsB
     final HttpConnectorFactory factory = new HttpConnectorFactory();
     factory.setPort(9091);
     return factory;
+  }
+
+  public List<String> getDbAliases() {
+    List<String> dbAliases = new ArrayList<>();
+    if (mongoConnectionFactory != null) {
+      dbAliases.add(mongoConnectionFactory.getAliasDBName());
+    }
+    return dbAliases;
   }
 }

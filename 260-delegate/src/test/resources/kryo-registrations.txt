@@ -1424,6 +1424,7 @@
 19479:io.harness.delegate.task.azure.appservice.webapp.response.AzureAppDeploymentData
 19480:io.harness.delegate.task.azure.appservice.webapp.response.AzureWebAppSlotShiftTrafficResponse
 19481:io.harness.delegate.task.azure.appservice.webapp.response.AzureWebAppSwapSlotsResponse
+19482:io.harness.delegate.task.shell.WinRmShellScriptTaskParametersNG
 19483:io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifactDelegateRequest
 19484:io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifactDelegateResponse
 19485:io.harness.delegate.beans.azure.appservicesettings.AzureAppServiceSettingConstants
@@ -2305,6 +2306,8 @@
 980030:io.harness.exception.InterruptedRuntimeException
 980031:io.harness.exception.InvalidIdentifierRefException
 980032:io.harness.exception.ngexception.AzureAppServiceTaskException
+980033:io.harness.exception.ngexception.beans.templateservice.TemplateInputsErrorDTO
+980034:io.harness.exception.ngexception.beans.templateservice.TemplateInputsErrorMetadataDTO
 9300122:io.harness.yaml.core.timeout.Timeout
 9800001:io.harness.beans.RecasterMap
 9800002:io.harness.licensing.beans.modules.ChaosModuleLicenseDTO

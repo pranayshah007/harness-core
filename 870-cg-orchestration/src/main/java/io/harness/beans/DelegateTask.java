@@ -177,6 +177,9 @@ public class DelegateTask
   private boolean executeOnHarnessHostedDelegates;
   private String secondaryAccountId;
 
+  private boolean emitEvent;
+  private String stageId;
+
   @Transient private List<String> broadcastToDelegateIds;
 
   @Transient private List<String> taskActivityLogs;

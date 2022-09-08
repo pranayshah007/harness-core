@@ -11,6 +11,7 @@ import lombok.Data;
 @Builder
 @OwnedBy(HarnessTeam.CDP)
 public class EcsPrepareRollbackDataResult {
+  String serviceName;
   String createServiceRequestBuilderString;
   List<String> registerScalableTargetRequestBuilderStrings;
   List<String> registerScalingPolicyRequestBuilderStrings;
