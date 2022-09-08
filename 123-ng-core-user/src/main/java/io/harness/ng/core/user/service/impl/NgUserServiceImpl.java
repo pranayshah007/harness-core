@@ -754,6 +754,7 @@ public class NgUserServiceImpl implements NgUserService {
       update.set(UserMetadataKeys.locked, user.isLocked());
       update.set(UserMetadataKeys.disabled, user.isDisabled());
       update.set(UserMetadataKeys.externallyManaged, user.isExternallyManaged());
+      update.set(UserMetadataKeys.email, user.getEmail());
       return userMetadataRepository.updateFirst(user.getUuid(), update) != null;
     }
     return true;
