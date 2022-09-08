@@ -1570,7 +1570,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
             id = getUpdatedId(id, name);
             break;
           case FLOAT64:
-            if (field.getName().equalsIgnoreCase(COST)) {
+            if (field.getName().equalsIgnoreCase(COST) || field.getName().equalsIgnoreCase(BILLING_AMOUNT)) {
               cost = getNumericValue(row, field, skipRoundOff);
               dataPointBuilder.cost(cost);
             } else if (sharedCostBucketNames.contains(field.getName())) {
@@ -1851,9 +1851,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
                 "Invalid Unallocated Cost Strategy / Unallocated Cost Strategy not supported");
         }
       }
-    }
-
-    if (updatedDataPoints.isEmpty()) {
+    } else {
       updatedDataPoints = response.getData();
     }
 
