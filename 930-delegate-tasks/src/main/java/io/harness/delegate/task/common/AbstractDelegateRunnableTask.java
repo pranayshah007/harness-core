@@ -28,7 +28,7 @@ import io.harness.delegate.beans.RemoteMethodReturnValueData;
 import io.harness.delegate.beans.ThirdPartyApiCallLogDetails;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.exception.DelegateRetryableException;
-import io.harness.delegate.exceptionhandler.DelegateExceptionManager;
+import io.harness.delegate.exceptionhandler.core.DelegateExceptionManager;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.tasklogging.TaskLogContext;
 import io.harness.exception.ExceptionUtils;

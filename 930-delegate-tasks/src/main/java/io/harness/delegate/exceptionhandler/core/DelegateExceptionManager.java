@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.delegate.exceptionhandler;
+package io.harness.delegate.exceptionhandler.core;
 
 import static io.harness.exception.WingsException.ExecutionContext.DELEGATE;
 
