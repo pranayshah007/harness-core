@@ -12,6 +12,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.UJJAWAL;
 
+import static org.assertj.core.api.Assertions.as;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -310,5 +311,28 @@ public class NGScimUserServiceImplTest extends NgManagerTestBase {
     when(ngUserService.getUserByEmail(userInfo.getEmail(), false)).thenReturn(Optional.of(userMetadataDTO));
     when(ngUserService.isUserAtScope(anyString(), any())).thenReturn(false);
     ScimUser scimUser = scimUserService.getUser(userInfo.getUuid(), "someRandom");
+  }
+
+  @Test
+  @Owner(developers = UJJAWAL)
+  @Category(UnitTests.class)
+  public void testGetUserInBothCGAndNGButDifferentAccountInNg2() {
+    UserInfo userInfo =
+        UserInfo.builder().admin(true).email("username@harness.io").name("display_name").uuid("userId").build();
+    UserMetadataDTO userMetadataDTO = new UserMetadataDTO();
+    userMetadataDTO.setEmail("username@harness.io");
+    userMetadataDTO.setUuid("userId");
+    when(ngUserService.getUserById(userInfo.getUuid())).thenReturn(Optional.of(userInfo));
+    when(ngUserService.getUserByEmail(userInfo.getEmail(), false)).thenReturn(Optional.of(userMetadataDTO));
+    when(ngUserService.isUserAtScope(anyString(), any())).thenReturn(true);
+    ScimUser scimUser = scimUserService.getUser(userInfo.getUuid(), "accountId");
+    assertThat(scimUser).isNotNull();
+    assertThat(scimUser.getName()).isNotNull();
+    assertThat(scimUser.getDisplayName()).isNotNull();
+    assertThat(scimUser.getDisplayName()).isEqualTo(userInfo.getName());
+    assertThat(scimUser.getUserName()).isNotNull();
+    assertThat(scimUser.getUserName()).isEqualTo(userInfo.getEmail());
+    assertThat(scimUser.getId()).isNotNull();
+    assertThat(scimUser.getId()).isEqualTo(userInfo.getUuid());
   }
 }

@@ -37,8 +37,6 @@ import io.harness.scim.service.ScimUserService;
 import io.harness.serializer.JsonUtils;
 import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
-import software.wings.beans.User;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.inject.Inject;
 import java.util.ArrayList;
