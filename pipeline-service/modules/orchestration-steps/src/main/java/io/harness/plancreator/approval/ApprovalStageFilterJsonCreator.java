@@ -17,10 +17,15 @@ import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class ApprovalStageFilterJsonCreator extends GenericStageFilterJsonCreator {
+public class ApprovalStageFilterJsonCreator extends GenericStageFilterJsonCreator<AbstractStageNode> {
   @Override
   public Set<String> getSupportedStageTypes() {
     return Collections.singleton("Approval");
+  }
+
+  @Override
+  public Class<AbstractStageNode> getFieldClass() {
+    return AbstractStageNode.class;
   }
 
   public PipelineFilter getFilter(FilterCreationContext filterCreationContext, AbstractStageNode stageElementConfig) {

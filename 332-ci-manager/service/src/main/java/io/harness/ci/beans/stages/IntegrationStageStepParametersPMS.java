@@ -12,7 +12,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.build.BuildStatusUpdateParameter;
 import io.harness.beans.dependencies.DependencyElement;
-import io.harness.beans.stages.IntegrationStageNode;
 import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml.HostedVmInfraSpec;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
