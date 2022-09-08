@@ -51,6 +51,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import javax.cache.Cache;
 import lombok.Builder;
@@ -89,7 +90,8 @@ public class NgSecretManagerFunctor implements ExpressionFunctor, NgSecretManage
     try {
       if (expressionEvaluatorExecutor != null) {
         // Offload expression evaluation of secrets to another threadpool.
-        return expressionEvaluatorExecutor.submit(() -> obtainInternal(secretIdentifier));
+        Future<Object> future = expressionEvaluatorExecutor.submit(() -> obtainInternal(secretIdentifier));
+        return future.get();
       }
       log.warn("Expression evaluation is being processed synchronously");
       return obtainInternal(secretIdentifier);
