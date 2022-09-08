@@ -24,6 +24,12 @@
     "description": {
       "type": "string"
     },
+    "failureStrategies": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/FailureStrategyConfig"
+      }
+    },
     "identifier": {
       "type": "string",
       "pattern": "^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$"
@@ -31,6 +37,9 @@
     "name": {
       "type": "string",
       "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
+    },
+    "spec": {
+      "$ref": "#/definitions/IntegrationStageConfig"
     },
     "strategy": {
       "$ref": "#/definitions/StrategyConfig"
@@ -68,24 +77,6 @@
     }
   },
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "allOf": [
-    {
-      "if": {
-        "properties": {
-          "type": {
-            "const": "CI"
-          }
-        }
-      },
-      "then": {
-        "properties": {
-          "spec": {
-            "$ref": "#/definitions/IntegrationStageConfigImpl"
-          }
-        }
-      }
-    }
-  ],
   "definitions": {
     "ACRStepInfo": {
       "allOf": [
@@ -101,30 +92,16 @@
           ],
           "properties": {
             "baseImageConnectorRefs": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             },
             "buildArgs": {
-              "oneOf": [
-                {
-                  "type": "object",
-                  "additionalProperties": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
             },
             "connectorRef": {
               "type": "string"
@@ -136,27 +113,13 @@
               "type": "string"
             },
             "labels": {
-              "oneOf": [
-                {
-                  "type": "object",
-                  "additionalProperties": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
             },
             "optimize": {
-              "oneOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "boolean"
             },
             "remoteCacheImage": {
               "type": "string"
@@ -168,28 +131,14 @@
               "$ref": "#/definitions/ContainerResource"
             },
             "runAsUser": {
-              "oneOf": [
-                {
-                  "type": "integer",
-                  "format": "int32"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "integer",
+              "format": "int32"
             },
             "tags": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             },
             "target": {
               "type": "string"
@@ -236,118 +185,54 @@
               "type": "string"
             },
             "entrypoint": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             },
             "envVariables": {
-              "oneOf": [
-                {
-                  "type": "object",
-                  "additionalProperties": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
             },
             "image": {
               "type": "string"
             },
             "imagePullPolicy": {
-              "oneOf": [
-                {
-                  "type": "string",
-                  "enum": [
-                    "Always",
-                    "Never",
-                    "IfNotPresent"
-                  ]
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
+              "type": "string",
+              "enum": [
+                "Always",
+                "Never",
+                "IfNotPresent"
               ]
             },
             "portBindings": {
-              "oneOf": [
-                {
-                  "type": "object",
-                  "additionalProperties": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
             },
             "privileged": {
-              "oneOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
+              "type": "boolean"
             },
             "reports": {
-              "oneOf": [
-                {
-                  "$ref": "#/definitions/UnitTestReport"
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
+              "$ref": "#/definitions/UnitTestReport"
             },
             "resources": {
               "$ref": "#/definitions/ContainerResource"
             },
             "runAsUser": {
-              "oneOf": [
-                {
-                  "type": "integer",
-                  "format": "int32"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "integer",
+              "format": "int32"
             },
             "shell": {
-              "oneOf": [
-                {
-                  "type": "string",
-                  "enum": [
-                    "Sh",
-                    "Bash",
-                    "Powershell",
-                    "Pwsh"
-                  ]
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
+              "type": "string",
+              "enum": [
+                "Sh",
+                "Bash",
+                "Powershell",
+                "Pwsh"
               ]
             }
           }
@@ -412,6 +297,9 @@
         "type"
       ],
       "properties": {
+        "spec": {
+          "$ref": "#/definitions/BuildSpec"
+        },
         "type": {
           "type": "string",
           "enum": [
@@ -421,57 +309,7 @@
           ]
         }
       },
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "allOf": [
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "PR"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/PRBuildSpec"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "branch"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/BranchBuildSpec"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "tag"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/TagBuildSpec"
-              }
-            }
-          }
-        }
-      ]
+      "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "BuildJobEnvInfo": {
       "type": "object",
@@ -587,34 +425,16 @@
       "type": "object",
       "properties": {
         "add": {
-          "oneOf": [
-            {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
         "drop": {
-          "oneOf": [
-            {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -958,17 +778,10 @@
               "$ref": "#/definitions/ParameterFieldListString"
             },
             "buildArgs": {
-              "oneOf": [
-                {
-                  "type": "object",
-                  "additionalProperties": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
             },
             "connectorRef": {
               "type": "string"
@@ -980,27 +793,13 @@
               "type": "string"
             },
             "labels": {
-              "oneOf": [
-                {
-                  "type": "object",
-                  "additionalProperties": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
             },
             "optimize": {
-              "oneOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "boolean"
             },
             "remoteCacheRepo": {
               "type": "string"
@@ -1012,28 +811,14 @@
               "$ref": "#/definitions/ContainerResource"
             },
             "runAsUser": {
-              "oneOf": [
-                {
-                  "type": "integer",
-                  "format": "int32"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "integer",
+              "format": "int32"
             },
             "tags": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             },
             "target": {
               "type": "string"
@@ -1062,30 +847,16 @@
               "type": "string"
             },
             "baseImageConnectorRefs": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             },
             "buildArgs": {
-              "oneOf": [
-                {
-                  "type": "object",
-                  "additionalProperties": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
             },
             "connectorRef": {
               "type": "string"
@@ -1100,27 +871,13 @@
               "type": "string"
             },
             "labels": {
-              "oneOf": [
-                {
-                  "type": "object",
-                  "additionalProperties": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
             },
             "optimize": {
-              "oneOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "boolean"
             },
             "region": {
               "type": "string"
@@ -1132,28 +889,14 @@
               "$ref": "#/definitions/ContainerResource"
             },
             "runAsUser": {
-              "oneOf": [
-                {
-                  "type": "integer",
-                  "format": "int32"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "integer",
+              "format": "int32"
             },
             "tags": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             },
             "target": {
               "type": "string"
@@ -1357,17 +1100,10 @@
               "$ref": "#/definitions/ParameterFieldListString"
             },
             "buildArgs": {
-              "oneOf": [
-                {
-                  "type": "object",
-                  "additionalProperties": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
             },
             "connectorRef": {
               "type": "string"
@@ -1385,27 +1121,13 @@
               "type": "string"
             },
             "labels": {
-              "oneOf": [
-                {
-                  "type": "object",
-                  "additionalProperties": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
             },
             "optimize": {
-              "oneOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "boolean"
             },
             "projectID": {
               "type": "string"
@@ -1417,28 +1139,14 @@
               "$ref": "#/definitions/ContainerResource"
             },
             "runAsUser": {
-              "oneOf": [
-                {
-                  "type": "integer",
-                  "format": "int32"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "integer",
+              "format": "int32"
             },
             "tags": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             },
             "target": {
               "type": "string"
@@ -1464,16 +1172,7 @@
               "$ref": "#/definitions/ParameterFieldListString"
             },
             "build": {
-              "oneOf": [
-                {
-                  "$ref": "#/definitions/Build"
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
+              "$ref": "#/definitions/Build"
             },
             "cloneDirectory": {
               "type": "string"
@@ -1482,17 +1181,8 @@
               "type": "string"
             },
             "depth": {
-              "oneOf": [
-                {
-                  "type": "integer",
-                  "format": "int32"
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
+              "type": "integer",
+              "format": "int32"
             },
             "projectName": {
               "type": "string"
@@ -1504,27 +1194,11 @@
               "$ref": "#/definitions/ContainerResource"
             },
             "runAsUser": {
-              "oneOf": [
-                {
-                  "type": "integer",
-                  "format": "int32"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "integer",
+              "format": "int32"
             },
             "sslVerify": {
-              "oneOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
+              "type": "boolean"
             }
           }
         }
@@ -1932,93 +1606,6 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "IntegrationStageConfigImpl": {
-      "type": "object",
-      "properties": {
-        "cloneCodebase": {
-          "oneOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
-        },
-        "execution": {
-          "$ref": "#/definitions/ExecutionElementConfig"
-        },
-        "infrastructure": {
-          "oneOf": [
-            {
-              "$ref": "#/definitions/HostedVmInfraYaml"
-            },
-            {
-              "$ref": "#/definitions/K8sDirectInfraYaml"
-            },
-            {
-              "$ref": "#/definitions/K8sHostedInfraYaml"
-            },
-            {
-              "$ref": "#/definitions/UseFromStageInfraYaml"
-            },
-            {
-              "$ref": "#/definitions/VmInfraYaml"
-            }
-          ]
-        },
-        "platform": {
-          "oneOf": [
-            {
-              "$ref": "#/definitions/Platform"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
-        },
-        "runtime": {
-          "oneOf": [
-            {
-              "$ref": "#/definitions/CloudRuntime"
-            }
-          ]
-        },
-        "serviceDependencies": {
-          "oneOf": [
-            {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/DependencyElement"
-              }
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
-        },
-        "sharedPaths": {
-          "oneOf": [
-            {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            {
-              "type": "string"
-            }
-          ]
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
     "IntegrationStageNode": {
       "type": "object",
       "required": [
@@ -2045,6 +1632,12 @@
         "description": {
           "type": "string"
         },
+        "failureStrategies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FailureStrategyConfig"
+          }
+        },
         "identifier": {
           "type": "string",
           "pattern": "^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$"
@@ -2052,6 +1645,9 @@
         "name": {
           "type": "string",
           "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
+        },
+        "spec": {
+          "$ref": "#/definitions/IntegrationStageConfig"
         },
         "strategy": {
           "$ref": "#/definitions/StrategyConfig"
@@ -2088,25 +1684,7 @@
           "$ref": "#/definitions/StageWhenCondition"
         }
       },
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "allOf": [
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "CI"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/IntegrationStageConfigImpl"
-              }
-            }
-          }
-        }
-      ]
+      "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "JUnitTestReport": {
       "allOf": [
@@ -2117,17 +1695,10 @@
           "type": "object",
           "properties": {
             "paths": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             }
           }
         }
@@ -2203,44 +1774,19 @@
       ],
       "properties": {
         "annotations": {
-          "oneOf": [
-            {
-              "type": "object",
-              "additionalProperties": {
-                "type": "string"
-              }
-            },
-            {
-              "type": "string"
-            }
-          ]
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
         },
         "automountServiceAccountToken": {
-          "oneOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "boolean"
         },
         "connectorRef": {
           "type": "string"
         },
         "containerSecurityContext": {
-          "oneOf": [
-            {
-              "$ref": "#/definitions/SecurityContext"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "$ref": "#/definitions/SecurityContext"
         },
         "harnessImageConnectorRef": {
           "type": "string"
@@ -2249,99 +1795,49 @@
           "type": "string"
         },
         "labels": {
-          "oneOf": [
-            {
-              "type": "object",
-              "additionalProperties": {
-                "type": "string"
-              }
-            },
-            {
-              "type": "string"
-            }
-          ]
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
         },
         "namespace": {
           "type": "string"
         },
         "nodeSelector": {
-          "oneOf": [
-            {
-              "type": "object",
-              "additionalProperties": {
-                "type": "string"
-              }
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
         },
         "os": {
-          "oneOf": [
-            {
-              "type": "string",
-              "enum": [
-                "Linux",
-                "MacOS",
-                "Windows"
-              ]
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
+          "type": "string",
+          "enum": [
+            "Linux",
+            "MacOS",
+            "Windows"
           ]
         },
         "priorityClassName": {
           "type": "string"
         },
         "runAsUser": {
-          "oneOf": [
-            {
-              "type": "integer",
-              "format": "int32"
-            },
-            {
-              "type": "string"
-            }
-          ]
+          "type": "integer",
+          "format": "int32"
         },
         "serviceAccountName": {
           "type": "string"
         },
         "tolerations": {
-          "oneOf": [
-            {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/Toleration"
-              }
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Toleration"
+          }
         },
         "volumes": {
-          "oneOf": [
-            {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/CIVolume"
-              }
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CIVolume"
+          }
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -2391,14 +1887,7 @@
       "type": "object",
       "properties": {
         "cpu": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "number"
-            }
-          ]
+          "type": "string"
         },
         "memory": {
           "type": "string"
@@ -3191,35 +2680,17 @@
       "type": "object",
       "properties": {
         "arch": {
-          "oneOf": [
-            {
-              "type": "string",
-              "enum": [
-                "Amd64"
-              ]
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
+          "type": "string",
+          "enum": [
+            "Amd64"
           ]
         },
         "os": {
-          "oneOf": [
-            {
-              "type": "string",
-              "enum": [
-                "Linux",
-                "MacOS",
-                "Windows"
-              ]
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
+          "type": "string",
+          "enum": [
+            "Linux",
+            "MacOS",
+            "Windows"
           ]
         }
       },
@@ -3241,85 +2712,37 @@
               "type": "string"
             },
             "entrypoint": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             },
             "image": {
               "type": "string"
             },
             "imagePullPolicy": {
-              "oneOf": [
-                {
-                  "type": "string",
-                  "enum": [
-                    "Always",
-                    "Never",
-                    "IfNotPresent"
-                  ]
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
+              "type": "string",
+              "enum": [
+                "Always",
+                "Never",
+                "IfNotPresent"
               ]
             },
             "privileged": {
-              "oneOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
+              "type": "boolean"
             },
             "reports": {
-              "oneOf": [
-                {
-                  "$ref": "#/definitions/UnitTestReport"
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
+              "$ref": "#/definitions/UnitTestReport"
             },
             "resources": {
               "$ref": "#/definitions/ContainerResource"
             },
             "runAsUser": {
-              "oneOf": [
-                {
-                  "type": "integer",
-                  "format": "int32"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "integer",
+              "format": "int32"
             },
             "settings": {
-              "oneOf": [
-                {
-                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
             }
           }
         }
@@ -3490,19 +2913,10 @@
           ],
           "properties": {
             "archiveFormat": {
-              "oneOf": [
-                {
-                  "type": "string",
-                  "enum": [
-                    "Tar",
-                    "Gzip"
-                  ]
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
+              "type": "string",
+              "enum": [
+                "Tar",
+                "Gzip"
               ]
             },
             "baseImageConnectorRefs": {
@@ -3515,14 +2929,7 @@
               "type": "string"
             },
             "failIfKeyNotFound": {
-              "oneOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "boolean"
             },
             "key": {
               "type": "string"
@@ -3531,15 +2938,8 @@
               "$ref": "#/definitions/ContainerResource"
             },
             "runAsUser": {
-              "oneOf": [
-                {
-                  "type": "integer",
-                  "format": "int32"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "integer",
+              "format": "int32"
             }
           }
         }
@@ -3560,19 +2960,10 @@
           ],
           "properties": {
             "archiveFormat": {
-              "oneOf": [
-                {
-                  "type": "string",
-                  "enum": [
-                    "Tar",
-                    "Gzip"
-                  ]
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
+              "type": "string",
+              "enum": [
+                "Tar",
+                "Gzip"
               ]
             },
             "baseImageConnectorRefs": {
@@ -3588,27 +2979,13 @@
               "type": "string"
             },
             "failIfKeyNotFound": {
-              "oneOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "boolean"
             },
             "key": {
               "type": "string"
             },
             "pathStyle": {
-              "oneOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "boolean"
             },
             "region": {
               "type": "string"
@@ -3617,15 +2994,8 @@
               "$ref": "#/definitions/ContainerResource"
             },
             "runAsUser": {
-              "oneOf": [
-                {
-                  "type": "integer",
-                  "format": "int32"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "integer",
+              "format": "int32"
             }
           }
         }
@@ -3703,107 +3073,48 @@
               "type": "string"
             },
             "envVariables": {
-              "oneOf": [
-                {
-                  "type": "object",
-                  "additionalProperties": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
             },
             "image": {
               "type": "string"
             },
             "imagePullPolicy": {
-              "oneOf": [
-                {
-                  "type": "string",
-                  "enum": [
-                    "Always",
-                    "Never",
-                    "IfNotPresent"
-                  ]
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
+              "type": "string",
+              "enum": [
+                "Always",
+                "Never",
+                "IfNotPresent"
               ]
             },
             "outputVariables": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/definitions/OutputNGVariable"
-                  }
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/OutputNGVariable"
+              }
             },
             "privileged": {
-              "oneOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
+              "type": "boolean"
             },
             "reports": {
-              "oneOf": [
-                {
-                  "$ref": "#/definitions/UnitTestReport"
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
+              "$ref": "#/definitions/UnitTestReport"
             },
             "resources": {
               "$ref": "#/definitions/ContainerResource"
             },
             "runAsUser": {
-              "oneOf": [
-                {
-                  "type": "integer",
-                  "format": "int32"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "integer",
+              "format": "int32"
             },
             "shell": {
-              "oneOf": [
-                {
-                  "type": "string",
-                  "enum": [
-                    "Sh",
-                    "Bash",
-                    "Powershell",
-                    "Pwsh"
-                  ]
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
+              "type": "string",
+              "enum": [
+                "Sh",
+                "Bash",
+                "Powershell",
+                "Pwsh"
               ]
             }
           }
@@ -3828,125 +3139,64 @@
               "type": "string"
             },
             "buildEnvironment": {
-              "oneOf": [
-                {
-                  "type": "string",
-                  "enum": [
-                    "Core",
-                    "Framework"
-                  ]
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
+              "type": "string",
+              "enum": [
+                "Core",
+                "Framework"
               ]
             },
             "buildTool": {
-              "oneOf": [
-                {
-                  "type": "string",
-                  "enum": [
-                    "Maven",
-                    "Bazel",
-                    "Gradle",
-                    "Dotnet",
-                    "Nunitconsole"
-                  ]
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
+              "type": "string",
+              "enum": [
+                "Maven",
+                "Bazel",
+                "Gradle",
+                "Dotnet",
+                "Nunitconsole"
               ]
             },
             "connectorRef": {
               "type": "string"
             },
             "envVariables": {
-              "oneOf": [
-                {
-                  "type": "object",
-                  "additionalProperties": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
             },
             "frameworkVersion": {
-              "oneOf": [
-                {
-                  "type": "string",
-                  "enum": [
-                    "5.0",
-                    "6.0"
-                  ]
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
+              "type": "string",
+              "enum": [
+                "5.0",
+                "6.0"
               ]
             },
             "image": {
               "type": "string"
             },
             "imagePullPolicy": {
-              "oneOf": [
-                {
-                  "type": "string",
-                  "enum": [
-                    "Always",
-                    "Never",
-                    "IfNotPresent"
-                  ]
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
+              "type": "string",
+              "enum": [
+                "Always",
+                "Never",
+                "IfNotPresent"
               ]
             },
             "language": {
-              "oneOf": [
-                {
-                  "type": "string",
-                  "enum": [
-                    "Java",
-                    "Csharp"
-                  ]
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
+              "type": "string",
+              "enum": [
+                "Java",
+                "Csharp"
               ]
             },
             "namespaces": {
               "type": "string"
             },
             "outputVariables": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/definitions/OutputNGVariable"
-                  }
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/OutputNGVariable"
+              }
             },
             "packages": {
               "type": "string"
@@ -3958,69 +3208,28 @@
               "type": "string"
             },
             "privileged": {
-              "oneOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
+              "type": "boolean"
             },
             "reports": {
-              "oneOf": [
-                {
-                  "$ref": "#/definitions/UnitTestReport"
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
+              "$ref": "#/definitions/UnitTestReport"
             },
             "resources": {
               "$ref": "#/definitions/ContainerResource"
             },
             "runAsUser": {
-              "oneOf": [
-                {
-                  "type": "integer",
-                  "format": "int32"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "integer",
+              "format": "int32"
             },
             "runOnlySelectedTests": {
-              "oneOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "boolean"
             },
             "shell": {
-              "oneOf": [
-                {
-                  "type": "string",
-                  "enum": [
-                    "Sh",
-                    "Bash",
-                    "Powershell",
-                    "Pwsh"
-                  ]
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
+              "type": "string",
+              "enum": [
+                "Sh",
+                "Bash",
+                "Powershell",
+                "Pwsh"
               ]
             },
             "testAnnotations": {
@@ -4059,19 +3268,10 @@
           ],
           "properties": {
             "archiveFormat": {
-              "oneOf": [
-                {
-                  "type": "string",
-                  "enum": [
-                    "Tar",
-                    "Gzip"
-                  ]
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
+              "type": "string",
+              "enum": [
+                "Tar",
+                "Gzip"
               ]
             },
             "baseImageConnectorRefs": {
@@ -4087,41 +3287,20 @@
               "type": "string"
             },
             "override": {
-              "oneOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "boolean"
             },
             "resources": {
               "$ref": "#/definitions/ContainerResource"
             },
             "runAsUser": {
-              "oneOf": [
-                {
-                  "type": "integer",
-                  "format": "int32"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "integer",
+              "format": "int32"
             },
             "sourcePaths": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             }
           }
         }
@@ -4143,19 +3322,10 @@
           ],
           "properties": {
             "archiveFormat": {
-              "oneOf": [
-                {
-                  "type": "string",
-                  "enum": [
-                    "Tar",
-                    "Gzip"
-                  ]
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
+              "type": "string",
+              "enum": [
+                "Tar",
+                "Gzip"
               ]
             },
             "baseImageConnectorRefs": {
@@ -4174,24 +3344,10 @@
               "type": "string"
             },
             "override": {
-              "oneOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "boolean"
             },
             "pathStyle": {
-              "oneOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "boolean"
             },
             "region": {
               "type": "string"
@@ -4200,28 +3356,14 @@
               "$ref": "#/definitions/ContainerResource"
             },
             "runAsUser": {
-              "oneOf": [
-                {
-                  "type": "integer",
-                  "format": "int32"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "integer",
+              "format": "int32"
             },
             "sourcePaths": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             }
           }
         }
@@ -4264,82 +3406,30 @@
       "type": "object",
       "properties": {
         "allowPrivilegeEscalation": {
-          "oneOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "boolean"
         },
         "capabilities": {
           "$ref": "#/definitions/Capabilities"
         },
         "privileged": {
-          "oneOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "boolean"
         },
         "procMount": {
           "type": "string"
         },
         "readOnlyRootFilesystem": {
-          "oneOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "boolean"
         },
         "runAsGroup": {
-          "oneOf": [
-            {
-              "type": "integer",
-              "format": "int32"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "integer",
+          "format": "int32"
         },
         "runAsNonRoot": {
-          "oneOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "boolean"
         },
         "runAsUser": {
-          "oneOf": [
-            {
-              "type": "integer",
-              "format": "int32"
-            },
-            {
-              "type": "string"
-            }
-          ]
+          "type": "integer",
+          "format": "int32"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -4356,72 +3446,31 @@
               "$ref": "#/definitions/ParameterFieldListString"
             },
             "imagePullPolicy": {
-              "oneOf": [
-                {
-                  "type": "string",
-                  "enum": [
-                    "Always",
-                    "Never",
-                    "IfNotPresent"
-                  ]
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
+              "type": "string",
+              "enum": [
+                "Always",
+                "Never",
+                "IfNotPresent"
               ]
             },
             "outputVariables": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/definitions/OutputNGVariable"
-                  }
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/OutputNGVariable"
+              }
             },
             "privileged": {
-              "oneOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
+              "type": "boolean"
             },
             "resources": {
               "$ref": "#/definitions/ContainerResource"
             },
             "runAsUser": {
-              "oneOf": [
-                {
-                  "type": "integer",
-                  "format": "int32"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "integer",
+              "format": "int32"
             },
             "settings": {
-              "oneOf": [
-                {
-                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
             }
           }
         }
@@ -4495,6 +3544,9 @@
           "type": "string",
           "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
         },
+        "spec": {
+          "$ref": "#/definitions/StepSpecType"
+        },
         "strategy": {
           "$ref": "#/definitions/StrategyConfig"
         },
@@ -4509,281 +3561,7 @@
           "$ref": "#/definitions/StepWhenCondition"
         }
       },
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "allOf": [
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "ArtifactoryUpload"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/UploadToArtifactoryStepInfo"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "Background"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/BackgroundStepInfo"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "BuildAndPushACR"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/ACRStepInfo"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "BuildAndPushDockerRegistry"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/DockerStepInfo"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "BuildAndPushECR"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/ECRStepInfo"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "BuildAndPushGCR"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/GCRStepInfo"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "GCSUpload"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/UploadToGCSStepInfo"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "GitClone"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/GitCloneStepInfo"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "Plugin"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/PluginStepInfo"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "RestoreCacheGCS"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/RestoreCacheGCSStepInfo"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "RestoreCacheS3"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/RestoreCacheS3StepInfo"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "Run"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/RunStepInfo"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "RunTests"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/RunTestsStepInfo"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "S3Upload"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/UploadToS3StepInfo"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "SaveCacheGCS"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/SaveCacheGCSStepInfo"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "SaveCacheS3"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/SaveCacheS3StepInfo"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "Security"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/SecurityStepInfo"
-              }
-            }
-          }
-        }
-      ]
+      "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "StepGroupElementConfig": {
       "type": "object",
@@ -4794,19 +3572,10 @@
       ],
       "properties": {
         "delegateSelectors": {
-          "oneOf": [
-            {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
         "failureStrategies": {
           "type": "array",
@@ -5023,6 +3792,9 @@
     "UnitTestReport": {
       "type": "object",
       "properties": {
+        "spec": {
+          "$ref": "#/definitions/UnitTestReportSpec"
+        },
         "type": {
           "type": "string",
           "enum": [
@@ -5030,25 +3802,7 @@
           ]
         }
       },
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "allOf": [
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "JUnit"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/JUnitTestReport"
-              }
-            }
-          }
-        }
-      ]
+      "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "UnitTestReportSpec": {
       "type": "object",
@@ -5077,15 +3831,8 @@
               "$ref": "#/definitions/ContainerResource"
             },
             "runAsUser": {
-              "oneOf": [
-                {
-                  "type": "integer",
-                  "format": "int32"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "integer",
+              "format": "int32"
             },
             "sourcePath": {
               "type": "string"
@@ -5124,15 +3871,8 @@
               "$ref": "#/definitions/ContainerResource"
             },
             "runAsUser": {
-              "oneOf": [
-                {
-                  "type": "integer",
-                  "format": "int32"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "integer",
+              "format": "int32"
             },
             "sourcePath": {
               "type": "string"
@@ -5178,15 +3918,8 @@
               "$ref": "#/definitions/ContainerResource"
             },
             "runAsUser": {
-              "oneOf": [
-                {
-                  "type": "integer",
-                  "format": "int32"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "integer",
+              "format": "int32"
             },
             "sourcePath": {
               "type": "string"
@@ -5290,11 +4023,7 @@
           ],
           "properties": {
             "spec": {
-              "oneOf": [
-                {
-                  "$ref": "#/definitions/VmPoolYaml"
-                }
-              ]
+              "$ref": "#/definitions/VmInfraSpec"
             },
             "type": {
               "type": "string",
@@ -5349,20 +4078,11 @@
           "type": "string"
         },
         "os": {
-          "oneOf": [
-            {
-              "type": "string",
-              "enum": [
-                "Linux",
-                "MacOS",
-                "Windows"
-              ]
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
+          "type": "string",
+          "enum": [
+            "Linux",
+            "MacOS",
+            "Windows"
           ]
         },
         "poolName": {
