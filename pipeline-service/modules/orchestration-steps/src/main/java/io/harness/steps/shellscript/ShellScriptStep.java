@@ -14,9 +14,11 @@ import static java.util.Collections.emptyList;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.shell.ShellScriptTaskNG;
-import io.harness.delegate.task.shell.ShellScriptTaskParametersNG;
 import io.harness.delegate.task.shell.ShellScriptTaskResponseNG;
+import io.harness.delegate.task.shell.WinRmShellScriptTaskNG;
+import io.harness.exception.UnsupportedOperationException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.UnitProgress;
 import io.harness.logstreaming.ILogStreamingStepClient;
@@ -43,6 +45,7 @@ import io.harness.supplier.ThrowingSupplier;
 import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -65,13 +68,24 @@ public class ShellScriptStep extends TaskExecutableWithRollback<ShellScriptTaskR
   @Override
   public TaskRequest obtainTask(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
-    ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
-    logStreamingStepClient.openStream(ShellScriptTaskNG.COMMAND_UNIT);
     ShellScriptStepParameters shellScriptStepParameters = (ShellScriptStepParameters) stepParameters.getSpec();
-
-    ShellScriptTaskParametersNG taskParameters =
+    TaskParameters taskParameters =
         shellScriptHelperService.buildShellScriptTaskParametersNG(ambiance, shellScriptStepParameters);
 
+    switch (shellScriptStepParameters.getShell()) {
+      case Bash:
+        return obtainBashTask(ambiance, stepParameters, shellScriptStepParameters, taskParameters);
+      case PowerShell:
+        return obtainPowerShellTask(ambiance, stepParameters, shellScriptStepParameters, taskParameters);
+      default:
+        throw new UnsupportedOperationException("Shell type not supported: " + shellScriptStepParameters.getShell());
+    }
+  }
+
+  private TaskRequest obtainBashTask(Ambiance ambiance, StepElementParameters stepParameters,
+      ShellScriptStepParameters shellScriptStepParameters, TaskParameters taskParameters) {
+    ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
+    logStreamingStepClient.openStream(ShellScriptTaskNG.COMMAND_UNIT);
     TaskData taskData =
         TaskData.builder()
             .async(true)
@@ -83,6 +97,28 @@ public class ShellScriptStep extends TaskExecutableWithRollback<ShellScriptTaskR
         CollectionUtils.emptyIfNull(StepUtils.generateLogKeys(
             StepUtils.generateLogAbstractions(ambiance), Collections.singletonList(ShellScriptTaskNG.COMMAND_UNIT))),
         null, null, TaskSelectorYaml.toTaskSelector(shellScriptStepParameters.getDelegateSelectors()),
+        stepHelper.getEnvironmentType(ambiance));
+  }
+
+  private TaskRequest obtainPowerShellTask(Ambiance ambiance, StepElementParameters stepParameters,
+      ShellScriptStepParameters shellScriptStepParameters, TaskParameters taskParameters) {
+    ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
+
+    List<String> units = Arrays.asList(WinRmShellScriptTaskNG.INIT_UNIT, WinRmShellScriptTaskNG.COMMAND_UNIT);
+    for (String unit : units) {
+      logStreamingStepClient.openStream(unit);
+    }
+
+    TaskData taskData =
+        TaskData.builder()
+            .async(true)
+            .taskType(TaskType.WIN_RM_SHELL_SCRIPT_TASK_NG.name())
+            .parameters(new Object[] {taskParameters})
+            .timeout(StepUtils.getTimeoutMillis(stepParameters.getTimeout(), StepUtils.DEFAULT_STEP_TIMEOUT))
+            .build();
+    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer, units,
+        TaskType.WIN_RM_SHELL_SCRIPT_TASK_NG.getDisplayName(),
+        TaskSelectorYaml.toTaskSelector(shellScriptStepParameters.getDelegateSelectors()),
         stepHelper.getEnvironmentType(ambiance));
   }
 
@@ -139,7 +175,7 @@ public class ShellScriptStep extends TaskExecutableWithRollback<ShellScriptTaskR
     } finally {
       ILogStreamingStepClient logStreamingStepClient =
           logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
-      logStreamingStepClient.closeStream(ShellScriptTaskNG.COMMAND_UNIT);
+      logStreamingStepClient.closeAllOpenStreamsWithPrefix(StepUtils.generateLogKeys(ambiance, emptyList()).get(0));
     }
   }
 }

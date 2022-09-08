@@ -8,7 +8,7 @@
 package io.harness.entity;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.beans.ClientType;
 import io.harness.mongo.index.FdIndex;
 import io.harness.ng.DbAliases;

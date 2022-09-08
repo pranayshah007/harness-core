@@ -139,14 +139,6 @@ public class ViewsQueryBuilder {
       List<QLCEInExpressionFilter> inExpressionFilters, List<QLCEViewGroupBy> groupByList,
       List<QLCEViewAggregation> aggregations, List<QLCEViewSortCriteria> sortCriteriaList,
       String cloudProviderTableName, int timeOffsetInDays) {
-    return getQuery(rules, filters, timeFilters, inExpressionFilters, groupByList, aggregations, sortCriteriaList,
-        cloudProviderTableName, timeOffsetInDays, Collections.emptyList());
-  }
-
-  public SelectQuery getQuery(List<ViewRule> rules, List<QLCEViewFilter> filters, List<QLCEViewTimeFilter> timeFilters,
-      List<QLCEInExpressionFilter> inExpressionFilters, List<QLCEViewGroupBy> groupByList,
-      List<QLCEViewAggregation> aggregations, List<QLCEViewSortCriteria> sortCriteriaList,
-      String cloudProviderTableName, int timeOffsetInDays, List<BusinessMapping> sharedCostBusinessMappings) {
     SelectQuery selectQuery = new SelectQuery();
     selectQuery.addCustomFromTable(cloudProviderTableName);
     List<QLCEViewFieldInput> groupByEntity = getGroupByEntity(groupByList);
@@ -209,10 +201,6 @@ public class ViewsQueryBuilder {
     if (!aggregations.isEmpty()) {
       decorateQueryWithAggregations(selectQuery, aggregations);
       decorateQueryWithSharedCostAggregations(selectQuery, groupByEntity);
-    }
-
-    if (!sharedCostBusinessMappings.isEmpty()) {
-      decorateQueryWithSharedCostBusinessMappings(selectQuery, sharedCostBusinessMappings);
     }
 
     if (!sortCriteriaList.isEmpty()) {
@@ -967,16 +955,6 @@ public class ViewsQueryBuilder {
           Converter.toCustomColumnSqlObject(functionCall.addCustomParams(new CustomSql(aggregation.getColumnName())),
               getAliasNameForAggregation(aggregation.getColumnName())));
     }
-  }
-
-  private void decorateQueryWithSharedCostBusinessMappings(
-      SelectQuery selectQuery, List<BusinessMapping> sharedCostBusinessMappings) {
-    sharedCostBusinessMappings.forEach(businessMapping -> {
-      List<SharedCost> sharedCosts = businessMapping.getSharedCosts();
-      if (sharedCosts != null) {
-        sharedCosts.forEach(sharedCost -> decorateQueryWithSharedCostAggregation(selectQuery, sharedCost));
-      }
-    });
   }
 
   private void decorateQueryWithSharedCostAggregations(

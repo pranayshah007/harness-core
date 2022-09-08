@@ -539,7 +539,7 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
   private String getFqnFromStepNode(YamlNode stepsNode, String stepNodeType) {
     YamlNode stepNode = stepsNode.getField(STEP).getNode();
     if (stepNodeType.equals(stepNode.getType())) {
-      return YamlUtils.getFullyQualifiedName(stepNode);
+      return YamlUtils.getFullyQualifiedName(stepNode, true);
     }
 
     return null;

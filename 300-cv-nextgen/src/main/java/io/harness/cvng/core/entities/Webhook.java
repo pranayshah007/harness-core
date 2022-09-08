@@ -8,7 +8,7 @@
 package io.harness.cvng.core.entities;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.cvng.core.beans.WebhookType;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;

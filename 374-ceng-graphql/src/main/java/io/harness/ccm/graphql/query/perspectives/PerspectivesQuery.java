@@ -30,6 +30,7 @@ import io.harness.ccm.graphql.utils.GraphQLUtils;
 import io.harness.ccm.graphql.utils.annotations.GraphQLApi;
 import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.views.entities.ViewQueryParams;
+import io.harness.ccm.views.entities.ViewRule;
 import io.harness.ccm.views.graphql.QLCEViewAggregation;
 import io.harness.ccm.views.graphql.QLCEViewFilterWrapper;
 import io.harness.ccm.views.graphql.QLCEViewGroupBy;
@@ -206,11 +207,17 @@ public class PerspectivesQuery {
     ViewQueryParams viewQueryParamsWithSkipDefaultGroupBy =
         viewsQueryHelper.buildQueryParams(accountId, true, false, isClusterQuery, false, true);
 
+    List<ViewRule> viewRules = viewsBillingService.getViewRules(filters);
+    Set<String> businessMappingIdsFromRules = viewsQueryHelper.getBusinessMappingIdsFromViewRules(viewRules);
+    List<String> businessMappingIdsFromRulesAndFilters = viewsQueryHelper.getBusinessMappingIdsFromFilters(filters);
+    businessMappingIdsFromRulesAndFilters.addAll(businessMappingIdsFromRules);
+    boolean addSharedCostFromGroupBy = !businessMappingIdsFromRulesAndFilters.contains(businessMappingId);
+
     PerspectiveTimeSeriesData data = perspectiveTimeSeriesHelper.fetch(
         viewsBillingService.getTimeSeriesStatsNg(bigQuery, filters, groupBy, aggregateFunction, sortCriteria,
             cloudProviderTableName, includeOthers, limit, viewQueryParams),
-        timePeriod, conversionField, businessMappingId, accountId, groupBy,
-        perspectiveTimeSeriesHelper.getSharedCostBucketsFromFilters(filters), sharedCostFromFilters);
+        timePeriod, conversionField, businessMappingId, accountId, groupBy, sharedCostFromFilters,
+        addSharedCostFromGroupBy);
 
     Map<Long, Double> othersTotalCost = Collections.emptyMap();
     if (includeOthers) {

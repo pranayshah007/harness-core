@@ -9,6 +9,7 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//commons/go/lib/logs",
+        "//product/ci/addon/remote",
         "//product/ci/common/external",
         "//product/ci/engine/consts",
         "//product/ci/engine/grpc/client",

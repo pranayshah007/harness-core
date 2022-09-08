@@ -7,7 +7,7 @@
 
 package io.harness.connector.entities.embedded.docker;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.connector.entities.Connector;
 import io.harness.delegate.beans.connector.docker.DockerAuthType;
 import io.harness.delegate.beans.connector.docker.DockerRegistryProviderType;

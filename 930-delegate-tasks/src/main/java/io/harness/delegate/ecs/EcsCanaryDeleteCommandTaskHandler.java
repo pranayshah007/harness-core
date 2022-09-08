@@ -23,6 +23,7 @@ import io.harness.logging.LogLevel;
 
 import com.google.inject.Inject;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
@@ -69,15 +70,20 @@ public class EcsCanaryDeleteCommandTaskHandler extends EcsCommandTaskNGHandler {
     EcsCanaryDeleteResult ecsCanaryDeleteResult = null;
 
     if (optionalService.isPresent() && ecsCommandTaskHelper.isServiceActive(optionalService.get())) {
+      canaryDeleteLogCallback.saveExecutionLog(format("Deleting service %s..", canaryServiceName), LogLevel.INFO);
+
       ecsCommandTaskHelper.deleteService(canaryServiceName, ecsInfraConfig.getCluster(), ecsInfraConfig.getRegion(),
           ecsInfraConfig.getAwsConnectorDTO());
-      canaryDeleteLogCallback.saveExecutionLog(
-          format("Canary service %s deleted", canaryServiceName), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
 
-      // todo: do we need to add inactive state check
+      ecsCommandTaskHelper.ecsServiceInactiveStateCheck(canaryDeleteLogCallback, ecsInfraConfig.getAwsConnectorDTO(),
+          ecsInfraConfig.getCluster(), canaryServiceName, ecsInfraConfig.getRegion(),
+          (int) TimeUnit.MILLISECONDS.toMinutes(timeoutInMillis));
 
       ecsCanaryDeleteResult =
           EcsCanaryDeleteResult.builder().canaryDeleted(true).canaryServiceName(canaryServiceName).build();
+
+      canaryDeleteLogCallback.saveExecutionLog(
+          format("Canary service %s deleted", canaryServiceName), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
     } else {
       canaryDeleteLogCallback.saveExecutionLog(
           format("Canary service %s doesn't exist", canaryServiceName), LogLevel.INFO, CommandExecutionStatus.SUCCESS);

@@ -7,7 +7,7 @@
 
 package io.harness.ng.core.activityhistory.entity;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.ng.DbAliases;
 

@@ -1,0 +1,130 @@
+spec:
+  execution:
+    steps:
+      - step:
+          name: "Deploy"
+          identifier: Deploy
+          type: Command
+          timeout: 10m
+          strategy:
+            repeat:
+              items: <+stage.output.hosts>
+          spec:
+            onDelegate: false
+            environmentVariables:
+              - name: ReleaseNo
+                type: String
+                value: ""
+              - name: ServiceName
+                type: String
+                value: ""
+              - name: AppPoolName
+                type: String
+                value: "DefaultAppPool"
+              - name: AppPoolDotNetVersion
+                type: String
+                value: "v4.0"
+              - name: DownloadDirectory
+                type: String
+                value: "$env:TEMP"
+              - name: AppPhysicalDirectory
+                type: String
+                value: "$env:SYSTEMDRIVE"
+            outputVariables: []
+            commandUnits:
+              - identifier: Copy_Artifact
+                name: "Copy Artifact"
+                type: Copy
+                spec:
+                  sourceType: Artifact
+                  destinationPath: "%USERPROFILE%\\<+service.name>\\<+env.name>"
+              - identifier: Expend_Artifact
+                name: "Expend Artifact"
+                type: Script
+                spec:
+                  shell: PowerShell
+                  source:
+                    type: Inline
+                    spec:
+                      script: |-
+                        <+extend_artifact_script_powershell>
+              - identifier: Copy_Config
+                name: "Copy Config"
+                type: Copy
+                spec:
+                  sourceType: Config
+                  destinationPath: "%USERPROFILE%\\<+service.name>\\<+env.name>"
+              - identifier: Create_Virtual_Directory
+                name: "Create Virtual Directory"
+                type: Script
+                spec:
+                  shell: PowerShell
+                  source:
+                    type: Inline
+                    spec:
+                      script: |-
+                        <+create_virtual_directory_script_powershell>
+    rollbackSteps:
+      - step:
+          name: "Rollback"
+          identifier: Rollback
+          type: Command
+          timeout: 10m
+          strategy:
+            repeat:
+              items: <+stage.output.hosts>
+          spec:
+            onDelegate: false
+            environmentVariables:
+              - name: ReleaseNo
+                type: String
+                value: ""
+              - name: ServiceName
+                type: String
+                value: ""
+              - name: AppPoolName
+                type: String
+                value: "DefaultAppPool"
+              - name: AppPoolDotNetVersion
+                type: String
+                value: "v4.0"
+              - name: DownloadDirectory
+                type: String
+                value: "$env:TEMP"
+              - name: AppPhysicalDirectory
+                type: String
+                value: "$env:SYSTEMDRIVE"
+            outputVariables: []
+            commandUnits:
+              - identifier: Copy_Artifact_Rollback
+                name: "Copy Artifact Rollback"
+                type: Copy
+                spec:
+                  sourceType: Artifact
+                  destinationPath: "%USERPROFILE%\\<+service.name>\\<+env.name>"
+              - identifier: Expend_Artifact_Rollback
+                name: "Expend Artifact Rollback"
+                type: Script
+                spec:
+                  shell: PowerShell
+                  source:
+                    type: Inline
+                    spec:
+                      script: |-
+                        <+extend_artifact_script_powershell>
+              - identifier: Copy_ConfigRollback
+                name: "Copy Config Rollback"
+                type: Copy
+                spec:
+                  sourceType: Config
+                  destinationPath: "%USERPROFILE%\\<+service.name>\\<+env.name>"
+              - identifier: Create_Virtual_Directory_Rollback
+                name: "Create Virtual Directory Rollback"
+                type: Script
+                spec:
+                  shell: PowerShell
+                  source:
+                    type: Inline
+                    spec:
+                      script: |-
+                        <+create_virtual_directory_script_powershell>

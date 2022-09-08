@@ -37,6 +37,7 @@ public class AWSConnectorTestHelper {
   public final String REPORT_NAME = "report_name_utsav";
   public final String S3_BUCKET_NAME = "ce-customer-billing-data-dev";
   public final String AWS_ACCOUNT_ID = "890436954479";
+  public final Boolean IS_AWS_GOV_CLOUD_ACCOUNT = false;
   public final String EXTERNAL_ID = "harness:108817434118:kmpySmUISimoRrJL6NL73w";
   public final String CROSS_ACCOUNT_ROLE_ARN = "arn:aws:iam::890436954479:role/harnessCERole";
   public final String DEFAULT_REGION = "us-east-1";
@@ -84,6 +85,7 @@ public class AWSConnectorTestHelper {
     return CEAwsConnectorDTO.builder()
         .curAttributes(awsCurAttributesDTO)
         .awsAccountId(AWS_ACCOUNT_ID)
+        .isAWSGovCloudAccount(IS_AWS_GOV_CLOUD_ACCOUNT)
         .crossAccountAccess(createCrossAccountAccessDTO())
         .featuresEnabled(CE_AWS_FEATURES_ENABLED)
         .build();
@@ -97,6 +99,7 @@ public class AWSConnectorTestHelper {
     return CEAwsConfig.builder()
         .featuresEnabled(CE_AWS_FEATURES_ENABLED)
         .awsAccountId(AWS_ACCOUNT_ID)
+        .isAWSGovCloudAccount(IS_AWS_GOV_CLOUD_ACCOUNT)
         .crossAccountAccess(createCrossAccountAccessDTO())
         .curAttributes(CURAttributes.builder()
                            .reportName(REPORT_NAME)

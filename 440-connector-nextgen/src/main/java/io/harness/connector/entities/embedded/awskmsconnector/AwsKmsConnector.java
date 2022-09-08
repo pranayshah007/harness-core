@@ -9,7 +9,7 @@ package io.harness.connector.entities.embedded.awskmsconnector;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.entities.Connector;
 import io.harness.delegate.beans.connector.awskmsconnector.AwsKmsCredentialType;

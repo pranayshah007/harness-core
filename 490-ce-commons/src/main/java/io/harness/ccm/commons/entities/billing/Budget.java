@@ -7,7 +7,7 @@
 
 package io.harness.ccm.commons.entities.billing;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.ccm.budget.AlertThreshold;
 import io.harness.ccm.budget.BudgetPeriod;
 import io.harness.ccm.budget.BudgetScope;

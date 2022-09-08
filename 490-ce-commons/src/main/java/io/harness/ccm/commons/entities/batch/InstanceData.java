@@ -7,7 +7,7 @@
 
 package io.harness.ccm.commons.entities.batch;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.ccm.HarnessServiceInfoNG;
 import io.harness.ccm.commons.beans.Container;
 import io.harness.ccm.commons.beans.HarnessServiceInfo;

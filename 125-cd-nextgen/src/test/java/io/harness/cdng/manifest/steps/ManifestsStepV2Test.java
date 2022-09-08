@@ -13,6 +13,7 @@ import static org.mockito.Mockito.verify;
 
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.manifest.ManifestConfigType;
 import io.harness.cdng.manifest.yaml.GitStore;
 import io.harness.cdng.manifest.yaml.ManifestConfig;
@@ -56,6 +57,7 @@ public class ManifestsStepV2Test {
   @Mock private ExecutionSweepingOutputService sweepingOutputService;
   @Mock private ConnectorService connectorService;
   @Mock private CDStepHelper cdStepHelper;
+  @Mock private CDExpressionResolver expressionResolver;
   @InjectMocks private ManifestsStepV2 step = new ManifestsStepV2();
   private AutoCloseable mocks;
 
@@ -93,6 +95,8 @@ public class ManifestsStepV2Test {
     ArgumentCaptor<ManifestsOutcome> captor = ArgumentCaptor.forClass(ManifestsOutcome.class);
     verify(sweepingOutputService, times(1))
         .consume(any(Ambiance.class), eq("manifests"), captor.capture(), eq("STAGE"));
+    verify(expressionResolver, times(1)).updateExpressions(any(Ambiance.class), any());
+
     ManifestsOutcome outcome = captor.getValue();
 
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);

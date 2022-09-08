@@ -71,4 +71,7 @@ public interface ServiceEntityService {
   @NotNull
   YamlNode getYamlNodeForFqn(@NotEmpty String accountId, @NotEmpty String orgIdentifier,
       @NotEmpty String projectIdentifier, @NotEmpty String serviceIdentifier, @NotEmpty String fqn);
+
+  List<ServiceEntity> getServices(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> serviceIdentifiers);
 }

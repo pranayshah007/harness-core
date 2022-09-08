@@ -40,6 +40,8 @@ import io.harness.security.dto.ServicePrincipal;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -47,6 +49,10 @@ import lombok.extern.slf4j.Slf4j;
 public class EnvironmentEventHandler implements OutboxEventHandler {
   private final ObjectMapper objectMapper;
   private final AuditClientService auditClientService;
+
+  private static final String OLD_YAML = "oldYaml";
+  private static final String NEW_YAML = "newYaml";
+  private static final String EMPTY_YAML = "";
 
   @Inject
   EnvironmentEventHandler(AuditClientService auditClientService) {
@@ -107,10 +113,8 @@ public class EnvironmentEventHandler implements OutboxEventHandler {
   }
   private boolean handlerEnvironmentUpdated(OutboxEvent outboxEvent) throws IOException {
     GlobalContext globalContext = outboxEvent.getGlobalContext();
-    EnvironmentUpdatedEvent environmentUpdateEvent =
-        objectMapper.readValue(outboxEvent.getEventData(), EnvironmentUpdatedEvent.class);
-    final Environment newEnvironment = environmentUpdateEvent.getNewEnvironment();
-    final Environment oldEnvironment = environmentUpdateEvent.getOldEnvironment();
+    Map<String, String> yamls = updateYaml(outboxEvent);
+
     AuditEntry auditEntry = AuditEntry.builder()
                                 .action(Action.UPDATE)
                                 .module(ModuleType.CORE)
@@ -118,12 +122,8 @@ public class EnvironmentEventHandler implements OutboxEventHandler {
                                 .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
                                 .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
                                 .timestamp(outboxEvent.getCreatedAt())
-                                .newYaml(isNotEmpty(newEnvironment.getYaml())
-                                        ? newEnvironment.getYaml()
-                                        : getYamlString(EnvironmentMapper.toNGEnvironmentConfig(newEnvironment)))
-                                .oldYaml(isNotEmpty(oldEnvironment.getYaml())
-                                        ? oldEnvironment.getYaml()
-                                        : getYamlString(EnvironmentMapper.toNGEnvironmentConfig(oldEnvironment)))
+                                .newYaml(isNotEmpty(yamls.get(NEW_YAML)) ? yamls.get(NEW_YAML) : null)
+                                .oldYaml(isNotEmpty(yamls.get(OLD_YAML)) ? yamls.get(OLD_YAML) : null)
                                 .build();
 
     Principal principal = null;
@@ -134,6 +134,46 @@ public class EnvironmentEventHandler implements OutboxEventHandler {
     }
     return auditClientService.publishAudit(auditEntry, fromSecurityPrincipal(principal), globalContext);
   }
+
+  private Map<String, String> updateYaml(OutboxEvent outboxEvent) throws IOException {
+    Map<String, String> yamls = new HashMap<>();
+    EnvironmentUpdatedEvent environmentUpdateEvent =
+        objectMapper.readValue(outboxEvent.getEventData(), EnvironmentUpdatedEvent.class);
+
+    switch (environmentUpdateEvent.getResourceType()) {
+      case SERVICE_OVERRIDE:
+        yamls.put(OLD_YAML,
+            environmentUpdateEvent.getOldServiceOverridesEntity() == null
+                ? EMPTY_YAML
+                : environmentUpdateEvent.getOldServiceOverridesEntity().getYaml());
+        yamls.put(NEW_YAML,
+            environmentUpdateEvent.getNewServiceOverridesEntity() == null
+                ? EMPTY_YAML
+                : environmentUpdateEvent.getNewServiceOverridesEntity().getYaml());
+        return yamls;
+      case INFRASTRUCTURE:
+        yamls.put(OLD_YAML,
+            environmentUpdateEvent.getOldInfrastructureEntity() == null
+                ? EMPTY_YAML
+                : environmentUpdateEvent.getOldInfrastructureEntity().getYaml());
+        yamls.put(NEW_YAML,
+            environmentUpdateEvent.getNewInfrastructureEntity() == null
+                ? EMPTY_YAML
+                : environmentUpdateEvent.getNewInfrastructureEntity().getYaml());
+        return yamls;
+      default:
+        yamls.put(OLD_YAML,
+            isNotEmpty(environmentUpdateEvent.getOldEnvironment().getYaml())
+                ? environmentUpdateEvent.getOldEnvironment().getYaml()
+                : getYamlString(EnvironmentMapper.toNGEnvironmentConfig(environmentUpdateEvent.getOldEnvironment())));
+        yamls.put(NEW_YAML,
+            isNotEmpty(environmentUpdateEvent.getNewEnvironment().getYaml())
+                ? environmentUpdateEvent.getNewEnvironment().getYaml()
+                : getYamlString(EnvironmentMapper.toNGEnvironmentConfig(environmentUpdateEvent.getNewEnvironment())));
+        return yamls;
+    }
+  }
+
   private boolean handlerEnvironmentDeleted(OutboxEvent outboxEvent) throws IOException {
     GlobalContext globalContext = outboxEvent.getGlobalContext();
     EnvironmentDeleteEvent environmentDeleteEvent =

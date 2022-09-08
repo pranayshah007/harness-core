@@ -16,7 +16,9 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.app.beans.dto.CITaskDetails;
 import io.harness.beans.DelegateTaskRequest;
+import io.harness.beans.outcomes.VmDetailsOutcome;
 import io.harness.ci.logserviceclient.CILogServiceUtils;
 import io.harness.ci.states.codebase.CodeBaseTaskStep;
 import io.harness.delegate.TaskSelector;
@@ -28,9 +30,12 @@ import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.sdk.core.data.OptionalOutcome;
 import io.harness.pms.sdk.core.events.OrchestrationEvent;
 import io.harness.pms.sdk.core.events.OrchestrationEventHandler;
+import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
+import io.harness.repositories.CITaskDetailsRepository;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.steps.StepUtils;
 
@@ -39,12 +44,14 @@ import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import io.fabric8.utils.Strings;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -59,7 +66,10 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
   @Inject private StageCleanupUtility stageCleanupUtility;
   @Inject private CILogServiceUtils ciLogServiceUtils;
 
+  @Inject private CITaskDetailsRepository ciTaskDetailsRepository;
+
   private final int MAX_ATTEMPTS = 3;
+  private final int WAIT_TIME_IN_SECOND = 30;
   @Inject @Named("ciEventHandlerExecutor") private ExecutorService executorService;
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
 
@@ -143,19 +153,25 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
   }
 
   private DelegateTaskRequest getDelegateCleanupTaskRequest(
-      Ambiance ambiance, CICleanupTaskParams ciCleanupTaskParams, String accountId) {
+      Ambiance ambiance, CICleanupTaskParams ciCleanupTaskParams, String accountId) throws InterruptedException {
     List<TaskSelector> taskSelectors = stageCleanupUtility.fetchDelegateSelector(ambiance);
 
     Map<String, String> abstractions = buildAbstractions(ambiance, Scope.PROJECT);
     String taskType = "CI_CLEANUP";
     SerializationFormat serializationFormat = SerializationFormat.KRYO;
     boolean executeOnHarnessHostedDelegates = false;
-    // TODO: Retrieve delegate ID from outcome of init task and populate it here
     List<String> eligibleToExecuteDelegateIds = new ArrayList<>();
+
     if (ciCleanupTaskParams.getType() == CICleanupTaskParams.Type.DLITE_VM) {
       taskType = TaskType.DLITE_CI_VM_CLEANUP_TASK.getDisplayName();
       executeOnHarnessHostedDelegates = true;
       serializationFormat = SerializationFormat.JSON;
+      String stageId = ambiance.getStageExecutionId();
+      String delegateId = fetchDelegateId(ambiance);
+      if (Strings.isNotBlank(delegateId)) {
+        eligibleToExecuteDelegateIds.add(delegateId);
+        ciTaskDetailsRepository.deleteFirstByStageExecutionId(stageId);
+      }
     }
 
     return DelegateTaskRequest.builder()
@@ -170,6 +186,36 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
         .taskParameters(ciCleanupTaskParams)
         .taskDescription("CI cleanup pod task")
         .build();
+  }
+
+  private String fetchDelegateId(Ambiance ambiance) throws InterruptedException {
+    OptionalOutcome optionalOutput = outcomeService.resolveOptional(
+        ambiance, RefObjectUtils.getOutcomeRefObject(VmDetailsOutcome.VM_DETAILS_OUTCOME));
+    VmDetailsOutcome vmDetailsOutcome = (VmDetailsOutcome) optionalOutput.getOutcome();
+
+    if (vmDetailsOutcome != null && Strings.isNotBlank(vmDetailsOutcome.getDelegateId())) {
+      return vmDetailsOutcome.getDelegateId();
+    } else {
+      String stageId = ambiance.getStageExecutionId();
+
+      long currentTime = System.currentTimeMillis();
+      long waitTill = currentTime + WAIT_TIME_IN_SECOND * 1000;
+
+      while (System.currentTimeMillis() < waitTill) {
+        Optional<CITaskDetails> taskDetailsOptional = ciTaskDetailsRepository.findFirstByStageExecutionId(stageId);
+
+        if (taskDetailsOptional.isPresent()) {
+          CITaskDetails taskDetails = taskDetailsOptional.get();
+          if (Strings.isNotBlank(taskDetails.getDelegateId())) {
+            return taskDetails.getDelegateId();
+          }
+          break;
+        } else {
+          Thread.sleep(1000);
+        }
+      }
+    }
+    return null;
   }
 
   // When trigger has "Auto Abort Prev Executions" ebanled, it will abort prev running execution and start a new one.

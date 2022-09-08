@@ -27,6 +27,7 @@ import static io.harness.ci.commonconstants.CIExecutionConstants.UNIX_STEP_COMMA
 import static io.harness.delegate.beans.ci.pod.CIContainerType.PLUGIN;
 import static io.harness.delegate.beans.ci.pod.CIContainerType.RUN;
 import static io.harness.delegate.beans.ci.pod.CIContainerType.SERVICE;
+import static io.harness.delegate.beans.connector.azureconnector.AzureSecretType.SECRET_KEY;
 import static io.harness.pms.yaml.ParameterField.createValueField;
 
 import static java.util.Arrays.asList;
@@ -35,6 +36,7 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.util.Lists.newArrayList;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.azure.AzureEnvironmentType;
 import io.harness.beans.dependencies.CIServiceInfo;
 import io.harness.beans.dependencies.DependencyElement;
 import io.harness.beans.environment.BuildJobEnvInfo;
@@ -85,6 +87,12 @@ import io.harness.delegate.beans.ci.pod.PodVolume;
 import io.harness.delegate.beans.ci.pod.SecretVariableDTO;
 import io.harness.delegate.beans.ci.pod.SecretVariableDetails;
 import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.azureconnector.AzureAuthDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureClientSecretKeyDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureCredentialDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureCredentialType;
+import io.harness.delegate.beans.connector.azureconnector.AzureManualDetailsDTO;
 import io.harness.delegate.beans.connector.docker.DockerAuthType;
 import io.harness.delegate.beans.connector.docker.DockerAuthenticationDTO;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
@@ -1236,6 +1244,35 @@ public class CIExecutionPlanTestHelper {
                                         .build())
                                 .build())
 
+                        .build())
+                .build())
+        .build();
+  }
+
+  public ConnectorDTO getAzureConnectorDTO() {
+    return ConnectorDTO.builder()
+        .connectorInfo(
+            ConnectorInfoDTO.builder()
+                .name("azureConnector")
+                .identifier("azureConnector")
+                .connectorType(ConnectorType.AZURE)
+                .connectorConfig(
+                    AzureConnectorDTO.builder()
+                        .azureEnvironmentType(AzureEnvironmentType.AZURE)
+                        .credential(
+                            AzureCredentialDTO.builder()
+                                .azureCredentialType(AzureCredentialType.MANUAL_CREDENTIALS)
+                                .config(AzureManualDetailsDTO.builder()
+                                            .clientId("clientId")
+                                            .tenantId("tenantId")
+                                            .authDTO(AzureAuthDTO.builder()
+                                                         .azureSecretType(SECRET_KEY)
+                                                         .credentials(AzureClientSecretKeyDTO.builder()
+                                                                          .secretKey(SecretRefData.builder().build())
+                                                                          .build())
+                                                         .build())
+                                            .build())
+                                .build())
                         .build())
                 .build())
         .build();

@@ -335,6 +335,17 @@ public class NGMigrationApplication extends Application<MigratorConfig> {
 
     List<Module> modules = new ArrayList<>();
     addModules(configuration.getCg(), modules);
+
+    Module providerModule = new ProviderModule() {
+      @Provides
+      @Singleton
+      @Named("dbAliases")
+      public List<String> getDbAliases() {
+        return Collections.EMPTY_LIST;
+      }
+    };
+    modules.add(providerModule);
+
     modules.add(new MigratorModule(configuration));
 
     Injector injector = Guice.createInjector(modules);

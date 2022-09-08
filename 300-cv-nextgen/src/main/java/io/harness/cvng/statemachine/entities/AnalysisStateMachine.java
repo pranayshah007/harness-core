@@ -10,7 +10,7 @@ package io.harness.cvng.statemachine.entities;
 import static io.harness.cvng.CVConstants.STATE_MACHINE_IGNORE_MINUTES;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.cvng.beans.cvnglog.ExecutionLogDTO.LogLevel;
 import io.harness.cvng.core.entities.VerificationTaskExecutionInstance;
 import io.harness.cvng.statemachine.beans.AnalysisState;

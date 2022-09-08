@@ -713,6 +713,11 @@ public class ConnectorServiceImpl implements ConnectorService {
   }
 
   @Override
+  public void resetHeartBeatTask(String accountId, String taskId) {
+    defaultConnectorService.resetHeartBeatTask(accountId, taskId);
+  }
+
+  @Override
   public Page<ConnectorResponseDTO> list(int page, int size, String accountIdentifier,
       ConnectorFilterPropertiesDTO filterProperties, String orgIdentifier, String projectIdentifier,
       String filterIdentifier, String searchTerm, Boolean includeAllConnectorsAccessibleAtScope,

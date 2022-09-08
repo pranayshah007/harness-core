@@ -10,6 +10,7 @@ FROM us.gcr.io/platform-205701/ubi/ubi-java:latest as base
 # Add the capsule JAR and ci-manager-config.yml
 COPY --chown=65534:65534 ci-manager-capsule.jar /opt/harness/
 COPY --chown=65534:65534 keystore.jks /opt/harness/
+COPY --chown=65534:65534 enterprise-redisson-jcache.yaml /opt/harness/
 COPY --chown=65534:65534 classpath_metadata.json /opt/harness/
 COPY --chown=65534:65534 ci-manager-config.yml /opt/harness/
 COPY --chown=65534:65534 redisson-jcache.yaml /opt/harness/

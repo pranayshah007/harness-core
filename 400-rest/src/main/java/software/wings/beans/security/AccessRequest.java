@@ -9,7 +9,7 @@ package software.wings.beans.security;
 
 import static io.harness.annotations.dev.HarnessModule._970_RBAC_CORE;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;

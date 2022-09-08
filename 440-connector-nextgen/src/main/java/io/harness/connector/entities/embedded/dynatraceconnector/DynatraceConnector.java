@@ -7,7 +7,7 @@
 
 package io.harness.connector.entities.embedded.dynatraceconnector;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.connector.entities.Connector;
 import io.harness.ng.DbAliases;
 

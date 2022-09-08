@@ -55,8 +55,10 @@ import io.harness.ff.FeatureFlagService;
 import io.harness.logging.AutoLogContext;
 import io.harness.outbox.api.OutboxService;
 import io.harness.persistence.HPersistence;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.security.DelegateTokenAuthenticator;
 import io.harness.security.dto.UserPrincipal;
+import io.harness.usermembership.remote.UserMembershipClient;
 import io.harness.version.VersionInfoManager;
 
 import software.wings.app.MainConfiguration;
@@ -168,6 +170,7 @@ public class AuthServiceImpl implements AuthService {
   @Inject private FeatureFlagService featureFlagService;
   @Inject private DelegateTokenAuthenticator delegateTokenAuthenticator;
   @Inject private OutboxService outboxService;
+  @Inject @Named("PRIVILEGED") private UserMembershipClient userMembershipClient;
 
   @Inject
   public AuthServiceImpl(GenericDbCache dbCache, HPersistence persistence, UserService userService,
@@ -1250,9 +1253,32 @@ public class AuthServiceImpl implements AuthService {
   @Override
   public void auditLoginToNg(List<String> accountIds, User loggedInUser) {
     if (Objects.nonNull(loggedInUser) && Objects.nonNull(accountIds)) {
-      accountIds.forEach(accountId
-          -> outboxService.save(
-              new LoginEvent(accountId, loggedInUser.getUuid(), loggedInUser.getEmail(), loggedInUser.getName())));
+      for (String accountIdentifier : accountIds) {
+        try {
+          if (isUserInScope(loggedInUser.getUuid(), accountIdentifier)) {
+            try {
+              outboxService.save(new LoginEvent(
+                  accountIdentifier, loggedInUser.getUuid(), loggedInUser.getEmail(), loggedInUser.getName()));
+            } catch (Exception ex) {
+              log.error("For account {} and userId {} the Audit trails for User Login event failed with exception: ",
+                  accountIdentifier, loggedInUser.getUuid(), ex);
+            }
+          }
+        } catch (Exception ex) {
+          log.error("Skipping audit for account {} and userId {} due to exception: ", accountIdentifier,
+              loggedInUser.getUuid(), ex);
+        }
+      }
+    }
+  }
+
+  private boolean isUserInScope(String userId, String accountIdentifier) {
+    try {
+      return NGRestUtils.getResponse(userMembershipClient.isUserInScope(userId, accountIdentifier, null, null));
+    } catch (Exception ex) {
+      log.error("For account {} and userId {} while auditing userMembershipClient call failed with exception: ",
+          accountIdentifier, userId, ex);
+      throw ex;
     }
   }
 

@@ -138,7 +138,7 @@ func (r *runTestsTask) Run(ctx context.Context) (map[string]string, int32, error
 			cgSt := time.Now()
 			// even if the collectCg fails, try to collect reports. Both are parallel features and one should
 			// work even if the other one fails
-			errCg = collectCgFn(ctx, r.id, cgDir, time.Since(testSt).Milliseconds(), r.log)
+			errCg = collectCgFn(ctx, r.id, cgDir, time.Since(testSt).Milliseconds(), r.log, cgSt)
 			cgTime := time.Since(cgSt)
 			repoSt := time.Now()
 			err = collectTestReportsFn(ctx, r.reports, r.id, r.log)
@@ -161,14 +161,13 @@ func (r *runTestsTask) Run(ctx context.Context) (map[string]string, int32, error
 			if len(r.reports) > 0 {
 				r.log.Infow(fmt.Sprintf("successfully collected test reports in %s time", repoTime))
 			}
-			r.log.Infow(fmt.Sprintf("successfully uploaded partial callgraph in %s time", cgTime))
 			return o, i, nil
 		}
 	}
 	if err != nil {
 		// Run step did not execute successfully
 		// Try and collect callgraph and reports, ignore any errors during collection steps itself
-		errCg = collectCgFn(ctx, r.id, cgDir, time.Since(testSt).Milliseconds(), r.log)
+		errCg = collectCgFn(ctx, r.id, cgDir, time.Since(testSt).Milliseconds(), r.log, time.Now())
 		errc := collectTestReportsFn(ctx, r.reports, r.id, r.log)
 		if errc != nil {
 			r.log.Errorw("error while collecting test reports", zap.Error(errc))
@@ -282,6 +281,37 @@ func valid(tests []types.RunnableTest) bool {
 	return true
 }
 
+func (r *runTestsTask) getTestSelection(ctx context.Context, files []types.File, isManual bool) types.SelectTestsResp {
+	resp := types.SelectTestsResp{}
+	log := r.log
+
+	if isManual {
+		// Manual execution: Select all tests in case of manual execution
+		log.Infow("Detected manual execution - for test intelligence to be configured, a PR must be raised. Running all the tests")
+		r.runOnlySelectedTests = false
+	} else if len(files) == 0 {
+		// PR execution: Select all tests if unable to find changed files list
+		log.Infow("Unable to get changed files list")
+		r.runOnlySelectedTests = false
+	} else {
+		// PR execution: Call TI svc only when there is a chance of running selected tests
+		resp, err := selectTestsFn(ctx, files, r.runOnlySelectedTests, r.id, r.log, r.fs)
+		if err != nil {
+			log.Errorw("There was some issue in trying to intelligently figure out tests to run. Running all the tests", "error", zap.Error(err))
+			r.runOnlySelectedTests = false
+		} else if !valid(resp.Tests) { // This shouldn't happen
+			log.Errorw("Test Intelligence did not return suitable tests")
+			r.runOnlySelectedTests = false
+		} else if resp.SelectAll == true {
+			log.Infow("Test Intelligence determined to run all the tests")
+			r.runOnlySelectedTests = false
+		} else {
+			r.log.Infow(fmt.Sprintf("Running tests selected by Test Intelligence: %s", resp.Tests))
+		}
+	}
+	return resp
+}
+
 func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile string) (string, error) {
 	// Get the tests that need to be run if we are running selected tests
 	var selection types.SelectTestsResp
@@ -291,27 +321,7 @@ func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile stri
 		return "", err
 	}
 	isManual := isManualFn()
-	if len(files) == 0 {
-		r.log.Errorw("unable to get changed files list")
-		r.runOnlySelectedTests = false // run all the tests if we could not find changed files list correctly
-	}
-	if isManual {
-		r.log.Infow("detected manual execution - for intelligence to be configured, a PR must be raised. Running all the tests.")
-		r.runOnlySelectedTests = false // run all the tests if it is a manual execution
-	}
-	selection, err = selectTestsFn(ctx, files, r.runOnlySelectedTests, r.id, r.log, r.fs)
-	if err != nil {
-		r.log.Errorw("there was some issue in trying to intelligently figure out tests to run. Running all the tests.", zap.Error(err))
-		r.runOnlySelectedTests = false // run all the tests if an error was encountered
-	} else if !valid(selection.Tests) { // This shouldn't happen
-		r.log.Warnw("test intelligence did not return suitable tests")
-		r.runOnlySelectedTests = false // TI did not return suitable tests
-	} else if selection.SelectAll == true {
-		r.log.Infow("intelligently determined to run all the tests")
-		r.runOnlySelectedTests = false // TI selected all the tests to be run
-	} else {
-		r.log.Infow(fmt.Sprintf("intelligently running tests: %s", selection.Tests))
-	}
+	selection = r.getTestSelection(ctx, files, isManual)
 
 	var runner testintelligence.TestRunner
 	switch r.language {

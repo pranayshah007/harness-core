@@ -139,8 +139,10 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       throw new InvalidRequestException("Environment ref not found in pipeline yaml");
     }
 
-    List<Object> toResolve = new ArrayList<>();
-    toResolve.add(envRef);
+    final List<Object> toResolve = new ArrayList<>();
+    if (envRef.isExpression()) {
+      toResolve.add(envRef);
+    }
     toResolve.add(envInputs);
     expressionResolver.updateExpressions(ambiance, toResolve);
 
