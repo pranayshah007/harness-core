@@ -281,6 +281,10 @@ public class NGScimUserServiceImpl implements ScimUserService {
       ngUserService.updateUserMetadata(userMetadataDTO);
     }
 
+    if ("active".equals(patchOperation.getPath()) && patchOperation.getValue(Boolean.class) != null) {
+      changeScimUserDisabled(accountId, userId, !patchOperation.getValue(Boolean.class));
+    }
+
     if (RestClientUtils.getResponse(
             accountClient.isFeatureFlagEnabled(FeatureName.UPDATE_EMAILS_VIA_SCIM.name(), accountId))
         && "userName".equals(patchOperation.getPath()) && patchOperation.getValue(String.class) != null
@@ -291,13 +295,8 @@ public class NGScimUserServiceImpl implements ScimUserService {
       log.info("SCIM: Updated user's {}, email to id: {}", userId, patchOperation.getValue(String.class));
     }
 
-    if ("active".equals(patchOperation.getPath()) && patchOperation.getValue(Boolean.class) != null) {
-      changeScimUserDisabled(accountId, userId, !patchOperation.getValue(Boolean.class));
-    }
-
     if (patchOperation.getValue(ScimMultiValuedObject.class) != null
         && patchOperation.getValue(ScimMultiValuedObject.class).getDisplayName() != null) {
-      // @Todo: Check with Ujjawal why CG has patchOperation.getValue(String.class)
       userMetadataDTO.setName(patchOperation.getValue(ScimMultiValuedObject.class).getDisplayName());
       userMetadataDTO.setExternallyManaged(true);
       ngUserService.updateUserMetadata(userMetadataDTO);
