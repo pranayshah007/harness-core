@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import static java.util.Collections.emptyList;
 
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
@@ -25,6 +26,7 @@ import io.harness.ng.core.user.UserMembershipUpdateSource;
 import io.harness.ng.core.user.entities.UserGroup;
 import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
 import io.harness.ng.core.user.service.NgUserService;
+import io.harness.remote.client.RestClientUtils;
 import io.harness.scim.PatchOperation;
 import io.harness.scim.PatchRequest;
 import io.harness.scim.ScimListResponse;
@@ -34,6 +36,8 @@ import io.harness.scim.ScimUserValuedObject;
 import io.harness.scim.service.ScimUserService;
 import io.harness.serializer.JsonUtils;
 import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
+
+import software.wings.beans.User;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.inject.Inject;
@@ -62,6 +66,7 @@ public class NGScimUserServiceImpl implements ScimUserService {
   private final InviteService inviteService;
   private final UserGroupService userGroupService;
   private final NGFeatureFlagHelperService nGFeatureFlagHelperService;
+  private final AccountClient accountClient;
 
   @Override
   public Response createUser(ScimUser userQuery, String accountId) {
@@ -271,21 +276,33 @@ public class NGScimUserServiceImpl implements ScimUserService {
       PatchOperation patchOperation) throws JsonProcessingException {
     // Not sure why this needs to be done for displayName as well as ScimMultiValuedObject
     // Relying on CG implementation as it has been around for a while
-    if ("displayName".equals(patchOperation.getPath())) {
+    if ("displayName".equals(patchOperation.getPath())
+        && !userMetadataDTO.getName().equals(patchOperation.getValue(String.class))) {
       userMetadataDTO.setName(patchOperation.getValue(String.class));
       userMetadataDTO.setExternallyManaged(true);
       ngUserService.updateUserMetadata(userMetadataDTO);
     }
+
+    if (RestClientUtils.getResponse(
+            accountClient.isFeatureFlagEnabled(FeatureName.UPDATE_EMAILS_VIA_SCIM.name(), accountId))
+        && "userName".equals(patchOperation.getPath()) && patchOperation.getValue(String.class) != null
+        && !userMetadataDTO.getEmail().equals(patchOperation.getValue(String.class))) {
+      userMetadataDTO.setEmail(patchOperation.getValue(String.class));
+      userMetadataDTO.setExternallyManaged(true);
+      ngUserService.updateUserMetadata(userMetadataDTO);
+      log.info("SCIM: Updated user's {}, email to id: {}", userId, patchOperation.getValue(String.class));
+    }
+
+    if ("active".equals(patchOperation.getPath()) && patchOperation.getValue(Boolean.class) != null) {
+      changeScimUserDisabled(accountId, userId, !patchOperation.getValue(Boolean.class));
+    }
+
     if (patchOperation.getValue(ScimMultiValuedObject.class) != null
         && patchOperation.getValue(ScimMultiValuedObject.class).getDisplayName() != null) {
       // @Todo: Check with Ujjawal why CG has patchOperation.getValue(String.class)
       userMetadataDTO.setName(patchOperation.getValue(ScimMultiValuedObject.class).getDisplayName());
       userMetadataDTO.setExternallyManaged(true);
       ngUserService.updateUserMetadata(userMetadataDTO);
-    }
-
-    if ("active".equals(patchOperation.getPath()) && patchOperation.getValue(Boolean.class) != null) {
-      changeScimUserDisabled(accountId, userId, !patchOperation.getValue(Boolean.class));
     }
 
     if (patchOperation.getValue(ScimUserValuedObject.class) != null) {

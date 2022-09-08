@@ -22,6 +22,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.NgManagerTestBase;
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
@@ -34,6 +35,7 @@ import io.harness.ng.core.user.UserInfo;
 import io.harness.ng.core.user.UserMembershipUpdateSource;
 import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
 import io.harness.ng.core.user.service.NgUserService;
+import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.scim.ScimListResponse;
 import io.harness.scim.ScimUser;
@@ -42,6 +44,7 @@ import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 import software.wings.beans.Account;
 import software.wings.beans.UserInvite;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -49,6 +52,8 @@ import javax.ws.rs.core.Response;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.Mock;
+import retrofit2.Call;
 
 @OwnedBy(PL)
 public class NGScimUserServiceImplTest extends NgManagerTestBase {
@@ -58,15 +63,21 @@ public class NGScimUserServiceImplTest extends NgManagerTestBase {
   private InviteService inviteService;
   private NGScimUserServiceImpl scimUserService;
   private NGFeatureFlagHelperService nGFeatureFlagHelperService;
+  @Mock private AccountClient accountClient;
 
   @Before
-  public void setup() throws IllegalAccessException {
+  public void setup() throws IOException {
     inviteService = mock(InviteService.class);
     ngUserService = mock(NgUserService.class);
     userGroupService = mock(UserGroupService.class);
     nGFeatureFlagHelperService = mock(NGFeatureFlagHelperService.class);
-    scimUserService =
-        new NGScimUserServiceImpl(ngUserService, inviteService, userGroupService, nGFeatureFlagHelperService);
+
+    Call<RestResponse<Boolean>> ffCall = mock(Call.class);
+    when(accountClient.isFeatureFlagEnabled(any(), anyString())).thenReturn(ffCall);
+    when(ffCall.execute()).thenReturn(retrofit2.Response.success(new RestResponse<>(true)));
+
+    scimUserService = new NGScimUserServiceImpl(
+        ngUserService, inviteService, userGroupService, nGFeatureFlagHelperService, accountClient);
   }
 
   @Test
