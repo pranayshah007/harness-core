@@ -4,5 +4,5 @@ metricGroup: delegate_id
 metrics:
   - metricName: websocket_connections_cnt
     metricDefinition: Websocket Connections Count
-    type: Count
-    unit: "1"
+    type: LastValue
+    unit: count
