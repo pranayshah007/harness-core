@@ -27,6 +27,7 @@ import io.harness.exception.SecretManagementDelegateException;
 import io.harness.helpers.ext.vault.SSHVaultAuthResult;
 import io.harness.helpers.ext.vault.SecretEngineSummary;
 import io.harness.helpers.ext.vault.VaultAppRoleLoginResult;
+import io.harness.security.encryption.AccessType;
 import io.harness.security.encryption.EncryptedRecord;
 
 import software.wings.beans.BaseVaultConfig;
@@ -329,7 +330,7 @@ public class SecretManagementDelegateServiceImpl implements SecretManagementDele
     } else if (vaultConfig.isUseK8sAuth()) {
       VaultK8sLoginResult vaultK8sLoginResult = getVaultK8sAuthLoginResult(vaultConfig);
       vaultConfig.setAuthToken(vaultK8sLoginResult.getClientToken());
-    } else if (!vaultConfig.getRenewAppRoleToken()) {
+    } else if (AccessType.APP_ROLE.equals(vaultConfig.getAccessType())) {
       VaultAppRoleLoginResult vaultAppRoleLoginResult = getVaultAppRoleLoginResult(vaultConfig);
       vaultConfig.setAuthToken(vaultAppRoleLoginResult.getClientToken());
     }

@@ -86,6 +86,10 @@ public class VaultSecretManagerRenewalHandler implements Handler<SecretManagerCo
       log.info("Vault {} configured with K8s Auth does not need renewal", baseVaultConfig.getUuid());
       return;
     }
+    if (baseVaultConfig.getAccessType() == APP_ROLE) {
+      log.info("Vault {} configured with App Role Auth does not need renewal", baseVaultConfig.getUuid());
+      return;
+    }
     KmsSetupAlert kmsSetupAlert = vaultService.getRenewalAlert(baseVaultConfig);
     try {
       long renewalInterval = baseVaultConfig.getRenewalInterval();
@@ -98,13 +102,7 @@ public class VaultSecretManagerRenewalHandler implements Handler<SecretManagerCo
             baseVaultConfig.getRenewedAt());
         return;
       }
-      if (baseVaultConfig.getAccessType() == APP_ROLE) {
-        if (baseVaultConfig.getRenewAppRoleToken()) {
-          vaultService.renewAppRoleClientToken(baseVaultConfig);
-        }
-      } else {
-        vaultService.renewToken(baseVaultConfig);
-      }
+      vaultService.renewToken(baseVaultConfig);
       alertService.closeAlert(baseVaultConfig.getAccountId(), GLOBAL_APP_ID, InvalidKMS, kmsSetupAlert);
     } catch (Exception e) {
       log.info("Failed to renew vault token for vault id {}", secretManagerConfig.getUuid(), e);
