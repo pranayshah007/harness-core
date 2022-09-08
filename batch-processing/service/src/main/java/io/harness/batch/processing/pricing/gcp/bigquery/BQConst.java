@@ -34,12 +34,12 @@ public class BQConst {
       + "GROUP BY  azureInstanceId, azureVMProviderId, azureMeterCategory; ";
 
   public static final String GCP_VM_BILLING_QUERY =
-      "SELECT SUM(cost) as cost, MAX(usage.amount_in_pricing_units) as gcpRate, resource.name as gcpResourceName, service.description gcpServiceName "
+      "SELECT %s as productFamily, SUM(cost) as cost, MAX(usage.amount_in_pricing_units) as gcpRate, resource.name as gcpResourceName, service.description gcpServiceName "
       + "FROM `%s` "
       + "WHERE DATE(_PARTITIONTIME) >= Date('%s') and "
       + "%s and "
       + "usage_start_time >= '%s' and usage_end_time <= '%s' and %s "
-      + "group by gcpResourceName, gcpServiceName";
+      + "group by gcpResourceName, gcpServiceName, productFamily";
 
   public static final String GCP_DESCRIPTION_CONDITION = "(sku.description like '%E2 Instance Core running%' OR "
       + "sku.description like '%RAM cost%' OR "
@@ -51,6 +51,11 @@ public class BQConst {
       + " (%s) AND "
       + "usagestartdate  >= '%s' AND usagestartdate < '%s' "
       + "GROUP BY  resourceid, usagetype; ";
+
+  public static final String GCP_PRODUCT_FAMILY_CASE_CONDITION =
+      "(CASE WHEN (sku.description like '%CPU cost%' OR sku.description like '%Core running%')  THEN 'CPU Cost' "
+      + "WHEN sku.description like '%RAM cost%' THEN 'RAM Cost' "
+      + "WHEN sku.description like '%NETWORK%' THEN 'Network Cost' END)";
 
   public static final String AWS_BILLING_DATA = "SELECT resourceid, productfamily  "
       + "FROM `%s` "

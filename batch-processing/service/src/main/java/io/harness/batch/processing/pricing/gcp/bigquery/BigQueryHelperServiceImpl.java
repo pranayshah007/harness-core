@@ -8,6 +8,7 @@
 package io.harness.batch.processing.pricing.gcp.bigquery;
 
 import static io.harness.batch.processing.pricing.gcp.bigquery.BQConst.GCP_DESCRIPTION_CONDITION;
+import static io.harness.batch.processing.pricing.gcp.bigquery.BQConst.GCP_PRODUCT_FAMILY_CASE_CONDITION;
 import static io.harness.ccm.billing.GcpServiceAccountServiceImpl.getCredentials;
 
 import static java.lang.String.format;
@@ -229,6 +230,9 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
             dataBuilder.rate(getNumericValue(row, field));
             break;
           case BQConst.gcpServiceName:
+            dataBuilder.serviceCode(fetchStringValue(row, field));
+            break;
+          case BQConst.productFamily:
             dataBuilder.productFamily(fetchStringValue(row, field));
             break;
           default:
@@ -396,8 +400,8 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
     String resourceIdSubQuery = createSubQuery(resourceIds);
     String query = BQConst.GCP_VM_BILLING_QUERY;
     String projectTableName = getGcpProjectTableName(dataSetId);
-    String formattedQuery =
-        format(query, projectTableName, startTime, resourceIdSubQuery, startTime, endTime, GCP_DESCRIPTION_CONDITION);
+    String formattedQuery = format(query, GCP_PRODUCT_FAMILY_CASE_CONDITION, projectTableName, startTime,
+        resourceIdSubQuery, startTime, endTime, GCP_DESCRIPTION_CONDITION);
 
     log.info("GCP CUR Data Query: {}", formattedQuery);
     return query(formattedQuery, "GCP");
