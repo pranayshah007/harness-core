@@ -9,7 +9,7 @@ package io.harness.licensing.migrations;
 
 import static io.harness.annotations.dev.HarnessTeam.GTM;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.migration.beans.MigrationType;
 import io.harness.migration.entities.NGSchema;

@@ -10,7 +10,7 @@ package io.harness.notification.entities;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.notification.Team.OTHER;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.CompoundMongoIndex;

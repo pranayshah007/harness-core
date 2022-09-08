@@ -116,7 +116,7 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
 
   @Override
   public Optional<InputSetEntity> get(String accountId, String orgIdentifier, String projectIdentifier,
-      String pipelineIdentifier, String identifier, boolean deleted) {
+      String pipelineIdentifier, String identifier, boolean deleted, String pipelineBranch, String pipelineRepoID) {
     Optional<InputSetEntity> optionalInputSetEntity =
         getWithoutValidations(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, deleted);
     if (!optionalInputSetEntity.isPresent()) {
@@ -124,7 +124,10 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
           String.format("InputSet with the given ID: %s does not exist or has been deleted", identifier));
     }
     InputSetEntity inputSetEntity = optionalInputSetEntity.get();
-    if (inputSetEntity.getStoreType() == StoreType.REMOTE) {
+    if (gitSyncSdkService.isGitSyncEnabled(accountId, orgIdentifier, projectIdentifier)) {
+      InputSetValidationHelper.validateInputSetForOldGitSync(
+          this, pmsPipelineService, inputSetEntity, pipelineBranch, pipelineRepoID);
+    } else if (inputSetEntity.getStoreType() == StoreType.REMOTE) {
       ScmGitMetaData inputSetScmGitMetaData = GitAwareContextHelper.getScmGitMetaData();
       try {
         InputSetValidationHelper.validateInputSet(this, pmsPipelineService, inputSetEntity, false);
@@ -134,6 +137,8 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
         // irrespective of whether the validation throws an exception or not
         GitAwareContextHelper.updateScmGitMetaData(inputSetScmGitMetaData);
       }
+    } else {
+      InputSetValidationHelper.validateInputSet(this, pmsPipelineService, inputSetEntity, false);
     }
     return optionalInputSetEntity;
   }

@@ -7,7 +7,7 @@
 
 package software.wings.integration.common;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.ng.DbAliases;
 
 import software.wings.beans.Base;

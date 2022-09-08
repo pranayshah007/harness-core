@@ -10,7 +10,7 @@ package io.harness.delegate.beans;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;

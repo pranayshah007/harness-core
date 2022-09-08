@@ -7,7 +7,7 @@
 
 package io.harness.connector.entities;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
@@ -116,6 +116,13 @@ public abstract class Connector implements PersistentEntity, NGAccountAccess, Gi
   @Override
   public String getUuid() {
     return getId();
+  }
+
+  public boolean getDeleted() {
+    if (deleted == null) {
+      return Boolean.FALSE;
+    }
+    return deleted;
   }
 
   @UtilityClass

@@ -10,7 +10,8 @@ package io.harness.cvng.core.beans.monitoredService.healthSouceSpec;
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.core.beans.DatadogMetricHealthDefinition;
-import io.harness.cvng.core.beans.monitoredService.HealthSource;
+import io.harness.cvng.core.beans.monitoredService.HealthSource.CVConfigUpdateResult;
+import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.DatadogMetricCVConfig;
 import io.harness.cvng.core.services.api.MetricPackService;
@@ -19,6 +20,7 @@ import io.harness.cvng.core.validators.UniqueIdentifierCheck;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.Sets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,11 +46,19 @@ import lombok.experimental.SuperBuilder;
 public class DatadogMetricHealthSourceSpec extends MetricHealthSourceSpec {
   @NotNull private String feature;
   @UniqueIdentifierCheck @Valid private List<DatadogMetricHealthDefinition> metricDefinitions;
+  @Valid Set<TimeSeriesMetricPackDTO> metricPacks;
+
+  public List<DatadogMetricHealthDefinition> getMetricDefinitions() {
+    if (metricDefinitions == null) {
+      return Collections.emptyList();
+    }
+    return metricDefinitions;
+  }
 
   @Override
-  public HealthSource.CVConfigUpdateResult getCVConfigUpdateResult(String accountId, String orgIdentifier,
-      String projectIdentifier, String environmentRef, String serviceRef, String monitoredServiceIdentifier,
-      String identifier, String name, List<CVConfig> existingCVConfigs, MetricPackService metricPackService) {
+  public CVConfigUpdateResult getCVConfigUpdateResult(String accountId, String orgIdentifier, String projectIdentifier,
+      String environmentRef, String serviceRef, String monitoredServiceIdentifier, String identifier, String name,
+      List<CVConfig> existingCVConfigs, MetricPackService metricPackService) {
     List<DatadogMetricCVConfig> cvConfigsFromThisObj = toCVConfigs(accountId, orgIdentifier, projectIdentifier,
         environmentRef, serviceRef, monitoredServiceIdentifier, identifier, name);
     Map<Key, DatadogMetricCVConfig> existingConfigMap = new HashMap<>();
@@ -75,7 +85,7 @@ public class DatadogMetricHealthSourceSpec extends MetricHealthSourceSpec {
       updatedConfigs.get(i).setUuid(updatedConfigWithUuid.get(i).getUuid());
     }
 
-    return HealthSource.CVConfigUpdateResult.builder()
+    return CVConfigUpdateResult.builder()
         .deleted(deleted.stream().map(existingConfigMap::get).collect(Collectors.toList()))
         .updated(updatedConfigs)
         .added(added.stream().map(currentCVConfigsMap::get).collect(Collectors.toList()))
@@ -120,7 +130,8 @@ public class DatadogMetricHealthSourceSpec extends MetricHealthSourceSpec {
                                            .dashboardId(key.getDashboardId())
                                            .monitoredServiceIdentifier(monitoredServiceIdentifier)
                                            .build();
-      cvConfig.fromMetricDefinitions(datadogDefinitions, key.getCategory());
+      cvConfig.populateFromMetricDefinitions(datadogDefinitions, key.getCategory());
+      cvConfig.addMetricThresholds(metricPacks);
       cvConfigs.add(cvConfig);
     });
 

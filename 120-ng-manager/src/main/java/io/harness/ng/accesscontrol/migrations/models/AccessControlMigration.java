@@ -9,7 +9,7 @@ package io.harness.ng.accesscontrol.migrations.models;
 
 import static io.harness.ng.DbAliases.NG_MANAGER;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.CompoundMongoIndex;

@@ -7,7 +7,7 @@
 
 package io.harness.iterator;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.ng.DbAliases;
 
 import lombok.Builder;

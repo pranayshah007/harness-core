@@ -10,7 +10,7 @@ package io.harness.cvng.analysis.entities;
 import static io.harness.cvng.analysis.entities.LearningEngineTask.TaskPriority.P1;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.cvng.beans.cvnglog.ExecutionLogDTO.LogLevel;
 import io.harness.cvng.core.entities.VerificationTaskExecutionInstance;
 import io.harness.mongo.index.CompoundMongoIndex;

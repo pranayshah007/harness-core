@@ -8,7 +8,7 @@
 package io.harness.cvng.dashboard.entities;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.core.beans.monitoredService.DurationDTO;
 import io.harness.mongo.index.CompoundMongoIndex;

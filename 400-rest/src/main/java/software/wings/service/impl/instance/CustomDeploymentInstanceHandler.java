@@ -47,8 +47,8 @@ import software.wings.service.intfc.ArtifactService;
 import software.wings.service.intfc.customdeployment.CustomDeploymentTypeService;
 import software.wings.sm.PhaseStepExecutionSummary;
 import software.wings.sm.StepExecutionSummary;
-import software.wings.sm.states.customdeployment.InstanceMapperUtils;
-import software.wings.sm.states.customdeployment.InstanceMapperUtils.HostProperties;
+import software.wings.sm.states.customdeploymentng.InstanceMapperUtils;
+import software.wings.sm.states.customdeploymentng.InstanceMapperUtils.HostProperties;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;

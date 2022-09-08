@@ -8,7 +8,7 @@
 package io.harness.cdng.artifact.bean.artifactsource;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;

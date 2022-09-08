@@ -10,7 +10,7 @@ package io.harness.beans;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.DelegateTaskRank;
@@ -176,6 +176,9 @@ public class DelegateTask
   // below 2 used for harness hosted delegattes
   private boolean executeOnHarnessHostedDelegates;
   private String secondaryAccountId;
+
+  private boolean emitEvent;
+  private String stageId;
 
   @Transient private List<String> broadcastToDelegateIds;
 

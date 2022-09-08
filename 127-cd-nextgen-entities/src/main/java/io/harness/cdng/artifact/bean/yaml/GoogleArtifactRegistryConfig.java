@@ -7,7 +7,6 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
-import io.harness.cdng.artifact.bean.GoogleArtifactRegistryType;
 import io.harness.cdng.artifact.utils.ArtifactUtils;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
@@ -80,11 +79,11 @@ public class GoogleArtifactRegistryConfig implements ArtifactConfig, Visitable, 
    * Version regex is used to get latest build from builds matching regex.
    */
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> versionRegex;
+
   @JsonProperty("repositoryType")
   @NotNull
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  @Wither
-  ParameterField<GoogleArtifactRegistryType> googleArtifactRegistryType;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH, allowableValues = "docker")
+  ParameterField<String> googleArtifactRegistryType;
 
   @Override
   public ArtifactSourceType getSourceType() {

@@ -12,7 +12,7 @@ import static io.harness.annotations.dev.HarnessModule._951_CG_GIT_SYNC;
 import static software.wings.settings.SettingVariableTypes.YAML_GIT_SYNC;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;

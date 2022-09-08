@@ -7,14 +7,19 @@
 
 package io.harness.cvng.core.utils.monitoredService;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition;
 import io.harness.cvng.core.beans.RiskProfile;
 import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.DynatraceHealthSourceSpec;
+import io.harness.cvng.core.constant.MonitoredServiceConstants;
 import io.harness.cvng.core.entities.DynatraceCVConfig;
 
 import com.google.common.base.Preconditions;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.collections4.CollectionUtils;
 
@@ -34,6 +39,7 @@ public class DynatraceHealthSourceSpecTransformer
     Preconditions.checkArgument(cvConfigs.stream().map(DynatraceCVConfig::getProductName).distinct().count() == 1,
         "Application feature name should be same for list of all configs.");
 
+    Set<TimeSeriesMetricPackDTO> metricPacks = new HashSet<>();
     List<DynatraceHealthSourceSpec.DynatraceMetricDefinition> metricDefinitions =
         cvConfigs.stream()
             .flatMap(cv -> CollectionUtils.emptyIfNull(cv.getMetricInfos()).stream().map(metricInfo -> {
@@ -66,16 +72,22 @@ public class DynatraceHealthSourceSpecTransformer
                   .build();
             }))
             .collect(Collectors.toList());
+    cvConfigs.forEach(dynatraceCVConfig -> {
+      String identifier = MonitoredServiceConstants.CUSTOM_METRIC_PACK;
+      List<TimeSeriesMetricPackDTO.MetricThreshold> metricThresholds = dynatraceCVConfig.getMetricThresholdDTOs();
+      if (isNotEmpty(metricThresholds)) {
+        metricThresholds.forEach(metricThreshold -> metricThreshold.setMetricType(identifier));
+      }
+      metricPacks.add(
+          TimeSeriesMetricPackDTO.builder().identifier(identifier).metricThresholds(metricThresholds).build());
+    });
     return DynatraceHealthSourceSpec.builder()
         .connectorRef(cvConfigs.get(0).getConnectorIdentifier())
         .serviceId(cvConfigs.get(0).getDynatraceServiceId())
         .serviceMethodIds(cvConfigs.get(0).getServiceMethodIds())
         .feature(cvConfigs.get(0).getProductName())
         .serviceName(cvConfigs.get(0).getDynatraceServiceName())
-        .metricPacks(cvConfigs.stream()
-                         .filter(cv -> CollectionUtils.isEmpty(cv.getMetricInfos()))
-                         .map(cv -> TimeSeriesMetricPackDTO.toMetricPackDTO(cv.getMetricPack()))
-                         .collect(Collectors.toSet()))
+        .metricPacks(metricPacks)
         .metricDefinitions(metricDefinitions)
         .build();
   }

@@ -16,7 +16,7 @@ import static software.wings.beans.command.Command.Builder.aCommand;
 import static java.util.Arrays.asList;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;

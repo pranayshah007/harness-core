@@ -78,6 +78,11 @@ public class GARApiServiceImpl implements GarApiService {
   public BuildDetailsInternal getLastSuccessfulBuildFromRegex(
       GarInternalConfig garinternalConfig, String versionRegex) {
     List<BuildDetailsInternal> builds = getBuilds(garinternalConfig, versionRegex, garinternalConfig.getMaxBuilds());
+    if (builds.isEmpty()) {
+      throw NestedExceptionUtils.hintWithExplanationException("Could not fetch versions for the package",
+          "Please check versionRegex Provided",
+          new InvalidArtifactServerException("No versions found with versionRegex provided for the given package"));
+    }
     return builds.get(0);
   }
 

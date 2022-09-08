@@ -16,7 +16,7 @@ import static io.harness.security.encryption.EncryptionType.CUSTOM;
 import static io.harness.security.encryption.EncryptionType.LOCAL;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EncryptedDataParent.EncryptedDataParentKeys;
 import io.harness.iterator.PersistentRegularIterable;

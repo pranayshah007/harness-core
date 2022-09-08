@@ -8,7 +8,7 @@
 package io.harness.ci.beans.entities;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.beans.build.CIPipelineDetails;
 import io.harness.beans.build.PublishedArtifact;
 import io.harness.beans.execution.ExecutionSource;

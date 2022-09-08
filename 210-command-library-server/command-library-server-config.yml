@@ -49,6 +49,7 @@ mongo:
   serverSelectionTimeout: 90000
   maxConnectionIdleTime: 600000
   connectionsPerHost: 300
+  aliasDBName: harness
 
 serviceSecret:
   managerToCommandLibraryServiceSecret: a611aa13eb1d5e77bc3295517ebe65gh1

@@ -10,7 +10,7 @@ package io.harness.ng.core.migration;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.ng.DbAliases.NG_MANAGER;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.migration.beans.MigrationType;
 import io.harness.migration.entities.NGSchema;

@@ -9,7 +9,7 @@ package io.harness.capability;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;

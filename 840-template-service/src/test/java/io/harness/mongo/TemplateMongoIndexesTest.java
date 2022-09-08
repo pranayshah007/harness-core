@@ -51,8 +51,8 @@ public class TemplateMongoIndexesTest extends TemplateServiceTestBase {
     morphia.getMapper().getOptions().setMapSubPackages(false);
     morphia.map(classes);
 
-    List<IndexCreator> indexCreators = IndexManagerSession.allIndexes(persistence.getDatastore(TemplateEntity.class),
-        morphia, Store.builder().name(DbAliases.TEMPLATE).build(), null);
+    List<IndexCreator> indexCreators = IndexManagerSession.allIndexes(
+        persistence.getDatastore(TemplateEntity.class), morphia, Store.builder().name(DbAliases.TEMPLATE).build());
 
     List<String> indexes = indexCreators.stream()
                                .map(creator

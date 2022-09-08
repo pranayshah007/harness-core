@@ -12,13 +12,17 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.UJJAWAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
+import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 import io.harness.scim.OktaReplaceOperation;
 import io.harness.scim.PatchRequest;
@@ -59,12 +63,14 @@ import org.mongodb.morphia.query.UpdateOperations;
 public class ScimUserServiceTest extends WingsBaseTest {
   private static final String USER_ID = generateUuid();
   private static final String MEMBERS = "members";
+  private static final String USERNAME = "userName";
+
   private static final String ACCOUNT_ID = "accountId";
 
   @Inject WingsPersistence realWingsPersistence;
   @Mock WingsPersistence wingsPersistence;
-
   @Mock UserService userService;
+  @Mock private FeatureFlagService featureFlagService;
 
   @Inject @InjectMocks ScimUserService scimUserService;
 
@@ -97,6 +103,39 @@ public class ScimUserServiceTest extends WingsBaseTest {
     when(wingsPersistence.save(userGroup)).thenReturn("true");
     scimUserService.updateUser(ACCOUNT_ID, USER_ID, patchRequest);
     verify(userService, times(1)).updateUser(USER_ID, updateOperations);
+  }
+
+  @Test
+  @Owner(developers = UJJAWAL)
+  @Category(UnitTests.class)
+  public void testUpdateUser2() {
+    PatchRequest patchRequest = getOktaEmailActivityReplaceOperation();
+    User user = new User();
+    user.setUuid(USER_ID);
+    user.setEmail("admin@harness.io");
+
+    when(wingsPersistence.createUpdateOperations(User.class)).thenReturn(updateOperations);
+    when(userService.get(ACCOUNT_ID, USER_ID)).thenReturn(user);
+    when(featureFlagService.isEnabled(any(), anyString())).thenReturn(true);
+    ScimUser userResponse = scimUserService.updateUser(ACCOUNT_ID, USER_ID, patchRequest);
+    assertThat(userResponse).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = UJJAWAL)
+  @Category(UnitTests.class)
+  public void testUpdateUser3() {
+    PatchRequest patchRequest = getOktaEmailActivityReplaceOperation();
+    User user = new User();
+    user.setUuid(USER_ID);
+    user.setEmail("admin@harness.io");
+
+    when(wingsPersistence.createUpdateOperations(User.class)).thenReturn(updateOperations);
+    when(userService.get(ACCOUNT_ID, USER_ID)).thenReturn(user);
+    when(featureFlagService.isEnabled(any(), anyString())).thenReturn(false);
+    ScimUser userResponse = scimUserService.updateUser(ACCOUNT_ID, USER_ID, patchRequest);
+    assertThat(userResponse).isNotNull();
+    assertThat(userResponse.getUserName()).isEqualTo(user.getEmail());
   }
 
   @Test
@@ -337,6 +376,90 @@ public class ScimUserServiceTest extends WingsBaseTest {
     assertThat(response.getStatus()).isNotNull();
   }
 
+  private void setEmailsForUser(ScimUser scimUser) {
+    JsonObject jsonObject = new JsonObject();
+    jsonObject.addProperty("emails", "user_name_diff@harness.io");
+
+    JsonNode jsonNode;
+
+    try {
+      jsonNode = mapper.readTree(jsonObject.toString());
+      scimUser.setEmails(jsonNode);
+    } catch (IOException ioe) {
+      log.error("IO Exception while creating okta replace operation in SCIM", ioe);
+    }
+  }
+
+  @Test
+  @Owner(developers = UJJAWAL)
+  @Category(UnitTests.class)
+  public void testUpdateUserDiff() {
+    Account account = new Account();
+    account.setUuid(generateUuid());
+    account.setAccountName("account_name");
+
+    ScimUser scimUser = new ScimUser();
+    scimUser.setUserName("user_name@harness.io");
+    scimUser.setDisplayName("display_name");
+    scimUser.setActive(true);
+    setEmailsForUser(scimUser);
+    setNameForScimUser(scimUser);
+
+    User user = new User();
+    user.setEmail("user_name_diff@harness.io");
+    user.setDisabled(true);
+    user.setFamilyName("family_name_diff");
+    user.setGivenName("given_name_diff");
+    user.setUuid(generateUuid());
+    user.setName("display_name_diff");
+    user.setAccounts(Arrays.asList(account));
+
+    UserInvite userInvite = new UserInvite();
+    userInvite.setUuid(generateUuid());
+
+    when(userService.get(account.getUuid(), user.getUuid())).thenReturn(user);
+    when(featureFlagService.isEnabled(eq(FeatureName.UPDATE_EMAILS_VIA_SCIM), any())).thenReturn(true);
+    when(wingsPersistence.createUpdateOperations(User.class)).thenReturn(updateOperations);
+    Response response = scimUserService.updateUser(user.getUuid(), account.getUuid(), scimUser);
+    verify(userService, times(1)).updateUser(user.getUuid(), updateOperations);
+    assertThat(response.getStatus()).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = UJJAWAL)
+  @Category(UnitTests.class)
+  public void testUpdateUserDiff2() {
+    Account account = new Account();
+    account.setUuid(generateUuid());
+    account.setAccountName("account_name");
+
+    ScimUser scimUser = new ScimUser();
+    scimUser.setUserName("user_name@harness.io");
+    scimUser.setDisplayName("display_name");
+    scimUser.setActive(true);
+    setEmailsForUser(scimUser);
+    setNameForScimUser(scimUser);
+
+    User user = new User();
+    user.setEmail("user_name_diff@harness.io");
+    user.setDisabled(true);
+    user.setFamilyName("family_name_diff");
+    user.setGivenName("given_name_diff");
+    user.setUuid(generateUuid());
+    user.setName("display_name_diff");
+    user.setAccounts(Arrays.asList(account));
+
+    UserInvite userInvite = new UserInvite();
+    userInvite.setUuid(generateUuid());
+
+    when(userService.get(account.getUuid(), user.getUuid())).thenReturn(user);
+    when(featureFlagService.isEnabled(eq(FeatureName.UPDATE_EMAILS_VIA_SCIM), any())).thenReturn(false);
+    when(wingsPersistence.createUpdateOperations(User.class)).thenReturn(updateOperations);
+    Response response = scimUserService.updateUser(user.getUuid(), account.getUuid(), scimUser);
+    verify(userService, times(1)).updateUser(user.getUuid(), updateOperations);
+    assertThat(response.getStatus()).isNotNull();
+  }
+
   @Test
   @Owner(developers = UJJAWAL)
   @Category(UnitTests.class)
@@ -437,6 +560,21 @@ public class ScimUserServiceTest extends WingsBaseTest {
     try {
       jsonNode = mapper.readTree(jsonObject.toString());
       OktaReplaceOperation replaceOperation = new OktaReplaceOperation(MEMBERS, jsonNode);
+      return new PatchRequest(Collections.singletonList(replaceOperation));
+    } catch (IOException ioe) {
+      log.error("IO Exception while creating okta replace operation in SCIM", ioe);
+    }
+    return null;
+  }
+
+  private PatchRequest getOktaEmailActivityReplaceOperation() {
+    JsonObject jsonObject = new JsonObject();
+    jsonObject.addProperty("userName", "admin25@harness.io");
+    JsonNode jsonNode;
+
+    try {
+      jsonNode = mapper.readTree(jsonObject.toString());
+      OktaReplaceOperation replaceOperation = new OktaReplaceOperation(USERNAME, jsonNode);
       return new PatchRequest(Collections.singletonList(replaceOperation));
     } catch (IOException ioe) {
       log.error("IO Exception while creating okta replace operation in SCIM", ioe);

@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.manifest.mappers.ManifestOutcomeMapper;
 import io.harness.cdng.manifest.yaml.ManifestAttributes;
 import io.harness.cdng.manifest.yaml.ManifestConfig;
@@ -62,6 +63,7 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters> {
   @Inject private ExecutionSweepingOutputService sweepingOutputService;
   @Inject private CDStepHelper cdStepHelper;
   @Named(ConnectorModule.DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
+  @Inject private CDExpressionResolver cdExpressionResolver;
 
   @Override
   public Class<EmptyStepParameters> getStepParametersClass() {
@@ -87,6 +89,7 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters> {
                                                       .map(ManifestConfigWrapper::getManifest)
                                                       .map(ManifestConfig::getSpec)
                                                       .collect(Collectors.toList());
+    cdExpressionResolver.updateExpressions(ambiance, manifestAttributes);
 
     validateManifestList(service.getServiceDefinition().getType(), manifestAttributes);
     validateConnectors(ambiance, manifestAttributes);

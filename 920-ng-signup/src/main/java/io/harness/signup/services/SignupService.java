@@ -16,17 +16,19 @@ import io.harness.signup.dto.OAuthSignupDTO;
 import io.harness.signup.dto.SignupDTO;
 import io.harness.signup.dto.VerifyTokenResponseDTO;
 
+import javax.annotation.Nullable;
+
 @OwnedBy(GTM)
 public interface SignupService {
-  UserInfo signup(SignupDTO dto, String captchaToken) throws WingsException;
+  UserInfo signup(SignupDTO dto, String captchaToken, @Nullable String referer) throws WingsException;
 
   UserInfo communitySignup(SignupDTO dto) throws WingsException;
 
   boolean createSignupInvite(SignupDTO dto, String captchaToken);
 
-  UserInfo completeSignupInvite(String token);
+  UserInfo completeSignupInvite(String token, String referer);
 
-  UserInfo oAuthSignup(OAuthSignupDTO dto) throws WingsException;
+  UserInfo oAuthSignup(OAuthSignupDTO dto, String referer) throws WingsException;
 
   VerifyTokenResponseDTO verifyToken(String token);
 

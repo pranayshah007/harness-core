@@ -185,7 +185,7 @@ public class VmInitializeUtils {
     return getStepMountPath(os);
   }
 
-  public OSType getOS(Infrastructure infrastructure) {
+  public static OSType getOS(Infrastructure infrastructure) {
     // Only linux is supported now for runs on infrastructure
     if (infrastructure.getType() == Infrastructure.Type.HOSTED_VM) {
       return OSType.Linux;

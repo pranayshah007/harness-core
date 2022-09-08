@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CI;
 
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotation.RecasterAlias;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.DbAliases;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
