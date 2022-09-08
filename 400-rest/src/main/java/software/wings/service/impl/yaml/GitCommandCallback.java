@@ -440,6 +440,14 @@ public class GitCommandCallback implements NotifyCallbackWithErrorHandling {
         log.error("Failure in git command execution", e);
         updateChangeSetFailureStatusSafely();
         updateGitCommitFailureSafely();
+        yamlGitService.raiseAlertForGitFailure(accountId, GLOBAL_APP_ID,
+            GitSyncFailureAlertDetails.builder()
+                .errorCode(ErrorCode.DEFAULT_ERROR_CODE)
+                .errorMessage("Unknown error occurred, possible reason: token incorrect")
+                .gitConnectorId(gitConnectorId)
+                .branchName(branchName)
+                .repositoryName(repositoryName)
+                .build());
       }
     }
   }
