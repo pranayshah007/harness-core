@@ -10,9 +10,12 @@ package io.harness.cdng.creator.plan.stage;
 import io.harness.beans.SwaggerConstants;
 import io.harness.plancreator.stages.stage.AbstractStageNode;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.yaml.core.VariableExpression;
+import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
+import java.util.List;
 import lombok.Data;
 
 @Data
@@ -20,4 +23,6 @@ public abstract class DeploymentAbstractStageNode extends AbstractStageNode {
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
   @JsonProperty("skipInstances")
   ParameterField<Boolean> skipInstances;
+
+  @VariableExpression(skipVariableExpression = true) List<FailureStrategyConfig> failureStrategies;
 }

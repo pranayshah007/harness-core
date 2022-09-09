@@ -15,13 +15,16 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.StepSpecTypeConstants;
-import io.harness.cimanager.stages.IntegrationStageConfig;
+import io.harness.cimanager.stages.IntegrationStageConfigImpl;
 import io.harness.plancreator.stages.stage.AbstractStageNode;
 import io.harness.plancreator.stages.stage.StageInfoConfig;
+import io.harness.yaml.core.VariableExpression;
+import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -43,7 +46,7 @@ public class IntegrationStageNode extends AbstractStageNode {
 
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
-  IntegrationStageConfig integrationStageConfig;
+  IntegrationStageConfigImpl integrationStageConfig;
   @Override
   public String getType() {
     return StepSpecTypeConstants.CI_STAGE;
@@ -61,4 +64,6 @@ public class IntegrationStageNode extends AbstractStageNode {
       this.name = name;
     }
   }
+
+  @VariableExpression(skipVariableExpression = true) List<FailureStrategyConfig> failureStrategies;
 }

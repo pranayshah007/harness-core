@@ -91,7 +91,7 @@ public class K8InitializeStepUtilsHelper {
         .build();
   }
 
-  public static IntegrationStageConfig getIntegrationStageConfig() {
+  public static IntegrationStageConfigImpl getIntegrationStageConfig() {
     List<ExecutionWrapperConfig> executionSectionList = getExecutionWrapperConfigList();
     return IntegrationStageConfigImpl.builder()
         .execution(ExecutionElementConfig.builder().steps(executionSectionList).build())
@@ -492,7 +492,7 @@ public class K8InitializeStepUtilsHelper {
         .build();
   }
 
-  public static IntegrationStageConfig getIntegrationStageConfigWithStepGroup1() throws Exception {
+  public static IntegrationStageConfigImpl getIntegrationStageConfigWithStepGroup1() throws Exception {
     List<ExecutionWrapperConfig> executionSectionList = getExecutionWrapperConfigListWithStepGroup1();
     return IntegrationStageConfigImpl.builder()
         .execution(ExecutionElementConfig.builder().steps(executionSectionList).build())

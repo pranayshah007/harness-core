@@ -7,7 +7,6 @@
 
 package io.harness.beans.steps;
 
-import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.plancreator.steps.AbstractStepNode;
@@ -16,12 +15,9 @@ import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
 
 import java.util.List;
 import lombok.Data;
-import org.springframework.data.annotation.TypeAlias;
 
-@OwnedBy(HarnessTeam.CI)
+@OwnedBy(HarnessTeam.STO)
 @Data
-@TypeAlias("STOAbstractStepNode")
-@RecasterAlias("io.harness.beans.steps.stepinfo.STOAbstractStepNode")
-public abstract class CIAbstractStepNode extends AbstractStepNode {
+public abstract class STOAbstractStepNode extends AbstractStepNode {
   @VariableExpression(skipVariableExpression = true) List<FailureStrategyConfig> failureStrategies;
 }

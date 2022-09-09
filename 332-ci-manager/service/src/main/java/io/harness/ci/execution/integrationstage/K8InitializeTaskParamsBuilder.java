@@ -49,6 +49,7 @@ import io.harness.ci.license.CILicenseService;
 import io.harness.ci.utils.HarnessImageUtils;
 import io.harness.ci.utils.LiteEngineSecretEvaluator;
 import io.harness.ci.utils.PortFinder;
+import io.harness.cimanager.stages.IntegrationStageConfigImpl;
 import io.harness.delegate.beans.ci.k8s.CIK8InitializeTaskParams;
 import io.harness.delegate.beans.ci.pod.CIContainerType;
 import io.harness.delegate.beans.ci.pod.CIK8ContainerParams;
@@ -392,11 +393,12 @@ public class K8InitializeTaskParamsBuilder {
     Set<Integer> usedPorts = new HashSet<>();
     PortFinder portFinder = PortFinder.builder().startingPort(PORT_STARTING_RANGE).usedPorts(usedPorts).build();
 
-    IntegrationStageNode stageElementConfig = IntegrationStageNode.builder()
-                                                  .identifier(initializeStepInfo.getStageIdentifier())
-                                                  .variables(initializeStepInfo.getVariables())
-                                                  .integrationStageConfig(initializeStepInfo.getStageElementConfig())
-                                                  .build();
+    IntegrationStageNode stageElementConfig =
+        IntegrationStageNode.builder()
+            .identifier(initializeStepInfo.getStageIdentifier())
+            .variables(initializeStepInfo.getVariables())
+            .integrationStageConfig((IntegrationStageConfigImpl) initializeStepInfo.getStageElementConfig())
+            .build();
     CIExecutionArgs ciExecutionArgs = CIExecutionArgs.builder()
                                           .runSequence(String.valueOf(ambiance.getMetadata().getRunSequence()))
                                           .executionSource(initializeStepInfo.getExecutionSource())

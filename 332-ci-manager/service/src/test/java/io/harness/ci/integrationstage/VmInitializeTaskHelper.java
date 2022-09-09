@@ -70,7 +70,7 @@ public class VmInitializeTaskHelper {
         .build();
   }
 
-  public static IntegrationStageConfig getIntegrationStageConfig() {
+  public static IntegrationStageConfigImpl getIntegrationStageConfig() {
     List<ExecutionWrapperConfig> executionSectionList = getExecutionWrapperConfigList();
     return IntegrationStageConfigImpl.builder()
         .execution(ExecutionElementConfig.builder().steps(executionSectionList).build())

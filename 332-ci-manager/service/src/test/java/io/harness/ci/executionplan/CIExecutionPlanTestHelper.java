@@ -1365,7 +1365,7 @@ public class CIExecutionPlanTestHelper {
         .build();
   }
 
-  public IntegrationStageConfig getIntegrationStageConfig() {
+  public IntegrationStageConfigImpl getIntegrationStageConfig() {
     return IntegrationStageConfigImpl.builder()
         .execution(getExecutionElementConfig())
         .infrastructure(getInfrastructureWithVolume())

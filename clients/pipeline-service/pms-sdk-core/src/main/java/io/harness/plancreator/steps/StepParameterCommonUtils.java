@@ -57,7 +57,6 @@ public class StepParameterCommonUtils {
     stageBuilder.name(stageElementConfig.getName());
     stageBuilder.identifier(stageElementConfig.getIdentifier());
     stageBuilder.description(SdkCoreStepUtils.getParameterFieldHandleValueNull(stageElementConfig.getDescription()));
-    stageBuilder.failureStrategies(stageElementConfig.getFailureStrategies());
     stageBuilder.skipCondition(stageElementConfig.getSkipCondition());
     stageBuilder.when(stageElementConfig.getWhen());
     stageBuilder.type(stageElementConfig.getType());

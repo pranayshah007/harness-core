@@ -82,6 +82,4 @@ public abstract class AbstractStageNode {
 
   @JsonIgnore public abstract String getType();
   @JsonIgnore public abstract StageInfoConfig getStageInfoConfig();
-
-  @VariableExpression(skipVariableExpression = true) List<FailureStrategyConfig> failureStrategies;
 }

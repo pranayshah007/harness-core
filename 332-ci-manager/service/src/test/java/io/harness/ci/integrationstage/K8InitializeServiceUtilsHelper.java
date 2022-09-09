@@ -119,7 +119,7 @@ public class K8InitializeServiceUtilsHelper {
         .build();
   }
 
-  public static IntegrationStageConfig getIntegrationStageConfig() {
+  public static IntegrationStageConfigImpl getIntegrationStageConfig() {
     return IntegrationStageConfigImpl.builder()
         .serviceDependencies(ParameterField.createValueField(Collections.singletonList(getServiceDependencyElement())))
         .build();
