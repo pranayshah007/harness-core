@@ -98,6 +98,7 @@ public class ResumeStateUtils {
         // updated context element to executionResponse will not work because it will just update the
         // stateExecutionInstance of the db and not the context and the stateExecutionInstance for the next state is
         // formed using the stateExecutionInstance of the context.
+        // Test comment
         WorkflowStandardParams workflowStandardParams =
             (WorkflowStandardParams) stateExecutionInstance.getContextElements()
                 .stream()
@@ -115,6 +116,7 @@ public class ResumeStateUtils {
 
   @VisibleForTesting
   void mergeWorkflowElementVariables(ExecutionContext context, WorkflowStandardParams oldParams) {
+    // Test comment
     WorkflowStandardParams currParams = context.getContextElement(ContextElementType.STANDARD);
     if (currParams != null) {
       oldParams.getWorkflowElement().getVariables().forEach((key, value) -> {

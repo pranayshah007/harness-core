@@ -259,6 +259,7 @@ public class ResumeStateUtilsTest extends WingsBaseTest {
   @Owner(developers = YUVRAJ)
   @Category(UnitTests.class)
   public void test_mergeWorkflowElementVariablesNull() {
+    // Test comment
     ExecutionContext context = mock(ExecutionContextImpl.class);
     WorkflowStandardParams std1 = mock(WorkflowStandardParams.class);
     WorkflowStandardParams std2 = mock(WorkflowStandardParams.class);
