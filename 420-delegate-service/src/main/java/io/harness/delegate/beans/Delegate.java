@@ -18,6 +18,7 @@ import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
@@ -40,6 +41,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 import org.mongodb.morphia.annotations.Entity;
 import org.mongodb.morphia.annotations.Id;
 import org.mongodb.morphia.annotations.Transient;
+import software.wings.beans.DelegateConnection;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Data
@@ -60,6 +62,11 @@ public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, Ac
                  .field(DelegateKeys.owner)
                  .name("byAcctNgGroupIdOwner")
                  .build())
+        .add(SortCompoundMongoIndex.builder()
+            .name("delegateLastHeartbeatIndex")
+            .field(DelegateConnection.DelegateConnectionKeys.disconnected)
+            .sortField(DelegateConnection.DelegateConnectionKeys.lastHeartbeat)
+            .build())
         .build();
   }
 
@@ -84,8 +91,10 @@ public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, Ac
   private String delegateGroupId;
   private String delegateName;
   private String delegateProfileId;
+  private long startTime;
   private long lastHeartBeat;
   private String version;
+  private boolean disconnected;
   private transient String sequenceNum;
   private String delegateType;
   private transient String delegateRandomToken;

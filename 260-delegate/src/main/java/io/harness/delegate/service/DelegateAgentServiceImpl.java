@@ -388,6 +388,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   private TimeLimiter delegateTaskTimeLimiter;
 
   private final String delegateConnectionId = generateTimeBasedUuid();
+  private final long delegateStartTime = clock.millis();
   private volatile boolean switchStorageMsgSent;
   private DelegateConnectionHeartbeat connectionHeartbeat;
   private String migrateToJreVersion = System.getProperty(JAVA_VERSION);
@@ -1714,7 +1715,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
                                                    .collect(toList()))
               .location(Paths.get("").toAbsolutePath().toString())
               .tokenName(DelegateAgentCommonVariables.getDelegateTokenName())
-              .delegateConnectionId(delegateConnectionId)
+              .startTime(delegateStartTime)
               .token(tokenGenerator.getToken("https", "localhost", 9090, HOST_NAME))
               .build();
 

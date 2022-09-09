@@ -20,15 +20,15 @@ import io.harness.app.schema.type.delegate.QLDelegate.QLDelegateBuilder;
 import io.harness.app.schema.type.delegate.QLDelegateApproval;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateApproval;
+import io.harness.delegate.beans.DelegateConnectionDetails;
 import io.harness.delegate.task.DelegateLogContext;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
 
-import software.wings.beans.DelegateConnection;
 import software.wings.graphql.datafetcher.BaseMutatorDataFetcher;
 import software.wings.graphql.datafetcher.MutationContext;
 import software.wings.security.annotations.AuthRule;
-import software.wings.service.impl.DelegateConnectionDao;
+import software.wings.service.impl.DelegateConnectionDetailsHelper;
 import software.wings.service.intfc.DelegateService;
 
 import com.google.inject.Inject;
@@ -41,7 +41,7 @@ import lombok.extern.slf4j.Slf4j;
 public class DelegateApprovalDataFetcher
     extends BaseMutatorDataFetcher<QLDelegateApproveRejectInput, QLDelegateApproveRejectPayload> {
   @Inject DelegateService delegateService;
-  @Inject private DelegateConnectionDao delegateConnectionDao;
+  @Inject private DelegateConnectionDetailsHelper delegateConnectionDetailsHelper;
 
   @Inject
   public DelegateApprovalDataFetcher(DelegateService delegateService) {
@@ -61,8 +61,8 @@ public class DelegateApprovalDataFetcher
       Delegate delegate = delegateService.updateApprovalStatus(accountId, delegateId, delegateApproval);
       Assert.notNull(delegate, "Unable to perform the operation");
       QLDelegateBuilder qlDelegateBuilder = QLDelegate.builder();
-      List<DelegateConnection> delegateConnections =
-          delegateConnectionDao.list(delegate.getAccountId(), delegate.getUuid());
+      List<DelegateConnectionDetails> delegateConnections =
+          delegateConnectionDetailsHelper.list(delegate.getUuid());
       DelegateController.populateQLDelegate(delegate, qlDelegateBuilder, delegateConnections);
       return new QLDelegateApproveRejectPayload(mutationContext.getAccountId(), qlDelegateBuilder.build());
     }

@@ -134,6 +134,7 @@ public interface DelegateService extends OwnedByAccount {
   void deleteDelegateGroupV2(String accountId, String orgId, String projectId, String identifier);
 
   DelegateRegisterResponse register(@Valid Delegate delegate);
+  //void processHeartBeat(@Valid Delegate delegate);
 
   DelegateRegisterResponse register(@Valid DelegateParams delegateParams, boolean isConnectedUsingMtls);
 
@@ -174,7 +175,7 @@ public interface DelegateService extends OwnedByAccount {
 
   boolean validateThatDelegateNameIsUnique(String accountId, String delegateName);
 
-  void delegateDisconnected(String accountId, String delegateId, String delegateConnectionId);
+  void delegateDisconnected(String accountId, String delegateId);
 
   void deleteAllDelegatesExceptOne(String accountId, long shutdownInterval);
 

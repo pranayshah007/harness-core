@@ -285,7 +285,6 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.Request.Builder;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.io.IOUtils;
@@ -386,7 +385,6 @@ public class DelegateServiceImpl implements DelegateService {
   @Inject private SubdomainUrlHelperIntfc subdomainUrlHelper;
   @Inject private ConfigurationController configurationController;
   @Inject private DelegateSelectionLogsService delegateSelectionLogsService;
-  @Inject private DelegateConnectionDao delegateConnectionDao;
   @Inject private SystemEnvironment sysenv;
   @Inject private DelegateSyncService delegateSyncService;
   @Inject private DelegateTaskService delegateTaskService;
@@ -419,6 +417,7 @@ public class DelegateServiceImpl implements DelegateService {
   @Inject private DelegateMetricsService delegateMetricsService;
   @Inject private DelegateVersionService delegateVersionService;
   @Inject private AgentMtlsEndpointService agentMtlsEndpointService;
+  @Inject private DelegateConnectionDetailsHelper delegateConnectionDetailsHelper;
 
   private final LoadingCache<String, String> delegateVersionCache =
       CacheBuilder.newBuilder()
@@ -494,7 +493,7 @@ public class DelegateServiceImpl implements DelegateService {
 
     // check delegate connections, if it's active
     List<DelegateConnectionDetails> activelyConnectedDelegates =
-        delegateConnectionDao.list(accountId, delegate.getUuid())
+        delegateConnectionDetailsHelper.list(delegate.getUuid())
             .stream()
             .map(delegateConnection
                 -> DelegateConnectionDetails.builder()
@@ -663,7 +662,7 @@ public class DelegateServiceImpl implements DelegateService {
     }
 
     String primaryVersion = delegateVersions.get(0).split("-")[0];
-    long primary = delegateConnectionDao.numberOfActiveDelegateConnectionsPerVersion(primaryVersion, accountId);
+    long primary = delegateConnectionDetailsHelper.numberOfActiveDelegateConnectionsPerVersion(primaryVersion, accountId);
 
     // If we do not have any delegates in the primary version, lets unblock the deployment,
     // that will be very rare and we are in trouble anyways, let report 1 to let the new deployment go.
@@ -671,18 +670,18 @@ public class DelegateServiceImpl implements DelegateService {
       return 1.0;
     }
 
-    long target = delegateConnectionDao.numberOfActiveDelegateConnectionsPerVersion(targetVersion, accountId);
+    long target = delegateConnectionDetailsHelper.numberOfActiveDelegateConnectionsPerVersion(targetVersion, accountId);
     return BigDecimal.valueOf((double) target / (double) primary).setScale(3, RoundingMode.HALF_UP).doubleValue();
   }
 
   @Override
   public Double getConnectedDelegatesRatio(String version, String accountId) {
-    long totalDelegatesWithVersion = delegateConnectionDao.numberOfDelegateConnectionsPerVersion(version, accountId);
+    long totalDelegatesWithVersion = delegateConnectionDetailsHelper.numberOfDelegateConnectionsPerVersion(version, accountId);
     if (totalDelegatesWithVersion == 0) {
       return 0.0;
     }
     long connectedDelegatesWithVersion =
-        delegateConnectionDao.numberOfActiveDelegateConnectionsPerVersion(version, accountId);
+        delegateConnectionDetailsHelper.numberOfActiveDelegateConnectionsPerVersion(version, accountId);
     return BigDecimal.valueOf((double) connectedDelegatesWithVersion / (double) totalDelegatesWithVersion)
         .setScale(3, RoundingMode.HALF_UP)
         .doubleValue();
@@ -691,7 +690,7 @@ public class DelegateServiceImpl implements DelegateService {
   @Override
   public Map<String, List<String>> getActiveDelegatesPerAccount(String version) {
     version = Arrays.stream(version.split("-")).findFirst().get();
-    return delegateConnectionDao.obtainActiveDelegatesPerAccount(version);
+    return delegateConnectionDetailsHelper.obtainActiveDelegatesPerAccount(version);
   }
 
   @Override
@@ -794,7 +793,7 @@ public class DelegateServiceImpl implements DelegateService {
                                    .asList();
 
     Map<String, List<DelegateConnectionDetails>> perDelegateConnections =
-        delegateConnectionDao.obtainActiveDelegateConnections(accountId);
+        delegateConnectionDetailsHelper.obtainActiveDelegateConnections(accountId);
 
     return DelegateStatus.builder()
         .publishedVersions(delegateConfiguration.getDelegateVersions())
@@ -809,7 +808,7 @@ public class DelegateServiceImpl implements DelegateService {
     List<Delegate> delegatesWithoutScalingGroup = getDelegatesWithoutScalingGroup(accountId);
 
     Map<String, List<DelegateConnectionDetails>> activeDelegateConnections =
-        delegateConnectionDao.obtainActiveDelegateConnections(accountId);
+        delegateConnectionDetailsHelper.obtainActiveDelegateConnections(accountId);
 
     List<DelegateScalingGroup> scalingGroups = getDelegateScalingGroups(accountId, activeDelegateConnections);
 
@@ -985,7 +984,7 @@ public class DelegateServiceImpl implements DelegateService {
     }
   }
 
-  // ??? why need such a function while Delegate is already a bean ?
+  // ??? why need a function while Delegate is already a bean ?
   private UpdateOperations<Delegate> getDelegateUpdateOperations(final Delegate delegate) {
     final UpdateOperations<Delegate> updateOperations = persistence.createUpdateOperations(Delegate.class);
     setUnset(updateOperations, DelegateKeys.ip, delegate.getIp());
@@ -2312,7 +2311,7 @@ public class DelegateServiceImpl implements DelegateService {
                                     .get();
 
     if (existingDelegate != null) {
-      if (delegateConnectionDao.checkAnyDelegateIsConnected(accountId, Arrays.asList(delegateId))) {
+      if (delegateConnectionDetailsHelper.checkAnyDelegateIsConnected(accountId, Arrays.asList(delegateId))) {
         throw new InvalidRequestException(format("Unable to delete delegate. Delegate %s is connected", delegateId));
       }
       // before deleting delegate, check if any alert is open for delegate, if yes, close it.
@@ -2345,7 +2344,7 @@ public class DelegateServiceImpl implements DelegateService {
   @Override
   public void retainOnlySelectedDelegatesAndDeleteRest(String accountId, List<String> delegatesToRetain) {
     if (EmptyPredicate.isNotEmpty(delegatesToRetain)) {
-      if (delegateConnectionDao.checkAnyDelegateIsConnected(accountId, delegatesToRetain)) {
+      if (delegateConnectionDetailsHelper.checkAnyDelegateIsConnected(accountId, delegatesToRetain)) {
         throw new InvalidRequestException(
             format("Unable to delete delegate[s]. Anyone delegate %s is connected", delegatesToRetain));
       }
@@ -2503,7 +2502,7 @@ public class DelegateServiceImpl implements DelegateService {
   }
 
   @Override
-  public DelegateRegisterResponse register(Delegate delegate) {
+  public DelegateRegisterResponse processHeartBeat(Delegate delegate) {
     if (licenseService.isAccountDeleted(delegate.getAccountId())) {
       delegateMetricsService.recordDelegateMetrics(delegate, DELEGATE_DESTROYED);
       broadcasterFactory.lookup(STREAM_DELEGATE + delegate.getAccountId(), true).broadcast(SELF_DESTRUCT);
@@ -2533,6 +2532,7 @@ public class DelegateServiceImpl implements DelegateService {
     final Delegate existingDelegate = getExistingDelegate(
         delegate.getAccountId(), delegate.getHostName(), delegate.isNg(), delegate.getDelegateType(), delegate.getIp());
 
+    // clean up
     if (existingDelegate != null && existingDelegate.getStatus() == DelegateInstanceStatus.DELETED) {
       broadcasterFactory.lookup(STREAM_DELEGATE + delegate.getAccountId(), true)
           .broadcast(SELF_DESTRUCT + existingDelegate.getUuid());
@@ -2552,8 +2552,28 @@ public class DelegateServiceImpl implements DelegateService {
     if (ECS.equals(delegate.getDelegateType())) {
       return registerResponseFromDelegate(handleEcsDelegateRequest(delegate));
     } else {
-      return registerResponseFromDelegate(upsertDelegateOperation(existingDelegate, delegate));
+      return registerResponseFromDelegate(updateDelegateWithHeartBeatInfo(delegate));
     }
+  }
+
+  private Delegate updateDelegateWithHeartBeatInfo(final Delegate delegate) {
+    long delegateHeartbeat = delegate.getLastHeartBeat();
+    long now = clock.millis();
+    long skew = Math.abs(now - delegateHeartbeat);
+    if (skew > TimeUnit.MINUTES.toMillis(2L)) {
+      log.debug("Delegate {} has clock skew of {}", delegate.getUuid(), Misc.getDurationString(skew));
+    }
+    delegate.setLastHeartBeat(now);
+    delegate.setValidUntil(Date.from(OffsetDateTime.now().plusDays(Delegate.TTL.toDays()).toInstant()));
+    delegate.setDisconnected(false);
+    Delegate registeredDelegate;
+    if (isGroupedCgDelegate(delegate)) {
+      updateDelegateWithConfigFromGroup(delegate);
+    }
+    registeredDelegate = update(delegate);
+
+    sendHeartBeatResponse(delegate, registeredDelegate);
+    return registeredDelegate;
   }
 
   @Override
@@ -2744,7 +2764,7 @@ public class DelegateServiceImpl implements DelegateService {
       log.warn("Delegate instance {} doesn't exist for {}, nothing to remove", request.getHostName(),
           request.getDelegateId());
     }
-    delegateConnectionDao.list(accountId, request.getDelegateId())
+    delegateConnectionDetailsHelper.list(request.getDelegateId())
         .forEach(connection -> delegateDisconnected(accountId, request.getDelegateId(), connection.getUuid()));
   }
 
@@ -2753,7 +2773,7 @@ public class DelegateServiceImpl implements DelegateService {
     return upsertDelegateOperation(existingDelegate, delegate, null);
   }
 
-  // ??? we should keep the upsert functions only db related.
+  // ??? keep the upsert functions only db related.
   @VisibleForTesting
   Delegate upsertDelegateOperation(
       Delegate existingDelegate, Delegate delegate, DelegateSetupDetails delegateSetupDetails) {
@@ -2798,7 +2818,11 @@ public class DelegateServiceImpl implements DelegateService {
     }
 
     // Not needed to be done when polling is enabled for delegate
-    // ??? why broadcast
+    sendHeartBeatResponse(delegate, registeredDelegate);
+    return registeredDelegate;
+  }
+
+  private void sendHeartBeatResponse(final Delegate delegate, final Delegate registeredDelegate) {
     if (isDelegateWithoutPollingEnabled(delegate)) {
       if (delegate.isHeartbeatAsObject()) {
         broadcastDelegateHeartBeatResponse(delegate, registeredDelegate);
@@ -2809,7 +2833,6 @@ public class DelegateServiceImpl implements DelegateService {
         broadcasterFactory.lookup(STREAM_DELEGATE + delegate.getAccountId(), true).broadcast(message.toString());
       }
     }
-    return registeredDelegate;
   }
 
   private void broadcastDelegateHeartBeatResponse(Delegate delegate, Delegate registeredDelegate) {
@@ -3074,9 +3097,9 @@ public class DelegateServiceImpl implements DelegateService {
   }
 
   @Override
-  public void delegateDisconnected(String accountId, String delegateId, String delegateConnectionId) {
-    log.info("Delegate connection {} disconnected for delegate {}", delegateConnectionId, delegateId);
-    delegateConnectionDao.delegateDisconnected(accountId, delegateConnectionId);
+  public void delegateDisconnected(String accountId, String delegateId) {
+    log.info("Delegate disconnected for delegate {}", delegateId);
+    delegateConnectionDetailsHelper.delegateDisconnected(delegateId);
     subject.fireInform(DelegateObserver::onDisconnected, accountId, delegateId);
     Delegate delegate = delegateCache.get(accountId, delegateId, false);
     delegateMetricsService.recordDelegateMetrics(delegate, DELEGATE_DISCONNECTED);
@@ -3251,6 +3274,8 @@ public class DelegateServiceImpl implements DelegateService {
 
   public void registerHeartbeat(
       String accountId, String delegateId, DelegateConnectionHeartbeat heartbeat, ConnectionMode connectionMode) {
+      return;
+    /*
     String version = heartbeat.getVersion();
     if (isEmpty(version)) {
       version = accountService.getAccountPrimaryDelegateVersion(accountId);
@@ -3285,6 +3310,8 @@ public class DelegateServiceImpl implements DelegateService {
         }
       }
     }
+
+     */
   }
 
   /**
@@ -3867,7 +3894,7 @@ public class DelegateServiceImpl implements DelegateService {
   public List<String> getConnectedDelegates(String accountId, List<String> delegateIds) {
     return delegateIds.stream()
         .filter(
-            delegateId -> delegateConnectionDao.checkDelegateConnected(accountId, delegateId, getVersion(accountId)))
+            delegateId -> delegateConnectionDetailsHelper.checkDelegateConnected(delegateId, getVersion(accountId)))
         .collect(toList());
   }
 
@@ -3988,8 +4015,8 @@ public class DelegateServiceImpl implements DelegateService {
     if (delegateKey == null) {
       return false;
     }
-    return delegateConnectionDao.checkDelegateConnected(
-        accountId, delegateKey.getId().toString(), versionInfoManager.getVersionInfo().getVersion());
+    return delegateConnectionDetailsHelper.checkDelegateConnected(
+        delegateKey.getId().toString(), versionInfoManager.getVersionInfo().getVersion());
   }
 
   @Override
@@ -4003,7 +4030,7 @@ public class DelegateServiceImpl implements DelegateService {
 
   @Override
   public boolean checkDelegateConnected(String accountId, String delegateId) {
-    return delegateConnectionDao.checkDelegateConnected(accountId, delegateId, getVersion(accountId));
+    return delegateConnectionDetailsHelper.checkDelegateConnected(delegateId, getVersion(accountId));
   }
 
   private String getVersion(String accountId) {

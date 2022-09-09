@@ -53,7 +53,6 @@ import io.harness.service.intfc.DelegateCache;
 import io.harness.service.intfc.DelegateSetupService;
 
 import software.wings.beans.SelectorType;
-import software.wings.service.impl.DelegateConnectionDao;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -79,6 +78,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.query.Criteria;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.UpdateOperations;
+import software.wings.service.impl.DelegateConnectionDetailsHelper;
 
 @Singleton
 @ValidateOnExecution
@@ -87,7 +87,7 @@ import org.mongodb.morphia.query.UpdateOperations;
 public class DelegateSetupServiceImpl implements DelegateSetupService {
   @Inject private HPersistence persistence;
   @Inject private DelegateCache delegateCache;
-  @Inject private DelegateConnectionDao delegateConnectionDao;
+  @Inject private DelegateConnectionDetailsHelper delegateConnectionDetailsHelper;
   @Inject private FilterService filterService;
   @Inject private OutboxService outboxService;
   private static final Duration HEARTBEAT_EXPIRY_TIME = ofMinutes(5);
@@ -486,7 +486,7 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
   }
 
   private boolean isGrpcActive(String accountId, String delegateId) {
-    return delegateConnectionDao.list(accountId, delegateId)
+    return delegateConnectionDetailsHelper.list(delegateId)
         .stream()
         .anyMatch(delegateConnection
             -> delegateConnection.getLastGrpcHeartbeat() > System.currentTimeMillis() - MAX_GRPC_HB_TIMEOUT);

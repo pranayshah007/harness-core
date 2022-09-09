@@ -10,6 +10,7 @@ package io.harness.app.schema.type.delegate;
 import static io.harness.annotations.dev.HarnessTeam.DEL;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.DelegateConnectionDetails;
 import io.harness.delegate.beans.DelegateScope;
 
 import software.wings.beans.DelegateConnection;
@@ -42,7 +43,7 @@ public class QLDelegate implements QLObject {
   String version;
   String delegateProfileId;
   List<String> tags;
-  List<DelegateConnection> connections;
+  List<DelegateConnectionDetails> connections;
   List<DelegateScope> includeScopes;
   List<DelegateScope> excludeScopes;
   List<String> supportedTasks;

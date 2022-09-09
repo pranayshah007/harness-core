@@ -99,12 +99,13 @@ public class DelegateStreamHandler extends AtmosphereHandlerAdapter {
           updateIfEcsDelegate(delegate, sequenceNum, delegateToken);
 
           delegateService.register(delegate);
+          /*
           delegateService.registerHeartbeat(accountId, delegateId,
               DelegateConnectionHeartbeat.builder()
                   .delegateConnectionId(delegateConnectionId)
                   .version(delegateVersion)
                   .build(),
-              ConnectionMode.STREAMING);
+              ConnectionMode.STREAMING); */
 
           resource.addEventListener(new AtmosphereResourceEventListenerAdapter() {
             @Override

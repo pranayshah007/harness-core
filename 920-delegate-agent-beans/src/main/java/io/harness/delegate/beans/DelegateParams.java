@@ -25,6 +25,7 @@ import lombok.experimental.FieldDefaults;
 public class DelegateParams {
   String delegateId;
   String delegateConnectionId;
+  long startTime;
   String accountId;
   String sessionIdentifier;
   String orgIdentifier;

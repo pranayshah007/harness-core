@@ -26,8 +26,6 @@ import io.harness.queue.QueueController;
 import io.harness.service.intfc.DelegateCache;
 import io.harness.version.VersionInfoManager;
 
-import software.wings.beans.DelegateConnection;
-import software.wings.beans.DelegateConnection.DelegateConnectionKeys;
 import software.wings.service.intfc.DelegateService;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -51,50 +49,33 @@ public class DelegateDisconnectedDetector implements Runnable {
       return;
     }
 
-    Query<DelegateConnection> delegateConnectionQuery =
-        persistence.createQuery(DelegateConnection.class, excludeAuthority)
-            .filter(DelegateConnectionKeys.disconnected, Boolean.FALSE)
-            .field(DelegateConnectionKeys.lastHeartbeat)
+    Query<Delegate> delegateConnectionQuery =
+        persistence.createQuery(Delegate.class, excludeAuthority)
+            .filter(Delegate.DelegateKeys.disconnected, Boolean.FALSE)
+            .field(Delegate.DelegateKeys.lastHeartBeat)
             .lessThanOrEq(currentTimeMillis() - EXPIRY_TIME.toMillis());
 
-    try (HIterator<DelegateConnection> delegateConnections = new HIterator<>(delegateConnectionQuery.fetch())) {
-      for (DelegateConnection delegateConnection : delegateConnections) {
-        Delegate delegate =
-            delegateCache.get(delegateConnection.getAccountId(), delegateConnection.getDelegateId(), false);
-
-        if (delegate == null) {
-          persistence.delete(delegateConnection);
-          continue;
-        }
-
+    try (HIterator<Delegate> delegateConnections = new HIterator<>(delegateConnectionQuery.fetch())) {
+      for (Delegate delegateConnection : delegateConnections) {
+        // ??? when do we clean up disconnected deletes. How does version matter before marking it as disconnected?
         if (versionInfoManager.getVersionInfo().getVersion().equals(delegateConnection.getVersion())) {
-          disconnectedDetected(delegate.isPolllingModeEnabled(), delegateConnection);
+          disconnectedDetected(delegateConnection.isPolllingModeEnabled(), delegateConnection);
           continue;
         }
-
-        if (persistence.createQuery(DelegateConnection.class)
-                .filter(DelegateConnectionKeys.accountId, delegateConnection.getAccountId())
-                .filter(DelegateConnectionKeys.delegateId, delegateConnection.getDelegateId())
-                .filter(DelegateConnectionKeys.version, versionInfoManager.getVersionInfo().getVersion())
-                .count(HPersistence.upToOne)
-            == 0) {
-          disconnectedDetected(delegate.isPolllingModeEnabled(), delegateConnection);
-        }
-        persistence.delete(delegateConnection);
       }
     }
   }
 
   @VisibleForTesting
-  public void disconnectedDetected(boolean polllingModeEnabled, DelegateConnection delegateConnection) {
+  public void disconnectedDetected(boolean polllingModeEnabled, Delegate delegateConnection) {
     try (DelegateLogContext ignore = new DelegateLogContext(
-             delegateConnection.getAccountId(), delegateConnection.getDelegateId(), null, OVERRIDE_ERROR)) {
+             delegateConnection.getAccountId(), delegateConnection.getUuid(), null, OVERRIDE_ERROR)) {
       log.info("Delegate was detected as disconnected");
       if (!polllingModeEnabled) {
         log.error("Non-polling delegate was detected as disconnected");
       }
       delegateService.delegateDisconnected(
-          delegateConnection.getAccountId(), delegateConnection.getDelegateId(), delegateConnection.getUuid());
+          delegateConnection.getAccountId(), delegateConnection.getUuid());
     }
   }
 }

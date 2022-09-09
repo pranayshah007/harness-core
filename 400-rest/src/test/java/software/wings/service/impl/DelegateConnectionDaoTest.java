@@ -55,7 +55,7 @@ public class DelegateConnectionDaoTest extends WingsBaseTest {
   private static final String VERSION = "1.0.0";
   private Delegate delegate;
 
-  @Inject private DelegateConnectionDao delegateConnectionDao;
+  @Inject private DelegateConnectionDetailsHelper delegateConnectionDetailsHelper;
   @Inject private DelegateService delegateService;
   @Inject private HPersistence persistence;
 
@@ -68,8 +68,8 @@ public class DelegateConnectionDaoTest extends WingsBaseTest {
   @Owner(developers = HANTANG)
   @Category(UnitTests.class)
   public void shouldReturnNullWhenList() {
-    List<DelegateConnection> delegateConnections =
-        delegateConnectionDao.list(delegate.getAccountId(), delegate.getUuid());
+    List<DelegateConnectionDetails> delegateConnections =
+        delegateConnectionDetailsHelper.list(delegate.getUuid());
     assertThat(delegateConnections).isEqualTo(emptyList());
   }
 
@@ -100,7 +100,7 @@ public class DelegateConnectionDaoTest extends WingsBaseTest {
         ConnectionMode.POLLING);
 
     Map<String, List<DelegateConnectionDetails>> delegateConnections =
-        delegateConnectionDao.obtainActiveDelegateConnections(ACCOUNT_ID);
+        delegateConnectionDetailsHelper.obtainActiveDelegateConnections(ACCOUNT_ID);
 
     assertThat(delegateConnections).hasSize(2);
     assertThat(delegateConnections.get(delegateId)).hasSize(2);
@@ -123,7 +123,7 @@ public class DelegateConnectionDaoTest extends WingsBaseTest {
 
     persistence.save(delegateConnection);
 
-    delegateConnectionDao.delegateDisconnected(accountId, delegateConnectionId);
+    delegateConnectionDetailsHelper.delegateDisconnected(delegateId);
 
     DelegateConnection retrievedDelegateConnection =
         persistence.createQuery(DelegateConnection.class)
@@ -150,9 +150,13 @@ public class DelegateConnectionDaoTest extends WingsBaseTest {
                          .lastHeartbeat(System.currentTimeMillis())
                          .build());
 
-    assertThat(delegateConnectionDao.checkAnyDelegateIsConnected(accountId, Arrays.asList(delegateId, delegateId2)))
+    assertThat(
+        delegateConnectionDetailsHelper.checkAnyDelegateIsConnected(
+            accountId, Arrays.asList(delegateId, delegateId2)))
         .isTrue();
-    assertThat(delegateConnectionDao.checkAnyDelegateIsConnected(accountId, Arrays.asList(delegateId2, "DELEGATE_ID3")))
+    assertThat(
+        delegateConnectionDetailsHelper.checkAnyDelegateIsConnected(
+            accountId, Arrays.asList(delegateId2, "DELEGATE_ID3")))
         .isFalse();
   }
 
@@ -169,7 +173,8 @@ public class DelegateConnectionDaoTest extends WingsBaseTest {
                          .version(VERSION)
                          .build());
 
-    assertThat(delegateConnectionDao.numberOfActiveDelegateConnectionsPerVersion(VERSION, null)).isEqualTo(1L);
+    assertThat(
+        delegateConnectionDetailsHelper.numberOfActiveDelegateConnectionsPerVersion(VERSION, null)).isEqualTo(1L);
   }
 
   @Test
@@ -185,6 +190,7 @@ public class DelegateConnectionDaoTest extends WingsBaseTest {
                          .version(VERSION)
                          .build());
 
-    assertThat(delegateConnectionDao.numberOfActiveDelegateConnectionsPerVersion(VERSION, accountId)).isEqualTo(1L);
+    assertThat(delegateConnectionDetailsHelper.numberOfActiveDelegateConnectionsPerVersion(
+        VERSION, accountId)).isEqualTo(1L);
   }
 }
