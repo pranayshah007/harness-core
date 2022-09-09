@@ -35,6 +35,7 @@ import io.harness.ngsettings.entities.SettingConfiguration;
 import io.harness.ngsettings.events.SettingRestoreEvent;
 import io.harness.ngsettings.events.SettingUpdateEvent;
 import io.harness.ngsettings.mapper.SettingsMapper;
+import io.harness.ngsettings.services.SettingValidator;
 import io.harness.ngsettings.utils.SettingUtils;
 import io.harness.outbox.api.OutboxService;
 import io.harness.repositories.ngsettings.spring.SettingConfigurationRepository;
@@ -67,6 +68,7 @@ public class SettingsServiceImplTest extends CategoryTest {
   @Mock private TransactionTemplate transactionTemplate;
   @Mock private OutboxService outboxService;
   @Mock private SettingUtils settingUtils;
+  @Mock private SettingValidator settingValidator;
   private SettingsServiceImpl settingsService;
 
   @Rule public ExpectedException exceptionRule = ExpectedException.none();
@@ -75,8 +77,8 @@ public class SettingsServiceImplTest extends CategoryTest {
   @Before
   public void setUp() {
     MockitoAnnotations.openMocks(this);
-    settingsService = new SettingsServiceImpl(
-        settingConfigurationRepository, settingRepository, settingsMapper, transactionTemplate, outboxService);
+    settingsService = new SettingsServiceImpl(settingConfigurationRepository, settingRepository, settingsMapper,
+        transactionTemplate, outboxService, settingValidator);
   }
 
   @Test
