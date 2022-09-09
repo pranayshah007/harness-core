@@ -68,9 +68,8 @@ public class SettingsServiceImplTest extends CategoryTest {
   @Mock private TransactionTemplate transactionTemplate;
   @Mock private OutboxService outboxService;
   @Mock private SettingUtils settingUtils;
-  @Mock private SettingValidator settingValidator;
   private SettingsServiceImpl settingsService;
-
+  @Mock private Map<String, SettingValidator> settingValidatorMap;
   @Rule public ExpectedException exceptionRule = ExpectedException.none();
   private String defaultValue = "defaultValue";
 
@@ -78,7 +77,7 @@ public class SettingsServiceImplTest extends CategoryTest {
   public void setUp() {
     MockitoAnnotations.openMocks(this);
     settingsService = new SettingsServiceImpl(settingConfigurationRepository, settingRepository, settingsMapper,
-        transactionTemplate, outboxService, settingValidator);
+        transactionTemplate, outboxService, settingValidatorMap);
   }
 
   @Test
@@ -170,8 +169,10 @@ public class SettingsServiceImplTest extends CategoryTest {
     when(settingsMapper.writeBatchResponseDTO(settingResponseDTO)).thenReturn(settingBatchResponseDTO);
     SettingDTO settingDTO = SettingDTO.builder().identifier(identifier).build();
     when(settingsMapper.writeNewDTO(setting, settingRequestDTO, settingConfiguration, true)).thenReturn(settingDTO);
-    when(settingsMapper.toSetting(accountIdentifier, settingDTO)).thenReturn(updatedSetting);
+    when(settingsMapper.writeSettingDTO(setting, settingConfiguration, true, settingConfiguration.getDefaultValue()))
+        .thenReturn(settingDTO);
     when(settingsMapper.writeSettingDTO(settingConfiguration, true)).thenReturn(settingDTO);
+    when(settingsMapper.toSetting(accountIdentifier, settingDTO)).thenReturn(updatedSetting);
     when(settingsMapper.toSetting(null, settingDTO)).thenReturn(setting);
     when(settingsMapper.writeSettingResponseDTO(setting, settingConfiguration, true)).thenReturn(settingResponseDTO);
     when(transactionTemplate.execute(any()))
@@ -225,6 +226,8 @@ public class SettingsServiceImplTest extends CategoryTest {
     when(settingRepository.upsert(newSetting)).thenReturn(newSetting);
     when(settingsMapper.toSetting(accountIdentifier, settingDTO)).thenReturn(newSetting);
     when(settingsMapper.toSetting(null, settingDTO)).thenReturn(setting);
+    when(settingsMapper.writeSettingDTO(setting, settingConfiguration, true, settingConfiguration.getDefaultValue()))
+        .thenReturn(settingDTO);
     when(settingsMapper.writeSettingResponseDTO(newSetting, settingConfiguration, true, value))
         .thenReturn(settingResponseDTO);
     when(settingsMapper.writeBatchResponseDTO(settingResponseDTO)).thenReturn(settingBatchResponseDTO);
