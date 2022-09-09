@@ -46,7 +46,8 @@ public interface AccountClient {
   @POST(ACCOUNT_API) Call<RestResponse<AccountDTO>> create(@Body AccountDTO dto);
 
   @GET(ACCOUNT_API + "/list") Call<RestResponse<List<AccountDTO>>> getAllAccounts();
-
+  @GET(ACCOUNT_API + "/{accountId}/name")
+  Call<RestResponse<String>> getAccountName(@Path("accountId") String accountId);
   @GET(ACCOUNT_API + "/{accountId}") Call<RestResponse<AccountDTO>> getAccountDTO(@Path("accountId") String accountId);
 
   @GET(ACCOUNT_API) Call<RestResponse<List<AccountDTO>>> getAccountDTOs(@Query("accountIds") List<String> accountIds);

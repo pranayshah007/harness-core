@@ -46,5 +46,7 @@ public interface FeatureFlagService {
 
   Optional<FeatureFlag> updateFeatureFlag(String featureFlagName, FeatureFlag featureFlag);
 
-  void evictAccountNameFromCache(String accountId);
+  /*void evictAccountNameFromCache(String accountId);*/
+
+  /*int loadAccountIdToAccountNameCache();*/
 }

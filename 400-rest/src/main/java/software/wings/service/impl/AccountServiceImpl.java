@@ -186,6 +186,8 @@ import software.wings.service.intfc.template.TemplateGalleryService;
 import software.wings.service.intfc.verification.CVConfigurationService;
 import software.wings.verification.CVConfiguration;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
@@ -311,6 +313,8 @@ public class AccountServiceImpl implements AccountService {
   @Inject @Named("BackgroundJobScheduler") private PersistentScheduler jobScheduler;
   @Inject private GovernanceFeature governanceFeature;
   private Map<String, UrlInfo> techStackDocLinks;
+
+  private Cache<String, String> accountIdToAccountNameCache;
 
   @Getter private Subject<AccountCrudObserver> accountCrudSubject = new Subject<>();
 
@@ -934,6 +938,7 @@ public class AccountServiceImpl implements AccountService {
 
     wingsPersistence.update(account, updateOperations);
     dbCache.invalidate(Account.class, account.getUuid());
+    accountIdToAccountNameCache.put(account.getUuid(), account.getAccountName());
     authService.evictUserPermissionCacheForAccount(account.getUuid(), true);
     Account updatedAccount = wingsPersistence.get(Account.class, account.getUuid());
     LicenseUtils.decryptLicenseInfo(updatedAccount, false);
@@ -1755,6 +1760,7 @@ public class AccountServiceImpl implements AccountService {
       UpdateResults updateResults = wingsPersistence.update(
           wingsPersistence.createQuery(Account.class).filter(Mapper.ID_KEY, accountId), updateOperations);
       if (updateResults != null && updateResults.getUpdatedCount() > 0) {
+        accountIdToAccountNameCache.put(accountId, accountName);
         log.info("Successfully updated account name to {} for accountId = {} ", accountName, accountId);
         return true;
       }
@@ -1795,6 +1801,7 @@ public class AccountServiceImpl implements AccountService {
     }
     wingsPersistence.update(
         wingsPersistence.createQuery(Account.class).filter(Mapper.ID_KEY, accountId), updateOperations);
+    accountIdToAccountNameCache.put(accountId, accountName);
     return get(accountId);
   }
 
@@ -2116,5 +2123,40 @@ public class AccountServiceImpl implements AccountService {
     }
     log.info("Failed to update ring name to {} for accountId = {} ", ringName, accountId);
     return false;
+  }
+
+  @Override
+  public void loadAllActiveAccountsToAccountIdToAccountNameCache() {
+    List<Account> activeAccountList = listAllActiveAccounts();
+    int numberOfActiveAccounts = activeAccountList.size();
+    log.info(String.format("Number of active accounts are %s", numberOfActiveAccounts));
+    accountIdToAccountNameCache = Caffeine.newBuilder()
+                                      .initialCapacity(numberOfActiveAccounts)
+                                      .maximumSize(numberOfActiveAccounts + 100L)
+                                      .expireAfterWrite(7, TimeUnit.DAYS)
+                                      .build();
+    Map<String, String> accountIdToNameMap =
+        activeAccountList.stream().collect(Collectors.toMap(Account::getUuid, Account::getAccountName));
+    accountIdToAccountNameCache.putAll(accountIdToNameMap);
+    log.info("Created accountId to account name cache.");
+  }
+
+  @Override
+  public String getAccountName(String activeAccountId) {
+    // try getting from cache
+    String accountName = accountIdToAccountNameCache.getIfPresent(activeAccountId);
+    if (isEmpty(accountName)) {
+      log.info(String.format("Can not fetch account name for account id %s from cache. ", activeAccountId));
+      Account account = get(activeAccountId);
+      accountName = account.getAccountName();
+      log.info(String.format("Fetched from DB. Account name for account id %s is %s", activeAccountId, accountName));
+      accountIdToAccountNameCache.put(activeAccountId, accountName);
+    }
+    return accountName;
+  }
+
+  @Override
+  public void evictAccountNameFromCache(String accountId) {
+    accountIdToAccountNameCache.invalidate(accountId);
   }
 }

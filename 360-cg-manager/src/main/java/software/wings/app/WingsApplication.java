@@ -708,6 +708,7 @@ public class WingsApplication extends Application<MainConfiguration> {
       initMetrics();
       initializeServiceSecretKeys(injector);
       runMigrations(injector);
+      injector.getInstance(AccountService.class).loadAllActiveAccountsToAccountIdToAccountNameCache();
     }
 
     String deployMode = configuration.getDeployMode().name();

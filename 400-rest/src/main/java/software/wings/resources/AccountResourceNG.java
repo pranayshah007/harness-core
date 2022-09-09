@@ -12,6 +12,8 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.eraro.ResponseMessage;
+import io.harness.exception.InvalidRequestException;
 import io.harness.mappers.AccountMapper;
 import io.harness.ng.core.account.DefaultExperience;
 import io.harness.ng.core.dto.AccountDTO;
@@ -22,12 +24,16 @@ import software.wings.beans.Account;
 import software.wings.beans.AccountStatus;
 import software.wings.beans.AccountType;
 import software.wings.beans.LicenseInfo;
+import software.wings.beans.User;
 import software.wings.beans.security.UserGroup;
 import software.wings.helpers.ext.url.SubdomainUrlHelper;
+import software.wings.security.UserThreadLocal;
 import software.wings.security.authentication.TwoFactorAuthenticationManager;
 import software.wings.service.intfc.AccountService;
+import software.wings.service.intfc.HarnessUserGroupService;
 import software.wings.service.intfc.UserGroupService;
 
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import java.util.Collections;
@@ -63,6 +69,8 @@ public class AccountResourceNG {
   private SubdomainUrlHelper subdomainUrlHelper;
   private TwoFactorAuthenticationManager twoFactorAuthenticationManager;
   private UserGroupService userGroupService;
+
+  private HarnessUserGroupService harnessUserGroupService;
 
   @POST
   public RestResponse<AccountDTO> create(@NotNull AccountDTO dto) {
@@ -209,5 +217,29 @@ public class AccountResourceNG {
     Account account = accountService.get(accountId);
     account.setDefaultExperience(dto.getDefaultExperience());
     return new RestResponse(AccountMapper.toAccountDTO(accountService.update(account)));
+  }
+
+  @GET
+  @Path("/{accountId}/name")
+  public RestResponse<String> getAccountName(@PathParam("accountId") @NotEmpty String accountId) {
+    return new RestResponse<>(accountService.getAccountName(accountId));
+  }
+
+  @GET
+  @Path("/evict-account-name-cache")
+  public RestResponse<Boolean> evictAccountNameCache(@QueryParam("accountId") String accountId) {
+    User existingUser = UserThreadLocal.get();
+    if (existingUser == null) {
+      throw new InvalidRequestException("Invalid User");
+    }
+    if (!harnessUserGroupService.isHarnessSupportUser(existingUser.getUuid())) {
+      return RestResponse.Builder.aRestResponse()
+          .withResponseMessages(Lists.newArrayList(
+              ResponseMessage.builder().message("User not allowed to invalidate cache entry").build()))
+          .build();
+    }
+    accountService.evictAccountNameFromCache(accountId);
+    log.info("Successfully removed account name cache entry for account id {}", accountId);
+    return new RestResponse<>(Boolean.TRUE);
   }
 }

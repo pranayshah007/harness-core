@@ -258,4 +258,10 @@ public interface AccountService {
   AuthenticationInfo getAuthenticationInfo(String accountId);
 
   boolean isAccountActivelyUsed(String accountId);
+
+  String getAccountName(String accountId);
+
+  void evictAccountNameFromCache(String accountId);
+
+  void loadAllActiveAccountsToAccountIdToAccountNameCache();
 }

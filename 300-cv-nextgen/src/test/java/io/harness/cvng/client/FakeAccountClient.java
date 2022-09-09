@@ -34,6 +34,11 @@ public class FakeAccountClient implements AccountClient {
   }
 
   @Override
+  public Call<RestResponse<String>> getAccountName(String accountId) {
+    throw new UnsupportedOperationException("mocked method - provide impl when required");
+  }
+
+  @Override
   public Call<RestResponse<AccountDTO>> getAccountDTO(String accountId) {
     return new Call<RestResponse<AccountDTO>>() {
       @Override

@@ -81,23 +81,4 @@ public class FeatureFlagResource {
   public RestResponse<FeatureFlag> getFeatureFlag(@PathParam("featureFlagName") String featureFlagName) {
     return new RestResponse<>(featureFlagService.getFeatureFlag(FeatureName.valueOf(featureFlagName)).orElse(null));
   }
-
-  @GET
-  @Path("evict-cache")
-  public RestResponse<Boolean> evictAccountNameFromCache(@QueryParam("accountId") String accountId) {
-    User existingUser = UserThreadLocal.get();
-    if (existingUser == null) {
-      throw new InvalidRequestException("Invalid User");
-    }
-    if (!harnessUserGroupService.isHarnessSupportUser(existingUser.getUuid())) {
-      return RestResponse.Builder.aRestResponse()
-          .withResponseMessages(
-              Lists.newArrayList(ResponseMessage.builder().message("User not allowed to reset cache").build()))
-          .build();
-    }
-
-    featureFlagService.evictAccountNameFromCache(accountId);
-    log.info("Reset cache successful for account id {}", accountId);
-    return new RestResponse<>(Boolean.TRUE);
-  }
 }

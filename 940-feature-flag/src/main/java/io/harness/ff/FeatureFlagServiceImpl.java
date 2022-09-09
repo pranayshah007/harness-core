@@ -78,8 +78,7 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
   private final FeatureFlagConfig featureFlagConfig;
   private Optional<AccountClient> optionalAccountClient;
   // Caffeine cache
-  private final Cache<String, String> accountIdToAccountNameCache =
-      Caffeine.newBuilder().initialCapacity(10).maximumSize(1500).expireAfterWrite(7, TimeUnit.DAYS).build();
+  // private Cache<String, String> accountIdToAccountNameCache;
 
   private static final RetryPolicy<Object> fetchAccountNameRetryPolicy =
       RetryUtils.getRetryPolicy("Failed attempt: Could not fetch account name", "Failure: Could not fetch account name",
@@ -97,6 +96,51 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
     this.cache = new HashMap<>();
     this.optionalAccountClient = optionalAccountClient;
   }
+
+  /*private int createAccountIdToAccountNameCache() {
+    log.info("Creating cache for account id to account name");
+    if(!optionalAccountClient.isPresent()){
+      log.info("Account client info is not present.");
+      buildCacheWithDefaultConfiguration();
+      return 1500;
+    }
+    try{
+      log.info("Fetching all active accounts");
+      List<AccountDTO> activeAccountList = RestClientUtils.getResponse(
+              optionalAccountClient.get().getAllActiveAccounts());
+      if(activeAccountList == null){
+        log.info("Unable to fetch active accounts.");
+        buildCacheWithDefaultConfiguration();
+        return 1500;
+      }
+      int size = activeAccountList.size();
+      log.info(String.format("Number of active accounts are %s", size));
+      Map<String, String> accountIdToNameMap = activeAccountList.stream().collect(Collectors.toMap(
+              AccountDTO::getIdentifier, AccountDTO::getName
+      ));
+      accountIdToAccountNameCache = Caffeine.newBuilder()
+              .initialCapacity(activeAccountList.size())
+              .maximumSize(activeAccountList.size()+100)
+              .expireAfterWrite(7, TimeUnit.DAYS)
+              .build();
+      accountIdToAccountNameCache.putAll(accountIdToNameMap);
+      return size;
+    }
+    catch (Exception e){
+      log.info("Can not load account data in cache. ", e);
+      buildCacheWithDefaultConfiguration();
+      return 1500;
+    }
+  }*/
+
+  /* private void buildCacheWithDefaultConfiguration(){
+     log.info("Using default configuration for building account id to account name cache");
+     accountIdToAccountNameCache = Caffeine.newBuilder()
+             .initialCapacity(10)
+             .maximumSize(1500)
+             .expireAfterWrite(7, TimeUnit.DAYS)
+             .build();
+   }*/
 
   @Override
   public boolean isEnabledReloadCache(FeatureName featureName, String accountId) {
@@ -246,6 +290,36 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
       target = buildStaticIdAndNameTarget();
     } else {
       log.info(String.format("Fetching account name for account id %s ", accountId));
+      if (optionalAccountClient.isPresent()) {
+        log.info(String.format("Using account client to get account name for accountId %s", accountId));
+        RestClientUtils.getResponse(optionalAccountClient.get().isNextGenEnabled(accountId));
+        accountName =
+            Failsafe.with(fetchAccountNameRetryPolicy)
+                .get(() -> RestClientUtils.getResponse(optionalAccountClient.get().getAccountName(accountId)));
+        if (accountName == null) {
+          log.info(String.format("Not able to fetch account name. Setting it as account id %s", accountId));
+          accountName = accountId;
+        }
+      } else {
+        log.info(String.format("Account client is absent. Using account id %s as account name", accountId));
+        accountName = accountId;
+      }
+      target = buildTarget(accountId, accountName);
+    }
+    return cfClient.get().boolVariation(featureName.name(), target, false);
+  }
+
+  /*private boolean cfFeatureFlagEvaluation(@NonNull FeatureName featureName, String accountId) {
+    String accountName;
+    Target target;
+    if (Scope.GLOBAL.equals(featureName.getScope())) {
+      log.info(String.format("Scope is Global for feature name %s .", featureName.name()));
+      target = buildStaticIdAndNameTarget();
+    } else if (isEmpty(accountId)) {
+      log.info(String.format("Account Id passed is empty when evaluating for feature %s ", featureName.name()));
+      target = buildStaticIdAndNameTarget();
+    } else {
+      log.info(String.format("Fetching account name for account id %s ", accountId));
       // Use cache
       accountName = accountIdToAccountNameCache.getIfPresent(accountId);
       if (isEmpty(accountName)) {
@@ -263,9 +337,9 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
       target = buildTarget(accountId, accountName);
     }
     return cfClient.get().boolVariation(featureName.name(), target, false);
-  }
+  }*/
 
-  private String getAccountNameFromClient(Optional<AccountClient> optionalAccountClient, String accountId) {
+  /*private String getAccountNameFromClient(Optional<AccountClient> optionalAccountClient, String accountId) {
     String accountName;
     try {
       AccountDTO accountDTO =
@@ -292,7 +366,7 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
     // put value in cache
     accountIdToAccountNameCache.put(accountId, accountName);
     return accountName;
-  }
+  }*/
 
   private Target buildStaticIdAndNameTarget() {
     return buildTarget(FeatureFlagConstants.STATIC_ACCOUNT_ID, FeatureFlagConstants.STATIC_ACCOUNT_ID);
@@ -504,8 +578,13 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
    * where account name could not be loaded in cache because account service was down, and account id was loaded.
    * @param accountId for which cache has to be invalidated.
    */
-  @Override
+  /*@Override
   public void evictAccountNameFromCache(String accountId) {
     accountIdToAccountNameCache.invalidate(accountId);
   }
+
+  @Override
+  public int loadAccountIdToAccountNameCache() {
+    return createAccountIdToAccountNameCache();
+  }*/
 }
