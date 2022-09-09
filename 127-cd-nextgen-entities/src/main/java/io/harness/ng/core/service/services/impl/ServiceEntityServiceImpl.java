@@ -634,7 +634,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
     String fqnWithinServiceEntityYaml = String.join(PATH_SEP, splitPaths);
 
     // convert sidecars[0]/sidecar to sidecars/[0]/
-    fqnWithinServiceEntityYaml = fqnWithinServiceEntityYaml.replace("[", "/[");
+    fqnWithinServiceEntityYaml = fqnWithinServiceEntityYaml.replace("sidecars[", "sidecars/[");
 
     YamlNode service;
     try {
