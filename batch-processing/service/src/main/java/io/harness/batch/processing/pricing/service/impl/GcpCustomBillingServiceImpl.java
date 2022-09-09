@@ -76,8 +76,10 @@ public class GcpCustomBillingServiceImpl implements GcpCustomBillingService {
         bigQueryHelperService.getGcpVMBillingData(resourceIds, startTime, endTime, dataSetId);
     log.info("GCPVMBillingData size fetched from BQ: {}", gcpVMBillingData.size());
     gcpVMBillingData.forEach((resourceId, vmInstanceBillingData) -> {
-      log.info("GCP: Updated Key (resourceId) is: {}", resourceId);
-      gcpResourceBillingCache.put(new CacheKey(resourceId, startTime, endTime), vmInstanceBillingData);
+      String cleanedResourceId = resourceId.substring(resourceId.lastIndexOf('/') + 1);
+      log.info("GCP: Updated Key (resourceId) is: {}", cleanedResourceId);
+
+      gcpResourceBillingCache.put(new CacheKey(cleanedResourceId, startTime, endTime), vmInstanceBillingData);
     });
   }
 }
