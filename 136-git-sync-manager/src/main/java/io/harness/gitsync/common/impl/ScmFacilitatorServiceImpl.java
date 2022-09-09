@@ -58,6 +58,7 @@ import io.harness.product.ci.scm.proto.GetUserReposResponse;
 import io.harness.product.ci.scm.proto.ListBranchesWithDefaultResponse;
 import io.harness.product.ci.scm.proto.Repository;
 import io.harness.product.ci.scm.proto.UpdateFileResponse;
+import io.harness.utils.FilePathUtils;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -434,16 +435,17 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
 
   @VisibleForTesting
   protected void createNewBranch(Scope scope, ScmConnector scmConnector, String newBranchName, String baseBranchName) {
+    String branchName = FilePathUtils.removeStartingAndEndingSlash(newBranchName);
     CreateBranchResponse createBranchResponse =
         scmOrchestratorService.processScmRequestUsingConnectorSettings(scmClientFacilitatorService
-            -> scmClientFacilitatorService.createNewBranch(scope, scmConnector, newBranchName, baseBranchName),
+            -> scmClientFacilitatorService.createNewBranch(scope, scmConnector, branchName, baseBranchName),
             scmConnector);
 
     if (ScmApiErrorHandlingHelper.isFailureResponse(
             createBranchResponse.getStatus(), scmConnector.getConnectorType())) {
       ScmApiErrorHandlingHelper.processAndThrowError(ScmApis.CREATE_BRANCH, scmConnector.getConnectorType(),
           scmConnector.getUrl(), createBranchResponse.getStatus(), createBranchResponse.getError(),
-          ErrorMetadata.builder().newBranchName(newBranchName).branchName(baseBranchName).build());
+          ErrorMetadata.builder().newBranchName(branchName).branchName(baseBranchName).build());
     }
   }
 

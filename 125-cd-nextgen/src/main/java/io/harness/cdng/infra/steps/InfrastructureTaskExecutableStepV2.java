@@ -1,7 +1,7 @@
 package io.harness.cdng.infra.steps;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.INFRA_TASK_EXECUTABLE_STEP_V2;
+import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.INFRA_TASK_EXECUTABLE_STEP_OUTPUT;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -101,11 +101,12 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     final NGLogCallback logCallback = infrastructureStepHelper.getInfrastructureLogCallback(ambiance, true, "Execute");
     // Create delegate task for infra if needed
     if (isTaskStep(infraSpec.getKind())) {
-      return obtainTaskInternal(ambiance, infraSpec, logCallback);
+      return obtainTaskInternal(ambiance, infraSpec, logCallback,
+          !infrastructureConfig.getInfrastructureDefinitionConfig().isAllowSimultaneousDeployments());
     }
 
     // If delegate task is not needed, just validate the infra spec
-    executeSync(ambiance, infraSpec, logCallback);
+    executeSync(ambiance, infrastructureConfig, logCallback);
     return null;
   }
 
@@ -181,25 +182,27 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     pipelineRbacHelper.checkRuntimePermissions(ambiance, entityDetails);
   }
 
-  private void executeSync(Ambiance ambiance, Infrastructure infrastructure, NGLogCallback logCallback) {
-    validateConnector(infrastructure, ambiance);
+  private void executeSync(Ambiance ambiance, InfrastructureConfig infrastructure, NGLogCallback logCallback) {
+    final Infrastructure spec = infrastructure.getInfrastructureDefinitionConfig().getSpec();
+    validateConnector(spec, ambiance);
     saveExecutionLog(logCallback, "Fetching environment information...");
-    validateInfrastructure(infrastructure, ambiance);
+    validateInfrastructure(spec, ambiance);
 
     final OutcomeSet outcomeSet = fetchRequiredOutcomes(ambiance);
     final EnvironmentOutcome environmentOutcome = outcomeSet.getEnvironmentOutcome();
     final ServiceStepOutcome serviceOutcome = outcomeSet.getServiceStepOutcome();
     final InfrastructureOutcome infrastructureOutcome =
-        InfrastructureMapper.toOutcome(infrastructure, environmentOutcome, serviceOutcome);
+        InfrastructureMapper.toOutcome(spec, environmentOutcome, serviceOutcome);
 
-    // save infrastructure sweeping output for further use within the step
-    boolean skipInstances = infrastructureStepHelper.getSkipInstances(infrastructure);
-    executionSweepingOutputService.consume(ambiance, INFRA_TASK_EXECUTABLE_STEP_V2,
+    // save spec sweeping output for further use within the step
+    boolean skipInstances = infrastructureStepHelper.getSkipInstances(spec);
+    executionSweepingOutputService.consume(ambiance, INFRA_TASK_EXECUTABLE_STEP_OUTPUT,
         InfrastructureTaskExecutableStepSweepingOutput.builder()
             .infrastructureOutcome(infrastructureOutcome)
             .skipInstances(skipInstances)
+            .addRcStep(!infrastructure.getInfrastructureDefinitionConfig().isAllowSimultaneousDeployments())
             .build(),
-        "");
+        StepCategory.STAGE.name());
   }
 
   private boolean isTaskStep(String infraKind) {

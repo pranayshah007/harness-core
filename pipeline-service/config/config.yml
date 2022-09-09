@@ -70,7 +70,7 @@ mongo:
   connectionsPerHost: 300
   indexManagerMode: AUTO
   transactionsEnabled: false
-  aliasDBName:  pms-harness
+  aliasDBName: pms-harness
   traceMode: DISABLED
 
 grpcServerConfig:

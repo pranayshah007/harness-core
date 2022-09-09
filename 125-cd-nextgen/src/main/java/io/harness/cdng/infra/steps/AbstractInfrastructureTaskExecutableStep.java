@@ -1,6 +1,6 @@
 package io.harness.cdng.infra.steps;
 
-import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.INFRA_TASK_EXECUTABLE_STEP_V2;
+import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.INFRA_TASK_EXECUTABLE_STEP_OUTPUT;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -138,25 +138,26 @@ abstract class AbstractInfrastructureTaskExecutableStep {
   }
 
   protected TaskRequest obtainTaskInternal(
-      Ambiance ambiance, Infrastructure infrastructureSpec, NGLogCallback logCallback) {
+      Ambiance ambiance, Infrastructure infrastructure, NGLogCallback logCallback, Boolean addRcStep) {
     saveExecutionLog(logCallback, "Starting infrastructure step...");
 
-    validateConnector(infrastructureSpec, ambiance);
-    validateInfrastructure(infrastructureSpec);
+    validateConnector(infrastructure, ambiance);
+    validateInfrastructure(infrastructure);
 
     saveExecutionLog(logCallback, "Fetching environment information...");
     final OutcomeSet outcomeSet = fetchRequiredOutcomes(ambiance);
     final EnvironmentOutcome environmentOutcome = outcomeSet.getEnvironmentOutcome();
     final ServiceStepOutcome serviceOutcome = outcomeSet.getServiceStepOutcome();
     final InfrastructureOutcome infrastructureOutcome =
-        InfrastructureMapper.toOutcome(infrastructureSpec, environmentOutcome, serviceOutcome);
+        InfrastructureMapper.toOutcome(infrastructure, environmentOutcome, serviceOutcome);
 
     // save infrastructure sweeping output for further use within the step
-    boolean skipInstances = infrastructureStepHelper.getSkipInstances(infrastructureSpec);
-    executionSweepingOutputService.consume(ambiance, INFRA_TASK_EXECUTABLE_STEP_V2,
+    boolean skipInstances = infrastructureStepHelper.getSkipInstances(infrastructure);
+    executionSweepingOutputService.consume(ambiance, INFRA_TASK_EXECUTABLE_STEP_OUTPUT,
         InfrastructureTaskExecutableStepSweepingOutput.builder()
             .infrastructureOutcome(infrastructureOutcome)
             .skipInstances(skipInstances)
+            .addRcStep(addRcStep != null && addRcStep)
             .build(),
         "");
 
@@ -215,8 +216,8 @@ abstract class AbstractInfrastructureTaskExecutableStep {
   }
 
   protected InfrastructureTaskExecutableStepSweepingOutput fetchInfraStepOutputOrThrow(Ambiance ambiance) {
-    OptionalSweepingOutput output = executionSweepingOutputService.resolveOptional(
-        ambiance, RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.INFRA_TASK_EXECUTABLE_STEP_V2));
+    OptionalSweepingOutput output = executionSweepingOutputService.resolveOptional(ambiance,
+        RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.INFRA_TASK_EXECUTABLE_STEP_OUTPUT));
     if (!output.isFound()) {
       throw new InvalidRequestException("Infrastructure could not be resolved");
     }

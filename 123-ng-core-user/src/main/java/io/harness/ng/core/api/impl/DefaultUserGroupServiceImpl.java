@@ -26,6 +26,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
 import io.harness.beans.ScopeLevel;
+import io.harness.exception.DuplicateFieldException;
 import io.harness.ng.core.api.DefaultUserGroupService;
 import io.harness.ng.core.api.UserGroupService;
 import io.harness.ng.core.dto.UserGroupDTO;
@@ -72,28 +73,36 @@ public class DefaultUserGroupServiceImpl implements DefaultUserGroupService {
     String userGroupIdentifier = getUserGroupIdentifier(scope);
     String userGroupName = getUserGroupName(scope);
     String userGroupDescription = getUserGroupDescription(scope);
-    UserGroupDTO userGroupDTO = UserGroupDTO.builder()
-                                    .accountIdentifier(scope.getAccountIdentifier())
-                                    .orgIdentifier(scope.getOrgIdentifier())
-                                    .projectIdentifier(scope.getProjectIdentifier())
-                                    .name(userGroupName)
-                                    .description(userGroupDescription)
-                                    .identifier(userGroupIdentifier)
-                                    .isSsoLinked(false)
-                                    .externallyManaged(false)
-                                    .users(userIds == null ? emptyList() : userIds)
-                                    .harnessManaged(true)
-                                    .build();
 
-    UserGroup userGroup = userGroupService.createDefaultUserGroup(userGroupDTO);
-    if (isNotEmpty(scope.getProjectIdentifier())) {
-      createRoleAssignmentForProject(userGroupIdentifier, scope);
-    } else if (isNotEmpty(scope.getOrgIdentifier())) {
-      createRoleAssignmentsForOrganization(userGroupIdentifier, scope);
-    } else {
-      createRoleAssignmentsForAccount(userGroupIdentifier, scope);
+    UserGroup userGroup = null;
+    try {
+      UserGroupDTO userGroupDTO = UserGroupDTO.builder()
+                                      .accountIdentifier(scope.getAccountIdentifier())
+                                      .orgIdentifier(scope.getOrgIdentifier())
+                                      .projectIdentifier(scope.getProjectIdentifier())
+                                      .name(userGroupName)
+                                      .description(userGroupDescription)
+                                      .identifier(userGroupIdentifier)
+                                      .isSsoLinked(false)
+                                      .externallyManaged(false)
+                                      .users(userIds == null ? emptyList() : userIds)
+                                      .harnessManaged(true)
+                                      .build();
+
+      userGroup = userGroupService.createDefaultUserGroup(userGroupDTO);
+      if (isNotEmpty(scope.getProjectIdentifier())) {
+        createRoleAssignmentForProject(userGroupIdentifier, scope);
+      } else if (isNotEmpty(scope.getOrgIdentifier())) {
+        createRoleAssignmentsForOrganization(userGroupIdentifier, scope);
+      } else {
+        createRoleAssignmentsForAccount(userGroupIdentifier, scope);
+      }
+      log.info(DEBUG_MESSAGE + "Created default user group {} at scope {}", userGroupIdentifier, scope);
+      return userGroup;
+    } catch (DuplicateFieldException ex) {
+      // Safe to assume Default User Group is created.
+      log.info(DEBUG_MESSAGE + String.format("Safe to assume Default User Group is created at scope %s", scope));
     }
-    log.info("Created default user group {} at scope {}", userGroupIdentifier, scope);
     return userGroup;
   }
 

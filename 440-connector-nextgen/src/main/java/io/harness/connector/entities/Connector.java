@@ -118,6 +118,13 @@ public abstract class Connector implements PersistentEntity, NGAccountAccess, Gi
     return getId();
   }
 
+  public boolean getDeleted() {
+    if (deleted == null) {
+      return Boolean.FALSE;
+    }
+    return deleted;
+  }
+
   @UtilityClass
   public static final class ConnectorKeys {
     public static final String connectionStatus =

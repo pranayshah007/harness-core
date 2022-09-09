@@ -1969,9 +1969,9 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     if (isEmpty(deploymentTypes) || deploymentTypes.size() > 1) {
       throw new InvalidRequestException("Execution Hosts only supported for single deployment type", USER);
     }
-
-    if (deploymentTypes.get(0) != DeploymentType.SSH) {
-      throw new InvalidRequestException("Execution Hosts only supported for SSH deployment type", USER);
+    DeploymentType deploymentType = deploymentTypes.get(0);
+    if (deploymentType != DeploymentType.SSH && deploymentType != DeploymentType.WINRM) {
+      throw new InvalidRequestException("Execution Hosts only supported for SSH and WinRM deployment type", USER);
     }
   }
 

@@ -76,6 +76,7 @@ import com.google.inject.Key;
 import com.google.inject.Module;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import io.dropwizard.Application;
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
@@ -170,6 +171,13 @@ public class TemplateServiceApplication extends Application<TemplateServiceConfi
       @Singleton
       TemplateServiceConfiguration configuration() {
         return templateServiceConfiguration;
+      }
+
+      @Provides
+      @Singleton
+      @Named("dbAliases")
+      public List<String> getDbAliases() {
+        return templateServiceConfiguration.getDbAliases();
       }
     });
     modules.add(TemplateServiceModule.getInstance(templateServiceConfiguration));

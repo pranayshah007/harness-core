@@ -319,16 +319,19 @@ public class StepUtilsTest extends CategoryTest {
                             .taskType(TaskType.DOCKER_ARTIFACT_TASK_NG.name())
                             .build();
     TaskCategory taskCategory = TaskCategory.DELEGATE_TASK_V1;
-
-    TaskRequest taskRequest = StepUtils.prepareTaskRequest(ambiance, taskData, kryoSerializer, taskCategory, null,
-        false, "taskName", null, Scope.ACCOUNT, EnvironmentType.NON_PROD, false, Collections.emptyList());
+    String stageId = "stageId";
+    TaskRequest taskRequest =
+        StepUtils.prepareTaskRequest(ambiance, taskData, kryoSerializer, taskCategory, null, false, "taskName", null,
+            Scope.ACCOUNT, EnvironmentType.NON_PROD, false, Collections.emptyList(), true, stageId);
     assertEquals(taskRequest.getDelegateTaskRequest().getRequest().getAccountId().getId(), accountId);
     assertEquals(taskRequest.getTaskCategory(), taskCategory);
+    assertEquals(taskRequest.getDelegateTaskRequest().getRequest().getEmitEvent(), true);
+    assertEquals(taskRequest.getDelegateTaskRequest().getRequest().getStageId(), stageId);
     assertNotNull(taskRequest.getDelegateTaskRequest());
     assertEquals(taskRequest.getDelegateTaskRequest().getTaskName(), "taskName");
 
     taskRequest = StepUtils.prepareTaskRequest(ambiance, taskData, kryoSerializer, taskCategory, null, false, null,
-        null, Scope.ACCOUNT, EnvironmentType.NON_PROD, false, Collections.emptyList());
+        null, Scope.ACCOUNT, EnvironmentType.NON_PROD, false, Collections.emptyList(), false, null);
     assertEquals(taskRequest.getTaskCategory(), taskCategory);
     assertEquals(taskRequest.getDelegateTaskRequest().getRequest().getAccountId().getId(), accountId);
     assertNotNull(taskRequest.getDelegateTaskRequest());
@@ -337,7 +340,7 @@ public class StepUtilsTest extends CategoryTest {
 
     taskData.setAsync(true);
     taskRequest = StepUtils.prepareTaskRequest(ambiance, taskData, kryoSerializer, taskCategory, null, false, null,
-        null, Scope.ACCOUNT, EnvironmentType.NON_PROD, false, Collections.emptyList());
+        null, Scope.ACCOUNT, EnvironmentType.NON_PROD, false, Collections.emptyList(), false, null);
     assertEquals(taskRequest.getDelegateTaskRequest().getRequest().getAccountId().getId(), accountId);
     assertNotNull(taskRequest.getDelegateTaskRequest());
     assertEquals(taskRequest.getDelegateTaskRequest().getTaskName(), taskData.getTaskType());

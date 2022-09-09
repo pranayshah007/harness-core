@@ -40,6 +40,7 @@ public interface EntityTypeConstants {
   String MONITORED_SERVICE = "MonitoredService";
   String TEMPLATE = "Template";
   String TEMPLATE_STAGE = "TemplateStage";
+  String TEMPLATE_CUSTOM_DEPLOYMENT = "CustomDeployment";
   String GIT_REPOSITORIES = "GitRepositories";
   String FEATURE_FLAGS = "FeatureFlags";
   String HTTP = "Http";

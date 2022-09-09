@@ -78,6 +78,11 @@ public class GARApiServiceImpl implements GarApiService {
   public BuildDetailsInternal getLastSuccessfulBuildFromRegex(
       GarInternalConfig garinternalConfig, String versionRegex) {
     List<BuildDetailsInternal> builds = getBuilds(garinternalConfig, versionRegex, garinternalConfig.getMaxBuilds());
+    if (builds.isEmpty()) {
+      throw NestedExceptionUtils.hintWithExplanationException("Could not fetch versions for the package",
+          "Please check versionRegex Provided",
+          new InvalidArtifactServerException("No versions found with versionRegex provided for the given package"));
+    }
     return builds.get(0);
   }
 
@@ -92,6 +97,18 @@ public class GARApiServiceImpl implements GarApiService {
       Response<GarTags> response =
           garRestClient.getversioninfo(garinternalConfig.getBearerToken(), project, region, repositories, pkg, version)
               .execute();
+      if (response == null) {
+        throw NestedExceptionUtils.hintWithExplanationException("Response Is Null",
+            "Please Check Whether Artifact exists or not",
+            new InvalidArtifactServerException(response.errorBody().toString(), USER));
+      }
+      if (!response.isSuccessful()) {
+        log.error("Request not successful. Reason: {}", response);
+        if (!isSuccessful(response.code(), response.errorBody().toString())) {
+          throw NestedExceptionUtils.hintWithExplanationException("Unable to fetch the versions for the package",
+              "Please check region field", new InvalidArtifactServerException(response.message(), USER));
+        }
+      }
       GarTags garTags = response.body();
       int index = garTags.getName().lastIndexOf("/");
       String tagFinal = garTags.getName().substring(index + 1);
@@ -128,11 +145,17 @@ public class GARApiServiceImpl implements GarApiService {
                                                              region, repositoryName, pkg, PAGESIZE, nextPage)
                                                          .execute();
 
-      if (!isSuccessful(response)) {
-        throw NestedExceptionUtils.hintWithExplanationException(
-            "GOOGLE ARTIFACT REGISTRY : Unable to fetch the versions for the package",
-            "Please Check if the package exists and if the permissions are scoped for the authenticated user",
-            new InvalidArtifactServerException(response.message(), USER));
+      if (response == null) {
+        throw NestedExceptionUtils.hintWithExplanationException("Response Is Null",
+            "Please Check Whether Artifact exists or not",
+            new InvalidArtifactServerException(response.errorBody().toString(), USER));
+      }
+      if (!response.isSuccessful()) {
+        log.error("Request not successful. Reason: {}", response);
+        if (!isSuccessful(response.code(), response.errorBody().toString())) {
+          throw NestedExceptionUtils.hintWithExplanationException("Unable to fetch the versions for the package",
+              "Please check region field", new InvalidArtifactServerException(response.message(), USER));
+        }
       }
 
       GarPackageVersionResponse page = response.body();
@@ -149,43 +172,33 @@ public class GARApiServiceImpl implements GarApiService {
     return details.stream().limit(maxNumberOfBuilds).collect(Collectors.toList());
   }
 
-  private boolean isSuccessful(Response<GarPackageVersionResponse> response) {
-    if (response == null) {
-      throw NestedExceptionUtils.hintWithExplanationException("Response Is Null",
-          "Please Check Whether Artifact exists or not",
-          new InvalidArtifactServerException(response.errorBody().toString(), USER));
-    }
-
-    if (response.isSuccessful()) {
-      return true;
-    }
-
-    log.error("Request not successful. Reason: {}", response);
-    int code = response.code();
+  private boolean isSuccessful(int code, String errormessage) {
     switch (code) {
       case 404:
-        throw NestedExceptionUtils.hintWithExplanationException(
-            "Please check project, repository name, package, region fields",
-            "Please verify the values of project, repository name, package, region are same as of package in Google Artifact Registry",
-            new InvalidArtifactServerException(response.errorBody().toString(), USER));
+        throw NestedExceptionUtils.hintWithExplanationException("Please check region, repository name, package fields",
+            "Please verify the values of region, repository name, package",
+            new InvalidArtifactServerException(errormessage, USER));
       case 400:
         return false;
       case 401:
         throw NestedExceptionUtils.hintWithExplanationException(
             "The connector provided does not have sufficient privileges to access Google artifact registry",
             "Please check connector's permission and credentials",
-            new InvalidArtifactServerException(response.errorBody().toString(), USER));
+            new InvalidArtifactServerException(errormessage, USER));
+      case 403:
+        throw NestedExceptionUtils.hintWithExplanationException(
+            "Connector provided does not have access to project provided", "Please check project field",
+            new InvalidArtifactServerException(errormessage, USER));
       default:
         throw NestedExceptionUtils.hintWithExplanationException(
             "The server could have failed authenticate ,Please check your credentials",
             " Server responded with the following error code",
-            new InvalidArtifactServerException(StringUtils.isNotBlank(response.errorBody().toString())
-                    ? response.errorBody().toString()
+            new InvalidArtifactServerException(StringUtils.isNotBlank(errormessage)
+                    ? errormessage
                     : String.format("Server responded with the following error code - %d", code),
                 USER));
     }
   }
-
   private List<BuildDetailsInternal> processPage(
       GarPackageVersionResponse tagsPage, String versionRegex, GarInternalConfig garinternalConfig) {
     if (tagsPage != null && EmptyPredicate.isNotEmpty(tagsPage.getTags())) {

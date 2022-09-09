@@ -2080,6 +2080,39 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ParameterFieldTimeout": {
+      "type": "object",
+      "properties": {
+        "defaultValue": {
+          "$ref": "#/definitions/Timeout"
+        },
+        "executionInput": {
+          "type": "boolean"
+        },
+        "expression": {
+          "type": "boolean"
+        },
+        "expressionValue": {
+          "type": "string"
+        },
+        "inputSetValidator": {
+          "$ref": "#/definitions/InputSetValidator"
+        },
+        "jsonResponseField": {
+          "type": "boolean"
+        },
+        "responseField": {
+          "type": "string"
+        },
+        "typeString": {
+          "type": "boolean"
+        },
+        "value": {
+          "$ref": "#/definitions/Timeout"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "PatchInstruction": {
       "type": "object",
       "discriminator": "type",
@@ -3719,6 +3752,22 @@
               }
             }
           }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Wait"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/WaitStepInfo"
+              }
+            }
+          }
         }
       ]
     },
@@ -3944,6 +3993,19 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "Timeout": {
+      "type": "object",
+      "properties": {
+        "timeoutInMillis": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "timeoutString": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "TransitionTo": {
       "type": "object",
       "required": [
@@ -4029,6 +4091,25 @@
           "format": "int32"
         }
       },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "WaitStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "duration": {
+              "$ref": "#/definitions/ParameterFieldTimeout"
+            },
+            "metadata": {
+              "type": "string"
+            }
+          }
+        }
+      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "WeightedVariation": {

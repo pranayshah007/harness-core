@@ -28,6 +28,7 @@ shared_dependencies = [
     "//960-yaml-sdk:module",
     "//965-api-key-filter:module",
     "//product/ci/scm/proto:ciscm_java_proto",
+    "//952-remote-observers/src/main/proto:952_remote_observers_java_proto",
     "@maven//:de_skuzzle_semantic_version",
     "@maven//:net_rcarz_jira_client",
     "@maven//:aopalliance_aopalliance",

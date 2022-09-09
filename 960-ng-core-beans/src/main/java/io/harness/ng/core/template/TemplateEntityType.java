@@ -10,6 +10,8 @@ package io.harness.ng.core.template;
 import static io.harness.NGCommonEntityConstants.IDENTIFIER_KEY;
 import static io.harness.NGCommonEntityConstants.NAME_KEY;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.ng.core.template.TemplateEntityConstants.CUSTOM_DEPLOYMENT;
+import static io.harness.ng.core.template.TemplateEntityConstants.CUSTOM_DEPLOYMENT_ROOT_FIELD;
 import static io.harness.ng.core.template.TemplateEntityConstants.MONITORED_SERVICE;
 import static io.harness.ng.core.template.TemplateEntityConstants.MONITORED_SERVICE_ROOT_FIELD;
 import static io.harness.ng.core.template.TemplateEntityConstants.PIPELINE;
@@ -39,6 +41,9 @@ public enum TemplateEntityType {
   @JsonProperty(STAGE) STAGE_TEMPLATE(STAGE, STAGE_ROOT_FIELD, asList(IDENTIFIER_KEY, NAME_KEY), HarnessTeam.PIPELINE),
   @JsonProperty(PIPELINE)
   PIPELINE_TEMPLATE(PIPELINE, PIPELINE_ROOT_FIELD, asList(IDENTIFIER_KEY, NAME_KEY), HarnessTeam.PIPELINE),
+  @JsonProperty(CUSTOM_DEPLOYMENT)
+  CUSTOM_DEPLOYMENT_TEMPLATE(
+      CUSTOM_DEPLOYMENT, CUSTOM_DEPLOYMENT_ROOT_FIELD, asList(IDENTIFIER_KEY, NAME_KEY), HarnessTeam.CDP),
   @JsonProperty(MONITORED_SERVICE)
   MONITORED_SERVICE_TEMPLATE(
       MONITORED_SERVICE, MONITORED_SERVICE_ROOT_FIELD, asList(IDENTIFIER_KEY, NAME_KEY), HarnessTeam.CV),

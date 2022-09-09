@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.cdng.pipeline.steps.MultiDeploymentSpawnerUtils.SERVICE_REF_EXPRESSION;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.cdng.creator.plan.envGroup.EnvGroupPlanCreatorHelper;
 import io.harness.cdng.creator.plan.environment.EnvironmentPlanCreatorHelper;
 import io.harness.cdng.creator.plan.infrastructure.InfrastructurePmsPlanCreator;
@@ -61,6 +62,7 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.yaml.DependenciesUtils;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -203,7 +205,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       YamlField specField =
           Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
 
-      if (useNewFlow(ctx)) {
+      if (useNewFlow(ctx, stageNode)) {
         List<AdviserObtainment> adviserObtainments =
             addResourceConstraintDependencyWithWhenCondition(planCreationResponseMap, specField);
         String infraNodeId = addInfrastructureNode(planCreationResponseMap, stageNode, adviserObtainments);
@@ -292,11 +294,12 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
         planCreationResponseMap, specField, kryoSerializer);
   }
 
-  private boolean useNewFlow(PlanCreationContext ctx) {
-    // uncomment this going forward
-    //    return featureFlagHelperService.isEnabled(
-    //        ctx.getMetadata().getAccountIdentifier(), FeatureName.SERVICE_V2_EXPRESSION);
-    return false;
+  private boolean useNewFlow(PlanCreationContext ctx, DeploymentStageNode stageNode) {
+    boolean isServiceV2 = stageNode.getDeploymentStageConfig().getService() != null
+        && ParameterField.isNotNull(stageNode.getDeploymentStageConfig().getService().getServiceRef());
+    return isServiceV2
+        && featureFlagHelperService.isEnabled(
+            ctx.getMetadata().getAccountIdentifier(), FeatureName.SERVICE_V2_EXPRESSION);
   }
 
   private void addEnvAndInfraDependency(PlanCreationContext ctx, DeploymentStageNode stageNode,

@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.views.entities.ViewQueryParams;
+import io.harness.ccm.views.entities.ViewRule;
 import io.harness.ccm.views.graphql.QLCEViewAggregation;
 import io.harness.ccm.views.graphql.QLCEViewEntityStatsDataPoint;
 import io.harness.ccm.views.graphql.QLCEViewFilterWrapper;
@@ -88,4 +89,6 @@ public interface ViewsBillingService {
       List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy, List<QLCEViewAggregation> aggregateFunction,
       List<QLCEViewSortCriteria> sort, String cloudProviderTableName, ViewQueryParams queryParams,
       boolean skipRoundOff);
+
+  List<ViewRule> getViewRules(List<QLCEViewFilterWrapper> filters);
 }

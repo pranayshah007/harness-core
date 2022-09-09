@@ -104,7 +104,7 @@ public class CdTelemetryPublisherTest extends CategoryTest {
     firstAccountExpectedMap.put("account_deploy_type", null);
     firstAccountExpectedMap.put("cd_license_cg_services_used", 2L);
     firstAccountExpectedMap.put("cd_license_cg_service_instances_used", 31L);
-    firstAccountExpectedMap.put("harness_prod_cd_cluster_id", "someCluster");
+    firstAccountExpectedMap.put("harness_cluster_id", "someCluster");
 
     HashMap<String, Object> secondAccountExpectedMap = new HashMap<>();
     secondAccountExpectedMap.put("group_type", "Account");
@@ -115,7 +115,7 @@ public class CdTelemetryPublisherTest extends CategoryTest {
     secondAccountExpectedMap.put("account_deploy_type", null);
     secondAccountExpectedMap.put("cd_license_cg_services_used", 2L);
     secondAccountExpectedMap.put("cd_license_cg_service_instances_used", 31L);
-    secondAccountExpectedMap.put("harness_prod_cd_cluster_id", "someCluster");
+    secondAccountExpectedMap.put("harness_cluster_id", "someCluster");
 
     telemetryPublisher.recordTelemetry();
     verify(telemetryReporter, times(1))

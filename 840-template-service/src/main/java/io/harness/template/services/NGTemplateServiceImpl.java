@@ -50,6 +50,7 @@ import io.harness.grpc.utils.StringValueUtils;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ng.core.template.TemplateReferenceSummary;
+import io.harness.ng.core.template.TemplateWithInputsResponseDTO;
 import io.harness.ng.core.template.exception.NGTemplateResolveExceptionV2;
 import io.harness.organization.remote.OrganizationClient;
 import io.harness.project.remote.ProjectClient;
@@ -59,12 +60,14 @@ import io.harness.template.TemplateFilterPropertiesDTO;
 import io.harness.template.beans.FilterParamsDTO;
 import io.harness.template.beans.PageParamsDTO;
 import io.harness.template.beans.PermissionTypes;
+import io.harness.template.beans.TemplateResponseDTO;
 import io.harness.template.beans.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
 import io.harness.template.events.TemplateUpdateEventType;
 import io.harness.template.gitsync.TemplateGitSyncBranchContextGuard;
+import io.harness.template.helpers.TemplateMergeServiceHelper;
 import io.harness.template.helpers.TemplateReferenceHelper;
 import io.harness.template.mappers.NGTemplateDtoMapper;
 import io.harness.template.resources.NGTemplateResource;
@@ -111,6 +114,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   @Inject private NGTemplateSchemaService ngTemplateSchemaService;
   @Inject private TemplateMergeService templateMergeService;
   @Inject private AccessControlClient accessControlClient;
+  @Inject private TemplateMergeServiceHelper templateMergeServiceHelper;
 
   private static final String DUP_KEY_EXP_FORMAT_STRING =
       "Template [%s] of versionLabel [%s] under Project[%s], Organization [%s] already exists";
@@ -217,7 +221,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     try {
       TemplateMergeResponseDTO templateMergeResponseDTO = null;
       if (TemplateRefHelper.hasTemplateRef(templateEntity.getYaml())) {
-        setupGitParentEntityDetails(templateEntity);
+        setupGitParentEntityDetails(templateEntity.getAccountIdentifier(), templateEntity.getOrgIdentifier(),
+            templateEntity.getProjectIdentifier());
         templateMergeResponseDTO = templateMergeService.applyTemplatesToYamlV2(templateEntity.getAccountId(),
             templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier(), templateEntity.getYaml(), false);
         populateLinkedTemplatesModules(templateEntity, templateMergeResponseDTO);
@@ -979,6 +984,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
 
   private TemplateEntity getAndValidateOldTemplateEntity(
       TemplateEntity templateEntity, String oldOrgIdentifier, String oldProjectIdentifier) {
+    setupGitParentEntityDetails(templateEntity.getAccountIdentifier(), oldOrgIdentifier, oldProjectIdentifier);
     Optional<TemplateEntity> optionalTemplate =
         templateServiceHelper.getTemplateWithVersionLabel(templateEntity.getAccountId(), oldOrgIdentifier,
             oldProjectIdentifier, templateEntity.getIdentifier(), templateEntity.getVersionLabel(), false, false);
@@ -1015,21 +1021,41 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     }
   }
 
-  private void setupGitParentEntityDetails(TemplateEntity templateEntity) {
+  @Override
+  public TemplateWithInputsResponseDTO getTemplateWithInputs(String accountId, String orgIdentifier,
+      String projectIdentifier, String templateIdentifier, String versionLabel) {
+    Optional<TemplateEntity> templateEntity =
+        get(accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, false);
+    TemplateResponseDTO templateResponseDTO = NGTemplateDtoMapper.writeTemplateResponseDto(templateEntity.orElseThrow(
+        ()
+            -> new InvalidRequestException(String.format(
+
+                "Template with the given Identifier: %s and %s does not exist or has been deleted", templateIdentifier,
+                EmptyPredicate.isEmpty(versionLabel) ? "stable versionLabel" : "versionLabel: " + versionLabel))));
+    String templateInputs = templateMergeServiceHelper.createTemplateInputsFromTemplate(templateEntity.get().getYaml());
+    return TemplateWithInputsResponseDTO.builder()
+        .templateInputs(templateInputs)
+        .templateResponseDTO(templateResponseDTO)
+        .build();
+  }
+
+  private void setupGitParentEntityDetails(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
-    if (null != gitEntityInfo.getRepoName()) {
-      gitEntityInfo.setParentEntityRepoName(gitEntityInfo.getRepoName());
+    if (null != gitEntityInfo) {
+      if (!GitAwareContextHelper.isNullOrDefault(gitEntityInfo.getRepoName())) {
+        gitEntityInfo.setParentEntityRepoName(gitEntityInfo.getRepoName());
+      }
+      if (!GitAwareContextHelper.isNullOrDefault(gitEntityInfo.getConnectorRef())) {
+        gitEntityInfo.setParentEntityConnectorRef(gitEntityInfo.getConnectorRef());
+      }
+      if (!GitAwareContextHelper.isNullOrDefault(orgIdentifier)) {
+        gitEntityInfo.setParentEntityOrgIdentifier(orgIdentifier);
+      }
+      if (!GitAwareContextHelper.isNullOrDefault(projectIdentifier)) {
+        gitEntityInfo.setParentEntityProjectIdentifier(projectIdentifier);
+      }
+      gitEntityInfo.setParentEntityAccountIdentifier(accountIdentifier);
+      GitAwareContextHelper.updateGitEntityContext(gitEntityInfo);
     }
-    if (null != gitEntityInfo.getConnectorRef()) {
-      gitEntityInfo.setParentEntityConnectorRef(gitEntityInfo.getConnectorRef());
-    }
-    if (null != templateEntity.getOrgIdentifier()) {
-      gitEntityInfo.setParentEntityOrgIdentifier(templateEntity.getOrgIdentifier());
-    }
-    if (null != templateEntity.getProjectIdentifier()) {
-      gitEntityInfo.setParentEntityProjectIdentifier(templateEntity.getProjectIdentifier());
-    }
-    gitEntityInfo.setParentEntityAccountIdentifier(templateEntity.getAccountIdentifier());
-    GitAwareContextHelper.updateGitEntityContext(gitEntityInfo);
   }
 }

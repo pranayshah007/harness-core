@@ -184,6 +184,7 @@ public class PrometheusStateTest extends APMStateVerificationTestBase {
     String resolvedAnalysisServerConfigId = generateUuid();
 
     PrometheusConfig prometheusConfig = PrometheusConfig.builder()
+                                            .accountId(accountId)
                                             .username("user")
                                             .password(new char[] {'p', 'a', 's', 's'})
                                             .url(generateUuid())

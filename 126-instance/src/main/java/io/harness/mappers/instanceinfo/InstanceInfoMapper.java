@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.dtos.instanceinfo.AwsSshWinrmInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.AzureSshWinrmInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.AzureWebAppInstanceInfoDTO;
+import io.harness.dtos.instanceinfo.CustomDeploymentInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.EcsInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.GitOpsInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.InstanceInfoDTO;
@@ -23,6 +24,7 @@ import io.harness.dtos.instanceinfo.ServerlessAwsLambdaInstanceInfoDTO;
 import io.harness.entities.instanceinfo.AwsSshWinrmInstanceInfo;
 import io.harness.entities.instanceinfo.AzureSshWinrmInstanceInfo;
 import io.harness.entities.instanceinfo.AzureWebAppNGInstanceInfo;
+import io.harness.entities.instanceinfo.CustomDeploymentInstanceInfo;
 import io.harness.entities.instanceinfo.EcsInstanceInfo;
 import io.harness.entities.instanceinfo.GitopsInstanceInfo;
 import io.harness.entities.instanceinfo.InstanceInfo;
@@ -59,6 +61,8 @@ public class InstanceInfoMapper {
       return AzureSshWinrmInstanceInfoMapper.toDTO((AzureSshWinrmInstanceInfo) instanceInfo);
     } else if (instanceInfo instanceof AwsSshWinrmInstanceInfo) {
       return AwsSshWinrmInstanceInfoMapper.toDTO((AwsSshWinrmInstanceInfo) instanceInfo);
+    } else if (instanceInfo instanceof CustomDeploymentInstanceInfo) {
+      return CustomDeploymentInstanceInfoMapper.toDTO((CustomDeploymentInstanceInfo) instanceInfo);
     }
     throw new InvalidRequestException("No InstanceInfoMapper toDTO found for instanceInfo : {}" + instanceInfo);
   }
@@ -84,6 +88,8 @@ public class InstanceInfoMapper {
       return AzureSshWinrmInstanceInfoMapper.toEntity((AzureSshWinrmInstanceInfoDTO) instanceInfoDTO);
     } else if (instanceInfoDTO instanceof AwsSshWinrmInstanceInfoDTO) {
       return AwsSshWinrmInstanceInfoMapper.toEntity((AwsSshWinrmInstanceInfoDTO) instanceInfoDTO);
+    } else if (instanceInfoDTO instanceof CustomDeploymentInstanceInfoDTO) {
+      return CustomDeploymentInstanceInfoMapper.toEntity((CustomDeploymentInstanceInfoDTO) instanceInfoDTO);
     }
     throw new InvalidRequestException(
         "No InstanceInfoMapper toEntity found for instanceInfoDTO : {}" + instanceInfoDTO);

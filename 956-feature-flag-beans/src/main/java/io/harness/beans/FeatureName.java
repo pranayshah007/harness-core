@@ -31,7 +31,6 @@ public enum FeatureName {
   ARTIFACT_STREAM_REFACTOR,
   ARTIFACT_STREAM_DELEGATE_SCOPING,
   ARTIFACT_STREAM_DELEGATE_TIMEOUT,
-  AUDIT_TRAIL_WEB_INTERFACE,
   AUTO_ACCEPT_SAML_ACCOUNT_INVITES,
   AZURE_US_GOV_CLOUD,
   AZURE_VMSS,
@@ -148,7 +147,6 @@ public enum FeatureName {
   STOP_INSTANCE_SYNC_VIA_ITERATOR_FOR_CONTAINER_DEPLOYMENTS,
   STOP_INSTANCE_SYNC_VIA_ITERATOR_FOR_PCF_DEPLOYMENTS,
   SUPERVISED_TS_THRESHOLD,
-  TEMPLATIZED_SECRET_MANAGER,
   THREE_PHASE_SECRET_DECRYPTION,
   TIME_RANGE_FREEZE_GOVERNANCE,
   TRIGGER_FOR_ALL_ARTIFACTS,
@@ -323,7 +321,6 @@ public enum FeatureName {
   INHERITED_USER_GROUP,
   JDK11_UPGRADE_BANNER,
   DISABLE_CI_STAGE_DEL_SELECTOR,
-  CLEANUP_INCOMPLETE_CANARY_DEPLOY_RELEASE,
   JENKINS_ARTIFACT,
   ENABLE_DEFAULT_TIMEFRAME_IN_DEPLOYMENTS,
   EXPORT_TF_PLAN_JSON_NG,
@@ -436,7 +433,10 @@ public enum FeatureName {
   CHANGE_INSTANCE_QUERY_OPERATOR_TO_NE("Change instance service query operator from $exists to $ne", HarnessTeam.SPG),
   NEXUS3_RAW_REPOSITORY("Enable support for Nexus3 raw repository format on CG", HarnessTeam.SPG),
   NG_ARTIFACT_SOURCES("Flag to support multi artifact sources for service V2", HarnessTeam.CDC),
-  UPDATE_EMAILS_VIA_SCIM("Will enable updating emails in Harness via SCIM", HarnessTeam.PL);
+  UPDATE_EMAILS_VIA_SCIM("Will enable updating emails in Harness via SCIM", HarnessTeam.PL),
+  WAIT_STEP(
+      "Automatically pause a pipeline execution for a specific amount of time, after time expires the pipeline proceeds and eventually completes",
+      HarnessTeam.PIPELINE);
 
   @Deprecated
   FeatureName() {
