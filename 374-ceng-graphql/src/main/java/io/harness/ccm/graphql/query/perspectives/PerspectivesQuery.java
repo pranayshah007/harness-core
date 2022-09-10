@@ -30,6 +30,7 @@ import io.harness.ccm.graphql.utils.GraphQLUtils;
 import io.harness.ccm.graphql.utils.annotations.GraphQLApi;
 import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.views.entities.ViewQueryParams;
+import io.harness.ccm.views.entities.ViewRule;
 import io.harness.ccm.views.graphql.QLCEViewAggregation;
 import io.harness.ccm.views.graphql.QLCEViewFilterWrapper;
 import io.harness.ccm.views.graphql.QLCEViewGroupBy;
@@ -41,6 +42,7 @@ import io.harness.ccm.views.graphql.ViewsQueryHelper;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.ccm.views.service.ViewsBillingService;
 
+import com.google.cloud.Timestamp;
 import com.google.cloud.bigquery.BigQuery;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -71,6 +73,7 @@ public class PerspectivesQuery {
   @Inject PerspectiveTimeSeriesHelper perspectiveTimeSeriesHelper;
   @Inject PerspectiveFieldsHelper perspectiveFieldsHelper;
   @Inject CCMRbacHelper rbacHelper;
+  private static final int MAX_LIMIT_VALUE = 10_000;
 
   @GraphQLQuery(name = "perspectiveTrendStats", description = "Trend stats for perspective")
   public PerspectiveTrendStats perspectiveTrendStats(
@@ -134,11 +137,12 @@ public class PerspectivesQuery {
     BigQuery bigQuery = bigQueryService.get();
     isClusterQuery = isClusterQuery != null && isClusterQuery;
     skipRoundOff = skipRoundOff != null && skipRoundOff;
+    final int maxLimit = Objects.isNull(limit) ? MAX_LIMIT_VALUE : Integer.min(limit, MAX_LIMIT_VALUE);
 
     return PerspectiveEntityStatsData.builder()
         .data(viewsBillingService
                   .getEntityStatsDataPointsNg(bigQuery, filters, groupBy, aggregateFunction, sortCriteria,
-                      cloudProviderTableName, limit, offset,
+                      cloudProviderTableName, maxLimit, offset,
                       viewsQueryHelper.buildQueryParams(accountId, isClusterQuery, skipRoundOff))
                   .getData())
         .build();
@@ -184,6 +188,7 @@ public class PerspectivesQuery {
     final boolean includeOthers = Objects.nonNull(preferences) && Boolean.TRUE.equals(preferences.getIncludeOthers());
     final boolean includeUnallocatedCost =
         Objects.nonNull(preferences) && Boolean.TRUE.equals(preferences.getIncludeUnallocatedCost());
+    final int maxLimit = Objects.isNull(limit) ? MAX_LIMIT_VALUE : Integer.min(limit, MAX_LIMIT_VALUE);
     String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(accountId, UNIFIED_TABLE);
     BigQuery bigQuery = bigQueryService.get();
     long timePeriod = perspectiveTimeSeriesHelper.getTimePeriod(groupBy);
@@ -198,13 +203,24 @@ public class PerspectivesQuery {
     isClusterQuery = isClusterQuery && businessMappingId == null;
 
     ViewQueryParams viewQueryParams = viewsQueryHelper.buildQueryParams(accountId, true, false, isClusterQuery, false);
+    Map<String, Map<Timestamp, Double>> sharedCostFromFilters =
+        viewsBillingService.getSharedCostPerTimestampFromFilters(bigQuery, filters, groupBy, aggregateFunction,
+            sortCriteria, cloudProviderTableName, viewQueryParams, viewQueryParams.isSkipRoundOff());
+
     ViewQueryParams viewQueryParamsWithSkipDefaultGroupBy =
         viewsQueryHelper.buildQueryParams(accountId, true, false, isClusterQuery, false, true);
 
+    List<ViewRule> viewRules = viewsBillingService.getViewRules(filters);
+    Set<String> businessMappingIdsFromRules = viewsQueryHelper.getBusinessMappingIdsFromViewRules(viewRules);
+    List<String> businessMappingIdsFromRulesAndFilters = viewsQueryHelper.getBusinessMappingIdsFromFilters(filters);
+    businessMappingIdsFromRulesAndFilters.addAll(businessMappingIdsFromRules);
+    boolean addSharedCostFromGroupBy = !businessMappingIdsFromRulesAndFilters.contains(businessMappingId);
+
     PerspectiveTimeSeriesData data = perspectiveTimeSeriesHelper.fetch(
         viewsBillingService.getTimeSeriesStatsNg(bigQuery, filters, groupBy, aggregateFunction, sortCriteria,
-            cloudProviderTableName, includeOthers, limit, viewQueryParams),
-        timePeriod, conversionField, businessMappingId, accountId, groupBy);
+            cloudProviderTableName, includeOthers, maxLimit, viewQueryParams),
+        timePeriod, conversionField, businessMappingId, accountId, groupBy, sharedCostFromFilters,
+        addSharedCostFromGroupBy);
 
     Map<Long, Double> othersTotalCost = Collections.emptyMap();
     if (includeOthers) {

@@ -53,6 +53,8 @@ import org.apache.commons.lang3.NotImplementedException;
 @OwnedBy(CDP)
 @Slf4j
 public class FileBasedWinRmExecutorNG extends FileBasedAbstractWinRmExecutor {
+  private static final String ARTIFACT = "artifact";
+
   private final SecretDecryptionService secretDecryptionService;
   private final ArtifactoryRequestMapper artifactoryRequestMapper;
 
@@ -132,22 +134,28 @@ public class FileBasedWinRmExecutorNG extends FileBasedAbstractWinRmExecutor {
       saveExecutionLog(format("Connected to %s", config.getHostname()), INFO);
       saveExecutionLog(format("Executing command ...%n"), INFO);
 
-      String artifactPathOnTarget =
-          jenkinsArtifactDelegateConfig.getJobName() + "\\" + jenkinsArtifactDelegateConfig.getArtifactPath();
+      String artifactPathOnTarget = Paths.get(jenkinsArtifactDelegateConfig.getArtifactPath()).getFileName().toString();
       String artifactPath =
           Paths
-              .get(jenkinsArtifactDelegateConfig.getJobName(), jenkinsArtifactDelegateConfig.getBuild(), "artifact",
-                  "target", jenkinsArtifactDelegateConfig.getArtifactPath())
+              .get(jenkinsArtifactDelegateConfig.getJobName(), jenkinsArtifactDelegateConfig.getBuild(), ARTIFACT,
+                  jenkinsArtifactDelegateConfig.getArtifactPath())
               .toString();
-
+      saveExecutionLog(
+          format("Begin file transfer from %s", getJenkinsUrl(jenkinsArtifactDelegateConfig, artifactPath)), INFO,
+          RUNNING);
       String command = getDownloadJenkinsArtifactCommand(
           jenkinsArtifactDelegateConfig, copyCommandUnit.getDestinationPath(), artifactPath, artifactPathOnTarget);
       commandExecutionStatus = executeRemoteCommand(session, outputWriter, errorWriter, command, true);
-      saveExecutionLog("Command completed successfully", INFO, commandExecutionStatus);
       if (FAILURE == commandExecutionStatus) {
-        saveExecutionLog("Failed to copy artifact.", ERROR, RUNNING);
+        saveExecutionLog(format("Failed to copy Jenkins artifact from %s",
+                             getJenkinsUrl(jenkinsArtifactDelegateConfig, artifactPath)),
+            ERROR, RUNNING);
         return commandExecutionStatus;
       }
+      saveExecutionLog(
+          format("File successfully transferred to %s\\%s", copyCommandUnit.getDestinationPath(), artifactPathOnTarget),
+          INFO, RUNNING);
+      saveExecutionLog("Command completed successfully", INFO, commandExecutionStatus);
     } catch (Exception e) {
       log.error(ERROR_WHILE_EXECUTING_COMMAND, e);
       ResponseMessage details = buildErrorDetailsFromWinRmClientException(e);
@@ -243,7 +251,13 @@ public class FileBasedWinRmExecutorNG extends FileBasedAbstractWinRmExecutor {
     JenkinsConnectorDTO jenkinsConnectorDto =
         (JenkinsConnectorDTO) jenkinsArtifactDelegateConfig.getConnectorDTO().getConnectorConfig();
     if (jenkinsConnectorDto.getAuth() != null) {
-      return "$Headers = @{\n"
+      String createFolderIfDoesntExist = "$targetPathForArtifact = \"" + destinationPath + "\\"
+          + jenkinsArtifactDelegateConfig.getJobName() + "\"\n"
+          + "If(!(test-path -PathType container $targetPathForArtifact))\n"
+          + "{\n"
+          + "      New-Item -ItemType Directory -Path $targetPathForArtifact\n"
+          + "}\n";
+      return createFolderIfDoesntExist + "$Headers = @{\n"
           + "    Authorization = \"" + getJenkinsAuthHeader(jenkinsArtifactDelegateConfig) + "\"\n"
           + "}\n"
           + "$AllProtocols = [Net.SecurityProtocolType]'Ssl3,Tls,Tls11,Tls12'\n"

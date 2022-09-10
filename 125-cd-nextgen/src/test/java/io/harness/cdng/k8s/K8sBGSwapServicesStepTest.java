@@ -17,6 +17,7 @@ import static io.harness.pms.contracts.execution.Status.SUCCEEDED;
 import static io.harness.rule.OwnerRule.ABHINAV2;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ANSHUL;
+import static io.harness.rule.OwnerRule.PRATYUSH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -50,6 +51,7 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
+import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
@@ -249,6 +251,28 @@ public class K8sBGSwapServicesStepTest extends CategoryTest {
         k8sBGSwapServicesStep.handleTaskResultWithSecurityContext(ambiance, stepElementParameters, () -> responseData);
     assertThat(response.getStatus()).isEqualTo(SUCCEEDED);
     assertThat(response.getStepOutcomes()).isEmpty();
+  }
+
+  @SneakyThrows
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testHandleTaskResultInRollbackSwapService() {
+    K8sDeployResponse responseData = K8sDeployResponse.builder()
+                                         .commandUnitsProgress(UnitProgressData.builder().build())
+                                         .commandExecutionStatus(SUCCESS)
+                                         .build();
+
+    StepResponse response =
+        k8sBGSwapServicesStep.handleTaskResultWithSecurityContext(ambiance, stepElementParameters, () -> responseData);
+    assertThat(response.getStatus()).isEqualTo(SUCCEEDED);
+    assertThat(response.getStepOutcomes()).isNotEmpty();
+    assertThat(response.getStepOutcomes().stream().collect(Collectors.toList()).get(0).getGroup())
+        .isEqualTo(StepOutcomeGroup.STAGE.name());
+    assertThat(response.getStepOutcomes().stream().collect(Collectors.toList()).get(0).getOutcome())
+        .isEqualTo(K8sBGSwapServicesOutcome.builder().build());
+    assertThat(response.getStepOutcomes().stream().collect(Collectors.toList()).get(0).getName())
+        .isEqualTo(OutcomeExpressionConstants.K8S_BG_SWAP_SERVICES_OUTCOME);
   }
 
   @SneakyThrows

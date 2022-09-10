@@ -171,11 +171,18 @@ public class ArtifactUtils {
             jenkinsArtifactConfig.getConnectorRef().getValue());
       case GOOGLE_ARTIFACT_REGISTRY:
         GoogleArtifactRegistryConfig googleArtifactRegistryConfig = (GoogleArtifactRegistryConfig) artifactConfig;
-        return String.format(placeholder, sourceType, googleArtifactRegistryConfig.getRegion().getValue(),
-            googleArtifactRegistryConfig.getPkg().getValue(), googleArtifactRegistryConfig.getConnectorRef().getValue(),
+        String version = googleArtifactRegistryConfig.getVersion().getValue() != null
+            ? googleArtifactRegistryConfig.getVersion().getValue()
+            : googleArtifactRegistryConfig.getVersionRegex().getValue();
+        return String.format(
+            "\ntype: %s \nregion: %s \nproject: %s \nrepositoryName: %s \npackage: %s \nversion/versionRegex: %s \nconnectorRef: %s \nregistryType: %s\n",
+            sourceType, googleArtifactRegistryConfig.getRegion().getValue(),
             googleArtifactRegistryConfig.getProject().getValue(),
             googleArtifactRegistryConfig.getRepositoryName().getValue(),
+            googleArtifactRegistryConfig.getPkg().getValue(), version,
+            googleArtifactRegistryConfig.getConnectorRef().getValue(),
             googleArtifactRegistryConfig.getGoogleArtifactRegistryType().getValue());
+
       default:
         throw new UnsupportedOperationException(String.format("Unknown Artifact Config type: [%s]", sourceType));
     }

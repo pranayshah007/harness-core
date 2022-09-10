@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/harness/harness-core/commons/go/lib/exec"
@@ -46,6 +47,8 @@ const (
 	logUploadFf      = "HARNESS_CI_INDIRECT_LOG_UPLOAD_FF"
 	gitBin           = "git"
 	diffFilesCmd     = "%s diff --name-status --diff-filter=MADR HEAD@{1} HEAD -1"
+	harnessNodeIndex = "HARNESS_NODE_INDEX"
+	harnessNodeTotal = "HARNESS_NODE_TOTAL"
 )
 
 // GetChangedFiles executes a shell command and returns a list of files changed in the PR
@@ -336,6 +339,30 @@ func GetTiSvcToken() (string, error) {
 		return "", fmt.Errorf("ti service token variable not set %s", tiSvcToken)
 	}
 	return token, nil
+}
+
+func GetStepStrategyIteration() (int, error) {
+	idxStr, ok := os.LookupEnv(harnessNodeIndex)
+	if !ok {
+		return -1, fmt.Errorf("parallelism strategy iteration variable not set %s", harnessNodeIndex)
+	}
+	idx, err := strconv.Atoi(idxStr)
+	if err != nil {
+		return -1, fmt.Errorf("unable to convert %s from string to int", harnessNodeIndex)
+	}
+	return idx, nil
+}
+
+func GetStepStrategyIterations() (int, error) {
+	totalStr, ok := os.LookupEnv(harnessNodeTotal)
+	if !ok {
+		return -1, fmt.Errorf("parallelism total iteration variable not set %s", harnessNodeTotal)
+	}
+	total, err := strconv.Atoi(totalStr)
+	if err != nil {
+		return -1, fmt.Errorf("unable to convert %s from string to int", harnessNodeTotal)
+	}
+	return total, nil
 }
 
 func IsManualExecution() bool {

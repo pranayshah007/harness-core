@@ -21,6 +21,7 @@ import static io.harness.secretmanagerclient.ValueType.CustomSecretManagerValues
 import static io.harness.secrets.SecretPermissions.SECRET_RESOURCE_TYPE;
 import static io.harness.secrets.SecretPermissions.SECRET_VIEW_PERMISSION;
 
+import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.NGResourceFilterConstants;
@@ -31,6 +32,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorCategory;
 import io.harness.connector.services.NGConnectorSecretManagerService;
 import io.harness.delegate.beans.FileUploadLimit;
+import io.harness.encryption.SecretRefData;
 import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.api.Producer;
@@ -46,6 +48,9 @@ import io.harness.ng.core.api.NGSecretServiceV2;
 import io.harness.ng.core.api.SecretCrudService;
 import io.harness.ng.core.common.beans.NGTag.NGTagKeys;
 import io.harness.ng.core.dto.secrets.BaseSSHSpecDTO;
+import io.harness.ng.core.dto.secrets.KerberosConfigDTO;
+import io.harness.ng.core.dto.secrets.KerberosWinRmConfigDTO;
+import io.harness.ng.core.dto.secrets.NTLMConfigDTO;
 import io.harness.ng.core.dto.secrets.SSHAuthDTO;
 import io.harness.ng.core.dto.secrets.SSHConfigDTO;
 import io.harness.ng.core.dto.secrets.SSHCredentialSpecDTO;
@@ -57,6 +62,8 @@ import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.SecretFileSpecDTO;
 import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
 import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
+import io.harness.ng.core.dto.secrets.TGTPasswordSpecDTO;
+import io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO;
 import io.harness.ng.core.entities.NGEncryptedData;
 import io.harness.ng.core.models.Secret;
 import io.harness.ng.core.models.Secret.SecretKeys;
@@ -206,7 +213,7 @@ public class SecretCrudServiceImpl implements SecretCrudService {
   public SecretResponseWrapper create(String accountIdentifier, SecretDTOV2 dto) {
     if (SecretText.equals(dto.getType()) && isEmpty(((SecretTextSpecDTO) dto.getSpec()).getValue())) {
       if ((((SecretTextSpecDTO) dto.getSpec()).getValueType()).equals(CustomSecretManagerValues)) {
-        log.info(String.format("Secret %s does not have any path for custom secret manager: %s", dto.getIdentifier(),
+        log.info(format("Secret %s does not have any path for custom secret manager: %s", dto.getIdentifier(),
             ((SecretTextSpecDTO) dto.getSpec()).getSecretManagerIdentifier()));
       } else {
         throw new InvalidRequestException("value cannot be empty for a secret text.");
@@ -640,5 +647,46 @@ public class SecretCrudServiceImpl implements SecretCrudService {
   public SecretValidationResultDTO validateSecret(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String identifier, @Valid SecretValidationMetaData metadata) {
     return ngSecretService.validateSecret(accountIdentifier, orgIdentifier, projectIdentifier, identifier, metadata);
+  }
+
+  @Override
+  public void validateSshWinRmPasswords(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, SecretDTOV2 secretDTO) {
+    SecretRefData password = null;
+
+    if (secretDTO.getSpec() instanceof SSHKeySpecDTO) {
+      SSHKeySpecDTO sshKeySpecDTO = (SSHKeySpecDTO) secretDTO.getSpec();
+      if (sshKeySpecDTO.getAuth().getSpec() instanceof KerberosConfigDTO) {
+        KerberosConfigDTO kerberosConfigDTO = (KerberosConfigDTO) sshKeySpecDTO.getAuth().getSpec();
+        if (kerberosConfigDTO.getSpec() instanceof TGTPasswordSpecDTO) {
+          TGTPasswordSpecDTO tgtPasswordSpecDTO = (TGTPasswordSpecDTO) kerberosConfigDTO.getSpec();
+          password = tgtPasswordSpecDTO.getPassword();
+        }
+      }
+    } else if (secretDTO.getSpec() instanceof WinRmCredentialsSpecDTO) {
+      WinRmCredentialsSpecDTO winRmCredentialsSpecDTO = (WinRmCredentialsSpecDTO) secretDTO.getSpec();
+      if (winRmCredentialsSpecDTO.getAuth().getSpec() instanceof KerberosWinRmConfigDTO) {
+        KerberosWinRmConfigDTO kerberosConfigDTO = (KerberosWinRmConfigDTO) winRmCredentialsSpecDTO.getAuth().getSpec();
+        if (kerberosConfigDTO.getSpec() instanceof TGTPasswordSpecDTO) {
+          TGTPasswordSpecDTO tgtPasswordSpecDTO = (TGTPasswordSpecDTO) kerberosConfigDTO.getSpec();
+          password = tgtPasswordSpecDTO.getPassword();
+        }
+      } else if (winRmCredentialsSpecDTO.getAuth().getSpec() instanceof NTLMConfigDTO) {
+        NTLMConfigDTO ntlmConfigDTO = (NTLMConfigDTO) winRmCredentialsSpecDTO.getAuth().getSpec();
+        password = ntlmConfigDTO.getPassword();
+      }
+    }
+
+    if (password == null) {
+      return;
+    }
+
+    Optional<Secret> secretOptional =
+        ngSecretService.get(accountIdentifier, orgIdentifier, projectIdentifier, password.getIdentifier());
+
+    if (!secretOptional.isPresent()) {
+      throw new InvalidRequestException(format(
+          "No such password found '%s', please check identifier/scope and try again.", password.getIdentifier()));
+    }
   }
 }

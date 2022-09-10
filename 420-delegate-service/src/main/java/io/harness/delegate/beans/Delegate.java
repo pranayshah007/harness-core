@@ -10,6 +10,7 @@ package io.harness.delegate.beans;
 import static java.time.Duration.ofDays;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateEntityOwner.DelegateEntityOwnerKeys;
@@ -18,6 +19,7 @@ import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
@@ -45,6 +47,7 @@ import org.mongodb.morphia.annotations.Transient;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "DelegateKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "delegates", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @OwnedBy(HarnessTeam.DEL)
@@ -84,7 +87,7 @@ public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, Ac
   private String delegateGroupId;
   private String delegateName;
   private String delegateProfileId;
-  private long lastHeartBeat;
+  @FdIndex private long lastHeartBeat;
   private String version;
   private transient String sequenceNum;
   private String delegateType;

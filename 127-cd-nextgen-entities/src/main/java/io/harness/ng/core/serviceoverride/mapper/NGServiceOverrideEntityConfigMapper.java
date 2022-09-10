@@ -11,6 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.azure.config.yaml.ApplicationSettingsConfiguration;
+import io.harness.cdng.azure.config.yaml.ConnectionStringsConfiguration;
 import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.exception.InvalidRequestException;
@@ -40,6 +42,9 @@ public class NGServiceOverrideEntityConfigMapper {
     List<NGVariable> variableOverride = null;
     List<ManifestConfigWrapper> manifestsList = null;
     List<ConfigFileWrapper> configFiles = null;
+    ApplicationSettingsConfiguration applicationSettings = null;
+    ConnectionStringsConfiguration connectionStrings = null;
+
     if (isNotEmpty(serviceOverridesEntity.getYaml())) {
       try {
         final NGServiceOverrideConfig config =
@@ -48,6 +53,8 @@ public class NGServiceOverrideEntityConfigMapper {
         variableOverride = serviceOverrideInfoConfig.getVariables();
         manifestsList = serviceOverrideInfoConfig.getManifests();
         configFiles = serviceOverrideInfoConfig.getConfigFiles();
+        applicationSettings = serviceOverrideInfoConfig.getApplicationSettings();
+        connectionStrings = serviceOverrideInfoConfig.getConnectionStrings();
       } catch (IOException e) {
         throw new InvalidRequestException("Cannot create service ng service config due to " + e.getMessage());
       }
@@ -59,6 +66,8 @@ public class NGServiceOverrideEntityConfigMapper {
                                        .variables(variableOverride)
                                        .manifests(manifestsList)
                                        .configFiles(configFiles)
+                                       .applicationSettings(applicationSettings)
+                                       .connectionStrings(connectionStrings)
                                        .build())
         .build();
   }

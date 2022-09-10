@@ -7,7 +7,8 @@
 
 package io.harness.batch.processing.entities;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
@@ -24,10 +25,10 @@ import org.mongodb.morphia.annotations.Id;
 
 @Data
 @Builder
+@StoreIn(DbAliases.CENG)
 @Entity(value = "accountShardMapping", noClassnameStored = true)
 @FieldNameConstants(innerTypeName = "AccountShardMappingKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@StoreIn("events")
 public final class AccountShardMapping
     implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, AccountAccess {
   @Id String uuid;

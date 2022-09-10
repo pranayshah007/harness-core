@@ -3,8 +3,6 @@
 !!!custom_delegateSyncTaskResponses {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 !!!custom_delegateTaskProgressResponses {"name": "processAfter_1", "background": true} {"processAfter": 1}
 !!!custom_delegateTaskProgressResponses {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-!!!testDummies {"name": "appId_1", "background": true} {"appId": 1}
-!!!testDummies {"name": "createdAt_1", "background": true} {"createdAt": 1}
 !!!testMongo {"name": "appId_1", "background": true} {"appId": 1}
 !!!testMongo {"name": "createdAt_1", "background": true} {"createdAt": 1}
 accounts {"name": "accountBackgroundJobCheckIteration_1", "background": true} {"accountBackgroundJobCheckIteration": 1}
@@ -100,8 +98,6 @@ barrierInstances {"name": "validUntil_1", "background": true, "expireAfterSecond
 cache {"name": "accountId_1", "background": true} {"accountId": 1}
 cache {"name": "unique_commutative", "unique": true} {"_id": 1, "contextValue": 1}
 cache {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-cacheEntities {"name": "createdAt_1", "background": true} {"createdAt": 1}
-cacheEntities {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 capabilityRequirement {"name": "accountId_1", "background": true} {"accountId": 1}
 capabilityRequirement {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 capabilitySubjectPermission {"name": "accountId_1", "background": true} {"accountId": 1}
@@ -114,7 +110,6 @@ capabilityTaskSelectionDetails {"name": "accountId_1", "background": true} {"acc
 capabilityTaskSelectionDetails {"name": "blocked_1", "background": true} {"blocked": 1}
 capabilityTaskSelectionDetails {"name": "capabilityId_1", "background": true} {"capabilityId": 1}
 capabilityTaskSelectionDetails {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-ceCloudAccount {"name": "no_dup_account", "unique": true} {"accountId": 1, "infraAccountId": 1, "infraMasterAccountId": 1, "masterAccountSettingId": 1}
 ceCommunications {"name": "account_email_type", "unique": true} {"accountId": 1, "emailId": 1, "type": 1}
 ceCommunications {"name": "account_enabled_type", "background": true} {"accountId": 1, "enabled": 1, "type": 1}
 cgEventConfig {"name": "accountId_1", "background": true} {"accountId": 1}
@@ -221,6 +216,7 @@ delegates {"name": "accountId_1", "background": true} {"accountId": 1}
 delegates {"name": "byAcctNgGroupIdOwner", "background": true} {"accountId": 1, "ng": 1, "delegateGroupId": 1, "owner": 1}
 delegates {"name": "capabilitiesCheckNextIteration_1", "background": true} {"capabilitiesCheckNextIteration": 1}
 delegates {"name": "createdAt_1", "background": true} {"createdAt": 1}
+delegates {"name": "lastHeartBeat_1", "background": true} {"lastHeartBeat": 1}
 delegates {"name": "taskExpiryCheckNextIteration_1", "background": true} {"taskExpiryCheckNextIteration": 1}
 delegates {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 deletedEntities {"name": "entityId_1", "unique": true} {"entityId": 1}
@@ -781,9 +777,6 @@ timeSeriesRiskSummary {"name": "appId_1", "background": true} {"appId": 1}
 timeSeriesRiskSummary {"name": "createdAt_1", "background": true} {"createdAt": 1}
 timeSeriesRiskSummary {"name": "minute_idx", "background": true} {"cvConfigId": 1, "analysisMinute": 1, "tag": 1}
 timeSeriesRiskSummary {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-timeoutInstances {"name": "createdAt_1", "background": true} {"createdAt": 1}
-timeoutInstances {"name": "nextIteration_1", "background": true} {"nextIteration": 1}
-timeoutInstances {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 timeseriesTransactionThresholds {"name": "accountId_1", "background": true} {"accountId": 1}
 timeseriesTransactionThresholds {"name": "appId_1", "background": true} {"appId": 1}
 timeseriesTransactionThresholds {"name": "createdAt_1", "background": true} {"createdAt": 1}

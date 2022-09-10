@@ -9,7 +9,7 @@ package io.harness.gitsync.common.beans;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
 import io.harness.mongo.index.CompoundMongoIndex;
@@ -40,10 +40,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Builder
 @EqualsAndHashCode(callSuper = false)
 @FieldNameConstants(innerTypeName = "GitBranchKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Document("gitBranches")
 @TypeAlias("io.harness.gitsync.common.beans.GitBranch")
 @Entity(value = "gitBranches", noClassnameStored = true)
-@StoreIn(DbAliases.NG_MANAGER)
 @Persistent
 @OwnedBy(DX)
 public class GitBranch {

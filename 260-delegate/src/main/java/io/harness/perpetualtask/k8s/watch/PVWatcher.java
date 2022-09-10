@@ -7,8 +7,8 @@
 
 package io.harness.perpetualtask.k8s.watch;
 
-import static io.harness.ccm.commons.constants.Constants.CLUSTER_ID_IDENTIFIER;
-import static io.harness.ccm.commons.constants.Constants.UID;
+import static io.harness.ccm.CcmConstants.CLUSTER_ID_IDENTIFIER;
+import static io.harness.ccm.CcmConstants.UID;
 import static io.harness.perpetualtask.k8s.watch.PVEvent.EventType.EVENT_TYPE_EXPANSION;
 import static io.harness.perpetualtask.k8s.watch.PVEvent.EventType.EVENT_TYPE_STOP;
 
@@ -22,6 +22,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.event.client.EventPublisher;
 import io.harness.grpc.utils.HTimestamps;
 import io.harness.perpetualtask.k8s.informer.ClusterDetails;
+import io.harness.perpetualtask.k8s.utils.ApiExceptionLogger;
 import io.harness.perpetualtask.k8s.utils.K8sWatcherHelper;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -114,6 +115,10 @@ public class PVWatcher implements ResourceEventHandler<V1PersistentVolume> {
                 return coreV1Api.listPersistentVolumeCall(null, null, null, null, null, null,
                     callGeneratorParams.resourceVersion, null, callGeneratorParams.timeoutSeconds,
                     callGeneratorParams.watch, null);
+              } catch (IllegalArgumentException ex) {
+                ApiExceptionLogger.logErrorIfNotSeenRecently(
+                    ex, String.format("IllegalArgumentException: %s", ex.getMessage()));
+                throw ex;
               } catch (Exception e) {
                 log.error("Unknown exception occurred for listPersistentVolumeCall", e);
                 throw e;

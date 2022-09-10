@@ -52,6 +52,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.Optional;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
+import org.assertj.core.util.Lists;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -113,6 +114,10 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
         .get("accountId", "orgId", "projectId", "service-id", false);
     doReturn(Optional.of(envEntity)).when(environmentService).get("accountId", "orgId", "projectId", "env-id", false);
     doReturn(Optional.of(infra)).when(infraService).get("accountId", "orgId", "projectId", "env-id", "infra-id");
+    doReturn(Lists.newArrayList(infra))
+        .when(infraService)
+        .getAllInfrastructureFromIdentifierList(
+            "accountId", "orgId", "projectId", "env-id", Lists.newArrayList("infra-id"));
   }
 
   @Test

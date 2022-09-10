@@ -9,6 +9,9 @@ package io.harness.iterator;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import io.harness.annotations.StoreIn;
+import io.harness.ng.DbAliases;
+
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
@@ -19,6 +22,7 @@ import org.mongodb.morphia.annotations.Id;
 
 @Data
 @Builder
+@StoreIn(DbAliases.TEST)
 @Entity(value = "!!!testIterable")
 @FieldNameConstants(innerTypeName = "TestIterableEntityKeys")
 @Slf4j

@@ -147,6 +147,7 @@ public class EcsPrepareRollbackCommandTaskHandler extends EcsCommandTaskNGHandle
       EcsPrepareRollbackDataResult ecsPrepareRollbackDataResult =
           EcsPrepareRollbackDataResult.builder()
               .isFirstDeployment(false)
+              .serviceName(serviceName)
               .createServiceRequestBuilderString(createServiceRequestBuilderString)
               .registerScalableTargetRequestBuilderStrings(registerScalableTargetRequestBuilderStrings)
               .registerScalingPolicyRequestBuilderStrings(registerScalingPolicyRequestBuilderStrings)
@@ -169,7 +170,7 @@ public class EcsPrepareRollbackCommandTaskHandler extends EcsCommandTaskNGHandle
 
       // Send EcsPrepareRollbackDataResult with isFirstDeployment as true
       EcsPrepareRollbackDataResult ecsPrepareRollbackDataResult =
-          EcsPrepareRollbackDataResult.builder().isFirstDeployment(true).build();
+          EcsPrepareRollbackDataResult.builder().isFirstDeployment(true).serviceName(serviceName).build();
 
       return EcsPrepareRollbackDataResponse.builder()
           .ecsPrepareRollbackDataResult(ecsPrepareRollbackDataResult)

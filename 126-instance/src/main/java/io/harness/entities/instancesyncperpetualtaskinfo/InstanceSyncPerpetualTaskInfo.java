@@ -7,7 +7,7 @@
 
 package io.harness.entities.instancesyncperpetualtaskinfo;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.FdUniqueIndex;
@@ -30,9 +30,9 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @FieldNameConstants(innerTypeName = "InstanceSyncPerpetualTaskInfoKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "instanceSyncPerpetualTasksInfoNG", noClassnameStored = true)
 @Document("instanceSyncPerpetualTasksInfoNG")
-@StoreIn(DbAliases.NG_MANAGER)
 @Persistent
 @OwnedBy(HarnessTeam.DX)
 public class InstanceSyncPerpetualTaskInfo {

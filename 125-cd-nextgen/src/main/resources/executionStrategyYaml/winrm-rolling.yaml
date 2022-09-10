@@ -8,8 +8,8 @@ spec:
   execution:
     steps:
       - stepGroup:
-          name: Phase
-          identifier: Phase
+          identifier: Step_Group
+          name: "Step Group"
           strategy:
             repeat:
               items: <+stage.output.hosts>
@@ -17,15 +17,9 @@ spec:
               partitionSize: <+partitionSize>
               unit: <+unit>
           steps:
-            - stepGroup:
-                name: Phase Group
-                identifier: phase_group
-                strategy:
-                  repeat:
-                    items: <+repeat.partition>
-                steps:
-                  - step:
-                      type: Command
-                      name: "Deploy"
-                      identifier: Deploy
-                      spec: {}
+            - step:
+                name: "Deploy"
+                identifier: Deploy
+                type: Command
+                timeout: 10m
+                spec: {}

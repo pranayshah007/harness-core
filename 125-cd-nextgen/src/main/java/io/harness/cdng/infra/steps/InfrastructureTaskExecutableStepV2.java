@@ -1,12 +1,16 @@
 package io.harness.cdng.infra.steps;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.INFRA_TASK_EXECUTABLE_STEP_V2;
+import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.INFRA_TASK_EXECUTABLE_STEP_OUTPUT;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.logging.LogCallbackUtils.saveExecutionLogSafely;
 
 import static software.wings.beans.LogColor.Green;
+import static software.wings.beans.LogColor.Red;
 import static software.wings.beans.LogHelper.color;
+
+import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
@@ -24,8 +28,11 @@ import io.harness.cdng.infra.yaml.InfrastructureConfig;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.visitor.YamlTypes;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
+import io.harness.delegate.task.ssh.SshInfraDelegateConfig;
+import io.harness.delegate.task.ssh.WinRmInfraDelegateConfig;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
@@ -55,13 +62,17 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.EntityReferenceExtractorUtils;
 import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.environment.EnvironmentOutcome;
+import io.harness.steps.shellscript.HostsOutput;
 import io.harness.steps.shellscript.K8sInfraDelegateConfigOutput;
+import io.harness.steps.shellscript.SshInfraDelegateConfigOutput;
+import io.harness.steps.shellscript.WinRmInfraDelegateConfigOutput;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -93,7 +104,7 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
       Ambiance ambiance, InfrastructureTaskExecutableStepV2Params stepParameters, StepInputPackage inputPackage) {
     validateStepParameters(stepParameters);
 
-    final InfrastructureConfig infrastructureConfig = fetchInfraConfigFromDB(ambiance, stepParameters);
+    final InfrastructureConfig infrastructureConfig = fetchInfraConfigFromDBorThrow(ambiance, stepParameters);
     final Infrastructure infraSpec = infrastructureConfig.getInfrastructureDefinitionConfig().getSpec();
 
     validateResources(ambiance, infraSpec);
@@ -101,11 +112,12 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     final NGLogCallback logCallback = infrastructureStepHelper.getInfrastructureLogCallback(ambiance, true, "Execute");
     // Create delegate task for infra if needed
     if (isTaskStep(infraSpec.getKind())) {
-      return obtainTaskInternal(ambiance, infraSpec, logCallback);
+      return obtainTaskInternal(ambiance, infraSpec, logCallback,
+          !infrastructureConfig.getInfrastructureDefinitionConfig().isAllowSimultaneousDeployments());
     }
 
     // If delegate task is not needed, just validate the infra spec
-    executeSync(ambiance, infraSpec, logCallback);
+    executeSync(ambiance, infrastructureConfig, logCallback);
     return null;
   }
 
@@ -134,7 +146,8 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
 
     final InfrastructureOutcome infrastructureOutcome = stepSweepingOutput.getInfrastructureOutcome();
 
-    publishInfraDelegateConfigOutput(serviceOutcome, infrastructureOutcome, ambiance);
+    publishInfraDelegateConfigOutput(logCallback, serviceOutcome, infrastructureOutcome, ambiance, environmentOutcome,
+        stepSweepingOutput.isSkipInstances());
 
     StepResponseBuilder stepResponseBuilder = StepResponse.builder();
     String infrastructureKind = infrastructureOutcome.getKind();
@@ -181,32 +194,34 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     pipelineRbacHelper.checkRuntimePermissions(ambiance, entityDetails);
   }
 
-  private void executeSync(Ambiance ambiance, Infrastructure infrastructure, NGLogCallback logCallback) {
-    validateConnector(infrastructure, ambiance);
+  private void executeSync(Ambiance ambiance, InfrastructureConfig infrastructure, NGLogCallback logCallback) {
+    final Infrastructure spec = infrastructure.getInfrastructureDefinitionConfig().getSpec();
+    validateConnector(spec, ambiance);
     saveExecutionLog(logCallback, "Fetching environment information...");
-    validateInfrastructure(infrastructure, ambiance);
+    validateInfrastructure(spec, ambiance);
 
     final OutcomeSet outcomeSet = fetchRequiredOutcomes(ambiance);
     final EnvironmentOutcome environmentOutcome = outcomeSet.getEnvironmentOutcome();
     final ServiceStepOutcome serviceOutcome = outcomeSet.getServiceStepOutcome();
     final InfrastructureOutcome infrastructureOutcome =
-        InfrastructureMapper.toOutcome(infrastructure, environmentOutcome, serviceOutcome);
+        InfrastructureMapper.toOutcome(spec, environmentOutcome, serviceOutcome);
 
-    // save infrastructure sweeping output for further use within the step
-    boolean skipInstances = infrastructureStepHelper.getSkipInstances(infrastructure);
-    executionSweepingOutputService.consume(ambiance, INFRA_TASK_EXECUTABLE_STEP_V2,
+    // save spec sweeping output for further use within the step
+    boolean skipInstances = infrastructureStepHelper.getSkipInstances(spec);
+    executionSweepingOutputService.consume(ambiance, INFRA_TASK_EXECUTABLE_STEP_OUTPUT,
         InfrastructureTaskExecutableStepSweepingOutput.builder()
             .infrastructureOutcome(infrastructureOutcome)
             .skipInstances(skipInstances)
+            .addRcStep(!infrastructure.getInfrastructureDefinitionConfig().isAllowSimultaneousDeployments())
             .build(),
-        "");
+        StepCategory.STAGE.name());
   }
 
   private boolean isTaskStep(String infraKind) {
     return InfrastructureKind.SSH_WINRM_AZURE.equals(infraKind) || InfrastructureKind.SSH_WINRM_AWS.equals(infraKind);
   }
 
-  private InfrastructureConfig fetchInfraConfigFromDB(
+  private InfrastructureConfig fetchInfraConfigFromDBorThrow(
       Ambiance ambiance, InfrastructureTaskExecutableStepV2Params stepParameters) {
     Optional<InfrastructureEntity> infrastructureEntityOpt =
         infrastructureEntityService.get(AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
@@ -227,15 +242,25 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     return InfrastructureEntityConfigMapper.toInfrastructureConfig(infrastructureEntity);
   }
 
-  private void publishInfraDelegateConfigOutput(
-      ServiceStepOutcome serviceOutcome, InfrastructureOutcome infrastructureOutcome, Ambiance ambiance) {
-    if (ServiceSpecType.SSH.equals(serviceOutcome.getType())) {
-      publishSshInfraDelegateConfigOutput(infrastructureOutcome, ambiance);
+  private void publishInfraDelegateConfigOutput(NGLogCallback logCallback, ServiceStepOutcome serviceOutcome,
+      InfrastructureOutcome infrastructureOutcome, Ambiance ambiance, EnvironmentOutcome environmentOutcome,
+      boolean skipInstances) {
+    if (serviceOutcome.getType() == null) {
+      throw new InvalidRequestException("service type cannot be null");
+    }
+    if (ServiceSpecType.SSH.toLowerCase(Locale.ROOT).equals(serviceOutcome.getType().toLowerCase(Locale.ROOT))) {
+      ExecutionInfoKey executionInfoKey = ExecutionInfoKeyMapper.getExecutionInfoKey(
+          ambiance, environmentOutcome, serviceOutcome, infrastructureOutcome);
+      publishSshInfraDelegateConfigOutput(
+          ambiance, logCallback, infrastructureOutcome, executionInfoKey, skipInstances);
       return;
     }
 
-    if (ServiceSpecType.WINRM.equals(serviceOutcome.getType())) {
-      publishWinRmInfraDelegateConfigOutput(infrastructureOutcome, ambiance);
+    if (ServiceSpecType.WINRM.toLowerCase(Locale.ROOT).equals(serviceOutcome.getType().toLowerCase(Locale.ROOT))) {
+      ExecutionInfoKey executionInfoKey = ExecutionInfoKeyMapper.getExecutionInfoKey(
+          ambiance, environmentOutcome, serviceOutcome, infrastructureOutcome);
+      publishWinRmInfraDelegateConfigOutput(
+          ambiance, logCallback, infrastructureOutcome, executionInfoKey, skipInstances);
       return;
     }
 
@@ -252,23 +277,71 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     }
   }
 
+  private void publishSshInfraDelegateConfigOutput(Ambiance ambiance, NGLogCallback logCallback,
+      InfrastructureOutcome infrastructureOutcome, ExecutionInfoKey executionInfoKey, boolean skipInstances) {
+    SshInfraDelegateConfig sshInfraDelegateConfig =
+        cdStepHelper.getSshInfraDelegateConfig(infrastructureOutcome, ambiance);
+
+    SshInfraDelegateConfigOutput sshInfraDelegateConfigOutput =
+        SshInfraDelegateConfigOutput.builder().sshInfraDelegateConfig(sshInfraDelegateConfig).build();
+    executionSweepingOutputService.consume(ambiance, OutputExpressionConstants.SSH_INFRA_DELEGATE_CONFIG_OUTPUT_NAME,
+        sshInfraDelegateConfigOutput, StepCategory.STAGE.name());
+    Set<String> hosts = sshInfraDelegateConfig.getHosts();
+    if (EmptyPredicate.isEmpty(hosts)) {
+      saveExecutionLogSafely(logCallback,
+          color("No host(s) were provided for specified infrastructure or filter did not match any instance(s)", Red));
+    } else {
+      saveExecutionLogSafely(logCallback, color(format("Successfully fetched %s instance(s)", hosts.size()), Green));
+      saveExecutionLogSafely(logCallback, color(format("Fetched following instance(s) %s)", hosts), Green));
+    }
+
+    Set<String> filteredHosts = stageExecutionHelper.saveAndExcludeHostsWithSameArtifactDeployedIfNeeded(
+        ambiance, executionInfoKey, infrastructureOutcome, hosts, ServiceSpecType.SSH, skipInstances, logCallback);
+    executionSweepingOutputService.consume(ambiance, OutputExpressionConstants.OUTPUT,
+        HostsOutput.builder().hosts(filteredHosts).build(), StepCategory.STAGE.name());
+  }
+
+  private void publishWinRmInfraDelegateConfigOutput(Ambiance ambiance, NGLogCallback logCallback,
+      InfrastructureOutcome infrastructureOutcome, ExecutionInfoKey executionInfoKey, boolean skipInstances) {
+    WinRmInfraDelegateConfig winRmInfraDelegateConfig =
+        cdStepHelper.getWinRmInfraDelegateConfig(infrastructureOutcome, ambiance);
+
+    WinRmInfraDelegateConfigOutput winRmInfraDelegateConfigOutput =
+        WinRmInfraDelegateConfigOutput.builder().winRmInfraDelegateConfig(winRmInfraDelegateConfig).build();
+    executionSweepingOutputService.consume(ambiance, OutputExpressionConstants.WINRM_INFRA_DELEGATE_CONFIG_OUTPUT_NAME,
+        winRmInfraDelegateConfigOutput, StepCategory.STAGE.name());
+    Set<String> hosts = winRmInfraDelegateConfig.getHosts();
+    if (EmptyPredicate.isEmpty(hosts)) {
+      saveExecutionLogSafely(logCallback,
+          color("No host(s) were provided for specified infrastructure or filter did not match any instance(s)", Red));
+    } else {
+      saveExecutionLogSafely(logCallback, color(format("Successfully fetched %s instance(s)", hosts.size()), Green));
+      saveExecutionLogSafely(logCallback, color(format("Fetched following instance(s) %s)", hosts), Green));
+    }
+
+    Set<String> filteredHosts = stageExecutionHelper.saveAndExcludeHostsWithSameArtifactDeployedIfNeeded(
+        ambiance, executionInfoKey, infrastructureOutcome, hosts, ServiceSpecType.WINRM, skipInstances, logCallback);
+    executionSweepingOutputService.consume(ambiance, OutputExpressionConstants.OUTPUT,
+        HostsOutput.builder().hosts(filteredHosts).build(), StepCategory.STAGE.name());
+  }
+
   private void validateStepParameters(InfrastructureTaskExecutableStepV2Params stepParameters) {
     if (ParameterField.isNull(stepParameters.getEnvRef())) {
-      throw new InvalidRequestException("Environment reference is not specified");
+      throw new InvalidRequestException("environment reference is not specified");
     }
 
     if (ParameterField.isNull(stepParameters.getInfraRef())) {
-      throw new InvalidRequestException("Infrastructure Definition reference is not specified");
+      throw new InvalidRequestException("infrastructure definition reference is not specified");
     }
 
     if (stepParameters.getEnvRef().isExpression()) {
       throw new InvalidRequestException(
-          "Environment reference " + stepParameters.getEnvRef().getExpressionValue() + " not resolved");
+          "environment reference " + stepParameters.getEnvRef().getExpressionValue() + " not resolved");
     }
 
     if (stepParameters.getInfraRef().isExpression()) {
       throw new InvalidRequestException(
-          "Infrastructure Definition reference" + stepParameters.getInfraRef().getExpressionValue() + " not resolved");
+          "infrastructure definition reference" + stepParameters.getInfraRef().getExpressionValue() + " not resolved");
     }
   }
 

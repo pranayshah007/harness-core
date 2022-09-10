@@ -37,6 +37,7 @@ public class CEAwsEntityToDTO implements ConnectorEntityToDTOMapper<CEAwsConnect
 
     return ceAwsConnectorDTOBuilder.crossAccountAccess(ceAwsConfig.getCrossAccountAccess())
         .featuresEnabled(ceAwsFeaturesList)
+        .isAWSGovCloudAccount(ceAwsConfig.getIsAWSGovCloudAccount())
         .build();
   }
 }

@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.ng.DbAliases.ACCESS_CONTROL;
 
 import io.harness.accesscontrol.AccessControlEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
 import io.harness.iterator.PersistentRegularIterable;
@@ -52,10 +52,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @ToString
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @FieldNameConstants(innerTypeName = "UserGroupDBOKeys")
+@StoreIn(ACCESS_CONTROL)
 @Entity(value = "usergroups", noClassnameStored = true)
 @Document("usergroups")
 @TypeAlias("usergroups")
-@StoreIn(ACCESS_CONTROL)
 public class UserGroupDBO implements PersistentRegularIterable, AccessControlEntity {
   @Setter @Id @org.mongodb.morphia.annotations.Id String id;
   @EqualsAndHashCode.Include @NotEmpty final String scopeIdentifier;

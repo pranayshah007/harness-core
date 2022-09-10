@@ -198,8 +198,10 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
         case POWERSHELL:
         case BASH:
           try {
-            executeCommandResponse =
-                executeBashScript(command, envVariablesToCollect, secretEnvVariablesToCollect, timeoutInMillis);
+            executeCommandResponse = executeBashScript(command,
+                envVariablesToCollect == null ? Collections.emptyList() : envVariablesToCollect,
+                secretEnvVariablesToCollect == null ? Collections.emptyList() : secretEnvVariablesToCollect,
+                timeoutInMillis);
           } catch (Exception e) {
             log.error("[ScriptProcessExecutor-01] Error while executing script on delegate: ", e);
             saveExecutionLog(format("Exception: %s", e), ERROR);

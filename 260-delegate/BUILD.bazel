@@ -20,7 +20,6 @@ java_library(
     deps = [
         "//:lombok",
         "//420-delegate-agent:module",
-        "//490-ce-commons:module",
         "//867-polling-contracts:module",
         "//platform-service/modules/notification-service/delegate-tasks:module",
         "@maven//:org_apache_commons_commons_math3",

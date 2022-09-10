@@ -23,6 +23,7 @@ import io.harness.cdng.artifact.bean.yaml.SidecarArtifact;
 import io.harness.cdng.artifact.bean.yaml.SidecarArtifactWrapper;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.artifact.utils.ArtifactStepHelper;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.service.beans.KubernetesServiceSpec;
 import io.harness.cdng.service.beans.ServiceDefinition;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
@@ -82,6 +83,7 @@ public class ArtifactsStepV2Test {
   @Mock private ArtifactStepHelper artifactStepHelper;
   @Mock private ExecutionSweepingOutputService mockSweepingOutputService;
   @Mock private CDStepHelper cdStepHelper;
+  @Mock private CDExpressionResolver expressionResolver;
   @InjectMocks private ArtifactsStepV2 step = new ArtifactsStepV2();
 
   private final EmptyStepParameters stepParameters = new EmptyStepParameters();
@@ -150,6 +152,7 @@ public class ArtifactsStepV2Test {
         step.executeAsync(buildAmbiance(ArtifactsStepV2.STEP_TYPE), stepParameters, inputPackage, null);
 
     verify(mockSweepingOutputService).consume(any(Ambiance.class), anyString(), captor.capture(), eq(""));
+    verify(expressionResolver, times(1)).updateExpressions(any(Ambiance.class), any());
 
     ArtifactsStepV2SweepingOutput output = captor.getValue();
 
@@ -206,6 +209,7 @@ public class ArtifactsStepV2Test {
         step.executeAsync(buildAmbiance(ArtifactsStepV2.STEP_TYPE), stepParameters, inputPackage, null);
 
     verify(mockSweepingOutputService).consume(any(Ambiance.class), anyString(), captor.capture(), eq(""));
+    verify(expressionResolver, times(1)).updateExpressions(any(Ambiance.class), any());
 
     ArtifactsStepV2SweepingOutput output = captor.getValue();
 
@@ -254,6 +258,7 @@ public class ArtifactsStepV2Test {
         step.executeAsync(buildAmbiance(ArtifactsStepV2.STEP_TYPE), stepParameters, inputPackage, null);
 
     verify(mockSweepingOutputService).consume(any(Ambiance.class), anyString(), captor.capture(), eq(""));
+    verify(expressionResolver, times(1)).updateExpressions(any(Ambiance.class), any());
 
     ArtifactsStepV2SweepingOutput output = captor.getValue();
 

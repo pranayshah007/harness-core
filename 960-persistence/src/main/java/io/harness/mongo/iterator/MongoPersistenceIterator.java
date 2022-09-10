@@ -11,10 +11,10 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.govern.Switch.unhandled;
 import static io.harness.iterator.PersistenceIterator.ProcessMode.PUMP;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
-import static io.harness.metrics.impl.IteratorMetricsServiceImpl.ITERATOR_DELAY;
-import static io.harness.metrics.impl.IteratorMetricsServiceImpl.ITERATOR_ERROR;
-import static io.harness.metrics.impl.IteratorMetricsServiceImpl.ITERATOR_PROCESSING_TIME;
-import static io.harness.metrics.impl.IteratorMetricsServiceImpl.ITERATOR_WORKING_ON_ENTITY;
+import static io.harness.metrics.impl.PersistenceMetricsServiceImpl.ITERATOR_DELAY;
+import static io.harness.metrics.impl.PersistenceMetricsServiceImpl.ITERATOR_ERROR;
+import static io.harness.metrics.impl.PersistenceMetricsServiceImpl.ITERATOR_PROCESSING_TIME;
+import static io.harness.metrics.impl.PersistenceMetricsServiceImpl.ITERATOR_WORKING_ON_ENTITY;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.IRREGULAR_SKIP_MISSED;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.REGULAR;
 import static io.harness.threading.Morpheus.sleep;
@@ -31,7 +31,7 @@ import io.harness.iterator.PersistentIrregularIterable;
 import io.harness.iterator.PersistentIterable;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.maintenance.MaintenanceController;
-import io.harness.metrics.impl.IteratorMetricsServiceImpl;
+import io.harness.metrics.impl.PersistenceMetricsServiceImpl;
 import io.harness.mongo.DelayLogContext;
 import io.harness.mongo.EntityLogContext;
 import io.harness.mongo.EntityProcessController;
@@ -58,7 +58,7 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
   private static final Duration QUERY_TIME = ofMillis(200);
 
   @Inject private final QueueController queueController;
-  @Inject private IteratorMetricsServiceImpl iteratorMetricsService;
+  @Inject private PersistenceMetricsServiceImpl iteratorMetricsService;
 
   public interface Handler<T> {
     void handle(T entity);

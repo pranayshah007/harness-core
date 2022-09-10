@@ -112,7 +112,6 @@ public class CommonStepInfo {
                                .setName("Queue")
                                .setType("Queue")
                                .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("FlowControl/Queue").build())
-                               .setFeatureFlag(FeatureName.PIPELINE_QUEUE_STEP.name())
                                .build();
   StepInfo serviceNowApprovalStepInfo =
       StepInfo.newBuilder()

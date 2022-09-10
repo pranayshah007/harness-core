@@ -225,20 +225,6 @@
           } ],
           "$schema" : "http://json-schema.org/draft-07/schema#"
         },
-        "ConfiguredMonitoredServiceSpec" : {
-          "allOf" : [ {
-            "$ref" : "#/definitions/cvng/MonitoredServiceSpec"
-          }, {
-            "type" : "object",
-            "required" : [ "monitoredServiceRef" ],
-            "properties" : {
-              "monitoredServiceRef" : {
-                "type" : "string"
-              }
-            }
-          } ],
-          "$schema" : "http://json-schema.org/draft-07/schema#"
-        },
         "DefaultMonitoredServiceSpec" : {
           "allOf" : [ {
             "$ref" : "#/definitions/cvng/MonitoredServiceSpec"
@@ -505,22 +491,7 @@
             }
           },
           "$schema" : "http://json-schema.org/draft-07/schema#",
-          "allOf" : [ {
-            "if" : {
-              "properties" : {
-                "type" : {
-                  "const" : "Configured"
-                }
-              }
-            },
-            "then" : {
-              "properties" : {
-                "spec" : {
-                  "$ref" : "#/definitions/cvng/ConfiguredMonitoredServiceSpec"
-                }
-              }
-            }
-          }, {
+          "allOf" : [{
             "if" : {
               "properties" : {
                 "type" : {

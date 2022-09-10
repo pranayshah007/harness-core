@@ -460,8 +460,8 @@ public class HelmDeployStateTest extends CategoryTest {
     when(featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, ACCOUNT_ID)).thenReturn(false);
 
     WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService =
-        new WorkflowStandardParamsExtensionService(
-            appService, null, artifactService, environmentService, artifactStreamServiceBindingService, null);
+        new WorkflowStandardParamsExtensionService(appService, null, artifactService, environmentService,
+            artifactStreamServiceBindingService, null, featureFlagService);
 
     on(helmDeployState).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
     on(helmRollbackState).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
