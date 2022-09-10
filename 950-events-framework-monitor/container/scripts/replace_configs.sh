@@ -15,7 +15,7 @@ replace_key_value () {
 }
 
 if [[ "" != "$LOGGING_LEVEL" ]]; then
-    yq -i '.logging.level="env(LOGGING_LEVEL)"' $CONFIG_FILE
+    yq -i '.logging.level=env(LOGGING_LEVEL)' $CONFIG_FILE
 fi
 
 if [[ "" != "$LOGGERS" ]]; then
@@ -23,13 +23,13 @@ if [[ "" != "$LOGGERS" ]]; then
   for ITEM in "${LOGGER_ITEMS[@]}"; do
     LOGGER=`echo $ITEM | awk -F= '{print $1}'`
     LOGGER_LEVEL=`echo $ITEM | awk -F= '{print $2}'`
-    yq -i '.logging.loggers.env(LOGGER)="env(LOGGER_LEVEL)"' $CONFIG_FILE
+    yq -i '.logging.loggers.env(LOGGER)=env(LOGGER_LEVEL)' $CONFIG_FILE
   done
 fi
 
 if [[ "$STACK_DRIVER_LOGGING_ENABLED" == "true" ]]; then
   yq -i 'del(.logging.appenders[0])' $CONFIG_FILE
-  yq -i '.logging.appenders[0].stackdriverLogEnabled="true"' $CONFIG_FILE
+  yq -i '.logging.appenders[0].stackdriverLogEnabled=true' $CONFIG_FILE
 else
   yq -i 'del(.logging.appenders[1])' $CONFIG_FILE
 fi
@@ -38,7 +38,7 @@ if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then
   IFS=',' read -ra SENTINEL_URLS <<< "$EVENTS_FRAMEWORK_REDIS_SENTINELS"
   INDEX=0
   for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
-    yq -i '.eventsFramework.redis.sentinelUrls.env(INDEX)="env(REDIS_SENTINEL_URL)"' $CONFIG_FILE
+    yq -i '.eventsFramework.redis.sentinelUrls.env(INDEX)=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
     INDEX=$(expr $INDEX + 1)
   done
 fi

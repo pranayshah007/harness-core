@@ -10,11 +10,11 @@ CONFIG_FILE=/opt/harness/event-service-config.yml
 yq -i 'del(.connectors[0])' $CONFIG_FILE
 
 if [[ "" != "$MONGO_URI" ]]; then
-  yq -i '.harness-mongo.uri="env(MONGO_URI)"' $CONFIG_FILE
+  yq -i '.harness-mongo.uri=env(MONGO_URI)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_READ_PREF_NAME" ]]; then
-  yq -i '.harness-mongo.readPref.name="env(MONGO_READ_PREF_NAME)"' $CONFIG_FILE
+  yq -i '.harness-mongo.readPref.name=env(MONGO_READ_PREF_NAME)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_READ_PREF_TAGS" ]]; then
@@ -22,7 +22,7 @@ if [[ "" != "$MONGO_READ_PREF_TAGS" ]]; then
   for ITEM in "${TAG_ITEMS[@]}"; do
     TAG_NAME=$(echo $ITEM | awk -F= '{print $1}')
     TAG_VALUE=$(echo $ITEM | awk -F= '{print $2}')
-    yq -i '."harness-mongo.readPref.tagSet.env(TAG_NAME)="env(TAG_VALUE)"' $CONFIG_FILE
+    yq -i '."harness-mongo.readPref.tagSet.env(TAG_NAME)=env(TAG_VALUE)' $CONFIG_FILE
   done
 fi
 
@@ -35,5 +35,5 @@ if [[ "" != "$EVEMTS_MONGO_INDEX_MANAGER_MODE" ]]; then
 fi
 
 if [[ "" != "$EVENTS_MONGO_URI" ]]; then
-  yq -i '.events-mongo.uri="env(EVENTS_MONGO_URI)"' $CONFIG_FILE
+  yq -i '.events-mongo.uri=env(EVENTS_MONGO_URI)' $CONFIG_FILE
 fi

@@ -17,16 +17,16 @@ replace_key_value () {
 }
 
 if [[ "" != "$SERVER_MAX_THREADS" ]]; then
-  yq -i '.server.maxThreads="env(SERVER_MAX_THREADS)"' $CONFIG_FILE
+  yq -i '.server.maxThreads=env(SERVER_MAX_THREADS)' $CONFIG_FILE
 fi
 
 yq -i '.server.adminConnectors=[]' $CONFIG_FILE
 
-yq -i 'del(.grpcServerConfig.connectors | select(.secure == true))' $CONFIG_FILE
-yq -i 'del(.gitSdkConfiguration.gitSdkGrpcServerConfig.connectors | select(.secure == true))' $CONFIG_FILE
+yq -i 'del(.grpcServerConfig.connectors.[] | select(.secure == true))' $CONFIG_FILE
+yq -i 'del(.gitSdkConfiguration.gitSdkGrpcServerConfig.connectors.[] | select(.secure == true))' $CONFIG_FILE
 
 if [[ "" != "$LOGGING_LEVEL" ]]; then
-    yq -i '.logging.level="env(LOGGING_LEVEL)"' $CONFIG_FILE
+    yq -i '.logging.level=env(LOGGING_LEVEL)' $CONFIG_FILE
 fi
 
 if [[ "" != "$LOGGERS" ]]; then
@@ -34,12 +34,12 @@ if [[ "" != "$LOGGERS" ]]; then
   for ITEM in "${LOGGER_ITEMS[@]}"; do
     LOGGER=`echo $ITEM | awk -F= '{print $1}'`
     LOGGER_LEVEL=`echo $ITEM | awk -F= '{print $2}'`
-    yq -i '.logging.loggers.env(LOGGER)="env(LOGGER_LEVEL)"' $CONFIG_FILE
+    yq -i '.logging.loggers.env(LOGGER)=env(LOGGER_LEVEL)' $CONFIG_FILE
   done
 fi
 
 if [[ "" != "$MONGO_URI" ]]; then
-  yq -i '.mongo.uri="env(MONGO_URI)"' $CONFIG_FILE
+  yq -i '.mongo.uri=env(MONGO_URI)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_TRACE_MODE" ]]; then
@@ -71,11 +71,11 @@ if [[ "" != "$MONGO_TRANSACTIONS_ALLOWED" ]]; then
 fi
 
 if [[ "" != "$DISTRIBUTED_LOCK_IMPLEMENTATION" ]]; then
-  yq -i '.distributedLockImplementation="env(DISTRIBUTED_LOCK_IMPLEMENTATION)"' $CONFIG_FILE
+  yq -i '.distributedLockImplementation=env(DISTRIBUTED_LOCK_IMPLEMENTATION)' $CONFIG_FILE
 fi
 
 if [[ "" != "$GRPC_SERVER_PORT" ]]; then
-  yq -i '.grpcServerConfig.connectors[0].port="env(GRPC_SERVER_PORT)"' $CONFIG_FILE
+  yq -i '.grpcServerConfig.connectors[0].port=env(GRPC_SERVER_PORT)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MANAGER_TARGET" ]]; then
@@ -207,63 +207,63 @@ if [[ "" != "$NG_MANAGER_GITSYNC_AUTHORITY" ]]; then
 fi
 
 if [[ "" != "$SCM_SERVICE_URI" ]]; then
-  yq -i '.gitSdkConfiguration.scmConnectionConfig.url="env(SCM_SERVICE_URI)"' $CONFIG_FILE
+  yq -i '.gitSdkConfiguration.scmConnectionConfig.url=env(SCM_SERVICE_URI)' $CONFIG_FILE
 fi
 
 if [[ "" != "$PIPELINE_SERVICE_BASE_URL" ]]; then
-  yq -i '.pipelineServiceBaseUrl="env(PIPELINE_SERVICE_BASE_URL)"' $CONFIG_FILE
+  yq -i '.pipelineServiceBaseUrl=env(PIPELINE_SERVICE_BASE_URL)' $CONFIG_FILE
 fi
 
 if [[ "" != "$PMS_API_BASE_URL" ]]; then
-  yq -i '.pmsApiBaseUrl="env(PMS_API_BASE_URL)"' $CONFIG_FILE
+  yq -i '.pmsApiBaseUrl=env(PMS_API_BASE_URL)' $CONFIG_FILE
 fi
 
 if [[ "$STACK_DRIVER_LOGGING_ENABLED" == "true" ]]; then
-  yq -i 'del(.logging.appenders | select(.type == console))' $CONFIG_FILE
-  yq -i '(.logging.appenders | select(.type == gke-console) | .stackdriverLogEnabled) = "true"' $CONFIG_FILE
+  yq -i 'del(.logging.appenders.[] | select(.type == "console"))' $CONFIG_FILE
+  yq -i '(.logging.appenders | select(.type == gke-console) | .stackdriverLogEnabled) = true' $CONFIG_FILE
 else
-  yq -i 'del(.logging.appenders | select(.type == gke-console))' $CONFIG_FILE
+  yq -i 'del(.logging.appenders.[] | select(.type == "gke-console"))' $CONFIG_FILE
 fi
 
 if [[ "" != "$JWT_AUTH_SECRET" ]]; then
-  yq -i '.jwtAuthSecret="env(JWT_AUTH_SECRET)"' $CONFIG_FILE
+  yq -i '.jwtAuthSecret=env(JWT_AUTH_SECRET)' $CONFIG_FILE
 fi
 
 if [[ "" != "$JWT_IDENTITY_SERVICE_SECRET" ]]; then
-  yq -i '.jwtIdentityServiceSecret="env(JWT_IDENTITY_SERVICE_SECRET)"' $CONFIG_FILE
+  yq -i '.jwtIdentityServiceSecret=env(JWT_IDENTITY_SERVICE_SECRET)' $CONFIG_FILE
 fi
 
 if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then
   IFS=',' read -ra SENTINEL_URLS <<< "$EVENTS_FRAMEWORK_REDIS_SENTINELS"
   INDEX=0
   for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
-    yq -i '.eventsFramework.redis.sentinelUrls.env(INDEX)="env(REDIS_SENTINEL_URL)"' $CONFIG_FILE
+    yq -i '.eventsFramework.redis.sentinelUrls.env(INDEX)=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
     INDEX=$(expr $INDEX + 1)
   done
 fi
 
 if [[ "" != "$NOTIFICATION_BASE_URL" ]]; then
-  yq -i '.notificationClient.httpClient.baseUrl="env(NOTIFICATION_BASE_URL)"' $CONFIG_FILE
+  yq -i '.notificationClient.httpClient.baseUrl=env(NOTIFICATION_BASE_URL)' $CONFIG_FILE
 fi
 
 if [[ "" != "$NOTIFICATION_MONGO_URI" ]]; then
-  yq -i '.notificationClient.messageBroker.uri="env(NOTIFICATION_MONGO_URI)"' $CONFIG_FILE
+  yq -i '.notificationClient.messageBroker.uri=env(NOTIFICATION_MONGO_URI)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MANAGER_CLIENT_BASEURL" ]]; then
-  yq -i '.managerClientConfig.baseUrl="env(MANAGER_CLIENT_BASEURL)"' $CONFIG_FILE
+  yq -i '.managerClientConfig.baseUrl=env(MANAGER_CLIENT_BASEURL)' $CONFIG_FILE
 fi
 
 if [[ "" != "$TIMESCALE_PASSWORD" ]]; then
-  yq -i '.timescaledb.timescaledbPassword="env(TIMESCALE_PASSWORD)"' $CONFIG_FILE
+  yq -i '.timescaledb.timescaledbPassword=env(TIMESCALE_PASSWORD)' $CONFIG_FILE
 fi
 
 if [[ "" != "$TIMESCALE_URI" ]]; then
-  yq -i '.timescaledb.timescaledbUrl="env(TIMESCALE_URI)"' $CONFIG_FILE
+  yq -i '.timescaledb.timescaledbUrl=env(TIMESCALE_URI)' $CONFIG_FILE
 fi
 
 if [[ "" != "$TIMESCALEDB_USERNAME" ]]; then
-  yq -i '.timescaledb.timescaledbUsername="env(TIMESCALEDB_USERNAME)"' $CONFIG_FILE
+  yq -i '.timescaledb.timescaledbUsername=env(TIMESCALEDB_USERNAME)' $CONFIG_FILE
 fi
 
 if [[ "" != "$ENABLE_DASHBOARD_TIMESCALE" ]]; then
@@ -278,7 +278,7 @@ fi
 
 
 if [[ "" != "$CACHE_CONFIG_REDIS_URL" ]]; then
-  yq -i '.singleServerConfig.address="env(CACHE_CONFIG_REDIS_URL)"' $REDISSON_CACHE_FILE
+  yq -i '.singleServerConfig.address=env(CACHE_CONFIG_REDIS_URL)' $REDISSON_CACHE_FILE
 fi
 
 if [[ "$CACHE_CONFIG_USE_SENTINEL" == "true" ]]; then
@@ -286,20 +286,20 @@ if [[ "$CACHE_CONFIG_USE_SENTINEL" == "true" ]]; then
 fi
 
 if [[ "" != "$CACHE_CONFIG_SENTINEL_MASTER_NAME" ]]; then
-  yq -i '.sentinelServersConfig.masterName="env(CACHE_CONFIG_SENTINEL_MASTER_NAME)"' $REDISSON_CACHE_FILE
+  yq -i '.sentinelServersConfig.masterName=env(CACHE_CONFIG_SENTINEL_MASTER_NAME)' $REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$CACHE_CONFIG_REDIS_SENTINELS" ]]; then
   IFS=',' read -ra SENTINEL_URLS <<< "$CACHE_CONFIG_REDIS_SENTINELS"
   INDEX=0
   for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
-    yq -i '.sentinelServersConfig.sentinelAddresses.env(INDEX)="env(REDIS_SENTINEL_URL)"' $REDISSON_CACHE_FILE
+    yq -i '.sentinelServersConfig.sentinelAddresses.env(INDEX)=env(REDIS_SENTINEL_URL)' $REDISSON_CACHE_FILE
     INDEX=$(expr $INDEX + 1)
   done
 fi
 
 if [[ "" != "$REDIS_NETTY_THREADS" ]]; then
-  yq -i '.nettyThreads="env(REDIS_NETTY_THREADS)"' $REDISSON_CACHE_FILE
+  yq -i '.nettyThreads=env(REDIS_NETTY_THREADS)' $REDISSON_CACHE_FILE
 fi
 
 yq -i 'del(.codec)' $ENTERPRISE_REDISSON_CACHE_FILE
@@ -309,41 +309,41 @@ if [[ "$REDIS_SCRIPT_CACHE" == "false" ]]; then
 fi
 
 if [[ "" != "$EVENTS_FRAMEWORK_NETTY_THREADS" ]]; then
-  yq -i '.nettyThreads="env(EVENTS_FRAMEWORK_NETTY_THREADS)"' $ENTERPRISE_REDISSON_CACHE_FILE
+  yq -i '.nettyThreads=env(EVENTS_FRAMEWORK_NETTY_THREADS)' $ENTERPRISE_REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$EVENTS_FRAMEWORK_REDIS_URL" ]]; then
-  yq -i '.singleServerConfig.address="env(EVENTS_FRAMEWORK_REDIS_URL)"' $ENTERPRISE_REDISSON_CACHE_FILE
+  yq -i '.singleServerConfig.address=env(EVENTS_FRAMEWORK_REDIS_URL)' $ENTERPRISE_REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$EVENTS_FRAMEWORK_REDIS_USERNAME" ]]; then
-  yq -i '.singleServerConfig.username="env(EVENTS_FRAMEWORK_REDIS_USERNAME)"' $ENTERPRISE_REDISSON_CACHE_FILE
+  yq -i '.singleServerConfig.username=env(EVENTS_FRAMEWORK_REDIS_USERNAME)' $ENTERPRISE_REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$EVENTS_FRAMEWORK_REDIS_PASSWORD" ]]; then
-  yq -i '.singleServerConfig.password="env(EVENTS_FRAMEWORK_REDIS_PASSWORD)"' $ENTERPRISE_REDISSON_CACHE_FILE
+  yq -i '.singleServerConfig.password=env(EVENTS_FRAMEWORK_REDIS_PASSWORD)' $ENTERPRISE_REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PATH" ]]; then
-  yq -i '.singleServerConfig.sslTruststore=env(file:")"' $ENTERPRISE_REDISSON_CACHE_FILE
+  yq -i '.singleServerConfig.sslTruststore=env(file:")' $ENTERPRISE_REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD" ]]; then
-  yq -i '.singleServerConfig.sslTruststorePassword="env(EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD)"' $ENTERPRISE_REDISSON_CACHE_FILE
+  yq -i '.singleServerConfig.sslTruststorePassword=env(EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD)' $ENTERPRISE_REDISSON_CACHE_FILE
 fi
 
 if [[ "$EVENTS_FRAMEWORK_USE_SENTINEL" == "true" ]]; then
   yq -i 'del(.singleServerConfig)' $ENTERPRISE_REDISSON_CACHE_FILE
 
   if [[ "" != "$EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME" ]]; then
-    yq -i '.sentinelServersConfig.masterName="env(EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME)"' $ENTERPRISE_REDISSON_CACHE_FILE
+    yq -i '.sentinelServersConfig.masterName=env(EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME)' $ENTERPRISE_REDISSON_CACHE_FILE
   fi
 
   if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then
     IFS=',' read -ra SENTINEL_URLS <<< "$EVENTS_FRAMEWORK_REDIS_SENTINELS"
     INDEX=0
     for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
-      yq -i '.sentinelServersConfig.sentinelAddresses.env(INDEX)="env(REDIS_SENTINEL_URL)"' $ENTERPRISE_REDISSON_CACHE_FILE
+      yq -i '.sentinelServersConfig.sentinelAddresses.env(INDEX)=env(REDIS_SENTINEL_URL)' $ENTERPRISE_REDISSON_CACHE_FILE
       INDEX=$(expr $INDEX + 1)
     done
   fi
@@ -368,7 +368,7 @@ if [[ "" != "$LOCK_CONFIG_REDIS_SENTINELS" ]]; then
   IFS=',' read -ra SENTINEL_URLS <<< "$LOCK_CONFIG_REDIS_SENTINELS"
   INDEX=0
   for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
-    yq -i '.redisLockConfig.sentinelUrls.env(INDEX)="env(REDIS_SENTINEL_URL)"' $CONFIG_FILE
+    yq -i '.redisLockConfig.sentinelUrls.env(INDEX)=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
     INDEX=$(expr $INDEX + 1)
   done
 fi
