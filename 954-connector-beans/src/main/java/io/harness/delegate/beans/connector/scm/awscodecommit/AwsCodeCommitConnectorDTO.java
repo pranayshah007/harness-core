@@ -32,7 +32,6 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.hibernate.validator.constraints.NotBlank;
-import org.hibernate.validator.constraints.URL;
 
 @Data
 @NoArgsConstructor
@@ -43,7 +42,7 @@ import org.hibernate.validator.constraints.URL;
 @Schema(name = "AwsCodeCommitConnector", description = "This contains details of the AWS Code Commit connector")
 public class AwsCodeCommitConnectorDTO extends ConnectorConfigDTO implements ScmConnector, DelegateSelectable {
   @NotNull @JsonProperty("type") AwsCodeCommitUrlType urlType;
-  @URL @NotNull @NotBlank String url;
+  @NotNull @NotBlank String url;
   @Valid @NotNull AwsCodeCommitAuthenticationDTO authentication;
   Set<String> delegateSelectors;
   String gitConnectionUrl;

@@ -63,13 +63,13 @@ public class BitbucketConnectorDTO
   @JsonProperty("type")
   @Schema(type = "string", allowableValues = {"Account", "Repo"})
   private GitConnectionType connectionType;
-  @org.hibernate.validator.constraints.URL @NotNull @NotBlank private String url;
+  @NotNull @NotBlank private String url;
   private String validationRepo;
   @Valid @NotNull private BitbucketAuthenticationDTO authentication;
   @Valid private BitbucketApiAccessDTO apiAccess;
   private Set<String> delegateSelectors;
   Boolean executeOnDelegate = true;
-  @org.hibernate.validator.constraints.URL private String gitConnectionUrl;
+  private String gitConnectionUrl;
 
   @Builder
   public BitbucketConnectorDTO(GitConnectionType connectionType, String url, String validationRepo,

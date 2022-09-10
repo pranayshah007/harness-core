@@ -16,7 +16,6 @@ import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import org.hibernate.validator.constraints.NotBlank;
-import org.hibernate.validator.constraints.URL;
 
 @Data
 @Builder
@@ -24,6 +23,6 @@ import org.hibernate.validator.constraints.URL;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Schema(name = "KubernetesClusterDetails", description = "This contains kubernetes cluster details")
 public class KubernetesClusterDetailsDTO implements KubernetesCredentialSpecDTO {
-  @URL @NotBlank @NotNull String masterUrl;
+  @NotBlank @NotNull String masterUrl;
   @JsonProperty("auth") @NotNull @Valid KubernetesAuthDTO auth;
 }

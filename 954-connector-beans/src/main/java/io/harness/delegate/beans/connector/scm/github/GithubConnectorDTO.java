@@ -43,7 +43,6 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.hibernate.validator.constraints.NotBlank;
-import org.hibernate.validator.constraints.URL;
 
 @Data
 @NoArgsConstructor
@@ -59,13 +58,13 @@ public class GithubConnectorDTO
   @JsonProperty("type")
   @Schema(type = "string", allowableValues = {"Account", "Repo"})
   GitConnectionType connectionType;
-  @URL @NotBlank @NotNull String url;
+  @NotBlank @NotNull String url;
   String validationRepo;
   @Valid @NotNull GithubAuthenticationDTO authentication;
   @Valid GithubApiAccessDTO apiAccess;
   Set<String> delegateSelectors;
   Boolean executeOnDelegate;
-  @URL String gitConnectionUrl;
+  String gitConnectionUrl;
 
   @Builder
   public GithubConnectorDTO(GitConnectionType connectionType, String url, String validationRepo,

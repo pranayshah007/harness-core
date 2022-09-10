@@ -39,7 +39,6 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.hibernate.validator.constraints.NotBlank;
-import org.hibernate.validator.constraints.URL;
 
 @Data
 @NoArgsConstructor
@@ -52,13 +51,13 @@ import org.hibernate.validator.constraints.URL;
 public class GitlabConnectorDTO
     extends ConnectorConfigDTO implements ScmConnector, DelegateSelectable, ManagerExecutable {
   @NotNull @JsonProperty("type") GitConnectionType connectionType;
-  @URL @NotNull @NotBlank String url;
+  @NotNull @NotBlank String url;
   private String validationRepo;
   @Valid @NotNull GitlabAuthenticationDTO authentication;
   @Valid GitlabApiAccessDTO apiAccess;
   Set<String> delegateSelectors;
   Boolean executeOnDelegate = true;
-  @URL String gitConnectionUrl;
+  String gitConnectionUrl;
 
   @Builder
   public GitlabConnectorDTO(GitConnectionType connectionType, String url, String validationRepo,
