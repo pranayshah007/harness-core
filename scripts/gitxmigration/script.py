@@ -9,8 +9,10 @@ import requests
 
 INPUT_ACCOUNT_ID = "kmpySmUISimoRrJL6NL73w"
 INPUT_ORG_ID = "default"
-INPUT_PROJECT_ID = "sept_10_project_2"
+INPUT_PROJECT_ID = "sept_10_project_3"
 LOCAL_API_KEY = "pat.kmpySmUISimoRrJL6NL73w.62a7a3ee66425e616acf6629.ccm4qJhiI42DcOwRtGE3"
+
+HARNESS_SUPPORT_USER_ACCOUNT_ID = "kmpySmUISimoRrJL6NL73w"
 
 PMS_DB_NAME = "pms-harness"
 NG_MANAGER_DB_NAME = "ng-harness"
@@ -187,10 +189,10 @@ def cleanup_connector_entities():
 
 
 def reset_git_sync_sdk_cache():
-    url = "https://localhost:8181/ng/api/git-sync/reset-cache?accountIdentifier=%s&orgIdentifier=%s&projectIdentifier=%s" % (
-        INPUT_ACCOUNT_ID, INPUT_ORG_ID, INPUT_PROJECT_ID)
+    url = "https://localhost:8181/ng/api/git-sync/reset-cache?accountIdentifier=%s&targetAccountIdentifier=%s&targetOrgIdentifier=%s&targetProjectIdentifier=%s" % (
+        HARNESS_SUPPORT_USER_ACCOUNT_ID, INPUT_ACCOUNT_ID, INPUT_ORG_ID, INPUT_PROJECT_ID)
     headers = {'x-api-key': LOCAL_API_KEY}
-    resp = requests.get(url, headers=headers, verify=False)
+    resp = requests.post(url, headers=headers, verify=False)
     print(resp.status_code)
 
 
