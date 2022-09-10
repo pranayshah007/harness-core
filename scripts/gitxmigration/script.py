@@ -9,7 +9,7 @@ import requests
 
 INPUT_ACCOUNT_ID = "kmpySmUISimoRrJL6NL73w"
 INPUT_ORG_ID = "default"
-INPUT_PROJECT_ID = "_sept_9"
+INPUT_PROJECT_ID = "sept_10_project_2"
 LOCAL_API_KEY = "pat.kmpySmUISimoRrJL6NL73w.62a7a3ee66425e616acf6629.ccm4qJhiI42DcOwRtGE3"
 
 PMS_DB_NAME = "pms-harness"
@@ -186,6 +186,14 @@ def cleanup_connector_entities():
                 })
 
 
+def reset_git_sync_sdk_cache():
+    url = "https://localhost:8181/ng/api/git-sync/reset-cache?accountIdentifier=%s&orgIdentifier=%s&projectIdentifier=%s" % (
+        INPUT_ACCOUNT_ID, INPUT_ORG_ID, INPUT_PROJECT_ID)
+    headers = {'x-api-key': LOCAL_API_KEY}
+    resp = requests.get(url, headers=headers, verify=False)
+    print(resp.status_code)
+
+
 if __name__ == "__main__":
     setup_mongo_client()
     prepare_yaml_git_config_list()
@@ -194,3 +202,4 @@ if __name__ == "__main__":
     enable_gitx_via_api()
     migrate_records_from_inline_to_remote()
     cleanup_connector_entities()
+    reset_git_sync_sdk_cache()
