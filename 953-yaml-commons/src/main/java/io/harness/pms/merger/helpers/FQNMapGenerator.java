@@ -96,7 +96,11 @@ public class FQNMapGenerator {
       firstNode = objectNode;
     }
     int noOfKeys = firstNode.size();
-    if (noOfKeys == 1) {
+    // Taking decision based on noOfKeys assumes that if there is only one key in element then it will always have only
+    // one. And current node does not have any meaningful information and all information is inside the child of current
+    // element. That is not true anymore.
+    // TODO: Simplify this logic.
+    if (noOfKeys == 1 && EmptyPredicate.isEmpty(FQNHelper.getUuidKey(list))) {
       generateFQNMapFromListOfSingleKeyMaps(list, baseFQN, res, expressions, keepUuidFields);
     } else {
       generateFQNMapFromListOfMultipleKeyMaps(list, baseFQN, res, expressions, keepUuidFields);
@@ -147,7 +151,7 @@ public class FQNMapGenerator {
       }
       FQN currFQN = FQN.duplicateAndAddNode(baseFQN,
           FQNNode.builder().nodeType(FQNNode.NodeType.UUID).uuidKey(uuidKey).uuidValue(jsonNode.asText()).build());
-      if (uuidKey.equals(YAMLFieldNameConstants.IDENTIFIER)) {
+      if (FQNHelper.isKeyInsideUUIdsToIdentityElementInList(uuidKey)) {
         generateFQNMap(element, currFQN, res, expressions, keepUuidFields);
       } else {
         Set<String> fieldNames = new LinkedHashSet<>();

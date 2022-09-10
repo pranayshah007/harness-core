@@ -93,6 +93,7 @@ public class OrchestrationStepsModuleRegistrars {
           .addAll(NGCoreClientRegistrars.morphiaRegistrars)
           .addAll(DelegateTaskRegistrars.morphiaRegistrars)
           .addAll(NGCommonModuleRegistrars.morphiaRegistrars)
+          .addAll(FeatureFlagBeansRegistrars.morphiaRegistrars)
           .build();
 
   public static final ImmutableSet<Class<? extends TypeConverter>> morphiaConverters =
@@ -188,13 +189,11 @@ public class OrchestrationStepsModuleRegistrars {
                    .availableAtOrgLevel(false)
                    .availableAtAccountLevel(false)
                    .clazz(QueueStepNode.class)
-                   .yamlSchemaMetadata(
-                       YamlSchemaMetadata.builder()
-                           .namespace(SchemaNamespaceConstants.PMS)
-                           .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
-                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
-                           .featureFlags(Collections.singletonList(FeatureName.PIPELINE_QUEUE_STEP.name()))
-                           .build())
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.PMS)
+                                           .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
                    .build())
           .add(YamlSchemaRootClass.builder()
                    .entityType(EntityType.SHELL_SCRIPT_STEP)

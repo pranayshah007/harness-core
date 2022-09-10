@@ -65,6 +65,8 @@ public interface WhitelistService extends OwnedByAccount {
    */
   boolean checkIfFeatureIsEnabledAndWhitelisting(String accountId, String ipAddress, FeatureName featureName);
 
+  void evictWhitelistConfigCache(String accountId);
+
   Whitelist update(Whitelist whitelist);
 
   /**

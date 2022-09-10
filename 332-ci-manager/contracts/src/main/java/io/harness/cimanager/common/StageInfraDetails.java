@@ -11,7 +11,9 @@ import static io.harness.annotations.dev.HarnessTeam.CI;
 
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ng.DbAliases;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -20,6 +22,7 @@ import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.TypeAlias;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
+@StoreIn(DbAliases.PMS)
 @Entity(value = "stageInfraDetails")
 @HarnessEntity(exportable = true)
 @TypeAlias("StageInfraDetails")

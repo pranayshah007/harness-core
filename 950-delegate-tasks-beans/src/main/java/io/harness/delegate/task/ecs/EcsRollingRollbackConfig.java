@@ -23,6 +23,8 @@ import lombok.experimental.NonFinal;
 @Value
 @Builder
 public class EcsRollingRollbackConfig implements NestedAnnotationResolver {
+  @NonFinal @Expression(ALLOW_SECRETS) String serviceName;
+
   @NonFinal @Expression(ALLOW_SECRETS) String createServiceRequestBuilderString;
 
   @NonFinal @Expression(ALLOW_SECRETS) List<String> registerScalableTargetRequestBuilderStrings;

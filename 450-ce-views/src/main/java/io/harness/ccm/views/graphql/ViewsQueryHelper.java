@@ -11,8 +11,12 @@ import static io.harness.ccm.commons.constants.ViewFieldConstants.NONE_FIELD;
 import static io.harness.ccm.views.graphql.QLCEViewTimeFilterOperator.AFTER;
 import static io.harness.ccm.views.graphql.QLCEViewTimeFilterOperator.BEFORE;
 
+import io.harness.ccm.views.businessMapping.entities.BusinessMapping;
+import io.harness.ccm.views.entities.ViewCondition;
 import io.harness.ccm.views.entities.ViewFieldIdentifier;
+import io.harness.ccm.views.entities.ViewIdCondition;
 import io.harness.ccm.views.entities.ViewQueryParams;
+import io.harness.ccm.views.entities.ViewRule;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -25,10 +29,13 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
@@ -355,5 +362,142 @@ public class ViewsQueryHelper {
             .findFirst();
 
     return businessMappingGroupBy.map(filter -> filter.getIdFilter().getField().getFieldId()).orElse(null);
+  }
+
+  public List<String> getBusinessMappingIdsFromFilters(List<QLCEViewFilterWrapper> filters) {
+    if (filters == null) {
+      return Collections.emptyList();
+    }
+
+    List<QLCEViewFilterWrapper> businessMappingFilters =
+        filters.stream()
+            .filter(filter
+                -> filter.getIdFilter() != null
+                    && filter.getIdFilter().getField().getIdentifier() == ViewFieldIdentifier.BUSINESS_MAPPING)
+            .collect(Collectors.toList());
+
+    return businessMappingFilters.stream()
+        .map(filter -> filter.getIdFilter().getField().getFieldId())
+        .collect(Collectors.toList());
+  }
+
+  public List<QLCEViewFilterWrapper> removeBusinessMappingFilters(List<QLCEViewFilterWrapper> filters) {
+    if (filters == null) {
+      return Collections.emptyList();
+    }
+
+    return filters.stream()
+        .filter(filter
+            -> filter.getTimeFilter() != null || filter.getViewMetadataFilter() != null
+                || filter.getRuleFilter() != null
+                || (filter.getIdFilter() != null
+                    && filter.getIdFilter().getField().getIdentifier() != ViewFieldIdentifier.BUSINESS_MAPPING))
+        .collect(Collectors.toList());
+  }
+
+  public List<QLCEViewFilterWrapper> removeBusinessMappingFilter(
+      List<QLCEViewFilterWrapper> filters, String businessMappingId) {
+    if (filters == null) {
+      return Collections.emptyList();
+    }
+
+    return filters.stream()
+        .filter(filter
+            -> filter.getTimeFilter() != null || filter.getViewMetadataFilter() != null
+                || filter.getRuleFilter() != null
+                || (filter.getIdFilter() != null
+                    && !filter.getIdFilter().getField().getFieldId().equals(businessMappingId)))
+        .collect(Collectors.toList());
+  }
+
+  public List<QLCEViewFilterWrapper> getBusinessMappingFilter(
+      List<QLCEViewFilterWrapper> filters, String businessMappingId) {
+    if (filters == null) {
+      return Collections.emptyList();
+    }
+
+    return filters.stream()
+        .filter(filter
+            -> filter.getIdFilter() != null && filter.getIdFilter().getField().getFieldId().equals(businessMappingId))
+        .collect(Collectors.toList());
+  }
+
+  public List<QLCEViewGroupBy> createBusinessMappingGroupBy(BusinessMapping businessMapping) {
+    return Collections.singletonList(QLCEViewGroupBy.builder()
+                                         .entityGroupBy(QLCEViewFieldInput.builder()
+                                                            .fieldName(businessMapping.getName())
+                                                            .fieldId(businessMapping.getUuid())
+                                                            .identifier(ViewFieldIdentifier.BUSINESS_MAPPING)
+                                                            .build())
+                                         .build());
+  }
+
+  public boolean isGroupByBusinessMappingPresent(List<QLCEViewGroupBy> groupByList) {
+    return groupByList.stream().anyMatch(groupBy
+        -> groupBy.getEntityGroupBy() != null
+            && groupBy.getEntityGroupBy().getIdentifier() == ViewFieldIdentifier.BUSINESS_MAPPING);
+  }
+
+  public Set<String> getBusinessMappingIdsFromViewRules(List<ViewRule> viewRules) {
+    Set<String> businessMappingIds = new HashSet<>();
+    for (ViewRule rule : viewRules) {
+      for (ViewCondition condition : rule.getViewConditions()) {
+        if (((ViewIdCondition) condition).getViewField().getIdentifier().equals(ViewFieldIdentifier.BUSINESS_MAPPING)) {
+          businessMappingIds.add(((ViewIdCondition) condition).getViewField().getFieldId());
+        }
+      }
+    }
+    return businessMappingIds;
+  }
+
+  public List<String> getSelectedCostTargetsFromViewRules(List<ViewRule> viewRules, String businessMappingId) {
+    List<String> selectedCostTargets = new ArrayList<>();
+    for (ViewRule rule : viewRules) {
+      List<String> selectedTargetsFromRule = new ArrayList<>();
+      for (ViewCondition condition : rule.getViewConditions()) {
+        if (((ViewIdCondition) condition).getViewField().getFieldId().equals(businessMappingId)) {
+          if (selectedTargetsFromRule.isEmpty()) {
+            selectedTargetsFromRule.addAll(((ViewIdCondition) condition).getValues());
+          } else {
+            selectedTargetsFromRule = intersection(selectedTargetsFromRule, ((ViewIdCondition) condition).getValues());
+          }
+        }
+      }
+      if (selectedCostTargets.isEmpty()) {
+        selectedCostTargets.addAll(selectedTargetsFromRule);
+      } else {
+        selectedCostTargets = union(selectedCostTargets, selectedTargetsFromRule);
+      }
+    }
+    return selectedCostTargets;
+  }
+
+  public QLCEViewGroupBy getGroupByTime(List<QLCEViewGroupBy> groupByList) {
+    Optional<QLCEViewGroupBy> timeGroupBy =
+        groupByList.stream().filter(groupBy -> groupBy.getTimeTruncGroupBy() != null).findFirst();
+    return timeGroupBy.orElse(null);
+  }
+
+  public List<String> union(List<String> list1, List<String> list2) {
+    Set<String> set = new HashSet<>();
+    set.addAll(list1);
+    set.addAll(list2);
+    return new ArrayList<>(set);
+  }
+
+  public List<String> intersection(List<String> list1, List<String> list2) {
+    if (list1.isEmpty()) {
+      return list2;
+    } else if (list2.isEmpty()) {
+      return list1;
+    }
+
+    List<String> list = new ArrayList<>();
+    for (String element : list1) {
+      if (list2.contains(element)) {
+        list.add(element);
+      }
+    }
+    return list;
   }
 }

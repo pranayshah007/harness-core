@@ -8,7 +8,7 @@
 package io.harness.cvng.cdng.entities;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
@@ -39,9 +39,9 @@ import org.mongodb.morphia.annotations.Id;
 @Builder
 @FieldNameConstants(innerTypeName = "CVNGStepTaskKeys")
 @EqualsAndHashCode
+@StoreIn(DbAliases.CVNG)
 @Entity(value = "cvngStepTasks", noClassnameStored = true)
 @HarnessEntity(exportable = true)
-@StoreIn(DbAliases.CVNG)
 public class CVNGStepTask
     implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, AccountAccess, PersistentRegularIterable {
   public static List<MongoIndex> mongoIndexes() {

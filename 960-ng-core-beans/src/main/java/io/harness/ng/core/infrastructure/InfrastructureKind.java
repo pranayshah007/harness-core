@@ -22,4 +22,5 @@ public interface InfrastructureKind {
   String AZURE_WEB_APP = "AzureWebApp";
   String ECS = "ECS";
   String GITOPS = "GitOps";
+  String CUSTOM_DEPLOYMENT = "CustomDeployment";
 }

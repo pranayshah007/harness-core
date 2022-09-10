@@ -118,6 +118,13 @@ public class NotificationServiceRule implements MethodRule, InjectorRuleMixin, M
       Set<Class<? extends TypeConverter>> morphiaConverters() {
         return ImmutableSet.<Class<? extends TypeConverter>>builder().build();
       }
+
+      @Provides
+      @Singleton
+      @Named("dbAliases")
+      public List<String> getDbAliases() {
+        return Collections.EMPTY_LIST;
+      }
     });
 
     modules.add(MorphiaModule.getInstance());

@@ -12,6 +12,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.GeneralException;
 import io.harness.sto.beans.entities.STOServiceConfig;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
@@ -61,6 +63,9 @@ public class STOServiceUtils {
           "Could not fetch token from STO service. status code = %s, message = %s, response = %s", response.code(),
           response.message() == null ? "null" : response.message(), response.errorBody() == null ? "null" : errorBody));
     }
-    return response.body();
+
+    JsonObject tokenResponse = JsonParser.parseString(response.body()).getAsJsonObject();
+
+    return tokenResponse.get("token").getAsString();
   }
 }

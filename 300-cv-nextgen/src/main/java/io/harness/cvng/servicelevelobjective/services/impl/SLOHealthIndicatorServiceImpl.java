@@ -152,6 +152,9 @@ public class SLOHealthIndicatorServiceImpl implements SLOHealthIndicatorService 
           SLOHealthIndicatorKeys.errorBudgetRemainingPercentage, sloGraphData.getErrorBudgetRemainingPercentage());
       updateOperations.set(SLOHealthIndicatorKeys.errorBudgetRisk,
           ErrorBudgetRisk.getFromPercentage(sloGraphData.getErrorBudgetRemainingPercentage()));
+      updateOperations.set(SLOHealthIndicatorKeys.errorBudgetRemainingMinutes, sloGraphData.getErrorBudgetRemaining());
+      updateOperations.set(SLOHealthIndicatorKeys.errorBudgetBurnRate,
+          sloGraphData.dailyBurnRate(serviceLevelObjective.getZoneOffset()));
       updateOperations.set(SLOHealthIndicatorKeys.lastComputedAt, Instant.now());
       hPersistence.update(sloHealthIndicator, updateOperations);
     }

@@ -1,0 +1,76 @@
+// Copyright 2021 Harness Inc. All rights reserved.
+// Use of this source code is governed by the PolyForm Shield 1.0.0 license
+// that can be found in the licenses directory at the root of this repository, also available at
+// https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
+
+syntax = "proto3";
+
+package io.harness.observer;
+
+option java_multiple_files = true;
+option go_package = "952_remote_observers";
+
+service RemoteObserver {
+  rpc observer(Informant) returns (Response);
+}
+
+message Informant {
+  string method_name = 1;
+  oneof informant {
+    Informant0 informant0 = 2;
+    Informant1 informant1 = 3;
+    Informant2 informant2 = 4;
+    Informant3 informant3 = 5;
+    Informant4 informant4 = 6;
+    Informant5 informant5 = 7;
+  }
+}
+
+message Informant0 {}
+
+message Informant1 {
+  bytes param1 = 1;
+  string type1 = 2;
+}
+
+message Informant2 {
+  bytes param1 = 1;
+  bytes param2 = 2;
+  string type1 = 3;
+  string type2 = 4;
+}
+
+message Informant3 {
+  bytes param1 = 1;
+  bytes param2 = 2;
+  bytes param3 = 3;
+  string type1 = 4;
+  string type2 = 5;
+  string type3 = 6;
+}
+
+message Informant4 {
+  bytes param1 = 1;
+  bytes param2 = 2;
+  bytes param3 = 3;
+  bytes param4 = 4;
+  string type1 = 5;
+  string type2 = 6;
+  string type3 = 7;
+  string type4 = 8;
+}
+
+message Informant5 {
+  bytes param1 = 1;
+  bytes param2 = 2;
+  bytes param3 = 3;
+  bytes param4 = 4;
+  bytes param5 = 5;
+  string type1 = 6;
+  string type2 = 7;
+  string type3 = 8;
+  string type4 = 9;
+  string type5 = 10;
+}
+
+message Response {}

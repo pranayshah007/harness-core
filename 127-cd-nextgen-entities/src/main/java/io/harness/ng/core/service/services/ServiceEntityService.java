@@ -9,6 +9,7 @@ package io.harness.ng.core.service.services;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ng.core.service.entity.ArtifactSourcesResponseDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.repositories.UpsertOptions;
@@ -53,6 +54,8 @@ public interface ServiceEntityService {
 
   String createServiceInputsYaml(String yaml, String serviceIdentifier);
 
+  ArtifactSourcesResponseDTO getArtifactSourceInputs(String yaml, String serviceIdentifier);
+
   boolean forceDeleteAllInProject(String accountId, String orgIdentifier, String projectIdentifier);
 
   /**
@@ -68,4 +71,7 @@ public interface ServiceEntityService {
   @NotNull
   YamlNode getYamlNodeForFqn(@NotEmpty String accountId, @NotEmpty String orgIdentifier,
       @NotEmpty String projectIdentifier, @NotEmpty String serviceIdentifier, @NotEmpty String fqn);
+
+  List<ServiceEntity> getServices(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> serviceIdentifiers);
 }

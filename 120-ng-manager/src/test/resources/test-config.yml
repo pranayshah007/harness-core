@@ -46,6 +46,7 @@ mongo:
   maxConnectionIdleTime: 600000
   connectionsPerHost: 300
   indexManagerMode: AUTO
+  aliasDBName: ng-harness
 
 eventsFramework:
   redis:

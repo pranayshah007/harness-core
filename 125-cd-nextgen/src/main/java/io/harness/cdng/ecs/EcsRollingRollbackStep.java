@@ -80,7 +80,7 @@ public class EcsRollingRollbackStep extends TaskExecutableWithRollbackAndRbac<Ec
 
       stepResponse = generateStepResponse(ambiance, ecsRollingRollbackResponse, stepResponseBuilder);
     } catch (Exception e) {
-      log.error("Error while processing Serverless Aws Lambda rollback response: {}", ExceptionUtils.getMessage(e), e);
+      log.error("Error while processing ecs rolling rollback response: {}", ExceptionUtils.getMessage(e), e);
       throw e;
     } finally {
       String accountName = accountService.getAccount(AmbianceUtils.getAccountId(ambiance)).getName();
@@ -162,6 +162,7 @@ public class EcsRollingRollbackStep extends TaskExecutableWithRollbackAndRbac<Ec
 
     EcsRollingRollbackConfig ecsRollingRollbackConfig =
         EcsRollingRollbackConfig.builder()
+            .serviceName(ecsRollingRollbackDataOutcome.getServiceName())
             .isFirstDeployment(ecsRollingRollbackDataOutcome.isFirstDeployment())
             .createServiceRequestBuilderString(ecsRollingRollbackDataOutcome.getCreateServiceRequestBuilderString())
             .registerScalableTargetRequestBuilderStrings(

@@ -15,7 +15,9 @@ import io.harness.VerificationBase;
 import io.harness.category.element.UnitTests;
 import io.harness.mongo.IndexCreator;
 import io.harness.mongo.IndexManagerSession;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.HPersistence;
+import io.harness.persistence.Store;
 import io.harness.rule.Owner;
 
 import software.wings.beans.Account;
@@ -49,8 +51,8 @@ public class MongoIndexesTest extends VerificationBase {
     morphia.getMapper().getOptions().setMapSubPackages(true);
     morphia.map(classes);
 
-    List<IndexCreator> indexCreators =
-        IndexManagerSession.allIndexes(persistence.getDatastore(Account.class), morphia, null, null);
+    List<IndexCreator> indexCreators = IndexManagerSession.allIndexes(
+        persistence.getDatastore(Account.class), morphia, Store.builder().name(DbAliases.HARNESS).build());
 
     List<String> indexes = indexCreators.stream()
                                .map(creator

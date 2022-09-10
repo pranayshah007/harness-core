@@ -32,8 +32,6 @@ import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
 import io.harness.ci.config.CIExecutionServiceConfig;
-import io.harness.ci.integrationstage.InitializeStepInfoBuilder;
-import io.harness.ci.integrationstage.K8InitializeStepInfoBuilder;
 import io.harness.ci.serializer.PluginCompatibleStepSerializer;
 import io.harness.ci.serializer.PluginStepProtobufSerializer;
 import io.harness.ci.serializer.ProtobufStepSerializer;
@@ -93,7 +91,6 @@ public class CIExecutionServiceModule extends AbstractModule {
         .toInstance(ThreadPool.create(
             20, 300, 5, TimeUnit.SECONDS, new ThreadFactoryBuilder().setNameFormat("Event-Handler-%d").build()));
     this.bind(CIExecutionServiceConfig.class).toInstance(this.ciExecutionServiceConfig);
-    bind(InitializeStepInfoBuilder.class).to(K8InitializeStepInfoBuilder.class);
     bind(new TypeLiteral<ProtobufStepSerializer<RunStepInfo>>() {}).toInstance(new RunStepProtobufSerializer());
     bind(new TypeLiteral<ProtobufStepSerializer<PluginStepInfo>>() {}).toInstance(new PluginStepProtobufSerializer());
     bind(new TypeLiteral<ProtobufStepSerializer<RunTestsStepInfo>>() {

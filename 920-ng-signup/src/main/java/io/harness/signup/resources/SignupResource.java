@@ -60,6 +60,7 @@ public class SignupResource {
   /**
    * Follows the "free trial sign up" path
    * Module type can be optional but by default we will always redirect to NG
+   *
    * @param dto
    * @return
    */
@@ -73,6 +74,7 @@ public class SignupResource {
   /**
    * Follows the "free trial sign up" path
    * Module type can be optional but by default we will always redirect to NG
+   *
    * @param dto
    * @return
    */
@@ -86,8 +88,9 @@ public class SignupResource {
   @PUT
   @Path("/complete/{token}")
   @PublicApi
-  public RestResponse<UserInfo> completeSignupInvite(@PathParam("token") String token) {
-    return new RestResponse<>(signupService.completeSignupInvite(token));
+  public RestResponse<UserInfo> completeSignupInvite(
+      @PathParam("token") String token, @QueryParam("referer") String referer) {
+    return new RestResponse<>(signupService.completeSignupInvite(token, referer));
   }
 
   /**
@@ -99,8 +102,8 @@ public class SignupResource {
   @POST
   @Path("/oauth")
   @PublicApi
-  public RestResponse<UserInfo> signupOAuth(OAuthSignupDTO dto) {
-    return new RestResponse<>(signupService.oAuthSignup(dto));
+  public RestResponse<UserInfo> signupOAuth(OAuthSignupDTO dto, @QueryParam("referer") String referer) {
+    return new RestResponse<>(signupService.oAuthSignup(dto, referer));
   }
 
   @POST

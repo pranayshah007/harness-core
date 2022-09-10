@@ -9,8 +9,10 @@ package io.harness.connector.entities.embedded.pdcconnector;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.entities.Connector;
+import io.harness.ng.DbAliases;
 
 import java.util.List;
 import lombok.AccessLevel;
@@ -28,6 +30,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @EqualsAndHashCode(callSuper = true)
 @FieldNameConstants(innerTypeName = "PhysicalDataCenterConnectorKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "connectors", noClassnameStored = true)
 @Persistent
 @FieldDefaults(level = AccessLevel.PRIVATE)

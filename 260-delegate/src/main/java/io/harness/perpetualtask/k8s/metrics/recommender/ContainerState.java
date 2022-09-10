@@ -7,9 +7,9 @@
 
 package io.harness.perpetualtask.k8s.metrics.recommender;
 
-import static software.wings.graphql.datafetcher.ce.recommendation.entity.RecommenderUtils.MIN_SAMPLE_WEIGHT;
-import static software.wings.graphql.datafetcher.ce.recommendation.entity.RecommenderUtils.newCpuHistogram;
-import static software.wings.graphql.datafetcher.ce.recommendation.entity.RecommenderUtils.newCpuHistogramV2;
+import static io.harness.ccm.RecommenderUtils.MIN_SAMPLE_WEIGHT;
+import static io.harness.ccm.RecommenderUtils.newCpuHistogram;
+import static io.harness.ccm.RecommenderUtils.newCpuHistogramV2;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;

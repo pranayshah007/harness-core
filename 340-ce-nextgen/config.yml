@@ -150,6 +150,13 @@ awsConfig:
   harnessAwsAccountId: 108817434118
   awsConnectorTemplate: https://continuous-efficiency-templates.s3.amazonaws.com/templateOptimOnly.yaml
 
+awsGovCloudConfig:
+  accessKey: govCloud_AccessKey_placeholder
+  secretKey: govCloud_SecretKey_placeholder
+  harnessAwsAccountId: 054036368597
+  awsRegionName: us-gov-west-1
+  awsConnectorTemplate: https://continuous-efficiency-templates.s3.amazonaws.com/templateOptimOnly.yaml
+
 hostname: ${HOSTNAME:-localhost}
 basePathPrefix: ${BASE_PATH_PREFIX:-""}
 

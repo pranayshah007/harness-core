@@ -4,6 +4,8 @@ import static software.wings.beans.LogHelper.color;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.ecs.EcsRollingRollbackResult;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
@@ -28,9 +30,15 @@ import software.wings.beans.LogWeight;
 
 import com.google.inject.Inject;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import software.amazon.awssdk.services.ecs.model.CreateServiceRequest;
 
+@OwnedBy(HarnessTeam.CDP)
+@NoArgsConstructor
+@Slf4j
 public class EcsRollingRollbackCommandTaskHandler extends EcsCommandTaskNGHandler {
   @Inject private EcsTaskHelperBase ecsTaskHelperBase;
   @Inject private EcsInfraConfigHelper ecsInfraConfigHelper;
@@ -57,33 +65,68 @@ public class EcsRollingRollbackCommandTaskHandler extends EcsCommandTaskNGHandle
     try {
       EcsRollingRollbackConfig ecsRollingRollbackConfig = ecsRollingRollbackRequest.getEcsRollingRollbackConfig();
 
-      CreateServiceRequest.Builder createServiceRequestBuilder =
-          ecsCommandTaskHelper.parseYamlAsObject(ecsRollingRollbackConfig.getCreateServiceRequestBuilderString(),
-              CreateServiceRequest.serializableBuilderClass());
-      // replace cluster
-      CreateServiceRequest createServiceRequest =
-          createServiceRequestBuilder.cluster(ecsInfraConfig.getCluster()).build();
+      boolean isFirstDeployment = ecsRollingRollbackConfig.isFirstDeployment();
 
-      rollback(createServiceRequest, ecsRollingRollbackConfig.getRegisterScalableTargetRequestBuilderStrings(),
-          ecsRollingRollbackConfig.getRegisterScalingPolicyRequestBuilderStrings(), ecsInfraConfig, rollbackLogCallback,
-          timeoutInMillis);
-      EcsRollingRollbackResult ecsRollingRollbackResult =
-          EcsRollingRollbackResult.builder()
-              .region(ecsInfraConfig.getRegion())
-              .ecsTasks(ecsCommandTaskHelper.getRunningEcsTasks(ecsInfraConfig.getAwsConnectorDTO(),
-                  ecsInfraConfig.getCluster(), createServiceRequest.serviceName(), ecsInfraConfig.getRegion()))
-              .infrastructureKey(ecsInfraConfig.getInfraStructureKey())
-              .build();
-      EcsRollingRollbackResponse ecsRollingRollbackResponse =
-          EcsRollingRollbackResponse.builder()
-              .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-              .ecsRollingRollbackResult(ecsRollingRollbackResult)
-              .build();
+      EcsRollingRollbackResponse ecsRollingRollbackResponse = null;
+
+      if (!isFirstDeployment) {
+        CreateServiceRequest.Builder createServiceRequestBuilder =
+            ecsCommandTaskHelper.parseYamlAsObject(ecsRollingRollbackConfig.getCreateServiceRequestBuilderString(),
+                CreateServiceRequest.serializableBuilderClass());
+        // replace cluster
+        CreateServiceRequest createServiceRequest =
+            createServiceRequestBuilder.cluster(ecsInfraConfig.getCluster()).build();
+
+        rollback(createServiceRequest, ecsRollingRollbackConfig.getRegisterScalableTargetRequestBuilderStrings(),
+            ecsRollingRollbackConfig.getRegisterScalingPolicyRequestBuilderStrings(), ecsInfraConfig,
+            rollbackLogCallback, timeoutInMillis);
+
+        EcsRollingRollbackResult ecsRollingRollbackResult =
+            EcsRollingRollbackResult.builder()
+                .firstDeployment(isFirstDeployment)
+                .region(ecsInfraConfig.getRegion())
+                .ecsTasks(ecsCommandTaskHelper.getRunningEcsTasks(ecsInfraConfig.getAwsConnectorDTO(),
+                    ecsInfraConfig.getCluster(), createServiceRequest.serviceName(), ecsInfraConfig.getRegion()))
+                .infrastructureKey(ecsInfraConfig.getInfraStructureKey())
+                .build();
+
+        ecsRollingRollbackResponse = EcsRollingRollbackResponse.builder()
+                                         .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                                         .ecsRollingRollbackResult(ecsRollingRollbackResult)
+                                         .build();
+
+      } else {
+        String serviceName = ecsRollingRollbackConfig.getServiceName();
+
+        rollbackLogCallback.saveExecutionLog(format("Deleting service %s..", serviceName), LogLevel.INFO);
+
+        ecsCommandTaskHelper.deleteService(
+            serviceName, ecsInfraConfig.getCluster(), ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
+
+        ecsCommandTaskHelper.ecsServiceInactiveStateCheck(rollbackLogCallback, ecsInfraConfig.getAwsConnectorDTO(),
+            ecsInfraConfig.getCluster(), serviceName, ecsInfraConfig.getRegion(),
+            (int) TimeUnit.MILLISECONDS.toMinutes(timeoutInMillis));
+
+        rollbackLogCallback.saveExecutionLog(format("Deleted service %s", serviceName), LogLevel.INFO);
+
+        EcsRollingRollbackResult ecsRollingRollbackResult =
+            EcsRollingRollbackResult.builder()
+                .firstDeployment(isFirstDeployment)
+                .region(ecsInfraConfig.getRegion())
+                .infrastructureKey(ecsInfraConfig.getInfraStructureKey())
+                .build();
+
+        ecsRollingRollbackResponse = EcsRollingRollbackResponse.builder()
+                                         .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                                         .ecsRollingRollbackResult(ecsRollingRollbackResult)
+                                         .build();
+      }
 
       rollbackLogCallback.saveExecutionLog(color(format("%n Rollback Successful."), LogColor.Green, LogWeight.Bold),
           LogLevel.INFO, CommandExecutionStatus.SUCCESS);
 
       return ecsRollingRollbackResponse;
+
     } catch (Exception ex) {
       rollbackLogCallback.saveExecutionLog(color(format("%n Rollback Failed."), LogColor.Red, LogWeight.Bold),
           LogLevel.ERROR, CommandExecutionStatus.FAILURE);

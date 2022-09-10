@@ -27,6 +27,7 @@ import io.harness.pms.sdk.PmsSdkHelper;
 import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.pms.yaml.YamlField;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Multimap;
@@ -102,34 +103,52 @@ public class PipelineEnforcementServiceImpl implements PipelineEnforcementServic
     try {
       Set<YamlField> stageFields = PipelineUtils.getStagesFieldFromPipeline(pipelineField);
       Set<String> modules = new HashSet<>();
-      Set<YamlField> nonCachedStageYamlFields = new HashSet<>();
+      if (!populateModulesFromCache(stageFields, modules)) {
+        populateModuleAndUpdateCache(stageFields, modules);
+      }
+
+      validateExecutionFeatureRestrictions(accountId, modules);
+    } finally {
+      log.info("[PMS_Enforcement] Validating enforcement on stages took time {}ms", System.currentTimeMillis() - start);
+    }
+  }
+
+  /**
+   * Populate module list from previous cached values.
+   *
+   * @return {@code true} when all fields are found in cache and {@code false} otherwise.
+   */
+  @VisibleForTesting
+  boolean populateModulesFromCache(Set<YamlField> stageFields, Set<String> modules) {
+    Set<YamlField> nonCachedStageYamlFields = new HashSet<>();
+    for (YamlField stageField : stageFields) {
+      if (stageTypeToModule.containsKey(stageField.getNode().getType())) {
+        modules.add(stageTypeToModule.get(stageField.getNode().getType()));
+      } else {
+        nonCachedStageYamlFields.add(stageField);
+      }
+    }
+    return nonCachedStageYamlFields.isEmpty();
+  }
+
+  /**
+   * Populate modules and update the cache with these modules to speed the access time in next call
+   */
+  @VisibleForTesting
+  void populateModuleAndUpdateCache(Set<YamlField> stageFields, Set<String> modules) {
+    Map<String, PlanCreatorServiceInfo> services = pmsSdkHelper.getServices();
+    for (Map.Entry<String, PlanCreatorServiceInfo> planCreatorServiceInfoEntry : services.entrySet()) {
+      Map<String, Set<String>> supportedTypes = planCreatorServiceInfoEntry.getValue().getSupportedTypes();
       for (YamlField stageField : stageFields) {
         if (stageTypeToModule.containsKey(stageField.getNode().getType())) {
           modules.add(stageTypeToModule.get(stageField.getNode().getType()));
         } else {
-          nonCachedStageYamlFields.add(stageField);
-        }
-      }
-
-      if (!nonCachedStageYamlFields.isEmpty()) {
-        Map<String, PlanCreatorServiceInfo> services = pmsSdkHelper.getServices();
-        for (Map.Entry<String, PlanCreatorServiceInfo> planCreatorServiceInfoEntry : services.entrySet()) {
-          Map<String, Set<String>> supportedTypes = planCreatorServiceInfoEntry.getValue().getSupportedTypes();
-          for (YamlField stageField : stageFields) {
-            if (stageTypeToModule.containsKey(stageField.getNode().getType())) {
-              modules.add(stageTypeToModule.get(stageField.getNode().getType()));
-            } else {
-              if (PlanCreatorUtils.supportsField(supportedTypes, stageField)) {
-                modules.add(planCreatorServiceInfoEntry.getKey());
-                stageTypeToModule.put(stageField.getNode().getType(), planCreatorServiceInfoEntry.getKey());
-              }
-            }
+          if (PlanCreatorUtils.supportsField(supportedTypes, stageField)) {
+            modules.add(planCreatorServiceInfoEntry.getKey());
+            stageTypeToModule.put(stageField.getNode().getType(), planCreatorServiceInfoEntry.getKey());
           }
         }
       }
-      validateExecutionFeatureRestrictions(accountId, modules);
-    } finally {
-      log.info("[PMS_Enforcement] Validating enforcement on stages took time {}ms", System.currentTimeMillis() - start);
     }
   }
 

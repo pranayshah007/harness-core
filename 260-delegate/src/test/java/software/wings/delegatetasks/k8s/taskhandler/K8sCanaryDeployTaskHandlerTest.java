@@ -190,7 +190,7 @@ public class K8sCanaryDeployTaskHandlerTest extends WingsBaseTest {
 
     doReturn(true)
         .when(k8sCanaryBaseHandler)
-        .prepareForCanary(canaryHandlerConfig, delegateTaskParams, null, executionLogCallback, false, false);
+        .prepareForCanary(canaryHandlerConfig, delegateTaskParams, null, executionLogCallback, false);
     doReturn(1)
         .when(k8sCanaryBaseHandler)
         .getCurrentInstances(canaryHandlerConfig, delegateTaskParams, executionLogCallback);
@@ -348,7 +348,7 @@ public class K8sCanaryDeployTaskHandlerTest extends WingsBaseTest {
                                                              .build();
     doReturn(true)
         .when(k8sCanaryBaseHandler)
-        .prepareForCanary(canaryHandlerConfig, delegateTaskParams, false, executionLogCallback, false, false);
+        .prepareForCanary(canaryHandlerConfig, delegateTaskParams, false, executionLogCallback, false);
     doReturn(1)
         .when(k8sCanaryBaseHandler)
         .getCurrentInstances(canaryHandlerConfig, delegateTaskParams, executionLogCallback);
@@ -372,7 +372,7 @@ public class K8sCanaryDeployTaskHandlerTest extends WingsBaseTest {
                                                              .build();
     doReturn(true)
         .when(k8sCanaryBaseHandler)
-        .prepareForCanary(canaryHandlerConfig, delegateTaskParams, false, executionLogCallback, false, false);
+        .prepareForCanary(canaryHandlerConfig, delegateTaskParams, false, executionLogCallback, false);
     doReturn(currentInstances)
         .when(k8sCanaryBaseHandler)
         .getCurrentInstances(canaryHandlerConfig, delegateTaskParams, executionLogCallback);

@@ -6,9 +6,11 @@ import io.harness.delegate.beans.ecs.EcsTask;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.EcsServerInstanceInfo;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
+import org.apache.commons.collections.CollectionUtils;
 
 @UtilityClass
 @OwnedBy(HarnessTeam.CDP)
@@ -16,9 +18,14 @@ public class EcsTaskToServerInstanceInfoMapper {
   public List<ServerInstanceInfo> toServerInstanceInfoList(
 
       List<EcsTask> ecsTasks, String infraStructureKey, String region) {
-    return ecsTasks.stream()
-        .map(task -> toServerInstanceInfo(task, infraStructureKey, region))
-        .collect(Collectors.toList());
+    List<ServerInstanceInfo> serverInstanceInfoList = new ArrayList<>();
+
+    if (CollectionUtils.isNotEmpty(ecsTasks)) {
+      serverInstanceInfoList = ecsTasks.stream()
+                                   .map(task -> toServerInstanceInfo(task, infraStructureKey, region))
+                                   .collect(Collectors.toList());
+    }
+    return serverInstanceInfoList;
   }
 
   public ServerInstanceInfo toServerInstanceInfo(EcsTask ecsTask, String infraStructureKey, String region) {

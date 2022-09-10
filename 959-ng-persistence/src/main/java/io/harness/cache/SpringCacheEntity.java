@@ -11,9 +11,11 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import static java.time.Duration.ofDays;
 
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 
 import java.time.Duration;
@@ -34,6 +36,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Value
 @Builder
 @FieldNameConstants(innerTypeName = "SpringCacheEntityKeys")
+@StoreIn(DbAliases.PMS)
 @Entity(value = "cacheEntities")
 @Document("cacheEntities")
 public class SpringCacheEntity implements PersistentEntity {

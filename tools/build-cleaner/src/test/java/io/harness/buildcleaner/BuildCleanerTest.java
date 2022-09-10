@@ -14,10 +14,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.buildcleaner.bazel.BuildFile;
 import io.harness.buildcleaner.bazel.JavaLibrary;
 import io.harness.buildcleaner.bazel.LoadStatement;
+import io.harness.buildcleaner.common.SymbolDependencyMap;
 
 import com.google.common.collect.ImmutableSet;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Paths;
@@ -103,6 +103,42 @@ public class BuildCleanerTest {
   }
 
   @Test
+  public void generateIndex_withProtoFiles_mapsProtoClassToHarnessGrpcTarget()
+      throws IOException, ClassNotFoundException {
+    // Arrange
+
+    // Create proto file.
+    String protoFileContent = new StringBuilder()
+                                  .append("package io.harness.test;\n")
+                                  .append("message TestProto {\n")
+                                  .append("  int64 val = 1;\n")
+                                  .append("}")
+                                  .toString();
+    writeFileWithContent(workspace.getRoot(), "test.proto", protoFileContent);
+
+    // Create BUILD file with proto_library and harness_grpc_library targets.
+    String buildFileContent = new StringBuilder()
+                                  .append("proto_library(\n")
+                                  .append("    name = \"100_test_proto\",")
+                                  .append(")\n")
+                                  .append("harness_grpc_library(\n")
+                                  .append("    name = \"100_test_java_proto\",")
+                                  .append("    deps = [")
+                                  .append("        \"//:100_test_proto\",")
+                                  .append("    ],")
+                                  .append(")\n")
+                                  .toString();
+    writeFileWithContent(workspace.getRoot(), "BUILD.bazel", buildFileContent);
+
+    BuildCleaner buildCleaner =
+        new BuildCleaner(new String[] {"--workspace", workspace.getRoot().toString(), "--indexSourceGlob", "**"});
+
+    // Act & Assert
+    assertThat(buildCleaner.buildHarnessSymbolMap().getSymbolToTargetMap())
+        .isEqualTo(Map.of("io.harness.test.TestProto", "//:100_test_java_proto"));
+  }
+
+  @Test
   public void generateBuildForModule_oneSourceFile_allImportsInSymbolMap_returnBuildWithDeps() throws IOException {
     // Arrange
     List<String> imports = List.of("io.harness.RootClass", "io.harness.nested.NestedClass");
@@ -160,5 +196,15 @@ public class BuildCleanerTest {
   private void createEmptyFile(File folder, String fileName) throws IOException {
     File file = new File(folder + "/" + fileName);
     file.createNewFile();
+  }
+
+  private void writeFileWithContent(File folder, String fileName, String content) throws IOException {
+    File file = new File(folder + "/" + fileName);
+    file.createNewFile();
+
+    try (PrintWriter out = new PrintWriter(file);) {
+      out.println(content);
+      out.flush();
+    }
   }
 }

@@ -30,4 +30,5 @@ public class DelegateScalingGroup {
   boolean autoUpgrade;
   long upgraderLastUpdated;
   long delegateGroupExpirationTime;
+  boolean immutable;
 }

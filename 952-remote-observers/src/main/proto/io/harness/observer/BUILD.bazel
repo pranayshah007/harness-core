@@ -4,7 +4,7 @@ load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
 
 proto_library(
     name = "952_remote_observers_proto",
-    srcs = ["observer.proto"],
+    srcs = ["observer_proto.proto"],
     visibility = ["//visibility:public"],
 )
 

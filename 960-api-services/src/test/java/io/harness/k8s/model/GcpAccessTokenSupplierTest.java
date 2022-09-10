@@ -8,6 +8,7 @@
 package io.harness.k8s.model;
 
 import static io.harness.rule.OwnerRule.BOGDAN;
+import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.anyString;
@@ -26,7 +27,10 @@ import com.google.api.client.util.store.DataStore;
 import com.google.api.client.util.store.MemoryDataStoreFactory;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
@@ -133,6 +137,21 @@ public class GcpAccessTokenSupplierTest {
 
     // when
     tokenSupplier.get();
+  }
+
+  @Test
+  @Owner(developers = NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void testCopyAndAddRefreshListener()
+      throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    Method method = gcpAccessTokenSupplier.getClass().getDeclaredMethod(
+        "copyAndAddRefreshListener", GoogleCredential.class, Clock.class, DataStore.class);
+    method.setAccessible(true);
+    GoogleCredential newGoogleCredential =
+        (GoogleCredential) method.invoke(gcpAccessTokenSupplier, googleCredential, clock, cache);
+    assertThat(newGoogleCredential.getServiceAccountScopes().size()).isEqualTo(2);
+    assertThat(newGoogleCredential.getServiceAccountScopes().contains("https://www.googleapis.com/auth/userinfo.email"))
+        .isTrue();
   }
 
   private GcpAccessTokenSupplierBuilder defaultSupplierBuilder() {

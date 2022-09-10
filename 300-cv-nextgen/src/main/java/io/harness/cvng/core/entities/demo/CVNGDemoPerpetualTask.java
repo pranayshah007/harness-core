@@ -8,7 +8,7 @@
 package io.harness.cvng.core.entities.demo;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.iterator.PersistentRegularIterable;
@@ -34,10 +34,10 @@ import org.mongodb.morphia.annotations.Id;
 @FieldNameConstants(innerTypeName = "CVNGDemoPerpetualTaskKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @EqualsAndHashCode(callSuper = false)
+@StoreIn(DbAliases.CVNG)
 @Entity(value = "cvngDemoPerpetualTasks")
 @HarnessEntity(exportable = true)
 @OwnedBy(HarnessTeam.CV)
-@StoreIn(DbAliases.CVNG)
 public class CVNGDemoPerpetualTask
     implements PersistentEntity, UuidAware, AccountAccess, UpdatedAtAware, CreatedAtAware, PersistentRegularIterable {
   @Id private String uuid;

@@ -13,7 +13,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.cvng.CVConstants;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
@@ -50,9 +50,9 @@ import org.mongodb.morphia.annotations.Id;
 @FieldNameConstants(innerTypeName = "TimeSeriesShortTermHistoryKeys")
 @EqualsAndHashCode(callSuper = false, exclude = {"transactionMetricHistories"})
 @JsonIgnoreProperties(ignoreUnknown = true)
+@StoreIn(DbAliases.CVNG)
 @Entity(value = "timeseriesShortTermHistory", noClassnameStored = true)
 @HarnessEntity(exportable = false)
-@StoreIn(DbAliases.CVNG)
 public final class TimeSeriesShortTermHistory implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware {
   @Id private String uuid;
   @FdIndex private long createdAt;

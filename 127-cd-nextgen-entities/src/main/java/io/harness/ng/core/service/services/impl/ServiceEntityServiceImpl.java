@@ -19,6 +19,7 @@ import static io.harness.springdata.TransactionUtils.DEFAULT_TRANSACTION_RETRY_P
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.String.format;
+import static java.util.Collections.emptyList;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.EntityType;
@@ -46,6 +47,7 @@ import io.harness.ng.core.events.ServiceCreateEvent;
 import io.harness.ng.core.events.ServiceDeleteEvent;
 import io.harness.ng.core.events.ServiceUpdateEvent;
 import io.harness.ng.core.events.ServiceUpsertEvent;
+import io.harness.ng.core.service.entity.ArtifactSourcesResponseDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
 import io.harness.ng.core.service.mappers.ServiceFilterHelper;
@@ -243,7 +245,9 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
           }
           return result;
         }));
-    entitySetupUsageHelper.updateSetupUsages(upsertedService);
+    if (upsertOptions.isPublishSetupUsages()) {
+      entitySetupUsageHelper.updateSetupUsages(upsertedService);
+    }
     publishEvent(requestService.getAccountId(), requestService.getOrgIdentifier(),
         requestService.getProjectIdentifier(), requestService.getIdentifier(),
         EventsFrameworkMetadataConstants.UPSERT_ACTION);
@@ -422,6 +426,24 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   }
 
   @Override
+  public List<ServiceEntity> getServices(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> serviceIdentifiers) {
+    if (isEmpty(serviceIdentifiers)) {
+      return emptyList();
+    }
+    Criteria criteria = Criteria.where(ServiceEntityKeys.accountId)
+                            .is(accountIdentifier)
+                            .and(ServiceEntityKeys.orgIdentifier)
+                            .is(orgIdentifier)
+                            .and(ServiceEntityKeys.projectIdentifier)
+                            .is(projectIdentifier)
+                            .and(ServiceEntityKeys.identifier)
+                            .in(serviceIdentifiers);
+
+    return serviceRepository.findAll(criteria);
+  }
+
+  @Override
   public Integer findActiveServicesCountAtGivenTimestamp(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, long timestampInMs) {
     if (timestampInMs <= 0) {
@@ -457,6 +479,55 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       JsonNode serviceDefinitionInputNode = YamlUtils.readTree(serviceDefinitionInputs).getNode().getCurrJsonNode();
       serviceInputs.put(YamlTypes.SERVICE_INPUTS, serviceDefinitionInputNode);
       return YamlPipelineUtils.writeYamlString(serviceInputs);
+    } catch (IOException e) {
+      throw new InvalidRequestException(
+          String.format("Error occurred while creating service inputs for service %s", serviceIdentifier), e);
+    }
+  }
+
+  @Override
+  public ArtifactSourcesResponseDTO getArtifactSourceInputs(String yaml, String serviceIdentifier) {
+    try {
+      YamlField serviceYamlField = YamlUtils.readTree(yaml).getNode().getField(YamlTypes.SERVICE_ENTITY);
+      if (serviceYamlField == null) {
+        throw new YamlException(
+            String.format("Yaml provided for service %s does not have service root field.", serviceIdentifier));
+      }
+
+      YamlField primaryArtifactField = ServiceFilterHelper.getPrimaryArtifactNodeFromServiceYaml(serviceYamlField);
+      if (primaryArtifactField == null) {
+        return ArtifactSourcesResponseDTO.builder().build();
+      }
+
+      YamlField artifactSourcesField = primaryArtifactField.getNode().getField(YamlTypes.ARTIFACT_SOURCES);
+      if (artifactSourcesField == null) {
+        return ArtifactSourcesResponseDTO.builder().build();
+      }
+      List<String> artifactSourceIdentifiers = new ArrayList<>();
+      Map<String, String> sourceIdentifierToSourceInputMap = new HashMap<>();
+
+      List<YamlNode> artifactSources = artifactSourcesField.getNode().asArray();
+      for (YamlNode artifactSource : artifactSources) {
+        String sourceIdentifier = artifactSource.getIdentifier();
+        artifactSourceIdentifiers.add(sourceIdentifier);
+        ObjectMapper objectMapper = new ObjectMapper();
+        ObjectNode tempSourceNode = objectMapper.createObjectNode();
+        // Adding root node because RuntimeInputFormHelper.createTemplateFromYaml() method requires root node.
+        tempSourceNode.set(YamlTypes.ARTIFACT_SOURCES, artifactSource.getCurrJsonNode());
+        String runtimeInputFormWithSourcesRootNode =
+            RuntimeInputFormHelper.createTemplateFromYaml(tempSourceNode.toString());
+        if (EmptyPredicate.isNotEmpty(runtimeInputFormWithSourcesRootNode)) {
+          JsonNode runtimeInputFormNode =
+              YamlUtils.readTree(runtimeInputFormWithSourcesRootNode).getNode().getCurrJsonNode();
+          sourceIdentifierToSourceInputMap.put(sourceIdentifier,
+              YamlPipelineUtils.writeYamlString(runtimeInputFormNode.get(YamlTypes.ARTIFACT_SOURCES)));
+        }
+      }
+
+      return ArtifactSourcesResponseDTO.builder()
+          .sourceIdentifiers(artifactSourceIdentifiers)
+          .sourceIdentifierToSourceInputMap(sourceIdentifierToSourceInputMap)
+          .build();
     } catch (IOException e) {
       throw new InvalidRequestException(
           String.format("Error occurred while creating service inputs for service %s", serviceIdentifier), e);
