@@ -146,6 +146,7 @@ public class CustomSecretsManagerValidationUtils {
         .scriptType(scriptType)
         .workingDirectory(customSecretNGManagerConfig.getWorkingDirectory())
         .host(customSecretNGManagerConfig.getHost())
+        .sshKeySpecDTO(customSecretNGManagerConfig.getSshKeySpecDTO())
         .build();
   }
 }

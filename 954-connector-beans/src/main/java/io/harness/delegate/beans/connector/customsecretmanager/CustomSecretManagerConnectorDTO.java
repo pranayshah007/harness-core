@@ -12,6 +12,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
+import io.harness.connector.ManagerExecutable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.encryption.SecretReference;
@@ -46,7 +47,8 @@ import lombok.experimental.FieldDefaults;
 @ApiModel("CustomSecretManager")
 @OwnedBy(HarnessTeam.PL)
 @Schema(name = "CustomSecretManager", description = "This contains details of Custom Secret Manager connectors")
-public class CustomSecretManagerConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable {
+public class CustomSecretManagerConnectorDTO
+    extends ConnectorConfigDTO implements DelegateSelectable, ManagerExecutable {
   Set<String> delegateSelectors;
   @NotNull @JsonProperty("onDelegate") Boolean executeOnDelegate;
   @Schema(description = SecretManagerDescriptionConstants.DEFAULT) private boolean isDefault;
