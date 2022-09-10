@@ -20,9 +20,9 @@ write_mongo_hosts_and_ports() {
     HOST=$(cut -d: -f 1 <<< "${HOST_AND_PORT[$INDEX]}")
     PORT=$(cut -d: -f 2 -s <<< "${HOST_AND_PORT[$INDEX]}")
 
-    yq -i '.env(1.hosts[$INDEX].host)=env(HOST)' $CONFIG_FILE
+    export ARG1=$1; yq -i '.env(ARG1).env(INDEX).host="env(HOST)"' $CONFIG_FILE
     if [[ "" != "$PORT" ]]; then
-      yq -i '.env(1.hosts[$INDEX].port)=env(PORT)' $CONFIG_FILE
+      export ARG1=$1; yq -i '.env(ARG1).env(INDEX).port="env(PORT)"' $CONFIG_FILE
     fi
   done
 }
@@ -32,13 +32,13 @@ write_mongo_params() {
   for PARAM_PAIR in "${PARAMS[@]}"; do
     NAME=$(cut -d= -f 1 <<< "$PARAM_PAIR")
     VALUE=$(cut -d= -f 2 <<< "$PARAM_PAIR")
-    yq -i '.env(1.params.$NAME)=env(VALUE)' $CONFIG_FILE
+    export ARG1=$1; yq -i '.env(ARG1).params.env(NAME)="env(VALUE)"' $CONFIG_FILE
   done
 }
 
 #
 yq -i 'del(.server.adminConnectors)' $CONFIG_FILE
-yq -i 'del(.server.applicationConnectors | select(.type == "https"))' $CONFIG_FILE
+yq -i 'del(.server.applicationConnectors | select(.type == https))' $CONFIG_FILE
 
 replace_key_value logging.level $LOGGING_LEVEL
 
@@ -133,32 +133,32 @@ if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then
   IFS=',' read -ra SENTINEL_URLS <<< "$EVENTS_FRAMEWORK_REDIS_SENTINELS"
   INDEX=0
   for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
-    yq -i '.eventsFramework.redis.sentinelUrls.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
+    yq -i '.eventsFramework.redis.sentinelUrls.env(INDEX)="env(REDIS_SENTINEL_URL)"' $CONFIG_FILE
     INDEX=$(expr $INDEX + 1)
   done
 fi
 
 if [[ "$STACK_DRIVER_LOGGING_ENABLED" == "true" ]]; then
-  yq -i 'del(.logging.appenders | select(.type == "console"))' $CONFIG_FILE
-  yq -i '(.logging.appenders | select(.type == "gke-console") | .stackdriverLogEnabled) = "true"' $CONFIG_FILE
+  yq -i 'del(.logging.appenders | select(.type == console))' $CONFIG_FILE
+  yq -i '(.logging.appenders | select(.type == gke-console) | .stackdriverLogEnabled) = "true"' $CONFIG_FILE
 else
-  yq -i 'del(.logging.appenders | select(.type == "gke-console"))' $CONFIG_FILE
+  yq -i 'del(.logging.appenders | select(.type == gke-console))' $CONFIG_FILE
 fi
 
 if [[ "" != "$SEGMENT_ENABLED" ]]; then
-  yq -i '.segmentConfiguration.enabled=env(SEGMENT_ENABLED)' $CONFIG_FILE
+  yq -i '.segmentConfiguration.enabled="env(SEGMENT_ENABLED)"' $CONFIG_FILE
 fi
 
 if [[ "" != "$SEGMENT_APIKEY" ]]; then
-  yq -i '.segmentConfiguration.apiKey=env(SEGMENT_APIKEY)' $CONFIG_FILE
+  yq -i '.segmentConfiguration.apiKey="env(SEGMENT_APIKEY)"' $CONFIG_FILE
 fi
 
 if [[ "" != "$AUDIT_CLIENT_BASEURL" ]]; then
-  yq -i '.auditClientConfig.baseUrl=env(AUDIT_CLIENT_BASEURL)' $CONFIG_FILE
+  yq -i '.auditClientConfig.baseUrl="env(AUDIT_CLIENT_BASEURL)"' $CONFIG_FILE
 fi
 
 if [[ "" != "$AUDIT_ENABLED" ]]; then
-  yq -i '.enableAudit=env(AUDIT_ENABLED)' $CONFIG_FILE
+  yq -i '.enableAudit="env(AUDIT_ENABLED)"' $CONFIG_FILE
 fi
 
 replace_key_value outboxPollConfig.initialDelayInSeconds "$OUTBOX_POLL_INITIAL_DELAY"

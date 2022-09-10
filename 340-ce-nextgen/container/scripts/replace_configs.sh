@@ -89,7 +89,7 @@ if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then
   IFS=',' read -ra SENTINEL_URLS <<< "$EVENTS_FRAMEWORK_REDIS_SENTINELS"
   INDEX=0
   for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
-    yq -i '.eventsFramework.redis.sentinelUrls.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
+    yq -i '.eventsFramework.redis.sentinelUrls.env(INDEX)="env(REDIS_SENTINEL_URL)"' $CONFIG_FILE
     INDEX=$(expr $INDEX + 1)
   done
 fi
@@ -102,27 +102,27 @@ else
 fi
 
 if [[ "" != "$SEGMENT_ENABLED" ]]; then
-  yq -i '.segmentConfiguration.enabled=env(SEGMENT_ENABLED)' $CONFIG_FILE
+  yq -i '.segmentConfiguration.enabled="env(SEGMENT_ENABLED)"' $CONFIG_FILE
 fi
 
 if [[ "" != "$SEGMENT_APIKEY" ]]; then
-  yq -i '.segmentConfiguration.apiKey=env(SEGMENT_APIKEY)' $CONFIG_FILE
+  yq -i '.segmentConfiguration.apiKey="env(SEGMENT_APIKEY)"' $CONFIG_FILE
 fi
 
 if [[ "" != "$AUDIT_CLIENT_BASEURL" ]]; then
-  yq -i '.auditClientConfig.baseUrl=env(AUDIT_CLIENT_BASEURL)' $CONFIG_FILE
+  yq -i '.auditClientConfig.baseUrl="env(AUDIT_CLIENT_BASEURL)"' $CONFIG_FILE
 fi
 
 if [[ "" != "$AUDIT_ENABLED" ]]; then
-  yq -i '.enableAudit=env(AUDIT_ENABLED)' $CONFIG_FILE
+  yq -i '.enableAudit="env(AUDIT_ENABLED)"' $CONFIG_FILE
 fi
 
 if [[ "" != "$NOTIFICATION_BASE_URL" ]]; then
-  yq -i '.notificationClient.httpClient.baseUrl=env(NOTIFICATION_BASE_URL)' $CONFIG_FILE
+  yq -i '.notificationClient.httpClient.baseUrl="env(NOTIFICATION_BASE_URL)"' $CONFIG_FILE
 fi
 
 if [[ "" != "$NOTIFICATION_MONGO_URI" ]]; then
-  yq -i '.notificationClient.messageBroker.uri=env(NOTIFICATION_MONGO_URI)' $CONFIG_FILE
+  yq -i '.notificationClient.messageBroker.uri="env(NOTIFICATION_MONGO_URI)"' $CONFIG_FILE
 fi
 
 replace_key_value outboxPollConfig.initialDelayInSeconds "$OUTBOX_POLL_INITIAL_DELAY"

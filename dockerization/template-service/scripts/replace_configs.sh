@@ -17,14 +17,14 @@ replace_key_value () {
 
 yq -i '.server.adminConnectors=[]' $CONFIG_FILE
 
-yq -i 'del(.gitSdkConfiguration.gitSdkGrpcServerConfig.connectors | select(.secure == "true"))' $CONFIG_FILE
+yq -i 'del(.gitSdkConfiguration.gitSdkGrpcServerConfig.connectors | select(.secure == true))' $CONFIG_FILE
 
 if [[ "" != "$LOGGING_LEVEL" ]]; then
-    yq -i '.logging.level=env(LOGGING_LEVEL)' $CONFIG_FILE
+    yq -i '.logging.level="env(LOGGING_LEVEL)"' $CONFIG_FILE
 fi
 
 if [[ "" != "$SERVER_PORT" ]]; then
-  yq -i '.server.applicationConnectors[0].port=env(SERVER_PORT)' $CONFIG_FILE
+  yq -i '.server.applicationConnectors[0].port="env(SERVER_PORT)"' $CONFIG_FILE
 else
   yq -i '.server.applicationConnectors[0].port="15001"' $CONFIG_FILE
 fi
@@ -34,12 +34,12 @@ if [[ "" != "$LOGGERS" ]]; then
   for ITEM in "${LOGGER_ITEMS[@]}"; do
     LOGGER=`echo $ITEM | awk -F= '{print $1}'`
     LOGGER_LEVEL=`echo $ITEM | awk -F= '{print $2}'`
-    yq -i '.logging.loggers.[env(LOGGER)]=env(LOGGER_LEVEL)' $CONFIG_FILE
+    yq -i '.logging.loggers.env(LOGGER)="env(LOGGER_LEVEL)"' $CONFIG_FILE
   done
 fi
 
 if [[ "" != "$MONGO_URI" ]]; then
-  yq -i '.mongo.uri=env(MONGO_URI)' $CONFIG_FILE
+  yq -i '.mongo.uri="env(MONGO_URI)"' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_TRACE_MODE" ]]; then
@@ -95,7 +95,7 @@ if [[ "" != "$NG_MANAGER_SERVICE_SECRET" ]]; then
 fi
 
 if [[ "" != "$PIPELINE_SERVICE_SECRET" ]]; then
-  yq -i '.pipelineServiceSecret=env(PIPELINE_SERVICE_SECRET)' $CONFIG_FILE
+  yq -i '.pipelineServiceSecret="env(PIPELINE_SERVICE_SECRET)"' $CONFIG_FILE
 fi
 
 if [[ "" != "$NG_MANAGER_GITSYNC_TARGET" ]]; then
@@ -107,29 +107,29 @@ if [[ "" != "$NG_MANAGER_GITSYNC_AUTHORITY" ]]; then
 fi
 
 if [[ "" != "$SCM_SERVICE_URI" ]]; then
-  yq -i '.gitSdkConfiguration.scmConnectionConfig.url=env(SCM_SERVICE_URI)' $CONFIG_FILE
+  yq -i '.gitSdkConfiguration.scmConnectionConfig.url="env(SCM_SERVICE_URI)"' $CONFIG_FILE
 fi
 
 if [[ "$STACK_DRIVER_LOGGING_ENABLED" == "true" ]]; then
-  yq -i 'del(.logging.appenders | select(.type == "console"))' $CONFIG_FILE
-  yq -i '(.logging.appenders | select(.type == "gke-console") | .stackdriverLogEnabled) = "true"' $CONFIG_FILE
+  yq -i 'del(.logging.appenders | select(.type == console))' $CONFIG_FILE
+  yq -i '(.logging.appenders | select(.type == gke-console) | .stackdriverLogEnabled) = "true"' $CONFIG_FILE
 else
-  yq -i 'del(.logging.appenders | select(.type == "gke-console"))' $CONFIG_FILE
+  yq -i 'del(.logging.appenders | select(.type == gke-console))' $CONFIG_FILE
 fi
 
 if [[ "" != "$JWT_AUTH_SECRET" ]]; then
-  yq -i '.jwtAuthSecret=env(JWT_AUTH_SECRET)' $CONFIG_FILE
+  yq -i '.jwtAuthSecret="env(JWT_AUTH_SECRET)"' $CONFIG_FILE
 fi
 
 if [[ "" != "$JWT_IDENTITY_SERVICE_SECRET" ]]; then
-  yq -i '.jwtIdentityServiceSecret=env(JWT_IDENTITY_SERVICE_SECRET)' $CONFIG_FILE
+  yq -i '.jwtIdentityServiceSecret="env(JWT_IDENTITY_SERVICE_SECRET)"' $CONFIG_FILE
 fi
 
 if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then
   IFS=',' read -ra SENTINEL_URLS <<< "$EVENTS_FRAMEWORK_REDIS_SENTINELS"
   INDEX=0
   for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
-    yq -i '.eventsFramework.redis.sentinelUrls.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
+    yq -i '.eventsFramework.redis.sentinelUrls.env(INDEX)="env(REDIS_SENTINEL_URL)"' $CONFIG_FILE
     INDEX=$(expr $INDEX + 1)
   done
 fi
@@ -137,12 +137,12 @@ fi
 yq -i 'del(.codec)' $REDISSON_CACHE_FILE
 
 if [[ "$REDIS_SCRIPT_CACHE" == "false" ]]; then
-  yq -i '.useScriptCache="false"' $REDISSON_CACHE_FILE
+  yq -i '.useScriptCache=false' $REDISSON_CACHE_FILE
 fi
 
 
 if [[ "" != "$CACHE_CONFIG_REDIS_URL" ]]; then
-  yq -i '.singleServerConfig.address=env(CACHE_CONFIG_REDIS_URL)' $REDISSON_CACHE_FILE
+  yq -i '.singleServerConfig.address="env(CACHE_CONFIG_REDIS_URL)"' $REDISSON_CACHE_FILE
 fi
 
 if [[ "$CACHE_CONFIG_USE_SENTINEL" == "true" ]]; then
@@ -150,20 +150,20 @@ if [[ "$CACHE_CONFIG_USE_SENTINEL" == "true" ]]; then
 fi
 
 if [[ "" != "$CACHE_CONFIG_SENTINEL_MASTER_NAME" ]]; then
-  yq -i '.sentinelServersConfig.masterName=env(CACHE_CONFIG_SENTINEL_MASTER_NAME)' $REDISSON_CACHE_FILE
+  yq -i '.sentinelServersConfig.masterName="env(CACHE_CONFIG_SENTINEL_MASTER_NAME)"' $REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$CACHE_CONFIG_REDIS_SENTINELS" ]]; then
   IFS=',' read -ra SENTINEL_URLS <<< "$CACHE_CONFIG_REDIS_SENTINELS"
   INDEX=0
   for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
-    yq -i '.sentinelServersConfig.sentinelAddresses.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $REDISSON_CACHE_FILE
+    yq -i '.sentinelServersConfig.sentinelAddresses.env(INDEX)="env(REDIS_SENTINEL_URL)"' $REDISSON_CACHE_FILE
     INDEX=$(expr $INDEX + 1)
   done
 fi
 
 if [[ "" != "$REDIS_NETTY_THREADS" ]]; then
-  yq -i '.nettyThreads=env(REDIS_NETTY_THREADS)' $REDISSON_CACHE_FILE
+  yq -i '.nettyThreads="env(REDIS_NETTY_THREADS)"' $REDISSON_CACHE_FILE
 fi
 
 replace_key_value cacheConfig.cacheNamespace $CACHE_NAMESPACE
