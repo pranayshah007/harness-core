@@ -991,23 +991,28 @@ public class AccountServiceImpl implements AccountService {
 
   @Override
   public DelegateConfiguration getDelegateConfiguration(String accountId) {
+    System.out.println("line 994 : "+ licenseService.isAccountDeleted(accountId));
     if (licenseService.isAccountDeleted(accountId)) {
       throw new InvalidRequestException("Deleted AccountId: " + accountId);
     }
     log.debug("Getting delegate configuration from Delegate ring");
+    System.out.println("line 999 : "+"Getting delegate configuration from Delegate ring");
 
     // Prefer using delegateConfiguration from DelegateRing.
     List<String> delegateVersionFromRing = delegateVersionService.getDelegateJarVersions(accountId);
+    System.out.println("line 1003 : "+delegateVersionFromRing);
     if (isNotEmpty(delegateVersionFromRing)) {
       return DelegateConfiguration.builder().delegateVersions(new ArrayList<>(delegateVersionFromRing)).build();
     }
     log.warn("Unable to get Delegate version from ring, falling back to regular flow");
+    System.out.println("line 1008 : "+"Unable to get Delegate version from ring, falling back to regular flow");
 
     // Try to pickup delegateConfiguration from Account collection.
     Account account = wingsPersistence.createQuery(Account.class, excludeAuthorityCount)
                           .filter(AccountKeys.uuid, accountId)
                           .project("delegateConfiguration", true)
                           .get();
+    System.out.println("Line 1015 : "+account);
 
     if (account.getDelegateConfiguration() != null) {
       if (account.getDelegateConfiguration().isValidTillNextRelease()) {
@@ -1032,6 +1037,7 @@ public class AccountServiceImpl implements AccountService {
                   .filter(AccountKeys.uuid, GLOBAL_ACCOUNT_ID)
                   .project("delegateConfiguration", true)
                   .get();
+    System.out.println("line 1040 : "+account);
     return account.getDelegateConfiguration();
   }
 

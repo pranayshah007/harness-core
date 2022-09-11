@@ -565,10 +565,12 @@ public class WatcherServiceImpl implements WatcherService {
       }
 
       List<String> expectedVersions = findExpectedDelegateVersions();
+      System.out.println("Expected ver : "+expectedVersions);
       if (isEmpty(expectedVersions)) {
         // Something went wrong with obtaining the list with expected delegates.
         // Postpone this for better times.
-        log.error("Unable to fetch expected version, skip watching delegate");
+        System.out.println("Unable to fetch expected version, skip watching delegate");
+        log.info("Unable to fetch expected version, skip watching delegate");
         return;
       }
       Multimap<String, String> runningVersions = LinkedHashMultimap.create();
@@ -996,9 +998,11 @@ public class WatcherServiceImpl implements WatcherService {
   @VisibleForTesting
   public List<String> findExpectedDelegateVersions() {
     try {
+      System.out.println("multiversion"+multiVersion);
       if (multiVersion) {
         RestResponse<DelegateConfiguration> restResponse = callInterruptible21(timeLimiter, ofSeconds(30),
             () -> SafeHttpCall.execute(managerClient.getDelegateConfiguration(watcherConfiguration.getAccountId())));
+        System.out.println("Response: "+restResponse);
 
         if (restResponse == null) {
           return null;
@@ -1009,6 +1013,7 @@ public class WatcherServiceImpl implements WatcherService {
         if (config != null && config.getAction() == SELF_DESTRUCT) {
           selfDestruct();
         }
+        System.out.println("config: "+config);
 
         return config != null ? config.getDelegateVersions() : null;
       } else {
@@ -1018,8 +1023,10 @@ public class WatcherServiceImpl implements WatcherService {
         return singletonList(substringBefore(delegateMetadata, " ").trim());
       }
     } catch (UncheckedTimeoutException e) {
+      System.out.println("Timed out fetching delegate version information");
       log.warn("Timed out fetching delegate version information", e);
     } catch (Exception e) {
+      System.out.println("Unable to fetch delegate version information");
       log.warn("Unable to fetch delegate version information", e);
     }
     return null;
@@ -1665,6 +1672,7 @@ public class WatcherServiceImpl implements WatcherService {
 
   private void selfDestruct() {
     log.info("Self destructing now...");
+    System.out.println("Self destructing");
 
     working.set(true);
     messageService.shutdown();

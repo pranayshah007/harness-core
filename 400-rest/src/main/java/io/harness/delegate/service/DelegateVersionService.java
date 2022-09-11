@@ -110,6 +110,7 @@ public class DelegateVersionService {
     }
 
     final List<String> ringVersion = delegateRingService.getDelegateVersions(accountId);
+    System.out.println("line 113 : "+ringVersion);
     if (!CollectionUtils.isEmpty(ringVersion)) {
       return ringVersion;
     }

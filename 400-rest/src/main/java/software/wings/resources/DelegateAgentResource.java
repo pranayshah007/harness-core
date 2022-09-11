@@ -165,17 +165,22 @@ public class DelegateAgentResource {
       @QueryParam("accountId") @NotEmpty String accountId) {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
       DelegateConfiguration configuration = accountService.getDelegateConfiguration(accountId);
+      System.out.println("line 168 : "+configuration);
       String primaryDelegateVersion = configurationController.getPrimaryVersion();
+      System.out.println("line 170 : "+primaryDelegateVersion);
       // Adding primary delegate to the last element of delegate versions.
+      System.out.println("line 172 : "+configuration.getDelegateVersions());
       if (isNotEmpty(configuration.getDelegateVersions())
           && configuration.getDelegateVersions().remove(primaryDelegateVersion)) {
         configuration.getDelegateVersions().add(primaryDelegateVersion);
       }
       return new RestResponse<>(configuration);
     } catch (InvalidRequestException ex) {
+      System.out.println("line 179 : "+ex);
       if (isNotBlank(ex.getMessage()) && ex.getMessage().startsWith("Deleted AccountId")) {
         return new RestResponse<>(DelegateConfiguration.builder().action(Action.SELF_DESTRUCT).build());
       }
+      System.out.println("line 183 : null");
 
       return null;
     }
