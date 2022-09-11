@@ -254,8 +254,7 @@ public class NGLdapSyncHelperTest extends CategoryTest {
     verify(ngUserService, times(1))
         .addUserToScope(userMetaData.getUuid(),
             Scope.builder().accountIdentifier(ACCOUNT_ID).orgIdentifier(ORG_ID).projectIdentifier(PROJECT_ID).build(),
-            Collections.singletonList(RoleBinding.builder().roleIdentifier(ACCOUNT_VIEWER_ROLE).build()), emptyList(),
-            UserMembershipUpdateSource.SYSTEM);
+            emptyList(), emptyList(), UserMembershipUpdateSource.SYSTEM);
     verify(userGroupService, times(1)).addMember(ACCOUNT_ID, ORG_ID, PROJECT_ID, userGrpId, userMetaData.getUuid());
   }
 

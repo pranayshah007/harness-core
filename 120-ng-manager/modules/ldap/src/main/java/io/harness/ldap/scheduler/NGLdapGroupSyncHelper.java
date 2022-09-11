@@ -202,9 +202,8 @@ public class NGLdapGroupSyncHelper {
       final String accountId, final String orgId, final String projectId) {
     log.info("NGLDAP: adding user {} with externalUserId {}, to scope- account: {}, organization: {}, project: {}",
         uuid, userResponse.getUserId(), accountId, orgId, projectId);
-    ngUserService.addUserToScope(uuid, Scope.of(accountId, orgId, projectId),
-        Collections.singletonList(RoleBinding.builder().roleIdentifier(ACCOUNT_VIEWER_ROLE).build()), emptyList(),
-        UserMembershipUpdateSource.SYSTEM);
+    ngUserService.addUserToScope(
+        uuid, Scope.of(accountId, orgId, projectId), emptyList(), emptyList(), UserMembershipUpdateSource.SYSTEM);
     return ngUserService.getUserByEmail(userResponse.getEmail(), false);
   }
 
@@ -217,8 +216,7 @@ public class NGLdapGroupSyncHelper {
                         .inviteType(InviteType.ADMIN_INITIATED_INVITE)
                         .build();
 
-    invite.setRoleBindings(
-        Collections.singletonList(RoleBinding.builder().roleIdentifier(ACCOUNT_VIEWER_ROLE).build()));
+    invite.setRoleBindings(emptyList());
     log.info("NGLDAP: creating user invite for account {} and user Invite {} and externalUserId {}", accountId,
         invite.getEmail(), ldapUserResponse.getUserId());
     inviteService.create(invite, false, true);
