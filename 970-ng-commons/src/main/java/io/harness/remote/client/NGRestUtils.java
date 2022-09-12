@@ -77,10 +77,11 @@ public class NGRestUtils {
 
   private <T> RetryPolicy<Response<ResponseDTO<T>>> getRetryPolicy(String failureMessage) {
     return new RetryPolicy<Response<ResponseDTO<T>>>()
-        .withBackoff(1, 10, ChronoUnit.SECONDS)
+        .withBackoff(1, 5, ChronoUnit.SECONDS)
         .handle(IOException.class)
         .handleResultIf(result -> !result.isSuccessful() && isRetryableHttpCode(result.code()))
         .withMaxAttempts(MAX_ATTEMPTS)
+        .onFailure(event -> handleFailure(event, failureMessage))
         .onRetriesExceeded(event -> handleFailure(event, failureMessage));
   }
 
