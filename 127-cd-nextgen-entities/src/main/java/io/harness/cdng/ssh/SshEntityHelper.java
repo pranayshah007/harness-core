@@ -10,7 +10,6 @@ package io.harness.cdng.ssh;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.PDC;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.SSH_WINRM_AWS;
@@ -18,12 +17,10 @@ import static io.harness.ng.core.infrastructure.InfrastructureKind.SSH_WINRM_AZU
 import static io.harness.pms.yaml.YamlNode.UUID_FIELD_NAME;
 
 import static java.lang.String.format;
-import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 import static java.util.stream.Collectors.joining;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.DecryptableEntity;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.azure.AzureHelperService;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
@@ -38,10 +35,8 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.services.NGHostService;
-import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
-import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
 import io.harness.delegate.beans.connector.pdcconnector.HostDTO;
 import io.harness.delegate.beans.connector.pdcconnector.HostFilterDTO;
 import io.harness.delegate.beans.connector.pdcconnector.HostFilterType;
@@ -57,7 +52,6 @@ import io.harness.delegate.task.ssh.WinRmInfraDelegateConfig;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.core.NGAccess;
-import io.harness.ng.core.NGAccessWithEncryptionConsumer;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
@@ -85,7 +79,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import javax.annotation.Nonnull;
 import org.springframework.data.domain.Page;
 
 @Singleton
@@ -375,41 +368,5 @@ public class SshEntityHelper {
       throw new InvalidRequestException(format("Connector not found for identifier : [%s]", connectorId), USER);
     }
     return connectorDTO.get().getConnector();
-  }
-
-  public List<EncryptedDataDetail> getArtifactEncryptionDataDetails(
-      @Nonnull ConnectorInfoDTO connectorDTO, @Nonnull NGAccess ngAccess) {
-    switch (connectorDTO.getConnectorType()) {
-      case ARTIFACTORY:
-        ArtifactoryConnectorDTO artifactoryConnectorDTO = (ArtifactoryConnectorDTO) connectorDTO.getConnectorConfig();
-        List<DecryptableEntity> artifactoryDecryptableEntities = artifactoryConnectorDTO.getDecryptableEntities();
-        if (isNotEmpty(artifactoryDecryptableEntities)) {
-          return artifactoryDecryptableEntities.stream()
-              .map(i -> getEncryptedDataDetails(ngAccess, i))
-              .flatMap(Collection::stream)
-              .collect(Collectors.toList());
-        } else {
-          return emptyList();
-        }
-      case JENKINS:
-        JenkinsConnectorDTO jenkinsConnectorDTO = (JenkinsConnectorDTO) connectorDTO.getConnectorConfig();
-        List<DecryptableEntity> jenkinsDecryptableEntities = jenkinsConnectorDTO.getDecryptableEntities();
-        if (isNotEmpty(jenkinsDecryptableEntities)) {
-          return jenkinsDecryptableEntities.stream()
-              .map(i -> getEncryptedDataDetails(ngAccess, i))
-              .flatMap(Collection::stream)
-              .collect(Collectors.toList());
-        } else {
-          return emptyList();
-        }
-      default:
-        throw new UnsupportedOperationException(
-            format("Unsupported connector type : [%s]", connectorDTO.getConnectorType()));
-    }
-  }
-
-  private List<EncryptedDataDetail> getEncryptedDataDetails(NGAccess ngAccess, DecryptableEntity decryptableEntity) {
-    return NGRestUtils.getResponse(secretManagerClient.getEncryptionDetails(ngAccess.getAccountIdentifier(),
-        NGAccessWithEncryptionConsumer.builder().ngAccess(ngAccess).decryptableEntity(decryptableEntity).build()));
   }
 }

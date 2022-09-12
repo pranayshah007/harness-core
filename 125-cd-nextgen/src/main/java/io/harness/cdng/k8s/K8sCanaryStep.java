@@ -132,7 +132,7 @@ public class K8sCanaryStep extends TaskChainExecutableWithRollbackAndRbac implem
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
             .useLatestKustomizeVersion(cdStepHelper.isUseLatestKustomizeVersion(accountId))
             .useNewKubectlVersion(cdStepHelper.isUseNewKubectlVersion(accountId))
-            .cleanUpIncompleteCanaryDeployRelease(cdStepHelper.shouldCleanUpIncompleteCanaryDeployRelease(accountId))
+            .cleanUpIncompleteCanaryDeployRelease(true)
             .useK8sApiForSteadyStateCheck(cdStepHelper.shouldUseK8sApiForSteadyStateCheck(accountId))
             .build();
 
@@ -140,12 +140,8 @@ public class K8sCanaryStep extends TaskChainExecutableWithRollbackAndRbac implem
     TaskChainResponse response =
         k8sStepHelper.queueK8sTask(stepElementParameters, k8sCanaryDeployRequest, ambiance, executionPassThroughData);
 
-    OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputService.resolveOptional(
-        ambiance, RefObjectUtils.getSweepingOutputRefObject(K8sCanaryExecutionOutput.OUTPUT_NAME));
-    if (optionalSweepingOutput == null || !optionalSweepingOutput.isFound()) {
-      executionSweepingOutputService.consume(ambiance, K8sCanaryExecutionOutput.OUTPUT_NAME,
-          K8sCanaryExecutionOutput.builder().build(), StepOutcomeGroup.STAGE.name());
-    }
+    executionSweepingOutputService.consume(ambiance, K8sCanaryExecutionOutput.OUTPUT_NAME,
+        K8sCanaryExecutionOutput.builder().build(), StepOutcomeGroup.STEP.name());
 
     return response;
   }

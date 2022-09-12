@@ -8,7 +8,7 @@
 package io.harness.cvng.core.entities;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
@@ -36,9 +36,9 @@ import org.mongodb.morphia.annotations.Id;
 @FieldNameConstants(innerTypeName = "MonitoringSourcePerpetualTaskKeys")
 @EqualsAndHashCode(callSuper = false)
 @JsonIgnoreProperties(ignoreUnknown = true)
+@StoreIn(DbAliases.CVNG)
 @Entity(value = "monitoringSourcePerpetualTasks", noClassnameStored = true)
 @HarnessEntity(exportable = true)
-@StoreIn(DbAliases.CVNG)
 public final class MonitoringSourcePerpetualTask
     implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, AccountAccess, PersistentRegularIterable {
   public static List<MongoIndex> mongoIndexes() {

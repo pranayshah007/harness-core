@@ -8,9 +8,11 @@
 package software.wings.beans;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
@@ -39,6 +41,7 @@ import org.mongodb.morphia.annotations.Transient;
 @Data
 @Builder
 @AllArgsConstructor
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "gitFileActivitySummary", noClassnameStored = true)
 @FieldNameConstants(innerTypeName = "GitFileActivitySummaryKeys")
 @HarnessEntity(exportable = true)

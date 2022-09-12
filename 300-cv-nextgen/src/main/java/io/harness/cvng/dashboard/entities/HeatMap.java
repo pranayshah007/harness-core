@@ -8,7 +8,7 @@
 package io.harness.cvng.dashboard.entities;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.core.beans.monitoredService.DurationDTO;
 import io.harness.mongo.index.CompoundMongoIndex;
@@ -45,9 +45,9 @@ import org.mongodb.morphia.annotations.Id;
 @EqualsAndHashCode(callSuper = false, exclude = {"validUntil"})
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "HeatMapKeys")
+@StoreIn(DbAliases.CVNG)
 @Entity(value = "heatMaps", noClassnameStored = true)
 @HarnessEntity(exportable = false)
-@StoreIn(DbAliases.CVNG)
 public final class HeatMap implements UuidAware, CreatedAtAware, AccountAccess, PersistentEntity {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()

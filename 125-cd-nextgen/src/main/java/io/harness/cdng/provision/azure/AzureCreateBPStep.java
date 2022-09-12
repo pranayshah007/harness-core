@@ -7,46 +7,66 @@
 
 package io.harness.cdng.provision.azure;
 
+import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.cdng.provision.azure.AzureCommonHelper.BLUEPRINT_IDENTIFIER;
 import static io.harness.cdng.provision.azure.AzureCommonHelper.BP_TEMPLATE_TYPE;
 import static io.harness.cdng.provision.azure.AzureCommonHelper.DEFAULT_TIMEOUT;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.task.azure.arm.AzureARMTaskType.BLUEPRINT_DEPLOYMENT;
 
+import static java.lang.String.format;
+
 import io.harness.EntityType;
+import io.harness.annotations.dev.OwnedBy;
+import io.harness.azure.model.AzureConstants;
 import io.harness.beans.FeatureName;
+import io.harness.beans.FileReference;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
+import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.provision.azure.beans.AzureCreateBPPassThroughData;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
+import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.azure.arm.AzureBlueprintTaskNGParameters;
+import io.harness.delegate.task.azure.arm.AzureBlueprintTaskNGResponse;
 import io.harness.delegate.task.azure.arm.AzureResourceCreationTaskNGParameters;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.git.GitFetchResponse;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.AccessDeniedException;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.executions.steps.ExecutionNodeType;
+import io.harness.filestore.dto.node.FileNodeDTO;
+import io.harness.filestore.dto.node.FileStoreNodeDTO;
+import io.harness.filestore.dto.node.FolderNodeDTO;
+import io.harness.filestore.service.FileStoreService;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.git.model.GitFile;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.ng.core.EntityDetail;
+import io.harness.ng.core.NGAccess;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.rollback.TaskChainExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
@@ -64,11 +84,15 @@ import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 
+@OwnedBy(CDP)
+@Slf4j
 public class AzureCreateBPStep extends TaskChainExecutableWithRollbackAndRbac {
   private static final String BLUEPRINT_JSON = "blueprint.json";
   private static final String ASSIGN_JSON = "assign.json";
@@ -85,6 +109,10 @@ public class AzureCreateBPStep extends TaskChainExecutableWithRollbackAndRbac {
 
   @Inject private AzureCommonHelper azureCommonHelper;
   @Inject private CDStepHelper cdStepHelper;
+  @Inject private CDExpressionResolver cdExpressionResolver;
+  @Inject private FileStoreService fileStoreService;
+
+  @Inject private EngineExpressionService engineExpressionService;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -111,7 +139,6 @@ public class AzureCreateBPStep extends TaskChainExecutableWithRollbackAndRbac {
       EntityDetail entityDetail = EntityDetail.builder().type(EntityType.CONNECTORS).entityRef(identifierRef).build();
       entityDetailList.add(entityDetail);
     }
-
     // Azure connector
     String connectorRef = azureCreateBPStepParameters.getConfiguration().getConnectorRef().getValue();
     IdentifierRef identifierRef =
@@ -148,8 +175,24 @@ public class AzureCreateBPStep extends TaskChainExecutableWithRollbackAndRbac {
       StepExceptionPassThroughData stepExceptionPassThroughData = (StepExceptionPassThroughData) passThroughData;
       return cdStepHelper.handleStepExceptionFailure(stepExceptionPassThroughData);
     }
-    // TODO: To implement after the DelegateTask is implemented.
-    return null;
+    AzureBlueprintTaskNGResponse azureBlueprintTaskNGResponse;
+    try {
+      azureBlueprintTaskNGResponse = (AzureBlueprintTaskNGResponse) responseDataSupplier.get();
+      if (azureBlueprintTaskNGResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
+        return azureCommonHelper.getFailureResponse(
+            azureBlueprintTaskNGResponse.getUnitProgressData().getUnitProgresses(),
+            azureBlueprintTaskNGResponse.getErrorMsg());
+      }
+      return StepResponse.builder()
+          .unitProgressList(azureBlueprintTaskNGResponse.getUnitProgressData().getUnitProgresses())
+          .status(Status.SUCCEEDED)
+          .build();
+    } catch (TaskNGDataException ex) {
+      String errorMsg =
+          String.format("Error while processing Azure Create ARM Resource Task response %s", ex.getMessage());
+      log.error(errorMsg, ex);
+      throw ex;
+    }
   }
 
   @Override
@@ -162,12 +205,35 @@ public class AzureCreateBPStep extends TaskChainExecutableWithRollbackAndRbac {
     if (!(connectorDTO.getConnectorConfig() instanceof AzureConnectorDTO)) {
       throw new InvalidRequestException("Invalid connector selected in Azure step. Select Azure connector");
     }
-    List<GitFetchFilesConfig> gitFetchFilesConfigs = Collections.singletonList(
-        getTemplateGitFetchFileConfig(ambiance, azureCreateBPStepConfigurationParameters.getTemplateFile()));
+    if (ManifestStoreType.isInGitSubset(
+            azureCreateBPStepConfigurationParameters.getTemplateFile().getStore().getSpec().getKind())) {
+      List<GitFetchFilesConfig> gitFetchFilesConfigs = Collections.singletonList(
+          getTemplateGitFetchFileConfig(ambiance, azureCreateBPStepConfigurationParameters.getTemplateFile()));
 
-    AzureCreateBPPassThroughData passThroughData = AzureCreateBPPassThroughData.builder().build();
-    return azureCommonHelper.getGitFetchFileTaskChainResponse(
-        ambiance, gitFetchFilesConfigs, stepParameters, passThroughData);
+      AzureCreateBPPassThroughData passThroughData = AzureCreateBPPassThroughData.builder().build();
+      return azureCommonHelper.getGitFetchFileTaskChainResponse(
+          ambiance, gitFetchFilesConfigs, stepParameters, passThroughData);
+    } else if (ManifestStoreType.HARNESS.equals(
+                   azureCreateBPStepConfigurationParameters.getTemplateFile().getStore().getSpec().getKind())) {
+      HarnessStore harnessStore =
+          (HarnessStore) azureCreateBPStepConfigurationParameters.getTemplateFile().getStore().getSpec();
+      Map<String, String> fileContent = fetchFileContentFromHarnessStore(ambiance, harnessStore);
+
+      String blueprint = fileContent.get(BLUEPRINT_JSON);
+      fileContent.remove(BLUEPRINT_JSON);
+      String assignBody = fileContent.get(ASSIGN_JSON);
+      fileContent.remove(ASSIGN_JSON);
+      AzureCreateBPPassThroughData passThroughData = AzureCreateBPPassThroughData.builder().build();
+
+      populatePassThroughData(passThroughData, blueprint, assignBody, fileContent);
+      AzureConnectorDTO azureConnectorDTO = azureCommonHelper.getAzureConnectorConfig(ambiance,
+          ParameterField.createValueField(azureCreateBPStepConfigurationParameters.getConnectorRef().getValue()));
+
+      AzureResourceCreationTaskNGParameters azureTaskNGParameters =
+          getAzureTaskNGParams(ambiance, stepParameters, azureConnectorDTO, passThroughData);
+      return executeCreateTask(ambiance, stepParameters, azureTaskNGParameters, passThroughData);
+    }
+    throw new InvalidRequestException("Unsupported Store type");
   }
 
   @Override
@@ -185,7 +251,8 @@ public class AzureCreateBPStep extends TaskChainExecutableWithRollbackAndRbac {
             .parameters(new Object[] {parameters})
             .build();
     final TaskRequest taskRequest = StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-        Collections.singletonList(AzureCommandUnit.Create.name()), TaskType.AZURE_NG_ARM.getDisplayName(),
+        Arrays.asList(AzureConstants.BLUEPRINT_DEPLOYMENT, AzureConstants.BLUEPRINT_DEPLOYMENT_STEADY_STATE),
+        TaskType.AZURE_NG_ARM.getDisplayName(),
         TaskSelectorYaml.toTaskSelector(
             ((AzureCreateBPStepParameters) stepParameters.getSpec()).getDelegateSelectors()),
         stepHelper.getEnvironmentType(ambiance));
@@ -262,5 +329,94 @@ public class AzureCreateBPStep extends TaskChainExecutableWithRollbackAndRbac {
     AzureResourceCreationTaskNGParameters azureTaskNGParameters =
         getAzureTaskNGParams(ambiance, stepElementParameters, connectorDTO, passThroughData);
     return executeCreateTask(ambiance, stepElementParameters, azureTaskNGParameters, passThroughData);
+  }
+
+  /**
+   * Retrieve the files from the Harness Store given a Harness Store with a specific path
+   * This path should be a folder path. If the FileReference resolves to a file, it will throw an exception
+   * @param ambiance object containing project data
+   * @param harnessStore Store to retrieve the files from
+   *
+   *
+   * @return Map of strings with the key as the filename and the value as the content of the file.
+   * @throws InvalidArgumentsException if there is no store, we can't find any content in the store or if the path
+   *     points
+   * to a secret file
+   * */
+  public Map<String, String> fetchFileContentFromHarnessStore(Ambiance ambiance, HarnessStore harnessStore) {
+    HarnessStore renderedHarnessStore = (HarnessStore) cdExpressionResolver.updateExpressions(ambiance, harnessStore);
+    if (!ParameterField.isNull(renderedHarnessStore.getFiles())
+        && isNotEmpty(renderedHarnessStore.getFiles().getValue())) {
+      List<String> harnessStoreFiles = renderedHarnessStore.getFiles().getValue();
+      String firstFile = harnessStoreFiles.stream().findFirst().orElseThrow(
+          () -> new InvalidArgumentsException("No file configured for harness file store"));
+      return fetchFileContentFromFileStore(ambiance, firstFile);
+
+    } else if (!ParameterField.isNull(renderedHarnessStore.getSecretFiles())
+        && isNotEmpty(renderedHarnessStore.getSecretFiles().getValue())) {
+      throw new InvalidArgumentsException("Secrets files are not supported for Blueprints");
+    }
+    throw new InvalidArgumentsException("The selected path points to an empty Store");
+  }
+
+  /**
+   * Auxiliary function to retrieve the files and subfolders given a path from a Harness Store. If the
+   * @param ambiance object containing project data
+   * @param filePath path to the folder to extract the files from
+   *
+   * @return Map of strings with the key as the filename and the value as the content of the file.
+   * @throws  InvalidArgumentsException if the given path doesn't resolve to a FileStoreNode or if
+   * it resolves to a FileNodeDTO type
+   **/
+  private Map<String, String> fetchFileContentFromFileStore(Ambiance ambiance, String filePath) {
+    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+    FileReference fileReference = FileReference.of(
+        filePath, ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
+    FileStoreNodeDTO fileStoreNodeDTO =
+        fileStoreService
+            .getWithChildrenByPath(fileReference.getAccountIdentifier(), fileReference.getOrgIdentifier(),
+                fileReference.getProjectIdentifier(), fileReference.getPath(), true)
+            .orElseThrow(
+                () -> new InvalidArgumentsException(format("File '%s' doesn't exists", fileReference.getPath())));
+
+    if (fileStoreNodeDTO instanceof FolderNodeDTO) {
+      FolderNodeDTO folderNodeDTO = (FolderNodeDTO) fileStoreNodeDTO;
+      return retrieveFilesFromFileStore(ambiance, folderNodeDTO.getChildren());
+    }
+
+    if (fileStoreNodeDTO instanceof FileNodeDTO) {
+      throw new InvalidArgumentsException(
+          format("Provided path '%s' is a file, expecting a folder", fileReference.getPath()));
+    }
+
+    log.error("Unknown file store node: {}", fileStoreNodeDTO.getClass().getSimpleName());
+    throw new InvalidArgumentsException("Unsupported file store node");
+  }
+
+  /**
+   * Auxiliary function used to Iterate through all the files and sybfolders
+   * @param ambiance object containing project data
+   * @param filesAndFolders FileStoreNodeDTO to retrieve the files and subfolders from
+   * @return Map of strings with the key as the filename and the value as the content of the file.
+   */
+  private Map<String, String> retrieveFilesFromFileStore(Ambiance ambiance, List<FileStoreNodeDTO> filesAndFolders) {
+    Map<String, String> fileMap = new HashMap<>();
+
+    filesAndFolders.forEach(f -> {
+      if (f instanceof FileNodeDTO) {
+        FileNodeDTO fileNodeDTO = (FileNodeDTO) f;
+        if (f.getPath().contains(BLUEPRINT_JSON) || f.getPath().contains(ASSIGN_JSON)) {
+          fileMap.put(f.getName(),
+              engineExpressionService.renderExpression(ambiance, fileNodeDTO.getContent().replaceAll("\\r", "")));
+        } else if (f.getPath().contains(ARTIFACTS)) {
+          fileMap.put(f.getName(),
+              engineExpressionService.renderExpression(ambiance, fileNodeDTO.getContent()).replaceAll("\\r", ""));
+        }
+      } else if (f instanceof FolderNodeDTO) {
+        FolderNodeDTO folderNodeDTO = (FolderNodeDTO) f;
+        fileMap.putAll(retrieveFilesFromFileStore(ambiance, folderNodeDTO.getChildren()));
+      }
+    });
+    return fileMap;
   }
 }

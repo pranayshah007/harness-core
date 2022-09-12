@@ -12,7 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import io.harness.accesscontrol.principals.PrincipalDTO.PrincipalDTOKeys;
 import io.harness.accesscontrol.roleassignments.api.RoleAssignmentDTO;
 import io.harness.accesscontrol.roleassignments.api.RoleAssignmentDTO.RoleAssignmentDTOKey;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.mongo.index.CompoundMongoIndex;
@@ -35,10 +35,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder(toBuilder = true)
 @FieldNameConstants(innerTypeName = "MockRoleAssignmentKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "mockRoleAssignments", noClassnameStored = true)
 @Document("mockRoleAssignments")
 @TypeAlias("mockRoleAssignments")
-@StoreIn(DbAliases.NG_MANAGER)
 @OwnedBy(PL)
 public class MockRoleAssignment implements PersistentEntity {
   public static List<MongoIndex> mongoIndexes() {

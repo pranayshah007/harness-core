@@ -10,7 +10,7 @@ package io.harness.data;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.Trimmed;
 import io.harness.mongo.index.CompoundMongoIndex;
@@ -42,11 +42,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @OwnedBy(PIPELINE)
 @Value
 @Builder
+@StoreIn(DbAliases.PMS)
 @Entity(value = "outcomeInstances", noClassnameStored = true)
 @Document("outcomeInstances")
 @FieldNameConstants(innerTypeName = "OutcomeInstanceKeys")
 @TypeAlias("outcomeInstance")
-@StoreIn(DbAliases.PMS)
 public class OutcomeInstance implements PersistentEntity, UuidAccess {
   public static final long TTL_MONTHS = 6;
 

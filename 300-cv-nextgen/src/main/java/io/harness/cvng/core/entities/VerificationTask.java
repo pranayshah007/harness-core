@@ -8,7 +8,7 @@
 package io.harness.cvng.core.entities;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
@@ -37,9 +37,9 @@ import org.mongodb.morphia.annotations.Id;
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "VerificationTaskKeys")
+@StoreIn(DbAliases.CVNG)
 @Entity(value = "verificationTasks", noClassnameStored = true)
 @HarnessEntity(exportable = false)
-@StoreIn(DbAliases.CVNG)
 public final class VerificationTask implements UuidAware, CreatedAtAware, AccountAccess, PersistentEntity {
   public static final String VERIFICATION_TASK_ID_KEY = "verificationTaskId";
 

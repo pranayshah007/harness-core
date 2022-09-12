@@ -11,7 +11,7 @@ import static io.harness.ng.DbAliases.ACCESS_CONTROL;
 
 import io.harness.accesscontrol.permissions.PermissionStatus;
 import io.harness.accesscontrol.permissions.validator.PermissionIdentifier;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
@@ -49,10 +49,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @ToString
 @EqualsAndHashCode
 @FieldNameConstants(innerTypeName = "PermissionDBOKeys")
+@StoreIn(ACCESS_CONTROL)
 @Entity(value = "permissions", noClassnameStored = true)
 @Document("permissions")
 @TypeAlias("permissions")
-@StoreIn(ACCESS_CONTROL)
 public class PermissionDBO implements PersistentEntity {
   @Setter @Id @org.mongodb.morphia.annotations.Id String id;
   @FdUniqueIndex @PermissionIdentifier final String identifier;

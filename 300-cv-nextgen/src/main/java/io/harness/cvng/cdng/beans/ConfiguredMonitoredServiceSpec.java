@@ -12,7 +12,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.pms.yaml.ParameterField;
 
-import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
@@ -23,7 +22,8 @@ import lombok.experimental.SuperBuilder;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@JsonTypeName("Configured")
+// if in future we want configured field, uncomment this.
+//@JsonTypeName("Configured")
 @OwnedBy(HarnessTeam.CV)
 @SuperBuilder
 public class ConfiguredMonitoredServiceSpec extends MonitoredServiceSpec {

@@ -10,6 +10,7 @@ package software.wings.beans;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -18,6 +19,7 @@ import io.harness.data.validator.Trimmed;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.NameAccess;
 
@@ -54,6 +56,7 @@ import org.mongodb.morphia.annotations.Entity;
       @Type(value = ARMInfrastructureProvisioner.class, name = "ARM"),
       @Type(value = TerragruntInfrastructureProvisioner.class, name = "TERRAGRUNT")
 })
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "infrastructureProvisioner")
 @HarnessEntity(exportable = true)
 @FieldNameConstants(innerTypeName = "InfrastructureProvisionerKeys")

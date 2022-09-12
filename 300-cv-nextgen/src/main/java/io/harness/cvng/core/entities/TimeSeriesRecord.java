@@ -8,7 +8,7 @@
 package io.harness.cvng.core.entities;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.cvng.CVConstants;
 import io.harness.cvng.beans.TimeSeriesMetricType;
 import io.harness.mongo.index.CompoundMongoIndex;
@@ -44,9 +44,9 @@ import org.mongodb.morphia.annotations.Id;
 @EqualsAndHashCode(callSuper = false, exclude = {"validUntil", "timeSeriesGroupValues"})
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "TimeSeriesRecordKeys")
+@StoreIn(DbAliases.CVNG)
 @Entity(value = "timeSeriesRecords", noClassnameStored = true)
 @HarnessEntity(exportable = false)
-@StoreIn(DbAliases.CVNG)
 public final class TimeSeriesRecord
     implements CreatedAtAware, AccountAccess, PersistentEntity, Comparable<TimeSeriesRecord> {
   public static List<MongoIndex> mongoIndexes() {

@@ -230,6 +230,13 @@ public class FunctionalTestRule implements MethodRule, InjectorRuleMixin, MongoR
 
       @Provides
       @Singleton
+      @Named("dbAliases")
+      public List<String> getDbAliases() {
+        return Collections.EMPTY_LIST;
+      }
+
+      @Provides
+      @Singleton
       Set<Class<? extends TypeConverter>> morphiaConverters() {
         return ImmutableSet.<Class<? extends TypeConverter>>builder()
             .addAll(ManagerRegistrars.morphiaConverters)

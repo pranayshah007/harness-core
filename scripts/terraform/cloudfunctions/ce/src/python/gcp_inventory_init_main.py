@@ -91,7 +91,7 @@ def update_parent_region_for_job(job_id):
 def manage_scheduler_jobs(event_json):
     for event in event_json:
         for inventory_type in INVENTORY_TYPE:
-            update_parent_region_for_job("ce-gcp-%s-data-%s" % (inventory_type, event["accountId"]))
+            update_parent_region_for_job("ce-gcp-%s-data-%s-%s" % (inventory_type, event["accountId"], event["gcpInfraProjectId"]))
             manage_inventory_data_scheduler_job(event, inventory_type)
 
             update_parent_region_for_job("ce-gcp-%s-data-load-%s" % (inventory_type, event["accountId"]))
@@ -99,7 +99,7 @@ def manage_scheduler_jobs(event_json):
 
 
 def manage_inventory_data_scheduler_job(event, inventory_type):
-    name = f"{parent}/jobs/ce-gcp-%s-data-%s" % (inventory_type, event["accountId"])
+    name = f"{parent}/jobs/ce-gcp-%s-data-%s-%s" % (inventory_type, event["accountId"], event["gcpInfraProjectId"])
     topic_path = publisher.topic_path(PROJECTID, f"ce-gcp-{inventory_type}-inventory-data-scheduler")
 
     schedule = "10 * * * *"  # Run every hour

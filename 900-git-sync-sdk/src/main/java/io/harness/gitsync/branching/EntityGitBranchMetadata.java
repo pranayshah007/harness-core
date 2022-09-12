@@ -9,7 +9,9 @@ package io.harness.gitsync.branching;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ng.DbAliases;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.List;
@@ -28,10 +30,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
 @Builder
-@Document("entityGitBranchMetadata")
-@TypeAlias("io.harness.gitsync.beans.entityGitBranchMetadata")
 @EqualsAndHashCode(callSuper = false)
 @JsonIgnoreProperties(ignoreUnknown = true)
+@StoreIn(DbAliases.ALL)
+@Document("entityGitBranchMetadata")
+@TypeAlias("io.harness.gitsync.beans.entityGitBranchMetadata")
 @Entity(value = "entityGitBranchMetadata", noClassnameStored = true)
 @FieldNameConstants(innerTypeName = "EntityGitBranchMetadataKeys")
 @OwnedBy(DX)

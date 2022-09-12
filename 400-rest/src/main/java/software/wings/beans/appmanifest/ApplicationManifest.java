@@ -13,12 +13,14 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static java.lang.String.join;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.manifest.CustomSourceConfig;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 
 import software.wings.beans.Base;
@@ -46,6 +48,7 @@ import org.mongodb.morphia.annotations.Transient;
 @Builder
 @EqualsAndHashCode(callSuper = false)
 @FieldNameConstants(innerTypeName = "ApplicationManifestKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity("applicationManifests")
 @HarnessEntity(exportable = true)
 @OwnedBy(CDP)

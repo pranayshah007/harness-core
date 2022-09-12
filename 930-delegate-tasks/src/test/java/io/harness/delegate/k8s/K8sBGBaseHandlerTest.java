@@ -44,8 +44,9 @@ import io.harness.k8s.model.K8sPod;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
-import io.harness.k8s.model.Release;
-import io.harness.k8s.model.ReleaseHistory;
+import io.harness.k8s.releasehistory.IK8sRelease;
+import io.harness.k8s.releasehistory.K8sLegacyRelease;
+import io.harness.k8s.releasehistory.ReleaseHistory;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 
@@ -193,22 +194,22 @@ public class K8sBGBaseHandlerTest extends CategoryTest {
 
     ReleaseHistory releaseHistory = ReleaseHistory.createNew();
     releaseHistory.createNewRelease(asList(stage, versioned));
-    releaseHistory.setReleaseStatus(Release.Status.Succeeded);
+    releaseHistory.setReleaseStatus(IK8sRelease.Status.Succeeded);
     releaseHistory.getLatestRelease().setManagedWorkload(stage);
     releaseHistory.setReleaseNumber(0);
 
     releaseHistory.createNewRelease(singletonList(stage));
-    releaseHistory.setReleaseStatus(Release.Status.Failed);
+    releaseHistory.setReleaseStatus(IK8sRelease.Status.Failed);
     releaseHistory.getLatestRelease().setManagedWorkload(stage);
     releaseHistory.setReleaseNumber(1);
 
     releaseHistory.createNewRelease(asList(primary, versioned));
-    releaseHistory.setReleaseStatus(Release.Status.Succeeded);
+    releaseHistory.setReleaseStatus(IK8sRelease.Status.Succeeded);
     releaseHistory.getLatestRelease().setManagedWorkload(primary);
     releaseHistory.setReleaseNumber(2);
 
     releaseHistory.createNewRelease(asList(stage, versioned));
-    releaseHistory.setReleaseStatus(Release.Status.Succeeded);
+    releaseHistory.setReleaseStatus(IK8sRelease.Status.Succeeded);
     releaseHistory.getLatestRelease().setManagedWorkload(stage);
     releaseHistory.setReleaseNumber(3);
 
@@ -236,7 +237,7 @@ public class K8sBGBaseHandlerTest extends CategoryTest {
     ReleaseHistory releaseHistory = mock(ReleaseHistory.class);
 
     PrePruningInfo prePruningInfo = k8sBGBaseHandler.cleanupForBlueGreen(K8sDelegateTaskParams.builder().build(),
-        releaseHistory, logCallback, "blue", "blue", Release.builder().build(), kubectl);
+        releaseHistory, logCallback, "blue", "blue", K8sLegacyRelease.builder().build(), kubectl);
 
     // Do nothing if colors are the same
     verifyNoMoreInteractions(releaseHistory);
@@ -269,24 +270,24 @@ public class K8sBGBaseHandlerTest extends CategoryTest {
 
     releaseHistory.createNewReleaseWithResourceMap(
         getResourcesWithSpecForRelease(asList(stage0, versioned0, persistentResource, oldResource)));
-    releaseHistory.setReleaseStatus(Release.Status.Succeeded);
+    releaseHistory.setReleaseStatus(IK8sRelease.Status.Succeeded);
     releaseHistory.getLatestRelease().setManagedWorkload(stage0);
     releaseHistory.setReleaseNumber(0);
 
     releaseHistory.createNewReleaseWithResourceMap(
         getResourcesWithSpecForRelease(asList(stage1, versioned1, persistentResource, oldResource)));
-    releaseHistory.setReleaseStatus(Release.Status.Failed);
+    releaseHistory.setReleaseStatus(IK8sRelease.Status.Failed);
     releaseHistory.getLatestRelease().setManagedWorkload(stage1);
     releaseHistory.setReleaseNumber(1);
 
     releaseHistory.createNewReleaseWithResourceMap(
         getResourcesWithSpecForRelease(asList(primary, versioned2, persistentResource)));
-    releaseHistory.setReleaseStatus(Release.Status.Succeeded);
+    releaseHistory.setReleaseStatus(IK8sRelease.Status.Succeeded);
     releaseHistory.getLatestRelease().setManagedWorkload(primary);
     releaseHistory.setReleaseNumber(2);
 
     releaseHistory.createNewReleaseWithResourceMap(getResourcesWithSpecForRelease(asList(currentStage, versioned3)));
-    releaseHistory.setReleaseStatus(Release.Status.Succeeded);
+    releaseHistory.setReleaseStatus(IK8sRelease.Status.Succeeded);
     releaseHistory.getLatestRelease().setManagedWorkload(currentStage);
     releaseHistory.setReleaseNumber(3);
 
@@ -324,7 +325,7 @@ public class K8sBGBaseHandlerTest extends CategoryTest {
     PrePruningInfo prePruningInfo = PrePruningInfo.builder().releaseHistoryBeforeStageCleanUp(releaseHistory).build();
 
     K8sBlueGreenHandlerConfig k8sBlueGreenHandlerConfig =
-        getK8sBlueGreenHandlerConfig("blue", "blue", Release.builder().build(), prePruningInfo);
+        getK8sBlueGreenHandlerConfig("blue", "blue", K8sLegacyRelease.builder().build(), prePruningInfo);
     List<KubernetesResourceId> resourcesPruned = k8sBGBaseHandler.pruneForBg(K8sDelegateTaskParams.builder().build(),
         logCallback, k8sBlueGreenHandlerConfig.getPrimaryColor(), k8sBlueGreenHandlerConfig.getStageColor(),
         k8sBlueGreenHandlerConfig.getPrePruningInfo(), k8sBlueGreenHandlerConfig.getCurrentRelease(),
@@ -341,7 +342,7 @@ public class K8sBGBaseHandlerTest extends CategoryTest {
   public void testPruneForNoPreviousReleases() throws Exception {
     PrePruningInfo prePruningInfo1 = PrePruningInfo.builder().build();
     K8sBlueGreenHandlerConfig k8sBlueGreenHandlerConfig =
-        getK8sBlueGreenHandlerConfig("blue", "green", Release.builder().build(), prePruningInfo1);
+        getK8sBlueGreenHandlerConfig("blue", "green", K8sLegacyRelease.builder().build(), prePruningInfo1);
     List<KubernetesResourceId> resourcesPruned = k8sBGBaseHandler.pruneForBg(K8sDelegateTaskParams.builder().build(),
         logCallback, k8sBlueGreenHandlerConfig.getPrimaryColor(), k8sBlueGreenHandlerConfig.getStageColor(),
         k8sBlueGreenHandlerConfig.getPrePruningInfo(), k8sBlueGreenHandlerConfig.getCurrentRelease(),
@@ -362,7 +363,7 @@ public class K8sBGBaseHandlerTest extends CategoryTest {
 
   @NotNull
   private K8sBlueGreenHandlerConfig getK8sBlueGreenHandlerConfig(
-      String primaryColor, String stageColor, Release currentRelease, PrePruningInfo prePruningInfo) {
+      String primaryColor, String stageColor, K8sLegacyRelease currentRelease, PrePruningInfo prePruningInfo) {
     K8sBlueGreenHandlerConfig k8sBlueGreenHandlerConfig = new K8sBlueGreenHandlerConfig();
     k8sBlueGreenHandlerConfig.setPrePruningInfo(prePruningInfo);
     k8sBlueGreenHandlerConfig.setPrimaryColor(primaryColor);

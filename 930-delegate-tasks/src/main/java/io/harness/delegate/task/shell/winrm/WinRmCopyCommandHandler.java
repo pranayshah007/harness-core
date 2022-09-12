@@ -17,7 +17,12 @@ import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_CO
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_DESTINATION_PATH_SPECIFIED;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_DESTINATION_PATH_SPECIFIED_EXPLANATION;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_DESTINATION_PATH_SPECIFIED_HINT;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.UNDECRYPTABLE_CONFIG_FILE_PROVIDED;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.UNDECRYPTABLE_CONFIG_FILE_PROVIDED_EXPLANATION;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.UNDECRYPTABLE_CONFIG_FILE_PROVIDED_HINT;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
+
+import static software.wings.common.Constants.WINDOWS_HOME_DIR;
 
 import static java.lang.String.format;
 
@@ -32,6 +37,7 @@ import io.harness.delegate.task.shell.WinrmTaskParameters;
 import io.harness.delegate.task.shell.ssh.CommandHandler;
 import io.harness.delegate.task.ssh.CopyCommandUnit;
 import io.harness.delegate.task.ssh.NgCommandUnit;
+import io.harness.delegate.task.ssh.WinRmInfraDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.CustomArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.SkipCopyArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.config.ConfigFileParameters;
@@ -42,6 +48,7 @@ import io.harness.delegate.task.winrm.WinRmSessionConfig;
 import io.harness.delegate.task.winrm.WinRmSessionConfig.WinRmSessionConfigBuilder;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
+import io.harness.exception.runtime.SshCommandExecutionException;
 import io.harness.exception.runtime.WinRmCommandExecutionException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogLevel;
@@ -49,12 +56,12 @@ import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.shell.ExecuteCommandResponse;
 import io.harness.ssh.FileSourceType;
 
-import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -81,14 +88,20 @@ public class WinRmCopyCommandHandler implements CommandHandler {
     WinRmSessionConfigBuilder configBuilder = WinRmSessionConfig.builder()
                                                   .accountId(winRmCommandTaskParameters.getAccountId())
                                                   .executionId(winRmCommandTaskParameters.getExecutionId())
-                                                  .workingDirectory(copyCommandUnit.getWorkingDirectory())
+                                                  .workingDirectory(WINDOWS_HOME_DIR)
                                                   .commandUnitName(copyCommandUnit.getName())
                                                   .environment(winRmCommandTaskParameters.getEnvironmentVariables())
                                                   .hostname(winRmCommandTaskParameters.getHost())
                                                   .timeout(SESSION_TIMEOUT);
 
-    WinRmSessionConfig config =
-        winRmConfigAuthEnhancer.configureAuthentication(winRmCommandTaskParameters, configBuilder);
+    final WinRmInfraDelegateConfig winRmInfraDelegateConfig = winRmCommandTaskParameters.getWinRmInfraDelegateConfig();
+    if (winRmInfraDelegateConfig == null) {
+      throw new InvalidRequestException("Task parameters must include WinRm Infra Delegate config.");
+    }
+
+    WinRmSessionConfig config = winRmConfigAuthEnhancer.configureAuthentication(
+        winRmInfraDelegateConfig.getWinRmCredentials(), winRmInfraDelegateConfig.getEncryptionDataDetails(),
+        configBuilder, winRmCommandTaskParameters.isUseWinRMKerberosUniqueCacheFile());
     FileBasedWinRmExecutorNG executor = winRmExecutorFactoryNG.getFiledBasedWinRmExecutor(config,
         winRmCommandTaskParameters.isDisableWinRMCommandEncodingFFSet(), logStreamingTaskClient, commandUnitsProgress);
 
@@ -117,8 +130,17 @@ public class WinRmCopyCommandHandler implements CommandHandler {
     for (ConfigFileParameters configFile : configFiles) {
       log.info(format("Copying config file : %s, isEncrypted: %b", configFile.getFileName(), configFile.isEncrypted()));
       if (configFile.isEncrypted()) {
-        SecretConfigFile secretConfigFile = (SecretConfigFile) secretDecryptionService.decrypt(
-            configFile.getSecretConfigFile(), configFile.getEncryptionDataDetails());
+        SecretConfigFile secretConfigFile;
+        try {
+          secretConfigFile = (SecretConfigFile) secretDecryptionService.decrypt(
+              configFile.getSecretConfigFile(), configFile.getEncryptionDataDetails());
+        } catch (Exception e) {
+          throw NestedExceptionUtils.hintWithExplanationException(
+              format(UNDECRYPTABLE_CONFIG_FILE_PROVIDED_HINT, configFile.getFileName()),
+              format(UNDECRYPTABLE_CONFIG_FILE_PROVIDED_EXPLANATION, configFile.getFileName()),
+              new SshCommandExecutionException(format(UNDECRYPTABLE_CONFIG_FILE_PROVIDED, configFile.getFileName())));
+        }
+
         String fileData = new String(secretConfigFile.getEncryptedConfigFile().getDecryptedValue());
         configFile.setFileContent(fileData);
         configFile.setFileSize(fileData.getBytes(StandardCharsets.UTF_8).length);
@@ -170,8 +192,7 @@ public class WinRmCopyCommandHandler implements CommandHandler {
         .stream()
         .filter(storeDelegateConfig -> StoreDelegateConfigType.HARNESS.equals(storeDelegateConfig.getType()))
         .map(storeDelegateConfig -> (HarnessStoreDelegateConfig) storeDelegateConfig)
-        .findFirst()
-        .map(harnessStoreDelegateConfig -> Lists.newArrayList(harnessStoreDelegateConfig.getConfigFiles()))
-        .orElse(Lists.newArrayList());
+        .flatMap(harnessStoreDelegateConfig -> harnessStoreDelegateConfig.getConfigFiles().stream())
+        .collect(Collectors.toList());
   }
 }

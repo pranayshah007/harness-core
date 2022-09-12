@@ -1,34 +1,46 @@
 package io.harness.cdng.creator.plan.service;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.cdng.artifact.steps.ArtifactsStepV2;
 import io.harness.cdng.azure.webapp.AzureServiceSettingsStep;
 import io.harness.cdng.configfile.steps.ConfigFilesStepV2;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
+import io.harness.cdng.creator.plan.stage.DeploymentStageConfig;
+import io.harness.cdng.creator.plan.stage.DeploymentStageNode;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.manifest.steps.ManifestsStepV2;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
+import io.harness.cdng.service.beans.ServiceUseFromStageV2;
 import io.harness.cdng.service.beans.ServiceYamlV2;
 import io.harness.cdng.service.steps.ServiceStepV3;
 import io.harness.cdng.service.steps.ServiceStepV3Parameters;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.UUIDGenerator;
+import io.harness.exception.InvalidArgumentsException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.steps.SkipType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
+import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
 import io.harness.pms.sdk.core.adviser.success.OnSuccessAdviserParameters;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
+import io.harness.pms.yaml.YamlField;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
 
 import com.google.protobuf.ByteString;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import javax.validation.constraints.NotNull;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -41,16 +53,20 @@ public class ServiceAllInOnePlanCreatorUtils {
    *      config files
    *      azure settings
    */
-  public LinkedHashMap<String, PlanCreationResponse> addServiceNode(KryoSerializer kryoSerializer,
+  public LinkedHashMap<String, PlanCreationResponse> addServiceNode(YamlField specField, KryoSerializer kryoSerializer,
       ServiceYamlV2 serviceYamlV2, EnvironmentYamlV2 environmentYamlV2, String serviceNodeId, String nextNodeId,
       ServiceDefinitionType serviceType) {
+    final ServiceYamlV2 finalServiceYaml = useFromStage(serviceYamlV2)
+        ? useServiceYamlFromStage(serviceYamlV2.getUseFromStage(), specField)
+        : serviceYamlV2;
+
     final LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
 
     // add nodes for artifacts/manifests/files
     final List<String> childrenNodeIds = addChildrenNodes(planCreationResponseMap, serviceType);
     final ServiceStepV3Parameters stepParameters = ServiceStepV3Parameters.builder()
-                                                       .serviceRef(serviceYamlV2.getServiceRef())
-                                                       .inputs(serviceYamlV2.getServiceInputs())
+                                                       .serviceRef(finalServiceYaml.getServiceRef())
+                                                       .inputs(finalServiceYaml.getServiceInputs())
                                                        .envRef(environmentYamlV2.getEnvironmentRef())
                                                        .envInputs(environmentYamlV2.getEnvironmentInputs())
                                                        .childrenNodeIds(childrenNodeIds)
@@ -78,6 +94,10 @@ public class ServiceAllInOnePlanCreatorUtils {
     planCreationResponseMap.put(node.getUuid(), PlanCreationResponse.builder().planNode(node).build());
 
     return planCreationResponseMap;
+  }
+
+  private boolean useFromStage(ServiceYamlV2 serviceYamlV2) {
+    return serviceYamlV2.getUseFromStage() != null && isNotEmpty(serviceYamlV2.getUseFromStage().getStage());
   }
 
   private List<String> addChildrenNodes(
@@ -160,7 +180,28 @@ public class ServiceAllInOnePlanCreatorUtils {
       planCreationResponseMap.put(
           azureSettingsNode.getUuid(), PlanCreationResponse.builder().planNode(azureSettingsNode).build());
     }
-
     return nodeIds;
+  }
+
+  private ServiceYamlV2 useServiceYamlFromStage(@NotNull ServiceUseFromStageV2 useFromStage, YamlField specField) {
+    final YamlField serviceField = specField.getNode().getField(YamlTypes.SERVICE_ENTITY);
+    String stage = useFromStage.getStage();
+    if (stage == null) {
+      throw new InvalidRequestException("Stage identifier not present in useFromStage");
+    }
+
+    try {
+      //  Add validation for not chaining of stages
+      DeploymentStageNode stageElementConfig = YamlUtils.read(
+          PlanCreatorUtils.getStageConfig(serviceField, stage).getNode().toString(), DeploymentStageNode.class);
+      DeploymentStageConfig deploymentStage = stageElementConfig.getDeploymentStageConfig();
+      if (deploymentStage != null) {
+        return deploymentStage.getService();
+      } else {
+        throw new InvalidArgumentsException("Stage identifier given in useFromStage doesn't exist");
+      }
+    } catch (IOException ex) {
+      throw new InvalidRequestException("Cannot parse stage: " + stage);
+    }
   }
 }

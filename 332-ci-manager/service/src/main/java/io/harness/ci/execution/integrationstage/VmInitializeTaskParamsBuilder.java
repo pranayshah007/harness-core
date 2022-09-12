@@ -159,7 +159,7 @@ public class VmInitializeTaskParamsBuilder {
     IntegrationStageConfig integrationStageConfig = initializeStepInfo.getStageElementConfig();
     vmInitializeUtils.validateStageConfig(integrationStageConfig, accountID);
 
-    OSType os = vmInitializeUtils.getOS(infrastructure);
+    OSType os = VmInitializeUtils.getOS(infrastructure);
     Map<String, String> volToMountPath =
         vmInitializeUtils.getVolumeToMountPath(integrationStageConfig.getSharedPaths(), os);
     String workDir = vmInitializeUtils.getWorkDir(os);
@@ -183,7 +183,7 @@ public class VmInitializeTaskParamsBuilder {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     ConnectorDetails gitConnector = codebaseUtils.getGitConnector(
         ngAccess, initializeStepInfo.getCiCodebase(), initializeStepInfo.isSkipGitClone());
-    Map<String, String> codebaseEnvVars = codebaseUtils.getCodebaseVars(ambiance, ciExecutionArgs);
+    Map<String, String> codebaseEnvVars = codebaseUtils.getCodebaseVars(ambiance, ciExecutionArgs, gitConnector);
     Map<String, String> gitEnvVars = codebaseUtils.getGitEnvVariables(
         gitConnector, initializeStepInfo.getCiCodebase(), initializeStepInfo.isSkipGitClone());
 

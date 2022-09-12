@@ -96,6 +96,7 @@ import io.harness.delegate.task.pcf.request.CfRunPluginCommandRequest;
 import io.harness.environment.SystemEnvironment;
 import io.harness.eraro.ErrorCode;
 import io.harness.event.handler.impl.EventPublishHelper;
+import io.harness.eventframework.manager.ManagerObserverEventProducer;
 import io.harness.exception.CriticalExpressionEvaluationException;
 import io.harness.exception.DelegateNotAvailableException;
 import io.harness.exception.ExceptionUtils;
@@ -283,6 +284,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   @Inject @Getter private Subject<DelegateTaskStatusObserver> delegateTaskStatusObserverSubject;
   @Inject @Getter private Subject<DelegateTaskObserver> delegateTaskObserverSubject;
   @Inject private RemoteObserverInformer remoteObserverInformer;
+  @Inject private ManagerObserverEventProducer managerObserverEventProducer;
 
   private LoadingCache<String, String> logStreamingAccountTokenCache =
       CacheBuilder.newBuilder()
@@ -1080,11 +1082,16 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
       task.getData().setParameters(delegateTask.getData().getParameters());
       delegateSelectionLogsService.logTaskAssigned(delegateId, task);
 
-      delegateTaskObserverSubject.fireInform(
-          DelegateTaskObserver::onTaskAssigned, delegateTask.getAccountId(), taskId, delegateId);
-      remoteObserverInformer.sendEvent(ReflectionUtils.getMethod(DelegateTaskObserver.class, "onTaskAssigned",
-                                           String.class, String.class, String.class),
-          DelegateTaskServiceClassicImpl.class, delegateTask.getAccountId(), taskId);
+      if (delegateTask.isEmitEvent()) {
+        Map<String, String> eventData = new HashMap<>();
+        String taskType = task.getData().getTaskType();
+
+        managerObserverEventProducer.sendEvent(
+            ReflectionUtils.getMethod(DelegateTaskObserver.class, "onTaskAssigned", String.class, String.class,
+                String.class, String.class, String.class),
+            DelegateTaskServiceClassicImpl.class, delegateTask.getAccountId(), taskId, delegateId,
+            delegateTask.getStageId(), taskType);
+      }
 
       delegateMetricsService.recordDelegateTaskMetrics(delegateTask, DELEGATE_TASK_ACQUIRE);
 

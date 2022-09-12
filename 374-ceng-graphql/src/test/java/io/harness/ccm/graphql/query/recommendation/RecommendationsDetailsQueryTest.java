@@ -7,12 +7,11 @@
 
 package io.harness.ccm.graphql.query.recommendation;
 
+import static io.harness.ccm.RecommenderUtils.CPU_HISTOGRAM_FIRST_BUCKET_SIZE;
+import static io.harness.ccm.RecommenderUtils.HISTOGRAM_BUCKET_SIZE_GROWTH;
+import static io.harness.ccm.RecommenderUtils.MEMORY_HISTOGRAM_FIRST_BUCKET_SIZE;
 import static io.harness.rule.OwnerRule.TRUNAPUSHPA;
 import static io.harness.rule.OwnerRule.UTSAV;
-
-import static software.wings.graphql.datafetcher.ce.recommendation.entity.RecommenderUtils.CPU_HISTOGRAM_FIRST_BUCKET_SIZE;
-import static software.wings.graphql.datafetcher.ce.recommendation.entity.RecommenderUtils.HISTOGRAM_BUCKET_SIZE_GROWTH;
-import static software.wings.graphql.datafetcher.ce.recommendation.entity.RecommenderUtils.MEMORY_HISTOGRAM_FIRST_BUCKET_SIZE;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;

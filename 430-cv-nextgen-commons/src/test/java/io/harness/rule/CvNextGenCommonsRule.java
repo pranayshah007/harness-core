@@ -78,6 +78,13 @@ public class CvNextGenCommonsRule implements MethodRule, InjectorRuleMixin, Mong
       Map<Class, String> morphiaCustomCollectionNames() {
         return Collections.emptyMap();
       }
+
+      @Provides
+      @Singleton
+      @Named("dbAliases")
+      public List<String> getDbAliases() {
+        return Collections.EMPTY_LIST;
+      }
     });
 
     modules.add(MorphiaModule.getInstance());

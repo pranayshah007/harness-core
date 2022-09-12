@@ -672,16 +672,7 @@
           "type": "object",
           "properties": {
             "file": {
-              "oneOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "string",
-                  "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
-                  "minLength": 1
-                }
-              ]
+              "type": "string"
             }
           }
         }
@@ -823,6 +814,9 @@
               "type": "string"
             },
             "issueType": {
+              "type": "string"
+            },
+            "projectKey": {
               "type": "string"
             },
             "rejectionCriteria": {

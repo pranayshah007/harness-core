@@ -10,7 +10,7 @@ package io.harness.interrupts;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.logging.AutoLogContext;
@@ -48,11 +48,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @OwnedBy(CDC)
 @Value
 @Builder
+@StoreIn(DbAliases.PMS)
 @Entity(value = "interrupts", noClassnameStored = true)
 @Document(value = "interrupts")
 @FieldNameConstants(innerTypeName = "InterruptKeys")
 @TypeAlias("interrupt")
-@StoreIn(DbAliases.PMS)
 public class Interrupt implements PersistentRegularIterable, UuidAccess {
   public static final long TTL_MONTHS = 4;
   public enum State { REGISTERED, PROCESSING, PROCESSED_SUCCESSFULLY, PROCESSED_UNSUCCESSFULLY, DISCARDED }

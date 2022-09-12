@@ -26,6 +26,10 @@ import io.harness.artifacts.gar.service.GARApiServiceImpl;
 import io.harness.artifacts.gar.service.GarApiService;
 import io.harness.artifacts.gcr.service.GcrApiService;
 import io.harness.artifacts.gcr.service.GcrApiServiceImpl;
+import io.harness.artifacts.githubpackages.client.GithubPackagesRestClientFactory;
+import io.harness.artifacts.githubpackages.client.GithubPackagesRestClientFactoryImpl;
+import io.harness.artifacts.githubpackages.service.GithubPackagesRegistryService;
+import io.harness.artifacts.githubpackages.service.GithubPackagesRegistryServiceImpl;
 import io.harness.aws.AWSCloudformationClient;
 import io.harness.aws.AWSCloudformationClientImpl;
 import io.harness.aws.AwsClient;
@@ -173,6 +177,9 @@ import io.harness.delegate.task.artifacts.docker.DockerArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactTaskNG;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactTaskNG;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactTaskNG;
+import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactTaskHandler;
+import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactTaskNG;
 import io.harness.delegate.task.artifacts.googleartifactregistry.GARArtifactTaskNG;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactTaskHandler;
@@ -289,6 +296,7 @@ import io.harness.delegate.task.servicenow.ServiceNowValidationHandler;
 import io.harness.delegate.task.servicenow.connection.ServiceNowTestConnectionTaskNG;
 import io.harness.delegate.task.shell.CommandTaskNG;
 import io.harness.delegate.task.shell.ShellScriptTaskNG;
+import io.harness.delegate.task.shell.WinRmShellScriptTaskNG;
 import io.harness.delegate.task.shell.ssh.ArtifactCommandUnitHandler;
 import io.harness.delegate.task.shell.ssh.ArtifactoryCommandUnitHandler;
 import io.harness.delegate.task.shell.ssh.CommandHandler;
@@ -1265,6 +1273,7 @@ public class DelegateModule extends AbstractModule {
     // HelmNG Task Handlers
 
     bind(DockerRegistryService.class).to(DockerRegistryServiceImpl.class);
+    bind(GithubPackagesRegistryService.class).to(GithubPackagesRegistryServiceImpl.class);
     bind(NexusRegistryService.class).to(NexusRegistryServiceImpl.class);
     bind(ArtifactoryRegistryService.class).to(ArtifactoryRegistryServiceImpl.class);
     bind(HttpService.class).to(HttpServiceImpl.class);
@@ -1273,6 +1282,7 @@ public class DelegateModule extends AbstractModule {
     bind(BitbucketService.class).to(BitbucketServiceImpl.class);
     bind(AzureRepoService.class).to(AzureRepoServiceImpl.class);
     bind(DockerRestClientFactory.class).to(DockerRestClientFactoryImpl.class);
+    bind(GithubPackagesRestClientFactory.class).to(GithubPackagesRestClientFactoryImpl.class);
 
     MapBinder<Class<? extends ArtifactSourceDelegateRequest>, Class<? extends DelegateArtifactTaskHandler>>
         artifactServiceMapBinder =
@@ -1286,6 +1296,13 @@ public class DelegateModule extends AbstractModule {
             MapBinder.newMapBinder(binder(), new TypeLiteral<Class<? extends ArtifactSourceDelegateRequest>>() {},
                 new TypeLiteral<Class<? extends DelegateArtifactTaskHandler>>() {});
     s3ArtifactServiceMapBinder.addBinding(S3ArtifactDelegateRequest.class).toInstance(S3ArtifactTaskHandler.class);
+
+    MapBinder<Class<? extends ArtifactSourceDelegateRequest>, Class<? extends DelegateArtifactTaskHandler>>
+        githubPackagesArtifactServiceMapBinder =
+            MapBinder.newMapBinder(binder(), new TypeLiteral<Class<? extends ArtifactSourceDelegateRequest>>() {},
+                new TypeLiteral<Class<? extends DelegateArtifactTaskHandler>>() {});
+    githubPackagesArtifactServiceMapBinder.addBinding(GithubPackagesArtifactDelegateRequest.class)
+        .toInstance(GithubPackagesArtifactTaskHandler.class);
 
     MapBinder<Class<? extends ArtifactSourceDelegateRequest>, Class<? extends DelegateArtifactTaskHandler>>
         jenkinsArtifactServiceMapBinder =
@@ -1716,6 +1733,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.DOCKER_ARTIFACT_TASK_NG).toInstance(DockerArtifactTaskNG.class);
     mapBinder.addBinding(TaskType.AMAZON_S3_ARTIFACT_TASK_NG).toInstance(S3ArtifactTaskNG.class);
     mapBinder.addBinding(TaskType.JENKINS_ARTIFACT_TASK_NG).toInstance(JenkinsArtifactTaskNG.class);
+    mapBinder.addBinding(TaskType.GITHUB_PACKAGES_TASK_NG).toInstance(GithubPackagesArtifactTaskNG.class);
     mapBinder.addBinding(TaskType.GOOGLE_ARTIFACT_REGISTRY_TASK_NG).toInstance(GARArtifactTaskNG.class);
     mapBinder.addBinding(TaskType.GCR_ARTIFACT_TASK_NG).toInstance(GcrArtifactTaskNG.class);
     mapBinder.addBinding(TaskType.ECR_ARTIFACT_TASK_NG).toInstance(EcrArtifactTaskNG.class);
@@ -1780,6 +1798,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.NOTIFY_PAGERDUTY).toInstance(PagerDutySenderDelegateTask.class);
     mapBinder.addBinding(TaskType.NOTIFY_MICROSOFTTEAMS).toInstance(MicrosoftTeamsSenderDelegateTask.class);
     mapBinder.addBinding(TaskType.SHELL_SCRIPT_TASK_NG).toInstance(ShellScriptTaskNG.class);
+    mapBinder.addBinding(TaskType.WIN_RM_SHELL_SCRIPT_TASK_NG).toInstance(WinRmShellScriptTaskNG.class);
     mapBinder.addBinding(TaskType.NG_NEXUS_TASK).toInstance(NexusDelegateTask.class);
     mapBinder.addBinding(TaskType.NG_ARTIFACTORY_TASK).toInstance(ArtifactoryDelegateTask.class);
     mapBinder.addBinding(TaskType.NG_AWS_CODE_COMMIT_TASK).toInstance(AwsCodeCommitDelegateTask.class);

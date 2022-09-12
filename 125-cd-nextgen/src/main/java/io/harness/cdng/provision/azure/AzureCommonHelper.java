@@ -13,10 +13,12 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig.GitStoreDelegateConfigBuilder;
 import static io.harness.steps.StepUtils.prepareCDTaskRequest;
 
+import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.azure.model.ARMScopeType;
+import io.harness.azure.model.AzureConstants;
 import io.harness.azure.model.AzureDeploymentMode;
 import io.harness.beans.DecryptableEntity;
 import io.harness.cdng.CDStepHelper;
@@ -25,6 +27,7 @@ import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.provision.azure.beans.AzureCreateARMResourcePassThroughData;
+import io.harness.cdng.provision.azure.beans.AzureCreateBPPassThroughData;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.validator.scmValidators.GitConfigAuthenticationInfoHelper;
@@ -37,21 +40,27 @@ import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.git.GitFetchRequest;
+import io.harness.exception.InvalidRequestException;
 import io.harness.k8s.K8sCommandUnitConstants;
+import io.harness.logging.UnitProgress;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
+import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
+import io.harness.validator.NGRegexValidatorConstants;
 
 import software.wings.beans.TaskType;
 
@@ -61,6 +70,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -144,6 +154,7 @@ public class AzureCommonHelper {
     GitFetchRequest gitFetchRequest = GitFetchRequest.builder()
                                           .gitFetchFilesConfigs(gitFetchFilesConfigs)
                                           .accountId(AmbianceUtils.getAccountId(ambiance))
+                                          .closeLogStream(true)
                                           .build();
 
     final TaskData taskData = TaskData.builder()
@@ -154,8 +165,7 @@ public class AzureCommonHelper {
                                   .build();
 
     final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-        Arrays.asList(K8sCommandUnitConstants.FetchFiles, AzureCommandUnit.Create.name()),
-        TaskType.GIT_FETCH_NEXT_GEN_TASK.getDisplayName(),
+        getCommandUnits(passThroughData), TaskType.GIT_FETCH_NEXT_GEN_TASK.getDisplayName(),
         StepUtils.getTaskSelectors(stepElementParameters.getDelegateSelectors()),
         stepHelper.getEnvironmentType(ambiance));
 
@@ -187,10 +197,10 @@ public class AzureCommonHelper {
 
   List<GitFetchFilesConfig> getParametersGitFetchFileConfigs(
       Ambiance ambiance, AzureCreateARMResourceStepConfigurationParameters stepConfiguration) {
-    GitStoreConfig gitStoreConfig = (GitStoreConfig) stepConfiguration.getParameters().getStore().getSpec();
-    List<String> paths = new ArrayList<>(ParameterFieldHelper.getParameterFieldValue(gitStoreConfig.getPaths()));
     if (stepConfiguration.getParameters() != null
         && ManifestStoreType.isInGitSubset(stepConfiguration.getParameters().getStore().getSpec().getKind())) {
+      GitStoreConfig gitStoreConfig = (GitStoreConfig) stepConfiguration.getParameters().getStore().getSpec();
+      List<String> paths = new ArrayList<>(ParameterFieldHelper.getParameterFieldValue(gitStoreConfig.getPaths()));
       return new ArrayList<>(
           Collections.singletonList(GitFetchFilesConfig.builder()
                                         .manifestType(AZURE_PARAMETER_TYPE)
@@ -201,5 +211,35 @@ public class AzureCommonHelper {
     }
 
     return new ArrayList<>();
+  }
+
+  public StepResponse getFailureResponse(List<UnitProgress> unitProgresses, String errorMessage) {
+    return StepResponse.builder()
+        .unitProgressList(unitProgresses)
+        .status(Status.FAILED)
+        .failureInfo(FailureInfo.newBuilder().setErrorMessage(errorMessage).build())
+        .build();
+  }
+
+  protected String generateIdentifier(String provisionerIdentifier, Ambiance ambiance) {
+    if (Pattern.matches(NGRegexValidatorConstants.IDENTIFIER_PATTERN, provisionerIdentifier)) {
+      return format("%s/%s/%s/%s", AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
+          AmbianceUtils.getProjectIdentifier(ambiance), provisionerIdentifier);
+    } else {
+      throw new InvalidRequestException(
+          format("Provisioner Identifier cannot contain special characters or spaces: [%s]", provisionerIdentifier));
+    }
+  }
+
+  private List<String> getCommandUnits(PassThroughData passThroughData) {
+    if (passThroughData instanceof AzureCreateBPPassThroughData) {
+      return Arrays.asList(K8sCommandUnitConstants.FetchFiles, AzureConstants.BLUEPRINT_DEPLOYMENT,
+          AzureConstants.BLUEPRINT_DEPLOYMENT_STEADY_STATE);
+    } else if (passThroughData instanceof AzureCreateARMResourcePassThroughData) {
+      return Arrays.asList(K8sCommandUnitConstants.FetchFiles, AzureConstants.EXECUTE_ARM_DEPLOYMENT,
+          AzureConstants.ARM_DEPLOYMENT_STEADY_STATE, AzureConstants.ARM_DEPLOYMENT_OUTPUTS);
+    } else {
+      return emptyList();
+    }
   }
 }

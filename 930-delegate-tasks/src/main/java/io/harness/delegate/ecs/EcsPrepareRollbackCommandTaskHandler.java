@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.delegate.ecs;
 
 import static java.lang.String.format;
@@ -147,6 +154,7 @@ public class EcsPrepareRollbackCommandTaskHandler extends EcsCommandTaskNGHandle
       EcsPrepareRollbackDataResult ecsPrepareRollbackDataResult =
           EcsPrepareRollbackDataResult.builder()
               .isFirstDeployment(false)
+              .serviceName(serviceName)
               .createServiceRequestBuilderString(createServiceRequestBuilderString)
               .registerScalableTargetRequestBuilderStrings(registerScalableTargetRequestBuilderStrings)
               .registerScalingPolicyRequestBuilderStrings(registerScalingPolicyRequestBuilderStrings)
@@ -169,7 +177,7 @@ public class EcsPrepareRollbackCommandTaskHandler extends EcsCommandTaskNGHandle
 
       // Send EcsPrepareRollbackDataResult with isFirstDeployment as true
       EcsPrepareRollbackDataResult ecsPrepareRollbackDataResult =
-          EcsPrepareRollbackDataResult.builder().isFirstDeployment(true).build();
+          EcsPrepareRollbackDataResult.builder().isFirstDeployment(true).serviceName(serviceName).build();
 
       return EcsPrepareRollbackDataResponse.builder()
           .ecsPrepareRollbackDataResult(ecsPrepareRollbackDataResult)

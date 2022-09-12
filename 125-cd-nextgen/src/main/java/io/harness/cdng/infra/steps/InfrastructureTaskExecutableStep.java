@@ -61,13 +61,13 @@ public class InfrastructureTaskExecutableStep extends AbstractInfrastructureTask
   public TaskRequest obtainTaskAfterRbac(
       Ambiance ambiance, Infrastructure infrastructureSpec, StepInputPackage inputPackage) {
     final NGLogCallback logCallback = infrastructureStepHelper.getInfrastructureLogCallback(ambiance, true, "Execute");
-    return obtainTaskInternal(ambiance, infrastructureSpec, logCallback);
+    return obtainTaskInternal(ambiance, infrastructureSpec, logCallback, null);
   }
 
   @Override
   public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, Infrastructure stepParameters,
       ThrowingSupplier<DelegateResponseData> responseDataSupplier) throws Exception {
-    final NGLogCallback logCallback = infrastructureStepHelper.getInfrastructureLogCallback(ambiance, true, "Execute");
+    final NGLogCallback logCallback = infrastructureStepHelper.getInfrastructureLogCallback(ambiance, "Execute");
     final InfrastructureTaskExecutableStepSweepingOutput infrastructureOutput = fetchInfraStepOutputOrThrow(ambiance);
     return super.handleTaskResult(ambiance, infrastructureOutput, responseDataSupplier, logCallback);
   }

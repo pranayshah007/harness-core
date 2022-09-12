@@ -48,6 +48,7 @@ import io.harness.enforcement.client.services.EnforcementSdkRegisterService;
 import io.harness.enforcement.client.usage.RestrictionUsageInterface;
 import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.exception.ConstraintViolationExceptionMapper;
+import io.harness.govern.ProviderModule;
 import io.harness.health.HealthService;
 import io.harness.maintenance.MaintenanceController;
 import io.harness.metrics.MetricRegistryModule;
@@ -80,6 +81,10 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Key;
+import com.google.inject.Module;
+import com.google.inject.Provides;
+import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import io.dropwizard.Application;
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
@@ -95,6 +100,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 import javax.servlet.DispatcherType;
@@ -138,6 +144,7 @@ public class AccessControlApplication extends Application<AccessControlConfigura
     });
     bootstrap.addCommand(new ScanClasspathMetadataCommand());
     bootstrap.addCommand(new GenerateOpenApiSpecCommand());
+    bootstrap.setMetricRegistry(metricRegistry);
     // Enable variable substitution with environment variables
     bootstrap.setConfigurationSourceProvider(new SubstitutingSourceProvider(
         bootstrap.getConfigurationSourceProvider(), new EnvironmentVariableSubstitutor(false)));
@@ -148,8 +155,18 @@ public class AccessControlApplication extends Application<AccessControlConfigura
   public void run(AccessControlConfiguration appConfig, Environment environment) {
     log.info("Starting Access Control Application ...");
     MaintenanceController.forceMaintenance(true);
-    Injector injector =
-        Guice.createInjector(AccessControlModule.getInstance(appConfig), new MetricRegistryModule(metricRegistry));
+    List<Module> modules = new ArrayList<>();
+    modules.add(AccessControlModule.getInstance(appConfig));
+    modules.add(new MetricRegistryModule(metricRegistry));
+    modules.add(new ProviderModule() {
+      @Provides
+      @Singleton
+      @Named("dbAliases")
+      public List<String> getDbAliases() {
+        return appConfig.getDbAliases();
+      }
+    });
+    Injector injector = Guice.createInjector(modules);
     injector.getInstance(HPersistence.class);
     registerCorsFilter(appConfig, environment);
     registerResources(environment, injector);

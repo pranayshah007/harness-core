@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.serializer.kryo;
 
 import static io.harness.annotations.dev.HarnessTeam.DEL;
@@ -324,6 +331,8 @@ import io.harness.delegate.task.artifacts.gar.GarDelegateRequest;
 import io.harness.delegate.task.artifacts.gar.GarDelegateResponse;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateRequest;
@@ -403,6 +412,7 @@ import io.harness.delegate.task.azure.arm.response.AzureARMListSubscriptionLocat
 import io.harness.delegate.task.azure.arm.response.AzureARMRollbackResponse;
 import io.harness.delegate.task.azure.arm.response.AzureBlueprintDeploymentResponse;
 import io.harness.delegate.task.azure.artifact.ArtifactoryAzureArtifactRequestDetails;
+import io.harness.delegate.task.azure.artifact.AwsS3AzureArtifactRequestDetails;
 import io.harness.delegate.task.azure.artifact.AzureArtifactConfig;
 import io.harness.delegate.task.azure.artifact.AzureArtifactRequestDetails;
 import io.harness.delegate.task.azure.artifact.AzureArtifactType;
@@ -616,6 +626,7 @@ import io.harness.delegate.task.shell.ShellScriptTaskParametersNG;
 import io.harness.delegate.task.shell.ShellScriptTaskResponseNG;
 import io.harness.delegate.task.shell.SshCommandTaskParameters;
 import io.harness.delegate.task.shell.TailFilePatternDto;
+import io.harness.delegate.task.shell.WinRmShellScriptTaskParametersNG;
 import io.harness.delegate.task.shell.WinrmTaskParameters;
 import io.harness.delegate.task.spotinst.request.SpotInstDeployTaskParameters;
 import io.harness.delegate.task.spotinst.request.SpotInstGetElastigroupJsonParameters;
@@ -655,6 +666,7 @@ import io.harness.delegate.task.ssh.artifact.ArtifactoryArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.ArtifactoryDockerArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.CustomArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.JenkinsArtifactDelegateConfig;
+import io.harness.delegate.task.ssh.artifact.NexusDockerArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.SkipCopyArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactType;
@@ -1155,6 +1167,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
 
     kryo.register(DeploymentSlotData.class, 19457);
     kryo.register(ShellScriptTaskParametersNG.class, 19463);
+    kryo.register(WinRmShellScriptTaskParametersNG.class, 19482);
     kryo.register(ShellScriptTaskResponseNG.class, 19464);
     kryo.register(AzureWebAppSlotSetupParameters.class, 19465);
     kryo.register(AzureWebAppRollbackParameters.class, 19466);
@@ -1735,12 +1748,15 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AwsInfraDelegateConfig.class, 55416);
     kryo.register(AwsSshInfraDelegateConfig.class, 55417);
     kryo.register(AwsWinrmInfraDelegateConfig.class, 55418);
+    kryo.register(AwsS3AzureArtifactRequestDetails.class, 55422);
     kryo.register(PdcServerInstanceInfo.class, 55501);
     kryo.register(AzureSshWinrmServerInstanceInfo.class, 55502);
     kryo.register(AwsSshWinrmServerInstanceInfo.class, 55503);
     kryo.register(AzureMngGroupsResponse.class, 55506);
     kryo.register(AzureLocationsResponse.class, 55505);
     kryo.register(VmBackgroundStep.class, 55504);
+    kryo.register(GithubPackagesArtifactDelegateRequest.class, 55511);
+    kryo.register(GithubPackagesArtifactDelegateResponse.class, 55512);
     kryo.register(GitPollingTaskParameters.class, 56335);
     kryo.register(GitHubPollingDelegateRequest.class, 56336);
     kryo.register(GitPollingSourceType.class, 56337);
@@ -1750,6 +1766,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AzureWebAppRollbackExceptionData.class, 55419);
     kryo.register(SkipCopyArtifactDelegateConfig.class, 9800004);
     kryo.register(ArtifactoryDockerArtifactDelegateConfig.class, 9800005);
+    kryo.register(NexusDockerArtifactDelegateConfig.class, 9800006);
     kryo.register(CustomSecretManagerValidationParams.class, 19876);
     kryo.register(GarDelegateRequest.class, 55420);
     kryo.register(GarDelegateResponse.class, 55421);

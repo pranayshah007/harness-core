@@ -47,9 +47,10 @@ public class STOServiceUtilsTest extends CategoryTest implements MockableTestMix
     String baseUrl = "http://localhost:4000";
     String accountID = "account";
     String globalToken = "token";
+    String stoServiceTokenResponse = "{\"token\":\"sto-token\"}";
     String stoServiceToken = "sto-token";
     Call<String> stoServiceTokenCall = mock(Call.class);
-    when(stoServiceTokenCall.execute()).thenReturn(Response.success(stoServiceToken));
+    when(stoServiceTokenCall.execute()).thenReturn(Response.success(stoServiceTokenResponse));
     when(stoServiceClient.generateToken(eq(accountID), eq(globalToken))).thenReturn(stoServiceTokenCall);
     STOServiceConfig stoServiceConfig = STOServiceConfig.builder().globalToken(globalToken).baseUrl(baseUrl).build();
     STOServiceUtils stoServiceUtils = new STOServiceUtils(stoServiceClient, stoServiceConfig);

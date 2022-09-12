@@ -12,11 +12,13 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static software.wings.beans.approval.ServiceNowApprovalParams.validateTimeWindow;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.FdIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 
 import software.wings.beans.servicenow.ServiceNowTicketType;
@@ -40,6 +42,7 @@ import org.mongodb.morphia.annotations.Id;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @ToString(exclude = "scriptString")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "approvalPollingJob")
 @HarnessEntity(exportable = false)
 @TargetModule(HarnessModule._957_CG_BEANS)

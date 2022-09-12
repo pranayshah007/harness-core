@@ -41,6 +41,7 @@ import io.harness.accesscontrol.roleassignments.api.RoleAssignmentAggregateRespo
 import io.harness.accesscontrol.roleassignments.api.RoleAssignmentFilterDTO;
 import io.harness.accesscontrol.roleassignments.api.RoleAssignmentResponseDTO;
 import io.harness.accesscontrol.scopes.ScopeDTO;
+import io.harness.accesscontrol.scopes.ScopeFilterType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.beans.ScopeLevel;
@@ -57,6 +58,7 @@ import io.harness.ng.authenticationsettings.remote.AuthSettingsManagerClient;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.api.UserGroupService;
+import io.harness.ng.core.dto.ScopeSelector;
 import io.harness.ng.core.dto.UserGroupDTO;
 import io.harness.ng.core.dto.UserGroupFilterDTO;
 import io.harness.ng.core.entities.NotificationSettingConfig;
@@ -260,6 +262,13 @@ public class UserGroupServiceImpl implements UserGroupService {
     return userGroupRepository.findAll(
         createUserGroupFilterCriteria(accountIdentifier, orgIdentifier, projectIdentifier, searchTerm, filterType),
         pageable);
+  }
+
+  @Override
+  public Page<UserGroup> list(
+      List<ScopeSelector> scopeFilter, String userIdentifier, String searchTerm, Pageable pageable) {
+    Criteria criteria = createUserGroupCriteriaByUser(scopeFilter, userIdentifier, searchTerm);
+    return userGroupRepository.findAll(criteria, pageable);
   }
 
   @Override
@@ -657,6 +666,43 @@ public class UserGroupServiceImpl implements UserGroupService {
     return criteria;
   }
 
+  private Criteria createUserGroupCriteriaByUser(
+      List<ScopeSelector> scopeFilter, String userIdentifier, String searchTerm) {
+    Criteria criteria = new Criteria();
+    criteria.and(UserGroupKeys.users).in(userIdentifier);
+    Criteria[] scopeCriteriaList =
+        scopeFilter.stream()
+            .map(scope -> {
+              if (ScopeFilterType.INCLUDING_CHILD_SCOPES.equals(scope.getFilter())) {
+                Criteria scopeCriteria =
+                    Criteria.where(UserGroupKeys.accountIdentifier).is(scope.getAccountIdentifier());
+                if (isNotEmpty(scope.getOrgIdentifier())) {
+                  scopeCriteria.and(UserGroupKeys.orgIdentifier).is(scope.getOrgIdentifier());
+                }
+                if (isNotEmpty(scope.getProjectIdentifier())) {
+                  scopeCriteria.and(UserGroupKeys.projectIdentifier).is(scope.getProjectIdentifier());
+                }
+                return scopeCriteria;
+              } else {
+                return Criteria.where(UserGroupKeys.accountIdentifier)
+                    .is(scope.getAccountIdentifier())
+                    .and(UserGroupKeys.orgIdentifier)
+                    .is(scope.getOrgIdentifier())
+                    .and(UserGroupKeys.projectIdentifier)
+                    .is(scope.getProjectIdentifier());
+              }
+            })
+            .toArray(Criteria[] ::new);
+    if (isNotEmpty(scopeCriteriaList)) {
+      criteria.orOperator(scopeCriteriaList);
+    }
+    if (isNotBlank(searchTerm)) {
+      Criteria searchCriteria = new Criteria().orOperator(Criteria.where(UserGroupKeys.name).regex(searchTerm, "i"),
+          Criteria.where(UserGroupKeys.tags).regex(searchTerm, "i"));
+      criteria.andOperator(searchCriteria);
+    }
+    return criteria;
+  }
   private Criteria getUserGroupbySsoIdCriteria(String accountIdentifier, String ssoId) {
     Criteria criteria = createScopeCriteria(accountIdentifier, null, null);
     criteria.and(UserGroupKeys.isSsoLinked).is(true);

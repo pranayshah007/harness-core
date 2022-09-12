@@ -22,6 +22,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.api.Producer;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.entitysetupusage.service.EntitySetupUsageService;
+import io.harness.ng.core.events.EnvironmentUpdatedEvent;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity.NGServiceOverridesEntityKeys;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
@@ -94,6 +95,10 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
     validateOverrideValues(requestServiceOverride);
     Criteria criteria = getServiceOverrideEqualityCriteria(requestServiceOverride);
 
+    Optional<NGServiceOverridesEntity> serviceOverrideOptional = get(requestServiceOverride.getAccountId(),
+        requestServiceOverride.getOrgIdentifier(), requestServiceOverride.getProjectIdentifier(),
+        requestServiceOverride.getEnvironmentRef(), requestServiceOverride.getServiceRef());
+
     return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
       NGServiceOverridesEntity tempResult = serviceOverrideRepository.upsert(criteria, requestServiceOverride);
       if (tempResult == null) {
@@ -102,7 +107,27 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
             requestServiceOverride.getProjectIdentifier(), requestServiceOverride.getOrgIdentifier(),
             requestServiceOverride.getEnvironmentRef(), requestServiceOverride.getServiceRef()));
       }
-      // todo: events for outbox service
+      if (serviceOverrideOptional.isPresent()) {
+        outboxService.save(EnvironmentUpdatedEvent.builder()
+                               .accountIdentifier(requestServiceOverride.getAccountId())
+                               .orgIdentifier(requestServiceOverride.getOrgIdentifier())
+                               .status(EnvironmentUpdatedEvent.Status.UPDATED)
+                               .resourceType(EnvironmentUpdatedEvent.ResourceType.SERVICE_OVERRIDE)
+                               .projectIdentifier(requestServiceOverride.getProjectIdentifier())
+                               .newServiceOverridesEntity(requestServiceOverride)
+                               .oldServiceOverridesEntity(serviceOverrideOptional.get())
+                               .build());
+      } else {
+        outboxService.save(EnvironmentUpdatedEvent.builder()
+                               .accountIdentifier(requestServiceOverride.getAccountId())
+                               .orgIdentifier(requestServiceOverride.getOrgIdentifier())
+                               .status(EnvironmentUpdatedEvent.Status.CREATED)
+                               .resourceType(EnvironmentUpdatedEvent.ResourceType.SERVICE_OVERRIDE)
+                               .projectIdentifier(requestServiceOverride.getProjectIdentifier())
+                               .newServiceOverridesEntity(requestServiceOverride)
+                               .build());
+      }
+
       return tempResult;
     }));
   }
@@ -160,7 +185,6 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
                                                           .build();
 
     // todo: check for override usage in pipelines
-    // todo: outbox events
     Criteria criteria = getServiceOverrideEqualityCriteria(serviceOverridesEntity);
 
     Optional<NGServiceOverridesEntity> entityOptional =
@@ -173,6 +197,14 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
               "Service Override for Service [%s], Environment [%s], Project[%s], Organization [%s] couldn't be deleted.",
               serviceRef, environmentRef, projectIdentifier, orgIdentifier));
         }
+        outboxService.save(EnvironmentUpdatedEvent.builder()
+                               .accountIdentifier(accountId)
+                               .orgIdentifier(orgIdentifier)
+                               .projectIdentifier(projectIdentifier)
+                               .status(EnvironmentUpdatedEvent.Status.DELETED)
+                               .resourceType(EnvironmentUpdatedEvent.ResourceType.SERVICE_OVERRIDE)
+                               .oldServiceOverridesEntity(entityOptional.get())
+                               .build());
         return true;
       }));
     } else {

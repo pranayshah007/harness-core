@@ -38,7 +38,6 @@ public class PipelineExecutionSummaryEntityCDCEntityWithDebeziumEnabled
       if (!debeziumEnabled) {
         return planExecutionSummaryCdChangeDataHandler;
       } else {
-        log.info("FF {} is true.", FeatureName.DEBEZIUM_ENABLED.toString());
         return null;
       }
     } else if (handlerClass.contentEquals("PipelineExecutionSummaryEntityServiceAndInfra")) {

@@ -51,6 +51,12 @@ public class ServiceRepositoryCustomImpl implements ServiceRepositoryCustom {
   }
 
   @Override
+  public List<ServiceEntity> findAll(Criteria criteria) {
+    Query query = new Query(criteria);
+    return mongoTemplate.find(query, ServiceEntity.class);
+  }
+
+  @Override
   public ServiceEntity upsert(Criteria criteria, ServiceEntity serviceEntity) {
     Query query = new Query(criteria);
     Update update = ServiceFilterHelper.getUpdateOperations(serviceEntity);

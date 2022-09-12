@@ -69,11 +69,14 @@ public class ClasspathParser {
 
   public void parseClasses(String srcs, Set<String> assumedPackagePrefixesWithBuildFile) throws IOException {
     String pattern = workspace.toString() + "/" + srcs;
-    logger.info("Pattern: {}", pattern);
+    logger.info("Parsing java files: {}", pattern);
     PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher("glob:" + pattern);
     try (Stream<Path> paths = Files.find(workspace, Integer.MAX_VALUE, (path, f) -> pathMatcher.matches(path))) {
-      paths.peek(path -> logger.debug("processing {}", path))
-          .forEach(path -> parseFileGatherDependencies(path, assumedPackagePrefixesWithBuildFile));
+      paths.peek(path -> logger.debug("processing {}", path)).forEach(path -> {
+        if (path.toString().endsWith(".java")) {
+          parseFileGatherDependencies(path, assumedPackagePrefixesWithBuildFile);
+        }
+      });
     }
   }
 

@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.delegate.ecs;
 
 import static java.lang.String.format;
@@ -23,6 +30,7 @@ import io.harness.logging.LogLevel;
 
 import com.google.inject.Inject;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
@@ -69,15 +77,20 @@ public class EcsCanaryDeleteCommandTaskHandler extends EcsCommandTaskNGHandler {
     EcsCanaryDeleteResult ecsCanaryDeleteResult = null;
 
     if (optionalService.isPresent() && ecsCommandTaskHelper.isServiceActive(optionalService.get())) {
+      canaryDeleteLogCallback.saveExecutionLog(format("Deleting service %s..", canaryServiceName), LogLevel.INFO);
+
       ecsCommandTaskHelper.deleteService(canaryServiceName, ecsInfraConfig.getCluster(), ecsInfraConfig.getRegion(),
           ecsInfraConfig.getAwsConnectorDTO());
-      canaryDeleteLogCallback.saveExecutionLog(
-          format("Canary service %s deleted", canaryServiceName), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
 
-      // todo: do we need to add inactive state check
+      ecsCommandTaskHelper.ecsServiceInactiveStateCheck(canaryDeleteLogCallback, ecsInfraConfig.getAwsConnectorDTO(),
+          ecsInfraConfig.getCluster(), canaryServiceName, ecsInfraConfig.getRegion(),
+          (int) TimeUnit.MILLISECONDS.toMinutes(timeoutInMillis));
 
       ecsCanaryDeleteResult =
           EcsCanaryDeleteResult.builder().canaryDeleted(true).canaryServiceName(canaryServiceName).build();
+
+      canaryDeleteLogCallback.saveExecutionLog(
+          format("Canary service %s deleted", canaryServiceName), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
     } else {
       canaryDeleteLogCallback.saveExecutionLog(
           format("Canary service %s doesn't exist", canaryServiceName), LogLevel.INFO, CommandExecutionStatus.SUCCESS);

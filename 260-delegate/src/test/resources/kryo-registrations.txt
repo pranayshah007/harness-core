@@ -979,7 +979,6 @@
 8069:software.wings.beans.s3.FetchS3FilesCommandParams
 8070:software.wings.beans.s3.FetchS3FilesExecutionResponse.FetchS3FilesCommandStatus
 8074:software.wings.service.impl.dynatrace.DynaTraceApplication
-8075:software.wings.security.authentication.totp.RateLimitProtection
 8086:software.wings.helpers.ext.ecs.request.EcsDeployRollbackDataFetchRequest
 8087:software.wings.helpers.ext.ecs.response.EcsDeployRollbackDataFetchResponse
 8090:software.wings.helpers.ext.k8s.response.PodStatus
@@ -1424,6 +1423,7 @@
 19479:io.harness.delegate.task.azure.appservice.webapp.response.AzureAppDeploymentData
 19480:io.harness.delegate.task.azure.appservice.webapp.response.AzureWebAppSlotShiftTrafficResponse
 19481:io.harness.delegate.task.azure.appservice.webapp.response.AzureWebAppSwapSlotsResponse
+19482:io.harness.delegate.task.shell.WinRmShellScriptTaskParametersNG
 19483:io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifactDelegateRequest
 19484:io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifactDelegateResponse
 19485:io.harness.delegate.beans.azure.appservicesettings.AzureAppServiceSettingConstants
@@ -1746,6 +1746,7 @@
 55419:io.harness.delegate.task.azure.appservice.webapp.ng.exception.AzureWebAppRollbackExceptionData
 55420:io.harness.delegate.task.artifacts.gar.GarDelegateRequest
 55421:io.harness.delegate.task.artifacts.gar.GarDelegateResponse
+55422:io.harness.delegate.task.azure.artifact.AwsS3AzureArtifactRequestDetails
 55470:io.harness.delegate.task.ssh.artifact.CustomArtifactDelegateConfig
 55501:io.harness.delegate.beans.instancesync.info.PdcServerInstanceInfo
 55502:io.harness.delegate.beans.instancesync.info.AzureSshWinrmServerInstanceInfo
@@ -1753,16 +1754,14 @@
 55504:io.harness.delegate.beans.ci.vm.steps.VmBackgroundStep
 55505:io.harness.delegate.beans.azure.response.AzureLocationsResponse
 55506:io.harness.delegate.beans.azure.response.AzureMngGroupsResponse
+55511:io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactDelegateRequest
+55512:io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactDelegateResponse
 56335:io.harness.delegate.task.gitpolling.request.GitPollingTaskParameters
 56336:io.harness.delegate.task.gitpolling.github.GitHubPollingDelegateRequest
 56337:io.harness.delegate.task.gitpolling.GitPollingSourceType
 56338:io.harness.delegate.task.gitpolling.GitPollingTaskType
 56339:io.harness.delegate.beans.polling.GitPollingDelegateResponse
 56403:io.harness.delegate.beans.storeconfig.CustomRemoteStoreDelegateConfig
-70001:io.harness.accesscontrol.commons.exceptions.AccessDeniedErrorDTO
-70002:io.harness.accesscontrol.acl.api.PermissionCheckDTO
-70003:io.harness.accesscontrol.acl.api.ResourceScope
-70004:io.harness.accesscontrol.NGAccessDeniedException
 71100:software.wings.service.impl.ThirdPartyApiCallLog.ThirdPartyApiCallField
 71101:software.wings.service.impl.ThirdPartyApiCallLog.FieldType
 71102:software.wings.beans.Log
@@ -2304,11 +2303,14 @@
 980030:io.harness.exception.InterruptedRuntimeException
 980031:io.harness.exception.InvalidIdentifierRefException
 980032:io.harness.exception.ngexception.AzureAppServiceTaskException
+980033:io.harness.exception.ngexception.beans.templateservice.TemplateInputsErrorDTO
+980034:io.harness.exception.ngexception.beans.templateservice.TemplateInputsErrorMetadataDTO
 9300122:io.harness.yaml.core.timeout.Timeout
 9800001:io.harness.beans.RecasterMap
 9800002:io.harness.licensing.beans.modules.ChaosModuleLicenseDTO
 9800003:io.harness.delegate.task.ssh.artifact.JenkinsArtifactDelegateConfig
 9800004:io.harness.delegate.task.ssh.artifact.SkipCopyArtifactDelegateConfig
 9800005:io.harness.delegate.task.ssh.artifact.ArtifactoryDockerArtifactDelegateConfig
+9800006:io.harness.delegate.task.ssh.artifact.NexusDockerArtifactDelegateConfig
 10000001:io.harness.delegate.beans.connector.elkconnector.ELKConnectorDTO
 10000002:io.harness.delegate.beans.connector.elkconnector.ELKAuthType

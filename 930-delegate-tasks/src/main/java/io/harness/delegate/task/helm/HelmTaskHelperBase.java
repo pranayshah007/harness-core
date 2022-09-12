@@ -341,7 +341,7 @@ public class HelmTaskHelperBase {
   }
 
   public String addRepoFlags(String command, String repoName, String tempDir) {
-    if (isNotBlank(repoName)) {
+    if (isNotBlank(repoName) && isNotEmpty(tempDir)) {
       return command + HELM_REPO_FLAGS.replace(HELM_CACHE_HOME_PLACEHOLDER, tempDir).replace(REPO_NAME, repoName);
     }
     return command;

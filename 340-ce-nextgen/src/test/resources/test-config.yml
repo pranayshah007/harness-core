@@ -30,6 +30,7 @@ events-mongo:
   maxConnectionIdleTime: 600000
   connectionsPerHost: 300
   indexManagerMode: AUTO
+  aliasDBName: events
 
 timescaledb:
   timescaledbUrl: "jdbc:postgresql://localhost:5432/harness"
