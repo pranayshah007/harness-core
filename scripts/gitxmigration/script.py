@@ -9,7 +9,7 @@ import requests
 
 INPUT_ACCOUNT_ID = "kmpySmUISimoRrJL6NL73w"
 INPUT_ORG_ID = "default"
-INPUT_PROJECT_ID = "sept_10_project_3"
+INPUT_PROJECT_ID = "sept_13_project_3"
 LOCAL_API_KEY = "pat.kmpySmUISimoRrJL6NL73w.62a7a3ee66425e616acf6629.ccm4qJhiI42DcOwRtGE3"
 
 HARNESS_SUPPORT_USER_ACCOUNT_ID = "kmpySmUISimoRrJL6NL73w"
@@ -36,6 +36,7 @@ class DBKeys(Enum):
     BRANCH = "branch"
     OBJECT_ID_OF_YAML = "objectIdOfYaml"
     YAML = "yaml"
+    SETTINGS = "settings"
 
 
 yaml_git_config_list = []
@@ -196,12 +197,43 @@ def reset_git_sync_sdk_cache():
     print(resp.status_code)
 
 
+def enable_new_gitx():
+    ng_manager_db = mongo_client.get_database(NG_MANAGER_DB_NAME)
+    git_sync_settings_collection = ng_manager_db.gitSyncSettings
+
+    find_criteria = {
+        DBKeys.ACCOUNT_IDENTIFIER.value: INPUT_ACCOUNT_ID,
+        DBKeys.ORG_IDENTIFIER.value: INPUT_ORG_ID,
+        DBKeys.PROJECT_IDENTIFIER.value: INPUT_PROJECT_ID,
+    }
+
+    settings_value = {
+        "isGitSimplificationEnabled": "true"
+    }
+
+    git_sync_settings_collection.update_one(find_criteria, {"$set": {DBKeys.SETTINGS.value: settings_value}})
+
+
+def delete_yaml_git_configs():
+    ng_manager_db = mongo_client.get_database(NG_MANAGER_DB_NAME)
+    yaml_git_config_collection = ng_manager_db.yamlGitConfigs
+
+    find_criteria = {
+        DBKeys.ACCOUNT_ID.value: INPUT_ACCOUNT_ID,
+        DBKeys.ORG_IDENTIFIER.value: INPUT_ORG_ID,
+        DBKeys.PROJECT_IDENTIFIER.value: INPUT_PROJECT_ID
+    }
+    yaml_git_config_collection.delete_many(find_criteria)
+
+
 if __name__ == "__main__":
     setup_mongo_client()
     prepare_yaml_git_config_list()
-    disable_git_sync_via_api()
+    delete_yaml_git_configs()
+    # disable_git_sync_via_api()
     delete_non_default_branch_entities()
-    enable_gitx_via_api()
+    # enable_gitx_via_api()
+    enable_new_gitx()
     migrate_records_from_inline_to_remote()
     cleanup_connector_entities()
-    reset_git_sync_sdk_cache()
+    # reset_git_sync_sdk_cache()
