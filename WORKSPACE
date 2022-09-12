@@ -5006,7 +5006,7 @@ plain_artifacts = [
     "org.xerial.snappy:snappy-java:1.1.7.3",
     "org.xmlunit:xmlunit-core:2.3.0",
     "org.xmlunit:xmlunit-matchers:2.3.0",
-    "org.yaml:snakeyaml:1.28",
+    "org.yaml:snakeyaml:1.31",
     "org.zeroturnaround:zt-exec:1.9",
     "ru.vyarus:guice-validator:1.2.0",
     "com.amazonaws:aws-encryption-sdk-java:2.3.3",
