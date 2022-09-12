@@ -98,6 +98,8 @@ import static io.harness.ccm.views.utils.ClusterTableKeys.WORKLOAD_TYPE;
 
 import static java.lang.String.format;
 
+import com.healthmarketscience.sqlbuilder.OrderObject;
+import com.healthmarketscience.sqlbuilder.dbspec.basic.DbColumn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.commons.service.intf.EntityMetadataService;
 import io.harness.ccm.views.businessMapping.entities.BusinessMapping;
@@ -273,7 +275,9 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     }
 
     ViewsQueryMetadata viewsQueryMetadata = viewsQueryBuilder.getFilterValuesQuery(
-        viewRuleList, idFilters, getTimeFilters(filters), cloudProviderTableName, limit, offset);
+        viewRuleList, idFilters, getTimeFilters(filters), cloudProviderTableName, limit, offset,
+            !isDataFilteredByAwsAccount(idFilters));
+//    viewsQueryMetadata.getQuery().addOrdering(new DbColumn(idFilters.get(0).getField().getFieldId()), OrderObject.Dir.ASCENDING);
     QueryJobConfiguration queryConfig =
         QueryJobConfiguration.newBuilder(viewsQueryMetadata.getQuery().toString()).build();
     TableResult result;
@@ -284,9 +288,10 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
       Thread.currentThread().interrupt();
       return null;
     }
-    return costCategoriesPostFetchResponseUpdate(getFilterValuesData(queryParams.getAccountId(), viewsQueryMetadata,
-                                                     result, idFilters, cloudProviderTableName.contains(CLUSTER_TABLE)),
-        businessMappingId);
+    List<String> rs = getFilterValuesData(queryParams.getAccountId(), viewsQueryMetadata,
+            result, idFilters, cloudProviderTableName.contains(CLUSTER_TABLE));
+    System.out.println("result set after mongoDB mapping = " + rs);
+    return costCategoriesPostFetchResponseUpdate(rs, businessMappingId);
   }
 
   private List<String> getFilterValuesData(final String harnessAccountId, final ViewsQueryMetadata viewsQueryMetadata,
