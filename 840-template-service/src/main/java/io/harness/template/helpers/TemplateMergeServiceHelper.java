@@ -49,7 +49,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.*;
-
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -179,7 +178,8 @@ public class TemplateMergeServiceHelper {
       if (isEmpty(templateInputsYamlWithSpec)) {
         return templateInputsYamlWithSpec;
       }
-      ObjectNode templateObjectNode = (ObjectNode)YamlUtils.readTree(templateInputsYamlWithSpec).getNode().getCurrJsonNode();
+      ObjectNode templateObjectNode =
+          (ObjectNode) YamlUtils.readTree(templateInputsYamlWithSpec).getNode().getCurrJsonNode();
       JsonNode templateInputsYaml = templateObjectNode.retain(SPEC, "templateVariables");
       return YamlPipelineUtils.writeYamlString(templateInputsYaml);
     } catch (IOException e) {

@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.expression.EngineExpressionEvaluator.EXPR_END_ESC;
 import static io.harness.expression.EngineExpressionEvaluator.EXPR_START;
 
-import com.fasterxml.jackson.databind.node.*;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.common.NGExpressionUtils;
 import io.harness.data.structure.HarnessStringUtils;
@@ -19,14 +18,13 @@ import io.harness.jackson.JsonNodeUtils;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
-
-import com.fasterxml.jackson.databind.JsonNode;
-
-import java.util.*;
-
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.JsonUtils;
 import io.harness.utils.YamlPipelineUtils;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.*;
+import java.util.*;
 import lombok.experimental.UtilityClass;
 
 @OwnedBy(PIPELINE)
@@ -39,13 +37,15 @@ public class RuntimeInputFormHelper {
       JsonNode finalTemplateVariablesJson = new TextNode("");
       if (templateVariables != null && templateVariables.getNodeType() != JsonNodeType.MISSING) {
         JsonNode templateVariablesJsonList = createTemplateVariablesFromTemplate(templateVariables);
-        finalTemplateVariablesJson = new ObjectNode(JsonNodeFactory.instance, Collections.singletonMap("templateVariables", templateVariablesJsonList));
-        if(templateJson.get("templateVariables")!=null){
+        finalTemplateVariablesJson = new ObjectNode(
+            JsonNodeFactory.instance, Collections.singletonMap("templateVariables", templateVariablesJsonList));
+        if (templateJson.get("templateVariables") != null) {
           templateJson.remove("templateVariables");
         }
       }
-      return createRuntimeInputForm(templateJson.toString(), true) + YamlPipelineUtils.writeYamlString(finalTemplateVariablesJson);
-    }catch (Exception e){
+      return createRuntimeInputForm(templateJson.toString(), true)
+          + YamlPipelineUtils.writeYamlString(finalTemplateVariablesJson);
+    } catch (Exception e) {
       return createRuntimeInputForm(templateYaml, true);
     }
   }
@@ -79,16 +79,16 @@ public class RuntimeInputFormHelper {
   }
 
   private JsonNode createTemplateVariablesFromTemplate(JsonNode templateVariableSpec) {
-    if(templateVariableSpec.getNodeType() != JsonNodeType.ARRAY){
+    if (templateVariableSpec.getNodeType() != JsonNodeType.ARRAY) {
       return null;
     }
     ArrayNode variableArray = (ArrayNode) templateVariableSpec;
     List<Map<String, Object>> templateVariableMap = new LinkedList<>();
-    for (JsonNode variableNode: variableArray) {
+    for (JsonNode variableNode : variableArray) {
       String variableValue = variableNode.get(YAMLFieldNameConstants.VALUE).asText();
       if (NGExpressionUtils.matchesExecutionInputPattern(variableValue)
-              || NGExpressionUtils.matchesInputSetPattern(variableValue)) {
-        Map<String, Object> variable =  JsonUtils.jsonNodeToMap(variableNode);
+          || NGExpressionUtils.matchesInputSetPattern(variableValue)) {
+        Map<String, Object> variable = JsonUtils.jsonNodeToMap(variableNode);
         templateVariableMap.add(variable);
       }
     }
