@@ -49,7 +49,8 @@ public class NGRestUtils {
 
   private static <T> Response<ResponseDTO<T>> executeRequest(Call<ResponseDTO<T>> request) throws IOException {
     try {
-      return request.clone().execute();
+      Call<ResponseDTO<T>> cloneRequest = request.clone();
+      return cloneRequest == null ? request.execute() : cloneRequest.execute();
     } catch (IOException ioException) {
       String url = Optional.ofNullable(request.request()).map(x -> x.url().encodedPath()).orElse(null);
       log.error("IO error while connecting to the service: {}", url, ioException);
