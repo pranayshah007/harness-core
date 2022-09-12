@@ -13,7 +13,7 @@ import lombok.Value;
 @OwnedBy(HarnessTeam.CDC)
 @Value
 @Builder
-public class GARrtifactInfo implements ArtifactInfo {
+public class GARArtifactInfo implements ArtifactInfo {
   String connectorRef;
   String region;
   String project;

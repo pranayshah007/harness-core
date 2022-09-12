@@ -52,7 +52,7 @@ import io.harness.polling.bean.artifact.ArtifactPolledResponse;
 import io.harness.polling.bean.artifact.ArtifactoryRegistryArtifactInfo;
 import io.harness.polling.bean.artifact.DockerHubArtifactInfo;
 import io.harness.polling.bean.artifact.EcrArtifactInfo;
-import io.harness.polling.bean.artifact.GARrtifactInfo;
+import io.harness.polling.bean.artifact.GARArtifactInfo;
 import io.harness.polling.bean.artifact.GcrArtifactInfo;
 import io.harness.polling.bean.artifact.JenkinsArtifactInfo;
 import io.harness.polling.bean.artifact.NexusRegistryArtifactInfo;
@@ -373,7 +373,7 @@ public class PollingResponseHandler {
         polledResponseResultBuilder.type(JENKINS);
         break;
       case GOOGLE_ARTIFACT_REGISTRY:
-        polledResponseResultBuilder.name(((GARrtifactInfo) artifactInfo).getPkg());
+        polledResponseResultBuilder.name(((GARArtifactInfo) artifactInfo).getPkg());
         polledResponseResultBuilder.type(GOOGLE_ARTIFACT_REGISTRY);
         break;
       default:
