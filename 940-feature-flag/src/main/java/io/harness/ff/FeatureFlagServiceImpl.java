@@ -30,15 +30,12 @@ import io.harness.cf.client.api.CfClient;
 import io.harness.cf.client.dto.Target;
 import io.harness.configuration.DeployMode;
 import io.harness.exception.InvalidRequestException;
-import io.harness.ng.core.dto.AccountDTO;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.PersistentEntity;
 import io.harness.remote.client.RestClientUtils;
 import io.harness.serializer.JsonUtils;
 import io.harness.utils.RetryUtils;
 
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;

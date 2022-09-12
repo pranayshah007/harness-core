@@ -377,7 +377,7 @@ gcpMarketplaceConfig:
   subscriptionName: gcp-marketplace-topic-subscriber
 
 cfClientConfig:
-  apiKey: "088a7a3a-3c55-4438-9288-b560a6a7f565"
+  apiKey: ""
   configUrl: "https://config.feature-flags.uat.harness.io/api/1.0"
   eventUrl: "https://event.feature-flags.uat.harness.io/api/1.0"
   analyticsEnabled: true
@@ -388,7 +388,7 @@ cfClientConfig:
   sleepInterval: 5000
 
 featureFlagConfig:
-  featureFlagSystem: CF
+  featureFlagSystem: LOCAL
   syncFeaturesToCF: false
 
 cfMigrationConfig:

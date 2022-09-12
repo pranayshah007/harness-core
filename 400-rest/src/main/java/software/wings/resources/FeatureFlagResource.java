@@ -16,7 +16,6 @@ import io.harness.beans.FeatureFlag;
 import io.harness.beans.FeatureName;
 import io.harness.eraro.ResponseMessage;
 import io.harness.exception.InvalidArgumentsException;
-import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnauthorizedException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.rest.RestResponse;
@@ -34,7 +33,6 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import lombok.extern.slf4j.Slf4j;
 
