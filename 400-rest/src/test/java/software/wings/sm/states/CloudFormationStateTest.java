@@ -331,8 +331,8 @@ public class CloudFormationStateTest extends WingsBaseTest {
         .thenReturn(serviceCommand);
 
     WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService =
-        new WorkflowStandardParamsExtensionService(
-            appService, accountService, artifactService, environmentService, artifactStreamServiceBindingService, null);
+        new WorkflowStandardParamsExtensionService(appService, accountService, artifactService, environmentService,
+            artifactStreamServiceBindingService, null, featureFlagService);
 
     on(cloudFormationCreateStackState)
         .set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);

@@ -192,9 +192,6 @@ public class ProjectServiceImpl implements ProjectService {
   private void setupProject(Scope scope) {
     try {
       defaultUserGroupService.create(scope, emptyList());
-    } catch (DuplicateFieldException ex) {
-      log.error(
-          "Default User Group Creation failed for Project:" + scope.toString() + "as User Group already exists", ex);
     } catch (Exception ex) {
       log.error("Default User Group Creation failed for Project: " + scope.toString(), ex);
     }

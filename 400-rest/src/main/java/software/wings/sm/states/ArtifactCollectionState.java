@@ -13,6 +13,7 @@ import static io.harness.beans.ExecutionStatus.SUCCESS;
 import static io.harness.beans.FeatureName.ADD_MANIFEST_COLLECTION_STEP;
 import static io.harness.beans.FeatureName.ARTIFACT_COLLECTION_CONFIGURABLE;
 import static io.harness.beans.FeatureName.SAVE_ARTIFACT_TO_DB;
+import static io.harness.beans.FeatureName.SORT_ARTIFACTS_IN_UPDATED_ORDER;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
@@ -288,7 +289,8 @@ public class ArtifactCollectionState extends State {
   }
 
   private boolean shouldCollectArtifact(ExecutionContext context) {
-    return featureFlagService.isEnabled(ARTIFACT_COLLECTION_CONFIGURABLE, context.getAccountId());
+    return featureFlagService.isEnabled(ARTIFACT_COLLECTION_CONFIGURABLE, context.getAccountId())
+        || featureFlagService.isEnabled(SORT_ARTIFACTS_IN_UPDATED_ORDER, context.getAccountId());
   }
 
   private boolean shouldCollectManifest(ExecutionContext context) {
@@ -621,6 +623,8 @@ public class ArtifactCollectionState extends State {
           if (shouldUpdateMetadata(artifact, savedArtifact)) {
             artifactService.updateMetadataAndRevision(
                 savedArtifact.getUuid(), savedArtifact.getAccountId(), metadata, artifact.getRevision());
+          } else if (featureFlagService.isEnabled(SORT_ARTIFACTS_IN_UPDATED_ORDER, context.getAccountId())) {
+            artifactService.updateLastUpdatedAt(savedArtifact.getUuid(), savedArtifact.getAccountId());
           }
         }
         ArtifactCollectionExecutionData artifactCollectionExecutionData =

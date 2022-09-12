@@ -225,7 +225,7 @@ public class DefaultLicenseServiceImpl implements LicenseService {
   }
 
   @Override
-  public ModuleLicenseDTO startFreeLicense(String accountIdentifier, ModuleType moduleType) {
+  public ModuleLicenseDTO startFreeLicense(String accountIdentifier, ModuleType moduleType, String referer) {
     ModuleLicenseDTO trialLicenseDTO = licenseInterface.generateFreeLicense(accountIdentifier, moduleType);
     verifyAccountExistence(accountIdentifier);
 
@@ -234,7 +234,7 @@ public class DefaultLicenseServiceImpl implements LicenseService {
 
     licenseComplianceResolver.preCheck(trialLicense, EditionAction.START_FREE);
     ModuleLicense savedEntity = saveLicense(trialLicense);
-    sendSucceedTelemetryEvents(SUCCEED_START_FREE_OPERATION, savedEntity, accountIdentifier);
+    sendSucceedTelemetryEvents(SUCCEED_START_FREE_OPERATION, savedEntity, accountIdentifier, referer);
 
     log.info("Free license for module [{}] is started in account [{}]", moduleType, accountIdentifier);
 
@@ -266,7 +266,8 @@ public class DefaultLicenseServiceImpl implements LicenseService {
   }
 
   @Override
-  public ModuleLicenseDTO startTrialLicense(String accountIdentifier, StartTrialDTO startTrialRequestDTO) {
+  public ModuleLicenseDTO startTrialLicense(
+      String accountIdentifier, StartTrialDTO startTrialRequestDTO, String referer) {
     Edition edition = startTrialRequestDTO.getEdition();
     if (!checkTrialSupported(edition)) {
       throw new InvalidRequestException("Edition doesn't support trial");
@@ -280,7 +281,7 @@ public class DefaultLicenseServiceImpl implements LicenseService {
 
     licenseComplianceResolver.preCheck(trialLicense, EditionAction.START_TRIAL);
     ModuleLicense savedEntity = saveLicense(trialLicense);
-    sendSucceedTelemetryEvents(SUCCEED_START_TRIAL_OPERATION, savedEntity, accountIdentifier);
+    sendSucceedTelemetryEvents(SUCCEED_START_TRIAL_OPERATION, savedEntity, accountIdentifier, referer);
 
     log.info("Trial license for module [{}] is started in account [{}]", startTrialRequestDTO.getModuleType(),
         accountIdentifier);
@@ -307,7 +308,7 @@ public class DefaultLicenseServiceImpl implements LicenseService {
     licenseComplianceResolver.preCheck(licenseToBeExtended, EditionAction.EXTEND_TRIAL);
     ModuleLicense savedEntity = saveLicense(licenseToBeExtended);
 
-    sendSucceedTelemetryEvents(SUCCEED_EXTEND_TRIAL_OPERATION, savedEntity, accountIdentifier);
+    sendSucceedTelemetryEvents(SUCCEED_EXTEND_TRIAL_OPERATION, savedEntity, accountIdentifier, null);
     syncLicenseChangeToCGForCE(savedEntity);
     log.info("Trial license for module [{}] is extended in account [{}]", moduleType, accountIdentifier);
     return licenseObjectConverter.toDTO(savedEntity);
@@ -438,7 +439,8 @@ public class DefaultLicenseServiceImpl implements LicenseService {
     return EditionActionDTO.builder().action(editionAction).reason(editionAction.getReason()).build();
   }
 
-  private void sendSucceedTelemetryEvents(String eventName, ModuleLicense moduleLicense, String accountIdentifier) {
+  private void sendSucceedTelemetryEvents(
+      String eventName, ModuleLicense moduleLicense, String accountIdentifier, String referer) {
     String email = getEmailFromPrincipal();
     HashMap<String, Object> properties = new HashMap<>();
     properties.put("email", email);
@@ -451,7 +453,9 @@ public class DefaultLicenseServiceImpl implements LicenseService {
     if (moduleLicense.getEdition() != null) {
       properties.put("plan", moduleLicense.getEdition());
     }
-
+    if (referer != null) {
+      properties.put("refererURL", referer);
+    }
     properties.put("platform", "NG");
     properties.put("startTime", String.valueOf(moduleLicense.getStartTime()));
     properties.put("duration", TRIAL_DURATION);

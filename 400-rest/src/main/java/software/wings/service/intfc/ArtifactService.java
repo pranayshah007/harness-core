@@ -136,6 +136,8 @@ public interface ArtifactService extends OwnedByArtifactStream {
    */
   void updateArtifactSourceName(ArtifactStream artifactStream);
 
+  void updateLastUpdatedAt(String artifactId, String accountId);
+
   /**
    * Adds the artifact file.
    *

@@ -33,7 +33,7 @@ import static io.harness.k8s.manifest.ManifestHelper.yaml_file_extension;
 import static io.harness.k8s.manifest.ManifestHelper.yml_file_extension;
 import static io.harness.k8s.model.K8sExpressions.canaryDestinationExpression;
 import static io.harness.k8s.model.K8sExpressions.stableDestinationExpression;
-import static io.harness.k8s.model.Release.Status.Failed;
+import static io.harness.k8s.releasehistory.IK8sRelease.Status.Failed;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.ERROR;
@@ -160,9 +160,9 @@ import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceComparer;
 import io.harness.k8s.model.KubernetesResourceId;
-import io.harness.k8s.model.Release;
-import io.harness.k8s.model.ReleaseHistory;
 import io.harness.k8s.model.response.CEK8sDelegatePrerequisite;
+import io.harness.k8s.releasehistory.K8sLegacyRelease;
+import io.harness.k8s.releasehistory.ReleaseHistory;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -974,7 +974,7 @@ public class K8sTaskHelperBase {
     executionLogCallback.saveExecutionLog("\nCleaning up older and failed releases");
 
     for (int releaseIndex = releaseHistory.getReleases().size() - 1; releaseIndex >= 0; releaseIndex--) {
-      Release release = releaseHistory.getReleases().get(releaseIndex);
+      K8sLegacyRelease release = releaseHistory.getReleases().get(releaseIndex);
       if (release.getNumber() < lastSuccessfulReleaseNumber || release.getStatus() == Failed) {
         for (int resourceIndex = release.getResources().size() - 1; resourceIndex >= 0; resourceIndex--) {
           KubernetesResourceId resourceId = release.getResources().get(resourceIndex);
@@ -1997,7 +1997,7 @@ public class K8sTaskHelperBase {
     }
 
     Map<String, KubernetesResourceId> kubernetesResourceIdMap = new HashMap<>();
-    for (Release release : releaseHistory.getReleases()) {
+    for (K8sLegacyRelease release : releaseHistory.getReleases()) {
       if (isNotEmpty(release.getResources())) {
         release.getResources().forEach(
             resource -> kubernetesResourceIdMap.put(generateResourceIdentifier(resource), resource));

@@ -68,6 +68,7 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
+import io.harness.strategy.StrategyValidationUtils;
 import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.when.utils.RunInfoUtils;
 import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
@@ -160,8 +161,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   @Override
   public PlanNode createPlanForParentNode(
       PlanCreationContext ctx, DeploymentStageNode stageNode, List<String> childrenNodeIds) {
-    stageNode.setIdentifier(StrategyUtils.getIdentifierWithExpression(ctx, stageNode.getIdentifier()));
-    stageNode.setName(StrategyUtils.getIdentifierWithExpression(ctx, stageNode.getName()));
+    stageNode.setIdentifier(getIdentifierWithExpression(ctx, stageNode, stageNode.getIdentifier()));
+    stageNode.setName(getIdentifierWithExpression(ctx, stageNode, stageNode.getName()));
     DeploymentStageConfig config = stageNode.getDeploymentStageConfig();
     StageElementParametersBuilder stageParameters = CdStepParametersUtils.getStageParameters(stageNode);
     YamlField specField =
@@ -192,6 +193,14 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     return builder.build();
   }
 
+  public String getIdentifierWithExpression(PlanCreationContext ctx, DeploymentStageNode node, String identifier) {
+    if (node.getDeploymentStageConfig().getServices() != null
+        || node.getDeploymentStageConfig().getEnvironments() != null
+        || node.getDeploymentStageConfig().getEnvironmentGroup() != null) {
+      return node.getIdentifier() + StrategyValidationUtils.STRATEGY_IDENTIFIER_POSTFIX;
+    }
+    return StrategyUtils.getIdentifierWithExpression(ctx, node.getIdentifier());
+  }
   @Override
   public LinkedHashMap<String, PlanCreationResponse> createPlanForChildrenNodes(
       PlanCreationContext ctx, DeploymentStageNode stageNode) {
@@ -209,7 +218,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
         List<AdviserObtainment> adviserObtainments =
             addResourceConstraintDependencyWithWhenCondition(planCreationResponseMap, specField);
         String infraNodeId = addInfrastructureNode(planCreationResponseMap, stageNode, adviserObtainments);
-        String serviceNodeId = addServiceNode(planCreationResponseMap, stageNode, infraNodeId);
+        String serviceNodeId = addServiceNode(specField, planCreationResponseMap, stageNode, infraNodeId);
         addSpecNode(planCreationResponseMap, specField, serviceNodeId);
       } else {
         final String postServiceStepUuid = "service-" + UUIDGenerator.generateUuid();
@@ -274,9 +283,9 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
           GraphLayoutNode.newBuilder()
               .setNodeUUID(planNodeId)
               .setNodeType(yamlField.getNode().getType())
-              .setName(yamlField.getNode().getName())
+              .setName(config.getName())
               .setNodeGroup(StepOutcomeGroup.STAGE.name())
-              .setNodeIdentifier(yamlField.getNode().getIdentifier())
+              .setNodeIdentifier(config.getIdentifier())
               .setEdgeLayoutList(EdgeLayoutList.newBuilder().build())
               .build());
       return GraphLayoutResponse.builder().layoutNodes(stageYamlFieldMap).build();
@@ -295,9 +304,14 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   }
 
   private boolean useNewFlow(PlanCreationContext ctx, DeploymentStageNode stageNode) {
+    DeploymentStageConfig deploymentStageConfig = stageNode.getDeploymentStageConfig();
     boolean isServiceV2 = stageNode.getDeploymentStageConfig().getService() != null
         && ParameterField.isNotNull(stageNode.getDeploymentStageConfig().getService().getServiceRef());
-    return isServiceV2
+    boolean serviceV2UseFromStage = deploymentStageConfig.getService().getUseFromStage() != null
+        && EmptyPredicate.isNotEmpty(deploymentStageConfig.getService().getUseFromStage().getStage());
+    boolean isServices = stageNode.getDeploymentStageConfig().getServices() != null;
+    boolean shouldUseNewFlow = isServices || isServiceV2 || serviceV2UseFromStage;
+    return shouldUseNewFlow
         && featureFlagHelperService.isEnabled(
             ctx.getMetadata().getAccountIdentifier(), FeatureName.SERVICE_V2_EXPRESSION);
   }
@@ -439,8 +453,9 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     return serviceField;
   }
 
-  private String addServiceNode(LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap,
-      DeploymentStageNode stageNode, String nextNodeId) throws IOException {
+  private String addServiceNode(YamlField specField,
+      LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, DeploymentStageNode stageNode,
+      String nextNodeId) throws IOException {
     // Adding service child by resolving the serviceField
     ServiceDefinitionType serviceType = stageNode.getDeploymentStageConfig().getDeploymentType();
     ServiceYamlV2 service;
@@ -458,7 +473,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     }
     String serviceNodeId = service.getUuid();
     planCreationResponseMap.putAll(ServiceAllInOnePlanCreatorUtils.addServiceNode(
-        kryoSerializer, service, environment, serviceNodeId, nextNodeId, serviceType));
+        specField, kryoSerializer, service, environment, serviceNodeId, nextNodeId, serviceType));
     return serviceNodeId;
   }
   private String addInfrastructureNode(LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap,

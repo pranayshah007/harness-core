@@ -23,6 +23,7 @@ import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.GithubPackagesArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig;
 import io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
@@ -169,6 +170,12 @@ public class ArtifactUtils {
         return String.format(placeholder, sourceType, jenkinsArtifactConfig.getJobName().getValue(),
             jenkinsArtifactConfig.getArtifactPath().getValue(), jenkinsArtifactConfig.getBuild().getValue(),
             jenkinsArtifactConfig.getConnectorRef().getValue());
+      case GITHUB_PACKAGES:
+        GithubPackagesArtifactConfig githubPackagesArtifactConfig = (GithubPackagesArtifactConfig) artifactConfig;
+        return String.format(placeholder, sourceType, githubPackagesArtifactConfig.getPackageName().getValue(),
+            githubPackagesArtifactConfig.getVersion().getValue(),
+            githubPackagesArtifactConfig.getVersionRegex().getValue(),
+            githubPackagesArtifactConfig.getConnectorRef().getValue());
       case GOOGLE_ARTIFACT_REGISTRY:
         GoogleArtifactRegistryConfig googleArtifactRegistryConfig = (GoogleArtifactRegistryConfig) artifactConfig;
         String version = googleArtifactRegistryConfig.getVersion().getValue() != null

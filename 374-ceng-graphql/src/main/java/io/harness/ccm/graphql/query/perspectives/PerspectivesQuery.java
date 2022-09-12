@@ -73,6 +73,7 @@ public class PerspectivesQuery {
   @Inject PerspectiveTimeSeriesHelper perspectiveTimeSeriesHelper;
   @Inject PerspectiveFieldsHelper perspectiveFieldsHelper;
   @Inject CCMRbacHelper rbacHelper;
+  private static final int MAX_LIMIT_VALUE = 10_000;
 
   @GraphQLQuery(name = "perspectiveTrendStats", description = "Trend stats for perspective")
   public PerspectiveTrendStats perspectiveTrendStats(
@@ -136,11 +137,12 @@ public class PerspectivesQuery {
     BigQuery bigQuery = bigQueryService.get();
     isClusterQuery = isClusterQuery != null && isClusterQuery;
     skipRoundOff = skipRoundOff != null && skipRoundOff;
+    final int maxLimit = Objects.isNull(limit) ? MAX_LIMIT_VALUE : Integer.min(limit, MAX_LIMIT_VALUE);
 
     return PerspectiveEntityStatsData.builder()
         .data(viewsBillingService
                   .getEntityStatsDataPointsNg(bigQuery, filters, groupBy, aggregateFunction, sortCriteria,
-                      cloudProviderTableName, limit, offset,
+                      cloudProviderTableName, maxLimit, offset,
                       viewsQueryHelper.buildQueryParams(accountId, isClusterQuery, skipRoundOff))
                   .getData())
         .build();
@@ -186,6 +188,7 @@ public class PerspectivesQuery {
     final boolean includeOthers = Objects.nonNull(preferences) && Boolean.TRUE.equals(preferences.getIncludeOthers());
     final boolean includeUnallocatedCost =
         Objects.nonNull(preferences) && Boolean.TRUE.equals(preferences.getIncludeUnallocatedCost());
+    final int maxLimit = Objects.isNull(limit) ? MAX_LIMIT_VALUE : Integer.min(limit, MAX_LIMIT_VALUE);
     String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(accountId, UNIFIED_TABLE);
     BigQuery bigQuery = bigQueryService.get();
     long timePeriod = perspectiveTimeSeriesHelper.getTimePeriod(groupBy);
@@ -215,7 +218,7 @@ public class PerspectivesQuery {
 
     PerspectiveTimeSeriesData data = perspectiveTimeSeriesHelper.fetch(
         viewsBillingService.getTimeSeriesStatsNg(bigQuery, filters, groupBy, aggregateFunction, sortCriteria,
-            cloudProviderTableName, includeOthers, limit, viewQueryParams),
+            cloudProviderTableName, includeOthers, maxLimit, viewQueryParams),
         timePeriod, conversionField, businessMappingId, accountId, groupBy, sharedCostFromFilters,
         addSharedCostFromGroupBy);
 

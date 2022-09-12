@@ -101,7 +101,7 @@ public class VmInitializeTaskParamsBuilderTest extends CIExecutionTestBase {
     when(codebaseUtils.getGitConnector(AmbianceUtils.getNgAccess(ambiance), initializeStepInfo.getCiCodebase(),
              initializeStepInfo.isSkipGitClone()))
         .thenReturn(null);
-    when(codebaseUtils.getCodebaseVars(any(), any())).thenReturn(m);
+    when(codebaseUtils.getCodebaseVars(any(), any(), any())).thenReturn(m);
     when(
         codebaseUtils.getGitEnvVariables(null, initializeStepInfo.getCiCodebase(), initializeStepInfo.isSkipGitClone()))
         .thenReturn(m);
@@ -146,7 +146,7 @@ public class VmInitializeTaskParamsBuilderTest extends CIExecutionTestBase {
     when(codebaseUtils.getGitConnector(AmbianceUtils.getNgAccess(ambiance), initializeStepInfo.getCiCodebase(),
              initializeStepInfo.isSkipGitClone()))
         .thenReturn(null);
-    when(codebaseUtils.getCodebaseVars(any(), any())).thenReturn(m);
+    when(codebaseUtils.getCodebaseVars(any(), any(), any())).thenReturn(m);
     when(
         codebaseUtils.getGitEnvVariables(null, initializeStepInfo.getCiCodebase(), initializeStepInfo.isSkipGitClone()))
         .thenReturn(m);

@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.delegate.task.ecs.request;
 
 import static io.harness.expression.Expression.ALLOW_SECRETS;
@@ -22,6 +29,7 @@ import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.NonFinal;
+import org.apache.commons.collections.CollectionUtils;
 
 @Value
 @Builder
@@ -51,8 +59,14 @@ public class EcsGitFetchRequest implements ActivityAccess, TaskParameters, Execu
 
     allEcsGitFetchFileConfigs.add(ecsTaskDefinitionGitFetchFileConfig);
     allEcsGitFetchFileConfigs.add(ecsServiceDefinitionGitFetchFileConfig);
-    allEcsGitFetchFileConfigs.addAll(ecsScalableTargetGitFetchFileConfigs);
-    allEcsGitFetchFileConfigs.addAll(ecsScalingPolicyGitFetchFileConfigs);
+
+    if (CollectionUtils.isNotEmpty(ecsScalableTargetGitFetchFileConfigs)) {
+      allEcsGitFetchFileConfigs.addAll(ecsScalableTargetGitFetchFileConfigs);
+    }
+
+    if (CollectionUtils.isNotEmpty(ecsScalingPolicyGitFetchFileConfigs)) {
+      allEcsGitFetchFileConfigs.addAll(ecsScalingPolicyGitFetchFileConfigs);
+    }
 
     for (EcsGitFetchFileConfig ecsGitFetchFileConfig : allEcsGitFetchFileConfigs) {
       GitStoreDelegateConfig gitStoreDelegateConfig = ecsGitFetchFileConfig.getGitStoreDelegateConfig();
