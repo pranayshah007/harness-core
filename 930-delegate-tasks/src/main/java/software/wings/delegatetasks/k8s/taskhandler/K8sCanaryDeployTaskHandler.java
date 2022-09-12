@@ -45,7 +45,7 @@ import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.K8sPod;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
-import io.harness.k8s.model.ReleaseHistory;
+import io.harness.k8s.releasehistory.ReleaseHistory;
 import io.harness.logging.CommandExecutionStatus;
 
 import software.wings.beans.GitFetchFilesConfig;
@@ -285,8 +285,7 @@ public class K8sCanaryDeployTaskHandler extends K8sTaskHandler {
       canaryHandlerConfig.setReleaseHistory(releaseHistory);
 
       boolean success = k8sCanaryBaseHandler.prepareForCanary(canaryHandlerConfig, k8sDelegateTaskParams,
-          k8sCanaryDeployTaskParameters.getSkipVersioningForAllK8sObjects(), executionLogCallback, false,
-          k8sCanaryDeployTaskParameters.isCleanUpIncompleteCanaryDeployRelease());
+          k8sCanaryDeployTaskParameters.getSkipVersioningForAllK8sObjects(), executionLogCallback, false);
       if (!success) {
         return false;
       }

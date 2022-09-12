@@ -122,7 +122,6 @@ git fetch origin refs/heads/develop; git checkout develop && git branch
 check_branch_name "develop"
 
 export VERSION_FILE=build.properties
-export DELEGATE_VERSION_FILE=260-delegate/build.properties
 
 export VERSION=`cat ${VERSION_FILE} | grep 'build.number=' | sed -e 's: *build.number=::g'`
 DV=`cat ${VERSION_FILE} | grep 'delegate.version=' | sed -e 's: *delegate.version=::g'`
@@ -142,16 +141,7 @@ export NEW_VERSION=$(( ${VERSION}+1 ))
 sed -i "s:build.number=${VERSION}00:build.number=${NEW_VERSION}00:g" ${VERSION_FILE}
 sed -i "s#${DV}#${YEAR}.${MONTH}.${NEWDELEGATEVERSION}#g" ${VERSION_FILE}
 
-#Variables pointing to 260-delegate/build.properties.
-export LAST_PUBLISHED_YEAR=`cat ${DELEGATE_VERSION_FILE} | grep 'build.majorVersion=' | sed -e 's: *build.majorVersion=::g'`
-export LAST_PUBLISHED_MONTH=`cat ${DELEGATE_VERSION_FILE} | grep 'build.minorVersion=' | sed -e 's: *build.minorVersion=::g'`
-
-# update 260-delegate/build.properties.
-sed -i "s:build.number=${VERSION}00:build.number=${NEW_VERSION}00:g" ${DELEGATE_VERSION_FILE}
-sed -i "s:build.majorVersion=${LAST_PUBLISHED_YEAR}:build.majorVersion=${YEAR}:g" ${DELEGATE_VERSION_FILE}
-sed -i "s:build.minorVersion=${LAST_PUBLISHED_MONTH}:build.minorVersion=${MONTH}:g" ${DELEGATE_VERSION_FILE}
-
-git add ${VERSION_FILE} ${DELEGATE_VERSION_FILE}
+git add ${VERSION_FILE}
 git commit -m "Branching to release/${PURPOSE}/${VERSION}xx. New version ${NEW_VERSION}xx"
 git push origin develop
 print_err "$?" "Pushing build.properties to develop branch failed"

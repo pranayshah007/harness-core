@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.ng.core.api.impl;
 
 import static io.harness.NGConstants.ACCOUNT_BASIC_ROLE;
@@ -26,6 +33,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
 import io.harness.beans.ScopeLevel;
+import io.harness.exception.DuplicateFieldException;
 import io.harness.ng.core.api.DefaultUserGroupService;
 import io.harness.ng.core.api.UserGroupService;
 import io.harness.ng.core.dto.UserGroupDTO;
@@ -72,6 +80,7 @@ public class DefaultUserGroupServiceImpl implements DefaultUserGroupService {
     String userGroupIdentifier = getUserGroupIdentifier(scope);
     String userGroupName = getUserGroupName(scope);
     String userGroupDescription = getUserGroupDescription(scope);
+    UserGroup userGroup = null;
     try {
       UserGroupDTO userGroupDTO = UserGroupDTO.builder()
                                       .accountIdentifier(scope.getAccountIdentifier())
@@ -86,7 +95,7 @@ public class DefaultUserGroupServiceImpl implements DefaultUserGroupService {
                                       .harnessManaged(true)
                                       .build();
 
-      UserGroup userGroup = userGroupService.createDefaultUserGroup(userGroupDTO);
+      userGroup = userGroupService.createDefaultUserGroup(userGroupDTO);
       if (isNotEmpty(scope.getProjectIdentifier())) {
         createRoleAssignmentForProject(userGroupIdentifier, scope);
       } else if (isNotEmpty(scope.getOrgIdentifier())) {
@@ -94,12 +103,13 @@ public class DefaultUserGroupServiceImpl implements DefaultUserGroupService {
       } else {
         createRoleAssignmentsForAccount(userGroupIdentifier, scope);
       }
-      log.info("Created default user group {} at scope {}", userGroupIdentifier, scope);
+      log.info(DEBUG_MESSAGE + "Created default user group {} at scope {}", userGroupIdentifier, scope);
       return userGroup;
-    } catch (Exception ex) {
-      log.error(DEBUG_MESSAGE + "Default User Group Creation failed at scope: " + scope, ex);
-      throw ex;
+    } catch (DuplicateFieldException ex) {
+      // Safe to assume Default User Group is created.
+      log.info(DEBUG_MESSAGE + String.format("Safe to assume Default User Group is created at scope %s", scope));
     }
+    return userGroup;
   }
 
   private String getUserGroupIdentifier(Scope scope) {

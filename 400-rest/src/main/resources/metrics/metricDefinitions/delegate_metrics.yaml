@@ -6,10 +6,10 @@ metrics:
     metricDefinition: Delegate registration failed count
     type: Count
     unit: "1"
-  - metricName: active_delegates_count
+  - metricName: active_delegate_count
     metricDefinition: Active delegates count
-    type: Count
-    unit: "1"
+    type: LastValue
+    unit: count
   - metricName: delegate_restarted
     metricDefinition: Delegate restarted
     type: Count
@@ -22,12 +22,28 @@ metrics:
     metricDefinition: Delegate self destruct
     type: Count
     unit: "1"
-  - metricName: immutable_delegates
+  - metricName: immutable_delegate
     metricDefinition: Immutable delegate count
-    type: Count
-    unit: "1"
-  - metricName: mutable_delegates
+    type: LastValue
+    unit: count
+  - metricName: mutable_delegate
     metricDefinition: Mutable delegate count
-    type: Count
-    unit: "1"
+    type: LastValue
+    unit: count
+  - metricName: perpetual_tasks_num
+    metricDefinition: Number of perpetual tasks
+    type: LastValue
+    unit: count
+  - metricName: perpetual_tasks_assigned_num
+    metricDefinition: Assigned Perpetual tasks
+    type: LastValue
+    unit: count
+  - metricName: perpetual_tasks_unassigned_num
+    metricDefinition: Unassigned Perpetual tasks
+    type: LastValue
+    unit: count
+  - metricName: perpetual_tasks_to_rebalance_num
+    metricDefinition: Perpetual tasks to rebalance
+    type: LastValue
+    unit: count
 

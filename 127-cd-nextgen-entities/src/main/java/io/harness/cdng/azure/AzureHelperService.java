@@ -85,7 +85,7 @@ import org.apache.commons.lang3.tuple.Pair;
 @OwnedBy(CDP)
 public class AzureHelperService {
   @Inject @Named(DEFAULT_CONNECTOR_SERVICE) private ConnectorService connectorService;
-  @Inject private SecretManagerClientService secretManagerClientService;
+  @Inject @Named("PRIVILEGED") private SecretManagerClientService secretManagerClientService;
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @Inject private FileStoreService fileStoreService;
   @Inject private CDExpressionResolver cdExpressionResolver;

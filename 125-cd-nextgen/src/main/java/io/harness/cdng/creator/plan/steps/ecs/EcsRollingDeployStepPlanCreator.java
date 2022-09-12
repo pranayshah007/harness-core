@@ -11,9 +11,12 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.creator.plan.steps.CDPMSStepPlanCreatorV2;
 import io.harness.cdng.ecs.EcsRollingDeployStepNode;
+import io.harness.cdng.ecs.EcsRollingDeployStepParameters;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
+import io.harness.pms.sdk.core.steps.io.StepParameters;
 
 import com.google.common.collect.Sets;
 import java.util.Set;
@@ -33,5 +36,20 @@ public class EcsRollingDeployStepPlanCreator extends CDPMSStepPlanCreatorV2<EcsR
   @Override
   public PlanCreationResponse createPlanForField(PlanCreationContext ctx, EcsRollingDeployStepNode stepElement) {
     return super.createPlanForField(ctx, stepElement);
+  }
+
+  @Override
+  protected StepParameters getStepParameters(PlanCreationContext ctx, EcsRollingDeployStepNode stepElement) {
+    final StepParameters stepParameters = super.getStepParameters(ctx, stepElement);
+    EcsRollingDeployStepParameters ecsRollingDeployStepParameters =
+        (EcsRollingDeployStepParameters) ((StepElementParameters) stepParameters).getSpec();
+    ecsRollingDeployStepParameters.setSameAsAlreadyRunningInstances(
+        stepElement.getEcsRollingDeployStepInfo().getSameAsAlreadyRunningInstances());
+    ecsRollingDeployStepParameters.setForceNewDeployment(
+        stepElement.getEcsRollingDeployStepInfo().getForceNewDeployment());
+    ecsRollingDeployStepParameters.setDelegateSelectors(
+        stepElement.getEcsRollingDeployStepInfo().getDelegateSelectors());
+
+    return stepParameters;
   }
 }

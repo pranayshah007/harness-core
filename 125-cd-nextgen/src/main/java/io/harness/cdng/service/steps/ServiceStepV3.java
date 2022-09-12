@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.cdng.service.steps;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -33,6 +40,7 @@ import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverride.mapper.NGServiceOverrideEntityConfigMapper;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
+import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -81,12 +89,16 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
   public static final StepType STEP_TYPE =
       StepType.newBuilder().setType(ExecutionNodeType.SERVICE_V3.getName()).setStepCategory(StepCategory.STEP).build();
   public static final String SERVICE_SWEEPING_OUTPUT = "serviceSweepingOutput";
+  public static final String SERVICE_MANIFESTS_SWEEPING_OUTPUT = "serviceManifestsSweepingOutput";
+  public static final String SERVICE_CONFIG_FILES_SWEEPING_OUTPUT = "serviceConfigFilesSweepingOutput";
+
   @Inject private ServiceEntityService serviceEntityService;
   @Inject private ServiceStepsHelper serviceStepsHelper;
   @Inject private ExecutionSweepingOutputService sweepingOutputService;
   @Inject private EnvironmentService environmentService;
   @Inject private CDExpressionResolver expressionResolver;
   @Inject private ServiceOverrideService serviceOverrideService;
+  @Inject private ServiceStepOverrideHelper serviceStepOverrideHelper;
 
   @Override
   public Class<ServiceStepV3Parameters> getStepParametersClass() {
@@ -161,15 +173,23 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
           serviceOverrideService.get(AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
               AmbianceUtils.getProjectIdentifier(ambiance), envRef.getValue(), parameters.getServiceRef().getValue());
 
+      final NGServiceOverrideConfig ngServiceOverrides = NGServiceOverrideEntityConfigMapper.toNGServiceOverrideConfig(
+          ngServiceOverridesEntity.orElse(NGServiceOverridesEntity.builder().build()));
       final EnvironmentOutcome environmentOutcome =
-          EnvironmentMapper.toEnvironmentOutcome(environment.get(), ngEnvironmentConfig,
-              NGServiceOverrideEntityConfigMapper.toNGServiceOverrideConfig(
-                  ngServiceOverridesEntity.orElse(NGServiceOverridesEntity.builder().build())));
+          EnvironmentMapper.toEnvironmentOutcome(environment.get(), ngEnvironmentConfig, ngServiceOverrides);
 
       sweepingOutputService.consume(
           ambiance, OutputExpressionConstants.ENVIRONMENT, environmentOutcome, StepCategory.STAGE.name());
 
       processServiceVariables(ambiance, servicePartResponse, logCallback, environmentOutcome);
+
+      serviceStepOverrideHelper.prepareAndSaveFinalManifestMetadataToSweepingOutput(
+          servicePartResponse.getNgServiceConfig(), ngServiceOverrides, ngEnvironmentConfig, ambiance,
+          SERVICE_MANIFESTS_SWEEPING_OUTPUT);
+
+      serviceStepOverrideHelper.prepareAndSaveFinalConfigFilesMetadataToSweepingOutput(
+          servicePartResponse.getNgServiceConfig(), ngServiceOverrides, ngEnvironmentConfig, ambiance,
+          SERVICE_CONFIG_FILES_SWEEPING_OUTPUT);
     }
   }
 
@@ -227,7 +247,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
         StepResponse.StepOutcome.builder()
             .name(OutcomeExpressionConstants.SERVICE)
             .outcome(ServiceStepOutcome.fromServiceStepV2(ngServiceV2InfoConfig.getIdentifier(),
-                ngServiceV2InfoConfig.getName(), ngServiceV2InfoConfig.getServiceDefinition().getType().name(),
+                ngServiceV2InfoConfig.getName(), ngServiceV2InfoConfig.getServiceDefinition().getType().getYamlName(),
                 ngServiceV2InfoConfig.getDescription(), ngServiceV2InfoConfig.getTags(),
                 ngServiceV2InfoConfig.getGitOpsEnabled()))
             .group(StepCategory.STAGE.name())

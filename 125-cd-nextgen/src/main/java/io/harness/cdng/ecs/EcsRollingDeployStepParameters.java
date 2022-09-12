@@ -28,7 +28,8 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.ecs.EcsRollingDeployStepParameters")
 public class EcsRollingDeployStepParameters extends EcsRollingDeployBaseStepInfo implements EcsSpecParameters {
   @Builder(builderMethodName = "infoBuilder")
-  public EcsRollingDeployStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
-    super(delegateSelectors);
+  public EcsRollingDeployStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
+      ParameterField<Boolean> sameAsAlreadyRunningInstances, ParameterField<Boolean> forceNewDeployment) {
+    super(delegateSelectors, sameAsAlreadyRunningInstances, forceNewDeployment);
   }
 }

@@ -8,7 +8,6 @@
 package io.harness.ng.core.infrastructure.resource;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.core.environment.resources.EnvironmentResourceV2.ENVIRONMENT_PARAM_MESSAGE;
 import static io.harness.rbac.CDNGRbacPermissions.ENVIRONMENT_UPDATE_PERMISSION;
 import static io.harness.rbac.CDNGRbacPermissions.ENVIRONMENT_VIEW_PERMISSION;
@@ -30,6 +29,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.infra.mapper.InfrastructureEntityConfigMapper;
 import io.harness.cdng.infra.mapper.InfrastructureMapper;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.ng.beans.PageResponse;
@@ -342,8 +342,8 @@ public class InfrastructureResource {
           NGCommonEntityConstants.ENVIRONMENT_IDENTIFIER_KEY) @ResourceIdentifier String envIdentifier,
       @Parameter(description = "The word to be searched and included in the list response") @QueryParam(
           NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
-      @Parameter(description = "List of InfrastructureIds") @QueryParam(
-          "infraIdentifiers") List<String> infraIdentifiers,
+      @Parameter(description = "List of InfrastructureIds") @QueryParam("infraIdentifiers")
+      List<String> infraIdentifiers, @QueryParam("deploymentType") ServiceDefinitionType deploymentType,
       @Parameter(
           description =
               "Specifies the sorting criteria of the list. Like sorting based on the last updated entity, alphabetical sorting in an ascending or descending order")
@@ -353,12 +353,9 @@ public class InfrastructureResource {
     checkForAccessOrThrow(
         accountId, orgIdentifier, projectIdentifier, envIdentifier, ENVIRONMENT_VIEW_PERMISSION, "list");
 
-    Criteria criteria = InfrastructureFilterHelper.createCriteriaForGetList(
-        accountId, orgIdentifier, projectIdentifier, envIdentifier, searchTerm);
+    Criteria criteria = InfrastructureFilterHelper.createListCriteria(
+        accountId, orgIdentifier, projectIdentifier, envIdentifier, searchTerm, infraIdentifiers, deploymentType);
     Pageable pageRequest;
-    if (isNotEmpty(infraIdentifiers)) {
-      criteria.and(InfrastructureEntityKeys.identifier).in(infraIdentifiers);
-    }
     if (isEmpty(sort)) {
       pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, InfrastructureEntityKeys.createdAt));
     } else {

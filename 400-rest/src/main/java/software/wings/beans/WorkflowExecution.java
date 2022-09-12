@@ -409,6 +409,8 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
     public static final String executionArgs_helmCharts = executionArgs + "." + ExecutionArgsKeys.helmCharts;
     public static final String executionArgs_helmCharts_displayName = executionArgs_helmCharts + "."
         + "displayName";
+    public static final String serviceExecutionSummaries_instanceStatusSummaries_instanceElement_uuid =
+        serviceExecutionSummaries + ".instanceStatusSummaries.instanceElement.uuid";
   }
 
   @PrePersist
