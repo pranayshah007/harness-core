@@ -176,6 +176,10 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
       final ArtifactTaskResponse taskResponse = (ArtifactTaskResponse) responseDataMap.get(taskId);
       final boolean isPrimary = taskId.equals(artifactsSweepingOutput.getPrimaryArtifactTaskId());
 
+      if (isPrimary) {
+        artifactConfig.setPrimaryArtifact(true);
+      }
+
       logArtifactFetchedMessage(logCallback, artifactConfig, taskResponse, isPrimary);
 
       switch (taskResponse.getCommandExecutionStatus()) {
@@ -197,13 +201,14 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
       }
     }
     final ArtifactsOutcome artifactsOutcome = outcomeBuilder.sidecars(sidecarsOutcome).build();
-    final ArtifactOutcome primaryArtifactOutcome = artifactsOutcome.getPrimary();
 
     sweepingOutputService.consume(
         ambiance, OutcomeExpressionConstants.ARTIFACTS, artifactsOutcome, StepCategory.STAGE.name());
     // special handling for artifact outcome for <+artifact.> expressions
-    sweepingOutputService.consume(
-        ambiance, OutcomeExpressionConstants.ARTIFACTS, primaryArtifactOutcome, StepCategory.STAGE.name());
+    if (artifactsOutcome.getPrimary() != null) {
+      sweepingOutputService.consume(
+          ambiance, OutcomeExpressionConstants.ARTIFACT, artifactsOutcome.getPrimary(), StepCategory.STAGE.name());
+    }
 
     return StepResponse.builder().status(Status.SUCCEEDED).build();
   }

@@ -16,6 +16,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -28,6 +29,7 @@ import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.PrimaryArtifact;
 import io.harness.cdng.artifact.bean.yaml.SidecarArtifact;
 import io.harness.cdng.artifact.bean.yaml.SidecarArtifactWrapper;
+import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.artifact.utils.ArtifactStepHelper;
 import io.harness.cdng.expressions.CDExpressionResolver;
@@ -52,6 +54,7 @@ import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
@@ -304,15 +307,22 @@ public class ArtifactsStepV2Test {
     StepResponse stepResponse = step.handleAsyncResponse(
         buildAmbiance(ArtifactsStepV2.STEP_TYPE), stepParameters, Map.of("taskId-1", sampleArtifactTaskResponse()));
 
-    final ArgumentCaptor<ArtifactsOutcome> captor = ArgumentCaptor.forClass(ArtifactsOutcome.class);
+    final ArgumentCaptor<ExecutionSweepingOutput> captor = ArgumentCaptor.forClass(ExecutionSweepingOutput.class);
     verify(mockSweepingOutputService, times(1))
         .consume(any(Ambiance.class), eq("artifacts"), captor.capture(), eq("STAGE"));
+    verify(mockSweepingOutputService, times(1))
+        .consume(any(Ambiance.class), eq("artifact"), captor.capture(), eq("STAGE"));
 
-    final ArtifactsOutcome outcome = captor.getValue();
+    final ArtifactsOutcome outcome = (ArtifactsOutcome) captor.getAllValues().get(0);
+    final ArtifactOutcome primaryOutcome = (ArtifactOutcome) captor.getAllValues().get(1);
 
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
     assertThat(outcome.getPrimary()).isNotNull();
     assertThat(outcome.getSidecars()).isEmpty();
+
+    assertThat(primaryOutcome.isPrimaryArtifact()).isTrue();
+    assertThat(primaryOutcome.getIdentifier()).isNotEmpty();
+    assertThat(primaryOutcome.getArtifactType()).isEqualTo("DockerRegistry");
   }
 
   @Test
@@ -334,15 +344,22 @@ public class ArtifactsStepV2Test {
         Map.of("taskId-1", sampleArtifactTaskResponse(), "taskId-2", sampleArtifactTaskResponse(), "taskId-3",
             sampleArtifactTaskResponse()));
 
-    final ArgumentCaptor<ArtifactsOutcome> captor = ArgumentCaptor.forClass(ArtifactsOutcome.class);
+    final ArgumentCaptor<ExecutionSweepingOutput> captor = ArgumentCaptor.forClass(ExecutionSweepingOutput.class);
     verify(mockSweepingOutputService, times(1))
         .consume(any(Ambiance.class), eq("artifacts"), captor.capture(), eq("STAGE"));
+    verify(mockSweepingOutputService, times(1))
+        .consume(any(Ambiance.class), eq("artifact"), captor.capture(), eq("STAGE"));
 
-    final ArtifactsOutcome outcome = captor.getValue();
+    final ArtifactsOutcome outcome = (ArtifactsOutcome) captor.getAllValues().get(0);
+    final ArtifactOutcome primaryOutcome = (ArtifactOutcome) captor.getAllValues().get(1);
 
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
     assertThat(outcome.getPrimary()).isNotNull();
     assertThat(outcome.getSidecars()).hasSize(2);
+
+    assertThat(primaryOutcome.isPrimaryArtifact()).isTrue();
+    assertThat(primaryOutcome.getIdentifier()).isNotEmpty();
+    assertThat(primaryOutcome.getArtifactType()).isEqualTo("DockerRegistry");
   }
 
   @Test
@@ -363,11 +380,13 @@ public class ArtifactsStepV2Test {
         Map.of("taskId-1", sampleArtifactTaskResponse(), "taskId-2", sampleArtifactTaskResponse(), "taskId-3",
             sampleArtifactTaskResponse()));
 
-    final ArgumentCaptor<ArtifactsOutcome> captor = ArgumentCaptor.forClass(ArtifactsOutcome.class);
+    final ArgumentCaptor<ExecutionSweepingOutput> captor = ArgumentCaptor.forClass(ExecutionSweepingOutput.class);
     verify(mockSweepingOutputService, times(1))
         .consume(any(Ambiance.class), eq("artifacts"), captor.capture(), eq("STAGE"));
+    verify(mockSweepingOutputService, never())
+        .consume(any(Ambiance.class), eq("artifact"), captor.capture(), eq("STAGE"));
 
-    final ArtifactsOutcome outcome = captor.getValue();
+    final ArtifactsOutcome outcome = (ArtifactsOutcome) captor.getAllValues().get(0);
 
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
     assertThat(outcome.getPrimary()).isNull();
