@@ -138,6 +138,6 @@ public class EcsRollingRollbackCommandTaskHandler extends EcsCommandTaskNGHandle
       List<String> ecsScalingPolicyManifestContentList, EcsInfraConfig ecsInfraConfig, LogCallback rollbackLogCallback,
       long timeoutInMillis) {
     ecsCommandTaskHelper.createOrUpdateService(createServiceRequest, ecsScalableTargetManifestContentList,
-        ecsScalingPolicyManifestContentList, ecsInfraConfig, rollbackLogCallback, timeoutInMillis);
+        ecsScalingPolicyManifestContentList, ecsInfraConfig, rollbackLogCallback, timeoutInMillis, false, false);
   }
 }

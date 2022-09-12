@@ -539,8 +539,16 @@ public class EnvironmentResourceV2 {
       }
 
       if (isEmpty(serviceOverrideInfoConfig.getManifests()) && isEmpty(serviceOverrideInfoConfig.getConfigFiles())
-          && isEmpty(serviceOverrideInfoConfig.getVariables())) {
-        throw new InvalidRequestException("No overrides found in request");
+          && isEmpty(serviceOverrideInfoConfig.getVariables())
+          && serviceOverrideInfoConfig.getApplicationSettings() == null
+          && serviceOverrideInfoConfig.getConnectionStrings() == null) {
+        final Optional<NGServiceOverridesEntity> optionalNGServiceOverrides =
+            serviceOverrideService.get(serviceOverridesEntity.getAccountId(), serviceOverridesEntity.getOrgIdentifier(),
+                serviceOverridesEntity.getProjectIdentifier(), serviceOverridesEntity.getEnvironmentRef(),
+                serviceOverridesEntity.getServiceRef());
+        if (!optionalNGServiceOverrides.isPresent()) {
+          throw new InvalidRequestException("No overrides found in request");
+        }
       }
 
       checkDuplicateManifestIdentifiersWithIn(serviceOverrideInfoConfig.getManifests());

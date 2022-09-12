@@ -87,7 +87,7 @@ public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, Ac
   private String delegateGroupId;
   private String delegateName;
   private String delegateProfileId;
-  private long lastHeartBeat;
+  @FdIndex private long lastHeartBeat;
   private String version;
   private transient String sequenceNum;
   private String delegateType;

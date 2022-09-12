@@ -48,6 +48,7 @@ import io.harness.delegate.beans.connector.azureconnector.AzureCredentialType;
 import io.harness.delegate.beans.connector.azureconnector.AzureInheritFromDelegateDetailsDTO;
 import io.harness.delegate.task.ssh.AwsSshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.AzureSshInfraDelegateConfig;
+import io.harness.delegate.task.ssh.PdcSshInfraDelegateConfig;
 import io.harness.exception.AccessDeniedException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
@@ -481,6 +482,9 @@ public class InfrastructureTaskExecutableStepV2Test {
                                               .connectorRef(spec.getConnectorRef().getValue())
                                               .hosts(List.of("h1", "h2"))
                                               .build());
+    doReturn(PdcSshInfraDelegateConfig.builder().hosts(Set.of("h1", "h2")).build())
+        .when(cdStepHelper)
+        .getSshInfraDelegateConfig(any(InfrastructureOutcome.class), any(Ambiance.class));
 
     StepResponse stepResponse = step.handleTaskResult(ambiance,
         InfrastructureTaskExecutableStepV2Params.builder()
@@ -497,6 +501,10 @@ public class InfrastructureTaskExecutableStepV2Test {
                        .connectorRef("awsconnector")
                        .credentialsRef("sshkey")
                        .build());
+
+    verify(sweepingOutputService, times(1))
+        .consume(any(Ambiance.class), eq("output"), eq(HostsOutput.builder().hosts(Set.of("h1", "h2")).build()),
+            eq("STAGE"));
   }
 
   private AwsEC2Instance mockAwsInstance(String id) {
@@ -558,7 +566,8 @@ public class InfrastructureTaskExecutableStepV2Test {
             .build())
         .when(sweepingOutputService)
         .resolveOptional(any(Ambiance.class),
-            eq(RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.INFRA_TASK_EXECUTABLE_STEP_V2)));
+            eq(RefObjectUtils.getSweepingOutputRefObject(
+                OutcomeExpressionConstants.INFRA_TASK_EXECUTABLE_STEP_OUTPUT)));
   }
 
   private InfrastructureConfig testPdcInfra() {

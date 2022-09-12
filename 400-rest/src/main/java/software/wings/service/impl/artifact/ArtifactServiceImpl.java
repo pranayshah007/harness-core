@@ -490,6 +490,16 @@ public class ArtifactServiceImpl implements ArtifactService {
   }
 
   @Override
+  public void updateLastUpdatedAt(String artifactId, String accountId) {
+    Query<Artifact> query = wingsPersistence.createQuery(Artifact.class)
+                                .filter(ID_KEY, artifactId)
+                                .filter(ArtifactKeys.accountId, accountId);
+    UpdateOperations<Artifact> ops = wingsPersistence.createUpdateOperations(Artifact.class);
+    ops.set(ArtifactKeys.lastUpdatedAt, System.currentTimeMillis());
+    wingsPersistence.update(query, ops);
+  }
+
+  @Override
   public void addArtifactFile(String artifactId, String accountId, List<ArtifactFile> artifactFile) {
     log.info("Adding artifactFiles for artifactId {}", artifactId);
     Query<Artifact> query = wingsPersistence.createQuery(Artifact.class)

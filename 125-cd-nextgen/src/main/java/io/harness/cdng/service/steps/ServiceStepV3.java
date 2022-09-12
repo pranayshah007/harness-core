@@ -227,7 +227,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
         StepResponse.StepOutcome.builder()
             .name(OutcomeExpressionConstants.SERVICE)
             .outcome(ServiceStepOutcome.fromServiceStepV2(ngServiceV2InfoConfig.getIdentifier(),
-                ngServiceV2InfoConfig.getName(), ngServiceV2InfoConfig.getServiceDefinition().getType().name(),
+                ngServiceV2InfoConfig.getName(), ngServiceV2InfoConfig.getServiceDefinition().getType().getYamlName(),
                 ngServiceV2InfoConfig.getDescription(), ngServiceV2InfoConfig.getTags(),
                 ngServiceV2InfoConfig.getGitOpsEnabled()))
             .group(StepCategory.STAGE.name())

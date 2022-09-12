@@ -9,8 +9,8 @@ package io.harness.batch.processing.cloudevents.aws.ecs.service.tasklet;
 
 import static io.harness.batch.processing.config.k8s.recommendation.estimators.ResourceAmountUtils.convertToReadableForm;
 import static io.harness.batch.processing.config.k8s.recommendation.estimators.ResourceAmountUtils.makeResourceMap;
+import static io.harness.ccm.RecommenderUtils.EPSILON;
 
-import static software.wings.graphql.datafetcher.ce.recommendation.entity.RecommenderUtils.EPSILON;
 import static software.wings.graphql.datafetcher.ce.recommendation.entity.ResourceRequirement.CPU;
 import static software.wings.graphql.datafetcher.ce.recommendation.entity.ResourceRequirement.MEMORY;
 

@@ -12,4 +12,5 @@ import lombok.Value;
 public class InfrastructureTaskExecutableStepSweepingOutput implements ExecutionSweepingOutput {
   @NotNull InfrastructureOutcome infrastructureOutcome;
   boolean skipInstances;
+  boolean addRcStep;
 }

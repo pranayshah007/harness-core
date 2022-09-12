@@ -21,7 +21,6 @@ import io.harness.serializer.kryo.NotificationDelegateTasksKryoRegistrar;
 import io.harness.serializer.kryo.YamlKryoRegistrar;
 import io.harness.serializer.morphia.NotificationBeansMorphiaRegistrar;
 import io.harness.serializer.morphia.NotificationRegistrar;
-import io.harness.serializer.morphia.YamlMorphiaRegistrar;
 
 import com.google.common.collect.ImmutableSet;
 import org.mongodb.morphia.converters.TypeConverter;
@@ -57,7 +56,7 @@ public class NotificationRegistrars {
           .addAll(io.harness.serializer.DelegateTaskRegistrars.morphiaRegistrars)
           .addAll(ProjectAndOrgRegistrars.morphiaRegistrars)
           .addAll(FiltersRegistrars.morphiaRegistrars)
-          .add(YamlMorphiaRegistrar.class)
+          .addAll(FeatureFlagBeansRegistrars.morphiaRegistrars)
           .build();
 
   public static final ImmutableSet<Class<? extends TypeConverter>> morphiaConverters =

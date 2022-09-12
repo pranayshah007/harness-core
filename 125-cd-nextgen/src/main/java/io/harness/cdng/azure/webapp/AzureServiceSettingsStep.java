@@ -16,7 +16,6 @@ import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.steps.ServiceStepsHelper;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.executions.steps.ExecutionNodeType;
-import io.harness.logging.LogCallback;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -80,19 +79,25 @@ public class AzureServiceSettingsStep implements SyncExecutable<EmptyStepParamet
     final List<StepResponse.StepOutcome> outcomes = new ArrayList<>();
 
     // Process azure settings
-    outcomes.add(processStartupCommand(ambiance, serviceSpec, logCallback));
-    outcomes.add(processApplicationSettings(ambiance, serviceSpec, logCallback));
-    outcomes.add(processConnectionStrings(ambiance, serviceSpec, logCallback));
+    if (serviceSpec.getStartupCommand() != null) {
+      outcomes.add(processStartupCommand(ambiance, serviceSpec, logCallback));
+    }
+    if (serviceSpec.getApplicationSettings() != null) {
+      outcomes.add(processApplicationSettings(ambiance, serviceSpec, logCallback));
+    }
+    if (serviceSpec.getConnectionStrings() != null) {
+      outcomes.add(processConnectionStrings(ambiance, serviceSpec, logCallback));
+    }
 
     return StepResponse.builder().status(Status.SUCCEEDED).stepOutcomes(outcomes).build();
   }
 
   private StepResponse.StepOutcome processConnectionStrings(
       Ambiance ambiance, AzureWebAppServiceSpec serviceSpec, NGLogCallback logCallback) {
-    logCallback.saveExecutionLog("Processing connection strings...");
+    saveExecutionLog(logCallback, "Processing connection strings...");
     StoreConfigWrapper storeConfig = serviceSpec.getConnectionStrings().getStore();
     azureHelperService.validateSettingsStoreReferences(storeConfig, ambiance, "Connection strings");
-    logCallback.saveExecutionLog("Processed connection strings");
+    saveExecutionLog(logCallback, "Processed connection strings");
     return StepResponse.StepOutcome.builder()
         .name(CONNECTION_STRINGS)
         .outcome(ConnectionStringsOutcome.builder().store(storeConfig.getSpec()).build())
@@ -102,10 +107,10 @@ public class AzureServiceSettingsStep implements SyncExecutable<EmptyStepParamet
 
   private StepResponse.StepOutcome processApplicationSettings(
       Ambiance ambiance, AzureWebAppServiceSpec serviceSpec, NGLogCallback logCallback) {
-    logCallback.saveExecutionLog("Processing application settings...");
+    saveExecutionLog(logCallback, "Processing application settings...");
     StoreConfigWrapper storeConfig = serviceSpec.getApplicationSettings().getStore();
     azureHelperService.validateSettingsStoreReferences(storeConfig, ambiance, "Application settings");
-    logCallback.saveExecutionLog("Processed application settings");
+    saveExecutionLog(logCallback, "Processed application settings");
     return StepResponse.StepOutcome.builder()
         .name(APPLICATION_SETTINGS)
         .outcome(ApplicationSettingsOutcome.builder().store(storeConfig.getSpec()).build())
@@ -114,15 +119,21 @@ public class AzureServiceSettingsStep implements SyncExecutable<EmptyStepParamet
   }
 
   private StepResponse.StepOutcome processStartupCommand(
-      Ambiance ambiance, AzureWebAppServiceSpec serviceSpec, LogCallback logCallback) {
-    logCallback.saveExecutionLog("Processing startup command...");
+      Ambiance ambiance, AzureWebAppServiceSpec serviceSpec, NGLogCallback logCallback) {
+    saveExecutionLog(logCallback, "Processing startup command...");
     StoreConfigWrapper storeConfig = serviceSpec.getStartupCommand().getStore();
     azureHelperService.validateSettingsStoreReferences(storeConfig, ambiance, "Startup command");
-    logCallback.saveExecutionLog("Processed startup command");
+    saveExecutionLog(logCallback, "Processed startup command");
     return StepResponse.StepOutcome.builder()
         .name(STARTUP_COMMAND)
         .outcome(StartupCommandOutcome.builder().store(storeConfig.getSpec()).build())
         .group(StepCategory.STAGE.name())
         .build();
+  }
+
+  private void saveExecutionLog(NGLogCallback logCallback, String line) {
+    if (logCallback != null) {
+      logCallback.saveExecutionLog(line);
+    }
   }
 }

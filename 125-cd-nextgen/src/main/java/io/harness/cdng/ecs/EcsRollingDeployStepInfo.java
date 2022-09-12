@@ -43,8 +43,9 @@ public class EcsRollingDeployStepInfo extends EcsRollingDeployBaseStepInfo imple
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
   @Builder(builderMethodName = "infoBuilder")
-  public EcsRollingDeployStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
-    super(delegateSelectors);
+  public EcsRollingDeployStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
+      ParameterField<Boolean> sameAsAlreadyRunningInstances, ParameterField<Boolean> forceNewDeployment) {
+    super(delegateSelectors, sameAsAlreadyRunningInstances, forceNewDeployment);
   }
   @Override
   public StepType getStepType() {

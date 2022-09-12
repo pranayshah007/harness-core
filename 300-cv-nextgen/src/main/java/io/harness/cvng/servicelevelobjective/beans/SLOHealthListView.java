@@ -27,6 +27,8 @@ public class SLOHealthListView {
   @NotNull String serviceName;
   Map<String, String> tags;
   String description;
+  @NotNull String userJourneyIdentifier;
+  @NotNull String userJourneyName;
   @NotNull double burnRate;
   @NotNull double errorBudgetRemainingPercentage;
   @NotNull int errorBudgetRemaining;

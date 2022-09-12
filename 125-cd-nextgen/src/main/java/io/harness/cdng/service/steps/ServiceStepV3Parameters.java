@@ -1,6 +1,7 @@
 package io.harness.cdng.service.steps;
 
 import io.harness.pms.sdk.core.steps.io.StepParameters;
+import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.ParameterField;
 
 import java.util.List;
@@ -15,6 +16,9 @@ public class ServiceStepV3Parameters implements StepParameters {
   private ParameterField<Map<String, Object>> inputs;
   private ParameterField<String> envRef;
   private ParameterField<Map<String, Object>> envInputs;
-
   private List<String> childrenNodeIds;
+  @Override
+  public String toViewJson() {
+    return RecastOrchestrationUtils.toJson(Map.of("service", serviceRef.fetchFinalValue()));
+  }
 }

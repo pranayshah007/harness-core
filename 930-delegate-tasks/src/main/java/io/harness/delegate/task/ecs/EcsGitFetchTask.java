@@ -52,6 +52,7 @@ import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.NotImplementedException;
 import org.jose4j.lang.JoseException;
 
@@ -99,19 +100,23 @@ public class EcsGitFetchTask extends AbstractDelegateRunnableTask {
           ecsServiceDefinitionGitFetchFileConfig, executionLogCallback, ecsGitFetchRequest.getAccountId());
 
       List<FetchFilesResult> ecsScalableTargetFetchFilesResults = new ArrayList<>();
-      for (EcsGitFetchFileConfig ecsScalableTargetGitFetchFileConfig :
-          ecsGitFetchRequest.getEcsScalableTargetGitFetchFileConfigs()) {
-        FetchFilesResult ecsScalableTargetFetchFilesResult = fetchManifestFile(
-            ecsScalableTargetGitFetchFileConfig, executionLogCallback, ecsGitFetchRequest.getAccountId());
-        ecsScalableTargetFetchFilesResults.add(ecsScalableTargetFetchFilesResult);
+      if (CollectionUtils.isNotEmpty(ecsGitFetchRequest.getEcsScalableTargetGitFetchFileConfigs())) {
+        for (EcsGitFetchFileConfig ecsScalableTargetGitFetchFileConfig :
+            ecsGitFetchRequest.getEcsScalableTargetGitFetchFileConfigs()) {
+          FetchFilesResult ecsScalableTargetFetchFilesResult = fetchManifestFile(
+              ecsScalableTargetGitFetchFileConfig, executionLogCallback, ecsGitFetchRequest.getAccountId());
+          ecsScalableTargetFetchFilesResults.add(ecsScalableTargetFetchFilesResult);
+        }
       }
 
       List<FetchFilesResult> ecsScalingPolicyFetchFilesResults = new ArrayList<>();
-      for (EcsGitFetchFileConfig ecsScalingPolicyGitFetchFileConfig :
-          ecsGitFetchRequest.getEcsScalingPolicyGitFetchFileConfigs()) {
-        FetchFilesResult ecsScalingPolicyFetchFilesResult = fetchManifestFile(
-            ecsScalingPolicyGitFetchFileConfig, executionLogCallback, ecsGitFetchRequest.getAccountId());
-        ecsScalingPolicyFetchFilesResults.add(ecsScalingPolicyFetchFilesResult);
+      if (CollectionUtils.isNotEmpty(ecsGitFetchRequest.getEcsScalingPolicyGitFetchFileConfigs())) {
+        for (EcsGitFetchFileConfig ecsScalingPolicyGitFetchFileConfig :
+            ecsGitFetchRequest.getEcsScalingPolicyGitFetchFileConfigs()) {
+          FetchFilesResult ecsScalingPolicyFetchFilesResult = fetchManifestFile(
+              ecsScalingPolicyGitFetchFileConfig, executionLogCallback, ecsGitFetchRequest.getAccountId());
+          ecsScalingPolicyFetchFilesResults.add(ecsScalingPolicyFetchFilesResult);
+        }
       }
 
       executionLogCallback.saveExecutionLog(

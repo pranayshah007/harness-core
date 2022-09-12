@@ -120,10 +120,10 @@ public class EcsV2ClientImpl extends AwsClientHelper implements EcsV2Client {
 
   @Override
   public WaiterResponse<DescribeServicesResponse> ecsServiceSteadyStateCheck(AwsInternalConfig awsConfig,
-      DescribeServicesRequest describeServicesRequest, String region, int serviceSteadyStateTimeout) {
+      DescribeServicesRequest describeServicesRequest, String region, long serviceSteadyStateTimeout) {
     // Polling interval of 10 sec with total waiting done till a timeout of <serviceSteadyStateTimeout> min
     int delayInSeconds = 10;
-    int maxAttempts = (int) TimeUnit.MINUTES.toSeconds(serviceSteadyStateTimeout) / delayInSeconds;
+    int maxAttempts = (int) TimeUnit.MILLISECONDS.toSeconds(serviceSteadyStateTimeout) / delayInSeconds;
     try (EcsClient ecsClient = (EcsClient) getClient(awsConfig, region);
          EcsWaiter ecsWaiter = getEcsWaiter(ecsClient, delayInSeconds, maxAttempts)) {
       super.logCall(client(), Thread.currentThread().getStackTrace()[1].getMethodName());

@@ -161,7 +161,7 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
 
     ArtifactsStepV2SweepingOutput artifactsSweepingOutput = (ArtifactsStepV2SweepingOutput) outputOptional.getOutput();
 
-    final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance, true);
+    final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
     final ArtifactsOutcomeBuilder outcomeBuilder = ArtifactsOutcome.builder();
     final SidecarsOutcome sidecarsOutcome = new SidecarsOutcome();
     for (String taskId : responseDataMap.keySet()) {

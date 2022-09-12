@@ -32,6 +32,9 @@ public class TemplateGitXHelper {
       return branchName;
     }
     String parentEntityRepoUrl = getRepoUrl(scope);
+    if (gitEntityInfo.isNewBranch()) {
+      branchName = gitEntityInfo.getBaseBranch();
+    }
     if (null != parentEntityRepoUrl && !parentEntityRepoUrl.equals(entityRepoURL)) {
       branchName = "";
     }
@@ -57,13 +60,13 @@ public class TemplateGitXHelper {
   private Scope buildScope(GitEntityInfo gitEntityInfo) {
     ScopeBuilder scope = Scope.builder();
     if (gitEntityInfo != null) {
-      if (null != gitEntityInfo.getParentEntityAccountIdentifier()) {
+      if (!GitAwareContextHelper.isNullOrDefault(gitEntityInfo.getParentEntityAccountIdentifier())) {
         scope.accountIdentifier(gitEntityInfo.getParentEntityAccountIdentifier());
       }
-      if (null != gitEntityInfo.getParentEntityOrgIdentifier()) {
+      if (!GitAwareContextHelper.isNullOrDefault(gitEntityInfo.getParentEntityOrgIdentifier())) {
         scope.orgIdentifier(gitEntityInfo.getParentEntityOrgIdentifier());
       }
-      if (null != gitEntityInfo.getParentEntityProjectIdentifier()) {
+      if (!GitAwareContextHelper.isNullOrDefault(gitEntityInfo.getParentEntityProjectIdentifier())) {
         scope.projectIdentifier(gitEntityInfo.getParentEntityProjectIdentifier());
       }
     }

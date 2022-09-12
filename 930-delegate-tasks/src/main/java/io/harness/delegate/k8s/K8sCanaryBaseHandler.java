@@ -63,7 +63,7 @@ public class K8sCanaryBaseHandler {
 
   public boolean prepareForCanary(K8sCanaryHandlerConfig canaryHandlerConfig,
       K8sDelegateTaskParams k8sDelegateTaskParams, Boolean skipVersioning, LogCallback logCallback,
-      boolean isErrorFrameworkEnabled, boolean cleanUpIncompleteCanaryDeployRelease) throws Exception {
+      boolean isErrorFrameworkEnabled) throws Exception {
     if (isNotTrue(skipVersioning)) {
       markVersionedResources(canaryHandlerConfig.getResources());
     }
@@ -101,11 +101,9 @@ public class K8sCanaryBaseHandler {
       return false;
     }
 
-    if (cleanUpIncompleteCanaryDeployRelease) {
-      for (Release release : canaryHandlerConfig.getReleaseHistory().getReleases()) {
-        if (release.getStatus() == InProgress) {
-          release.setStatus(Failed);
-        }
+    for (Release release : canaryHandlerConfig.getReleaseHistory().getReleases()) {
+      if (release.getStatus() == InProgress) {
+        release.setStatus(Failed);
       }
     }
 

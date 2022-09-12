@@ -979,7 +979,6 @@
 8069:software.wings.beans.s3.FetchS3FilesCommandParams
 8070:software.wings.beans.s3.FetchS3FilesExecutionResponse.FetchS3FilesCommandStatus
 8074:software.wings.service.impl.dynatrace.DynaTraceApplication
-8075:software.wings.security.authentication.totp.RateLimitProtection
 8086:software.wings.helpers.ext.ecs.request.EcsDeployRollbackDataFetchRequest
 8087:software.wings.helpers.ext.ecs.response.EcsDeployRollbackDataFetchResponse
 8090:software.wings.helpers.ext.k8s.response.PodStatus
@@ -1761,10 +1760,6 @@
 56338:io.harness.delegate.task.gitpolling.GitPollingTaskType
 56339:io.harness.delegate.beans.polling.GitPollingDelegateResponse
 56403:io.harness.delegate.beans.storeconfig.CustomRemoteStoreDelegateConfig
-70001:io.harness.accesscontrol.commons.exceptions.AccessDeniedErrorDTO
-70002:io.harness.accesscontrol.acl.api.PermissionCheckDTO
-70003:io.harness.accesscontrol.acl.api.ResourceScope
-70004:io.harness.accesscontrol.NGAccessDeniedException
 71100:software.wings.service.impl.ThirdPartyApiCallLog.ThirdPartyApiCallField
 71101:software.wings.service.impl.ThirdPartyApiCallLog.FieldType
 71102:software.wings.beans.Log

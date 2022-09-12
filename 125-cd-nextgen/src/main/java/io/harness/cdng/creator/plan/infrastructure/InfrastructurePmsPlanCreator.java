@@ -412,7 +412,8 @@ public class InfrastructurePmsPlanCreator {
   public static List<AdviserObtainment> addResourceConstraintDependency(
       LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, YamlField specField,
       KryoSerializer kryoSerializer) {
-    final String whenCondition = "<+infraAllowSimultaneousDeployments.allowed> == \"false\"";
+    final String whenCondition =
+        String.format("<+%s.addRcStep> == \"true\"", OutcomeExpressionConstants.INFRA_TASK_EXECUTABLE_STEP_OUTPUT);
     YamlField rcYamlField =
         addResourceConstraintDependency(specField.getNode(), planCreationResponseMap, whenCondition);
     return getAdviserObtainmentFromMetaDataToResourceConstraint(rcYamlField, kryoSerializer);

@@ -13,6 +13,7 @@ import static io.harness.ng.core.mapper.TagMapper.convertToMap;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.ng.core.infrastructure.dto.InfrastructureRequestDTO;
 import io.harness.ng.core.infrastructure.dto.InfrastructureResponse;
 import io.harness.ng.core.infrastructure.dto.InfrastructureResponseDTO;
@@ -25,6 +26,7 @@ import lombok.experimental.UtilityClass;
 public class InfrastructureMapper {
   public InfrastructureEntity toInfrastructureEntity(
       String accountId, InfrastructureRequestDTO infrastructureRequestDTO) {
+    // TODO: refactor code to populate infrastructureEntity from yaml rather than infrastructureRequestDTO
     InfrastructureEntity infrastructureEntity = InfrastructureEntity.builder()
                                                     .identifier(infrastructureRequestDTO.getIdentifier())
                                                     .accountId(accountId)
@@ -40,7 +42,13 @@ public class InfrastructureMapper {
 
     InfrastructureConfig infrastructureConfig =
         InfrastructureEntityConfigMapper.toInfrastructureConfig(infrastructureEntity);
-    infrastructureEntity.setYaml(InfrastructureEntityConfigMapper.toYaml(infrastructureConfig));
+    if (EmptyPredicate.isEmpty(infrastructureRequestDTO.getYaml())) {
+      infrastructureEntity.setYaml(InfrastructureEntityConfigMapper.toYaml(infrastructureConfig));
+    }
+    if (infrastructureConfig.getInfrastructureDefinitionConfig().getDeploymentType() != null) {
+      infrastructureEntity.setDeploymentType(
+          infrastructureConfig.getInfrastructureDefinitionConfig().getDeploymentType());
+    }
     return infrastructureEntity;
   }
 
@@ -64,6 +72,7 @@ public class InfrastructureMapper {
         .tags(convertToMap(infrastructureEntity.getTags()))
         .yaml(infrastructureEntity.getYaml())
         .type(infrastructureEntity.getType())
+        .deploymentType(infrastructureEntity.getDeploymentType())
         .build();
   }
 }
