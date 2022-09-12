@@ -16,6 +16,7 @@ import static io.harness.rule.OwnerRule.RUTVIJ_MEHTA;
 import static io.harness.rule.OwnerRule.SRIDHAR;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -242,7 +243,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testCreate() throws Exception {
-    doReturn(ngTriggerEntity).when(ngTriggerService).create(any(), any());
+    doReturn(ngTriggerEntity).when(ngTriggerService).create(any(), anyBoolean());
 
     TriggerDetails triggerDetails = TriggerDetails.builder().ngTriggerEntity(ngTriggerEntity).build();
     doReturn(triggerDetails)
@@ -260,7 +261,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
   @Owner(developers = HARSH)
   @Category(UnitTests.class)
   public void testCreateWithGitSync() throws Exception {
-    doReturn(ngTriggerEntityGitSync).when(ngTriggerService).create(any(), any());
+    doReturn(ngTriggerEntityGitSync).when(ngTriggerService).create(any(), anyBoolean());
     when(ngTriggerElementMapper.toResponseDTO(ngTriggerEntity)).thenReturn(ngTriggerResponseDTOGitSync);
     TriggerDetails triggerDetails = TriggerDetails.builder().ngTriggerEntity(ngTriggerEntity).build();
     doReturn(triggerDetails)
@@ -302,7 +303,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testUpdate() throws Exception {
-    doReturn(ngTriggerEntity).when(ngTriggerService).update(any(), any());
+    doReturn(ngTriggerEntity).when(ngTriggerService).update(any(), anyBoolean());
     doReturn(Optional.of(ngTriggerEntity))
         .when(ngTriggerService)
         .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, false);
@@ -321,7 +322,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
 
     NGTriggerResponseDTO responseDTO = ngTriggerResource
                                            .update("0", ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
-                                               PIPELINE_IDENTIFIER, IDENTIFIER, ngTriggerYaml, true, false)
+                                               PIPELINE_IDENTIFIER, IDENTIFIER, ngTriggerYaml, true)
                                            .getData();
 
     assertThat(responseDTO).isEqualTo(ngTriggerResponseDTO);
@@ -331,7 +332,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testUpdateWithGitSync() throws Exception {
-    doReturn(ngTriggerEntityGitSync).when(ngTriggerService).update(any(), any());
+    doReturn(ngTriggerEntityGitSync).when(ngTriggerService).update(any(), anyBoolean());
     doReturn(Optional.of(ngTriggerEntityGitSync))
         .when(ngTriggerService)
         .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, false);
@@ -349,7 +350,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
     when(ngTriggerElementMapper.toResponseDTO(ngTriggerEntityGitSync)).thenReturn(ngTriggerResponseDTOGitSync);
     NGTriggerResponseDTO responseDTO = ngTriggerResource
                                            .update("0", ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
-                                               PIPELINE_IDENTIFIER, IDENTIFIER, ngTriggerYamlWithGitSync, false, false)
+                                               PIPELINE_IDENTIFIER, IDENTIFIER, ngTriggerYamlWithGitSync, false)
                                            .getData();
 
     assertThat(responseDTO).isEqualTo(ngTriggerResponseDTOGitSync);
@@ -429,7 +430,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
   @Owner(developers = RUTVIJ_MEHTA)
   @Category(UnitTests.class)
   public void testCreateGitlabMRComment() throws Exception {
-    doReturn(ngTriggerEntityGitlabMRComment).when(ngTriggerService).create(any(), any());
+    doReturn(ngTriggerEntityGitlabMRComment).when(ngTriggerService).create(any(), anyBoolean());
     when(ngTriggerElementMapper.toResponseDTO(ngTriggerEntity)).thenReturn(ngTriggerResponseDTOGitlabMRComment);
     TriggerDetails triggerDetails = TriggerDetails.builder().ngTriggerEntity(ngTriggerEntityGitlabMRComment).build();
     doReturn(triggerDetails)
@@ -448,7 +449,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
   @Owner(developers = RUTVIJ_MEHTA)
   @Category(UnitTests.class)
   public void testCreateBitbucketPRComment() throws Exception {
-    doReturn(ngTriggerEntityBitbucketPRComment).when(ngTriggerService).create(any(), any());
+    doReturn(ngTriggerEntityBitbucketPRComment).when(ngTriggerService).create(any(), anyBoolean());
     when(ngTriggerElementMapper.toResponseDTO(ngTriggerEntity)).thenReturn(ngTriggerResponseDTOBitbucketPRComment);
     TriggerDetails triggerDetails = TriggerDetails.builder().ngTriggerEntity(ngTriggerEntityBitbucketPRComment).build();
     doReturn(triggerDetails)
