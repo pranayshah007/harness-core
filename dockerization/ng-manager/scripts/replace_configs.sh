@@ -116,26 +116,6 @@ if [[ "" != "$MONGO_TRANSACTIONS_ALLOWED" ]]; then
   export MONGO_TRANSACTIONS_ALLOWED; yq -i '.mongo.transactionsEnabled=env(MONGO_TRANSACTIONS_ALLOWED)' $CONFIG_FILE
 fi
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-if [[ "" != "$PMS_MONGO_URI" ]]; then
-  yq -i '.pmsMongo.uri=env(PMS_MONGO_URI)' $CONFIG_FILE
-fi
-
-if [[ "" != "$PMS_MONGO_HOSTS_AND_PORTS" ]]; then
-  yq -i 'del(.pmsMongo.uri)' $CONFIG_FILE
-  yq -i '.pmsMongo.username=env(PMS_MONGO_USERNAME)' $CONFIG_FILE
-  yq -i '.pmsMongo.password=env(PMS_MONGO_PASSWORD)' $CONFIG_FILE
-  yq -i '.pmsMongo.database=env(PMS_MONGO_DATABASE)' $CONFIG_FILE
-  yq -i '.pmsMongo.schema=env(PMS_MONGO_SCHEMA)' $CONFIG_FILE
-  write_mongo_hosts_and_ports pmsMongo "$PMS_MONGO_HOSTS_AND_PORTS"
-  write_mongo_params pmsMongo "$PMS_MONGO_PARAMS"
-fi
-
->>>>>>> 7655f574839 (feat: [SPG-143]]: upgrade from yq3 to yq4: update write and delete - rebase)
-=======
->>>>>>> fc0896a0b66 (feat: [SPG-143]: upgrade from yq3 to yq4 - handle special cases)
 if [[ "" != "$MANAGER_TARGET" ]]; then
   export MANAGER_TARGET; yq -i '.grpcClient.target=env(MANAGER_TARGET)' $CONFIG_FILE
 fi
