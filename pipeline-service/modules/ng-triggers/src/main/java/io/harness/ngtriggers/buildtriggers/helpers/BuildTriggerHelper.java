@@ -151,7 +151,7 @@ public class BuildTriggerHelper {
 
     Map<String, Object> pipelineBuildSpecMap = new HashMap<>();
 
-    if(triggerManifestSpecMap.containsKey("stageIdentifier") && triggerManifestSpecMap.containsKey("artifactRef")) {
+    if(triggerManifestSpecMap.containsKey("stageIdentifier") && triggerManifestSpecMap.containsKey("manifestRef")) {
       String stageRef = triggerManifestSpecMap.get("stageIdentifier").asText();
       String buildRef = triggerManifestSpecMap.get("manifestRef").asText();
       List<String> keys = Arrays.asList(
