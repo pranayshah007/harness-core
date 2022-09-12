@@ -397,7 +397,7 @@ public class MigrationBackgroundList {
         .add(Pair.of(230, TimeSeriesMLScoresTTLMigration.class))
         .add(Pair.of(231, TimeSeriesRiskSummaryTTLMigration.class))
         .add(Pair.of(232, TimeSeriesMLScoresTTLMigration.class))
-        .add(Pair.of(233, ExecuteWorkflowAbortActionMigration.class))
+        //        .add(Pair.of(233, ExecuteWorkflowAbortActionMigration.class))
         .build();
   }
 }
