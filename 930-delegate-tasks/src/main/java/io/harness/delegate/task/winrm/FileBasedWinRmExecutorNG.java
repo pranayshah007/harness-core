@@ -93,17 +93,22 @@ public class FileBasedWinRmExecutorNG extends FileBasedAbstractWinRmExecutor {
         artifactoryArtifactDelegateConfig, logCallback, secretDecryptionService, artifactoryRequestMapper);
 
     CommandExecutionStatus commandExecutionStatus = FAILURE;
+    String artifactPath = Paths
+                              .get(artifactoryArtifactDelegateConfig.getRepositoryName(),
+                                  artifactoryArtifactDelegateConfig.getArtifactPath())
+                              .toString();
+    saveExecutionLog(format("Begin execution of command: %s", copyCommandUnit.getName()), INFO);
+    saveExecutionLog("Downloading artifact from ARTIFACTORY to " + copyCommandUnit.getDestinationPath() + "\\"
+            + getArtifactFileName(artifactPath),
+        INFO);
 
+    saveExecutionLog(format("Initializing WinRM connection to %s ...", config.getHostname()), INFO);
     try (WinRmSession session = new WinRmSession(config, this.logCallback);
          ExecutionLogWriter outputWriter = getExecutionLogWriter(INFO);
          ExecutionLogWriter errorWriter = getExecutionLogWriter(ERROR)) {
       saveExecutionLog(format("Connected to %s", config.getHostname()), INFO);
-      saveExecutionLog(format("Executing command ...%n"), INFO);
-
-      String artifactPath = Paths
-                                .get(artifactoryArtifactDelegateConfig.getRepositoryName(),
-                                    artifactoryArtifactDelegateConfig.getArtifactPath())
-                                .toString();
+      saveExecutionLog(
+          format("Executing copy artifact command...\nArtifact filename: %s", getArtifactFileName(artifactPath)), INFO);
 
       String command =
           getDownloadArtifactCommand(artifactoryConfigRequest, copyCommandUnit.getDestinationPath(), artifactPath);
@@ -128,13 +133,18 @@ public class FileBasedWinRmExecutorNG extends FileBasedAbstractWinRmExecutor {
       JenkinsArtifactDelegateConfig jenkinsArtifactDelegateConfig, CopyCommandUnit copyCommandUnit) {
     CommandExecutionStatus commandExecutionStatus = FAILURE;
 
+    String artifactPathOnTarget = Paths.get(jenkinsArtifactDelegateConfig.getArtifactPath()).getFileName().toString();
+    saveExecutionLog(format("Begin execution of command: %s", copyCommandUnit.getName()), INFO);
+    saveExecutionLog("Downloading artifact from JENKINS to " + copyCommandUnit.getDestinationPath() + "\\"
+            + getArtifactFileName(artifactPathOnTarget),
+        INFO);
     try (WinRmSession session = new WinRmSession(config, this.logCallback);
          ExecutionLogWriter outputWriter = getExecutionLogWriter(INFO);
          ExecutionLogWriter errorWriter = getExecutionLogWriter(ERROR)) {
       saveExecutionLog(format("Connected to %s", config.getHostname()), INFO);
-      saveExecutionLog(format("Executing command ...%n"), INFO);
-
-      String artifactPathOnTarget = Paths.get(jenkinsArtifactDelegateConfig.getArtifactPath()).getFileName().toString();
+      saveExecutionLog(format("Executing copy artifact command...\nArtifact filename: %s",
+                           getArtifactFileName(artifactPathOnTarget)),
+          INFO);
       String artifactPath =
           Paths
               .get(jenkinsArtifactDelegateConfig.getJobName(), jenkinsArtifactDelegateConfig.getBuild(), ARTIFACT,
@@ -179,7 +189,9 @@ public class FileBasedWinRmExecutorNG extends FileBasedAbstractWinRmExecutor {
          ExecutionLogWriter outputWriter = getExecutionLogWriter(INFO);
          ExecutionLogWriter errorWriter = getExecutionLogWriter(ERROR)) {
       saveExecutionLog(format("Connected to %s", config.getHostname()), INFO);
-      saveExecutionLog(format("Executing command ...%n"), INFO);
+      saveExecutionLog(
+          format("Executing copy config files command...\nConfig filename: %s", configFileParameters.getFileName()),
+          INFO);
 
       commandExecutionStatus = splitFileAndTransfer(configFileParameters, session, outputWriter, errorWriter);
       saveExecutionLog("Command completed successfully", INFO, commandExecutionStatus);
@@ -225,12 +237,7 @@ public class FileBasedWinRmExecutorNG extends FileBasedAbstractWinRmExecutor {
 
   private String getDownloadArtifactCommand(
       ArtifactoryConfigRequest artifactoryConfigRequest, String destinationPath, String artifactPath) {
-    String artifactFileName = artifactPath;
-    int lastIndexOfSlash = artifactFileName.lastIndexOf('/');
-    if (lastIndexOfSlash > 0) {
-      artifactFileName = artifactFileName.substring(lastIndexOfSlash + 1);
-      log.info("Got filename: " + artifactFileName);
-    }
+    String artifactFileName = getArtifactFileName(artifactPath);
     if (artifactoryConfigRequest.isHasCredentials()) {
       return "$Headers = @{\n"
           + "    Authorization = \"" + getAuthHeader(artifactoryConfigRequest) + "\"\n"
@@ -244,6 +251,16 @@ public class FileBasedWinRmExecutorNG extends FileBasedAbstractWinRmExecutor {
           + "Invoke-WebRequest -Uri \"" + getArtifactoryUrl(artifactoryConfigRequest, artifactPath) + "\" -OutFile \""
           + destinationPath + "\\" + artifactFileName + "\"";
     }
+  }
+
+  private String getArtifactFileName(String artifactPath) {
+    String artifactFileName = artifactPath;
+    int lastIndexOfSlash = artifactFileName.lastIndexOf('/');
+    if (lastIndexOfSlash > 0) {
+      artifactFileName = artifactFileName.substring(lastIndexOfSlash + 1);
+      log.info("Got filename: " + artifactFileName);
+    }
+    return artifactFileName;
   }
 
   private String getDownloadJenkinsArtifactCommand(JenkinsArtifactDelegateConfig jenkinsArtifactDelegateConfig,
@@ -264,13 +281,14 @@ public class FileBasedWinRmExecutorNG extends FileBasedAbstractWinRmExecutor {
           + "[Net.ServicePointManager]::SecurityProtocol = $AllProtocols"
           + "\n $ProgressPreference = 'SilentlyContinue'"
           + "\n Invoke-WebRequest -Uri \"" + getJenkinsUrl(jenkinsArtifactDelegateConfig, artifactPath)
-          + "\" -Headers $Headers -OutFile \"" + destinationPath + "\\" + artifactPathOnTarget + "\"";
+          + "\" -Headers $Headers -OutFile \"" + destinationPath + "\\" + getArtifactFileName(artifactPathOnTarget)
+          + "\"";
     } else {
       return "$AllProtocols = [Net.SecurityProtocolType]'Ssl3,Tls,Tls11,Tls12'\n"
           + "[Net.ServicePointManager]::SecurityProtocol = $AllProtocols\n"
           + "$ProgressPreference = 'SilentlyContinue'\n"
           + "Invoke-WebRequest -Uri \"" + getJenkinsUrl(jenkinsArtifactDelegateConfig, artifactPath) + "\" -OutFile \""
-          + destinationPath + "\\" + artifactPathOnTarget + "\"";
+          + destinationPath + "\\" + getArtifactFileName(artifactPathOnTarget) + "\"";
     }
   }
 

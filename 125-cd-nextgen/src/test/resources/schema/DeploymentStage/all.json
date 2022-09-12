@@ -309,7 +309,8 @@
             "Acr",
             "Jenkins",
             "AmazonS3",
-            "GoogleArtifactRegistry"
+            "GoogleArtifactRegistry",
+            "GithubPackageRegistry"
           ]
         }
       },
@@ -423,6 +424,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/GcrArtifactConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "GithubPackageRegistry"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GithubPackagesArtifactConfig"
               }
             }
           }
@@ -3576,6 +3593,63 @@
             {
               "required": [
                 "paths"
+              ]
+            }
+          ]
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "GithubPackagesArtifactConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ArtifactConfig"
+        },
+        {
+          "type": "object",
+          "required": [
+            "connectorRef",
+            "packageName",
+            "packageType"
+          ],
+          "properties": {
+            "connectorRef": {
+              "type": "string"
+            },
+            "org": {
+              "type": "string"
+            },
+            "packageName": {
+              "type": "string"
+            },
+            "packageType": {
+              "type": "string",
+              "enum": [
+                "npm",
+                "maven",
+                "rubygems",
+                "nuget",
+                "container"
+              ]
+            },
+            "version": {
+              "type": "string"
+            },
+            "versionRegex": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "versionRegex"
+              ]
+            },
+            {
+              "required": [
+                "version"
               ]
             }
           ]
@@ -6805,7 +6879,8 @@
             "Acr",
             "Jenkins",
             "AmazonS3",
-            "GoogleArtifactRegistry"
+            "GoogleArtifactRegistry",
+            "GithubPackageRegistry"
           ]
         }
       },
@@ -6919,6 +6994,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/GcrArtifactConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "GithubPackageRegistry"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GithubPackagesArtifactConfig"
               }
             }
           }
@@ -7884,7 +7975,8 @@
             "Acr",
             "Jenkins",
             "AmazonS3",
-            "GoogleArtifactRegistry"
+            "GoogleArtifactRegistry",
+            "GithubPackageRegistry"
           ]
         }
       },
@@ -7998,6 +8090,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/GcrArtifactConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "GithubPackageRegistry"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GithubPackagesArtifactConfig"
               }
             }
           }

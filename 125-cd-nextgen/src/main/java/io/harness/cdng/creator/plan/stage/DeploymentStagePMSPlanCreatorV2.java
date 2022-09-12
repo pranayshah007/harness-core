@@ -209,7 +209,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
         List<AdviserObtainment> adviserObtainments =
             addResourceConstraintDependencyWithWhenCondition(planCreationResponseMap, specField);
         String infraNodeId = addInfrastructureNode(planCreationResponseMap, stageNode, adviserObtainments);
-        String serviceNodeId = addServiceNode(planCreationResponseMap, stageNode, infraNodeId);
+        String serviceNodeId = addServiceNode(specField, planCreationResponseMap, stageNode, infraNodeId);
         addSpecNode(planCreationResponseMap, specField, serviceNodeId);
       } else {
         final String postServiceStepUuid = "service-" + UUIDGenerator.generateUuid();
@@ -295,10 +295,13 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   }
 
   private boolean useNewFlow(PlanCreationContext ctx, DeploymentStageNode stageNode) {
+    DeploymentStageConfig deploymentStageConfig = stageNode.getDeploymentStageConfig();
     boolean isServiceV2 = stageNode.getDeploymentStageConfig().getService() != null
         && ParameterField.isNotNull(stageNode.getDeploymentStageConfig().getService().getServiceRef());
+    boolean serviceV2UseFromStage = deploymentStageConfig.getService().getUseFromStage() != null
+        && EmptyPredicate.isNotEmpty(deploymentStageConfig.getService().getUseFromStage().getStage());
     boolean isServices = stageNode.getDeploymentStageConfig().getServices() != null;
-    boolean shouldUseNewFlow = isServices || isServiceV2;
+    boolean shouldUseNewFlow = isServices || isServiceV2 || serviceV2UseFromStage;
     return shouldUseNewFlow
         && featureFlagHelperService.isEnabled(
             ctx.getMetadata().getAccountIdentifier(), FeatureName.SERVICE_V2_EXPRESSION);
@@ -441,8 +444,9 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     return serviceField;
   }
 
-  private String addServiceNode(LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap,
-      DeploymentStageNode stageNode, String nextNodeId) throws IOException {
+  private String addServiceNode(YamlField specField,
+      LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, DeploymentStageNode stageNode,
+      String nextNodeId) throws IOException {
     // Adding service child by resolving the serviceField
     ServiceDefinitionType serviceType = stageNode.getDeploymentStageConfig().getDeploymentType();
     ServiceYamlV2 service;
@@ -460,7 +464,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     }
     String serviceNodeId = service.getUuid();
     planCreationResponseMap.putAll(ServiceAllInOnePlanCreatorUtils.addServiceNode(
-        kryoSerializer, service, environment, serviceNodeId, nextNodeId, serviceType));
+        specField, kryoSerializer, service, environment, serviceNodeId, nextNodeId, serviceType));
     return serviceNodeId;
   }
   private String addInfrastructureNode(LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap,

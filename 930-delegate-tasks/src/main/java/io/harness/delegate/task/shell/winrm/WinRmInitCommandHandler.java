@@ -83,7 +83,7 @@ public class WinRmInitCommandHandler implements CommandHandler {
         scriptCommandUnit.setCommand(scriptCommandUnit.getScript());
       }
     }
-    CommandExecutionStatus commandExecutionStatus = executor.executeCommandString(getInitCommand(), true);
+    CommandExecutionStatus commandExecutionStatus = executor.executeCommandString(getInitCommand(), false);
     return ExecuteCommandResponse.builder().status(commandExecutionStatus).build();
   }
 

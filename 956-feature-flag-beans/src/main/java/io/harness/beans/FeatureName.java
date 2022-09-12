@@ -347,7 +347,6 @@ public enum FeatureName {
   SEARCH_USERGROUP_BY_APPLICATION("Search in usergroup by application in CG", HarnessTeam.SPG),
   GITOPS_BYO_ARGO,
   CCM_MICRO_FRONTEND("Micro front for CCM", HarnessTeam.CE),
-  NG_GIT_EXPERIENCE_IMPORT_FLOW,
   CVNG_LICENSE_ENFORCEMENT,
   CVNG_SLO_DISABLE_ENABLE,
   SERVICE_DASHBOARD_V2,
@@ -438,6 +437,8 @@ public enum FeatureName {
   WAIT_STEP(
       "Automatically pause a pipeline execution for a specific amount of time, after time expires the pipeline proceeds and eventually completes",
       HarnessTeam.PIPELINE),
+
+  PIPELINE_CHAINING("UI flag to enable/disable Pipeline Chaining feature", HarnessTeam.PIPELINE),
   MERGE_RUNTIME_VARIABLES_IN_RESUME(
       "merge context elements workflow variables while resuming pipeline from a stage", HarnessTeam.SPG);
 
