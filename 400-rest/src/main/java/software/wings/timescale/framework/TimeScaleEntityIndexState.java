@@ -9,7 +9,9 @@ package software.wings.timescale.framework;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 
 import java.util.List;
@@ -23,6 +25,7 @@ import org.mongodb.morphia.annotations.Id;
 
 @OwnedBy(CDC)
 @Value
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "timeScaleEntitiesIndexState", noClassnameStored = true)
 @FieldNameConstants(innerTypeName = "TimeScaleEntityIndexStateKeys")
 @Slf4j

@@ -44,6 +44,7 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.utils.StatusUtils;
 
 import com.google.inject.Inject;
+import java.util.Collection;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
@@ -132,8 +133,7 @@ public class InterruptMonitor implements Handler<Interrupt> {
       if (isEmpty(leaves)) {
         log.error("No Leaves found something really wrong happened here. Lets check this execution {}",
             interrupt.getPlanExecutionId());
-        forceTerminate(
-            interrupt, nodeExecutions, nodeExecutions.stream().map(NodeExecution::getUuid).collect(Collectors.toSet()));
+        discontinueAllRunningNodeExecutionsAndPlanExecution(interrupt, nodeExecutions);
         interruptService.markProcessedForceful(interrupt.getUuid(), PROCESSED_UNSUCCESSFULLY, true);
         return;
       }
@@ -196,15 +196,35 @@ public class InterruptMonitor implements Handler<Interrupt> {
     }
 
     // Terminate parents here
-    for (NodeExecution parent : runningParents) {
-      NodeExecution discontinuingParent = markDiscontinuingIfRequired(interrupt, parent);
-      if (discontinuingParent == null) {
+    discontinueNodeExecutions(interrupt, runningParents);
+  }
+
+  private void discontinueAllRunningNodeExecutionsAndPlanExecution(
+      Interrupt interrupt, List<NodeExecution> nodeExecutions) {
+    Set<NodeExecution> runningNodeExecutions = nodeExecutions.stream()
+                                                   .filter(ne -> !StatusUtils.finalStatuses().contains(ne.getStatus()))
+                                                   .collect(Collectors.toSet());
+    discontinueNodeExecutions(interrupt, runningNodeExecutions);
+    Status status = planExecutionService.calculateStatus(interrupt.getPlanExecutionId());
+    PlanExecution planExecution =
+        planExecutionService.updateStatusForceful(interrupt.getPlanExecutionId(), status, null, true);
+    if (planExecution == null) {
+      log.error("Failed to update PlanExecution {} with Status {}", interrupt.getPlanExecutionId(), status);
+    } else {
+      log.info("Only plan Status was not correct. Updated plan status to {}", planExecution.getStatus());
+    }
+  }
+
+  private void discontinueNodeExecutions(Interrupt interrupt, Collection<NodeExecution> nodeExecutions) {
+    for (NodeExecution runningNodeExecution : nodeExecutions) {
+      NodeExecution discontinuingNode = markDiscontinuingIfRequired(interrupt, runningNodeExecution);
+      if (discontinuingNode == null) {
         // TODO: Think more cases can this happen if yes what we can do to improve
         log.error("Unable to unblock stuck execution InterruptId :{} NodeExecutionId: {}", interrupt.getUuid(),
-            parent.getUuid());
+            runningNodeExecution.getUuid());
         return;
       }
-      terminateParent(interrupt, discontinuingParent);
+      terminateParent(interrupt, discontinuingNode);
     }
   }
 

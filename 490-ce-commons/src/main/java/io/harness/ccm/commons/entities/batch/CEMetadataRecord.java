@@ -7,7 +7,7 @@
 
 package io.harness.ccm.commons.entities.batch;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
@@ -29,9 +29,9 @@ import org.mongodb.morphia.annotations.Id;
 @Data
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@StoreIn(DbAliases.CENG)
 @Entity(value = "ceMetadataRecord", noClassnameStored = true)
 @FieldNameConstants(innerTypeName = "CEMetadataRecordKeys")
-@StoreIn(DbAliases.CENG)
 public final class CEMetadataRecord implements PersistentEntity, UuidAware, AccountAccess, UpdatedAtAware {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()

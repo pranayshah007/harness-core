@@ -62,6 +62,7 @@ public class PipelineServiceModuleRegistrars {
           .addAll(NGAuditCommonsRegistrars.morphiaRegistrars)
           .addAll(DelegateTaskRegistrars.morphiaRegistrars)
           .addAll(ProjectAndOrgRegistrars.morphiaRegistrars)
+          .addAll(FeatureFlagBeansRegistrars.morphiaRegistrars)
           .build();
 
   public final ImmutableSet<Class<? extends TypeConverter>> morphiaConverters =

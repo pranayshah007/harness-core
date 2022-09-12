@@ -1,0 +1,104 @@
+name: Access Control Service Metrics
+identifier: accessControlServiceMetrics
+metricGroup: accessControlServiceMetricsGroup
+metrics:
+  - metricName: access_control_io_dropwizard_jetty_MutableServletContextHandler_percent_4xx_15m
+    metricDefinition: Percentage of 4xx errors in the last 15 minutes
+    type: LastValue
+    unit: count
+  - metricName: access_control_io_dropwizard_jetty_MutableServletContextHandler_percent_4xx_5m
+    metricDefinition: Percentage of 4xx errors in the last 5 minutes
+    type: LastValue
+    unit: count
+  - metricName: access_control_io_dropwizard_jetty_MutableServletContextHandler_percent_5xx_15m
+    metricDefinition: Percentage of 5xx errors in the last 15 minutes
+    type: LastValue
+    unit: count
+  - metricName: access_control_io_dropwizard_jetty_MutableServletContextHandler_percent_5xx_5m
+    metricDefinition: Percentage of 5xx errors in the last 5 minutes
+    type: LastValue
+    unit: count
+  - metricName: access_control_jvm_memory_heap_used
+    metricDefinition: JVM Memory Heap Used
+    type: LastValue
+    unit: count
+  - metricName: access_control_jvm_memory_total_used
+    metricDefinition: JVM Memory Total Used
+    type: LastValue
+    unit: count
+  - metricName: access_control_jvm_threads_count
+    metricDefinition: JVM Threads Count
+    type: LastValue
+    unit: count
+  - metricName: access_control_jvm_threads_daemon_count
+    metricDefinition: JVM Daemon Threads Count
+    type: LastValue
+    unit: count
+  - metricName: access_control_jvm_threads_deadlock_count
+    metricDefinition: JVM Threads Deadlock Count
+    type: LastValue
+    unit: count
+  - metricName: access_control_jvm_threads_peak_count
+    metricDefinition: JVM Threads Peak Count
+    type: LastValue
+    unit: count
+  - metricName: access_control_jvm_threads_runnable_count
+    metricDefinition: JVM Runnable Threads Count
+    type: LastValue
+    unit: count
+  - metricName: access_control_jvm_threads_timed_waiting_count
+    metricDefinition: JVM Threads Timed Waiting Count
+    type: LastValue
+    unit: count
+  - metricName: access_control_jvm_threads_waiting_count
+    metricDefinition: JVM Threads Waiting Count
+    type: LastValue
+    unit: count
+  - metricName: access_control_org_eclipse_jetty_util_thread_QueuedThreadPool_dw_size
+    metricDefinition: Request Thread Pool size
+    type: LastValue
+    unit: count
+  - metricName: access_control_org_eclipse_jetty_util_thread_QueuedThreadPool_dw_utilization
+    metricDefinition: Request Thread Pool Utilization
+    type: LastValue
+    unit: count
+  - metricName: access_control_org_eclipse_jetty_util_thread_QueuedThreadPool_dw_admin_utilization_max
+    metricDefinition: Request Thread Pool Utilization relative to Max Capacity
+    type: LastValue
+    unit: count
+  - metricName: access_control_org_eclipse_jetty_util_thread_QueuedThreadPool_dw_jobs_queue_utilization
+    metricDefinition: Request Thread Pool Pending Job Queue Utilization
+    type: LastValue
+    unit: count
+  - metricName: access_control_org_eclipse_jetty_util_thread_QueuedThreadPool_dw_jobs
+    metricDefinition: Request Thread Pool Pending Jobs
+    type: LastValue
+    unit: count
+  - metricName: access_control_io_dropwizard_jetty_MutableServletContextHandler_requests_count
+    metricDefinition: Total requests received
+    type: LastValue
+    unit: count
+  - metricName: access_control_io_dropwizard_jetty_MutableServletContextHandler_requests_fifteenMinuteRate
+    metricDefinition: Average Calls/second in the last 15 minutes
+    type: LastValue
+    unit: count
+  - metricName: access_control_io_dropwizard_jetty_MutableServletContextHandler_requests_meanRate
+    metricDefinition: Average Calls/second
+    type: LastValue
+    unit: count
+  - metricName: access_control_io_dropwizard_jetty_MutableServletContextHandler_requests_snapshot_99thPercentile
+    metricDefinition: Request time - P99 (seconds)
+    type: LastValue
+    unit: count
+  - metricName: access_control_io_dropwizard_jetty_MutableServletContextHandler_requests_snapshot_95thPercentile
+    metricDefinition: Request time - P95 (seconds)
+    type: LastValue
+    unit: count
+  - metricName: access_control_io_dropwizard_jetty_MutableServletContextHandler_requests_snapshot_75thPercentile
+    metricDefinition: Request time - P75 (seconds)
+    type: LastValue
+    unit: count
+  - metricName: access_control_io_dropwizard_jetty_MutableServletContextHandler_requests_snapshot_mean
+    metricDefinition: Request time - Mean (seconds)
+    type: LastValue
+    unit: count

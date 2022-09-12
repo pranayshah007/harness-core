@@ -28,6 +28,7 @@ import static org.jooq.impl.DSL.val;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.retry.RetryOnException;
+import io.harness.ccm.commons.beans.InstanceState;
 import io.harness.ccm.commons.beans.InstanceType;
 import io.harness.ccm.commons.beans.JobConstants;
 import io.harness.ccm.commons.beans.billing.InstanceCategory;
@@ -301,8 +302,8 @@ public class K8sRecommendationDAO {
 
   @NonNull
   public K8sServiceProvider getServiceProvider(JobConstants jobConstants, NodePoolId nodePoolId) {
-    InstanceData instanceData = instanceDataDao.fetchInstanceData(
-        jobConstants.getAccountId(), nodePoolId.getClusterid(), InstanceType.K8S_NODE, nodePoolId.getNodepoolname());
+    InstanceData instanceData = instanceDataDao.fetchInstanceData(jobConstants.getAccountId(),
+        nodePoolId.getClusterid(), InstanceType.K8S_NODE, nodePoolId.getNodepoolname(), InstanceState.RUNNING);
     try {
       Map<String, String> metaData = instanceData.getMetaData();
       String region = metaData.get(InstanceMetaDataConstants.REGION);

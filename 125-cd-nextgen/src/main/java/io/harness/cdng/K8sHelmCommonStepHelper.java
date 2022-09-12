@@ -414,7 +414,7 @@ public class K8sHelmCommonStepHelper {
 
   protected TaskChainResponse prepareHelmFetchValuesTaskChainResponse(Ambiance ambiance,
       StepElementParameters stepElementParameters, List<ValuesManifestOutcome> aggregatedValuesManifests,
-      K8sStepPassThroughData k8sStepPassThroughData) {
+      K8sStepPassThroughData k8sStepPassThroughData, boolean shouldOpenLogStream) {
     String accountId = AmbianceUtils.getAccountId(ambiance);
     HelmChartManifestOutcome helmChartManifestOutcome =
         (HelmChartManifestOutcome) k8sStepPassThroughData.getManifestOutcome();
@@ -432,7 +432,7 @@ public class K8sHelmCommonStepHelper {
             .helmChartManifestDelegateConfig(helmManifest)
             .timeout(CDStepHelper.getTimeoutInMillis(stepElementParameters))
             .helmFetchFileConfigList(helmFetchFileConfigList)
-            .openNewLogStream(isEmpty(k8sStepPassThroughData.getCustomFetchContent()))
+            .openNewLogStream(shouldOpenLogStream)
             .closeLogStream(!shouldExecuteGitFetchTask(aggregatedValuesManifests))
             .build();
 
@@ -846,9 +846,6 @@ public class K8sHelmCommonStepHelper {
     }
 
     if (ManifestStoreType.OCI.equals(storeConfig.getKind())) {
-      if (!isHelmOciEnabled(AmbianceUtils.getAccountId(ambiance))) {
-        throw new UnsupportedOperationException(format("Unsupported Store Config type: [%s]", storeConfig.getKind()));
-      }
       OciHelmChartConfig ociStoreConfig = (OciHelmChartConfig) storeConfig;
       ConnectorInfoDTO helmConnectorDTO =
           cdStepHelper.getConnector(getParameterFieldValue(ociStoreConfig.getConnectorReference()), ambiance);
@@ -863,7 +860,7 @@ public class K8sHelmCommonStepHelper {
           .ociHelmConnector((OciHelmConnectorDTO) helmConnectorDTO.getConnectorConfig())
           .encryptedDataDetails(
               k8sEntityHelper.getEncryptionDataDetails(helmConnectorDTO, AmbianceUtils.getNgAccess(ambiance)))
-          .helmOciEnabled(isHelmOciEnabled(AmbianceUtils.getAccountId(ambiance)))
+          .helmOciEnabled(true)
           .build();
     }
 
@@ -955,10 +952,6 @@ public class K8sHelmCommonStepHelper {
       paths.add("/");
     }
     return paths;
-  }
-
-  public boolean isHelmOciEnabled(String accountId) {
-    return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.HELM_OCI_SUPPORT);
   }
 
   public List<String> getValuesFileContents(Ambiance ambiance, List<String> valuesFileContents) {

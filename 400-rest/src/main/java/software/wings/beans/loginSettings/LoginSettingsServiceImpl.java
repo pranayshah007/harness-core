@@ -186,8 +186,8 @@ public class LoginSettingsServiceImpl implements LoginSettingsService {
               .newLoginSettingsYamlDTO(LoginSettingsYamlDTO.builder().loginSettings(newLoginSettings).build())
               .build());
     } catch (Exception ex) {
-      log.error("For account {} Audit trails for LoginSettings update event failed with exception: {}",
-          accountIdentifier, ex);
+      log.error(
+          "For account {} Audit trails for LoginSettings update event failed with exception: ", accountIdentifier, ex);
     }
   }
 

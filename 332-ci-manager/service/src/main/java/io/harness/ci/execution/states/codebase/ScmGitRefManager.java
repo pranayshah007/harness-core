@@ -89,7 +89,8 @@ public class ScmGitRefManager {
           .getLatestCommitResponse(latestCommitResponse.toByteArray())
           .build();
     } else {
-      throw new CIStageExecutionException("Manual codebase git task needs one of PR number, branch or tag");
+      throw new CIStageExecutionException(
+          "Manual codebase git task needs one of PR number, branch or tag. Please check if you are passing codebase inputs correctly.");
     }
   }
 

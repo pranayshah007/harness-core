@@ -162,7 +162,8 @@ public class WhitelistServiceImpl implements WhitelistService {
     return response.getResponse();
   }
 
-  private void evictWhitelistConfigCache(String accountId) {
+  @Override
+  public void evictWhitelistConfigCache(String accountId) {
     whitelistConfigCache.remove(accountId);
   }
 

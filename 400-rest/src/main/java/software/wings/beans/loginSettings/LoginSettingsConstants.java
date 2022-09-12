@@ -8,7 +8,7 @@
 package software.wings.beans.loginSettings;
 
 public class LoginSettingsConstants {
-  public static final String RESOURCE_NAME = "Login Settings";
+  public static final String RESOURCE_NAME = "Authentication Settings";
   public static final String HARNESS_USERNAME_PASSWORD_UPDATED = "HarnessUsernamePasswordUpdated";
   public static final String WHITELISTED_DOMAINS_UPDATED = "WhitelistedDomainsUpdated";
   public static final String SAML_SSO_CREATED = "SamlSSOCreated";
@@ -19,4 +19,7 @@ public class LoginSettingsConstants {
   public static final String OAUTH_PROVIDER_UPDATED = "OAuthProviderUpdated";
   public static final String OAUTH_PROVIDER_DELETED = "OAuthProviderDeleted";
   public static final String AUTHENTICATION_MECHANISM_UPDATED = "AuthenticationMechanismUpdated";
+  public static final String LDAP_SSO_CREATED = "LdapSSOCreated";
+  public static final String LDAP_SSO_UPDATED = "LdapSSOUpdated";
+  public static final String LDAP_SSO_DELETED = "LdapSSODeleted";
 }

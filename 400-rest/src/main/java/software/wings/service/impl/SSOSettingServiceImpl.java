@@ -45,6 +45,10 @@ import software.wings.beans.NotificationRule;
 import software.wings.beans.alert.Alert;
 import software.wings.beans.alert.AlertType;
 import software.wings.beans.alert.SSOSyncFailedAlert;
+import software.wings.beans.loginSettings.events.LdapSettingsYamlDTO;
+import software.wings.beans.loginSettings.events.LoginSettingsLDAPCreateEvent;
+import software.wings.beans.loginSettings.events.LoginSettingsLDAPDeleteEvent;
+import software.wings.beans.loginSettings.events.LoginSettingsLDAPUpdateEvent;
 import software.wings.beans.loginSettings.events.LoginSettingsOAuthCreateEvent;
 import software.wings.beans.loginSettings.events.LoginSettingsOAuthDeleteEvent;
 import software.wings.beans.loginSettings.events.LoginSettingsOAuthUpdateEvent;
@@ -166,7 +170,6 @@ public class SSOSettingServiceImpl implements SSOSettingService {
   private SamlSettings saveSSOSettingsInternal(
       @GetAccountId(SamlSettingsAccountIdExtractor.class) SamlSettings settings) {
     SamlSettings queriedSettings = getSamlSettingsByAccountId(settings.getAccountId());
-    SamlSettings currentSamlSettings = queriedSettings;
     SamlSettings savedSettings;
     if (queriedSettings != null) {
       queriedSettings.setUrl(settings.getUrl());
@@ -179,6 +182,7 @@ public class SSOSettingServiceImpl implements SSOSettingService {
       queriedSettings.setSamlProviderType(settings.getSamlProviderType());
       queriedSettings.setClientId(settings.getClientId());
       queriedSettings.setEncryptedClientSecret(settings.getEncryptedClientSecret());
+      SamlSettings currentSamlSettings = getSamlSettingsByAccountId(settings.getAccountId());
       String ssoSettingUuid = wingsPersistence.save(queriedSettings);
       savedSettings = wingsPersistence.get(SamlSettings.class, ssoSettingUuid);
       ngAuditLoginSettingsForSAMLUpdate(currentSamlSettings, savedSettings);
@@ -202,7 +206,7 @@ public class SSOSettingServiceImpl implements SSOSettingService {
               .newSamlSettingsYamlDTO(SamlSettingsYamlDTO.builder().samlSettings(newSamlSettings).build())
               .build());
     } catch (Exception ex) {
-      log.error("For account {} Audit trails for SAML SSO upload event failed with exception: {}",
+      log.error("For account {} Audit trails for SAML SSO upload event failed with exception: ",
           newSamlSettings.getAccountId(), ex);
     }
   }
@@ -216,7 +220,7 @@ public class SSOSettingServiceImpl implements SSOSettingService {
               .newSamlSettingsYamlDTO(SamlSettingsYamlDTO.builder().samlSettings(newSamlSettings).build())
               .build());
     } catch (Exception ex) {
-      log.error("For account {} Audit trails for SAML SSO update event failed with exception: {}",
+      log.error("For account {} Audit trails for SAML SSO update event failed with exception: ",
           newSamlSettings.getAccountId(), ex);
     }
   }
@@ -229,7 +233,7 @@ public class SSOSettingServiceImpl implements SSOSettingService {
               .oldSamlSettingsYamlDTO(SamlSettingsYamlDTO.builder().samlSettings(oldSamlSettings).build())
               .build());
     } catch (Exception ex) {
-      log.error("For account {} Audit trails for SAML SSO delete event failed with exception: {}",
+      log.error("For account {} Audit trails for SAML SSO delete event failed with exception: ",
           oldSamlSettings.getAccountId(), ex);
     }
   }
@@ -237,13 +241,13 @@ public class SSOSettingServiceImpl implements SSOSettingService {
   @Override
   public OauthSettings saveOauthSettings(OauthSettings settings) {
     OauthSettings queriedSettings = getOauthSettingsByAccountId(settings.getAccountId());
-    OauthSettings currentSettings = queriedSettings;
     OauthSettings savedSettings;
     if (queriedSettings != null) {
       queriedSettings.setUrl(settings.getUrl());
       queriedSettings.setDisplayName(settings.getDisplayName());
       queriedSettings.setAllowedProviders(settings.getAllowedProviders());
       queriedSettings.setFilter(settings.getFilter());
+      OauthSettings currentSettings = wingsPersistence.get(OauthSettings.class, queriedSettings.getUuid());
       wingsPersistence.save(queriedSettings);
       savedSettings = wingsPersistence.get(OauthSettings.class, queriedSettings.getUuid());
       ngAuditLoginSettingsForOAuthUpdate(settings.getAccountId(), currentSettings, savedSettings);
@@ -268,8 +272,8 @@ public class SSOSettingServiceImpl implements SSOSettingService {
               .newOAuthSettingsYamlDTO(OAuthSettingsYamlDTO.builder().oauthSettings(newOauthSettings).build())
               .build());
     } catch (Exception ex) {
-      log.error("For account {} Audit trails for OAuth Provider Upload event failed with exception: {}",
-          accountIdentifier, ex);
+      log.error(
+          "For account {} Audit trails for OAuth Provider Upload event failed with exception: ", accountIdentifier, ex);
     }
   }
 
@@ -283,8 +287,8 @@ public class SSOSettingServiceImpl implements SSOSettingService {
               .newOAuthSettingsYamlDTO(OAuthSettingsYamlDTO.builder().oauthSettings(newOauthSettings).build())
               .build());
     } catch (Exception ex) {
-      log.error("For account {} Audit trails for OAuth Provider Update event failed with exception: {}",
-          accountIdentifier, ex);
+      log.error(
+          "For account {} Audit trails for OAuth Provider Update event failed with exception: ", accountIdentifier, ex);
     }
   }
 
@@ -296,8 +300,8 @@ public class SSOSettingServiceImpl implements SSOSettingService {
               .oldOAuthSettingsYamlDTO(OAuthSettingsYamlDTO.builder().oauthSettings(oldOauthSettings).build())
               .build());
     } catch (Exception ex) {
-      log.error("For account {} Audit trails for OAuth Provider Delete event failed with exception: {}",
-          accountIdentifier, ex);
+      log.error(
+          "For account {} Audit trails for OAuth Provider Delete event failed with exception: ", accountIdentifier, ex);
     }
   }
 
@@ -391,6 +395,7 @@ public class SSOSettingServiceImpl implements SSOSettingService {
     LdapGroupSyncJob.add(jobScheduler, savedSettings.getAccountId(), savedSettings.getUuid());
     ldapGroupScheduledHandler.wakeup();
     auditServiceHelper.reportForAuditingUsingAccountId(settings.getAccountId(), null, settings, Event.Type.CREATE);
+    ngAuditLoginSettingsForLdapUpload(savedSettings.getAccountId(), savedSettings);
     log.info("Auditing creation of LDAP Settings for account={}", settings.getAccountId());
     eventPublishHelper.publishSSOEvent(settings.getAccountId());
     return savedSettings;
@@ -423,9 +428,11 @@ public class SSOSettingServiceImpl implements SSOSettingService {
     oldSettings.setDefaultCronExpression(ldapSyncJobConfig.getDefaultCronExpression());
     oldSettings.setCronExpression(settings.getCronExpression());
     updateNextIterations(oldSettings);
+    LdapSettings currentLdapSettings = getLdapSettingsByUuid(oldSettings.getUuid());
     LdapSettings savedSettings = wingsPersistence.saveAndGet(LdapSettings.class, oldSettings);
     auditServiceHelper.reportForAuditingUsingAccountId(
         settings.getAccountId(), oldSettings, savedSettings, Event.Type.UPDATE);
+    ngAuditLoginSettingsForLdapUpdate(settings.getAccountId(), currentLdapSettings, savedSettings);
     log.info("Auditing updation of LDAP for account={}", savedSettings.getAccountId());
     LdapGroupSyncJob.add(jobScheduler, savedSettings.getAccountId(), savedSettings.getUuid());
     ldapGroupScheduledHandler.wakeup();
@@ -462,8 +469,47 @@ public class SSOSettingServiceImpl implements SSOSettingService {
     wingsPersistence.delete(settings);
     LdapGroupSyncJob.delete(jobScheduler, this, settings.getAccountId(), settings.getUuid());
     auditServiceHelper.reportDeleteForAuditingUsingAccountId(settings.getAccountId(), settings);
+    ngAuditLoginSettingsForLdapDelete(settings.getAccountId(), settings);
     log.info("Auditing deletion of LDAP Settings for account={}", settings.getAccountId());
     return settings;
+  }
+
+  private void ngAuditLoginSettingsForLdapUpload(String accountIdentifier, LdapSettings newLdapSettings) {
+    try {
+      outboxService.save(
+          LoginSettingsLDAPCreateEvent.builder()
+              .accountIdentifier(accountIdentifier)
+              .newLdapSettingsYamlDTO(LdapSettingsYamlDTO.builder().ldapSettings(newLdapSettings).build())
+              .build());
+    } catch (Exception ex) {
+      log.error("For account {} Audit trails for LDAP SSO create event failed with exception: ", accountIdentifier, ex);
+    }
+  }
+
+  private void ngAuditLoginSettingsForLdapUpdate(
+      String accountIdentifier, LdapSettings oldLdapSettings, LdapSettings newLdapSettings) {
+    try {
+      outboxService.save(
+          LoginSettingsLDAPUpdateEvent.builder()
+              .accountIdentifier(accountIdentifier)
+              .oldLdapSettingsYamlDTO(LdapSettingsYamlDTO.builder().ldapSettings(oldLdapSettings).build())
+              .newLdapSettingsYamlDTO(LdapSettingsYamlDTO.builder().ldapSettings(newLdapSettings).build())
+              .build());
+    } catch (Exception ex) {
+      log.error("For account {} Audit trails for LDAP SSO upload event failed with exception: ", accountIdentifier, ex);
+    }
+  }
+
+  private void ngAuditLoginSettingsForLdapDelete(String accountIdentifier, LdapSettings oldLdapSettings) {
+    try {
+      outboxService.save(
+          LoginSettingsLDAPDeleteEvent.builder()
+              .accountIdentifier(accountIdentifier)
+              .oldLdapSettingsYamlDTO(LdapSettingsYamlDTO.builder().ldapSettings(oldLdapSettings).build())
+              .build());
+    } catch (Exception ex) {
+      log.error("For account {} Audit trails for LDAP SSO delete event failed with exception: ", accountIdentifier, ex);
+    }
   }
 
   @Override

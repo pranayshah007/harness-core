@@ -83,6 +83,7 @@ import software.wings.graphql.schema.type.artifactSource.QLNexusDockerProps;
 import software.wings.graphql.schema.type.artifactSource.QLNexusMavenProps;
 import software.wings.graphql.schema.type.artifactSource.QLNexusNpmProps;
 import software.wings.graphql.schema.type.artifactSource.QLNexusNugetProps;
+import software.wings.graphql.schema.type.artifactSource.QLNexusRawProps;
 import software.wings.graphql.schema.type.artifactSource.QLNexusRepositoryFormat;
 import software.wings.graphql.schema.type.artifactSource.QLSFTPArtifactSource;
 import software.wings.graphql.schema.type.artifactSource.QLSMBArtifactSource;
@@ -403,6 +404,16 @@ public class ArtifactSourceControllerTest extends WingsBaseTest {
     assertThat(qlNexusNugetProps.getNexusConnectorId()).isEqualTo(SETTING_ID);
     assertThat(qlNexusNugetProps.getRepository()).isEqualTo(JOB_NAME);
     assertThat(qlNexusNugetProps.getPackageName()).isEqualTo(package_name);
+
+    nexusArtifactStream.setRepositoryFormat(RepositoryFormat.raw.name());
+
+    qlArtifactSource = ArtifactSourceController.populateArtifactSource(nexusArtifactStream);
+    qlNexusArtifactSource = (QLNexusArtifactSource) qlArtifactSource;
+    assertThat(qlNexusArtifactSource.getProperties()).isInstanceOf(QLNexusRawProps.class);
+    QLNexusRawProps qlNexusRawProps = (QLNexusRawProps) qlNexusArtifactSource.getProperties();
+    assertThat(qlNexusRawProps.getNexusConnectorId()).isEqualTo(SETTING_ID);
+    assertThat(qlNexusRawProps.getRepository()).isEqualTo(JOB_NAME);
+    assertThat(qlNexusRawProps.getPackageName()).isEqualTo(package_name);
   }
 
   @Test

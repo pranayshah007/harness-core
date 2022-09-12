@@ -14,7 +14,9 @@ import static io.harness.persistence.GoogleDataStoreAware.readLong;
 import static io.harness.persistence.GoogleDataStoreAware.readString;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.mongo.index.FdIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.GoogleDataStoreAware;
 import io.harness.persistence.PersistentEntity;
@@ -44,6 +46,7 @@ import org.mongodb.morphia.annotations.Id;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @EqualsAndHashCode(callSuper = false)
 @FieldNameConstants(innerTypeName = "ExperimentalMessageComparisonResultKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "experimentalLogMessageComparisonResult")
 @HarnessEntity(exportable = false)
 public class ExperimentalMessageComparisonResult

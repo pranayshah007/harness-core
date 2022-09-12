@@ -285,6 +285,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   private static final String HOST_NAME = getLocalHostName();
   private static final String DELEGATE_NAME =
       isNotBlank(System.getenv().get("DELEGATE_NAME")) ? System.getenv().get("DELEGATE_NAME") : "";
+
   private static final String DELEGATE_TYPE = System.getenv().get("DELEGATE_TYPE");
   private static final boolean IsEcsDelegate = "ECS".equals(DELEGATE_TYPE);
   private static final String DELEGATE_GROUP_NAME = System.getenv().get("DELEGATE_GROUP_NAME");
@@ -669,7 +670,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       log.info("Manager Authority:{}, Manager Target:{}", delegateConfiguration.getManagerAuthority(),
           delegateConfiguration.getManagerTarget());
 
-      if (!isImmutableDelegate || !delegateNg || isNotBlank(delegateProfile)) {
+      if (!isImmutableDelegate) {
         startProfileCheck();
       }
 
@@ -807,11 +808,11 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   }
 
   private void handleClose(Object o) {
-    log.info("Event:{}, message:[{}] trying to reconnect", Event.CLOSE.name(), o.toString());
+    log.info("Event:{}, trying to reconnect, message:[{}]", Event.CLOSE.name(), o);
   }
 
   private void handleError(final Exception e) {
-    log.info("Event:{}, message:[{}]", Event.ERROR.name(), e.getMessage());
+    log.info("Event:{}", Event.ERROR.name(), e);
   }
 
   private void finalizeSocket() {

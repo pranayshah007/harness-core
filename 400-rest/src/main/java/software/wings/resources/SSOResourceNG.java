@@ -20,6 +20,8 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EncryptedData;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.beans.SecretText;
+import io.harness.delegate.beans.ldap.LDAPTestAuthenticationRequest;
+import io.harness.delegate.beans.ldap.LdapSettingsWithEncryptedDataAndPasswordDetail;
 import io.harness.delegate.beans.ldap.LdapSettingsWithEncryptedDataDetail;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.InvalidRequestException;
@@ -49,6 +51,7 @@ import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import java.io.InputStream;
 import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -258,6 +261,23 @@ public class SSOResourceNG {
           String.format("No LDAP SSO Provider settings found for account: %s", accountId));
     }
     return new RestResponse<>(ssoService.validateLdapAuthentication(settings, email, password));
+  }
+
+  @POST
+  @Path("ldap/setting-with-encrypted-data-password-details")
+  @Timed
+  @ExceptionMetered
+  @Produces("application/x-kryo")
+  @Consumes("application/x-kryo")
+  public RestResponse<LdapSettingsWithEncryptedDataAndPasswordDetail> getLdapSettingsAndEncryptedPassword(
+      @QueryParam("accountId") @NotBlank String accountId,
+      @NotNull @Valid LDAPTestAuthenticationRequest authenticationRequest) {
+    if (isEmpty(authenticationRequest.getPassword())) {
+      throw new InvalidRequestException(
+          String.format("Password field is required for fetching encrypted data details: %s", accountId));
+    }
+    return new RestResponse<>(
+        ssoService.getLdapSettingsWithEncryptedDataAndPasswordDetail(accountId, authenticationRequest.getPassword()));
   }
 
   @VisibleForTesting

@@ -33,13 +33,17 @@ import io.harness.ccm.commons.service.intf.EntityMetadataService;
 import io.harness.ccm.graphql.dto.common.DataPoint;
 import io.harness.ccm.graphql.dto.common.DataPoint.DataPointBuilder;
 import io.harness.ccm.graphql.dto.common.Reference;
+import io.harness.ccm.graphql.dto.common.SharedCostParameters;
 import io.harness.ccm.graphql.dto.common.TimeSeriesDataPoints;
 import io.harness.ccm.graphql.dto.perspectives.PerspectiveTimeSeriesData;
 import io.harness.ccm.views.businessMapping.entities.BusinessMapping;
+import io.harness.ccm.views.businessMapping.entities.CostTarget;
+import io.harness.ccm.views.businessMapping.entities.SharedCost;
 import io.harness.ccm.views.businessMapping.entities.UnallocatedCostStrategy;
 import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingService;
 import io.harness.ccm.views.graphql.QLCEViewGroupBy;
 import io.harness.ccm.views.graphql.QLCEViewTimeTruncGroupBy;
+import io.harness.ccm.views.graphql.ViewsQueryHelper;
 import io.harness.ccm.views.helper.AwsAccountFieldHelper;
 import io.harness.ccm.views.utils.ViewFieldUtils;
 import io.harness.exception.InvalidRequestException;
@@ -53,6 +57,8 @@ import com.google.cloud.bigquery.Schema;
 import com.google.cloud.bigquery.TableResult;
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -68,21 +74,41 @@ import lombok.extern.slf4j.Slf4j;
 public class PerspectiveTimeSeriesHelper {
   @Inject EntityMetadataService entityMetadataService;
   @Inject BusinessMappingService businessMappingService;
+  @Inject ViewsQueryHelper viewsQueryHelper;
+
   private static final String OTHERS = "Others";
   private static final String UNALLOCATED_COST = "Unallocated";
   private static final long ONE_DAY_SEC = 86400;
   private static final long ONE_HOUR_SEC = 3600;
 
   public PerspectiveTimeSeriesData fetch(TableResult result, long timePeriod, List<QLCEViewGroupBy> groupBy) {
-    return fetch(result, timePeriod, null, null, null, groupBy);
+    return fetch(result, timePeriod, null, null, null, groupBy, null, true);
   }
 
   public PerspectiveTimeSeriesData fetch(TableResult result, long timePeriod, String conversionField,
-      String businessMappingId, String accountId, List<QLCEViewGroupBy> groupBy) {
+      String businessMappingId, String accountId, List<QLCEViewGroupBy> groupBy,
+      Map<String, Map<Timestamp, Double>> sharedCostFromFilters, boolean addSharedCostFromGroupBy) {
     BusinessMapping businessMapping = businessMappingService.get(businessMappingId);
     UnallocatedCostStrategy strategy = businessMapping != null && businessMapping.getUnallocatedCost() != null
         ? businessMapping.getUnallocatedCost().getStrategy()
         : null;
+
+    List<String> sharedCostBucketNames = new ArrayList<>();
+    Map<String, Map<Timestamp, Double>> sharedCostFromGroupBy = new HashMap<>();
+    List<String> costTargetNames = new ArrayList<>();
+    if (businessMapping != null) {
+      if (businessMapping.getSharedCosts() != null) {
+        List<SharedCost> sharedCostBuckets = businessMapping.getSharedCosts();
+        sharedCostBucketNames = sharedCostBuckets.stream()
+                                    .map(sharedCostBucket -> modifyStringToComplyRegex(sharedCostBucket.getName()))
+                                    .collect(Collectors.toList());
+      }
+      if (businessMapping.getCostTargets() != null) {
+        costTargetNames =
+            businessMapping.getCostTargets().stream().map(CostTarget::getName).collect(Collectors.toList());
+      }
+    }
+
     String fieldName = getEntityGroupByFieldName(groupBy);
 
     Schema schema = result.getSchema();
@@ -96,6 +122,11 @@ public class PerspectiveTimeSeriesHelper {
     Map<Timestamp, List<DataPoint>> memoryLimitDataPointsMap = new LinkedHashMap<>();
     Map<Timestamp, List<DataPoint>> memoryRequestDataPointsMap = new LinkedHashMap<>();
     Map<Timestamp, List<DataPoint>> memoryUtilizationValueDataPointsMap = new LinkedHashMap<>();
+
+    double totalCost = 0.0;
+    double numberOfEntities = 0.0;
+    Map<String, Double> costPerEntity = new HashMap<>();
+    Map<String, Reference> entityReference = new HashMap<>();
 
     for (FieldValueList row : result.iterateAll()) {
       Timestamp startTimeTruncatedTimestamp = null;
@@ -172,6 +203,10 @@ public class PerspectiveTimeSeriesHelper {
                 maxMemoryUtilizationValue = getNumericValue(row, field) / 1024;
                 break;
               default:
+                if (sharedCostBucketNames.contains(field.getName())) {
+                  updateSharedCostMap(
+                      sharedCostFromGroupBy, getNumericValue(row, field), field.getName(), startTimeTruncatedTimestamp);
+                }
                 break;
             }
             break;
@@ -197,6 +232,15 @@ public class PerspectiveTimeSeriesHelper {
       }
 
       if (addDataPoint) {
+        if (costTargetNames.contains(stringValue)) {
+          if (!costPerEntity.containsKey(stringValue)) {
+            costPerEntity.put(stringValue, 0.0);
+            numberOfEntities += 1;
+          }
+          costPerEntity.put(stringValue, costPerEntity.get(stringValue) + value);
+          entityReference.put(stringValue, getReference(id, stringValue, type));
+          totalCost += value;
+        }
         addDataPointToMap(id, stringValue, type, value, costDataPointsMap, startTimeTruncatedTimestamp);
         addDataPointToMap(id, "LIMIT", "UTILIZATION", cpuLimit, cpuLimitDataPointsMap, startTimeTruncatedTimestamp);
         addDataPointToMap(
@@ -214,6 +258,23 @@ public class PerspectiveTimeSeriesHelper {
         addDataPointToMap(id, "MAX", "UTILIZATION", maxMemoryUtilizationValue, memoryUtilizationValueDataPointsMap,
             startTimeTruncatedTimestamp);
       }
+    }
+
+    if (!sharedCostBucketNames.isEmpty() && addSharedCostFromGroupBy) {
+      costDataPointsMap = addSharedCosts(costDataPointsMap,
+          SharedCostParameters.builder()
+              .totalCost(totalCost)
+              .numberOfEntities(numberOfEntities)
+              .costPerEntity(costPerEntity)
+              .entityReference(entityReference)
+              .sharedCostFromGroupBy(sharedCostFromGroupBy)
+              .businessMappingFromGroupBy(businessMapping)
+              .sharedCostFromFilters(sharedCostFromFilters)
+              .build());
+    }
+
+    if (sharedCostFromFilters != null) {
+      costDataPointsMap = addSharedCostsFromFiltersAndRules(costDataPointsMap, sharedCostFromFilters);
     }
 
     if (conversionField != null) {
@@ -300,6 +361,128 @@ public class PerspectiveTimeSeriesHelper {
         .memoryRequest(data.getMemoryRequest())
         .memoryUtilValues(data.getMemoryUtilValues())
         .build();
+  }
+
+  private Map<Timestamp, List<DataPoint>> addSharedCostsFromFiltersAndRules(
+      Map<Timestamp, List<DataPoint>> costDataPointsMap,
+      Map<String, Map<Timestamp, Double>> sharedCostsFromRulesAndFilters) {
+    Map<Timestamp, List<DataPoint>> updatedDataPointsMap = new TreeMap<>();
+    costDataPointsMap.keySet().forEach(timestamp -> {
+      updatedDataPointsMap.put(timestamp,
+          addSharedCostsToDataPoint(costDataPointsMap.get(timestamp), sharedCostsFromRulesAndFilters, timestamp));
+    });
+
+    return updatedDataPointsMap;
+  }
+
+  private Map<Timestamp, List<DataPoint>> addSharedCosts(
+      Map<Timestamp, List<DataPoint>> costDataPointsMap, SharedCostParameters sharedCostParameters) {
+    Map<Timestamp, List<DataPoint>> updatedDataPointsMap = new TreeMap<>();
+    costDataPointsMap.keySet().forEach(timestamp
+        -> updatedDataPointsMap.put(
+            timestamp, addSharedCostsToDataPoint(costDataPointsMap.get(timestamp), sharedCostParameters, timestamp)));
+    return updatedDataPointsMap;
+  }
+
+  private List<DataPoint> addSharedCostsToDataPoint(List<DataPoint> dataPoints,
+      Map<String, Map<Timestamp, Double>> sharedCostsFromRulesAndFilters, Timestamp timestamp) {
+    List<DataPoint> updatedDataPoints = new ArrayList<>();
+    Map<String, Boolean> entityDataPointAdded = new HashMap<>();
+
+    dataPoints.forEach(dataPoint -> {
+      String name = dataPoint.getKey().getName();
+      entityDataPointAdded.put(name, true);
+      double updatedCost = dataPoint.getValue().doubleValue();
+      if (sharedCostsFromRulesAndFilters.containsKey(name)) {
+        updatedCost += sharedCostsFromRulesAndFilters.get(name).getOrDefault(timestamp, 0.0);
+      }
+      updatedDataPoints.add(DataPoint.builder()
+                                .value(getRoundedDoubleValue(updatedCost))
+                                .key(getReference(dataPoint.getKey().getId(), name, dataPoint.getKey().getType()))
+                                .build());
+    });
+
+    sharedCostsFromRulesAndFilters.keySet().forEach(entity -> {
+      if (!entityDataPointAdded.containsKey(entity)) {
+        entityDataPointAdded.put(entity, true);
+        double cost = sharedCostsFromRulesAndFilters.get(entity).getOrDefault(timestamp, 0.0);
+        updatedDataPoints.add(
+            DataPoint.builder().value(getRoundedDoubleValue(cost)).key(getReference(entity, entity, "")).build());
+      }
+    });
+
+    return updatedDataPoints;
+  }
+
+  private List<DataPoint> addSharedCostsToDataPoint(
+      List<DataPoint> dataPoints, SharedCostParameters sharedCostParameters, Timestamp timestamp) {
+    Set<String> entities = sharedCostParameters.getCostPerEntity().keySet();
+    Map<String, Boolean> entityDataPointAdded = new HashMap<>();
+    List<DataPoint> updatedDataPoints = new ArrayList<>();
+    List<SharedCost> sharedCostBucketsFromGroupBy = sharedCostParameters.getBusinessMappingFromGroupBy() != null
+        ? sharedCostParameters.getBusinessMappingFromGroupBy().getSharedCosts()
+        : Collections.emptyList();
+    List<String> costTargets = sharedCostParameters.getBusinessMappingFromGroupBy().getCostTargets() != null
+        ? sharedCostParameters.getBusinessMappingFromGroupBy()
+              .getCostTargets()
+              .stream()
+              .map(CostTarget::getName)
+              .collect(Collectors.toList())
+        : Collections.emptyList();
+
+    dataPoints.forEach(dataPoint -> {
+      String name = dataPoint.getKey().getName();
+      entityDataPointAdded.put(name, true);
+      double sharedCostForEntity = 0.0;
+
+      if (costTargets.contains(name)) {
+        sharedCostForEntity =
+            calculateSharedCost(sharedCostParameters, timestamp, sharedCostParameters.getCostPerEntity().get(name),
+                sharedCostBucketsFromGroupBy, sharedCostParameters.getSharedCostFromGroupBy());
+      }
+
+      updatedDataPoints.add(DataPoint.builder()
+                                .value(getRoundedDoubleValue(dataPoint.getValue().doubleValue() + sharedCostForEntity))
+                                .key(getReference(dataPoint.getKey().getId(), name, dataPoint.getKey().getType()))
+                                .build());
+    });
+
+    entities.forEach(entity -> {
+      if (!entityDataPointAdded.containsKey(entity)) {
+        entityDataPointAdded.put(entity, true);
+        double sharedCostForEntity = 0.0;
+        if (costTargets.contains(entity)) {
+          sharedCostForEntity =
+              calculateSharedCost(sharedCostParameters, timestamp, sharedCostParameters.getCostPerEntity().get(entity),
+                  sharedCostBucketsFromGroupBy, sharedCostParameters.getSharedCostFromGroupBy());
+        }
+        updatedDataPoints.add(DataPoint.builder()
+                                  .value(getRoundedDoubleValue(sharedCostForEntity))
+                                  .key(sharedCostParameters.getEntityReference().get(entity))
+                                  .build());
+      }
+    });
+
+    return updatedDataPoints;
+  }
+
+  private double calculateSharedCost(SharedCostParameters sharedCostParameters, Timestamp timestamp, Double entityCost,
+      List<SharedCost> sharedCostBuckets, Map<String, Map<Timestamp, Double>> sharedCosts) {
+    double sharedCost = 0.0;
+    for (SharedCost sharedCostBucket : sharedCostBuckets) {
+      double sharedCostForGivenTimestamp =
+          sharedCosts.get(modifyStringToComplyRegex(sharedCostBucket.getName())).get(timestamp);
+      switch (sharedCostBucket.getStrategy()) {
+        case PROPORTIONAL:
+          sharedCost += sharedCostForGivenTimestamp * (entityCost / sharedCostParameters.getTotalCost());
+          break;
+        case FIXED:
+        default:
+          sharedCost += sharedCostForGivenTimestamp * (1.0 / sharedCostParameters.getNumberOfEntities());
+          break;
+      }
+    }
+    return sharedCost;
   }
 
   // If conversion  of entity id to name is required
@@ -414,5 +597,21 @@ public class PerspectiveTimeSeriesHelper {
       log.info("Time group by can't be null for timeSeries query");
       return ONE_DAY_SEC;
     }
+  }
+
+  private String modifyStringToComplyRegex(String value) {
+    return value.toLowerCase().replaceAll("[^a-z0-9]", "_");
+  }
+
+  private void updateSharedCostMap(Map<String, Map<Timestamp, Double>> sharedCostFromGroupBy, Double sharedCostValue,
+      String sharedCostName, Timestamp timeStamp) {
+    if (!sharedCostFromGroupBy.containsKey(sharedCostName)) {
+      sharedCostFromGroupBy.put(sharedCostName, new HashMap<>());
+    }
+    if (!sharedCostFromGroupBy.get(sharedCostName).containsKey(timeStamp)) {
+      sharedCostFromGroupBy.get(sharedCostName).put(timeStamp, 0.0);
+    }
+    Double currentValue = sharedCostFromGroupBy.get(sharedCostName).get(timeStamp);
+    sharedCostFromGroupBy.get(sharedCostName).put(timeStamp, currentValue + sharedCostValue);
   }
 }

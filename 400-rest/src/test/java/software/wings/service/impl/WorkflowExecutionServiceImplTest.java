@@ -2373,7 +2373,7 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
   @Test
   @Owner(developers = VAIBHAV_SI)
   @Category(UnitTests.class)
-  public void executionHostsShouldNotBeSetForNonSshDeploymentType() {
+  public void executionHostsShouldNotBeSetForNonSshOrWinRmDeploymentType() {
     List<String> hosts = Arrays.asList("host1", "host2");
     WorkflowExecution workflowExecution =
         WorkflowExecution.builder().serviceIds(Collections.singletonList("serviceId")).build();
@@ -2384,7 +2384,7 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
                            -> ((WorkflowExecutionServiceImpl) workflowExecutionService)
                                   .validateExecutionArgsHosts(hosts, workflowExecution, workflow))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessageContaining("Execution Hosts only supported for SSH deployment type");
+        .hasMessageContaining("Execution Hosts only supported for SSH and WinRM deployment type");
   }
 
   @Test

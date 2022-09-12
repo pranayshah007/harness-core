@@ -10,7 +10,7 @@ package io.harness.cvng.core.entities;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.cvng.CVConstants;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
@@ -45,9 +45,9 @@ import org.mongodb.morphia.annotations.Id;
 @EqualsAndHashCode()
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "HostRecordKeys")
+@StoreIn(DbAliases.CVNG)
 @Entity(value = "hostRecords", noClassnameStored = true)
 @HarnessEntity(exportable = false)
-@StoreIn(DbAliases.CVNG)
 public final class HostRecord implements PersistentEntity, UuidAware, CreatedAtAware, AccountAccess {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()

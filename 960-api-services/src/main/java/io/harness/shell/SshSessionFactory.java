@@ -185,7 +185,6 @@ public class SshSessionFactory {
         session.setProxy(proxyHTTP);
       }
     }
-
     session.connect(config.getSshConnectionTimeout());
 
     return session;

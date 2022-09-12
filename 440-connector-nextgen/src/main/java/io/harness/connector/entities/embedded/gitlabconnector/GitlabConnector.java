@@ -7,11 +7,13 @@
 
 package io.harness.connector.entities.embedded.gitlabconnector;
 
+import io.harness.annotations.StoreIn;
 import io.harness.connector.entities.Connector;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessType;
 import io.harness.iterator.PersistentRegularIterable;
+import io.harness.ng.DbAliases;
 
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -27,6 +29,7 @@ import org.springframework.data.annotation.TypeAlias;
 @EqualsAndHashCode(callSuper = true)
 @FieldNameConstants(innerTypeName = "GitlabConnectorKeys")
 @Persistent
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "connectors", noClassnameStored = true)
 @TypeAlias("io.harness.connector.entities.embedded.gitlabconnector.GitlabConnector")
 public class GitlabConnector extends Connector implements PersistentRegularIterable {

@@ -10,7 +10,6 @@ package io.harness.ng.overview.service;
 import static io.harness.NGDateUtils.DAY_IN_MS;
 import static io.harness.NGDateUtils.HOUR_IN_MS;
 import static io.harness.NGDateUtils.getNumberOfDays;
-import static io.harness.NGDateUtils.getStartTimeOfNextDay;
 import static io.harness.NGDateUtils.getStartTimeOfPreviousInterval;
 import static io.harness.NGDateUtils.getStartTimeOfTheDayAsEpoch;
 import static io.harness.event.timeseries.processor.utils.DateUtils.getCurrentTime;
@@ -526,7 +525,6 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   @Override
   public io.harness.ng.overview.dto.HealthDeploymentDashboard getHealthDeploymentDashboard(String accountId,
       String orgId, String projectId, long startInterval, long endInterval, long previousStartInterval) {
-    endInterval = endInterval + getTimeUnitToGroupBy(DAY);
     String query = queryBuilderSelectStatusTime(accountId, orgId, projectId, previousStartInterval, endInterval);
 
     List<Long> time = new ArrayList<>();
@@ -745,7 +743,6 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   @Override
   public io.harness.ng.overview.dto.ExecutionDeploymentInfo getExecutionDeploymentDashboard(
       String accountId, String orgId, String projectId, long startInterval, long endInterval) {
-    endInterval = endInterval + DAY_IN_MS;
     String query = queryBuilderSelectStatusTime(accountId, orgId, projectId, startInterval, endInterval);
 
     HashMap<Long, Integer> totalCountMap = new HashMap<>();
@@ -913,9 +910,6 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   @Override
   public ServiceDetailsInfoDTO getServiceDetailsList(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, long startTime, long endTime, List<String> sort) throws Exception {
-    startTime = getStartTimeOfTheDayAsEpoch(startTime);
-    endTime = getStartTimeOfNextDay(endTime);
-
     long numberOfDays = getNumberOfDays(startTime, endTime);
     if (numberOfDays < 0) {
       throw new Exception("start date should be less than or equal to end date");
@@ -1228,8 +1222,6 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   public io.harness.ng.overview.dto.ServiceDeploymentListInfo getServiceDeploymentsInfo(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, long startTime, long endTime, String serviceIdentifier,
       long bucketSizeInDays) throws Exception {
-    startTime = getStartTimeOfTheDayAsEpoch(startTime);
-    endTime = getStartTimeOfNextDay(endTime);
     long numberOfDays = getNumberOfDays(startTime, endTime);
     validateBucketSize(numberOfDays, bucketSizeInDays);
     long prevStartTime = getStartTimeOfPreviousInterval(startTime, numberOfDays);
@@ -1470,7 +1462,6 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   @Override
   public DashboardExecutionStatusInfo getDeploymentActiveFailedRunningInfo(
       String accountId, String orgId, String projectId, long days, long startInterval, long endInterval) {
-    endInterval = endInterval + getTimeUnitToGroupBy(DAY);
     // failed
     String queryFailed = queryBuilderStatusNew(
         accountId, orgId, projectId, days, CDDashboardServiceHelper.failedStatusList, startInterval, endInterval);
@@ -1743,7 +1734,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   }
 
   public long getStartingDateEpochValue(long epochValue, long startInterval) {
-    return epochValue - epochValue % DAY_IN_MS;
+    return epochValue - (epochValue - startInterval) % DAY_IN_MS;
   }
 
   /*
@@ -1939,8 +1930,8 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     List<TimeValuePair<Integer>> timeValuePairList = new ArrayList<>();
     Map<Long, Integer> timeValuePairMap = new HashMap<>();
 
-    final long tunedStartTimeInMs = getStartTimeOfTheDayAsEpoch(startTimeInMs);
-    final long tunedEndTimeInMs = getStartTimeOfNextDay(endTimeInMs);
+    final long tunedStartTimeInMs = startTimeInMs;
+    final long tunedEndTimeInMs = endTimeInMs;
 
     final String query =
         "select reportedat, SUM(instancecount) as count from ng_instance_stats_day where accountid = ? and orgid = ? and projectid = ? and serviceid = ? and reportedat >= ? and reportedat <= ? group by reportedat order by reportedat asc";
@@ -1992,8 +1983,8 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     List<TimeValuePair<io.harness.ng.overview.dto.EnvIdCountPair>> timeValuePairList = new ArrayList<>();
     Map<String, Map<Long, Integer>> envIdToTimestampAndCountMap = new HashMap<>();
 
-    final long tunedStartTimeInMs = getStartTimeOfTheDayAsEpoch(startTimeInMs);
-    final long tunedEndTimeInMs = getStartTimeOfNextDay(endTimeInMs);
+    final long tunedStartTimeInMs = startTimeInMs;
+    final long tunedEndTimeInMs = endTimeInMs;
 
     final String query =
         "select reportedat, envid, SUM(instancecount) as count from ng_instance_stats_day where accountid = ? and orgid = ? and projectid = ? and serviceid = ? and reportedat >= ? and reportedat <= ? group by reportedat, envid order by reportedat asc";
@@ -2045,8 +2036,6 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
 
   public DeploymentsInfo getDeploymentsByServiceId(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String serviceId, long startTimeInMs, long endTimeInMs) {
-    startTimeInMs = getStartTimeOfTheDayAsEpoch(startTimeInMs);
-    endTimeInMs = getStartTimeOfNextDay(endTimeInMs);
     String query = queryBuilderDeployments(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceId, startTimeInMs, endTimeInMs);
     String queryServiceNameTagId =
@@ -2106,6 +2095,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     Map<String, Map<String, List<InstanceGroupedByArtifactList.InstanceGroupedByInfrastructure>>> buildEnvInfraMap =
         new HashMap<>();
     Map<String, String> envIdToEnvNameMap = new HashMap<>();
+    Set<String> envIdsWithInfra = new HashSet<>();
     Map<String, String> buildIdToArtifactPathMap = new HashMap<>();
 
     String query = queryActiveServiceDeploymentsInfo(accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
@@ -2113,8 +2103,12 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
 
     List<String> pipelineExecutionIdList = new ArrayList<>();
 
-    deploymentsInfo.forEach(
-        deploymentInfo -> { pipelineExecutionIdList.add(deploymentInfo.getPipelineExecutionId()); });
+    deploymentsInfo.forEach(deploymentInfo -> {
+      pipelineExecutionIdList.add(deploymentInfo.getPipelineExecutionId());
+      if (deploymentInfo.getInfrastructureIdentifier() != null) {
+        envIdsWithInfra.add(deploymentInfo.getEnvId());
+      }
+    });
 
     Map<String, ServicePipelineInfo> pipelineExecutionDetailsMap = getPipelineExecutionDetails(pipelineExecutionIdList);
 
@@ -2145,12 +2139,15 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
               .infraIdentifier(infrastructureIdentifier)
               .infraName(infrastructureName)
               .build();
-      buildEnvInfraMap.putIfAbsent(artifact, new HashMap<>());
-      buildEnvInfraMap.get(artifact).putIfAbsent(envId, new ArrayList<>());
 
-      buildEnvInfraMap.get(artifact).get(envId).add(deploymentPipelineInfo);
-      envIdToEnvNameMap.putIfAbsent(envId, envName);
-      buildIdToArtifactPathMap.putIfAbsent(artifact, artifactPath);
+      if (infrastructureIdentifier != null || !envIdsWithInfra.contains(envId)) {
+        buildEnvInfraMap.putIfAbsent(artifact, new HashMap<>());
+        buildEnvInfraMap.get(artifact).putIfAbsent(envId, new ArrayList<>());
+
+        buildEnvInfraMap.get(artifact).get(envId).add(deploymentPipelineInfo);
+        envIdToEnvNameMap.putIfAbsent(envId, envName);
+        buildIdToArtifactPathMap.putIfAbsent(artifact, artifactPath);
+      }
     });
 
     List<InstanceGroupedByArtifactList.InstanceGroupedByArtifact> instanceGroupedByArtifactList =
@@ -2173,7 +2170,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
         + " from " + tableNameServiceAndInfra + " where " + String.format("accountid='%s' and ", accountId)
         + String.format("orgidentifier='%s' and ", orgId) + String.format("projectidentifier='%s' and ", projectId)
         + String.format("service_id='%s'", serviceId)
-        + " and service_status = 'SUCCESS' AND tag is not null AND infrastructureIdentifier is not null order by env_id , infrastructureIdentifier, service_endts DESC;";
+        + " and service_status = 'SUCCESS' AND tag is not null order by env_id , infrastructureIdentifier, service_endts DESC;";
   }
 
   public List<EnvironmentInfoByServiceId> getEnvironmentWithArtifactDetails(String queryStatus) {

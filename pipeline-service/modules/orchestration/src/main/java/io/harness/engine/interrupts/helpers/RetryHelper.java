@@ -129,7 +129,6 @@ public class RetryHelper {
         .planNode(nodeExecution.getNode())
         .levelCount(ambiance.getLevelsCount())
         .mode(null)
-        .startTs(AmbianceUtils.getCurrentLevelStartTs(ambiance))
         .endTs(null)
         .initialWaitDuration(null)
         .resolvedStepParameters(null)

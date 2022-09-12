@@ -117,7 +117,6 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
             .parentId(parentId)
             .previousId(previousId)
             .unitProgresses(new ArrayList<>())
-            .startTs(AmbianceUtils.getCurrentLevelStartTs(ambiance))
             .module(node.getServiceName())
             .name(AmbianceUtils.modifyIdentifier(ambiance, node.getName()))
             .skipGraphType(node.getSkipGraphType())

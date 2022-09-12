@@ -33,6 +33,9 @@ public class CDExpressionResolver {
   }
 
   public Object updateExpressions(Ambiance ambiance, Object obj) {
+    if (obj == null) {
+      return obj;
+    }
     return ExpressionEvaluatorUtils.updateExpressions(
         obj, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
   }

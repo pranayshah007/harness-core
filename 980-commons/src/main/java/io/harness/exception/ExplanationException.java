@@ -77,6 +77,13 @@ public class ExplanationException extends WingsException {
       "Delegate(s) is(are) not able to establish socket connection to host(s)";
   public static String EXPLANATION_FILE_CREATION_ERROR = "Unable to create a new file";
 
+  // LDAP
+  public static String LDAP_ATTRIBUTES_INCORRECT = "One or more attributes of this query is incorrect";
+  public static String INVALID_LDAP_CREDENTIALS =
+      "The credentials of Ldap Connection settings you are using are incorrect";
+  public static String INVALID_LDAP_AUTH_EMAIL_PWD =
+      "The email, password value supplied for the configured Ldap settings is incorrect";
+
   public ExplanationException(String message, Throwable cause) {
     super(message, cause, EXPLANATION, INFO, USER_SRE, null);
     super.excludeReportTarget(EXPLANATION, EnumSet.of(ReportTarget.LOG_SYSTEM));

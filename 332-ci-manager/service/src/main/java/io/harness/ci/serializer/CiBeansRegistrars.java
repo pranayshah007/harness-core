@@ -91,6 +91,7 @@ public class CiBeansRegistrars {
           .addAll(ConnectorNextGenRegistrars.morphiaRegistrars)
           .addAll(LicenseManagerRegistrars.morphiaRegistrars)
           .addAll(PrimaryVersionManagerRegistrars.morphiaRegistrars)
+          .addAll(FeatureFlagBeansRegistrars.morphiaRegistrars)
           .add(NotificationBeansMorphiaRegistrar.class)
           .add(CIBeansMorphiaRegistrar.class)
           .add(CIContractsMorphiaRegistrar.class)

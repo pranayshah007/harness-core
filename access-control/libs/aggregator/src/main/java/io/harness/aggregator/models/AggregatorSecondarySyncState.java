@@ -10,7 +10,7 @@ package io.harness.aggregator.models;
 import static io.harness.ng.DbAliases.ACCESS_CONTROL;
 
 import io.harness.accesscontrol.aggregator.api.SecondarySyncStatus;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.FdUniqueIndex;
@@ -30,10 +30,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "AggregatorSecondarySyncStateKeys")
+@StoreIn(ACCESS_CONTROL)
 @Entity(value = "aggregatorSecondarySyncState", noClassnameStored = true)
 @Document("aggregatorSecondarySyncState")
 @TypeAlias("aggregatorSecondarySyncState")
-@StoreIn(ACCESS_CONTROL)
 public class AggregatorSecondarySyncState {
   @Id @org.mongodb.morphia.annotations.Id private String id;
   @FdUniqueIndex private String identifier;

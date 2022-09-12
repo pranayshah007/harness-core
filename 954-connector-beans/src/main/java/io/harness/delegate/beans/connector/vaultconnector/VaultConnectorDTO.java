@@ -69,7 +69,10 @@ public class VaultConnectorDTO extends ConnectorConfigDTO implements DelegateSel
   @Schema(description = SecretManagerDescriptionConstants.AUTH_TOKEN)
   private SecretRefData authToken;
   @Schema(description = SecretManagerDescriptionConstants.BASE_PATH) private String basePath;
-  @NotNull @Schema(description = SecretManagerDescriptionConstants.VAULT_URL) private String vaultUrl;
+  @org.hibernate.validator.constraints.URL
+  @NotNull
+  @Schema(description = SecretManagerDescriptionConstants.VAULT_URL)
+  private String vaultUrl;
   @Schema(description = SecretManagerDescriptionConstants.READ_ONLY) private boolean isReadOnly;
   @NotNull
   @Schema(description = SecretManagerDescriptionConstants.RENEWAL_INTERVAL_MINUTES)

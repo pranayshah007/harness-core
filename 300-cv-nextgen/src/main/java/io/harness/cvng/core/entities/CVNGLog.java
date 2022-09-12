@@ -8,7 +8,7 @@
 package io.harness.cvng.core.entities;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
@@ -51,11 +51,11 @@ import org.mongodb.morphia.annotations.Id;
 @Setter
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = false)
+@StoreIn(DbAliases.CVNG)
 @Entity(value = "cvngLogs", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @SuperBuilder
 @OwnedBy(HarnessTeam.CV)
-@StoreIn(DbAliases.CVNG)
 public final class CVNGLog implements PersistentEntity, UuidAware, AccountAccess, UpdatedAtAware {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()

@@ -9,9 +9,12 @@ package io.harness.cdng.provision.azure;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import static java.lang.String.format;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
+import io.harness.cdng.provision.azure.beans.AzureARMTemplateDataOutput;
 import io.harness.delegate.task.azure.AzureTaskExecutionResponse;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.AccessDeniedException;
@@ -24,6 +27,9 @@ import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
+import io.harness.pms.sdk.core.resolver.RefObjectUtils;
+import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.supplier.ThrowingSupplier;
@@ -32,6 +38,12 @@ import com.google.inject.Inject;
 
 @OwnedBy(CDP)
 public class AzureARMRollbackStep extends TaskExecutableWithRollbackAndRbac<AzureTaskExecutionResponse> {
+  private static final String AZURE_TEMPLATE_DATA_FORMAT = "azureARMTemplateDataOutput_%s";
+
+  @Inject private ExecutionSweepingOutputService sweepingOutputService;
+
+  @Inject private AzureCommonHelper azureCommonHelper;
+
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   public static final StepType STEP_TYPE = StepType.newBuilder()
@@ -63,5 +75,17 @@ public class AzureARMRollbackStep extends TaskExecutableWithRollbackAndRbac<Azur
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
     return null;
+  }
+
+  private AzureARMTemplateDataOutput getAzureARMTemplateDataOutput(String provisionerIdentifier, Ambiance ambiance) {
+    String identifier = azureCommonHelper.generateIdentifier(provisionerIdentifier, ambiance);
+    String sweepingOutputKey = format(AZURE_TEMPLATE_DATA_FORMAT, identifier);
+
+    OptionalSweepingOutput output =
+        sweepingOutputService.resolveOptional(ambiance, RefObjectUtils.getSweepingOutputRefObject(sweepingOutputKey));
+    if (!output.isFound()) {
+      return null;
+    }
+    return (AzureARMTemplateDataOutput) output.getOutput();
   }
 }

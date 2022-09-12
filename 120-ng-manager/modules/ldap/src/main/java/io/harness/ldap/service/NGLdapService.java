@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import software.wings.beans.sso.LdapGroupResponse;
 import software.wings.beans.sso.LdapSettings;
 import software.wings.beans.sso.LdapTestResponse;
+import software.wings.helpers.ext.ldap.LdapResponse;
 
 import java.util.Collection;
 import javax.validation.constraints.NotNull;
@@ -28,4 +29,6 @@ public interface NGLdapService {
   Collection<LdapGroupResponse> searchLdapGroupsByName(@NotNull String accountIdentifier, String orgIdentifier,
       String projectIdentifier, @NotNull String ldapId, @NotNull String name);
   void syncUserGroupsJob(@NotNull String accountIdentifier, String orgIdentifier, String projectIdentifier);
+  LdapResponse testLDAPLogin(@NotNull String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      @NotNull String email, @NotNull String password);
 }

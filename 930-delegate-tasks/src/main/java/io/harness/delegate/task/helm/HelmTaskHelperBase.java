@@ -341,7 +341,7 @@ public class HelmTaskHelperBase {
   }
 
   public String addRepoFlags(String command, String repoName, String tempDir) {
-    if (isNotBlank(repoName)) {
+    if (isNotBlank(repoName) && isNotEmpty(tempDir)) {
       return command + HELM_REPO_FLAGS.replace(HELM_CACHE_HOME_PLACEHOLDER, tempDir).replace(REPO_NAME, repoName);
     }
     return command;
@@ -595,7 +595,7 @@ public class HelmTaskHelperBase {
           manifest.getChartName(), manifest.getChartVersion(), destinationDirectory, manifest.getHelmVersion(),
           manifest.getHelmCommandFlag(), timeoutInMillis, manifest.isCheckIncorrectChartVersion(), cacheDir);
     } finally {
-      if (!manifest.isUseCache()) {
+      if (isNotEmpty(cacheDir) && !manifest.isUseCache()) {
         try {
           deleteDirectoryAndItsContentIfExists(Paths.get(cacheDir).getParent().toString());
         } catch (IOException ie) {
@@ -699,7 +699,7 @@ public class HelmTaskHelperBase {
 
       cleanup(resourceDirectory);
 
-      if (!manifest.isUseCache()) {
+      if (isNotEmpty(cacheDir) && !manifest.isUseCache()) {
         try {
           deleteDirectoryAndItsContentIfExists(Paths.get(cacheDir).getParent().toString());
         } catch (IOException ie) {

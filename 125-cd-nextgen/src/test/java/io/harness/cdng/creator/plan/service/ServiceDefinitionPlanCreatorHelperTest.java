@@ -11,6 +11,7 @@ import static io.harness.cdng.creator.plan.manifest.ManifestsPlanCreator.SERVICE
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.TATHAGAT;
+import static io.harness.rule.OwnerRule.VLICA;
 
 import static java.util.Collections.EMPTY_LIST;
 import static java.util.Collections.singletonList;
@@ -26,16 +27,22 @@ import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.PrimaryArtifact;
 import io.harness.cdng.artifact.bean.yaml.SidecarArtifact;
 import io.harness.cdng.artifact.bean.yaml.SidecarArtifactWrapper;
+import io.harness.cdng.azure.config.yaml.ApplicationSettingsConfiguration;
+import io.harness.cdng.azure.config.yaml.ConnectionStringsConfiguration;
 import io.harness.cdng.configfile.ConfigFile;
 import io.harness.cdng.configfile.ConfigFileWrapper;
+import io.harness.cdng.creator.plan.PlanCreatorConstants;
 import io.harness.cdng.manifest.ManifestConfigType;
 import io.harness.cdng.manifest.yaml.ManifestConfig;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
+import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
+import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.service.beans.KubernetesServiceSpec;
 import io.harness.cdng.service.beans.ServiceConfig;
 import io.harness.cdng.service.beans.ServiceDefinition;
 import io.harness.cdng.service.beans.ServiceUseFromStage;
 import io.harness.cdng.service.beans.StageOverridesConfig;
+import io.harness.cdng.service.steps.ServiceStepOverrideHelper;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
@@ -91,12 +98,66 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
       ManifestConfigWrapper.builder()
           .manifest(ManifestConfig.builder().identifier("values_test3").type(ManifestConfigType.VALUES).build())
           .build();
-  private static final ConfigFileWrapper configFile1 =
-      ConfigFileWrapper.builder().configFile(ConfigFile.builder().identifier("config_file1").build()).build();
-  private static final ConfigFileWrapper configFile2 =
-      ConfigFileWrapper.builder().configFile(ConfigFile.builder().identifier("config_file2").build()).build();
-  private static final ConfigFileWrapper configFile3 =
-      ConfigFileWrapper.builder().configFile(ConfigFile.builder().identifier("config_file3").build()).build();
+  private static final ConfigFileWrapper configFile1a =
+      ConfigFileWrapper.builder().configFile(ConfigFile.builder().identifier("config_file1").uuid("a").build()).build();
+  private static final ConfigFileWrapper configFile1b =
+      ConfigFileWrapper.builder().configFile(ConfigFile.builder().identifier("config_file1").uuid("b").build()).build();
+  private static final ConfigFileWrapper configFile2a =
+      ConfigFileWrapper.builder().configFile(ConfigFile.builder().identifier("config_file2").uuid("a").build()).build();
+  private static final ConfigFileWrapper configFile2b =
+      ConfigFileWrapper.builder().configFile(ConfigFile.builder().identifier("config_file2").uuid("b").build()).build();
+  private static final ConfigFileWrapper configFile3a =
+      ConfigFileWrapper.builder().configFile(ConfigFile.builder().identifier("config_file3").uuid("a").build()).build();
+  private static final ConfigFileWrapper configFile3b =
+      ConfigFileWrapper.builder().configFile(ConfigFile.builder().identifier("config_file3").uuid("b").build()).build();
+
+  private static final NGServiceOverrideConfig serviceConfig_With_AppSettingsAndConnectionString =
+      NGServiceOverrideConfig.builder()
+          .serviceOverrideInfoConfig(NGServiceOverrideInfoConfig.builder()
+                                         .applicationSettings(ApplicationSettingsConfiguration.builder()
+                                                                  .store(StoreConfigWrapper.builder()
+                                                                             .uuid("service-app-settings-1")
+                                                                             .type(StoreConfigType.GIT)
+                                                                             .build())
+                                                                  .build())
+                                         .connectionStrings(ConnectionStringsConfiguration.builder()
+                                                                .store(StoreConfigWrapper.builder()
+                                                                           .uuid("service-connection-strings-1")
+                                                                           .type(StoreConfigType.GIT)
+                                                                           .build())
+                                                                .build())
+                                         .build())
+          .build();
+
+  private static final NGEnvironmentConfig ngEnvironmentConfig_With_AppSettingsAndConnectionString =
+      NGEnvironmentConfig.builder()
+          .ngEnvironmentInfoConfig(
+              NGEnvironmentInfoConfig.builder()
+                  .ngEnvironmentGlobalOverride(
+                      NGEnvironmentGlobalOverride.builder()
+                          .applicationSettings(
+                              ApplicationSettingsConfiguration.builder()
+                                  .store(StoreConfigWrapper.builder().uuid("envGlobal-app-settings-1").build())
+                                  .build())
+                          .connectionStrings(
+                              ConnectionStringsConfiguration.builder()
+                                  .store(StoreConfigWrapper.builder().uuid("envGlobal-app-settings-1").build())
+                                  .build())
+                          .build())
+                  .build())
+          .build();
+
+  NGServiceOverrideConfig serviceOverrideConfig_Without_SettingsAndConnectionStrings =
+      NGServiceOverrideConfig.builder()
+          .serviceOverrideInfoConfig(NGServiceOverrideInfoConfig.builder().build())
+          .build();
+
+  NGEnvironmentConfig ngEnvironmentConfig_Without_SettingsAndConnectionStrings =
+      NGEnvironmentConfig.builder()
+          .ngEnvironmentInfoConfig(NGEnvironmentInfoConfig.builder()
+                                       .ngEnvironmentGlobalOverride(NGEnvironmentGlobalOverride.builder().build())
+                                       .build())
+          .build();
 
   private static final Set<String> dependencyMetadataMapKeys =
       new HashSet<>(Arrays.asList(YamlTypes.UUID, YamlTypes.SERVICE_CONFIG));
@@ -580,8 +641,8 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
                     .build())
             .build();
 
-    final List<ManifestConfigWrapper> finalManifests = ServiceDefinitionPlanCreatorHelper.prepareFinalManifests(
-        serviceInfoConfig, serviceOverrideConfig, environmentConfig);
+    final List<ManifestConfigWrapper> finalManifests =
+        ServiceStepOverrideHelper.prepareFinalManifests(serviceInfoConfig, serviceOverrideConfig, environmentConfig);
 
     assertThat(finalManifests).hasSize(3);
     assertThat(finalManifests).containsExactly(valuesManifest1, valuesManifest3, valuesManifest2);
@@ -594,36 +655,39 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
     final NGServiceV2InfoConfig serviceInfoConfig =
         NGServiceV2InfoConfig.builder()
             .identifier(SVC_REF)
-            .serviceDefinition(
-                ServiceDefinition.builder()
-                    .serviceSpec(
-                        KubernetesServiceSpec.builder().manifests(Collections.singletonList(valuesManifest1)).build())
-                    .build())
+            .serviceDefinition(ServiceDefinition.builder()
+                                   .serviceSpec(KubernetesServiceSpec.builder()
+                                                    .manifests(Collections.singletonList(valuesManifest1))
+                                                    .configFiles(Arrays.asList(configFile1a, configFile2a))
+                                                    .build())
+                                   .build())
             .build();
-    final NGServiceOverrideConfig serviceOverrideConfig =
-        NGServiceOverrideConfig.builder()
-            .serviceOverrideInfoConfig(NGServiceOverrideInfoConfig.builder()
-                                           .serviceRef(SVC_REF)
-                                           .environmentRef(ENV_REF)
-                                           .configFiles(Collections.singletonList(configFile1))
-                                           .build())
-            .build();
+
     final NGEnvironmentConfig environmentConfig =
         NGEnvironmentConfig.builder()
             .ngEnvironmentInfoConfig(
                 NGEnvironmentInfoConfig.builder()
                     .identifier(ENV_REF)
                     .ngEnvironmentGlobalOverride(NGEnvironmentGlobalOverride.builder()
-                                                     .configFiles(Arrays.asList(configFile2, configFile3))
+                                                     .configFiles(Arrays.asList(configFile2b, configFile3a))
                                                      .build())
                     .build())
             .build();
 
-    final List<ConfigFileWrapper> finalConfigFiles = ServiceDefinitionPlanCreatorHelper.prepareFinalConfigFiles(
-        serviceInfoConfig, serviceOverrideConfig, environmentConfig);
+    final NGServiceOverrideConfig serviceOverrideConfig =
+        NGServiceOverrideConfig.builder()
+            .serviceOverrideInfoConfig(NGServiceOverrideInfoConfig.builder()
+                                           .serviceRef(SVC_REF)
+                                           .environmentRef(ENV_REF)
+                                           .configFiles(singletonList(configFile3b))
+                                           .build())
+            .build();
+
+    final List<ConfigFileWrapper> finalConfigFiles =
+        ServiceStepOverrideHelper.prepareFinalConfigFiles(serviceInfoConfig, serviceOverrideConfig, environmentConfig);
 
     assertThat(finalConfigFiles).hasSize(3);
-    assertThat(finalConfigFiles).containsExactly(configFile2, configFile3, configFile1);
+    assertThat(finalConfigFiles).containsExactlyInAnyOrder(configFile1a, configFile2b, configFile3b);
   }
 
   @Test
@@ -656,7 +720,7 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
             .build();
     // service overrides manifest type validation
     assertThatThrownBy(()
-                           -> ServiceDefinitionPlanCreatorHelper.prepareFinalManifests(
+                           -> ServiceStepOverrideHelper.prepareFinalManifests(
                                serviceInfoConfig, serviceOverrideConfig, environmentConfig))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Unsupported Manifest Types: [K8sManifest] found for service overrides");
@@ -666,7 +730,7 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
     environmentConfig.getNgEnvironmentInfoConfig().setNgEnvironmentGlobalOverride(
         NGEnvironmentGlobalOverride.builder().manifests(Arrays.asList(k8sManifest, valuesManifest3)).build());
     assertThatThrownBy(()
-                           -> ServiceDefinitionPlanCreatorHelper.prepareFinalManifests(
+                           -> ServiceStepOverrideHelper.prepareFinalManifests(
                                serviceInfoConfig, serviceOverrideConfig, environmentConfig))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Unsupported Manifest Types: [K8sManifest] found for environment global overrides");
@@ -704,7 +768,7 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
 
     // service overrides manifest identifier duplication
     assertThatThrownBy(()
-                           -> ServiceDefinitionPlanCreatorHelper.prepareFinalManifests(
+                           -> ServiceStepOverrideHelper.prepareFinalManifests(
                                serviceInfoConfig, serviceOverrideConfig, environmentConfig))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(
@@ -715,60 +779,11 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
     environmentConfig.getNgEnvironmentInfoConfig().setNgEnvironmentGlobalOverride(
         NGEnvironmentGlobalOverride.builder().manifests(Arrays.asList(valuesManifest1, valuesManifest2)).build());
     assertThatThrownBy(()
-                           -> ServiceDefinitionPlanCreatorHelper.prepareFinalManifests(
+                           -> ServiceStepOverrideHelper.prepareFinalManifests(
                                serviceInfoConfig, serviceOverrideConfig, environmentConfig))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(
             "Found duplicate manifest identifiers [values_test1,values_test2] in environment global overrides for service [SVC_REF] and environment [ENV_REF]");
-  }
-
-  @Test
-  @Owner(developers = TATHAGAT)
-  @Category(UnitTests.class)
-  public void testPrepareFinalConfigFilesDuplicateConfigFilesIdentifiers() {
-    final NGServiceV2InfoConfig serviceInfoConfig =
-        NGServiceV2InfoConfig.builder()
-            .identifier(SVC_REF)
-            .serviceDefinition(ServiceDefinition.builder()
-                                   .serviceSpec(KubernetesServiceSpec.builder()
-                                                    .configFiles(Arrays.asList(configFile1, configFile2, configFile3))
-                                                    .build())
-                                   .build())
-            .build();
-    final NGServiceOverrideConfig serviceOverrideConfig =
-        NGServiceOverrideConfig.builder()
-            .serviceOverrideInfoConfig(NGServiceOverrideInfoConfig.builder()
-                                           .serviceRef(SVC_REF)
-                                           .environmentRef(ENV_REF)
-                                           .configFiles(Collections.singletonList(configFile1))
-                                           .build())
-            .build();
-    final NGEnvironmentConfig environmentConfig =
-        NGEnvironmentConfig.builder()
-            .ngEnvironmentInfoConfig(NGEnvironmentInfoConfig.builder()
-                                         .identifier(ENV_REF)
-                                         .ngEnvironmentGlobalOverride(NGEnvironmentGlobalOverride.builder().build())
-                                         .build())
-            .build();
-
-    // service overrides config files identifier duplication
-    assertThatThrownBy(()
-                           -> ServiceDefinitionPlanCreatorHelper.prepareFinalConfigFiles(
-                               serviceInfoConfig, serviceOverrideConfig, environmentConfig))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessage(
-            "Found duplicate config file identifiers [config_file1] in service overrides for service [SVC_REF] and environment [ENV_REF]");
-
-    // environment global overrides config files identifier duplication
-    serviceOverrideConfig.getServiceOverrideInfoConfig().setConfigFiles(EMPTY_LIST);
-    environmentConfig.getNgEnvironmentInfoConfig().setNgEnvironmentGlobalOverride(
-        NGEnvironmentGlobalOverride.builder().configFiles(Arrays.asList(configFile1, configFile2)).build());
-    assertThatThrownBy(()
-                           -> ServiceDefinitionPlanCreatorHelper.prepareFinalConfigFiles(
-                               serviceInfoConfig, serviceOverrideConfig, environmentConfig))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessage(
-            "Found duplicate config file identifiers [config_file1,config_file2] in environment global overrides for service [SVC_REF] and environment [ENV_REF]");
   }
 
   @Test
@@ -798,8 +813,8 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
                                          .build())
             .build();
 
-    final List<ManifestConfigWrapper> finalManifests = ServiceDefinitionPlanCreatorHelper.prepareFinalManifests(
-        serviceInfoConfig, serviceOverrideConfig, environmentConfig);
+    final List<ManifestConfigWrapper> finalManifests =
+        ServiceStepOverrideHelper.prepareFinalManifests(serviceInfoConfig, serviceOverrideConfig, environmentConfig);
     assertThat(finalManifests).hasSize(3);
     assertThat(finalManifests).containsExactly(k8sManifest, valuesManifest1, valuesManifest2);
   }
@@ -811,11 +826,12 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
     final NGServiceV2InfoConfig serviceInfoConfig =
         NGServiceV2InfoConfig.builder()
             .identifier(SVC_REF)
-            .serviceDefinition(ServiceDefinition.builder()
-                                   .serviceSpec(KubernetesServiceSpec.builder()
-                                                    .configFiles(Arrays.asList(configFile1, configFile2, configFile3))
-                                                    .build())
-                                   .build())
+            .serviceDefinition(
+                ServiceDefinition.builder()
+                    .serviceSpec(KubernetesServiceSpec.builder()
+                                     .configFiles(Arrays.asList(configFile1a, configFile2a, configFile3a))
+                                     .build())
+                    .build())
             .build();
     final NGServiceOverrideConfig serviceOverrideConfig =
         NGServiceOverrideConfig.builder()
@@ -830,10 +846,10 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
                                          .build())
             .build();
 
-    final List<ConfigFileWrapper> finalConfigFiles = ServiceDefinitionPlanCreatorHelper.prepareFinalConfigFiles(
-        serviceInfoConfig, serviceOverrideConfig, environmentConfig);
+    final List<ConfigFileWrapper> finalConfigFiles =
+        ServiceStepOverrideHelper.prepareFinalConfigFiles(serviceInfoConfig, serviceOverrideConfig, environmentConfig);
     assertThat(finalConfigFiles).hasSize(3);
-    assertThat(finalConfigFiles).containsExactly(configFile1, configFile2, configFile3);
+    assertThat(finalConfigFiles).containsExactlyInAnyOrder(configFile1a, configFile2a, configFile3a);
   }
 
   @Test
@@ -863,8 +879,8 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
                     .build())
             .build();
 
-    final List<ManifestConfigWrapper> finalManifests = ServiceDefinitionPlanCreatorHelper.prepareFinalManifests(
-        serviceInfoConfig, serviceOverrideConfig, environmentConfig);
+    final List<ManifestConfigWrapper> finalManifests =
+        ServiceStepOverrideHelper.prepareFinalManifests(serviceInfoConfig, serviceOverrideConfig, environmentConfig);
     assertThat(finalManifests).hasSize(2);
     assertThat(finalManifests).containsExactly(valuesManifest2, valuesManifest1);
   }
@@ -883,7 +899,7 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
             .serviceOverrideInfoConfig(NGServiceOverrideInfoConfig.builder()
                                            .serviceRef(SVC_REF)
                                            .environmentRef(ENV_REF)
-                                           .configFiles(Arrays.asList(configFile1, configFile2))
+                                           .configFiles(Arrays.asList(configFile1a, configFile2a))
                                            .build())
             .build();
     final NGEnvironmentConfig environmentConfig =
@@ -891,15 +907,16 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
             .ngEnvironmentInfoConfig(
                 NGEnvironmentInfoConfig.builder()
                     .identifier(ENV_REF)
-                    .ngEnvironmentGlobalOverride(
-                        NGEnvironmentGlobalOverride.builder().configFiles(singletonList(configFile3)).build())
+                    .ngEnvironmentGlobalOverride(NGEnvironmentGlobalOverride.builder()
+                                                     .configFiles(Arrays.asList(configFile1b, configFile3a))
+                                                     .build())
                     .build())
             .build();
 
-    final List<ConfigFileWrapper> finalConfigFiles = ServiceDefinitionPlanCreatorHelper.prepareFinalConfigFiles(
-        serviceInfoConfig, serviceOverrideConfig, environmentConfig);
+    final List<ConfigFileWrapper> finalConfigFiles =
+        ServiceStepOverrideHelper.prepareFinalConfigFiles(serviceInfoConfig, serviceOverrideConfig, environmentConfig);
     assertThat(finalConfigFiles).hasSize(3);
-    assertThat(finalConfigFiles).containsExactly(configFile3, configFile1, configFile2);
+    assertThat(finalConfigFiles).containsExactlyInAnyOrder(configFile3a, configFile1a, configFile2a);
   }
 
   @Test
@@ -966,7 +983,7 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
     NGServiceOverrideConfig serviceOverrideConfig =
         NGServiceOverrideConfig.builder()
             .serviceOverrideInfoConfig(
-                NGServiceOverrideInfoConfig.builder().configFiles(Collections.singletonList(configFile1)).build())
+                NGServiceOverrideInfoConfig.builder().configFiles(Collections.singletonList(configFile1a)).build())
             .build();
 
     NGEnvironmentConfig ngEnvironmentConfig =
@@ -974,7 +991,7 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
             .ngEnvironmentInfoConfig(
                 NGEnvironmentInfoConfig.builder()
                     .ngEnvironmentGlobalOverride(NGEnvironmentGlobalOverride.builder()
-                                                     .configFiles(Collections.singletonList(configFile2))
+                                                     .configFiles(Collections.singletonList(configFile2a))
                                                      .build())
                     .build())
             .build();
@@ -990,6 +1007,156 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
     final HashSet<String> dependencyMetadataMapKeys = new HashSet<>();
     dependencyMetadataMapKeys.add(YamlTypes.UUID);
     dependencyMetadataMapKeys.add(YamlTypes.CONFIG_FILES);
+    checksForDependencies(planCreationResponse, nodeUuid, dependencyMetadataMapKeys);
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testAddDependenciesForApplicationSettingsForOverride() throws IOException {
+    LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
+
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    InputStream yamlFile =
+        classLoader.getResourceAsStream("cdng/plan/azureapplicationsettings/service-def-application-settings.yml");
+    assertThat(yamlFile).isNotNull();
+
+    String yaml = new Scanner(yamlFile, "UTF-8").useDelimiter("\\A").next();
+    yaml = YamlUtils.injectUuid(yaml);
+    YamlField serviceField = YamlUtils.readTree(yaml);
+
+    NGServiceV2InfoConfig config = YamlUtils.read(serviceField.getNode().toString(), NGServiceV2InfoConfig.class);
+
+    doReturn(new byte[] {}).when(kryoSerializer).asDeflatedBytes(any());
+
+    final String nodeUuid = ServiceDefinitionPlanCreatorHelper.addDependenciesForApplicationSettingsV2(
+        serviceField.getNode(), planCreationResponseMap, config, serviceConfig_With_AppSettingsAndConnectionString,
+        ngEnvironmentConfig_With_AppSettingsAndConnectionString, kryoSerializer);
+
+    assertThat(planCreationResponseMap.size()).isEqualTo(1);
+    assertThat(planCreationResponseMap.containsKey(nodeUuid)).isEqualTo(true);
+    PlanCreationResponse planCreationResponse = planCreationResponseMap.get(nodeUuid);
+    final HashSet<String> dependencyMetadataMapKeys = new HashSet<>();
+    dependencyMetadataMapKeys.add(YamlTypes.UUID);
+    dependencyMetadataMapKeys.add(PlanCreatorConstants.APPLICATION_SETTINGS_STEP_PARAMETER);
+    checksForDependencies(planCreationResponse, nodeUuid, dependencyMetadataMapKeys);
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testAddDependenciesForApplicationSettingsV2WithoutOverride() throws IOException {
+    LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
+
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    InputStream yamlFile =
+        classLoader.getResourceAsStream("cdng/plan/azureapplicationsettings/service-def-application-settings.yml");
+    assertThat(yamlFile).isNotNull();
+
+    String yaml = new Scanner(yamlFile, "UTF-8").useDelimiter("\\A").next();
+    yaml = YamlUtils.injectUuid(yaml);
+    YamlField serviceField = YamlUtils.readTree(yaml);
+
+    NGServiceV2InfoConfig config = YamlUtils.read(serviceField.getNode().toString(), NGServiceV2InfoConfig.class);
+
+    doReturn(new byte[] {}).when(kryoSerializer).asDeflatedBytes(any());
+
+    final String nodeUuid = ServiceDefinitionPlanCreatorHelper.addDependenciesForApplicationSettingsV2(
+        serviceField.getNode(), planCreationResponseMap, config, serviceConfig_With_AppSettingsAndConnectionString,
+        ngEnvironmentConfig_Without_SettingsAndConnectionStrings, kryoSerializer);
+
+    assertThat(planCreationResponseMap.size()).isEqualTo(1);
+    assertThat(planCreationResponseMap.containsKey(nodeUuid)).isEqualTo(true);
+    PlanCreationResponse planCreationResponse = planCreationResponseMap.get(nodeUuid);
+    final HashSet<String> dependencyMetadataMapKeys = new HashSet<>();
+    dependencyMetadataMapKeys.add(YamlTypes.UUID);
+    dependencyMetadataMapKeys.add(PlanCreatorConstants.APPLICATION_SETTINGS_STEP_PARAMETER);
+    checksForDependencies(planCreationResponse, nodeUuid, dependencyMetadataMapKeys);
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testGetFinalApplicationSettingsConfigFromServiceOverride() {
+    ApplicationSettingsConfiguration finalConfig =
+        ServiceDefinitionPlanCreatorHelper.getFinalApplicationSettingsConfiguration(
+            serviceConfig_With_AppSettingsAndConnectionString, ngEnvironmentConfig_With_AppSettingsAndConnectionString);
+    ApplicationSettingsConfiguration finalConfig1 =
+        ServiceDefinitionPlanCreatorHelper.getFinalApplicationSettingsConfiguration(
+            serviceOverrideConfig_Without_SettingsAndConnectionStrings,
+            ngEnvironmentConfig_With_AppSettingsAndConnectionString);
+    ApplicationSettingsConfiguration finalConfig2 =
+        ServiceDefinitionPlanCreatorHelper.getFinalApplicationSettingsConfiguration(
+            serviceOverrideConfig_Without_SettingsAndConnectionStrings,
+            ngEnvironmentConfig_Without_SettingsAndConnectionStrings);
+
+    assertThat(finalConfig.getStore().getUuid()).isEqualTo("service-app-settings-1");
+    assertThat(finalConfig1.getStore().getUuid()).isEqualTo("envGlobal-app-settings-1");
+    assertThat(finalConfig2).isEqualTo(null);
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testAddDependenciesForConnectionStringsForOverride() throws IOException {
+    LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
+
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    InputStream yamlFile =
+        classLoader.getResourceAsStream("cdng/plan/azureconnectionstrings/service-def-connection-strings.yml");
+    assertThat(yamlFile).isNotNull();
+
+    String yaml = new Scanner(yamlFile, "UTF-8").useDelimiter("\\A").next();
+    yaml = YamlUtils.injectUuid(yaml);
+    YamlField serviceField = YamlUtils.readTree(yaml);
+
+    NGServiceV2InfoConfig config = YamlUtils.read(serviceField.getNode().toString(), NGServiceV2InfoConfig.class);
+
+    doReturn(new byte[] {}).when(kryoSerializer).asDeflatedBytes(any());
+
+    final String nodeUuid = ServiceDefinitionPlanCreatorHelper.addDependenciesForConnectionStringsV2(
+        serviceField.getNode(), planCreationResponseMap, config, serviceConfig_With_AppSettingsAndConnectionString,
+        ngEnvironmentConfig_With_AppSettingsAndConnectionString, kryoSerializer);
+
+    assertThat(planCreationResponseMap.size()).isEqualTo(1);
+    assertThat(planCreationResponseMap.containsKey(nodeUuid)).isEqualTo(true);
+    PlanCreationResponse planCreationResponse = planCreationResponseMap.get(nodeUuid);
+    final HashSet<String> dependencyMetadataMapKeys = new HashSet<>();
+    dependencyMetadataMapKeys.add(YamlTypes.UUID);
+    dependencyMetadataMapKeys.add(PlanCreatorConstants.CONNECTION_STRINGS_STEP_PARAMETER);
+    checksForDependencies(planCreationResponse, nodeUuid, dependencyMetadataMapKeys);
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testAddDependenciesForConnectionStringsV2WithoutOverride() throws IOException {
+    LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
+
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    InputStream yamlFile =
+        classLoader.getResourceAsStream("cdng/plan/azureconnectionstrings/service-def-connection-strings.yml");
+    assertThat(yamlFile).isNotNull();
+
+    String yaml = new Scanner(yamlFile, "UTF-8").useDelimiter("\\A").next();
+    yaml = YamlUtils.injectUuid(yaml);
+    YamlField serviceField = YamlUtils.readTree(yaml);
+
+    NGServiceV2InfoConfig config = YamlUtils.read(serviceField.getNode().toString(), NGServiceV2InfoConfig.class);
+
+    doReturn(new byte[] {}).when(kryoSerializer).asDeflatedBytes(any());
+
+    final String nodeUuid =
+        ServiceDefinitionPlanCreatorHelper.addDependenciesForConnectionStringsV2(serviceField.getNode(),
+            planCreationResponseMap, config, serviceOverrideConfig_Without_SettingsAndConnectionStrings,
+            ngEnvironmentConfig_Without_SettingsAndConnectionStrings, kryoSerializer);
+
+    assertThat(planCreationResponseMap.size()).isEqualTo(1);
+    assertThat(planCreationResponseMap.containsKey(nodeUuid)).isEqualTo(true);
+    PlanCreationResponse planCreationResponse = planCreationResponseMap.get(nodeUuid);
+    final HashSet<String> dependencyMetadataMapKeys = new HashSet<>();
+    dependencyMetadataMapKeys.add(YamlTypes.UUID);
+    dependencyMetadataMapKeys.add(PlanCreatorConstants.CONNECTION_STRINGS_STEP_PARAMETER);
     checksForDependencies(planCreationResponse, nodeUuid, dependencyMetadataMapKeys);
   }
 }

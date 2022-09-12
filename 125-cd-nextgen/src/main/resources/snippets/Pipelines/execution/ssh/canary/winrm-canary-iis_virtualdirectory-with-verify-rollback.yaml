@@ -1,0 +1,79 @@
+spec:
+  execution:
+    rollbackSteps:
+      - stepGroup:
+          identifier: Step_Group_Rollback_<+phase>
+          name: "Step Group Rollback"
+          strategy:
+            repeat:
+              items: <+stage.output.hosts>
+              start: <+start>
+              end: <+end>
+              unit: <+unit>
+          steps:
+            - step:
+                name: "Rollback"
+                identifier: Rollback_<+phase>
+                type: Command
+                timeout: 10m
+                spec:
+                  onDelegate: false
+                  environmentVariables:
+                    - name: ReleaseNo
+                      type: String
+                      value: ""
+                    - name: ServiceName
+                      type: String
+                      value: ""
+                    - name: AppPoolName
+                      type: String
+                      value: "DefaultAppPool"
+                    - name: AppPoolDotNetVersion
+                      type: String
+                      value: "v4.0"
+                    - name: DownloadDirectory
+                      type: String
+                      value: "$env:TEMP"
+                    - name: AppPhysicalDirectory
+                      type: String
+                      value: "$env:SYSTEMDRIVE"
+                  outputVariables: []
+                  commandUnits:
+                    - identifier: Copy_Artifact_Rollback_<+phase>
+                      name: "Copy Artifact Rollback"
+                      type: Copy
+                      spec:
+                        sourceType: Artifact
+                        destinationPath: "%USERPROFILE%\\<+service.name>\\<+env.name>"
+                    - identifier: Expend_Artifact_Rollback_<+phase>
+                      name: "Expend Artifact Rollback"
+                      type: Script
+                      spec:
+                        shell: PowerShell
+                        source:
+                          type: Inline
+                          spec:
+                            script: |-
+                              <+extend_artifact_script_powershell>
+                    - identifier: Copy_ConfigRollback_<+phase>
+                      name: "Copy Config Rollback"
+                      type: Copy
+                      spec:
+                        sourceType: Config
+                        destinationPath: "%USERPROFILE%\\<+service.name>\\<+env.name>"
+                    - identifier: Create_Virtual_Directory_Rollback_<+phase>
+                      name: "Create Virtual Directory Rollback"
+                      type: Script
+                      spec:
+                        shell: PowerShell
+                        source:
+                          type: Inline
+                          spec:
+                            script: |-
+                              <+create_virtual_directory_script_powershell>
+            - step:
+                type: Verify
+                name: Verify
+                identifier: Verify_<+phase>
+                timeout: 2h
+                spec: {}

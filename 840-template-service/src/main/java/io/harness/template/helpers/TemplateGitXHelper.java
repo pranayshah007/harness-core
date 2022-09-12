@@ -10,6 +10,7 @@ package io.harness.template.helpers;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
+import io.harness.beans.Scope.ScopeBuilder;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.scm.SCMGitSyncHelper;
@@ -23,13 +24,17 @@ import java.util.Collections;
 public class TemplateGitXHelper {
   @Inject SCMGitSyncHelper scmGitSyncHelper;
 
-  public String getWorkingBranch(Scope scope, String entityRepoURL) {
+  public String getWorkingBranch(String entityRepoURL) {
     GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    Scope scope = buildScope(gitEntityInfo);
     String branchName = gitEntityInfo.getBranch();
     if (isParentReferenceEntityNotPresent(gitEntityInfo)) {
       return branchName;
     }
     String parentEntityRepoUrl = getRepoUrl(scope);
+    if (gitEntityInfo.isNewBranch()) {
+      branchName = gitEntityInfo.getBaseBranch();
+    }
     if (null != parentEntityRepoUrl && !parentEntityRepoUrl.equals(entityRepoURL)) {
       branchName = "";
     }
@@ -50,6 +55,22 @@ public class TemplateGitXHelper {
     GitAwareContextHelper.updateGitEntityContext(gitEntityInfo);
 
     return parentEntityRepoUrl;
+  }
+
+  private Scope buildScope(GitEntityInfo gitEntityInfo) {
+    ScopeBuilder scope = Scope.builder();
+    if (gitEntityInfo != null) {
+      if (!GitAwareContextHelper.isNullOrDefault(gitEntityInfo.getParentEntityAccountIdentifier())) {
+        scope.accountIdentifier(gitEntityInfo.getParentEntityAccountIdentifier());
+      }
+      if (!GitAwareContextHelper.isNullOrDefault(gitEntityInfo.getParentEntityOrgIdentifier())) {
+        scope.orgIdentifier(gitEntityInfo.getParentEntityOrgIdentifier());
+      }
+      if (!GitAwareContextHelper.isNullOrDefault(gitEntityInfo.getParentEntityProjectIdentifier())) {
+        scope.projectIdentifier(gitEntityInfo.getParentEntityProjectIdentifier());
+      }
+    }
+    return scope.build();
   }
 
   private boolean isParentReferenceEntityNotPresent(GitEntityInfo gitEntityInfo) {

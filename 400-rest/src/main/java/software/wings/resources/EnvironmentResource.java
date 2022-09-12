@@ -11,6 +11,7 @@ import static io.harness.beans.SearchFilter.Operator.IN;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static software.wings.security.PermissionAttribute.PermissionType.ENV;
+import static software.wings.security.PermissionAttribute.PermissionType.LOGGED_IN;
 import static software.wings.security.PermissionAttribute.ResourceType.APPLICATION;
 import static software.wings.security.PermissionAttribute.ResourceType.ENVIRONMENT;
 
@@ -29,6 +30,7 @@ import software.wings.beans.container.KubernetesPayload;
 import software.wings.beans.stats.CloneMetadata;
 import software.wings.security.PermissionAttribute.Action;
 import software.wings.security.PermissionAttribute.PermissionType;
+import software.wings.security.annotations.ApiKeyAuthorized;
 import software.wings.security.annotations.AuthRule;
 import software.wings.security.annotations.ListAPI;
 import software.wings.security.annotations.Scope;
@@ -87,6 +89,7 @@ public class EnvironmentResource {
   @ListAPI(ENVIRONMENT)
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<PageResponse<Environment>> list(@QueryParam("accountId") String accountId,
       @QueryParam("appId") List<String> appIds, @BeanParam PageRequest<Environment> pageRequest,
       @QueryParam("details") @DefaultValue("true") boolean details, @QueryParam("tagFilter") String tagFilter,
@@ -121,6 +124,7 @@ public class EnvironmentResource {
   @Path("{envId}")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<Environment> get(@QueryParam("appId") String appId, @PathParam("envId") String envId) {
     try {
       return new RestResponse<>(environmentService.get(appId, envId, false));
@@ -140,6 +144,7 @@ public class EnvironmentResource {
   @Path("{envId}/services")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<List<Service>> getServicesWithOverrides(
       @QueryParam("appId") String appId, @PathParam("envId") String envId) {
     return new RestResponse(environmentService.getServicesWithOverrides(appId, envId));
@@ -368,6 +373,7 @@ public class EnvironmentResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = PermissionType.ENV, action = Action.READ)
+  @ApiKeyAuthorized(permissionType = ENV, action = Action.READ)
   public RestResponse<ManifestFile> getValues(@QueryParam("appId") String appId, @PathParam("envId") String envId,
       @PathParam("manifestFileId") String manifestFileId) {
     return new RestResponse<>(applicationManifestService.getManifestFileById(appId, manifestFileId));
@@ -413,6 +419,7 @@ public class EnvironmentResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = PermissionType.ENV, action = Action.READ)
+  @ApiKeyAuthorized(permissionType = ENV, action = Action.READ)
   public RestResponse<ManifestFile> getValuesForService(@QueryParam("appId") String appId,
       @PathParam("envId") String envId, @PathParam("serviceId") String serviceId,
       @PathParam("manifestFileId") String manifestFileId) {
@@ -448,6 +455,7 @@ public class EnvironmentResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = PermissionType.ENV, action = Action.READ)
+  @ApiKeyAuthorized(permissionType = ENV, action = Action.READ)
   public RestResponse<ApplicationManifest> getValuesAppManifest(@QueryParam("appId") String appId,
       @PathParam("envId") String envId, @PathParam("appManifestId") String appManifestId) {
     return new RestResponse<>(applicationManifestService.getById(appId, appManifestId));
@@ -497,6 +505,7 @@ public class EnvironmentResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = PermissionType.ENV, action = Action.READ)
+  @ApiKeyAuthorized(permissionType = ENV, action = Action.READ)
   public RestResponse<ApplicationManifest> getValuesAppManifestForService(@QueryParam("appId") String appId,
       @PathParam("envId") String envId, @PathParam("serviceId") String serviceId,
       @PathParam("appManifestId") String appManifestId) {
@@ -535,6 +544,7 @@ public class EnvironmentResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = PermissionType.ENV, action = Action.READ)
+  @ApiKeyAuthorized(permissionType = ENV, action = Action.READ)
   public RestResponse<ApplicationManifest> getValuesAppManifest(
       @QueryParam("appId") String appId, @PathParam("envId") String envId) {
     return new RestResponse<>(applicationManifestService.getByEnvId(appId, envId, AppManifestKind.VALUES));
@@ -545,6 +555,7 @@ public class EnvironmentResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = PermissionType.ENV, action = Action.READ)
+  @ApiKeyAuthorized(permissionType = ENV, action = Action.READ)
   public RestResponse<ManifestFile> getValuesManifestFile(
       @QueryParam("appId") String appId, @PathParam("envId") String envId) {
     return new RestResponse<>(applicationManifestService.getManifestFileByEnvId(appId, envId, AppManifestKind.VALUES));
@@ -555,6 +566,7 @@ public class EnvironmentResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = PermissionType.ENV, action = Action.READ)
+  @ApiKeyAuthorized(permissionType = ENV, action = Action.READ)
   public RestResponse<List<ManifestFile>> getLocalOverrideManifestFiles(
       @QueryParam("appId") String appId, @PathParam("envId") String envId) {
     return new RestResponse<>(applicationManifestService.getOverrideManifestFilesByEnvId(appId, envId));

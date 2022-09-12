@@ -148,6 +148,8 @@ public abstract class ExpressionBuilder {
   protected static final String INFRA_HELM_RELEASENAME = "infra.helm.releaseName";
   protected static final String INFRA_CUSTOM_VARS = "infra.custom.vars";
 
+  protected static final String INFRA_CLOUDPROVIDER_NAME = "infra.cloudProvider.name";
+
   protected static final String INFRA_PCF_ORG = "infra.pcf.organization";
   protected static final String INFRA_PCF_SPACE = "infra.pcf.space";
   protected static final String INFRA_PCF_CLOUDPROVIDER_NAME = "infra.pcf.cloudProvider.name";
@@ -232,7 +234,7 @@ public abstract class ExpressionBuilder {
     expressions.addAll(asList(INFRA_KUBERNETES_NAMESPACE, INFRA_KUBERNETES_INFRAID));
     expressions.addAll(asList(INFRA_ROUTE_PCF, INFRA_TEMP_ROUTE_PCF));
     expressions.add(WorkflowStandardParams.DEPLOYMENT_TRIGGERED_BY);
-    expressions.addAll(asList(INFRA_CUSTOM_VARS));
+    expressions.addAll(asList(INFRA_CUSTOM_VARS, INFRA_CLOUDPROVIDER_NAME));
 
     expressions.addAll(asList(HELM_CHART_BASE_PATH, HELM_CHART_DESCRIPTION, HELM_CHART_NAME, HELM_CHART_REPO_NAME,
         HELM_CHART_URL, HELM_CHART_VERSION, HELM_CHART_BUCKET_NAME, HELM_CHART_DISPLAY_NAME));

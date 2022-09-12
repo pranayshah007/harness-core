@@ -41,6 +41,15 @@ java_library(
         "@maven//:org_eclipse_jgit_org_eclipse_jgit_http_apache",
         "@maven//:org_jfrog_artifactory_client_artifactory_java_client_services",
         "@maven//:org_sonatype_nexus_plugins_nexus_restlet1x_model",
+        "@maven//:software_amazon_awssdk_applicationautoscaling",
+        "@maven//:software_amazon_awssdk_auth",
+        "@maven//:software_amazon_awssdk_aws_core",
+        "@maven//:software_amazon_awssdk_core",
+        "@maven//:software_amazon_awssdk_ecs",
+        "@maven//:software_amazon_awssdk_regions",
+        "@maven//:software_amazon_awssdk_sdk_core",
+        "@maven//:software_amazon_awssdk_sts",
+        "@maven//:software_amazon_awssdk_utils",
     ],
 )
 

@@ -179,6 +179,7 @@ public class SLIRecordServiceImpl implements SLIRecordService {
     List<Point> errorBudgetBurndown = new ArrayList<>();
     double errorBudgetRemainingPercentage = 100;
     int errorBudgetRemaining = totalErrorBudgetMinutes;
+    boolean isReCalculatingSLI = false;
     boolean isCalculatingSLI = false;
     if (!sliRecords.isEmpty()) {
       SLIValue sliValue = null;
@@ -207,7 +208,7 @@ public class SLIRecordServiceImpl implements SLIRecordService {
               enabled && !disableTimes.get(currentDisabledRange - 1).contains(sliRecord.getTimestamp().toEpochMilli());
         }
         if (!isCalculatingSLI && sliRecord.getSliVersion() != sliVersion) {
-          isCalculatingSLI = true;
+          isReCalculatingSLI = true;
         }
         sliValue = sliMissingDataType.calculateSLIValue(
             goodCountFromStart, badCountFromStart, minutesFromStart, disabledMinutesFromStart);
@@ -246,7 +247,7 @@ public class SLIRecordServiceImpl implements SLIRecordService {
         .errorBudgetBurndown(errorBudgetBurndown)
         .errorBudgetRemaining(errorBudgetRemaining)
         .sloPerformanceTrend(sliTread)
-        .isRecalculatingSLI(isCalculatingSLI)
+        .isRecalculatingSLI(isReCalculatingSLI)
         .isCalculatingSLI(isCalculatingSLI)
         .errorBudgetRemainingPercentage(errorBudgetRemainingPercentage)
         .build();

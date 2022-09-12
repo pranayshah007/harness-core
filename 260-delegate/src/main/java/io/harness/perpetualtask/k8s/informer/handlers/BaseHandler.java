@@ -11,7 +11,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.ccm.commons.constants.Constants;
+import io.harness.ccm.CcmConstants;
 import io.harness.event.client.EventPublisher;
 import io.harness.grpc.utils.HTimestamps;
 import io.harness.perpetualtask.k8s.informer.ClusterDetails;
@@ -94,7 +94,7 @@ public abstract class BaseHandler<ApiType extends KubernetesObject> implements R
                                       .setClusterName(clusterDetails.getClusterName())
                                       .setKubeSystemUid(clusterDetails.getKubeSystemUid())
                                       .build(),
-        occurredAt, ImmutableMap.of(Constants.CLUSTER_ID_IDENTIFIER, clusterDetails.getClusterId()));
+        occurredAt, ImmutableMap.of(CcmConstants.CLUSTER_ID_IDENTIFIER, clusterDetails.getClusterId()));
   }
 
   final void publishWorkloadSpec(K8sWorkloadSpec workloadSpecProto, Timestamp occurredAt) {
@@ -104,7 +104,7 @@ public abstract class BaseHandler<ApiType extends KubernetesObject> implements R
                                       .setClusterName(clusterDetails.getClusterName())
                                       .setKubeSystemUid(clusterDetails.getKubeSystemUid())
                                       .build(),
-        occurredAt, ImmutableMap.of(Constants.CLUSTER_ID_IDENTIFIER, clusterDetails.getClusterId()));
+        occurredAt, ImmutableMap.of(CcmConstants.CLUSTER_ID_IDENTIFIER, clusterDetails.getClusterId()));
   }
 
   @Override

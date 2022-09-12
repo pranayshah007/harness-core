@@ -8,11 +8,13 @@
 package software.wings.beans;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EmbeddedUser;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -28,6 +30,7 @@ import org.mongodb.morphia.annotations.Entity;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @FieldNameConstants(innerTypeName = "DelegateSequenceConfigKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "delegateSequenceConfig", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @TargetModule(HarnessModule._420_DELEGATE_SERVICE)

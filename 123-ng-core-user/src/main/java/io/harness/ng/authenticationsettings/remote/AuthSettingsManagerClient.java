@@ -9,6 +9,8 @@ package io.harness.ng.authenticationsettings.remote;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.ldap.LDAPTestAuthenticationRequest;
+import io.harness.delegate.beans.ldap.LdapSettingsWithEncryptedDataAndPasswordDetail;
 import io.harness.delegate.beans.ldap.LdapSettingsWithEncryptedDataDetail;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.user.TwoFactorAdminOverrideSettings;
@@ -141,4 +143,10 @@ public interface AuthSettingsManagerClient {
   @POST(API_PREFIX + "sso/ldap/settings/test/authentication")
   Call<RestResponse<LdapResponse>> testLdapAuthentication(@Query("accountId") @NotEmpty String accountId,
       @Part("email") RequestBody email, @Part("password") RequestBody password);
+
+  @POST(API_PREFIX + "sso/ldap/setting-with-encrypted-data-password-details")
+  @KryoRequest
+  @KryoResponse
+  Call<RestResponse<LdapSettingsWithEncryptedDataAndPasswordDetail>> getLdapSettingsAndEncryptedPassword(
+      @Query("accountId") String accountIdentifier, @Body LDAPTestAuthenticationRequest authenticationRequest);
 }

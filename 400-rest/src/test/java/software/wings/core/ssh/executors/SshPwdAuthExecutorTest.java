@@ -20,6 +20,7 @@ import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.rule.OwnerRule.AADITI;
 import static io.harness.rule.OwnerRule.ANUBHAW;
+import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.YOGESH;
 import static io.harness.shell.SshSessionConfig.Builder.aSshSessionConfig;
 
@@ -44,6 +45,7 @@ import io.harness.rule.Owner;
 import io.harness.rule.Repeat;
 import io.harness.scm.ScmSecret;
 import io.harness.scm.SecretName;
+import io.harness.shell.AccessType;
 import io.harness.shell.BaseScriptExecutor;
 import io.harness.shell.ExecutorType;
 import io.harness.shell.ScriptSshExecutor;
@@ -340,5 +342,20 @@ public class SshPwdAuthExecutorTest extends WingsBaseTest {
     assertThat(fileBasedScriptExecutor.copyFiles("/tmp/", asList(file.getAbsolutePath()))).isEqualTo(SUCCESS);
 
     assertThat(new File(sshRoot.getRoot(), file.getName())).hasSameTextualContentAs(file).canRead().canWrite();
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void shouldThrowUnknownHostExceptionForInvalidHostUsingUsernamePassword() {
+    SshSessionConfig sessionConfig = configBuilder.but()
+                                         .withHost("INVALID_HOST")
+                                         .withAccessType(AccessType.USER_PASSWORD)
+                                         .withSshPassword("TEST_PASS".toCharArray())
+                                         .build();
+    executor = new ScriptSshExecutor(logCallback, true, sessionConfig);
+    assertThatThrownBy(() -> executor.executeCommandString("ls"))
+        .isInstanceOf(WingsException.class)
+        .hasMessage(UNKNOWN_HOST.name());
   }
 }

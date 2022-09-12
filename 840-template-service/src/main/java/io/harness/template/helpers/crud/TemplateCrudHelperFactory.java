@@ -17,6 +17,7 @@ import com.google.inject.Inject;
 public class TemplateCrudHelperFactory {
   @Inject NoOpTemplateCrudHelper noOpTemplateCrudHelper;
   @Inject PipelineTemplateCrudHelper pipelineTemplateCrudHelper;
+  @Inject CustomDeploymentCrudHelper customDeploymentCrudHelper;
 
   public TemplateCrudHelper getCrudHelperForTemplateType(TemplateEntityType templateEntityType) {
     switch (templateEntityType) {
@@ -24,6 +25,8 @@ public class TemplateCrudHelperFactory {
       case STAGE_TEMPLATE:
       case PIPELINE_TEMPLATE:
         return pipelineTemplateCrudHelper;
+      case CUSTOM_DEPLOYMENT_TEMPLATE:
+        return customDeploymentCrudHelper;
       default:
         return noOpTemplateCrudHelper;
     }
