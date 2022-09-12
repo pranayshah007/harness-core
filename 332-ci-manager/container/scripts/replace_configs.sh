@@ -161,7 +161,7 @@ if [[ "" != "$ALLOWED_ORIGINS" ]]; then
 fi
 
 if [[ "" != "$MONGO_URI" ]]; then
-  export MONGO_URI; yq -i '.harness-mongo.uri=env(MONGO_URI)' $CONFIG_FILE
+  export MONGO_URI=${MONGO_URI//\\&/&}; export MONGO_URI; yq -i '.harness-mongo.uri=env(MONGO_URI)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MANAGER_TARGET" ]]; then
@@ -213,7 +213,7 @@ if [[ "" != "$SHOULD_CONFIGURE_WITH_PMS" ]]; then
 fi
 
 if [[ "" != "$PMS_MONGO_URI" ]]; then
-  export PMS_MONGO_URI; yq -i '.pmsMongo.uri=env(PMS_MONGO_URI)' $CONFIG_FILE
+  export PMS_MONGO_URI=${PMS_MONGO_URI//\\&/&}; export PMS_MONGO_URI; yq -i '.pmsMongo.uri=env(PMS_MONGO_URI)' $CONFIG_FILE
 fi
 
 if [[ "" != "$GRPC_SERVER_PORT" ]]; then

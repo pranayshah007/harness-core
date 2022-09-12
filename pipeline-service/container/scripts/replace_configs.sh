@@ -39,7 +39,7 @@ if [[ "" != "$LOGGERS" ]]; then
 fi
 
 if [[ "" != "$MONGO_URI" ]]; then
-  export MONGO_URI; yq -i '.mongo.uri=env(MONGO_URI)' $CONFIG_FILE
+  export MONGO_URI=${MONGO_URI//\\&/&}; export MONGO_URI; yq -i '.mongo.uri=env(MONGO_URI)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_TRACE_MODE" ]]; then
@@ -247,7 +247,7 @@ if [[ "" != "$NOTIFICATION_BASE_URL" ]]; then
 fi
 
 if [[ "" != "$NOTIFICATION_MONGO_URI" ]]; then
-  export NOTIFICATION_MONGO_URI; yq -i '.notificationClient.messageBroker.uri=env(NOTIFICATION_MONGO_URI)' $CONFIG_FILE
+  export NOTIFICATION_MONGO_URI=${NOTIFICATION_MONGO_URI//\\&/&}; export NOTIFICATION_MONGO_URI; yq -i '.notificationClient.messageBroker.uri=env(NOTIFICATION_MONGO_URI)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MANAGER_CLIENT_BASEURL" ]]; then

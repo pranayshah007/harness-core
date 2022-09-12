@@ -31,7 +31,7 @@ else
 fi
 
 if [[ "" != "$MONGO_URI" ]]; then
-  export MONGO_URI; yq -i '.mongo.uri=env(MONGO_URI)' /opt/harness/cv-nextgen-config.yml
+  export MONGO_URI=${MONGO_URI//\\&/&}; export MONGO_URI; yq -i '.mongo.uri=env(MONGO_URI)' /opt/harness/cv-nextgen-config.yml
 fi
 
 if [[ "" != "$MANAGER_CLIENT_BASEURL" ]]; then

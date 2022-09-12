@@ -75,7 +75,7 @@ if [[ "" != "$ALLOWED_ORIGINS" ]]; then
 fi
 
 if [[ "" != "$MONGO_URI" ]]; then
-  export MONGO_URI; yq -i '.mongo.uri=env(MONGO_URI)' $CONFIG_FILE
+  export MONGO_URI=${MONGO_URI//\\&/&}; export MONGO_URI; yq -i '.mongo.uri=env(MONGO_URI)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_HOSTS_AND_PORTS" ]]; then

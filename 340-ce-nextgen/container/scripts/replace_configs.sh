@@ -122,7 +122,7 @@ if [[ "" != "$NOTIFICATION_BASE_URL" ]]; then
 fi
 
 if [[ "" != "$NOTIFICATION_MONGO_URI" ]]; then
-  export NOTIFICATION_MONGO_URI; yq -i '.notificationClient.messageBroker.uri=env(NOTIFICATION_MONGO_URI)' $CONFIG_FILE
+  export NOTIFICATION_MONGO_URI=${NOTIFICATION_MONGO_URI//\\&/&}; export NOTIFICATION_MONGO_URI; yq -i '.notificationClient.messageBroker.uri=env(NOTIFICATION_MONGO_URI)' $CONFIG_FILE
 fi
 
 replace_key_value outboxPollConfig.initialDelayInSeconds "$OUTBOX_POLL_INITIAL_DELAY"

@@ -26,7 +26,7 @@ else
 fi
 
 if [[ "" != "$MONGO_URI" ]]; then
-  export MONGO_URI; yq -i '.mongo.uri=env(MONGO_URI)' $CONFIG_FILE
+  export MONGO_URI=${MONGO_URI//\\&/&}; export MONGO_URI; yq -i '.mongo.uri=env(MONGO_URI)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_CONNECT_TIMEOUT" ]]; then
