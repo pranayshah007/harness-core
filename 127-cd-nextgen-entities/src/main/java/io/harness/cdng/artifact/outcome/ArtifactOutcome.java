@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.WithIdentifier;
 import io.harness.cdng.artifact.WithArtifactSummary;
+import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.data.Outcome;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -31,7 +32,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
       @JsonSubTypes.Type(value = GithubPackagesArtifactOutcome.class, name = "GithubPackageRegistry")
 })
 @OwnedBy(HarnessTeam.CDP)
-public interface ArtifactOutcome extends Outcome, WithIdentifier, WithArtifactSummary {
+public interface ArtifactOutcome extends Outcome, WithIdentifier, WithArtifactSummary , ExecutionSweepingOutput {
   boolean isPrimaryArtifact();
   String getArtifactType();
   String getIdentifier();

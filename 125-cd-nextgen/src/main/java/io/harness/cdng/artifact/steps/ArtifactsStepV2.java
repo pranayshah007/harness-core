@@ -197,9 +197,13 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
       }
     }
     final ArtifactsOutcome artifactsOutcome = outcomeBuilder.sidecars(sidecarsOutcome).build();
+    final ArtifactOutcome primaryArtifactOutcome = artifactsOutcome.getPrimary();
 
     sweepingOutputService.consume(
         ambiance, OutcomeExpressionConstants.ARTIFACTS, artifactsOutcome, StepCategory.STAGE.name());
+    // special handling for artifact outcome for <+artifact.> expressions
+    sweepingOutputService.consume(
+        ambiance, OutcomeExpressionConstants.ARTIFACTS, primaryArtifactOutcome, StepCategory.STAGE.name());
 
     return StepResponse.builder().status(Status.SUCCEEDED).build();
   }
