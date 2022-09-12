@@ -233,6 +233,10 @@ io.harness.cdng.helm.beans.NativeHelmExecutionPassThroughData
 io.harness.cdng.helm.NativeHelmRollbackOutcome
 io.harness.cdng.helm.NativeHelmReleaseDetailsInfo
 io.harness.cdng.helm.HelmDeployStepInfo
+io.harness.cdng.creator.plan.customDeployment.CustomDeploymentNode
+io.harness.cdng.service.beans.CustomDeploymentServiceSpec
+io.harness.cdng.infra.beans.CustomDeploymentInfraMapping
+io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure
 io.harness.cdng.creator.plan.stage.DeploymentStageNode
 io.harness.cdng.manifest.yaml.ArtifactoryStoreConfig
 io.harness.cdng.artifact.NexusArtifactSummary
@@ -461,7 +465,11 @@ io.harness.cdng.environment.yaml.EnvironmentsMetadata
 io.harness.cdng.artifact.steps.ArtifactsStepV2SweepingOutput
 io.harness.ngpipeline.artifact.bean.GarArtifactOutcome
 io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig
+io.harness.cdng.provision.azure.AzureCreateARMResourceOutcome
+io.harness.cdng.provision.azure.beans.AzureARMTemplateDataOutput
 io.harness.cdng.infra.beans.host.HostFilter
 io.harness.cdng.infra.beans.host.AllHostsFilter
 io.harness.cdng.infra.beans.host.HostNamesFilter
 io.harness.cdng.infra.beans.host.HostAttributesFilter
+io.harness.cdng.manifest.steps.NgManifestsMetadataSweepingOutput
+io.harness.cdng.configfile.steps.NgConfigFilesMetadataSweepingOutput

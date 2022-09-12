@@ -10,6 +10,7 @@ package io.harness.pms.approval.jira;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.LUCAS_SALES;
+import static io.harness.rule.OwnerRule.RAFAEL;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -211,5 +212,70 @@ public class JiraApprovalCallbackTest extends CategoryTest {
     instance.setAmbiance(ambiance);
     instance.setType(ApprovalType.JIRA_APPROVAL);
     return instance;
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void testValidateNotMatchingProjectKey_ShouldFail() {
+    Map<String, String> fieldsMap = new HashMap<>();
+    fieldsMap.put("Project Key", "TEST");
+    JiraApprovalInstance instance = JiraApprovalInstance.builder().projectKey("TE").build();
+
+    instance.setId("instanceId");
+
+    JiraIssueNG jiraIssueNG = mock(JiraIssueNG.class);
+    doReturn(fieldsMap).when(jiraIssueNG).getFields();
+    doNothing().when(approvalInstanceService).finalizeStatus(any(), any(), any(), any());
+    JiraTaskNGResponse response = JiraTaskNGResponse.builder().issue(jiraIssueNG).build();
+
+    boolean success = jiraApprovalCallback.validateProject(instance, response);
+
+    assertThat(success).isFalse();
+    verify(approvalInstanceService).finalizeStatus(eq(instance.getId()), eq(ApprovalStatus.FAILED), anyString());
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void testValidateMatchingProjectKey_ShouldSucceed() {
+    Map<String, String> fieldsMap = new HashMap<>();
+    fieldsMap.put("Project Key", "TEST");
+    JiraApprovalInstance instance = JiraApprovalInstance.builder().projectKey("TEST").build();
+
+    instance.setId("instanceId");
+
+    JiraIssueNG jiraIssueNG = mock(JiraIssueNG.class);
+    doReturn(fieldsMap).when(jiraIssueNG).getFields();
+    doNothing().when(approvalInstanceService).finalizeStatus(any(), any(), any(), any());
+    JiraTaskNGResponse response = JiraTaskNGResponse.builder().issue(jiraIssueNG).build();
+
+    boolean success = jiraApprovalCallback.validateProject(instance, response);
+
+    assertThat(success).isTrue();
+    verify(approvalInstanceService, never())
+        .finalizeStatus(eq(instance.getId()), eq(ApprovalStatus.FAILED), anyString());
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void testValidateNullProjectKey_ShouldSucceed() {
+    Map<String, String> fieldsMap = new HashMap<>();
+    fieldsMap.put("Project Key", "TEST");
+    JiraApprovalInstance instance = JiraApprovalInstance.builder().build();
+
+    instance.setId("instanceId");
+
+    JiraIssueNG jiraIssueNG = mock(JiraIssueNG.class);
+    doReturn(fieldsMap).when(jiraIssueNG).getFields();
+    doNothing().when(approvalInstanceService).finalizeStatus(any(), any(), any(), any());
+    JiraTaskNGResponse response = JiraTaskNGResponse.builder().issue(jiraIssueNG).build();
+
+    boolean success = jiraApprovalCallback.validateProject(instance, response);
+
+    assertThat(success).isTrue();
+    verify(approvalInstanceService, never())
+        .finalizeStatus(eq(instance.getId()), eq(ApprovalStatus.FAILED), anyString());
   }
 }

@@ -129,6 +129,8 @@ public class HintException extends WingsException {
   public static final String HINT_FILE_CREATION_ERROR =
       "Check if delegate instance has enough free space or enough write permissions";
   public static final String CHECK_LDAP_CONNECTION = "Please check your credentials under Ldap Connection Settings";
+  public static final String CHECK_LDAP_AUTH_CREDENTIALS =
+      "Please check user email, password entered for Ldap test/enable authentication for the configured Ldap settings";
   public static final String LDAP_ATTRIBUTES_INCORRECT =
       "Verify configuration provided in Base DN or Search Filter are correct";
 

@@ -30,6 +30,7 @@ import io.harness.template.entity.TemplateEntity;
 import io.harness.template.helpers.TemplateYamlSchemaMergeHelper;
 import io.harness.template.mappers.TemplateChildEntityTypeToEntityTypeMapper;
 import io.harness.yaml.schema.YamlSchemaProvider;
+import io.harness.yaml.schema.client.YamlSchemaClient;
 import io.harness.yaml.utils.JsonPipelineUtils;
 import io.harness.yaml.validator.YamlSchemaValidator;
 
@@ -38,6 +39,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.util.Collections;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
 @Singleton
@@ -45,6 +47,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(CDC)
 public class NGTemplateSchemaServiceImpl implements NGTemplateSchemaService {
   private PipelineYamlSchemaServiceClient pipelineYamlSchemaServiceClient;
+  Map<String, YamlSchemaClient> yamlSchemaClientMapper;
   private YamlSchemaProvider yamlSchemaProvider;
   private YamlSchemaValidator yamlSchemaValidator;
   private AccountClient accountClient;
@@ -52,9 +55,11 @@ public class NGTemplateSchemaServiceImpl implements NGTemplateSchemaService {
 
   @Inject
   public NGTemplateSchemaServiceImpl(PipelineYamlSchemaServiceClient pipelineYamlSchemaServiceClient,
-      YamlSchemaProvider yamlSchemaProvider, YamlSchemaValidator yamlSchemaValidator, AccountClient accountClient,
+      Map<String, YamlSchemaClient> yamlSchemaClientMapper, YamlSchemaProvider yamlSchemaProvider,
+      YamlSchemaValidator yamlSchemaValidator, AccountClient accountClient,
       @Named("allowedParallelStages") Integer allowedParallelStages) {
     this.pipelineYamlSchemaServiceClient = pipelineYamlSchemaServiceClient;
+    this.yamlSchemaClientMapper = yamlSchemaClientMapper;
     this.yamlSchemaProvider = yamlSchemaProvider;
     this.yamlSchemaValidator = yamlSchemaValidator;
     this.accountClient = accountClient;
@@ -80,6 +85,8 @@ public class NGTemplateSchemaServiceImpl implements NGTemplateSchemaService {
 
     if (TemplateEntityType.PIPELINE_TEMPLATE.equals(templateEntityType)) {
       templateChildType = EntityTypeConstants.PIPELINES;
+    } else if (TemplateEntityType.CUSTOM_DEPLOYMENT_TEMPLATE.equals(templateEntityType)) {
+      templateChildType = EntityTypeConstants.TEMPLATE_CUSTOM_DEPLOYMENT;
     }
 
     if (templateChildType == null || !schemaValidationSupported(templateEntityType)) {
@@ -90,10 +97,17 @@ public class NGTemplateSchemaServiceImpl implements NGTemplateSchemaService {
 
     String yamlGroup = getYamlGroup(templateEntityType);
     // TODO: add a handler here to fetch for schemas that we can't get from pipeline as discussed. and refactor
-    JsonNode specSchema = NGRestUtils
-                              .getResponse(pipelineYamlSchemaServiceClient.getYamlSchema(
-                                  accountIdentifier, orgIdentifier, projectIdentifier, yamlGroup, entityType, scope))
-                              .getSchema();
+    JsonNode specSchema;
+
+    if (TemplateEntityType.CUSTOM_DEPLOYMENT_TEMPLATE.equals(templateEntityType)) {
+      specSchema = NGRestUtils.getResponse(yamlSchemaClientMapper.get("cd").getEntityYaml(
+          accountIdentifier, orgIdentifier, projectIdentifier, entityType, scope));
+    } else {
+      specSchema = NGRestUtils
+                       .getResponse(pipelineYamlSchemaServiceClient.getYamlSchema(
+                           accountIdentifier, orgIdentifier, projectIdentifier, yamlGroup, entityType, scope))
+                       .getSchema();
+    }
 
     TemplateYamlSchemaMergeHelper.mergeYamlSchema(templateSchema, specSchema, entityType, templateEntityType);
     return templateSchema;
@@ -120,6 +134,7 @@ public class NGTemplateSchemaServiceImpl implements NGTemplateSchemaService {
       case PIPELINE_TEMPLATE:
       case STEP_TEMPLATE:
       case STAGE_TEMPLATE:
+      case CUSTOM_DEPLOYMENT_TEMPLATE:
         return true;
       default:
         return false;

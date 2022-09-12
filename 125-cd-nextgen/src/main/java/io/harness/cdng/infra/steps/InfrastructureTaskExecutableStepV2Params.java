@@ -13,5 +13,5 @@ import lombok.Data;
 public class InfrastructureTaskExecutableStepV2Params implements StepParameters {
   @NotNull private ParameterField<String> envRef;
   @NotNull private ParameterField<String> infraRef;
-  private Map<String, Object> infraInputs;
+  private ParameterField<Map<String, Object>> infraInputs;
 }

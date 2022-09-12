@@ -19,7 +19,7 @@ import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogHelper.doneColoring;
 import static software.wings.beans.command.CommandUnitDetails.CommandUnitType.CUSTOM_DEPLOYMENT_FETCH_INSTANCES;
 import static software.wings.sm.InstanceStatusSummary.InstanceStatusSummaryBuilder.anInstanceStatusSummary;
-import static software.wings.sm.states.customdeployment.InstanceMapperUtils.getHostnameFieldName;
+import static software.wings.sm.states.customdeploymentng.InstanceMapperUtils.getHostnameFieldName;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.String.format;
@@ -87,7 +87,8 @@ import software.wings.sm.StateType;
 import software.wings.sm.WorkflowStandardParams;
 import software.wings.sm.WorkflowStandardParamsExtensionService;
 import software.wings.sm.states.ManagerExecutionLogCallback;
-import software.wings.sm.states.customdeployment.InstanceMapperUtils.HostProperties;
+import software.wings.sm.states.customdeploymentng.InstanceMapperUtils;
+import software.wings.sm.states.customdeploymentng.InstanceMapperUtils.HostProperties;
 import software.wings.sm.states.utils.StateTimeoutUtils;
 import software.wings.stencils.DefaultValue;
 

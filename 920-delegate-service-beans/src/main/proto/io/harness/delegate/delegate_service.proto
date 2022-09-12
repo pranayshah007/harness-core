@@ -66,6 +66,8 @@ message SubmitTaskRequest {
 
   // Used for hosted builds
   bool execute_on_harness_hosted_delegates = 12;
+  bool emitEvent = 13;
+  string stageId = 14;
 }
 
 message SubmitTaskResponse {

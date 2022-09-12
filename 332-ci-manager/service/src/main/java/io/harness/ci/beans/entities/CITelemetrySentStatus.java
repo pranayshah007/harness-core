@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CI;
 
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotation.RecasterAlias;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
@@ -38,8 +38,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @FieldNameConstants(innerTypeName = "CITelemetrySentStatusKeys")
-@Entity(value = "ciTelemetrySentStatus", noClassnameStored = true)
 @StoreIn(DbAliases.CIMANAGER)
+@Entity(value = "ciTelemetrySentStatus", noClassnameStored = true)
 @Document("ciTelemetrySentStatus")
 @TypeAlias("ciTelemetrySentStatus")
 @RecasterAlias("io.harness.ci.beans.entities.CITelemetrySentStatus")

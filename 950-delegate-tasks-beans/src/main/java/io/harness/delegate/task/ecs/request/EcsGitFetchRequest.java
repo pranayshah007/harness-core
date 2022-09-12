@@ -22,6 +22,7 @@ import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.NonFinal;
+import org.apache.commons.collections.CollectionUtils;
 
 @Value
 @Builder
@@ -51,8 +52,14 @@ public class EcsGitFetchRequest implements ActivityAccess, TaskParameters, Execu
 
     allEcsGitFetchFileConfigs.add(ecsTaskDefinitionGitFetchFileConfig);
     allEcsGitFetchFileConfigs.add(ecsServiceDefinitionGitFetchFileConfig);
-    allEcsGitFetchFileConfigs.addAll(ecsScalableTargetGitFetchFileConfigs);
-    allEcsGitFetchFileConfigs.addAll(ecsScalingPolicyGitFetchFileConfigs);
+
+    if (CollectionUtils.isNotEmpty(ecsScalableTargetGitFetchFileConfigs)) {
+      allEcsGitFetchFileConfigs.addAll(ecsScalableTargetGitFetchFileConfigs);
+    }
+
+    if (CollectionUtils.isNotEmpty(ecsScalingPolicyGitFetchFileConfigs)) {
+      allEcsGitFetchFileConfigs.addAll(ecsScalingPolicyGitFetchFileConfigs);
+    }
 
     for (EcsGitFetchFileConfig ecsGitFetchFileConfig : allEcsGitFetchFileConfigs) {
       GitStoreDelegateConfig gitStoreDelegateConfig = ecsGitFetchFileConfig.getGitStoreDelegateConfig();

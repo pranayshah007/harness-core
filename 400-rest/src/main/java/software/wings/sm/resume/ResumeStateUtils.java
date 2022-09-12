@@ -15,10 +15,13 @@ import static io.harness.validation.Validator.notNullCheck;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.beans.FeatureName;
 import io.harness.beans.SweepingOutputInstance;
 import io.harness.context.ContextElementType;
+import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HIterator;
 
+import software.wings.dl.WingsPersistence;
 import software.wings.service.impl.SweepingOutputServiceImpl;
 import software.wings.service.intfc.StateExecutionService;
 import software.wings.service.intfc.sweepingoutput.SweepingOutputService;
@@ -28,18 +31,24 @@ import software.wings.sm.ExecutionResponse;
 import software.wings.sm.ExecutionResponse.ExecutionResponseBuilder;
 import software.wings.sm.StateExecutionData;
 import software.wings.sm.StateExecutionInstance;
+import software.wings.sm.StateExecutionInstance.StateExecutionInstanceKeys;
 import software.wings.sm.WorkflowStandardParams;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.annotations.Transient;
 import org.mongodb.morphia.query.FindOptions;
+import org.mongodb.morphia.query.Query;
+import org.mongodb.morphia.query.UpdateOperations;
 
 @OwnedBy(CDC)
 @Singleton
@@ -50,6 +59,8 @@ public class ResumeStateUtils {
 
   @Transient @Inject private StateExecutionService stateExecutionService;
   @Transient @Inject private SweepingOutputService sweepingOutputService;
+  @Transient @Inject private FeatureFlagService featureFlagService;
+  @Transient @Inject private WingsPersistence wingsPersistence;
 
   public ExecutionResponse prepareExecutionResponse(ExecutionContext context, String prevStateExecutionId) {
     ExecutionResponseBuilder executionResponseBuilder = prepareExecutionResponseBuilder(context, prevStateExecutionId);
@@ -77,8 +88,53 @@ public class ResumeStateUtils {
       if (isNotEmpty(contextElements)) {
         executionResponseBuilder.contextElements(contextElements);
       }
+
+      if (featureFlagService.isEnabled(
+              FeatureName.MERGE_RUNTIME_VARIABLES_IN_RESUME, stateExecutionInstance.getAccountId())) {
+        // This is working because when we continue the pipeline it will always have a nextState so
+        // stateExecutionInstance will always be cloned from context. Hence we are updating the context element by
+        // getting it from context. We have updated the stateExecutionInstance seperately as updating the context
+        // element will just update the stateExecutionInstance of the context and not in the db itself.Adding the
+        // updated context element to executionResponse will not work because it will just update the
+        // stateExecutionInstance of the db and not the context and the stateExecutionInstance for the next state is
+        // formed using the stateExecutionInstance of the context.
+        WorkflowStandardParams workflowStandardParams =
+            (WorkflowStandardParams) stateExecutionInstance.getContextElements()
+                .stream()
+                .filter(contextElement -> contextElement.getElementType() == ContextElementType.STANDARD)
+                .findFirst()
+                .orElse(null);
+
+        if (workflowStandardParams != null && workflowStandardParams.getWorkflowElement().getVariables() != null) {
+          mergeWorkflowElementVariables(context, workflowStandardParams);
+        }
+      }
     }
     return executionResponseBuilder;
+  }
+
+  @VisibleForTesting
+  void mergeWorkflowElementVariables(ExecutionContext context, WorkflowStandardParams oldParams) {
+    WorkflowStandardParams currParams = context.getContextElement(ContextElementType.STANDARD);
+    if (currParams != null) {
+      oldParams.getWorkflowElement().getVariables().forEach((key, value) -> {
+        if (currParams.getWorkflowElement().getVariables() != null) {
+          currParams.getWorkflowElement().getVariables().put(key, value);
+        } else {
+          Map<String, Object> variableMap = new HashMap<>();
+          variableMap.put(key, value);
+          currParams.getWorkflowElement().setVariables(variableMap);
+        }
+      });
+      UpdateOperations<StateExecutionInstance> ops =
+          wingsPersistence.createUpdateOperations(StateExecutionInstance.class);
+      ops.set(StateExecutionInstanceKeys.contextElements, currParams);
+      Query<StateExecutionInstance> query =
+          wingsPersistence.createQuery(StateExecutionInstance.class)
+              .filter(StateExecutionInstanceKeys.appId, context.getAppId())
+              .filter(StateExecutionInstanceKeys.uuid, context.getStateExecutionInstanceId());
+      wingsPersistence.update(query, ops);
+    }
   }
 
   public String fetchPipelineExecutionId(ExecutionContext context) {

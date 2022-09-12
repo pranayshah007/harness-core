@@ -28,39 +28,34 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"time"
 )
 
 var (
 	newJunit = junit.New
 )
 
-func collectCg(ctx context.Context, stepID, cgDir string, timeMs int64, log *zap.SugaredLogger) error {
+func collectCg(ctx context.Context, stepID, cgDir string, timeMs int64, log *zap.SugaredLogger, cgSt time.Time) error {
+	if external.IsManualExecution() {
+		log.Infow("Skipping call graph collection since it is a manual run")
+		return nil
+	}
+
 	repo, err := external.GetRepo()
 	if err != nil {
 		return err
 	}
-	isManual := external.IsManualExecution()
 	sha, err := external.GetSha()
-	if err != nil && !isManual {
+	if err != nil {
 		return err
 	}
 	source, err := external.GetSourceBranch()
-	if err != nil && !isManual {
+	if err != nil {
 		return err
-	} else if isManual {
-		source, err = external.GetBranch()
-		if err != nil {
-			return err
-		}
 	}
 	target, err := external.GetTargetBranch()
-	if err != nil && !isManual {
+	if err != nil {
 		return err
-	} else if isManual {
-		target, err = external.GetBranch()
-		if err != nil {
-			return err
-		}
 	}
 	// Create TI proxy client (lite engine)
 	client, err := grpcclient.NewTiProxyClient(consts.LiteEnginePort, log)
@@ -77,11 +72,13 @@ func collectCg(ctx context.Context, stepID, cgDir string, timeMs int64, log *zap
 		DataDir: cgDir,
 		TimeMs:  timeMs,
 	}
-	log.Infow(fmt.Sprintf("sending cgRequest %s to lite engine", req.GetDataDir()))
+	log.Infow(fmt.Sprintf("Sending cgRequest %s to lite engine", req.GetDataDir()))
 	_, err = client.Client().UploadCg(ctx, req)
 	if err != nil {
 		return errors.Wrap(err, "failed to upload cg to ti server")
 	}
+	cgTime := time.Since(cgSt)
+	log.Infow(fmt.Sprintf("Successfully uploaded partial callgraph in %s time", cgTime))
 	return nil
 }
 

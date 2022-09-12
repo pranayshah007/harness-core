@@ -116,20 +116,6 @@ if [[ "" != "$MONGO_TRANSACTIONS_ALLOWED" ]]; then
   yq write -i $CONFIG_FILE mongo.transactionsEnabled $MONGO_TRANSACTIONS_ALLOWED
 fi
 
-if [[ "" != "$PMS_MONGO_URI" ]]; then
-  yq write -i $CONFIG_FILE pmsMongo.uri "${PMS_MONGO_URI//\\&/&}"
-fi
-
-if [[ "" != "$PMS_MONGO_HOSTS_AND_PORTS" ]]; then
-  yq delete -i $CONFIG_FILE pmsMongo.uri
-  yq write -i $CONFIG_FILE pmsMongo.username "$PMS_MONGO_USERNAME"
-  yq write -i $CONFIG_FILE pmsMongo.password "$PMS_MONGO_PASSWORD"
-  yq write -i $CONFIG_FILE pmsMongo.database "$PMS_MONGO_DATABASE"
-  yq write -i $CONFIG_FILE pmsMongo.schema "$PMS_MONGO_SCHEMA"
-  write_mongo_hosts_and_ports pmsMongo "$PMS_MONGO_HOSTS_AND_PORTS"
-  write_mongo_params pmsMongo "$PMS_MONGO_PARAMS"
-fi
-
 if [[ "" != "$MANAGER_TARGET" ]]; then
   yq write -i $CONFIG_FILE grpcClient.target $MANAGER_TARGET
 fi

@@ -94,7 +94,9 @@ public class EcsRollingDeployCommandTaskHandler extends EcsCommandTaskNGHandler 
               .build();
 
       ecsCommandTaskHelper.createOrUpdateService(createServiceRequest, ecsScalableTargetManifestContentList,
-          ecsScalingPolicyManifestContentList, ecsInfraConfig, deployLogCallback, timeoutInMillis);
+          ecsScalingPolicyManifestContentList, ecsInfraConfig, deployLogCallback, timeoutInMillis,
+          ecsRollingDeployRequest.isSameAsAlreadyRunningInstances(), ecsRollingDeployRequest.isForceNewDeployment());
+
       EcsRollingDeployResult ecsRollingDeployResult =
           EcsRollingDeployResult.builder()
               .region(ecsInfraConfig.getRegion())

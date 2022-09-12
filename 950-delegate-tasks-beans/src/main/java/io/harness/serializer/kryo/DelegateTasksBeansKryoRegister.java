@@ -403,6 +403,7 @@ import io.harness.delegate.task.azure.arm.response.AzureARMListSubscriptionLocat
 import io.harness.delegate.task.azure.arm.response.AzureARMRollbackResponse;
 import io.harness.delegate.task.azure.arm.response.AzureBlueprintDeploymentResponse;
 import io.harness.delegate.task.azure.artifact.ArtifactoryAzureArtifactRequestDetails;
+import io.harness.delegate.task.azure.artifact.AwsS3AzureArtifactRequestDetails;
 import io.harness.delegate.task.azure.artifact.AzureArtifactConfig;
 import io.harness.delegate.task.azure.artifact.AzureArtifactRequestDetails;
 import io.harness.delegate.task.azure.artifact.AzureArtifactType;
@@ -616,6 +617,7 @@ import io.harness.delegate.task.shell.ShellScriptTaskParametersNG;
 import io.harness.delegate.task.shell.ShellScriptTaskResponseNG;
 import io.harness.delegate.task.shell.SshCommandTaskParameters;
 import io.harness.delegate.task.shell.TailFilePatternDto;
+import io.harness.delegate.task.shell.WinRmShellScriptTaskParametersNG;
 import io.harness.delegate.task.shell.WinrmTaskParameters;
 import io.harness.delegate.task.spotinst.request.SpotInstDeployTaskParameters;
 import io.harness.delegate.task.spotinst.request.SpotInstGetElastigroupJsonParameters;
@@ -1155,6 +1157,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
 
     kryo.register(DeploymentSlotData.class, 19457);
     kryo.register(ShellScriptTaskParametersNG.class, 19463);
+    kryo.register(WinRmShellScriptTaskParametersNG.class, 19482);
     kryo.register(ShellScriptTaskResponseNG.class, 19464);
     kryo.register(AzureWebAppSlotSetupParameters.class, 19465);
     kryo.register(AzureWebAppRollbackParameters.class, 19466);
@@ -1735,6 +1738,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AwsInfraDelegateConfig.class, 55416);
     kryo.register(AwsSshInfraDelegateConfig.class, 55417);
     kryo.register(AwsWinrmInfraDelegateConfig.class, 55418);
+    kryo.register(AwsS3AzureArtifactRequestDetails.class, 55422);
     kryo.register(PdcServerInstanceInfo.class, 55501);
     kryo.register(AzureSshWinrmServerInstanceInfo.class, 55502);
     kryo.register(AwsSshWinrmServerInstanceInfo.class, 55503);

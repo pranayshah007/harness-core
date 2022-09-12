@@ -12,6 +12,7 @@ import static io.harness.accesscontrol.common.filter.ManagedFilter.ONLY_MANAGED;
 import static io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBOMapper.fromDBO;
 import static io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBOMapper.toDBO;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.accesscontrol.roleassignments.RoleAssignment;
 import io.harness.accesscontrol.roleassignments.RoleAssignmentFilter;
@@ -26,8 +27,11 @@ import io.harness.utils.PageUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;
@@ -107,11 +111,28 @@ public class RoleAssignmentDaoImpl implements RoleAssignmentDao {
 
   private Criteria createCriteriaFromFilter(RoleAssignmentFilter roleAssignmentFilter) {
     Criteria criteria = new Criteria();
-    if (!roleAssignmentFilter.isIncludeChildScopes()) {
-      criteria.and(RoleAssignmentDBOKeys.scopeIdentifier).is(roleAssignmentFilter.getScopeFilter());
-    } else {
-      Pattern startsWithScope = Pattern.compile("^".concat(roleAssignmentFilter.getScopeFilter()));
-      criteria.and(RoleAssignmentDBOKeys.scopeIdentifier).regex(startsWithScope);
+
+    List<Criteria> scopeCriteria =
+        roleAssignmentFilter.getScopeFilters()
+            .stream()
+            .map(scopeFilter -> {
+              if (!scopeFilter.isIncludeChildScopes()) {
+                return Criteria.where(RoleAssignmentDBOKeys.scopeIdentifier).is(scopeFilter.getScope());
+              } else {
+                Pattern startsWithScope = Pattern.compile("^".concat(scopeFilter.getScope()));
+                return Criteria.where(RoleAssignmentDBOKeys.scopeIdentifier).regex(startsWithScope);
+              }
+            })
+            .collect(Collectors.toList());
+
+    if (!isEmpty(roleAssignmentFilter.getScopeFilter())) {
+      if (!roleAssignmentFilter.isIncludeChildScopes()) {
+        scopeCriteria.add(
+            Criteria.where(RoleAssignmentDBOKeys.scopeIdentifier).is(roleAssignmentFilter.getScopeFilter()));
+      } else {
+        Pattern startsWithScope = Pattern.compile("^".concat(roleAssignmentFilter.getScopeFilter()));
+        scopeCriteria.add(Criteria.where(RoleAssignmentDBOKeys.scopeIdentifier).regex(startsWithScope));
+      }
     }
 
     if (!roleAssignmentFilter.getScopeLevelFilter().isEmpty()) {
@@ -145,19 +166,24 @@ public class RoleAssignmentDaoImpl implements RoleAssignmentDao {
         criteria.and(RoleAssignmentDBOKeys.principalScopeLevel).in(roleAssignmentFilter.getPrincipalScopeLevelFilter());
       }
     }
+    Criteria[] principalCriteria = roleAssignmentFilter.getPrincipalFilter()
+                                       .stream()
+                                       .map(principal
+                                           -> Criteria.where(RoleAssignmentDBOKeys.principalIdentifier)
+                                                  .is(principal.getPrincipalIdentifier())
+                                                  .and(RoleAssignmentDBOKeys.principalType)
+                                                  .is(principal.getPrincipalType())
+                                                  .and(RoleAssignmentDBOKeys.principalScopeLevel)
+                                                  .is(principal.getPrincipalScopeLevel()))
+                                       .toArray(Criteria[] ::new);
 
-    else if (!roleAssignmentFilter.getPrincipalFilter().isEmpty()) {
-      criteria.orOperator(roleAssignmentFilter.getPrincipalFilter()
-                              .stream()
-                              .map(principal
-                                  -> Criteria.where(RoleAssignmentDBOKeys.principalIdentifier)
-                                         .is(principal.getPrincipalIdentifier())
-                                         .and(RoleAssignmentDBOKeys.principalType)
-                                         .is(principal.getPrincipalType())
-                                         .and(RoleAssignmentDBOKeys.principalScopeLevel)
-                                         .is(principal.getPrincipalScopeLevel()))
-                              .toArray(Criteria[] ::new));
+    Criteria criteria1 = new Criteria().orOperator(scopeCriteria.toArray(Criteria[] ::new));
+    List<Criteria> criteria3 = new ArrayList<>();
+    criteria3.add(criteria);
+    if (principalCriteria.length != 0) {
+      criteria3.add(new Criteria().orOperator(principalCriteria));
     }
-    return criteria;
+    return scopeCriteria.isEmpty() ? new Criteria().andOperator(criteria3.toArray(Criteria[] ::new))
+                                   : criteria1.andOperator(criteria3.toArray(Criteria[] ::new));
   }
 }

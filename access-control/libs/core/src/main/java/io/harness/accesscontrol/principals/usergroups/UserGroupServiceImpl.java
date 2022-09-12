@@ -27,6 +27,7 @@ import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
@@ -66,6 +67,11 @@ public class UserGroupServiceImpl implements UserGroupService {
   @Override
   public PageResponse<UserGroup> list(PageRequest pageRequest, String scopeIdentifier) {
     return userGroupDao.list(pageRequest, scopeIdentifier);
+  }
+
+  @Override
+  public List<UserGroup> list(String userIdentifier) {
+    return userGroupDao.list(userIdentifier);
   }
 
   @Override

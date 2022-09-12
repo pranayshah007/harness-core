@@ -25,8 +25,10 @@ public class EcsRollingDeployRequest implements EcsCommandRequest, NestedAnnotat
   CommandUnitsProgress commandUnitsProgress;
   @NonFinal @Expression(ALLOW_SECRETS) EcsInfraConfig ecsInfraConfig;
   @NonFinal @Expression(ALLOW_SECRETS) Integer timeoutIntervalInMin;
-  @Expression(ALLOW_SECRETS) String ecsTaskDefinitionManifestContent;
-  @Expression(ALLOW_SECRETS) String ecsServiceDefinitionManifestContent;
-  @Expression(ALLOW_SECRETS) List<String> ecsScalableTargetManifestContentList;
-  @Expression(ALLOW_SECRETS) List<String> ecsScalingPolicyManifestContentList;
+  @NonFinal @Expression(ALLOW_SECRETS) String ecsTaskDefinitionManifestContent;
+  @NonFinal @Expression(ALLOW_SECRETS) String ecsServiceDefinitionManifestContent;
+  @NonFinal @Expression(ALLOW_SECRETS) List<String> ecsScalableTargetManifestContentList;
+  @NonFinal @Expression(ALLOW_SECRETS) List<String> ecsScalingPolicyManifestContentList;
+  @NonFinal @Expression(ALLOW_SECRETS) boolean sameAsAlreadyRunningInstances;
+  @NonFinal @Expression(ALLOW_SECRETS) boolean forceNewDeployment;
 }

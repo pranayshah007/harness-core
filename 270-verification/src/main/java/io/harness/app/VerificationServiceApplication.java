@@ -271,6 +271,13 @@ public class VerificationServiceApplication extends Application<VerificationServ
       MongoConfig mongoConfig() {
         return configuration.getMongoConnectionFactory();
       }
+
+      @Provides
+      @Singleton
+      @Named("dbAliases")
+      public List<String> getDbAliases() {
+        return configuration.getDbAliases();
+      }
     });
     modules.add(new AbstractMongoModule() {
       @Override

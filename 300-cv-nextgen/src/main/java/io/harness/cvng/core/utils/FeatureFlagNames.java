@@ -14,4 +14,6 @@ public class FeatureFlagNames {
   public static final String PERSIST_MONITORED_SERVICE_TEMPLATE_STEP = "PERSIST_MONITORED_SERVICE_TEMPLATE_STEP";
 
   public static final String CVNG_SLO_DISABLE_ENABLE = "CVNG_SLO_DISABLE_ENABLE";
+
+  public static final String ELK_HEALTH_SOURCE = "ELK_HEALTH_SOURCE";
 }

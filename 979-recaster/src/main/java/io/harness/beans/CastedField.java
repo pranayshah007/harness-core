@@ -9,7 +9,9 @@ package io.harness.beans;
 
 import static java.lang.String.format;
 
+import io.harness.annotation.RecasterFieldName;
 import io.harness.core.Recaster;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exceptions.RecasterException;
 import io.harness.utils.RecastReflectionUtils;
 
@@ -41,6 +43,7 @@ public class CastedField {
   private Field field;
   private Class<?> realType;
   private Constructor constructor;
+  private String recasterFieldName;
   private Type subType;
   private Type mapKeyType;
   private boolean isSingleValue = true;
@@ -54,6 +57,7 @@ public class CastedField {
   CastedField(final Field f, final Class<?> clazz, final Recaster recaster) {
     f.setAccessible(true);
     field = f;
+    recasterFieldName = getRecasterFieldNameFromField(f);
     persistedClass = clazz;
     realType = field.getType();
     genericType = field.getGenericType();
@@ -64,6 +68,16 @@ public class CastedField {
     this.field = field;
     genericType = type;
     discoverType(recaster);
+  }
+
+  String getRecasterFieldNameFromField(Field f) {
+    // If RecasterFieldName annotation is declared on a field and value provided is non-empty, then set the
+    // recasterFieldName with the value provided in annotation else null.
+    if (f.getDeclaredAnnotation(RecasterFieldName.class) != null) {
+      String recasterFieldName = f.getDeclaredAnnotation(RecasterFieldName.class).name();
+      return EmptyPredicate.isEmpty(recasterFieldName) ? null : recasterFieldName;
+    }
+    return null;
   }
 
   /**
@@ -361,10 +375,11 @@ public class CastedField {
   }
 
   public Object getRecastedMapValue(final RecasterMap recasterMap) {
-    return recasterMap.get(field.getName());
+    return recasterMap.get(getNameToStore());
   }
 
   public String getNameToStore() {
-    return field.getName();
+    // if recasterFieldName is non-empty then use it while recasting else use the fieldName.
+    return EmptyPredicate.isEmpty(recasterFieldName) ? field.getName() : recasterFieldName;
   }
 }

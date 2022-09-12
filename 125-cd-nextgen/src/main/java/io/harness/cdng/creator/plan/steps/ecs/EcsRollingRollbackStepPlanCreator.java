@@ -45,9 +45,11 @@ public class EcsRollingRollbackStepPlanCreator extends CDPMSStepPlanCreatorV2<Ec
     final StepParameters stepParameters = super.getStepParameters(ctx, stepElement);
 
     String ecsRollbackFnq = getExecutionStepFqn(ctx.getCurrentField(), ECS_ROLLING_DEPLOY);
-    ((EcsRollingRollbackStepParameters) ((StepElementParameters) stepParameters).getSpec())
-        .setEcsRollingRollbackFnq(ecsRollbackFnq);
-
+    EcsRollingRollbackStepParameters ecsRollingRollbackStepParameters =
+        (EcsRollingRollbackStepParameters) ((StepElementParameters) stepParameters).getSpec();
+    ecsRollingRollbackStepParameters.setEcsRollingRollbackFnq(ecsRollbackFnq);
+    ecsRollingRollbackStepParameters.setDelegateSelectors(
+        stepElement.getEcsRollingRollbackStepInfo().getDelegateSelectors());
     return stepParameters;
   }
 }

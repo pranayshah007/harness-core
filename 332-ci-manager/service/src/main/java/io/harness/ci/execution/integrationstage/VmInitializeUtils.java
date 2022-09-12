@@ -27,7 +27,6 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.steps.CIStepInfo;
 import io.harness.beans.steps.stepinfo.BackgroundStepInfo;
@@ -40,7 +39,6 @@ import io.harness.beans.yaml.extended.infrastrucutre.VmInfraSpec;
 import io.harness.beans.yaml.extended.infrastrucutre.VmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml;
 import io.harness.ci.buildstate.PluginSettingUtils;
-import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.CIStageExecutionException;
@@ -52,7 +50,6 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.ParameterField;
 
-import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.HashMap;
 import java.util.List;
@@ -63,13 +60,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(HarnessTeam.CI)
 public class VmInitializeUtils {
-  @Inject CIFeatureFlagService featureFlagService;
-
   public void validateStageConfig(IntegrationStageConfig integrationStageConfig, String accountId) {
-    if (!featureFlagService.isEnabled(FeatureName.CI_VM_INFRASTRUCTURE, accountId)) {
-      throw new CIStageExecutionException("infrastructure VM is not allowed");
-    }
-
     for (ExecutionWrapperConfig executionWrapper : integrationStageConfig.getExecution().getSteps()) {
       validateStageConfigUtil(executionWrapper);
     }
@@ -194,7 +185,7 @@ public class VmInitializeUtils {
     return getStepMountPath(os);
   }
 
-  public OSType getOS(Infrastructure infrastructure) {
+  public static OSType getOS(Infrastructure infrastructure) {
     // Only linux is supported now for runs on infrastructure
     if (infrastructure.getType() == Infrastructure.Type.HOSTED_VM) {
       return OSType.Linux;

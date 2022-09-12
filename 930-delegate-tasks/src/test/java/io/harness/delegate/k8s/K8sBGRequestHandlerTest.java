@@ -76,8 +76,8 @@ import io.harness.k8s.model.K8sSteadyStateDTO;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
-import io.harness.k8s.model.Release;
-import io.harness.k8s.model.ReleaseHistory;
+import io.harness.k8s.releasehistory.K8sLegacyRelease;
+import io.harness.k8s.releasehistory.ReleaseHistory;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 
@@ -507,7 +507,7 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
 
     KubernetesResource primaryService = on(k8sBGRequestHandler).get("primaryService");
     KubernetesResource stageService = on(k8sBGRequestHandler).get("stageService");
-    Release currentRelease = on(k8sBGRequestHandler).get("currentRelease");
+    K8sLegacyRelease currentRelease = on(k8sBGRequestHandler).get("currentRelease");
     PrePruningInfo prePruningInfo = on(k8sBGRequestHandler).get("prePruningInfo");
 
     assertThat(prePruningInfo.getReleaseHistoryBeforeStageCleanUp()).isEqualTo(releaseHistory);

@@ -21,7 +21,7 @@ build --javacopt='--release 11'
 
 #CV-Nextgen
 build --action_env=VERIFICATION_SERVICE_SECRET=67d9b94d9856665afc21acd3aa745401
-build --action_env=CLASSPATH_LIMIT=200000
+build --action_env=CLASSPATH_LIMIT=400000
 
 # Test specific
 build --test_env=MAX_ALLOWED_THREAD_LEAKS

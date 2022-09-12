@@ -8,14 +8,14 @@
 package software.wings.graphql.datafetcher.ce.recommendation;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
-
-import static software.wings.graphql.datafetcher.ce.recommendation.entity.RecommenderUtils.CPU_HISTOGRAM_FIRST_BUCKET_SIZE;
-import static software.wings.graphql.datafetcher.ce.recommendation.entity.RecommenderUtils.HISTOGRAM_BUCKET_SIZE_GROWTH;
-import static software.wings.graphql.datafetcher.ce.recommendation.entity.RecommenderUtils.MEMORY_HISTOGRAM_FIRST_BUCKET_SIZE;
+import static io.harness.ccm.RecommenderUtils.CPU_HISTOGRAM_FIRST_BUCKET_SIZE;
+import static io.harness.ccm.RecommenderUtils.HISTOGRAM_BUCKET_SIZE_GROWTH;
+import static io.harness.ccm.RecommenderUtils.MEMORY_HISTOGRAM_FIRST_BUCKET_SIZE;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.ccm.RecommenderUtils;
 import io.harness.ccm.commons.entities.k8s.recommendation.PartialRecommendationHistogram;
 import io.harness.ccm.commons.entities.k8s.recommendation.PartialRecommendationHistogram.PartialRecommendationHistogramKeys;
 import io.harness.ccm.commons.utils.StrippedHistogram;
@@ -30,7 +30,6 @@ import software.wings.graphql.datafetcher.ce.recommendation.dto.QLHistogramExp;
 import software.wings.graphql.datafetcher.ce.recommendation.dto.QLK8SWorkloadHistogramData;
 import software.wings.graphql.datafetcher.ce.recommendation.dto.QLK8sWorkloadParameters;
 import software.wings.graphql.datafetcher.ce.recommendation.entity.PartialHistogramAggragator;
-import software.wings.graphql.datafetcher.ce.recommendation.entity.RecommenderUtils;
 import software.wings.security.PermissionAttribute;
 import software.wings.security.annotations.AuthRule;
 

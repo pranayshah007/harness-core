@@ -142,8 +142,8 @@ public class PrometheusCVConfig extends MetricCVConfig<MetricInfo> {
     }
   }
 
-  public void populateFromMetricDefinitions(List<PrometheusMetricDefinition> metricDefinitions,
-      CVMonitoringCategory category, Set<TimeSeriesMetricPackDTO> timeSeriesMetricPacks) {
+  public void populateFromMetricDefinitions(
+      List<PrometheusMetricDefinition> metricDefinitions, CVMonitoringCategory category) {
     if (metricInfoList == null) {
       metricInfoList = new ArrayList<>();
     }

@@ -174,6 +174,13 @@ public class DataGenApplication extends Application<MainConfiguration> {
             .addAll(ManagerRegistrars.springConverters)
             .build();
       }
+
+      @Provides
+      @Singleton
+      @Named("dbAliases")
+      public List<String> getDbAliases() {
+        return configuration.getDbAliases();
+      }
     });
 
     ValidatorFactory validatorFactory = Validation.byDefaultProvider()

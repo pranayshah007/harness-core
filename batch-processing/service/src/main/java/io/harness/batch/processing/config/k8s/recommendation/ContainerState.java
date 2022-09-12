@@ -7,8 +7,8 @@
 
 package io.harness.batch.processing.config.k8s.recommendation;
 
-import static software.wings.graphql.datafetcher.ce.recommendation.entity.RecommenderUtils.newCpuHistogram;
-import static software.wings.graphql.datafetcher.ce.recommendation.entity.RecommenderUtils.newMemoryHistogram;
+import static io.harness.ccm.RecommenderUtils.newCpuHistogram;
+import static io.harness.ccm.RecommenderUtils.newMemoryHistogram;
 
 import io.harness.histogram.Histogram;
 
