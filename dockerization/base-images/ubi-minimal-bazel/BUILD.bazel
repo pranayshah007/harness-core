@@ -1,0 +1,56 @@
+load("@io_bazel_rules_docker//container:container.bzl", "container_image", "container_push")
+load("@io_bazel_rules_docker//docker/util:run.bzl", "container_run_and_commit_layer")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
+
+container_run_and_commit_layer(
+    name = "ubi-minimal-run",
+    image = "@ubi-minimal//image",
+    commands = [
+        "microdnf install curl libstdc++.i686 make bash unzip hostname tar gzip",
+        "curl -L https://github.com/mikefarah/yq/releases/download/3.3.2/yq_linux_amd64 -o /usr/bin/yq",
+        "chmod +x /usr/bin/yq",
+        "set -x",
+        "mkdir -p /opt/harness/plugins",
+        "mkdir -p /tmp",
+        "chown -R 65534:65534 /opt/harness /tmp",
+        "chmod -R 700 /opt/harness /tmp",
+    ],
+    tags = [
+        "manual",
+        "no-cache",
+        "no-ide",
+    ],
+)
+
+container_image(
+    name = "ubi-minimal-image",
+    base = "@ubi-minimal//image",
+    cmd = ["/bin/sh"],
+    layers = [
+        ":ubi-minimal-run"
+        ],
+    tags = [
+        "manual",
+        "no-cache",
+        "no-ide",
+    ],
+    user = "65534",
+    workdir = "/opt/harness",
+    visibility = ["//visibility:public"],
+)
+
+container_push(
+    name = "ubi-minimal-push",
+    format = "Docker",
+    image = "ubi-minimal-image",
+    registry = "us.gcr.io",
+    repository = "platform-205701/harness/docker-bazel-test",
+    tag = "latest-test",
+    tags = [
+        "manual",
+        "no-cache",
+        "no-ide"
+    ],
+)
+
+

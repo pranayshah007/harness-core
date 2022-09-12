@@ -5457,6 +5457,13 @@ container_pull(
     tag = "latest",
 )
 
+container_pull(
+    name = "ubi-minimal",
+    registry = "registry.access.redhat.com",
+    repository = "ubi8/ubi-minimal",
+    tag = "8.6-902",
+)
+
 load(
     "@io_bazel_rules_docker//repositories:repositories.bzl",
     container_repositories = "repositories",
