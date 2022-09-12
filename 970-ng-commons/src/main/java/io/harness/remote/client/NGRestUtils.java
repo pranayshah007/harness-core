@@ -26,7 +26,6 @@ import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
 import net.jodah.failsafe.event.ExecutionCompletedEvent;
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.NotNull;
 import retrofit2.Call;
 import retrofit2.Response;
 
@@ -48,7 +47,6 @@ public class NGRestUtils {
     return handleResponse(response, defaultErrorMessage);
   }
 
-  @NotNull
   private static <T> Response<ResponseDTO<T>> executeRequest(Call<ResponseDTO<T>> request) throws IOException {
     try {
       return request.clone().execute();
