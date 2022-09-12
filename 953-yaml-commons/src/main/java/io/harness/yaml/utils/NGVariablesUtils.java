@@ -20,10 +20,9 @@ import io.harness.yaml.core.properties.NGProperties;
 import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.core.variables.SecretNGVariable;
 
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
+
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
@@ -89,6 +88,20 @@ public class NGVariablesUtils {
       }
     }
     return mapOfVariables;
+  }
+
+  public List<Map<String, String>> getSimplifiedVariablesList(List<NGVariable> variables) {
+    if (EmptyPredicate.isEmpty(variables)) {
+      return new ArrayList<>();
+    }
+    Map<String, String> variableValues = getStringMapVariables(variables, 0L);
+    return variables.stream().map(variable -> {
+      Map<String, String> variableMap = new LinkedHashMap<>();
+      variableMap.put(YAMLFieldNameConstants.NAME, variable.getName());
+      variableMap.put(YAMLFieldNameConstants.TYPE, variable.getType().name());
+      variableMap.put(YAMLFieldNameConstants.VALUE, variableValues.get(variable.getName()));
+      return variableMap;
+    }).collect(Collectors.toList());
   }
 
   public String fetchSecretExpression(String secretValue) {

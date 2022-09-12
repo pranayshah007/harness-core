@@ -48,16 +48,8 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
+
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -178,8 +170,7 @@ public class TemplateMergeServiceHelper {
         throw new NGTemplateException("Yaml provided is not a template yaml.");
       }
       ObjectNode templateNode = (ObjectNode) templateYamlField.getNode().getCurrJsonNode();
-      String templateVariableSpec = templateNode.findValue("templateVariables").toString();
-      String templateSpec = templateNode.retain(SPEC).toString();
+      String templateSpec = templateNode.retain(SPEC, "templateVariables").toString();
       if (isEmpty(templateSpec)) {
         log.error("Template yaml provided does not have spec in it.");
         throw new NGTemplateException("Template yaml provided does not have spec in it.");
@@ -188,8 +179,8 @@ public class TemplateMergeServiceHelper {
       if (isEmpty(templateInputsYamlWithSpec)) {
         return templateInputsYamlWithSpec;
       }
-      JsonNode templateInputsYaml =
-          YamlUtils.readTree(templateInputsYamlWithSpec).getNode().getCurrJsonNode().get(SPEC);
+      ObjectNode templateObjectNode = (ObjectNode)YamlUtils.readTree(templateInputsYamlWithSpec).getNode().getCurrJsonNode();
+      JsonNode templateInputsYaml = templateObjectNode.retain(SPEC, "templateVariables");
       return YamlPipelineUtils.writeYamlString(templateInputsYaml);
     } catch (IOException e) {
       log.error("Error occurred while creating template inputs " + e);
