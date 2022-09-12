@@ -22,9 +22,9 @@ write_mongo_hosts_and_ports() {
     HOST=$(cut -d: -f 1 <<< "${HOST_AND_PORT[$INDEX]}")
     PORT=$(cut -d: -f 2 -s <<< "${HOST_AND_PORT[$INDEX]}")
 
-    export HOST; export ARG1=$1; export INDEX; export INDEX; yq -i '.env(ARG1).[env(INDEX)].host=env(HOST)' $CONFIG_FILE
+    export HOST; export ARG1=$1; export INDEX; yq -i '.env(ARG1).[env(INDEX)].host=env(HOST)' $CONFIG_FILE
     if [[ "" != "$PORT" ]]; then
-      export PORT; export ARG1=$1; export INDEX; export INDEX; yq -i '.env(ARG1).[env(INDEX)].port=env(PORT)' $CONFIG_FILE
+      export PORT; export ARG1=$1; export INDEX; yq -i '.env(ARG1).[env(INDEX)].port=env(PORT)' $CONFIG_FILE
     fi
   done
 }
@@ -727,9 +727,9 @@ if [[ "" != "$REDIS_SENTINELS" ]]; then
   IFS=',' read -ra REDIS_SENTINEL_URLS <<< "$REDIS_SENTINELS"
   INDEX=0
   for REDIS_SENTINEL_URL in "${REDIS_SENTINEL_URLS[@]}"; do
-    export REDIS_SENTINEL_URL; export INDEX; export INDEX; yq -i '.redisLockConfig.sentinelUrls.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
-    export REDIS_SENTINEL_URL; export INDEX; export INDEX; yq -i '.redisAtmosphereConfig.sentinelUrls.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
-    export REDIS_SENTINEL_URL; export INDEX; export INDEX; yq -i '.sentinelServersConfig.sentinelAddresses.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $REDISSON_CACHE_FILE
+    export REDIS_SENTINEL_URL; export INDEX; yq -i '.redisLockConfig.sentinelUrls.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
+    export REDIS_SENTINEL_URL; export INDEX; yq -i '.redisAtmosphereConfig.sentinelUrls.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
+    export REDIS_SENTINEL_URL; export INDEX; yq -i '.sentinelServersConfig.sentinelAddresses.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $REDISSON_CACHE_FILE
     INDEX=$(expr $INDEX + 1)
   done
 fi
@@ -932,7 +932,7 @@ if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then
   IFS=',' read -ra SENTINEL_URLS <<< "$EVENTS_FRAMEWORK_REDIS_SENTINELS"
   INDEX=0
   for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
-    export REDIS_SENTINEL_URL; export INDEX; export INDEX; yq -i '.eventsFramework.redis.sentinelUrls.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
+    export REDIS_SENTINEL_URL; export INDEX; yq -i '.eventsFramework.redis.sentinelUrls.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
     INDEX=$(expr $INDEX + 1)
   done
 fi

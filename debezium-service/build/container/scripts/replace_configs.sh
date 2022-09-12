@@ -41,7 +41,7 @@ if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then
   IFS=',' read -ra SENTINEL_URLS <<< "$EVENTS_FRAMEWORK_REDIS_SENTINELS"
   INDEX=0
   for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
-    export REDIS_SENTINEL_URL; export INDEX; export INDEX; yq -i '.eventsFramework.redis.sentinelUrls.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
+    export REDIS_SENTINEL_URL; export INDEX; yq -i '.eventsFramework.redis.sentinelUrls.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
     INDEX=$(expr $INDEX + 1)
   done
 fi
@@ -69,7 +69,7 @@ if [[ "" != "$CACHE_CONFIG_REDIS_SENTINELS" ]]; then
   IFS=',' read -ra SENTINEL_URLS <<< "$CACHE_CONFIG_REDIS_SENTINELS"
   INDEX=0
   for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
-    export REDIS_SENTINEL_URL; export INDEX; export INDEX; yq -i '.sentinelServersConfig.sentinelAddresses.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $REDISSON_CACHE_FILE
+    export REDIS_SENTINEL_URL; export INDEX; yq -i '.sentinelServersConfig.sentinelAddresses.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $REDISSON_CACHE_FILE
     INDEX=$(expr $INDEX + 1)
   done
 fi
@@ -111,7 +111,7 @@ if [[ "" != "$REDIS_LOCK_CONFIG_REDIS_SENTINELS" ]]; then
   IFS=',' read -ra SENTINEL_URLS <<< "$REDIS_LOCK_CONFIG_REDIS_SENTINELS"
   INDEX=0
   for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
-    export REDIS_SENTINEL_URL; export INDEX; export INDEX; yq -i '.redisLockConfig.sentinelUrls.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
+    export REDIS_SENTINEL_URL; export INDEX; yq -i '.redisLockConfig.sentinelUrls.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
     INDEX=$(expr $INDEX + 1)
   done
 fi

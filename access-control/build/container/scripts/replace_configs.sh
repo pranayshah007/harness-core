@@ -42,7 +42,7 @@ if [[ "" != "$EVENTS_CONFIG_REDIS_SENTINELS" ]]; then
   IFS=',' read -ra SENTINEL_URLS <<< "$EVENTS_CONFIG_REDIS_SENTINELS"
   INDEX=0
   for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
-    export REDIS_SENTINEL_URL; export INDEX; export INDEX; yq -i '.eventsConfig.redis.sentinelUrls.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
+    export REDIS_SENTINEL_URL; export INDEX; yq -i '.eventsConfig.redis.sentinelUrls.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
     INDEX=$(expr $INDEX + 1)
   done
 fi
@@ -51,7 +51,7 @@ if [[ "" != "$LOCK_CONFIG_REDIS_SENTINELS" ]]; then
   IFS=',' read -ra SENTINEL_URLS <<< "$LOCK_CONFIG_REDIS_SENTINELS"
   INDEX=0
   for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
-    export REDIS_SENTINEL_URL; export INDEX; export INDEX; yq -i '.redisLockConfig.sentinelUrls.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
+    export REDIS_SENTINEL_URL; export INDEX; yq -i '.redisLockConfig.sentinelUrls.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
     INDEX=$(expr $INDEX + 1)
   done
 fi
@@ -60,7 +60,7 @@ if [[ "" != "$ALLOWED_ORIGINS" ]]; then
   IFS=',' read -ra ALLOWED_ORIGINS <<< "$ALLOWED_ORIGINS"
   INDEX=0
   for ALLOWED_URL in "${ALLOWED_ORIGINS[@]}"; do
-    export ALLOWED_URL; export INDEX; export INDEX; yq -i '.allowedOrigins.[env(INDEX)]=env(ALLOWED_URL)' $CONFIG_FILE
+    export ALLOWED_URL; export INDEX; yq -i '.allowedOrigins.[env(INDEX)]=env(ALLOWED_URL)' $CONFIG_FILE
     INDEX=$(expr $INDEX + 1)
   done
 fi
