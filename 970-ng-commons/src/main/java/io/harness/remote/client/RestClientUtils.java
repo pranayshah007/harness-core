@@ -40,11 +40,7 @@ public class RestClientUtils {
     return getResponse(request, DEFAULT_ERROR_MESSAGE, DEFAULT_CONNECTION_ERROR_MESSAGE);
   }
 
-  public static <T> T getResponse(Call<RestResponse<T>> request, String defaultErrorMessage) {
-    return getResponse(request, defaultErrorMessage, DEFAULT_CONNECTION_ERROR_MESSAGE);
-  }
-
-  public static <T> T getResponse(
+  private static <T> T getResponse(
       Call<RestResponse<T>> request, String defaultErrorMessage, String connectionErrorMessage) {
     try {
       Response<RestResponse<T>> response = request.execute();

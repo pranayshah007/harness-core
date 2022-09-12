@@ -9,7 +9,6 @@ package io.harness.remote.client;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.remote.client.RestClientUtils.DEFAULT_CONNECTION_ERROR_MESSAGE;
-import static io.harness.remote.client.RestClientUtils.DEFAULT_ERROR_MESSAGE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
@@ -38,10 +37,6 @@ public class NGRestClientExecutor {
   @Inject private KryoSerializer kryoSerializer;
 
   public <T> T getResponse(Call<ResponseDTO<T>> request) {
-    return getResponse(request, DEFAULT_ERROR_MESSAGE, DEFAULT_CONNECTION_ERROR_MESSAGE);
-  }
-
-  private <T> T getResponse(Call<ResponseDTO<T>> request, String defaultErrorMessage, String connectionErrorMessage) {
     try {
       Response<ResponseDTO<T>> response = request.execute();
       if (response.isSuccessful()) {
@@ -62,12 +57,13 @@ public class NGRestClientExecutor {
         } catch (Exception e) {
           log.debug("Error while converting error received from upstream systems", e);
         }
-        throw new InvalidRequestException(StringUtils.isEmpty(errorMessage) ? defaultErrorMessage : errorMessage);
+        throw new InvalidRequestException(
+            StringUtils.isEmpty(errorMessage) ? RestClientUtils.DEFAULT_ERROR_MESSAGE : errorMessage);
       }
     } catch (IOException ex) {
       String url = Optional.ofNullable(request.request()).map(x -> x.url().encodedPath()).orElse(null);
       log.error("IO error while connecting to the service: {}", url, ex);
-      throw new UnexpectedException(connectionErrorMessage);
+      throw new UnexpectedException(DEFAULT_CONNECTION_ERROR_MESSAGE);
     }
   }
 }
