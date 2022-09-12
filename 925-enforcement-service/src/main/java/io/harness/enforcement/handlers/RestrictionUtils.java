@@ -7,7 +7,7 @@
 
 package io.harness.enforcement.handlers;
 
-import static io.harness.remote.client.NGRestUtils.getResponseWithRetry;
+import static io.harness.remote.client.NGRestUtils.getResponse;
 
 import io.harness.enforcement.beans.FeatureRestrictionUsageDTO;
 import io.harness.enforcement.beans.metadata.RestrictionMetadataDTO;
@@ -25,7 +25,7 @@ public class RestrictionUtils {
       RestrictionMetadataDTO restrictionMetadataDTO) {
     try {
       FeatureRestrictionUsageDTO response =
-          getResponseWithRetry(limitRestriction.getEnforcementSdkClient().getRestrictionUsage(
+          getResponse(limitRestriction.getEnforcementSdkClient().getRestrictionUsage(
               featureRestrictionName, accountIdentifier, restrictionMetadataDTO));
       return response.getCount();
     } catch (Exception e) {

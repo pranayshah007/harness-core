@@ -7,7 +7,7 @@
 
 package io.harness.pms.rbac;
 
-import static io.harness.remote.client.NGRestUtils.getResponseWithRetry;
+import static io.harness.remote.client.NGRestUtils.getResponse;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
@@ -21,6 +21,8 @@ import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import io.harness.remote.client.NGRestUtils;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -53,7 +55,7 @@ public class InternalReferredEntityExtractor {
       List<List<String>> partitionedList = Lists.partition(entry.getValue(), MAX_PAGE_SIZE);
       for (List<String> entityDetail : partitionedList) {
         EntityReferencesDTO entityReferencesDTO =
-            getResponseWithRetry(entitySetupUsageClient.listAllReferredUsagesBatch(accountIdentifier, entityDetail,
+            NGRestUtils.getResponse(entitySetupUsageClient.listAllReferredUsagesBatch(accountIdentifier, entityDetail,
                                      entry.getKey(), referredByEntityTypeToReferredEntityTypeMap.get(entry.getKey())),
                 "Internal refereed entities could not be extracted after {} attempts.");
         for (EntitySetupUsageBatchDTO entitySetupUsageBatchDTO : entityReferencesDTO.getEntitySetupUsageBatchList()) {

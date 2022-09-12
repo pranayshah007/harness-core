@@ -10,7 +10,7 @@ package io.harness.cdng.licenserestriction;
 import static io.harness.cd.CDLicenseType.SERVICES;
 import static io.harness.data.structure.CollectionUtils.collectionToStream;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.remote.client.NGRestUtils.getResponseWithRetry;
+import static io.harness.remote.client.NGRestUtils.getResponse;
 
 import io.harness.EntityType;
 import io.harness.ModuleType;
@@ -29,6 +29,7 @@ import io.harness.licensing.usage.params.CDUsageRequestParams;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.utils.FullyQualifiedIdentifierHelper;
 
 import com.google.common.cache.Cache;
@@ -82,7 +83,7 @@ public class EnforcementValidator {
   private Set<BaseNGAccess> getServicesBeingCreated(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String pipelineId, String yaml) {
     List<EntitySetupUsageDTO> allReferredUsages =
-        getResponseWithRetry(entitySetupUsageClient.listAllReferredUsages(PAGE, SIZE, accountIdentifier,
+        NGRestUtils.getResponse(entitySetupUsageClient.listAllReferredUsages(PAGE, SIZE, accountIdentifier,
                                  FullyQualifiedIdentifierHelper.getFullyQualifiedIdentifier(
                                      accountIdentifier, orgIdentifier, projectIdentifier, pipelineId),
                                  EntityType.SERVICE, null),

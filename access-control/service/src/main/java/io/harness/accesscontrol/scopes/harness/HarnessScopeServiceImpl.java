@@ -8,7 +8,7 @@
 package io.harness.accesscontrol.scopes.harness;
 
 import static io.harness.accesscontrol.common.filter.ManagedFilter.ONLY_CUSTOM;
-import static io.harness.remote.client.NGRestUtils.getResponseWithRetry;
+import static io.harness.remote.client.NGRestUtils.getResponse;
 
 import io.harness.accesscontrol.roleassignments.RoleAssignmentFilter;
 import io.harness.accesscontrol.roleassignments.RoleAssignmentService;
@@ -62,7 +62,7 @@ public class HarnessScopeServiceImpl implements HarnessScopeService {
     boolean toBeDeleted = false;
     if (scope.getLevel() == HarnessScopeLevel.PROJECT) {
       try {
-        Optional<ProjectResponse> response = getResponseWithRetry(projectClient.getProject(
+        Optional<ProjectResponse> response = getResponse(projectClient.getProject(
             params.getProjectIdentifier(), params.getAccountIdentifier(), params.getOrgIdentifier()));
         scope.setInstanceName(response.isPresent() ? response.get().getProject().getName() : null);
       } catch (InvalidRequestException e) {
@@ -72,7 +72,7 @@ public class HarnessScopeServiceImpl implements HarnessScopeService {
       }
     } else if (scope.getLevel() == HarnessScopeLevel.ORGANIZATION) {
       try {
-        Optional<OrganizationResponse> response = getResponseWithRetry(
+        Optional<OrganizationResponse> response = getResponse(
             organizationClient.getOrganization(params.getOrgIdentifier(), params.getAccountIdentifier()));
         scope.setInstanceName(response.isPresent() ? response.get().getOrganization().getName() : null);
       } catch (InvalidRequestException e) {

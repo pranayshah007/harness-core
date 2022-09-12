@@ -250,7 +250,7 @@ public class AwsEntityChangeEventServiceImpl implements AwsEntityChangeEventServ
           jsonObject.put(CONNECTOR, ceAwsConnectorDTO);
         }
         RequestBody body = RequestBody.create(MediaType.parse("application/json"), jsonObject.toString());
-        NGRestUtils.getResponseWithRetry(lightwingClient.scheduleAutoCUDDataCollectorJob(body));
+        NGRestUtils.getResponse(lightwingClient.scheduleAutoCUDDataCollectorJob(body));
         log.info("Connector {}: The data collector api of autocud fired with no exception", action);
       } catch (Exception e) {
         log.info("Connector {}: Error while calling the data collector job of autocud {}", action, e.toString());

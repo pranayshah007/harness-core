@@ -7,7 +7,7 @@
 
 package io.harness.pms.preflight.connector;
 
-import static io.harness.remote.client.NGRestUtils.getResponseWithRetry;
+import static io.harness.remote.client.NGRestUtils.getResponse;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -33,6 +33,8 @@ import io.harness.preflight.PreFlightCheckMetadata;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import io.harness.remote.client.NGRestUtils;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -87,7 +89,7 @@ public class ConnectorPreflightHandler {
     List<ConnectorResponseDTO> connectorResponses = new ArrayList<>();
     if (scopeToConnectorIdentifiers.containsKey(Scope.ACCOUNT)) {
       PageResponse<ConnectorResponseDTO> response =
-          getResponseWithRetry(connectorResourceClient.listConnectors(accountIdentifier, null, null, PAGE, SIZE,
+          NGRestUtils.getResponse(connectorResourceClient.listConnectors(accountIdentifier, null, null, PAGE, SIZE,
                                    ConnectorFilterPropertiesDTO.builder()
                                        .connectorIdentifiers(scopeToConnectorIdentifiers.get(Scope.ACCOUNT))
                                        .build(),
@@ -96,7 +98,7 @@ public class ConnectorPreflightHandler {
       connectorResponses.addAll(response.getContent());
     }
     if (scopeToConnectorIdentifiers.containsKey(Scope.ORG)) {
-      PageResponse<ConnectorResponseDTO> response = getResponseWithRetry(
+      PageResponse<ConnectorResponseDTO> response = NGRestUtils.getResponse(
           connectorResourceClient.listConnectors(accountIdentifier, orgIdentifier, null, PAGE, SIZE,
               ConnectorFilterPropertiesDTO.builder()
                   .connectorIdentifiers(scopeToConnectorIdentifiers.get(Scope.ORG))
@@ -107,7 +109,7 @@ public class ConnectorPreflightHandler {
       connectorResponses.addAll(response.getContent());
     }
     if (scopeToConnectorIdentifiers.containsKey(Scope.PROJECT)) {
-      PageResponse<ConnectorResponseDTO> response = getResponseWithRetry(
+      PageResponse<ConnectorResponseDTO> response = NGRestUtils.getResponse(
           connectorResourceClient.listConnectors(accountIdentifier, orgIdentifier, projectIdentifier, PAGE, SIZE,
               ConnectorFilterPropertiesDTO.builder()
                   .connectorIdentifiers(scopeToConnectorIdentifiers.get(Scope.PROJECT))

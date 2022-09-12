@@ -41,11 +41,7 @@ public class NGRestClientExecutor {
     return getResponse(request, DEFAULT_ERROR_MESSAGE, DEFAULT_CONNECTION_ERROR_MESSAGE);
   }
 
-  public <T> T getResponse(Call<ResponseDTO<T>> request, String defaultErrorMessage) {
-    return getResponse(request, defaultErrorMessage, DEFAULT_CONNECTION_ERROR_MESSAGE);
-  }
-
-  public <T> T getResponse(Call<ResponseDTO<T>> request, String defaultErrorMessage, String connectionErrorMessage) {
+  private <T> T getResponse(Call<ResponseDTO<T>> request, String defaultErrorMessage, String connectionErrorMessage) {
     try {
       Response<ResponseDTO<T>> response = request.execute();
       if (response.isSuccessful()) {
