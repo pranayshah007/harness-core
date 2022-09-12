@@ -32,7 +32,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
       @JsonSubTypes.Type(value = GithubPackagesArtifactOutcome.class, name = "GithubPackageRegistry")
 })
 @OwnedBy(HarnessTeam.CDP)
-public interface ArtifactOutcome extends Outcome, WithIdentifier, WithArtifactSummary , ExecutionSweepingOutput {
+public interface ArtifactOutcome extends Outcome, WithIdentifier, WithArtifactSummary, ExecutionSweepingOutput {
   boolean isPrimaryArtifact();
   String getArtifactType();
   String getIdentifier();
