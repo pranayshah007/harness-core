@@ -5464,6 +5464,13 @@ container_pull(
     tag = "8.6-902",
 )
 
+container_pull(
+    name = "ubi-minimal-base-image",
+    registry = "us.gcr.io",
+    repository = "platform-205701/harness/ubi-minimal-bazel-test",
+    tag = "latest-test",
+)
+
 load(
     "@io_bazel_rules_docker//repositories:repositories.bzl",
     container_repositories = "repositories",
