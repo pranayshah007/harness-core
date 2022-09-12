@@ -153,4 +153,20 @@ public class AccountResource {
 
     return ResponseDTO.newResponse(accountDTO);
   }
+
+  @GET
+  @Path("/evict-account-name-cache")
+  @ApiOperation(value = "Invalidates account name cache entry", nickname = "invalidateAccountNameCacheEntry")
+  @Operation(operationId = "invalidateAccountNameCacheEntry", summary = "Invalidates account name cache entry",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default", description = "Returns boolean")
+      })
+  @NGAccessControlCheck(resourceType = ResourceTypes.ACCOUNT, permission = EDIT_ACCOUNT_PERMISSION)
+  public ResponseDTO<Boolean>
+  evictAccountNameCache(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+      NGCommonEntityConstants.ACCOUNT_KEY) @NotNull @AccountIdentifier String accountId) {
+    Boolean invalidationStatus = RestClientUtils.getResponse(accountClient.evictAccountNameCache(accountId));
+    return ResponseDTO.newResponse(invalidationStatus);
+  }
 }

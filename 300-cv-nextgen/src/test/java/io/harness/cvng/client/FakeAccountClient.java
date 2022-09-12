@@ -146,6 +146,11 @@ public class FakeAccountClient implements AccountClient {
   }
 
   @Override
+  public Call<RestResponse<Boolean>> evictAccountNameCache(String accountId) {
+    return null;
+  }
+
+  @Override
   public Call<RestResponse<Void>> upsertDefaultToken(
       String accountId, String orgId, String projectId, Boolean skipIfExists) {
     throw new UnsupportedOperationException("mocked method - provide impl when required");

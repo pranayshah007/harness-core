@@ -89,6 +89,9 @@ public interface AccountClient {
   @GET(ACCOUNT_API + "/isAutoInviteAcceptanceEnabled")
   Call<RestResponse<Boolean>> checkAutoInviteAcceptanceEnabledForAccount(@Query("accountId") String accountId);
 
+  @GET(ACCOUNT_API + "/evict-account-name-cache")
+  Call<RestResponse<Boolean>> evictAccountNameCache(@Query("accountId") String accountId);
+
   @PUT(NG_DELEGATE_TOKEN_API + UPSERT_DEFAULT)
   Call<RestResponse<Void>> upsertDefaultToken(@Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @Query(NGCommonEntityConstants.ORG_KEY) String orgId,

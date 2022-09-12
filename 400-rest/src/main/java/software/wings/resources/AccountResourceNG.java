@@ -228,16 +228,6 @@ public class AccountResourceNG {
   @GET
   @Path("/evict-account-name-cache")
   public RestResponse<Boolean> evictAccountNameCache(@QueryParam("accountId") String accountId) {
-    User existingUser = UserThreadLocal.get();
-    if (existingUser == null) {
-      throw new InvalidRequestException("Invalid User");
-    }
-    if (!harnessUserGroupService.isHarnessSupportUser(existingUser.getUuid())) {
-      return RestResponse.Builder.aRestResponse()
-          .withResponseMessages(Lists.newArrayList(
-              ResponseMessage.builder().message("User not allowed to invalidate cache entry").build()))
-          .build();
-    }
     accountService.evictAccountNameFromCache(accountId);
     log.info("Successfully removed account name cache entry for account id {}", accountId);
     return new RestResponse<>(Boolean.TRUE);

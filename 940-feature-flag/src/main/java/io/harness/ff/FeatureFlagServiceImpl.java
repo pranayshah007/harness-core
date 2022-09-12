@@ -77,8 +77,6 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
   private final Provider<CfClient> cfClient;
   private final FeatureFlagConfig featureFlagConfig;
   private Optional<AccountClient> optionalAccountClient;
-  // Caffeine cache
-  // private Cache<String, String> accountIdToAccountNameCache;
 
   private static final RetryPolicy<Object> fetchAccountNameRetryPolicy =
       RetryUtils.getRetryPolicy("Failed attempt: Could not fetch account name", "Failure: Could not fetch account name",
@@ -96,51 +94,6 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
     this.cache = new HashMap<>();
     this.optionalAccountClient = optionalAccountClient;
   }
-
-  /*private int createAccountIdToAccountNameCache() {
-    log.info("Creating cache for account id to account name");
-    if(!optionalAccountClient.isPresent()){
-      log.info("Account client info is not present.");
-      buildCacheWithDefaultConfiguration();
-      return 1500;
-    }
-    try{
-      log.info("Fetching all active accounts");
-      List<AccountDTO> activeAccountList = RestClientUtils.getResponse(
-              optionalAccountClient.get().getAllActiveAccounts());
-      if(activeAccountList == null){
-        log.info("Unable to fetch active accounts.");
-        buildCacheWithDefaultConfiguration();
-        return 1500;
-      }
-      int size = activeAccountList.size();
-      log.info(String.format("Number of active accounts are %s", size));
-      Map<String, String> accountIdToNameMap = activeAccountList.stream().collect(Collectors.toMap(
-              AccountDTO::getIdentifier, AccountDTO::getName
-      ));
-      accountIdToAccountNameCache = Caffeine.newBuilder()
-              .initialCapacity(activeAccountList.size())
-              .maximumSize(activeAccountList.size()+100)
-              .expireAfterWrite(7, TimeUnit.DAYS)
-              .build();
-      accountIdToAccountNameCache.putAll(accountIdToNameMap);
-      return size;
-    }
-    catch (Exception e){
-      log.info("Can not load account data in cache. ", e);
-      buildCacheWithDefaultConfiguration();
-      return 1500;
-    }
-  }*/
-
-  /* private void buildCacheWithDefaultConfiguration(){
-     log.info("Using default configuration for building account id to account name cache");
-     accountIdToAccountNameCache = Caffeine.newBuilder()
-             .initialCapacity(10)
-             .maximumSize(1500)
-             .expireAfterWrite(7, TimeUnit.DAYS)
-             .build();
-   }*/
 
   @Override
   public boolean isEnabledReloadCache(FeatureName featureName, String accountId) {
@@ -292,7 +245,6 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
       log.info(String.format("Fetching account name for account id %s ", accountId));
       if (optionalAccountClient.isPresent()) {
         log.info(String.format("Using account client to get account name for accountId %s", accountId));
-        RestClientUtils.getResponse(optionalAccountClient.get().isNextGenEnabled(accountId));
         accountName =
             Failsafe.with(fetchAccountNameRetryPolicy)
                 .get(() -> RestClientUtils.getResponse(optionalAccountClient.get().getAccountName(accountId)));
@@ -308,65 +260,6 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
     }
     return cfClient.get().boolVariation(featureName.name(), target, false);
   }
-
-  /*private boolean cfFeatureFlagEvaluation(@NonNull FeatureName featureName, String accountId) {
-    String accountName;
-    Target target;
-    if (Scope.GLOBAL.equals(featureName.getScope())) {
-      log.info(String.format("Scope is Global for feature name %s .", featureName.name()));
-      target = buildStaticIdAndNameTarget();
-    } else if (isEmpty(accountId)) {
-      log.info(String.format("Account Id passed is empty when evaluating for feature %s ", featureName.name()));
-      target = buildStaticIdAndNameTarget();
-    } else {
-      log.info(String.format("Fetching account name for account id %s ", accountId));
-      // Use cache
-      accountName = accountIdToAccountNameCache.getIfPresent(accountId);
-      if (isEmpty(accountName)) {
-        // Cache miss
-        log.info(String.format("Cache does not contain name corresponding to account id - %s ", accountId));
-        if (optionalAccountClient.isPresent()) {
-          // Make rest call
-          log.info(String.format("Using account client to get account name for accountId %s", accountId));
-          accountName = getAccountNameFromClient(optionalAccountClient, accountId);
-        } else {
-          log.info(String.format("Account client is absent. Using account id %s as account name", accountId));
-          accountName = accountId;
-        }
-      }
-      target = buildTarget(accountId, accountName);
-    }
-    return cfClient.get().boolVariation(featureName.name(), target, false);
-  }*/
-
-  /*private String getAccountNameFromClient(Optional<AccountClient> optionalAccountClient, String accountId) {
-    String accountName;
-    try {
-      AccountDTO accountDTO =
-          Failsafe.with(fetchAccountNameRetryPolicy)
-              .get(() -> RestClientUtils.getResponse(optionalAccountClient.get().getAccountDTO(accountId)));
-      if (accountDTO == null) {
-        log.info(String.format(
-            "Can not fetch account name for accountId %s . Setting account name same as account id", accountId));
-        accountName = accountId;
-      } else {
-        accountName = accountDTO.getName();
-        log.info(String.format("Received account name %s corresponding to account id %s ", accountName, accountId));
-        if (isEmpty(accountName)) {
-          log.info(String.format("Account name is empty, using account id %s as accountName", accountId));
-          accountName = accountId;
-        }
-      }
-    } catch (Exception e) {
-      log.info(String.format("Can not fetch account name corresponding to accountId %s . "
-              + "Using account id as account name",
-          accountId));
-      accountName = accountId;
-    }
-    // put value in cache
-    accountIdToAccountNameCache.put(accountId, accountName);
-    return accountName;
-  }*/
 
   private Target buildStaticIdAndNameTarget() {
     return buildTarget(FeatureFlagConstants.STATIC_ACCOUNT_ID, FeatureFlagConstants.STATIC_ACCOUNT_ID);
@@ -572,19 +465,4 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
     cfMigrationService.syncFeatureFlagWithCF(featureFlag);
     return Optional.of(featureFlag);
   }
-
-  /**
-   * Used to invalidate cache. Should be used if account name has changed for any account. Or one of situation
-   * where account name could not be loaded in cache because account service was down, and account id was loaded.
-   * @param accountId for which cache has to be invalidated.
-   */
-  /*@Override
-  public void evictAccountNameFromCache(String accountId) {
-    accountIdToAccountNameCache.invalidate(accountId);
-  }
-
-  @Override
-  public int loadAccountIdToAccountNameCache() {
-    return createAccountIdToAccountNameCache();
-  }*/
 }
