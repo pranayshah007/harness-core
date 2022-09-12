@@ -39,7 +39,7 @@ if [[ "" != "$LOGGERS" ]]; then
 fi
 
 if [[ "" != "$MONGO_URI" ]]; then
-  export MONGO_URI=${MONGO_URI//\\&/&}; export MONGO_URI; yq -i '.mongo.uri=env(MONGO_URI)' $CONFIG_FILE
+  export MONGO_URI=${MONGO_URI//\\&/&}; yq -i '.mongo.uri=env(MONGO_URI)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_TRACE_MODE" ]]; then
@@ -247,7 +247,7 @@ if [[ "" != "$NOTIFICATION_BASE_URL" ]]; then
 fi
 
 if [[ "" != "$NOTIFICATION_MONGO_URI" ]]; then
-  export NOTIFICATION_MONGO_URI=${NOTIFICATION_MONGO_URI//\\&/&}; export NOTIFICATION_MONGO_URI; yq -i '.notificationClient.messageBroker.uri=env(NOTIFICATION_MONGO_URI)' $CONFIG_FILE
+  export NOTIFICATION_MONGO_URI=${NOTIFICATION_MONGO_URI//\\&/&}; yq -i '.notificationClient.messageBroker.uri=env(NOTIFICATION_MONGO_URI)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MANAGER_CLIENT_BASEURL" ]]; then
@@ -325,7 +325,7 @@ if [[ "" != "$EVENTS_FRAMEWORK_REDIS_PASSWORD" ]]; then
 fi
 
 if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PATH" ]]; then
-  export file:"$EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PATH; yq -i '.singleServerConfig.sslTruststore=env(file:")' $ENTERPRISE_REDISSON_CACHE_FILE
+  export EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PATH="file:$EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PATH"; yq -i '.singleServerConfig.sslTruststore=env(EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PATH)' $ENTERPRISE_REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD" ]]; then

@@ -82,7 +82,7 @@ if [[ "" != "$STORE_RESPONSE_PAYLOAD" ]]; then
 fi
 
 if [[ "" != "$MONGO_URI" ]]; then
-  export MONGO_URI=${MONGO_URI//\\&/&}; export MONGO_URI; yq -i '.mongo.uri=env(MONGO_URI)' $CONFIG_FILE
+  export MONGO_URI=${MONGO_URI//\\&/&}; yq -i '.mongo.uri=env(MONGO_URI)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_TRACE_MODE" ]]; then
@@ -192,7 +192,7 @@ replace_key_value featureFlagConfig.syncFeaturesToCF "$SYNC_FEATURES_TO_CF"
 
 
 if [[ "" != "$MONGO_LOCK_URI" ]]; then
-  export MONGO_LOCK_URI=${MONGO_LOCK_URI//\\&/&}; export MONGO_LOCK_URI; yq -i '.mongo.locksUri=env(MONGO_LOCK_URI)' $CONFIG_FILE
+  export MONGO_LOCK_URI=${MONGO_LOCK_URI//\\&/&}; yq -i '.mongo.locksUri=env(MONGO_LOCK_URI)' $CONFIG_FILE
 fi
 
 yq -i '.server.requestLog.appenders[0].threshold="TRACE"' $CONFIG_FILE

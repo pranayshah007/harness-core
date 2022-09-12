@@ -67,7 +67,7 @@ if [[ "" != "$ALLOWED_ORIGINS" ]]; then
 fi
 
 if [[ "" != "$MONGO_URI" ]]; then
-  export MONGO_URI=${MONGO_URI//\\&/&}; export MONGO_URI; yq -i '.notificationServiceConfig.mongo.uri=env(MONGO_URI)' $CONFIG_FILE
+  export MONGO_URI=${MONGO_URI//\\&/&}; yq -i '.notificationServiceConfig.mongo.uri=env(MONGO_URI)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_CONNECT_TIMEOUT" ]]; then
@@ -158,7 +158,7 @@ else
 fi
 
 if [[ "" != "$AUDIT_MONGO_URI" ]]; then
-  export AUDIT_MONGO_URI=${AUDIT_MONGO_URI//\\&/&}; export AUDIT_MONGO_URI; yq -i '.auditServiceConfig.mongo.uri=env(AUDIT_MONGO_URI)' $CONFIG_FILE
+  export AUDIT_MONGO_URI=${AUDIT_MONGO_URI//\\&/&}; yq -i '.auditServiceConfig.mongo.uri=env(AUDIT_MONGO_URI)' $CONFIG_FILE
 fi
 
 if [[ "" != "$AUDIT_MONGO_CONNECT_TIMEOUT" ]]; then

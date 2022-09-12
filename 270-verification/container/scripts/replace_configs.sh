@@ -28,7 +28,7 @@ else
 fi
 
 if [[ "" != "$MONGO_URI" ]]; then
-  export MONGO_URI=${MONGO_URI//\\&/&}; export MONGO_URI; yq -i '.mongo.uri=env(MONGO_URI)' /opt/harness/verification-config.yml
+  export MONGO_URI=${MONGO_URI//\\&/&}; yq -i '.mongo.uri=env(MONGO_URI)' /opt/harness/verification-config.yml
 fi
 
 if [[ "" != "$MONGO_SSL_CONFIG" ]]; then

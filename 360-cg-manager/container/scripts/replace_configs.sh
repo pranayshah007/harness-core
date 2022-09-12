@@ -8,6 +8,15 @@ CONFIG_FILE=/opt/harness/config.yml
 NEWRELIC_FILE=/opt/harness/newrelic.yml
 REDISSON_CACHE_FILE=/opt/harness/redisson-jcache.yaml
 
+
+cp ../../config.yml ../../config4.yml
+CONFIG_FILE=../../config4.yml
+NEWRELIC_FILE=../../newrelic.yml
+REDISSON_CACHE_FILE=../../redisson-jcache.yaml
+export NEWRELIC_LICENSE_KEY=newrelickey
+export REDIS_SENTINELS=redis://redisha-redis-ha-announce-0.shiv-yq-vuln-pr.svc.cluster.local:26379,redis://redisha-redis-ha-announce-1.shiv-yq-vuln-pr.svc.cluster.local:26379,redis://redisha-redis-ha-announce-2.shiv-yq-vuln-pr.svc.cluster.local:26379
+
+
 replace_key_value () {
   CONFIG_KEY="$1";
   CONFIG_VALUE="$2";
@@ -99,7 +108,7 @@ if [[ "" != "$STORE_RESPONSE_PAYLOAD" ]]; then
 fi
 
 if [[ "" != "$MONGO_URI" ]]; then
-  export MONGO_URI=${MONGO_URI//\\&/&}; export MONGO_URI; yq -i '.mongo.uri=env(MONGO_URI)' $CONFIG_FILE
+  export MONGO_URI=${MONGO_URI//\\&/&}; yq -i '.mongo.uri=env(MONGO_URI)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_HOSTS_AND_PORTS" ]]; then
@@ -253,7 +262,7 @@ if [[ "" != "$ELASTICSEARCH_MONGO_TAG_VALUE" ]]; then
 fi
 
 if [[ "" != "$MONGO_LOCK_URI" ]]; then
-  export MONGO_LOCK_URI=${MONGO_LOCK_URI//\\&/&}; export MONGO_LOCK_URI; yq -i '.mongo.locksUri=env(MONGO_LOCK_URI)' $CONFIG_FILE
+  export MONGO_LOCK_URI=${MONGO_LOCK_URI//\\&/&}; yq -i '.mongo.locksUri=env(MONGO_LOCK_URI)' $CONFIG_FILE
 fi
 
 yq -i '.server.requestLog.appenders[0].threshold="TRACE"' $CONFIG_FILE
