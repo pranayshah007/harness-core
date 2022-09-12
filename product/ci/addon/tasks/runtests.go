@@ -308,6 +308,7 @@ func (r *runTestsTask) getTestSelection(ctx context.Context, files []types.File,
 		} else {
 			r.log.Infow(fmt.Sprintf("Running tests selected by Test Intelligence: %s", resp.Tests))
 		}
+		return resp
 	}
 	return resp
 }
