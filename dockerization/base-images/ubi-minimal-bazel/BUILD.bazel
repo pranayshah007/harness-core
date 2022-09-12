@@ -44,7 +44,7 @@ container_push(
     format = "Docker",
     image = "ubi-minimal-image",
     registry = "us.gcr.io",
-    repository = "platform-205701/harness/docker-bazel-test",
+    repository = "platform-205701/harness/ubi-minimal-bazel-test",
     tag = "latest-test",
     tags = [
         "manual",
