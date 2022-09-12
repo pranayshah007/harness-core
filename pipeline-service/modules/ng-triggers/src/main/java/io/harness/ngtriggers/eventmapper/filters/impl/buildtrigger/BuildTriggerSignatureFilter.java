@@ -72,7 +72,7 @@ public class BuildTriggerSignatureFilter implements TriggerFilter {
     for (NGTriggerEntity ngTriggerEntity : ngTriggerEntities) {
       try {
         matchedTriggers.add(ngTriggerElementMapper.toTriggerDetails(ngTriggerEntity.getAccountId(),
-            ngTriggerEntity.getOrgIdentifier(), ngTriggerEntity.getProjectIdentifier(), ngTriggerEntity.getYaml()));
+            ngTriggerEntity.getOrgIdentifier(), ngTriggerEntity.getProjectIdentifier(), ngTriggerEntity.getYaml(), ngTriggerEntity.getServiceV2()));
       } catch (Exception e) {
         log.error("While processing PollingEvent, Failed to generate toTriggerDetails for Trigger: "
                 + TriggerHelper.getTriggerRef(ngTriggerEntity),

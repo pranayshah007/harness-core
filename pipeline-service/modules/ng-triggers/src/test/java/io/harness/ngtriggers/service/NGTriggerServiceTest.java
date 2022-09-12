@@ -177,7 +177,7 @@ public class NGTriggerServiceTest extends CategoryTest {
                     .build())
             .build();
     try {
-      ngTriggerServiceImpl.validateTriggerConfig(triggerDetails);
+      ngTriggerServiceImpl.validateTriggerConfig(triggerDetails, false);
       fail("bad cron not caught");
     } catch (Exception e) {
       assertThat(e instanceof IllegalArgumentException).isTrue();
@@ -191,28 +191,28 @@ public class NGTriggerServiceTest extends CategoryTest {
     NGTriggerEntity ngTriggerEntity = NGTriggerEntity.builder().identifier("").name("name").build();
     TriggerDetails triggerDetails = TriggerDetails.builder().ngTriggerEntity(ngTriggerEntity).build();
 
-    assertThatThrownBy(() -> ngTriggerServiceImpl.validateTriggerConfig(triggerDetails))
+    assertThatThrownBy(() -> ngTriggerServiceImpl.validateTriggerConfig(triggerDetails, false))
         .isInstanceOf(InvalidArgumentsException.class);
-    assertThatThrownBy(() -> ngTriggerServiceImpl.validateTriggerConfig(triggerDetails))
+    assertThatThrownBy(() -> ngTriggerServiceImpl.validateTriggerConfig(triggerDetails, false))
         .hasMessage("Identifier can not be empty");
 
     ngTriggerEntity.setIdentifier(null);
-    assertThatThrownBy(() -> ngTriggerServiceImpl.validateTriggerConfig(triggerDetails))
+    assertThatThrownBy(() -> ngTriggerServiceImpl.validateTriggerConfig(triggerDetails, false))
         .isInstanceOf(InvalidArgumentsException.class);
-    assertThatThrownBy(() -> ngTriggerServiceImpl.validateTriggerConfig(triggerDetails))
+    assertThatThrownBy(() -> ngTriggerServiceImpl.validateTriggerConfig(triggerDetails, false))
         .hasMessage("Identifier can not be empty");
 
     ngTriggerEntity.setIdentifier("  ");
-    assertThatThrownBy(() -> ngTriggerServiceImpl.validateTriggerConfig(triggerDetails))
+    assertThatThrownBy(() -> ngTriggerServiceImpl.validateTriggerConfig(triggerDetails, false))
         .isInstanceOf(InvalidArgumentsException.class);
-    assertThatThrownBy(() -> ngTriggerServiceImpl.validateTriggerConfig(triggerDetails))
+    assertThatThrownBy(() -> ngTriggerServiceImpl.validateTriggerConfig(triggerDetails, false))
         .hasMessage("Identifier can not be empty");
 
     ngTriggerEntity.setIdentifier("a1");
     ngTriggerEntity.setName("");
-    assertThatThrownBy(() -> ngTriggerServiceImpl.validateTriggerConfig(triggerDetails))
+    assertThatThrownBy(() -> ngTriggerServiceImpl.validateTriggerConfig(triggerDetails, false))
         .isInstanceOf(InvalidArgumentsException.class);
-    assertThatThrownBy(() -> ngTriggerServiceImpl.validateTriggerConfig(triggerDetails))
+    assertThatThrownBy(() -> ngTriggerServiceImpl.validateTriggerConfig(triggerDetails, false))
         .hasMessage("Name can not be empty");
   }
 
@@ -235,7 +235,7 @@ public class NGTriggerServiceTest extends CategoryTest {
                     .build())
             .build();
 
-    ngTriggerServiceImpl.validateTriggerConfig(triggerDetails);
+    ngTriggerServiceImpl.validateTriggerConfig(triggerDetails, false);
   }
 
   @Test

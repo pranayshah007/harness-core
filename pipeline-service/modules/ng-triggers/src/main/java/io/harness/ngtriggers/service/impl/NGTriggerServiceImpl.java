@@ -847,7 +847,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     try {
       ValidationResult validationResult = triggerValidationHandler.applyValidations(
           ngTriggerElementMapper.toTriggerDetails(ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
-              ngTriggerEntity.getProjectIdentifier(), ngTriggerEntity.getYaml()), Optional.of(serviceV2));
+              ngTriggerEntity.getProjectIdentifier(), ngTriggerEntity.getYaml(), serviceV2), Optional.of(serviceV2));
       if (!validationResult.isSuccess()) {
         ngTriggerEntity.setEnabled(false);
       }
@@ -913,10 +913,10 @@ public class NGTriggerServiceImpl implements NGTriggerService {
 
   @Override
   public TriggerDetails fetchTriggerEntity(
-      String accountId, String orgId, String projectId, String pipelineId, String triggerId, String newYaml) {
+      String accountId, String orgId, String projectId, String pipelineId, String triggerId, String newYaml, boolean serviceV2) {
     NGTriggerConfigV2 config = ngTriggerElementMapper.toTriggerConfigV2(newYaml);
     Optional<NGTriggerEntity> existingEntity = get(accountId, orgId, projectId, pipelineId, triggerId, false);
-    NGTriggerEntity entity = ngTriggerElementMapper.toTriggerEntity(accountId, orgId, projectId, triggerId, newYaml);
+    NGTriggerEntity entity = ngTriggerElementMapper.toTriggerEntity(accountId, orgId, projectId, triggerId, newYaml, serviceV2);
     if (existingEntity.isPresent()) {
       ngTriggerElementMapper.copyEntityFieldsOutsideOfYml(existingEntity.get(), entity);
     }

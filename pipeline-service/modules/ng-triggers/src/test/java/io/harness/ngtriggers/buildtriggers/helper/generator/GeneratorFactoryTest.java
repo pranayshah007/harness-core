@@ -131,7 +131,7 @@ public class GeneratorFactoryTest extends CategoryTest {
     String ngTriggerYaml_artifact_ecr =
         Resources.toString(Objects.requireNonNull(classLoader.getResource(triggerYmlPath)), StandardCharsets.UTF_8);
     TriggerDetails triggerDetails =
-        ngTriggerElementMapper.toTriggerDetails("acc", "org", "proj", ngTriggerYaml_artifact_ecr);
+        ngTriggerElementMapper.toTriggerDetails("acc", "org", "proj", ngTriggerYaml_artifact_ecr, false);
     BuildTriggerOpsData buildTriggerOpsData = buildTriggerHelper.generateBuildTriggerOpsDataForArtifact(
         triggerDetails, ecr_pipeline_artifact_snippet_runtime_all);
     PollingItemGenerator pollingItemGenerator = generatorFactory.retrievePollingItemGenerator(buildTriggerOpsData);

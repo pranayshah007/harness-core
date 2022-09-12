@@ -190,10 +190,10 @@ public class NGTriggerElementMapper {
   }
 
   public TriggerDetails toTriggerDetails(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String yaml) {
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String yaml, boolean serviceV2) {
     NGTriggerConfigV2 config = toTriggerConfigV2(yaml);
     NGTriggerEntity ngTriggerEntity =
-        toTriggerEntity(accountIdentifier, orgIdentifier, projectIdentifier, config, yaml);
+        toTriggerEntity(accountIdentifier, orgIdentifier, projectIdentifier, config, yaml, serviceV2);
     return TriggerDetails.builder().ngTriggerConfigV2(config).ngTriggerEntity(ngTriggerEntity).build();
   }
 
@@ -205,7 +205,7 @@ public class NGTriggerElementMapper {
   public TriggerDetails mergeTriggerEntity(NGTriggerEntity existingEntity, String newYaml) {
     NGTriggerConfigV2 config = toTriggerConfigV2(newYaml);
     NGTriggerEntity entity = toTriggerEntity(existingEntity.getAccountId(), existingEntity.getOrgIdentifier(),
-        existingEntity.getProjectIdentifier(), existingEntity.getIdentifier(), newYaml);
+        existingEntity.getProjectIdentifier(), existingEntity.getIdentifier(), newYaml, existingEntity.getServiceV2());
 
     copyEntityFieldsOutsideOfYml(existingEntity, entity);
     return TriggerDetails.builder().ngTriggerConfigV2(config).ngTriggerEntity(entity).build();
@@ -229,16 +229,16 @@ public class NGTriggerElementMapper {
   }
 
   public NGTriggerEntity toTriggerEntity(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier, String yaml) {
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier, String yaml, boolean serviceV2) {
     NGTriggerConfigV2 config = toTriggerConfigV2(yaml);
     if (!identifier.equals(config.getIdentifier())) {
       throw new InvalidRequestException("Identifier in url and yaml do not match");
     }
-    return toTriggerEntity(accountIdentifier, orgIdentifier, projectIdentifier, config, yaml);
+    return toTriggerEntity(accountIdentifier, orgIdentifier, projectIdentifier, config, yaml, serviceV2);
   }
 
   public NGTriggerEntity toTriggerEntity(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, NGTriggerConfigV2 config, String yaml) {
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, NGTriggerConfigV2 config, String yaml, boolean serviceV2) {
     NGTriggerEntityBuilder entityBuilder = NGTriggerEntity.builder()
                                                .name(config.getName())
                                                .identifier(config.getIdentifier())
@@ -253,6 +253,7 @@ public class NGTriggerElementMapper {
                                                .metadata(toMetadata(config.getSource(), accountIdentifier))
                                                .enabled(config.getEnabled())
                                                .pollInterval(config.getSource().getPollInterval())
+                                                .serviceV2(serviceV2)
                                                .tags(TagMapper.convertToList(config.getTags()));
 
     if (config.getSource().getType() == NGTriggerType.SCHEDULED) {

@@ -148,7 +148,7 @@ public interface NGTriggerResource {
           "targetIdentifier") @ResourceIdentifier String targetIdentifier,
       @PathParam("triggerIdentifier") String triggerIdentifier,
       @NotNull @ApiParam(hidden = true, type = "") String yaml,
-      @QueryParam("ignoreError") @DefaultValue("false") boolean ignoreError, @QueryParam("serviceV2") @DefaultValue("true") boolean serviceV2);
+      @QueryParam("ignoreError") @DefaultValue("false") boolean ignoreError);
 
   @PUT
   @Path("{triggerIdentifier}/status")
@@ -168,7 +168,7 @@ public interface NGTriggerResource {
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
       @Parameter(description = "Identifier of the target pipeline under which trigger resides") @NotNull @QueryParam(
           "targetIdentifier") @ResourceIdentifier String targetIdentifier,
-      @PathParam("triggerIdentifier") String triggerIdentifier, @NotNull @QueryParam("status") boolean status, @QueryParam("serviceV2") @DefaultValue("true") boolean serviceV2);
+      @PathParam("triggerIdentifier") String triggerIdentifier, @NotNull @QueryParam("status") boolean status);
 
   @DELETE
   @Operation(operationId = "deleteTrigger", summary = "Deletes Trigger by identifier.",

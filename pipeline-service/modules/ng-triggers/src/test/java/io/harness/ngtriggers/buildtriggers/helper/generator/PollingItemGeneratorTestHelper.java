@@ -20,6 +20,8 @@ import io.harness.polling.contracts.PollingItem;
 
 import lombok.experimental.UtilityClass;
 
+import java.util.Optional;
+
 @UtilityClass
 @OwnedBy(PIPELINE)
 public class PollingItemGeneratorTestHelper {
@@ -34,7 +36,7 @@ public class PollingItemGeneratorTestHelper {
 
   public void validateBuildType(BuildTriggerOpsData buildTriggerOpsData, BuildTriggerHelper buildTriggerHelper) {
     try {
-      buildTriggerHelper.validateBuildType(buildTriggerOpsData);
+      buildTriggerHelper.validateBuildType(buildTriggerOpsData, Optional.of(Boolean.FALSE));
     } catch (Exception e) {
       fail("Exception not expected");
     }

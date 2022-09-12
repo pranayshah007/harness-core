@@ -76,7 +76,7 @@ public class BuildTriggerValidationFilter implements TriggerFilter {
   boolean checkTriggerEligibility(TriggerDetails triggerDetails) {
     boolean result = false;
     try {
-      ValidationResult validationResult = triggerValidationHandler.applyValidations(triggerDetails, Optional.empty());
+      ValidationResult validationResult = triggerValidationHandler.applyValidations(triggerDetails, Optional.of(triggerDetails.getNgTriggerEntity().getServiceV2()));
       ngTriggerService.updateTriggerWithValidationStatus(triggerDetails.getNgTriggerEntity(), validationResult);
 
       if (!validationResult.isSuccess()) {

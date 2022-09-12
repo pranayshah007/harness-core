@@ -66,7 +66,7 @@ public class HelmGcsPollingItemGeneratorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testHelmGcsPollingItemGeneration_pipelineContainsFixedValuesExceptTag() throws Exception {
     TriggerDetails triggerDetails =
-        ngTriggerElementMapper.toTriggerDetails("acc", "org", "proj", ng_trigger_manifest_helm_gcs);
+        ngTriggerElementMapper.toTriggerDetails("acc", "org", "proj", ng_trigger_manifest_helm_gcs, false);
     triggerDetails.getNgTriggerEntity().getMetadata().getBuildMetadata().setPollingConfig(
         PollingConfig.builder().signature("sig1").build());
     BuildTriggerOpsData buildTriggerOpsData = buildTriggerHelper.generateBuildTriggerOpsDataForManifest(
@@ -93,7 +93,7 @@ public class HelmGcsPollingItemGeneratorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testHelmGcsPollingItemGeneration_pipelineContainsAllRuntimeInputs() throws Exception {
     TriggerDetails triggerDetails =
-        ngTriggerElementMapper.toTriggerDetails("acc", "org", "proj", ng_trigger_manifest_helm_gcs);
+        ngTriggerElementMapper.toTriggerDetails("acc", "org", "proj", ng_trigger_manifest_helm_gcs, false);
     triggerDetails.getNgTriggerEntity().getMetadata().getBuildMetadata().setPollingConfig(
         PollingConfig.builder().signature("sig1").build());
     BuildTriggerOpsData buildTriggerOpsData = buildTriggerHelper.generateBuildTriggerOpsDataForManifest(

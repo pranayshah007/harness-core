@@ -65,6 +65,6 @@ public interface NGTriggerService {
   NGTriggerEntity updateTriggerWithValidationStatus(NGTriggerEntity ngTriggerEntity, ValidationResult validationResult);
   Map<String, Map<String, String>> generateErrorMap(InputSetErrorWrapperDTOPMS inputSetErrorWrapperDTOPMS);
   TriggerDetails fetchTriggerEntity(
-      String accountId, String orgId, String projectId, String pipelineId, String triggerId, String newYaml);
+      String accountId, String orgId, String projectId, String pipelineId, String triggerId, String newYaml, boolean serviceV2);
   Object fetchExecutionSummaryV2(String planExecutionId, String accountId, String orgId, String projectId);
 }
