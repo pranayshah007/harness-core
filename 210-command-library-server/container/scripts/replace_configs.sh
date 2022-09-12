@@ -10,7 +10,7 @@ replace_key_value () {
   CONFIG_KEY="$1";
   CONFIG_VALUE="$2";
   if [[ "" != "$CONFIG_VALUE" ]]; then
-    yq -i '.env(CONFIG_KEY)"=env(CONFIG_VALUE)' "$CONFIG_FILE"
+    export CONFIG_VALUE; export CONFIG_KEY; yq -i '.env(CONFIG_KEY)"=env(CONFIG_VALUE)' "$CONFIG_FILE"
   fi
 }
 
@@ -28,17 +28,17 @@ yq -i 'del(.server.adminConnectors)' /opt/harness/command-library-server-config.
 yq -i 'del(.server.applicationConnectors[0])' /opt/harness/command-library-server-config.yml
 
 if [[ "" != "$LOGGING_LEVEL" ]]; then
-  yq -i '.logging.level=env(LOGGING_LEVEL)' /opt/harness/command-library-server-config.yml
+  export LOGGING_LEVEL; yq -i '.logging.level=env(LOGGING_LEVEL)' /opt/harness/command-library-server-config.yml
 fi
 
 if [[ "" != "$COMMAND_LIBRARY_SERVER_PORT" ]]; then
-  yq -i '.server.applicationConnectors[0].port=env(COMMAND_LIBRARY_SERVER_PORT)' /opt/harness/command-library-server-config.yml
+  export COMMAND_LIBRARY_SERVER_PORT; yq -i '.server.applicationConnectors[0].port=env(COMMAND_LIBRARY_SERVER_PORT)' /opt/harness/command-library-server-config.yml
 else
   yq -i '.server.applicationConnectors[0].port=7070' /opt/harness/command-library-server-config.yml
 fi
 
 if [[ "" != "$MONGO_URI" ]]; then
-  yq -i '.mongo.uri=env(MONGO_URI)' /opt/harness/command-library-server-config.yml
+  export MONGO_URI; yq -i '.mongo.uri=env(MONGO_URI)' /opt/harness/command-library-server-config.yml
 fi
 
 yq -i '.server.requestLog.appenders[0].type="console"' /opt/harness/command-library-server-config.yml
@@ -53,7 +53,7 @@ else
 fi
 
 if [[ "" != "$MANAGER_TO_COMMAND_LIBRARY_SERVICE_SECRET" ]]; then
-  yq -i '.serviceSecret.managerToCommandLibraryServiceSecret=env(MANAGER_TO_COMMAND_LIBRARY_SERVICE_SECRET)' /opt/harness/command-library-server-config.yml
+  export MANAGER_TO_COMMAND_LIBRARY_SERVICE_SECRET; yq -i '.serviceSecret.managerToCommandLibraryServiceSecret=env(MANAGER_TO_COMMAND_LIBRARY_SERVICE_SECRET)' /opt/harness/command-library-server-config.yml
 fi
 
 if [[ "" != "$ALLOWED_TAGS_TO_ADD" ]]; then

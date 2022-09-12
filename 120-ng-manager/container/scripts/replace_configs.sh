@@ -12,7 +12,7 @@ replace_key_value () {
   CONFIG_KEY="$1";
   CONFIG_VALUE="$2";
   if [[ "" != "$CONFIG_VALUE" ]]; then
-    yq -i '.env(CONFIG_KEY)=env(CONFIG_VALUE)' $CONFIG_FILE
+    export CONFIG_VALUE; export CONFIG_KEY; export CONFIG_KEY=.$CONFIG_KEY; yq -i 'eval(strenv(CONFIG_KEY))=env(CONFIG_VALUE)' $CONFIG_FILE
   fi
 }
 
@@ -22,9 +22,9 @@ write_mongo_hosts_and_ports() {
     HOST=$(cut -d: -f 1 <<< "${HOST_AND_PORT[$INDEX]}")
     PORT=$(cut -d: -f 2 -s <<< "${HOST_AND_PORT[$INDEX]}")
 
-    export ARG1=$1; yq -i '.env(ARG1).env(INDEX).host=env(HOST)' $CONFIG_FILE
+    export HOST; export ARG1=$1; export INDEX; export INDEX; yq -i '.env(ARG1).[env(INDEX)].host=env(HOST)' $CONFIG_FILE
     if [[ "" != "$PORT" ]]; then
-      export ARG1=$1; yq -i '.env(ARG1).env(INDEX).port=env(PORT)' $CONFIG_FILE
+      export PORT; export ARG1=$1; export INDEX; export INDEX; yq -i '.env(ARG1).[env(INDEX)].port=env(PORT)' $CONFIG_FILE
     fi
   done
 }
@@ -34,7 +34,7 @@ write_mongo_params() {
   for PARAM_PAIR in "${PARAMS[@]}"; do
     NAME=$(cut -d= -f 1 <<< "$PARAM_PAIR")
     VALUE=$(cut -d= -f 2 <<< "$PARAM_PAIR")
-    export ARG1=$1; yq -i '.env(ARG1).params.env(NAME)=env(VALUE)' $CONFIG_FILE
+    export VALUE; export ARG1=$1; export NAME; yq -i '.env(ARG1).params.env(NAME)=env(VALUE)' $CONFIG_FILE
   done
 }
 
@@ -46,7 +46,7 @@ yq -i 'del(.pmsSdkGrpcServerConfig.connectors.[] | select(.secure == true))' $CO
 yq -i 'del(.gitSyncServerConfig.connectors.[] | select(.secure == true))' $CONFIG_FILE
 
 if [[ "" != "$LOGGING_LEVEL" ]]; then
-    yq -i '.logging.level=env(LOGGING_LEVEL)' $CONFIG_FILE
+    export LOGGING_LEVEL; yq -i '.logging.level=env(LOGGING_LEVEL)' $CONFIG_FILE
 fi
 
 if [[ "" != "$LOGGERS" ]]; then
@@ -54,66 +54,66 @@ if [[ "" != "$LOGGERS" ]]; then
   for ITEM in "${LOGGER_ITEMS[@]}"; do
     LOGGER=`echo $ITEM | awk -F= '{print $1}'`
     LOGGER_LEVEL=`echo $ITEM | awk -F= '{print $2}'`
-    yq -i '.logging.loggers.env(LOGGER)=env(LOGGER_LEVEL)' $CONFIG_FILE
+    export LOGGER_LEVEL; export LOGGER; yq -i '.logging.loggers.env(LOGGER)=env(LOGGER_LEVEL)' $CONFIG_FILE
   done
 fi
 
 if [[ "" != "$SERVER_PORT" ]]; then
-  yq -i '.server.applicationConnectors[0].port=env(SERVER_PORT)' $CONFIG_FILE
+  export SERVER_PORT; yq -i '.server.applicationConnectors[0].port=env(SERVER_PORT)' $CONFIG_FILE
 else
   yq -i '.server.applicationConnectors[0].port=7090' $CONFIG_FILE
 fi
 
 
 if [[ "" != "$SERVER_MAX_THREADS" ]]; then
-  yq -i '.server.maxThreads=env(SERVER_MAX_THREADS)' $CONFIG_FILE
+  export SERVER_MAX_THREADS; yq -i '.server.maxThreads=env(SERVER_MAX_THREADS)' $CONFIG_FILE
 fi
 
 if [[ "" != "$ALLOWED_ORIGINS" ]]; then
   yq -i 'del(.allowedOrigins)' $CONFIG_FILE
-  yq -i '.allowedOrigins=env(ALLOWED_ORIGINS)' $CONFIG_FILE
+  export ALLOWED_ORIGINS; yq -i '.allowedOrigins=env(ALLOWED_ORIGINS)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_URI" ]]; then
-  yq -i '.mongo.uri=env(MONGO_URI)' $CONFIG_FILE
+  export MONGO_URI; yq -i '.mongo.uri=env(MONGO_URI)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_HOSTS_AND_PORTS" ]]; then
   yq -i 'del(.mongo.uri)' $CONFIG_FILE
-  yq -i '.mongo.username=env(MONGO_USERNAME)' $CONFIG_FILE
-  yq -i '.mongo.password=env(MONGO_PASSWORD)' $CONFIG_FILE
-  yq -i '.mongo.database=env(MONGO_DATABASE)' $CONFIG_FILE
-  yq -i '.mongo.schema=env(MONGO_SCHEMA)' $CONFIG_FILE
+  export MONGO_USERNAME; yq -i '.mongo.username=env(MONGO_USERNAME)' $CONFIG_FILE
+  export MONGO_PASSWORD; yq -i '.mongo.password=env(MONGO_PASSWORD)' $CONFIG_FILE
+  export MONGO_DATABASE; yq -i '.mongo.database=env(MONGO_DATABASE)' $CONFIG_FILE
+  export MONGO_SCHEMA; yq -i '.mongo.schema=env(MONGO_SCHEMA)' $CONFIG_FILE
   write_mongo_hosts_and_ports mongo "$MONGO_HOSTS_AND_PORTS"
   write_mongo_params mongo "$MONGO_PARAMS"
 fi
 
 if [[ "" != "$MONGO_TRACE_MODE" ]]; then
-  yq -i '.mongo.traceMode=env(MONGO_TRACE_MODE)' $CONFIG_FILE
+  export MONGO_TRACE_MODE; yq -i '.mongo.traceMode=env(MONGO_TRACE_MODE)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_CONNECT_TIMEOUT" ]]; then
-  yq -i '.mongo.connectTimeout=env(MONGO_CONNECT_TIMEOUT)' $CONFIG_FILE
+  export MONGO_CONNECT_TIMEOUT; yq -i '.mongo.connectTimeout=env(MONGO_CONNECT_TIMEOUT)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_SERVER_SELECTION_TIMEOUT" ]]; then
-  yq -i '.mongo.serverSelectionTimeout=env(MONGO_SERVER_SELECTION_TIMEOUT)' $CONFIG_FILE
+  export MONGO_SERVER_SELECTION_TIMEOUT; yq -i '.mongo.serverSelectionTimeout=env(MONGO_SERVER_SELECTION_TIMEOUT)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MAX_CONNECTION_IDLE_TIME" ]]; then
-  yq -i '.mongo.maxConnectionIdleTime=env(MAX_CONNECTION_IDLE_TIME)' $CONFIG_FILE
+  export MAX_CONNECTION_IDLE_TIME; yq -i '.mongo.maxConnectionIdleTime=env(MAX_CONNECTION_IDLE_TIME)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_CONNECTIONS_PER_HOST" ]]; then
-  yq -i '.mongo.connectionsPerHost=env(MONGO_CONNECTIONS_PER_HOST)' $CONFIG_FILE
+  export MONGO_CONNECTIONS_PER_HOST; yq -i '.mongo.connectionsPerHost=env(MONGO_CONNECTIONS_PER_HOST)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_INDEX_MANAGER_MODE" ]]; then
-  yq -i '.mongo.indexManagerMode=env(MONGO_INDEX_MANAGER_MODE)' $CONFIG_FILE
+  export MONGO_INDEX_MANAGER_MODE; yq -i '.mongo.indexManagerMode=env(MONGO_INDEX_MANAGER_MODE)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_TRANSACTIONS_ALLOWED" ]]; then
-  yq -i '.mongo.transactionsEnabled=env(MONGO_TRANSACTIONS_ALLOWED)' $CONFIG_FILE
+  export MONGO_TRANSACTIONS_ALLOWED; yq -i '.mongo.transactionsEnabled=env(MONGO_TRANSACTIONS_ALLOWED)' $CONFIG_FILE
 fi
 
 <<<<<<< HEAD
@@ -137,197 +137,197 @@ fi
 =======
 >>>>>>> fc0896a0b66 (feat: [SPG-143]: upgrade from yq3 to yq4 - handle special cases)
 if [[ "" != "$MANAGER_TARGET" ]]; then
-  yq -i '.grpcClient.target=env(MANAGER_TARGET)' $CONFIG_FILE
+  export MANAGER_TARGET; yq -i '.grpcClient.target=env(MANAGER_TARGET)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MANAGER_AUTHORITY" ]]; then
-  yq -i '.grpcClient.authority=env(MANAGER_AUTHORITY)' $CONFIG_FILE
+  export MANAGER_AUTHORITY; yq -i '.grpcClient.authority=env(MANAGER_AUTHORITY)' $CONFIG_FILE
 fi
 
 if [[ "" != "$GRPC_SERVER_PORT" ]]; then
-  yq -i '.grpcServer.connectors[0].port=env(GRPC_SERVER_PORT)' $CONFIG_FILE
+  export GRPC_SERVER_PORT; yq -i '.grpcServer.connectors[0].port=env(GRPC_SERVER_PORT)' $CONFIG_FILE
 fi
 
 if [[ "" != "$NEXT_GEN_MANAGER_SECRET" ]]; then
-  yq -i '.nextGen.managerServiceSecret=env(NEXT_GEN_MANAGER_SECRET)' $CONFIG_FILE
+  export NEXT_GEN_MANAGER_SECRET; yq -i '.nextGen.managerServiceSecret=env(NEXT_GEN_MANAGER_SECRET)' $CONFIG_FILE
 fi
 
 if [[ "" != "$NEXT_GEN_MANAGER_SECRET" ]]; then
-  yq -i '.nextGen.ngManagerServiceSecret=env(NEXT_GEN_MANAGER_SECRET)' $CONFIG_FILE
+  export NEXT_GEN_MANAGER_SECRET; yq -i '.nextGen.ngManagerServiceSecret=env(NEXT_GEN_MANAGER_SECRET)' $CONFIG_FILE
 fi
 
 if [[ "" != "$USER_VERIFICATION_SECRET" ]]; then
-  yq -i '.nextGen.userVerificationSecret=env(USER_VERIFICATION_SECRET)' $CONFIG_FILE
+  export USER_VERIFICATION_SECRET; yq -i '.nextGen.userVerificationSecret=env(USER_VERIFICATION_SECRET)' $CONFIG_FILE
 fi
 
 if [[ "" != "$JWT_IDENTITY_SERVICE_SECRET" ]]; then
-  yq -i '.nextGen.jwtIdentityServiceSecret=env(JWT_IDENTITY_SERVICE_SECRET)' $CONFIG_FILE
+  export JWT_IDENTITY_SERVICE_SECRET; yq -i '.nextGen.jwtIdentityServiceSecret=env(JWT_IDENTITY_SERVICE_SECRET)' $CONFIG_FILE
 fi
 
 if [[ "" != "$NEXT_GEN_MANAGER_SECRET" ]]; then
-  yq -i '.nextGen.pipelineServiceSecret=env(NEXT_GEN_MANAGER_SECRET)' $CONFIG_FILE
+  export NEXT_GEN_MANAGER_SECRET; yq -i '.nextGen.pipelineServiceSecret=env(NEXT_GEN_MANAGER_SECRET)' $CONFIG_FILE
 fi
 
 if [[ "" != "$NEXT_GEN_MANAGER_SECRET" ]]; then
-  yq -i '.nextGen.ciManagerSecret=env(NEXT_GEN_MANAGER_SECRET)' $CONFIG_FILE
+  export NEXT_GEN_MANAGER_SECRET; yq -i '.nextGen.ciManagerSecret=env(NEXT_GEN_MANAGER_SECRET)' $CONFIG_FILE
 fi
 
 if [[ "" != "$NEXT_GEN_MANAGER_SECRET" ]]; then
-  yq -i '.nextGen.ceNextGenServiceSecret=env(NEXT_GEN_MANAGER_SECRET)' $CONFIG_FILE
+  export NEXT_GEN_MANAGER_SECRET; yq -i '.nextGen.ceNextGenServiceSecret=env(NEXT_GEN_MANAGER_SECRET)' $CONFIG_FILE
 fi
 
 if [[ "" != "$NEXT_GEN_MANAGER_SECRET" ]]; then
-  yq -i '.nextGen.ffServiceSecret=env(NEXT_GEN_MANAGER_SECRET)' $CONFIG_FILE
+  export NEXT_GEN_MANAGER_SECRET; yq -i '.nextGen.ffServiceSecret=env(NEXT_GEN_MANAGER_SECRET)' $CONFIG_FILE
 fi
 
 if [[ "" != "$TEMPLATE_SERVICE_ENDPOINT" ]]; then
-  yq -i '.templateServiceClientConfig.baseUrl=env(TEMPLATE_SERVICE_ENDPOINT)' $CONFIG_FILE
+  export TEMPLATE_SERVICE_ENDPOINT; yq -i '.templateServiceClientConfig.baseUrl=env(TEMPLATE_SERVICE_ENDPOINT)' $CONFIG_FILE
 fi
 
 if [[ "" != "$TEMPLATE_SERVICE_SECRET" ]]; then
-  yq -i '.nextGen.templateServiceSecret=env(TEMPLATE_SERVICE_SECRET)' $CONFIG_FILE
+  export TEMPLATE_SERVICE_SECRET; yq -i '.nextGen.templateServiceSecret=env(TEMPLATE_SERVICE_SECRET)' $CONFIG_FILE
 fi
 
 if [[ "" != "$AUTH_ENABLED" ]]; then
-  yq -i '.enableAuth=env(AUTH_ENABLED)' $CONFIG_FILE
+  export AUTH_ENABLED; yq -i '.enableAuth=env(AUTH_ENABLED)' $CONFIG_FILE
 fi
 
 if [[ "" != "$AUDIT_ENABLED" ]]; then
-  yq -i '.enableAudit=env(AUDIT_ENABLED)' $CONFIG_FILE
+  export AUDIT_ENABLED; yq -i '.enableAudit=env(AUDIT_ENABLED)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MANAGER_CLIENT_BASEURL" ]]; then
-  yq -i '.managerClientConfig.baseUrl=env(MANAGER_CLIENT_BASEURL)' $CONFIG_FILE
+  export MANAGER_CLIENT_BASEURL; yq -i '.managerClientConfig.baseUrl=env(MANAGER_CLIENT_BASEURL)' $CONFIG_FILE
 fi
 
 if [[ "" != "$NG_MANAGER_CLIENT_BASEURL" ]]; then
-  yq -i '.ngManagerClientConfig.baseUrl=env(NG_MANAGER_CLIENT_BASEURL)' $CONFIG_FILE
+  export NG_MANAGER_CLIENT_BASEURL; yq -i '.ngManagerClientConfig.baseUrl=env(NG_MANAGER_CLIENT_BASEURL)' $CONFIG_FILE
 fi
 
 if [[ "" != "$CENG_CLIENT_BASEURL" ]]; then
-  yq -i '.ceNextGenClientConfig.baseUrl=env(CENG_CLIENT_BASEURL)' $CONFIG_FILE
+  export CENG_CLIENT_BASEURL; yq -i '.ceNextGenClientConfig.baseUrl=env(CENG_CLIENT_BASEURL)' $CONFIG_FILE
 fi
 
 if [[ "" != "$CENG_CLIENT_READ_TIMEOUT" ]]; then
-  yq -i '.ceNextGenClientConfig.readTimeOutSeconds=env(CENG_CLIENT_READ_TIMEOUT)' $CONFIG_FILE
+  export CENG_CLIENT_READ_TIMEOUT; yq -i '.ceNextGenClientConfig.readTimeOutSeconds=env(CENG_CLIENT_READ_TIMEOUT)' $CONFIG_FILE
 fi
 
 if [[ "" != "$CENG_CLIENT_CONNECT_TIMEOUT" ]]; then
-  yq -i '.ceNextGenClientConfig.connectTimeOutSeconds=env(CENG_CLIENT_CONNECT_TIMEOUT)' $CONFIG_FILE
+  export CENG_CLIENT_CONNECT_TIMEOUT; yq -i '.ceNextGenClientConfig.connectTimeOutSeconds=env(CENG_CLIENT_CONNECT_TIMEOUT)' $CONFIG_FILE
 fi
 
 if [[ "" != "$JWT_AUTH_SECRET" ]]; then
-  yq -i '.nextGen.jwtAuthSecret=env(JWT_AUTH_SECRET)' $CONFIG_FILE
+  export JWT_AUTH_SECRET; yq -i '.nextGen.jwtAuthSecret=env(JWT_AUTH_SECRET)' $CONFIG_FILE
 fi
 
 if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then
   IFS=',' read -ra SENTINEL_URLS <<< "$EVENTS_FRAMEWORK_REDIS_SENTINELS"
   INDEX=0
   for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
-    yq -i '.eventsFramework.redis.sentinelUrls.env(INDEX)=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
+    export REDIS_SENTINEL_URL; export INDEX; export INDEX; yq -i '.eventsFramework.redis.sentinelUrls.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
     INDEX=$(expr $INDEX + 1)
   done
 fi
 
 if [[ "" != "$GRPC_SERVER_PORT" ]]; then
-  yq -i '.pmsSdkGrpcServerConfig.connectors[0].port=env(GRPC_SERVER_PORT)' $CONFIG_FILE
+  export GRPC_SERVER_PORT; yq -i '.pmsSdkGrpcServerConfig.connectors[0].port=env(GRPC_SERVER_PORT)' $CONFIG_FILE
 fi
 
 
 if [[ "" != "$SHOULD_CONFIGURE_WITH_PMS" ]]; then
-  yq -i '.shouldConfigureWithPMS=env(SHOULD_CONFIGURE_WITH_PMS)' $CONFIG_FILE
+  export SHOULD_CONFIGURE_WITH_PMS; yq -i '.shouldConfigureWithPMS=env(SHOULD_CONFIGURE_WITH_PMS)' $CONFIG_FILE
 fi
 
 if [[ "" != "$PMS_TARGET" ]]; then
-  yq -i '.pmsGrpcClientConfig.target=env(PMS_TARGET)' $CONFIG_FILE
+  export PMS_TARGET; yq -i '.pmsGrpcClientConfig.target=env(PMS_TARGET)' $CONFIG_FILE
 fi
 
 if [[ "" != "$PMS_AUTHORITY" ]]; then
-  yq -i '.pmsGrpcClientConfig.authority=env(PMS_AUTHORITY)' $CONFIG_FILE
+  export PMS_AUTHORITY; yq -i '.pmsGrpcClientConfig.authority=env(PMS_AUTHORITY)' $CONFIG_FILE
 fi
 
 if [[ "" != "$NG_MANAGER_TARGET" ]]; then
- yq -i '.gitGrpcClientConfigs.core.target=env(NG_MANAGER_TARGET)' $CONFIG_FILE
+ export NG_MANAGER_TARGET; yq -i '.gitGrpcClientConfigs.core.target=env(NG_MANAGER_TARGET)' $CONFIG_FILE
 fi
 
 if [[ "" != "$NG_MANAGER_AUTHORITY" ]]; then
-  yq -i '.gitGrpcClientConfigs.core.authority=env(NG_MANAGER_AUTHORITY)' $CONFIG_FILE
+  export NG_MANAGER_AUTHORITY; yq -i '.gitGrpcClientConfigs.core.authority=env(NG_MANAGER_AUTHORITY)' $CONFIG_FILE
 fi
 
 if [[ "" != "$NG_MANAGER_TARGET" ]]; then
-  yq -i '.gitSdkConfiguration.gitManagerGrpcClientConfig.target=env(NG_MANAGER_TARGET)' $CONFIG_FILE
+  export NG_MANAGER_TARGET; yq -i '.gitSdkConfiguration.gitManagerGrpcClientConfig.target=env(NG_MANAGER_TARGET)' $CONFIG_FILE
 fi
 
 if [[ "" != "$NG_MANAGER_AUTHORITY" ]]; then
-  yq -i '.gitSdkConfiguration.gitManagerGrpcClientConfig.authority=env(NG_MANAGER_AUTHORITY)' $CONFIG_FILE
+  export NG_MANAGER_AUTHORITY; yq -i '.gitSdkConfiguration.gitManagerGrpcClientConfig.authority=env(NG_MANAGER_AUTHORITY)' $CONFIG_FILE
 fi
 
 
 if [[ "" != "$HARNESS_IMAGE_USER_NAME" ]]; then
-  yq -i '.ciDefaultEntityConfiguration.harnessImageUseName=env(HARNESS_IMAGE_USER_NAME)' $CONFIG_FILE
+  export HARNESS_IMAGE_USER_NAME; yq -i '.ciDefaultEntityConfiguration.harnessImageUseName=env(HARNESS_IMAGE_USER_NAME)' $CONFIG_FILE
 fi
 
 if [[ "" != "$HARNESS_IMAGE_PASSWORD" ]]; then
-  yq -i '.ciDefaultEntityConfiguration.harnessImagePassword=env(HARNESS_IMAGE_PASSWORD)' $CONFIG_FILE
+  export HARNESS_IMAGE_PASSWORD; yq -i '.ciDefaultEntityConfiguration.harnessImagePassword=env(HARNESS_IMAGE_PASSWORD)' $CONFIG_FILE
 fi
 
 if [[ "" != "$CE_NG_CLIENT_BASEURL" ]]; then
-  yq -i '.ceNextGenClientConfig.baseUrl=env(CE_NG_CLIENT_BASEURL)' $CONFIG_FILE
+  export CE_NG_CLIENT_BASEURL; yq -i '.ceNextGenClientConfig.baseUrl=env(CE_NG_CLIENT_BASEURL)' $CONFIG_FILE
 fi
 
 if [[ "" != "$LW_CLIENT_BASEURL" ]]; then
-  yq -i '.lightwingClientConfig.baseUrl=env(LW_CLIENT_BASEURL)' $CONFIG_FILE
+  export LW_CLIENT_BASEURL; yq -i '.lightwingClientConfig.baseUrl=env(LW_CLIENT_BASEURL)' $CONFIG_FILE
 fi
 
 if [[ "" != "$CF_CLIENT_BASEURL" ]]; then
-  yq -i '.ffServerClientConfig.baseUrl=env(CF_CLIENT_BASEURL)' $CONFIG_FILE
+  export CF_CLIENT_BASEURL; yq -i '.ffServerClientConfig.baseUrl=env(CF_CLIENT_BASEURL)' $CONFIG_FILE
 fi
 
 if [[ "" != "$AUDIT_CLIENT_BASEURL" ]]; then
-  yq -i '.auditClientConfig.baseUrl=env(AUDIT_CLIENT_BASEURL)' $CONFIG_FILE
+  export AUDIT_CLIENT_BASEURL; yq -i '.auditClientConfig.baseUrl=env(AUDIT_CLIENT_BASEURL)' $CONFIG_FILE
 fi
 
 if [[ "" != "$SCM_SERVICE_URI" ]]; then
-  yq -i '.gitSdkConfiguration.scmConnectionConfig.url=env(SCM_SERVICE_URI)' $CONFIG_FILE
+  export SCM_SERVICE_URI; yq -i '.gitSdkConfiguration.scmConnectionConfig.url=env(SCM_SERVICE_URI)' $CONFIG_FILE
 fi
 
 if [[ "" != "$LOG_STREAMING_SERVICE_BASEURL" ]]; then
-  yq -i '.logStreamingServiceConfig.baseUrl=env(LOG_STREAMING_SERVICE_BASEURL)' $CONFIG_FILE
+  export LOG_STREAMING_SERVICE_BASEURL; yq -i '.logStreamingServiceConfig.baseUrl=env(LOG_STREAMING_SERVICE_BASEURL)' $CONFIG_FILE
 fi
 
 if [[ "" != "$LOG_STREAMING_SERVICE_TOKEN" ]]; then
-  yq -i '.logStreamingServiceConfig.serviceToken=env(LOG_STREAMING_SERVICE_TOKEN)' $CONFIG_FILE
+  export LOG_STREAMING_SERVICE_TOKEN; yq -i '.logStreamingServiceConfig.serviceToken=env(LOG_STREAMING_SERVICE_TOKEN)' $CONFIG_FILE
 fi
 
 if [[ "$STACK_DRIVER_LOGGING_ENABLED" == "true" ]]; then
   yq -i 'del(.logging.appenders.[] | select(.type == "console"))' $CONFIG_FILE
-  yq -i '(.logging.appenders | select(.type == gke-console) | .stackdriverLogEnabled) = true' $CONFIG_FILE
+  yq -i '(.logging.appenders.[] | select(.type == "gke-console") | .stackdriverLogEnabled) = true' $CONFIG_FILE
 else
   yq -i 'del(.logging.appenders.[] | select(.type == "gke-console"))' $CONFIG_FILE
 fi
 
 if [[ "" != "$TIMESCALE_PASSWORD" ]]; then
-  yq -i '.timescaledb.timescaledbPassword=env(TIMESCALE_PASSWORD)' $CONFIG_FILE
+  export TIMESCALE_PASSWORD; yq -i '.timescaledb.timescaledbPassword=env(TIMESCALE_PASSWORD)' $CONFIG_FILE
 fi
 
 if [[ "" != "$TIMESCALE_URI" ]]; then
-  yq -i '.timescaledb.timescaledbUrl=env(TIMESCALE_URI)' $CONFIG_FILE
+  export TIMESCALE_URI; yq -i '.timescaledb.timescaledbUrl=env(TIMESCALE_URI)' $CONFIG_FILE
 fi
 
 if [[ "" != "$TIMESCALEDB_USERNAME" ]]; then
-  yq -i '.timescaledb.timescaledbUsername=env(TIMESCALEDB_USERNAME)' $CONFIG_FILE
+  export TIMESCALEDB_USERNAME; yq -i '.timescaledb.timescaledbUsername=env(TIMESCALEDB_USERNAME)' $CONFIG_FILE
 fi
 
 if [[ "" != "$ENABLE_DASHBOARD_TIMESCALE" ]]; then
-  yq -i '.enableDashboardTimescale=env(ENABLE_DASHBOARD_TIMESCALE)' $CONFIG_FILE
+  export ENABLE_DASHBOARD_TIMESCALE; yq -i '.enableDashboardTimescale=env(ENABLE_DASHBOARD_TIMESCALE)' $CONFIG_FILE
 fi
 
 if [[ "" != "$FILE_STORAGE_MODE" ]]; then
-  yq -i '.fileServiceConfiguration.fileStorageMode=env(FILE_STORAGE_MODE)' $CONFIG_FILE
+  export FILE_STORAGE_MODE; yq -i '.fileServiceConfiguration.fileStorageMode=env(FILE_STORAGE_MODE)' $CONFIG_FILE
 fi
 
 if [[ "" != "$FILE_STORAGE_CLUSTER_NAME" ]]; then
-  yq -i '.fileServiceConfiguration.clusterName=env(FILE_STORAGE_CLUSTER_NAME)' $CONFIG_FILE
+  export FILE_STORAGE_CLUSTER_NAME; yq -i '.fileServiceConfiguration.clusterName=env(FILE_STORAGE_CLUSTER_NAME)' $CONFIG_FILE
 fi
 
 yq -i 'del(.codec)' $REDISSON_CACHE_FILE
@@ -348,35 +348,35 @@ replace_key_value redisLockConfig.password $LOCK_CONFIG_REDIS_PASSWORD
 replace_key_value redisLockConfig.nettyThreads $REDIS_NETTY_THREADS
 
 if [[ "" != "$LOCK_CONFIG_REDIS_URL" ]]; then
-  yq -i '.singleServerConfig.address=env(LOCK_CONFIG_REDIS_URL)' $REDISSON_CACHE_FILE
+  export LOCK_CONFIG_REDIS_URL; yq -i '.singleServerConfig.address=env(LOCK_CONFIG_REDIS_URL)' $REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$GITLAB_OAUTH_CLIENT" ]]; then
-  yq -i '.gitlabConfig.clientId=env(GITLAB_OAUTH_CLIENT)' $CONFIG_FILE
+  export GITLAB_OAUTH_CLIENT; yq -i '.gitlabConfig.clientId=env(GITLAB_OAUTH_CLIENT)' $CONFIG_FILE
 fi
 
 if [[ "" != "$GITLAB_OAUTH_SECRET" ]]; then
-  yq -i '.gitlabConfig.clientSecret=env(GITLAB_OAUTH_SECRET)' $CONFIG_FILE
+  export GITLAB_OAUTH_SECRET; yq -i '.gitlabConfig.clientSecret=env(GITLAB_OAUTH_SECRET)' $CONFIG_FILE
 fi
 
 if [[ "" != "$GITLAB_OAUTH_CALLBACK_URL" ]]; then
-  yq -i '.gitlabConfig.callbackUrl=env(GITLAB_OAUTH_CALLBACK_URL)' $CONFIG_FILE
+  export GITLAB_OAUTH_CALLBACK_URL; yq -i '.gitlabConfig.callbackUrl=env(GITLAB_OAUTH_CALLBACK_URL)' $CONFIG_FILE
 fi
 
 if [[ "" != "$OAUTH_REFRESH_FREQUECY" ]]; then
-  yq -i '.oauthRefreshFrequency=env(OAUTH_REFRESH_FREQUECY)' $CONFIG_FILE
+  export OAUTH_REFRESH_FREQUECY; yq -i '.oauthRefreshFrequency=env(OAUTH_REFRESH_FREQUECY)' $CONFIG_FILE
 fi
 
 if [[ "" != "$OAUTH_REFRESH_ENABLED" ]]; then
-  yq -i '.oauthRefreshEnabled=env(OAUTH_REFRESH_ENABLED)' $CONFIG_FILE
+  export OAUTH_REFRESH_ENABLED; yq -i '.oauthRefreshEnabled=env(OAUTH_REFRESH_ENABLED)' $CONFIG_FILE
 fi
 
 if [[ "" != "$DELEGATE_STATUS_ENDPOINT" ]]; then
-  yq -i '.delegateStatusEndpoint=env(DELEGATE_STATUS_ENDPOINT)' $CONFIG_FILE
+  export DELEGATE_STATUS_ENDPOINT; yq -i '.delegateStatusEndpoint=env(DELEGATE_STATUS_ENDPOINT)' $CONFIG_FILE
 fi
 
 if [[ "" != "$SIGNUP_TARGET_ENV" ]]; then
-  yq -i '.signupTargetEnv=env(SIGNUP_TARGET_ENV)' $CONFIG_FILE
+  export SIGNUP_TARGET_ENV; yq -i '.signupTargetEnv=env(SIGNUP_TARGET_ENV)' $CONFIG_FILE
 fi
 
 if [[ "$LOCK_CONFIG_USE_SENTINEL" == "true" ]]; then
@@ -384,21 +384,21 @@ if [[ "$LOCK_CONFIG_USE_SENTINEL" == "true" ]]; then
 fi
 
 if [[ "" != "$LOCK_CONFIG_SENTINEL_MASTER_NAME" ]]; then
-  yq -i '.sentinelServersConfig.masterName=env(LOCK_CONFIG_SENTINEL_MASTER_NAME)' $REDISSON_CACHE_FILE
+  export LOCK_CONFIG_SENTINEL_MASTER_NAME; yq -i '.sentinelServersConfig.masterName=env(LOCK_CONFIG_SENTINEL_MASTER_NAME)' $REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$LOCK_CONFIG_REDIS_SENTINELS" ]]; then
   IFS=',' read -ra SENTINEL_URLS <<< "$LOCK_CONFIG_REDIS_SENTINELS"
   INDEX=0
   for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
-    yq -i '.redisLockConfig.sentinelUrls.env(INDEX)=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
-    yq -i '.sentinelServersConfig.sentinelAddresses.env(INDEX)=env(REDIS_SENTINEL_URL)' $REDISSON_CACHE_FILE
+    export REDIS_SENTINEL_URL; export INDEX; export INDEX; yq -i '.redisLockConfig.sentinelUrls.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
+    export REDIS_SENTINEL_URL; export INDEX; export INDEX; yq -i '.sentinelServersConfig.sentinelAddresses.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $REDISSON_CACHE_FILE
     INDEX=$(expr $INDEX + 1)
   done
 fi
 
 if [[ "" != "$REDIS_NETTY_THREADS" ]]; then
-  yq -i '.nettyThreads=env(REDIS_NETTY_THREADS)' $REDISSON_CACHE_FILE
+  export REDIS_NETTY_THREADS; yq -i '.nettyThreads=env(REDIS_NETTY_THREADS)' $REDISSON_CACHE_FILE
 fi
 
 yq -i 'del(.codec)' $ENTERPRISE_REDISSON_CACHE_FILE
@@ -408,41 +408,41 @@ if [[ "$REDIS_SCRIPT_CACHE" == "false" ]]; then
 fi
 
 if [[ "" != "$EVENTS_FRAMEWORK_NETTY_THREADS" ]]; then
-  yq -i '.nettyThreads=env(EVENTS_FRAMEWORK_NETTY_THREADS)' $ENTERPRISE_REDISSON_CACHE_FILE
+  export EVENTS_FRAMEWORK_NETTY_THREADS; yq -i '.nettyThreads=env(EVENTS_FRAMEWORK_NETTY_THREADS)' $ENTERPRISE_REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$EVENTS_FRAMEWORK_REDIS_URL" ]]; then
-  yq -i '.singleServerConfig.address=env(EVENTS_FRAMEWORK_REDIS_URL)' $ENTERPRISE_REDISSON_CACHE_FILE
+  export EVENTS_FRAMEWORK_REDIS_URL; yq -i '.singleServerConfig.address=env(EVENTS_FRAMEWORK_REDIS_URL)' $ENTERPRISE_REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$EVENTS_FRAMEWORK_REDIS_USERNAME" ]]; then
-  yq -i '.singleServerConfig.username=env(EVENTS_FRAMEWORK_REDIS_USERNAME)' $ENTERPRISE_REDISSON_CACHE_FILE
+  export EVENTS_FRAMEWORK_REDIS_USERNAME; yq -i '.singleServerConfig.username=env(EVENTS_FRAMEWORK_REDIS_USERNAME)' $ENTERPRISE_REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$EVENTS_FRAMEWORK_REDIS_PASSWORD" ]]; then
-  yq -i '.singleServerConfig.password=env(EVENTS_FRAMEWORK_REDIS_PASSWORD)' $ENTERPRISE_REDISSON_CACHE_FILE
+  export EVENTS_FRAMEWORK_REDIS_PASSWORD; yq -i '.singleServerConfig.password=env(EVENTS_FRAMEWORK_REDIS_PASSWORD)' $ENTERPRISE_REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PATH" ]]; then
-  yq -i '.singleServerConfig.sslTruststore=env(file:")' $ENTERPRISE_REDISSON_CACHE_FILE
+  export file:"$EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PATH; yq -i '.singleServerConfig.sslTruststore=env(file:")' $ENTERPRISE_REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD" ]]; then
-  yq -i '.singleServerConfig.sslTruststorePassword=env(EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD)' $ENTERPRISE_REDISSON_CACHE_FILE
+  export EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD; yq -i '.singleServerConfig.sslTruststorePassword=env(EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD)' $ENTERPRISE_REDISSON_CACHE_FILE
 fi
 
 if [[ "$EVENTS_FRAMEWORK_USE_SENTINEL" == "true" ]]; then
   yq -i 'del(.singleServerConfig)' $ENTERPRISE_REDISSON_CACHE_FILE
 
   if [[ "" != "$EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME" ]]; then
-    yq -i '.sentinelServersConfig.masterName=env(EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME)' $ENTERPRISE_REDISSON_CACHE_FILE
+    export EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME; yq -i '.sentinelServersConfig.masterName=env(EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME)' $ENTERPRISE_REDISSON_CACHE_FILE
   fi
 
   if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then
     IFS=',' read -ra SENTINEL_URLS <<< "$EVENTS_FRAMEWORK_REDIS_SENTINELS"
     INDEX=0
     for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
-      yq -i '.sentinelServersConfig.sentinelAddresses.env(INDEX)=env(REDIS_SENTINEL_URL)' $ENTERPRISE_REDISSON_CACHE_FILE
+      export REDIS_SENTINEL_URL; export INDEX; export INDEX; yq -i '.sentinelServersConfig.sentinelAddresses.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $ENTERPRISE_REDISSON_CACHE_FILE
       INDEX=$(expr $INDEX + 1)
     done
   fi

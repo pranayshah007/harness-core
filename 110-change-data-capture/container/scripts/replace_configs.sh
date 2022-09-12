@@ -10,7 +10,7 @@ replace_key_value () {
   CONFIG_KEY="$1";
   CONFIG_VALUE="$2";
   if [[ "" != "$CONFIG_VALUE" ]]; then
-    yq -i '.env(CONFIG_KEY)=env(CONFIG_VALUE)' $CONFIG_FILE
+    export CONFIG_VALUE; export CONFIG_KEY; export CONFIG_KEY=.$CONFIG_KEY; yq -i 'eval(strenv(CONFIG_KEY))=env(CONFIG_VALUE)' $CONFIG_FILE
   fi
 }
 
@@ -25,51 +25,51 @@ fi
 yq -i 'del(.connectors[0])' $CONFIG_FILE
 
 if [[ "" != "$MONGO_URI" ]]; then
-  yq -i '.harness-mongo.uri=env(MONGO_URI)' $CONFIG_FILE
+  export MONGO_URI; yq -i '.harness-mongo.uri=env(MONGO_URI)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_TAG_NAME" ]]; then
-  yq -i '.mongotags.tagKey=env(MONGO_TAG_NAME)' $CONFIG_FILE
+  export MONGO_TAG_NAME; yq -i '.mongotags.tagKey=env(MONGO_TAG_NAME)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_TAG_VALUE" ]]; then
-  yq -i '.mongotags.tagValue=env(MONGO_TAG_VALUE)' $CONFIG_FILE
+  export MONGO_TAG_VALUE; yq -i '.mongotags.tagValue=env(MONGO_TAG_VALUE)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_INDEX_MANAGER_MODE" ]]; then
-  yq -i '.harness-mongo.indexManagerMode=env(MONGO_INDEX_MANAGER_MODE)' $CONFIG_FILE
+  export MONGO_INDEX_MANAGER_MODE; yq -i '.harness-mongo.indexManagerMode=env(MONGO_INDEX_MANAGER_MODE)' $CONFIG_FILE
 fi
 
 if [[ "" != "$EVEMTS_MONGO_INDEX_MANAGER_MODE" ]]; then
-  yq -i '.events-mongo.indexManagerMode=env(EVEMTS_MONGO_INDEX_MANAGER_MODE)' $CONFIG_FILE
+  export EVEMTS_MONGO_INDEX_MANAGER_MODE; yq -i '.events-mongo.indexManagerMode=env(EVEMTS_MONGO_INDEX_MANAGER_MODE)' $CONFIG_FILE
 fi
 
 if [[ "" != "$EVENTS_MONGO_URI" ]]; then
-  yq -i '.events-mongo.uri=env(EVENTS_MONGO_URI)' $CONFIG_FILE
+  export EVENTS_MONGO_URI; yq -i '.events-mongo.uri=env(EVENTS_MONGO_URI)' $CONFIG_FILE
 fi
 
 if [[ "" != "$PMS_MONGO_URI" ]]; then
-  yq -i '.pms-harness.uri=env(PMS_MONGO_URI)' $CONFIG_FILE
+  export PMS_MONGO_URI; yq -i '.pms-harness.uri=env(PMS_MONGO_URI)' $CONFIG_FILE
 fi
 
 if [[ "" != "$CDC_MONGO_URI" ]]; then
-  yq -i '.cdc-mongo.uri=env(CDC_MONGO_URI)' $CONFIG_FILE
+  export CDC_MONGO_URI; yq -i '.cdc-mongo.uri=env(CDC_MONGO_URI)' $CONFIG_FILE
 fi
 
 if [[ "" != "$TIMESCALEDB_URI" ]]; then
-  yq -i '.timescaledb.timescaledbUrl=env(TIMESCALEDB_URI)' $CONFIG_FILE
+  export TIMESCALEDB_URI; yq -i '.timescaledb.timescaledbUrl=env(TIMESCALEDB_URI)' $CONFIG_FILE
 fi
 
 if [[ "" != "$TIMESCALEDB_USERNAME" ]]; then
-  yq -i '.timescaledb.timescaledbUsername=env(TIMESCALEDB_USERNAME)' $CONFIG_FILE
+  export TIMESCALEDB_USERNAME; yq -i '.timescaledb.timescaledbUsername=env(TIMESCALEDB_USERNAME)' $CONFIG_FILE
 fi
 
 if [[ "" != "$TIMESCALEDB_PASSWORD" ]]; then
-  yq -i '.timescaledb.timescaledbPassword=env(TIMESCALEDB_PASSWORD)' $CONFIG_FILE
+  export TIMESCALEDB_PASSWORD; yq -i '.timescaledb.timescaledbPassword=env(TIMESCALEDB_PASSWORD)' $CONFIG_FILE
 fi
 
 if [[ "" != "$GCP_PROJECT_ID" ]]; then
-  yq -i '.gcp-project-id=env(GCP_PROJECT_ID)' $CONFIG_FILE
+  export GCP_PROJECT_ID; yq -i '.gcp-project-id=env(GCP_PROJECT_ID)' $CONFIG_FILE
 fi
 
 if [[ "" != "$NG_HARNESS_MONGO_URI" ]]; then
