@@ -18,6 +18,7 @@ import com.google.common.base.Strings;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.jayway.jsonpath.internal.Utils;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -66,7 +67,7 @@ public class TimeScaleDBServiceImpl implements TimeScaleDBService {
     }
   }
 
-  @RetryOnException(retryCount = 4, sleepDurationInMilliseconds = 200)
+  @RetryOnException(retryCount = 4, sleepDurationInMilliseconds = 200, retryOn = IOException.class)
   public void createConnection(Properties dbProperties) throws SQLException {
     try (Connection connection = DriverManager.getConnection(timeScaleDBConfig.getTimescaledbUrl(), dbProperties);
          Statement st = connection.createStatement(); ResultSet rs = st.executeQuery("SELECT VERSION()")) {
