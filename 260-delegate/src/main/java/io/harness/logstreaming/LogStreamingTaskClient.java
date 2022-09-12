@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import lombok.Builder;
@@ -64,10 +65,14 @@ public class LogStreamingTaskClient implements ILogStreamingTaskClient {
   private final String token;
   private final String accountId;
   private final String baseLogKey;
-  private ScheduledExecutorService scheduledExecutorService;
+  private static ScheduledExecutorService scheduledExecutorService = new ScheduledThreadPoolExecutor(50,
+      new ThreadFactoryBuilder()
+          .setNameFormat("new-log-streaming-client-%d")
+          .setPriority(Thread.NORM_PRIORITY)
+          .build());
   @Deprecated private final String appId;
   @Deprecated private final String activityId;
-
+  ScheduledFuture scheduledFuture;
   private final ITaskProgressClient taskProgressClient;
 
   @Default private final Map<String, List<LogLine>> logCache = new HashMap<>();
@@ -81,9 +86,7 @@ public class LogStreamingTaskClient implements ILogStreamingTaskClient {
     } catch (Exception ex) {
       log.error("Unable to open log stream for account {} and key {}", accountId, logKey, ex);
     }
-    scheduledExecutorService = new ScheduledThreadPoolExecutor(1,
-        new ThreadFactoryBuilder().setNameFormat("log-streaming-client-%d").setPriority(Thread.NORM_PRIORITY).build());
-    scheduledExecutorService.scheduleAtFixedRate(this::dispatchLogs, 0, 100, TimeUnit.MILLISECONDS);
+    scheduledFuture = scheduledExecutorService.scheduleAtFixedRate(this::dispatchLogs, 0, 100, TimeUnit.MILLISECONDS);
   }
 
   @Override
@@ -111,6 +114,9 @@ public class LogStreamingTaskClient implements ILogStreamingTaskClient {
     } catch (Exception ex) {
       log.error("Unable to close log stream for account {} and key {}", accountId, logKey, ex);
     } finally {
+      if (scheduledFuture != null) {
+        scheduledFuture.cancel(true);
+      }
       scheduledExecutorService.shutdownNow();
     }
   }
