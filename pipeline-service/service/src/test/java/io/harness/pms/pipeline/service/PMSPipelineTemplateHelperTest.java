@@ -175,12 +175,13 @@ public class PMSPipelineTemplateHelperTest extends CategoryTest {
     Call<ResponseDTO<ValidateTemplateInputsResponseDTO>> callRequest = mock(Call.class);
     doReturn(callRequest)
         .when(templateResourceClient)
-        .validateTemplateInputsForGivenYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, null, null, null, refreshRequest);
+        .validateTemplateInputsForGivenYaml(
+            ACCOUNT_ID, ORG_ID, PROJECT_ID, null, null, null, null, null, null, null, null, refreshRequest);
     when(callRequest.execute())
         .thenReturn(Response.success(ResponseDTO.newResponse(validateTemplateInputsResponseDTO)));
 
     ValidateTemplateInputsResponseDTO responseDTO =
-        pipelineTemplateHelper.validateTemplateInputsForGivenYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, GIVEN_YAML);
+        pipelineTemplateHelper.validateTemplateInputsForGivenYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, GIVEN_YAML, null);
     assertThat(responseDTO).isEqualTo(validateTemplateInputsResponseDTO);
   }
 

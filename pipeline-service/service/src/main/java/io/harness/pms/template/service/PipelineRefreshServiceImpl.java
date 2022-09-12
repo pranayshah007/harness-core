@@ -21,6 +21,7 @@ import io.harness.template.beans.refresh.NodeInfo;
 import io.harness.template.beans.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.template.beans.refresh.YamlDiffResponseDTO;
 import io.harness.template.beans.refresh.YamlFullRefreshResponseDTO;
+import io.harness.template.remote.TemplateResourceClient;
 
 import com.google.inject.Inject;
 import java.util.Optional;
@@ -28,6 +29,7 @@ import java.util.Optional;
 @OwnedBy(HarnessTeam.CDC)
 public class PipelineRefreshServiceImpl implements PipelineRefreshService {
   @Inject private PMSPipelineTemplateHelper pmsPipelineTemplateHelper;
+  @Inject private TemplateResourceClient templateResourceClient;
   @Inject private PMSPipelineService pmsPipelineService;
 
   @Override
@@ -57,7 +59,7 @@ public class PipelineRefreshServiceImpl implements PipelineRefreshService {
     if (Boolean.TRUE.equals(pipelineEntity.getTemplateReference())) {
       ValidateTemplateInputsResponseDTO validateTemplateInputsResponse =
           pmsPipelineTemplateHelper.validateTemplateInputsForGivenYaml(
-              accountId, orgId, projectId, pipelineEntity.getYaml());
+              accountId, orgId, projectId, pipelineEntity.getYaml(), pipelineEntity);
       if (!validateTemplateInputsResponse.isValidYaml()) {
         validateTemplateInputsResponse.getErrorNodeSummary().setNodeInfo(
             NodeInfo.builder().identifier(pipelineIdentifier).name(pipelineEntity.getName()).build());

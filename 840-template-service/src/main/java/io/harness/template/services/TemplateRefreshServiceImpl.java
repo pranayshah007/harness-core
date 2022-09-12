@@ -43,8 +43,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(CDC)
 public class TemplateRefreshServiceImpl implements TemplateRefreshService {
+  private NGTemplateServiceHelper templateServiceHelper;
   private TemplateInputsRefreshHelper templateInputsRefreshHelper;
   private NGTemplateService templateService;
+  private NGTemplateServiceImpl templateServiceImpl;
   private TemplateInputsValidator templateInputsValidator;
 
   private AccessControlClient accessControlClient;
@@ -53,7 +55,8 @@ public class TemplateRefreshServiceImpl implements TemplateRefreshService {
   public void refreshAndUpdateTemplate(
       String accountId, String orgId, String projectId, String templateIdentifier, String versionLabel) {
     TemplateEntity template = getTemplate(accountId, orgId, projectId, templateIdentifier, versionLabel);
-
+    templateServiceImpl.setupGitParentEntityDetails(
+        accountId, orgId, projectId, template.getRepo(), template.getConnectorRef());
     String refreshedYaml = refreshLinkedTemplateInputs(accountId, orgId, projectId, template.getYaml());
     TemplateEntity templateEntity = NGTemplateDtoMapper.toTemplateEntity(
         accountId, orgId, projectId, templateIdentifier, versionLabel, refreshedYaml);
@@ -82,7 +85,8 @@ public class TemplateRefreshServiceImpl implements TemplateRefreshService {
   public ValidateTemplateInputsResponseDTO validateTemplateInputsInTemplate(
       String accountId, String orgId, String projectId, String templateIdentifier, String versionLabel) {
     TemplateEntity template = getTemplate(accountId, orgId, projectId, templateIdentifier, versionLabel);
-
+    templateServiceImpl.setupGitParentEntityDetails(
+        accountId, orgId, projectId, template.getRepo(), template.getConnectorRef());
     ValidateTemplateInputsResponseDTO validateTemplateInputsResponse =
         templateInputsValidator.validateNestedTemplateInputsForTemplates(accountId, orgId, projectId, template);
 
@@ -102,7 +106,8 @@ public class TemplateRefreshServiceImpl implements TemplateRefreshService {
   public YamlDiffResponseDTO getYamlDiffOnRefreshingTemplate(
       String accountId, String orgId, String projectId, String templateIdentifier, String versionLabel) {
     TemplateEntity template = getTemplate(accountId, orgId, projectId, templateIdentifier, versionLabel);
-
+    templateServiceImpl.setupGitParentEntityDetails(
+        accountId, orgId, projectId, template.getRepo(), template.getConnectorRef());
     String templateYaml = template.getYaml();
     String refreshedYaml = refreshLinkedTemplateInputs(accountId, orgId, projectId, templateYaml);
 

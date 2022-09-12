@@ -195,7 +195,8 @@ public class PipelineRefreshServiceTest extends PipelineServiceTestBase {
         ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITHOUT_TEMPLATES);
     verify(pmsPipelineService).get(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITHOUT_TEMPLATES, false);
     verify(pmsPipelineTemplateHelper, never())
-        .validateTemplateInputsForGivenYaml(anyString(), anyString(), anyString(), anyString());
+        .validateTemplateInputsForGivenYaml(
+            anyString(), anyString(), anyString(), anyString(), any(PipelineEntity.class));
     assertThat(responseDTO).isNotNull();
     assertThat(responseDTO.isValidYaml()).isTrue();
   }
@@ -205,14 +206,15 @@ public class PipelineRefreshServiceTest extends PipelineServiceTestBase {
   @Category(UnitTests.class)
   public void testValidateTemplateInputsInPipelineWithTemplateReferences_ValidYaml() {
     when(pmsPipelineTemplateHelper.validateTemplateInputsForGivenYaml(
-             ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineEntityWithTemplates.getYaml()))
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineEntityWithTemplates.getYaml(), pipelineEntityWithTemplates))
         .thenReturn(ValidateTemplateInputsResponseDTO.builder().validYaml(true).build());
 
     ValidateTemplateInputsResponseDTO responseDTO = pipelineRefreshService.validateTemplateInputsInPipeline(
         ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITH_TEMPLATES);
     verify(pmsPipelineService).get(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITH_TEMPLATES, false);
     verify(pmsPipelineTemplateHelper)
-        .validateTemplateInputsForGivenYaml(anyString(), anyString(), anyString(), anyString());
+        .validateTemplateInputsForGivenYaml(
+            anyString(), anyString(), anyString(), anyString(), any(PipelineEntity.class));
     assertThat(responseDTO).isNotNull();
     assertThat(responseDTO.isValidYaml()).isTrue();
   }
@@ -222,7 +224,7 @@ public class PipelineRefreshServiceTest extends PipelineServiceTestBase {
   @Category(UnitTests.class)
   public void testValidateTemplateInputsInPipelineWithTemplateReferences_InValidYaml() {
     when(pmsPipelineTemplateHelper.validateTemplateInputsForGivenYaml(
-             ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineEntityWithTemplates.getYaml()))
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineEntityWithTemplates.getYaml(), pipelineEntityWithTemplates))
         .thenReturn(ValidateTemplateInputsResponseDTO.builder()
                         .validYaml(false)
                         .errorNodeSummary(ErrorNodeSummary.builder().build())
@@ -232,7 +234,8 @@ public class PipelineRefreshServiceTest extends PipelineServiceTestBase {
         ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITH_TEMPLATES);
     verify(pmsPipelineService).get(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITH_TEMPLATES, false);
     verify(pmsPipelineTemplateHelper)
-        .validateTemplateInputsForGivenYaml(anyString(), anyString(), anyString(), anyString());
+        .validateTemplateInputsForGivenYaml(
+            anyString(), anyString(), anyString(), anyString(), any(PipelineEntity.class));
     assertThat(responseDTO).isNotNull();
     assertThat(responseDTO.isValidYaml()).isFalse();
     assertThat(responseDTO.getErrorNodeSummary()).isNotNull();

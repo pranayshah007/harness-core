@@ -65,6 +65,7 @@ public class TemplateRefreshServiceImplTest extends TemplateServiceTestBase {
   private static final String TEMPLATE_IDENTIFIER = "TEMPLATE_ID";
   @InjectMocks TemplateRefreshServiceImpl templateRefreshService;
   @Mock NGTemplateService templateService;
+  @Mock NGTemplateServiceHelper templateServiceHelper;
   @Mock TemplateInputsRefreshHelper templateInputsRefreshHelper;
   @Mock TemplateInputsValidator templateInputsValidator;
   @Mock AccessControlClient accessControlClient;
