@@ -67,7 +67,7 @@ public class LogStreamingTaskClient implements ILogStreamingTaskClient {
   private final String baseLogKey;
   private static ScheduledExecutorService scheduledExecutorService = new ScheduledThreadPoolExecutor(50,
       new ThreadFactoryBuilder()
-          .setNameFormat("new-log-streaming-client-%d")
+          .setNameFormat("log-streaming-client-%d")
           .setPriority(Thread.NORM_PRIORITY)
           .build());
   @Deprecated private final String appId;
