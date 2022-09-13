@@ -19,8 +19,10 @@ import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_INPUTS;
 import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_REF;
 import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_VERSION_LABEL;
 
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.common.EntityReferenceHelper;
 import io.harness.common.NGExpressionUtils;
@@ -51,7 +53,18 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -65,6 +78,7 @@ import lombok.extern.slf4j.Slf4j;
 public class TemplateMergeServiceHelper {
   private static final int MAX_DEPTH = 10;
   private NGTemplateServiceHelper templateServiceHelper;
+  private AccountClient accountClient;
 
   // Gets the Template Entity linked to a YAML
   public TemplateEntity getLinkedTemplateEntity(
@@ -141,27 +155,28 @@ public class TemplateMergeServiceHelper {
    * This method gets the template inputs from template.spec in template yaml.
    * For eg: Template Yaml:
    * template:
-   *   identifier: httpTemplate
-   *   versionLabel: 1
-   *   name: template1
-   *   type: Step
-   *   spec:
-   *     type: Http
-   *     spec:
-   *       url: <+input>
-   *       method: GET
-   *     timeout: <+input>
-   *
+   * identifier: httpTemplate
+   * versionLabel: 1
+   * name: template1
+   * type: Step
+   * spec:
+   * type: Http
+   * spec:
+   * url: <+input>
+   * method: GET
+   * timeout: <+input>
+   * <p>
    * Output template inputs yaml:
    * type: Http
    * spec:
-   *   url: <+input>
+   * url: <+input>
    * timeout: <+input>
    *
-   * @param yaml - template yaml
+   * @param yaml      - template yaml
+   * @param accountId
    * @return template inputs yaml
    */
-  public String createTemplateInputsFromTemplate(String yaml) {
+  public String createTemplateInputsFromTemplate(String yaml, String accountId) {
     try {
       if (isEmpty(yaml)) {
         throw new NGTemplateException("Template yaml to create template inputs cannot be empty");
@@ -182,6 +197,16 @@ public class TemplateMergeServiceHelper {
         throw new NGTemplateException("Template yaml provided does not have spec in it.");
       }
       String templateInputsYamlWithSpec = RuntimeInputFormHelper.createTemplateFromYaml(templateSpec);
+      JsonNode templateInputsYaml = templateInputsYamlWithSpec == null
+              ? null
+              : YamlUtils.readTree(templateInputsYamlWithSpec).getNode().getCurrJsonNode().get(SPEC);
+      if(!TemplateYamlSchemaMergeHelper.isFeatureFlagEnabled(
+              FeatureName.NG_TEMPLATE_VARIABLES, accountId, accountClient)){
+        if (isEmpty(templateInputsYamlWithSpec)) {
+          return templateInputsYamlWithSpec;
+        }
+        return YamlPipelineUtils.writeYamlString(templateInputsYaml);
+      }
       String templateVariablesYamlWithDummy = RuntimeInputFormHelper.createTemplateFromYaml(templateVariableSpec);
       if (isEmpty(templateInputsYamlWithSpec) && isEmpty(templateVariablesYamlWithDummy)) {
         return templateInputsYamlWithSpec;
@@ -193,9 +218,6 @@ public class TemplateMergeServiceHelper {
                 .getCurrJsonNode()
                 .get(DUMMY_NODE)
                 .get(YAMLFieldNameConstants.VARIABLES);
-      JsonNode templateInputsYaml = templateInputsYamlWithSpec == null
-          ? null
-          : YamlUtils.readTree(templateInputsYamlWithSpec).getNode().getCurrJsonNode().get(SPEC);
       JsonNode finalTemplateJson;
       if (templateVariablesJson == null) {
         finalTemplateJson =
@@ -525,7 +547,7 @@ public class TemplateMergeServiceHelper {
     }
 
     String templateYaml = templateEntity.getYaml();
-    String templateSpecInputSetFormatYaml = createTemplateInputsFromTemplate(templateYaml);
+    String templateSpecInputSetFormatYaml = createTemplateInputsFromTemplate(templateYaml, accountId);
 
     try {
       Map<String, JsonNode> dummyLinkedTemplateInputsMap = new LinkedHashMap<>();

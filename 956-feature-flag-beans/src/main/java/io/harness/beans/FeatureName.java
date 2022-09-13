@@ -439,7 +439,8 @@ public enum FeatureName {
       "Automatically pause a pipeline execution for a specific amount of time, after time expires the pipeline proceeds and eventually completes",
       HarnessTeam.PIPELINE),
   MERGE_RUNTIME_VARIABLES_IN_RESUME(
-      "merge context elements workflow variables while resuming pipeline from a stage", HarnessTeam.SPG);
+      "merge context elements workflow variables while resuming pipeline from a stage", HarnessTeam.SPG),
+  NG_TEMPLATE_VARIABLES("Enable support for Template variables in NG", HarnessTeam.CDC);
 
   @Deprecated
   FeatureName() {

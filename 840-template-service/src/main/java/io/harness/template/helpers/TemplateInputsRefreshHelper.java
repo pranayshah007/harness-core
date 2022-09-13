@@ -7,37 +7,35 @@
 
 package io.harness.template.helpers;
 
-import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.template.beans.NGTemplateConstants.*;
-
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.inject.Inject;
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.exception.ngexception.NGTemplateException;
 import io.harness.pms.merger.helpers.YamlRefreshHelper;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.serializer.JsonUtils;
 import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.utils.YamlPipelineUtils;
-import io.harness.yaml.core.variables.NGVariable;
-import io.harness.yaml.utils.NGVariablesUtils;
+import lombok.extern.slf4j.Slf4j;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import lombok.extern.slf4j.Slf4j;
+
+import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.template.beans.NGTemplateConstants.TEMPLATE;
+import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_INPUTS;
 
 @Slf4j
 @OwnedBy(CDC)
@@ -48,6 +46,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 public class TemplateInputsRefreshHelper {
   @Inject private TemplateMergeServiceHelper templateMergeServiceHelper;
+  @Inject private AccountClient accountClient;
 
   // Returns the refreshed YAML when a YAML String is passed.
   public String refreshTemplates(String accountId, String orgId, String projectId, String yaml) {
@@ -146,20 +145,24 @@ public class TemplateInputsRefreshHelper {
     TemplateEntity templateEntity = templateMergeServiceHelper.getLinkedTemplateEntity(
         accountId, orgId, projectId, TemplateNodeValue, templateCacheMap);
     String templateYaml = templateEntity.getYaml();
+    boolean templateVariablesEnabled = TemplateYamlSchemaMergeHelper.isFeatureFlagEnabled(
+            FeatureName.NG_TEMPLATE_VARIABLES, accountId, accountClient);
 
     // Generate the Template Spec from the Template YAML
     JsonNode templateSpec;
-    ObjectNode templateVariablesFromTemplate;
+    ObjectNode templateVariablesFromTemplate = null;
     try {
       NGTemplateConfig templateConfig = YamlPipelineUtils.read(templateYaml, NGTemplateConfig.class);
       templateSpec = templateConfig.getTemplateInfoConfig().getSpec();
       YamlField templateYamlField = YamlUtils.readTree(templateYaml).getNode().getField(TEMPLATE);
-      if (templateYamlField == null) {
-        log.error("Yaml provided is not a template yaml. Yaml:\n" + templateYaml);
-        throw new NGTemplateException("Yaml provided is not a template yaml.");
+      if(templateVariablesEnabled) {
+        if (templateYamlField == null) {
+          log.error("Yaml provided is not a template yaml. Yaml:\n" + templateYaml);
+          throw new NGTemplateException("Yaml provided is not a template yaml.");
+        }
+        templateVariablesFromTemplate = (ObjectNode) templateYamlField.getNode().getCurrJsonNode();
+        templateVariablesFromTemplate.retain(YAMLFieldNameConstants.VARIABLES);
       }
-      templateVariablesFromTemplate = (ObjectNode) templateYamlField.getNode().getCurrJsonNode();
-      templateVariablesFromTemplate.retain(YAMLFieldNameConstants.VARIABLES);
     } catch (IOException e) {
       log.error("Could not read template yaml", e);
       throw new NGTemplateException("Could not read template yaml: " + e.getMessage());
@@ -167,12 +170,6 @@ public class TemplateInputsRefreshHelper {
 
     // refreshed json node
     JsonNode refreshedJsonNode = YamlRefreshHelper.refreshNodeFromSourceNode(templateInputs, templateSpec);
-    JsonNode refreshedTemplateVariablesNode = YamlRefreshHelper.refreshNodeFromSourceNode(
-        templateVariablesFromPipelineWithRoot, templateVariablesFromTemplate);
-
-    if (refreshedTemplateVariablesNode != null) {
-      refreshedTemplateVariablesNode = refreshedTemplateVariablesNode.get(YAMLFieldNameConstants.VARIABLES);
-    }
 
     ObjectNode updatedValue = (ObjectNode) TemplateNodeValue;
 
@@ -182,6 +179,17 @@ public class TemplateInputsRefreshHelper {
     } else {
       // Inserting the Updated Value of TemplateInputs corresponding to the TemplateInputs field
       updatedValue.set(TEMPLATE_INPUTS, refreshedJsonNode);
+    }
+
+    if(!templateVariablesEnabled){
+      return updatedValue;
+    }
+
+    JsonNode refreshedTemplateVariablesNode = YamlRefreshHelper.refreshNodeFromSourceNode(
+            templateVariablesFromPipelineWithRoot, templateVariablesFromTemplate);
+
+    if (refreshedTemplateVariablesNode != null) {
+      refreshedTemplateVariablesNode = refreshedTemplateVariablesNode.get(YAMLFieldNameConstants.VARIABLES);
     }
 
     if (refreshedTemplateVariablesNode == null) {

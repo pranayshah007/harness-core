@@ -79,7 +79,7 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
   public void testCreateTemplateInputsFromStepTemplateWithRuntimeInputs() {
     String filename = "template-step.yaml";
     String yaml = readFile(filename);
-    String templateYaml = templateMergeServiceHelper.createTemplateInputsFromTemplate(yaml);
+    String templateYaml = templateMergeServiceHelper.createTemplateInputsFromTemplate(yaml, null);
     assertThat(templateYaml).isNotNull();
 
     String resFile = "template-step-templateInputs.yaml";
@@ -93,7 +93,7 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
   public void testCreateTemplateInputsFromStepTemplateWithoutRuntimeInputs() {
     String filename = "step-template-without-runtime-inputs.yaml";
     String yaml = readFile(filename);
-    String templateYaml = templateMergeServiceHelper.createTemplateInputsFromTemplate(yaml);
+    String templateYaml = templateMergeServiceHelper.createTemplateInputsFromTemplate(yaml, null);
     assertThat(templateYaml).isNullOrEmpty();
   }
 
@@ -103,7 +103,7 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
   public void testCreateTemplateInputsFromPipelineTemplateWithRuntimeInputs() {
     String filename = "template-pipeline.yaml";
     String yaml = readFile(filename);
-    String templateYaml = templateMergeServiceHelper.createTemplateInputsFromTemplate(yaml);
+    String templateYaml = templateMergeServiceHelper.createTemplateInputsFromTemplate(yaml, null);
     assertThat(templateYaml).isNotNull();
 
     String resFile = "template-pipeline-templateInputs.yaml";
@@ -117,7 +117,7 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
   public void testCreateTemplateInputsFromPipelineTemplateWithoutRuntimeInputs() {
     String filename = "pipeline-template-without-runtime-inputs.yaml";
     String yaml = readFile(filename);
-    String templateYaml = templateMergeServiceHelper.createTemplateInputsFromTemplate(yaml);
+    String templateYaml = templateMergeServiceHelper.createTemplateInputsFromTemplate(yaml, null);
     assertThat(templateYaml).isNullOrEmpty();
   }
 

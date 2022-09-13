@@ -854,7 +854,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     doReturn(Optional.of(templateEntity))
         .when(templateServiceHelper)
         .getTemplateOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "zxcv", "as", false);
-    when(templateMergeServiceHelper.createTemplateInputsFromTemplate(yaml)).thenReturn(templateInputs);
+    when(templateMergeServiceHelper.createTemplateInputsFromTemplate(yaml, null)).thenReturn(templateInputs);
 
     TemplateWithInputsResponseDTO templateWithInputsResponseDTO =
         templateService.getTemplateWithInputs(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "zxcv", "as");
