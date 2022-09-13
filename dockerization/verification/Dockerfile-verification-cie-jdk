@@ -13,10 +13,6 @@ COPY --chown=65534:65534 protocol.info /opt/harness/
 
 COPY --chown=65534:65534 scripts /opt/harness
 
-RUN curl -L https://github.com/inspectIT/inspectit-ocelot/releases/download/1.16.0/inspectit-ocelot-agent-1.16.0.jar > /opt/harness/inspectit-ocelot-agent-1.16.0.jar \
-    && chmod 755 /opt/harness/inspectit-ocelot-agent-1.16.0.jar \
-    && chown 65534:65534 /opt/harness/inspectit-ocelot-agent-1.16.0.jar
-
 CMD [ "./run.sh" ]
 
 
