@@ -9,11 +9,14 @@ package io.harness.template.helpers;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_INPUTS;
+import static io.harness.template.beans.NGTemplateConstants.*;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.ngexception.NGTemplateException;
 import io.harness.pms.merger.helpers.YamlRefreshHelper;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
@@ -29,6 +32,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -130,6 +134,13 @@ public class TemplateInputsRefreshHelper {
       Map<String, TemplateEntity> templateCacheMap) {
     // Template Inputs linked to the YAML
     JsonNode templateInputs = TemplateNodeValue.get(TEMPLATE_INPUTS);
+    JsonNode templateVariablesFromPipeline = TemplateNodeValue.get("templateVariables");
+    ObjectMapper mapper = new ObjectMapper();
+    ObjectNode templateVariablesFromPipelineWithRoot = null;
+    if(templateVariablesFromPipeline!=null){
+      templateVariablesFromPipelineWithRoot = mapper.createObjectNode();
+      templateVariablesFromPipelineWithRoot.set(YAMLFieldNameConstants.VARIABLES, templateVariablesFromPipeline);
+    }
 
     // Template YAML corresponding to the TemplateRef and Version Label
     TemplateEntity templateEntity = templateMergeServiceHelper.getLinkedTemplateEntity(
@@ -138,14 +149,17 @@ public class TemplateInputsRefreshHelper {
 
     // Generate the Template Spec from the Template YAML
     JsonNode templateSpec;
-    JsonNode templateVariables;
+    ObjectNode templateVariablesFromTemplate;
     try {
       NGTemplateConfig templateConfig = YamlPipelineUtils.read(templateYaml, NGTemplateConfig.class);
       templateSpec = templateConfig.getTemplateInfoConfig().getSpec();
-      List<NGVariable> variables = templateConfig.getTemplateInfoConfig().getVariables();
-      List<Map<String, String>> templateVariablesMap = NGVariablesUtils.getSimplifiedVariablesList(variables);
-      templateVariables = JsonUtils.asTree(templateVariablesMap);
-      ((ObjectNode) templateSpec).set("templateVariables", templateVariables);
+      YamlField templateYamlField = YamlUtils.readTree(templateYaml).getNode().getField(TEMPLATE);
+      if (templateYamlField == null) {
+        log.error("Yaml provided is not a template yaml. Yaml:\n" + templateYaml);
+        throw new NGTemplateException("Yaml provided is not a template yaml.");
+      }
+      templateVariablesFromTemplate = (ObjectNode) templateYamlField.getNode().getCurrJsonNode();
+      templateVariablesFromTemplate.retain(YAMLFieldNameConstants.VARIABLES);
     } catch (IOException e) {
       log.error("Could not read template yaml", e);
       throw new NGTemplateException("Could not read template yaml: " + e.getMessage());
@@ -153,6 +167,11 @@ public class TemplateInputsRefreshHelper {
 
     // refreshed json node
     JsonNode refreshedJsonNode = YamlRefreshHelper.refreshNodeFromSourceNode(templateInputs, templateSpec);
+    JsonNode refreshedTemplateVariablesNode = YamlRefreshHelper.refreshNodeFromSourceNode(templateVariablesFromPipelineWithRoot, templateVariablesFromTemplate);
+
+    if(refreshedTemplateVariablesNode!=null){
+      refreshedTemplateVariablesNode = refreshedTemplateVariablesNode.get(YAMLFieldNameConstants.VARIABLES);
+    }
 
     ObjectNode updatedValue = (ObjectNode) TemplateNodeValue;
 
@@ -162,6 +181,14 @@ public class TemplateInputsRefreshHelper {
     } else {
       // Inserting the Updated Value of TemplateInputs corresponding to the TemplateInputs field
       updatedValue.set(TEMPLATE_INPUTS, refreshedJsonNode);
+    }
+
+    if (refreshedTemplateVariablesNode == null) {
+      // CASE -> When Template does not contain any runtime inputs
+      updatedValue.remove("templateVariables");
+    } else {
+      // Inserting the Updated Value of TemplateInputs corresponding to the TemplateInputs field
+      updatedValue.set("templateVariables", refreshedTemplateVariablesNode);
     }
 
     // Returning the Refreshed Template Inputs Value

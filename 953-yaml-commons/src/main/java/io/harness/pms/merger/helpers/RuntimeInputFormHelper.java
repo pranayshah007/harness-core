@@ -7,10 +7,8 @@
 
 package io.harness.pms.merger.helpers;
 
-import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.expression.EngineExpressionEvaluator.EXPR_END_ESC;
-import static io.harness.expression.EngineExpressionEvaluator.EXPR_START;
-
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.common.NGExpressionUtils;
 import io.harness.data.structure.HarnessStringUtils;
@@ -18,14 +16,14 @@ import io.harness.jackson.JsonNodeUtils;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
-import io.harness.pms.yaml.YamlUtils;
-import io.harness.serializer.JsonUtils;
-import io.harness.utils.YamlPipelineUtils;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.*;
-import java.util.*;
 import lombok.experimental.UtilityClass;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.expression.EngineExpressionEvaluator.EXPR_END_ESC;
+import static io.harness.expression.EngineExpressionEvaluator.EXPR_START;
 
 @OwnedBy(PIPELINE)
 @UtilityClass
@@ -60,23 +58,6 @@ public class RuntimeInputFormHelper {
     });
 
     return new YamlConfig(templateMap, yamlConfig.getYamlMap());
-  }
-
-  private JsonNode createTemplateVariablesFromTemplate(JsonNode templateVariableSpec) {
-    if (templateVariableSpec.getNodeType() != JsonNodeType.ARRAY) {
-      return null;
-    }
-    ArrayNode variableArray = (ArrayNode) templateVariableSpec;
-    List<Map<String, Object>> templateVariableMap = new LinkedList<>();
-    for (JsonNode variableNode : variableArray) {
-      String variableValue = variableNode.get(YAMLFieldNameConstants.VALUE).asText();
-      if (NGExpressionUtils.matchesExecutionInputPattern(variableValue)
-          || NGExpressionUtils.matchesInputSetPattern(variableValue)) {
-        Map<String, Object> variable = JsonUtils.jsonNodeToMap(variableNode);
-        templateVariableMap.add(variable);
-      }
-    }
-    return JsonUtils.asTree(templateVariableMap);
   }
 
   public String createExecutionInputFormAndUpdateYamlField(JsonNode jsonNode) {
