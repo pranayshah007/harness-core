@@ -72,7 +72,7 @@ public class LogStreamingTaskClient implements ILogStreamingTaskClient {
           .build());
   @Deprecated private final String appId;
   @Deprecated private final String activityId;
-  ScheduledFuture scheduledFuture;
+  private ScheduledFuture scheduledFuture;
   private final ITaskProgressClient taskProgressClient;
 
   @Default private final Map<String, List<LogLine>> logCache = new HashMap<>();
@@ -117,7 +117,6 @@ public class LogStreamingTaskClient implements ILogStreamingTaskClient {
       if (scheduledFuture != null) {
         scheduledFuture.cancel(true);
       }
-      scheduledExecutorService.shutdownNow();
     }
   }
 
