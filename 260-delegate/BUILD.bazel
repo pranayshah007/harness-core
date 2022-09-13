@@ -25,6 +25,7 @@ java_library(
         "//420-delegate-agent:module",
         "//867-polling-contracts:module",
         "//platform-service/modules/notification-service/delegate-tasks:module",
+        "@maven//:com_google_dagger_dagger",
         "@maven//:org_apache_commons_commons_math3",
         "@maven//:org_apache_logging_log4j_log4j_api",
         "@maven//:org_apache_logging_log4j_log4j_to_slf4j",
@@ -39,7 +40,6 @@ java_binary(
     name = "execute",
     main_class = "io.harness.delegate.app.DelegateApplication",
     runtime_deps = [":module"],
-    deps = [":dagger"],
 )
 
 # Temporary target while we have two entrypoints. Once old is deleted remove this target.
@@ -47,7 +47,6 @@ java_binary(
     name = "executedw",
     main_class = "io.harness.delegate.app.DelegateAgentApplication",
     runtime_deps = [":module"],
-    deps = [":dagger"],
 )
 
 config_setting(

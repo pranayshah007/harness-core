@@ -4326,6 +4326,29 @@ load("@rules_jvm_external//:defs.bzl", "maven_install")
 load("@rules_jvm_external//:specs.bzl", "maven")
 load("//:tools/bazel/macros.bzl", "maven_test_artifact")
 
+DAGGER_TAG = "2.43.2"
+DAGGER_SHA = "f7fbc3e417b3cdc10e76e818a6854ada777ad6d408408b65c23a096f3ff6daf7"
+http_archive(
+    name = "dagger",
+    strip_prefix = "dagger-dagger-%s" % DAGGER_TAG,
+    sha256 = DAGGER_SHA,
+    urls = ["https://github.com/google/dagger/archive/dagger-%s.zip" % DAGGER_TAG],
+)
+
+load("@dagger//:workspace_defs.bzl", "DAGGER_ARTIFACTS", "DAGGER_REPOSITORIES")
+
+maven_install(
+  artifacts = DAGGER_ARTIFACTS,
+  repositories = DAGGER_REPOSITORIES,
+)
+
+dagger_artifacts = [
+   "com.google.dagger:dagger-compiler:%s" % DAGGER_TAG,
+   "com.google.dagger:dagger-spi:%s" % DAGGER_TAG,
+   "com.google.dagger:dagger:%s" % DAGGER_TAG,
+   "com.google.dagger:dagger-producers:%s" % DAGGER_TAG,
+]
+
 plain_artifacts = [
     "aopalliance:aopalliance:1.0",
     "cglib:cglib-nodep:3.1",
@@ -5106,7 +5129,7 @@ powermock_artifacts = [
 
 maven_install(
     name = "maven",
-    artifacts = plain_artifacts + amazon_artifacts + amazon_v2_artifacts + powermock_artifacts + [
+    artifacts = plain_artifacts + amazon_artifacts + amazon_v2_artifacts + powermock_artifacts + dagger_artifacts + [
         maven.artifact(
             artifact = "netty-transport-native-kqueue",
             classifier = "osx-x86_64",
@@ -5559,18 +5582,4 @@ load("@contrib_rules_jvm//:gazelle_setup.bzl", "contib_rules_jvm_gazelle_setup")
 
 contib_rules_jvm_gazelle_setup()
 
-DAGGER_TAG = "2.43.2"
-DAGGER_SHA = "f7fbc3e417b3cdc10e76e818a6854ada777ad6d408408b65c23a096f3ff6daf7"
-http_archive(
-    name = "dagger",
-    strip_prefix = "dagger-dagger-%s" % DAGGER_TAG,
-    sha256 = DAGGER_SHA,
-    urls = ["https://github.com/google/dagger/archive/dagger-%s.zip" % DAGGER_TAG],
-)
 
-load("@dagger//:workspace_defs.bzl", "DAGGER_ARTIFACTS", "DAGGER_REPOSITORIES")
-
-maven_install(
-  artifacts = DAGGER_ARTIFACTS,
-  repositories = DAGGER_REPOSITORIES,
-)
