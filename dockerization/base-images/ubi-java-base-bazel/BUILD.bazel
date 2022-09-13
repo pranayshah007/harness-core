@@ -1,10 +1,9 @@
 load("@io_bazel_rules_docker//container:container.bzl", "container_image", "container_pull", "container_push")
 load("@io_bazel_rules_docker//docker/util:run.bzl", "container_run_and_commit_layer")
-load("@rules_pkg//:pkg.bzl", "pkg_tar")
 
 container_run_and_commit_layer(
     name = "ubi-java-base-run",
-    image = "@ubi-minimal-base-image//image",
+    image = "@ubi-minimal-base//image",
     commands = [
         "curl -OL https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.15%2B10/OpenJDK11U-jdk_x64_linux_hotspot_11.0.15_10.tar.gz",
         "mkdir -p /opt/harness/OpenJDK11",
@@ -22,7 +21,7 @@ container_run_and_commit_layer(
 
 container_image(
     name = "ubi-java-base-image",
-    base = "@ubi-minimal-base-image//image",
+    base = "@ubi-minimal-base//image",
     layers = [
         ":ubi-java-base-run"
         ],
@@ -47,6 +46,7 @@ container_push(
     image = "ubi-java-base-image",
     registry = "us.gcr.io",
     repository = "platform-205701/harness/ubi-java-base-bazel-test",
+    tag = "latest-test",
     tags = [
         "manual",
         "no-cache",
