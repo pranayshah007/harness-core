@@ -386,6 +386,12 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
       }
     }
 
+    fillBuildFailureInfos(serviceIds, buildFailureInfos);
+
+    return buildFailureInfos;
+  }
+
+  private void fillBuildFailureInfos(List<String> serviceIds, List<BuildFailureInfo> buildFailureInfos) {
     for (int i = 0; i < serviceIds.size(); i++) {
       List<ServiceDeploymentInfo> serviceDeploymentInfoList;
       if (serviceIds.get(i) != null) {
@@ -396,7 +402,6 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
       }
       buildFailureInfos.get(i).setServiceInfoList(serviceDeploymentInfoList);
     }
-    return buildFailureInfos;
   }
 
   private void parseResultToBuildFailureInfo(ResultSet resultSet, List<BuildFailureInfo> buildFailureInfo, List<String> serviceIds) throws SQLException {
@@ -409,7 +414,6 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
       endTime = Long.parseLong(resultSet.getString("endts"));
     }
 
-    List<ServiceDeploymentInfo> serviceDeploymentInfoList = new ArrayList<>();
     GitInfo gitInfo = GitInfo.builder()
                           .targetBranch(resultSet.getString("moduleinfo_branch_name"))
                           .sourceBranch(resultSet.getString("source_branch"))
@@ -517,7 +521,11 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
         DBUtils.close(resultSet);
       }
     }
+    fillBuildActiveInfos(serviceIds, buildActiveInfos);
+    return buildActiveInfos;
+  }
 
+  private void fillBuildActiveInfos(List<String> serviceIds, List<BuildActiveInfo> buildActiveInfos) {
     for (int i = 0; i < serviceIds.size(); i++) {
       List<ServiceDeploymentInfo> serviceDeploymentInfoList;
       if (serviceIds.get(i)!= null) {
@@ -528,8 +536,6 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
       }
       buildActiveInfos.get(i).setServiceInfoList(serviceDeploymentInfoList);
     }
-
-    return buildActiveInfos;
   }
 
   private void convertResultToBuildActiveInfo(ResultSet resultSet, List<BuildActiveInfo> buildActiveInfos, List<String> serviceIds) throws SQLException {
