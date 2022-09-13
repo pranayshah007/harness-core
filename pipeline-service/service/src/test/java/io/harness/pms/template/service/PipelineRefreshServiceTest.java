@@ -103,7 +103,8 @@ public class PipelineRefreshServiceTest extends PipelineServiceTestBase {
     pipelineRefreshService.refreshTemplateInputsInPipeline(
         ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITHOUT_TEMPLATES);
     verify(pmsPipelineService).get(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITHOUT_TEMPLATES, false);
-    verify(pmsPipelineTemplateHelper, never()).getRefreshedYaml(anyString(), anyString(), anyString(), anyString());
+    verify(pmsPipelineTemplateHelper, never())
+        .getRefreshedYaml(anyString(), anyString(), anyString(), anyString(), any(PipelineEntity.class));
   }
 
   @Test
@@ -112,7 +113,7 @@ public class PipelineRefreshServiceTest extends PipelineServiceTestBase {
   public void testRefreshTemplateInputsInPipelineWithTemplateReferences() {
     String refreshedYaml = "Yayy!! Updated YAML";
     when(pmsPipelineTemplateHelper.getRefreshedYaml(
-             ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineEntityWithTemplates.getYaml()))
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineEntityWithTemplates.getYaml(), pipelineEntityWithTemplates))
         .thenReturn(RefreshResponseDTO.builder().refreshedYaml(refreshedYaml).build());
     when(pmsPipelineService.updatePipelineYaml(any(), any()))
         .thenReturn(PipelineCRUDResult.builder()
@@ -122,7 +123,8 @@ public class PipelineRefreshServiceTest extends PipelineServiceTestBase {
     pipelineRefreshService.refreshTemplateInputsInPipeline(
         ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITH_TEMPLATES);
     verify(pmsPipelineService).get(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITH_TEMPLATES, false);
-    verify(pmsPipelineTemplateHelper).getRefreshedYaml(anyString(), anyString(), anyString(), anyString());
+    verify(pmsPipelineTemplateHelper)
+        .getRefreshedYaml(anyString(), anyString(), anyString(), anyString(), any(PipelineEntity.class));
 
     ArgumentCaptor<PipelineEntity> argumentCaptor = ArgumentCaptor.forClass(PipelineEntity.class);
     verify(pmsPipelineService).updatePipelineYaml(argumentCaptor.capture(), eq(ChangeType.MODIFY));
@@ -137,7 +139,7 @@ public class PipelineRefreshServiceTest extends PipelineServiceTestBase {
   @Category(UnitTests.class)
   public void testFailRefreshTemplateInputsInPipelineWithTemplateReferencesIfGovernanceFails() {
     when(pmsPipelineTemplateHelper.getRefreshedYaml(
-             ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineEntityWithTemplates.getYaml()))
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineEntityWithTemplates.getYaml(), pipelineEntityWithTemplates))
         .thenReturn(RefreshResponseDTO.builder().refreshedYaml(pipelineEntityWithTemplates.getYaml()).build());
     when(pmsPipelineService.updatePipelineYaml(pipelineEntityWithTemplates, ChangeType.MODIFY))
         .thenReturn(
@@ -163,7 +165,8 @@ public class PipelineRefreshServiceTest extends PipelineServiceTestBase {
     YamlDiffResponseDTO responseDTO =
         pipelineRefreshService.getYamlDiff(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITHOUT_TEMPLATES);
     verify(pmsPipelineService).get(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITHOUT_TEMPLATES, false);
-    verify(pmsPipelineTemplateHelper, never()).getRefreshedYaml(anyString(), anyString(), anyString(), anyString());
+    verify(pmsPipelineTemplateHelper, never())
+        .getRefreshedYaml(anyString(), anyString(), anyString(), anyString(), any(PipelineEntity.class));
     assertThat(responseDTO).isNotNull();
     assertThat(responseDTO.getOriginalYaml()).isEqualTo(pipelineEntityWithoutTemplates.getYaml());
     assertThat(responseDTO.getRefreshedYaml()).isEqualTo(pipelineEntityWithoutTemplates.getYaml());
@@ -175,13 +178,14 @@ public class PipelineRefreshServiceTest extends PipelineServiceTestBase {
   public void testGetYamlDiffPipelineWithTemplateReferences() {
     String refreshedYaml = "Yayy!! Updated YAML";
     when(pmsPipelineTemplateHelper.getRefreshedYaml(
-             ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineEntityWithTemplates.getYaml()))
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineEntityWithTemplates.getYaml(), pipelineEntityWithTemplates))
         .thenReturn(RefreshResponseDTO.builder().refreshedYaml(refreshedYaml).build());
 
     YamlDiffResponseDTO responseDTO =
         pipelineRefreshService.getYamlDiff(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITH_TEMPLATES);
     verify(pmsPipelineService).get(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITH_TEMPLATES, false);
-    verify(pmsPipelineTemplateHelper).getRefreshedYaml(anyString(), anyString(), anyString(), anyString());
+    verify(pmsPipelineTemplateHelper)
+        .getRefreshedYaml(anyString(), anyString(), anyString(), anyString(), any(PipelineEntity.class));
     assertThat(responseDTO).isNotNull();
     assertThat(responseDTO.getOriginalYaml()).isEqualTo(pipelineEntityWithTemplates.getYaml());
     assertThat(responseDTO.getRefreshedYaml()).isEqualTo(refreshedYaml);

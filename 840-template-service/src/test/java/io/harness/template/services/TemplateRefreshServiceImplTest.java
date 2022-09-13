@@ -65,8 +65,8 @@ public class TemplateRefreshServiceImplTest extends TemplateServiceTestBase {
   private static final String TEMPLATE_IDENTIFIER = "TEMPLATE_ID";
   @InjectMocks TemplateRefreshServiceImpl templateRefreshService;
   @Mock NGTemplateService templateService;
-  @Mock private NGTemplateServiceImpl templateServiceImpl;
   @Mock TemplateInputsRefreshHelper templateInputsRefreshHelper;
+  @Mock NGTemplateServiceHelper templateServiceHelper;
   @Mock TemplateInputsValidator templateInputsValidator;
   @Mock AccessControlClient accessControlClient;
 
@@ -270,8 +270,12 @@ public class TemplateRefreshServiceImplTest extends TemplateServiceTestBase {
 
     InOrder inOrder = inOrder(templateInputsRefreshHelper);
     templateRefreshService.recursivelyRefreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineTemplateIdentifier, "1");
-    verify(templateService, times(2)).get(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineTemplateIdentifier, "1", false);
-    verify(templateService, times(1)).get(ACCOUNT_ID, ORG_ID, PROJECT_ID, stageTemplateIdentifier, "1", false);
+    verify(accessControlClient, times(1))
+        .checkForAccessOrThrow(ResourceScope.of(ACCOUNT_ID, ORG_ID, PROJECT_ID),
+            Resource.of(TEMPLATE, pipelineTemplateIdentifier), PermissionTypes.TEMPLATE_EDIT_PERMISSION);
+    verify(accessControlClient, times(1))
+        .checkForAccessOrThrow(ResourceScope.of(ACCOUNT_ID, ORG_ID, PROJECT_ID),
+            Resource.of(TEMPLATE, stageTemplateIdentifier), PermissionTypes.TEMPLATE_EDIT_PERMISSION);
     verify(templateInputsValidator)
         .validateNestedTemplateInputsForTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineTemplateEntity);
     inOrder.verify(templateInputsRefreshHelper, times(1)).refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, stageYaml);
@@ -359,9 +363,16 @@ public class TemplateRefreshServiceImplTest extends TemplateServiceTestBase {
     InOrder inOrder = inOrder(templateInputsRefreshHelper);
     YamlFullRefreshResponseDTO refreshResponse =
         templateRefreshService.recursivelyRefreshTemplatesForYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml);
-    verify(templateService, times(1)).get(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineTemplateIdentifier, "1", false);
-    verify(templateService, times(1)).get(ACCOUNT_ID, ORG_ID, PROJECT_ID, stageTemplateIdentifier, "1", false);
-    verify(templateService, times(1)).get(ACCOUNT_ID, null, null, stageTemplateIdentifier, "1", false);
+    verify(accessControlClient, times(1))
+        .checkForAccessOrThrow(ResourceScope.of(ACCOUNT_ID, ORG_ID, PROJECT_ID),
+            Resource.of(TEMPLATE, pipelineTemplateIdentifier), PermissionTypes.TEMPLATE_EDIT_PERMISSION);
+    verify(accessControlClient, times(1))
+        .checkForAccessOrThrow(ResourceScope.of(ACCOUNT_ID, ORG_ID, PROJECT_ID),
+            Resource.of(TEMPLATE, stageTemplateIdentifier), PermissionTypes.TEMPLATE_EDIT_PERMISSION);
+    verify(accessControlClient, times(1))
+        .checkForAccessOrThrow(ResourceScope.of(ACCOUNT_ID, null, null), Resource.of(TEMPLATE, stageTemplateIdentifier),
+            PermissionTypes.TEMPLATE_EDIT_PERMISSION);
+
     verify(templateInputsValidator)
         .validateNestedTemplateInputsForGivenYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml);
     inOrder.verify(templateInputsRefreshHelper, times(1)).refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, stageYaml);

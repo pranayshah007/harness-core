@@ -154,11 +154,12 @@ public class PMSPipelineTemplateHelperTest extends CategoryTest {
     Call<ResponseDTO<RefreshResponseDTO>> callRequest = mock(Call.class);
     doReturn(callRequest)
         .when(templateResourceClient)
-        .getRefreshedYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, null, null, null, refreshRequest);
+        .getRefreshedYaml(
+            ACCOUNT_ID, ORG_ID, PROJECT_ID, null, null, null, null, null, null, null, null, refreshRequest);
     when(callRequest.execute()).thenReturn(Response.success(ResponseDTO.newResponse(refreshResponseDTO)));
 
     RefreshResponseDTO refreshedResponse =
-        pipelineTemplateHelper.getRefreshedYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, GIVEN_YAML);
+        pipelineTemplateHelper.getRefreshedYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, GIVEN_YAML, null);
     assertThat(refreshedResponse).isEqualTo(refreshResponseDTO);
   }
 

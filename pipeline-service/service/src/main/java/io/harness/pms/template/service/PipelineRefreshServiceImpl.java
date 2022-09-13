@@ -37,8 +37,8 @@ public class PipelineRefreshServiceImpl implements PipelineRefreshService {
       String accountId, String orgId, String projectId, String pipelineIdentifier) {
     PipelineEntity pipelineEntity = getPipelineEntity(accountId, orgId, projectId, pipelineIdentifier);
     if (Boolean.TRUE.equals(pipelineEntity.getTemplateReference())) {
-      RefreshResponseDTO refreshResponseDTO =
-          pmsPipelineTemplateHelper.getRefreshedYaml(accountId, orgId, projectId, pipelineEntity.getYaml());
+      RefreshResponseDTO refreshResponseDTO = pmsPipelineTemplateHelper.getRefreshedYaml(
+          accountId, orgId, projectId, pipelineEntity.getYaml(), pipelineEntity);
       updatePipelineWithYaml(pipelineEntity, refreshResponseDTO.getRefreshedYaml());
     }
     return true;
@@ -86,8 +86,8 @@ public class PipelineRefreshServiceImpl implements PipelineRefreshService {
 
     String pipelineYaml = pipelineEntity.getYaml();
     if (Boolean.TRUE.equals(pipelineEntity.getTemplateReference())) {
-      RefreshResponseDTO refreshResponseDTO =
-          pmsPipelineTemplateHelper.getRefreshedYaml(accountId, orgId, projectId, pipelineEntity.getYaml());
+      RefreshResponseDTO refreshResponseDTO = pmsPipelineTemplateHelper.getRefreshedYaml(
+          accountId, orgId, projectId, pipelineEntity.getYaml(), pipelineEntity);
       return YamlDiffResponseDTO.builder()
           .originalYaml(pipelineYaml)
           .refreshedYaml(refreshResponseDTO.getRefreshedYaml())

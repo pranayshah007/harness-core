@@ -31,6 +31,7 @@ import io.harness.filter.FilterType;
 import io.harness.filter.dto.FilterDTO;
 import io.harness.filter.service.FilterService;
 import io.harness.git.model.ChangeType;
+import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.persistance.GitSyncSdkService;
@@ -520,6 +521,36 @@ public class NGTemplateServiceHelper {
           templateIdentifier, versionLabel, projectIdentifier, orgIdentifier, accountId, e.getMessage());
       log.error(errorMessage, e);
       return false;
+    }
+  }
+
+  public void setupGitParentEntityDetails(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String repoFromTemplate, String connectorFromTemplate) {
+    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    if (null != gitEntityInfo) {
+      // Set Parent's Repo
+      if (EmptyPredicate.isNotEmpty(repoFromTemplate)) {
+        gitEntityInfo.setParentEntityRepoName(repoFromTemplate);
+      } else if (!GitAwareContextHelper.isNullOrDefault(gitEntityInfo.getRepoName())) {
+        gitEntityInfo.setParentEntityRepoName(gitEntityInfo.getRepoName());
+      }
+
+      // Set Parent's ConnectorRef
+      if (EmptyPredicate.isNotEmpty(repoFromTemplate)) {
+        gitEntityInfo.setParentEntityConnectorRef(connectorFromTemplate);
+      } else if (!GitAwareContextHelper.isNullOrDefault(gitEntityInfo.getConnectorRef())) {
+        gitEntityInfo.setParentEntityConnectorRef(gitEntityInfo.getConnectorRef());
+      }
+      // Set Parent's Org identifier
+      if (!GitAwareContextHelper.isNullOrDefault(orgIdentifier)) {
+        gitEntityInfo.setParentEntityOrgIdentifier(orgIdentifier);
+      }
+      // Set Parent's Project Identifier
+      if (!GitAwareContextHelper.isNullOrDefault(projectIdentifier)) {
+        gitEntityInfo.setParentEntityProjectIdentifier(projectIdentifier);
+      }
+      gitEntityInfo.setParentEntityAccountIdentifier(accountIdentifier);
+      GitAwareContextHelper.updateGitEntityContext(gitEntityInfo);
     }
   }
 }

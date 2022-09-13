@@ -1065,36 +1065,6 @@ public class NGTemplateServiceImpl implements NGTemplateService {
         .build();
   }
 
-  public void setupGitParentEntityDetails(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String repoFromTemplate, String connectorFromTemplate) {
-    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
-    if (null != gitEntityInfo) {
-      // Set Parent's Repo
-      if (EmptyPredicate.isNotEmpty(repoFromTemplate)) {
-        gitEntityInfo.setParentEntityRepoName(repoFromTemplate);
-      } else if (!GitAwareContextHelper.isNullOrDefault(gitEntityInfo.getRepoName())) {
-        gitEntityInfo.setParentEntityRepoName(gitEntityInfo.getRepoName());
-      }
-
-      // Set Parent's ConnectorRef
-      if (EmptyPredicate.isNotEmpty(repoFromTemplate)) {
-        gitEntityInfo.setParentEntityConnectorRef(connectorFromTemplate);
-      } else if (!GitAwareContextHelper.isNullOrDefault(gitEntityInfo.getConnectorRef())) {
-        gitEntityInfo.setParentEntityConnectorRef(gitEntityInfo.getConnectorRef());
-      }
-      // Set Parent's Org identifier
-      if (!GitAwareContextHelper.isNullOrDefault(orgIdentifier)) {
-        gitEntityInfo.setParentEntityOrgIdentifier(orgIdentifier);
-      }
-      // Set Parent's Project Identifier
-      if (!GitAwareContextHelper.isNullOrDefault(projectIdentifier)) {
-        gitEntityInfo.setParentEntityProjectIdentifier(projectIdentifier);
-      }
-      gitEntityInfo.setParentEntityAccountIdentifier(accountIdentifier);
-      GitAwareContextHelper.updateGitEntityContext(gitEntityInfo);
-    }
-  }
-
   private boolean isRemoteTemplateAndGitEntity(TemplateEntity templateEntity) {
     GitAwareContextHelper.initDefaultScmGitMetaData();
     GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
