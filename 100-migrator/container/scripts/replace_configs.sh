@@ -686,7 +686,7 @@ if [[ "" != "$REDIS_SENTINELS" ]]; then
   for REDIS_SENTINEL_URL in "${REDIS_SENTINEL_URLS[@]}"; do
     export REDIS_SENTINEL_URL; export INDEX; yq -i '.redisLockConfig.sentinelUrls.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
     export REDIS_SENTINEL_URL; export INDEX; yq -i '.redisAtmosphereConfig.sentinelUrls.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
-    export REDIS_SENTINEL_URL; yq -i '.sentinelServersConfig.sentinelAddresses.[+]=env(REDIS_SENTINEL_URL)' $REDISSON_CACHE_FILE
+    export REDIS_SENTINEL_URL; yq -i '.sentinelServersConfig.sentinelAddresses +=[env(REDIS_SENTINEL_URL)]' $REDISSON_CACHE_FILE
     INDEX=$(expr $INDEX + 1)
   done
 fi

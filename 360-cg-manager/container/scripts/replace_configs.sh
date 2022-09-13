@@ -8,15 +8,6 @@ CONFIG_FILE=/opt/harness/config.yml
 NEWRELIC_FILE=/opt/harness/newrelic.yml
 REDISSON_CACHE_FILE=/opt/harness/redisson-jcache.yaml
 
-
-cp ../../config.yml ../../config4.yml
-CONFIG_FILE=../../config4.yml
-NEWRELIC_FILE=../../newrelic.yml
-REDISSON_CACHE_FILE=../../redisson-jcache.yaml
-export NEWRELIC_LICENSE_KEY=newrelickey
-export REDIS_SENTINELS=redis://redisha-redis-ha-announce-0.shiv-yq-vuln-pr.svc.cluster.local:26379,redis://redisha-redis-ha-announce-1.shiv-yq-vuln-pr.svc.cluster.local:26379,redis://redisha-redis-ha-announce-2.shiv-yq-vuln-pr.svc.cluster.local:26379
-
-
 replace_key_value () {
   CONFIG_KEY="$1";
   CONFIG_VALUE="$2";
