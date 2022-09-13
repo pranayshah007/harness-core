@@ -44,6 +44,7 @@ class DBKeys(Enum):
 
 
 yaml_git_config_list = []
+migrated_pipelines = {}
 
 class YamlGitConfig:
     def __init__(self, identifier, repo_url, connector_ref):
@@ -87,6 +88,10 @@ def prepare_yaml_git_config_list():
     print(yaml_git_config_list)
 
 
+def cache_pipeline_locally(record):
+    migrated_pipelines[record.get("_id")] = record
+
+
 def migrate_records(collection, yaml_git_config):
     query = {
         DBKeys.ACCOUNT_ID.value: INPUT_ACCOUNT_ID,
@@ -97,7 +102,6 @@ def migrate_records(collection, yaml_git_config):
     records = collection.find(query)
 
     for record in records:
-        print(record)
         old_file_path = record.get(DBKeys.FILE_PATH.value)
         old_root_folder = record.get(DBKeys.ROOT_FOLDER.value)
         # remove starting slash from root folder
@@ -108,6 +112,7 @@ def migrate_records(collection, yaml_git_config):
         record[DBKeys.FILE_PATH.value] = old_root_folder[1:] + old_file_path
 
         collection.update_one({"_id": record.get("_id")}, {"$set": record}, upsert=False)
+        cache_pipeline_locally(record)
 
     collection.update_many(query, {"$unset": {
                                     DBKeys.ROOT_FOLDER.value: 1,
@@ -229,6 +234,7 @@ def delete_yaml_git_configs():
     }
     yaml_git_config_collection.delete_many(find_criteria)
 
+
 def update_triggers():
     query = {
         DBKeys.ACCOUNT_ID.value: INPUT_ACCOUNT_ID,
@@ -236,25 +242,19 @@ def update_triggers():
         DBKeys.PROJECT_IDENTIFIER.value: INPUT_PROJECT_ID,
     }
     triggers = pms_db.triggersNG.find(query)
-    for record in triggers:
-        pipelineId = record.get(DBKeys.TARGET_IDENTIFIER.value);
-        pipelineQuery = {
-            DBKeys.ACCOUNT_ID.value: INPUT_ACCOUNT_ID,
-            DBKeys.ORG_IDENTIFIER.value: INPUT_ORG_ID,
-            DBKeys.PROJECT_IDENTIFIER.value: INPUT_PROJECT_ID,
-            DBKeys.IDENTIFIER.value: pipelineId,
-            DBKeys.IS_FROM_DEFAULT_BRANCH.value: True
-        }
-        pipeline = pms_db.pipelinesPMS.find_one(pipelineQuery)
+
+    for trigger in triggers:
+        pipelineId = trigger.get(DBKeys.TARGET_IDENTIFIER.value);
+        pipeline = migrated_pipelines[pipelineId]
         if pipeline is None:
             continue
 
-        pipelineBranchName = pipeline.get(DBKeys.BRANCH.value);
+        pipelineBranchName = pipeline[DBKeys.BRANCH.value];
+        trigger_yaml = yaml.safe_load(trigger.get(DBKeys.YAML.value));
+        trigger_yaml[DBKeys.TRIGGER.value][DBKeys.PIPELINE_BRANCH_NAME.value] = pipelineBranchName
+        trigger[DBKeys.YAML.value] = yaml.dump(trigger_yaml,  sort_keys=False);
+        pms_db.triggersNG.update_one({"_id": trigger.get("_id")}, {"$set": trigger}, upsert=False)
 
-        trigger_yaml = yaml.safe_load(record.get(DBKeys.YAML.value));
-        trigger_yaml.get(DBKeys.TRIGGER.value)[DBKeys.PIPELINE_BRANCH_NAME.value] = pipelineBranchName
-        record[DBKeys.YAML.value] = yaml.dump(trigger_yaml,  sort_keys=False);
-        pms_db.triggersNG.update_one({"_id": record.get("_id")}, {"$set": record}, upsert=False)
 
 if __name__ == "__main__":
     setup_mongo_client()
