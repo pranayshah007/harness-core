@@ -514,10 +514,6 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
         buildActiveInfos.clear();
         serviceIds.clear();
         log.error("Caught SQL Exception:" + ex.getMessage());
-      } catch (Exception ex) {
-        buildActiveInfos.clear();
-        serviceIds.clear();
-        log.error("Caught General Exception:" + ex.getMessage());
       } finally {
         DBUtils.close(resultSet);
       }
