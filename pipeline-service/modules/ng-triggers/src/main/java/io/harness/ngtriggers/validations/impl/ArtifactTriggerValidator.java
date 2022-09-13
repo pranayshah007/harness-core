@@ -60,7 +60,7 @@ public class ArtifactTriggerValidator implements TriggerValidator {
       }
 
       // make sure, stage and artifact identifiers are given
-      if(triggerDetails.getNgTriggerEntity().getWithServiceV2() == false) {
+      if (triggerDetails.getNgTriggerEntity().getWithServiceV2() == false) {
         validationHelper.verifyStageAndBuildRef(triggerDetails, ARTIFACT_REF);
       }
 
@@ -68,7 +68,8 @@ public class ArtifactTriggerValidator implements TriggerValidator {
       BuildTriggerOpsData buildTriggerOpsData =
           validationHelper.generateBuildTriggerOpsDataForArtifact(triggerDetails, pipelineYml);
       // stageRef & manifestRef exists
-      if (triggerDetails.getNgTriggerEntity().getWithServiceV2() == false && isEmpty(buildTriggerOpsData.getPipelineBuildSpecMap())) {
+      if (triggerDetails.getNgTriggerEntity().getWithServiceV2() == false
+          && isEmpty(buildTriggerOpsData.getPipelineBuildSpecMap())) {
         throw new InvalidRequestException(
             "Artifact With Given StageIdentifier and ArtifactRef in Trigger does not exist in Pipeline");
       }

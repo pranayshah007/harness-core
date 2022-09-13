@@ -19,8 +19,6 @@ import io.harness.ngtriggers.validations.TriggerValidator;
 import io.harness.ngtriggers.validations.ValidationResult;
 import io.harness.ngtriggers.validations.ValidationResult.ValidationResultBuilder;
 
-import java.util.Optional;
-
 @OwnedBy(PIPELINE)
 public class TriggerIdentifierRefValidator implements TriggerValidator {
   @Override

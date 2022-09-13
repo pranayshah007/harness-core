@@ -16,7 +16,6 @@ import static io.harness.rule.OwnerRule.RUTVIJ_MEHTA;
 import static io.harness.rule.OwnerRule.SRIDHAR;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -252,7 +251,8 @@ public class NGTriggerResourceImplTest extends CategoryTest {
     when(ngTriggerElementMapper.toResponseDTO(ngTriggerEntity)).thenReturn(ngTriggerResponseDTO);
 
     NGTriggerResponseDTO responseDTO =
-        ngTriggerResource.create(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, ngTriggerYaml, true, false)
+        ngTriggerResource
+            .create(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, ngTriggerYaml, true, false)
             .getData();
     assertThat(responseDTO).isEqualTo(ngTriggerResponseDTO);
   }
@@ -270,7 +270,8 @@ public class NGTriggerResourceImplTest extends CategoryTest {
     when(ngTriggerElementMapper.toResponseDTO(ngTriggerEntityGitSync)).thenReturn(ngTriggerResponseDTOGitSync);
 
     NGTriggerResponseDTO responseDTO =
-        ngTriggerResource.create(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, ngTriggerYaml, false, false)
+        ngTriggerResource
+            .create(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, ngTriggerYaml, false, false)
             .getData();
     assertThat(responseDTO).isEqualTo(ngTriggerResponseDTOGitSync);
   }
@@ -345,8 +346,8 @@ public class NGTriggerResourceImplTest extends CategoryTest {
         .mergeTriggerEntity(triggerDetails.getNgTriggerEntity(), ngTriggerYamlWithGitSync);
     doReturn(triggerDetails)
         .when(ngTriggerService)
-        .fetchTriggerEntity(
-            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, ngTriggerYamlWithGitSync, false);
+        .fetchTriggerEntity(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER,
+            ngTriggerYamlWithGitSync, false);
     when(ngTriggerElementMapper.toResponseDTO(ngTriggerEntityGitSync)).thenReturn(ngTriggerResponseDTOGitSync);
     NGTriggerResponseDTO responseDTO = ngTriggerResource
                                            .update("0", ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
@@ -440,7 +441,8 @@ public class NGTriggerResourceImplTest extends CategoryTest {
         .thenReturn(ngTriggerResponseDTOGitlabMRComment);
 
     NGTriggerResponseDTO responseDTO =
-        ngTriggerResource.create(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, ngTriggerYaml, false, false)
+        ngTriggerResource
+            .create(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, ngTriggerYaml, false, false)
             .getData();
     assertThat(responseDTO).isEqualTo(ngTriggerResponseDTOGitlabMRComment);
   }
@@ -459,7 +461,8 @@ public class NGTriggerResourceImplTest extends CategoryTest {
         .thenReturn(ngTriggerResponseDTOBitbucketPRComment);
 
     NGTriggerResponseDTO responseDTO =
-        ngTriggerResource.create(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, ngTriggerYaml, false, false)
+        ngTriggerResource
+            .create(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, ngTriggerYaml, false, false)
             .getData();
     assertThat(responseDTO).isEqualTo(ngTriggerResponseDTOBitbucketPRComment);
   }

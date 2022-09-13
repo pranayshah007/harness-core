@@ -123,12 +123,10 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
       NGTriggerEntity updatedEntity;
 
       if (ignoreError) {
-        updatedEntity = ngTriggerService.update(
-            triggerDetails.getNgTriggerEntity());
+        updatedEntity = ngTriggerService.update(triggerDetails.getNgTriggerEntity());
       } else {
         ngTriggerService.validateInputSets(triggerDetails);
-        updatedEntity = ngTriggerService.update(
-            triggerDetails.getNgTriggerEntity());
+        updatedEntity = ngTriggerService.update(triggerDetails.getNgTriggerEntity());
       }
       return ResponseDTO.newResponse(
           updatedEntity.getVersion().toString(), ngTriggerElementMapper.toResponseDTO(updatedEntity));
@@ -145,8 +143,7 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
       @NotNull @ResourceIdentifier String targetIdentifier, String triggerIdentifier, @NotNull boolean status) {
     Optional<NGTriggerEntity> ngTriggerEntity = ngTriggerService.get(
         accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier, triggerIdentifier, false);
-    return ResponseDTO.newResponse(
-        ngTriggerService.updateTriggerStatus(ngTriggerEntity.get(), status));
+    return ResponseDTO.newResponse(ngTriggerService.updateTriggerStatus(ngTriggerEntity.get(), status));
   }
 
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)

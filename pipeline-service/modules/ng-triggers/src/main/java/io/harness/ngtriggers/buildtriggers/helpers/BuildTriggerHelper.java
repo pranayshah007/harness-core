@@ -124,7 +124,8 @@ public class BuildTriggerHelper {
           "Type filed is not present in Trigger Spec. Its needed for Artifact/Manifest Triggers");
     }
 
-    if (buildTriggerOpsData.getTriggerDetails().getNgTriggerEntity().getWithServiceV2() == false && !typeFromPipeline.asText().equals(typeFromTrigger.asText())) {
+    if (buildTriggerOpsData.getTriggerDetails().getNgTriggerEntity().getWithServiceV2() == false
+        && !typeFromPipeline.asText().equals(typeFromTrigger.asText())) {
       throw new InvalidRequestException(new StringBuilder(128)
                                             .append("Artifact/Manifest Type in Trigger: ")
                                             .append(typeFromTrigger.asText())

@@ -54,7 +54,7 @@ public class ManifestTriggerValidator implements TriggerValidator {
       }
 
       // make sure, stage and artifact identifiers are given
-      if(triggerDetails.getNgTriggerEntity().getWithServiceV2() == false) {
+      if (triggerDetails.getNgTriggerEntity().getWithServiceV2() == false) {
         validationHelper.verifyStageAndBuildRef(triggerDetails, MANIFEST_REF);
       }
 
@@ -63,7 +63,8 @@ public class ManifestTriggerValidator implements TriggerValidator {
           validationHelper.generateBuildTriggerOpsDataForManifest(triggerDetails, pipelineYml);
 
       // stageRef & manifestRef exists
-      if (triggerDetails.getNgTriggerEntity().getWithServiceV2() == false && isEmpty(buildTriggerOpsData.getPipelineBuildSpecMap())) {
+      if (triggerDetails.getNgTriggerEntity().getWithServiceV2() == false
+          && isEmpty(buildTriggerOpsData.getPipelineBuildSpecMap())) {
         throw new InvalidRequestException(
             "Manifest With Given StageIdentifier and ManifestRef in Trigger does not exist in Pipeline");
       }
@@ -95,30 +96,29 @@ public class ManifestTriggerValidator implements TriggerValidator {
 
   @VisibleForTesting
   void validateForHelmChart(BuildTriggerOpsData buildTriggerOpsData) {
-
-    if(buildTriggerOpsData.getTriggerDetails().getNgTriggerEntity().getWithServiceV2() == false) {
+    if (buildTriggerOpsData.getTriggerDetails().getNgTriggerEntity().getWithServiceV2() == false) {
       // Only check when complete Store is not runtimeInput
       if (!buildTriggerOpsData.getPipelineBuildSpecMap().containsKey("spec.store")) {
         String storeTypeFromTrigger = validationHelper.fetchStoreTypeForHelm(buildTriggerOpsData);
 
         String storeTypeFromPipeline =
-                ((TextNode) buildTriggerOpsData.getPipelineBuildSpecMap().get("spec.store.type")).asText();
+            ((TextNode) buildTriggerOpsData.getPipelineBuildSpecMap().get("spec.store.type")).asText();
 
         // Store type mismatch
         if (!storeTypeFromPipeline.equals(storeTypeFromTrigger)) {
           throw new InvalidRequestException(
-                  String.format("Manifest Store Type in Trigger:%s does not match with Manifest Store Type in Pipeline %s",
-                          storeTypeFromTrigger, storeTypeFromPipeline));
+              String.format("Manifest Store Type in Trigger:%s does not match with Manifest Store Type in Pipeline %s",
+                  storeTypeFromTrigger, storeTypeFromPipeline));
         }
       }
 
       // ChartVersion can not be a fixed value
       if (buildTriggerOpsData.getPipelineBuildSpecMap().containsKey("spec.chartVersion")) {
         String chartVersion =
-                ((TextNode) buildTriggerOpsData.getPipelineBuildSpecMap().get("spec.chartVersion")).asText();
+            ((TextNode) buildTriggerOpsData.getPipelineBuildSpecMap().get("spec.chartVersion")).asText();
         if (!chartVersion.equals("<+input>")) {
           throw new InvalidRequestException(
-                  "ChartVersion should not have fixed value in Pipeline when creating Manifest Trigger");
+              "ChartVersion should not have fixed value in Pipeline when creating Manifest Trigger");
         }
       }
     }

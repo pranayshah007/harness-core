@@ -609,7 +609,8 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     // for the validation.
 
     // trigger source validation
-    if (triggerDetails.getNgTriggerEntity().getWithServiceV2() == false && isBlank(triggerDetails.getNgTriggerEntity().getIdentifier())) {
+    if (triggerDetails.getNgTriggerEntity().getWithServiceV2() == false
+        && isBlank(triggerDetails.getNgTriggerEntity().getIdentifier())) {
       throw new InvalidArgumentsException("Identifier can not be empty");
     }
 
@@ -638,10 +639,12 @@ public class NGTriggerServiceImpl implements NGTriggerService {
         }
         return;
       case MANIFEST:
-        validateStageIdentifierAndBuildRef((BuildAware) spec, "manifestRef", triggerDetails.getNgTriggerEntity().getWithServiceV2());
+        validateStageIdentifierAndBuildRef(
+            (BuildAware) spec, "manifestRef", triggerDetails.getNgTriggerEntity().getWithServiceV2());
         return;
       case ARTIFACT:
-        validateStageIdentifierAndBuildRef((BuildAware) spec, "artifactRef", triggerDetails.getNgTriggerEntity().getWithServiceV2());
+        validateStageIdentifierAndBuildRef(
+            (BuildAware) spec, "artifactRef", triggerDetails.getNgTriggerEntity().getWithServiceV2());
         return;
       default:
         return; // not implemented
@@ -912,11 +915,12 @@ public class NGTriggerServiceImpl implements NGTriggerService {
   }
 
   @Override
-  public TriggerDetails fetchTriggerEntity(
-      String accountId, String orgId, String projectId, String pipelineId, String triggerId, String newYaml, boolean withServiceV2) {
+  public TriggerDetails fetchTriggerEntity(String accountId, String orgId, String projectId, String pipelineId,
+      String triggerId, String newYaml, boolean withServiceV2) {
     NGTriggerConfigV2 config = ngTriggerElementMapper.toTriggerConfigV2(newYaml);
     Optional<NGTriggerEntity> existingEntity = get(accountId, orgId, projectId, pipelineId, triggerId, false);
-    NGTriggerEntity entity = ngTriggerElementMapper.toTriggerEntity(accountId, orgId, projectId, triggerId, newYaml, withServiceV2);
+    NGTriggerEntity entity =
+        ngTriggerElementMapper.toTriggerEntity(accountId, orgId, projectId, triggerId, newYaml, withServiceV2);
     if (existingEntity.isPresent()) {
       ngTriggerElementMapper.copyEntityFieldsOutsideOfYml(existingEntity.get(), entity);
     }

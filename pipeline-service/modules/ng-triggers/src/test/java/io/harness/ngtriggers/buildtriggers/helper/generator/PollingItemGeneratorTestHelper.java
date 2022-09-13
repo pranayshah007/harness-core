@@ -20,8 +20,6 @@ import io.harness.polling.contracts.PollingItem;
 
 import lombok.experimental.UtilityClass;
 
-import java.util.Optional;
-
 @UtilityClass
 @OwnedBy(PIPELINE)
 public class PollingItemGeneratorTestHelper {
