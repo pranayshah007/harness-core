@@ -21,7 +21,6 @@ import java.util.concurrent.TimeUnit;
 @OwnedBy(CDP)
 public final class HelmConstants {
   public static final String HELM_PATH_PLACEHOLDER = "${HELM_PATH}";
-
   public static final String HELM_NAMESPACE_PLACEHOLDER_REGEX = "\\$\\{NAMESPACE}";
   public static final String HELM_NAMESPACE_PLACEHOLDER = "${NAMESPACE}";
   public static final String HELM_DOCKER_IMAGE_NAME_PLACEHOLDER = "${DOCKER_IMAGE_NAME}";

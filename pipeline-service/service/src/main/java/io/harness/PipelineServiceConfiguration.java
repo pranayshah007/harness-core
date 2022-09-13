@@ -262,4 +262,12 @@ public class PipelineServiceConfiguration extends Configuration {
         .resourceClasses(resourceClasses)
         .scannerClass("io.swagger.v3.jaxrs2.integration.JaxrsAnnotationScanner");
   }
+
+  public List<String> getDbAliases() {
+    List<String> dbAliases = new ArrayList<>();
+    if (mongoConfig != null) {
+      dbAliases.add(mongoConfig.getAliasDBName());
+    }
+    return dbAliases;
+  }
 }

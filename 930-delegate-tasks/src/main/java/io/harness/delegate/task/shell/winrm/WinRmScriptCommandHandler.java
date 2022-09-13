@@ -18,11 +18,12 @@ import io.harness.delegate.task.shell.WinrmTaskParameters;
 import io.harness.delegate.task.shell.ssh.CommandHandler;
 import io.harness.delegate.task.ssh.NgCommandUnit;
 import io.harness.delegate.task.ssh.ScriptCommandUnit;
+import io.harness.delegate.task.ssh.WinRmInfraDelegateConfig;
 import io.harness.delegate.task.winrm.WinRmExecutorFactoryNG;
 import io.harness.delegate.task.winrm.WinRmSessionConfig;
 import io.harness.delegate.task.winrm.WinRmSessionConfig.WinRmSessionConfigBuilder;
 import io.harness.exception.InvalidRequestException;
-import io.harness.logging.CommandExecutionStatus;
+import io.harness.shell.ExecuteCommandResponse;
 
 import software.wings.core.winrm.executors.WinRmExecutor;
 
@@ -44,7 +45,7 @@ public class WinRmScriptCommandHandler implements CommandHandler {
   }
 
   @Override
-  public CommandExecutionStatus handle(CommandTaskParameters parameters, NgCommandUnit commandUnit,
+  public ExecuteCommandResponse handle(CommandTaskParameters parameters, NgCommandUnit commandUnit,
       ILogStreamingTaskClient logStreamingTaskClient, CommandUnitsProgress commandUnitsProgress,
       Map<String, Object> taskContext) {
     if (!(parameters instanceof WinrmTaskParameters)) {
@@ -65,12 +66,18 @@ public class WinRmScriptCommandHandler implements CommandHandler {
                                                   .hostname(winRmCommandTaskParameters.getHost())
                                                   .timeout(SESSION_TIMEOUT);
 
-    WinRmSessionConfig config =
-        winRmConfigAuthEnhancer.configureAuthentication(winRmCommandTaskParameters, configBuilder);
+    final WinRmInfraDelegateConfig winRmInfraDelegateConfig = winRmCommandTaskParameters.getWinRmInfraDelegateConfig();
+    if (winRmInfraDelegateConfig == null) {
+      throw new InvalidRequestException("Task parameters must include WinRm Infra Delegate config.");
+    }
+
+    WinRmSessionConfig config = winRmConfigAuthEnhancer.configureAuthentication(
+        winRmInfraDelegateConfig.getWinRmCredentials(), winRmInfraDelegateConfig.getEncryptionDataDetails(),
+        configBuilder, winRmCommandTaskParameters.isUseWinRMKerberosUniqueCacheFile());
     WinRmExecutor executor = winRmExecutorFactoryNG.getExecutor(config,
         winRmCommandTaskParameters.isDisableWinRMCommandEncodingFFSet(), logStreamingTaskClient, commandUnitsProgress);
-    return executor
-        .executeCommandString(scriptCommandUnit.getCommand(), winRmCommandTaskParameters.getOutputVariables())
-        .getStatus();
+
+    return executor.executeCommandString(
+        scriptCommandUnit.getCommand(), winRmCommandTaskParameters.getOutputVariables());
   }
 }

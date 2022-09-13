@@ -20,6 +20,7 @@ import io.harness.eventsframework.consumer.Message;
 import io.harness.ng.core.event.MessageListener;
 import io.harness.queue.QueueController;
 import io.harness.security.SecurityContextBuilder;
+import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.security.dto.ServicePrincipal;
 
 import com.google.inject.Inject;
@@ -58,6 +59,7 @@ public class PMSEntityCRUDStreamConsumer implements Runnable {
     log.info("Started the consumer for PMS entity crud stream");
     try {
       SecurityContextBuilder.setContext(new ServicePrincipal(PIPELINE_SERVICE.getServiceId()));
+      SourcePrincipalContextBuilder.setSourcePrincipal(new ServicePrincipal(PIPELINE_SERVICE.getServiceId()));
       while (!Thread.currentThread().isInterrupted()) {
         if (queueController.isNotPrimary()) {
           log.info(this.getClass().getSimpleName()

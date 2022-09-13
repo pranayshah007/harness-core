@@ -10,10 +10,11 @@ package io.harness.buildcleaner;
 import io.harness.buildcleaner.bazel.BuildFile;
 import io.harness.buildcleaner.bazel.JavaBinary;
 import io.harness.buildcleaner.bazel.JavaLibrary;
-import io.harness.buildcleaner.bazel.LoadStatement;
+import io.harness.buildcleaner.common.SymbolDependencyMap;
 import io.harness.buildcleaner.javaparser.ClassMetadata;
 import io.harness.buildcleaner.javaparser.ClasspathParser;
 import io.harness.buildcleaner.javaparser.PackageParser;
+import io.harness.buildcleaner.proto.ProtoBuildMapper;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
@@ -24,6 +25,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
@@ -88,11 +90,27 @@ public class BuildCleaner {
           try {
             Path modulePath = workspace().relativize(path);
             Optional<BuildFile> buildFile = generateBuildForModule(modulePath, harnessSymbolMap);
-
-            if (buildFile.isPresent()) {
-              logger.info("Writing Build file for Module: " + path);
-              buildFile.get().writeToPackage(workspace().resolve(path));
+            if (!buildFile.isPresent()) {
+              logger.error("Could not generate build file for {}", modulePath);
+              return;
             }
+
+            Path packagePath = workspace().resolve(path);
+            Path buildFilePath = Paths.get(packagePath.toString(), "/BUILD.bazel");
+
+            if (!Files.exists(buildFilePath) || options.hasOption("overwriteExistingBuildFiles")) {
+              logger.info("Writing Build file for Module: {}", path);
+              buildFile.get().writeToPackage(workspace().resolve(path));
+              return;
+            }
+
+            logger.info("Updating dependencies for the existing buildFile at: {}", buildFilePath);
+            // Need to update the existing file with new content, after replacing the dependencies.
+            // Assumptions:
+            // - The BUILD file has at most one java_library rule
+            // - The BUILD file has at most one java_binary rule.
+            // - Empty dependencies are explicitly mentioned in the rules: Eg: deps = [] and runtime_deps = []
+            buildFile.get().updateDependencies(buildFilePath);
           } catch (IOException e) {
             throw new RuntimeException(e);
           }
@@ -107,18 +125,21 @@ public class BuildCleaner {
    */
   @VisibleForTesting
   protected SymbolDependencyMap buildHarnessSymbolMap() throws IOException, ClassNotFoundException {
-    SymbolDependencyMap harnessSymbolMap = new SymbolDependencyMap();
-
     if (indexFileExists() && !options.hasOption("overrideIndex")) {
       logger.info("Loading the already existing index file: " + indexFilePath().toString());
       return SymbolDependencyMap.deserializeFromFile(indexFilePath().toString());
     }
     logger.info("Creating index using sources matching: " + indexSourceGlob());
 
-    ClasspathParser classpathParser = packageParser.getClassPathParser();
-    classpathParser.parseClasses(indexSourceGlob(), options.hasOption("findBuildInParent"));
+    // Parse proto and BUILD files to construct Proto specific java symbols to proto target map.
+    ProtoBuildMapper protoBuildMapper = new ProtoBuildMapper(workspace());
+    SymbolDependencyMap harnessSymbolMap = protoBuildMapper.protoToBuildTargetDependencyMap(indexSourceGlob());
 
-    // Add repository java source code index to the cache.
+    // Parse java classes.
+    ClasspathParser classpathParser = packageParser.getClassPathParser();
+    classpathParser.parseClasses(indexSourceGlob(), assumedPackagePrefixesWithBuildFile());
+
+    // Update symbol dependency map with the parsed java code.
     Set<ClassMetadata> fullyQualifiedClassNames = classpathParser.getFullyQualifiedClassNames();
     for (ClassMetadata metadata : fullyQualifiedClassNames) {
       harnessSymbolMap.addSymbolTarget(metadata.getFullyQualifiedClassName(), metadata.getBuildModulePath());
@@ -146,7 +167,7 @@ public class BuildCleaner {
     // and don't care about the BUILD file paths.
     ClasspathParser classpathParser = this.packageParser.getClassPathParser();
     String parseClassPattern = path.toString().isEmpty() ? srcsGlob() : path.toString() + "/" + srcsGlob();
-    classpathParser.parseClasses(parseClassPattern, false);
+    classpathParser.parseClasses(parseClassPattern, new HashSet<>());
 
     Set<String> dependencies = new TreeSet<>();
     for (String importStatement : classpathParser.getUsedTypes()) {
@@ -184,7 +205,7 @@ public class BuildCleaner {
     // Find main files in the folder and create java binary targets.
     for (String className : classpathParser.getMainClasses()) {
       JavaBinary javaBinary = new JavaBinary(className, DEFAULT_VISIBILITY,
-          getPackageName(classpathParser) + "." + className, Collections.singleton(":" + path.getFileName().toString()),
+          getPackageName(classpathParser) + "." + className, /*runTimeDeps=*/Collections.singleton(":module"),
           /*deps=*/Collections.emptySet());
       buildFile.addJavaBinary(javaBinary);
     }
@@ -219,11 +240,16 @@ public class BuildCleaner {
 
     // Look up symbol in the harness symbol map.
     resolvedSymbol = harnessSymbolMap.getTarget(importStatement);
-    if (resolvedSymbol.isPresent()) {
-      return Optional.of("//" + resolvedSymbol.get() + ":" + DEFAULT_JAVA_LIBRARY_NAME);
+    if (!resolvedSymbol.isPresent()) {
+      return Optional.empty();
     }
 
-    return Optional.empty();
+    // For Java targets, we don't have java_library name in the Symbol dependency map.
+    if (!resolvedSymbol.get().contains(":")) {
+      return Optional.of(String.format("//%s:%s", resolvedSymbol.get(), DEFAULT_JAVA_LIBRARY_NAME));
+    }
+
+    return Optional.of(resolvedSymbol.get());
   }
 
   /**
@@ -279,6 +305,12 @@ public class BuildCleaner {
     return options.hasOption("srcsGlob") ? options.getOptionValue("srcsGlob") : "*.java";
   }
 
+  private Set<String> assumedPackagePrefixesWithBuildFile() {
+    return options.hasOption("assumedPackagePrefixesWithBuildFile")
+        ? new HashSet<String>(Arrays.asList(options.getOptionValue("assumedPackagePrefixesWithBuildFile").split(",")))
+        : new HashSet<String>();
+  }
+
   private Path mavenManifestFile() {
     return options.hasOption("mavenManifestFile") ? Paths.get(options.getOptionValue("mavenManifestFile"))
                                                   : Paths.get(workspace() + "/maven-manifest.json");
@@ -291,7 +323,7 @@ public class BuildCleaner {
   }
 
   private String indexSourceGlob() {
-    return options.hasOption("indexSourceGlob") ? options.getOptionValue("indexSourceGlob") : "**/src/**/*.java";
+    return options.hasOption("indexSourceGlob") ? options.getOptionValue("indexSourceGlob") : "**/src/**/*";
   }
 
   private CommandLine getCommandLineOptions(String[] args) {
@@ -299,9 +331,11 @@ public class BuildCleaner {
     CommandLineParser parser = new DefaultParser();
 
     options.addOption(new Option(null, "workspace", true, "Workspace root"));
-    options.addOption(new Option(
-        null, "indexSourceGlob", true, "Pattern for source files to build index. Defaults to '**/src/main/**/*.java'"));
-    options.addOption(new Option(null, "overrideIndex", true, "Override the existing index"));
+    options.addOption(
+        new Option(null, "indexSourceGlob", true, "Pattern for source files to build index. Defaults to '**/src/**/*"));
+    options.addOption(new Option(null, "overrideIndex", false, "Override the existing index"));
+    options.addOption(new Option(null, "overwriteExistingBuildFiles", false,
+        "Overwrite existing build file, instead of updating dependencies only"));
     options.addOption(new Option(null, "module", true, "Relative path of the module from the workspace"));
     options.addOption(new Option(null, "srcsGlob", true, "Pattern to match for finding source files."));
     options.addOption(
@@ -311,10 +345,10 @@ public class BuildCleaner {
             + "Defaults to workspace/maven_manifest.json"));
     options.addOption(
         new Option(null, "mavenManifestOverrideFile", true, "Specify overrides for conflicting imports."));
-    options.addOption(new Option(null, "recursive", true, "Generate BUILD files for all folders inside the module"));
-    options.addOption(new Option(null, "findBuildInParent", true,
-        "Don't assume build file is present in every folder, rather keep going up the tree until a build file is found. "
-            + "This would not override the index file if already present."));
+    options.addOption(new Option(null, "recursive", false, "Generate BUILD files for all folders inside the module"));
+    options.addOption(new Option(null, "assumedPackagePrefixesWithBuildFile", true,
+        "Comma separate list of module prefixes for which we can assume BUILD file to be present. "
+            + "Set to 'all' if need same behavior for all folders"));
 
     CommandLine commandLineOptions = null;
     try {

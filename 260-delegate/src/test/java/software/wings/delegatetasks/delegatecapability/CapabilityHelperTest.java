@@ -9,7 +9,6 @@ package software.wings.delegatetasks.delegatecapability;
 
 import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.MOHIT;
-import static io.harness.rule.OwnerRule.ROHIT_KUMAR;
 import static io.harness.rule.OwnerRule.TMACARI;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -30,7 +29,6 @@ import io.harness.security.encryption.EncryptionConfig;
 import io.harness.security.encryption.EncryptionType;
 
 import software.wings.WingsBaseTest;
-import software.wings.beans.CyberArkConfig;
 import software.wings.beans.GitConfig;
 import software.wings.beans.HostConnectionAttributes;
 import software.wings.beans.JenkinsConfig;
@@ -133,16 +131,6 @@ public class CapabilityHelperTest extends WingsBaseTest {
     List<ExecutionCapability> capability =
         EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilityForSecretManager(encryptionConfig, null);
     assertThat(AWS_KMS_URL).isEqualTo(capability.get(0).fetchCapabilityBasis());
-  }
-
-  @Test
-  @Owner(developers = ROHIT_KUMAR)
-  @Category(UnitTests.class)
-  public void testGetHttpCapabilityForDecryption_secretconfig() throws Exception {
-    EncryptionConfig encryptionConfig = CyberArkConfig.builder().cyberArkUrl("https://harness.cyberark.com").build();
-    List<ExecutionCapability> capability =
-        EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilityForSecretManager(encryptionConfig, null);
-    assertThat("https://harness.cyberark.com").isEqualTo(capability.get(0).fetchCapabilityBasis());
   }
 
   @Test

@@ -18,6 +18,7 @@ import io.harness.cdng.gitops.steps.GitopsClustersStep;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.steps.InfrastructureStep;
 import io.harness.cdng.infra.steps.InfrastructureTaskExecutableStep;
+import io.harness.cdng.infra.steps.InfrastructureTaskExecutableStepV2;
 import io.harness.cdng.pipeline.executions.beans.CDPipelineModuleInfo;
 import io.harness.cdng.pipeline.executions.beans.CDPipelineModuleInfo.CDPipelineModuleInfoBuilder;
 import io.harness.cdng.pipeline.executions.beans.CDStageModuleInfo;
@@ -29,6 +30,7 @@ import io.harness.cdng.pipeline.executions.beans.ServiceExecutionSummary.Artifac
 import io.harness.cdng.service.steps.ServiceConfigStep;
 import io.harness.cdng.service.steps.ServiceSectionStep;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
+import io.harness.cdng.service.steps.ServiceStepV3;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -109,13 +111,15 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
 
   private boolean isServiceNodeAndCompleted(StepType stepType, Status status) {
     return (Objects.equals(stepType, ServiceConfigStep.STEP_TYPE)
-               || Objects.equals(stepType, ServiceSectionStep.STEP_TYPE))
+               || Objects.equals(stepType, ServiceSectionStep.STEP_TYPE)
+               || Objects.equals(stepType, ServiceStepV3.STEP_TYPE))
         && StatusUtils.isFinalStatus(status);
   }
 
   private boolean isInfrastructureNodeAndCompleted(StepType stepType, Status status) {
     return (Objects.equals(stepType, InfrastructureStep.STEP_TYPE)
-               || Objects.equals(stepType, InfrastructureTaskExecutableStep.STEP_TYPE))
+               || Objects.equals(stepType, InfrastructureTaskExecutableStep.STEP_TYPE)
+               || Objects.equals(stepType, InfrastructureTaskExecutableStepV2.STEP_TYPE))
         && StatusUtils.isFinalStatus(status);
   }
 

@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.delegate.task.shell.ssh;
 
 import static io.harness.logging.LogLevel.ERROR;
@@ -23,6 +30,7 @@ import io.harness.exception.runtime.SshCommandExecutionException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
+import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
 
 import software.wings.beans.JenkinsConfig;
@@ -35,6 +43,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
@@ -62,10 +73,13 @@ public class JenkinsArtifactCommandUnitHandler extends ArtifactCommandUnitHandle
         JenkinsArtifactDelegateConfig jenkinsArtifactDelegateConfig =
             (JenkinsArtifactDelegateConfig) context.getArtifactDelegateConfig();
         updateArtifactMetadata(context);
-        logCallback.saveExecutionLog(color(
-            format("Downloading jenkins artifact with identifier: %s", jenkinsArtifactDelegateConfig.getIdentifier()),
-            White, Bold));
-        logCallback.saveExecutionLog("Jenkins Artifact Path: " + jenkinsArtifactDelegateConfig.getArtifactPath());
+        JenkinsConnectorDTO jenkinsConnectorDto =
+            (JenkinsConnectorDTO) jenkinsArtifactDelegateConfig.getConnectorDTO().getConnectorConfig();
+        logCallback.saveExecutionLog(
+            color(format("Downloading jenkins artifact: %s/job/%s/%s/artifact/%s", jenkinsConnectorDto.getJenkinsUrl(),
+                      jenkinsArtifactDelegateConfig.getJobName(), jenkinsArtifactDelegateConfig.getBuild(),
+                      jenkinsArtifactDelegateConfig.getArtifactPath()),
+                White, Bold));
         pair = jenkins.downloadArtifact(jenkinsArtifactDelegateConfig.getJobName(),
             jenkinsArtifactDelegateConfig.getBuild(), jenkinsArtifactDelegateConfig.getArtifactPath());
       }
@@ -113,27 +127,30 @@ public class JenkinsArtifactCommandUnitHandler extends ArtifactCommandUnitHandle
     if (JenkinsAuthType.USER_PASSWORD.equals(authType)) {
       JenkinsUserNamePasswordDTO jenkinsUserNamePasswordDTO =
           (JenkinsUserNamePasswordDTO) jenkinsConnectorDto.getAuth().getCredentials();
-      JenkinsConfig jenkinsConfig = JenkinsConfig.builder()
-                                        .jenkinsUrl(jenkinsConnectorDto.getJenkinsUrl())
-                                        .username(jenkinsUserNamePasswordDTO.getUsername())
-                                        .password((jenkinsUserNamePasswordDTO.isDecrypted()
-                                                ? jenkinsUserNamePasswordDTO
-                                                : decrypt(jenkinsUserNamePasswordDTO, jenkinsArtifactDelegateConfig))
-                                                      .getPasswordRef()
-                                                      .getDecryptedValue())
-                                        .build();
+      JenkinsConfig jenkinsConfig =
+          JenkinsConfig.builder()
+              .jenkinsUrl(jenkinsConnectorDto.getJenkinsUrl())
+              .username(jenkinsUserNamePasswordDTO.getUsername())
+              .password((jenkinsUserNamePasswordDTO.isDecrypted()
+                      ? jenkinsUserNamePasswordDTO
+                      : decrypt(jenkinsUserNamePasswordDTO, jenkinsArtifactDelegateConfig, context))
+                            .getPasswordRef()
+                            .getDecryptedValue())
+              .build();
       jenkins = jenkinsUtil.getJenkins(jenkinsConfig);
     } else if (JenkinsAuthType.BEARER_TOKEN.equals(authType)) {
       JenkinsBearerTokenDTO jenkinsBearerTokenDTO =
           (JenkinsBearerTokenDTO) jenkinsConnectorDto.getAuth().getCredentials();
-      JenkinsConfig jenkinsConfig = JenkinsConfig.builder()
-                                        .jenkinsUrl(jenkinsConnectorDto.getJenkinsUrl())
-                                        .token((jenkinsBearerTokenDTO.isDecrypted()
-                                                ? jenkinsBearerTokenDTO
-                                                : decrypt(jenkinsBearerTokenDTO, jenkinsArtifactDelegateConfig))
-                                                   .getTokenRef()
-                                                   .getDecryptedValue())
-                                        .build();
+      JenkinsConfig jenkinsConfig =
+          JenkinsConfig.builder()
+              .jenkinsUrl(jenkinsConnectorDto.getJenkinsUrl())
+              .token((jenkinsBearerTokenDTO.isDecrypted()
+                      ? jenkinsBearerTokenDTO
+                      : decrypt(jenkinsBearerTokenDTO, jenkinsArtifactDelegateConfig, context))
+                         .getTokenRef()
+                         .getDecryptedValue())
+              .authMechanism(JenkinsUtils.TOKEN_FIELD)
+              .build();
       jenkins = jenkinsUtil.getJenkins(jenkinsConfig);
     }
     return jenkins;
@@ -160,14 +177,24 @@ public class JenkinsArtifactCommandUnitHandler extends ArtifactCommandUnitHandle
   }
 
   private JenkinsUserNamePasswordDTO decrypt(JenkinsUserNamePasswordDTO jenkinsUserNamePasswordDTO,
-      JenkinsArtifactDelegateConfig jenkinsArtifactDelegateConfig) {
-    return (JenkinsUserNamePasswordDTO) secretDecryptionService.decrypt(
-        jenkinsUserNamePasswordDTO, jenkinsArtifactDelegateConfig.getEncryptedDataDetails());
+      JenkinsArtifactDelegateConfig jenkinsArtifactDelegateConfig, SshExecutorFactoryContext context) {
+    List<EncryptedDataDetail> allDetails = new ArrayList<>();
+    allDetails.addAll(
+        context.getEncryptedDataDetailList() != null ? context.getEncryptedDataDetailList() : Collections.emptyList());
+    allDetails.addAll(jenkinsArtifactDelegateConfig.getEncryptedDataDetails() != null
+            ? jenkinsArtifactDelegateConfig.getEncryptedDataDetails()
+            : Collections.emptyList());
+    return (JenkinsUserNamePasswordDTO) secretDecryptionService.decrypt(jenkinsUserNamePasswordDTO, allDetails);
   }
 
-  private JenkinsBearerTokenDTO decrypt(
-      JenkinsBearerTokenDTO jenkinsBearerTokenDTO, JenkinsArtifactDelegateConfig jenkinsArtifactDelegateConfig) {
-    return (JenkinsBearerTokenDTO) secretDecryptionService.decrypt(
-        jenkinsBearerTokenDTO, jenkinsArtifactDelegateConfig.getEncryptedDataDetails());
+  private JenkinsBearerTokenDTO decrypt(JenkinsBearerTokenDTO jenkinsBearerTokenDTO,
+      JenkinsArtifactDelegateConfig jenkinsArtifactDelegateConfig, SshExecutorFactoryContext context) {
+    List<EncryptedDataDetail> allDetails = new ArrayList<>();
+    allDetails.addAll(
+        context.getEncryptedDataDetailList() != null ? context.getEncryptedDataDetailList() : Collections.emptyList());
+    allDetails.addAll(jenkinsArtifactDelegateConfig.getEncryptedDataDetails() != null
+            ? jenkinsArtifactDelegateConfig.getEncryptedDataDetails()
+            : Collections.emptyList());
+    return (JenkinsBearerTokenDTO) secretDecryptionService.decrypt(jenkinsBearerTokenDTO, allDetails);
   }
 }

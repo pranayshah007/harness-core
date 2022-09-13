@@ -96,13 +96,16 @@ import io.harness.migration.NGMigrationSdkModule;
 import io.harness.migration.beans.NGMigrationConfiguration;
 import io.harness.migrations.InstanceMigrationProvider;
 import io.harness.ng.core.CorrelationFilter;
+import io.harness.ng.core.DefaultUserGroupsCreationJob;
 import io.harness.ng.core.EtagFilter;
 import io.harness.ng.core.event.NGEventConsumerService;
 import io.harness.ng.core.exceptionmappers.GenericExceptionMapperV2;
 import io.harness.ng.core.exceptionmappers.JerseyViolationExceptionMapperV2;
 import io.harness.ng.core.exceptionmappers.NotFoundExceptionMapper;
+import io.harness.ng.core.exceptionmappers.NotSupportedExceptionMapper;
 import io.harness.ng.core.exceptionmappers.OptimisticLockingFailureExceptionMapper;
 import io.harness.ng.core.exceptionmappers.WingsExceptionMapperV2;
+import io.harness.ng.core.filter.ApiResponseFilter;
 import io.harness.ng.core.handler.NGVaultSecretManagerRenewalHandler;
 import io.harness.ng.core.migration.NGBeanMigrationProvider;
 import io.harness.ng.core.migration.ProjectMigrationProvider;
@@ -208,6 +211,7 @@ import com.google.inject.Module;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
+import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import io.dropwizard.Application;
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
@@ -293,6 +297,13 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
 
   @Override
   public void run(NextGenConfiguration appConfig, Environment environment) {
+    log.info("Entering startup maintenance mode");
+    MaintenanceController.forceMaintenance(true);
+    environment.lifecycle().addServerLifecycleListener(server -> {
+      log.info("Leaving startup maintenance mode");
+      MaintenanceController.forceMaintenance(false);
+    });
+
     log.info("Starting Next Gen Application ...");
 
     ConfigSecretUtils.resolveSecrets(appConfig.getSecretsConfiguration(), appConfig);
@@ -315,6 +326,13 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
       @Singleton
       public GitSyncServiceConfiguration gitSyncServiceConfiguration() {
         return GitSyncServiceConfiguration.builder().grpcServerConfig(appConfig.getGitSyncGrpcServerConfig()).build();
+      }
+
+      @Provides
+      @Singleton
+      @Named("dbAliases")
+      public List<String> getDbAliases() {
+        return appConfig.getDbAliases();
       }
     });
     modules.add(new MetricRegistryModule(metricRegistry));
@@ -386,6 +404,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     registerJerseyProviders(environment, injector);
     registerJerseyFeatures(environment);
     registerCharsetResponseFilter(environment, injector);
+    registerApiResponseFilter(environment, injector);
     registerCorrelationFilter(environment, injector);
     registerEtagFilter(environment, injector);
     registerScheduleJobs(injector);
@@ -423,8 +442,6 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     } else {
       log.info("NextGenApplication DEPLOY_VERSION is not COMMUNITY");
     }
-
-    MaintenanceController.forceMaintenance(false);
   }
 
   private void initializeNGMonitoring(NextGenConfiguration appConfig, Injector injector) {
@@ -706,6 +723,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     environment.lifecycle().manage(injector.getInstance(QueueListenerController.class));
     environment.lifecycle().manage(injector.getInstance(NotifierScheduledExecutorService.class));
     environment.lifecycle().manage(injector.getInstance(OutboxEventPollService.class));
+    environment.lifecycle().manage(injector.getInstance(DefaultUserGroupsCreationJob.class));
     createConsumerThreadsToListenToEvents(environment, injector);
   }
 
@@ -738,6 +756,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     environment.jersey().register(NGAccessDeniedExceptionMapper.class);
     environment.jersey().register(WingsExceptionMapperV2.class);
     environment.jersey().register(GenericExceptionMapperV2.class);
+    environment.jersey().register(NotSupportedExceptionMapper.class);
   }
 
   private void registerJerseyFeatures(Environment environment) {
@@ -746,6 +765,10 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
 
   private void registerCharsetResponseFilter(Environment environment, Injector injector) {
     environment.jersey().register(injector.getInstance(CharsetResponseFilter.class));
+  }
+
+  private void registerApiResponseFilter(Environment environment, Injector injector) {
+    environment.jersey().register(injector.getInstance(ApiResponseFilter.class));
   }
 
   private void registerCorrelationFilter(Environment environment, Injector injector) {

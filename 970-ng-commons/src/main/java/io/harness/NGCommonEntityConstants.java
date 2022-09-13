@@ -16,6 +16,7 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(PL)
 @UtilityClass
 public class NGCommonEntityConstants {
+  public static final String ACCOUNT = "account";
   public static final String ACCOUNT_KEY = "accountIdentifier";
   public static final String ORG_KEY = "orgIdentifier";
   public static final String ORGS_KEY = "orgIdentifiers";
@@ -49,10 +50,15 @@ public class NGCommonEntityConstants {
   public static final String REFERRED_ENTITY_TYPE = "referredEntityType";
   public static final String REFERRED_BY_ENTITY_TYPE = "referredByEntityType";
   public static final String MODULE_TYPE = "moduleType";
+  public static final String REFERER = "referer";
   public static final String ENTITY_TYPE = "entityType";
   public static final String SEARCH_TERM = "searchTerm";
   public static final String USER_ID = "userId";
   public static final String PAGE = "page";
+  public static final String PAGE_SIZE = "page_size";
+  public static final String SELF_REL = "self";
+  public static final String PREVIOUS_REL = "previous";
+  public static final String NEXT_REL = "next";
   public static final String SIZE = "size";
   public static final String MASK_SECRETS = "maskSecrets";
   public static final String CONNECTOR_IDENTIFIER_REF = "connectorIdentifierRef";

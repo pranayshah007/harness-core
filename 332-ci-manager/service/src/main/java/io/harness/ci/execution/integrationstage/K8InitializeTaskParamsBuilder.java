@@ -44,6 +44,7 @@ import io.harness.ci.buildstate.CodebaseUtils;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.buildstate.SecretUtils;
 import io.harness.ci.buildstate.providers.InternalContainerParamsProvider;
+import io.harness.ci.license.CILicenseService;
 import io.harness.ci.utils.HarnessImageUtils;
 import io.harness.ci.utils.LiteEngineSecretEvaluator;
 import io.harness.ci.utils.PortFinder;
@@ -93,6 +94,7 @@ public class K8InitializeTaskParamsBuilder {
   @Inject private HarnessImageUtils harnessImageUtils;
   @Inject private InternalContainerParamsProvider internalContainerParamsProvider;
   @Inject private SecretUtils secretUtils;
+  @Inject private CILicenseService ciLicenseService;
   @Inject CodebaseUtils codebaseUtils;
 
   private static String RUNTIME_CLASS_NAME = "gvisor";
@@ -168,7 +170,8 @@ public class K8InitializeTaskParamsBuilder {
         .initContainerParamsList(singletonList(podContainers.getLeft()))
         .volumes(volumes)
         .runtime(RUNTIME_CLASS_NAME)
-        .activeDeadLineSeconds(k8InitializeTaskUtils.getLimitTtl(ngAccess))
+        .activeDeadLineSeconds(
+            IntegrationStageUtils.getStageTtl(ciLicenseService, ngAccess.getAccountIdentifier(), k8sHostedInfraYaml))
         .build();
   }
 
@@ -233,7 +236,7 @@ public class K8InitializeTaskParamsBuilder {
     Map<String, String> stoEnvVars = k8InitializeTaskUtils.getSTOServiceEnvVariables(accountId);
     Map<String, String> gitEnvVars =
         codebaseUtils.getGitEnvVariables(gitConnector, ciCodebase, initializeStepInfo.isSkipGitClone());
-    Map<String, String> runtimeCodebaseVars = codebaseUtils.getRuntimeCodebaseVars(ambiance);
+    Map<String, String> runtimeCodebaseVars = codebaseUtils.getRuntimeCodebaseVars(ambiance, gitConnector);
     Map<String, String> commonEnvVars = k8InitializeTaskUtils.getCommonStepEnvVariables(
         k8PodDetails, gitEnvVars, runtimeCodebaseVars, k8InitializeTaskUtils.getWorkDir(), logPrefix, ambiance);
 

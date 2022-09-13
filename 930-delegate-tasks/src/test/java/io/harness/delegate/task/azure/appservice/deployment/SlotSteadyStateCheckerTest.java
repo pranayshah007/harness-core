@@ -129,7 +129,7 @@ public class SlotSteadyStateCheckerTest extends CategoryTest {
     assertThatThrownBy(()
                            -> slotSteadyStateChecker.waitUntilCompleteWithTimeout(
                                10, 10, mockLogCallback, START_DEPLOYMENT_SLOT, statusVerifier))
-        .isInstanceOf(InvalidRequestException.class)
+        .isInstanceOf(AzureAppServicesSlotSteadyStateException.class)
         .hasMessageContaining("Timed out waiting for executing operation");
 
     doAnswer(invocation -> { throw new Exception(); }).when(deploymentSlot).state();

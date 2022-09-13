@@ -56,8 +56,8 @@ public class AzureRepoServiceImpl implements AzureRepoService {
   }
 
   @Override
-  public JSONObject mergePR(AzureRepoConfig azureRepoConfig, String userName, String token, String sha, String org,
-      String project, String repo, String prNumber) {
+  public JSONObject mergePR(AzureRepoConfig azureRepoConfig, String token, String sha, String org, String project,
+      String repo, String prNumber, boolean deleteSourceBranch) {
     log.info("Merging PR for sha {}", sha);
 
     JSONObject commitId = new JSONObject();
@@ -66,7 +66,7 @@ public class AzureRepoServiceImpl implements AzureRepoService {
     JSONObject mergeStrategy = new JSONObject();
     mergeStrategy.put("mergeStrategy", "1");
     mergeStrategy.put("mergeCommitMessage", MergeCommitMessage);
-    mergeStrategy.put("deleteSourceBranch", true);
+    mergeStrategy.put("deleteSourceBranch", deleteSourceBranch);
 
     JSONObject lastMergeSourceCommit = new JSONObject();
     lastMergeSourceCommit.put("lastMergeSourceCommit", commitId);

@@ -53,6 +53,7 @@ import io.harness.helm.HelmClient;
 import io.harness.helm.HelmClientImpl.HelmCliResponse;
 import io.harness.helm.HelmCommandResponseMapper;
 import io.harness.helm.HelmCommandType;
+import io.harness.k8s.K8sConstants;
 import io.harness.k8s.K8sGlobalConfigService;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.kubectl.Kubectl;
@@ -62,9 +63,9 @@ import io.harness.k8s.model.Kind;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
-import io.harness.k8s.model.Release;
-import io.harness.k8s.model.Release.Status;
-import io.harness.k8s.model.ReleaseHistory;
+import io.harness.k8s.releasehistory.IK8sRelease;
+import io.harness.k8s.releasehistory.K8sLegacyRelease;
+import io.harness.k8s.releasehistory.ReleaseHistory;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -111,6 +112,8 @@ import com.google.inject.Singleton;
 import io.fabric8.kubernetes.api.model.Pod;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -300,6 +303,12 @@ public class HelmDeployServiceImpl implements HelmDeployService {
         Optional<String> ocPath = setupPathOfOcBinaries(entry.getValue());
         if (ocPath.isPresent()) {
           commandRequest.setOcPath(ocPath.get());
+        }
+        if (isNotEmpty(commandRequest.getGcpKeyPath())) {
+          Path oldPath = Paths.get(commandRequest.getGcpKeyPath());
+          Path newPath = Paths.get(commandRequest.getWorkingDir(), K8sConstants.GCP_JSON_KEY_FILE_NAME);
+          Files.move(oldPath, newPath);
+          commandRequest.setGcpKeyPath(newPath.toAbsolutePath().toString());
         }
         success = success
             && k8sTaskHelperBase.doStatusCheckAllResourcesForHelm(client, entry.getValue(), commandRequest.getOcPath(),
@@ -573,8 +582,9 @@ public class HelmDeployServiceImpl implements HelmDeployService {
       HelmCommandRequest request, HelmCommandResponse response, ReleaseHistory releaseHistory) throws IOException {
     KubernetesConfig kubernetesConfig =
         containerDeploymentDelegateHelper.getKubernetesConfig(request.getContainerServiceParams());
-    releaseHistory.setReleaseStatus(
-        CommandExecutionStatus.SUCCESS == response.getCommandExecutionStatus() ? Status.Succeeded : Status.Failed);
+    releaseHistory.setReleaseStatus(CommandExecutionStatus.SUCCESS == response.getCommandExecutionStatus()
+            ? IK8sRelease.Status.Succeeded
+            : IK8sRelease.Status.Failed);
     k8sTaskHelperBase.saveReleaseHistory(kubernetesConfig, request.getReleaseName(), releaseHistory.getAsYaml(), true);
   }
 
@@ -650,10 +660,10 @@ public class HelmDeployServiceImpl implements HelmDeployService {
     KubernetesConfig kubernetesConfig =
         containerDeploymentDelegateHelper.getKubernetesConfig(request.getContainerServiceParams());
     ReleaseHistory releaseHistory = fetchK8sReleaseHistory(request, kubernetesConfig);
-    Release rollbackRelease = releaseHistory.getRelease(request.getPrevReleaseVersion());
+    K8sLegacyRelease rollbackRelease = releaseHistory.getRelease(request.getPrevReleaseVersion());
     notNullCheck("Unable to find release " + request.getPrevReleaseVersion(), rollbackRelease);
 
-    if (Status.Succeeded != rollbackRelease.getStatus()) {
+    if (IK8sRelease.Status.Succeeded != rollbackRelease.getStatus()) {
       throw new InvalidRequestException("Invalid status for release with number " + request.getPrevReleaseVersion()
               + ". Expected 'Succeeded' status, actual status is '" + rollbackRelease.getStatus() + "'",
           USER);

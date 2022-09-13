@@ -13,11 +13,13 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.exception.WingsException;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.serializer.JsonUtils;
 
@@ -53,6 +55,7 @@ import org.mongodb.morphia.annotations.Transient;
 @EqualsAndHashCode(callSuper = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "TimeSeriesRiskSummaryKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "timeSeriesRiskSummary", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 public class TimeSeriesRiskSummary extends Base implements AccountAccess {

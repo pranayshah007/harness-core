@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.ng.DbAliases.ACCESS_CONTROL;
 
 import io.harness.accesscontrol.acl.persistence.SourceMetadata.SourceMetadataKeys;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
@@ -38,10 +38,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @FieldNameConstants(innerTypeName = "ACLKeys")
+@StoreIn(ACCESS_CONTROL)
 @Document(ACL.PRIMARY_COLLECTION)
 @Entity(value = "acl", noClassnameStored = true)
 @TypeAlias("acl")
-@StoreIn(ACCESS_CONTROL)
 public class ACL implements PersistentEntity {
   private static final String DELIMITER = "$";
   public static final String ROLE_ASSIGNMENT_IDENTIFIER_KEY =

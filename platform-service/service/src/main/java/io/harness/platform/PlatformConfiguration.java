@@ -13,6 +13,7 @@ import static java.util.stream.Collectors.toSet;
 
 import io.harness.AccessControlClientConfiguration;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.enforcement.client.EnforcementClientConfiguration;
 import io.harness.platform.audit.AuditServiceConfiguration;
 import io.harness.platform.notification.NotificationServiceConfiguration;
@@ -44,6 +45,7 @@ import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.servers.Server;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -137,7 +139,9 @@ public class PlatformConfiguration extends Configuration {
     resources.addAll(ALL_HARNESS_RESOURCES.stream()
                          .filter(clazz -> StringUtils.startsWithAny(clazz.getPackage().getName(), ENFORCEMENT_PACKAGE))
                          .collect(Collectors.toSet()));
-    return resources;
+    return resources.stream()
+        .filter(clazz -> clazz.isInterface() || EmptyPredicate.isEmpty(clazz.getInterfaces()))
+        .collect(toSet());
   }
 
   public PlatformConfiguration() {
@@ -192,5 +196,19 @@ public class PlatformConfiguration extends Configuration {
 
   public static Collection<Class<?>> getOAS3ResourceClassesOnly(Collection<Class<?>> allResourceClasses) {
     return allResourceClasses.stream().filter(x -> x.isAnnotationPresent(Tag.class)).collect(Collectors.toList());
+  }
+
+  public List<String> getDbAliases() {
+    List<String> dbAliases = new ArrayList<>();
+    if (notificationServiceConfig != null && notificationServiceConfig.getMongoConfig() != null) {
+      dbAliases.add(notificationServiceConfig.getMongoConfig().getAliasDBName());
+    }
+    if (auditServiceConfig != null && auditServiceConfig.getMongoConfig() != null) {
+      dbAliases.add(auditServiceConfig.getMongoConfig().getAliasDBName());
+    }
+    if (resoureGroupServiceConfig != null && resoureGroupServiceConfig.getMongoConfig() != null) {
+      dbAliases.add(resoureGroupServiceConfig.getMongoConfig().getAliasDBName());
+    }
+    return dbAliases;
   }
 }

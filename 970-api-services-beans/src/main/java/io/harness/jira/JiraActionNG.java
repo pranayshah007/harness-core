@@ -20,7 +20,8 @@ public enum JiraActionNG {
   GET_ISSUE_CREATE_METADATA("Get Issue Create Metadata"),
   GET_ISSUE_UPDATE_METADATA("Get Issue Update Metadata"),
   CREATE_ISSUE("Create Issue"),
-  UPDATE_ISSUE("Update Issue");
+  UPDATE_ISSUE("Update Issue"),
+  SEARCH_USER("Search user");
 
   private final String displayName;
 

@@ -9,6 +9,7 @@ package io.harness.stream;
 
 import static io.harness.agent.AgentGatewayConstants.HEADER_AGENT_MTLS_AUTHORITY;
 import static io.harness.agent.AgentGatewayUtils.isAgentConnectedUsingMtls;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.UNKNOWN_ERROR;
 import static io.harness.govern.Switch.unhandled;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
@@ -17,6 +18,7 @@ import io.harness.delegate.beans.ConnectionMode;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateConnectionHeartbeat;
 import io.harness.delegate.beans.DelegateInstanceStatus;
+import io.harness.delegate.beans.DelegateParams;
 import io.harness.delegate.task.DelegateLogContext;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.ErrorCodeName;
@@ -26,9 +28,11 @@ import io.harness.eraro.ResponseMessage;
 import io.harness.exception.WingsException;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
+import io.harness.metrics.impl.CachedMetricsPublisher;
 import io.harness.serializer.JsonUtils;
 import io.harness.service.intfc.DelegateCache;
 
+import software.wings.logcontext.WebsocketLogContext;
 import software.wings.service.intfc.AuthService;
 import software.wings.service.intfc.DelegateService;
 
@@ -37,6 +41,10 @@ import com.google.common.io.CharStreams;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.List;
+/**
+ * Created by peeyushaggarwal on 8/15/16.
+ */
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.atmosphere.cache.UUIDBroadcasterCache;
 import org.atmosphere.config.service.AtmosphereHandlerService;
@@ -48,27 +56,27 @@ import org.atmosphere.cpr.AtmosphereResponse;
 import org.atmosphere.handler.AtmosphereHandlerAdapter;
 import org.atmosphere.interceptor.AtmosphereResourceLifecycleInterceptor;
 
-/**
- * Created by peeyushaggarwal on 8/15/16.
- */
 @Slf4j
+@RequiredArgsConstructor(onConstructor_ = @Inject)
 @AtmosphereHandlerService(path = "/stream/delegate/{accountId}",
     interceptors = {AtmosphereResourceLifecycleInterceptor.class}, broadcasterCache = UUIDBroadcasterCache.class,
     broadcastFilters = {DelegateEventFilter.class})
 public class DelegateStreamHandler extends AtmosphereHandlerAdapter {
   public static final Splitter SPLITTER = Splitter.on("/").omitEmptyStrings();
 
-  @Inject private AuthService authService;
-  @Inject private DelegateService delegateService;
-  @Inject private DelegateCache delegateCache;
+  private final AuthService authService;
+  private final DelegateService delegateService;
+  private final DelegateCache delegateCache;
+  private final CachedMetricsPublisher cachedMetrics;
 
   @Override
   public void onRequest(AtmosphereResource resource) throws IOException {
-    AtmosphereRequest req = resource.getRequest();
+    final AtmosphereRequest req = resource.getRequest();
+    final String websocketId = resource.uuid();
 
     // get mTLS information independent of request type
-    String agentMtlsAuthority = req.getHeader(HEADER_AGENT_MTLS_AUTHORITY);
-    boolean isConnectedUsingMtls = isAgentConnectedUsingMtls(agentMtlsAuthority);
+    final String agentMtlsAuthority = req.getHeader(HEADER_AGENT_MTLS_AUTHORITY);
+    final boolean isConnectedUsingMtls = isAgentConnectedUsingMtls(agentMtlsAuthority);
 
     if (req.getMethod().equals("GET")) {
       String accountId;
@@ -77,13 +85,15 @@ public class DelegateStreamHandler extends AtmosphereHandlerAdapter {
         List<String> pathSegments = SPLITTER.splitToList(req.getPathInfo());
         accountId = pathSegments.get(1);
         delegateId = req.getParameter("delegateId");
-        String delegateTokenName = req.getParameter("delegateTokenName");
+        final String delegateConnectionId = req.getParameter("delegateConnectionId");
 
-        authService.validateDelegateToken(
-            accountId, req.getParameter("token"), delegateId, delegateTokenName, agentMtlsAuthority, false);
+        cachedMetrics.recordDelegateProcess(accountId, delegateConnectionId);
+        cachedMetrics.recordDelegateWebsocketConnection(accountId, websocketId);
+
         try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
-             AutoLogContext ignore2 = new DelegateLogContext(delegateId, OVERRIDE_ERROR)) {
-          String delegateConnectionId = req.getParameter("delegateConnectionId");
+             AutoLogContext ignore2 = new DelegateLogContext(delegateId, OVERRIDE_ERROR);
+             AutoLogContext ignore3 = new WebsocketLogContext(websocketId, OVERRIDE_ERROR)) {
+          log.info("delegate socket connected");
           String delegateVersion = req.getParameter("version");
 
           // These 2 will be sent by ECS delegate only
@@ -107,10 +117,22 @@ public class DelegateStreamHandler extends AtmosphereHandlerAdapter {
           resource.addEventListener(new AtmosphereResourceEventListenerAdapter() {
             @Override
             public void onDisconnect(AtmosphereResourceEvent event) {
-              try (AccountLogContext ignore = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
+              try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
+                   AutoLogContext ignore2 = new DelegateLogContext(delegateId, OVERRIDE_ERROR);
+                   AutoLogContext ignore3 = new WebsocketLogContext(event.getResource().uuid(), OVERRIDE_ERROR)) {
+                log.info("delegate socket disconnected {}", event);
                 Delegate delegate = delegateCache.get(accountId, delegateId, true);
                 delegateService.register(delegate);
                 delegateService.delegateDisconnected(accountId, delegateId, delegateConnectionId);
+              }
+            }
+
+            @Override
+            public void onClose(AtmosphereResourceEvent event) {
+              try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
+                   AutoLogContext ignore2 = new DelegateLogContext(delegateId, OVERRIDE_ERROR);
+                   AutoLogContext ignore3 = new WebsocketLogContext(event.getResource().uuid(), OVERRIDE_ERROR)) {
+                log.info("delegate socket closed {}", event);
               }
             }
           });
@@ -130,22 +152,30 @@ public class DelegateStreamHandler extends AtmosphereHandlerAdapter {
       List<String> pathSegments = SPLITTER.splitToList(req.getPathInfo());
       String accountId = pathSegments.get(1);
       String delegateId = req.getParameter("delegateId");
+      String delegateConnectionId = req.getParameter("delegateConnectionId");
+
+      cachedMetrics.recordDelegateProcess(accountId, delegateConnectionId);
+      cachedMetrics.recordDelegateWebsocketConnection(accountId, websocketId);
 
       try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
-           AutoLogContext ignore2 = new DelegateLogContext(delegateId, OVERRIDE_ERROR)) {
-        String delegateConnectionId = req.getParameter("delegateConnectionId");
-        String delegateVersion = req.getParameter("version");
+           AutoLogContext ignore2 = new DelegateLogContext(delegateId, OVERRIDE_ERROR);
+           AutoLogContext ignore3 = new WebsocketLogContext(websocketId, OVERRIDE_ERROR)) {
+        DelegateParams delegateParams = JsonUtils.asObject(CharStreams.toString(req.getReader()), DelegateParams.class);
+        String delegateVersion = delegateParams.getVersion();
 
-        Delegate delegate = JsonUtils.asObject(CharStreams.toString(req.getReader()), Delegate.class);
+        if (isNotEmpty(delegateParams.getToken())) {
+          authService.validateDelegateToken(accountId, delegateParams.getToken(), delegateId,
+              delegateParams.getTokenName(), agentMtlsAuthority, false);
+        }
+        Delegate delegate = Delegate.getDelegateFromParams(delegateParams, isConnectedUsingMtls);
         delegate.setUuid(delegateId);
-        delegate.setMtls(isConnectedUsingMtls);
 
         delegateService.register(delegate);
         delegateService.registerHeartbeat(accountId, delegateId,
             DelegateConnectionHeartbeat.builder()
                 .delegateConnectionId(delegateConnectionId)
                 .version(delegateVersion)
-                .location(delegate.getLocation())
+                .location(delegateParams.getLocation())
                 .build(),
             ConnectionMode.STREAMING);
       }
@@ -154,31 +184,36 @@ public class DelegateStreamHandler extends AtmosphereHandlerAdapter {
 
   @Override
   public void onStateChange(AtmosphereResourceEvent event) throws IOException {
-    AtmosphereResource r = event.getResource();
-    AtmosphereResponse res = r.getResponse();
+    AtmosphereRequest req = event.getResource().getRequest();
+    String delegateId = req.getParameter("delegateId");
+    try (AutoLogContext ignore2 = new DelegateLogContext(delegateId, OVERRIDE_ERROR);
+         AutoLogContext ignore3 = new WebsocketLogContext(event.getResource().uuid(), OVERRIDE_ERROR)) {
+      AtmosphereResource r = event.getResource();
+      AtmosphereResponse res = r.getResponse();
 
-    if (r.isSuspended()) {
-      Object message = event.getMessage();
-      if (message != null) {
-        if (message instanceof String) {
-          event.getResource().write((String) message);
-        } else {
-          event.getResource().write(JsonUtils.asJson(message));
+      if (r.isSuspended()) {
+        Object message = event.getMessage();
+        if (message != null) {
+          if (message instanceof String) {
+            event.getResource().write((String) message);
+          } else {
+            event.getResource().write(JsonUtils.asJson(message));
+          }
         }
-      }
-      AtmosphereResource.TRANSPORT transport = r.transport();
-      switch (transport) {
-        case JSONP:
-        case LONG_POLLING:
-          event.getResource().resume();
-          break;
-        case WEBSOCKET:
-          break;
-        case STREAMING:
-          res.getWriter().flush();
-          break;
-        default:
-          unhandled(transport);
+        AtmosphereResource.TRANSPORT transport = r.transport();
+        switch (transport) {
+          case JSONP:
+          case LONG_POLLING:
+            event.getResource().resume();
+            break;
+          case WEBSOCKET:
+            break;
+          case STREAMING:
+            res.getWriter().flush();
+            break;
+          default:
+            unhandled(transport);
+        }
       }
     }
   }

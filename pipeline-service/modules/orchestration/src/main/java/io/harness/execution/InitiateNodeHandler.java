@@ -9,17 +9,19 @@ package io.harness.execution;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.engine.OrchestrationEngine;
+import io.harness.engine.interrupts.InterruptService;
+import io.harness.interrupts.Interrupt;
 import io.harness.pms.PmsFeatureFlagService;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.events.InitiateNodeEvent;
+import io.harness.pms.contracts.interrupts.InterruptType;
 import io.harness.pms.events.base.PmsBaseEventHandler;
-import io.harness.pms.execution.utils.AmbianceUtils;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import java.util.Map;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -28,6 +30,7 @@ public class InitiateNodeHandler extends PmsBaseEventHandler<InitiateNodeEvent> 
   @Inject private OrchestrationEngine engine;
   @Inject private PmsFeatureFlagService pmsFeatureFlagService;
 
+  @Inject private InterruptService interruptService;
   @Override
   protected Map<String, String> extractMetricContext(Map<String, String> metadataMap, InitiateNodeEvent event) {
     return ImmutableMap.of("eventType", "TRIGGER_NODE");
@@ -50,11 +53,21 @@ public class InitiateNodeHandler extends PmsBaseEventHandler<InitiateNodeEvent> 
 
   @Override
   protected void handleEventWithContext(InitiateNodeEvent event) {
-    if (pmsFeatureFlagService.isEnabled(AmbianceUtils.getAccountId(event.getAmbiance()), FeatureName.PIPELINE_MATRIX)) {
+    Optional<Interrupt> abortAllOrExpireAllInterrupt =
+        interruptService.fetchAllInterrupts(event.getAmbiance().getPlanExecutionId())
+            .stream()
+            .filter(interrupt
+                -> interrupt.getType() == InterruptType.ABORT_ALL || interrupt.getType() == InterruptType.EXPIRE_ALL)
+            .findAny();
+    // If any abortAll or expireAll interrupt is registered then do not initiate any further nodeExecution.
+    if (!abortAllOrExpireAllInterrupt.isPresent()) {
       engine.initiateNode(event.getAmbiance(), event.getNodeId(), event.getRuntimeId(), null,
           event.hasStrategyMetadata() ? event.getStrategyMetadata() : null, event.getInitiateMode());
     } else {
-      engine.initiateNode(event.getAmbiance(), event.getNodeId(), event.getRuntimeId(), null);
+      log.info(
+          "Not initiating the NodeExecution for RuntimeId {} and planExecutionId {}. Because {} interrupt is present with interruptId {}",
+          event.getRuntimeId(), event.getAmbiance().getPlanExecutionId(), abortAllOrExpireAllInterrupt.get().getType(),
+          abortAllOrExpireAllInterrupt.get().getUuid());
     }
   }
 }

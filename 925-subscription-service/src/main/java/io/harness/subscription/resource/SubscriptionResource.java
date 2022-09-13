@@ -31,7 +31,6 @@ import io.harness.subscription.dto.PriceCollectionDTO;
 import io.harness.subscription.dto.StripeBillingDTO;
 import io.harness.subscription.dto.SubscriptionDTO;
 import io.harness.subscription.dto.SubscriptionDetailDTO;
-import io.harness.subscription.params.RecommendationParams;
 import io.harness.subscription.params.UsageKey;
 import io.harness.subscription.services.SubscriptionService;
 
@@ -103,11 +102,12 @@ public class SubscriptionResource {
   public ResponseDTO<EnumMap<UsageKey, Long>>
   retrieveRecommendedUsage(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                                NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
-      @io.swagger.v3.oas.annotations.parameters.RequestBody(
-          required = true, description = "This is the details of the Subscription Request.") @NotNull
-      @Valid RecommendationParams params) {
+      @Parameter(required = true, description = "Number of MAUs") @NotNull @QueryParam(
+          "numberOfMAUs") long numberOfMAUs,
+      @Parameter(required = true, description = "Number of Users") @NotNull @QueryParam(
+          "numberOfUsers") long numberOfUsers) {
     return ResponseDTO.newResponse(
-        subscriptionService.getRecommendation(accountIdentifier, params.getModuleType(), params.getUsage()));
+        subscriptionService.getRecommendation(accountIdentifier, numberOfMAUs, numberOfUsers));
   }
 
   @GET
@@ -320,7 +320,7 @@ public class SubscriptionResource {
   }
 
   @GET
-  @Path("/customers/{customerId}")
+  @Path("/customer")
   @ApiOperation(value = "Retrieves the customer", nickname = "retrieveCustomer")
   @Operation(operationId = "retrieveCustomer", summary = "Retrieves the customer",
       responses =
@@ -331,10 +331,8 @@ public class SubscriptionResource {
   @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
   public ResponseDTO<CustomerDetailDTO>
   retrieveCustomer(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
-                       NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
-      @Parameter(required = true, description = "Customer Identifier for the Entity") @NotNull @PathParam(
-          CUSTOMER_ID) String customerId) {
-    return ResponseDTO.newResponse(subscriptionService.getStripeCustomer(accountIdentifier, customerId));
+      NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier) {
+    return ResponseDTO.newResponse(subscriptionService.getStripeCustomer(accountIdentifier));
   }
 
   //  @GET
@@ -365,10 +363,8 @@ public class SubscriptionResource {
   @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
   public ResponseDTO<PaymentMethodCollectionDTO>
   listPaymentMethods(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
-                         NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
-      @Parameter(required = true, description = "Customer Identifier for the Entity") @NotNull @QueryParam(
-          "customerId") String customerId) {
-    return ResponseDTO.newResponse(subscriptionService.listPaymentMethods(accountIdentifier, customerId));
+      NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier) {
+    return ResponseDTO.newResponse(subscriptionService.listPaymentMethods(accountIdentifier));
   }
 
   @GET

@@ -51,6 +51,7 @@ public class YAMLFieldNameConstants {
   public final String ENVIRONMENT = "environment";
   public final String PROVISIONER = "provisioner";
   public final String CONNECTOR_REF = "connectorRef";
+  public final String CONNECTOR_REFS = "connectorRefs";
   public final String FILES = "files";
   public final String SECRET_FILES = "secretFiles";
   public final String CODEBASE_CONNECTOR_REF = "ciCodebase.connectorRef";
@@ -72,6 +73,7 @@ public class YAMLFieldNameConstants {
 
   public final String CHILD_NODE_OF_SPEC = "childNodeOfSpec";
   public final String GITOPS_ENABLED = "gitOpsEnabled";
+  public final String SKIP_INSTANCES = "skipInstances";
 
   public final String ORG_IDENTIFIER = "orgIdentifier";
   public final String PROJECT_IDENTIFIER = "projectIdentifier";
@@ -81,4 +83,6 @@ public class YAMLFieldNameConstants {
 
   public final String INPUT_SET_REFERENCES = "inputSetReferences";
   public final String REPEAT = "repeat";
+  public final String SERVICE_REF = "serviceRef";
+  public final String ENVIRONMENT_REF = "environmentRef";
 }

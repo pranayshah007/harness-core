@@ -18,7 +18,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.k8s.model.KubernetesResource;
-import io.harness.k8s.model.Release;
+import io.harness.k8s.releasehistory.K8sLegacyRelease;
 
 import com.google.common.io.Resources;
 import com.google.inject.Singleton;
@@ -90,8 +90,8 @@ public class K8sTestHelper {
         StandardCharsets.UTF_8);
   }
 
-  public static Release buildRelease(Release.Status status, int number) throws IOException {
-    return Release.builder()
+  public static K8sLegacyRelease buildRelease(K8sLegacyRelease.Status status, int number) throws IOException {
+    return K8sLegacyRelease.builder()
         .number(number)
         .resources(asList(deployment().getResourceId(), configMap().getResourceId()))
         .managedWorkload(deployment().getResourceId())

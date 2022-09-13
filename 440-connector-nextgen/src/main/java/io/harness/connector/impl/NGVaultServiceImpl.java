@@ -9,6 +9,7 @@ package io.harness.connector.impl;
 
 import static io.harness.NGConstants.HARNESS_SECRET_MANAGER_IDENTIFIER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.beans.FeatureName.DO_NOT_RENEW_APPROLE_TOKEN;
 import static io.harness.beans.FeatureName.ENABLE_CERT_VALIDATION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -75,6 +76,7 @@ import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
 import io.harness.ng.core.encryptors.NGManagerEncryptorHelper;
 import io.harness.ng.core.entities.NGEncryptedData;
+import io.harness.remote.client.RestClientUtils;
 import io.harness.repositories.ConnectorRepository;
 import io.harness.secretmanagerclient.NGSecretManagerMetadata;
 import io.harness.secretmanagerclient.SecretType;
@@ -168,6 +170,7 @@ public class NGVaultServiceImpl implements NGVaultService {
     if (ngVaultRenewalTaskResponse.isSuccessful()) {
       vaultConnector.setRenewedAt(System.currentTimeMillis());
       connectorRepository.save(vaultConnector, ChangeType.NONE);
+      updatePerpetualTaskWhenTokenIsRenewed(vaultConnector);
     }
   }
 
@@ -200,6 +203,12 @@ public class NGVaultServiceImpl implements NGVaultService {
 
   @Override
   public void renewAppRoleClientToken(VaultConnector vaultConnector) {
+    if (RestClientUtils.getResponse(accountClient.isFeatureFlagEnabled(
+            DO_NOT_RENEW_APPROLE_TOKEN.name(), vaultConnector.getAccountIdentifier()))) {
+      vaultConnector.setRenewAppRoleToken(false);
+      connectorRepository.save(vaultConnector, ChangeType.NONE);
+      return;
+    }
     SecretManagerConfig secretManagerConfig = getSecretManagerConfig(vaultConnector.getAccountIdentifier(),
         vaultConnector.getOrgIdentifier(), vaultConnector.getProjectIdentifier(), vaultConnector.getIdentifier());
     BaseVaultConfig baseVaultConfig = (BaseVaultConfig) secretManagerConfig;
@@ -234,6 +243,7 @@ public class NGVaultServiceImpl implements NGVaultService {
     }
     vaultConnector.setRenewedAt(System.currentTimeMillis());
     connectorRepository.save(vaultConnector, ChangeType.NONE);
+    updatePerpetualTaskWhenTokenIsRenewed(vaultConnector);
   }
 
   @Override
@@ -824,5 +834,12 @@ public class NGVaultServiceImpl implements NGVaultService {
         .encryptionType(encryptedData.getEncryptionType())
         .base64Encoded(encryptedData.isBase64Encoded())
         .build();
+  }
+
+  private void updatePerpetualTaskWhenTokenIsRenewed(VaultConnector vaultConnector) {
+    String heartBeatPerpetualTaskId =
+        ngConnectorSecretManagerService.getPerpetualTaskId(vaultConnector.getAccountIdentifier(),
+            vaultConnector.getOrgIdentifier(), vaultConnector.getProjectIdentifier(), vaultConnector.getIdentifier());
+    ngConnectorSecretManagerService.resetHeartBeatTask(vaultConnector.getAccountIdentifier(), heartBeatPerpetualTaskId);
   }
 }

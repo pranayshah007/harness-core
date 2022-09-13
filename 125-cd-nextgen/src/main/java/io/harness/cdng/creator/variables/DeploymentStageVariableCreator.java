@@ -61,6 +61,7 @@ import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.yaml.core.variables.NGVariable;
 
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -197,7 +198,7 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
       if (environmentRef != null) {
         createVariablesForEnvironment(ctx, environmentRef, responseMap, serviceVariables);
       }
-      if (environmentRef != null && infraDefinitionRefs != null) {
+      if (environmentRef != null && isNotEmpty(infraDefinitionRefs)) {
         // todo: multi-infra
         createVariablesForInfraDefinitions(ctx, environmentRef, infraDefinitionRefs, responseMap);
       }
@@ -396,7 +397,13 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
       if (isNotEmpty(infraStructureDefinitionYamls)) {
         return infraStructureDefinitionYamls.stream()
             .map(InfraStructureDefinitionYaml::getIdentifier)
+            .filter(p -> !p.isExpression())
+            .map(ParameterField::getValue)
             .collect(Collectors.toList());
+      }
+      if (ParameterField.isNotNull(environmentYamlV2.getInfrastructureDefinition())) {
+        return Lists.newArrayList(
+            environmentYamlV2.getInfrastructureDefinition().getValue().getIdentifier().getValue());
       }
     }
     return null;

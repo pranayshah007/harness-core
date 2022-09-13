@@ -31,7 +31,6 @@ public enum ConnectorType implements EntitySubtype {
   @JsonProperty("AwsKms") AWS_KMS("AwsKms"),
   @JsonProperty("GcpKms") GCP_KMS("GcpKms"),
   @JsonProperty("AwsSecretManager") AWS_SECRET_MANAGER("AwsSecretManager"),
-  //  @JsonProperty("Cyberark") CYBERARK("Cyberark"),
   //  @JsonProperty("CustomSecretManager") CUSTOM("CustomSecretManager"),
   @JsonProperty("Gcp") GCP("Gcp"),
   @JsonProperty("Aws") AWS("Aws"),
@@ -59,7 +58,9 @@ public enum ConnectorType implements EntitySubtype {
   @JsonProperty("Pdc") PDC("Pdc"),
   @JsonProperty("AzureRepo") AZURE_REPO("AzureRepo"),
   @JsonProperty("Jenkins") JENKINS("Jenkins"),
-  @JsonProperty("OciHelmRepo") OCI_HELM_REPO("OciHelmRepo");
+  @JsonProperty("OciHelmRepo") OCI_HELM_REPO("OciHelmRepo"),
+  @JsonProperty("CustomSecretManager") CUSTOM_SECRET_MANAGER("CustomSecretManager"),
+  @JsonProperty("ELK") ELK("ELK");
   private final String displayName;
 
   @JsonCreator(mode = JsonCreator.Mode.DELEGATING)

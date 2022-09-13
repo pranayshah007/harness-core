@@ -127,7 +127,7 @@ datadogConfig:
   enabled: false #datadogConfigEnable
   apiKey: ""
 
-distributedLockImplementation: MONGO
+distributedLockImplementation: REDIS
 
 redisLockConfig:
   sentinel: false
@@ -301,6 +301,7 @@ mongo:
   analyticNodeConfig:
     mongoTagKey: none
     mongoTagValue: none
+  aliasDBName: harness
 
 events-mongo:
   uri: mongodb://localhost:27017/events
@@ -309,6 +310,7 @@ events-mongo:
   maxConnectionIdleTime: 600000
   connectionsPerHost: 300
   indexManagerMode: AUTO
+  aliasDBName: events
 
 searchEnabled: false
 graphQLEnabled: true
@@ -328,7 +330,7 @@ deployMode: KUBERNETES
 deployVariant: SAAS
 envPath: ""
 
-scmVersion: 36d92fd8
+scmVersion: 140a857a
 
 ngAuthUIEnabled: false
 

@@ -663,6 +663,22 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "HarnessFileStoreSource": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ShellScriptBaseSource"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "file": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "HttpHeaderConfig": {
       "type": "object",
       "properties": {
@@ -798,6 +814,9 @@
               "type": "string"
             },
             "issueType": {
+              "type": "string"
+            },
+            "projectKey": {
               "type": "string"
             },
             "rejectionCriteria": {
@@ -1680,6 +1699,22 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#",
       "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Harness"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/HarnessFileStoreSource"
+              }
+            }
+          }
+        },
         {
           "if": {
             "properties": {

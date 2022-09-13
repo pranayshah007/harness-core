@@ -19,7 +19,6 @@ import static io.harness.mongo.IndexManagerSession.Type.NORMAL_INDEX;
 import static io.harness.mongo.IndexManagerSession.Type.SPARSE_INDEX;
 import static io.harness.mongo.IndexManagerSession.Type.UNIQUE_INDEX;
 
-import static com.google.common.base.MoreObjects.firstNonNull;
 import static java.lang.String.format;
 import static java.lang.String.join;
 import static java.lang.System.currentTimeMillis;
@@ -28,8 +27,8 @@ import static java.time.Duration.ofHours;
 import static java.util.stream.Collectors.toList;
 
 import io.harness.annotation.IgnoreUnusedIndex;
-import io.harness.annotation.StoreIn;
-import io.harness.annotation.StoreInMultiple;
+import io.harness.annotations.StoreIn;
+import io.harness.annotations.StoreInMultiple;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.ListUtils.OneAndOnlyOne;
@@ -165,16 +164,11 @@ public class IndexManagerSession {
 
   public static Set<String> processIndexes(
       AdvancedDatastore datastore, Morphia morphia, Store store, IndexesProcessor processor) {
-    return processIndexesInternal(datastore, morphia, store, true, processor);
+    return processIndexesInternal(datastore, morphia, store, processor);
   }
 
-  public static Set<String> processIndexes(AdvancedDatastore datastore, Morphia morphia, Store store,
-      boolean includeUnannotatedStoreIn, IndexesProcessor processor) {
-    return processIndexesInternal(datastore, morphia, store, includeUnannotatedStoreIn, processor);
-  }
-
-  private static Set<String> processIndexesInternal(AdvancedDatastore datastore, Morphia morphia, Store store,
-      boolean includeUnannotatedStoreIn, IndexesProcessor processor) {
+  private static Set<String> processIndexesInternal(
+      AdvancedDatastore datastore, Morphia morphia, Store store, IndexesProcessor processor) {
     Set<String> processedCollections = new HashSet<>();
     Collection<MappedClass> mappedClasses = morphia.getMapper().getMappedClasses();
     mappedClasses.forEach(mc -> {
@@ -191,8 +185,6 @@ public class IndexManagerSession {
         if (!storeInSet.contains(DbAliases.ALL) && (store == null || !storeInSet.contains(store.getName()))) {
           return;
         }
-      } else if (!includeUnannotatedStoreIn) {
-        return;
       }
       try (AutoLogContext ignore = new CollectionLogContext(collection.getName(), OVERRIDE_ERROR)) {
         if (processedCollections.contains(collection.getName())) {
@@ -227,12 +219,10 @@ public class IndexManagerSession {
     }
   }
 
-  // TODO(KARAN): clean includeUnannotatedStoreIn variable after all collections have @StoreIn annotations
-  public static List<IndexCreator> allIndexes(
-      AdvancedDatastore datastore, Morphia morphia, Store store, Boolean includeUnannotatedStoreIn) {
+  public static List<IndexCreator> allIndexes(AdvancedDatastore datastore, Morphia morphia, Store store) {
     List<IndexCreator> result = new ArrayList<>();
-    processIndexes(datastore, morphia, store, firstNonNull(includeUnannotatedStoreIn, true),
-        (mc, collection) -> result.addAll(indexCreators(mc, collection).values()));
+    processIndexes(
+        datastore, morphia, store, (mc, collection) -> result.addAll(indexCreators(mc, collection).values()));
     return result;
   }
 
@@ -522,8 +512,10 @@ public class IndexManagerSession {
     AtomicBoolean actionPerformed = new AtomicBoolean(false);
     try {
       Map<String, IndexCreator> creators = indexCreators(mc, collection);
+      IndexManagerCollectionSession collectionSession = createCollectionSession(collection);
       // We should be attempting to drop indexes only if we successfully created all new ones
-      int created = createNewIndexes(createCollectionSession(collection), creators);
+
+      int created = createNewIndexes(collectionSession, creators);
       if (created > 0) {
         actionPerformed.set(true);
       }
@@ -531,9 +523,7 @@ public class IndexManagerSession {
       boolean okToDropIndexes = created == 0;
 
       Map<String, Accesses> accesses = fetchIndexAccesses(collection);
-
       if (okToDropIndexes) {
-        IndexManagerCollectionSession collectionSession = createCollectionSession(collection);
         List<String> obsoleteIndexes = collectionSession.obsoleteIndexes(creators.keySet());
         if (isNotEmpty(obsoleteIndexes)) {
           // Make sure that all indexes that we have are operational, we check that they have being seen since
@@ -555,7 +545,7 @@ public class IndexManagerSession {
       }
 
       if (mc.getClazz().getAnnotation(IgnoreUnusedIndex.class) == null) {
-        createCollectionSession(collection).checkForUnusedIndexes(accesses);
+        collectionSession.checkForUnusedIndexes(accesses);
       }
     } catch (MongoCommandException exception) {
       if (exception.getErrorCode() == 13) {

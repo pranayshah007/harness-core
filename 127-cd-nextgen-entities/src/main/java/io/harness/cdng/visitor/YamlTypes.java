@@ -21,6 +21,9 @@ public interface YamlTypes {
   String GITOPS_MERGE_PR = StepSpecTypeConstants.GITOPS_MERGE_PR;
 
   String PRIMARY_ARTIFACT = "primary";
+  String PRIMARY_ARTIFACT_REF = "primaryArtifactRef";
+  String ARTIFACT_SOURCES = "sources";
+  String IDENTIFIER = "identifier";
   String ARTIFACT_LIST_CONFIG = "artifacts";
   String SIDECAR_ARTIFACT_CONFIG = "sidecar";
   String SIDECARS_ARTIFACT_CONFIG = "sidecars";
@@ -50,6 +53,11 @@ public interface YamlTypes {
   String SERVERLESS_AWS_LAMBDA_DEPLOY = StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_DEPLOY;
   String SERVERLESS_AWS_LAMBDA_ROLLBACK = StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK;
   String COMMAND = StepSpecTypeConstants.COMMAND;
+
+  String ECS_ROLLING_DEPLOY = StepSpecTypeConstants.ECS_ROLLING_DEPLOY;
+  String ECS_ROLLING_ROLLBACK = StepSpecTypeConstants.ECS_ROLLING_ROLLBACK;
+  String ECS_CANARY_DEPLOY = StepSpecTypeConstants.ECS_CANARY_DEPLOY;
+  String ECS_CANARY_DELETE = StepSpecTypeConstants.ECS_CANARY_DELETE;
 
   String AZURE_SLOT_DEPLOYMENT = StepSpecTypeConstants.AZURE_SLOT_DEPLOYMENT;
   String AZURE_TRAFFIC_SHIFT = StepSpecTypeConstants.AZURE_TRAFFIC_SHIFT;
@@ -99,8 +107,7 @@ public interface YamlTypes {
   String STAGE = "stage";
   String CREDENTIALS_REF = "credentialsRef";
   String HOSTS = "hosts";
-  String ATTRIBUTE_FILTERS = "attributeFilters";
-  String HOST_FILTERS = "hostFilters";
+  String HOST_FILTER = "hostFilter";
 
   String SUBSCRIPTION = "subscription";
   String RESOURCE_GROUP = "resourceGroup";
@@ -124,6 +131,10 @@ public interface YamlTypes {
   String REF = "ref";
   String JENKINS_BUILD = StepSpecTypeConstants.JENKINS_BUILD;
   String STARTUP_COMMAND = "startupCommand";
+
+  String AZURE_SERVICE_SETTINGS_STEP = "Azure_Service_Settings";
+
   String APPLICATION_SETTINGS = "applicationSettings";
   String CONNECTION_STRINGS = "connectionStrings";
+  String DEPLOYMENT_TYPE = "deploymentType";
 }

@@ -28,6 +28,7 @@ import static software.wings.integration.SSO.LDAP.LdapUrlHelper.createUploadLdap
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.category.element.DeprecatedIntegrationTests;
+import io.harness.delegate.beans.ldap.LDAPTestAuthenticationRequest;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.serializer.JsonUtils;
@@ -39,7 +40,6 @@ import software.wings.beans.sso.LdapSettings;
 import software.wings.beans.sso.LdapTestResponse;
 import software.wings.beans.sso.LdapTestResponse.Status;
 import software.wings.integration.IntegrationTestBase;
-import software.wings.resources.SSOResource.LDAPTestAuthenticationRequest;
 import software.wings.security.authentication.AuthenticationUtils;
 import software.wings.service.intfc.SSOService;
 import software.wings.service.intfc.UserGroupService;

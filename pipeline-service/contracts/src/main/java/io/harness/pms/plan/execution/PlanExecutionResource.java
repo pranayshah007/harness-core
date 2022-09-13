@@ -110,6 +110,7 @@ public interface PlanExecutionResource {
       @Parameter(description = PlanExecutionResourceConstants.PIPELINE_IDENTIFIER_PARAM_MESSAGE) @ResourceIdentifier
       @NotEmpty String pipelineIdentifier, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
       @QueryParam("useFQNIfError") @DefaultValue("false") boolean useFQNIfErrorResponse,
+      @QueryParam("notifyOnlyUser") @DefaultValue("false") boolean notifyOnlyUser,
       @ApiParam(hidden = true) @RequestBody(
           description =
               "Enter Runtime Input YAML if the Pipeline contains Runtime Inputs. Template for this can be Fetched from /inputSets/template API.",

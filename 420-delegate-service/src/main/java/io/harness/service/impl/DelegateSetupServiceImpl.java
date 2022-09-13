@@ -460,7 +460,7 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
         .delegateGroupIdentifier(delegateGroupIdentifier)
         .delegateType(delegateType)
         .groupName(groupName)
-        .autoUpgrade(setAutoUpgrader(upgraderLastUpdated))
+        .autoUpgrade(setAutoUpgrader(upgraderLastUpdated, immutableDelegate))
         .upgraderLastUpdated(upgraderLastUpdated)
         .delegateGroupExpirationTime(groupExpirationTime)
         .delegateDescription(delegateDescription)
@@ -474,11 +474,16 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
         .activelyConnected(!connectivityStatus.equals(GROUP_STATUS_DISCONNECTED))
         .tokenActive(isDelegateTokenActiveAtGroupLevel.get())
         .immutable(immutableDelegate)
+        .versions(groupDelegates.stream().map(Delegate::getVersion).collect(toList()))
         .build();
   }
 
-  private boolean setAutoUpgrader(long upgraderLastUpdated) {
-    return TimeUnit.MILLISECONDS.toHours(System.currentTimeMillis() - upgraderLastUpdated) <= 1;
+  private boolean setAutoUpgrader(long upgraderLastUpdated, boolean immutableDelegate) {
+    // Auto Upgrade is on for legacy delegates.
+    if (!immutableDelegate) {
+      return true;
+    }
+    return TimeUnit.MILLISECONDS.toMinutes(System.currentTimeMillis() - upgraderLastUpdated) <= 90;
   }
 
   private boolean isGrpcActive(String accountId, String delegateId) {

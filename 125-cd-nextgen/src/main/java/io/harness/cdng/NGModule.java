@@ -21,6 +21,10 @@ import io.harness.cdng.artifact.resources.ecr.service.EcrResourceService;
 import io.harness.cdng.artifact.resources.ecr.service.EcrResourceServiceImpl;
 import io.harness.cdng.artifact.resources.gcr.service.GcrResourceService;
 import io.harness.cdng.artifact.resources.gcr.service.GcrResourceServiceImpl;
+import io.harness.cdng.artifact.resources.githubpackages.service.GithubPackagesResourceService;
+import io.harness.cdng.artifact.resources.githubpackages.service.GithubPackagesResourceServiceImpl;
+import io.harness.cdng.artifact.resources.googleartifactregistry.service.GARResourceService;
+import io.harness.cdng.artifact.resources.googleartifactregistry.service.GARResourceServiceImpl;
 import io.harness.cdng.artifact.resources.jenkins.service.JenkinsResourceService;
 import io.harness.cdng.artifact.resources.jenkins.service.JenkinsResourceServiceImpl;
 import io.harness.cdng.artifact.resources.nexus.service.NexusResourceService;
@@ -41,6 +45,8 @@ import io.harness.cdng.gitops.ClusterServiceImpl;
 import io.harness.cdng.gitops.service.ClusterService;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.instance.info.InstanceInfoServiceImpl;
+import io.harness.cdng.instance.service.InstanceDeploymentInfoService;
+import io.harness.cdng.instance.service.InstanceDeploymentInfoServiceImpl;
 import io.harness.cdng.jira.resources.service.JiraResourceService;
 import io.harness.cdng.jira.resources.service.JiraResourceServiceImpl;
 import io.harness.cdng.k8s.resources.azure.service.AzureResourceService;
@@ -119,6 +125,7 @@ public class NGModule extends AbstractModule {
     bind(AcrResourceService.class).to(AcrResourceServiceImpl.class);
     bind(AzureResourceService.class).to(AzureResourceServiceImpl.class);
     bind(JenkinsResourceService.class).to(JenkinsResourceServiceImpl.class);
+    bind(GithubPackagesResourceService.class).to(GithubPackagesResourceServiceImpl.class);
     bind(FilterService.class).to(FilterServiceImpl.class);
     bind(ClusterService.class).to(ClusterServiceImpl.class);
     bind(InfrastructureEntityService.class).to(InfrastructureEntityServiceImpl.class);
@@ -131,7 +138,8 @@ public class NGModule extends AbstractModule {
                 .setPriority(Thread.NORM_PRIORITY)
                 .build()));
     bind(StageExecutionInfoService.class).to(StageExecutionInfoServiceImpl.class);
-
+    bind(InstanceDeploymentInfoService.class).to(InstanceDeploymentInfoServiceImpl.class);
+    bind(GARResourceService.class).to(GARResourceServiceImpl.class);
     MapBinder<String, FilterPropertiesMapper> filterPropertiesMapper =
         MapBinder.newMapBinder(binder(), String.class, FilterPropertiesMapper.class);
     filterPropertiesMapper.addBinding(FilterType.ENVIRONMENTGROUP.toString())

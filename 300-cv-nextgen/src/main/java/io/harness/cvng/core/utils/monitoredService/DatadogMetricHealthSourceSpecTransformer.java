@@ -7,16 +7,22 @@
 
 package io.harness.cvng.core.utils.monitoredService;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.cvng.core.beans.DatadogMetricHealthDefinition;
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition;
 import io.harness.cvng.core.beans.RiskProfile;
+import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.DatadogMetricHealthSourceSpec;
+import io.harness.cvng.core.constant.MonitoredServiceConstants;
 import io.harness.cvng.core.entities.AnalysisInfo;
 import io.harness.cvng.core.entities.DatadogMetricCVConfig;
 
 import com.google.common.base.Preconditions;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class DatadogMetricHealthSourceSpecTransformer
     implements CVConfigToHealthSourceTransformer<DatadogMetricCVConfig, DatadogMetricHealthSourceSpec> {
@@ -27,6 +33,7 @@ public class DatadogMetricHealthSourceSpecTransformer
         cvConfigs.stream().map(DatadogMetricCVConfig::getConnectorIdentifier).distinct().count() == 1,
         "ConnectorRef should be same for all the configs in the list.");
     List<DatadogMetricHealthDefinition> metricDefinitions = new ArrayList<>();
+    Set<TimeSeriesMetricPackDTO> metricPacks = new HashSet<>();
     cvConfigs.forEach(cvConfig -> cvConfig.getMetricInfoList().forEach(metricInfo -> {
       RiskProfile riskProfile = RiskProfile.builder()
                                     .category(cvConfig.getMetricPack().getCategory())
@@ -60,9 +67,21 @@ public class DatadogMetricHealthSourceSpecTransformer
 
       metricDefinitions.add(metricDefinition);
     }));
+
+    cvConfigs.forEach(datadogMetricCVConfig -> {
+      String identifier = MonitoredServiceConstants.CUSTOM_METRIC_PACK;
+      List<TimeSeriesMetricPackDTO.MetricThreshold> metricThresholds = datadogMetricCVConfig.getMetricThresholdDTOs();
+      if (isNotEmpty(metricThresholds)) {
+        metricThresholds.forEach(metricThreshold -> metricThreshold.setMetricType(identifier));
+      }
+      metricPacks.add(
+          TimeSeriesMetricPackDTO.builder().identifier(identifier).metricThresholds(metricThresholds).build());
+    });
+
     return DatadogMetricHealthSourceSpec.builder()
         .feature(cvConfigs.get(0).getProductName())
         .metricDefinitions(metricDefinitions)
+        .metricPacks(metricPacks)
         .connectorRef(cvConfigs.get(0).getConnectorIdentifier())
         .build();
   }

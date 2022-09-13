@@ -9,9 +9,11 @@ package io.harness.encryptors;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.encryptors.Encryptors.CUSTOM_ENCRYPTOR;
+import static io.harness.encryptors.Encryptors.CUSTOM_ENCRYPTOR_NG;
 import static io.harness.eraro.ErrorCode.SECRET_MANAGEMENT_ERROR;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.security.encryption.EncryptionType.CUSTOM;
+import static io.harness.security.encryption.EncryptionType.CUSTOM_NG;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.SecretManagementDelegateException;
@@ -37,6 +39,7 @@ public class CustomEncryptorsRegistry {
     this.injector = injector;
     registeredEncryptors = new EnumMap<>(EncryptionType.class);
     registeredEncryptors.put(CUSTOM, CUSTOM_ENCRYPTOR);
+    registeredEncryptors.put(CUSTOM_NG, CUSTOM_ENCRYPTOR_NG);
   }
 
   public CustomEncryptor getCustomEncryptor(EncryptionType encryptionType) {

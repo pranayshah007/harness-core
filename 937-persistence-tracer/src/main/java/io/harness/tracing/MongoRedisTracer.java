@@ -7,6 +7,7 @@
 
 package io.harness.tracing;
 
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACCOUNT_IDENTIFIER_METRICS_KEY;
 import static io.harness.mongo.tracing.TracerConstants.QUERY_HASH;
 import static io.harness.mongo.tracing.TracerConstants.SERVICE_ID;
 import static io.harness.version.VersionConstants.MAJOR_VERSION_KEY;
@@ -104,6 +105,7 @@ public class MongoRedisTracer implements Tracer, NgTracer {
     Document explainResult = mongoTemplate.getDb().runCommand(command);
     log.debug(String.format("Explain Results: %s", explainResult.toJson()));
     producer.send(Message.newBuilder()
+                      .putMetadata(ACCOUNT_IDENTIFIER_METRICS_KEY, serviceId)
                       .putMetadata(VERSION_KEY, versionInfoManager.getVersionInfo().getVersion())
                       .putMetadata(SERVICE_ID, serviceId)
                       .putMetadata(MAJOR_VERSION_KEY, getMajorVersionFromFullVersion())
@@ -124,6 +126,7 @@ public class MongoRedisTracer implements Tracer, NgTracer {
     String explainResult = JsonUtils.asJson(query.explain());
     log.debug(String.format("Explain Results: %s", explainResult));
     producer.send(Message.newBuilder()
+                      .putMetadata(ACCOUNT_IDENTIFIER_METRICS_KEY, serviceId)
                       .putMetadata(VERSION_KEY, versionInfoManager.getVersionInfo().getVersion())
                       .putMetadata(MAJOR_VERSION_KEY, getMajorVersionFromFullVersion())
                       .putMetadata(SERVICE_ID, serviceId)

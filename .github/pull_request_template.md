@@ -39,3 +39,6 @@
 
 ## PR check failures and solutions
 https://harness.atlassian.net/wiki/spaces/BT/pages/21106884744/PR+Checks+-+Failures+and+Solutions
+
+
+## [Contributor license agreement](https://github.com/harness/harness-core/blob/develop/CONTRIBUTOR_LICENSE_AGREEMENT.md)

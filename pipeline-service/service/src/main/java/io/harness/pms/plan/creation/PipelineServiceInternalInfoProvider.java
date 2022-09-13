@@ -23,6 +23,7 @@ import io.harness.plancreator.pipeline.NGPipelinePlanCreator;
 import io.harness.plancreator.stages.StagesPlanCreator;
 import io.harness.plancreator.stages.parallel.ParallelPlanCreator;
 import io.harness.plancreator.steps.NGStageStepsPlanCreator;
+import io.harness.plancreator.steps.SpecNodePlanCreator;
 import io.harness.plancreator.steps.StepGroupPMSPlanCreator;
 import io.harness.plancreator.steps.barrier.BarrierStepPlanCreator;
 import io.harness.plancreator.steps.email.EmailStepPlanCreator;
@@ -74,6 +75,7 @@ import io.harness.steps.servicenow.create.ServiceNowCreateStepPlanCreator;
 import io.harness.steps.servicenow.update.ServiceNowUpdateStepPlanCreator;
 import io.harness.steps.shellscript.ShellScriptStepPlanCreator;
 import io.harness.steps.shellscript.ShellScriptStepVariableCreator;
+import io.harness.steps.wait.WaitStepPlanCreator;
 import io.harness.variables.ExecutionVariableCreator;
 
 import com.google.inject.Inject;
@@ -117,6 +119,8 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     planCreators.add(new StrategyConfigPlanCreator());
     planCreators.add(new CustomStagePlanCreator());
     planCreators.add(new CustomApprovalStepPlanCreator());
+    planCreators.add(new SpecNodePlanCreator());
+    planCreators.add(new WaitStepPlanCreator());
     injectorUtils.injectMembers(planCreators);
     return planCreators;
   }

@@ -13,6 +13,7 @@ import static java.util.Objects.isNull;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
@@ -20,12 +21,16 @@ import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.gar.GarDelegateRequest;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.s3.S3ArtifactDelegateRequest;
@@ -57,6 +62,7 @@ public class ArtifactDelegateRequestUtils {
         .sourceType(sourceType)
         .build();
   }
+
   public EcrArtifactDelegateRequest getEcrDelegateRequest(String imagePath, String tag, String tagRegex,
       List<String> tagsList, String region, String connectorRef, AwsConnectorDTO awsConnectorDTO,
       List<EncryptedDataDetail> encryptedDataDetails, ArtifactSourceType sourceType) {
@@ -70,6 +76,22 @@ public class ArtifactDelegateRequestUtils {
         .awsConnectorDTO(awsConnectorDTO)
         .encryptedDataDetails(encryptedDataDetails)
         .sourceType(sourceType)
+        .build();
+  }
+  public GarDelegateRequest getGoogleArtifactDelegateRequest(String region, String repositoryName, String project,
+      String pkg, String version, String versionRegex, GcpConnectorDTO gcpConnectorDTO,
+      List<EncryptedDataDetail> encryptedDataDetails, ArtifactSourceType sourceType, int maxBuilds) {
+    return GarDelegateRequest.builder()
+        .region(trim(region))
+        .project(trim(project))
+        .maxBuilds(maxBuilds == -1 ? Integer.MAX_VALUE : maxBuilds)
+        .repositoryName(trim(repositoryName))
+        .gcpConnectorDTO(gcpConnectorDTO)
+        .sourceType(sourceType)
+        .pkg(trim(pkg))
+        .versionRegex(versionRegex)
+        .version(version)
+        .encryptedDataDetails(encryptedDataDetails)
         .build();
   }
   public DockerArtifactDelegateRequest getDockerDelegateRequest(String imagePath, String tag, String tagRegex,
@@ -198,20 +220,57 @@ public class ArtifactDelegateRequestUtils {
 
   public static S3ArtifactDelegateRequest getAmazonS3DelegateRequest(String bucketName, String filePath,
       String filePathRegex, Object o, String connectorRef, AwsConnectorDTO connectorDTO,
-      List<EncryptedDataDetail> encryptedDataDetails, ArtifactSourceType sourceType) {
+      List<EncryptedDataDetail> encryptedDataDetails, ArtifactSourceType sourceType, String region) {
     return S3ArtifactDelegateRequest.builder()
         .bucketName(trim(bucketName))
         .filePath(trim(filePath))
         .filePathRegex(trim(filePathRegex))
         .connectorRef(connectorRef)
-        .region(DEFAULT_REGION_AWS)
+        .region(EmptyPredicate.isNotEmpty(region) ? region : DEFAULT_REGION_AWS)
         .awsConnectorDTO(connectorDTO)
         .encryptedDataDetails(encryptedDataDetails)
         .sourceType(sourceType)
         .build();
   }
 
+  public CustomArtifactDelegateRequest getCustomDelegateRequest(String artifactsArrayPath, String versionRegex,
+      String type, ArtifactSourceType sourceType, String versionPath, String script, Map<String, String> attributes,
+      Map<String, String> inputs, String version, String executionId, long timeout, String accountId) {
+    return CustomArtifactDelegateRequest.builder()
+        .artifactsArrayPath(artifactsArrayPath)
+        .attributes(attributes)
+        .versionRegex(trim(versionRegex))
+        .sourceType(sourceType)
+        .type(type)
+        .versionPath(versionPath)
+        .script(script)
+        .timeout(timeout)
+        .inputs(inputs)
+        .version(version)
+        .executionId(executionId)
+        .workingDirectory("/tmp")
+        .accountId(accountId)
+        .build();
+  }
+
   private String trim(String str) {
     return str == null ? null : str.trim();
+  }
+
+  public static GithubPackagesArtifactDelegateRequest getGithubPackagesDelegateRequest(String packageName,
+      String packageType, String version, String versionRegex, String org, String connectorRef,
+      GithubConnectorDTO githubConnector, List<EncryptedDataDetail> encryptionDetails,
+      ArtifactSourceType artifactSourceType) {
+    return GithubPackagesArtifactDelegateRequest.builder()
+        .packageName(packageName)
+        .githubConnectorDTO(githubConnector)
+        .version(version)
+        .versionRegex(versionRegex)
+        .connectorRef(connectorRef)
+        .encryptedDataDetails(encryptionDetails)
+        .sourceType(artifactSourceType)
+        .packageType(packageType)
+        .org(org)
+        .build();
   }
 }

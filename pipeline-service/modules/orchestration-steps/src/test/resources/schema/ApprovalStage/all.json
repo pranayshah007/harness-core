@@ -869,7 +869,8 @@
             "Abort",
             "StageRollback",
             "StepGroupRollback",
-            "ManualIntervention"
+            "ManualIntervention",
+            "ProceedWithDefaultValue"
           ]
         }
       },
@@ -966,6 +967,22 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "HarnessFileStoreSource": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ShellScriptBaseSource"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "file": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "HarnessForConfig": {
       "type": "object",
       "properties": {
@@ -999,6 +1016,20 @@
           ]
         },
         "maxConcurrency": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+              "minLength": 1
+            }
+          ]
+        },
+        "partitionSize": {
           "oneOf": [
             {
               "type": "integer",
@@ -1239,6 +1270,9 @@
               "type": "string"
             },
             "issueType": {
+              "type": "string"
+            },
+            "projectKey": {
               "type": "string"
             },
             "rejectionCriteria": {
@@ -1595,6 +1629,9 @@
               "$ref": "#/definitions/MarkAsSuccessFailureActionConfig"
             },
             {
+              "$ref": "#/definitions/ProceedWithDefaultValuesFailureActionConfig"
+            },
+            {
               "$ref": "#/definitions/RetryFailureActionConfig"
             },
             {
@@ -1618,7 +1655,8 @@
               "Authorization",
               "Verification",
               "DelegateProvisioning",
-              "PolicyEvaluationFailure"
+              "PolicyEvaluationFailure",
+              "ExecutionInputTimeoutError"
             ]
           }
         }
@@ -1641,6 +1679,9 @@
             },
             {
               "$ref": "#/definitions/MarkAsSuccessFailureActionConfig"
+            },
+            {
+              "$ref": "#/definitions/ProceedWithDefaultValuesFailureActionConfig"
             },
             {
               "$ref": "#/definitions/RetryFailureActionConfig"
@@ -1672,6 +1713,9 @@
             },
             {
               "$ref": "#/definitions/MarkAsSuccessFailureActionConfig"
+            },
+            {
+              "$ref": "#/definitions/ProceedWithDefaultValuesFailureActionConfig"
             },
             {
               "$ref": "#/definitions/RetryFailureActionConfig"
@@ -1886,6 +1930,28 @@
               "policySpec": {
                 "$ref": "#/definitions/CustomPolicyStepSpec"
               }
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ProceedWithDefaultValuesFailureActionConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/FailureStrategyActionConfig"
+        },
+        {
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "ProceedWithDefaultValue"
+              ]
             }
           }
         }
@@ -2565,6 +2631,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "Harness"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/HarnessFileStoreSource"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "Inline"
               }
             }
@@ -2992,6 +3074,22 @@
               }
             }
           }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Wait"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/WaitStepInfo"
+              }
+            }
+          }
         }
       ]
     },
@@ -3264,6 +3362,26 @@
           "format": "int32"
         }
       },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "WaitStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "duration": {
+              "type": "string",
+              "pattern": "^(([1-9])+\\d+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|(<\\+input>.*)|(.*<\\+.*>.*)|(^$))$"
+            },
+            "metadata": {
+              "type": "string"
+            }
+          }
+        }
+      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "WeightedVariation": {

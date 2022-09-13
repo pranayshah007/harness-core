@@ -7,7 +7,7 @@
 
 package io.harness.subscription.entities;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
@@ -34,9 +34,9 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "StripeCustomerKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "stripeCustomers", noClassnameStored = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@StoreIn(DbAliases.NG_MANAGER)
 @Document("stripeCustomers")
 @Persistent
 public class StripeCustomer implements PersistentEntity, NGAccountAccess {

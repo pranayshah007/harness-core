@@ -37,6 +37,7 @@ import io.harness.beans.quantity.unit.StorageQuantityUnit;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.steps.CIStepInfo;
 import io.harness.beans.steps.CIStepInfoType;
+import io.harness.beans.steps.stepinfo.BackgroundStepInfo;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
@@ -47,6 +48,7 @@ import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.buildstate.PluginSettingUtils;
 import io.harness.ci.buildstate.StepContainerUtils;
+import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.execution.CIExecutionConfigService;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.utils.CIStepInfoUtils;
@@ -160,7 +162,8 @@ public class K8InitializeStepUtils {
     Integer extraMemoryPerStep = 0;
     Integer extraCPUPerStep = 0;
 
-    if (stepElementConfig.getStrategy() == null) {
+    if ((stepElementConfig.getStrategy() == null)
+        && !(stepElementConfig.getStepSpecType() instanceof BackgroundStepInfo)) {
       extraMemoryPerStep = calculateExtraMemory(executionWrapper, accountId, maxAllocatableMemoryRequest);
       extraCPUPerStep = calculateExtraCPU(executionWrapper, accountId, maxAllocatableCpuRequest);
     }
@@ -214,9 +217,16 @@ public class K8InitializeStepUtils {
       return containerDefinitionInfos;
     }
 
-    int steps = parallelStepElementConfig.getSections().size();
-    Integer extraMemoryPerStep = extraMemory / steps;
-    Integer extraCPUPerStep = extraCPU / steps;
+    Integer extraMemoryPerStep = 0;
+    Integer extraCPUPerStep = 0;
+
+    int stepCount =
+        (int) parallelStepElementConfig.getSections().stream().filter(this::isStepEligibleForExtraResource).count();
+
+    if (stepCount > 0) {
+      extraMemoryPerStep = extraMemory / stepCount;
+      extraCPUPerStep = extraCPU / stepCount;
+    }
 
     for (ExecutionWrapperConfig executionWrapperInParallel : parallelStepElementConfig.getSections()) {
       if (executionWrapperInParallel.getStep() != null && !executionWrapperInParallel.getStep().isNull()) {
@@ -264,6 +274,10 @@ public class K8InitializeStepUtils {
         return createRunStepContainerDefinition((RunStepInfo) ciStepInfo, integrationStage, ciExecutionArgs, portFinder,
             stepIndex, stepElement.getIdentifier(), stepElement.getName(), accountId, os, extraMemoryPerStep,
             extraCPUPerStep);
+      case BACKGROUND:
+        return createBackgroundStepContainerDefinition((BackgroundStepInfo) ciStepInfo, integrationStage,
+            ciExecutionArgs, portFinder, stepIndex, stepElement.getIdentifier(), stepElement.getName(), accountId, os,
+            extraMemoryPerStep, extraCPUPerStep);
       case DOCKER:
       case ECR:
       case ACR:
@@ -419,6 +433,63 @@ public class K8InitializeStepUtils {
         .build();
   }
 
+  private ContainerDefinitionInfo createBackgroundStepContainerDefinition(BackgroundStepInfo backgroundStepInfo,
+      StageElementConfig integrationStage, CIExecutionArgs ciExecutionArgs, PortFinder portFinder, int stepIndex,
+      String identifier, String name, String accountId, OSType os, Integer extraMemoryPerStep,
+      Integer extraCPUPerStep) {
+    String image = resolveStringParameter("Image", "Background", identifier, backgroundStepInfo.getImage(), true);
+    if (isEmpty(image)) {
+      throw new CIStageExecutionException("image can't be empty in k8s infrastructure");
+    }
+
+    String connectorRef =
+        resolveStringParameter("connectorRef", "Background", identifier, backgroundStepInfo.getConnectorRef(), true);
+    if (isEmpty(connectorRef)) {
+      throw new CIStageExecutionException("connectorRef can't be empty in k8s infrastructure");
+    }
+
+    Map<String, String> portBindings =
+        resolveMapParameter("portBindings", "Background", identifier, backgroundStepInfo.getPortBindings(), false);
+
+    if (portBindings != null) {
+      throw new CIStageExecutionException("portBindings should be empty in k8s infrastructure");
+    }
+
+    Integer port = portFinder.getNextPort();
+
+    String containerName = format("%s%d", STEP_PREFIX, stepIndex);
+    Map<String, String> stepEnvVars = new HashMap<>();
+    stepEnvVars.putAll(getEnvVariables(integrationStage));
+    stepEnvVars.putAll(BuildEnvironmentUtils.getBuildEnvironmentVariables(ciExecutionArgs));
+    Map<String, String> envVars =
+        resolveMapParameter("envVariables", "Background", identifier, backgroundStepInfo.getEnvVariables(), false);
+    if (!isEmpty(envVars)) {
+      stepEnvVars.putAll(envVars);
+    }
+    Integer runAsUser = resolveIntegerParameter(backgroundStepInfo.getRunAsUser(), null);
+
+    return ContainerDefinitionInfo.builder()
+        .name(containerName)
+        .commands(StepContainerUtils.getCommand(os))
+        .args(StepContainerUtils.getArguments(port))
+        .envVars(stepEnvVars)
+        .stepIdentifier(identifier)
+        .secretVariables(getSecretVariables(integrationStage))
+        .containerImageDetails(ContainerImageDetails.builder()
+                                   .imageDetails(IntegrationStageUtils.getImageInfo(image))
+                                   .connectorIdentifier(connectorRef)
+                                   .build())
+        .containerResourceParams(
+            getIndependentContainerResource(backgroundStepInfo.getResources(), "Background", identifier))
+        .ports(Arrays.asList(port))
+        .containerType(CIContainerType.BACKGROUND)
+        .stepName(name)
+        .privileged(backgroundStepInfo.getPrivileged().getValue())
+        .runAsUser(runAsUser)
+        .imagePullPolicy(RunTimeInputHandler.resolveImagePullPolicy(backgroundStepInfo.getImagePullPolicy()))
+        .build();
+  }
+
   private ContainerDefinitionInfo createRunTestsStepContainerDefinition(RunTestsStepInfo runTestsStepInfo,
       StageElementConfig integrationStage, CIExecutionArgs ciExecutionArgs, PortFinder portFinder, int stepIndex,
       String identifier, String accountId, OSType os, Integer extraMemoryPerStep, Integer extraCPUPerStep) {
@@ -526,6 +597,36 @@ public class K8InitializeStepUtils {
         .resourceRequestMemoryMiB(STEP_REQUEST_MEMORY_MIB)
         .resourceLimitMilliCpu(cpuLimit)
         .resourceLimitMemoryMiB(memoryLimit)
+        .build();
+  }
+
+  private ContainerResourceParams getIndependentContainerResource(
+      ContainerResource resource, String stepType, String identifier) {
+    CIExecutionServiceConfig ciExecutionServiceConfig = ciExecutionConfigService.getCiExecutionServiceConfig();
+    Integer cpu = ciExecutionServiceConfig.getDefaultCPULimit();
+    Integer memory = ciExecutionServiceConfig.getDefaultMemoryLimit();
+
+    if (resource != null && resource.getLimits() != null) {
+      if (resource.getLimits().getCpu() != null) {
+        String cpuQuantity = resolveStringParameter("cpu", stepType, identifier, resource.getLimits().getCpu(), false);
+        if (isNotEmpty(cpuQuantity) && !UNRESOLVED_PARAMETER.equals(cpuQuantity)) {
+          cpu = QuantityUtils.getCpuQuantityValueInUnit(cpuQuantity, DecimalQuantityUnit.m);
+        }
+      }
+      if (resource.getLimits().getMemory() != null) {
+        String memoryQuantity = RunTimeInputHandler.resolveStringParameter(
+            "memory", stepType, identifier, resource.getLimits().getMemory(), false);
+        if (isNotEmpty(memoryQuantity) && !UNRESOLVED_PARAMETER.equals(memoryQuantity)) {
+          memory = QuantityUtils.getStorageQuantityValueInUnit(memoryQuantity, StorageQuantityUnit.Mi);
+        }
+      }
+    }
+
+    return ContainerResourceParams.builder()
+        .resourceRequestMilliCpu(cpu)
+        .resourceRequestMemoryMiB(memory)
+        .resourceLimitMilliCpu(cpu)
+        .resourceLimitMemoryMiB(memory)
         .build();
   }
 
@@ -707,6 +808,8 @@ public class K8InitializeStepUtils {
     Integer zeroMemory = 0;
     if (!(stepElement.getStepSpecType() instanceof CIStepInfo)) {
       return zeroMemory;
+    } else if (stepElement.getStepSpecType() instanceof BackgroundStepInfo) {
+      return zeroMemory;
     }
 
     ContainerResource containerResource = getStepResources((CIStepInfo) stepElement.getStepSpecType());
@@ -846,6 +949,7 @@ public class K8InitializeStepUtils {
         return getContainerCpuLimit(((PluginCompatibleStep) ciStepInfo).getResources(), stepElement.getType(),
             stepElement.getIdentifier(), accountId);
       default:
+        // For background step as well we return zero cpu
         return zeroCpu;
     }
   }
@@ -871,6 +975,8 @@ public class K8InitializeStepUtils {
     switch (ciStepInfo.getNonYamlInfo().getStepInfoType()) {
       case RUN:
         return ((RunStepInfo) ciStepInfo).getResources();
+      case BACKGROUND:
+        return ((BackgroundStepInfo) ciStepInfo).getResources();
       case PLUGIN:
         return ((PluginStepInfo) ciStepInfo).getResources();
       case RUN_TESTS:
@@ -1044,6 +1150,30 @@ public class K8InitializeStepUtils {
     } catch (Exception ex) {
       throw new CIStageExecutionException("Failed to deserialize ExecutionWrapperConfig step node", ex);
     }
+  }
+
+  private boolean isStepEligibleForExtraResource(ExecutionWrapperConfig executionWrapperConfig) {
+    if (executionWrapperConfig.getStep() != null && !executionWrapperConfig.getStep().isNull()) {
+      StepElementConfig stepElementConfig = IntegrationStageUtils.getStepElementConfig(executionWrapperConfig);
+      return !(stepElementConfig.getStepSpecType() instanceof BackgroundStepInfo);
+    } else if (executionWrapperConfig.getParallel() != null && !executionWrapperConfig.getParallel().isNull()) {
+      ParallelStepElementConfig parallelStepElementConfig =
+          IntegrationStageUtils.getParallelStepElementConfig(executionWrapperConfig);
+      for (ExecutionWrapperConfig parallelWrapperConfig : parallelStepElementConfig.getSections()) {
+        if (isStepEligibleForExtraResource(parallelWrapperConfig)) {
+          return true;
+        }
+      }
+    } else if (executionWrapperConfig.getStepGroup() != null && !executionWrapperConfig.getStepGroup().isNull()) {
+      StepGroupElementConfig stepGroupElementConfig =
+          IntegrationStageUtils.getStepGroupElementConfig(executionWrapperConfig);
+      for (ExecutionWrapperConfig stepGroupElementWrapperConfig : stepGroupElementConfig.getSteps()) {
+        if (isStepEligibleForExtraResource(stepGroupElementWrapperConfig)) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   private ContainerResource getContainerResource(StepElementConfig stepElement) {

@@ -2269,9 +2269,7 @@ public class YamlDirectoryServiceImpl implements YamlDirectoryService {
     doArtifactServerType(accountId, artifactServersFolder, SettingVariableTypes.NEXUS, directoryPath.clone());
     doArtifactServerType(accountId, artifactServersFolder, SettingVariableTypes.ARTIFACTORY, directoryPath.clone());
     doArtifactServerType(accountId, artifactServersFolder, SettingVariableTypes.HTTP_HELM_REPO, directoryPath.clone());
-    if (featureFlagService.isEnabled(FeatureName.HELM_OCI_SUPPORT, accountId)) {
-      doArtifactServerType(accountId, artifactServersFolder, SettingVariableTypes.OCI_HELM_REPO, directoryPath.clone());
-    }
+    doArtifactServerType(accountId, artifactServersFolder, SettingVariableTypes.OCI_HELM_REPO, directoryPath.clone());
     doArtifactServerType(
         accountId, artifactServersFolder, SettingVariableTypes.AMAZON_S3_HELM_REPO, directoryPath.clone());
     doArtifactServerType(accountId, artifactServersFolder, SettingVariableTypes.GCS_HELM_REPO, directoryPath.clone());
@@ -2801,12 +2799,6 @@ public class YamlDirectoryServiceImpl implements YamlDirectoryService {
       SettingAttribute settingAttribute, SettingVariableTypes settingVariableType) {
     StringBuilder sb = new StringBuilder();
     sb.append(getRootPath()).append(PATH_DELIMITER);
-
-    if (!featureFlagService.isEnabled(FeatureName.HELM_OCI_SUPPORT, settingAttribute.getAccountId())
-        && settingVariableType.equals(OCI_HELM_REPO)) {
-      log.warn("Unknown SettingVariable type:" + settingVariableType);
-      return sb.toString();
-    }
 
     switch (settingVariableType) {
       // cloud providers

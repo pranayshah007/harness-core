@@ -10,8 +10,8 @@ package io.harness.pms.pipeline;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
 import io.harness.annotations.ChangeDataCapture;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.validator.EntityName;
@@ -37,6 +37,7 @@ import com.google.common.collect.ImmutableList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import lombok.AccessLevel;
@@ -63,11 +64,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "PipelineEntityKeys")
+@StoreIn(DbAliases.PMS)
 @Entity(value = "pipelinesPMS", noClassnameStored = true)
 @Document("pipelinesPMS")
 @TypeAlias("pipelinesPMS")
 @HarnessEntity(exportable = true)
-@StoreIn(DbAliases.PMS)
 @ChangeDataCapture(table = "tags_info", dataStore = "pms-harness", fields = {}, handler = "TagsInfoCD")
 @ChangeDataCapture(table = "pipelines", dataStore = "ng-harness", fields = {}, handler = "Pipelines")
 public class PipelineEntity
@@ -101,6 +102,8 @@ public class PipelineEntity
         .build();
   }
   @Setter @NonFinal @Id @org.mongodb.morphia.annotations.Id String uuid;
+
+  @Setter @NonFinal Set<String> templateModules;
 
   @NotEmpty String accountId;
   @NotEmpty String orgIdentifier;

@@ -1,0 +1,15 @@
+name: Autoscaling metrics
+identifier: le_autoscale_metrics
+metrics:
+  - metricName: learning_engine_max_queued_time
+    metricDefinition: max queued time of a learning task
+    type: LastValue
+    unit: count
+  - metricName: learning_engine_deployment_max_queued_time
+    metricDefinition: max queued time of a learning deployment task
+    type: LastValue
+    unit: count
+  - metricName: learning_engine_service_health_max_queued_time
+    metricDefinition: max queued time of a learning live health task
+    type: LastValue
+    unit: count

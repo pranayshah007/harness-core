@@ -57,14 +57,20 @@ public class HarnessForConfig {
 
   @ApiModelProperty(dataType = INTEGER_CLASSPATH)
   @YamlSchemaTypes(value = {expression})
+  @JsonProperty("partitionSize")
+  @Min(0)
+  ParameterField<Integer> partitionSize;
+
+  @ApiModelProperty(dataType = INTEGER_CLASSPATH)
+  @YamlSchemaTypes(value = {expression})
   @JsonProperty("start")
-  @Min(value = 0)
+  @Min(0)
   ParameterField<Integer> start;
 
   @ApiModelProperty(dataType = INTEGER_CLASSPATH)
   @YamlSchemaTypes(value = {expression})
   @JsonProperty("end")
-  @Min(value = 0)
+  @Min(0)
   ParameterField<Integer> end;
 
   RepeatUnit unit;

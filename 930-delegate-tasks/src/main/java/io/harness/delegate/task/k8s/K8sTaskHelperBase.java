@@ -33,7 +33,7 @@ import static io.harness.k8s.manifest.ManifestHelper.yaml_file_extension;
 import static io.harness.k8s.manifest.ManifestHelper.yml_file_extension;
 import static io.harness.k8s.model.K8sExpressions.canaryDestinationExpression;
 import static io.harness.k8s.model.K8sExpressions.stableDestinationExpression;
-import static io.harness.k8s.model.Release.Status.Failed;
+import static io.harness.k8s.releasehistory.IK8sRelease.Status.Failed;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.ERROR;
@@ -160,9 +160,9 @@ import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceComparer;
 import io.harness.k8s.model.KubernetesResourceId;
-import io.harness.k8s.model.Release;
-import io.harness.k8s.model.ReleaseHistory;
 import io.harness.k8s.model.response.CEK8sDelegatePrerequisite;
+import io.harness.k8s.releasehistory.K8sLegacyRelease;
+import io.harness.k8s.releasehistory.ReleaseHistory;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -974,7 +974,7 @@ public class K8sTaskHelperBase {
     executionLogCallback.saveExecutionLog("\nCleaning up older and failed releases");
 
     for (int releaseIndex = releaseHistory.getReleases().size() - 1; releaseIndex >= 0; releaseIndex--) {
-      Release release = releaseHistory.getReleases().get(releaseIndex);
+      K8sLegacyRelease release = releaseHistory.getReleases().get(releaseIndex);
       if (release.getNumber() < lastSuccessfulReleaseNumber || release.getStatus() == Failed) {
         for (int resourceIndex = release.getResources().size() - 1; resourceIndex >= 0; resourceIndex--) {
           KubernetesResourceId resourceId = release.getResources().get(resourceIndex);
@@ -1001,15 +1001,17 @@ public class K8sTaskHelperBase {
       ProcessResult result = executeDeleteCommand(client, k8sDelegateTaskParams, executionLogCallback, resourceId);
       if (result.getExitValue() != 0) {
         log.warn("Failed to delete resource {}. Error {}", resourceId.kindNameRef(), result.getOutput());
-        String reultOutput = result.outputUTF8().toLowerCase();
+        String resultOutput = result.outputUTF8().toLowerCase();
         // if result contains "not found" then we don't fail else we fail the step
-        if (!reultOutput.contains(NOT_FOUND)) {
-          denoteOverallSuccess = false;
+        if (!resultOutput.contains(NOT_FOUND)) {
+          executionLogCallback.saveExecutionLog(resultOutput, ERROR, FAILURE);
+          throw new KubernetesCliTaskRuntimeException(resultOutput, KubernetesCliCommandType.DELETE);
         }
       }
     }
-
-    executionLogCallback.saveExecutionLog("Done", INFO, denoteOverallSuccess == true ? SUCCESS : FAILURE);
+    if (denoteOverallSuccess) {
+      executionLogCallback.saveExecutionLog("Done", INFO, SUCCESS);
+    }
   }
 
   public List<KubernetesResourceId> executeDeleteHandlingPartialExecution(Kubectl client,
@@ -1062,8 +1064,16 @@ public class K8sTaskHelperBase {
   public ProcessResult executeCommandUsingUtils(K8sDelegateTaskParams k8sDelegateTaskParams,
       LogOutputStream statusInfoStream, LogOutputStream statusErrorStream, String command,
       Map<String, String> environment) throws Exception {
+    addGcpCredentialsToEnvironmentIfExist(k8sDelegateTaskParams.getWorkingDirectory(), environment);
     return executeCommandUsingUtils(
         k8sDelegateTaskParams.getWorkingDirectory(), statusInfoStream, statusErrorStream, command, environment);
+  }
+
+  private void addGcpCredentialsToEnvironmentIfExist(String directory, Map<String, String> environment) {
+    Path googleApplicationCredentialsPath = Paths.get(directory).resolve(K8sConstants.GCP_JSON_KEY_FILE_NAME);
+    if (Files.exists(googleApplicationCredentialsPath)) {
+      environment.put("GOOGLE_APPLICATION_CREDENTIALS", googleApplicationCredentialsPath.toAbsolutePath().toString());
+    }
   }
 
   public String getRolloutStatusCommandForDeploymentConfig(
@@ -1989,7 +1999,7 @@ public class K8sTaskHelperBase {
     }
 
     Map<String, KubernetesResourceId> kubernetesResourceIdMap = new HashMap<>();
-    for (Release release : releaseHistory.getReleases()) {
+    for (K8sLegacyRelease release : releaseHistory.getReleases()) {
       if (isNotEmpty(release.getResources())) {
         release.getResources().forEach(
             resource -> kubernetesResourceIdMap.put(generateResourceIdentifier(resource), resource));

@@ -168,6 +168,7 @@ public class CIVmInitializeTaskHandler implements CIInitializeTaskHandler {
         .poolID(params.getPoolID())
         .config(config)
         .logKey(params.getLogKey())
+        .tags(params.getTags())
         .build();
   }
 

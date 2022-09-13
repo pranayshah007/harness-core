@@ -314,6 +314,7 @@ cg:
     connectionsPerHost: 300
     indexManagerMode: MANUAL
     traceMode: DISABLED
+    aliasDBName: harness
     mongoSSLConfig:
       mongoSSLEnabled: false
       mongoTrustStorePath:
@@ -326,6 +327,7 @@ cg:
     maxConnectionIdleTime: 600000
     connectionsPerHost: 300
     indexManagerMode: MANUAL
+    aliasDBName: events
 
   searchEnabled: false
   graphQLEnabled: false
@@ -345,7 +347,7 @@ cg:
   envPath: ""
 
   kubectlVersion: v1.13.2
-  scmVersion: 36d92fd8
+  scmVersion: 140a857a
 
   ngAuthUIEnabled: false
 

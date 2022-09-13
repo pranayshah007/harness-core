@@ -59,4 +59,18 @@ public class SshExceptionConstants {
   public final String JENKINS_ARTIFACT_DOWNLOAD_HINT = "Please review the Jenkins Artifact Details and check "
       + "Path to the artifact. We recommend also checking for the artifact on Jenkins server";
   public final String JENKINS_ARTIFACT_DOWNLOAD_EXPLANATION = "Failed to download Jenkins Artifact with id: %s";
+
+  public final String SCRIPT_EXECUTION_FAILED = "Failed to execute script command unit";
+  public final String SCRIPT_EXECUTION_FAILED_HINT = "Please ensure the specified workingDir is available on the host";
+  public final String SCRIPT_EXECUTION_FAILED_EXPLANATION =
+      "Selected workingDir path should exist and accessible on the host in order to use it with the script command unit";
+  public final String COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT =
+      "Copy Artifact is not supported for Custom Repository artifacts";
+  public final String COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT_HINT =
+      "Please make sure there is no copy artifact command unit specified";
+  public final String UNDECRYPTABLE_CONFIG_FILE_PROVIDED = "Could not decrypt the encrypted secret config file %s";
+  public final String UNDECRYPTABLE_CONFIG_FILE_PROVIDED_HINT =
+      "Please provide a valid encrypted config file instead of %s";
+  public final String UNDECRYPTABLE_CONFIG_FILE_PROVIDED_EXPLANATION =
+      "Encrypted config file %s could not be decrypted";
 }

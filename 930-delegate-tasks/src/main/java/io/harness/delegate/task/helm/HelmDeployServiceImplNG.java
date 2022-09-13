@@ -90,8 +90,9 @@ import io.harness.k8s.model.Kind;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
-import io.harness.k8s.model.Release;
-import io.harness.k8s.model.ReleaseHistory;
+import io.harness.k8s.releasehistory.IK8sRelease;
+import io.harness.k8s.releasehistory.K8sLegacyRelease;
+import io.harness.k8s.releasehistory.ReleaseHistory;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -169,6 +170,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
     int prevVersion = -1;
     boolean isInstallUpgrade = false;
     List<KubernetesResource> resources = Collections.emptyList();
+    String initWorkingDir = commandRequest.getWorkingDir();
     try {
       HelmInstallCmdResponseNG commandResponse;
       logCallback.saveExecutionLog(
@@ -279,7 +281,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
         logCallback.saveExecutionLog("Deployment failed.");
         deleteAndPurgeHelmRelease(commandRequest, logCallback);
       }
-      cleanUpWorkingDirectory(Paths.get(commandRequest.getWorkingDir()).getParent().toString());
+      cleanUpWorkingDirectory(initWorkingDir);
     }
   }
 
@@ -394,6 +396,12 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
         if (ocPath.isPresent()) {
           commandRequest.setOcPath(ocPath.get());
         }
+        if (isNotEmpty(commandRequest.getGcpKeyPath())) {
+          Path oldPath = Paths.get(commandRequest.getGcpKeyPath());
+          Path newPath = Paths.get(commandRequest.getWorkingDir(), K8sConstants.GCP_JSON_KEY_FILE_NAME);
+          Files.move(oldPath, newPath);
+          commandRequest.setGcpKeyPath(newPath.toAbsolutePath().toString());
+        }
         success = success
             && doStatusCheckAllResourcesForHelm(client, entry.getValue(), commandRequest.getOcPath(),
                 commandRequest.getWorkingDir(), namespace, commandRequest.getKubeConfigLocation(), logCallback);
@@ -433,8 +441,9 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
 
   private void saveReleaseHistory(HelmCommandRequestNG commandRequest, ReleaseHistory releaseHistory,
       CommandExecutionStatus commandExecutionStatus) throws IOException {
-    Release.Status releaseStatus =
-        CommandExecutionStatus.SUCCESS == commandExecutionStatus ? Release.Status.Succeeded : Release.Status.Failed;
+    K8sLegacyRelease.Status releaseStatus = CommandExecutionStatus.SUCCESS == commandExecutionStatus
+        ? IK8sRelease.Status.Succeeded
+        : IK8sRelease.Status.Failed;
     releaseHistory.setReleaseStatus(releaseStatus);
     k8sTaskHelperBase.saveReleaseHistory(
         kubernetesConfig, commandRequest.getReleaseName(), releaseHistory.getAsYaml(), true);
@@ -546,10 +555,10 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
   private List<KubernetesResourceId> readResourcesForRollback(
       HelmCommandRequestNG commandRequest, Integer prevReleaseVersion) throws IOException {
     ReleaseHistory releaseHistory = fetchReleaseHistory(commandRequest, kubernetesConfig);
-    Release rollbackRelease = releaseHistory.getRelease(prevReleaseVersion);
+    K8sLegacyRelease rollbackRelease = releaseHistory.getRelease(prevReleaseVersion);
     notNullCheck("Unable to find release " + prevReleaseVersion, rollbackRelease);
 
-    if (Release.Status.Succeeded != rollbackRelease.getStatus()) {
+    if (IK8sRelease.Status.Succeeded != rollbackRelease.getStatus()) {
       throw new InvalidRequestException("Invalid status for release with number " + prevReleaseVersion
           + ". Expected 'Succeeded' status, actual status is '" + rollbackRelease.getStatus() + "'");
     }

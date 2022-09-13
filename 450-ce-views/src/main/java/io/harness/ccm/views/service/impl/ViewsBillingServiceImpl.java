@@ -16,6 +16,7 @@ import static io.harness.ccm.commons.constants.ViewFieldConstants.NAMESPACE_FIEL
 import static io.harness.ccm.commons.constants.ViewFieldConstants.TASK_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.WORKLOAD_NAME_FIELD_ID;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.CLUSTER;
+import static io.harness.ccm.views.entities.ViewFieldIdentifier.COMMON;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.LABEL;
 import static io.harness.ccm.views.graphql.QLCEViewAggregateOperation.MAX;
 import static io.harness.ccm.views.graphql.QLCEViewAggregateOperation.MIN;
@@ -28,6 +29,8 @@ import static io.harness.ccm.views.graphql.ViewMetaDataConstants.entityConstantM
 import static io.harness.ccm.views.graphql.ViewMetaDataConstants.entityConstantMinStartTime;
 import static io.harness.ccm.views.graphql.ViewMetaDataConstants.entityConstantSystemCost;
 import static io.harness.ccm.views.graphql.ViewMetaDataConstants.entityConstantUnallocatedCost;
+import static io.harness.ccm.views.graphql.ViewsQueryBuilder.ECS_TASK_EC2;
+import static io.harness.ccm.views.graphql.ViewsQueryBuilder.ECS_TASK_FARGATE;
 import static io.harness.ccm.views.graphql.ViewsQueryBuilder.K8S_NODE;
 import static io.harness.ccm.views.graphql.ViewsQueryBuilder.K8S_POD;
 import static io.harness.ccm.views.graphql.ViewsQueryBuilder.K8S_POD_FARGATE;
@@ -98,11 +101,15 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.commons.service.intf.EntityMetadataService;
 import io.harness.ccm.views.businessMapping.entities.BusinessMapping;
+import io.harness.ccm.views.businessMapping.entities.CostTarget;
+import io.harness.ccm.views.businessMapping.entities.SharedCost;
+import io.harness.ccm.views.businessMapping.entities.SharingStrategy;
 import io.harness.ccm.views.businessMapping.entities.UnallocatedCostStrategy;
 import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingService;
 import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.entities.ClusterData;
 import io.harness.ccm.views.entities.ClusterData.ClusterDataBuilder;
+import io.harness.ccm.views.entities.EntitySharedCostDetails;
 import io.harness.ccm.views.entities.ViewCondition;
 import io.harness.ccm.views.entities.ViewField;
 import io.harness.ccm.views.entities.ViewFieldIdentifier;
@@ -113,6 +120,7 @@ import io.harness.ccm.views.entities.ViewRule;
 import io.harness.ccm.views.entities.ViewTimeGranularity;
 import io.harness.ccm.views.entities.ViewVisualization;
 import io.harness.ccm.views.graphql.EfficiencyScoreStats;
+import io.harness.ccm.views.graphql.QLCEInExpressionFilter;
 import io.harness.ccm.views.graphql.QLCEViewAggregateOperation;
 import io.harness.ccm.views.graphql.QLCEViewAggregation;
 import io.harness.ccm.views.graphql.QLCEViewDataPoint;
@@ -150,6 +158,7 @@ import io.harness.ccm.views.utils.ViewFieldUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
 
+import com.google.cloud.Timestamp;
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.Field;
 import com.google.cloud.bigquery.FieldList;
@@ -188,6 +197,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.Nullable;
 
 @Slf4j
 @Singleton
@@ -218,6 +228,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
   private static final String STANDARD_TIME_ZONE = "GMT";
   private static final long ONE_DAY_MILLIS = 86400000L;
   private static final long OBSERVATION_PERIOD = 29 * ONE_DAY_MILLIS;
+  private static final int MAX_LIMIT_VALUE = 10_000;
   private static final List<String> UNALLOCATED_COST_CLUSTER_FIELDS = ImmutableList.of(
       NAMESPACE_FIELD_ID, WORKLOAD_NAME_FIELD_ID, CLOUD_SERVICE_NAME_FIELD_ID, TASK_FIELD_ID, LAUNCH_TYPE_FIELD_ID);
 
@@ -246,13 +257,6 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     List<QLCEViewFilter> idFilters =
         awsAccountFieldHelper.addAccountIdsByAwsAccountNameFilter(getIdFilters(filters), queryParams.getAccountId());
 
-    List<QLCEViewRule> rules = getRuleFilters(filters);
-    if (!rules.isEmpty()) {
-      for (QLCEViewRule rule : rules) {
-        viewRuleList.add(convertQLCEViewRuleToViewRule(rule));
-      }
-    }
-
     if (viewMetadataFilter.isPresent()) {
       QLCEViewMetadataFilter metadataFilter = viewMetadataFilter.get().getViewMetadataFilter();
       final String viewId = metadataFilter.getViewId();
@@ -276,7 +280,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     try {
       result = bigQuery.query(queryConfig);
     } catch (InterruptedException e) {
-      log.error("Failed to getViewFilterValueStats. {}", e);
+      log.error("Failed to getViewFilterValueStats for query {}", viewsQueryMetadata.getQuery(), e);
       Thread.currentThread().interrupt();
       return null;
     }
@@ -317,6 +321,25 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
       String cloudProviderTableName, Integer limit, Integer offset, ViewQueryParams queryParams) {
     boolean isClusterPerspective = isClusterTableQuery(filters, queryParams);
     String businessMappingId = viewsQueryHelper.getBusinessMappingIdFromGroupBy(groupBy);
+    BusinessMapping businessMapping = businessMappingId != null ? businessMappingService.get(businessMappingId) : null;
+    boolean addSharedCostFromGroupBy = true;
+
+    // Fetching business mapping Ids from rules and filters
+    List<ViewRule> viewRules = getViewRules(filters);
+    Set<String> businessMappingIdsFromRules = viewsQueryHelper.getBusinessMappingIdsFromViewRules(viewRules);
+    List<String> businessMappingIdsFromRulesAndFilters = viewsQueryHelper.getBusinessMappingIdsFromFilters(filters);
+    businessMappingIdsFromRulesAndFilters.addAll(businessMappingIdsFromRules);
+    List<BusinessMapping> sharedCostBusinessMappings = new ArrayList<>();
+    Map<String, Double> sharedCostsFromRulesAndFilters = new HashMap<>();
+    if (!businessMappingIdsFromRulesAndFilters.isEmpty()) {
+      businessMappingIdsFromRulesAndFilters.forEach(businessMappingIdFromRulesAndFilters -> {
+        BusinessMapping businessMappingFromRulesAndFilters =
+            businessMappingService.get(businessMappingIdFromRulesAndFilters);
+        if (businessMappingFromRulesAndFilters != null && businessMappingFromRulesAndFilters.getSharedCosts() != null) {
+          sharedCostBusinessMappings.add(businessMappingFromRulesAndFilters);
+        }
+      });
+    }
 
     // If group by business mapping is present, query unified table
     isClusterPerspective = isClusterPerspective && businessMappingId == null;
@@ -326,6 +349,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     if (isDataGroupedByAwsAccount(filters, groupBy) && !queryParams.isUsedByTimeSeriesStats()) {
       conversionField = AWS_ACCOUNT_FIELD;
     }
+
     Map<String, ViewCostData> costTrendData = new HashMap<>();
     long startTimeForTrendData = 0L;
     if (!queryParams.isUsedByTimeSeriesStats()) {
@@ -337,19 +361,29 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     query.addCustomization(new PgLimitClause(limit));
     query.addCustomization(new PgOffsetClause(offset));
     QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query.toString()).build();
+    log.info("Query for grid (with limit as {}): {}", limit, query.toString());
     TableResult result;
     try {
       result = bigQuery.query(queryConfig);
     } catch (InterruptedException e) {
-      log.error("Failed to getEntityStatsDataPoints. {}", e);
+      log.error("Failed to getEntityStatsDataPoints for query {}", query, e);
       Thread.currentThread().interrupt();
       return null;
     }
+
+    if (!sharedCostBusinessMappings.isEmpty()) {
+      sharedCostsFromRulesAndFilters =
+          getSharedCostFromFilters(bigQuery, filters, groupBy, aggregateFunction, sort, cloudProviderTableName,
+              queryParams, sharedCostBusinessMappings, limit, offset, queryParams.isSkipRoundOff(), viewRules);
+    }
+
+    addSharedCostFromGroupBy = !businessMappingIdsFromRulesAndFilters.contains(businessMappingId);
+
     return costCategoriesPostFetchResponseUpdate(
         convertToEntityStatsData(result, costTrendData, startTimeForTrendData, isClusterPerspective,
             queryParams.isUsedByTimeSeriesStats(), queryParams.isSkipRoundOff(), conversionField,
-            queryParams.getAccountId(), groupBy),
-        businessMappingId);
+            queryParams.getAccountId(), groupBy, businessMapping, addSharedCostFromGroupBy),
+        businessMappingId, sharedCostBusinessMappings, sharedCostsFromRulesAndFilters);
   }
 
   @Override
@@ -371,23 +405,22 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
   public TableResult getTimeSeriesStatsNg(BigQuery bigQuery, List<QLCEViewFilterWrapper> filters,
       List<QLCEViewGroupBy> groupBy, List<QLCEViewAggregation> aggregateFunction, List<QLCEViewSortCriteria> sort,
       String cloudProviderTableName, boolean includeOthers, Integer limit, ViewQueryParams queryParams) {
-    if (!includeOthers && !isMetricsQuery(aggregateFunction)) {
+    QLCEViewGridData gridData = null;
+    List<QLCEViewGroupBy> groupByExcludingGroupByTime =
+        groupBy.stream().filter(g -> g.getEntityGroupBy() != null).collect(Collectors.toList());
+    if (!viewsQueryHelper.isGroupByBusinessMappingPresent(groupBy)) {
       ViewQueryParams queryParamsForGrid = viewsQueryHelper.buildQueryParams(
           queryParams.getAccountId(), false, true, queryParams.isClusterQuery(), false);
-      List<QLCEViewGroupBy> groupByExcludingGroupByTime =
-          groupBy.stream().filter(g -> g.getEntityGroupBy() != null).collect(Collectors.toList());
-      QLCEViewGridData gridData = getEntityStatsDataPointsNg(bigQuery, filters, groupByExcludingGroupByTime,
-          aggregateFunction, sort, cloudProviderTableName, limit, 0, queryParamsForGrid);
-      log.info("GRID DATA: {}", gridData);
-      filters = getModifiedFilters(filters, gridData);
+      gridData = getEntityStatsDataPointsNg(bigQuery, filters, groupByExcludingGroupByTime, aggregateFunction, sort,
+          cloudProviderTableName, limit, 0, queryParamsForGrid);
     }
-
-    SelectQuery query = getQuery(filters, groupBy, aggregateFunction, sort, cloudProviderTableName, queryParams);
+    SelectQuery query = getQuery(getModifiedFiltersForTimeSeriesStats(filters, gridData, groupByExcludingGroupByTime),
+        groupBy, aggregateFunction, sort, cloudProviderTableName, queryParams);
     QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query.toString()).build();
     try {
       return bigQuery.query(queryConfig);
     } catch (InterruptedException e) {
-      log.error("Failed to getTimeSeriesStats. {}", e);
+      log.error("Failed to getTimeSeriesStats for query: {}", query, e);
       Thread.currentThread().interrupt();
       return null;
     }
@@ -403,17 +436,51 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
                                         .operationType(QLCEViewAggregateOperation.SUM)
                                         .columnName(entityConstantUnallocatedCost)
                                         .build());
-      final SelectQuery query = getQuery(filters, modifyGroupByForUnallocatedCostData(groupBy), aggregateFunction, sort,
-          cloudProviderTableName, queryParams);
+      final SelectQuery query = getQuery(getModifiedFilters(filters, groupBy, true), getTimeTruncGroupBys(groupBy),
+          aggregateFunction, sort, cloudProviderTableName, queryParams);
       final QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query.toString()).build();
       try {
-        return convertToUnallocatedCostData(bigQuery.query(queryConfig));
+        return convertToCostData(bigQuery.query(queryConfig));
       } catch (final InterruptedException e) {
-        log.error("Failed to getUnallocatedCostDataNg.", e);
+        log.error("Failed to getUnallocatedCostDataNg for query: {}", query, e);
         Thread.currentThread().interrupt();
       }
     }
-    return null;
+    return Collections.emptyMap();
+  }
+
+  private List<QLCEViewFilterWrapper> getModifiedFilters(final List<QLCEViewFilterWrapper> filters,
+      final List<QLCEViewGroupBy> groupBy, final boolean isClusterTableQuery) {
+    final List<QLCEViewFilterWrapper> modifiedFilters = new ArrayList<>(filters);
+    if (isClusterTableQuery) {
+      final List<QLCEViewGroupBy> modifiedGroupBys = addAdditionalRequiredGroupBy(groupBy);
+      final List<QLCEViewFilter> modifiedIdFilters =
+          getModifiedIdFilters(addNotNullFilters(Collections.emptyList(), modifiedGroupBys), true);
+      modifiedIdFilters.forEach(
+          modifiedIdFilter -> modifiedFilters.add(QLCEViewFilterWrapper.builder().idFilter(modifiedIdFilter).build()));
+    }
+    return modifiedFilters;
+  }
+
+  @Override
+  public Map<Long, Double> getOthersTotalCostDataNg(final BigQuery bigQuery, final List<QLCEViewFilterWrapper> filters,
+      final List<QLCEViewGroupBy> groupBy, final List<QLCEViewSortCriteria> sort, final String cloudProviderTableName,
+      final ViewQueryParams queryParams) {
+    final List<QLCEViewAggregation> aggregateFunction =
+        Collections.singletonList(QLCEViewAggregation.builder()
+                                      .operationType(QLCEViewAggregateOperation.SUM)
+                                      .columnName(entityConstantCost)
+                                      .build());
+    final SelectQuery query = getQuery(getModifiedFilters(filters, groupBy, isClusterTableQuery(filters, queryParams)),
+        getTimeTruncGroupBys(groupBy), aggregateFunction, sort, cloudProviderTableName, queryParams);
+    final QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query.toString()).build();
+    try {
+      return convertToCostData(bigQuery.query(queryConfig));
+    } catch (final InterruptedException e) {
+      log.error("Failed to getOthersTotalCostDataNg for query: {}", query, e);
+      Thread.currentThread().interrupt();
+    }
+    return Collections.emptyMap();
   }
 
   @Override
@@ -477,65 +544,53 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
   }
 
   @Override
-  public boolean isClusterPerspective(List<QLCEViewFilterWrapper> filters) {
-    boolean dataSourceCondition = false;
-    boolean ruleCondition = true;
-    List<ViewRule> viewRuleList = new ArrayList<>();
-    Optional<QLCEViewFilterWrapper> viewMetadataFilter = getViewMetadataFilter(filters);
+  public boolean isClusterPerspective(final List<QLCEViewFilterWrapper> filters) {
+    Set<ViewFieldIdentifier> dataSources = null;
+    final Optional<QLCEViewFilterWrapper> viewMetadataFilter = getViewMetadataFilter(filters);
     if (viewMetadataFilter.isPresent()) {
-      QLCEViewMetadataFilter metadataFilter = viewMetadataFilter.get().getViewMetadataFilter();
-      final String viewId = metadataFilter.getViewId();
+      final QLCEViewMetadataFilter metadataFilter = viewMetadataFilter.get().getViewMetadataFilter();
       if (!metadataFilter.isPreview()) {
-        CEView ceView = viewService.get(viewId);
-        viewRuleList = ceView.getViewRules();
-        List<ViewFieldIdentifier> dataSources;
-        try {
-          dataSources = ceView.getDataSources();
-        } catch (Exception e) {
-          dataSources = null;
-        }
-        if (dataSources != null) {
-          dataSourceCondition = true;
-          for (ViewFieldIdentifier identifier : dataSources) {
-            if (!identifier.equals(CLUSTER) && !identifier.equals(LABEL)) {
-              dataSourceCondition = false;
-              break;
-            }
-          }
+        final CEView ceView = viewService.get(metadataFilter.getViewId());
+        if (Objects.nonNull(ceView) && Objects.nonNull(ceView.getDataSources())) {
+          dataSources = new HashSet<>(ceView.getDataSources());
         }
       } else {
-        dataSourceCondition = true;
-        ruleCondition = isClusterPerspectiveRules(getRuleFilters(filters));
-      }
-    }
-    for (ViewRule rule : viewRuleList) {
-      for (ViewCondition condition : rule.getViewConditions()) {
-        ViewIdCondition viewIdCondition = (ViewIdCondition) condition;
-        if (isNotClusterPerspective(viewIdCondition.getViewField().getIdentifier())) {
-          ruleCondition = false;
-          break;
-        }
+        dataSources = getDataSourcesFromFilters(filters);
       }
     }
 
-    return dataSourceCondition && ruleCondition;
+    return dataSources != null && isClusterDataSources(dataSources);
   }
 
-  private boolean isClusterPerspectiveRules(final List<QLCEViewRule> qlCEViewRules) {
-    boolean ruleCondition = true;
+  private Set<ViewFieldIdentifier> getDataSourcesFromFilters(final List<QLCEViewFilterWrapper> filters) {
+    final Set<ViewFieldIdentifier> dataSources = new HashSet<>();
+    dataSources.addAll(getDataSourcesFromViewFilters(getIdFilters(filters)));
+    dataSources.addAll(getDataSourcesFromViewRules(getRuleFilters(filters)));
+    return dataSources;
+  }
+
+  private Set<ViewFieldIdentifier> getDataSourcesFromViewFilters(final List<QLCEViewFilter> qlCEViewFilters) {
+    final Set<ViewFieldIdentifier> dataSources = new HashSet<>();
+    for (final QLCEViewFilter qlCEViewFilter : qlCEViewFilters) {
+      dataSources.add(qlCEViewFilter.getField().getIdentifier());
+    }
+    return dataSources;
+  }
+
+  private Set<ViewFieldIdentifier> getDataSourcesFromViewRules(final List<QLCEViewRule> qlCEViewRules) {
+    final Set<ViewFieldIdentifier> dataSources = new HashSet<>();
     for (final QLCEViewRule qlCEViewRule : qlCEViewRules) {
-      for (final QLCEViewFilter qlCEViewFilter : qlCEViewRule.getConditions()) {
-        if (isNotClusterPerspective(qlCEViewFilter.getField().getIdentifier())) {
-          ruleCondition = false;
-          break;
-        }
-      }
+      dataSources.addAll(getDataSourcesFromViewFilters(qlCEViewRule.getConditions()));
     }
-    return ruleCondition;
+    return dataSources;
   }
 
-  private boolean isNotClusterPerspective(final ViewFieldIdentifier viewFieldIdentifier) {
-    return !(viewFieldIdentifier.equals(CLUSTER) || viewFieldIdentifier.equals(LABEL));
+  public boolean isClusterDataSources(final Set<ViewFieldIdentifier> dataSources) {
+    return (dataSources.size() == 1 && dataSources.contains(CLUSTER))
+        || (dataSources.size() == 2 && dataSources.contains(CLUSTER)
+            && (dataSources.contains(COMMON) || dataSources.contains(LABEL)))
+        || (dataSources.size() == 3 && dataSources.contains(CLUSTER) && dataSources.contains(COMMON)
+            && dataSources.contains(LABEL));
   }
 
   @Override
@@ -560,7 +615,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     try {
       result = bigQuery.query(queryConfig);
     } catch (InterruptedException e) {
-      log.error("Failed to getTotalCountForQuery. {}", e);
+      log.error("Failed to getTotalCountForQuery.", e);
       Thread.currentThread().interrupt();
       return null;
     }
@@ -613,13 +668,194 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     return getLabelsForWorkloadsData(bigQuery, query);
   }
 
+  @Override
+  public Map<String, Map<Timestamp, Double>> getSharedCostPerTimestampFromFilters(BigQuery bigQuery,
+      List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy, List<QLCEViewAggregation> aggregateFunction,
+      List<QLCEViewSortCriteria> sort, String cloudProviderTableName, ViewQueryParams queryParams,
+      boolean skipRoundOff) {
+    // Fetching business mapping Ids from filters
+    List<ViewRule> viewRules = getViewRules(filters);
+    Map<String, Map<Timestamp, Double>> entitySharedCostsPerTimestamp = new HashMap<>();
+
+    Set<String> businessMappingIdsFromRules = viewsQueryHelper.getBusinessMappingIdsFromViewRules(viewRules);
+    List<String> businessMappingIdsFromRulesAndFilters = viewsQueryHelper.getBusinessMappingIdsFromFilters(filters);
+    businessMappingIdsFromRulesAndFilters.addAll(businessMappingIdsFromRules);
+    List<BusinessMapping> sharedCostBusinessMappings = new ArrayList<>();
+    Map<String, Map<Timestamp, Double>> sharedCosts = new HashMap<>();
+    if (!businessMappingIdsFromRulesAndFilters.isEmpty()) {
+      businessMappingIdsFromRulesAndFilters.forEach(businessMappingIdFromRulesAndFilters -> {
+        BusinessMapping businessMappingFromRulesAndFilters =
+            businessMappingService.get(businessMappingIdFromRulesAndFilters);
+        if (businessMappingFromRulesAndFilters != null && businessMappingFromRulesAndFilters.getSharedCosts() != null) {
+          sharedCostBusinessMappings.add(businessMappingFromRulesAndFilters);
+        }
+      });
+    }
+
+    String groupByBusinessMappingId = viewsQueryHelper.getBusinessMappingIdFromGroupBy(groupBy);
+
+    for (BusinessMapping sharedCostBusinessMapping : sharedCostBusinessMappings) {
+      List<QLCEViewGroupBy> updatedGroupBy =
+          new ArrayList<>(viewsQueryHelper.createBusinessMappingGroupBy(sharedCostBusinessMapping));
+      updatedGroupBy.add(viewsQueryHelper.getGroupByTime(groupBy));
+      final boolean groupByCurrentBusinessMapping =
+          groupByBusinessMappingId != null && groupByBusinessMappingId.equals(sharedCostBusinessMapping.getUuid());
+
+      SelectQuery query = getQuery(viewsQueryHelper.removeBusinessMappingFilters(filters), updatedGroupBy,
+          aggregateFunction, sort, cloudProviderTableName, queryParams, sharedCostBusinessMappings.get(0));
+      QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query.toString()).build();
+      TableResult result;
+      try {
+        result = bigQuery.query(queryConfig);
+      } catch (InterruptedException e) {
+        log.error("Failed to getSharedCostFromFilters.", e);
+        Thread.currentThread().interrupt();
+        return null;
+      }
+
+      List<String> sharedCostBucketNames =
+          sharedCostBusinessMapping.getSharedCosts()
+              .stream()
+              .map(sharedCostBucket -> viewsQueryBuilder.modifyStringToComplyRegex(sharedCostBucket.getName()))
+              .collect(Collectors.toList());
+      List<String> costTargetBucketNames =
+          sharedCostBusinessMapping.getCostTargets().stream().map(CostTarget::getName).collect(Collectors.toList());
+
+      Schema schema = result.getSchema();
+      FieldList fields = schema.getFields();
+      String fieldName = getEntityGroupByFieldName(groupBy);
+      Map<String, Double> entityCosts = new HashMap<>();
+      costTargetBucketNames.forEach(costTarget -> entityCosts.put(costTarget, 0.0));
+      double totalCost = 0.0;
+      double numberOfEntities = costTargetBucketNames.size();
+      Set<Timestamp> timestamps = new HashSet<>();
+      for (FieldValueList row : result.iterateAll()) {
+        Timestamp timestamp = null;
+        String name = DEFAULT_GRID_ENTRY_NAME;
+        Double cost = 0.0;
+        Map<String, Double> sharedCostsPerTimestamp = new HashMap<>();
+        sharedCostBucketNames.forEach(sharedCostBucketName -> sharedCostsPerTimestamp.put(sharedCostBucketName, 0.0));
+        for (Field field : fields) {
+          switch (field.getType().getStandardType()) {
+            case STRING:
+              name = fetchStringValue(row, field, fieldName);
+              break;
+            case TIMESTAMP:
+              timestamp = Timestamp.ofTimeMicroseconds(row.get(field.getName()).getTimestampValue());
+              timestamps.add(timestamp);
+              break;
+            case FLOAT64:
+              if (field.getName().equalsIgnoreCase(COST)) {
+                cost = getNumericValue(row, field, skipRoundOff);
+              } else if (sharedCostBucketNames.contains(field.getName())) {
+                sharedCostsPerTimestamp.put(field.getName(),
+                    sharedCostsPerTimestamp.get(field.getName()) + getNumericValue(row, field, skipRoundOff));
+              }
+              break;
+            default:
+          }
+        }
+
+        if (costTargetBucketNames.contains(name)) {
+          totalCost += cost;
+          entityCosts.put(name, entityCosts.get(name) + cost);
+        }
+
+        for (String sharedCostEntity : sharedCostsPerTimestamp.keySet()) {
+          updateSharedCostMap(sharedCosts, sharedCostsPerTimestamp.get(sharedCostEntity), sharedCostEntity, timestamp);
+        }
+      }
+
+      List<QLCEViewFilterWrapper> businessMappingFilters =
+          viewsQueryHelper.getBusinessMappingFilter(filters, sharedCostBusinessMapping.getUuid());
+      List<String> selectedCostTargets = new ArrayList<>();
+      for (QLCEViewFilterWrapper businessMappingFilter : businessMappingFilters) {
+        if (!selectedCostTargets.isEmpty()) {
+          selectedCostTargets = viewsQueryHelper.intersection(
+              selectedCostTargets, Arrays.asList(businessMappingFilter.getIdFilter().getValues()));
+        } else {
+          selectedCostTargets.addAll(Arrays.asList(businessMappingFilter.getIdFilter().getValues()));
+        }
+      }
+      selectedCostTargets = viewsQueryHelper.intersection(selectedCostTargets,
+          viewsQueryHelper.getSelectedCostTargetsFromViewRules(viewRules, sharedCostBusinessMapping.getUuid()));
+
+      for (String costTarget : costTargetBucketNames) {
+        if (selectedCostTargets.contains(costTarget)) {
+          String sharedCostEntryName = groupByCurrentBusinessMapping ? costTarget : fieldName;
+          if (!entitySharedCostsPerTimestamp.containsKey(sharedCostEntryName)) {
+            entitySharedCostsPerTimestamp.put(sharedCostEntryName, new HashMap<>());
+          }
+          Map<Timestamp, Double> currentSharedCostsPerTimestamp =
+              entitySharedCostsPerTimestamp.get(sharedCostEntryName);
+
+          for (Timestamp timestamp : timestamps) {
+            if (!currentSharedCostsPerTimestamp.containsKey(timestamp)) {
+              currentSharedCostsPerTimestamp.put(timestamp, 0.0);
+            }
+            currentSharedCostsPerTimestamp.put(timestamp,
+                currentSharedCostsPerTimestamp.get(timestamp)
+                    + calculateSharedCostForTimestamp(sharedCosts, timestamp, sharedCostBusinessMapping,
+                        entityCosts.get(costTarget), numberOfEntities, totalCost));
+          }
+          entitySharedCostsPerTimestamp.put(sharedCostEntryName, currentSharedCostsPerTimestamp);
+        }
+      }
+    }
+
+    return entitySharedCostsPerTimestamp;
+  }
+
+  public List<ViewRule> getViewRules(List<QLCEViewFilterWrapper> filters) {
+    List<ViewRule> viewRuleList = new ArrayList<>();
+    Optional<QLCEViewFilterWrapper> viewMetadataFilter = getViewMetadataFilter(filters);
+
+    List<QLCEViewRule> rules = AwsAccountFieldHelper.removeAccountNameFromAWSAccountRuleFilter(getRuleFilters(filters));
+    if (!rules.isEmpty()) {
+      for (QLCEViewRule rule : rules) {
+        viewRuleList.add(convertQLCEViewRuleToViewRule(rule));
+      }
+    }
+
+    if (viewMetadataFilter.isPresent()) {
+      QLCEViewMetadataFilter metadataFilter = viewMetadataFilter.get().getViewMetadataFilter();
+      final String viewId = metadataFilter.getViewId();
+      if (!metadataFilter.isPreview()) {
+        CEView ceView = viewService.get(viewId);
+        viewRuleList = ceView.getViewRules();
+      }
+    }
+
+    return viewRuleList;
+  }
+
+  private double calculateSharedCostForTimestamp(Map<String, Map<Timestamp, Double>> sharedCosts, Timestamp timestamp,
+      BusinessMapping sharedCostBusinessMapping, Double entityCost, Double numberOfEntities, Double totalCost) {
+    double sharedCost = 0.0;
+    for (SharedCost sharedCostBucket : sharedCostBusinessMapping.getSharedCosts()) {
+      double sharedCostForGivenTimestamp =
+          sharedCosts.get(viewsQueryBuilder.modifyStringToComplyRegex(sharedCostBucket.getName())).get(timestamp);
+      SharingStrategy sharingStrategy = totalCost != 0 ? sharedCostBucket.getStrategy() : SharingStrategy.FIXED;
+      switch (sharingStrategy) {
+        case PROPORTIONAL:
+          sharedCost += sharedCostForGivenTimestamp * (entityCost / totalCost);
+          break;
+        case FIXED:
+        default:
+          sharedCost += sharedCostForGivenTimestamp * (1.0 / numberOfEntities);
+          break;
+      }
+    }
+    return sharedCost;
+  }
+
   private Map<String, Map<String, String>> getLabelsForWorkloadsData(BigQuery bigQuery, SelectQuery query) {
     QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query.toString()).build();
     TableResult result;
     try {
       result = bigQuery.query(queryConfig);
     } catch (InterruptedException e) {
-      log.error("Failed to getLabelsForWorkloadsData. {}", e);
+      log.error("Failed to getLabelsForWorkloadsData.", e);
       Thread.currentThread().interrupt();
       return null;
     }
@@ -636,6 +872,130 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
       workloadToLabelsMapping.put(workload, labels);
     }
     return workloadToLabelsMapping;
+  }
+
+  private Map<String, Double> getSharedCostFromFilters(BigQuery bigQuery, List<QLCEViewFilterWrapper> filters,
+      List<QLCEViewGroupBy> groupBy, List<QLCEViewAggregation> aggregateFunction, List<QLCEViewSortCriteria> sort,
+      String cloudProviderTableName, ViewQueryParams queryParams, List<BusinessMapping> sharedCostBusinessMappings,
+      Integer limit, Integer offset, boolean skipRoundOff, List<ViewRule> viewRules) {
+    Map<String, Double> sharedCostsFromFilters = new HashMap<>();
+    String groupByBusinessMappingId = viewsQueryHelper.getBusinessMappingIdFromGroupBy(groupBy);
+
+    for (BusinessMapping sharedCostBusinessMapping : sharedCostBusinessMappings) {
+      final boolean groupByCurrentBusinessMapping =
+          groupByBusinessMappingId != null && groupByBusinessMappingId.equals(sharedCostBusinessMapping.getUuid());
+
+      List<QLCEViewGroupBy> businessMappingGroupBy =
+          viewsQueryHelper.createBusinessMappingGroupBy(sharedCostBusinessMapping);
+      SelectQuery query =
+          getQuery(viewsQueryHelper.removeBusinessMappingFilter(filters, sharedCostBusinessMapping.getUuid()),
+              businessMappingGroupBy, aggregateFunction, sort, cloudProviderTableName, queryParams,
+              sharedCostBusinessMapping);
+      query.addCustomization(new PgLimitClause(limit));
+      query.addCustomization(new PgOffsetClause(offset));
+      QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query.toString()).build();
+      TableResult result;
+      try {
+        result = bigQuery.query(queryConfig);
+      } catch (InterruptedException e) {
+        log.error("Failed to getSharedCostFromFilters.", e);
+        Thread.currentThread().interrupt();
+        return null;
+      }
+
+      Map<String, Double> sharedCosts = new HashMap<>();
+      Map<String, Double> entityCosts = new HashMap<>();
+      List<String> sharedCostBucketNames =
+          sharedCostBusinessMapping.getSharedCosts()
+              .stream()
+              .map(sharedCostBucket -> viewsQueryBuilder.modifyStringToComplyRegex(sharedCostBucket.getName()))
+              .collect(Collectors.toList());
+      List<String> costTargetBucketNames =
+          sharedCostBusinessMapping.getCostTargets().stream().map(CostTarget::getName).collect(Collectors.toList());
+
+      sharedCostBucketNames.forEach(sharedCostBucketName -> sharedCosts.put(sharedCostBucketName, 0.0));
+
+      Schema schema = result.getSchema();
+      FieldList fields = schema.getFields();
+      String fieldName = getEntityGroupByFieldName(groupBy);
+      Double totalCost = 0.0;
+      for (FieldValueList row : result.iterateAll()) {
+        String name = DEFAULT_GRID_ENTRY_NAME;
+        Double cost = null;
+        for (Field field : fields) {
+          switch (field.getType().getStandardType()) {
+            case STRING:
+              name = fetchStringValue(row, field, fieldName);
+              break;
+            case FLOAT64:
+              if (field.getName().equalsIgnoreCase(COST)) {
+                cost = getNumericValue(row, field, skipRoundOff);
+              } else if (sharedCostBucketNames.contains(field.getName())) {
+                if (sharedCostBucketNames.contains(field.getName())) {
+                  sharedCosts.put(
+                      field.getName(), sharedCosts.get(field.getName()) + getNumericValue(row, field, skipRoundOff));
+                }
+              }
+              break;
+            default:
+              break;
+          }
+        }
+        if (costTargetBucketNames.contains(name)) {
+          entityCosts.put(name, cost);
+          totalCost += cost;
+        }
+      }
+
+      Map<String, List<EntitySharedCostDetails>> entitySharedCostDetails =
+          calculateSharedCostPerEntity(sharedCostBusinessMapping, sharedCosts, entityCosts, totalCost);
+
+      List<QLCEViewFilterWrapper> businessMappingFilters =
+          viewsQueryHelper.getBusinessMappingFilter(filters, sharedCostBusinessMapping.getUuid());
+      List<String> selectedCostTargets = new ArrayList<>();
+      for (QLCEViewFilterWrapper businessMappingFilter : businessMappingFilters) {
+        if (!selectedCostTargets.isEmpty()) {
+          selectedCostTargets = viewsQueryHelper.intersection(
+              selectedCostTargets, Arrays.asList(businessMappingFilter.getIdFilter().getValues()));
+        } else {
+          selectedCostTargets.addAll(Arrays.asList(businessMappingFilter.getIdFilter().getValues()));
+        }
+      }
+      selectedCostTargets = viewsQueryHelper.intersection(selectedCostTargets,
+          viewsQueryHelper.getSelectedCostTargetsFromViewRules(viewRules, sharedCostBusinessMapping.getUuid()));
+
+      for (String entity : entitySharedCostDetails.keySet()) {
+        if (selectedCostTargets.contains(entity)) {
+          entitySharedCostDetails.get(entity).forEach(sharedCostBucket -> {
+            if (groupByCurrentBusinessMapping) {
+              if (!sharedCostsFromFilters.containsKey(entity)) {
+                sharedCostsFromFilters.put(entity, 0.0);
+              }
+              sharedCostsFromFilters.put(entity, sharedCostsFromFilters.get(entity) + sharedCostBucket.getCost());
+            } else {
+              if (!sharedCostsFromFilters.containsKey(fieldName)) {
+                sharedCostsFromFilters.put(fieldName, 0.0);
+              }
+              sharedCostsFromFilters.put(fieldName, sharedCostsFromFilters.get(fieldName) + sharedCostBucket.getCost());
+            }
+          });
+        }
+      }
+    }
+
+    return sharedCostsFromFilters;
+  }
+
+  private void updateSharedCostMap(Map<String, Map<Timestamp, Double>> sharedCostFromGroupBy, Double sharedCostValue,
+      String sharedCostName, Timestamp timeStamp) {
+    if (!sharedCostFromGroupBy.containsKey(sharedCostName)) {
+      sharedCostFromGroupBy.put(sharedCostName, new HashMap<>());
+    }
+    if (!sharedCostFromGroupBy.get(sharedCostName).containsKey(timeStamp)) {
+      sharedCostFromGroupBy.get(sharedCostName).put(timeStamp, 0.0);
+    }
+    Double currentValue = sharedCostFromGroupBy.get(sharedCostName).get(timeStamp);
+    sharedCostFromGroupBy.get(sharedCostName).put(timeStamp, currentValue + sharedCostValue);
   }
 
   private boolean isClusterTableQuery(List<QLCEViewFilterWrapper> filters, ViewQueryParams queryParams) {
@@ -734,30 +1094,30 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     return shouldShowUnallocatedCost;
   }
 
-  private Map<Long, Double> convertToUnallocatedCostData(final TableResult result) {
-    Map<Long, Double> unallocatedCostMapping = new HashMap<>();
+  private Map<Long, Double> convertToCostData(final TableResult result) {
+    Map<Long, Double> costMapping = new HashMap<>();
     final Schema schema = result.getSchema();
     final FieldList fields = schema.getFields();
     for (final FieldValueList row : result.iterateAll()) {
       long timestamp = 0L;
-      double unallocatedCost = 0.0D;
+      double cost = 0.0D;
       for (final Field field : fields) {
         switch (field.getType().getStandardType()) {
           case TIMESTAMP:
             timestamp = row.get(field.getName()).getTimestampValue() / 1000;
             break;
           case FLOAT64:
-            unallocatedCost = getNumericValue(row, field, true);
+            cost = getNumericValue(row, field, true);
             break;
           default:
             break;
         }
       }
-      if (unallocatedCost != 0L) {
-        unallocatedCostMapping.put(timestamp, unallocatedCostMapping.getOrDefault(timestamp, 0.0D) + unallocatedCost);
+      if (cost != 0L) {
+        costMapping.put(timestamp, cost);
       }
     }
-    return unallocatedCostMapping;
+    return costMapping;
   }
 
   private QLCEViewTrendInfo getCostBillingStats(ViewCostData costData, ViewCostData prevCostData,
@@ -861,7 +1221,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
         .build();
   }
 
-  private static List<QLCEViewGroupBy> modifyGroupByForUnallocatedCostData(final List<QLCEViewGroupBy> groupByList) {
+  private static List<QLCEViewGroupBy> getTimeTruncGroupBys(final List<QLCEViewGroupBy> groupByList) {
     return groupByList.stream()
         .filter(groupBy -> Objects.nonNull(groupBy.getTimeTruncGroupBy()))
         .collect(Collectors.toList());
@@ -939,10 +1299,17 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
   private SelectQuery getQuery(List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy,
       List<QLCEViewAggregation> aggregateFunction, List<QLCEViewSortCriteria> sort, String cloudProviderTableName,
       ViewQueryParams queryParams) {
+    return getQuery(filters, groupBy, aggregateFunction, sort, cloudProviderTableName, queryParams, null);
+  }
+
+  // Next-gen
+  private SelectQuery getQuery(List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy,
+      List<QLCEViewAggregation> aggregateFunction, List<QLCEViewSortCriteria> sort, String cloudProviderTableName,
+      ViewQueryParams queryParams, BusinessMapping sharedCostBusinessMapping) {
     List<ViewRule> viewRuleList = new ArrayList<>();
 
     // Removing group by none if present
-    boolean skipDefaultGroupBy = false;
+    boolean skipDefaultGroupBy = queryParams.isSkipDefaultGroupBy();
     if (viewsQueryHelper.isGroupByNonePresent(groupBy)) {
       skipDefaultGroupBy = true;
       groupBy = viewsQueryHelper.removeGroupByNone(groupBy);
@@ -999,13 +1366,44 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
           queryParams.getAccountId(), cloudProviderTableName, queryParams.isClusterQuery(), isPodQuery);
     }
 
+    // This indicates that the query is to calculate shared cost
+    if (sharedCostBusinessMapping != null) {
+      viewRuleList = removeSharedCostRules(viewRuleList, sharedCostBusinessMapping);
+    }
+
     if (queryParams.isTotalCountQuery()) {
       return viewsQueryBuilder.getTotalCountQuery(
           viewRuleList, idFilters, timeFilters, modifiedGroupBy, cloudProviderTableName);
     }
 
-    return viewsQueryBuilder.getQuery(viewRuleList, idFilters, timeFilters, modifiedGroupBy, aggregateFunction, sort,
-        cloudProviderTableName, queryParams.getTimeOffsetInDays());
+    return viewsQueryBuilder.getQuery(viewRuleList, idFilters, timeFilters, getInExpressionFilters(filters),
+        modifiedGroupBy, aggregateFunction, sort, cloudProviderTableName, queryParams.getTimeOffsetInDays());
+  }
+
+  private List<ViewRule> removeSharedCostRules(List<ViewRule> viewRules, BusinessMapping sharedCostBusinessMapping) {
+    if (sharedCostBusinessMapping != null) {
+      List<ViewRule> updatedViewRules = new ArrayList<>();
+      viewRules.forEach(rule -> {
+        List<ViewCondition> updatedViewConditions =
+            removeSharedCostRulesFromViewConditions(rule.getViewConditions(), sharedCostBusinessMapping);
+        if (!updatedViewConditions.isEmpty()) {
+          updatedViewRules.add(ViewRule.builder().viewConditions(updatedViewConditions).build());
+        }
+      });
+      return updatedViewRules;
+    }
+    return viewRules;
+  }
+
+  private List<ViewCondition> removeSharedCostRulesFromViewConditions(
+      List<ViewCondition> viewConditions, BusinessMapping sharedCostBusinessMapping) {
+    List<ViewCondition> updatedViewConditions = new ArrayList<>();
+    for (ViewCondition condition : viewConditions) {
+      if (!((ViewIdCondition) condition).getViewField().getFieldId().equals(sharedCostBusinessMapping.getUuid())) {
+        updatedViewConditions.add(condition);
+      }
+    }
+    return updatedViewConditions;
   }
 
   private List<QLCEViewFilter> getModifiedIdFilters(
@@ -1087,6 +1485,13 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
         .collect(Collectors.toList());
   }
 
+  public static List<QLCEInExpressionFilter> getInExpressionFilters(@NotNull List<QLCEViewFilterWrapper> filters) {
+    return filters.stream()
+        .map(QLCEViewFilterWrapper::getInExpressionFilter)
+        .filter(Objects::nonNull)
+        .collect(Collectors.toList());
+  }
+
   /*
    * This method is overriding the Group By passed by the UI with the defaults selected by user while creating the View
    * */
@@ -1128,7 +1533,8 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
   // Here conversion field is not null if id to name conversion is required for the main group by field
   private QLCEViewGridData convertToEntityStatsData(TableResult result, Map<String, ViewCostData> costTrendData,
       long startTimeForTrend, boolean isClusterPerspective, boolean isUsedByTimeSeriesStats, boolean skipRoundOff,
-      String conversionField, String accountId, List<QLCEViewGroupBy> groupBy) {
+      String conversionField, String accountId, List<QLCEViewGroupBy> groupBy, BusinessMapping businessMapping,
+      boolean addSharedCostFromGroupBy) {
     if (isClusterPerspective) {
       return convertToEntityStatsDataForCluster(
           result, costTrendData, startTimeForTrend, isUsedByTimeSeriesStats, skipRoundOff, groupBy);
@@ -1138,6 +1544,17 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     List<String> fieldNames = getFieldNames(fields);
     String fieldName = getEntityGroupByFieldName(groupBy);
     List<String> entityNames = new ArrayList<>();
+
+    List<String> sharedCostBucketNames = new ArrayList<>();
+    Map<String, Double> sharedCosts = new HashMap<>();
+    if (businessMapping != null && businessMapping.getSharedCosts() != null) {
+      List<SharedCost> sharedCostBuckets = businessMapping.getSharedCosts();
+      sharedCostBucketNames =
+          sharedCostBuckets.stream()
+              .map(sharedCostBucket -> viewsQueryBuilder.modifyStringToComplyRegex(sharedCostBucket.getName()))
+              .collect(Collectors.toList());
+      sharedCostBucketNames.forEach(sharedCostBucketName -> sharedCosts.put(sharedCostBucketName, 0.0));
+    }
 
     List<QLCEViewEntityStatsDataPoint> entityStatsDataPoints = new ArrayList<>();
     for (FieldValueList row : result.iterateAll()) {
@@ -1153,8 +1570,13 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
             id = getUpdatedId(id, name);
             break;
           case FLOAT64:
-            cost = getNumericValue(row, field, skipRoundOff);
-            dataPointBuilder.cost(cost);
+            if (field.getName().equalsIgnoreCase(COST) || field.getName().equalsIgnoreCase(BILLING_AMOUNT)) {
+              cost = getNumericValue(row, field, skipRoundOff);
+              dataPointBuilder.cost(cost);
+            } else if (sharedCostBucketNames.contains(field.getName())) {
+              sharedCosts.put(
+                  field.getName(), sharedCosts.get(field.getName()) + getNumericValue(row, field, skipRoundOff));
+            }
             break;
           default:
             break;
@@ -1172,7 +1594,127 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
       entityStatsDataPoints = getUpdatedDataPoints(entityStatsDataPoints, entityNames, accountId, conversionField);
     }
 
+    if (!sharedCostBucketNames.isEmpty() && addSharedCostFromGroupBy) {
+      entityStatsDataPoints = addSharedCosts(entityStatsDataPoints, sharedCosts, businessMapping);
+    }
+
+    if (entityStatsDataPoints.size() > MAX_LIMIT_VALUE) {
+      log.warn("Grid result set size: {}", entityStatsDataPoints.size());
+    }
     return QLCEViewGridData.builder().data(entityStatsDataPoints).fields(fieldNames).build();
+  }
+
+  List<QLCEViewEntityStatsDataPoint> addSharedCosts(List<QLCEViewEntityStatsDataPoint> entityStatsDataPoints,
+      Map<String, Double> sharedCosts, BusinessMapping businessMapping) {
+    double totalCost = 0.0;
+    double numberOfEntities = 0.0;
+    List<String> costTargetNames = businessMapping.getCostTargets() != null
+        ? businessMapping.getCostTargets().stream().map(CostTarget::getName).collect(Collectors.toList())
+        : Collections.emptyList();
+
+    for (QLCEViewEntityStatsDataPoint dataPoint : entityStatsDataPoints) {
+      if (costTargetNames.contains(dataPoint.getName())) {
+        totalCost += dataPoint.getCost().doubleValue();
+        numberOfEntities += 1;
+      }
+    }
+
+    List<QLCEViewEntityStatsDataPoint> updatedDataPoints = new ArrayList<>();
+    for (QLCEViewEntityStatsDataPoint dataPoint : entityStatsDataPoints) {
+      double finalCost = !costTargetNames.contains(dataPoint.getName()) ? dataPoint.getCost().doubleValue()
+                                                                        : dataPoint.getCost().doubleValue()
+              + calculateSharedCost(businessMapping.getSharedCosts(), sharedCosts, dataPoint.getCost().doubleValue(),
+                  totalCost, numberOfEntities);
+      final QLCEViewEntityStatsDataPointBuilder qlceViewEntityStatsDataPointBuilder =
+          QLCEViewEntityStatsDataPoint.builder();
+      // Setting cost trend 0 because shared cost trend is not computed
+      qlceViewEntityStatsDataPointBuilder.id(dataPoint.getId()).name(dataPoint.getName()).cost(finalCost).costTrend(0);
+      updatedDataPoints.add(qlceViewEntityStatsDataPointBuilder.build());
+    }
+    return updatedDataPoints;
+  }
+
+  List<QLCEViewEntityStatsDataPoint> addSharedCostsFromFilters(
+      List<QLCEViewEntityStatsDataPoint> entityStatsDataPoints, Map<String, Double> sharedCosts) {
+    Set<String> entitiesToUpdate = sharedCosts.keySet();
+    List<QLCEViewEntityStatsDataPoint> updatedDataPoints = new ArrayList<>();
+    Map<String, Boolean> sharedCostAdded = new HashMap<>();
+    for (QLCEViewEntityStatsDataPoint dataPoint : entityStatsDataPoints) {
+      double finalCost = dataPoint.getCost().doubleValue();
+      Number finalCostTrend = dataPoint.getCostTrend();
+      if (entitiesToUpdate.contains(dataPoint.getName())) {
+        finalCost += sharedCosts.get(dataPoint.getName());
+        finalCostTrend = 0;
+        sharedCostAdded.put(dataPoint.getName(), true);
+      }
+      final QLCEViewEntityStatsDataPointBuilder qlceViewEntityStatsDataPointBuilder =
+          QLCEViewEntityStatsDataPoint.builder();
+      qlceViewEntityStatsDataPointBuilder.id(dataPoint.getId())
+          .name(dataPoint.getName())
+          .cost(viewsQueryHelper.getRoundedDoubleValue(finalCost))
+          .costTrend(finalCostTrend);
+      updatedDataPoints.add(qlceViewEntityStatsDataPointBuilder.build());
+    }
+
+    entitiesToUpdate.forEach(entity -> {
+      if (!sharedCostAdded.containsKey(entity)) {
+        sharedCostAdded.put(entity, true);
+        updatedDataPoints.add(QLCEViewEntityStatsDataPoint.builder()
+                                  .id(entity)
+                                  .name(entity)
+                                  .cost(viewsQueryHelper.getRoundedDoubleValue(sharedCosts.get(entity)))
+                                  .costTrend(0)
+                                  .build());
+      }
+    });
+
+    return updatedDataPoints;
+  }
+
+  private double calculateSharedCost(List<SharedCost> sharedCostBuckets, Map<String, Double> sharedCosts,
+      double entityCost, double totalCost, double totalEntities) {
+    double sharedCost = 0.0;
+    for (SharedCost sharedCostBucket : sharedCostBuckets) {
+      SharingStrategy sharingStrategy = totalCost != 0 ? sharedCostBucket.getStrategy() : SharingStrategy.FIXED;
+      switch (sharingStrategy) {
+        case PROPORTIONAL:
+          sharedCost += sharedCosts.get(viewsQueryBuilder.modifyStringToComplyRegex(sharedCostBucket.getName()))
+              * (entityCost / totalCost);
+          break;
+        case FIXED:
+        default:
+          sharedCost += sharedCosts.get(viewsQueryBuilder.modifyStringToComplyRegex(sharedCostBucket.getName()))
+              * (1.0 / totalEntities);
+          break;
+      }
+    }
+    return sharedCost;
+  }
+
+  private Map<String, List<EntitySharedCostDetails>> calculateSharedCostPerEntity(
+      BusinessMapping sharedCostBusinessMapping, Map<String, Double> sharedCosts, Map<String, Double> entityCosts,
+      double totalCost) {
+    List<SharedCost> sharedCostBuckets = sharedCostBusinessMapping.getSharedCosts();
+    double totalEntities = sharedCostBusinessMapping.getCostTargets().size();
+    List<String> costTargets =
+        sharedCostBusinessMapping.getCostTargets().stream().map(CostTarget::getName).collect(Collectors.toList());
+    costTargets.forEach(costTarget -> {
+      if (!entityCosts.containsKey(costTarget)) {
+        entityCosts.put(costTarget, 0.0);
+      }
+    });
+    Map<String, List<EntitySharedCostDetails>> sharedCostDetailsPerEntity = new HashMap<>();
+    entityCosts.keySet().forEach(entity -> {
+      List<EntitySharedCostDetails> entitySharedCostDetails = new ArrayList<>();
+      sharedCostBuckets.forEach(sharedCostBucket
+          -> entitySharedCostDetails.add(EntitySharedCostDetails.builder()
+                                             .sharedCostBucketName(sharedCostBucket.getName())
+                                             .cost(calculateSharedCost(Collections.singletonList(sharedCostBucket),
+                                                 sharedCosts, entityCosts.get(entity), totalCost, totalEntities))
+                                             .build()));
+      sharedCostDetailsPerEntity.put(entity, entitySharedCostDetails);
+    });
+    return sharedCostDetailsPerEntity;
   }
 
   private QLCEViewGridData convertToEntityStatsDataForCluster(TableResult result,
@@ -1263,18 +1805,22 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
           .fields(fieldNames)
           .build();
     }
+    if (entityStatsDataPoints.size() > MAX_LIMIT_VALUE) {
+      log.warn("Grid result set size (for cluster): {}", entityStatsDataPoints.size());
+    }
     return QLCEViewGridData.builder().data(entityStatsDataPoints).fields(fieldNames).build();
   }
 
-  private QLCEViewGridData costCategoriesPostFetchResponseUpdate(QLCEViewGridData response, String businessMappingId) {
+  private QLCEViewGridData costCategoriesPostFetchResponseUpdate(QLCEViewGridData response, String businessMappingId,
+      List<BusinessMapping> sharedCostBusinessMappings, Map<String, Double> sharedCosts) {
+    List<QLCEViewEntityStatsDataPoint> updatedDataPoints = new ArrayList<>();
     if (businessMappingId != null) {
       BusinessMapping businessMapping = businessMappingService.get(businessMappingId);
-      List<QLCEViewEntityStatsDataPoint> updatedDataPoints = new ArrayList<>();
       if (businessMapping.getUnallocatedCost() != null) {
         UnallocatedCostStrategy strategy = businessMapping.getUnallocatedCost().getStrategy();
         switch (strategy) {
           case DISPLAY_NAME:
-            response.getData().forEach(dataPoint -> {
+            for (QLCEViewEntityStatsDataPoint dataPoint : response.getData()) {
               if (dataPoint.getName().equals(ViewFieldUtils.getBusinessMappingUnallocatedCostDefaultName())) {
                 updatedDataPoints.add(QLCEViewEntityStatsDataPoint.builder()
                                           .name(businessMapping.getUnallocatedCost().getLabel())
@@ -1290,24 +1836,30 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
               } else {
                 updatedDataPoints.add(dataPoint);
               }
-            });
+            }
             break;
           case HIDE:
-            response.getData().forEach(dataPoint -> {
+            for (QLCEViewEntityStatsDataPoint dataPoint : response.getData()) {
               if (!dataPoint.getName().equals(ViewFieldUtils.getBusinessMappingUnallocatedCostDefaultName())) {
                 updatedDataPoints.add(dataPoint);
               }
-            });
+            }
             break;
           case SHARE:
           default:
             throw new InvalidRequestException(
                 "Invalid Unallocated Cost Strategy / Unallocated Cost Strategy not supported");
         }
-        return QLCEViewGridData.builder().data(updatedDataPoints).fields(response.getFields()).build();
       }
+    } else {
+      updatedDataPoints = response.getData();
     }
-    return response;
+
+    if (!sharedCostBusinessMappings.isEmpty()) {
+      updatedDataPoints = addSharedCostsFromFilters(updatedDataPoints, sharedCosts);
+    }
+
+    return QLCEViewGridData.builder().data(updatedDataPoints).fields(response.getFields()).build();
   }
 
   private List<String> getFieldNames(FieldList fields) {
@@ -1515,6 +2067,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     query.addCustomization(new PgLimitClause(limit));
     query.addCustomization(new PgOffsetClause(offset));
     QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query.toString()).build();
+    log.info("Query for cost trend (with limit as {}): {}", limit, query.toString());
     TableResult result;
     try {
       result = bigQuery.query(queryConfig);
@@ -1562,6 +2115,9 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
         }
       }
       costTrendData.put(id, viewCostDataBuilder.build());
+    }
+    if (costTrendData.size() > MAX_LIMIT_VALUE) {
+      log.warn("Cost trend result set size: {}", costTrendData.size());
     }
     return costTrendData;
   }
@@ -1676,6 +2232,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     groupByList.forEach(groupBy -> {
       if (groupBy.getEntityGroupBy() != null) {
         switch (groupBy.getEntityGroupBy().getFieldName()) {
+          case GROUP_BY_ECS_TASK_ID:
           case GROUP_BY_INSTANCE_ID:
           case GROUP_BY_INSTANCE_NAME:
           case GROUP_BY_INSTANCE_TYPE:
@@ -1780,10 +2337,6 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
             || aggregationFunction.getColumnName().equalsIgnoreCase(MEMORY_LIMIT));
   }
 
-  private boolean isMetricsQuery(List<QLCEViewAggregation> aggregateFunctions) {
-    return !areAggregationsValidForPreAggregation(aggregateFunctions);
-  }
-
   // Check for pod/pv/cloudservicename/taskid/launchtype
   private boolean isValidGroupByForPreAggregation(List<QLCEViewFieldInput> groupByList) {
     if (groupByList.isEmpty()) {
@@ -1834,6 +2387,8 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
       values = new String[] {K8S_NODE};
     } else if (entityGroupBy.contains(GROUP_BY_STORAGE)) {
       values = new String[] {K8S_PV};
+    } else if (entityGroupBy.contains(GROUP_BY_ECS_TASK_ID)) {
+      values = new String[] {ECS_TASK_EC2, ECS_TASK_FARGATE};
     } else {
       values = new String[] {K8S_POD, K8S_POD_FARGATE};
     }
@@ -1857,48 +2412,92 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     return entityGroupByFieldName;
   }
 
-  private List<QLCEViewFilterWrapper> getModifiedFilters(
-      List<QLCEViewFilterWrapper> filters, QLCEViewGridData gridData) {
-    if (filters == null) {
-      filters = new ArrayList<>();
+  private List<QLCEViewFilterWrapper> getModifiedFiltersForTimeSeriesStats(
+      List<QLCEViewFilterWrapper> filters, final QLCEViewGridData gridData, final List<QLCEViewGroupBy> entityGroupBy) {
+    final List<QLCEViewFilterWrapper> modifiedFilters = new ArrayList<>();
+    if (filters != null) {
+      modifiedFilters.addAll(filters);
     }
+    if (gridData != null) {
+      final List<String> fields = gridData.getFields();
+      final List<List<String>> inValues = getInValuesList(gridData, fields);
+      if (!inValues.isEmpty()) {
+        final List<QLCEViewFieldInput> qlCEViewFieldInputs = getInFieldsList(fields);
+        final String nullValueField = getNullValueField(entityGroupBy, inValues);
+        modifiedFilters.add(QLCEViewFilterWrapper.builder()
+                                .inExpressionFilter(QLCEInExpressionFilter.builder()
+                                                        .fields(qlCEViewFieldInputs)
+                                                        .values(inValues)
+                                                        .nullValueField(nullValueField)
+                                                        .build())
+                                .build());
+      }
+    }
+    return modifiedFilters;
+  }
 
-    List<String> fields = gridData.getFields();
-    Map<String, java.lang.reflect.Field> clusterDataFields = new HashMap<>();
-    for (java.lang.reflect.Field clusterField : ClusterData.class.getDeclaredFields()) {
+  @NotNull
+  private List<List<String>> getInValuesList(final QLCEViewGridData gridData, final List<String> fields) {
+    final List<List<String>> inValues = new ArrayList<>();
+
+    final Map<String, java.lang.reflect.Field> clusterDataFields = new HashMap<>();
+    for (final java.lang.reflect.Field clusterField : ClusterData.class.getDeclaredFields()) {
       clusterDataFields.put(clusterField.getName().toLowerCase(), clusterField);
     }
 
-    for (String field : fields) {
-      Set<String> values = new HashSet<>();
-      try {
-        for (QLCEViewEntityStatsDataPoint dataPoint : gridData.getData()) {
-          ClusterData clusterData = dataPoint.getClusterData();
-          if (Objects.nonNull(clusterData)) {
-            java.lang.reflect.Field clusterField = clusterDataFields.get(field.toLowerCase());
+    for (final QLCEViewEntityStatsDataPoint dataPoint : gridData.getData()) {
+      final ClusterData clusterData = dataPoint.getClusterData();
+      final List<String> values = new ArrayList<>();
+      for (final String field : fields) {
+        if (Objects.nonNull(clusterData)) {
+          final java.lang.reflect.Field clusterField = clusterDataFields.get(field.toLowerCase());
+          if (Objects.nonNull(clusterField)) {
             clusterField.setAccessible(true);
-            values.add((String) clusterField.get(clusterData));
+            try {
+              values.add((String) clusterField.get(clusterData));
+            } catch (final IllegalAccessException e) {
+              values.add("");
+              log.error("Unable to fetch field {} value for clusterData: {}", field, clusterData, e);
+            }
+          } else {
+            values.add(clusterData.getId());
           }
+        } else {
+          values.add(dataPoint.getId());
         }
-      } catch (Exception e) {
-        log.error("Unable to fetch field values for filter: {}", e.toString());
       }
+      inValues.add(values);
+    }
+    return inValues;
+  }
 
-      if (!values.isEmpty()) {
-        filters.add(QLCEViewFilterWrapper.builder()
-                        .idFilter(QLCEViewFilter.builder()
-                                      .field(QLCEViewFieldInput.builder()
-                                                 .fieldId(field.toLowerCase())
-                                                 .fieldName(field.toLowerCase())
-                                                 .identifier(CLUSTER)
-                                                 .build())
-                                      .operator(IN)
-                                      .values(values.toArray(new String[0]))
-                                      .build())
-                        .build());
+  @NotNull
+  private List<QLCEViewFieldInput> getInFieldsList(final List<String> fields) {
+    final List<QLCEViewFieldInput> qlCEViewFieldInputs = new ArrayList<>();
+    for (final String field : fields) {
+      qlCEViewFieldInputs.add(
+          QLCEViewFieldInput.builder().fieldId(field.toLowerCase()).fieldName(field.toLowerCase()).build());
+    }
+    return qlCEViewFieldInputs;
+  }
+
+  @Nullable
+  private String getNullValueField(final List<QLCEViewGroupBy> entityGroupBy, final List<List<String>> inValues) {
+    String nullValueField = null;
+    final String groupByName = getEntityGroupByFieldName(entityGroupBy);
+    for (final List<String> values : inValues) {
+      if (values.contains(groupByName)) {
+        final Optional<String> groupByFieldId = entityGroupBy.stream()
+                                                    .filter(entry -> Objects.nonNull(entry.getEntityGroupBy()))
+                                                    .map(entry -> entry.getEntityGroupBy().getFieldId())
+                                                    .findFirst();
+        if (groupByFieldId.isPresent()) {
+          nullValueField = groupByFieldId.get();
+        }
+        break;
       }
     }
-    return filters;
+    return nullValueField;
   }
 
   private List<QLCEViewAggregation> getModifiedAggregations(List<QLCEViewAggregation> aggregateFunctions) {

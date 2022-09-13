@@ -1,0 +1,28 @@
+$releaseId="$env:ReleaseNo"
+                                    $serviceName="<+service.name>"
+                                    $appPhysicalDirectory="$env:AppPhysicalDirectory" + "\Artifacts\" + $serviceName + "\release-" + $releaseId
+      
+                                      # Copy configs to application directory
+                                    $userProfile = "$env:userprofile"
+                                    Copy-Item -Path "$userProfile\\<+service.name>\\<+env.name>\\runtime\\*.config" -Destination $appPhysicalDirectory -Force
+      
+                                    Import-Module WebAdministration
+      
+                                    $AppPoolName = "$env:AppPoolName"
+                                    $AppPoolDotNetVersion = "$env:AppPoolDotNetVersion"
+      
+                                    if (!(Test-Path IIS:\AppPools\$AppPoolName -pathType container))
+                                    {
+                                      Write-Host "Creating AppPool:" $AppPoolName
+                                      $appPool = New-Item IIS:\AppPools\$AppPoolName
+                                    }
+                                    else
+                                    {
+                                      Write-Host "Updating AppPool:" $AppPoolName
+                                      $appPool = Get-Item IIS:\AppPools\$AppPoolName
+                                    }
+      
+                                    $appPool | Set-ItemProperty -Name "managedRuntimeVersion" -Value $AppPoolDotNetVersion
+      
+                                    Get-Item IIS:\AppPools\$AppPoolName | ft
+                                    Write-Host "Done."

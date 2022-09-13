@@ -8,8 +8,9 @@
 package io.harness.cvng.core.entities;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.cvng.beans.DataSourceType;
+import io.harness.cvng.beans.DeviationType;
 import io.harness.cvng.beans.ThresholdConfigType;
 import io.harness.cvng.beans.TimeSeriesMetricType;
 import io.harness.cvng.beans.TimeSeriesThresholdActionType;
@@ -46,9 +47,9 @@ import org.mongodb.morphia.annotations.Id;
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@StoreIn(DbAliases.CVNG)
 @Entity(value = "timeSeriesThresholds", noClassnameStored = true)
 @HarnessEntity(exportable = true)
-@StoreIn(DbAliases.CVNG)
 public final class TimeSeriesThreshold
     implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, AccountAccess {
   public static List<MongoIndex> mongoIndexes() {
@@ -76,6 +77,7 @@ public final class TimeSeriesThreshold
   @NotNull private TimeSeriesThresholdActionType action;
   @NotNull private TimeSeriesThresholdCriteria criteria;
   private ThresholdConfigType thresholdConfigType;
+  private DeviationType deviationType;
 
   public ThresholdConfigType getThresholdConfigType() {
     if (Objects.isNull(thresholdConfigType)) {

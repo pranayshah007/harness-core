@@ -84,7 +84,6 @@ public class InfrastructureDefinitionResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ENV, action = READ)
-  @ApiKeyAuthorized(permissionType = ENV, action = READ)
   public RestResponse<PageResponse<InfrastructureDefinition>> listPost(
       @Context PageRequest pageRequest, ListInfraDefinitionParams listInfraDefinitionParams) {
     if (EmptyPredicate.isNotEmpty(listInfraDefinitionParams.getDeploymentTypeFromMetaData())) {
@@ -111,7 +110,6 @@ public class InfrastructureDefinitionResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ENV, action = UPDATE)
-  @ApiKeyAuthorized(permissionType = ENV, action = UPDATE)
   public RestResponse<InfrastructureDefinition> save(@QueryParam("appId") String appId,
       @QueryParam("envId") String envId, InfrastructureDefinition infrastructureDefinition) {
     infrastructureDefinition.setAppId(appId);
@@ -146,7 +144,6 @@ public class InfrastructureDefinitionResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ENV, action = UPDATE)
-  @ApiKeyAuthorized(permissionType = ENV, action = UPDATE)
   public RestResponse delete(@QueryParam("appId") String appId, @QueryParam("envId") String envId,
       @PathParam("infraDefinitionId") String infraDefinitionId) {
     infrastructureDefinitionService.delete(appId, infraDefinitionId);
@@ -158,7 +155,6 @@ public class InfrastructureDefinitionResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ENV, action = UPDATE)
-  @ApiKeyAuthorized(permissionType = ENV, action = UPDATE)
   public RestResponse<InfrastructureDefinition> update(@QueryParam("appId") String appId,
       @QueryParam("envId") String envId, @PathParam("infraDefinitionId") String infraDefinitionId,
       InfrastructureDefinition infrastructureDefinition) {

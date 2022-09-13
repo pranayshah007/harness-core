@@ -8,13 +8,20 @@
 package io.harness.cvng.core.entities;
 
 import static io.harness.cvng.core.utils.ErrorMessageUtils.generateErrorMessageFromParam;
+import static io.harness.data.structure.CollectionUtils.emptyIfNull;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
+import io.harness.cvng.beans.DeviationType;
+import io.harness.cvng.beans.ThresholdConfigType;
 import io.harness.cvng.beans.TimeSeriesMetricType;
+import io.harness.cvng.beans.TimeSeriesThresholdType;
 import io.harness.cvng.core.beans.DatadogMetricHealthDefinition;
+import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
+import io.harness.cvng.core.constant.MonitoredServiceConstants;
 import io.harness.cvng.core.entities.DatadogMetricCVConfig.MetricInfo;
 import io.harness.cvng.core.utils.analysisinfo.AnalysisInfoUtility;
 import io.harness.cvng.core.utils.analysisinfo.DevelopmentVerificationTransformer;
@@ -26,8 +33,10 @@ import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -48,7 +57,7 @@ public class DatadogMetricCVConfig extends MetricCVConfig<MetricInfo> {
   private String dashboardId;
   private String dashboardName;
 
-  public void fromMetricDefinitions(
+  public void populateFromMetricDefinitions(
       List<DatadogMetricHealthDefinition> datadogMetricDefinitions, CVMonitoringCategory category) {
     Preconditions.checkNotNull(datadogMetricDefinitions);
     if (metricInfoList == null) {
@@ -91,12 +100,60 @@ public class DatadogMetricCVConfig extends MetricCVConfig<MetricInfo> {
       metricPack.addToMetrics(MetricPack.MetricDefinition.builder()
                                   .thresholds(new ArrayList<>(thresholds))
                                   .type(metricType)
-                                  .name(definition.getMetric())
+                                  .name(definition.getMetricName())
                                   .identifier(definition.getIdentifier())
                                   .included(true)
                                   .build());
     });
     this.setMetricPack(metricPack);
+  }
+
+  public void addMetricThresholds(
+      Set<TimeSeriesMetricPackDTO> timeSeriesMetricPacks, List<DatadogMetricHealthDefinition> metricDefinitions) {
+    if (isEmpty(timeSeriesMetricPacks)) {
+      return;
+    }
+    Map<String, DatadogMetricHealthDefinition> mapOfMetricDefinitions =
+        emptyIfNull(metricDefinitions)
+            .stream()
+            .collect(
+                Collectors.toMap(DatadogMetricHealthDefinition::getMetricName, metricDefinition -> metricDefinition));
+    getMetricPack().getMetrics().forEach(metric -> {
+      timeSeriesMetricPacks.stream()
+          .filter(timeSeriesMetricPack
+              -> timeSeriesMetricPack.getIdentifier().equalsIgnoreCase(MonitoredServiceConstants.CUSTOM_METRIC_PACK))
+          .forEach(timeSeriesMetricPackDTO -> {
+            if (!isEmpty(timeSeriesMetricPackDTO.getMetricThresholds())) {
+              timeSeriesMetricPackDTO.getMetricThresholds()
+                  .stream()
+                  .filter(metricPackDTO -> metric.getName().equals(metricPackDTO.getMetricName()))
+                  .forEach(metricPackDTO -> metricPackDTO.getTimeSeriesThresholdCriteria().forEach(criteria -> {
+                    List<TimeSeriesThreshold> timeSeriesThresholds =
+                        metric.getThresholds() != null ? metric.getThresholds() : new ArrayList<>();
+                    String metricName = metricPackDTO.getMetricName();
+                    List<TimeSeriesThresholdType> thresholdTypes = null;
+                    if (mapOfMetricDefinitions.containsKey(metricName)) {
+                      thresholdTypes = mapOfMetricDefinitions.get(metricName).getRiskProfile().getThresholdTypes();
+                    }
+                    TimeSeriesThreshold timeSeriesThreshold =
+                        TimeSeriesThreshold.builder()
+                            .accountId(getAccountId())
+                            .projectIdentifier(getProjectIdentifier())
+                            .dataSourceType(getType())
+                            .metricIdentifier(metric.getIdentifier())
+                            .metricType(metric.getType())
+                            .metricName(metricPackDTO.getMetricName())
+                            .action(metricPackDTO.getType().getTimeSeriesThresholdActionType())
+                            .criteria(criteria)
+                            .thresholdConfigType(ThresholdConfigType.USER_DEFINED)
+                            .deviationType(DeviationType.getDeviationType(thresholdTypes))
+                            .build();
+                    timeSeriesThresholds.add(timeSeriesThreshold);
+                    metric.setThresholds(timeSeriesThresholds);
+                  }));
+            }
+          });
+    });
   }
 
   @Override

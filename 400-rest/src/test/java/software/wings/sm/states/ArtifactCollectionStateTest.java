@@ -204,7 +204,8 @@ public class ArtifactCollectionStateTest extends CategoryTest {
     FieldUtils.writeField(executionContext, "featureFlagService", featureFlagService, true);
 
     WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService =
-        new WorkflowStandardParamsExtensionService(appService, accountService, artifactService, null, null, null);
+        new WorkflowStandardParamsExtensionService(
+            appService, accountService, artifactService, null, null, null, featureFlagService);
     ContextElementParamMapperFactory contextElementParamMapperFactory = new ContextElementParamMapperFactory(
         subdomainUrlHelper, workflowExecutionService, artifactService, artifactStreamService, null, featureFlagService,
         buildSourceService, workflowStandardParamsExtensionService);

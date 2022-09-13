@@ -60,7 +60,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.validation.Valid;
@@ -279,9 +281,24 @@ public class ClusterResource {
     checkForAccessOrThrow(
         accountId, orgIdentifier, projectIdentifier, envIdentifier, ENVIRONMENT_VIEW_PERMISSION, "list");
 
+    // NG Clusters
     Page<Cluster> entities = clusterService.list(
         page, size, accountId, orgIdentifier, projectIdentifier, envIdentifier, searchTerm, identifiers, sort);
-    return ResponseDTO.newResponse(getNGPageResponse(entities.map(ClusterEntityMapper::writeDTO)));
+
+    // Account level clusters
+    PageResponse<ClusterFromGitops> accountLevelClusters =
+        fetchClustersFromGitopsService(page, size, accountId, "", "", searchTerm);
+    // Project level clusters
+    PageResponse<ClusterFromGitops> projectLevelClusters =
+        fetchClustersFromGitopsService(page, size, accountId, orgIdentifier, projectIdentifier, searchTerm);
+
+    Map<String, ClusterFromGitops> allClusters =
+        Stream.of(accountLevelClusters.getContent(), projectLevelClusters.getContent())
+            .flatMap(List::stream)
+            .collect(Collectors.toMap(e
+                -> e.getScopeLevel().toString().toLowerCase() + "." + e.getIdentifier(),
+                Function.identity(), (c1, c2) -> c1));
+    return ResponseDTO.newResponse(getNGPageResponse(entities.map(e -> ClusterEntityMapper.writeDTO(e, allClusters))));
   }
 
   @GET

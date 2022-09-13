@@ -16,6 +16,7 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.clienttools.ClientTool;
 import io.harness.delegate.clienttools.HarnessPywinrmVersion;
 import io.harness.delegate.clienttools.InstallUtils;
@@ -90,8 +91,12 @@ public class WinRmSession implements AutoCloseable {
                  .workingDir(config.getWorkingDirectory())
                  .timeout(config.getTimeout())
                  .build();
-      SshHelperUtils.generateTGT(getUserPrincipal(config.getUsername(), config.getDomain()), config.getPassword(),
-          config.getKeyTabFilePath(), logCallback, generateTGTEnv);
+
+      if (!EmptyPredicate.isEmpty(config.getPassword()) || !EmptyPredicate.isEmpty(config.getKeyTabFilePath())) {
+        SshHelperUtils.generateTGT(getUserPrincipal(config.getUsername(), config.getDomain()), config.getPassword(),
+            config.getKeyTabFilePath(), logCallback, generateTGTEnv);
+      }
+
       shell = null;
       if (executeCommandString("echo 'checking connection'", null, null, false) != 0) {
         throw new InvalidRequestException("Cannot reach remote host");

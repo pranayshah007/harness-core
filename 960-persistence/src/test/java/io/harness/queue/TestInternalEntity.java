@@ -7,6 +7,8 @@
 
 package io.harness.queue;
 
+import io.harness.annotations.StoreIn;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 
 import lombok.Builder;
@@ -16,6 +18,7 @@ import org.mongodb.morphia.annotations.Id;
 
 @Value
 @Builder
+@StoreIn(DbAliases.TEST)
 @Entity(value = "!!!testEntity")
 public class TestInternalEntity implements PersistentEntity {
   @Id private String id;

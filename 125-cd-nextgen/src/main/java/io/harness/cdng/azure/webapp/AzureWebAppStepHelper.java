@@ -15,11 +15,13 @@ import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.connector.docker.DockerAuthType.ANONYMOUS;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.ACR_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.AMAZON_S3_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.ARTIFACTORY_REGISTRY_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.DOCKER_REGISTRY_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.ECR_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.GCR_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.NEXUS3_REGISTRY_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceType.AMAZONS3;
 
 import static java.lang.String.format;
 import static java.util.Collections.singletonList;
@@ -39,6 +41,7 @@ import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.NexusArtifactOutcome;
+import io.harness.cdng.artifact.outcome.S3ArtifactOutcome;
 import io.harness.cdng.azure.AzureHelperService;
 import io.harness.cdng.azure.config.ApplicationSettingsOutcome;
 import io.harness.cdng.azure.config.ConnectionStringsOutcome;
@@ -66,6 +69,7 @@ import io.harness.delegate.task.azure.appservice.settings.AppSettingsFile;
 import io.harness.delegate.task.azure.appservice.settings.EncryptedAppSettingsFile;
 import io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppInfraDelegateConfig;
 import io.harness.delegate.task.azure.artifact.ArtifactoryAzureArtifactRequestDetails;
+import io.harness.delegate.task.azure.artifact.AwsS3AzureArtifactRequestDetails;
 import io.harness.delegate.task.azure.artifact.AzureArtifactConfig;
 import io.harness.delegate.task.azure.artifact.AzureContainerArtifactConfig;
 import io.harness.delegate.task.azure.artifact.AzureContainerArtifactConfig.AzureContainerArtifactConfigBuilder;
@@ -273,7 +277,7 @@ public class AzureWebAppStepHelper {
         .azureConnectorDTO(azureConnectorDTO)
         .subscription(infrastructure.getSubscription())
         .resourceGroup(infrastructure.getResourceGroup())
-        .appName(webApp)
+        .appName(webApp.toLowerCase())
         .deploymentSlot(AzureResourceUtility.fixDeploymentSlotName(deploymentSlot, webApp))
         .encryptionDataDetails(azureHelperService.getEncryptionDetails(azureConnectorDTO, ngAccess))
         .build();
@@ -292,6 +296,7 @@ public class AzureWebAppStepHelper {
       case ACR_NAME:
       case NEXUS3_REGISTRY_NAME:
       case ARTIFACTORY_REGISTRY_NAME:
+      case AMAZON_S3_NAME:
         if (isPackageArtifactType(artifactOutcome)) {
           return getAzurePackageArtifactConfig(ambiance, artifactOutcome);
         } else {
@@ -334,6 +339,8 @@ public class AzureWebAppStepHelper {
     switch (artifactOutcome.getArtifactType()) {
       case ARTIFACTORY_REGISTRY_NAME:
         return !(artifactOutcome instanceof ArtifactoryArtifactOutcome);
+      case AMAZON_S3_NAME:
+        return artifactOutcome instanceof S3ArtifactOutcome;
       default:
         return false;
     }
@@ -427,6 +434,17 @@ public class AzureWebAppStepHelper {
                 .build());
         connectorInfoDTO = cdStepHelper.getConnector(artifactoryArtifactOutcome.getConnectorRef(), ambiance);
         break;
+      case AMAZON_S3_NAME:
+        S3ArtifactOutcome s3ArtifactOutcome = (S3ArtifactOutcome) artifactOutcome;
+        artifactConfigBuilder.sourceType(AMAZONS3);
+        artifactConfigBuilder.artifactDetails(AwsS3AzureArtifactRequestDetails.builder()
+                                                  .region(s3ArtifactOutcome.getRegion())
+                                                  .bucketName(s3ArtifactOutcome.getBucketName())
+                                                  .filePath(s3ArtifactOutcome.getFilePath())
+                                                  .identifier(s3ArtifactOutcome.getIdentifier())
+                                                  .build());
+        connectorInfoDTO = cdStepHelper.getConnector(s3ArtifactOutcome.getConnectorRef(), ambiance);
+        break;
       default:
         throw new InvalidArgumentsException(
             Pair.of("artifacts", format("Unsupported artifact type %s", artifactOutcome.getArtifactType())));
@@ -453,7 +471,7 @@ public class AzureWebAppStepHelper {
     }
   }
 
-  private AppSettingsFile fetchFileContentFromHarnessStore(
+  public AppSettingsFile fetchFileContentFromHarnessStore(
       Ambiance ambiance, String settingsType, HarnessStore harnessStore) {
     HarnessStore renderedHarnessStore = (HarnessStore) cdExpressionResolver.updateExpressions(ambiance, harnessStore);
     if (!ParameterField.isNull(renderedHarnessStore.getFiles())

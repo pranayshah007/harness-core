@@ -258,6 +258,7 @@ import org.mockito.Mock;
 @BreakDependencyOn("software.wings.beans.Event")
 public class DelegateServiceTest extends WingsBaseTest {
   private static final String VERSION = "1.0.0";
+  private static final String IMMUTABLE_DELEGATE_VERSION = "22.08.10000";
   private static final String DELEGATE_NAME = "harness-delegate";
   private static final String DELEGATE_PROFILE_ID = "QFWin33JRlKWKBzpzE5A9A";
   private static final String DELEGATE_ID_1 = "delegateId1";
@@ -665,7 +666,6 @@ public class DelegateServiceTest extends WingsBaseTest {
     verify(eventEmitter)
         .send(Channel.DELEGATES,
             anEvent().withOrgId(accountId).withUuid(delegate.getUuid()).withType(Type.UPDATE).build());
-    verify(delegateProfileSubject).fireInform(any(), eq(accountId), eq(delegate.getUuid()), eq(delegateProfileId));
     verify(auditServiceHelper).reportForAuditingUsingAccountId(eq(accountId), any(), any(), eq(Type.UPDATE));
     verify(auditServiceHelper).reportForAuditingUsingAccountId(eq(accountId), any(), any(), eq(Type.APPLY));
   }
@@ -1202,6 +1202,50 @@ public class DelegateServiceTest extends WingsBaseTest {
   }
 
   @Test
+  @Owner(developers = ANUPAM)
+  @Category(UnitTests.class)
+  public void shouldRegisterDelegateParamsWithExpirationTime() {
+    String accountId = generateUuid();
+    long expirationTimestamp = 1667260800000L;
+
+    DelegateGroup delegateGroup = DelegateGroup.builder()
+                                      .accountId(accountId)
+                                      .name(DELEGATE_GROUP_NAME)
+                                      .status(DelegateGroupStatus.ENABLED)
+                                      .ng(true)
+                                      .build();
+    persistence.save(delegateGroup);
+
+    // for ng delegates DelegateName and DelegateGroupName has always been same
+    DelegateParams params = DelegateParams.builder()
+                                .accountId(accountId)
+                                .hostName(HOST_NAME)
+                                .description(DESCRIPTION)
+                                .delegateType(KUBERNETES_DELEGATE)
+                                .ip("127.0.0.1")
+                                .delegateName(DELEGATE_GROUP_NAME)
+                                .delegateGroupId(delegateGroup.getUuid())
+                                .ng(true)
+                                .version(IMMUTABLE_DELEGATE_VERSION)
+                                .proxy(true)
+                                .pollingModeEnabled(true)
+                                .sampleDelegate(true)
+                                .immutable(true)
+                                .tags(ImmutableList.of("tag1", "tag2"))
+                                .build();
+
+    DelegateProfile profile = createDelegateProfileBuilder().accountId(accountId).primary(true).build();
+    when(delegateProfileService.fetchNgPrimaryProfile(accountId, null)).thenReturn(profile);
+    when(delegatesFeature.getMaxUsageAllowedForAccount(accountId)).thenReturn(Integer.MAX_VALUE);
+
+    DelegateRegisterResponse registerResponse = delegateService.register(params, true);
+    Delegate delegateFromDb = delegateCache.get(accountId, registerResponse.getDelegateId(), true);
+    DelegateGroup delegateGroupFromDb = delegateCache.getDelegateGroup(accountId, delegateGroup.getUuid());
+
+    assertThat(delegateFromDb.getExpirationTime()).isEqualTo(expirationTimestamp);
+  }
+
+  @Test
   @Owner(developers = ARPIT)
   @Category(UnitTests.class)
   public void shouldRegisterDelegateParamsWithNoProfile() {
@@ -1408,7 +1452,6 @@ public class DelegateServiceTest extends WingsBaseTest {
                             .proxy(false)
                             .polllingModeEnabled(false)
                             .sampleDelegate(false)
-                            .tags(Arrays.asList("existingTag1", "existingTag2"))
                             .mtls(false)
                             .build();
     DelegateProfile primaryDelegateProfile =
@@ -1433,7 +1476,6 @@ public class DelegateServiceTest extends WingsBaseTest {
                                 .proxy(true)
                                 .pollingModeEnabled(true)
                                 .sampleDelegate(false)
-                                .tags(Arrays.asList("newTag1", "newTag2"))
                                 .build();
 
     delegateService.register(params, true);
@@ -1450,8 +1492,6 @@ public class DelegateServiceTest extends WingsBaseTest {
     assertThat(delegateFromDb.isProxy()).isEqualTo(params.isProxy());
     assertThat(delegateFromDb.isPolllingModeEnabled()).isEqualTo(params.isPollingModeEnabled());
     assertThat(delegateFromDb.isSampleDelegate()).isEqualTo(params.isSampleDelegate());
-    assertThat(delegate.getTags()).isEqualTo(Arrays.asList("existingTag1", "existingTag2"));
-    assertThat(delegateFromDb.getTags()).isEqualTo(Arrays.asList("newTag1", "newTag2"));
     assertThat(delegateFromDb.isMtls()).isTrue();
   }
 
@@ -1472,7 +1512,6 @@ public class DelegateServiceTest extends WingsBaseTest {
                             .ng(false)
                             .polllingModeEnabled(false)
                             .sampleDelegate(false)
-                            .tags(Arrays.asList("existingTag1", "existingTag2"))
                             .mtls(false)
                             .build();
     DelegateProfile primaryDelegateProfile =
@@ -1498,7 +1537,6 @@ public class DelegateServiceTest extends WingsBaseTest {
                                 .proxy(true)
                                 .pollingModeEnabled(true)
                                 .sampleDelegate(false)
-                                .tags(Arrays.asList("newTag1", "newTag2"))
                                 .build();
 
     delegateService.register(params, true);
@@ -1515,8 +1553,6 @@ public class DelegateServiceTest extends WingsBaseTest {
     assertThat(delegateFromDb.isPolllingModeEnabled()).isEqualTo(params.isPollingModeEnabled());
     assertThat(delegateFromDb.isSampleDelegate()).isEqualTo(params.isSampleDelegate());
     assertThat(delegateFromDb.isNg()).isEqualTo(params.isNg());
-    assertThat(delegate.getTags()).isEqualTo(Arrays.asList("existingTag1", "existingTag2"));
-    assertThat(delegateFromDb.getTags()).isEqualTo(Arrays.asList("newTag1", "newTag2"));
     assertThat(delegateFromDb.isMtls()).isTrue();
   }
 

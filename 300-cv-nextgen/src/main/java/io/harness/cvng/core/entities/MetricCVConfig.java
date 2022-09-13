@@ -14,6 +14,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import io.harness.cvng.beans.DeviationType;
 import io.harness.cvng.beans.ThresholdConfigType;
 import io.harness.cvng.beans.TimeSeriesMetricType;
 import io.harness.cvng.beans.TimeSeriesThresholdActionType;
@@ -107,6 +108,7 @@ public abstract class MetricCVConfig<I extends AnalysisInfo> extends CVConfig {
                              .action(TimeSeriesThresholdActionType.IGNORE)
                              .criteria(criteria)
                              .thresholdConfigType(ThresholdConfigType.DEFAULT)
+                             .deviationType(DeviationType.getDeviationType(thresholdTypes))
                              .build());
         });
       });
@@ -135,7 +137,7 @@ public abstract class MetricCVConfig<I extends AnalysisInfo> extends CVConfig {
         List<TimeSeriesThreshold> customThresholds =
             metricDefinition.getThresholds()
                 .stream()
-                .filter(m -> ThresholdConfigType.CUSTOMER.equals(m.getThresholdConfigType()))
+                .filter(m -> ThresholdConfigType.USER_DEFINED.equals(m.getThresholdConfigType()))
                 .collect(Collectors.toList());
         for (TimeSeriesThreshold timeSeriesThreshold : customThresholds) {
           String key = getKey(timeSeriesThreshold);
@@ -156,18 +158,28 @@ public abstract class MetricCVConfig<I extends AnalysisInfo> extends CVConfig {
           customThresholds.stream()
               .filter(m -> TimeSeriesThresholdType.ACT_WHEN_LOWER.equals(m.getCriteria().getThresholdType()))
               .findFirst();
-      Double lessThan = null;
-      if (lessThanTimeSeriesThreshold.isPresent()) {
-        lessThan = thresholdCriteriaType.getPercentage(lessThanTimeSeriesThreshold.get().getCriteria().getValue());
-      }
       Optional<TimeSeriesThreshold> greaterThanTimeSeriesThreshold =
           customThresholds.stream()
               .filter(m -> TimeSeriesThresholdType.ACT_WHEN_HIGHER.equals(m.getCriteria().getThresholdType()))
               .findFirst();
+      Double lessThan = null;
       Double greaterThan = null;
+      if (lessThanTimeSeriesThreshold.isPresent()) {
+        double value = thresholdCriteriaType.getPercentage(lessThanTimeSeriesThreshold.get().getCriteria().getValue());
+        if (lessThanTimeSeriesThreshold.get().getAction().equals(TimeSeriesThresholdActionType.IGNORE)) {
+          greaterThan = value;
+        } else {
+          lessThan = value;
+        }
+      }
       if (greaterThanTimeSeriesThreshold.isPresent()) {
-        greaterThan =
+        double value =
             thresholdCriteriaType.getPercentage(greaterThanTimeSeriesThreshold.get().getCriteria().getValue());
+        if (greaterThanTimeSeriesThreshold.get().getAction().equals(TimeSeriesThresholdActionType.IGNORE)) {
+          lessThan = value;
+        } else {
+          greaterThan = value;
+        }
       }
       TimeSeriesThreshold baseMetricThreshold = customThresholds.get(0);
       metricThresholds.add(

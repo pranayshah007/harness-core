@@ -13,6 +13,7 @@ import static io.harness.delegate.task.helm.HelmTaskHelperBase.RESOURCE_DIR_BASE
 import static io.harness.filesystem.FileIo.deleteDirectoryAndItsContentIfExists;
 import static io.harness.k8s.model.HelmVersion.V2;
 import static io.harness.k8s.model.HelmVersion.V3;
+import static io.harness.k8s.model.HelmVersion.V380;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.ACHYUTH;
@@ -38,6 +39,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyMap;
@@ -364,6 +366,7 @@ public class HelmTaskHelperTest extends WingsBaseTest {
         .when(cgChartmuseumClientFactory)
         .createClient(eq(gcsHelmRepoConfig), any(), any(), any(), eq(false));
     doReturn(successfulResult).when(processExecutor).execute();
+    doReturn("cache").when(helmTaskHelper).getCacheDir(anyString(), anyBoolean(), eq(HelmVersion.V3));
     helmTaskHelper.downloadChartFiles(gcsConfigParams, outputTemporaryDir.toString(), LONG_TIMEOUT_INTERVAL, null);
     verifyFetchChartFilesProcessExecutor(outputTemporaryDir.toString());
     deleteDirectoryAndItsContentIfExists(outputTemporaryDir.toString());
@@ -385,6 +388,10 @@ public class HelmTaskHelperTest extends WingsBaseTest {
         .when(cgChartmuseumClientFactory)
         .createClient(eq(s3HelmRepoConfig), any(), any(), any(), eq(false));
     doReturn(successfulResult).when(processExecutor).execute();
+    doNothing().when(helmTaskHelper).initHelm(anyString(), any(), anyLong());
+    doReturn("cache").when(helmTaskHelper).getCacheDir(anyString(), anyBoolean(), eq(HelmVersion.V3));
+    doReturn("resource-dir").when(helmTaskHelper).createNewDirectoryAtPath(anyString());
+
     helmTaskHelper.downloadChartFiles(awsConfigParams, outputTemporaryDir.toString(), LONG_TIMEOUT_INTERVAL, null);
     verifyFetchChartFilesProcessExecutor(outputTemporaryDir.toString());
     deleteDirectoryAndItsContentIfExists(outputTemporaryDir.toString());
@@ -392,15 +399,18 @@ public class HelmTaskHelperTest extends WingsBaseTest {
 
   private void verifyFetchChartFilesProcessExecutor(String outputDirectory) throws Exception {
     verify(helmTaskHelperBase, times(1))
-        .createProcessExecutor("v3/helm repo add repoName-bucketName http://127.0.0.1:1234", outputDirectory,
-            LONG_TIMEOUT_INTERVAL, Collections.emptyMap());
-    verify(helmTaskHelperBase, times(1))
-        .createProcessExecutor("v3/helm pull repoName-bucketName/chartName  --untar ", outputDirectory,
-            LONG_TIMEOUT_INTERVAL, Collections.emptyMap());
+        .createProcessExecutor(
+            eq("v3/helm repo add repoName-bucketName http://127.0.0.1:1234 --repository-config cache/repo-repoName-bucketName.yaml"),
+            eq(outputDirectory), eq(LONG_TIMEOUT_INTERVAL), anyMap());
     verify(helmTaskHelperBase, times(1))
         .createProcessExecutor(
-            "v3/helm repo remove repoName-bucketName", null, LONG_TIMEOUT_INTERVAL, Collections.emptyMap());
-    verify(processExecutor, times(3)).execute();
+            eq("v3/helm pull repoName-bucketName/chartName  --untar  --repository-config cache/repo-repoName-bucketName.yaml"),
+            eq(outputDirectory), eq(LONG_TIMEOUT_INTERVAL), anyMap());
+    verify(helmTaskHelperBase, times(1))
+        .createProcessExecutor(
+            eq("v3/helm repo remove repoName-bucketName --repository-config cache/repo-repoName-bucketName.yaml"),
+            eq(null), eq(LONG_TIMEOUT_INTERVAL), anyMap());
+    verify(processExecutor, times(4)).execute();
   }
 
   @Test
@@ -419,14 +429,23 @@ public class HelmTaskHelperTest extends WingsBaseTest {
         .when(cgChartmuseumClientFactory)
         .createClient(eq(httpHelmRepoConfig), any(), any(), any(), eq(false));
     doReturn(successfulResult).when(processExecutor).execute();
+    doNothing().when(helmTaskHelper).initHelm(anyString(), any(), anyLong());
+    doReturn("cache").when(helmTaskHelper).getCacheDir(anyString(), anyBoolean(), eq(HelmVersion.V3));
+
     helmTaskHelper.downloadChartFiles(httpHelmChartConfig, outputTemporaryDir.toString(), LONG_TIMEOUT_INTERVAL, null);
+
     verify(helmTaskHelperBase, times(1))
-        .createProcessExecutor("v3/helm pull repoName/chartName  --untar ", outputTemporaryDir.toString(),
-            LONG_TIMEOUT_INTERVAL, Collections.emptyMap());
+        .createProcessExecutor(
+            eq("v3/helm repo add repoName http://127.0.0.1:1234   --repository-config cache/repo-repoName.yaml"),
+            eq(outputTemporaryDir.toString()), eq(LONG_TIMEOUT_INTERVAL), anyMap());
     verify(helmTaskHelperBase, times(1))
-        .createProcessExecutor("v3/helm repo add repoName http://127.0.0.1:1234  ", outputTemporaryDir.toString(),
-            LONG_TIMEOUT_INTERVAL, Collections.emptyMap());
-    verify(processExecutor, times(2)).execute();
+        .createProcessExecutor(eq("v3/helm repo update --repository-config cache/repo-repoName.yaml"),
+            eq(outputTemporaryDir.toString()), eq(LONG_TIMEOUT_INTERVAL), anyMap());
+    verify(helmTaskHelperBase, times(1))
+        .createProcessExecutor(
+            eq("v3/helm pull repoName/chartName  --untar  --repository-config cache/repo-repoName.yaml"),
+            eq(outputTemporaryDir.toString()), eq(LONG_TIMEOUT_INTERVAL), anyMap());
+    verify(processExecutor, times(3)).execute();
     deleteDirectoryAndItsContentIfExists(outputTemporaryDir.toString());
   }
 
@@ -447,12 +466,13 @@ public class HelmTaskHelperTest extends WingsBaseTest {
         .when(helmTaskHelperBase)
         .loginOciRegistry(repoConfig.getChartRepoUrl(), repoConfig.getUsername(), repoConfig.getPassword(),
             HelmVersion.V380, LONG_TIMEOUT_INTERVAL, outputTemporaryDir.toString());
-
+    doReturn("cache").when(helmTaskHelper).getCacheDir(anyString(), anyBoolean(), eq(HelmVersion.V3));
     doReturn(successfulResult).when(processExecutor).execute();
     helmTaskHelper.downloadChartFiles(configParams, outputTemporaryDir.toString(), LONG_TIMEOUT_INTERVAL, null);
     verify(helmTaskHelperBase, times(1))
-        .createProcessExecutor("v3/helm pull oci://localhost:5005/test-charts/chartName  --untar --version 0.1.0",
-            outputTemporaryDir.toString(), LONG_TIMEOUT_INTERVAL, Collections.emptyMap());
+        .createProcessExecutor(
+            eq("v3/helm pull oci://localhost:5005/test-charts/chartName  --untar --version 0.1.0 --repository-config cache/repo-oci://localhost:5005/test-charts.yaml"),
+            eq(outputTemporaryDir.toString()), eq(LONG_TIMEOUT_INTERVAL), anyMap());
     verify(processExecutor, times(1)).execute();
     deleteDirectoryAndItsContentIfExists(outputTemporaryDir.toString());
   }
@@ -608,6 +628,7 @@ public class HelmTaskHelperTest extends WingsBaseTest {
     }
 
     return HelmChartConfigParams.builder()
+        .useCache(true)
         .chartName("chartName")
         .helmRepoConfig(repoConfig)
         .connectorConfig(connectorConfig)
@@ -1053,15 +1074,16 @@ public class HelmTaskHelperTest extends WingsBaseTest {
             .serviceId(SERVICE_ID)
             .helmChartConfigParams(getHelmChartConfigParams(httpHelmRepoConfig))
             .build();
-
+    doReturn("cache").when(helmTaskHelper).getCacheDirForManifestCollection(any(), anyString(), anyBoolean());
     doReturn(new ProcessResult(0, null)).when(processExecutor).execute();
     doAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class))
         .when(helmTaskHelper)
         .createDirectory("dir");
     doReturn(processExecutor)
         .when(helmTaskHelper)
-        .createProcessExecutorWithRedirectOutput(eq(Collections.emptyMap()),
-            eq("v3/helm search repo repoName/chartName -l --devel --max-col-width 300"), eq("dir"), any());
+        .createProcessExecutorWithRedirectOutput(anyMap(),
+            eq("v3/helm search repo repoName/chartName -l --devel --max-col-width 300 --repository-config cache/repo-repoName.yaml"),
+            eq("dir"), any());
 
     assertThatExceptionOfType(InvalidRequestException.class)
         .isThrownBy(() -> helmTaskHelper.fetchChartVersions(helmChartCollectionParams, "dir", 10000))
@@ -1071,7 +1093,9 @@ public class HelmTaskHelperTest extends WingsBaseTest {
 
     doReturn("No results Found")
         .when(helmTaskHelper)
-        .executeCommandWithLogOutput(any(), eq("v3/helm search repo repoName/chartName -l"), eq("dir"), any(), any());
+        .executeCommandWithLogOutput(any(),
+            eq("v3/helm search repo repoName/chartName -l --devel --max-col-width 300 --repository-config cache/repo-repoName.yaml"),
+            eq("dir"), any(), any());
     assertThatExceptionOfType(InvalidRequestException.class)
         .isThrownBy(() -> helmTaskHelper.fetchChartVersions(helmChartCollectionParams, "dir", 10000))
         .withMessageContaining("No chart with the given name found. Chart might be deleted at source");
@@ -1098,7 +1122,10 @@ public class HelmTaskHelperTest extends WingsBaseTest {
         .createDirectory("dir");
     doReturn(getHelmCollectionResult(""))
         .when(helmTaskHelper)
-        .executeCommandWithLogOutput(any(), eq(V_3_HELM_SEARCH_REPO_COMMAND), eq("dir"), any(), any());
+        .executeCommandWithLogOutput(any(),
+            eq(V_3_HELM_SEARCH_REPO_COMMAND + " --repository-config cache/repo-repoName.yaml"), eq("dir"), any(),
+            any());
+    doReturn("cache").when(helmTaskHelper).getCacheDirForManifestCollection(any(), anyString(), anyBoolean());
 
     List<HelmChart> helmCharts = helmTaskHelper.fetchChartVersions(helmChartCollectionParams, "dir", 10000);
     assertThat(helmCharts.size()).isEqualTo(2);
@@ -1111,7 +1138,9 @@ public class HelmTaskHelperTest extends WingsBaseTest {
 
     doReturn(getHelmCollectionResult("11.0.1"))
         .when(helmTaskHelper)
-        .executeCommandWithLogOutput(any(), eq(V_3_HELM_SEARCH_REPO_COMMAND), eq("dir"), any(), any());
+        .executeCommandWithLogOutput(any(),
+            eq(V_3_HELM_SEARCH_REPO_COMMAND + " --repository-config cache/repo-repoName.yaml"), eq("dir"), any(),
+            any());
     helmCharts = helmTaskHelper.fetchChartVersions(helmChartCollectionParams, "dir", 10000);
     assertThat(helmCharts).hasSize(2);
     assertThat(helmCharts.get(0).getDescription()).isEqualTo("Deploys harness delegate");
@@ -1181,18 +1210,19 @@ public class HelmTaskHelperTest extends WingsBaseTest {
                                                               .serviceId(SERVICE_ID)
                                                               .helmChartConfigParams(helmChartConfigParams)
                                                               .build();
-
+    doReturn("").when(helmTaskHelper).getCacheDirForManifestCollection(any(), anyString(), anyBoolean());
+    doReturn("helmHomePath").when(helmTaskHelperBase).getHelmHomePath(anyString());
     doReturn(new ProcessResult(0, null)).when(processExecutor).execute();
     doAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class))
         .when(helmTaskHelper)
         .createDirectory("dir");
     doAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class))
         .when(helmTaskHelperBase)
-        .applyHelmHomePath("v2/helm search repoName/chartName -l ${HELM_HOME_PATH_FLAG} --col-width 300", "dir");
+        .applyHelmHomePath("v2/helm search repoName/chartName -l --home helmHomePath --col-width 300", "dir");
     doReturn(getHelmCollectionResult(""))
         .when(helmTaskHelper)
         .executeCommandWithLogOutput(any(),
-            eq("v2/helm search repoName/chartName -l ${HELM_HOME_PATH_FLAG} --col-width 300"), eq("dir"), any(), any());
+            eq("v2/helm search repoName/chartName -l --home helmHomePath --col-width 300"), eq("dir"), any(), any());
 
     List<HelmChart> helmCharts = helmTaskHelper.fetchChartVersions(helmChartCollectionParams, "dir", 10000);
     assertThat(helmCharts.size()).isEqualTo(2);
@@ -1296,8 +1326,7 @@ public class HelmTaskHelperTest extends WingsBaseTest {
     assertThatCode(() -> helmTaskHelper.removeRepo(repoName, workingDirectory, V2, LONG_TIMEOUT_INTERVAL))
         .doesNotThrowAnyException();
 
-    verify(helmTaskHelperBase)
-        .removeRepo(repoName, workingDirectory, V2, LONG_TIMEOUT_INTERVAL, false, StringUtils.EMPTY);
+    verify(helmTaskHelperBase).removeRepo(repoName, workingDirectory, V2, LONG_TIMEOUT_INTERVAL, StringUtils.EMPTY);
   }
 
   @Test
@@ -1326,5 +1355,14 @@ public class HelmTaskHelperTest extends WingsBaseTest {
         .isInstanceOf(HelmClientRuntimeException.class)
         .hasMessageContaining("Failed to fetch chart")
         .hasMessageContaining("something went wrong executing command");
+  }
+
+  @Test
+  @Owner(developers = PRABU)
+  @Category(UnitTests.class)
+  public void testGetCacheDirForManifestCollection() throws Exception {
+    assertThat(helmTaskHelper.getCacheDirForManifestCollection(V2, "repo", true)).isEmpty();
+    assertThat(helmTaskHelper.getCacheDirForManifestCollection(V3, "repo", true)).endsWith("repo/cache");
+    assertThat(helmTaskHelper.getCacheDirForManifestCollection(V380, "repo", true)).endsWith("repo/cache");
   }
 }

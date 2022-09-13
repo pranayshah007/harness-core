@@ -25,9 +25,11 @@ import io.harness.beans.execution.WebhookExecutionSource;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.stages.IntegrationStageStepParametersPMS;
 import io.harness.beans.steps.StepSpecTypeConstants;
+import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.integrationstage.CIIntegrationStageModifier;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
+import io.harness.ci.license.CILicenseService;
 import io.harness.ci.plan.creator.codebase.CodebasePlanCreator;
 import io.harness.ci.states.CISpecStep;
 import io.harness.ci.states.IntegrationStageStepPMS;
@@ -49,12 +51,16 @@ import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
+import io.harness.pms.timeout.AbsoluteSdkTimeoutTrackerParameters;
+import io.harness.pms.timeout.SdkTimeoutObtainment;
 import io.harness.pms.yaml.DependenciesUtils;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
+import io.harness.timeout.trackers.absolute.AbsoluteTimeoutTrackerFactory;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
@@ -78,13 +84,13 @@ public class IntegrationStagePMSPlanCreator extends GenericStagePlanCreator {
   @Inject private CIIntegrationStageModifier ciIntegrationStageModifier;
   @Inject private KryoSerializer kryoSerializer;
   @Inject private ConnectorUtils connectorUtils;
+  @Inject private CILicenseService ciLicenseService;
 
   @Override
   public LinkedHashMap<String, PlanCreationResponse> createPlanForChildrenNodes(
       PlanCreationContext ctx, StageElementConfig stageElementConfig) {
     log.info("Received plan creation request for integration stage {}", stageElementConfig.getIdentifier());
     LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
-    Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
     Map<String, ByteString> metadataMap = new HashMap<>();
 
     YamlField specField =
@@ -106,8 +112,9 @@ public class IntegrationStagePMSPlanCreator extends GenericStagePlanCreator {
       }
     }
 
+    Infrastructure infrastructure = IntegrationStageStepParametersPMS.getInfrastructure(stageElementConfig, ctx);
     ExecutionElementConfig modifiedExecutionPlan =
-        modifyYAMLWithImplicitSteps(ctx, executionSource, executionField, stageElementConfig);
+        modifyYAMLWithImplicitSteps(ctx, executionSource, executionField, stageElementConfig, infrastructure);
 
     addStrategyFieldDependencyIfPresent(ctx, stageElementConfig, planCreationResponseMap, metadataMap);
 
@@ -115,9 +122,10 @@ public class IntegrationStagePMSPlanCreator extends GenericStagePlanCreator {
 
     BuildStatusUpdateParameter buildStatusUpdateParameter =
         obtainBuildStatusUpdateParameter(ctx, stageElementConfig, executionSource);
-    PlanNode specPlanNode = getSpecPlanNode(specField,
+    PlanNode specPlanNode = getSpecPlanNode(ctx, specField,
         IntegrationStageStepParametersPMS.getStepParameters(
-            stageElementConfig, childNodeId, buildStatusUpdateParameter, ctx));
+            stageElementConfig, childNodeId, buildStatusUpdateParameter, ctx),
+        infrastructure);
     planCreationResponseMap.put(
         specPlanNode.getUuid(), PlanCreationResponse.builder().node(specPlanNode.getUuid(), specPlanNode).build());
 
@@ -172,16 +180,15 @@ public class IntegrationStagePMSPlanCreator extends GenericStagePlanCreator {
   }
 
   private ExecutionElementConfig modifyYAMLWithImplicitSteps(PlanCreationContext ctx, ExecutionSource executionSource,
-      YamlField executionYAMLField, StageElementConfig stageElementConfig) {
+      YamlField executionYAMLField, StageElementConfig stageElementConfig, Infrastructure infrastructure) {
     ExecutionElementConfig executionElementConfig;
     try {
       executionElementConfig = YamlUtils.read(executionYAMLField.getNode().toString(), ExecutionElementConfig.class);
     } catch (IOException e) {
       throw new InvalidRequestException("Invalid yaml", e);
     }
-    return ciIntegrationStageModifier.modifyExecutionPlan(executionElementConfig, stageElementConfig, ctx,
-        getCICodebase(ctx), IntegrationStageStepParametersPMS.getInfrastructure(stageElementConfig, ctx),
-        executionSource);
+    return ciIntegrationStageModifier.modifyExecutionPlan(
+        executionElementConfig, stageElementConfig, ctx, getCICodebase(ctx), infrastructure, executionSource);
   }
 
   private String fetchCodeBaseNodeUUID(PlanCreationContext ctx, String executionNodeUUid,
@@ -202,7 +209,11 @@ public class IntegrationStagePMSPlanCreator extends GenericStagePlanCreator {
     return null;
   }
 
-  private PlanNode getSpecPlanNode(YamlField specField, IntegrationStageStepParametersPMS stepParameters) {
+  private PlanNode getSpecPlanNode(PlanCreationContext ctx, YamlField specField,
+      IntegrationStageStepParametersPMS stepParameters, Infrastructure infrastructure) {
+    PlanCreationContextValue planCreationContextValue = ctx.getGlobalContext().get("metadata");
+    Long timeout = IntegrationStageUtils.getStageTtl(
+        ciLicenseService, planCreationContextValue.getAccountIdentifier(), infrastructure);
     return PlanNode.builder()
         .uuid(specField.getNode().getUuid())
         .identifier(YAMLFieldNameConstants.SPEC)
@@ -213,6 +224,12 @@ public class IntegrationStagePMSPlanCreator extends GenericStagePlanCreator {
             FacilitatorObtainment.newBuilder()
                 .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
                 .build())
+        .timeoutObtainment(SdkTimeoutObtainment.builder()
+                               .dimension(AbsoluteTimeoutTrackerFactory.DIMENSION)
+                               .parameters(AbsoluteSdkTimeoutTrackerParameters.builder()
+                                               .timeout(ParameterField.createValueField(String.format("%ds", timeout)))
+                                               .build())
+                               .build())
         .skipGraphType(SkipType.SKIP_NODE)
         .build();
   }

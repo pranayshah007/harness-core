@@ -39,8 +39,8 @@ public enum ResourceType {
   VARIABLE(ResourceTypeConstants.VARIABLE),
   CHAOS_HUB(ResourceTypeConstants.CHAOS_HUB),
   MONITORED_SERVICE(ResourceTypeConstants.MONITORED_SERVICE),
-  CHAOS_AGENT(ResourceTypeConstants.CHAOS_AGENT),
-  CHAOS_WORKFLOW(ResourceTypeConstants.CHAOS_WORKFLOW),
+  CHAOS_DELEGATE(ResourceTypeConstants.CHAOS_DELEGATE),
+  CHAOS_SCENARIO(ResourceTypeConstants.CHAOS_SCENARIO),
   STO_TARGET(ResourceTypeConstants.STO_TARGET),
   STO_EXEMPTION(ResourceTypeConstants.STO_EXEMPTION),
   CHAOS_GITOPS(ResourceTypeConstants.CHAOS_GITOPS),
@@ -54,7 +54,8 @@ public enum ResourceType {
   AUTOSTOPPING_RULE(ResourceTypeConstants.AUTOSTOPPING_RULE),
   AUTOSTOPPING_LB(ResourceTypeConstants.AUTOSTOPPING_LB),
   AUTOSTOPPING_STARTSTOP(ResourceTypeConstants.AUTOSTOPPING_STARTSTOP),
-  SETTING(ResourceTypeConstants.SETTING);
+  SETTING(ResourceTypeConstants.SETTING),
+  NG_LOGIN_SETTINGS(ResourceTypeConstants.NG_LOGIN_SETTINGS);
 
   ResourceType(String resourceType) {
     if (!this.name().equals(resourceType)) {

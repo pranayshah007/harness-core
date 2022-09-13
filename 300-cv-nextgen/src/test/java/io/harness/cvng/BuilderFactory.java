@@ -7,6 +7,7 @@
 
 package io.harness.cvng;
 
+import static io.harness.cvng.beans.TimeSeriesThresholdActionType.IGNORE;
 import static io.harness.cvng.core.utils.DateTimeUtils.roundDownToMinBoundary;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
@@ -24,6 +25,12 @@ import io.harness.cvng.activity.entities.PagerDutyActivity.PagerDutyActivityBuil
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.MonitoredServiceDataSourceType;
 import io.harness.cvng.beans.MonitoredServiceType;
+import io.harness.cvng.beans.ThresholdConfigType;
+import io.harness.cvng.beans.TimeSeriesCustomThresholdActions;
+import io.harness.cvng.beans.TimeSeriesMetricType;
+import io.harness.cvng.beans.TimeSeriesThresholdComparisonType;
+import io.harness.cvng.beans.TimeSeriesThresholdCriteria;
+import io.harness.cvng.beans.TimeSeriesThresholdType;
 import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.beans.change.ChangeEventDTO.ChangeEventDTOBuilder;
 import io.harness.cvng.beans.change.ChangeSourceType;
@@ -105,6 +112,7 @@ import io.harness.cvng.core.entities.StackdriverCVConfig;
 import io.harness.cvng.core.entities.StackdriverCVConfig.StackdriverCVConfigBuilder;
 import io.harness.cvng.core.entities.StackdriverLogCVConfig;
 import io.harness.cvng.core.entities.StackdriverLogCVConfig.StackdriverLogCVConfigBuilder;
+import io.harness.cvng.core.entities.TimeSeriesThreshold;
 import io.harness.cvng.core.entities.changeSource.HarnessCDChangeSource;
 import io.harness.cvng.core.entities.changeSource.HarnessCDChangeSource.HarnessCDChangeSourceBuilder;
 import io.harness.cvng.core.entities.changeSource.HarnessCDCurrentGenChangeSource;
@@ -1238,6 +1246,22 @@ public class BuilderFactory {
         .projectIdentifier(context.getProjectIdentifier())
         .verificationJobInstanceIdentifier(verificationJobInstanceId)
         .sourceIdentifiers(sources);
+  }
+
+  public TimeSeriesThreshold getMetricThresholdBuilder(String metricName, String metricGroupName) {
+    return TimeSeriesThreshold.builder()
+        .thresholdConfigType(ThresholdConfigType.USER_DEFINED)
+        .metricName(metricName)
+        .metricGroupName(metricGroupName)
+        .action(IGNORE)
+        .metricType(TimeSeriesMetricType.INFRA)
+        .criteria(TimeSeriesThresholdCriteria.builder()
+                      .value(20.0)
+                      .action(TimeSeriesCustomThresholdActions.IGNORE)
+                      .thresholdType(TimeSeriesThresholdType.ACT_WHEN_HIGHER)
+                      .type(TimeSeriesThresholdComparisonType.ABSOLUTE)
+                      .build())
+        .build();
   }
 
   private List<NotificationRuleCondition> getNotificationRuleConditions(NotificationRuleType type) {

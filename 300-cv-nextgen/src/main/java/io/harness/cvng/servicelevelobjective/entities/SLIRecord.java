@@ -8,10 +8,11 @@
 package io.harness.cvng.servicelevelobjective.entities;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.CompoundMongoIndex;
+import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
@@ -46,10 +47,10 @@ import org.mongodb.morphia.annotations.Version;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
+@StoreIn(DbAliases.CVNG)
 @Entity(value = "sliRecords", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @OwnedBy(HarnessTeam.CV)
-@StoreIn(DbAliases.CVNG)
 public class SLIRecord implements PersistentEntity, UuidAware, UpdatedAtAware, CreatedAtAware {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
@@ -69,7 +70,7 @@ public class SLIRecord implements PersistentEntity, UuidAware, UpdatedAtAware, C
   }
   @Version long version;
   @Id private String uuid;
-  private String verificationTaskId;
+  @FdIndex private String verificationTaskId;
   private String sliId;
   private Instant timestamp; // minute
   @Setter(AccessLevel.PRIVATE) private long epochMinute;

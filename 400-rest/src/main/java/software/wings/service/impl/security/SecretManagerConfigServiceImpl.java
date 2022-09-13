@@ -17,6 +17,7 @@ import static io.harness.eraro.ErrorCode.SECRET_MANAGER_ID_NOT_FOUND;
 import static io.harness.eraro.ErrorCode.UNSUPPORTED_OPERATION_EXCEPTION;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.persistence.HPersistence.returnNewOptions;
+import static io.harness.security.encryption.AccessType.APP_ROLE;
 import static io.harness.security.encryption.EncryptionType.LOCAL;
 import static io.harness.security.encryption.EncryptionType.VAULT;
 
@@ -27,6 +28,7 @@ import static software.wings.service.intfc.security.SecretManager.CREATED_AT_KEY
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EncryptedData;
 import io.harness.beans.EncryptedData.EncryptedDataKeys;
+import io.harness.beans.FeatureName;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.beans.SecretManagerConfig.SecretManagerConfigKeys;
 import io.harness.exception.InvalidRequestException;
@@ -41,7 +43,7 @@ import io.harness.templatizedsm.RuntimeCredentialsInjector;
 import software.wings.beans.Account;
 import software.wings.beans.AwsSecretsManagerConfig;
 import software.wings.beans.AzureVaultConfig;
-import software.wings.beans.CyberArkConfig;
+import software.wings.beans.BaseVaultConfig;
 import software.wings.beans.GcpKmsConfig;
 import software.wings.beans.GcpSecretsManagerConfig;
 import software.wings.beans.KmsConfig;
@@ -54,7 +56,6 @@ import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.security.AwsSecretsManagerService;
 import software.wings.service.intfc.security.AzureSecretsManagerService;
 import software.wings.service.intfc.security.CustomSecretsManagerService;
-import software.wings.service.intfc.security.CyberArkService;
 import software.wings.service.intfc.security.GcpSecretsManagerService;
 import software.wings.service.intfc.security.GcpSecretsManagerServiceV2;
 import software.wings.service.intfc.security.KmsService;
@@ -94,7 +95,6 @@ public class SecretManagerConfigServiceImpl implements SecretManagerConfigServic
   @Inject private AwsSecretsManagerService secretsManagerService;
   @Inject private LocalSecretManagerService localSecretManagerService;
   @Inject private AzureSecretsManagerService azureSecretsManagerService;
-  @Inject private CyberArkService cyberArkService;
   @Inject private CustomSecretsManagerService customSecretsManagerService;
   @Inject private SecretsManagerRBACService secretsManagerRBACService;
   @Inject private SecretsDao secretsDao;
@@ -236,6 +236,7 @@ public class SecretManagerConfigServiceImpl implements SecretManagerConfigServic
     if (secretManagerConfig.isTemplatized()) {
       updateRuntimeParameters(secretManagerConfig, runtimeParameters, true);
     }
+    updateConfigForAppRoleTokenRenewal(secretManagerConfig, accountId);
     return secretManagerConfig;
   }
 
@@ -246,6 +247,7 @@ public class SecretManagerConfigServiceImpl implements SecretManagerConfigServic
       decryptEncryptionConfigSecrets(accountId, secretManagerConfig, maskSecrets);
       secretManagerConfig.setNumOfEncryptedValue(getEncryptedDataCount(accountId, entityId));
     }
+    updateConfigForAppRoleTokenRenewal(secretManagerConfig, accountId);
     return secretManagerConfig;
   }
 
@@ -317,6 +319,15 @@ public class SecretManagerConfigServiceImpl implements SecretManagerConfigServic
     }
   }
 
+  private void updateConfigForAppRoleTokenRenewal(SecretManagerConfig secretManagerConfig, String accountId) {
+    if ((secretManagerConfig instanceof BaseVaultConfig)
+        && (((BaseVaultConfig) secretManagerConfig).getAccessType() == APP_ROLE)
+        && ((BaseVaultConfig) secretManagerConfig).getRenewAppRoleToken()
+        && (accountService.isFeatureFlagEnabled(FeatureName.DO_NOT_RENEW_APPROLE_TOKEN.name(), accountId))) {
+      ((BaseVaultConfig) secretManagerConfig).setRenewAppRoleToken(false);
+    }
+  }
+
   /**
    * required for admin portal
    * @param accountIds
@@ -376,10 +387,6 @@ public class SecretManagerConfigServiceImpl implements SecretManagerConfigServic
         break;
       case AZURE_VAULT:
         azureSecretsManagerService.decryptAzureConfigSecrets((AzureVaultConfig) secretManagerConfig, maskSecrets);
-        break;
-      case CYBERARK:
-        cyberArkService.decryptCyberArkConfigSecrets(accountId, (CyberArkConfig) secretManagerConfig, maskSecrets);
-        ((CyberArkConfig) secretManagerConfig).setCertValidationRequired(isCertValidationRequired);
         break;
       case CUSTOM:
         customSecretsManagerService.setAdditionalDetails((CustomSecretsManagerConfig) secretManagerConfig);

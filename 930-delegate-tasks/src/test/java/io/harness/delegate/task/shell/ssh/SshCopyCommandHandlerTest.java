@@ -104,8 +104,10 @@ public class SshCopyCommandHandlerTest extends CategoryTest {
     doReturn(fileBasedSshScriptExecutorNG).when(sshScriptExecutorFactory).getFileBasedExecutor(any());
     when(fileBasedSshScriptExecutorNG.copyFiles(any())).thenReturn(CommandExecutionStatus.SUCCESS);
 
-    CommandExecutionStatus status = sshCopyCommandHandler.handle(
-        getParameters(false, true), copyCommandUnit, logStreamingTaskClient, commandUnitsProgress, taskContext);
+    CommandExecutionStatus status = sshCopyCommandHandler
+                                        .handle(getParameters(false, true), copyCommandUnit, logStreamingTaskClient,
+                                            commandUnitsProgress, taskContext)
+                                        .getStatus();
     assertThat(status).isEqualTo(CommandExecutionStatus.SUCCESS);
     ArgumentCaptor<SshExecutorFactoryContext> contextArgumentCaptor =
         ArgumentCaptor.forClass(SshExecutorFactoryContext.class);
@@ -120,8 +122,10 @@ public class SshCopyCommandHandlerTest extends CategoryTest {
     doReturn(fileBasedProcessScriptExecutorNG).when(sshScriptExecutorFactory).getFileBasedExecutor(any());
     when(fileBasedProcessScriptExecutorNG.copyFiles(any())).thenReturn(CommandExecutionStatus.SUCCESS);
 
-    CommandExecutionStatus status = sshCopyCommandHandler.handle(
-        getParameters(true, true), copyCommandUnit, logStreamingTaskClient, commandUnitsProgress, taskContext);
+    CommandExecutionStatus status = sshCopyCommandHandler
+                                        .handle(getParameters(true, true), copyCommandUnit, logStreamingTaskClient,
+                                            commandUnitsProgress, taskContext)
+                                        .getStatus();
     assertThat(status).isEqualTo(CommandExecutionStatus.SUCCESS);
     ArgumentCaptor<SshExecutorFactoryContext> contextArgumentCaptor =
         ArgumentCaptor.forClass(SshExecutorFactoryContext.class);
@@ -171,8 +175,10 @@ public class SshCopyCommandHandlerTest extends CategoryTest {
                                                  .build())
                         .build());
 
-    CommandExecutionStatus status = sshCopyCommandHandler.handle(
-        getParameters(false, false), copyConfigCommandUnit, logStreamingTaskClient, commandUnitsProgress, taskContext);
+    CommandExecutionStatus status = sshCopyCommandHandler
+                                        .handle(getParameters(false, false), copyConfigCommandUnit,
+                                            logStreamingTaskClient, commandUnitsProgress, taskContext)
+                                        .getStatus();
     assertThat(status).isEqualTo(CommandExecutionStatus.SUCCESS);
     ArgumentCaptor<ConfigFileParameters> configFileArgumentCaptor = ArgumentCaptor.forClass(ConfigFileParameters.class);
     verify(fileBasedSshScriptExecutorNG, times(2)).copyConfigFiles(eq("/test"), configFileArgumentCaptor.capture());
@@ -193,8 +199,10 @@ public class SshCopyCommandHandlerTest extends CategoryTest {
                                                  .build())
                         .build());
 
-    CommandExecutionStatus status = sshCopyCommandHandler.handle(
-        getParameters(true, false), copyConfigCommandUnit, logStreamingTaskClient, commandUnitsProgress, taskContext);
+    CommandExecutionStatus status = sshCopyCommandHandler
+                                        .handle(getParameters(true, false), copyConfigCommandUnit,
+                                            logStreamingTaskClient, commandUnitsProgress, taskContext)
+                                        .getStatus();
     assertThat(status).isEqualTo(CommandExecutionStatus.SUCCESS);
     ArgumentCaptor<ConfigFileParameters> configFileArgumentCaptor = ArgumentCaptor.forClass(ConfigFileParameters.class);
     verify(fileBasedProcessScriptExecutorNG, times(2)).copyConfigFiles(eq("/test"), configFileArgumentCaptor.capture());
@@ -271,7 +279,7 @@ public class SshCopyCommandHandlerTest extends CategoryTest {
     assertThat(context).isNotNull();
     assertThat(context.getAccountId()).isEqualTo("testAccount");
     assertThat(context.getExecutionId()).isEqualTo("testExecution");
-    assertThat(context.getWorkingDirectory()).isEqualTo("/test");
+    assertThat(context.getWorkingDirectory()).isNull();
     assertThat(context.getCommandUnitName()).isEqualTo("test");
     assertThat(context.getCommandUnitsProgress()).isEqualTo(commandUnitsProgress);
     assertThat(context.isExecuteOnDelegate()).isEqualTo(onDelegate);

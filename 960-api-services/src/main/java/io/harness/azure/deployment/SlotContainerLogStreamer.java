@@ -10,6 +10,7 @@ package io.harness.azure.deployment;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.azure.model.AzureConstants.DDMMYYYY_TIME_PATTERN;
 import static io.harness.azure.model.AzureConstants.DEPLOYMENT_SLOT_PRODUCTION_NAME;
+import static io.harness.azure.model.AzureConstants.DEPLOY_TO_SLOT;
 import static io.harness.azure.model.AzureConstants.FAIL_DEPLOYMENT_ERROR_MSG;
 import static io.harness.azure.model.AzureConstants.TIME_PATTERN;
 import static io.harness.azure.model.AzureConstants.TIME_STAMP_REGEX;
@@ -29,6 +30,10 @@ import io.harness.exception.runtime.azure.AzureAppServicesDeploymentSlotNotFound
 import io.harness.exception.runtime.azure.AzureAppServicesSlotSteadyStateException;
 import io.harness.exception.runtime.azure.AzureAppServicesWebAppNotFoundException;
 import io.harness.logging.LogCallback;
+
+import software.wings.beans.LogColor;
+import software.wings.beans.LogHelper;
+import software.wings.beans.LogWeight;
 
 import com.microsoft.azure.management.appservice.DeploymentSlot;
 import com.microsoft.azure.management.appservice.WebApp;
@@ -140,7 +145,8 @@ public class SlotContainerLogStreamer {
     while (matcher.find() && operationNotCompleted()) {
       if (dateTime.isAfter(lastTime)) {
         String logLine = containerLogs.substring(timeStampBeginIndex, matcher.start());
-        logCallback.saveExecutionLog(logLine.replaceAll("[\\n]+", " "));
+        logCallback.saveExecutionLog(
+            LogHelper.color(logLine.replaceAll("[\\n]+", " "), LogColor.White, LogWeight.Bold));
         verifyContainerLogLine(logLine);
         noNewContainerLogFound = false;
       }
@@ -151,7 +157,7 @@ public class SlotContainerLogStreamer {
 
     if ((timeStampBeginIndex < containerLogs.length()) && operationNotCompleted() && dateTime.isAfter(lastTime)) {
       String logLine = containerLogs.substring(timeStampBeginIndex);
-      logCallback.saveExecutionLog(logLine);
+      logCallback.saveExecutionLog(LogHelper.color(logLine, LogColor.White, LogWeight.Bold));
       verifyContainerLogLine(logLine);
       noNewContainerLogFound = false;
     }
@@ -166,7 +172,7 @@ public class SlotContainerLogStreamer {
       hasFailed = true;
       errorLog = logLine;
       logCallback.saveExecutionLog(String.format(FAIL_DEPLOYMENT_ERROR_MSG, slotName, logLine), ERROR);
-      throw new AzureAppServicesSlotSteadyStateException(errorLog);
+      throw new AzureAppServicesSlotSteadyStateException(errorLog, DEPLOY_TO_SLOT, 0, null);
     }
     Matcher deploymentLogMatcher = deploymentLogPattern.matcher(logLine);
     Matcher containerLogMatcher = containerSuccessPattern.matcher(logLine);

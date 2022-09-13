@@ -32,6 +32,7 @@ import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.steps.outcome.CIStepArtifactOutcome;
 import io.harness.beans.steps.outcome.CIStepOutcome;
 import io.harness.beans.steps.outcome.StepArtifacts;
+import io.harness.beans.steps.stepinfo.BackgroundStepInfo;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
@@ -47,6 +48,7 @@ import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
+import io.harness.ci.serializer.BackgroundStepProtobufSerializer;
 import io.harness.ci.serializer.PluginCompatibleStepSerializer;
 import io.harness.ci.serializer.PluginStepProtobufSerializer;
 import io.harness.ci.serializer.RunStepProtobufSerializer;
@@ -130,6 +132,7 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
   public static final long bufferTimeMillis =
       5 * 1000; // These additional 5 seconds are approx time spent on creating delegate ask and receiving response
   @Inject private RunStepProtobufSerializer runStepProtobufSerializer;
+  @Inject private BackgroundStepProtobufSerializer backgroundStepProtobufSerializer;
   @Inject private PluginStepProtobufSerializer pluginStepProtobufSerializer;
   @Inject private RunTestsStepProtobufSerializer runTestsStepProtobufSerializer;
   @Inject private PluginCompatibleStepSerializer pluginCompatibleStepSerializer;
@@ -540,6 +543,9 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
       case RUN:
         return runStepProtobufSerializer.serializeStepWithStepParameters((RunStepInfo) ciStepInfo, port, taskId, logKey,
             stepIdentifier, ParameterField.createValueField(Timeout.fromString(timeout)), accountId, stepName);
+      case BACKGROUND:
+        return backgroundStepProtobufSerializer.serializeStepWithStepParameters(
+            (BackgroundStepInfo) ciStepInfo, port, taskId, logKey, stepIdentifier, accountId, stepName);
       case PLUGIN:
         return pluginStepProtobufSerializer.serializeStepWithStepParameters((PluginStepInfo) ciStepInfo, port, taskId,
             logKey, stepIdentifier, ParameterField.createValueField(Timeout.fromString(timeout)), accountId, stepName);

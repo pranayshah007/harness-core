@@ -23,7 +23,9 @@ import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
 import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
+import io.harness.cdng.artifact.outcome.GarArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GcrArtifactOutcome;
+import io.harness.cdng.artifact.outcome.GithubPackagesArtifactOutcome;
 import io.harness.cdng.artifact.outcome.JenkinsArtifactOutcome;
 import io.harness.cdng.artifact.outcome.NexusArtifactOutcome;
 import io.harness.cdng.artifact.outcome.S3ArtifactOutcome;
@@ -31,6 +33,7 @@ import io.harness.cdng.azure.AzureHelperService;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.azure.response.AzureAcrTokenTaskResponse;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryAuthType;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
@@ -59,6 +62,15 @@ import io.harness.delegate.beans.connector.jenkins.JenkinsUserNamePasswordDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusAuthType;
 import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusUsernamePasswordAuthDTO;
+import io.harness.delegate.beans.connector.scm.GitAuthType;
+import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubApiAccessType;
+import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubHttpAuthenticationType;
+import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubTokenSpecDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubUsernamePasswordDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubUsernameTokenDTO;
 import io.harness.delegate.task.artifacts.ArtifactDelegateRequestUtils;
 import io.harness.delegate.task.artifacts.ArtifactSourceConstants;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
@@ -78,6 +90,7 @@ import io.harness.security.SecurityContextBuilder;
 import io.harness.security.dto.Principal;
 import io.harness.security.dto.ServicePrincipal;
 import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.utils.FieldWithPlainTextOrSecretValueHelper;
 import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
@@ -130,6 +143,13 @@ public class ImagePullSecretUtils {
       case ArtifactSourceConstants.JENKINS_NAME:
         getBuildDetailsFromJenkins((JenkinsArtifactOutcome) artifactOutcome, imageDetailsBuilder, ambiance);
         break;
+      case ArtifactSourceConstants.GITHUB_PACKAGES_NAME:
+        getImageDetailsFromGithubPackages(
+            (GithubPackagesArtifactOutcome) artifactOutcome, imageDetailsBuilder, ambiance);
+        break;
+      case ArtifactSourceConstants.GOOGLE_ARTIFACT_REGISTRY_NAME:
+        getImageDetailsFromGar((GarArtifactOutcome) artifactOutcome, imageDetailsBuilder, ambiance);
+        break;
       default:
         throw new UnsupportedOperationException(
             String.format("Unknown Artifact Config type: [%s]", artifactOutcome.getArtifactType()));
@@ -161,6 +181,68 @@ public class ImagePullSecretUtils {
       imageDetailsBuilder.username(credentials.getAccessKey());
       imageDetailsBuilder.password(getPasswordExpression(passwordRef, ambiance));
     }
+  }
+
+  private void getImageDetailsFromGithubPackages(
+      GithubPackagesArtifactOutcome artifactOutcome, ImageDetailsBuilder imageDetailsBuilder, Ambiance ambiance) {
+    String connectorRef = artifactOutcome.getConnectorRef();
+
+    ConnectorInfoDTO connectorDTO = getConnector(connectorRef, ambiance);
+
+    GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) connectorDTO.getConnectorConfig();
+
+    String username = "";
+    String password = "";
+
+    if (githubConnectorDTO.getAuthentication() != null
+        && githubConnectorDTO.getAuthentication().getCredentials() != null) {
+      if (githubConnectorDTO.getAuthentication().getAuthType() == GitAuthType.HTTP) {
+        GithubHttpCredentialsDTO httpDTO =
+            (GithubHttpCredentialsDTO) githubConnectorDTO.getAuthentication().getCredentials();
+
+        if (httpDTO.getType() == GithubHttpAuthenticationType.USERNAME_AND_PASSWORD) {
+          GithubUsernamePasswordDTO githubUsernamePasswordDTO =
+              (GithubUsernamePasswordDTO) httpDTO.getHttpCredentialsSpec();
+
+          username = FieldWithPlainTextOrSecretValueHelper.getSecretAsStringFromPlainTextOrSecretRef(
+              githubUsernamePasswordDTO.getUsername(), githubUsernamePasswordDTO.getUsernameRef());
+
+        } else if (httpDTO.getType() == GithubHttpAuthenticationType.USERNAME_AND_TOKEN) {
+          GithubUsernameTokenDTO githubUsernameTokenDTO = (GithubUsernameTokenDTO) httpDTO.getHttpCredentialsSpec();
+
+          username = FieldWithPlainTextOrSecretValueHelper.getSecretAsStringFromPlainTextOrSecretRef(
+              githubUsernameTokenDTO.getUsername(), githubUsernameTokenDTO.getUsernameRef());
+        }
+      }
+    }
+
+    GithubApiAccessDTO githubApiAccessDTO = githubConnectorDTO.getApiAccess();
+
+    if (githubApiAccessDTO == null) {
+      throw new InvalidRequestException("Please enable the API Access for the Github Connector");
+    }
+
+    GithubApiAccessType githubApiAccessType = githubApiAccessDTO.getType();
+
+    if (githubApiAccessType == GithubApiAccessType.TOKEN) {
+      GithubTokenSpecDTO githubTokenSpecDTO = (GithubTokenSpecDTO) githubApiAccessDTO.getSpec();
+
+      if (githubTokenSpecDTO.getTokenRef() != null) {
+        password = EmptyPredicate.isNotEmpty(githubTokenSpecDTO.getTokenRef().getDecryptedValue())
+            ? new String(githubTokenSpecDTO.getTokenRef().getDecryptedValue())
+            : getPasswordExpression(githubTokenSpecDTO.getTokenRef().getIdentifier(), ambiance);
+
+      } else {
+        throw new InvalidRequestException("The token reference for the Github Connector is null");
+      }
+
+    } else {
+      throw new InvalidRequestException("Please select the API Access auth type to Token");
+    }
+
+    imageDetailsBuilder.username(username);
+    imageDetailsBuilder.password(password);
+    imageDetailsBuilder.registryUrl("https://ghcr.io");
   }
 
   public static String getArtifactRegistryCredentials(ImageDetails imageDetails) {
@@ -198,6 +280,20 @@ public class ImagePullSecretUtils {
     ConnectorInfoDTO connectorDTO = getConnector(connectorRef, ambiance);
     GcpConnectorDTO connectorConfig = (GcpConnectorDTO) connectorDTO.getConnectorConfig();
     String imageName = gcrArtifactOutcome.getRegistryHostname() + "/" + gcrArtifactOutcome.getImagePath();
+    imageDetailsBuilder.registryUrl(imageName);
+    imageDetailsBuilder.username("_json_key");
+    if (connectorConfig.getCredential() != null
+        && connectorConfig.getCredential().getGcpCredentialType() == GcpCredentialType.MANUAL_CREDENTIALS) {
+      GcpManualDetailsDTO config = (GcpManualDetailsDTO) connectorConfig.getCredential().getConfig();
+      imageDetailsBuilder.password(getPasswordExpression(config.getSecretKeyRef().toSecretRefStringValue(), ambiance));
+    }
+  }
+  private void getImageDetailsFromGar(
+      GarArtifactOutcome garArtifactOutcome, ImageDetailsBuilder imageDetailsBuilder, Ambiance ambiance) {
+    String connectorRef = garArtifactOutcome.getConnectorRef();
+    ConnectorInfoDTO connectorInfoDTO = getConnector(connectorRef, ambiance);
+    GcpConnectorDTO connectorConfig = (GcpConnectorDTO) connectorInfoDTO.getConnectorConfig();
+    String imageName = garArtifactOutcome.getImage();
     imageDetailsBuilder.registryUrl(imageName);
     imageDetailsBuilder.username("_json_key");
     if (connectorConfig.getCredential() != null

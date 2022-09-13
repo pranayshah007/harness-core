@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.ngtriggers.utils;
 
 import static io.harness.rule.OwnerRule.DEV_MITTAL;
@@ -16,6 +23,7 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessType;
+import io.harness.delegate.beans.connector.scm.github.GithubAppSpecDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubTokenSpecDTO;
 import io.harness.delegate.task.scm.ScmGitRefTaskResponseData;
@@ -74,6 +82,54 @@ public class SCMDataObtainerTest extends CategoryTest {
             .connectorType(ConnectorType.GITHUB)
             .connectorConfig(GithubConnectorDTO.builder().connectionType(GitConnectionType.REPO).url("url").build())
             .executeOnDelegate(true)
+            .build();
+
+    when(taskExecutionUtils.executeSyncTask(any(DelegateTaskRequest.class)))
+        .thenReturn(BinaryResponseData.builder().build());
+
+    byte[] list = ListCommitsInPRResponse.newBuilder()
+                      .addCommits(Commit.newBuilder()
+                                      .setSha("commitId")
+                                      .setMessage("message")
+                                      .setLink("http://github.com/octocat/hello-world/pull/1/commits/commitId")
+                                      .build())
+                      .build()
+                      .toByteArray();
+    when(kryoSerializer.asInflatedObject(any()))
+        .thenReturn(ScmGitRefTaskResponseData.builder().listCommitsInPRResponse(list).build());
+
+    List<Commit> commits = scmDataObtainer.getCommitsInPr(connectorDetails, triggerDetails, 3);
+    assertThat(commits.size()).isEqualTo(1);
+    assertThat(commits.get(0).getSha()).isEqualTo("commitId");
+  }
+
+  @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
+  public void testGetCommitsInPrViaGithubApp() {
+    TriggerDetails triggerDetails =
+        TriggerDetails.builder()
+            .ngTriggerConfigV2(
+                NGTriggerConfigV2.builder()
+                    .source(NGTriggerSourceV2.builder()
+                                .spec(WebhookTriggerConfigV2.builder().type(WebhookTriggerType.GITHUB).build())
+                                .build())
+                    .build())
+            .ngTriggerEntity(NGTriggerEntity.builder().accountId("account").build())
+            .build();
+
+    ConnectorDetails connectorDetails =
+        ConnectorDetails.builder()
+            .connectorType(ConnectorType.GITHUB)
+            .connectorConfig(GithubConnectorDTO.builder()
+                                 .connectionType(GitConnectionType.REPO)
+                                 .url("url")
+                                 .apiAccess(GithubApiAccessDTO.builder()
+                                                .type(GithubApiAccessType.GITHUB_APP)
+                                                .spec(GithubAppSpecDTO.builder().build())
+                                                .build())
+                                 .build())
+            .executeOnDelegate(false)
             .build();
 
     when(taskExecutionUtils.executeSyncTask(any(DelegateTaskRequest.class)))

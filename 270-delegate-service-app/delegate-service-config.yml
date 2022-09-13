@@ -183,6 +183,7 @@ mongo:
     mongoSSLEnabled: false
     mongoTrustStorePath:
     mongoTrustStorePassword:
+  aliasDBName: harness
 
 events-mongo:
   uri: mongodb://localhost:27017/events
@@ -191,6 +192,7 @@ events-mongo:
   maxConnectionIdleTime: 600000
   connectionsPerHost: 300
   indexManagerMode: AUTO
+  aliasDBName: events
 
 watcherMetadataUrl: file:///local-storage/wingswatchers/watcherlocal.txt
 
@@ -201,7 +203,7 @@ deployMode: KUBERNETES
 deployVariant: SAAS
 envPath: ""
 
-scmVersion: 36d92fd8
+scmVersion: 140a857a
 
 portal:
   url: https://localhost:8000

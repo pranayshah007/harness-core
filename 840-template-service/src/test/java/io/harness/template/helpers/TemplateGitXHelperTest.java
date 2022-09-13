@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.template.helpers;
 
 import static io.harness.rule.OwnerRule.ADITHYA;
@@ -49,24 +56,42 @@ public class TemplateGitXHelperTest {
   @Test
   @Owner(developers = ADITHYA)
   @Category(UnitTests.class)
-  public void testGetWorkingBranch() {
+  public void testGetWorkingBranchRemote() {
     GitEntityInfo branchInfo = GitEntityInfo.builder()
                                    .branch(BranchName)
                                    .parentEntityRepoName(PARENT_ENTITY_REPO)
                                    .parentEntityConnectorRef(PARENT_ENTITY_CONNECTOR_REF)
+                                   .parentEntityAccountIdentifier(ACCOUNT_IDENTIFIER)
+                                   .parentEntityOrgIdentifier(ORG_IDENTIFIER)
+                                   .parentEntityProjectIdentifier(PROJECT_IDENTIFIER)
                                    .build();
     setupGitContext(branchInfo);
     Scope scope = Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
     doReturn(ScmGetRepoUrlResponse.builder().repoUrl(ENTITY_REPO_URL).build())
         .when(scmGitSyncHelper)
         .getRepoUrl(any(), any(), any(), any());
-    assertThat(templateGitXHelper.getWorkingBranch(scope, ENTITY_REPO_URL)).isEqualTo(BranchName);
+    assertThat(templateGitXHelper.getWorkingBranch(ENTITY_REPO_URL)).isEqualTo(BranchName);
 
+    branchInfo = GitEntityInfo.builder()
+                     .branch(BranchName)
+                     .parentEntityRepoName(PARENT_ENTITY_REPO)
+                     .parentEntityConnectorRef(PARENT_ENTITY_CONNECTOR_REF)
+                     .build();
+    setupGitContext(branchInfo);
+    assertThat(templateGitXHelper.getWorkingBranch("random repo url")).isEqualTo("");
     branchInfo = GitEntityInfo.builder().branch(BranchName).parentEntityRepoUrl(ENTITY_REPO_URL).build();
     setupGitContext(branchInfo);
-    doReturn(ScmGetRepoUrlResponse.builder().build()).when(scmGitSyncHelper).getRepoUrl(any(), any(), any(), any());
-    assertThat(templateGitXHelper.getWorkingBranch(scope, "random repo url")).isEqualTo("");
-    assertThat(templateGitXHelper.getWorkingBranch(scope, ENTITY_REPO_URL)).isEqualTo(BranchName);
+    assertThat(templateGitXHelper.getWorkingBranch(ENTITY_REPO_URL)).isEqualTo(BranchName);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testGetWorkingBranchInline() {
+    GitEntityInfo branchInfo = GitEntityInfo.builder().branch(BranchName).build();
+    setupGitContext(branchInfo);
+    Scope scope = Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+    assertThat(templateGitXHelper.getWorkingBranch(ENTITY_REPO_URL)).isEqualTo(BranchName);
   }
 
   private void setupGitContext(GitEntityInfo branchInfo) {

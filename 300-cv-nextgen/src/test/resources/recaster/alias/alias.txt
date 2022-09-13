@@ -48,6 +48,7 @@ io.harness.steps.approval.step.jira.JiraApprovalStepInfo
 io.harness.advisers.rollback.OnFailRollbackParameters
 io.harness.steps.shellscript.ShellScriptSourceWrapper
 io.harness.steps.shellscript.ShellScriptInlineSource
+io.harness.steps.shellscript.HarnessFileStoreSource
 io.harness.steps.approval.step.harness.HarnessApprovalOutcome
 io.harness.steps.approval.step.jira.beans.CriteriaSpecWrapper
 io.harness.filters.TestObjectWithConnectorRef

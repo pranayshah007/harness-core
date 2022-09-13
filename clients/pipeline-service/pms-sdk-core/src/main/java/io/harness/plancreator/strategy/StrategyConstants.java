@@ -15,4 +15,6 @@ public class StrategyConstants {
   public static final String ITERATION = "iteration";
   public static final String ITERATIONS = "iterations";
   public static final String REPEAT = "repeat";
+  public static final String PARTITION = "partition";
+  public static final String TOTAL_ITERATIONS = "totalIterations";
 }

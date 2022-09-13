@@ -8,7 +8,7 @@
 package io.harness.batch.processing.service.impl;
 
 import static io.harness.batch.processing.tasklet.util.InstanceMetaDataUtils.getValueForKeyFromInstanceMetaData;
-import static io.harness.ccm.commons.constants.Constants.ZONE_OFFSET;
+import static io.harness.ccm.CcmConstants.ZONE_OFFSET;
 import static io.harness.ccm.commons.utils.TimeUtils.offsetDateTimeNow;
 import static io.harness.ccm.commons.utils.TimeUtils.toOffsetDateTime;
 import static io.harness.ccm.commons.utils.TimescaleUtils.isAliveAtInstant;
@@ -32,14 +32,17 @@ import io.harness.perpetualtask.k8s.watch.K8sWorkloadSpec;
 import io.harness.timescaledb.Keys;
 import io.harness.timescaledb.tables.records.NodeInfoRecord;
 import io.harness.timescaledb.tables.records.PodInfoRecord;
+import io.harness.timescaledb.tables.records.WorkloadInfoRecord;
 
 import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.jooq.DSLContext;
+import org.jooq.DeleteConditionStep;
 import org.jooq.InsertSetStep;
 import org.jooq.Record;
 import org.jooq.Table;
@@ -51,6 +54,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class InstanceInfoTimescaleDAOImpl implements InstanceInfoTimescaleDAO {
   private final DSLContext dslContext;
+  private static final String POD_INFO_PURGE_QUERY = "SELECT drop_chunks('pod_info', interval '9 months')";
 
   @Autowired
   public InstanceInfoTimescaleDAOImpl(DSLContext dslContext) {
@@ -73,6 +77,12 @@ public class InstanceInfoTimescaleDAOImpl implements InstanceInfoTimescaleDAO {
                                .set(NODE_INFO.STARTTIME, instantToOffsetDateTime(instanceInfo.getUsageStartTime()))
                                .set(NODE_INFO.UPDATEDAT, offsetDateTimeNow())
                                .set(NODE_INFO.NODEPOOLNAME, nodePoolName));
+  }
+
+  @Override
+  public void purgePodInfo() {
+    log.info("Purging pod info data {} !!", POD_INFO_PURGE_QUERY);
+    TimescaleUtils.execute(dslContext.query(POD_INFO_PURGE_QUERY));
   }
 
   @Override
@@ -99,6 +109,18 @@ public class InstanceInfoTimescaleDAOImpl implements InstanceInfoTimescaleDAO {
                                .set(WORKLOAD_INFO.TYPE, workloadSpec.getWorkloadKind())
                                .set(WORKLOAD_INFO.NAME, workloadSpec.getWorkloadName())
                                .set(WORKLOAD_INFO.NAMESPACE, workloadSpec.getNamespace()));
+  }
+
+  @Override
+  public void deleteWorkloadInfo() {
+    DeleteConditionStep<WorkloadInfoRecord> workloadInfoRecordDeleteConditionStep = getWorkloadInfoRecordDeleteSql();
+    log.info("Workload info delete sql {}", workloadInfoRecordDeleteConditionStep.getSQL());
+    workloadInfoRecordDeleteConditionStep.execute();
+  }
+
+  private DeleteConditionStep<WorkloadInfoRecord> getWorkloadInfoRecordDeleteSql() {
+    return dslContext.deleteFrom(WORKLOAD_INFO)
+        .where(WORKLOAD_INFO.UPDATEDAT.lessThan(toOffsetDateTime(Instant.now().minus(180, ChronoUnit.DAYS))));
   }
 
   @Override

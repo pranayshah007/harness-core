@@ -7,7 +7,7 @@
 
 package io.harness.notification.entities;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.ng.DbAliases;
 import io.harness.queue.Queuable;
 
@@ -23,8 +23,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
-@Document(collection = "notificationRequests")
 @StoreIn(DbAliases.NOTIFICATION)
+@Document(collection = "notificationRequests")
 public class MongoNotificationRequest extends Queuable {
   byte[] bytes;
 }

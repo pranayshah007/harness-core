@@ -11,10 +11,12 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
+import io.harness.cdng.environment.yaml.EnvironmentsYaml;
 import io.harness.cdng.pipeline.PipelineInfrastructure;
 import io.harness.cdng.service.beans.ServiceConfig;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.beans.ServiceYamlV2;
+import io.harness.cdng.service.beans.ServicesYaml;
 import io.harness.cdng.visitor.helpers.deploymentstage.DeploymentStageVisitorHelper;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.stages.stage.StageInfoConfig;
@@ -60,12 +62,18 @@ public class DeploymentStageConfig implements StageInfoConfig, Visitable {
   // For new service yaml
   // skipping variable creation from framework since these are supported through outcomes
   @VariableExpression(skipVariableExpression = true) ServiceYamlV2 service;
+  // For multiple services support
+  @VariableExpression(skipVariableExpression = true) ServicesYaml services;
+
   ServiceDefinitionType deploymentType;
   Boolean gitOpsEnabled;
 
   // New Environment Yaml
   // skipping variable creation from framework since these are supported through outcomes
   @VariableExpression(skipVariableExpression = true) EnvironmentYamlV2 environment;
+  // New Multi Environment Yaml
+  // skipping variable creation from framework since these are supported through outcomes
+  @VariableExpression(skipVariableExpression = true) EnvironmentsYaml environments;
 
   // Environment Group yaml
   // todo: add expressions from env group outcomes
@@ -90,6 +98,12 @@ public class DeploymentStageConfig implements StageInfoConfig, Visitable {
     }
     if (environmentGroup != null) {
       children.add(VisitableChild.builder().value(environmentGroup).fieldName("environmentGroup").build());
+    }
+    if (environments != null) {
+      children.add(VisitableChild.builder().value(environments).fieldName("environments").build());
+    }
+    if (services != null) {
+      children.add(VisitableChild.builder().value(services).fieldName("services").build());
     }
     return VisitableChildren.builder().visitableChildList(children).build();
   }

@@ -9,10 +9,13 @@ package io.harness.cdng.instance.service;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.cdng.instance.InstanceDeploymentInfoStatus.IN_PROGRESS;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.Scope;
 import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.instance.InstanceDeploymentInfo;
 import io.harness.cdng.instance.InstanceDeploymentInfoStatus;
@@ -29,6 +32,7 @@ import com.google.inject.Singleton;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
@@ -58,19 +62,6 @@ public class InstanceDeploymentInfoServiceImpl implements InstanceDeploymentInfo
     }
   }
 
-  @Override
-  public void updateStatus(
-      @NotNull ExecutionInfoKey key, @NotNull String host, @NotNull InstanceDeploymentInfoStatus status) {
-    UpdateResult updateResult = instanceDeploymentInfoRepository.updateStatus(key, host, status);
-    if (!updateResult.wasAcknowledged()) {
-      throw new InvalidRequestException(
-          format("Unable to update instance deployment info status, accountIdentifier: %s, orgIdentifier: %s, "
-                  + "projectIdentifier: %s, deploymentIdentifier: %s, stageStatus: %s",
-              key.getScope().getAccountIdentifier(), key.getScope().getOrgIdentifier(),
-              key.getScope().getProjectIdentifier(), key.getDeploymentIdentifier(), status));
-    }
-  }
-
   private void deleteByExecutionInfoKey(@NotNull ExecutionInfoKey key) {
     DeleteResult deleteResult = instanceDeploymentInfoRepository.deleteByExecutionInfoKey(key);
     if (!deleteResult.wasAcknowledged()) {
@@ -83,22 +74,31 @@ public class InstanceDeploymentInfoServiceImpl implements InstanceDeploymentInfo
   }
 
   @Override
-  public List<InstanceDeploymentInfo> getByHosts(ExecutionInfoKey executionInfoKey, List<String> hosts) {
-    return instanceDeploymentInfoRepository.listByHosts(executionInfoKey, hosts);
-  }
-
-  public ExecutionInfoKey filter(ExecutionInfoKey executionInfoKey) {
-    return ExecutionInfoKey.builder()
-        .scope(executionInfoKey.getScope())
-        .serviceIdentifier(executionInfoKey.getServiceIdentifier())
-        .envIdentifier(executionInfoKey.getEnvIdentifier())
-        .infraIdentifier(executionInfoKey.getInfraIdentifier())
-        .build();
+  public void updateStatus(
+      @NotNull Scope scope, @NotNull String stageExecutionId, @NotNull InstanceDeploymentInfoStatus status) {
+    UpdateResult updateResult = instanceDeploymentInfoRepository.updateStatus(scope, stageExecutionId, status);
+    if (!updateResult.wasAcknowledged()) {
+      throw new InvalidRequestException(
+          format("Unable to update instance deployment info status, accountIdentifier: %s, orgIdentifier: %s, "
+                  + "projectIdentifier: %s, stageExecutionId: %s, stageStatus: %s",
+              scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), stageExecutionId,
+              status));
+    }
   }
 
   @Override
-  public void createAndUpdate(
-      ExecutionInfoKey executionInfoKey, List<InstanceInfo> instanceInfos, ArtifactDetails artifactDetails) {
+  public List<InstanceDeploymentInfo> getByHostsAndArtifact(@NotNull ExecutionInfoKey executionInfoKey,
+      List<String> hosts, @NotNull ArtifactDetails artifactDetails, InstanceDeploymentInfoStatus status) {
+    if (isEmpty(hosts)) {
+      return Collections.emptyList();
+    }
+
+    return instanceDeploymentInfoRepository.listByHostsAndArtifact(executionInfoKey, hosts, artifactDetails, status);
+  }
+
+  @Override
+  public void createAndUpdate(ExecutionInfoKey executionInfoKey, List<InstanceInfo> instanceInfos,
+      ArtifactDetails artifactDetails, final String stageExecutionId) {
     if (EmptyPredicate.isEmpty(instanceInfos)
         || instanceInfos.stream().anyMatch(i -> !(i instanceof SshWinrmInstanceInfo))) {
       throw new InvalidArgumentsException("Invalid instanceInfo provided");
@@ -107,33 +107,41 @@ public class InstanceDeploymentInfoServiceImpl implements InstanceDeploymentInfo
     List<String> hosts =
         instanceInfos.stream().map(i -> ((SshWinrmInstanceInfo) i).getHost()).distinct().collect(Collectors.toList());
 
-    List<InstanceDeploymentInfo> instanceDeploymentInfosFromDb = getByHosts(filter(executionInfoKey), hosts);
-    List<String> hostsFromDb = instanceDeploymentInfosFromDb.stream()
+    List<InstanceDeploymentInfo> instanceFromDb = getByHosts(executionInfoKey, hosts);
+    List<String> hostsFromDb = instanceFromDb.stream()
                                    .map(i -> ((SshWinrmInstanceInfo) i.getInstanceInfo()).getHost())
                                    .collect(Collectors.toList());
 
     instanceDeploymentInfoRepository.updateArtifactAndStatus(
-        executionInfoKey, executionInfoKey.getDeploymentIdentifier(), hostsFromDb, artifactDetails, IN_PROGRESS);
+        executionInfoKey, hostsFromDb, artifactDetails, IN_PROGRESS, stageExecutionId);
 
-    List<InstanceDeploymentInfo> instanceDeploymentInfos = new ArrayList<>();
-    instanceInfos.stream().filter(i -> !hostsFromDb.contains(((SshWinrmInstanceInfo) i).getHost())).forEach(i -> {
-      InstanceDeploymentInfo instanceDeploymentInfo =
-          InstanceDeploymentInfo.builder()
-              .accountIdentifier(executionInfoKey.getScope().getAccountIdentifier())
-              .orgIdentifier(executionInfoKey.getScope().getOrgIdentifier())
-              .projectIdentifier(executionInfoKey.getScope().getProjectIdentifier())
-              .serviceIdentifier(executionInfoKey.getServiceIdentifier())
-              .envIdentifier(executionInfoKey.getEnvIdentifier())
-              .infraIdentifier(executionInfoKey.getInfraIdentifier())
-              .instanceInfo(i)
-              .artifactDetails(artifactDetails)
-              .status(IN_PROGRESS)
-              .build();
-      instanceDeploymentInfos.add(instanceDeploymentInfo);
-    });
+    List<InstanceDeploymentInfo> newInstancesToBeAdded = new ArrayList<>();
+    instanceInfos.stream()
+        .filter(newInstance -> !hostsFromDb.contains(((SshWinrmInstanceInfo) newInstance).getHost()))
+        .forEach(i -> {
+          InstanceDeploymentInfo instanceDeploymentInfo =
+              InstanceDeploymentInfo.builder()
+                  .accountIdentifier(executionInfoKey.getScope().getAccountIdentifier())
+                  .orgIdentifier(executionInfoKey.getScope().getOrgIdentifier())
+                  .projectIdentifier(executionInfoKey.getScope().getProjectIdentifier())
+                  .serviceIdentifier(executionInfoKey.getServiceIdentifier())
+                  .envIdentifier(executionInfoKey.getEnvIdentifier())
+                  .infraIdentifier(executionInfoKey.getInfraIdentifier())
+                  .instanceInfo(i)
+                  .artifactDetails(artifactDetails)
+                  .status(IN_PROGRESS)
+                  .stageExecutionId(stageExecutionId)
+                  .build();
+          newInstancesToBeAdded.add(instanceDeploymentInfo);
+        });
 
-    if (EmptyPredicate.isNotEmpty(instanceDeploymentInfos)) {
-      instanceDeploymentInfoRepository.saveAll(instanceDeploymentInfos);
+    if (isNotEmpty(newInstancesToBeAdded)) {
+      instanceDeploymentInfoRepository.saveAll(newInstancesToBeAdded);
     }
+  }
+
+  @Override
+  public List<InstanceDeploymentInfo> getByHosts(ExecutionInfoKey executionInfoKey, List<String> hosts) {
+    return instanceDeploymentInfoRepository.listByHosts(executionInfoKey, hosts);
   }
 }
