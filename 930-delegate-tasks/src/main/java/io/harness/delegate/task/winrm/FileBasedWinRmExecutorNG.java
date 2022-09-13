@@ -268,8 +268,7 @@ public class FileBasedWinRmExecutorNG extends FileBasedAbstractWinRmExecutor {
     JenkinsConnectorDTO jenkinsConnectorDto =
         (JenkinsConnectorDTO) jenkinsArtifactDelegateConfig.getConnectorDTO().getConnectorConfig();
     if (jenkinsConnectorDto.getAuth() != null) {
-      String createFolderIfDoesntExist = "$targetPathForArtifact = \"" + destinationPath + "\\"
-          + jenkinsArtifactDelegateConfig.getJobName() + "\"\n"
+      String createFolderIfDoesntExist = "$targetPathForArtifact = \"" + destinationPath + "\"\n"
           + "If(!(test-path -PathType container $targetPathForArtifact))\n"
           + "{\n"
           + "      New-Item -ItemType Directory -Path $targetPathForArtifact\n"
