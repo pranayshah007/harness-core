@@ -272,9 +272,8 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
           filters, null, null, queryParams.getAccountId(), cloudProviderTableName, isClusterQuery);
     }
 
-    ViewsQueryMetadata viewsQueryMetadata = viewsQueryBuilder.getFilterValuesQuery(
-        viewRuleList, idFilters, getTimeFilters(filters), cloudProviderTableName, limit, offset,
-            !isDataFilteredByAwsAccount(idFilters));
+    ViewsQueryMetadata viewsQueryMetadata = viewsQueryBuilder.getFilterValuesQuery(viewRuleList, idFilters,
+        getTimeFilters(filters), cloudProviderTableName, limit, offset, !isDataFilteredByAwsAccount(idFilters));
 
     QueryJobConfiguration queryConfig =
         QueryJobConfiguration.newBuilder(viewsQueryMetadata.getQuery().toString()).build();
@@ -287,9 +286,11 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
       return null;
     }
 
-    return costCategoriesPostFetchResponseUpdate(awsAccountFieldHelper.spiltAndSortAWSAccountIdListBasedOnAccountName(
-            getFilterValuesData(queryParams.getAccountId(), viewsQueryMetadata,
-                    result, idFilters, cloudProviderTableName.contains(CLUSTER_TABLE))), businessMappingId);
+    return costCategoriesPostFetchResponseUpdate(
+        awsAccountFieldHelper.spiltAndSortAWSAccountIdListBasedOnAccountName(
+            getFilterValuesData(queryParams.getAccountId(), viewsQueryMetadata, result, idFilters,
+                cloudProviderTableName.contains(CLUSTER_TABLE))),
+        businessMappingId);
   }
 
   private List<String> getFilterValuesData(final String harnessAccountId, final ViewsQueryMetadata viewsQueryMetadata,

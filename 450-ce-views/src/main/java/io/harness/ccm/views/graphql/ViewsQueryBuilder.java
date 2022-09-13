@@ -537,7 +537,7 @@ public class ViewsQueryBuilder {
 
   public ViewsQueryMetadata getFilterValuesQuery(List<ViewRule> rules, List<QLCEViewFilter> filters,
       List<QLCEViewTimeFilter> timeFilters, String cloudProviderTableName, Integer limit, Integer offset,
-                                                 boolean isLimitRequired) {
+      boolean isLimitRequired) {
     List<QLCEViewFieldInput> fields = new ArrayList<>();
     SelectQuery query = new SelectQuery();
     if (isLimitRequired) {
