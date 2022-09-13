@@ -118,7 +118,8 @@ public class ArtifactUtils {
             dockerHubArtifactConfig.getConnectorRef().getValue());
       case AMAZONS3:
         AmazonS3ArtifactConfig amazonS3ArtifactConfig = (AmazonS3ArtifactConfig) artifactConfig;
-        return String.format(placeholder, sourceType, amazonS3ArtifactConfig.getBucketName().getValue(),
+        return String.format("\ntype: %s \nbucketName: %s \nfilePath: %s \nfilePathRegex: %s \nconnectorRef: %s\n",
+            sourceType, amazonS3ArtifactConfig.getBucketName().getValue(),
             amazonS3ArtifactConfig.getFilePath().getValue(), amazonS3ArtifactConfig.getFilePathRegex().getValue(),
             amazonS3ArtifactConfig.getConnectorRef().getValue());
       case GCR:
