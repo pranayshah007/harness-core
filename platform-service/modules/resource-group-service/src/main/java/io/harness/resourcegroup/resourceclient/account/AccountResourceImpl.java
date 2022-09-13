@@ -8,7 +8,7 @@
 package io.harness.resourcegroup.resourceclient.account;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.remote.client.RestClientUtils.getResponse;
+import static io.harness.remote.client.NGRestUtils.getCgResponse;
 
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.stripToNull;
@@ -50,7 +50,7 @@ public class AccountResourceImpl implements Resource {
 
   @Override
   public List<Boolean> validate(List<String> resourceIds, Scope scope) {
-    List<AccountDTO> accounts = getResponse(accountClient.getAccountDTOs(resourceIds));
+    List<AccountDTO> accounts = getCgResponse(accountClient.getAccountDTOs(resourceIds));
     Set<String> validResourceIds = accounts.stream().map(AccountDTO::getIdentifier).collect(Collectors.toSet());
     return resourceIds.stream()
         .map(resourceId -> validResourceIds.contains(resourceId) && scope.getAccountIdentifier().equals(resourceId))

@@ -14,7 +14,7 @@ import io.harness.cdng.pipeline.helpers.CDPipelineInstrumentationHelper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.dtos.InstanceDTO;
 import io.harness.ng.core.dto.AccountDTO;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.service.instance.InstanceService;
 
 import com.google.inject.Inject;
@@ -85,7 +85,7 @@ public class NGTelemetryPublisher {
   }
 
   private String getAccountId() {
-    List<AccountDTO> accountDTOList = RestClientUtils.getResponse(accountClient.getAllAccounts());
+    List<AccountDTO> accountDTOList = NGRestUtils.getCgResponse(accountClient.getAllAccounts());
     String accountId = accountDTOList.get(0).getIdentifier();
     if (accountDTOList.size() > 1 && accountId.equals(GLOBAL_ACCOUNT_ID)) {
       accountId = accountDTOList.get(1).getIdentifier();

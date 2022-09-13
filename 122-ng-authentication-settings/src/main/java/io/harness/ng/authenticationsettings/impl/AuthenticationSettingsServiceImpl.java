@@ -10,7 +10,7 @@ package io.harness.ng.authenticationsettings.impl;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.expression.SecretString.SECRET_MASK;
-import static io.harness.remote.client.RestClientUtils.getResponse;
+import static io.harness.remote.client.NGRestUtils.getCgResponse;
 
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.HarnessTeam;
@@ -66,14 +66,14 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
 
   @Override
   public AuthenticationSettingsResponse getAuthenticationSettings(String accountIdentifier) {
-    Set<String> whitelistedDomains = getResponse(managerClient.getWhitelistedDomains(accountIdentifier));
+    Set<String> whitelistedDomains = getCgResponse(managerClient.getWhitelistedDomains(accountIdentifier));
     log.info("Whitelisted domains for accountId {}: {}", accountIdentifier, whitelistedDomains);
-    SSOConfig ssoConfig = getResponse(managerClient.getAccountAccessManagementSettings(accountIdentifier));
+    SSOConfig ssoConfig = getCgResponse(managerClient.getAccountAccessManagementSettings(accountIdentifier));
 
     List<NGAuthSettings> settingsList = buildAuthSettingsList(ssoConfig, accountIdentifier);
     log.info("NGAuthSettings list for accountId {}: {}", accountIdentifier, settingsList);
 
-    boolean twoFactorEnabled = getResponse(managerClient.twoFactorEnabled(accountIdentifier));
+    boolean twoFactorEnabled = getCgResponse(managerClient.twoFactorEnabled(accountIdentifier));
 
     return AuthenticationSettingsResponse.builder()
         .whitelistedDomains(whitelistedDomains)
@@ -86,7 +86,7 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
   @Override
   @FeatureRestrictionCheck(FeatureRestrictionName.OAUTH_SUPPORT)
   public void updateOauthProviders(@AccountIdentifier String accountId, OAuthSettings oAuthSettings) {
-    getResponse(managerClient.uploadOauthSettings(accountId,
+    getCgResponse(managerClient.uploadOauthSettings(accountId,
         OauthSettings.builder()
             .allowedProviders(oAuthSettings.getAllowedProviders())
             .filter(oAuthSettings.getFilter())
@@ -97,7 +97,7 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
   @Override
   public void updateAuthMechanism(String accountId, AuthenticationMechanism authenticationMechanism) {
     checkLicenseEnforcement(accountId, authenticationMechanism);
-    getResponse(managerClient.updateAuthMechanism(accountId, authenticationMechanism));
+    getCgResponse(managerClient.updateAuthMechanism(accountId, authenticationMechanism));
   }
 
   private void checkLicenseEnforcement(String accountId, AuthenticationMechanism authenticationMechanism) {
@@ -118,24 +118,24 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
 
   @Override
   public void removeOauthMechanism(String accountId) {
-    getResponse(managerClient.deleteOauthSettings(accountId));
+    getCgResponse(managerClient.deleteOauthSettings(accountId));
   }
 
   @Override
   public LoginSettings updateLoginSettings(
       String loginSettingsId, String accountIdentifier, LoginSettings loginSettings) {
-    return getResponse(managerClient.updateLoginSettings(loginSettingsId, accountIdentifier, loginSettings));
+    return getCgResponse(managerClient.updateLoginSettings(loginSettingsId, accountIdentifier, loginSettings));
   }
 
   @Override
   public void updateWhitelistedDomains(String accountIdentifier, Set<String> whitelistedDomains) {
-    getResponse(managerClient.updateWhitelistedDomains(accountIdentifier, whitelistedDomains));
+    getCgResponse(managerClient.updateWhitelistedDomains(accountIdentifier, whitelistedDomains));
   }
 
   private List<NGAuthSettings> buildAuthSettingsList(SSOConfig ssoConfig, String accountIdentifier) {
     List<NGAuthSettings> settingsList = getNGAuthSettings(ssoConfig);
 
-    LoginSettings loginSettings = getResponse(managerClient.getUserNamePasswordSettings(accountIdentifier));
+    LoginSettings loginSettings = getCgResponse(managerClient.getUserNamePasswordSettings(accountIdentifier));
     settingsList.add(UsernamePasswordSettings.builder().loginSettings(loginSettings).build());
 
     return settingsList;
@@ -220,7 +220,7 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
     RequestBody samlProviderTypePart = createPartFromString(samlProviderType);
     RequestBody clientIdPart = createPartFromString(clientId);
     RequestBody clientSecretPart = createPartFromString(clientSecret);
-    return getResponse(managerClient.uploadSAMLMetadata(accountId, inputStream, displayNamePart,
+    return getCgResponse(managerClient.uploadSAMLMetadata(accountId, inputStream, displayNamePart,
         groupMembershipAttrPart, authorizationEnabledPart, logoutUrlPart, entityIdentifierPart, samlProviderTypePart,
         clientIdPart, clientSecretPart));
   }
@@ -238,14 +238,14 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
     RequestBody samlProviderTypePart = createPartFromString(samlProviderType);
     RequestBody clientIdPart = createPartFromString(clientId);
     RequestBody clientSecretPart = createPartFromString(clientSecret);
-    return getResponse(managerClient.updateSAMLMetadata(accountId, inputStream, displayNamePart,
+    return getCgResponse(managerClient.updateSAMLMetadata(accountId, inputStream, displayNamePart,
         groupMembershipAttrPart, authorizationEnabledPart, logoutUrlPart, entityIdentifierPart, samlProviderTypePart,
         clientIdPart, clientSecretPart));
   }
 
   @Override
   public SSOConfig deleteSAMLMetadata(@NotNull @AccountIdentifier String accountIdentifier) {
-    SamlSettings samlSettings = getResponse(managerClient.getSAMLMetadata(accountIdentifier));
+    SamlSettings samlSettings = getCgResponse(managerClient.getSAMLMetadata(accountIdentifier));
     if (samlSettings == null) {
       throw new InvalidRequestException("No Saml Metadata found for this account");
     }
@@ -253,31 +253,31 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
       throw new InvalidRequestException(
           "Deleting Saml provider with linked user groups is not allowed. Unlink the user groups first");
     }
-    return getResponse(managerClient.deleteSAMLMetadata(accountIdentifier));
+    return getCgResponse(managerClient.deleteSAMLMetadata(accountIdentifier));
   }
 
   @Override
   @FeatureRestrictionCheck(FeatureRestrictionName.SAML_SUPPORT)
   public LoginTypeResponse getSAMLLoginTest(@NotNull @AccountIdentifier String accountIdentifier) {
-    return getResponse(managerClient.getSAMLLoginTest(accountIdentifier));
+    return getCgResponse(managerClient.getSAMLLoginTest(accountIdentifier));
   }
 
   @Override
   @FeatureRestrictionCheck(FeatureRestrictionName.TWO_FACTOR_AUTH_SUPPORT)
   public boolean setTwoFactorAuthAtAccountLevel(
       @AccountIdentifier String accountIdentifier, TwoFactorAdminOverrideSettings twoFactorAdminOverrideSettings) {
-    return getResponse(managerClient.setTwoFactorAuthAtAccountLevel(accountIdentifier, twoFactorAdminOverrideSettings));
+    return getCgResponse(managerClient.setTwoFactorAuthAtAccountLevel(accountIdentifier, twoFactorAdminOverrideSettings));
   }
 
   @Override
   public PasswordStrengthPolicy getPasswordStrengthSettings(String accountIdentifier) {
-    return getResponse(managerClient.getPasswordStrengthSettings(accountIdentifier));
+    return getCgResponse(managerClient.getPasswordStrengthSettings(accountIdentifier));
   }
 
   @Override
   public LDAPSettings getLdapSettings(String accountIdentifier) {
     log.info("NGLDAP: Get ldap settings call for accountId {}", accountIdentifier);
-    return fromCGLdapSettings(getResponse(managerClient.getLdapSettings(accountIdentifier)));
+    return fromCGLdapSettings(getCgResponse(managerClient.getLdapSettings(accountIdentifier)));
   }
 
   @Override
@@ -285,7 +285,7 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
   public LDAPSettings createLdapSettings(
       @NotNull @AccountIdentifier String accountIdentifier, LDAPSettings ldapSettings) {
     log.info("NGLDAP: Create ldap settings call for accountId {}", accountIdentifier);
-    return fromCGLdapSettings(getResponse(
+    return fromCGLdapSettings(getCgResponse(
         managerClient.createLdapSettings(accountIdentifier, toCGLdapSettings(ldapSettings, accountIdentifier))));
   }
 
@@ -294,14 +294,14 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
       @NotNull @AccountIdentifier String accountIdentifier, LDAPSettings ldapSettings) {
     log.info("NGLDAP: Update ldap settings call for accountId {}, ldap name {}", accountIdentifier,
         ldapSettings.getDisplayName());
-    return fromCGLdapSettings(getResponse(
+    return fromCGLdapSettings(getCgResponse(
         managerClient.updateLdapSettings(accountIdentifier, toCGLdapSettings(ldapSettings, accountIdentifier))));
   }
 
   @Override
   public void deleteLdapSettings(@NotNull @AccountIdentifier String accountIdentifier) {
     log.info("NGLDAP: Delete ldap settings call for accountId {}", accountIdentifier);
-    LdapSettings settings = getResponse(managerClient.getLdapSettings(accountIdentifier));
+    LdapSettings settings = getCgResponse(managerClient.getLdapSettings(accountIdentifier));
     if (settings == null) {
       throw new InvalidRequestException("No Ldap Settings found for this account: " + accountIdentifier);
     }
@@ -309,14 +309,14 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
       throw new InvalidRequestException(
           "Deleting Ldap provider with linked user groups is not allowed. Unlink the user groups first");
     }
-    getResponse(managerClient.deleteLdapSettings(accountIdentifier));
+    getCgResponse(managerClient.deleteLdapSettings(accountIdentifier));
   }
 
   @Override
   public LdapResponse testLDAPLogin(
       @NotNull @AccountIdentifier String accountIdentifier, String email, String password) {
     log.info("NGLDAP: Test ldap authentication in accountId {}", accountIdentifier);
-    return getResponse(managerClient.testLdapAuthentication(
+    return getCgResponse(managerClient.testLdapAuthentication(
         accountIdentifier, createPartFromString(email), createPartFromString(password)));
   }
 

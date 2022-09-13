@@ -25,6 +25,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.ng.core.dto.AccountDTO;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.remote.client.RestClientUtils;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
@@ -95,7 +96,7 @@ public class PipelineTelemetryPublisherTest extends CategoryTest {
     map.put("total_pipeline_executions", executionsTotal);
 
     try (MockedStatic<RestClientUtils> mockStatic = Mockito.mockStatic(RestClientUtils.class)) {
-      mockStatic.when(() -> RestClientUtils.getResponse(requestCall)).thenReturn(accounts);
+      mockStatic.when(() -> NGRestUtils.getCgResponse(requestCall)).thenReturn(accounts);
 
       telemetryPublisher.recordTelemetry();
 
@@ -114,7 +115,7 @@ public class PipelineTelemetryPublisherTest extends CategoryTest {
     Call<RestResponse<List<AccountDTO>>> requestCall = mock(Call.class);
     doReturn(requestCall).when(accountClient).getAllAccounts();
     try (MockedStatic<RestClientUtils> mockStatic = Mockito.mockStatic(RestClientUtils.class)) {
-      mockStatic.when(() -> RestClientUtils.getResponse(requestCall)).thenReturn(accounts);
+      mockStatic.when(() -> NGRestUtils.getCgResponse(requestCall)).thenReturn(accounts);
       String accountId = telemetryPublisher.getAccountId();
       assertThat(accountId).isEqualTo(acc);
     }

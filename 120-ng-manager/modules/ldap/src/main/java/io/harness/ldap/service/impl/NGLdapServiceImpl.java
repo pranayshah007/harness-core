@@ -10,7 +10,7 @@ package io.harness.ldap.service.impl;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.NgSetupFields.NG;
 import static io.harness.delegate.beans.NgSetupFields.OWNER;
-import static io.harness.remote.client.RestClientUtils.getResponse;
+import static io.harness.remote.client.NGRestUtils.getCgResponse;
 
 import static software.wings.beans.TaskType.NG_LDAP_GROUPS_SYNC;
 import static software.wings.beans.TaskType.NG_LDAP_SEARCH_GROUPS;
@@ -224,7 +224,7 @@ public class NGLdapServiceImpl implements NGLdapService {
     LDAPTestAuthenticationRequest authenticationRequest =
         LDAPTestAuthenticationRequest.builder().email(email).password(password).build();
     LdapSettingsWithEncryptedDataAndPasswordDetail withEncryptedDataAndPasswordDetail =
-        getResponse(managerClient.getLdapSettingsAndEncryptedPassword(accountIdentifier, authenticationRequest));
+        getCgResponse(managerClient.getLdapSettingsAndEncryptedPassword(accountIdentifier, authenticationRequest));
 
     NGLdapTestAuthenticationTaskParameters taskParameters =
         NGLdapTestAuthenticationTaskParameters.builder()
@@ -283,7 +283,7 @@ public class NGLdapServiceImpl implements NGLdapService {
           "Failed to get ldap settings with encrypted data detail from manager for account: {}", accountIdentifier);
       throw new InvalidRequestException("Failed to get LDAPSettings with encrypted data detail for the request");
     }
-    return getResponse(settingsWithEncryptedDataDetails);
+    return getCgResponse(settingsWithEncryptedDataDetails);
   }
 
   private LdapSettingsWithEncryptedDataDetail getLdapSettingsWithEncryptedDataInternal(String accountIdentifier) {
@@ -294,7 +294,7 @@ public class NGLdapServiceImpl implements NGLdapService {
           accountIdentifier);
       throw new InvalidRequestException("Failed to get LDAPSettings with encrypted data detail for the request");
     }
-    return getResponse(settingsWithEncryptedDataDetails);
+    return getCgResponse(settingsWithEncryptedDataDetails);
   }
 
   private DelegateResponseData getDelegateResponseData(String accountIdentifier, String orgIdentifier,

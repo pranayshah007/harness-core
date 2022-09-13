@@ -24,7 +24,7 @@ import io.harness.licensing.usage.beans.cd.CDLicenseUsageDTO;
 import io.harness.licensing.usage.interfaces.LicenseUsageInterface;
 import io.harness.licensing.usage.params.CDUsageRequestParams;
 import io.harness.ng.core.dto.AccountDTO;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.telemetry.CdTelemetryStatusRepository;
 import io.harness.telemetry.TelemetryOption;
 import io.harness.telemetry.TelemetryReporter;
@@ -116,10 +116,10 @@ public class CdTelemetryPublisher {
   }
 
   CgActiveServicesUsageInfo getCgLicenseUsageInfo(String accountId) {
-    return RestClientUtils.getResponse(licenseUsageCgClient.getActiveServiceUsage(accountId));
+    return NGRestUtils.getCgResponse(licenseUsageCgClient.getActiveServiceUsage(accountId));
   }
 
   List<AccountDTO> getAllAccounts() {
-    return RestClientUtils.getResponse(accountClient.getAllAccounts());
+    return NGRestUtils.getCgResponse(accountClient.getAllAccounts());
   }
 }

@@ -12,7 +12,7 @@ import static java.lang.String.format;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.webhook.WebhookConfigProvider;
 
 import com.google.inject.Inject;
@@ -28,7 +28,7 @@ public class UrlHelper {
   @Inject private WebhookConfigProvider webhookConfigProvider;
 
   public String getBaseUrl(String accountIdentifier) {
-    return RestClientUtils.getResponse(accountClient.getBaseUrl(accountIdentifier));
+    return NGRestUtils.getCgResponse(accountClient.getBaseUrl(accountIdentifier));
   }
 
   public String buildApiExecutionUrl(String uuid, String accountIdentifier) {

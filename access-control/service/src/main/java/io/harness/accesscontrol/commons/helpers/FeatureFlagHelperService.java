@@ -12,7 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.utils.RetryUtils;
 
 import com.google.common.collect.Lists;
@@ -34,7 +34,7 @@ public class FeatureFlagHelperService {
   public boolean isEnabled(FeatureName featureName, String accountId) {
     try {
       return Failsafe.with(fetchRetryPolicy)
-          .get(() -> RestClientUtils.getResponse(accountClient.isFeatureFlagEnabled(featureName.name(), accountId)));
+          .get(() -> NGRestUtils.getCgResponse(accountClient.isFeatureFlagEnabled(featureName.name(), accountId)));
     } catch (InvalidRequestException e) {
       throw new UnexpectedException("Unexpected error, could not fetch the feature flag");
     }

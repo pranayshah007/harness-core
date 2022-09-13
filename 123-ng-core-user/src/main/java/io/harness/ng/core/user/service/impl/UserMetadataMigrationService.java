@@ -13,7 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.migration.NGMigration;
 import io.harness.ng.core.user.UserInfo;
 import io.harness.ng.core.user.entities.UserMetadata;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.user.spring.UserMetadataRepository;
 import io.harness.user.remote.UserClient;
 
@@ -84,7 +84,7 @@ public class UserMetadataMigrationService implements NGMigration {
 
   private boolean getLockedStatus(UserMetadata userMetadata) {
     String userId = userMetadata.getUserId();
-    Optional<UserInfo> userInfoOptional = RestClientUtils.getResponse(userClient.getUserById(userId));
+    Optional<UserInfo> userInfoOptional = NGRestUtils.getCgResponse(userClient.getUserById(userId));
     if (userInfoOptional.isPresent()) {
       UserInfo userInfo = userInfoOptional.get();
       return userInfo.isLocked();

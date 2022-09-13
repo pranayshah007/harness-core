@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.rest.RestResponse;
 import io.harness.serializer.JsonUtils;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -35,21 +36,25 @@ import retrofit2.Response;
 public class NGRestUtils {
   private static final int MAX_ATTEMPTS = 3;
 
+  public static final String DEFAULT_CONNECTION_ERROR_MESSAGE =
+      "Unable to connect to upstream systems, please try again.";
+  public static final String DEFAULT_ERROR_MESSAGE = "Error occurred while performing this operation.";
+
   public static <T> T getResponse(Call<ResponseDTO<T>> request) {
     RetryPolicy<Response<ResponseDTO<T>>> retryPolicy = getRetryPolicy("Request failed");
     Response<ResponseDTO<T>> response = Failsafe.with(retryPolicy).get(() -> executeRequest(request));
-    return handleResponse(response, "");
+    return handleResponse(response, "").getData();
   }
 
   public static <T> T getResponse(Call<ResponseDTO<T>> request, String defaultErrorMessage) {
     RetryPolicy<Response<ResponseDTO<T>>> retryPolicy = getRetryPolicy(format(defaultErrorMessage));
     Response<ResponseDTO<T>> response = Failsafe.with(retryPolicy).get(() -> executeRequest(request));
-    return handleResponse(response, defaultErrorMessage);
+    return handleResponse(response, defaultErrorMessage).getData();
   }
 
-  private static <T> Response<ResponseDTO<T>> executeRequest(Call<ResponseDTO<T>> request) throws IOException {
+  private static <T> Response<T> executeRequest(Call<T> request) throws IOException {
     try {
-      Call<ResponseDTO<T>> cloneRequest = request.clone();
+      Call<T> cloneRequest = request.clone();
       return cloneRequest == null ? request.execute() : cloneRequest.execute();
     } catch (IOException ioException) {
       String url = Optional.ofNullable(request.request()).map(x -> x.url().encodedPath()).orElse(null);
@@ -58,9 +63,9 @@ public class NGRestUtils {
     }
   }
 
-  private static <T> T handleResponse(Response<ResponseDTO<T>> response, String defaultErrorMessage) {
+  private static <T> T handleResponse(Response<T> response, String defaultErrorMessage) {
     if (response.isSuccessful()) {
-      return response.body().getData();
+      return response.body();
     }
 
     log.error("Error response received: {}", response);
@@ -76,8 +81,8 @@ public class NGRestUtils {
     }
   }
 
-  private <T> RetryPolicy<Response<ResponseDTO<T>>> getRetryPolicy(String failureMessage) {
-    return new RetryPolicy<Response<ResponseDTO<T>>>()
+  private <P> RetryPolicy<Response<P>> getRetryPolicy(String failureMessage) {
+    return new RetryPolicy<Response<P>>()
         .withBackoff(1, 5, ChronoUnit.SECONDS)
         .handle(IOException.class)
         .handleResultIf(result -> !result.isSuccessful() && isRetryableHttpCode(result.code()))
@@ -86,8 +91,7 @@ public class NGRestUtils {
         .onRetriesExceeded(event -> handleFailure(event, failureMessage));
   }
 
-  private static <T> void handleFailure(
-      ExecutionCompletedEvent<Response<ResponseDTO<T>>> event, String failureMessage) {
+  private static <T> void handleFailure(ExecutionCompletedEvent<Response<T>> event, String failureMessage) {
     log.warn(failureMessage + ". "
             + "Attempts : {}",
         event.getAttemptCount(), event.getFailure());
@@ -96,5 +100,11 @@ public class NGRestUtils {
   private static boolean isRetryableHttpCode(int httpCode) {
     // https://stackoverflow.com/questions/51770071/what-are-the-http-codes-to-automatically-retry-the-request
     return httpCode == 408 || httpCode == 502 || httpCode == 503 || httpCode == 504;
+  }
+
+  public static <T> T getCgResponse(Call<RestResponse<T>> request) {
+    RetryPolicy<Response<RestResponse<T>>> retryPolicy = getRetryPolicy("Request failed");
+    Response<RestResponse<T>> response = Failsafe.with(retryPolicy).get(() -> executeRequest(request));
+    return handleResponse(response, DEFAULT_ERROR_MESSAGE).getResource();
   }
 }

@@ -14,7 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureFlag;
 import io.harness.beans.FeatureName;
 import io.harness.pms.PmsFeatureFlagService;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.NGRestUtils;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -65,7 +65,7 @@ public class PmsFeatureFlagHelper implements PmsFeatureFlagService {
   }
 
   private Set<String> listAllEnabledFeatureFlagsForAccount(String accountId) {
-    return RestClientUtils.getResponse(accountClient.listAllFeatureFlagsForAccount(accountId))
+    return NGRestUtils.getCgResponse(accountClient.listAllFeatureFlagsForAccount(accountId))
         .stream()
         .filter(FeatureFlag::isEnabled)
         .map(FeatureFlag::getName)

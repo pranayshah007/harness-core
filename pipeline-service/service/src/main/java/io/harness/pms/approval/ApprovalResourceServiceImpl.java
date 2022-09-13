@@ -26,7 +26,6 @@ import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.helpers.CurrentUserHelper;
 import io.harness.remote.client.NGRestUtils;
-import io.harness.remote.client.RestClientUtils;
 import io.harness.security.dto.Principal;
 import io.harness.steps.approval.step.ApprovalInstanceResponseMapper;
 import io.harness.steps.approval.step.ApprovalInstanceService;
@@ -103,7 +102,7 @@ public class ApprovalResourceServiceImpl implements ApprovalResourceService {
     }
 
     String userId = principal.getName();
-    Optional<UserInfo> userOptional = RestClientUtils.getResponse(userClient.getUserById(userId));
+    Optional<UserInfo> userOptional = NGRestUtils.getCgResponse(userClient.getUserById(userId));
     if (!userOptional.isPresent()) {
       throw new InvalidRequestException(String.format("Invalid user: %s", userId));
     }

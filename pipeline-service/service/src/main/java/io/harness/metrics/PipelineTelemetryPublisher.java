@@ -16,7 +16,7 @@ import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.telemetry.TelemetryOption;
 import io.harness.telemetry.TelemetryReporter;
 
@@ -89,7 +89,7 @@ public class PipelineTelemetryPublisher {
 
   @VisibleForTesting
   String getAccountId() {
-    List<AccountDTO> accountDTOList = RestClientUtils.getResponse(accountClient.getAllAccounts());
+    List<AccountDTO> accountDTOList = NGRestUtils.getCgResponse(accountClient.getAllAccounts());
     String accountId = accountDTOList.get(0).getIdentifier();
     if (accountDTOList.size() > 1 && accountId.equals(GLOBAL_ACCOUNT_ID)) {
       accountId = accountDTOList.get(1).getIdentifier();

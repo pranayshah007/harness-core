@@ -38,7 +38,6 @@ import io.harness.ng.core.user.UserMembershipUpdateSource;
 import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
 import io.harness.ng.core.user.service.NgUserService;
 import io.harness.remote.client.NGRestUtils;
-import io.harness.remote.client.RestClientUtils;
 import io.harness.user.remote.UserClient;
 import io.harness.utils.CryptoUtils;
 
@@ -121,7 +120,7 @@ public class AccessControlMigrationServiceImpl implements AccessControlMigration
     int maxIterations = 50;
     Set<UserInfo> users = new HashSet<>();
     while (maxIterations > 0) {
-      PageResponse<UserInfo> usersPage = RestClientUtils.getResponse(
+      PageResponse<UserInfo> usersPage = NGRestUtils.getCgResponse(
           userClient.list(accountId, String.valueOf(offset), String.valueOf(limit), null, true));
       if (isEmpty(usersPage.getResponse())) {
         break;

@@ -12,7 +12,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.migration.NGMigration;
 import io.harness.ng.core.entities.Organization;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.core.spring.OrganizationRepository;
 
 import com.google.inject.Inject;
@@ -52,7 +52,7 @@ public class NGDefaultTokenForOrganizationsMigration implements NGMigration {
               .distinct()
               .collect(Collectors.toMap(Function.identity(),
                   accountId
-                  -> RestClientUtils.getResponse(accountClient.getOrgsWithActiveDefaultDelegateToken(accountId))));
+                  -> NGRestUtils.getCgResponse(accountClient.getOrgsWithActiveDefaultDelegateToken(accountId))));
       for (Organization org : organizations) {
         if (orgsWithActiveDefaultDelegateToken.get(org.getAccountIdentifier()) != null
             && orgsWithActiveDefaultDelegateToken.get(org.getAccountIdentifier())
@@ -61,7 +61,7 @@ public class NGDefaultTokenForOrganizationsMigration implements NGMigration {
           continue;
         }
         try {
-          RestClientUtils.getResponse(
+          NGRestUtils.getCgResponse(
               accountClient.upsertDefaultToken(org.getAccountIdentifier(), org.getIdentifier(), null, true));
         } catch (Exception e) {
           log.error(

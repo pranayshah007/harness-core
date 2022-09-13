@@ -9,7 +9,7 @@ import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.NGRestUtils;
 
 import com.google.inject.Inject;
 
@@ -18,6 +18,6 @@ public class NGFeatureFlagHelperService {
   @Inject AccountClient accountClient;
 
   public boolean isEnabled(String accountId, FeatureName featureName) {
-    return RestClientUtils.getResponse(accountClient.isFeatureFlagEnabled(featureName.name(), accountId));
+    return NGRestUtils.getCgResponse(accountClient.isFeatureFlagEnabled(featureName.name(), accountId));
   }
 }

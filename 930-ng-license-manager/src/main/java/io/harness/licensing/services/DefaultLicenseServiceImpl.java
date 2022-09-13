@@ -11,7 +11,7 @@ import static io.harness.configuration.DeployMode.DEPLOY_MODE;
 import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
 import static io.harness.licensing.LicenseModule.LICENSE_CACHE_NAMESPACE;
 import static io.harness.licensing.interfaces.ModuleLicenseImpl.TRIAL_DURATION;
-import static io.harness.remote.client.RestClientUtils.getResponse;
+import static io.harness.remote.client.NGRestUtils.getCgResponse;
 
 import static java.lang.String.format;
 
@@ -530,7 +530,7 @@ public class DefaultLicenseServiceImpl implements LicenseService {
   private void startTrialInCGIfCE(ModuleLicense moduleLicense) {
     if (ModuleType.CE.equals(moduleLicense.getModuleType())) {
       try {
-        getResponse(ceLicenseClient.createCeTrial(CeLicenseInfoDTO.builder()
+        getCgResponse(ceLicenseClient.createCeTrial(CeLicenseInfoDTO.builder()
                                                       .accountId(moduleLicense.getAccountIdentifier())
                                                       .expiryTime(moduleLicense.getExpiryTime())
                                                       .edition(moduleLicense.getEdition())
@@ -544,7 +544,7 @@ public class DefaultLicenseServiceImpl implements LicenseService {
   private void syncLicenseChangeToCGForCE(ModuleLicense moduleLicense) {
     if (ModuleType.CE.equals(moduleLicense.getModuleType())) {
       try {
-        getResponse(ceLicenseClient.updateCeLicense(CeLicenseInfoDTO.builder()
+        getCgResponse(ceLicenseClient.updateCeLicense(CeLicenseInfoDTO.builder()
                                                         .accountId(moduleLicense.getAccountIdentifier())
                                                         .expiryTime(moduleLicense.getExpiryTime())
                                                         .build()));

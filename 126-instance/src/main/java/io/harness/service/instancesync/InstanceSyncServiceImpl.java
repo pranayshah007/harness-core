@@ -39,7 +39,7 @@ import io.harness.models.constants.InstanceSyncConstants;
 import io.harness.models.constants.InstanceSyncFlow;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.service.entity.ServiceEntity;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.service.deploymentsummary.DeploymentSummaryService;
 import io.harness.service.infrastructuremapping.InfrastructureMappingService;
 import io.harness.service.instance.InstanceService;
@@ -148,7 +148,7 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
           InstanceSyncLocalCacheManager.setDeploymentSummary(
               deploymentSummaryDTO.getInstanceSyncKey(), deploymentSummaryDTO);
 
-          if (RestClientUtils.getResponse(accountClient.isFeatureFlagEnabled(
+          if (NGRestUtils.getCgResponse(accountClient.isFeatureFlagEnabled(
                   FeatureName.FIX_CORRUPTED_INSTANCES.name(), infrastructureMappingDTO.getAccountIdentifier()))) {
             fixCorruptedInstances(infrastructureMappingDTO);
           }

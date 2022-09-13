@@ -18,7 +18,7 @@ import io.harness.core.ci.services.CIOverviewDashboardService;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.licensing.entities.modules.ModuleLicense;
 import io.harness.ng.core.dto.AccountDTO;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.CITelemetryStatusRepository;
 import io.harness.repositories.ModuleLicenseRepository;
 
@@ -85,6 +85,6 @@ public class CiTelemetryPublisher {
   }
 
   List<AccountDTO> getAllAccounts() {
-    return RestClientUtils.getResponse(accountClient.getAllAccounts());
+    return NGRestUtils.getCgResponse(accountClient.getAllAccounts());
   }
 }

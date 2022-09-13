@@ -87,7 +87,6 @@ import io.harness.notification.channeldetails.EmailChannel.EmailChannelBuilder;
 import io.harness.notification.notificationclient.NotificationClient;
 import io.harness.outbox.api.OutboxService;
 import io.harness.remote.client.NGRestUtils;
-import io.harness.remote.client.RestClientUtils;
 import io.harness.repositories.user.spring.UserMembershipRepository;
 import io.harness.repositories.user.spring.UserMetadataRepository;
 import io.harness.scim.PatchRequest;
@@ -201,7 +200,7 @@ public class NgUserServiceImpl implements NgUserService {
   @Override
   public Page<UserInfo> listCurrentGenUsers(String accountIdentifier, String searchString, Pageable pageable) {
     io.harness.beans.PageResponse<UserInfo> userPageResponse =
-        RestClientUtils.getResponse(userClient.list(accountIdentifier, String.valueOf(pageable.getOffset()),
+        NGRestUtils.getCgResponse(userClient.list(accountIdentifier, String.valueOf(pageable.getOffset()),
             String.valueOf(pageable.getPageSize()), searchString, false));
     List<UserInfo> users = userPageResponse.getResponse();
     return new PageImpl<>(users, pageable, users.size());
@@ -306,7 +305,7 @@ public class NgUserServiceImpl implements NgUserService {
       Optional<UserMetadata> user = userMetadataRepository.findDistinctByEmail(email);
       return user.map(UserMetadataMapper::toDTO);
     } else {
-      Optional<UserInfo> userInfo = RestClientUtils.getResponse(userClient.getUserByEmailId(email));
+      Optional<UserInfo> userInfo = NGRestUtils.getCgResponse(userClient.getUserByEmailId(email));
       UserMetadataDTO userMetadataDTO = userInfo
                                             .map(user
                                                 -> UserMetadataDTO.builder()
@@ -323,12 +322,12 @@ public class NgUserServiceImpl implements NgUserService {
   }
 
   public Optional<UserInfo> getUserInfoByEmailFromCG(String email) {
-    return RestClientUtils.getResponse(userClient.getUserByEmailId(email));
+    return NGRestUtils.getCgResponse(userClient.getUserByEmailId(email));
   }
 
   @Override
   public List<UserInfo> listCurrentGenUsers(String accountId, UserFilterNG userFilter) {
-    return RestClientUtils.getResponse(userClient.listUsers(
+    return NGRestUtils.getCgResponse(userClient.listUsers(
         accountId, UserFilterNG.builder().emailIds(userFilter.getEmailIds()).userIds(userFilter.getUserIds()).build()));
   }
 
@@ -336,7 +335,7 @@ public class NgUserServiceImpl implements NgUserService {
 
   public ScimListResponse<ScimUser> searchScimUsersByEmailQuery(
       String accountId, String searchQuery, Integer count, Integer startIndex) {
-    return RestClientUtils.getResponse(userClient.searchScimUsers(accountId, searchQuery, count, startIndex));
+    return NGRestUtils.getCgResponse(userClient.searchScimUsers(accountId, searchQuery, count, startIndex));
   }
 
   @Override
@@ -726,7 +725,7 @@ public class NgUserServiceImpl implements NgUserService {
 
   public void addUserToCG(String userId, Scope scope) {
     try {
-      RestClientUtils.getResponse(userClient.addUserToAccount(userId, scope.getAccountIdentifier()));
+      NGRestUtils.getCgResponse(userClient.addUserToAccount(userId, scope.getAccountIdentifier()));
     } catch (Exception e) {
       log.error("Couldn't add user to the account", e);
     }
@@ -734,7 +733,7 @@ public class NgUserServiceImpl implements NgUserService {
 
   @Override
   public Optional<UserInfo> getUserById(String userId) {
-    return RestClientUtils.getResponse(userClient.getUserById(userId));
+    return NGRestUtils.getCgResponse(userClient.getUserById(userId));
   }
 
   @Override
@@ -873,7 +872,7 @@ public class NgUserServiceImpl implements NgUserService {
 
   @Override
   public boolean isUserPasswordSet(String accountIdentifier, String email) {
-    return RestClientUtils.getResponse(userClient.isUserPasswordSet(accountIdentifier, email));
+    return NGRestUtils.getCgResponse(userClient.isUserPasswordSet(accountIdentifier, email));
   }
 
   @Override
@@ -891,22 +890,22 @@ public class NgUserServiceImpl implements NgUserService {
 
   @Override
   public boolean removeUser(String userId, String accountId) {
-    return RestClientUtils.getResponse(userClient.deleteUser(userId, accountId));
+    return NGRestUtils.getCgResponse(userClient.deleteUser(userId, accountId));
   }
 
   @Override
   public ScimUser updateScimUser(String accountId, String userId, PatchRequest patchRequest) {
-    return RestClientUtils.getResponse(userClient.scimUserPatchUpdate(accountId, userId, patchRequest));
+    return NGRestUtils.getCgResponse(userClient.scimUserPatchUpdate(accountId, userId, patchRequest));
   }
 
   @Override
   public boolean updateScimUser(String accountId, String userId, ScimUser scimUser) {
-    return RestClientUtils.getResponse(userClient.scimUserUpdate(accountId, userId, scimUser));
+    return NGRestUtils.getCgResponse(userClient.scimUserUpdate(accountId, userId, scimUser));
   }
 
   @Override
   public boolean updateUserDisabled(String accountId, String userId, boolean disabled) {
-    return RestClientUtils.getResponse(userClient.updateUserDisabled(accountId, userId, disabled));
+    return NGRestUtils.getCgResponse(userClient.updateUserDisabled(accountId, userId, disabled));
   }
 
   @Override
@@ -914,7 +913,7 @@ public class NgUserServiceImpl implements NgUserService {
     try {
       Collection<io.harness.ng.core.user.UserMetadata> supportUsers =
           Failsafe.with(harnessSupportUsersFetchRetryPolicy)
-              .get(() -> RestClientUtils.getResponse(accountClient.listAllHarnessSupportUsers()));
+              .get(() -> NGRestUtils.getCgResponse(accountClient.listAllHarnessSupportUsers()));
       if (supportUsers == null) {
         throw new UnexpectedException("Unexpected error, could not fetch the harness support group users");
       }

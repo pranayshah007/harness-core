@@ -12,7 +12,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.migration.NGMigration;
 import io.harness.ng.core.entities.Project;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.core.spring.ProjectRepository;
 
 import com.google.inject.Inject;
@@ -51,7 +51,7 @@ public class NGDefaultTokenForProjectsMigration implements NGMigration {
               .distinct()
               .collect(Collectors.toMap(Function.identity(),
                   accountId
-                  -> RestClientUtils.getResponse(accountClient.getProjectsWithActiveDefaultDelegateToken(accountId))));
+                  -> NGRestUtils.getCgResponse(accountClient.getProjectsWithActiveDefaultDelegateToken(accountId))));
       for (Project project : projects) {
         if (projectsWithActiveDefaultDelegateToken.get(project.getAccountIdentifier()) != null
             && projectsWithActiveDefaultDelegateToken.get(project.getAccountIdentifier())
@@ -60,7 +60,7 @@ public class NGDefaultTokenForProjectsMigration implements NGMigration {
           continue;
         }
         try {
-          RestClientUtils.getResponse(accountClient.upsertDefaultToken(
+          NGRestUtils.getCgResponse(accountClient.upsertDefaultToken(
               project.getAccountIdentifier(), project.getOrgIdentifier(), project.getIdentifier(), true));
         } catch (Exception e) {
           log.error(

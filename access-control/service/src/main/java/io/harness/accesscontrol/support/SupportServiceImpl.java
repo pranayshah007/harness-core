@@ -13,7 +13,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.user.UserMetadata;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.utils.RetryUtils;
 
 import com.google.common.collect.Lists;
@@ -65,7 +65,7 @@ public class SupportServiceImpl implements SupportService {
     Boolean isHarnessSupportEnabled =
         Failsafe.with(retryPolicy)
             .get(()
-                     -> RestClientUtils.getResponse(
+                     -> NGRestUtils.getCgResponse(
                          accountClient.checkIfHarnessSupportEnabledForAccount(accountIdentifier)));
     SupportPreference supportPreference = SupportPreference.builder()
                                               .accountIdentifier(accountIdentifier)
@@ -82,7 +82,7 @@ public class SupportServiceImpl implements SupportService {
   @Override
   public Set<String> fetchSupportUsers() {
     Collection<UserMetadata> supportUsers =
-        Failsafe.with(retryPolicy).get(() -> RestClientUtils.getResponse(accountClient.listAllHarnessSupportUsers()));
+        Failsafe.with(retryPolicy).get(() -> NGRestUtils.getCgResponse(accountClient.listAllHarnessSupportUsers()));
     return supportUsers.stream().map(UserMetadata::getId).collect(Collectors.toSet());
   }
 }

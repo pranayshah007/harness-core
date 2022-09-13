@@ -10,7 +10,7 @@ package io.harness.ng.core.api.impl;
 import static io.harness.NGConstants.HARNESS_SECRET_MANAGER_IDENTIFIER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.helpers.GlobalSecretManagerUtils.GLOBAL_ACCOUNT_ID;
-import static io.harness.remote.client.RestClientUtils.getResponse;
+import static io.harness.remote.client.NGRestUtils.getCgResponse;
 import static io.harness.security.encryption.AccessType.APP_ROLE;
 import static io.harness.security.encryption.EncryptionType.AWS_SECRETS_MANAGER;
 import static io.harness.security.encryption.EncryptionType.AZURE_VAULT;
@@ -80,14 +80,14 @@ public class NGSecretManagerServiceImpl implements NGSecretManagerService {
 
   @Override
   public SecretManagerConfigDTO createSecretManager(@NotNull SecretManagerConfigDTO secretManagerConfig) {
-    return getResponse(secretManagerClient.createSecretManager(secretManagerConfig));
+    return getCgResponse(secretManagerClient.createSecretManager(secretManagerConfig));
   }
 
   @Override
   public SecretManagerConfigDTO updateSecretManager(@NotNull String accountIdentifier, String orgIdentifier,
       String projectIdentifier, @NotNull String identifier,
       @NotNull SecretManagerConfigUpdateDTO secretManagerConfigUpdateDTO) {
-    return getResponse(secretManagerClient.updateSecretManager(
+    return getCgResponse(secretManagerClient.updateSecretManager(
         identifier, accountIdentifier, orgIdentifier, projectIdentifier, secretManagerConfigUpdateDTO));
   }
 
@@ -171,7 +171,7 @@ public class NGSecretManagerServiceImpl implements NGSecretManagerService {
     log.info("[GetGlobalSecretManagerFromCGWithRetry]: Getting global secret manager from CG for account:{}",
         accountIdentifier);
     Supplier<SecretManagerConfigDTO> retryingSecretManagerConfigDTOSupplier =
-        Retry.decorateSupplier(retry, () -> getResponse(secretManagerClient.getGlobalSecretManager(accountIdentifier)));
+        Retry.decorateSupplier(retry, () -> getCgResponse(secretManagerClient.getGlobalSecretManager(accountIdentifier)));
     SecretManagerConfigDTO globalSecretManagerFromCG = retryingSecretManagerConfigDTOSupplier.get();
     log.info("[GetGlobalSecretManagerFromCGWithRetry]: Got back global secret manager from CG {} for account: {}",
         globalSecretManagerFromCG, accountIdentifier);
@@ -207,7 +207,7 @@ public class NGSecretManagerServiceImpl implements NGSecretManagerService {
   @Override
   public boolean deleteSecretManager(
       @NotNull String accountIdentifier, String orgIdentifier, String projectIdentifier, @NotNull String identifier) {
-    return getResponse(
+    return getCgResponse(
         secretManagerClient.deleteSecretManager(identifier, accountIdentifier, orgIdentifier, projectIdentifier));
   }
 }

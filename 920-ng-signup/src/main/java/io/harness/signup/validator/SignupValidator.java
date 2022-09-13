@@ -22,7 +22,7 @@ import io.harness.exception.SignupException;
 import io.harness.exception.UserAlreadyPresentException;
 import io.harness.exception.WeakPasswordException;
 import io.harness.ng.core.user.SignupAction;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.signup.dto.SignupDTO;
 import io.harness.user.remote.UserClient;
 
@@ -71,7 +71,7 @@ public class SignupValidator {
 
     final String emailAddress = email.trim();
 
-    boolean userExists = RestClientUtils.getResponse(userClient.getUserByEmailId(email.toLowerCase())).isPresent();
+    boolean userExists = NGRestUtils.getCgResponse(userClient.getUserByEmailId(email.toLowerCase())).isPresent();
 
     if (userExists) {
       throw new UserAlreadyPresentException("This email is already registered to a user. Please sign in.");

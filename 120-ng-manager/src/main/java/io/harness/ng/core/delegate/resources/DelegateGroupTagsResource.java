@@ -26,7 +26,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.delegate.client.DelegateNgManagerCgManagerClient;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.rest.RestResponse;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
@@ -108,7 +108,7 @@ public class DelegateGroupTagsResource {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(DELEGATE_RESOURCE_TYPE, null), DELEGATE_VIEW_PERMISSION);
     Optional<DelegateGroupDTO> optionalDelegateGroupDTO =
-        RestClientUtils.getResponse(delegateNgManagerCgManagerClient.getDelegateGroupTags(
+        NGRestUtils.getCgResponse(delegateNgManagerCgManagerClient.getDelegateGroupTags(
             accountIdentifier, orgIdentifier, projectIdentifier, groupIdentifier));
     if (!optionalDelegateGroupDTO.isPresent()) {
       throw new InvalidRequestException(DELEGATE_GROUP_NOT_FOUND_ERROR_MSG);
@@ -140,7 +140,7 @@ public class DelegateGroupTagsResource {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(DELEGATE_RESOURCE_TYPE, null), DELEGATE_EDIT_PERMISSION);
     Optional<DelegateGroupDTO> optionalDelegateGroupDTO =
-        RestClientUtils.getResponse(delegateNgManagerCgManagerClient.addDelegateGroupTags(
+        NGRestUtils.getCgResponse(delegateNgManagerCgManagerClient.addDelegateGroupTags(
             accountIdentifier, orgIdentifier, projectIdentifier, groupIdentifier, tags));
     if (!optionalDelegateGroupDTO.isPresent()) {
       throw new InvalidRequestException(DELEGATE_GROUP_NOT_FOUND_ERROR_MSG);
@@ -173,7 +173,7 @@ public class DelegateGroupTagsResource {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(DELEGATE_RESOURCE_TYPE, null), DELEGATE_EDIT_PERMISSION);
     Optional<DelegateGroupDTO> optionalDelegateGroupDTO =
-        RestClientUtils.getResponse(delegateNgManagerCgManagerClient.updateDelegateGroupTags(
+        NGRestUtils.getCgResponse(delegateNgManagerCgManagerClient.updateDelegateGroupTags(
             accountIdentifier, orgIdentifier, projectIdentifier, groupIdentifier, tags));
     if (!optionalDelegateGroupDTO.isPresent()) {
       throw new InvalidRequestException(DELEGATE_GROUP_NOT_FOUND_ERROR_MSG);
@@ -204,7 +204,7 @@ public class DelegateGroupTagsResource {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(DELEGATE_RESOURCE_TYPE, null), DELEGATE_DELETE_PERMISSION);
     Optional<DelegateGroupDTO> optionalDelegateGroupDTO =
-        RestClientUtils.getResponse(delegateNgManagerCgManagerClient.updateDelegateGroupTags(
+        NGRestUtils.getCgResponse(delegateNgManagerCgManagerClient.updateDelegateGroupTags(
             accountIdentifier, orgIdentifier, projectIdentifier, groupIdentifier, new DelegateGroupTags(emptySet())));
     if (!optionalDelegateGroupDTO.isPresent()) {
       throw new InvalidRequestException(DELEGATE_GROUP_NOT_FOUND_ERROR_MSG);
@@ -236,7 +236,7 @@ public class DelegateGroupTagsResource {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(DELEGATE_RESOURCE_TYPE, null), DELEGATE_VIEW_PERMISSION);
     List<DelegateGroupDTO> delegateGroupDTOList =
-        RestClientUtils.getResponse(delegateNgManagerCgManagerClient.listDelegateGroupHavingTags(
+        NGRestUtils.getCgResponse(delegateNgManagerCgManagerClient.listDelegateGroupHavingTags(
             accountIdentifier, orgIdentifier, projectIdentifier, tags));
     if (delegateGroupDTOList.isEmpty()) {
       throw new InvalidRequestException(DELEGATE_GROUP_NOT_FOUND_ERROR_MSG);

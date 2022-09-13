@@ -12,7 +12,7 @@ import static io.harness.beans.FeatureName.AUTO_FREE_MODULE_LICENSE;
 import static io.harness.configuration.DeployMode.DEPLOY_MODE;
 import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
 import static io.harness.exception.WingsException.USER;
-import static io.harness.remote.client.RestClientUtils.getResponse;
+import static io.harness.remote.client.NGRestUtils.getCgResponse;
 import static io.harness.signup.services.SignupType.COMMUNITY_PROVISION;
 import static io.harness.utils.CryptoUtils.secureRandAlphaNumString;
 
@@ -200,7 +200,7 @@ public class SignupServiceImpl implements SignupService {
 
     UserInfo userInfo = null;
     try {
-      userInfo = getResponse(userClient.createCommunityUserAndCompleteSignup(signupRequest));
+      userInfo = getCgResponse(userClient.createCommunityUserAndCompleteSignup(signupRequest));
     } catch (InvalidRequestException e) {
       if (e.getMessage().contains("User with this email is already registered")) {
         throw new InvalidRequestException("Email is already signed up", ErrorCode.USER_ALREADY_REGISTERED, USER);
@@ -243,7 +243,7 @@ public class SignupServiceImpl implements SignupService {
                                         .utmInfo(dto.getUtmInfo())
                                         .build();
     try {
-      getResponse(userClient.createNewSignupInvite(signupRequest));
+      getCgResponse(userClient.createNewSignupInvite(signupRequest));
     } catch (InvalidRequestException e) {
       sendFailedTelemetryEvent(dto.getEmail(), dto.getUtmInfo(), e, null, "Create Signup Invite");
       if (e.getMessage().contains("User with this email is already registered")) {
@@ -295,7 +295,7 @@ public class SignupServiceImpl implements SignupService {
 
     UserInfo userInfo = null;
     try {
-      userInfo = getResponse(userClient.completeSignupInvite(verificationToken.getEmail(), null));
+      userInfo = getCgResponse(userClient.completeSignupInvite(verificationToken.getEmail(), null));
       verificationTokenRepository.delete(verificationToken);
       sendSucceedTelemetryEvent(userInfo.getEmail(), userInfo.getUtmInfo(), userInfo.getDefaultAccountId(), userInfo,
           SignupType.SIGNUP_FORM_FLOW, userInfo.getAccounts().get(0).getAccountName(), referer);
@@ -503,14 +503,14 @@ public class SignupServiceImpl implements SignupService {
     if (verificationToken.getUserId() == null) {
       throw new InvalidRequestException("Cannot verify token in non email verification blocking flow");
     }
-    getResponse(userClient.changeUserEmailVerified(verificationToken.getUserId()));
+    getCgResponse(userClient.changeUserEmailVerified(verificationToken.getUserId()));
     verificationTokenRepository.delete(verificationToken);
     return VerifyTokenResponseDTO.builder().accountIdentifier(verificationToken.getAccountIdentifier()).build();
   }
 
   @Override
   public void resendVerificationEmail(String email) {
-    SignupInviteDTO response = getResponse(userClient.getSignupInvite(email));
+    SignupInviteDTO response = getCgResponse(userClient.getSignupInvite(email));
     if (response == null) {
       throw new InvalidRequestException(String.format("Email [%s] has not been signed up", email));
     }
@@ -566,7 +566,7 @@ public class SignupServiceImpl implements SignupService {
                                        .emailVerified(false)
                                        .defaultAccountId(account.getIdentifier())
                                        .build();
-      return getResponse(userClient.createNewUser(userRequest));
+      return getCgResponse(userClient.createNewUser(userRequest));
     } catch (Exception e) {
       sendFailedTelemetryEvent(signupDTO.getEmail(), signupDTO.getUtmInfo(), e, account, "User creation");
       throw e;
@@ -719,7 +719,7 @@ public class SignupServiceImpl implements SignupService {
                                        .defaultAccountId(account.getIdentifier())
                                        .build();
 
-      return getResponse(userClient.createNewOAuthUser(userRequest));
+      return getCgResponse(userClient.createNewOAuthUser(userRequest));
     } catch (Exception e) {
       sendFailedTelemetryEvent(
           oAuthSignupDTO.getEmail(), oAuthSignupDTO.getUtmInfo(), e, account, "OAuth user creation");

@@ -31,6 +31,7 @@ import io.harness.ng.core.user.UserInfo;
 import io.harness.notification.NotificationChannelType;
 import io.harness.notification.remote.SmtpConfigClient;
 import io.harness.notification.repositories.NotificationSettingRepository;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.remote.client.RestClientUtils;
 import io.harness.rule.Owner;
 import io.harness.user.remote.UserClient;
@@ -212,7 +213,7 @@ public class NotificationSettingsServiceImplTest extends CategoryTest {
     List<String> userIds = Arrays.asList(USER_ID_1, USER_ID_2, USER_ID_3);
     List<UserInfo> userInfoList = Arrays.asList(UserInfo.builder().email(EMAIL_ID_1).build(),
         UserInfo.builder().email(EMAIL_ID_2).build(), UserInfo.builder().email(EMAIL_ID_3).build());
-    when(RestClientUtils.getResponse(any())).thenReturn(userInfoList);
+    when(NGRestUtils.getCgResponse(any())).thenReturn(userInfoList);
     List<String> emails = notificationSettingsService.getEmailsForUserIds(userIds, ACCOUNT_ID);
     List<String> expected = Arrays.asList(EMAIL_ID_1, EMAIL_ID_2, EMAIL_ID_3);
     assertEquals(expected, emails);
@@ -232,7 +233,7 @@ public class NotificationSettingsServiceImplTest extends CategoryTest {
   public void testGetNotificationSettings() {
     List<String> userIds = Arrays.asList(USER_ID_1);
     List<UserInfo> userInfoList = Arrays.asList(UserInfo.builder().email(EMAIL_ID_1).build());
-    when(RestClientUtils.getResponse(any())).thenReturn(userInfoList);
+    when(NGRestUtils.getCgResponse(any())).thenReturn(userInfoList);
     List<UserGroupDTO> userGroupDTOList = new ArrayList<>();
     EmailConfigDTO emailConfigDTO = EmailConfigDTO.builder().groupEmail(EMAIL_ID_1).build();
     userGroupDTOList.add(

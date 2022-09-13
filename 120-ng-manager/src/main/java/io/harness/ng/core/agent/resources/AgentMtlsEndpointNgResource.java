@@ -27,7 +27,7 @@ import io.harness.ng.core.agent.client.AgentNgManagerCgManagerClient;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.user.service.NgUserService;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.rest.RestResponse;
 
 import software.wings.security.annotations.Scope;
@@ -120,7 +120,7 @@ public class AgentMtlsEndpointNgResource {
       @NotNull AgentMtlsEndpointRequest endpointRequest) {
     try (AutoLogContext ignore1 = new AccountLogContext(accountIdentifier, OVERRIDE_ERROR)) {
       this.ensureOperationIsExecutedByHarnessSupport();
-      return new RestResponse<>(RestClientUtils.getResponse(
+      return new RestResponse<>(NGRestUtils.getCgResponse(
           this.agentNgManagerCgManagerClient.createEndpointForAccount(accountIdentifier, endpointRequest)));
     }
   }
@@ -149,7 +149,7 @@ public class AgentMtlsEndpointNgResource {
       @NotNull AgentMtlsEndpointRequest endpointRequest) {
     try (AutoLogContext ignore1 = new AccountLogContext(accountIdentifier, OVERRIDE_ERROR)) {
       this.ensureOperationIsExecutedByHarnessSupport();
-      return new RestResponse<>(RestClientUtils.getResponse(
+      return new RestResponse<>(NGRestUtils.getCgResponse(
           this.agentNgManagerCgManagerClient.updateEndpointForAccount(accountIdentifier, endpointRequest)));
     }
   }
@@ -177,7 +177,7 @@ public class AgentMtlsEndpointNgResource {
           value = AgentMtlsApiConstants.API_PARAM_PATCH_REQUEST_DESC) @NotNull AgentMtlsEndpointRequest patchRequest) {
     try (AutoLogContext ignore1 = new AccountLogContext(accountIdentifier, OVERRIDE_ERROR)) {
       this.ensureOperationIsExecutedByHarnessSupport();
-      return new RestResponse<>(RestClientUtils.getResponse(
+      return new RestResponse<>(NGRestUtils.getCgResponse(
           this.agentNgManagerCgManagerClient.patchEndpointForAccount(accountIdentifier, patchRequest)));
     }
   }
@@ -203,7 +203,7 @@ public class AgentMtlsEndpointNgResource {
     try (AutoLogContext ignore1 = new AccountLogContext(accountIdentifier, OVERRIDE_ERROR)) {
       this.ensureOperationIsExecutedByHarnessSupport();
       return new RestResponse<>(
-          RestClientUtils.getResponse(this.agentNgManagerCgManagerClient.deleteEndpointForAccount(accountIdentifier)));
+          NGRestUtils.getCgResponse(this.agentNgManagerCgManagerClient.deleteEndpointForAccount(accountIdentifier)));
     }
   }
 
@@ -228,7 +228,7 @@ public class AgentMtlsEndpointNgResource {
     try (AutoLogContext ignore1 = new AccountLogContext(accountIdentifier, OVERRIDE_ERROR)) {
       this.ensureOperationIsExecutedByHarnessSupport();
       return new RestResponse<>(
-          RestClientUtils.getResponse(this.agentNgManagerCgManagerClient.getEndpointForAccount(accountIdentifier)));
+          NGRestUtils.getCgResponse(this.agentNgManagerCgManagerClient.getEndpointForAccount(accountIdentifier)));
     }
   }
 
@@ -262,7 +262,7 @@ public class AgentMtlsEndpointNgResource {
       @ApiParam(required = true, value = AgentMtlsApiConstants.API_PARAM_DOMAIN_PREFIX_DESC) @QueryParam(
           AgentMtlsApiConstants.API_PARAM_DOMAIN_PREFIX_NAME) @NotNull String domainPrefix) {
     this.ensureOperationIsExecutedByHarnessSupport();
-    return new RestResponse<>(RestClientUtils.getResponse(
+    return new RestResponse<>(NGRestUtils.getCgResponse(
         this.agentNgManagerCgManagerClient.isDomainPrefixAvailable(accountIdentifier, domainPrefix)));
   }
 

@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.FeatureName.AZURE_REPO_CONNECTOR;
 import static io.harness.beans.FeatureName.JENKINS_ARTIFACT;
 import static io.harness.beans.FeatureName.SSH_NG;
-import static io.harness.remote.client.RestClientUtils.getResponse;
+import static io.harness.remote.client.NGRestUtils.getCgResponse;
 
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
@@ -36,6 +36,6 @@ public class ConnectorEnumFilter extends EnumFeatureFlagFilter {
 
   @Override
   public boolean isFeatureFlagEnabled(FeatureName featureName, String accountId) {
-    return getResponse(accountClient.isFeatureFlagEnabled(featureName.name(), accountId));
+    return getCgResponse(accountClient.isFeatureFlagEnabled(featureName.name(), accountId));
   }
 }

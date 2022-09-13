@@ -27,7 +27,7 @@ import io.harness.ng.core.user.UserMembershipUpdateSource;
 import io.harness.ng.core.user.entities.UserGroup;
 import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
 import io.harness.ng.core.user.service.NgUserService;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.user.remote.UserClient;
 import io.harness.user.remote.UserFilterNG;
 
@@ -121,7 +121,7 @@ public class NGLdapGroupSyncHelper {
   private void updateUserInGroup(UserGroup userGroup, LdapUserResponse userResponse) {
     log.info("NGLDAP: updating user {}, in group: {} for account {} and externalUserId {}", userResponse.getEmail(),
         userGroup.getIdentifier(), userGroup.getAccountIdentifier(), userResponse.getUserId());
-    RestClientUtils.getResponse(
+    NGRestUtils.getCgResponse(
         userClient.updateUser(UserInfo.builder().name(userResponse.getName()).email(userResponse.getEmail()).build()));
   }
 

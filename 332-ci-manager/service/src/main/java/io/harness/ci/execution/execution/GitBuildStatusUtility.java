@@ -53,7 +53,7 @@ import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.service.DelegateGrpcClientWrapper;
 
 import com.google.inject.Inject;
@@ -399,7 +399,7 @@ public class GitBuildStatusUtility {
   }
 
   private String getVanityUrl(String accountID) {
-    return RestClientUtils.getResponse(accountClient.getVanityUrl(accountID));
+    return NGRestUtils.getCgResponse(accountClient.getVanityUrl(accountID));
   }
 
   private String getNgBaseUrl(String vanityUrl, String defaultBaseUrl) {

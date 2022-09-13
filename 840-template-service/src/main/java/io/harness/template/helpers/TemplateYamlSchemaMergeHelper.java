@@ -21,7 +21,7 @@ import io.harness.account.AccountClient;
 import io.harness.beans.FeatureName;
 import io.harness.jackson.JsonNodeUtils;
 import io.harness.ng.core.template.TemplateEntityType;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.NGRestUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -85,6 +85,6 @@ public class TemplateYamlSchemaMergeHelper {
 
   public static boolean isFeatureFlagEnabled(
       FeatureName featureName, String accountIdentifier, AccountClient accountClient) {
-    return RestClientUtils.getResponse(accountClient.isFeatureFlagEnabled(featureName.name(), accountIdentifier));
+    return NGRestUtils.getCgResponse(accountClient.isFeatureFlagEnabled(featureName.name(), accountIdentifier));
   }
 }

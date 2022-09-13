@@ -12,7 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.core.migration.NGSecretManagerMigration.BATCH_SIZE;
-import static io.harness.remote.client.RestClientUtils.getResponse;
+import static io.harness.remote.client.NGRestUtils.getCgResponse;
 import static io.harness.secretmanagerclient.SecretType.SSHKey;
 import static io.harness.secretmanagerclient.SecretType.SecretFile;
 import static io.harness.secretmanagerclient.SecretType.SecretText;
@@ -122,7 +122,7 @@ public class NGSecretMigrationFromManager implements NGMigration {
           secret.getProjectIdentifier(), secret.getIdentifier());
       String secretManagerIdentifier = getSecretManagerIdentifier(secret);
       if (encryptedData == null) {
-        encryptedData = fromEncryptedDataMigrationDTO(getResponse(secretManagerClient.getEncryptedDataMigrationDTO(
+        encryptedData = fromEncryptedDataMigrationDTO(getCgResponse(secretManagerClient.getEncryptedDataMigrationDTO(
             secret.getIdentifier(), secret.getAccountIdentifier(), secret.getOrgIdentifier(),
             secret.getProjectIdentifier(), HARNESS_SECRET_MANAGER_IDENTIFIER.equals(secretManagerIdentifier))));
         if (encryptedData == null) {

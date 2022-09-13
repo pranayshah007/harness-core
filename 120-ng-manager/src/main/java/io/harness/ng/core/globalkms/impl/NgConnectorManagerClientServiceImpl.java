@@ -7,7 +7,7 @@
 
 package io.harness.ng.core.globalkms.impl;
 
-import static io.harness.remote.client.RestClientUtils.getResponse;
+import static io.harness.remote.client.NGRestUtils.getCgResponse;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -29,6 +29,6 @@ public class NgConnectorManagerClientServiceImpl implements NgConnectorManagerCl
 
   @Override
   public boolean isHarnessSupportUser(String userId) {
-    return getResponse(ngConnectorManagerClient.isHarnessSupportUser(userId));
+    return getCgResponse(ngConnectorManagerClient.isHarnessSupportUser(userId));
   }
 }

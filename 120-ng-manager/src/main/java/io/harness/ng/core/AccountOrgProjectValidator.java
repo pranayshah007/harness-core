@@ -9,7 +9,7 @@ package io.harness.ng.core;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.remote.client.RestClientUtils.getResponse;
+import static io.harness.remote.client.NGRestUtils.getCgResponse;
 
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
@@ -38,7 +38,7 @@ public class AccountOrgProjectValidator {
       return true;
     } else if (isEmpty(orgIdentifier)) {
       try {
-        return getResponse(accountClient.getAccountDTO(accountIdentifier)) != null;
+        return getCgResponse(accountClient.getAccountDTO(accountIdentifier)) != null;
       } catch (InvalidRequestException exception) {
         log.error(String.format("Account with accountIdentifier %s not found", accountIdentifier));
         return false;

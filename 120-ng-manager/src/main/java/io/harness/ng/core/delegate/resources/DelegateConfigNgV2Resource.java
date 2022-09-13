@@ -33,7 +33,7 @@ import io.harness.ng.core.delegate.client.DelegateNgManagerCgManagerClient;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.rest.RestResponse;
 
 import software.wings.security.annotations.AuthRule;
@@ -366,7 +366,7 @@ public class DelegateConfigNgV2Resource {
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) String projectId,
       @RequestBody(required = true, description = "List of tags") DelegateGroupTags tags) {
-    return new RestResponse<>(RestClientUtils.getResponse(
+    return new RestResponse<>(NGRestUtils.getCgResponse(
         delegateNgManagerCgManagerClient.updateDelegateGroupTags_old(groupName, accountId, orgId, projectId, tags)));
   }
 }

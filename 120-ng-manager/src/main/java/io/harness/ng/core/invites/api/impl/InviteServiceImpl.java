@@ -67,7 +67,7 @@ import io.harness.notification.channeldetails.EmailChannel;
 import io.harness.notification.channeldetails.EmailChannel.EmailChannelBuilder;
 import io.harness.notification.notificationclient.NotificationClient;
 import io.harness.outbox.api.OutboxService;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.invites.spring.InviteRepository;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.dto.Principal;
@@ -304,7 +304,7 @@ public class InviteServiceImpl implements InviteService {
     }
 
     UserInfo userInfo = inviteAcceptResponse.getUserInfo();
-    AccountDTO account = RestClientUtils.getResponse(accountClient.getAccountDTO(accountIdentifier));
+    AccountDTO account = NGRestUtils.getCgResponse(accountClient.getAccountDTO(accountIdentifier));
     if (account == null) {
       throw new IllegalStateException(String.format("Account with identifier [%s] doesn't exists", accountIdentifier));
     }
@@ -348,7 +348,7 @@ public class InviteServiceImpl implements InviteService {
   }
 
   private void checkUserLimit(String accountId, String emailId) {
-    boolean limitHasBeenReached = RestClientUtils.getResponse(userClient.checkUserLimit(accountId, emailId));
+    boolean limitHasBeenReached = NGRestUtils.getCgResponse(userClient.checkUserLimit(accountId, emailId));
     if (limitHasBeenReached) {
       throw new InvalidRequestException("The user count limit has been reached in this account");
     }
@@ -358,7 +358,7 @@ public class InviteServiceImpl implements InviteService {
       String accountIdentifier, String jwtToken, String email, boolean isScimInvite) {
     UserInviteDTO userInviteDTO =
         UserInviteDTO.builder().accountId(accountIdentifier).email(email).name(email).token(jwtToken).build();
-    RestClientUtils.getResponse(userClient.createUserAndCompleteNGInvite(userInviteDTO, isScimInvite));
+    NGRestUtils.getCgResponse(userClient.createUserAndCompleteNGInvite(userInviteDTO, isScimInvite));
   }
 
   private URI getUserInfoSubmitUrl(
@@ -531,7 +531,7 @@ public class InviteServiceImpl implements InviteService {
     if (scimLdapArray[0]) {
       createAndInviteNonPasswordUser(accountId, invite.getInviteToken(), email, true);
     } else if (scimLdapArray[1]
-        || RestClientUtils.getResponse(accountClient.checkAutoInviteAcceptanceEnabledForAccount(accountId))) {
+        || NGRestUtils.getCgResponse(accountClient.checkAutoInviteAcceptanceEnabledForAccount(accountId))) {
       createAndInviteNonPasswordUser(accountId, invite.getInviteToken(), email, false);
     }
     return InviteOperationResponse.USER_INVITED_SUCCESSFULLY;
@@ -571,7 +571,7 @@ public class InviteServiceImpl implements InviteService {
   }
 
   private String getInvitationMailEmbedUrl(Invite invite) throws URISyntaxException {
-    AccountDTO account = RestClientUtils.getResponse(accountClient.getAccountDTO(invite.getAccountIdentifier()));
+    AccountDTO account = NGRestUtils.getCgResponse(accountClient.getAccountDTO(invite.getAccountIdentifier()));
     String fragment = String.format(INVITE_URL, invite.getAccountIdentifier(), account.getName(),
         account.getCompanyName(), invite.getEmail(), invite.getInviteToken());
 
@@ -627,7 +627,7 @@ public class InviteServiceImpl implements InviteService {
 
     String accountName = "";
     // get the name of the account
-    AccountDTO account = RestClientUtils.getResponse(accountClient.getAccountDTO(accountId));
+    AccountDTO account = NGRestUtils.getCgResponse(accountClient.getAccountDTO(accountId));
     if (account != null) {
       accountName = account.getName();
     }

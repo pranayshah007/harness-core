@@ -78,7 +78,7 @@ import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptionConfig;
@@ -355,7 +355,7 @@ public class TerraformStepHelper {
             FileBucket fileBucket = FileBucket.valueOf(tfPlanJsonOutput.getTfPlanFileBucket());
             log.info("Remove terraform plan json file [{}] from bucket [{}] for provisioner [{}]",
                 tfPlanJsonOutput.getTfPlanFileId(), fileBucket, tfPlanJsonOutput.getProvisionerIdentifier());
-            RestClientUtils.getResponse(fileService.get().deleteFile(tfPlanJsonOutput.getTfPlanFileId(), fileBucket));
+            NGRestUtils.getCgResponse(fileService.get().deleteFile(tfPlanJsonOutput.getTfPlanFileId(), fileBucket));
           } catch (Exception e) {
             log.warn("Failed to remove terraform plan json file [{}] for provisioner [{}]",
                 tfPlanJsonOutput.getTfPlanFileId(), tfPlanJsonOutput.getProvisionerIdentifier(), e);
@@ -593,7 +593,7 @@ public class TerraformStepHelper {
 
   public String getLatestFileId(String entityId) {
     try {
-      return RestClientUtils.getResponse(fileService.get().getLatestFileId(entityId, FileBucket.TERRAFORM_STATE));
+      return NGRestUtils.getCgResponse(fileService.get().getLatestFileId(entityId, FileBucket.TERRAFORM_STATE));
     } catch (Exception exception) {
       String message = format("Unable to call fileservice to fetch latest file id for entityId: [%s]", entityId);
       throw new InvalidRequestException(message, exception);
@@ -621,7 +621,7 @@ public class TerraformStepHelper {
 
   public void updateParentEntityIdAndVersion(String entityId, String stateFileId) {
     try {
-      RestClientUtils.getResponse(fileService.get().updateParentEntityIdAndVersion(
+      NGRestUtils.getCgResponse(fileService.get().updateParentEntityIdAndVersion(
           URLEncoder.encode(entityId, "UTF-8"), stateFileId, FileBucket.TERRAFORM_STATE));
     } catch (Exception ex) {
       log.error(format("EntityId and Version update failed for entityId: [%s], with error %s: ", entityId,

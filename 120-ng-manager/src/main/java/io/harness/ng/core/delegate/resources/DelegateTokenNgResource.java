@@ -24,7 +24,7 @@ import io.harness.delegate.beans.DelegateTokenStatus;
 import io.harness.ng.core.delegate.client.DelegateNgManagerCgManagerClient;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.rest.RestResponse;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
@@ -98,7 +98,7 @@ public class DelegateTokenNgResource {
       @Parameter(description = "Delegate Token name") @QueryParam("tokenName") @NotNull String tokenName) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(DELEGATE_RESOURCE_TYPE, null), DELEGATE_EDIT_PERMISSION);
-    return new RestResponse<>(RestClientUtils.getResponse(
+    return new RestResponse<>(NGRestUtils.getCgResponse(
         delegateTokenClient.createToken(accountIdentifier, orgIdentifier, projectIdentifier, tokenName)));
   }
 
@@ -122,7 +122,7 @@ public class DelegateTokenNgResource {
       @Parameter(description = "Delegate Token name") @QueryParam("tokenName") @NotNull String tokenName) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(DELEGATE_RESOURCE_TYPE, null), DELEGATE_DELETE_PERMISSION);
-    return new RestResponse<>(RestClientUtils.getResponse(
+    return new RestResponse<>(NGRestUtils.getCgResponse(
         delegateTokenClient.revokeToken(accountIdentifier, orgIdentifier, projectIdentifier, tokenName)));
   }
 
@@ -149,7 +149,7 @@ public class DelegateTokenNgResource {
       DelegateTokenStatus status) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(DELEGATE_RESOURCE_TYPE, null), DELEGATE_VIEW_PERMISSION);
-    return new RestResponse<>(RestClientUtils.getResponse(
+    return new RestResponse<>(NGRestUtils.getCgResponse(
         delegateTokenClient.getTokens(accountIdentifier, orgIdentifier, projectIdentifier, status)));
   }
 
@@ -175,7 +175,7 @@ public class DelegateTokenNgResource {
       @Parameter(description = "Delegate Token name") @QueryParam("delegateTokenName") String delegateTokenName) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(DELEGATE_RESOURCE_TYPE, null), DELEGATE_VIEW_PERMISSION);
-    return new RestResponse<>(RestClientUtils.getResponse(delegateTokenClient.getDelegateGroupsUsingToken(
+    return new RestResponse<>(NGRestUtils.getCgResponse(delegateTokenClient.getDelegateGroupsUsingToken(
         accountIdentifier, orgIdentifier, projectIdentifier, delegateTokenName)));
   }
 }

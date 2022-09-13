@@ -89,7 +89,7 @@ import io.harness.ng.core.entitydetail.EntityDetailProtoToRestMapper;
 import io.harness.product.ci.scm.proto.CreateFileResponse;
 import io.harness.product.ci.scm.proto.DeleteFileResponse;
 import io.harness.product.ci.scm.proto.UpdateFileResponse;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.security.Principal;
 import io.harness.security.dto.UserPrincipal;
 import io.harness.tasks.DecryptGitApiAccessHelper;
@@ -644,6 +644,6 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
   }
 
   private boolean isEnabled(String accountId, FeatureName featureName) {
-    return RestClientUtils.getResponse(accountClient.isFeatureFlagEnabled(featureName.name(), accountId));
+    return NGRestUtils.getCgResponse(accountClient.isFeatureFlagEnabled(featureName.name(), accountId));
   }
 }

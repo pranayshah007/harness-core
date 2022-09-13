@@ -26,7 +26,7 @@ import io.harness.ng.core.user.UserMembershipUpdateSource;
 import io.harness.ng.core.user.entities.UserGroup;
 import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
 import io.harness.ng.core.user.service.NgUserService;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.scim.PatchOperation;
 import io.harness.scim.PatchRequest;
 import io.harness.scim.ScimListResponse;
@@ -285,7 +285,7 @@ public class NGScimUserServiceImpl implements ScimUserService {
       changeScimUserDisabled(accountId, userId, !patchOperation.getValue(Boolean.class));
     }
 
-    if (RestClientUtils.getResponse(
+    if (NGRestUtils.getCgResponse(
             accountClient.isFeatureFlagEnabled(FeatureName.UPDATE_EMAILS_VIA_SCIM.name(), accountId))
         && "userName".equals(patchOperation.getPath()) && patchOperation.getValue(String.class) != null
         && !userMetadataDTO.getEmail().equals(patchOperation.getValue(String.class))) {

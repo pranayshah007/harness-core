@@ -18,7 +18,7 @@ import static io.harness.delegate.beans.connector.ConnectorType.LOCAL;
 import static io.harness.delegate.beans.connector.ConnectorType.VAULT;
 import static io.harness.delegate.beans.connector.awskmsconnector.AwsKmsCredentialType.MANUAL_CONFIG;
 import static io.harness.helpers.GlobalSecretManagerUtils.GLOBAL_ACCOUNT_ID;
-import static io.harness.remote.client.RestClientUtils.getResponse;
+import static io.harness.remote.client.NGRestUtils.getCgResponse;
 
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 
@@ -333,7 +333,7 @@ public class NGSecretManagerMigration {
 
   private SecretManagerConfigDTO getSecretManagerConfigDTOFromCG(
       String accountIdentifier, ConnectorInfoDTO connectorInfoDTO) {
-    return getResponse(secretManagerClient.getSecretManager(connectorInfoDTO.getIdentifier(), accountIdentifier,
+    return getCgResponse(secretManagerClient.getSecretManager(connectorInfoDTO.getIdentifier(), accountIdentifier,
         connectorInfoDTO.getOrgIdentifier(), connectorInfoDTO.getProjectIdentifier(), false));
   }
 

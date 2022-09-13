@@ -25,7 +25,7 @@ import io.harness.ng.core.dto.OrganizationResponse;
 import io.harness.ng.core.dto.ProjectResponse;
 import io.harness.organization.remote.OrganizationClient;
 import io.harness.project.remote.ProjectClient;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.NGRestUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -81,7 +81,7 @@ public class HarnessScopeServiceImpl implements HarnessScopeService {
       }
     } else if (scope.getLevel() == HarnessScopeLevel.ACCOUNT) {
       try {
-        AccountDTO response = RestClientUtils.getResponse(accountClient.getAccountDTO(params.getAccountIdentifier()));
+        AccountDTO response = NGRestUtils.getCgResponse(accountClient.getAccountDTO(params.getAccountIdentifier()));
         scope.setInstanceName(response.getName());
 
       } catch (InvalidRequestException e) {

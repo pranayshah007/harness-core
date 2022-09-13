@@ -28,7 +28,7 @@ import io.harness.ng.core.dto.AccountDTO;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.security.annotations.NextGenManagerAuth;
 
 import software.wings.security.annotations.AuthRule;
@@ -104,7 +104,7 @@ public class AccountResource {
           "accountIdentifier") String accountIdentifier,
       @Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) @NotNull @AccountIdentifier String accountId) {
-    AccountDTO accountDTO = RestClientUtils.getResponse(accountClient.getAccountDTO(accountIdentifier));
+    AccountDTO accountDTO = NGRestUtils.getCgResponse(accountClient.getAccountDTO(accountIdentifier));
 
     accountDTO.setCluster(accountConfig.getDeploymentClusterName());
 
@@ -126,7 +126,7 @@ public class AccountResource {
                         "accountIdentifier") @AccountIdentifier String accountIdentifier,
       @io.swagger.v3.oas.annotations.parameters.RequestBody(
           required = true, description = "This is details of the Account. Name is mandatory.") AccountDTO dto) {
-    AccountDTO accountDTO = RestClientUtils.getResponse(accountClient.updateAccountName(accountIdentifier, dto));
+    AccountDTO accountDTO = NGRestUtils.getCgResponse(accountClient.updateAccountName(accountIdentifier, dto));
 
     return ResponseDTO.newResponse(accountDTO);
   }
@@ -149,7 +149,7 @@ public class AccountResource {
     if (DeployVariant.isCommunity(deployVersion)) {
       throw new InvalidRequestException("Operation is not supported");
     }
-    AccountDTO accountDTO = RestClientUtils.getResponse(accountClient.updateDefaultExperience(accountIdentifier, dto));
+    AccountDTO accountDTO = NGRestUtils.getCgResponse(accountClient.updateDefaultExperience(accountIdentifier, dto));
 
     return ResponseDTO.newResponse(accountDTO);
   }

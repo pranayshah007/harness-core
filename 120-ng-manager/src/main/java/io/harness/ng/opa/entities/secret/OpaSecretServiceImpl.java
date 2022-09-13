@@ -18,7 +18,7 @@ import io.harness.ng.opa.OpaEvaluationContext;
 import io.harness.ng.opa.OpaService;
 import io.harness.opaclient.OpaUtils;
 import io.harness.opaclient.model.OpaConstants;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.NGRestUtils;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -42,7 +42,7 @@ public class OpaSecretServiceImpl implements OpaSecretService {
 
   public GovernanceMetadata evaluatePoliciesWithEntity(String accountId, SecretDTOV2 secretDTO, String orgIdentifier,
       String projectIdentifier, String action, String identifier) {
-    if (!RestClientUtils.getResponse(
+    if (!NGRestUtils.getCgResponse(
             accountClient.isFeatureFlagEnabled(FeatureName.OPA_SECRET_GOVERNANCE.name(), accountId))) {
       return GovernanceMetadata.newBuilder()
           .setDeny(false)

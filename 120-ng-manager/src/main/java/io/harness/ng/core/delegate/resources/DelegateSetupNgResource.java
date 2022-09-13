@@ -22,7 +22,7 @@ import io.harness.delegate.beans.DelegateSetupDetails;
 import io.harness.ng.core.delegate.client.DelegateNgManagerCgManagerClient;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.NGRestUtils;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
@@ -108,7 +108,7 @@ public class DelegateSetupNgResource {
       DelegateSetupDetails delegateSetupDetails) throws IOException {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(DELEGATE_RESOURCE_TYPE, null), DELEGATE_EDIT_PERMISSION);
-    String yamlString = RestClientUtils.getResponse(delegateNgManagerCgManagerClient.generateHelmValuesFile(
+    String yamlString = NGRestUtils.getCgResponse(delegateNgManagerCgManagerClient.generateHelmValuesFile(
         accountIdentifier, orgIdentifier, projectIdentifier, delegateSetupDetails));
 
     // convert String to file and send as response

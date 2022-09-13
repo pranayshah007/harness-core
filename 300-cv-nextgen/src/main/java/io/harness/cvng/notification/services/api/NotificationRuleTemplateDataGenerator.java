@@ -30,7 +30,7 @@ import io.harness.ng.core.dto.AccountDTO;
 import io.harness.ng.core.dto.OrganizationDTO;
 import io.harness.ng.core.dto.ProjectDTO;
 import io.harness.ng.core.service.dto.ServiceResponseDTO;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.NGRestUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -62,7 +62,7 @@ public abstract class NotificationRuleTemplateDataGenerator<T extends Notificati
     String baseUrl = getBaseUrl(getPortalUrl(), vanityUrl);
 
     AccountDTO accountDTO =
-        RestClientUtils.getResponse(accountClient.getAccountDTO(projectParams.getAccountIdentifier()));
+        NGRestUtils.getCgResponse(accountClient.getAccountDTO(projectParams.getAccountIdentifier()));
     OrganizationDTO organizationDTO =
         nextGenService.getOrganization(projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier());
     ProjectDTO projectDTO = nextGenService.getProject(
@@ -101,7 +101,7 @@ public abstract class NotificationRuleTemplateDataGenerator<T extends Notificati
   }
 
   private String getVanityUrl(String accountIdentifier) {
-    return RestClientUtils.getResponse(accountClient.getVanityUrl(accountIdentifier));
+    return NGRestUtils.getCgResponse(accountClient.getVanityUrl(accountIdentifier));
   }
 
   private static String getBaseUrl(String defaultBaseUrl, String vanityUrl) {

@@ -18,7 +18,7 @@ import static io.harness.eraro.ErrorCode.INVALID_CREDENTIAL;
 import static io.harness.eraro.ErrorCode.SECRET_MANAGEMENT_ERROR;
 import static io.harness.eraro.ErrorCode.VAULT_OPERATION_ERROR;
 import static io.harness.exception.WingsException.USER;
-import static io.harness.remote.client.RestClientUtils.getResponse;
+import static io.harness.remote.client.NGRestUtils.getCgResponse;
 import static io.harness.security.encryption.AccessType.APP_ROLE;
 import static io.harness.security.encryption.AccessType.AWS_IAM;
 import static io.harness.security.encryption.AccessType.TOKEN;
@@ -76,7 +76,7 @@ import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
 import io.harness.ng.core.encryptors.NGManagerEncryptorHelper;
 import io.harness.ng.core.entities.NGEncryptedData;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.ConnectorRepository;
 import io.harness.secretmanagerclient.NGSecretManagerMetadata;
 import io.harness.secretmanagerclient.SecretType;
@@ -203,7 +203,7 @@ public class NGVaultServiceImpl implements NGVaultService {
 
   @Override
   public void renewAppRoleClientToken(VaultConnector vaultConnector) {
-    if (RestClientUtils.getResponse(accountClient.isFeatureFlagEnabled(
+    if (NGRestUtils.getCgResponse(accountClient.isFeatureFlagEnabled(
             DO_NOT_RENEW_APPROLE_TOKEN.name(), vaultConnector.getAccountIdentifier()))) {
       vaultConnector.setRenewAppRoleToken(false);
       connectorRepository.save(vaultConnector, ChangeType.NONE);
@@ -721,7 +721,7 @@ public class NGVaultServiceImpl implements NGVaultService {
 
   private void setCertValidation(String accountIdentifier, BaseVaultConfig secretManagerConfig) {
     Boolean isCertValidationRequired =
-        getResponse(accountClient.isFeatureFlagEnabled(ENABLE_CERT_VALIDATION.name(), accountIdentifier));
+        getCgResponse(accountClient.isFeatureFlagEnabled(ENABLE_CERT_VALIDATION.name(), accountIdentifier));
     secretManagerConfig.setCertValidationRequired(isCertValidationRequired);
   }
 
