@@ -57,7 +57,13 @@ public class TemplateRefreshServiceImpl implements TemplateRefreshService {
     TemplateEntity template = getTemplate(accountId, orgId, projectId, templateIdentifier, versionLabel);
     templateServiceImpl.setupGitParentEntityDetails(
         accountId, orgId, projectId, template.getRepo(), template.getConnectorRef());
-    String refreshedYaml = refreshLinkedTemplateInputs(accountId, orgId, projectId, template.getYaml());
+    String yaml = template.getYaml();
+    updateTemplate(accountId, orgId, projectId, templateIdentifier, versionLabel, yaml);
+  }
+
+  private void updateTemplate(
+      String accountId, String orgId, String projectId, String templateIdentifier, String versionLabel, String yaml) {
+    String refreshedYaml = refreshLinkedTemplateInputs(accountId, orgId, projectId, yaml);
     TemplateEntity templateEntity = NGTemplateDtoMapper.toTemplateEntity(
         accountId, orgId, projectId, templateIdentifier, versionLabel, refreshedYaml);
     templateService.updateTemplateEntity(templateEntity, ChangeType.MODIFY, false, "Refreshed template inputs");
@@ -87,6 +93,11 @@ public class TemplateRefreshServiceImpl implements TemplateRefreshService {
     TemplateEntity template = getTemplate(accountId, orgId, projectId, templateIdentifier, versionLabel);
     templateServiceImpl.setupGitParentEntityDetails(
         accountId, orgId, projectId, template.getRepo(), template.getConnectorRef());
+    return getValidateTemplateInputsResponseDTO(accountId, orgId, projectId, template);
+  }
+
+  private ValidateTemplateInputsResponseDTO getValidateTemplateInputsResponseDTO(
+      String accountId, String orgId, String projectId, TemplateEntity template) {
     ValidateTemplateInputsResponseDTO validateTemplateInputsResponse =
         templateInputsValidator.validateNestedTemplateInputsForTemplates(accountId, orgId, projectId, template);
 
@@ -117,8 +128,9 @@ public class TemplateRefreshServiceImpl implements TemplateRefreshService {
   @Override
   public void recursivelyRefreshTemplates(
       String accountId, String orgId, String projectId, String templateIdentifier, String versionLabel) {
+    TemplateEntity template = getTemplate(accountId, orgId, projectId, templateIdentifier, versionLabel);
     ValidateTemplateInputsResponseDTO validateTemplateInputsResponse =
-        validateTemplateInputsInTemplate(accountId, orgId, projectId, templateIdentifier, versionLabel);
+        getValidateTemplateInputsResponseDTO(accountId, orgId, projectId, template);
     if (validateTemplateInputsResponse.isValidYaml()) {
       return;
     }
@@ -162,9 +174,8 @@ public class TemplateRefreshServiceImpl implements TemplateRefreshService {
         accessControlClient.checkForAccessOrThrow(
             ResourceScope.of(accountId, templateResponse.getOrgIdentifier(), templateResponse.getProjectIdentifier()),
             Resource.of(TEMPLATE, templateResponse.getIdentifier()), PermissionTypes.TEMPLATE_EDIT_PERMISSION);
-        refreshAndUpdateTemplate(accountId, templateResponse.getOrgIdentifier(),
-            templateResponse.getProjectIdentifier(), templateResponse.getIdentifier(),
-            templateResponse.getVersionLabel());
+        updateTemplate(accountId, templateResponse.getOrgIdentifier(), templateResponse.getProjectIdentifier(),
+            templateResponse.getIdentifier(), templateResponse.getVersionLabel(), templateResponse.getYaml());
         visitedTemplateSet.add(templateResponse);
       }
     }
