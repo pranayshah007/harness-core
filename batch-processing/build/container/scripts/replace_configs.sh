@@ -11,7 +11,7 @@ replace_key_value () {
   CONFIG_KEY="$1";
   CONFIG_VALUE="$2";
   if [[ "" != "$CONFIG_VALUE" ]]; then
-    export CONFIG_VALUE; export CONFIG_KEY; yq -i '.env(CONFIG_KEY)"=env(CONFIG_VALUE)' "$CONFIG_FILE"
+    export CONFIG_VALUE; export CONFIG_KEY; export CONFIG_KEY=.$CONFIG_KEY; yq -i 'eval(strenv(CONFIG_KEY))=env(CONFIG_VALUE)' $CONFIG_FILE
   fi
 }
 
