@@ -251,7 +251,7 @@ public class PipelineRefreshServiceTest extends PipelineServiceTestBase {
   public void testRecursivelyRefreshAllTemplateInputsInPipelineWithTemplateReferences() {
     String refreshedYaml = "refreshedYaml";
     when(pmsPipelineTemplateHelper.refreshAllTemplatesForYaml(
-             ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineEntityWithTemplates.getYaml()))
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineEntityWithTemplates.getYaml(), pipelineEntityWithTemplates))
         .thenReturn(YamlFullRefreshResponseDTO.builder().shouldRefreshYaml(true).refreshedYaml(refreshedYaml).build());
     when(pmsPipelineService.updatePipelineYaml(any(), any()))
         .thenReturn(PipelineCRUDResult.builder()
@@ -261,7 +261,8 @@ public class PipelineRefreshServiceTest extends PipelineServiceTestBase {
     pipelineRefreshService.recursivelyRefreshAllTemplateInputsInPipeline(
         ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITH_TEMPLATES);
     verify(pmsPipelineService).get(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITH_TEMPLATES, false);
-    verify(pmsPipelineTemplateHelper).refreshAllTemplatesForYaml(anyString(), anyString(), anyString(), anyString());
+    verify(pmsPipelineTemplateHelper)
+        .refreshAllTemplatesForYaml(anyString(), anyString(), anyString(), anyString(), any(PipelineEntity.class));
 
     ArgumentCaptor<PipelineEntity> argumentCaptor = ArgumentCaptor.forClass(PipelineEntity.class);
     verify(pmsPipelineService).updatePipelineYaml(argumentCaptor.capture(), eq(ChangeType.MODIFY));
@@ -279,6 +280,6 @@ public class PipelineRefreshServiceTest extends PipelineServiceTestBase {
         ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITHOUT_TEMPLATES);
     verify(pmsPipelineService).get(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITHOUT_TEMPLATES, false);
     verify(pmsPipelineTemplateHelper, never())
-        .refreshAllTemplatesForYaml(anyString(), anyString(), anyString(), anyString());
+        .refreshAllTemplatesForYaml(anyString(), anyString(), anyString(), anyString(), any(PipelineEntity.class));
   }
 }

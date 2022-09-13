@@ -102,8 +102,8 @@ public class PipelineRefreshServiceImpl implements PipelineRefreshService {
     PipelineEntity pipelineEntity = getPipelineEntity(accountId, orgId, projectId, pipelineIdentifier);
 
     if (Boolean.TRUE.equals(pipelineEntity.getTemplateReference())) {
-      YamlFullRefreshResponseDTO refreshResponse =
-          pmsPipelineTemplateHelper.refreshAllTemplatesForYaml(accountId, orgId, projectId, pipelineEntity.getYaml());
+      YamlFullRefreshResponseDTO refreshResponse = pmsPipelineTemplateHelper.refreshAllTemplatesForYaml(
+          accountId, orgId, projectId, pipelineEntity.getYaml(), pipelineEntity);
       if (refreshResponse.isShouldRefreshYaml()) {
         updatePipelineWithYaml(pipelineEntity, refreshResponse.getRefreshedYaml());
       }

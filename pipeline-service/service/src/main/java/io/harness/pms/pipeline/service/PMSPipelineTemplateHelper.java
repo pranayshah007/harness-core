@@ -170,17 +170,19 @@ public class PMSPipelineTemplateHelper {
   }
 
   public YamlFullRefreshResponseDTO refreshAllTemplatesForYaml(
-      String accountId, String orgId, String projectId, String yaml) {
+      String accountId, String orgId, String projectId, String yaml, PipelineEntity pipelineEntity) {
     GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
     RefreshRequestDTO refreshRequest = RefreshRequestDTO.builder().yaml(yaml).build();
     if (gitEntityInfo != null) {
       return NGRestUtils.getResponse(templateResourceClient.refreshAllTemplatesForYaml(accountId, orgId, projectId,
           gitEntityInfo.isNewBranch() ? gitEntityInfo.getBaseBranch() : gitEntityInfo.getBranch(),
-          gitEntityInfo.getYamlGitConfigId(), true, refreshRequest));
+          gitEntityInfo.getYamlGitConfigId(), true, pipelineEntity.getConnectorRef(), pipelineEntity.getRepo(),
+          pipelineEntity.getAccountIdentifier(), pipelineEntity.getOrgIdentifier(),
+          pipelineEntity.getProjectIdentifier(), refreshRequest));
     }
 
     return NGRestUtils.getResponse(templateResourceClient.refreshAllTemplatesForYaml(
-        accountId, orgId, projectId, null, null, null, refreshRequest));
+        accountId, orgId, projectId, null, null, null, null, null, null, null, null, refreshRequest));
   }
 
   private String getConnectorRef() {
