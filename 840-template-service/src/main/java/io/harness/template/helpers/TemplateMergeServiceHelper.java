@@ -19,8 +19,6 @@ import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_INPUTS;
 import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_REF;
 import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_VERSION_LABEL;
 
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.google.common.collect.ImmutableMap;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
@@ -48,7 +46,9 @@ import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.*;
@@ -174,7 +174,9 @@ public class TemplateMergeServiceHelper {
       ObjectNode templateNode = (ObjectNode) templateYamlField.getNode().getCurrJsonNode();
       ObjectNode templateNodeCopy = templateNode.deepCopy();
       String templateSpec = templateNode.retain(SPEC).toString();
-      String templateVariableSpec = new ObjectNode(JsonNodeFactory.instance,Collections.singletonMap(DUMMY_NODE, templateNodeCopy.retain("variables"))).toString();
+      String templateVariableSpec = new ObjectNode(
+          JsonNodeFactory.instance, Collections.singletonMap(DUMMY_NODE, templateNodeCopy.retain("variables")))
+                                        .toString();
       if (isEmpty(templateSpec)) {
         log.error("Template yaml provided does not have spec in it.");
         throw new NGTemplateException("Template yaml provided does not have spec in it.");
@@ -184,17 +186,23 @@ public class TemplateMergeServiceHelper {
       if (isEmpty(templateInputsYamlWithSpec) && isEmpty(templateVariablesYamlWithDummy)) {
         return templateInputsYamlWithSpec;
       }
-      JsonNode templateVariablesJson =
-           YamlUtils.readTree(templateVariablesYamlWithDummy).getNode().getCurrJsonNode().get(DUMMY_NODE).get(YAMLFieldNameConstants.VARIABLES);
+      JsonNode templateVariablesJson = YamlUtils.readTree(templateVariablesYamlWithDummy)
+                                           .getNode()
+                                           .getCurrJsonNode()
+                                           .get(DUMMY_NODE)
+                                           .get(YAMLFieldNameConstants.VARIABLES);
       JsonNode templateInputsYaml =
-              YamlUtils.readTree(templateInputsYamlWithSpec).getNode().getCurrJsonNode().get(SPEC);
+          YamlUtils.readTree(templateInputsYamlWithSpec).getNode().getCurrJsonNode().get(SPEC);
       JsonNode finalTemplateJson;
-      if(templateVariablesJson==null) {
-        finalTemplateJson = new ObjectNode(JsonNodeFactory.instance, Collections.singletonMap("templateInputs", templateInputsYaml));
-      } else if(templateInputsYaml == null){
-        finalTemplateJson = new ObjectNode(JsonNodeFactory.instance, Collections.singletonMap("templateVariables", templateVariablesJson));
-      }else{
-        finalTemplateJson = new ObjectNode(JsonNodeFactory.instance, ImmutableMap.of("templateVariables", templateVariablesJson, "templateInputs", templateInputsYaml));
+      if (templateVariablesJson == null) {
+        finalTemplateJson =
+            new ObjectNode(JsonNodeFactory.instance, Collections.singletonMap("templateInputs", templateInputsYaml));
+      } else if (templateInputsYaml == null) {
+        finalTemplateJson = new ObjectNode(
+            JsonNodeFactory.instance, Collections.singletonMap("templateVariables", templateVariablesJson));
+      } else {
+        finalTemplateJson = new ObjectNode(JsonNodeFactory.instance,
+            ImmutableMap.of("templateVariables", templateVariablesJson, "templateInputs", templateInputsYaml));
       }
       return YamlPipelineUtils.writeYamlString(finalTemplateJson);
     } catch (IOException e) {
