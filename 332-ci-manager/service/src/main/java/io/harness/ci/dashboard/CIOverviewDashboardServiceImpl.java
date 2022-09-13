@@ -67,7 +67,7 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
       ExecutionStatus.ASYNCWAITING.name(), ExecutionStatus.TASKWAITING.name(), ExecutionStatus.TIMEDWAITING.name(),
       ExecutionStatus.PAUSED.name(), ExecutionStatus.PAUSING.name());
 
-  private static final int MAX_RETRY_COUNT = 5;
+  private static final int MAX_RETRY_COUNT = 1;
 
   // This ID comes, and should only come from internal source only. No need to use prepare statement here
   public String queryBuilderServiceTag(String queryIdCdTable) {
@@ -86,6 +86,7 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
         + WEBHOOK + "' and startts<=? and startts>=?;";
 
     while (totalTries <= MAX_RETRY_COUNT) {
+      totalTries++;
       ResultSet resultSet = null;
       try (Connection connection = timeScaleDBService.getDBConnection();
            PreparedStatement statement = connection.prepareStatement(query)) {
@@ -95,8 +96,9 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
         resultSet = statement.executeQuery();
         return resultSet.next() ? resultSet.getLong(1) : 0L;
       } catch (SQLException ex) {
-        log.error(ex.getMessage());
-        totalTries++;
+        log.error("Caught SQL Exception:" + ex.getMessage());
+      } catch (Exception ex) {
+        log.error("Caught General Exception:" + ex.getMessage());
       } finally {
         DBUtils.close(resultSet);
       }
@@ -112,6 +114,7 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
         + WEBHOOK + "' and startts<=? and startts>=?;";
 
     while (totalTries <= MAX_RETRY_COUNT) {
+      totalTries++;
       ResultSet resultSet = null;
       try (Connection connection = timeScaleDBService.getDBConnection();
            PreparedStatement statement = connection.prepareStatement(query)) {
@@ -140,8 +143,9 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
             .references(usageReferences)
             .build();
       } catch (SQLException ex) {
-        log.error(ex.getMessage());
-        totalTries++;
+        log.error("Caught SQL Exception:" + ex.getMessage());
+      } catch (Exception ex) {
+        log.error("Caught General Exception:" + ex.getMessage());
       } finally {
         DBUtils.close(resultSet);
       }
@@ -164,6 +168,7 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
 
     long totalTries = 0;
     while (totalTries <= MAX_RETRY_COUNT) {
+      totalTries++;
       ResultSet resultSet = null;
       try (Connection connection = timeScaleDBService.getDBConnection();
            PreparedStatement statement = connection.prepareStatement(selectStatusQuery)) {
@@ -173,8 +178,9 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
         resultSet = statement.executeQuery();
         return parseResultToStatusAndTime(resultSet);
       } catch (SQLException ex) {
-        log.error(ex.getMessage());
-        totalTries++;
+        log.error("Caught SQL Exception:" + ex.getMessage());
+      } catch (Exception ex) {
+        log.error("Caught General Exception:" + ex.getMessage());
       } finally {
         DBUtils.close(resultSet);
       }
@@ -198,7 +204,7 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
 
   public BuildFailureInfo getBuildFailureInfo(String name, String identifier, String branch_name, String commit,
       String commit_id, long startTs, long endTs, AuthorInfo author, String status, String planExecutionId,
-      String triggerType, GitInfo gitInfo, List<ServiceDeploymentInfo> serviceDeploymentInfos) {
+      String triggerType, GitInfo gitInfo) {
     return BuildFailureInfo.builder()
         .piplineName(name)
         .pipelineIdentifier(identifier)
@@ -208,7 +214,6 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
         .planExecutionId(planExecutionId)
         .commitID(commit_id)
         .gitInfo(gitInfo)
-        .serviceInfoList(serviceDeploymentInfos)
         .startTs(startTs)
         .endTs(endTs == -1L ? null : endTs)
         .author(author)
@@ -218,7 +223,7 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
 
   public BuildActiveInfo getBuildActiveInfo(String name, String identifier, String branch_name, String commit,
       String commit_id, AuthorInfo author, long startTs, String status, String planExecutionId, long endTs,
-      String triggerType, GitInfo gitInfo, List<ServiceDeploymentInfo> serviceDeploymentInfos) {
+      String triggerType, GitInfo gitInfo) {
     return BuildActiveInfo.builder()
         .piplineName(name)
         .pipelineIdentifier(identifier)
@@ -229,7 +234,6 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
         .triggerType(triggerType)
         .gitInfo(gitInfo)
         .author(author)
-        .serviceInfoList(serviceDeploymentInfos)
         .startTs(startTs)
         .status(status)
         .endTs(endTs == -1 ? null : endTs)
@@ -356,8 +360,9 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
     totalBuildSqlBuilder.append(") ORDER BY startts DESC LIMIT ?;");
 
     int totalTries = 0;
-
+    List<String> serviceIds = new ArrayList<>();
     while (totalTries <= MAX_RETRY_COUNT) {
+      totalTries++;
       ResultSet resultSet = null;
       try (Connection connection = timeScaleDBService.getDBConnection();
            PreparedStatement statement = connection.prepareStatement(totalBuildSqlBuilder.toString())) {
@@ -365,20 +370,36 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
         statement.setLong(4, limit);
         resultSet = statement.executeQuery();
         while (resultSet != null && resultSet.next()) {
-          buildFailureInfos.add(parseResultToBuildFailureInfo(resultSet));
+          parseResultToBuildFailureInfo(resultSet, buildFailureInfos, serviceIds);
         }
-        return buildFailureInfos;
+        break;
       } catch (SQLException ex) {
-        log.error(ex.getMessage());
-        totalTries++;
+        buildFailureInfos.clear();
+        serviceIds.clear();
+        log.error("Caught SQL Exception:" + ex.getMessage());
+      } catch (Exception ex) {
+        buildFailureInfos.clear();
+        serviceIds.clear();
+        log.error("Caught General Exception:" + ex.getMessage());
       } finally {
         DBUtils.close(resultSet);
       }
     }
+
+    for (int i = 0; i < serviceIds.size(); i++) {
+      List<ServiceDeploymentInfo> serviceDeploymentInfoList;
+      if (serviceIds.get(i) != null) {
+        String queryServiceTag = queryBuilderServiceTag(String.format("'%s'", serviceIds.get(i)));
+        serviceDeploymentInfoList = queryCalculatorServiceTag(queryServiceTag);
+      } else {
+        serviceDeploymentInfoList = Collections.emptyList();
+      }
+      buildFailureInfos.get(i).setServiceInfoList(serviceDeploymentInfoList);
+    }
     return buildFailureInfos;
   }
 
-  private BuildFailureInfo parseResultToBuildFailureInfo(ResultSet resultSet) throws SQLException {
+  private void parseResultToBuildFailureInfo(ResultSet resultSet, List<BuildFailureInfo> buildFailureInfo, List<String> serviceIds) throws SQLException {
     long startTime = -1L;
     long endTime = -1L;
     if (resultSet.getString("startts") != null) {
@@ -403,16 +424,13 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
                             .url(resultSet.getString("author_avatar"))
                             .build();
 
-    String id = resultSet.getString("id");
-    String queryServiceTag = queryBuilderServiceTag(String.format("'%s'", id));
-    serviceDeploymentInfoList = queryCalculatorServiceTag(queryServiceTag);
     String status = resultSet.getString("status");
     String pipelineIdentifier = resultSet.getString("pipelineidentifier");
-    return getBuildFailureInfo(resultSet.getString("name"), pipelineIdentifier,
+    buildFailureInfo.add(getBuildFailureInfo(resultSet.getString("name"), pipelineIdentifier,
         resultSet.getString("moduleinfo_branch_name"), resultSet.getString("moduleinfo_branch_commit_message"),
         resultSet.getString("moduleinfo_branch_commit_id"), startTime, endTime, author, status,
-        resultSet.getString("planexecutionid"), resultSet.getString("trigger_type"), gitInfo,
-        serviceDeploymentInfoList);
+        resultSet.getString("planexecutionid"), resultSet.getString("trigger_type"), gitInfo));
+    serviceIds.add(resultSet.getString("id"));
   }
 
   public List<ServiceDeploymentInfo> queryCalculatorServiceTag(String queryServiceTag) {
@@ -420,6 +438,7 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
 
     int totalTries = 0;
     while (totalTries <= MAX_RETRY_COUNT) {
+      totalTries++;
       ResultSet resultSet = null;
       try (Connection connection = timeScaleDBService.getDBConnection();
            PreparedStatement statement = connection.prepareStatement(queryServiceTag)) {
@@ -431,8 +450,9 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
         }
         return serviceTags;
       } catch (SQLException ex) {
-        log.error(ex.getMessage());
-        totalTries++;
+        log.error("Caught SQL Exception:" + ex.getMessage());
+      } catch (Exception ex) {
+        log.error("Caught General Exception:" + ex.getMessage());
       } finally {
         DBUtils.close(resultSet);
       }
@@ -471,8 +491,10 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
 
     totalBuildSqlBuilder.append(") ORDER BY startts DESC LIMIT ?;");
     List<BuildActiveInfo> buildActiveInfos = new ArrayList<>();
+    List<String> serviceIds = new ArrayList<>();
     int totalTries = 0;
     while (totalTries <= MAX_RETRY_COUNT) {
+      totalTries++;
       ResultSet resultSet = null;
       try (Connection connection = timeScaleDBService.getDBConnection();
            PreparedStatement statement = connection.prepareStatement(totalBuildSqlBuilder.toString())) {
@@ -480,20 +502,37 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
         statement.setLong(4, limit);
         resultSet = statement.executeQuery();
         while (resultSet != null && resultSet.next()) {
-          buildActiveInfos.add(convertResultToBuildActiveInfo(resultSet));
+          convertResultToBuildActiveInfo(resultSet, buildActiveInfos, serviceIds);
         }
         return buildActiveInfos;
       } catch (SQLException ex) {
-        log.error(ex.getMessage());
-        totalTries++;
+        buildActiveInfos.clear();
+        serviceIds.clear();
+        log.error("Caught SQL Exception:" + ex.getMessage());
+      } catch (Exception ex) {
+        buildActiveInfos.clear();
+        serviceIds.clear();
+        log.error("Caught General Exception:" + ex.getMessage());
       } finally {
         DBUtils.close(resultSet);
       }
     }
+
+    for (int i = 0; i < serviceIds.size(); i++) {
+      List<ServiceDeploymentInfo> serviceDeploymentInfoList;
+      if (serviceIds.get(i)!= null) {
+        String queryServiceTag = queryBuilderServiceTag(String.format("'%s'", serviceIds.get(i)));
+        serviceDeploymentInfoList = queryCalculatorServiceTag(queryServiceTag);
+      } else {
+        serviceDeploymentInfoList = Collections.emptyList();
+      }
+      buildActiveInfos.get(i).setServiceInfoList(serviceDeploymentInfoList);
+    }
+
     return buildActiveInfos;
   }
 
-  private BuildActiveInfo convertResultToBuildActiveInfo(ResultSet resultSet) throws SQLException {
+  private void convertResultToBuildActiveInfo(ResultSet resultSet, List<BuildActiveInfo> buildActiveInfos, List<String> serviceIds) throws SQLException {
     long startTime = -1L;
     if (resultSet.getString("startts") != null) {
       startTime = Long.parseLong(resultSet.getString("startts"));
@@ -508,20 +547,17 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
                           .eventType(resultSet.getString("moduleinfo_event"))
                           .build();
 
-    String id = resultSet.getString("id");
-    String queryServiceTag = queryBuilderServiceTag(String.format("'%s'", id));
-    List<ServiceDeploymentInfo> serviceDeploymentInfoList = queryCalculatorServiceTag(queryServiceTag);
+    serviceIds.add(resultSet.getString("id"));
 
     AuthorInfo author = AuthorInfo.builder()
                             .name(resultSet.getString("moduleinfo_author_id"))
                             .url(resultSet.getString("author_avatar"))
                             .build();
     String pipelineIdentifier = resultSet.getString("pipelineIdentifier");
-    return getBuildActiveInfo(resultSet.getString("name"), pipelineIdentifier,
+    buildActiveInfos.add(getBuildActiveInfo(resultSet.getString("name"), pipelineIdentifier,
         resultSet.getString("moduleinfo_branch_name"), resultSet.getString("moduleinfo_branch_commit_message"),
         resultSet.getString("moduleinfo_branch_commit_id"), author, startTime, resultSet.getString("status"),
-        resultSet.getString("planexecutionid"), -1L, resultSet.getString("trigger_type"), gitInfo,
-        serviceDeploymentInfoList);
+        resultSet.getString("planexecutionid"), -1L, resultSet.getString("trigger_type"), gitInfo));
   }
 
   @Override
@@ -553,6 +589,7 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
 
     int totalTries = 0;
     while (totalTries <= MAX_RETRY_COUNT) {
+      totalTries++;
       ResultSet resultSet = null;
       try (Connection connection = timeScaleDBService.getDBConnection();
            PreparedStatement statement = connection.prepareStatement(selectStatusQuery)) {
@@ -563,8 +600,9 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
         resultSet = statement.executeQuery();
         return parseResultToRepoInfo(resultSet);
       } catch (SQLException ex) {
-        log.error(ex.getMessage());
-        totalTries++;
+        log.error("Caught SQL Exception:" + ex.getMessage());
+      } catch (Exception ex) {
+        log.error("Caught General Exception:" + ex.getMessage());
       } finally {
         DBUtils.close(resultSet);
       }
