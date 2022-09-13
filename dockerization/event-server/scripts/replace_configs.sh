@@ -54,7 +54,7 @@ if [[ "" != "$MONGO_READ_PREF_TAGS" ]]; then
   for ITEM in "${TAG_ITEMS[@]}"; do
     TAG_NAME=$(echo $ITEM | awk -F= '{print $1}')
     TAG_VALUE=$(echo $ITEM | awk -F= '{print $2}')
-    export TAG_VALUE; export TAG_NAME; yq -i '."harness-mongo.readPref.tagSet.env(TAG_NAME)=env(TAG_VALUE)' $CONFIG_FILE
+    export TAG_VALUE; export TAG_NAME; yq -i '."harness-mongo.readPref.tagSet.[env(TAG_NAME)]=env(TAG_VALUE)' $CONFIG_FILE
   done
 fi
 
