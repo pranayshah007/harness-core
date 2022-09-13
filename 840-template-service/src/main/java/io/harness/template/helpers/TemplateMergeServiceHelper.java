@@ -11,14 +11,9 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.pms.merger.helpers.MergeHelper.mergeInputSetFormatYamlToOriginYaml;
 import static io.harness.pms.yaml.validation.RuntimeInputValuesValidator.validateStaticValues;
-import static io.harness.template.beans.NGTemplateConstants.DUMMY_NODE;
-import static io.harness.template.beans.NGTemplateConstants.SPEC;
-import static io.harness.template.beans.NGTemplateConstants.STABLE_VERSION;
-import static io.harness.template.beans.NGTemplateConstants.TEMPLATE;
-import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_INPUTS;
-import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_REF;
-import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_VERSION_LABEL;
+import static io.harness.template.beans.NGTemplateConstants.*;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -154,21 +149,20 @@ public class TemplateMergeServiceHelper {
    * This method gets the template inputs from template.spec in template yaml.
    * For eg: Template Yaml:
    * template:
-   * identifier: httpTemplate
-   * versionLabel: 1
-   * name: template1
-   * type: Step
-   * spec:
-   * type: Http
-   * spec:
-   * url: <+input>
-   * method: GET
-   * timeout: <+input>
-   * <p>
+   *  identifier: httpTemplate
+   *  versionLabel: 1
+   *  name: template1
+   *  type: Step
+   *  spec:
+   *    type: Http
+   *    spec:
+   *      url: <+input>
+   *      method: GET
+   *    timeout: <+input>
    * Output template inputs yaml:
    * type: Http
    * spec:
-   * url: <+input>
+   *  url: <+input>
    * timeout: <+input>
    *
    * @param yaml      - template yaml
@@ -217,16 +211,14 @@ public class TemplateMergeServiceHelper {
                 .getCurrJsonNode()
                 .get(DUMMY_NODE)
                 .get(YAMLFieldNameConstants.VARIABLES);
-      JsonNode finalTemplateJson;
-      if (templateVariablesJson == null) {
-        finalTemplateJson =
-            new ObjectNode(JsonNodeFactory.instance, Collections.singletonMap("templateInputs", templateInputsYaml));
-      } else if (templateInputsYaml == null) {
-        finalTemplateJson = new ObjectNode(
-            JsonNodeFactory.instance, Collections.singletonMap("templateVariables", templateVariablesJson));
-      } else {
-        finalTemplateJson = new ObjectNode(JsonNodeFactory.instance,
-            ImmutableMap.of("templateVariables", templateVariablesJson, "templateInputs", templateInputsYaml));
+      ObjectMapper mapper = new ObjectMapper();
+      ObjectNode finalTemplateJson = mapper.createObjectNode();;
+
+      if (templateVariablesJson != null) {
+        finalTemplateJson.set(TEMPLATE_VARIABLES, templateVariablesJson);
+      }
+      if (templateInputsYaml != null) {
+        finalTemplateJson.set(TEMPLATE_INPUTS, templateInputsYaml);
       }
       return YamlPipelineUtils.writeYamlString(finalTemplateJson);
     } catch (IOException e) {

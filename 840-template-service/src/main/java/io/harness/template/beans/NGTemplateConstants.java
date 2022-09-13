@@ -20,6 +20,7 @@ public class NGTemplateConstants {
   public static final String TEMPLATE_REF = TemplateRefHelper.TEMPLATE_REF;
   public static final String TEMPLATE_VERSION_LABEL = "versionLabel";
   public static final String TEMPLATE_INPUTS = "templateInputs";
+  public static final String TEMPLATE_VARIABLES = "templateVariables";
   public static final String DUMMY_NODE = "dummy";
   public static final String SPEC = "spec";
   public static final String IDENTIFIER = "identifier";

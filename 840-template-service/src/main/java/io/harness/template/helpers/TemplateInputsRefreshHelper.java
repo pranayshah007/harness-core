@@ -9,8 +9,7 @@ package io.harness.template.helpers;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.template.beans.NGTemplateConstants.TEMPLATE;
-import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_INPUTS;
+import static io.harness.template.beans.NGTemplateConstants.*;
 
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
@@ -133,7 +132,7 @@ public class TemplateInputsRefreshHelper {
       Map<String, TemplateEntity> templateCacheMap) {
     // Template Inputs linked to the YAML
     JsonNode templateInputs = TemplateNodeValue.get(TEMPLATE_INPUTS);
-    JsonNode templateVariablesFromPipeline = TemplateNodeValue.get("templateVariables");
+    JsonNode templateVariablesFromPipeline = TemplateNodeValue.get(TEMPLATE_VARIABLES);
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode templateVariablesFromPipelineWithRoot = null;
     if (templateVariablesFromPipeline != null) {
@@ -175,10 +174,10 @@ public class TemplateInputsRefreshHelper {
 
     if (refreshedJsonNode == null) {
       // CASE -> When Template does not contain any runtime inputs
-      updatedValue.remove(TEMPLATE_INPUTS);
+      updatedValue.remove(TEMPLATE_VARIABLES);
     } else {
       // Inserting the Updated Value of TemplateInputs corresponding to the TemplateInputs field
-      updatedValue.set(TEMPLATE_INPUTS, refreshedJsonNode);
+      updatedValue.set(TEMPLATE_VARIABLES, refreshedJsonNode);
     }
 
     if (!templateVariablesEnabled) {
