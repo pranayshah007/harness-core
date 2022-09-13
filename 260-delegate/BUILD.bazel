@@ -7,6 +7,9 @@ load("@io_bazel_rules_docker//docker/util:run.bzl", "container_run_and_commit")
 load("@rules_spring//springboot:springboot.bzl", "springboot")
 #load("//:tools/bazel/harness.bzl", "java_binary", "java_library")
 
+load("@dagger//:workspace_defs.bzl", "dagger_rules")
+dagger_rules()
+
 HarnessTeam = "DEL"
 
 java_library(
@@ -36,6 +39,7 @@ java_binary(
     name = "execute",
     main_class = "io.harness.delegate.app.DelegateApplication",
     runtime_deps = [":module"],
+    deps = [":dagger"],
 )
 
 # Temporary target while we have two entrypoints. Once old is deleted remove this target.
@@ -43,6 +47,7 @@ java_binary(
     name = "executedw",
     main_class = "io.harness.delegate.app.DelegateAgentApplication",
     runtime_deps = [":module"],
+    deps = [":dagger"],
 )
 
 config_setting(
