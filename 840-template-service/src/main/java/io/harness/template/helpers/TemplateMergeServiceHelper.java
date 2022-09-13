@@ -13,7 +13,6 @@ import static io.harness.pms.merger.helpers.MergeHelper.mergeInputSetFormatYamlT
 import static io.harness.pms.yaml.validation.RuntimeInputValuesValidator.validateStaticValues;
 import static io.harness.template.beans.NGTemplateConstants.*;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -42,6 +41,7 @@ import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -212,7 +212,8 @@ public class TemplateMergeServiceHelper {
                 .get(DUMMY_NODE)
                 .get(YAMLFieldNameConstants.VARIABLES);
       ObjectMapper mapper = new ObjectMapper();
-      ObjectNode finalTemplateJson = mapper.createObjectNode();;
+      ObjectNode finalTemplateJson = mapper.createObjectNode();
+      ;
 
       if (templateVariablesJson != null) {
         finalTemplateJson.set(TEMPLATE_VARIABLES, templateVariablesJson);
