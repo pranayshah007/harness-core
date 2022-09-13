@@ -161,11 +161,10 @@ public class PerspectivesQuery {
     String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(accountId, UNIFIED_TABLE);
     BigQuery bigQuery = bigQueryService.get();
     isClusterQuery = isClusterQuery != null && isClusterQuery;
-    List<String> values = viewsBillingService.getFilterValueStatsNg(bigQuery, filters, cloudProviderTableName, limit, offset,
-            viewsQueryHelper.buildQueryParams(accountId, isClusterQuery));
-    log.info("values coming from query: {} " , values);
+
     return PerspectiveFilterData.builder()
-        .values(values)
+        .values(viewsBillingService.getFilterValueStatsNg(bigQuery, filters, cloudProviderTableName, limit, offset,
+            viewsQueryHelper.buildQueryParams(accountId, isClusterQuery)))
         .build();
   }
 

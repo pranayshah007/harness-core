@@ -20,7 +20,6 @@ import io.harness.ccm.views.graphql.QLCEViewRule;
 import com.google.common.base.Strings;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;

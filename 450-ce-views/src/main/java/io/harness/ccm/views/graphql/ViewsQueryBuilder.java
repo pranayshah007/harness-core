@@ -545,7 +545,6 @@ public class ViewsQueryBuilder {
       query.addCustomization(new PgOffsetClause(offset));
     }
     query.addCustomFromTable(cloudProviderTableName);
-    System.out.println("Id filters coming from viewbillingserviceImpl = ");
 
     boolean isClusterTable = isClusterTable(cloudProviderTableName);
 
@@ -583,8 +582,6 @@ public class ViewsQueryBuilder {
     }
 
     for (QLCEViewFilter filter : filters) {
-      log.info("filter-key: {} ", filter.getField().getFieldId());
-
       QLCEViewFieldInput viewFieldInput = getModifiedQLCEViewFieldInput(filter.getField(), isClusterTable);
       String searchString = "";
       if (filter.getValues().length != 0) {
