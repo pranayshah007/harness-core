@@ -11,6 +11,7 @@ import static io.harness.eraro.ErrorCode.IMAGE_TAG_NOT_FOUND;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.eraro.FailureType;
 import io.harness.eraro.Level;
 
 import java.util.EnumSet;
@@ -20,7 +21,8 @@ public class InvalidTagException extends WingsException {
   private static final String MESSAGE_KEY = "message";
 
   public InvalidTagException(String message, EnumSet<ReportTarget> reportTargets) {
-    super(message, null, IMAGE_TAG_NOT_FOUND, Level.ERROR, reportTargets, EnumSet.of(FailureType.APPLICATION_ERROR));
+    super(message, null, IMAGE_TAG_NOT_FOUND, Level.ERROR, reportTargets,
+        EnumSet.of(io.harness.eraro.FailureType.APPLICATION_ERROR));
     param(MESSAGE_KEY, message);
   }
 

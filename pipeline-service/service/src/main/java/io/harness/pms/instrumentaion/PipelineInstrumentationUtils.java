@@ -10,6 +10,7 @@ package io.harness.pms.instrumentaion;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ErrorCode;
+import io.harness.eraro.FailureType;
 import io.harness.eraro.ResponseMessage;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.pipeline.PipelineEntity;
@@ -40,7 +41,7 @@ public class PipelineInstrumentationUtils {
     return ambiance.getMetadata().getTriggerInfo().getTriggeredBy().getIdentifier();
   }
 
-  public Collection<io.harness.exception.FailureType> getFailureTypesFromPipelineExecutionSummary(
+  public Collection<FailureType> getFailureTypesFromPipelineExecutionSummary(
       PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity) {
     if (pipelineExecutionSummaryEntity.getFailureInfo() == null) {
       return Collections.emptyList();

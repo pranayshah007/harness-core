@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.eraro.FailureType;
 import io.harness.eraro.Level;
 import io.harness.helm.HelmCliCommandType;
 
@@ -23,20 +24,21 @@ public class HelmClientException extends WingsException {
   @Getter private final HelmCliCommandType helmCliCommandType;
 
   public HelmClientException(String message, @NotNull HelmCliCommandType helmCliCommandType) {
-    super(message, null, GENERAL_ERROR, Level.ERROR, null, EnumSet.of(FailureType.APPLICATION_ERROR));
+    super(message, null, GENERAL_ERROR, Level.ERROR, null, EnumSet.of(io.harness.eraro.FailureType.APPLICATION_ERROR));
     this.helmCliCommandType = helmCliCommandType;
     super.param("message", message);
   }
 
   public HelmClientException(String message, Throwable cause, @NotNull HelmCliCommandType helmCliCommandType) {
-    super(message, cause, GENERAL_ERROR, Level.ERROR, null, EnumSet.of(FailureType.APPLICATION_ERROR));
+    super(message, cause, GENERAL_ERROR, Level.ERROR, null, EnumSet.of(io.harness.eraro.FailureType.APPLICATION_ERROR));
     this.helmCliCommandType = helmCliCommandType;
     super.param("message", message);
   }
 
   public HelmClientException(
       String message, EnumSet<ReportTarget> reportTargets, @NotNull HelmCliCommandType helmCliCommandType) {
-    super(message, null, GENERAL_ERROR, Level.ERROR, reportTargets, EnumSet.of(FailureType.APPLICATION_ERROR));
+    super(message, null, GENERAL_ERROR, Level.ERROR, reportTargets,
+        EnumSet.of(io.harness.eraro.FailureType.APPLICATION_ERROR));
     this.helmCliCommandType = helmCliCommandType;
     super.param("message", message);
   }

@@ -11,6 +11,7 @@ import static io.harness.eraro.ErrorCode.INVALID_CREDENTIALS_THIRD_PARTY;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.eraro.FailureType;
 import io.harness.eraro.Level;
 
 import java.util.EnumSet;
@@ -21,7 +22,7 @@ public class InvalidThirdPartyCredentialsException extends WingsException {
 
   public InvalidThirdPartyCredentialsException(String message, EnumSet<ReportTarget> reportTargets) {
     super(message, null, INVALID_CREDENTIALS_THIRD_PARTY, Level.ERROR, reportTargets,
-        EnumSet.of(FailureType.AUTHENTICATION));
+        EnumSet.of(io.harness.eraro.FailureType.AUTHENTICATION));
     super.param(MESSAGE_KEY, message);
   }
 

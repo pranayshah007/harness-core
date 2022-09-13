@@ -11,6 +11,7 @@ import static io.harness.eraro.ErrorCode.AUTHORIZATION_ERROR;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.eraro.FailureType;
 import io.harness.eraro.Level;
 
 import java.util.EnumSet;
@@ -20,7 +21,8 @@ public class AuthorizationException extends WingsException {
   private static final String MESSAGE_KEY = "message";
 
   public AuthorizationException(String message, EnumSet<ReportTarget> reportTargets) {
-    super(message, null, AUTHORIZATION_ERROR, Level.ERROR, reportTargets, EnumSet.of(FailureType.AUTHORIZATION_ERROR));
+    super(message, null, AUTHORIZATION_ERROR, Level.ERROR, reportTargets,
+        EnumSet.of(io.harness.eraro.FailureType.AUTHORIZATION_ERROR));
     param(MESSAGE_KEY, message);
   }
 

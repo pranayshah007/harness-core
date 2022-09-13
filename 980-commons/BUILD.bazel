@@ -15,6 +15,8 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
+        "//980-commons/src/main/java/io/harness/eraro:module",
+        "//980-commons/src/main/java/io/harness/eraro/mongo:module",
         "//980-commons/src/main/proto:980_commons_java_proto",
         "//999-annotations:module",
         "@maven//:ch_qos_logback_contrib_logback_jackson",

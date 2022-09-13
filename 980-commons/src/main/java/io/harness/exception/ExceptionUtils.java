@@ -14,6 +14,7 @@ import static java.util.stream.Collectors.joining;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ErrorCode;
+import io.harness.eraro.FailureType;
 import io.harness.eraro.Level;
 import io.harness.eraro.ResponseMessage;
 import io.harness.exception.runtime.HashiCorpVaultRuntimeException;
@@ -38,8 +39,8 @@ public class ExceptionUtils {
     return null;
   }
 
-  public static EnumSet<FailureType> getFailureTypes(Throwable throwable) {
-    EnumSet<FailureType> failureTypes = EnumSet.noneOf(FailureType.class);
+  public static EnumSet<io.harness.eraro.FailureType> getFailureTypes(Throwable throwable) {
+    EnumSet<io.harness.eraro.FailureType> failureTypes = EnumSet.noneOf(io.harness.eraro.FailureType.class);
 
     Throwable t = throwable;
     while (t != null) {
@@ -63,8 +64,8 @@ public class ExceptionUtils {
    * @param throwable
    * @return Set of failure types of exceptions with ERROR level
    */
-  public static EnumSet<FailureType> getFailureTypesOfErrors(Throwable throwable) {
-    EnumSet<FailureType> failureTypes = EnumSet.noneOf(FailureType.class);
+  public static EnumSet<io.harness.eraro.FailureType> getFailureTypesOfErrors(Throwable throwable) {
+    EnumSet<io.harness.eraro.FailureType> failureTypes = EnumSet.noneOf(FailureType.class);
 
     Throwable t = throwable;
     while (t != null) {

@@ -14,7 +14,7 @@ import static io.harness.beans.ExecutionStatus.SKIPPED;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
 import static io.harness.beans.FeatureName.TIMEOUT_FAILURE_SUPPORT;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.exception.FailureType.TIMEOUT;
+import static io.harness.eraro.FailureType.TIMEOUT;
 import static io.harness.validation.Validator.notNullCheck;
 
 import static software.wings.beans.Activity.Type.Command;

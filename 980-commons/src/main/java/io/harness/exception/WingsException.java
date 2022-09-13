@@ -18,6 +18,7 @@ import static io.harness.exception.WingsException.ReportTarget.REST_API;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ErrorCode;
+import io.harness.eraro.FailureType;
 import io.harness.eraro.Level;
 import io.harness.exception.ngexception.ErrorMetadataDTO;
 
@@ -81,18 +82,19 @@ public class WingsException extends RuntimeException {
 
   private Map<String, String> contextObjects;
 
-  private EnumSet<FailureType> failureTypes = EnumSet.noneOf(FailureType.class);
+  private EnumSet<io.harness.eraro.FailureType> failureTypes = EnumSet.noneOf(io.harness.eraro.FailureType.class);
 
   @Setter private ErrorMetadataDTO metadata;
 
   @Builder
   protected WingsException(String message, Throwable cause, ErrorCode code, Level level,
-      EnumSet<ReportTarget> reportTargets, EnumSet<FailureType> failureTypes) {
+      EnumSet<ReportTarget> reportTargets, EnumSet<io.harness.eraro.FailureType> failureTypes) {
     this(message, cause, code, level, reportTargets, failureTypes, null);
   }
 
   protected WingsException(String message, Throwable cause, ErrorCode code, Level level,
-      EnumSet<ReportTarget> reportTargets, EnumSet<FailureType> failureTypes, ErrorMetadataDTO metadata) {
+      EnumSet<ReportTarget> reportTargets, EnumSet<io.harness.eraro.FailureType> failureTypes,
+      ErrorMetadataDTO metadata) {
     super(message == null ? code.name() : message, cause);
     this.code = code == null ? UNKNOWN_ERROR : code;
     this.level = level == null ? Level.ERROR : level;
