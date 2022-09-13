@@ -135,7 +135,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
     doCallRealMethod().when(viewsQueryBuilder).getAliasFromField(any());
     doCallRealMethod()
         .when(viewsQueryBuilder)
-        .getFilterValuesQuery(any(), any(), any(), anyString(), anyInt(), anyInt(), true);
+        .getFilterValuesQuery(any(), any(), any(), anyString(), anyInt(), anyInt(), anyBoolean());
     doCallRealMethod().when(viewsQueryBuilder).getQuery(any(), any(), any(), any(), any(), any(), anyString());
     doCallRealMethod()
         .when(viewsQueryBuilder)

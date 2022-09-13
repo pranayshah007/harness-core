@@ -285,11 +285,8 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
       Thread.currentThread().interrupt();
       return null;
     }
-
-    return costCategoriesPostFetchResponseUpdate(
-        awsAccountFieldHelper.spiltAndSortAWSAccountIdListBasedOnAccountName(
-            getFilterValuesData(queryParams.getAccountId(), viewsQueryMetadata, result, idFilters,
-                cloudProviderTableName.contains(CLUSTER_TABLE))),
+    return costCategoriesPostFetchResponseUpdate(getFilterValuesData(queryParams.getAccountId(), viewsQueryMetadata,
+                                                     result, idFilters, cloudProviderTableName.contains(CLUSTER_TABLE)),
         businessMappingId);
   }
 
@@ -298,6 +295,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     List<String> filterValuesData = convertToFilterValuesData(result, viewsQueryMetadata.getFields(), isClusterQuery);
     if (isDataFilteredByAwsAccount(idFilters)) {
       filterValuesData = awsAccountFieldHelper.mergeAwsAccountNameWithValues(filterValuesData, harnessAccountId);
+      filterValuesData = awsAccountFieldHelper.spiltAndSortAWSAccountIdListBasedOnAccountName(filterValuesData);
     }
     return filterValuesData;
   }

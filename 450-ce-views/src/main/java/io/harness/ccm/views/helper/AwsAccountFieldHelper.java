@@ -179,7 +179,7 @@ public class AwsAccountFieldHelper {
     List<String> accountIdsWithNames = new ArrayList<>();
     List<String> accountIdsWithoutNames = new ArrayList<>();
     for (String value : values) {
-      if (Character.isDigit(value.charAt(0))) {
+      if (value.contains("(")) {
         accountIdsWithoutNames.add(value);
       } else {
         accountIdsWithNames.add(value);
