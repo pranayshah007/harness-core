@@ -404,7 +404,8 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
     }
   }
 
-  private void parseResultToBuildFailureInfo(ResultSet resultSet, List<BuildFailureInfo> buildFailureInfo, List<String> serviceIds) throws SQLException {
+  private void parseResultToBuildFailureInfo(
+      ResultSet resultSet, List<BuildFailureInfo> buildFailureInfo, List<String> serviceIds) throws SQLException {
     long startTime = -1L;
     long endTime = -1L;
     if (resultSet.getString("startts") != null) {
@@ -528,7 +529,7 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
   private void fillBuildActiveInfos(List<String> serviceIds, List<BuildActiveInfo> buildActiveInfos) {
     for (int i = 0; i < serviceIds.size(); i++) {
       List<ServiceDeploymentInfo> serviceDeploymentInfoList;
-      if (serviceIds.get(i)!= null) {
+      if (serviceIds.get(i) != null) {
         String queryServiceTag = queryBuilderServiceTag(String.format("'%s'", serviceIds.get(i)));
         serviceDeploymentInfoList = queryCalculatorServiceTag(queryServiceTag);
       } else {
@@ -538,7 +539,8 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
     }
   }
 
-  private void convertResultToBuildActiveInfo(ResultSet resultSet, List<BuildActiveInfo> buildActiveInfos, List<String> serviceIds) throws SQLException {
+  private void convertResultToBuildActiveInfo(
+      ResultSet resultSet, List<BuildActiveInfo> buildActiveInfos, List<String> serviceIds) throws SQLException {
     long startTime = -1L;
     if (resultSet.getString("startts") != null) {
       startTime = Long.parseLong(resultSet.getString("startts"));
