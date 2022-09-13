@@ -124,7 +124,7 @@ public class BuildTriggerHelper {
           "Type filed is not present in Trigger Spec. Its needed for Artifact/Manifest Triggers");
     }
 
-    if ((!serviceV2.isPresent() || serviceV2.get().equals(Boolean.FALSE)) && !typeFromPipeline.asText().equals(typeFromTrigger.asText())) {
+    if (serviceV2 == false && !typeFromPipeline.asText().equals(typeFromTrigger.asText())) {
       throw new InvalidRequestException(new StringBuilder(128)
                                             .append("Artifact/Manifest Type in Trigger: ")
                                             .append(typeFromTrigger.asText())
