@@ -163,8 +163,7 @@ public class PerspectivesQuery {
     isClusterQuery = isClusterQuery != null && isClusterQuery;
     List<String> values = viewsBillingService.getFilterValueStatsNg(bigQuery, filters, cloudProviderTableName, limit, offset,
             viewsQueryHelper.buildQueryParams(accountId, isClusterQuery));
-    System.out.println("values coming from query: ");
-    System.out.println(values);
+    log.info("values coming from query: {} " , values);
     return PerspectiveFilterData.builder()
         .values(values)
         .build();

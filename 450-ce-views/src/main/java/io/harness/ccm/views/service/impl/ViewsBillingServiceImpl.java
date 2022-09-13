@@ -290,7 +290,8 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     }
     List<String> rs = getFilterValuesData(queryParams.getAccountId(), viewsQueryMetadata,
             result, idFilters, cloudProviderTableName.contains(CLUSTER_TABLE));
-    System.out.println("result set after mongoDB mapping = " + rs);
+    rs = awsAccountFieldHelper.spiltAndSortAWSAccountIdListBasedOnAccountName(rs);
+    log.info("result set after mongoDB mapping, spilt and sort = " + rs);
     return costCategoriesPostFetchResponseUpdate(rs, businessMappingId);
   }
 

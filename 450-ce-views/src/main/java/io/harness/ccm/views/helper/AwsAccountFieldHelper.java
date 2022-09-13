@@ -20,8 +20,10 @@ import io.harness.ccm.views.graphql.QLCEViewRule;
 import com.google.common.base.Strings;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -172,5 +174,21 @@ public class AwsAccountFieldHelper {
       }
     });
     return updatedRuleFilters;
+  }
+
+  public List<String> spiltAndSortAWSAccountIdListBasedOnAccountName(final List<String> values) {
+    List<String> accountIdsWithNames = new ArrayList<>();
+    List<String> accountIdsWithoutNames = new ArrayList<>();
+    for (String value : values) {
+      if (Character.isDigit(value.charAt(0))) {
+        accountIdsWithoutNames.add(value);
+      } else {
+        accountIdsWithNames.add(value);
+      }
+    }
+    Collections.sort(accountIdsWithNames);
+    Collections.sort(accountIdsWithoutNames);
+    accountIdsWithNames.addAll(accountIdsWithoutNames);
+    return accountIdsWithNames;
   }
 }

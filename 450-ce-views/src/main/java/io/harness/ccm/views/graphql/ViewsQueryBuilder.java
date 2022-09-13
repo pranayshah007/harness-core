@@ -583,8 +583,7 @@ public class ViewsQueryBuilder {
     }
 
     for (QLCEViewFilter filter : filters) {
-      System.out.println("filter-key: ");
-      System.out.println(filter.getField().getFieldId());
+      log.info("filter-key: {} ", filter.getField().getFieldId());
 
       QLCEViewFieldInput viewFieldInput = getModifiedQLCEViewFieldInput(filter.getField(), isClusterTable);
       String searchString = "";
