@@ -114,7 +114,7 @@ public class BuildTriggerHelper {
     return fqnToValueMap;
   }
 
-  public void validateBuildType(BuildTriggerOpsData buildTriggerOpsData, Optional<Boolean> serviceV2) {
+  public void validateBuildType(BuildTriggerOpsData buildTriggerOpsData, boolean serviceV2) {
     EngineExpressionEvaluator engineExpressionEvaluator = new EngineExpressionEvaluator(null);
     TextNode typeFromPipeline = (TextNode) buildTriggerOpsData.getPipelineBuildSpecMap().get("type");
     TextNode typeFromTrigger =

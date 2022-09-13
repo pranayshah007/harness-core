@@ -847,7 +847,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     try {
       ValidationResult validationResult = triggerValidationHandler.applyValidations(
           ngTriggerElementMapper.toTriggerDetails(ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
-              ngTriggerEntity.getProjectIdentifier(), ngTriggerEntity.getYaml(), serviceV2), Optional.of(serviceV2));
+              ngTriggerEntity.getProjectIdentifier(), ngTriggerEntity.getYaml(), serviceV2), serviceV2);
       if (!validationResult.isSuccess()) {
         ngTriggerEntity.setEnabled(false);
       }

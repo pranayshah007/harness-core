@@ -29,7 +29,7 @@ public class PipelineRefValidator implements TriggerValidator {
   private final BuildTriggerHelper validationHelper;
 
   @Override
-  public ValidationResult validate(TriggerDetails triggerDetails, Optional<Boolean> serviceV2) {
+  public ValidationResult validate(TriggerDetails triggerDetails, boolean serviceV2) {
     ValidationResultBuilder builder = ValidationResult.builder().success(true);
     NGTriggerEntity ngTriggerEntity = triggerDetails.getNgTriggerEntity();
     Optional<String> pipelineYmlOptional = validationHelper.fetchPipelineForTrigger(ngTriggerEntity);

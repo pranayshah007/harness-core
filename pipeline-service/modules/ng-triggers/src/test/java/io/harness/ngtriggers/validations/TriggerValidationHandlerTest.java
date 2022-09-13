@@ -97,7 +97,7 @@ public class TriggerValidationHandlerTest extends CategoryTest {
 
     PipelineRefValidator pipelineRefValidator = new PipelineRefValidator(buildTriggerHelper);
     ValidationResult validate =
-        pipelineRefValidator.validate(TriggerDetails.builder().ngTriggerEntity(ngTriggerEntity).build(), Optional.of(Boolean.FALSE));
+        pipelineRefValidator.validate(TriggerDetails.builder().ngTriggerEntity(ngTriggerEntity).build(), false);
     assertThat(validate.isSuccess()).isFalse();
     assertThat(validate.getMessage()).isEqualTo("Pipeline with Ref -> acc:org:prj:pipeline does not exists");
   }
@@ -108,7 +108,7 @@ public class TriggerValidationHandlerTest extends CategoryTest {
   public void testTriggerIdentifierRefValidator() {
     TriggerIdentifierRefValidator triggerIdentifierRefValidator = new TriggerIdentifierRefValidator();
     ValidationResult validate = triggerIdentifierRefValidator.validate(
-        TriggerDetails.builder().ngTriggerEntity(NGTriggerEntity.builder().build()).build(), Optional.of(Boolean.FALSE));
+        TriggerDetails.builder().ngTriggerEntity(NGTriggerEntity.builder().build()).build(), false);
 
     assertThat(validate.isSuccess()).isFalse();
     assertThat(validate.getMessage())
@@ -119,7 +119,7 @@ public class TriggerValidationHandlerTest extends CategoryTest {
             + "ProjectIdentifier can not be null for trigger\n"
             + "PipelineIdentifier can not be null for trigger\n");
 
-    validate = triggerIdentifierRefValidator.validate(triggerDetails, Optional.of(Boolean.FALSE));
+    validate = triggerIdentifierRefValidator.validate(triggerDetails, false);
     assertThat(validate.isSuccess()).isTrue();
   }
 }

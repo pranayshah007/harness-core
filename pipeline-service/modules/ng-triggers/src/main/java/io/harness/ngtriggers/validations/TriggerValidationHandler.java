@@ -40,7 +40,7 @@ public class TriggerValidationHandler {
   private final ManifestTriggerValidator manifestTriggerValidator;
   private final ArtifactTriggerValidator artifactTriggerValidator;
 
-  public ValidationResult applyValidations(TriggerDetails triggerDetails, Optional<Boolean> serviceV2) {
+  public ValidationResult applyValidations(TriggerDetails triggerDetails, boolean serviceV2) {
     List<TriggerValidator> applicableValidators = getApplicableValidators(triggerDetails);
 
     // Remove it later, as this should not happen

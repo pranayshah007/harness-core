@@ -42,7 +42,7 @@ public class ManifestTriggerValidator implements TriggerValidator {
   private final GeneratorFactory generatorFactory;
 
   @Override
-  public ValidationResult validate(TriggerDetails triggerDetails, Optional<Boolean> serviceV2) {
+  public ValidationResult validate(TriggerDetails triggerDetails, boolean serviceV2) {
     ValidationResultBuilder builder = ValidationResult.builder().success(true);
 
     try {
@@ -54,7 +54,7 @@ public class ManifestTriggerValidator implements TriggerValidator {
       }
 
       // make sure, stage and artifact identifiers are given
-      if(!serviceV2.isPresent() || serviceV2.get().equals(Boolean.FALSE)) {
+      if(serviceV2 == false) {
         validationHelper.verifyStageAndBuildRef(triggerDetails, MANIFEST_REF);
       }
 
@@ -63,7 +63,7 @@ public class ManifestTriggerValidator implements TriggerValidator {
           validationHelper.generateBuildTriggerOpsDataForManifest(triggerDetails, pipelineYml);
 
       // stageRef & manifestRef exists
-      if ((!serviceV2.isPresent() || serviceV2.get().equals(Boolean.FALSE)) && isEmpty(buildTriggerOpsData.getPipelineBuildSpecMap())) {
+      if (serviceV2 == false && isEmpty(buildTriggerOpsData.getPipelineBuildSpecMap())) {
         throw new InvalidRequestException(
             "Manifest With Given StageIdentifier and ManifestRef in Trigger does not exist in Pipeline");
       }
@@ -85,7 +85,7 @@ public class ManifestTriggerValidator implements TriggerValidator {
   }
 
   @VisibleForTesting
-  void validateBasedOnManifestType(BuildTriggerOpsData buildTriggerOpsData, Optional<Boolean> serviceV2) {
+  void validateBasedOnManifestType(BuildTriggerOpsData buildTriggerOpsData, boolean serviceV2) {
     String typeFromTrigger = validationHelper.fetchBuildType(buildTriggerOpsData.getTriggerSpecMap());
 
     if (HELM_MANIFEST.getValue().equals(typeFromTrigger)) {
@@ -94,9 +94,9 @@ public class ManifestTriggerValidator implements TriggerValidator {
   }
 
   @VisibleForTesting
-  void validateForHelmChart(BuildTriggerOpsData buildTriggerOpsData, Optional<Boolean> serviceV2) {
+  void validateForHelmChart(BuildTriggerOpsData buildTriggerOpsData, boolean serviceV2) {
 
-    if(!serviceV2.isPresent() || serviceV2.get().equals(Boolean.FALSE)) {
+    if(serviceV2 == false) {
       // Only check when complete Store is not runtimeInput
       if (!buildTriggerOpsData.getPipelineBuildSpecMap().containsKey("spec.store")) {
         String storeTypeFromTrigger = validationHelper.fetchStoreTypeForHelm(buildTriggerOpsData);

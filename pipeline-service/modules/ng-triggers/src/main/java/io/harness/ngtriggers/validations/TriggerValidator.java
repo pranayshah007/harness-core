@@ -16,5 +16,5 @@ import java.util.Optional;
 
 @OwnedBy(PIPELINE)
 public interface TriggerValidator {
-  ValidationResult validate(TriggerDetails triggerDetails, Optional<Boolean> serviceV2);
+  ValidationResult validate(TriggerDetails triggerDetails, boolean serviceV2);
 }

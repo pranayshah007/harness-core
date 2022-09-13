@@ -49,7 +49,7 @@ public class ArtifactTriggerValidator implements TriggerValidator {
   }
 
   @Override
-  public ValidationResult validate(TriggerDetails triggerDetails, Optional<Boolean> serviceV2) {
+  public ValidationResult validate(TriggerDetails triggerDetails, boolean serviceV2) {
     ValidationResultBuilder builder = ValidationResult.builder().success(true);
     try {
       Optional<String> pipelineYmlOptional =
@@ -60,7 +60,7 @@ public class ArtifactTriggerValidator implements TriggerValidator {
       }
 
       // make sure, stage and artifact identifiers are given
-      if(!serviceV2.isPresent() || serviceV2.get().equals(Boolean.FALSE)) {
+      if(serviceV2 == false) {
         validationHelper.verifyStageAndBuildRef(triggerDetails, ARTIFACT_REF);
       }
 
@@ -68,7 +68,7 @@ public class ArtifactTriggerValidator implements TriggerValidator {
       BuildTriggerOpsData buildTriggerOpsData =
           validationHelper.generateBuildTriggerOpsDataForArtifact(triggerDetails, pipelineYml);
       // stageRef & manifestRef exists
-      if ((!serviceV2.isPresent() || serviceV2.get().equals(Boolean.FALSE)) && isEmpty(buildTriggerOpsData.getPipelineBuildSpecMap())) {
+      if (serviceV2 == false && isEmpty(buildTriggerOpsData.getPipelineBuildSpecMap())) {
         throw new InvalidRequestException(
             "Artifact With Given StageIdentifier and ArtifactRef in Trigger does not exist in Pipeline");
       }

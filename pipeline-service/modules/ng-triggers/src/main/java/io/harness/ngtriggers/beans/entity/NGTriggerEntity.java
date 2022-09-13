@@ -148,10 +148,7 @@ public class NGTriggerEntity implements PersistentEntity, PersistentNGCronIterab
   }
 
   public Boolean getServiceV2() {
-    if(serviceV2 == null) {
-      return Boolean.FALSE;
-    }
-    return serviceV2;
+    return serviceV2 != null && serviceV2;
   }
 
 }
