@@ -186,13 +186,16 @@ public class TemplateMergeServiceHelper {
       if (isEmpty(templateInputsYamlWithSpec) && isEmpty(templateVariablesYamlWithDummy)) {
         return templateInputsYamlWithSpec;
       }
-      JsonNode templateVariablesJson = templateVariablesYamlWithDummy == null? null : YamlUtils.readTree(templateVariablesYamlWithDummy)
-                                           .getNode()
-                                           .getCurrJsonNode()
-                                           .get(DUMMY_NODE)
-                                           .get(YAMLFieldNameConstants.VARIABLES);
-      JsonNode templateInputsYaml = templateInputsYamlWithSpec == null? null:
-          YamlUtils.readTree(templateInputsYamlWithSpec).getNode().getCurrJsonNode().get(SPEC);
+      JsonNode templateVariablesJson = templateVariablesYamlWithDummy == null
+          ? null
+          : YamlUtils.readTree(templateVariablesYamlWithDummy)
+                .getNode()
+                .getCurrJsonNode()
+                .get(DUMMY_NODE)
+                .get(YAMLFieldNameConstants.VARIABLES);
+      JsonNode templateInputsYaml = templateInputsYamlWithSpec == null
+          ? null
+          : YamlUtils.readTree(templateInputsYamlWithSpec).getNode().getCurrJsonNode().get(SPEC);
       JsonNode finalTemplateJson;
       if (templateVariablesJson == null) {
         finalTemplateJson =

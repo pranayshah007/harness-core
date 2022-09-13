@@ -11,8 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.template.beans.NGTemplateConstants.*;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.ngexception.NGTemplateException;
 import io.harness.pms.merger.helpers.YamlRefreshHelper;
@@ -28,6 +26,8 @@ import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.utils.NGVariablesUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import java.io.IOException;
@@ -137,7 +137,7 @@ public class TemplateInputsRefreshHelper {
     JsonNode templateVariablesFromPipeline = TemplateNodeValue.get("templateVariables");
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode templateVariablesFromPipelineWithRoot = null;
-    if(templateVariablesFromPipeline!=null){
+    if (templateVariablesFromPipeline != null) {
       templateVariablesFromPipelineWithRoot = mapper.createObjectNode();
       templateVariablesFromPipelineWithRoot.set(YAMLFieldNameConstants.VARIABLES, templateVariablesFromPipeline);
     }
@@ -167,9 +167,10 @@ public class TemplateInputsRefreshHelper {
 
     // refreshed json node
     JsonNode refreshedJsonNode = YamlRefreshHelper.refreshNodeFromSourceNode(templateInputs, templateSpec);
-    JsonNode refreshedTemplateVariablesNode = YamlRefreshHelper.refreshNodeFromSourceNode(templateVariablesFromPipelineWithRoot, templateVariablesFromTemplate);
+    JsonNode refreshedTemplateVariablesNode = YamlRefreshHelper.refreshNodeFromSourceNode(
+        templateVariablesFromPipelineWithRoot, templateVariablesFromTemplate);
 
-    if(refreshedTemplateVariablesNode!=null){
+    if (refreshedTemplateVariablesNode != null) {
       refreshedTemplateVariablesNode = refreshedTemplateVariablesNode.get(YAMLFieldNameConstants.VARIABLES);
     }
 
