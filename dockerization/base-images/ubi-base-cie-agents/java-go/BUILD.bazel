@@ -2,10 +2,10 @@ load("@io_bazel_rules_docker//container:container.bzl", "container_image", "cont
 load("@io_bazel_rules_docker//docker/util:run.bzl", "container_run_and_commit_layer")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 
-
 container_run_and_commit_layer(
     name = "java-go-run",
     image = "@ubi-java-base//image",
+    docker_run_flags = ["--user=root"],
     commands = [
         "microdnf install yum",
         "mkdir -p /deployments",
@@ -51,7 +51,7 @@ pkg_tar(
         "mongodb-org-4.4.repo",
     ],
     mode = "0500",
-    owner = "65534.65534",
+    owner = "0.0",
     package_dir = "/etc/yum.repos.d/",
     tags = [
                 "manual",
