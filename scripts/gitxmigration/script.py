@@ -132,13 +132,6 @@ def migrate_records_from_inline_to_remote():
         migrate_records(pms_db.inputSetsPMS, yaml_git_config)
 
 
-def disable_git_sync_via_api():
-    url = "https://localhost:8181/ng/api/git-sync/disable?accountIdentifier=%s&orgIdentifier=%s&projectIdentifier=%s" % (INPUT_ACCOUNT_ID, INPUT_ORG_ID, INPUT_PROJECT_ID)
-    headers = {'x-api-key': LOCAL_API_KEY}
-    resp = requests.put(url, headers=headers, verify=False)
-    print(resp.status_code)
-
-
 def delete_non_default_pipelines_input_sets():
     pipeline_collection = pms_db.pipelinesPMS
     input_sets_collection = pms_db.inputSetsPMS
@@ -166,14 +159,6 @@ def delete_non_default_connectors():
 def delete_non_default_branch_entities():
     delete_non_default_pipelines_input_sets()
     delete_non_default_connectors()
-
-
-def enable_gitx_via_api():
-    url = "https://localhost:8181/ng/api/git-sync-settings/git-simplification?accountIdentifier=%s&orgIdentifier=%s&projectIdentifier=%s" % (
-    INPUT_ACCOUNT_ID, INPUT_ORG_ID, INPUT_PROJECT_ID)
-    headers = {'x-api-key': LOCAL_API_KEY}
-    resp = requests.post(url, headers=headers, verify=False)
-    print(resp.status_code)
 
 
 def cleanup_connector_entities():
@@ -244,15 +229,15 @@ def update_triggers():
     triggers = pms_db.triggersNG.find(query)
 
     for trigger in triggers:
-        pipelineId = trigger.get(DBKeys.TARGET_IDENTIFIER.value);
+        pipelineId = trigger.get(DBKeys.TARGET_IDENTIFIER.value)
         pipeline = migrated_pipelines[pipelineId]
         if pipeline is None:
             continue
 
-        pipelineBranchName = pipeline[DBKeys.BRANCH.value];
-        trigger_yaml = yaml.safe_load(trigger.get(DBKeys.YAML.value));
+        pipelineBranchName = pipeline[DBKeys.BRANCH.value]
+        trigger_yaml = yaml.safe_load(trigger.get(DBKeys.YAML.value))
         trigger_yaml[DBKeys.TRIGGER.value][DBKeys.PIPELINE_BRANCH_NAME.value] = pipelineBranchName
-        trigger[DBKeys.YAML.value] = yaml.dump(trigger_yaml,  sort_keys=False);
+        trigger[DBKeys.YAML.value] = yaml.dump(trigger_yaml,  sort_keys=False)
         pms_db.triggersNG.update_one({"_id": trigger.get("_id")}, {"$set": trigger}, upsert=False)
 
 
@@ -260,9 +245,7 @@ if __name__ == "__main__":
     setup_mongo_client()
     prepare_yaml_git_config_list()
     delete_yaml_git_configs()
-    # disable_git_sync_via_api()
     delete_non_default_branch_entities()
-    # enable_gitx_via_api()
     enable_new_gitx()
     update_triggers()
     migrate_records_from_inline_to_remote()
