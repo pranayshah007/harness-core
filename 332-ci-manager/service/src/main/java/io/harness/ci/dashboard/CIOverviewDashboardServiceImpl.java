@@ -67,7 +67,7 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
       ExecutionStatus.ASYNCWAITING.name(), ExecutionStatus.TASKWAITING.name(), ExecutionStatus.TIMEDWAITING.name(),
       ExecutionStatus.PAUSED.name(), ExecutionStatus.PAUSING.name());
 
-  private static final int MAX_RETRY_COUNT = 5;
+  private static final int MAX_RETRY_COUNT = 2;
 
   // This ID comes, and should only come from internal source only. No need to use prepare statement here
   public String queryBuilderServiceTag(String queryIdCdTable) {
@@ -86,6 +86,7 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
         + WEBHOOK + "' and startts<=? and startts>=?;";
 
     while (totalTries <= MAX_RETRY_COUNT) {
+      totalTries++;
       ResultSet resultSet = null;
       try (Connection connection = timeScaleDBService.getDBConnection();
            PreparedStatement statement = connection.prepareStatement(query)) {
@@ -96,10 +97,8 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
         return resultSet.next() ? resultSet.getLong(1) : 0L;
       } catch (SQLException ex) {
         log.error("Caught SQL Exception:" + ex.getMessage());
-        totalTries++;
       } catch (Exception ex) {
         log.error("Caught General Exception:" + ex.getMessage());
-        totalTries++;
       } finally {
         DBUtils.close(resultSet);
       }
@@ -115,6 +114,7 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
         + WEBHOOK + "' and startts<=? and startts>=?;";
 
     while (totalTries <= MAX_RETRY_COUNT) {
+      totalTries++;
       ResultSet resultSet = null;
       try (Connection connection = timeScaleDBService.getDBConnection();
            PreparedStatement statement = connection.prepareStatement(query)) {
@@ -144,10 +144,8 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
             .build();
       } catch (SQLException ex) {
         log.error("Caught SQL Exception:" + ex.getMessage());
-        totalTries++;
       } catch (Exception ex) {
         log.error("Caught General Exception:" + ex.getMessage());
-        totalTries++;
       } finally {
         DBUtils.close(resultSet);
       }
@@ -170,6 +168,7 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
 
     long totalTries = 0;
     while (totalTries <= MAX_RETRY_COUNT) {
+      totalTries++;
       ResultSet resultSet = null;
       try (Connection connection = timeScaleDBService.getDBConnection();
            PreparedStatement statement = connection.prepareStatement(selectStatusQuery)) {
@@ -180,10 +179,8 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
         return parseResultToStatusAndTime(resultSet);
       } catch (SQLException ex) {
         log.error("Caught SQL Exception:" + ex.getMessage());
-        totalTries++;
       } catch (Exception ex) {
         log.error("Caught General Exception:" + ex.getMessage());
-        totalTries++;
       } finally {
         DBUtils.close(resultSet);
       }
@@ -367,6 +364,7 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
     int totalTries = 0;
 
     while (totalTries <= MAX_RETRY_COUNT) {
+      totalTries++;
       ResultSet resultSet = null;
       try (Connection connection = timeScaleDBService.getDBConnection();
            PreparedStatement statement = connection.prepareStatement(totalBuildSqlBuilder.toString())) {
@@ -379,10 +377,8 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
         return buildFailureInfos;
       } catch (SQLException ex) {
         log.error("Caught SQL Exception:" + ex.getMessage());
-        totalTries++;
       } catch (Exception ex) {
         log.error("Caught General Exception:" + ex.getMessage());
-        totalTries++;
       } finally {
         DBUtils.close(resultSet);
       }
@@ -432,6 +428,7 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
 
     int totalTries = 0;
     while (totalTries <= MAX_RETRY_COUNT) {
+      totalTries++;
       ResultSet resultSet = null;
       try (Connection connection = timeScaleDBService.getDBConnection();
            PreparedStatement statement = connection.prepareStatement(queryServiceTag)) {
@@ -444,10 +441,8 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
         return serviceTags;
       } catch (SQLException ex) {
         log.error("Caught SQL Exception:" + ex.getMessage());
-        totalTries++;
       } catch (Exception ex) {
         log.error("Caught General Exception:" + ex.getMessage());
-        totalTries++;
       } finally {
         DBUtils.close(resultSet);
       }
@@ -488,6 +483,7 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
     List<BuildActiveInfo> buildActiveInfos = new ArrayList<>();
     int totalTries = 0;
     while (totalTries <= MAX_RETRY_COUNT) {
+      totalTries++;
       ResultSet resultSet = null;
       try (Connection connection = timeScaleDBService.getDBConnection();
            PreparedStatement statement = connection.prepareStatement(totalBuildSqlBuilder.toString())) {
@@ -500,10 +496,8 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
         return buildActiveInfos;
       } catch (SQLException ex) {
         log.error("Caught SQL Exception:" + ex.getMessage());
-        totalTries++;
       } catch (Exception ex) {
         log.error("Caught General Exception:" + ex.getMessage());
-        totalTries++;
       } finally {
         DBUtils.close(resultSet);
       }
@@ -571,6 +565,7 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
 
     int totalTries = 0;
     while (totalTries <= MAX_RETRY_COUNT) {
+      totalTries++;
       ResultSet resultSet = null;
       try (Connection connection = timeScaleDBService.getDBConnection();
            PreparedStatement statement = connection.prepareStatement(selectStatusQuery)) {
@@ -582,10 +577,8 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
         return parseResultToRepoInfo(resultSet);
       } catch (SQLException ex) {
         log.error("Caught SQL Exception:" + ex.getMessage());
-        totalTries++;
       } catch (Exception ex) {
         log.error("Caught General Exception:" + ex.getMessage());
-        totalTries++;
       } finally {
         DBUtils.close(resultSet);
       }

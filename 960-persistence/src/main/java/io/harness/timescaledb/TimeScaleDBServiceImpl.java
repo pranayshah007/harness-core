@@ -97,9 +97,6 @@ public class TimeScaleDBServiceImpl implements TimeScaleDBService {
     ds.setPassword(config.getTimescaledbPassword());
     ds.setMinIdle(0);
     ds.setMaxIdle(10);
-    ds.setValidationQueryTimeout(15);
-    ds.setTestOnBorrow(true);
-    ds.setTestWhileIdle(true);
 
     ds.addConnectionProperty(
         TimeScaleDBConfigFields.connectTimeout, String.valueOf(timeScaleDBConfig.getConnectTimeout()));
@@ -132,7 +129,7 @@ public class TimeScaleDBServiceImpl implements TimeScaleDBService {
     if (!validDB) {
       throw new SQLException("Invalid timescale db.");
     }
-    log.debug("Active connections : [{}],Idle connections : [{}]", ds.getNumActive(), ds.getNumIdle());
+    log.info("Active connections : [{}],Idle connections : [{}]", ds.getNumActive(), ds.getNumIdle());
     return ds.getConnection();
   }
 
