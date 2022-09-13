@@ -41,16 +41,20 @@ const (
 )
 
 var (
-	selectTestsFn             = selectTests
-	collectCgFn               = collectCg
-	collectTestReportsFn      = collectTestReports
-	runCmdFn                  = runCmd
-	isManualFn                = external.IsManualExecution
-	installAgentFn            = installAgents
-	getWorkspace              = external.GetWrkspcPath
-	isParallelismEnabled      = external.IsParallelismEnabled
-	getStepStrategyIteration  = external.GetStepStrategyIteration
-	getStepStrategyIterations = external.GetStepStrategyIterations
+	selectTestsFn              = selectTests
+	collectCgFn                = collectCg
+	collectTestReportsFn       = collectTestReports
+	runCmdFn                   = runCmd
+	isManualFn                 = external.IsManualExecution
+	installAgentFn             = installAgents
+	getWorkspace               = external.GetWrkspcPath
+	isParallelismEnabled       = external.IsParallelismEnabled
+	getStepStrategyIteration   = external.GetStepStrategyIteration
+	getStepStrategyIterations  = external.GetStepStrategyIterations
+	getStageStrategyIteration  = external.GetStageStrategyIteration
+	getStageStrategyIterations = external.GetStageStrategyIterations
+	isStepParallelismEnabled   = external.IsStepParallelismEnabled
+	isStageParallelismEnabled  = external.IsStageParallelismEnabled
 )
 
 // RunTestsTask represents an interface to run tests intelligently
@@ -410,8 +414,23 @@ func (r *runTestsTask) invokeParallelism(ctx context.Context, runner testintelli
 	}
 
 	r.log.Info("Splitting the tests as parallelism is enabled")
-	idx, _ := getStepStrategyIteration()
-	total, _ := getStepStrategyIterations()
+
+	stepIdx, _ := getStepStrategyIterations()
+	stepTotal, _ := getStepStrategyIterations()
+	if !isStepParallelismEnabled() {
+		stepIdx = 0
+		stepTotal = 1
+	}
+	stageIdx, _ := getStageStrategyIteration()
+	stageTotal, _ := getStageStrategyIterations()
+	if !isStageParallelismEnabled() {
+		stageIdx = 0
+		stageTotal = 1
+	}
+
+	idx := stepTotal*stageIdx + stepIdx
+	total := stepTotal * stageTotal
+
 	tests := make([]types.RunnableTest, 0)
 	if !r.runOnlySelectedTests {
 		// For full runs, detect all the tests in the repo and split them
