@@ -7,10 +7,11 @@
 
 package io.harness.ccm.graphql.core.recommendation;
 
-import static software.wings.graphql.datafetcher.ce.recommendation.entity.RecommenderUtils.CPU_HISTOGRAM_FIRST_BUCKET_SIZE;
-import static software.wings.graphql.datafetcher.ce.recommendation.entity.RecommenderUtils.HISTOGRAM_BUCKET_SIZE_GROWTH;
-import static software.wings.graphql.datafetcher.ce.recommendation.entity.RecommenderUtils.MEMORY_HISTOGRAM_FIRST_BUCKET_SIZE;
+import static io.harness.ccm.RecommenderUtils.CPU_HISTOGRAM_FIRST_BUCKET_SIZE;
+import static io.harness.ccm.RecommenderUtils.HISTOGRAM_BUCKET_SIZE_GROWTH;
+import static io.harness.ccm.RecommenderUtils.MEMORY_HISTOGRAM_FIRST_BUCKET_SIZE;
 
+import io.harness.ccm.RecommenderUtils;
 import io.harness.ccm.commons.beans.recommendation.ResourceId;
 import io.harness.ccm.commons.dao.recommendation.K8sRecommendationDAO;
 import io.harness.ccm.commons.entities.k8s.recommendation.K8sWorkloadRecommendation;
@@ -24,7 +25,6 @@ import io.harness.histogram.HistogramCheckpoint;
 
 import software.wings.graphql.datafetcher.ce.recommendation.entity.ContainerRecommendation;
 import software.wings.graphql.datafetcher.ce.recommendation.entity.PartialHistogramAggragator;
-import software.wings.graphql.datafetcher.ce.recommendation.entity.RecommenderUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;

@@ -396,7 +396,6 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
   private void updateMonitoredService(MonitoredService monitoredService, MonitoredServiceDTO monitoredServiceDTO) {
     UpdateOperations<MonitoredService> updateOperations = hPersistence.createUpdateOperations(MonitoredService.class);
     updateOperations.set(MonitoredServiceKeys.name, monitoredServiceDTO.getName());
-    updateOperations.set(MonitoredServiceKeys.enabled, monitoredServiceDTO.isEnabled());
     if (monitoredServiceDTO.getDescription() != null) {
       updateOperations.set(MonitoredServiceKeys.desc, monitoredServiceDTO.getDescription());
     }

@@ -21,6 +21,8 @@ import io.harness.cdng.artifact.resources.ecr.service.EcrResourceService;
 import io.harness.cdng.artifact.resources.ecr.service.EcrResourceServiceImpl;
 import io.harness.cdng.artifact.resources.gcr.service.GcrResourceService;
 import io.harness.cdng.artifact.resources.gcr.service.GcrResourceServiceImpl;
+import io.harness.cdng.artifact.resources.githubpackages.service.GithubPackagesResourceService;
+import io.harness.cdng.artifact.resources.githubpackages.service.GithubPackagesResourceServiceImpl;
 import io.harness.cdng.artifact.resources.googleartifactregistry.service.GARResourceService;
 import io.harness.cdng.artifact.resources.googleartifactregistry.service.GARResourceServiceImpl;
 import io.harness.cdng.artifact.resources.jenkins.service.JenkinsResourceService;
@@ -123,6 +125,7 @@ public class NGModule extends AbstractModule {
     bind(AcrResourceService.class).to(AcrResourceServiceImpl.class);
     bind(AzureResourceService.class).to(AzureResourceServiceImpl.class);
     bind(JenkinsResourceService.class).to(JenkinsResourceServiceImpl.class);
+    bind(GithubPackagesResourceService.class).to(GithubPackagesResourceServiceImpl.class);
     bind(FilterService.class).to(FilterServiceImpl.class);
     bind(ClusterService.class).to(ClusterServiceImpl.class);
     bind(InfrastructureEntityService.class).to(InfrastructureEntityServiceImpl.class);

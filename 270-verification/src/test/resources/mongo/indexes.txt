@@ -1,0 +1,12 @@
+anomalousLogRecords {"name": "analysisMinIndex", "unique": true} {"serviceId": 1, "cvConfigId": 1, "analysisMinute": 1}
+timeSeriesAnomaliesRecords {"name": "accountId_1", "background": true} {"accountId": 1}
+timeSeriesAnomaliesRecords {"name": "appId_1", "background": true} {"appId": 1}
+timeSeriesAnomaliesRecords {"name": "createdAt_1", "background": true} {"createdAt": 1}
+timeSeriesAnomaliesRecords {"name": "cvConfigId_1", "background": true} {"cvConfigId": 1}
+timeSeriesCumulativeSums {"name": "accountId_1", "background": true} {"accountId": 1}
+timeSeriesCumulativeSums {"name": "analysisMinute_1", "background": true} {"analysisMinute": 1}
+timeSeriesCumulativeSums {"name": "appId_1", "background": true} {"appId": 1}
+timeSeriesCumulativeSums {"name": "createdAt_1", "background": true} {"createdAt": 1}
+timeSeriesCumulativeSums {"name": "cvConfigId_1", "background": true} {"cvConfigId": 1}
+timeSeriesCumulativeSums {"name": "service_gd_idx", "background": true} {"cvConfigId": 1, "analysisMinute": -1, "tag": 1}
+timeSeriesCumulativeSums {"name": "uniqueIdx", "unique": true} {"appId": 1, "cvConfigId": 1, "analysisMinute": 1, "tag": 1}

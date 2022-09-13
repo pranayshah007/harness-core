@@ -112,7 +112,6 @@ public class CommonStepInfo {
                                .setName("Queue")
                                .setType("Queue")
                                .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("FlowControl/Queue").build())
-                               .setFeatureFlag(FeatureName.PIPELINE_QUEUE_STEP.name())
                                .build();
   StepInfo serviceNowApprovalStepInfo =
       StepInfo.newBuilder()
@@ -158,6 +157,14 @@ public class CommonStepInfo {
           .setFeatureRestrictionName(FeatureRestrictionName.INTEGRATED_APPROVALS_WITH_SERVICE_NOW.name())
           .build();
 
+  StepInfo waitStepInfo =
+      StepInfo.newBuilder()
+          .setName("Wait Step")
+          .setType(StepSpecTypeConstants.WAIT_STEP)
+          .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Utilities/Non-Scripted").build())
+          .setFeatureFlag(FeatureName.WAIT_STEP.name())
+          .build();
+
   public List<StepInfo> getCommonSteps(String category) {
     List<StepInfo> stepInfos = new ArrayList<>();
     stepInfos.add(shellScriptStepInfo);
@@ -174,6 +181,7 @@ public class CommonStepInfo {
     stepInfos.add(serviceNowCreateStepInfo);
     stepInfos.add(serviceNowUpdateStepInfo);
     stepInfos.add(emailStepInfo);
+    stepInfos.add(waitStepInfo);
     return stepInfos;
   }
 }

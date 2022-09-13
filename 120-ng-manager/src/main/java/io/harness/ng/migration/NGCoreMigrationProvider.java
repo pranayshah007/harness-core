@@ -25,7 +25,6 @@ public class NGCoreMigrationProvider implements MigrationProvider {
   public String getServiceName() {
     return "ngmanager";
   }
-
   @Override
   public Class<? extends NGSchema> getSchemaClass() {
     return NGCoreSchema.class;

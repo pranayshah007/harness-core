@@ -25,6 +25,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
       @JsonSubTypes.Type(value = PdcInstanceInfoDTO.class, name = "Pdc"),
       @JsonSubTypes.Type(value = AzureSshWinrmInstanceInfoDTO.class, name = "AzureSshWinrm"),
       @JsonSubTypes.Type(value = AwsSshWinrmInstanceInfoDTO.class, name = "AwsSshWinrm"),
+      @JsonSubTypes.Type(value = CustomDeploymentInstanceInfoDTO.class, name = "CustomDeployment"),
       @JsonSubTypes.Type(value = EcsInstanceInfoDTO.class, name = "ECS")
 })
 public abstract class InstanceInfoDTO {

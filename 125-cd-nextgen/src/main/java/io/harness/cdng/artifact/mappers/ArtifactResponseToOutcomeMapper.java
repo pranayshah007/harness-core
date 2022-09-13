@@ -19,6 +19,7 @@ import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.GithubPackagesArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig;
 import io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
@@ -31,6 +32,7 @@ import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GarArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GcrArtifactOutcome;
+import io.harness.cdng.artifact.outcome.GithubPackagesArtifactOutcome;
 import io.harness.cdng.artifact.outcome.JenkinsArtifactOutcome;
 import io.harness.cdng.artifact.outcome.NexusArtifactOutcome;
 import io.harness.cdng.artifact.outcome.S3ArtifactOutcome;
@@ -46,6 +48,7 @@ import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.gar.GarDelegateResponse;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactDelegateResponse;
@@ -130,6 +133,12 @@ public class ArtifactResponseToOutcomeMapper {
         JenkinsArtifactDelegateResponse jenkinsArtifactDelegateResponse =
             (JenkinsArtifactDelegateResponse) artifactDelegateResponse;
         return getJenkinsArtifactOutcome(jenkinsArtifactConfig, jenkinsArtifactDelegateResponse, useDelegateResponse);
+      case GITHUB_PACKAGES:
+        GithubPackagesArtifactConfig githubPackagesArtifactConfig = (GithubPackagesArtifactConfig) artifactConfig;
+        GithubPackagesArtifactDelegateResponse githubPackagesArtifactDelegateResponse =
+            (GithubPackagesArtifactDelegateResponse) artifactDelegateResponse;
+        return getGithubPackagesArtifactOutcome(
+            githubPackagesArtifactConfig, githubPackagesArtifactDelegateResponse, useDelegateResponse);
       case GOOGLE_ARTIFACT_REGISTRY:
         GoogleArtifactRegistryConfig googleArtifactRegistryConfig = (GoogleArtifactRegistryConfig) artifactConfig;
         GarDelegateResponse garDelegateResponse = (GarDelegateResponse) artifactDelegateResponse;
@@ -138,6 +147,22 @@ public class ArtifactResponseToOutcomeMapper {
         throw new UnsupportedOperationException(
             String.format("Unknown Artifact Config type: [%s]", artifactConfig.getSourceType()));
     }
+  }
+
+  private static GithubPackagesArtifactOutcome getGithubPackagesArtifactOutcome(
+      GithubPackagesArtifactConfig githubPackagesArtifactConfig,
+      GithubPackagesArtifactDelegateResponse githubPackagesArtifactDelegateResponse, boolean useDelegateResponse) {
+    return GithubPackagesArtifactOutcome.builder()
+        .image(githubPackagesArtifactDelegateResponse.getPackageUrl())
+        .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(githubPackagesArtifactConfig)))
+        .packageName(githubPackagesArtifactConfig.getPackageName().getValue())
+        .version(githubPackagesArtifactDelegateResponse.getVersion())
+        .connectorRef(githubPackagesArtifactConfig.getConnectorRef().getValue())
+        .type(ArtifactSourceType.GITHUB_PACKAGES.getDisplayName())
+        .identifier(githubPackagesArtifactConfig.getIdentifier())
+        .primaryArtifact(githubPackagesArtifactConfig.isPrimaryArtifact())
+        .versionRegex(githubPackagesArtifactConfig.getVersionRegex().getValue())
+        .build();
   }
 
   private static S3ArtifactOutcome getS3ArtifactOutcome(AmazonS3ArtifactConfig amazonS3ArtifactConfig,

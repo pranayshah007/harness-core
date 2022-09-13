@@ -40,6 +40,7 @@ public interface EntityTypeConstants {
   String MONITORED_SERVICE = "MonitoredService";
   String TEMPLATE = "Template";
   String TEMPLATE_STAGE = "TemplateStage";
+  String TEMPLATE_CUSTOM_DEPLOYMENT = "CustomDeployment";
   String GIT_REPOSITORIES = "GitRepositories";
   String FEATURE_FLAGS = "FeatureFlags";
   String HTTP = "Http";
@@ -116,4 +117,5 @@ public interface EntityTypeConstants {
   String AZURE_CREATE_ARM_RESOURCE_STEP = "AzureCreateARMResource";
   String AZURE_CREATE_BP_RESOURCE_STEP = "AzureCreateBPResource";
   String AZURE_ROLLBACK_ARM_RESOURCE_STEP = "AzureARMRollback";
+  String WAIT_STEP = "Wait";
 }

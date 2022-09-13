@@ -3,7 +3,7 @@ delegateToken: 2f6b0988b6fb3370073c3d0505baee59
 managerUrl: https://app.harness.io/gratis/api
 verificationServiceUrl: https://app.harness.io/gratis/verification
 cvNextGenUrl: https://localhost:6060/cv/api/
-heartbeatIntervalMs: 60000
+heartbeatIntervalMs: 50000
 localDiskPath: /tmp
 doUpgrade: false
 pollForTasks: false
