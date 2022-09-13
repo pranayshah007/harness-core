@@ -12,6 +12,7 @@ import io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactOverrideSetWrapper;
 import io.harness.cdng.artifact.bean.yaml.ArtifactOverrideSets;
+import io.harness.cdng.artifact.bean.yaml.ArtifactSource;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
@@ -260,5 +261,6 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(CustomScriptBaseSource.class, 140020);
     kryo.register(GoogleArtifactRegistryConfig.class, 130021);
     kryo.register(GarArtifactOutcome.class, 130022);
+    kryo.register(ArtifactSource.class, 130023);
   }
 }
