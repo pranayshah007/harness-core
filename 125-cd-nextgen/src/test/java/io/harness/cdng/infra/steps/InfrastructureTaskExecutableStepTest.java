@@ -8,7 +8,7 @@
 package io.harness.cdng.infra.steps;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.INFRA_TASK_EXECUTABLE_STEP_V2;
+import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.INFRA_TASK_EXECUTABLE_STEP_OUTPUT;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.FILIP;
@@ -313,7 +313,7 @@ public class InfrastructureTaskExecutableStepTest {
                              .build())
                  .build())
         .when(executionSweepingOutputService)
-        .resolveOptional(ambiance, RefObjectUtils.getSweepingOutputRefObject(INFRA_TASK_EXECUTABLE_STEP_V2));
+        .resolveOptional(ambiance, RefObjectUtils.getSweepingOutputRefObject(INFRA_TASK_EXECUTABLE_STEP_OUTPUT));
     doNothing()
         .when(stageExecutionHelper)
         .saveStageExecutionInfoAndPublishExecutionInfoKey(
@@ -379,7 +379,7 @@ public class InfrastructureTaskExecutableStepTest {
                              .build())
                  .build())
         .when(executionSweepingOutputService)
-        .resolveOptional(ambiance, RefObjectUtils.getSweepingOutputRefObject(INFRA_TASK_EXECUTABLE_STEP_V2));
+        .resolveOptional(ambiance, RefObjectUtils.getSweepingOutputRefObject(INFRA_TASK_EXECUTABLE_STEP_OUTPUT));
     AwsListEC2InstancesTaskResponse awsListEC2InstancesTaskResponse =
         AwsListEC2InstancesTaskResponse.builder()
             .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
@@ -422,7 +422,7 @@ public class InfrastructureTaskExecutableStepTest {
                              .build())
                  .build())
         .when(executionSweepingOutputService)
-        .resolveOptional(ambiance, RefObjectUtils.getSweepingOutputRefObject(INFRA_TASK_EXECUTABLE_STEP_V2));
+        .resolveOptional(ambiance, RefObjectUtils.getSweepingOutputRefObject(INFRA_TASK_EXECUTABLE_STEP_OUTPUT));
 
     AzureHostsResponse azureHostsResponse = AzureHostsResponse.builder()
                                                 .commandExecutionStatus(CommandExecutionStatus.FAILURE)
@@ -460,7 +460,7 @@ public class InfrastructureTaskExecutableStepTest {
                              .build())
                  .build())
         .when(executionSweepingOutputService)
-        .resolveOptional(ambiance, RefObjectUtils.getSweepingOutputRefObject(INFRA_TASK_EXECUTABLE_STEP_V2));
+        .resolveOptional(ambiance, RefObjectUtils.getSweepingOutputRefObject(INFRA_TASK_EXECUTABLE_STEP_OUTPUT));
 
     AwsListEC2InstancesTaskResponse awsListEC2InstancesTaskResponse =
         AwsListEC2InstancesTaskResponse.builder().commandExecutionStatus(CommandExecutionStatus.FAILURE).build();
@@ -496,7 +496,7 @@ public class InfrastructureTaskExecutableStepTest {
                              .build())
                  .build())
         .when(executionSweepingOutputService)
-        .resolveOptional(ambiance, RefObjectUtils.getSweepingOutputRefObject(INFRA_TASK_EXECUTABLE_STEP_V2));
+        .resolveOptional(ambiance, RefObjectUtils.getSweepingOutputRefObject(INFRA_TASK_EXECUTABLE_STEP_OUTPUT));
 
     when(throwingSupplier.get()).thenThrow(new InvalidRequestException("Task failed to complete"));
 
@@ -529,7 +529,7 @@ public class InfrastructureTaskExecutableStepTest {
                              .build())
                  .build())
         .when(executionSweepingOutputService)
-        .resolveOptional(ambiance, RefObjectUtils.getSweepingOutputRefObject(INFRA_TASK_EXECUTABLE_STEP_V2));
+        .resolveOptional(ambiance, RefObjectUtils.getSweepingOutputRefObject(INFRA_TASK_EXECUTABLE_STEP_OUTPUT));
 
     when(throwingSupplier.get()).thenThrow(new InvalidRequestException("Task failed to complete"));
 

@@ -37,6 +37,10 @@ ENV LC_ALL en_US.UTF-8
 ENV CC /usr/bin/gcc
 ENV CXX /usr/bin/g++
 
+ARG KUBECTL_VERSION=v1.13.2
+ARG PLATFORM=linux
+ARG HELM_VERSION=2.17.0
+
 ##TODO: google-cloud-cli can be removed, update pipelines for the same
 RUN yum install -y mongodb-org-shell google-cloud-cli autoconf binutils gdb glibc-devel redhat-rpm-config rpm-build wget git gcc gcc-c++ jq bc zlib-devel --nodocs --skip-broken \
     && git --version \
@@ -47,7 +51,12 @@ RUN yum install -y mongodb-org-shell google-cloud-cli autoconf binutils gdb glib
     && cd / \
     && rm -rf /tmp/* \
     && yum clean all \
-    && rm -rf /var/tmp/yum-*
+    && rm -rf /var/tmp/yum-* \
+    && curl  -s -L -o kubectl https://app.harness.io/storage/harness-download/kubernetes-release/release/${KUBECTL_VERSION}/bin/${PLATFORM}/amd64/kubectl \
+    && chmod +x kubectl \
+    && mv kubectl /usr/bin \
+    && wget -q https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz -O - | tar -xzO linux-amd64/helm > /usr/local/bin/helm \
+    && chmod +x /usr/local/bin/helm
 
 CMD [ "/deployments/run-java.sh" ]
 

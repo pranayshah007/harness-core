@@ -145,10 +145,6 @@ public class OrganizationServiceImpl implements OrganizationService {
   private void setupOrganization(Scope scope) {
     try {
       defaultUserGroupService.create(scope, emptyList());
-    } catch (DuplicateFieldException ex) {
-      log.error(
-          "Default User Group Creation failed for Organization:" + scope.toString() + "as User Group already exists",
-          ex);
     } catch (Exception ex) {
       log.error("Default User Group Creation failed for Organization: " + scope.toString(), ex);
     }

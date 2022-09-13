@@ -85,6 +85,13 @@ public class ChangeDataCaptureApplication extends Application<ChangeDataCaptureS
       MongoConfig mongoConfig() {
         return changeDataCaptureServiceConfig.getHarnessMongo();
       }
+
+      @Provides
+      @Singleton
+      @Named("dbAliases")
+      public List<String> getDbAliases() {
+        return changeDataCaptureServiceConfig.getDbAliases();
+      }
     });
 
     modules.add(new AbstractMongoModule() {

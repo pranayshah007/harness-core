@@ -8,14 +8,17 @@
 package io.harness.cvng.core.entities;
 
 import static io.harness.cvng.core.utils.ErrorMessageUtils.generateErrorMessageFromParam;
+import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
+import io.harness.cvng.beans.DeviationType;
 import io.harness.cvng.beans.ThresholdConfigType;
 import io.harness.cvng.beans.TimeSeriesMetricType;
+import io.harness.cvng.beans.TimeSeriesThresholdType;
 import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.AppDynamicsHealthSourceSpec.AppDMetricDefinitions;
 import io.harness.cvng.core.constant.MonitoredServiceConstants;
@@ -31,8 +34,10 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -180,10 +185,15 @@ public class AppDynamicsCVConfig extends MetricCVConfig<MetricInfo> {
     populateCompleteMetricPaths();
   }
 
-  public void addMetricThresholds(Set<TimeSeriesMetricPackDTO> timeSeriesMetricPacks) {
+  public void addMetricThresholds(
+      Set<TimeSeriesMetricPackDTO> timeSeriesMetricPacks, List<AppDMetricDefinitions> metricDefinitions) {
     if (isEmpty(timeSeriesMetricPacks)) {
       return;
     }
+    Map<String, AppDMetricDefinitions> mapOfMetricDefinitions =
+        emptyIfNull(metricDefinitions)
+            .stream()
+            .collect(Collectors.toMap(AppDMetricDefinitions::getMetricName, metricDefinition -> metricDefinition));
     getMetricPack().getMetrics().forEach(metric -> {
       timeSeriesMetricPacks.forEach(timeSeriesMetricPackDTO -> {
         if (!isEmpty(timeSeriesMetricPackDTO.getMetricThresholds())) {
@@ -193,6 +203,11 @@ public class AppDynamicsCVConfig extends MetricCVConfig<MetricInfo> {
               .forEach(metricPackDTO -> metricPackDTO.getTimeSeriesThresholdCriteria().forEach(criteria -> {
                 List<TimeSeriesThreshold> timeSeriesThresholds =
                     metric.getThresholds() != null ? metric.getThresholds() : new ArrayList<>();
+                String metricName = metricPackDTO.getMetricName();
+                List<TimeSeriesThresholdType> thresholdTypes = null;
+                if (mapOfMetricDefinitions.containsKey(metricName)) {
+                  thresholdTypes = mapOfMetricDefinitions.get(metricName).getRiskProfile().getThresholdTypes();
+                }
                 TimeSeriesThreshold timeSeriesThreshold =
                     TimeSeriesThreshold.builder()
                         .accountId(getAccountId())
@@ -200,10 +215,11 @@ public class AppDynamicsCVConfig extends MetricCVConfig<MetricInfo> {
                         .dataSourceType(getType())
                         .metricType(metric.getType())
                         .metricIdentifier(metric.getIdentifier())
-                        .metricName(metricPackDTO.getMetricName())
+                        .metricName(metricName)
                         .action(metricPackDTO.getType().getTimeSeriesThresholdActionType())
                         .criteria(criteria)
-                        .thresholdConfigType(ThresholdConfigType.CUSTOMER)
+                        .thresholdConfigType(ThresholdConfigType.USER_DEFINED)
+                        .deviationType(DeviationType.getDeviationType(thresholdTypes))
                         .build();
                 if (!MonitoredServiceConstants.CUSTOM_METRIC_PACK.equalsIgnoreCase(
                         timeSeriesMetricPackDTO.getIdentifier())) {

@@ -1210,7 +1210,7 @@ public class HelmTaskHelperTest extends WingsBaseTest {
                                                               .serviceId(SERVICE_ID)
                                                               .helmChartConfigParams(helmChartConfigParams)
                                                               .build();
-    doReturn("cache").when(helmTaskHelper).getCacheDirForManifestCollection(any(), anyString(), anyBoolean());
+    doReturn("").when(helmTaskHelper).getCacheDirForManifestCollection(any(), anyString(), anyBoolean());
     doReturn("helmHomePath").when(helmTaskHelperBase).getHelmHomePath(anyString());
     doReturn(new ProcessResult(0, null)).when(processExecutor).execute();
     doAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class))
@@ -1218,14 +1218,11 @@ public class HelmTaskHelperTest extends WingsBaseTest {
         .createDirectory("dir");
     doAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class))
         .when(helmTaskHelperBase)
-        .applyHelmHomePath(
-            "v2/helm search repoName/chartName -l --home helmHomePath --col-width 300 --repository-config cache/repo-repoName.yaml",
-            "dir");
+        .applyHelmHomePath("v2/helm search repoName/chartName -l --home helmHomePath --col-width 300", "dir");
     doReturn(getHelmCollectionResult(""))
         .when(helmTaskHelper)
         .executeCommandWithLogOutput(any(),
-            eq("v2/helm search repoName/chartName -l --home helmHomePath --col-width 300 --repository-config cache/repo-repoName.yaml"),
-            eq("dir"), any(), any());
+            eq("v2/helm search repoName/chartName -l --home helmHomePath --col-width 300"), eq("dir"), any(), any());
 
     List<HelmChart> helmCharts = helmTaskHelper.fetchChartVersions(helmChartCollectionParams, "dir", 10000);
     assertThat(helmCharts.size()).isEqualTo(2);

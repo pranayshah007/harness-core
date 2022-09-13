@@ -27,6 +27,7 @@ import io.harness.azure.model.AzureConfig;
 import io.harness.azure.model.AzureDeploymentMode;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
+import io.harness.delegate.task.azure.appservice.settings.AppSettingsFile;
 import io.harness.delegate.task.azure.arm.AzureARMBaseHelperImpl;
 import io.harness.delegate.task.azure.arm.AzureARMDeploymentService;
 import io.harness.delegate.task.azure.arm.AzureARMTaskNGParameters;
@@ -325,8 +326,8 @@ public class AzureArmCreateTaskHandlerTest extends CategoryTest {
         .deploymentName("DEPLOYMENT_NAME")
         .deploymentDataLocation("DEPLOYMENT_DATA_LOCATION")
         .deploymentMode(AzureDeploymentMode.INCREMENTAL)
-        .parametersBody(parameters)
-        .templateBody(template)
+        .parametersBody(AppSettingsFile.create(parameters))
+        .templateBody(AppSettingsFile.create(template))
         .encryptedDataDetails(Collections.emptyList());
   }
 }

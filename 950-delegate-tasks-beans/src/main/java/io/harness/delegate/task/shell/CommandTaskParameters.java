@@ -13,6 +13,7 @@ import static io.harness.expression.Expression.ALLOW_SECRETS;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryCapabilityHelper;
+import io.harness.delegate.beans.connector.jenkins.JenkinsCapabilityHelper;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.beans.storeconfig.HarnessStoreDelegateConfig;
@@ -21,6 +22,7 @@ import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.ssh.NgCommandUnit;
 import io.harness.delegate.task.ssh.artifact.ArtifactoryArtifactDelegateConfig;
+import io.harness.delegate.task.ssh.artifact.JenkinsArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactType;
 import io.harness.delegate.task.ssh.config.ConfigFileParameters;
@@ -80,6 +82,13 @@ public abstract class CommandTaskParameters implements TaskParameters, Execution
           artifactoryDelegateConfig.getConnectorDTO().getConnectorConfig(), maskingEvaluator));
       capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
           artifactoryDelegateConfig.getEncryptedDataDetails(), maskingEvaluator));
+    } else if (SshWinRmArtifactType.JENKINS.equals(artifactDelegateConfig.getArtifactType())
+        && artifactDelegateConfig instanceof JenkinsArtifactDelegateConfig) {
+      JenkinsArtifactDelegateConfig jenkinsDelegateConfig = (JenkinsArtifactDelegateConfig) artifactDelegateConfig;
+      capabilities.addAll(JenkinsCapabilityHelper.fetchRequiredExecutionCapabilities(
+          jenkinsDelegateConfig.getConnectorDTO().getConnectorConfig(), maskingEvaluator));
+      capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
+          jenkinsDelegateConfig.getEncryptedDataDetails(), maskingEvaluator));
     }
   }
 

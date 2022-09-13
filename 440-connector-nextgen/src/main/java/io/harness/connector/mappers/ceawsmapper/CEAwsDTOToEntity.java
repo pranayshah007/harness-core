@@ -75,6 +75,7 @@ public class CEAwsDTOToEntity implements ConnectorDTOToEntityMapper<CEAwsConnect
     return ceAwsConfigBuilder.crossAccountAccess(crossAccountAccessDTO)
         .awsAccountId(awsAccountIdFromRoleArn)
         .featuresEnabled(featuresList)
+        .isAWSGovCloudAccount(connectorDTO.getIsAWSGovCloudAccount())
         .build();
   }
 

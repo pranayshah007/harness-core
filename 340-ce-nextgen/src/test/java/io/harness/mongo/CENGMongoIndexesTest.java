@@ -51,7 +51,7 @@ public class CENGMongoIndexesTest extends CENGTestBase {
     AdvancedDatastore advancedDatastore = persistence.getDatastore(Store.builder().name(DbAliases.CENG).build());
     // get indexes from ONLY "events" db
     List<IndexCreator> indexCreators =
-        IndexManagerSession.allIndexes(advancedDatastore, morphia, Store.builder().name(DbAliases.CENG).build(), false);
+        IndexManagerSession.allIndexes(advancedDatastore, morphia, Store.builder().name(DbAliases.CENG).build());
 
     List<String> indexes = indexCreators.stream()
                                .map(creator

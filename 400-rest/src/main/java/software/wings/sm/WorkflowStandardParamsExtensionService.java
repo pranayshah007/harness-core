@@ -11,7 +11,9 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ff.FeatureFlagService;
 
 import software.wings.beans.Account;
 import software.wings.beans.Application;
@@ -27,6 +29,7 @@ import software.wings.service.intfc.applicationmanifest.HelmChartService;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -40,17 +43,20 @@ public class WorkflowStandardParamsExtensionService {
   private final EnvironmentService environmentService;
   private final ArtifactStreamServiceBindingService artifactStreamServiceBindingService;
   private final HelmChartService helmChartService;
+  private final FeatureFlagService featureFlagService;
 
   @Inject
   public WorkflowStandardParamsExtensionService(AppService appService, AccountService accountService,
       ArtifactService artifactService, EnvironmentService environmentService,
-      ArtifactStreamServiceBindingService artifactStreamServiceBindingService, HelmChartService helmChartService) {
+      ArtifactStreamServiceBindingService artifactStreamServiceBindingService, HelmChartService helmChartService,
+      FeatureFlagService featureFlagService) {
     this.appService = appService;
     this.accountService = accountService;
     this.artifactService = artifactService;
     this.environmentService = environmentService;
     this.artifactStreamServiceBindingService = artifactStreamServiceBindingService;
     this.helmChartService = helmChartService;
+    this.featureFlagService = featureFlagService;
   }
 
   public HelmChart getHelmChartForService(WorkflowStandardParams workflowStandardParams, String serviceId) {
@@ -137,6 +143,13 @@ public class WorkflowStandardParamsExtensionService {
       Artifact artifact = artifactService.get(artifactId);
       if (artifact != null) {
         list.add(artifact);
+      }
+    }
+
+    if (workflowStandardParams.getAppId() != null) {
+      String accountId = appService.getAccountIdByAppId(workflowStandardParams.getAppId());
+      if (featureFlagService.isEnabled(FeatureName.SORT_ARTIFACTS_IN_UPDATED_ORDER, accountId)) {
+        list.sort(Comparator.comparing(Artifact::getLastUpdatedAt).reversed());
       }
     }
 

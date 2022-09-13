@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.instancesync.info.AwsSshWinrmServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.AzureSshWinrmServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.AzureWebAppServerInstanceInfo;
+import io.harness.delegate.beans.instancesync.info.CustomDeploymentServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.EcsServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.K8sServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.NativeHelmServerInstanceInfo;
@@ -35,7 +36,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
       @JsonSubTypes.Type(value = PdcServerInstanceInfo.class, name = "PdcServerInstanceInfo"),
       @JsonSubTypes.Type(value = EcsServerInstanceInfo.class, name = "EcsServerInstanceInfo"),
       @JsonSubTypes.Type(value = AzureSshWinrmServerInstanceInfo.class, name = "AzureSshWinrmServerInstanceInfo"),
-      @JsonSubTypes.Type(value = AwsSshWinrmServerInstanceInfo.class, name = "AwsSshWinrmServerInstanceInfo")
+      @JsonSubTypes.Type(value = AwsSshWinrmServerInstanceInfo.class, name = "AwsSshWinrmServerInstanceInfo"),
+      @JsonSubTypes.Type(value = CustomDeploymentServerInstanceInfo.class, name = "CustomDeploymentServerInstanceInfo")
 })
 @OwnedBy(HarnessTeam.DX)
 public abstract class ServerInstanceInfo {}

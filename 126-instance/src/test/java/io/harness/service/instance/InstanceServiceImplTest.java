@@ -22,7 +22,8 @@ import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyList;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -33,6 +34,7 @@ import io.harness.dtos.InstanceDTO;
 import io.harness.dtos.instanceinfo.InstanceInfoDTO;
 import io.harness.dtos.instanceinfo.K8sInstanceInfoDTO;
 import io.harness.entities.Instance;
+import io.harness.entities.Instance.InstanceKeys;
 import io.harness.entities.instanceinfo.InstanceInfo;
 import io.harness.entities.instanceinfo.K8sInstanceInfo;
 import io.harness.models.CountByServiceIdAndEnvType;
@@ -42,7 +44,6 @@ import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.repositories.instance.InstanceRepository;
 import io.harness.rule.Owner;
 
-import com.mongodb.client.result.UpdateResult;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -50,15 +51,18 @@ import org.bson.Document;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
+import org.springframework.data.mongodb.core.query.Criteria;
 
 public class InstanceServiceImplTest extends InstancesTestBase {
   private final String INSTANCE_KEY = "instance_key";
   @Mock InstanceRepository instanceRepository;
   @InjectMocks InstanceServiceImpl instanceService;
+  @Captor ArgumentCaptor<String> instanceIdCapture;
 
   @Test
   @Owner(developers = PIYUSH_BHUWALKA)
@@ -384,8 +388,28 @@ public class InstanceServiceImplTest extends InstancesTestBase {
   public void testUpdateInfrastructureMapping() {
     List<String> instanceIds = Arrays.asList("1", "2", "3");
     String infrastructureMappingId = "2";
-    UpdateResult updateResult = mock(UpdateResult.class);
-    when(instanceRepository.updateInfrastructureMapping(instanceIds, infrastructureMappingId)).thenReturn(updateResult);
     instanceService.updateInfrastructureMapping(instanceIds, infrastructureMappingId);
+    verify(instanceRepository, times(3))
+        .updateInfrastructureMapping(instanceIdCapture.capture(), eq(infrastructureMappingId));
+    assertThat(instanceIdCapture.getAllValues()).isEqualTo(instanceIds);
+  }
+
+  @Test
+  @Owner(developers = VIKYATH_HAREKAL)
+  @Category(UnitTests.class)
+  public void testUpdateInfrastructureMappingWhenDuplicateKeyExceptionSoftDeleteInstance() {
+    List<String> instanceIds = Arrays.asList("1", "2");
+    String infrastructureMappingId = "2";
+    doThrow(DuplicateKeyException.class)
+        .when(instanceRepository)
+        .updateInfrastructureMapping(eq("1"), eq(infrastructureMappingId));
+
+    instanceService.updateInfrastructureMapping(instanceIds, infrastructureMappingId);
+
+    Criteria criteria = Criteria.where(InstanceKeys.id).is("1");
+    verify(instanceRepository).findAndModify(eq(criteria), any());
+    verify(instanceRepository, times(2))
+        .updateInfrastructureMapping(instanceIdCapture.capture(), eq(infrastructureMappingId));
+    assertThat(instanceIdCapture.getAllValues()).isEqualTo(instanceIds);
   }
 }

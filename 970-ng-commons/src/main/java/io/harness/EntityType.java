@@ -175,6 +175,10 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.TEMPLATE_STAGE)
   TEMPLATE_STAGE(ModuleType.TEMPLATESERVICE, EntityTypeConstants.TEMPLATE_STAGE, NGTemplateReference.class,
       EntityYamlRootNames.TEMPLATE),
+
+  @JsonProperty(EntityTypeConstants.TEMPLATE_CUSTOM_DEPLOYMENT)
+  TEMPLATE_CUSTOM_DEPLOYMENT(ModuleType.TEMPLATESERVICE, EntityTypeConstants.TEMPLATE_CUSTOM_DEPLOYMENT,
+      NGTemplateReference.class, EntityYamlRootNames.TEMPLATE),
   @JsonProperty(EntityTypeConstants.TRIGGERS)
   TRIGGERS(ModuleType.CD, EntityTypeConstants.TRIGGERS, TriggerReference.class, EntityYamlRootNames.TRIGGERS),
   @JsonProperty(EntityTypeConstants.MONITORED_SERVICE)
@@ -301,7 +305,9 @@ public enum EntityType {
       IdentifierRef.class, EntityYamlRootNames.AZURE_ROLLBACK_ARM_RESOURCE_STEP),
   @JsonProperty(EntityTypeConstants.BACKGROUND_STEP)
   BACKGROUND_STEP(
-      ModuleType.CI, EntityTypeConstants.BACKGROUND_STEP, IdentifierRef.class, EntityYamlRootNames.BACKGROUND_STEP);
+      ModuleType.CI, EntityTypeConstants.BACKGROUND_STEP, IdentifierRef.class, EntityYamlRootNames.BACKGROUND_STEP),
+  @JsonProperty(EntityTypeConstants.WAIT_STEP)
+  WAIT_STEP(ModuleType.PMS, EntityTypeConstants.WAIT_STEP, IdentifierRef.class, EntityYamlRootNames.WAIT_STEP);
 
   private final ModuleType moduleType;
   String yamlName;

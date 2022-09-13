@@ -7,6 +7,7 @@
 
 package io.harness.ci.stateutils.buildstate;
 
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_REF;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_NETRC_MACHINE;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_REMOTE_URL;
 import static io.harness.rule.OwnerRule.JAMES_RICKS;
@@ -18,9 +19,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
+import io.harness.beans.sweepingoutputs.CodebaseSweepingOutput;
 import io.harness.category.element.UnitTests;
 import io.harness.ci.buildstate.CodebaseUtils;
 import io.harness.ci.buildstate.ConnectorUtils;
+import io.harness.ci.executionplan.CIExecutionPlanTestHelper;
 import io.harness.ci.executionplan.CIExecutionTestBase;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.ConnectorType;
@@ -35,6 +38,9 @@ import io.harness.delegate.beans.connector.scm.gitlab.GitlabAuthenticationDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.ng.core.NGAccess;
+import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
+import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
@@ -48,12 +54,21 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 
 public class CodebaseUtilsTest extends CIExecutionTestBase {
+  @Inject private CIExecutionPlanTestHelper ciExecutionPlanTestHelper;
   @Inject public CodebaseUtils codebaseUtils;
   @Mock private ConnectorUtils connectorUtils;
+  @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
+  private Ambiance ambiance;
 
   @Before
   public void setUp() {
     on(codebaseUtils).set("connectorUtils", connectorUtils);
+    on(codebaseUtils).set("executionSweepingOutputResolver", executionSweepingOutputService);
+    ambiance = Ambiance.newBuilder()
+                   .putSetupAbstractions("accountId", "accountId")
+                   .putSetupAbstractions("projectIdentifier", "projectId")
+                   .putSetupAbstractions("orgIdentifier", "orgIdentifier")
+                   .build();
   }
 
   @Test
@@ -276,5 +291,34 @@ public class CodebaseUtilsTest extends CIExecutionTestBase {
     final Map<String, String> gitEnvVariables = codebaseUtils.getGitEnvVariables(connectorDetails, repoName);
     assertThat(gitEnvVariables.get(DRONE_NETRC_MACHINE)).isEqualTo(scmHostName);
     assertThat(gitEnvVariables.get(DRONE_REMOTE_URL)).isEqualTo(scmUrl + "/" + repoName + ".git");
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testGetRuntimeCodebaseVarsForBitbucket() {
+    ConnectorDetails connectorDetails = ciExecutionPlanTestHelper.getBitBucketConnector();
+    when(executionSweepingOutputService.resolveOptional(any(), any()))
+        .thenReturn(OptionalSweepingOutput.builder()
+                        .found(true)
+                        .output(CodebaseSweepingOutput.builder().sourceBranch("source").build())
+                        .build());
+    final Map<String, String> runtimeCodebaseVars = codebaseUtils.getRuntimeCodebaseVars(ambiance, connectorDetails);
+    assertThat(runtimeCodebaseVars).isNotEmpty();
+    assertThat(runtimeCodebaseVars).containsKey(DRONE_COMMIT_REF);
+    assertThat(runtimeCodebaseVars.get(DRONE_COMMIT_REF)).isEqualTo("+refs/heads/source");
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testGetRuntimeCodebaseVarsForBitbucketWithoutGitConnector() {
+    when(executionSweepingOutputService.resolveOptional(any(), any()))
+        .thenReturn(OptionalSweepingOutput.builder()
+                        .found(true)
+                        .output(CodebaseSweepingOutput.builder().sourceBranch("source").build())
+                        .build());
+    final Map<String, String> runtimeCodebaseVars = codebaseUtils.getRuntimeCodebaseVars(ambiance, null);
+    assertThat(runtimeCodebaseVars).doesNotContainKey(DRONE_COMMIT_REF);
   }
 }

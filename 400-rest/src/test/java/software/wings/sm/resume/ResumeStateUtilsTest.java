@@ -9,6 +9,7 @@ package software.wings.sm.resume;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.GARVIT;
+import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static software.wings.sm.StateExecutionData.StateExecutionDataBuilder.aStateExecutionData;
 import static software.wings.utils.WingsTestConstants.APP_ID;
@@ -36,6 +37,7 @@ import software.wings.api.artifact.ServiceArtifactElement;
 import software.wings.api.artifact.ServiceArtifactVariableElement;
 import software.wings.expression.SweepingOutputData;
 import software.wings.service.impl.SweepingOutputServiceImpl;
+import software.wings.service.intfc.FeatureFlagService;
 import software.wings.service.intfc.StateExecutionService;
 import software.wings.service.intfc.sweepingoutput.SweepingOutputService;
 import software.wings.sm.ContextElement;
@@ -47,8 +49,10 @@ import software.wings.sm.StateExecutionInstance;
 import software.wings.sm.WorkflowStandardParams;
 
 import com.google.inject.Inject;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -64,6 +68,7 @@ public class ResumeStateUtilsTest extends WingsBaseTest {
   @Inject private HPersistence persistence;
 
   @Mock private StateExecutionService stateExecutionService;
+  @Mock private FeatureFlagService featureFlagService;
 
   private final String appId = generateUuid();
   private final String workflowExecutionUuid = generateUuid();
@@ -219,6 +224,60 @@ public class ResumeStateUtilsTest extends WingsBaseTest {
         .filter(SweepingOutputInstanceKeys.appId, appId)
         .filter(SweepingOutputInstanceKeys.pipelineExecutionId, pipelineExecutionUuid)
         .asList();
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void test_mergeWorkflowElementVariables() {
+    ExecutionContext context = mock(ExecutionContextImpl.class);
+    WorkflowStandardParams std1 = mock(WorkflowStandardParams.class);
+    WorkflowStandardParams std2 = mock(WorkflowStandardParams.class);
+    Map<String, Object> variableMap1 = new HashMap<>();
+    variableMap1.put("var1", "value1");
+    variableMap1.put("varX", "valueX");
+    WorkflowElement element1 = WorkflowElement.builder().variables(variableMap1).build();
+    Map<String, Object> variableMap2 = new HashMap<>();
+    variableMap2.put("var1", "newValue1");
+    variableMap2.put("var2", "newValue2");
+    variableMap2.put("var3", "newValue3");
+    variableMap2.put("var4", "newValue4");
+    WorkflowElement element2 = WorkflowElement.builder().variables(variableMap2).build();
+    when(std1.getWorkflowElement()).thenReturn(element1);
+    when(std2.getWorkflowElement()).thenReturn(element2);
+    when(context.getContextElement(eq(ContextElementType.STANDARD))).thenReturn(std1);
+    resumeStateUtils.mergeWorkflowElementVariables(context, std2);
+    assertThat(std1.getWorkflowElement().getVariables().size()).isEqualTo(5);
+    assertThat(std1.getWorkflowElement().getVariables().get("var1")).isEqualTo("newValue1");
+    assertThat(std1.getWorkflowElement().getVariables().get("var2")).isEqualTo("newValue2");
+    assertThat(std1.getWorkflowElement().getVariables().get("var3")).isEqualTo("newValue3");
+    assertThat(std1.getWorkflowElement().getVariables().get("var4")).isEqualTo("newValue4");
+    assertThat(std1.getWorkflowElement().getVariables().get("varX")).isEqualTo("valueX");
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void test_mergeWorkflowElementVariablesNull() {
+    ExecutionContext context = mock(ExecutionContextImpl.class);
+    WorkflowStandardParams std1 = mock(WorkflowStandardParams.class);
+    WorkflowStandardParams std2 = mock(WorkflowStandardParams.class);
+    WorkflowElement element1 = WorkflowElement.builder().build();
+    Map<String, Object> variableMap = new HashMap<>();
+    variableMap.put("var1", "newValue1");
+    variableMap.put("var2", "newValue2");
+    variableMap.put("var3", "newValue3");
+    variableMap.put("var4", "newValue4");
+    WorkflowElement element2 = WorkflowElement.builder().variables(variableMap).build();
+    when(std1.getWorkflowElement()).thenReturn(element1);
+    when(std2.getWorkflowElement()).thenReturn(element2);
+    when(context.getContextElement(eq(ContextElementType.STANDARD))).thenReturn(std1);
+    resumeStateUtils.mergeWorkflowElementVariables(context, std2);
+    assertThat(std1.getWorkflowElement().getVariables().size()).isEqualTo(4);
+    assertThat(std1.getWorkflowElement().getVariables().get("var1")).isEqualTo("newValue1");
+    assertThat(std1.getWorkflowElement().getVariables().get("var2")).isEqualTo("newValue2");
+    assertThat(std1.getWorkflowElement().getVariables().get("var3")).isEqualTo("newValue3");
+    assertThat(std1.getWorkflowElement().getVariables().get("var4")).isEqualTo("newValue4");
   }
 
   private SweepingOutputInstance getInstanceByName(List<SweepingOutputInstance> instances, String name) {

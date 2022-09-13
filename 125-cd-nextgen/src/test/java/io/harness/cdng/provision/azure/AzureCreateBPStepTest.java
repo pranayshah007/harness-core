@@ -10,22 +10,28 @@ package io.harness.cdng.provision.azure;
 import static io.harness.rule.OwnerRule.NGONZALEZ;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 import static org.powermock.api.mockito.PowerMockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FileReference;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.yaml.GithubStore;
+import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.provision.azure.beans.AzureCreateARMResourcePassThroughData;
 import io.harness.cdng.provision.azure.beans.AzureCreateBPPassThroughData;
@@ -42,6 +48,9 @@ import io.harness.delegate.task.azure.arm.AzureBlueprintTaskNGParameters;
 import io.harness.delegate.task.azure.arm.AzureBlueprintTaskNGResponse;
 import io.harness.delegate.task.cloudformation.CloudformationTaskNGResponse;
 import io.harness.delegate.task.git.GitFetchResponse;
+import io.harness.filestore.dto.node.FileNodeDTO;
+import io.harness.filestore.dto.node.FolderNodeDTO;
+import io.harness.filestore.service.FileStoreService;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.git.model.GitFile;
 import io.harness.logging.CommandExecutionStatus;
@@ -53,6 +62,7 @@ import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
+import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
@@ -72,6 +82,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -90,6 +101,10 @@ public class AzureCreateBPStepTest extends CategoryTest {
   @Mock StepHelper stepHelper;
   AzureTestHelper azureHelperTest = new AzureTestHelper();
   @Mock private GitConfigAuthenticationInfoHelper gitConfigAuthenticationInfoHelper;
+  @Mock private FileReference fileReference;
+  @Mock private CDExpressionResolver cdExpressionResolver;
+  @Mock private EngineExpressionService engineExpressionService;
+  @Mock private FileStoreService fileStoreService;
   @Mock private SecretManagerClientService secretManagerClientService;
 
   @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
@@ -146,6 +161,79 @@ public class AzureCreateBPStepTest extends CategoryTest {
     azureCreateBPStep.startChainLinkAfterRbac(azureHelperTest.getAmbiance(), step, inputPackage);
     verify(azureCommonHelper, times(1)).getGitStoreDelegateConfig(any(), any(), any());
     verify(azureCommonHelper, times(1)).getGitFetchFileTaskChainResponse(any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = NGONZALEZ)
+  @Category(UnitTests.class)
+  public void testExecuteAzureCreateStepTaskWithFilesInHarnessStore() throws Exception {
+    StepElementParameters step = createStepHarnessStore();
+    FileReference fileReference = FileReference.builder().build();
+    Mockito.mockStatic(FileReference.class);
+    when(FileReference.of(any(), any(), any(), any())).thenReturn(fileReference);
+    FolderNodeDTO folderNodeDTO = FolderNodeDTO.builder().build();
+    FileNodeDTO blueprintNodeDTO =
+        FileNodeDTO.builder().content("blueprint").name("blueprint.json").path("blueprint.json").build();
+    when(engineExpressionService.renderExpression(azureHelperTest.getAmbiance(), blueprintNodeDTO.getContent()))
+        .thenReturn(blueprintNodeDTO.getContent());
+
+    FileNodeDTO assignNodeDTO = FileNodeDTO.builder().content("assign").name("assign.json").path("assign.json").build();
+    when(engineExpressionService.renderExpression(azureHelperTest.getAmbiance(), assignNodeDTO.getContent()))
+        .thenReturn(assignNodeDTO.getContent());
+
+    FolderNodeDTO artifacts = FolderNodeDTO.builder().build();
+    FileNodeDTO artifact1 = FileNodeDTO.builder()
+                                .name("artifact1.json")
+                                .path("artifacts/artifact1.json")
+                                .content("artifact content")
+                                .build();
+    when(engineExpressionService.renderExpression(azureHelperTest.getAmbiance(), artifact1.getContent()))
+        .thenReturn(artifact1.getContent());
+    FileNodeDTO artifact2 = FileNodeDTO.builder()
+                                .name("artifact2.json")
+                                .path("artifacts/artifact2.json")
+                                .content("artifact 2 content")
+                                .build();
+    when(engineExpressionService.renderExpression(azureHelperTest.getAmbiance(), artifact2.getContent()))
+        .thenReturn(artifact2.getContent());
+
+    artifacts.addChild(artifact1);
+    artifacts.addChild(artifact2);
+    folderNodeDTO.addChild(artifacts);
+    folderNodeDTO.addChild(blueprintNodeDTO);
+    folderNodeDTO.addChild(assignNodeDTO);
+    when(fileStoreService.getWithChildrenByPath(any(), any(), any(), any(), anyBoolean()))
+        .thenReturn(Optional.of(folderNodeDTO));
+
+    when(cdExpressionResolver.updateExpressions(any(), any()))
+        .thenReturn(
+            ((AzureCreateBPStepParameters) step.getSpec()).getConfiguration().getTemplateFile().getStore().getSpec());
+    when(azureCommonHelper.getAzureConnectorConfig(any(), any()))
+        .thenReturn((AzureConnectorDTO) azureHelperTest.createAzureConnectorDTO().getConnectorConfig());
+    StepInputPackage inputPackage = StepInputPackage.builder().build();
+    Mockito.mockStatic(StepUtils.class);
+    Mockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(TaskRequest.newBuilder().build());
+    ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
+    Class<ArrayList<TaskSelector>> delegateSelectors = (Class<ArrayList<TaskSelector>>) (Class) ArrayList.class;
+    ArgumentCaptor<ArrayList<TaskSelector>> taskSelectorsArgumentCaptor = ArgumentCaptor.forClass(delegateSelectors);
+
+    TaskChainResponse taskChainResponse =
+        azureCreateBPStep.startChainLinkAfterRbac(azureHelperTest.getAmbiance(), step, inputPackage);
+
+    verify(azureCommonHelper, times(0)).getGitStoreDelegateConfig(any(), any(), any());
+    verify(azureCommonHelper, times(0)).getGitFetchFileTaskChainResponse(any(), any(), any(), any());
+    assertThat(taskChainResponse).isNotNull();
+    verifyStatic(StepUtils.class, times(1));
+    StepUtils.prepareCDTaskRequest(
+        any(), taskDataArgumentCaptor.capture(), any(), any(), any(), taskSelectorsArgumentCaptor.capture(), any());
+    assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
+    assertThat(taskDataArgumentCaptor.getValue().getParameters()).isNotNull();
+    AzureBlueprintTaskNGParameters taskNGParameters =
+        (AzureBlueprintTaskNGParameters) taskDataArgumentCaptor.getValue().getParameters()[0];
+    assertThat(taskNGParameters.getArtifacts().size()).isEqualTo(2);
+    assertThat(taskNGParameters.getBlueprintJson()).isEqualTo("blueprint");
+    assertThat(taskNGParameters.getAssignmentJson()).isEqualTo("assign");
   }
 
   @Test
@@ -262,6 +350,28 @@ public class AzureCreateBPStepTest extends CategoryTest {
                       .paths(ParameterField.createValueField(new ArrayList<>(Collections.singletonList("foobar"))))
                       .connectorRef(ParameterField.createValueField("template-connector-ref"))
                       .build())
+            .build();
+    templateFileBuilder.setStore(templateStore);
+
+    stepParameters.setConfiguration(AzureCreateBPStepConfigurationParameters.builder()
+                                        .templateFile(templateFileBuilder)
+                                        .scope(AzureBPScopes.SUBSCRIPTION)
+                                        .assignmentName(ParameterField.<String>builder().value("foobar").build())
+                                        .connectorRef(ParameterField.createValueField("azure"))
+                                        .build());
+
+    TaskSelectorYaml taskSelectorYaml = new TaskSelectorYaml("create-d-selector-1");
+    stepParameters.setDelegateSelectors(ParameterField.createValueField(Arrays.asList(taskSelectorYaml)));
+    return StepElementParameters.builder().spec(stepParameters).build();
+  }
+
+  private StepElementParameters createStepHarnessStore() {
+    AzureCreateBPStepParameters stepParameters = new AzureCreateBPStepParameters();
+    AzureTemplateFile templateFileBuilder = new AzureTemplateFile();
+
+    StoreConfigWrapper templateStore =
+        StoreConfigWrapper.builder()
+            .spec(HarnessStore.builder().files(ParameterField.createValueField(singletonList("project:/test"))).build())
             .build();
     templateFileBuilder.setStore(templateStore);
 

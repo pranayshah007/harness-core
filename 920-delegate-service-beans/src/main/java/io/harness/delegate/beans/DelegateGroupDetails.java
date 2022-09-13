@@ -45,4 +45,5 @@ public class DelegateGroupDetails {
   private String delegateVersion;
   private long upgraderLastUpdated;
   private boolean immutable;
+  private List<String> versions;
 }

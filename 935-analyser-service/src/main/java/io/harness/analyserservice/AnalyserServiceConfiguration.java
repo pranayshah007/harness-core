@@ -80,4 +80,12 @@ public class AnalyserServiceConfiguration extends Configuration {
     logbackAccessRequestLogFactory.setAppenders(ImmutableList.of(fileAppenderFactory));
     return logbackAccessRequestLogFactory;
   }
+
+  public List<String> getDbAliases() {
+    List<String> dbAliases = new ArrayList<>();
+    if (mongoConfig != null) {
+      dbAliases.add(mongoConfig.getAliasDBName());
+    }
+    return dbAliases;
+  }
 }

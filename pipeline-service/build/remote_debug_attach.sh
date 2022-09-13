@@ -8,7 +8,8 @@ if [ "$1" == "" ]; then
   exit 1
 fi
 
-if ! kubectl config use-context gke_pie-play_us-central1-c_pie-play-cluster-pr
+echo "Using cluster: \c"
+if ! kubectl config current-context
 then
   exit
 fi

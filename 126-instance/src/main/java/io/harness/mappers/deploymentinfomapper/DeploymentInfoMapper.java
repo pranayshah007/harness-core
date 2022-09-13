@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.dtos.deploymentinfo.AwsSshWinrmDeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.AzureSshWinrmDeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.AzureWebAppDeploymentInfoDTO;
+import io.harness.dtos.deploymentinfo.CustomDeploymentNGDeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.EcsDeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.K8sDeploymentInfoDTO;
@@ -22,6 +23,7 @@ import io.harness.dtos.deploymentinfo.ServerlessAwsLambdaDeploymentInfoDTO;
 import io.harness.entities.deploymentinfo.AwsSshWinrmDeploymentInfo;
 import io.harness.entities.deploymentinfo.AzureSshWinrmDeploymentInfo;
 import io.harness.entities.deploymentinfo.AzureWebAppNGDeploymentInfo;
+import io.harness.entities.deploymentinfo.CustomDeploymentNGDeploymentInfo;
 import io.harness.entities.deploymentinfo.DeploymentInfo;
 import io.harness.entities.deploymentinfo.EcsDeploymentInfo;
 import io.harness.entities.deploymentinfo.K8sDeploymentInfo;
@@ -55,6 +57,8 @@ public class DeploymentInfoMapper {
       return AzureSshWinrmDeploymentInfoMapper.toDTO((AzureSshWinrmDeploymentInfo) deploymentInfo);
     } else if (deploymentInfo instanceof AwsSshWinrmDeploymentInfo) {
       return AwsSshWinrmDeploymentInfoMapper.toDTO((AwsSshWinrmDeploymentInfo) deploymentInfo);
+    } else if (deploymentInfo instanceof CustomDeploymentNGDeploymentInfo) {
+      return CustomDeploymentNGDeploymentInfoMapper.toDTO((CustomDeploymentNGDeploymentInfo) deploymentInfo);
     }
     throw new InvalidRequestException("No DeploymentInfoMapper toDTO found for deploymentInfo : {}" + deploymentInfo);
   }
@@ -78,6 +82,8 @@ public class DeploymentInfoMapper {
       return AzureSshWinrmDeploymentInfoMapper.toEntity((AzureSshWinrmDeploymentInfoDTO) deploymentInfoDTO);
     } else if (deploymentInfoDTO instanceof AwsSshWinrmDeploymentInfoDTO) {
       return AwsSshWinrmDeploymentInfoMapper.toEntity((AwsSshWinrmDeploymentInfoDTO) deploymentInfoDTO);
+    } else if (deploymentInfoDTO instanceof CustomDeploymentNGDeploymentInfoDTO) {
+      return CustomDeploymentNGDeploymentInfoMapper.toEntity((CustomDeploymentNGDeploymentInfoDTO) deploymentInfoDTO);
     }
     throw new InvalidRequestException(
         "No DeploymentInfoMapper toEntity found for deploymentInfo : {}" + deploymentInfoDTO);

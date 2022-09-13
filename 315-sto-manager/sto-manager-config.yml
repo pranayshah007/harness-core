@@ -53,7 +53,7 @@ stomanager-mongo:
   maxConnectionIdleTime: 600000
   connectionsPerHost: 300
   indexManagerMode: AUTO
-  aliasDBName: sto-manager
+  aliasDBName: sto-harness
 
 enableAuth: false
 

@@ -10,6 +10,7 @@ package io.harness.ng.core.infrastructure.services;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
+import io.harness.repositories.UpsertOptions;
 
 import java.util.List;
 import java.util.Optional;
@@ -28,7 +29,7 @@ public interface InfrastructureEntityService {
 
   InfrastructureEntity update(@NotNull InfrastructureEntity requestInfra);
 
-  InfrastructureEntity upsert(@NotNull InfrastructureEntity requestInfra);
+  InfrastructureEntity upsert(@NotNull InfrastructureEntity requestInfra, UpsertOptions upsertOptions);
 
   Page<InfrastructureEntity> list(@NotNull Criteria criteria, @NotNull Pageable pageable);
 

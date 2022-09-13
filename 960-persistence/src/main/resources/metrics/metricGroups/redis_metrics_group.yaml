@@ -1,0 +1,4 @@
+name: Redis
+identifier: redis
+labels:
+  - redisTopic

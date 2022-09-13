@@ -27,7 +27,7 @@ metadata:
   namespace: harness-delegate-ng
 type: Opaque
 data:
-  ACCOUNT_SECRET: "QUNDT1VOVF9LRVk="
+  DELEGATE_TOKEN: "QUNDT1VOVF9LRVk="
 
 ---
 
