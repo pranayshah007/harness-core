@@ -22,6 +22,6 @@ public interface GitOpsSpecParameters extends SpecParameters {
   @Nonnull
   @JsonIgnore
   default List<String> getCommandUnits() {
-    return Arrays.asList("Fetch Files", "Update GitOps Configuration files", "Commit and Push", "Create PR");
+    return Arrays.asList("Execute", "Fetch Files", "Update GitOps Configuration files", "Commit and Push", "Create PR");
   }
 }

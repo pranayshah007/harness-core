@@ -8,6 +8,7 @@
 package io.harness.delegate.task.git;
 
 import static io.harness.annotations.dev.HarnessTeam.GITOPS;
+import static io.harness.expression.Expression.ALLOW_SECRETS;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorInfoDTO;
@@ -19,11 +20,14 @@ import io.harness.delegate.beans.gitapi.GitApiTaskParams;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import io.harness.shell.ScriptType;
 import lombok.Builder;
 import lombok.Data;
 
@@ -36,10 +40,18 @@ public class NGGitOpsTaskParams implements TaskParameters, ExecutionCapabilityDe
   private boolean overrideConfig;
   private String accountId;
   private String activityId;
+  private List<String> outputVars;
+  private List<String> secretOutputVars;
+  private ScriptType scriptType;
   ConnectorInfoDTO connectorInfoDTO;
   GitOpsTaskType gitOpsTaskType;
+
   private String prLink;
   private GitApiTaskParams gitApiTaskParams;
+
+  @Expression(ALLOW_SECRETS) String script;
+//  String workingDirectory;
+
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

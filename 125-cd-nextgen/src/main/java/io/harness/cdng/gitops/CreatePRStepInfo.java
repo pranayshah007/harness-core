@@ -18,6 +18,7 @@ import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.shell.ScriptType;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
 
@@ -47,8 +48,8 @@ public class CreatePRStepInfo extends CreatePRBaseStepInfo implements CDStepInfo
   @Builder(builderMethodName = "infoBuilder")
   public CreatePRStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
       ParameterField<Map<String, String>> stringMap, CreatePRStepUpdateConfigScriptWrapper updateConfigScriptWrapper,
-      ShellType shellType, ParameterField<Boolean> overrideConfig) {
-    super(shellType, overrideConfig, stringMap, updateConfigScriptWrapper, delegateSelectors);
+      ShellType shellType, ParameterField<Boolean> overrideConfig, ParameterField<String> script, List<String> outputVars, List<String> secretOutputVars, ScriptType scriptType) {
+    super(shellType, overrideConfig, stringMap, updateConfigScriptWrapper, delegateSelectors, script, outputVars, secretOutputVars, scriptType);
   }
 
   @Override
@@ -65,7 +66,7 @@ public class CreatePRStepInfo extends CreatePRBaseStepInfo implements CDStepInfo
   public String getFacilitatorType() {
     return OrchestrationFacilitatorType.TASK;
   }
-
+// TODO here gabriel
   @Override
   public SpecParameters getSpecParameters() {
     return CreatePRStepParams.infoBuilder()
@@ -74,6 +75,10 @@ public class CreatePRStepInfo extends CreatePRBaseStepInfo implements CDStepInfo
         .updateConfigScriptWrapper(this.getSource())
         .stringMap(getStringMap())
         .delegateSelectors(getDelegateSelectors())
+        .script(getScript())
+        .outputVars(getOutputVars())
+        .secretOutputVars(getSecretOutputVars())
         .build();
+
   }
 }

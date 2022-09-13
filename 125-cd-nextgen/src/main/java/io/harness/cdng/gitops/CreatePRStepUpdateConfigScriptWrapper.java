@@ -37,10 +37,10 @@ public class CreatePRStepUpdateConfigScriptWrapper {
   @NotNull String type;
   @NotNull
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
-  CreatePRStepUpdateConfigScriptBaseSource spec;
+  CreatePRStepUpdateConfigScriptInlineSource spec;
 
   @Builder
-  public CreatePRStepUpdateConfigScriptWrapper(String type, CreatePRStepUpdateConfigScriptBaseSource spec) {
+  public CreatePRStepUpdateConfigScriptWrapper(String type, CreatePRStepUpdateConfigScriptInlineSource spec) {
     this.type = type;
     this.spec = spec;
   }

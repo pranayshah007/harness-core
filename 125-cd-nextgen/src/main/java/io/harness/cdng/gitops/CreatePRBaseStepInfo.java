@@ -8,14 +8,17 @@
 package io.harness.cdng.gitops;
 
 import static io.harness.beans.SwaggerConstants.BOOLEAN_CLASSPATH;
+import static io.harness.expression.Expression.ALLOW_SECRETS;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
+import io.harness.expression.Expression;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.shell.ScriptType;
 import io.harness.yaml.YamlSchemaTypes;
 
 import io.swagger.annotations.ApiModelProperty;
@@ -47,9 +50,18 @@ public class CreatePRBaseStepInfo {
   // TODO: Remove this field
   ParameterField<Map<String, String>> stringMap;
 
+//  TODO GABRIEL
   CreatePRStepUpdateConfigScriptWrapper source;
 
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
+
+  @YamlSchemaTypes({string})
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
+  @Expression(ALLOW_SECRETS) ParameterField<String> script;
+
+  List<String> outputVars;
+  List<String> secretOutputVars;
+  ScriptType scriptType;
 }

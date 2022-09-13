@@ -34,9 +34,12 @@ import io.harness.delegate.task.git.GitOpsTaskType;
 import io.harness.delegate.task.git.NGGitOpsResponse;
 import io.harness.delegate.task.git.NGGitOpsTaskParams;
 import io.harness.delegate.task.git.TaskStatus;
+import io.harness.delegate.task.shell.ShellScriptTaskNG;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.expression.ExpressionEvaluatorUtils;
+import io.harness.logstreaming.ILogStreamingStepClient;
+import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
@@ -88,6 +91,7 @@ public class CreatePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsResp
   @Inject protected OutcomeService outcomeService;
   @Inject private K8sStepHelper k8sStepHelper;
   @Inject private GitOpsStepHelper gitOpsStepHelper;
+  @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
@@ -137,15 +141,16 @@ public class CreatePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsResp
    */
     CreatePRStepParams gitOpsSpecParams = (CreatePRStepParams) stepParameters.getSpec();
     try {
+      ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
+      logStreamingStepClient.openStream(ShellScriptTaskNG.COMMAND_UNIT);
+
       ManifestOutcome releaseRepoOutcome = gitOpsStepHelper.getReleaseRepoOutcome(ambiance);
       // Fetch files from releaseRepoOutcome and replace expressions if present with cluster name and environment
       Map<String, Map<String, String>> filesToVariablesMap = buildFilePathsToVariablesMap(releaseRepoOutcome, ambiance);
 
       List<GitFetchFilesConfig> gitFetchFilesConfig = new ArrayList<>();
       gitFetchFilesConfig.add(getGitFetchFilesConfig(ambiance, releaseRepoOutcome, filesToVariablesMap.keySet()));
-
-      NGGitOpsTaskParams ngGitOpsTaskParams =
-          NGGitOpsTaskParams.builder()
+      NGGitOpsTaskParams ngGitOpsTaskParams = NGGitOpsTaskParams.builder()
               .gitOpsTaskType(GitOpsTaskType.CREATE_PR)
               .gitFetchFilesConfig(gitFetchFilesConfig.get(0))
               .overrideConfig(CDStepHelper.getParameterFieldBooleanValue(gitOpsSpecParams.getOverrideConfig(),
@@ -154,6 +159,11 @@ public class CreatePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsResp
               .connectorInfoDTO(
                   cdStepHelper.getConnector(releaseRepoOutcome.getStore().getConnectorReference().getValue(), ambiance))
               .filesToVariablesMap(filesToVariablesMap)
+// TODO add the new fields here
+                  .script(getParameterFieldValue(gitOpsSpecParams.getSource().getSpec().updateConfigScript))
+                  .scriptType(gitOpsSpecParams.getScriptType())
+                  .outputVars(gitOpsSpecParams.getOutputVars())
+                  .secretOutputVars(gitOpsSpecParams.getSecretOutputVars())
               .build();
 
       final TaskData taskData = TaskData.builder()

@@ -8,6 +8,7 @@
 package io.harness.delegate.task.git;
 import static io.harness.annotations.dev.HarnessTeam.GITOPS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.git.model.ChangeType.MODIFY;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
@@ -28,6 +29,8 @@ import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
+import io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
@@ -43,11 +46,17 @@ import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
+import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.gitapi.client.impl.AzureRepoApiClient;
 import io.harness.delegate.task.gitapi.client.impl.GithubApiClient;
 import io.harness.delegate.task.gitapi.client.impl.GitlabApiClient;
+import io.harness.delegate.task.k8s.GcpK8sInfraDelegateConfig;
+import io.harness.delegate.task.shell.ShellExecutorFactoryNG;
+import io.harness.delegate.task.shell.ShellScriptTaskNG;
+import io.harness.delegate.task.shell.ShellScriptTaskParametersNG;
+import io.harness.delegate.task.shell.SshCommandTaskParameters;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.git.model.CommitAndPushRequest;
@@ -55,6 +64,8 @@ import io.harness.git.model.CommitAndPushResult;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.git.model.GitFile;
 import io.harness.git.model.GitFileChange;
+import io.harness.k8s.K8sCommandUnitConstants;
+import io.harness.k8s.K8sConstants;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -63,7 +74,7 @@ import io.harness.product.ci.scm.proto.CreateBranchResponse;
 import io.harness.product.ci.scm.proto.CreatePRResponse;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
-import io.harness.shell.SshSessionConfig;
+import io.harness.shell.*;
 
 import software.wings.beans.LogColor;
 import software.wings.beans.LogWeight;
@@ -80,12 +91,7 @@ import com.google.gson.GsonBuilder;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.nio.file.NoSuchFileException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
@@ -98,6 +104,8 @@ import org.jose4j.lang.JoseException;
 @Slf4j
 @OwnedBy(GITOPS)
 public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
+  public static final String COMMAND_UNIT = "Execute";
+
   private static final String PR_TITLE = "Harness: Updating config overrides";
   private static final String COMMIT_MSG = "Updating Config files";
   @Inject private SecretDecryptionService secretDecryptionService;
@@ -108,6 +116,7 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
   @Inject private GithubApiClient githubApiClient;
   @Inject private GitlabApiClient gitlabApiClient;
   @Inject private AzureRepoApiClient azureRepoApiClient;
+  @Inject private ShellExecutorFactoryNG shellExecutorFactory;
 
   private Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
@@ -138,13 +147,60 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
       case MERGE_PR:
         return handleMergePR(gitOpsTaskParams);
       case CREATE_PR:
-        return handleCreatePR(gitOpsTaskParams);
+        //        SEARCH COMMAND_TASK_NG
+        // TODO Start Stuff here
+        // We something here
+        // TODO
+        // The script is useful so that we don't do the create the pr for them
+        // variables we expose they want to do more things to them
+        // we dump from env and service variables
+        // customer wants to modify these variables themselves
+
+        // TODO STEP ONE
+        CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
+        ShellExecutorConfig shellExecutorConfig = getShellExecutorConfig(gitOpsTaskParams);
+
+        // TODO DELETE THESE
+        // TODO THIS SHOULD BE SYNC
+        // while, sleep before checking again , while != terminalState()
+        //        while execution status is terminal state, this way we know that this is finished
+
+
+        logCallback = new NGDelegateLogCallback(getLogStreamingTaskClient(), COMMAND_UNIT, true, commandUnitsProgress);
+
+
+        ScriptProcessExecutor executor =
+                shellExecutorFactory.getExecutor(shellExecutorConfig, getLogStreamingTaskClient(), commandUnitsProgress);
+
+        ExecuteCommandResponse executeCommandResponse = executor.executeCommandString(
+                gitOpsTaskParams.getScript(), gitOpsTaskParams.getOutputVars(), gitOpsTaskParams.getSecretOutputVars(), null);
+        // TODO FINAL STEP -- Add to Delegate ResponseData
+        // Step needs to go to the next step EXPORT MY CV
+        this.logCallback = markDoneAndStartNew(this.getLogStreamingTaskClient().obtainLogCallback(COMMAND_UNIT), FetchFiles, commandUnitsProgress);
+//        this.logCallback = markDoneAndStartNew(this.getLogStreamingTaskClient()., UpdateFiles, commandUnitsProgress);
+
+        return handleCreatePR(gitOpsTaskParams, commandUnitsProgress);
       default:
         return NGGitOpsResponse.builder()
             .taskStatus(TaskStatus.FAILURE)
             .errorMessage("Failed GitOps task: " + gitOpsTaskParams.getGitOpsTaskType())
             .build();
     }
+  }
+
+  public ShellExecutorConfig getShellExecutorConfig(NGGitOpsTaskParams taskParameters) {
+    Map<String, String> x = new HashMap<>();
+
+    return ShellExecutorConfig.builder()
+            .accountId(taskParameters.getAccountId())
+            .executionId(taskParameters.getAccountId())
+            .appId(taskParameters.getAccountId())
+            .commandUnitName(COMMAND_UNIT)
+            .workingDirectory("/tmp")
+            .environment(x)
+            .scriptType(ScriptType.BASH)
+//            .gcpKeyFileContent(serviceAccountKeyFileContent)
+            .build();
   }
 
   public DelegateResponseData handleMergePR(NGGitOpsTaskParams gitOpsTaskParams) {
@@ -237,12 +293,11 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
     }
   }
 
-  public DelegateResponseData handleCreatePR(NGGitOpsTaskParams gitOpsTaskParams) {
-    CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
+  public DelegateResponseData handleCreatePR(NGGitOpsTaskParams gitOpsTaskParams, CommandUnitsProgress commandUnitsProgress) {
     try {
       log.info("Running Create PR Task for activityId {}", gitOpsTaskParams.getActivityId());
 
-      logCallback = new NGDelegateLogCallback(getLogStreamingTaskClient(), FetchFiles, true, commandUnitsProgress);
+//      logCallback = new NGDelegateLogCallback(getLogStreamingTaskClient(), FetchFiles, true, commandUnitsProgress);
       FetchFilesResult fetchFilesResult = getFiles(gitOpsTaskParams, commandUnitsProgress);
       List<GitFile> fetchFilesResultFiles = fetchFilesResult.getFiles();
       StringBuilder sb = new StringBuilder(1024);
