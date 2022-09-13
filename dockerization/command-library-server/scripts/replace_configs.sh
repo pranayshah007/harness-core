@@ -24,26 +24,26 @@ yq -i '.	yq=write'
 		done
 }
 
-yq -i 'del(.server.adminConnectors)' /opt/harness/command-library-server-config.yml
+yq -i 'del(.server.adminConnectors)' $CONFIG_FILE
 yq -i 'del(.server.applicationConnectors.[] | select(.type == "h2"))' $CONFIG_FILE
 
 if [[ "" != "$LOGGING_LEVEL" ]]; then
-  export LOGGING_LEVEL; yq -i '.logging.level=env(LOGGING_LEVEL)' /opt/harness/command-library-server-config.yml
+  export LOGGING_LEVEL; yq -i '.logging.level=env(LOGGING_LEVEL)' $CONFIG_FILE
 fi
 
 if [[ "" != "$COMMAND_LIBRARY_SERVER_PORT" ]]; then
-  export COMMAND_LIBRARY_SERVER_PORT; yq -i '.server.applicationConnectors[0].port=env(COMMAND_LIBRARY_SERVER_PORT)' /opt/harness/command-library-server-config.yml
+  export COMMAND_LIBRARY_SERVER_PORT; yq -i '.server.applicationConnectors[0].port=env(COMMAND_LIBRARY_SERVER_PORT)' $CONFIG_FILE
 else
-  yq -i '.server.applicationConnectors[0].port=7070' /opt/harness/command-library-server-config.yml
+  yq -i '.server.applicationConnectors[0].port=7070' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_URI" ]]; then
-  export MONGO_URI=${MONGO_URI//\\&/&}; yq -i '.mongo.uri=env(MONGO_URI)' /opt/harness/command-library-server-config.yml
+  export MONGO_URI=${MONGO_URI//\\&/&}; yq -i '.mongo.uri=env(MONGO_URI)' $CONFIG_FILE
 fi
 
-yq -i '.server.requestLog.appenders[0].type="console"' /opt/harness/command-library-server-config.yml
-yq -i '.server.requestLog.appenders[0].threshold="TRACE"' /opt/harness/command-library-server-config.yml
-yq -i '.server.requestLog.appenders[0].target="STDOUT"' /opt/harness/command-library-server-config.yml
+yq -i '.server.requestLog.appenders[0].type="console"' $CONFIG_FILE
+yq -i '.server.requestLog.appenders[0].threshold="TRACE"' $CONFIG_FILE
+yq -i '.server.requestLog.appenders[0].target="STDOUT"' $CONFIG_FILE
 
 if [[ "$STACK_DRIVER_LOGGING_ENABLED" == "true" ]]; then
   yq -i 'del(.logging.appenders.[] | select(.type == "console"))' $CONFIG_FILE
@@ -53,7 +53,7 @@ else
 fi
 
 if [[ "" != "$MANAGER_TO_COMMAND_LIBRARY_SERVICE_SECRET" ]]; then
-  export MANAGER_TO_COMMAND_LIBRARY_SERVICE_SECRET; yq -i '.serviceSecret.managerToCommandLibraryServiceSecret=env(MANAGER_TO_COMMAND_LIBRARY_SERVICE_SECRET)' /opt/harness/command-library-server-config.yml
+  export MANAGER_TO_COMMAND_LIBRARY_SERVICE_SECRET; yq -i '.serviceSecret.managerToCommandLibraryServiceSecret=env(MANAGER_TO_COMMAND_LIBRARY_SERVICE_SECRET)' $CONFIG_FILE
 fi
 
 if [[ "" != "$ALLOWED_TAGS_TO_ADD" ]]; then

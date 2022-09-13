@@ -967,11 +967,11 @@ if [[ "" != "$SEGMENT_VERIFY_CERT_NG" ]]; then
 fi
 
 if [[ "" != "$SECOPS_EMAIL" ]]; then
- export SECOPS_EMAIL; yq -i '.cg.totp.secOpsEmail=env(SECOPS_EMAIL)' config.yml
+ export SECOPS_EMAIL; yq -i '.cg.totp.secOpsEmail=env(SECOPS_EMAIL)' $CONFIG_FILE
 fi
 
 if [[ "" != "$INCORRECT_ATTEMPTS_UNTIL_SECOPS_NOTIFIED" ]]; then
- export INCORRECT_ATTEMPTS_UNTIL_SECOPS_NOTIFIED; yq -i '.cg.totp.incorrectAttemptsUntilSecOpsNotified=env(INCORRECT_ATTEMPTS_UNTIL_SECOPS_NOTIFIED)' config.yml
+ export INCORRECT_ATTEMPTS_UNTIL_SECOPS_NOTIFIED; yq -i '.cg.totp.incorrectAttemptsUntilSecOpsNotified=env(INCORRECT_ATTEMPTS_UNTIL_SECOPS_NOTIFIED)' $CONFIG_FILE
 fi
 
 if [[ "" != "$PIPELINE_SERVICE_CLIENT_BASEURL" ]]; then

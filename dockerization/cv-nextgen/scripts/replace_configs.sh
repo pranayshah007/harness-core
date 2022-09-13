@@ -16,22 +16,22 @@ replace_key_value () {
   fi
 }
 
-yq -i 'del(.server.adminConnectors)' /opt/harness/cv-nextgen-config.yml
+yq -i 'del(.server.adminConnectors)' $CONFIG_FILE
 yq -i 'del(.server.applicationConnectors.[] | select(.type == "https"))' $CONFIG_FILE
 yq -i 'del(.pmsSdkGrpcServerConfig.connectors.[] | select(.secure == true))' $CONFIG_FILE
 
 if [[ "" != "$LOGGING_LEVEL" ]]; then
-  export LOGGING_LEVEL; yq -i '.logging.level=env(LOGGING_LEVEL)' /opt/harness/cv-nextgen-config.yml
+  export LOGGING_LEVEL; yq -i '.logging.level=env(LOGGING_LEVEL)' $CONFIG_FILE
 fi
 
 if [[ "" != "$VERIFICATION_PORT" ]]; then
-  export VERIFICATION_PORT; yq -i '.server.applicationConnectors[0].port=env(VERIFICATION_PORT)' /opt/harness/cv-nextgen-config.yml
+  export VERIFICATION_PORT; yq -i '.server.applicationConnectors[0].port=env(VERIFICATION_PORT)' $CONFIG_FILE
 else
-  yq -i '.server.applicationConnectors[0].port=6060' /opt/harness/cv-nextgen-config.yml
+  yq -i '.server.applicationConnectors[0].port=6060' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_URI" ]]; then
-  export MONGO_URI=${MONGO_URI//\\&/&}; yq -i '.mongo.uri=env(MONGO_URI)' /opt/harness/cv-nextgen-config.yml
+  export MONGO_URI=${MONGO_URI//\\&/&}; yq -i '.mongo.uri=env(MONGO_URI)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MANAGER_CLIENT_BASEURL" ]]; then
@@ -46,9 +46,9 @@ if [[ "" != "$NG_MANAGER_CLIENT_BASEURL" ]]; then
   export NG_MANAGER_CLIENT_BASEURL; yq -i '.ngManagerClientConfig.baseUrl=env(NG_MANAGER_CLIENT_BASEURL)' $CONFIG_FILE
 fi
 
-  yq -i '.server.requestLog.appenders[0].type="console"' /opt/harness/cv-nextgen-config.yml
-  yq -i '.server.requestLog.appenders[0].threshold="TRACE"' /opt/harness/cv-nextgen-config.yml
-  yq -i '.server.requestLog.appenders[0].target="STDOUT"' /opt/harness/cv-nextgen-config.yml
+  yq -i '.server.requestLog.appenders[0].type="console"' $CONFIG_FILE
+  yq -i '.server.requestLog.appenders[0].threshold="TRACE"' $CONFIG_FILE
+  yq -i '.server.requestLog.appenders[0].target="STDOUT"' $CONFIG_FILE
 
 if [[ "$STACK_DRIVER_LOGGING_ENABLED" == "true" ]]; then
   yq -i 'del(.logging.appenders.[] | select(.type == "console"))' $CONFIG_FILE
@@ -58,11 +58,11 @@ else
 fi
 
 if [[ "" != "$DATA_STORE" ]]; then
-  export DATA_STORE; yq -i '.dataStorageMode=env(DATA_STORE)' /opt/harness/cv-nextgen-config.yml
+  export DATA_STORE; yq -i '.dataStorageMode=env(DATA_STORE)' $CONFIG_FILE
 fi
 
 if [[ "" != "$NEXT_GEN_MANAGER_SECRET" ]]; then
-  export NEXT_GEN_MANAGER_SECRET; yq -i '.nextGen.managerServiceSecret=env(NEXT_GEN_MANAGER_SECRET)' /opt/harness/cv-nextgen-config.yml
+  export NEXT_GEN_MANAGER_SECRET; yq -i '.nextGen.managerServiceSecret=env(NEXT_GEN_MANAGER_SECRET)' $CONFIG_FILE
 fi
 
 if [[ "" != "$NEXT_GEN_MANAGER_SECRET" ]]; then
@@ -70,11 +70,11 @@ if [[ "" != "$NEXT_GEN_MANAGER_SECRET" ]]; then
 fi
 
 if [[ "" != "$MANAGER_JWT_AUTH_SECRET" ]]; then
-  export MANAGER_JWT_AUTH_SECRET; yq -i '.managerAuthConfig.jwtAuthSecret=env(MANAGER_JWT_AUTH_SECRET)' /opt/harness/cv-nextgen-config.yml
+  export MANAGER_JWT_AUTH_SECRET; yq -i '.managerAuthConfig.jwtAuthSecret=env(MANAGER_JWT_AUTH_SECRET)' $CONFIG_FILE
 fi
 
 if [[ "" != "$JWT_IDENTITY_SERVICE_SECRET" ]]; then
-  export JWT_IDENTITY_SERVICE_SECRET; yq -i '.managerAuthConfig.jwtIdentityServiceSecret=env(JWT_IDENTITY_SERVICE_SECRET)' /opt/harness/cv-nextgen-config.yml
+  export JWT_IDENTITY_SERVICE_SECRET; yq -i '.managerAuthConfig.jwtIdentityServiceSecret=env(JWT_IDENTITY_SERVICE_SECRET)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_INDEX_MANAGER_MODE" ]]; then

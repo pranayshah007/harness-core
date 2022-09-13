@@ -14,42 +14,42 @@ replace_key_value () {
   fi
 }
 
-yq -i 'del(.server.adminConnectors)' /opt/harness/verification-config.yml
+yq -i 'del(.server.adminConnectors)' $CONFIG_FILE
 yq -i 'del(.server.applicationConnectors.[] | select(.type == "h2"))' $CONFIG_FILE
 
 if [[ "" != "$LOGGING_LEVEL" ]]; then
-  export LOGGING_LEVEL; yq -i '.logging.level=env(LOGGING_LEVEL)' /opt/harness/verification-config.yml
+  export LOGGING_LEVEL; yq -i '.logging.level=env(LOGGING_LEVEL)' $CONFIG_FILE
 fi
 
 if [[ "" != "$VERIFICATION_PORT" ]]; then
-  export VERIFICATION_PORT; yq -i '.server.applicationConnectors[0].port=env(VERIFICATION_PORT)' /opt/harness/verification-config.yml
+  export VERIFICATION_PORT; yq -i '.server.applicationConnectors[0].port=env(VERIFICATION_PORT)' $CONFIG_FILE
 else
-  yq -i '.server.applicationConnectors[0].port=7070' /opt/harness/verification-config.yml
+  yq -i '.server.applicationConnectors[0].port=7070' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_URI" ]]; then
-  export MONGO_URI=${MONGO_URI//\\&/&}; yq -i '.mongo.uri=env(MONGO_URI)' /opt/harness/verification-config.yml
+  export MONGO_URI=${MONGO_URI//\\&/&}; yq -i '.mongo.uri=env(MONGO_URI)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_SSL_CONFIG" ]]; then
-  export MONGO_SSL_CONFIG; yq -i '.mongo.mongoSSLConfig.mongoSSLEnabled=env(MONGO_SSL_CONFIG)' /opt/harness/verification-config.yml
+  export MONGO_SSL_CONFIG; yq -i '.mongo.mongoSSLConfig.mongoSSLEnabled=env(MONGO_SSL_CONFIG)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_SSL_CA_TRUST_STORE_PATH" ]]; then
-  export MONGO_SSL_CA_TRUST_STORE_PATH; yq -i '.mongo.mongoSSLConfig.mongoTrustStorePath=env(MONGO_SSL_CA_TRUST_STORE_PATH)' /opt/harness/verification-config.yml
+  export MONGO_SSL_CA_TRUST_STORE_PATH; yq -i '.mongo.mongoSSLConfig.mongoTrustStorePath=env(MONGO_SSL_CA_TRUST_STORE_PATH)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_SSL_CA_TRUST_STORE_PASSWORD" ]]; then
-  export MONGO_SSL_CA_TRUST_STORE_PASSWORD; yq -i '.mongo.mongoSSLConfig.mongoTrustStorePassword=env(MONGO_SSL_CA_TRUST_STORE_PASSWORD)' /opt/harness/verification-config.yml
+  export MONGO_SSL_CA_TRUST_STORE_PASSWORD; yq -i '.mongo.mongoSSLConfig.mongoTrustStorePassword=env(MONGO_SSL_CA_TRUST_STORE_PASSWORD)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MANAGER_URL" ]]; then
-  export MANAGER_URL; yq -i '.managerUrl=env(MANAGER_URL)' /opt/harness/verification-config.yml
+  export MANAGER_URL; yq -i '.managerUrl=env(MANAGER_URL)' $CONFIG_FILE
 fi
 
-  yq -i '.server.requestLog.appenders[0].type="console"' /opt/harness/verification-config.yml
-  yq -i '.server.requestLog.appenders[0].threshold="TRACE"' /opt/harness/verification-config.yml
-  yq -i '.server.requestLog.appenders[0].target="STDOUT"' /opt/harness/verification-config.yml
+  yq -i '.server.requestLog.appenders[0].type="console"' $CONFIG_FILE
+  yq -i '.server.requestLog.appenders[0].threshold="TRACE"' $CONFIG_FILE
+  yq -i '.server.requestLog.appenders[0].target="STDOUT"' $CONFIG_FILE
 
 if [[ "$STACK_DRIVER_LOGGING_ENABLED" == "true" ]]; then
   yq -i 'del(.logging.appenders.[] | select(.type == "file"))' $CONFIG_FILE
@@ -67,7 +67,7 @@ else
 fi
 
 if [[ "" != "$DATA_STORE" ]]; then
-  export DATA_STORE; yq -i '.dataStorageMode=env(DATA_STORE)' /opt/harness/verification-config.yml
+  export DATA_STORE; yq -i '.dataStorageMode=env(DATA_STORE)' $CONFIG_FILE
 fi
 
 replace_key_value cfClientConfig.apiKey "$CF_CLIENT_API_KEY"
