@@ -22,6 +22,8 @@ import io.harness.accesscontrol.AccessControlAdminClient;
 import io.harness.accesscontrol.principals.PrincipalDTO;
 import io.harness.accesscontrol.roleassignments.api.RoleAssignmentCreateRequestDTO;
 import io.harness.accesscontrol.roleassignments.api.RoleAssignmentDTO;
+import io.harness.accesscontrol.roleassignments.api.RoleAssignmentFilterDTO;
+import io.harness.accesscontrol.roleassignments.api.RoleAssignmentResponseDTO;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
@@ -36,10 +38,12 @@ import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.user.spring.UserMembershipRepository;
 import io.harness.utils.NGFeatureFlagHelperService;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -233,6 +237,7 @@ public class DefaultUserGroupServiceImpl implements DefaultUserGroupService {
     try {
       Optional<UserGroup> optionalUserGroup = get(scope);
       if (optionalUserGroup.isPresent()) {
+        createRoleAssignmentAtScope(scope);
         return addUsersToExistingGroup(scope, optionalUserGroup.get(), allUsersAtScope);
       }
       return create(scope, allUsersAtScope);
@@ -292,5 +297,81 @@ public class DefaultUserGroupServiceImpl implements DefaultUserGroupService {
       log.error(DEBUG_MESSAGE + String.format("Fetching all users failed at scope %s", scope));
       return emptyList();
     }
+  }
+
+  private void createRoleAssignmentAtScope(Scope scope) {
+    Optional<List<RoleAssignmentResponseDTO>> optionalRoleAssignmentResponseDTO = getRoleAssignmentsAtScope(scope);
+    if (optionalRoleAssignmentResponseDTO.isPresent()) {
+      String userGroupIdentifier = getUserGroupIdentifier(scope);
+      if (isNotEmpty(scope.getProjectIdentifier())) {
+        if (isEmpty(optionalRoleAssignmentResponseDTO.get())) {
+          createRoleAssignmentForProject(userGroupIdentifier, scope);
+        }
+      } else if (isNotEmpty(scope.getOrgIdentifier())) {
+        if (isEmpty(optionalRoleAssignmentResponseDTO.get())) {
+          createRoleAssignmentsForOrganization(userGroupIdentifier, scope);
+        }
+      } else if (optionalRoleAssignmentResponseDTO.get().size() != 2) {
+        createRoleAssignmentsForAccount(userGroupIdentifier, scope);
+      }
+    }
+  }
+
+  private Optional<List<RoleAssignmentResponseDTO>> getRoleAssignmentsAtScope(Scope scope) {
+    RoleAssignmentFilterDTO roleAssignmentFilterDTO;
+    if (isNotEmpty(scope.getProjectIdentifier())) {
+      roleAssignmentFilterDTO = getRoleAssignmentFilterDTOForProjectScope();
+    } else if (isNotEmpty(scope.getOrgIdentifier())) {
+      roleAssignmentFilterDTO = getRoleAssignmentFilterDTOForOrganizationScope();
+    } else {
+      roleAssignmentFilterDTO = getRoleAssignmentFilterDTOForAccountScope();
+    }
+    try {
+      List<RoleAssignmentResponseDTO> roleAssignments =
+          NGRestUtils
+              .getResponse(accessControlAdminClient.getFilteredRoleAssignments(scope.getAccountIdentifier(),
+                  scope.getOrgIdentifier(), scope.getProjectIdentifier(), 0, 2, roleAssignmentFilterDTO))
+              .getContent();
+      return Optional.of(roleAssignments);
+    } catch (Exception ex) {
+      log.error(DEBUG_MESSAGE + String.format("Role Assignment fetch failed at scope: %s", scope));
+    }
+    return Optional.empty();
+  }
+
+  private RoleAssignmentFilterDTO getRoleAssignmentFilterDTOForAccountScope() {
+    return RoleAssignmentFilterDTO.builder()
+        .resourceGroupFilter(Collections.singleton(DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER))
+        .roleFilter(ImmutableSet.of(ACCOUNT_BASIC_ROLE, ACCOUNT_VIEWER_ROLE))
+        .principalFilter(Collections.singleton(PrincipalDTO.builder()
+                                                   .identifier(DEFAULT_ACCOUNT_LEVEL_USER_GROUP_IDENTIFIER)
+                                                   .scopeLevel("account")
+                                                   .type(USER_GROUP)
+                                                   .build()))
+        .build();
+  }
+
+  private RoleAssignmentFilterDTO getRoleAssignmentFilterDTOForOrganizationScope() {
+    return RoleAssignmentFilterDTO.builder()
+        .resourceGroupFilter(Collections.singleton(DEFAULT_ORGANIZATION_LEVEL_RESOURCE_GROUP_IDENTIFIER))
+        .roleFilter(Collections.singleton(ORGANIZATION_VIEWER_ROLE))
+        .principalFilter(Collections.singleton(PrincipalDTO.builder()
+                                                   .identifier(DEFAULT_ORGANIZATION_LEVEL_USER_GROUP_IDENTIFIER)
+                                                   .scopeLevel("organization")
+                                                   .type(USER_GROUP)
+                                                   .build()))
+        .build();
+  }
+
+  private RoleAssignmentFilterDTO getRoleAssignmentFilterDTOForProjectScope() {
+    return RoleAssignmentFilterDTO.builder()
+        .resourceGroupFilter(Collections.singleton(DEFAULT_PROJECT_LEVEL_RESOURCE_GROUP_IDENTIFIER))
+        .roleFilter(Collections.singleton(PROJECT_VIEWER_ROLE))
+        .principalFilter(Collections.singleton(PrincipalDTO.builder()
+                                                   .identifier(DEFAULT_PROJECT_LEVEL_USER_GROUP_IDENTIFIER)
+                                                   .scopeLevel("project")
+                                                   .type(USER_GROUP)
+                                                   .build()))
+        .build();
   }
 }
