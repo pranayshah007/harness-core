@@ -31,23 +31,7 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class RuntimeInputFormHelper {
   public String createTemplateFromYaml(String templateYaml) {
-    try {
-      ObjectNode templateJson = (ObjectNode) YamlUtils.readTree(templateYaml).getNode().getCurrJsonNode();
-      JsonNode templateVariables = templateJson.findPath("templateVariables");
-      JsonNode finalTemplateVariablesJson = new TextNode("");
-      if (templateVariables != null && templateVariables.getNodeType() != JsonNodeType.MISSING) {
-        JsonNode templateVariablesJsonList = createTemplateVariablesFromTemplate(templateVariables);
-        finalTemplateVariablesJson = new ObjectNode(
-            JsonNodeFactory.instance, Collections.singletonMap("templateVariables", templateVariablesJsonList));
-        if (templateJson.get("templateVariables") != null) {
-          templateJson.remove("templateVariables");
-        }
-      }
-      return createRuntimeInputForm(templateJson.toString(), true)
-          + YamlPipelineUtils.writeYamlString(finalTemplateVariablesJson);
-    } catch (Exception e) {
-      return createRuntimeInputForm(templateYaml, true);
-    }
+    return createRuntimeInputForm(templateYaml, true);
   }
 
   public String createRuntimeInputForm(String yaml, boolean keepInput) {

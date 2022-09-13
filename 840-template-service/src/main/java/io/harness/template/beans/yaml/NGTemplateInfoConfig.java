@@ -61,5 +61,5 @@ public class NGTemplateInfoConfig {
   String orgIdentifier;
   String projectIdentifier;
 
-  List<NGVariable> templateVariables;
+  List<NGVariable> variables;
 }

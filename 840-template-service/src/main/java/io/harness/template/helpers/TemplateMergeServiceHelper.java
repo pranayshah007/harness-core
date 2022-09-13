@@ -19,6 +19,8 @@ import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_INPUTS;
 import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_REF;
 import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_VERSION_LABEL;
 
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.google.common.collect.ImmutableMap;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
@@ -33,6 +35,7 @@ import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
 import io.harness.pms.merger.helpers.YamlSubMapExtractor;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
@@ -169,19 +172,31 @@ public class TemplateMergeServiceHelper {
         throw new NGTemplateException("Yaml provided is not a template yaml.");
       }
       ObjectNode templateNode = (ObjectNode) templateYamlField.getNode().getCurrJsonNode();
-      String templateSpec = templateNode.retain(SPEC, "templateVariables").toString();
+      ObjectNode templateNodeCopy = templateNode.deepCopy();
+      String templateSpec = templateNode.retain(SPEC).toString();
+      String templateVariableSpec = new ObjectNode(JsonNodeFactory.instance,Collections.singletonMap(DUMMY_NODE, templateNodeCopy.retain("variables"))).toString();
       if (isEmpty(templateSpec)) {
         log.error("Template yaml provided does not have spec in it.");
         throw new NGTemplateException("Template yaml provided does not have spec in it.");
       }
       String templateInputsYamlWithSpec = RuntimeInputFormHelper.createTemplateFromYaml(templateSpec);
-      if (isEmpty(templateInputsYamlWithSpec)) {
+      String templateVariablesYamlWithDummy = RuntimeInputFormHelper.createTemplateFromYaml(templateVariableSpec);
+      if (isEmpty(templateInputsYamlWithSpec) && isEmpty(templateVariablesYamlWithDummy)) {
         return templateInputsYamlWithSpec;
       }
-      ObjectNode templateObjectNode =
-          (ObjectNode) YamlUtils.readTree(templateInputsYamlWithSpec).getNode().getCurrJsonNode();
-      JsonNode templateInputsYaml = templateObjectNode.retain(SPEC, "templateVariables");
-      return YamlPipelineUtils.writeYamlString(templateInputsYaml);
+      JsonNode templateVariablesJson =
+           YamlUtils.readTree(templateVariablesYamlWithDummy).getNode().getCurrJsonNode().get(DUMMY_NODE).get(YAMLFieldNameConstants.VARIABLES);
+      JsonNode templateInputsYaml =
+              YamlUtils.readTree(templateInputsYamlWithSpec).getNode().getCurrJsonNode().get(SPEC);
+      JsonNode finalTemplateJson;
+      if(templateVariablesJson==null) {
+        finalTemplateJson = new ObjectNode(JsonNodeFactory.instance, Collections.singletonMap("templateInputs", templateInputsYaml));
+      } else if(templateInputsYaml == null){
+        finalTemplateJson = new ObjectNode(JsonNodeFactory.instance, Collections.singletonMap("templateVariables", templateVariablesJson));
+      }else{
+        finalTemplateJson = new ObjectNode(JsonNodeFactory.instance, ImmutableMap.of("templateVariables", templateVariablesJson, "templateInputs", templateInputsYaml));
+      }
+      return YamlPipelineUtils.writeYamlString(finalTemplateJson);
     } catch (IOException e) {
       log.error("Error occurred while creating template inputs " + e);
       throw new NGTemplateException("Error occurred while creating template inputs ", e);

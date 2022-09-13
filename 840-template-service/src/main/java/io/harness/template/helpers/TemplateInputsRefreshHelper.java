@@ -14,7 +14,6 @@ import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_INPUTS;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.ngexception.NGTemplateException;
 import io.harness.pms.merger.helpers.YamlRefreshHelper;
-import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
@@ -26,8 +25,6 @@ import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.utils.NGVariablesUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import java.io.IOException;
@@ -36,9 +33,8 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
 
 @Slf4j
 @OwnedBy(CDC)
@@ -147,7 +143,7 @@ public class TemplateInputsRefreshHelper {
     try {
       NGTemplateConfig templateConfig = YamlPipelineUtils.read(templateYaml, NGTemplateConfig.class);
       templateSpec = templateConfig.getTemplateInfoConfig().getSpec();
-      List<NGVariable> variables = templateConfig.getTemplateInfoConfig().getTemplateVariables();
+      List<NGVariable> variables = templateConfig.getTemplateInfoConfig().getVariables();
       List<Map<String, String>> templateVariablesMap = NGVariablesUtils.getSimplifiedVariablesList(variables);
       templateVariables = JsonUtils.asTree(templateVariablesMap);
       ((ObjectNode) templateSpec).set("templateVariables", templateVariables);
