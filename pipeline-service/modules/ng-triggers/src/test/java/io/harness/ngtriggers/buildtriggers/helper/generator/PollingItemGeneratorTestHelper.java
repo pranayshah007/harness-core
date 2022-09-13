@@ -36,7 +36,7 @@ public class PollingItemGeneratorTestHelper {
 
   public void validateBuildType(BuildTriggerOpsData buildTriggerOpsData, BuildTriggerHelper buildTriggerHelper) {
     try {
-      buildTriggerHelper.validateBuildType(buildTriggerOpsData, false);
+      buildTriggerHelper.validateBuildType(buildTriggerOpsData);
     } catch (Exception e) {
       fail("Exception not expected");
     }

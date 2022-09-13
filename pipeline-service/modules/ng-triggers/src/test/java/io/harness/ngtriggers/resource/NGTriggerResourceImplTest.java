@@ -233,6 +233,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
                                             .metadata(ngTriggerMetadata)
                                             .yaml(ngTriggerYamlBitbucketPRComment)
                                             .version(0L)
+            .serviceV2(false)
                                             .build();
 
     mergeInputSetResponseDTOPMS =
@@ -449,7 +450,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
   @Owner(developers = RUTVIJ_MEHTA)
   @Category(UnitTests.class)
   public void testCreateBitbucketPRComment() throws Exception {
-    doReturn(ngTriggerEntityBitbucketPRComment).when(ngTriggerService).create(any(), anyBoolean());
+    doReturn(ngTriggerEntityBitbucketPRComment).when(ngTriggerService).create(any());
     when(ngTriggerElementMapper.toResponseDTO(ngTriggerEntity)).thenReturn(ngTriggerResponseDTOBitbucketPRComment);
     TriggerDetails triggerDetails = TriggerDetails.builder().ngTriggerEntity(ngTriggerEntityBitbucketPRComment).build();
     doReturn(triggerDetails)

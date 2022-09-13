@@ -153,10 +153,10 @@ public class NGTriggerServiceImpl implements NGTriggerService {
   private static final String DUP_KEY_EXP_FORMAT_STRING = "Trigger [%s] already exists or is soft deleted";
 
   @Override
-  public NGTriggerEntity create(NGTriggerEntity ngTriggerEntity, boolean serviceV2) {
+  public NGTriggerEntity create(NGTriggerEntity ngTriggerEntity) {
     try {
       NGTriggerEntity savedNgTriggerEntity = ngTriggerRepository.save(ngTriggerEntity);
-      performPostUpsertFlow(savedNgTriggerEntity, serviceV2);
+      performPostUpsertFlow(savedNgTriggerEntity);
       outboxService.save(new TriggerCreateEvent(ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
           ngTriggerEntity.getProjectIdentifier(), savedNgTriggerEntity));
       return savedNgTriggerEntity;
@@ -166,8 +166,8 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     }
   }
 
-  private void performPostUpsertFlow(NGTriggerEntity ngTriggerEntity, boolean serviceV2) {
-    NGTriggerEntity validatedTrigger = validateTrigger(ngTriggerEntity, serviceV2);
+  private void performPostUpsertFlow(NGTriggerEntity ngTriggerEntity) {
+    NGTriggerEntity validatedTrigger = validateTrigger(ngTriggerEntity);
     registerWebhookAsync(validatedTrigger);
     registerPollingAsync(validatedTrigger);
   }
@@ -316,32 +316,32 @@ public class NGTriggerServiceImpl implements NGTriggerService {
   }
 
   @Override
-  public NGTriggerEntity update(NGTriggerEntity ngTriggerEntity, boolean serviceV2) {
+  public NGTriggerEntity update(NGTriggerEntity ngTriggerEntity) {
     ngTriggerEntity.setYmlVersion(TRIGGER_CURRENT_YML_VERSION);
     Criteria criteria = getTriggerEqualityCriteria(ngTriggerEntity, false);
-    NGTriggerEntity updatedTriggerEntity = updateTriggerEntity(ngTriggerEntity, criteria, serviceV2);
+    NGTriggerEntity updatedTriggerEntity = updateTriggerEntity(ngTriggerEntity, criteria);
     outboxService.save(new TriggerUpdateEvent(ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
         ngTriggerEntity.getProjectIdentifier(), updatedTriggerEntity, ngTriggerEntity));
     return updatedTriggerEntity;
   }
 
   @NotNull
-  private NGTriggerEntity updateTriggerEntity(NGTriggerEntity ngTriggerEntity, Criteria criteria, boolean serviceV2) {
+  private NGTriggerEntity updateTriggerEntity(NGTriggerEntity ngTriggerEntity, Criteria criteria) {
     NGTriggerEntity updatedEntity = ngTriggerRepository.update(criteria, ngTriggerEntity);
     if (updatedEntity == null) {
       throw new InvalidRequestException(
           String.format("NGTrigger [%s] couldn't be updated or doesn't exist", ngTriggerEntity.getIdentifier()));
     }
 
-    performPostUpsertFlow(updatedEntity, serviceV2);
+    performPostUpsertFlow(updatedEntity);
     return updatedEntity;
   }
 
   @Override
-  public boolean updateTriggerStatus(NGTriggerEntity ngTriggerEntity, boolean status, boolean serviceV2) {
+  public boolean updateTriggerStatus(NGTriggerEntity ngTriggerEntity, boolean status) {
     Criteria criteria = getTriggerEqualityCriteria(ngTriggerEntity, false);
     ngTriggerEntity.setEnabled(status);
-    NGTriggerEntity updatedEntity = updateTriggerEntity(ngTriggerEntity, criteria, serviceV2);
+    NGTriggerEntity updatedEntity = updateTriggerEntity(ngTriggerEntity, criteria);
     if (updatedEntity != null) {
       return updatedEntity.getEnabled();
     } else {
@@ -604,12 +604,12 @@ public class NGTriggerServiceImpl implements NGTriggerService {
   }
 
   @Override
-  public void validateTriggerConfig(TriggerDetails triggerDetails, boolean serviceV2) {
+  public void validateTriggerConfig(TriggerDetails triggerDetails) {
     // will be returned if certain conditions are not met. Either use this as a gateway or spin off a specific class
     // for the validation.
 
     // trigger source validation
-    if (serviceV2 == false && isBlank(triggerDetails.getNgTriggerEntity().getIdentifier())) {
+    if (triggerDetails.getNgTriggerEntity().getWithServiceV2() == false && isBlank(triggerDetails.getNgTriggerEntity().getIdentifier())) {
       throw new InvalidArgumentsException("Identifier can not be empty");
     }
 
@@ -638,10 +638,10 @@ public class NGTriggerServiceImpl implements NGTriggerService {
         }
         return;
       case MANIFEST:
-        validateStageIdentifierAndBuildRef((BuildAware) spec, "manifestRef", serviceV2);
+        validateStageIdentifierAndBuildRef((BuildAware) spec, "manifestRef", triggerDetails.getNgTriggerEntity().getWithServiceV2());
         return;
       case ARTIFACT:
-        validateStageIdentifierAndBuildRef((BuildAware) spec, "artifactRef", serviceV2);
+        validateStageIdentifierAndBuildRef((BuildAware) spec, "artifactRef", triggerDetails.getNgTriggerEntity().getWithServiceV2());
         return;
       default:
         return; // not implemented
@@ -843,11 +843,11 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     return criteria;
   }
 
-  public NGTriggerEntity validateTrigger(NGTriggerEntity ngTriggerEntity, boolean serviceV2) {
+  public NGTriggerEntity validateTrigger(NGTriggerEntity ngTriggerEntity) {
     try {
       ValidationResult validationResult = triggerValidationHandler.applyValidations(
           ngTriggerElementMapper.toTriggerDetails(ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
-              ngTriggerEntity.getProjectIdentifier(), ngTriggerEntity.getYaml(), serviceV2), serviceV2);
+              ngTriggerEntity.getProjectIdentifier(), ngTriggerEntity.getYaml(), ngTriggerEntity.getWithServiceV2()));
       if (!validationResult.isSuccess()) {
         ngTriggerEntity.setEnabled(false);
       }
@@ -913,10 +913,10 @@ public class NGTriggerServiceImpl implements NGTriggerService {
 
   @Override
   public TriggerDetails fetchTriggerEntity(
-      String accountId, String orgId, String projectId, String pipelineId, String triggerId, String newYaml, boolean serviceV2) {
+      String accountId, String orgId, String projectId, String pipelineId, String triggerId, String newYaml, boolean withServiceV2) {
     NGTriggerConfigV2 config = ngTriggerElementMapper.toTriggerConfigV2(newYaml);
     Optional<NGTriggerEntity> existingEntity = get(accountId, orgId, projectId, pipelineId, triggerId, false);
-    NGTriggerEntity entity = ngTriggerElementMapper.toTriggerEntity(accountId, orgId, projectId, triggerId, newYaml, serviceV2);
+    NGTriggerEntity entity = ngTriggerElementMapper.toTriggerEntity(accountId, orgId, projectId, triggerId, newYaml, withServiceV2);
     if (existingEntity.isPresent()) {
       ngTriggerElementMapper.copyEntityFieldsOutsideOfYml(existingEntity.get(), entity);
     }

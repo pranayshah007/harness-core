@@ -117,7 +117,7 @@ public class NGTriggerEntity implements PersistentEntity, PersistentNGCronIterab
   @LastModifiedDate Long lastModifiedAt;
   @Version Long version;
   @Builder.Default Boolean deleted = Boolean.FALSE;
-  @Builder.Default Boolean serviceV2 = Boolean.FALSE;
+  @Builder.Default Boolean withServiceV2 = Boolean.FALSE;
   @Singular @Size(max = 128) List<NGTag> tags;
   @Builder.Default Boolean enabled = Boolean.TRUE;
   String pollInterval;
@@ -147,8 +147,7 @@ public class NGTriggerEntity implements PersistentEntity, PersistentNGCronIterab
     return nextIterations.get(0);
   }
 
-  public Boolean getServiceV2() {
-    return serviceV2 != null && serviceV2;
+  public Boolean getWithServiceV2() {
+    return withServiceV2 != null && withServiceV2;
   }
-
 }

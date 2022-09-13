@@ -27,14 +27,14 @@ import org.springframework.data.mongodb.core.query.Criteria;
 
 @OwnedBy(PIPELINE)
 public interface NGTriggerService {
-  NGTriggerEntity create(NGTriggerEntity ngTriggerEntity, boolean serviceV1);
+  NGTriggerEntity create(NGTriggerEntity ngTriggerEntity);
 
   Optional<NGTriggerEntity> get(String accountId, String orgIdentifier, String projectIdentifier,
       String targetIdentifier, String identifier, boolean deleted);
 
-  NGTriggerEntity update(NGTriggerEntity ngTriggerEntity, boolean serviceV2);
+  NGTriggerEntity update(NGTriggerEntity ngTriggerEntity);
 
-  boolean updateTriggerStatus(NGTriggerEntity ngTriggerEntity, boolean status, boolean serviceV2);
+  boolean updateTriggerStatus(NGTriggerEntity ngTriggerEntity, boolean status);
 
   Page<NGTriggerEntity> list(Criteria criteria, Pageable pageable);
 
@@ -56,7 +56,7 @@ public interface NGTriggerService {
   void deleteTriggerWebhookEvent(TriggerWebhookEvent webhookEventQueueRecord);
   List<ConnectorResponseDTO> fetchConnectorsByFQN(String accountId, List<String> fqns);
 
-  void validateTriggerConfig(TriggerDetails triggerDetails, boolean serviceV2);
+  void validateTriggerConfig(TriggerDetails triggerDetails);
   void validateInputSets(TriggerDetails triggerDetails);
   boolean deleteAllForPipeline(
       String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier);
@@ -64,7 +64,7 @@ public interface NGTriggerService {
   WebhookEventProcessingDetails fetchTriggerEventHistory(String accountId, String eventId);
   NGTriggerEntity updateTriggerWithValidationStatus(NGTriggerEntity ngTriggerEntity, ValidationResult validationResult);
   Map<String, Map<String, String>> generateErrorMap(InputSetErrorWrapperDTOPMS inputSetErrorWrapperDTOPMS);
-  TriggerDetails fetchTriggerEntity(
-      String accountId, String orgId, String projectId, String pipelineId, String triggerId, String newYaml, boolean serviceV2);
+  TriggerDetails fetchTriggerEntity(String accountId, String orgId, String projectId, String pipelineId,
+      String triggerId, String newYaml, boolean withServiceV2);
   Object fetchExecutionSummaryV2(String planExecutionId, String accountId, String orgId, String projectId);
 }

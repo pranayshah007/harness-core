@@ -65,18 +65,19 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
   public ResponseDTO<NGTriggerResponseDTO> create(@NotNull @AccountIdentifier String accountIdentifier,
       @NotNull @OrgIdentifier String orgIdentifier, @NotNull @ProjectIdentifier String projectIdentifier,
-      @NotNull @ResourceIdentifier String targetIdentifier, @NotNull String yaml, boolean ignoreError, boolean serviceV2) {
+      @NotNull @ResourceIdentifier String targetIdentifier, @NotNull String yaml, boolean ignoreError,
+      boolean withServiceV2) {
     NGTriggerEntity createdEntity = null;
     try {
-      TriggerDetails triggerDetails =
-          ngTriggerElementMapper.toTriggerDetails(accountIdentifier, orgIdentifier, projectIdentifier, yaml, serviceV2);
-      ngTriggerService.validateTriggerConfig(triggerDetails, serviceV2);
+      TriggerDetails triggerDetails = ngTriggerElementMapper.toTriggerDetails(
+          accountIdentifier, orgIdentifier, projectIdentifier, yaml, withServiceV2);
+      ngTriggerService.validateTriggerConfig(triggerDetails);
 
       if (ignoreError) {
-        createdEntity = ngTriggerService.create(triggerDetails.getNgTriggerEntity(), serviceV2);
+        createdEntity = ngTriggerService.create(triggerDetails.getNgTriggerEntity());
       } else {
         ngTriggerService.validateInputSets(triggerDetails);
-        createdEntity = ngTriggerService.create(triggerDetails.getNgTriggerEntity(), serviceV2);
+        createdEntity = ngTriggerService.create(triggerDetails.getNgTriggerEntity());
       }
       return ResponseDTO.newResponse(
           createdEntity.getVersion().toString(), ngTriggerElementMapper.toResponseDTO(createdEntity));
@@ -114,18 +115,20 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
     }
 
     try {
-      TriggerDetails triggerDetails = ngTriggerService.fetchTriggerEntity(
-          accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier, triggerIdentifier, yaml, ngTriggerEntity.get().getServiceV2());
+      TriggerDetails triggerDetails = ngTriggerService.fetchTriggerEntity(accountIdentifier, orgIdentifier,
+          projectIdentifier, targetIdentifier, triggerIdentifier, yaml, ngTriggerEntity.get().getWithServiceV2());
 
-      ngTriggerService.validateTriggerConfig(triggerDetails, triggerDetails.getNgTriggerEntity().getServiceV2());
+      ngTriggerService.validateTriggerConfig(triggerDetails);
       triggerDetails.getNgTriggerEntity().setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
       NGTriggerEntity updatedEntity;
 
       if (ignoreError) {
-        updatedEntity = ngTriggerService.update(triggerDetails.getNgTriggerEntity(), triggerDetails.getNgTriggerEntity().getServiceV2());
+        updatedEntity = ngTriggerService.update(
+            triggerDetails.getNgTriggerEntity());
       } else {
         ngTriggerService.validateInputSets(triggerDetails);
-        updatedEntity = ngTriggerService.update(triggerDetails.getNgTriggerEntity(), triggerDetails.getNgTriggerEntity().getServiceV2());
+        updatedEntity = ngTriggerService.update(
+            triggerDetails.getNgTriggerEntity());
       }
       return ResponseDTO.newResponse(
           updatedEntity.getVersion().toString(), ngTriggerElementMapper.toResponseDTO(updatedEntity));
@@ -142,7 +145,8 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
       @NotNull @ResourceIdentifier String targetIdentifier, String triggerIdentifier, @NotNull boolean status) {
     Optional<NGTriggerEntity> ngTriggerEntity = ngTriggerService.get(
         accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier, triggerIdentifier, false);
-    return ResponseDTO.newResponse(ngTriggerService.updateTriggerStatus(ngTriggerEntity.get(), status, ngTriggerEntity.get().getServiceV2()));
+    return ResponseDTO.newResponse(
+        ngTriggerService.updateTriggerStatus(ngTriggerEntity.get(), status));
   }
 
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)

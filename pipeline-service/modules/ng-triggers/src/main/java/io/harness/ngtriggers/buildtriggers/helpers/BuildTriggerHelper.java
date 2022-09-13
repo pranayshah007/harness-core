@@ -114,7 +114,7 @@ public class BuildTriggerHelper {
     return fqnToValueMap;
   }
 
-  public void validateBuildType(BuildTriggerOpsData buildTriggerOpsData, boolean serviceV2) {
+  public void validateBuildType(BuildTriggerOpsData buildTriggerOpsData) {
     EngineExpressionEvaluator engineExpressionEvaluator = new EngineExpressionEvaluator(null);
     TextNode typeFromPipeline = (TextNode) buildTriggerOpsData.getPipelineBuildSpecMap().get("type");
     TextNode typeFromTrigger =
@@ -124,7 +124,7 @@ public class BuildTriggerHelper {
           "Type filed is not present in Trigger Spec. Its needed for Artifact/Manifest Triggers");
     }
 
-    if (serviceV2 == false && !typeFromPipeline.asText().equals(typeFromTrigger.asText())) {
+    if (buildTriggerOpsData.getTriggerDetails().getNgTriggerEntity().getWithServiceV2() == false && !typeFromPipeline.asText().equals(typeFromTrigger.asText())) {
       throw new InvalidRequestException(new StringBuilder(128)
                                             .append("Artifact/Manifest Type in Trigger: ")
                                             .append(typeFromTrigger.asText())
@@ -151,17 +151,16 @@ public class BuildTriggerHelper {
 
     Map<String, Object> pipelineBuildSpecMap = new HashMap<>();
 
-    if(triggerManifestSpecMap.containsKey("stageIdentifier") && triggerManifestSpecMap.containsKey("manifestRef")) {
+    if (triggerManifestSpecMap.containsKey("stageIdentifier") && triggerManifestSpecMap.containsKey("manifestRef")) {
       String stageRef = triggerManifestSpecMap.get("stageIdentifier").asText();
       String buildRef = triggerManifestSpecMap.get("manifestRef").asText();
       List<String> keys = Arrays.asList(
-              "pipeline.stages.stage[identifier:STAGE_REF].spec.serviceConfig.serviceDefinition.spec.manifests.manifest[identifier:BUILD_REF]",
-              "pipeline.stages.stage[identifier:STAGE_REF].spec.serviceConfig.stageOverrides.manifests.manifest[identifier:BUILD_REF]",
-              "pipeline.stages.PARALLEL.stage[identifier:STAGE_REF].spec.serviceConfig.serviceDefinition.spec.manifests.manifest[identifier:BUILD_REF]",
-              "pipeline.stages.PARALLEL.stage[identifier:STAGE_REF].spec.serviceConfig.stageOverrides.manifests.manifest[identifier:BUILD_REF]");
+          "pipeline.stages.stage[identifier:STAGE_REF].spec.serviceConfig.serviceDefinition.spec.manifests.manifest[identifier:BUILD_REF]",
+          "pipeline.stages.stage[identifier:STAGE_REF].spec.serviceConfig.stageOverrides.manifests.manifest[identifier:BUILD_REF]",
+          "pipeline.stages.PARALLEL.stage[identifier:STAGE_REF].spec.serviceConfig.serviceDefinition.spec.manifests.manifest[identifier:BUILD_REF]",
+          "pipeline.stages.PARALLEL.stage[identifier:STAGE_REF].spec.serviceConfig.stageOverrides.manifests.manifest[identifier:BUILD_REF]");
 
-      pipelineBuildSpecMap =
-              generateFinalMapWithBuildSpecFromPipeline(pipelineYml, stageRef, buildRef, keys);
+      pipelineBuildSpecMap = generateFinalMapWithBuildSpecFromPipeline(pipelineYml, stageRef, buildRef, keys);
     }
 
     Map<String, Object> manifestTriggerSpecMap = convertMapForExprEvaluation(triggerManifestSpecMap);
@@ -178,7 +177,7 @@ public class BuildTriggerHelper {
 
     Map<String, Object> pipelineBuildSpecMap = new HashMap<>();
 
-    if(triggerArtifactSpecMap.containsKey("stageIdentifier") && triggerArtifactSpecMap.containsKey("artifactRef")) {
+    if (triggerArtifactSpecMap.containsKey("stageIdentifier") && triggerArtifactSpecMap.containsKey("artifactRef")) {
       String stageRef = triggerArtifactSpecMap.get("stageIdentifier").asText();
       String buildRef = triggerArtifactSpecMap.get("artifactRef").asText();
 
@@ -186,24 +185,23 @@ public class BuildTriggerHelper {
 
       if (buildRef.equals("primary")) {
         keys.add(
-                "pipeline.stages.stage[identifier:STAGE_REF].spec.serviceConfig.serviceDefinition.spec.artifacts.primary");
+            "pipeline.stages.stage[identifier:STAGE_REF].spec.serviceConfig.serviceDefinition.spec.artifacts.primary");
         keys.add("pipeline.stages.stage[identifier:STAGE_REF].spec.serviceConfig.stageOverrides.artifacts.primary");
         keys.add(
-                "pipeline.stages.parallel.stage[identifier:STAGE_REF].spec.serviceConfig.serviceDefinition.spec.artifacts.primary");
+            "pipeline.stages.parallel.stage[identifier:STAGE_REF].spec.serviceConfig.serviceDefinition.spec.artifacts.primary");
         keys.add(
-                "pipeline.stages.parallel.stage[identifier:STAGE_REF].spec.serviceConfig.stageOverrides.artifacts.primary");
+            "pipeline.stages.parallel.stage[identifier:STAGE_REF].spec.serviceConfig.stageOverrides.artifacts.primary");
       } else {
         keys.add(
-                "pipeline.stages.stage[identifier:STAGE_REF].spec.serviceConfig.serviceDefinition.spec.artifacts.sidecars.sidecar[identifier:BUILD_REF]");
+            "pipeline.stages.stage[identifier:STAGE_REF].spec.serviceConfig.serviceDefinition.spec.artifacts.sidecars.sidecar[identifier:BUILD_REF]");
         keys.add(
-                "pipeline.stages.stage[identifier:STAGE_REF].spec.serviceConfig.stageOverrides.artifacts.sidecars.sidecar[identifier:BUILD_REF]");
+            "pipeline.stages.stage[identifier:STAGE_REF].spec.serviceConfig.stageOverrides.artifacts.sidecars.sidecar[identifier:BUILD_REF]");
         keys.add(
-                "pipeline.stages.parallel.stage[identifier:STAGE_REF].spec.serviceConfig.serviceDefinition.spec.artifacts.sidecars.sidecar[identifier:BUILD_REF]");
+            "pipeline.stages.parallel.stage[identifier:STAGE_REF].spec.serviceConfig.serviceDefinition.spec.artifacts.sidecars.sidecar[identifier:BUILD_REF]");
         keys.add(
-                "pipeline.stages.parallel.stage[identifier:STAGE_REF].spec.serviceConfig.stageOverrides.artifacts.sidecars.sidecar[identifier:BUILD_REF]");
+            "pipeline.stages.parallel.stage[identifier:STAGE_REF].spec.serviceConfig.stageOverrides.artifacts.sidecars.sidecar[identifier:BUILD_REF]");
       }
-      pipelineBuildSpecMap =
-              generateFinalMapWithBuildSpecFromPipeline(pipelineYml, stageRef, buildRef, keys);
+      pipelineBuildSpecMap = generateFinalMapWithBuildSpecFromPipeline(pipelineYml, stageRef, buildRef, keys);
     }
     Map<String, Object> manifestTriggerSpecMap = convertMapForExprEvaluation(triggerArtifactSpecMap);
     return BuildTriggerOpsData.builder()

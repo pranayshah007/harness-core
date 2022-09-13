@@ -42,7 +42,7 @@ public class ManifestTriggerValidator implements TriggerValidator {
   private final GeneratorFactory generatorFactory;
 
   @Override
-  public ValidationResult validate(TriggerDetails triggerDetails, boolean serviceV2) {
+  public ValidationResult validate(TriggerDetails triggerDetails) {
     ValidationResultBuilder builder = ValidationResult.builder().success(true);
 
     try {
@@ -54,7 +54,7 @@ public class ManifestTriggerValidator implements TriggerValidator {
       }
 
       // make sure, stage and artifact identifiers are given
-      if(serviceV2 == false) {
+      if(triggerDetails.getNgTriggerEntity().getWithServiceV2() == false) {
         validationHelper.verifyStageAndBuildRef(triggerDetails, MANIFEST_REF);
       }
 
@@ -63,14 +63,14 @@ public class ManifestTriggerValidator implements TriggerValidator {
           validationHelper.generateBuildTriggerOpsDataForManifest(triggerDetails, pipelineYml);
 
       // stageRef & manifestRef exists
-      if (serviceV2 == false && isEmpty(buildTriggerOpsData.getPipelineBuildSpecMap())) {
+      if (triggerDetails.getNgTriggerEntity().getWithServiceV2() == false && isEmpty(buildTriggerOpsData.getPipelineBuildSpecMap())) {
         throw new InvalidRequestException(
             "Manifest With Given StageIdentifier and ManifestRef in Trigger does not exist in Pipeline");
       }
 
       // type is validated {HemlChart}
-      validationHelper.validateBuildType(buildTriggerOpsData, serviceV2);
-      validateBasedOnManifestType(buildTriggerOpsData, serviceV2);
+      validationHelper.validateBuildType(buildTriggerOpsData);
+      validateBasedOnManifestType(buildTriggerOpsData);
     } catch (Exception e) {
       log.error("Exception while applying ManifestTriggerValidation for Trigger: "
               + TriggerHelper.getTriggerRef(triggerDetails.getNgTriggerEntity()),
@@ -85,18 +85,18 @@ public class ManifestTriggerValidator implements TriggerValidator {
   }
 
   @VisibleForTesting
-  void validateBasedOnManifestType(BuildTriggerOpsData buildTriggerOpsData, boolean serviceV2) {
+  void validateBasedOnManifestType(BuildTriggerOpsData buildTriggerOpsData) {
     String typeFromTrigger = validationHelper.fetchBuildType(buildTriggerOpsData.getTriggerSpecMap());
 
     if (HELM_MANIFEST.getValue().equals(typeFromTrigger)) {
-      validateForHelmChart(buildTriggerOpsData, serviceV2);
+      validateForHelmChart(buildTriggerOpsData);
     }
   }
 
   @VisibleForTesting
-  void validateForHelmChart(BuildTriggerOpsData buildTriggerOpsData, boolean serviceV2) {
+  void validateForHelmChart(BuildTriggerOpsData buildTriggerOpsData) {
 
-    if(serviceV2 == false) {
+    if(buildTriggerOpsData.getTriggerDetails().getNgTriggerEntity().getWithServiceV2() == false) {
       // Only check when complete Store is not runtimeInput
       if (!buildTriggerOpsData.getPipelineBuildSpecMap().containsKey("spec.store")) {
         String storeTypeFromTrigger = validationHelper.fetchStoreTypeForHelm(buildTriggerOpsData);
