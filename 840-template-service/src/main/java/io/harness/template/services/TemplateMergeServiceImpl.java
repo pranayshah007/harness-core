@@ -66,7 +66,8 @@ public class TemplateMergeServiceImpl implements TemplateMergeService {
     if (!optionalTemplateEntity.isPresent()) {
       throw new NGTemplateException("Template to fetch template inputs does not exist.");
     }
-    return templateMergeServiceHelper.createTemplateInputsFromTemplate(optionalTemplateEntity.get().getYaml(), accountId);
+    return templateMergeServiceHelper.createTemplateInputsFromTemplate(
+        optionalTemplateEntity.get().getYaml(), accountId);
   }
 
   @Override

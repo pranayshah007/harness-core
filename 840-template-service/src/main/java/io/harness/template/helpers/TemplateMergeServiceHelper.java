@@ -64,7 +64,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -198,10 +197,10 @@ public class TemplateMergeServiceHelper {
       }
       String templateInputsYamlWithSpec = RuntimeInputFormHelper.createTemplateFromYaml(templateSpec);
       JsonNode templateInputsYaml = templateInputsYamlWithSpec == null
-              ? null
-              : YamlUtils.readTree(templateInputsYamlWithSpec).getNode().getCurrJsonNode().get(SPEC);
-      if(!TemplateYamlSchemaMergeHelper.isFeatureFlagEnabled(
-              FeatureName.NG_TEMPLATE_VARIABLES, accountId, accountClient)){
+          ? null
+          : YamlUtils.readTree(templateInputsYamlWithSpec).getNode().getCurrJsonNode().get(SPEC);
+      if (!TemplateYamlSchemaMergeHelper.isFeatureFlagEnabled(
+              FeatureName.NG_TEMPLATE_VARIABLES, accountId, accountClient)) {
         if (isEmpty(templateInputsYamlWithSpec)) {
           return templateInputsYamlWithSpec;
         }

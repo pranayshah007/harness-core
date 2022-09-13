@@ -1032,7 +1032,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
 
                 "Template with the given Identifier: %s and %s does not exist or has been deleted", templateIdentifier,
                 EmptyPredicate.isEmpty(versionLabel) ? "stable versionLabel" : "versionLabel: " + versionLabel))));
-    String templateInputs = templateMergeServiceHelper.createTemplateInputsFromTemplate(templateEntity.get().getYaml(), accountId);
+    String templateInputs =
+        templateMergeServiceHelper.createTemplateInputsFromTemplate(templateEntity.get().getYaml(), accountId);
     return TemplateWithInputsResponseDTO.builder()
         .templateInputs(templateInputs)
         .templateResponseDTO(templateResponseDTO)
