@@ -23,6 +23,7 @@ import software.wings.search.entities.cloudprovider.CloudProviderTimeScaleEntity
 import software.wings.search.entities.deployment.DeploymentSearchEntity;
 import software.wings.search.entities.environment.EnvironmentSearchEntity;
 import software.wings.search.entities.environment.EnvironmentTimeScaleEntity;
+import software.wings.search.entities.infradefinition.InfrastructureDefinitionTimeScaleEntity;
 import software.wings.search.entities.pipeline.PipelineSearchEntity;
 import software.wings.search.entities.pipeline.PipelineTimeScaleEntity;
 import software.wings.search.entities.service.ServiceSearchEntity;
@@ -105,6 +106,7 @@ public class SearchModule extends AbstractModule {
     timeScaleEntityMultibinder.addBinding().to(PipelineTimeScaleEntity.class);
     timeScaleEntityMultibinder.addBinding().to(EnvironmentTimeScaleEntity.class);
     timeScaleEntityMultibinder.addBinding().to(CloudProviderTimeScaleEntity.class);
+    timeScaleEntityMultibinder.addBinding().to(InfrastructureDefinitionTimeScaleEntity.class);
     timeScaleEntityMultibinder.addBinding().to(UserTimeScaleEntity.class);
   }
 
