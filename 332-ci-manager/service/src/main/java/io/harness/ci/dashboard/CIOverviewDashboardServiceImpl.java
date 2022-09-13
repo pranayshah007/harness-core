@@ -97,8 +97,6 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
         return resultSet.next() ? resultSet.getLong(1) : 0L;
       } catch (SQLException ex) {
         log.error("Caught SQL Exception:" + ex.getMessage());
-      } catch (Exception ex) {
-        log.error("Caught General Exception:" + ex.getMessage());
       } finally {
         DBUtils.close(resultSet);
       }
@@ -144,8 +142,6 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
             .build();
       } catch (SQLException ex) {
         log.error("Caught SQL Exception:" + ex.getMessage());
-      } catch (Exception ex) {
-        log.error("Caught General Exception:" + ex.getMessage());
       } finally {
         DBUtils.close(resultSet);
       }
@@ -179,8 +175,6 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
         return parseResultToStatusAndTime(resultSet);
       } catch (SQLException ex) {
         log.error("Caught SQL Exception:" + ex.getMessage());
-      } catch (Exception ex) {
-        log.error("Caught General Exception:" + ex.getMessage());
       } finally {
         DBUtils.close(resultSet);
       }
@@ -377,10 +371,6 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
         buildFailureInfos.clear();
         serviceIds.clear();
         log.error("Caught SQL Exception:" + ex.getMessage());
-      } catch (Exception ex) {
-        buildFailureInfos.clear();
-        serviceIds.clear();
-        log.error("Caught General Exception:" + ex.getMessage());
       } finally {
         DBUtils.close(resultSet);
       }
@@ -456,8 +446,6 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
         return serviceTags;
       } catch (SQLException ex) {
         log.error("Caught SQL Exception:" + ex.getMessage());
-      } catch (Exception ex) {
-        log.error("Caught General Exception:" + ex.getMessage());
       } finally {
         DBUtils.close(resultSet);
       }
@@ -605,8 +593,6 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
         return parseResultToRepoInfo(resultSet);
       } catch (SQLException ex) {
         log.error("Caught SQL Exception:" + ex.getMessage());
-      } catch (Exception ex) {
-        log.error("Caught General Exception:" + ex.getMessage());
       } finally {
         DBUtils.close(resultSet);
       }
