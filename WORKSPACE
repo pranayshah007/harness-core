@@ -5465,9 +5465,16 @@ container_pull(
 )
 
 container_pull(
-    name = "ubi-minimal-base-image",
+    name = "ubi-minimal-base",
     registry = "us.gcr.io",
     repository = "platform-205701/harness/ubi-minimal-bazel-test",
+    tag = "latest-test",
+)
+
+container_pull(
+    name = "ubi-java-base",
+    registry = "us.gcr.io",
+    repository = "platform-205701/harness/ubi-java-base-bazel-test",
     tag = "latest-test",
 )
 
