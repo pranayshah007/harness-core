@@ -6,6 +6,7 @@
 from pymongo import MongoClient
 from enum import Enum
 import requests
+import yaml
 
 INPUT_ACCOUNT_ID = "kmpySmUISimoRrJL6NL73w"
 INPUT_ORG_ID = "default"
@@ -36,6 +37,9 @@ class DBKeys(Enum):
     BRANCH = "branch"
     OBJECT_ID_OF_YAML = "objectIdOfYaml"
     YAML = "yaml"
+    TARGET_IDENTIFIER = "targetIdentifier"
+    PIPELINE_BRANCH_NAME = "pipelineBranchName"
+    TRIGGER = "trigger"
     SETTINGS = "settings"
 
 
@@ -225,6 +229,32 @@ def delete_yaml_git_configs():
     }
     yaml_git_config_collection.delete_many(find_criteria)
 
+def update_triggers():
+    query = {
+        DBKeys.ACCOUNT_ID.value: INPUT_ACCOUNT_ID,
+        DBKeys.ORG_IDENTIFIER.value: INPUT_ORG_ID,
+        DBKeys.PROJECT_IDENTIFIER.value: INPUT_PROJECT_ID,
+    }
+    triggers = pms_db.triggersNG.find(query)
+    for record in triggers:
+        pipelineId = record.get(DBKeys.TARGET_IDENTIFIER.value);
+        pipelineQuery = {
+            DBKeys.ACCOUNT_ID.value: INPUT_ACCOUNT_ID,
+            DBKeys.ORG_IDENTIFIER.value: INPUT_ORG_ID,
+            DBKeys.PROJECT_IDENTIFIER.value: INPUT_PROJECT_ID,
+            DBKeys.IDENTIFIER.value: pipelineId,
+            DBKeys.IS_FROM_DEFAULT_BRANCH.value: True
+        }
+        pipeline = pms_db.pipelinesPMS.find_one(pipelineQuery)
+        if pipeline is None:
+            continue
+
+        pipelineBranchName = pipeline.get(DBKeys.BRANCH.value);
+
+        trigger_yaml = yaml.safe_load(record.get(DBKeys.YAML.value));
+        trigger_yaml.get(DBKeys.TRIGGER.value)[DBKeys.PIPELINE_BRANCH_NAME.value] = pipelineBranchName
+        record[DBKeys.YAML.value] = yaml.dump(trigger_yaml,  sort_keys=False);
+        pms_db.triggersNG.update_one({"_id": record.get("_id")}, {"$set": record}, upsert=False)
 
 if __name__ == "__main__":
     setup_mongo_client()
@@ -234,6 +264,7 @@ if __name__ == "__main__":
     delete_non_default_branch_entities()
     # enable_gitx_via_api()
     enable_new_gitx()
+    update_triggers()
     migrate_records_from_inline_to_remote()
     cleanup_connector_entities()
     # reset_git_sync_sdk_cache()
