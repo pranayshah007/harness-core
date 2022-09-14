@@ -71,7 +71,6 @@ public class LogStreamingTaskClient implements ILogStreamingTaskClient {
   @Deprecated private final String activityId;
   private ScheduledFuture scheduledFuture;
   private final ITaskProgressClient taskProgressClient;
-  private boolean taskCompleted;
   private String logKey;
 
   @Default private final Map<String, List<LogLine>> logCache = new HashMap<>();
@@ -82,7 +81,7 @@ public class LogStreamingTaskClient implements ILogStreamingTaskClient {
 
     try {
       SafeHttpCall.executeWithExceptions(logStreamingClient.openLogStream(token, accountId, logKey));
-      log.info("stream created for log key : {}, taskcommpleted {}", logKey, taskCompleted);
+      log.info("stream created for log key : {}, taskcommpleted {}", logKey);
     } catch (Exception ex) {
       log.error("Unable to open log stream for account {} and key {}", accountId, logKey, ex);
     }
@@ -93,8 +92,8 @@ public class LogStreamingTaskClient implements ILogStreamingTaskClient {
   public void closeStream(String baseLogKeySuffix) {
     synchronized (logCache) {
       // We can mark this task to be completed. Log upload can happen asynchronously.
-      log.info("close stream request received for log key : {}, taskcompleted {}", logKey, taskCompleted);
-      taskCompleted = true;
+      log.info("close stream request received for log key : {}, taskcompleted {}", logKey);
+      scheduledExecutorService.submit(() -> closeStreamAsync());
     }
   }
 
@@ -140,10 +139,6 @@ public class LogStreamingTaskClient implements ILogStreamingTaskClient {
     colorLog(logLine);
 
     synchronized (logCache) {
-      if (taskCompleted) {
-        log.warn("Trying to insert logline post task completion.");
-        return;
-      }
       if (!logCache.containsKey(logKey)) {
         logCache.put(logKey, new ArrayList<>());
       }
@@ -165,10 +160,6 @@ public class LogStreamingTaskClient implements ILogStreamingTaskClient {
         iterator.remove();
       }
       logCache.notifyAll();
-    }
-    if (taskCompleted) {
-      log.info("calling close stream for log key : {}", logKey);
-      closeStreamAsync();
     }
   }
 
