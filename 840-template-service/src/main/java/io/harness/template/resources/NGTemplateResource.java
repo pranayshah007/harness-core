@@ -7,13 +7,9 @@
 
 package io.harness.template.resources;
 
-import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-
-import static java.lang.Long.parseLong;
-import static javax.ws.rs.core.HttpHeaders.IF_MATCH;
-import static org.apache.commons.lang3.StringUtils.isNumeric;
-
+import com.codahale.metrics.annotation.ExceptionMetered;
+import com.codahale.metrics.annotation.Timed;
+import com.google.inject.Inject;
 import io.harness.NGCommonEntityConstants;
 import io.harness.NGResourceFilterConstants;
 import io.harness.accesscontrol.AccountIdentifier;
@@ -56,7 +52,6 @@ import io.harness.pms.contracts.service.VariablesServiceRequestV2;
 import io.harness.pms.mappers.VariablesResponseDtoMapper;
 import io.harness.pms.variables.VariableMergeServiceResponse;
 import io.harness.remote.client.NGRestUtils;
-import io.harness.rest.RestResponse;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.template.TemplateFilterPropertiesDTO;
 import io.harness.template.beans.FilterParamsDTO;
@@ -79,12 +74,6 @@ import io.harness.template.services.NGTemplateServiceHelper;
 import io.harness.template.services.TemplateMergeService;
 import io.harness.utils.PageUtils;
 import io.harness.yaml.core.variables.NGVariable;
-
-import software.wings.beans.FailureStrategy;
-
-import com.codahale.metrics.annotation.ExceptionMetered;
-import com.codahale.metrics.annotation.Timed;
-import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -97,9 +86,17 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.hibernate.validator.constraints.NotBlank;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.query.Criteria;
+import retrofit2.http.Body;
+
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
@@ -113,16 +110,15 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.hibernate.validator.constraints.NotBlank;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.mongodb.core.query.Criteria;
-import retrofit2.http.Body;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+
+import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static java.lang.Long.parseLong;
+import static javax.ws.rs.core.HttpHeaders.IF_MATCH;
+import static org.apache.commons.lang3.StringUtils.isNumeric;
 
 @OwnedBy(CDC)
 @Api("templates")
