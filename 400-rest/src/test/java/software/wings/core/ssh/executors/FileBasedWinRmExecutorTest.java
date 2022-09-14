@@ -131,7 +131,7 @@ public class FileBasedWinRmExecutorTest extends CategoryTest {
     ConfigFileMetaData configFileMetaData = buildConfigFileMetadata(1);
     String command = plainOldExecutor.getDeleteFileCommandStr(
         configFileMetaData.getDestinationDirectoryPath(), configFileMetaData.getFilename());
-    assertThat(command).isEqualTo("$decodedFile = 'TEST_PATH\\TEST_FILE_NAME'\n"
+    assertThat(command).isEqualTo("$decodedFile = \"TEST_PATH\\TEST_FILE_NAME\"\n"
         + "Write-Host \"Clearing target config file $decodedFile  on the host.\"\n"
         + "if ([IO.File]::Exists($decodedFile)) {\n"
         + "  [IO.File]::Delete($decodedFile)\n"
@@ -152,8 +152,8 @@ public class FileBasedWinRmExecutorTest extends CategoryTest {
         + "\n"
         + "$DecodedString = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String(\"VGhpcyBpcyBhIHRlc3Q=\"))\n"
         + "Write-Host \"Decoding config file on the host.\"\n"
-        + "$decodedFile = \'" + configFileMetaData.getDestinationDirectoryPath() + "\\"
-        + configFileMetaData.getFilename() + "\'\n"
+        + "$decodedFile = \"" + configFileMetaData.getDestinationDirectoryPath() + "\\"
+        + configFileMetaData.getFilename() + "\"\n"
         + "[IO.File]::AppendAllText($decodedFile, $DecodedString) \n"
         + "Write-Host \"Appended to config file on the host.\"\n");
   }

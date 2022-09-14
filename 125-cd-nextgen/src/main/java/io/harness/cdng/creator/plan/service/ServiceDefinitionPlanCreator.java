@@ -227,18 +227,19 @@ public class ServiceDefinitionPlanCreator extends ChildrenPlanCreator<YamlField>
         serviceSpecChildrenIds.add(startupCommandPlanNodeId);
       }
 
-      ApplicationSettingsConfiguration applicationSettings = azureWebAppServiceSpec.getApplicationSettings();
-      if (applicationSettings != null) {
-        String applicationSettingsPlanNodeId =
-            ServiceDefinitionPlanCreatorHelper.addDependenciesForApplicationSettingsV2(
-                serviceV2Node, planCreationResponseMap, ngServiceV2InfoConfig, kryoSerializer);
+      final String applicationSettingsPlanNodeId =
+          ServiceDefinitionPlanCreatorHelper.addDependenciesForApplicationSettingsV2(serviceV2Node,
+              planCreationResponseMap, ngServiceV2InfoConfig, serviceOverrideConfig, ngEnvironmentConfig,
+              kryoSerializer);
+      if (isNotBlank(applicationSettingsPlanNodeId)) {
         serviceSpecChildrenIds.add(applicationSettingsPlanNodeId);
       }
 
-      ConnectionStringsConfiguration connectionStrings = azureWebAppServiceSpec.getConnectionStrings();
-      if (connectionStrings != null) {
-        String connectionStringsPlanNodeId = ServiceDefinitionPlanCreatorHelper.addDependenciesForConnectionStringsV2(
-            serviceV2Node, planCreationResponseMap, ngServiceV2InfoConfig, kryoSerializer);
+      final String connectionStringsPlanNodeId =
+          ServiceDefinitionPlanCreatorHelper.addDependenciesForConnectionStringsV2(serviceV2Node,
+              planCreationResponseMap, ngServiceV2InfoConfig, serviceOverrideConfig, ngEnvironmentConfig,
+              kryoSerializer);
+      if (isNotBlank(connectionStringsPlanNodeId)) {
         serviceSpecChildrenIds.add(connectionStringsPlanNodeId);
       }
     }

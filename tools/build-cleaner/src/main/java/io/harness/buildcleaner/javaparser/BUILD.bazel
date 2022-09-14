@@ -9,11 +9,9 @@ java_library(
         "PackageParser.java",
     ],
     visibility = ["//visibility:public"],
-    runtime_deps = [
-        "@maven//:io_grpc_grpc_netty",  #keep
-        "@maven//:org_slf4j_slf4j_simple",  #keep
-    ],
+    runtime_deps = ["@maven//:org_slf4j_slf4j_api"],
     deps = [
+        "//tools/build-cleaner/src/main/java/io/harness/buildcleaner/proto:module",
         "@maven//:com_github_javaparser_javaparser_core",
         "@maven//:com_github_javaparser_javaparser_symbol_solver_core",
         "@maven//:com_google_code_gson_gson",

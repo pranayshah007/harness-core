@@ -905,6 +905,13 @@ public class WingsApplication extends Application<MainConfiguration> {
             .put(DelegateTaskProgressResponse.class, "delegateTaskProgressResponses")
             .build();
       }
+
+      @Provides
+      @Singleton
+      @Named("dbAliases")
+      public List<String> getDbAliases() {
+        return configuration.getDbAliases();
+      }
     });
 
     modules.add(new IndexMigratorModule());

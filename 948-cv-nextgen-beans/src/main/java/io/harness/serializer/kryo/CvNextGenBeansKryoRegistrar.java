@@ -72,6 +72,9 @@ import io.harness.cvng.beans.dynatrace.DynatraceMetricPackValidationRequest;
 import io.harness.cvng.beans.dynatrace.DynatraceSampleDataRequest;
 import io.harness.cvng.beans.dynatrace.DynatraceServiceDetailsRequest;
 import io.harness.cvng.beans.dynatrace.DynatraceServiceListRequest;
+import io.harness.cvng.beans.elk.ELKDataCollectionRequest;
+import io.harness.cvng.beans.elk.ELKIndexCollectionRequest;
+import io.harness.cvng.beans.elk.ELKSampleDataCollectionRequest;
 import io.harness.cvng.beans.newrelic.NewRelicApplicationFetchRequest;
 import io.harness.cvng.beans.newrelic.NewRelicFetchSampleDataRequest;
 import io.harness.cvng.beans.newrelic.NewRelicMetricPackValidationRequest;
@@ -196,5 +199,8 @@ public class CvNextGenBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(SplunkMetricDataCollectionInfo.class, 9110);
     kryo.register(SplunkMetricDataCollectionInfo.MetricInfo.class, 9111);
     kryo.register(SplunkMetricSampleDataCollectionRequest.class, 9112);
+    kryo.register(ELKDataCollectionRequest.class, 9121);
+    kryo.register(ELKIndexCollectionRequest.class, 9122);
+    kryo.register(ELKSampleDataCollectionRequest.class, 9123);
   }
 }

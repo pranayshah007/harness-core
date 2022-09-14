@@ -474,6 +474,7 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
         .activelyConnected(!connectivityStatus.equals(GROUP_STATUS_DISCONNECTED))
         .tokenActive(isDelegateTokenActiveAtGroupLevel.get())
         .immutable(immutableDelegate)
+        .versions(groupDelegates.stream().map(Delegate::getVersion).collect(toList()))
         .build();
   }
 
@@ -482,7 +483,7 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
     if (!immutableDelegate) {
       return true;
     }
-    return TimeUnit.MILLISECONDS.toHours(System.currentTimeMillis() - upgraderLastUpdated) <= 1;
+    return TimeUnit.MILLISECONDS.toMinutes(System.currentTimeMillis() - upgraderLastUpdated) <= 90;
   }
 
   private boolean isGrpcActive(String accountId, String delegateId) {

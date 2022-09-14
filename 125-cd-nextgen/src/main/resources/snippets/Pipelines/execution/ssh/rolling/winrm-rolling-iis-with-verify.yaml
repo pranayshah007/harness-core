@@ -1,0 +1,208 @@
+spec:
+  execution:
+    steps:
+      - stepGroup:
+          name: Phase
+          identifier: Phase
+          strategy:
+            repeat:
+              items: <+stage.output.hosts>
+              maxConcurrency: <+maxConcurrency>
+              partitionSize: <+partitionSize>
+              unit: <+unit>
+          steps:
+            - stepGroup:
+                name: Phase Group
+                identifier: phase_group
+                strategy:
+                  repeat:
+                    items: <+repeat.partition>
+                steps:
+                  - step:
+                      name: "Deploy"
+                      identifier: Deploy
+                      type: Command
+                      timeout: 10m
+                      spec:
+                        onDelegate: false
+                        environmentVariables:
+                          - name: ReleaseNo
+                            type: String
+                            value: ""
+                          - name: ServiceName
+                            type: String
+                            value: ""
+                          - name: AppPoolName
+                            type: String
+                            value: "DefaultAppPool"
+                          - name: AppPoolDotNetVersion
+                            type: String
+                            value: "v4.0"
+                          - name: DownloadDirectory
+                            type: String
+                            value: "$env:TEMP"
+                          - name: AppPhysicalDirectory
+                            type: String
+                            value: "$env:SYSTEMDRIVE"
+                          - name: SiteProtocol
+                            type: String
+                            value: "http"
+                          - name: SitePort
+                            type: String
+                            value: "80"
+                          - name: SiteHostName
+                            type: String
+                            value: "*"
+                        outputVariables: []
+                        commandUnits:
+                          - identifier: Copy_Artifact
+                            name: "Copy Artifact"
+                            type: Copy
+                            spec:
+                              sourceType: Artifact
+                              destinationPath: "%USERPROFILE%\\<+service.name>\\<+env.name>"
+                          - identifier: Expend_Artifact
+                            name: "Expend Artifact"
+                            type: Script
+                            spec:
+                              shell: PowerShell
+                              source:
+                                type: Inline
+                                spec:
+                                  script: |-
+                                    <+extend_artifact_script_powershell>
+                          - identifier: Copy_Config
+                            name: "Copy Config"
+                            type: Copy
+                            spec:
+                              sourceType: Config
+                              destinationPath: "%USERPROFILE%\\<+service.name>\\<+env.name>"
+                          - identifier: Create_AppPool
+                            name: "Create AppPool"
+                            type: Script
+                            spec:
+                              shell: PowerShell
+                              source:
+                                type: Inline
+                                spec:
+                                  script: |-
+                                    <+create_apppool_script_powershell>
+                          - identifier: Create_Website
+                            name: "Create Website"
+                            type: Script
+                            spec:
+                              shell: PowerShell
+                              source:
+                                type: Inline
+                                spec:
+                                  script: |-
+                                    <+create_website_script_powershell>
+                  - step:
+                      type: Verify
+                      name: Verify
+                      identifier: Verify
+                      timeout: 2h
+                      spec: { }
+    rollbackSteps:
+      - stepGroup:
+          name: Phase Rollback
+          identifier: Phase_Rollback
+          strategy:
+            repeat:
+              items: <+stage.output.hosts>
+              maxConcurrency: <+maxConcurrency>
+              partitionSize: <+partitionSize>
+              unit: <+unit>
+          steps:
+            - stepGroup:
+                name: Phase Group Rollback
+                identifier: phase_group_rollback
+                strategy:
+                  repeat:
+                    items: <+repeat.partition>
+                steps:
+                  - step:
+                      name: "Rollback"
+                      identifier: Rollback
+                      type: Command
+                      timeout: 10m
+                      spec:
+                        onDelegate: false
+                        environmentVariables:
+                          - name: ReleaseNo
+                            type: String
+                            value: ""
+                          - name: ServiceName
+                            type: String
+                            value: ""
+                          - name: AppPoolName
+                            type: String
+                            value: "DefaultAppPool"
+                          - name: AppPoolDotNetVersion
+                            type: String
+                            value: "v4.0"
+                          - name: DownloadDirectory
+                            type: String
+                            value: "$env:TEMP"
+                          - name: AppPhysicalDirectory
+                            type: String
+                            value: "$env:SYSTEMDRIVE"
+                          - name: SiteProtocol
+                            type: String
+                            value: "http"
+                          - name: SitePort
+                            type: String
+                            value: "80"
+                          - name: SiteHostName
+                            type: String
+                            value: "*"
+                        outputVariables: []
+                        commandUnits:
+                          - identifier: Copy_Artifact_Rollback
+                            name: "Copy Artifact Rollback"
+                            type: Copy
+                            spec:
+                              sourceType: Artifact
+                              destinationPath: "%USERPROFILE%\\<+service.name>\\<+env.name>"
+                          - identifier: Expend_Artifact_Rollback
+                            name: "Expend Artifact Rollback"
+                            type: Script
+                            spec:
+                              shell: PowerShell
+                              source:
+                                type: Inline
+                                spec:
+                                  script: |-
+                                    <+extend_artifact_script_powershell>
+                          - identifier: Copy_Config_Rollback
+                            name: "Copy Config Rollback"
+                            type: Copy
+                            spec:
+                              sourceType: Config
+                              destinationPath: "%USERPROFILE%\\<+service.name>\\<+env.name>"
+                          - identifier: Create_AppPool_Rollback
+                            name: "Create AppPool Rollback"
+                            type: Script
+                            spec:
+                              shell: PowerShell
+                              source:
+                                type: Inline
+                                spec:
+                                  script: |-
+                                    <+create_apppool_script_powershell>
+                          - identifier: Create_Website_Rollback
+                            name: "Create Website Rollback"
+                            type: Script
+                            spec:
+                              shell: PowerShell
+                              source:
+                                type: Inline
+                                spec:
+                                  script: |-
+                                    <+create_website_script_powershell>
+                  - step:
+                      type: Verify
+                      name: Verify Rollback
+                      identifier: Verify_Rollback
+                      timeout: 2h
+                      spec: { }

@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.ng.core;
 
 import static io.harness.AuthorizationServiceHeader.NG_MANAGER;
@@ -5,24 +12,28 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static java.lang.Boolean.FALSE;
 
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
 import io.harness.ng.core.api.DefaultUserGroupService;
+import io.harness.ng.core.dto.AccountDTO;
 import io.harness.ng.core.entities.Organization;
 import io.harness.ng.core.entities.Organization.OrganizationKeys;
 import io.harness.ng.core.entities.Project;
 import io.harness.ng.core.entities.Project.ProjectKeys;
 import io.harness.ng.core.services.OrganizationService;
 import io.harness.ng.core.services.ProjectService;
+import io.harness.remote.client.RestClientUtils;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.dto.ServicePrincipal;
 
 import com.google.inject.Inject;
 import java.time.Duration;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -35,16 +46,19 @@ public class DefaultUserGroupCreationService implements Runnable {
   private final OrganizationService organizationService;
   private final ProjectService projectService;
   private final PersistentLocker persistentLocker;
+  private final AccountClient accountClient;
   private static final String DEBUG_MESSAGE = "DefaultUserGroupCreationService: ";
   private static final String LOCK_NAME = "DefaultUserGroupsCreationJobLock";
 
   @Inject
   public DefaultUserGroupCreationService(DefaultUserGroupService defaultUserGroupService,
-      OrganizationService organizationService, ProjectService projectService, PersistentLocker persistentLocker) {
+      OrganizationService organizationService, ProjectService projectService, PersistentLocker persistentLocker,
+      AccountClient accountClient) {
     this.defaultUserGroupService = defaultUserGroupService;
     this.organizationService = organizationService;
     this.projectService = projectService;
     this.persistentLocker = persistentLocker;
+    this.accountClient = accountClient;
   }
 
   @Override
@@ -77,11 +91,16 @@ public class DefaultUserGroupCreationService implements Runnable {
     log.info(DEBUG_MESSAGE + "User Groups creation started.");
 
     try {
-      List<String> distinctAccountIds = organizationService.getDistinctAccounts();
+      List<AccountDTO> allAccounts = RestClientUtils.getResponse(accountClient.getAllAccounts());
+      List<String> distinctAccountIds = allAccounts.stream()
+                                            .filter(AccountDTO::isNextGenEnabled)
+                                            .map(AccountDTO::getIdentifier)
+                                            .collect(Collectors.toList());
       if (isEmpty(distinctAccountIds)) {
         return;
       }
-      log.info(DEBUG_MESSAGE + String.format("Fetched %s accounts...", distinctAccountIds.size()));
+      log.info(
+          DEBUG_MESSAGE + String.format("Fetched %s accounts having NextGen enabled...", distinctAccountIds.size()));
       createUserGroupForAccounts(distinctAccountIds);
     } catch (Exception ex) {
       log.error(DEBUG_MESSAGE + " Fetching all accounts failed : ", ex);

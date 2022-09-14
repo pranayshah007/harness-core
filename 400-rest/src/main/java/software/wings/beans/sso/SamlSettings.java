@@ -18,7 +18,6 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.encryption.Encrypted;
 
 import software.wings.annotation.EncryptableSetting;
-import software.wings.jersey.JsonViews;
 import software.wings.settings.SettingVariableTypes;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -26,7 +25,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
-import com.fasterxml.jackson.annotation.JsonView;
 import com.github.reinert.jjschema.SchemaIgnore;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
@@ -50,7 +48,7 @@ public class SamlSettings extends SSOSettings implements EncryptableSetting {
   private SAMLProviderType samlProviderType;
   private String clientId;
   @Encrypted(fieldName = "clientSecret") private char[] clientSecret;
-  @JsonIgnore @JsonView(JsonViews.Internal.class) @SchemaIgnore private String encryptedClientSecret;
+  @SchemaIgnore private String encryptedClientSecret;
 
   @JsonCreator
   @Builder

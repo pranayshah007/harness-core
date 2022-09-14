@@ -511,7 +511,7 @@ public class ExecutionContextImplTest extends WingsBaseTest {
     WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService =
         new WorkflowStandardParamsExtensionService(appService, injector.getInstance(AccountService.class),
             artifactService, environmentService, artifactStreamServiceBindingService,
-            injector.getInstance(HelmChartService.class));
+            injector.getInstance(HelmChartService.class), featureFlagService);
     on(context).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
 
     ContextElementParamMapperFactory contextElementParamMapperFactory =

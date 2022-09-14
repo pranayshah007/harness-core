@@ -33,6 +33,7 @@ import org.springframework.data.annotation.TypeAlias;
 public class CEAwsConfig extends Connector {
   List<CEFeatures> featuresEnabled;
   String awsAccountId;
+  Boolean isAWSGovCloudAccount;
   CURAttributes curAttributes;
   CrossAccountAccessDTO crossAccountAccess;
 }

@@ -28,6 +28,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName("manifestsOutcome")
 @OwnedBy(CDC)
 @RecasterAlias("io.harness.cdng.manifest.yaml.ManifestsOutcome")
+@Deprecated(forRemoval = true)
 public class ManifestsOutcome implements Outcome {
   @NotEmpty List<ManifestOutcome> manifestOutcomeList;
   @NotEmpty List<ManifestOutcome> manifestOriginalList;

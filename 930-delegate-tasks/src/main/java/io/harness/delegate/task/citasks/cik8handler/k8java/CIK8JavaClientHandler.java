@@ -59,6 +59,7 @@ import io.kubernetes.client.openapi.models.V1ServicePortBuilder;
 import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.util.generic.GenericKubernetesApi;
 import io.kubernetes.client.util.generic.KubernetesApiResponse;
+import io.kubernetes.client.util.generic.options.DeleteOptions;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -252,7 +253,9 @@ public class CIK8JavaClientHandler {
 
   public V1Status deletePod(GenericKubernetesApi<V1Pod, V1PodList> podClient, String podName, String namespace) {
     V1Status v1Status = new V1Status();
-    KubernetesApiResponse kubernetesApiResponse = podClient.delete(namespace, podName);
+    DeleteOptions deleteOptions = new DeleteOptions();
+    deleteOptions.setGracePeriodSeconds(0l);
+    KubernetesApiResponse kubernetesApiResponse = podClient.delete(namespace, podName, deleteOptions);
     if (kubernetesApiResponse.isSuccess()) {
       v1Status.setStatus("Success");
       return v1Status;
@@ -262,6 +265,7 @@ public class CIK8JavaClientHandler {
       log.warn("Pod {} not found ", podName);
       throw new PodNotFoundException("Failed to delete pod " + podName);
     } else {
+      log.warn("Pod {} deletion failed with response code: {}", podName, kubernetesApiResponse.getHttpStatusCode());
       throw new RuntimeException("Failed to delete pod " + podName);
     }
   }

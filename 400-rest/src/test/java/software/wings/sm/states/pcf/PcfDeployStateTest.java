@@ -288,8 +288,8 @@ public class PcfDeployStateTest extends WingsBaseTest {
         .thenReturn(setupSweepingOutputPcf);
     doNothing().when(stateExecutionService).appendDelegateTaskDetails(anyString(), any());
 
-    workflowStandardParamsExtensionService = spy(
-        new WorkflowStandardParamsExtensionService(appService, null, artifactService, environmentService, null, null));
+    workflowStandardParamsExtensionService = spy(new WorkflowStandardParamsExtensionService(
+        appService, null, artifactService, environmentService, null, null, featureFlagService));
 
     on(context).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
     FieldUtils.writeField(

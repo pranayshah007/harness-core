@@ -27,8 +27,8 @@ import io.harness.k8s.model.Kind;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
-import io.harness.k8s.model.Release;
-import io.harness.k8s.model.Release.KubernetesResourceIdRevision;
+import io.harness.k8s.releasehistory.K8sLegacyRelease;
+import io.harness.k8s.releasehistory.K8sLegacyRelease.KubernetesResourceIdRevision;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 
@@ -55,7 +55,7 @@ public class K8sRollingBaseHandler {
 
   @VisibleForTesting
   public void updateManagedWorkloadsRevision(
-      K8sDelegateTaskParams k8sDelegateTaskParams, Release release, Kubectl client) throws Exception {
+      K8sDelegateTaskParams k8sDelegateTaskParams, K8sLegacyRelease release, Kubectl client) throws Exception {
     List<KubernetesResourceIdRevision> workloads = release.getManagedWorkloads();
 
     for (KubernetesResourceIdRevision kubernetesResourceIdRevision : workloads) {
@@ -66,7 +66,7 @@ public class K8sRollingBaseHandler {
   }
 
   public void setManagedWorkloadsInRelease(K8sDelegateTaskParams k8sDelegateTaskParams,
-      List<KubernetesResource> managedWorkloads, Release release, Kubectl client) throws Exception {
+      List<KubernetesResource> managedWorkloads, K8sLegacyRelease release, Kubectl client) throws Exception {
     List<KubernetesResourceIdRevision> kubernetesResourceIdRevisions = new ArrayList<>();
 
     for (KubernetesResource kubernetesResource : managedWorkloads) {
@@ -82,7 +82,7 @@ public class K8sRollingBaseHandler {
     release.setManagedWorkloads(kubernetesResourceIdRevisions);
   }
 
-  public void setCustomWorkloadsInRelease(List<KubernetesResource> customWorkloads, Release release) {
+  public void setCustomWorkloadsInRelease(List<KubernetesResource> customWorkloads, K8sLegacyRelease release) {
     if (isNotEmpty(customWorkloads)) {
       release.setCustomWorkloads(customWorkloads);
     }

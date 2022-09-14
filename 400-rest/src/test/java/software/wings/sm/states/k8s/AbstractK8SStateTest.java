@@ -319,7 +319,7 @@ public class AbstractK8SStateTest extends WingsBaseTest {
 
     WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService =
         new WorkflowStandardParamsExtensionService(
-            appService, accountService, artifactService, environmentService, null, null);
+            appService, accountService, artifactService, environmentService, null, null, featureFlagService);
     on(context).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
     on(k8sStateHelper).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
     on(abstractK8SState).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);

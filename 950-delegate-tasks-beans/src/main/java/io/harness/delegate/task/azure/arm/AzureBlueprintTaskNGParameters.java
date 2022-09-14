@@ -11,15 +11,19 @@ import static io.harness.expression.Expression.ALLOW_SECRETS;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.DecryptableEntity;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
+import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.expression.Expression;
 import io.harness.security.encryption.EncryptedDataDetail;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.apache.commons.lang3.tuple.Pair;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -34,12 +38,22 @@ public class AzureBlueprintTaskNGParameters extends AzureResourceCreationTaskNGP
   @Builder
   public AzureBlueprintTaskNGParameters(String accountId, AzureARMTaskType taskType, AzureConnectorDTO connectorDTO,
       long timeoutInMs, String blueprintJson, Map<String, String> artifacts, String assignmentJson,
-      String assignmentName, List<EncryptedDataDetail> encryptedDataDetailList, String scope) {
-    super(accountId, taskType, connectorDTO, encryptedDataDetailList, timeoutInMs);
+      String assignmentName, List<EncryptedDataDetail> encryptedDataDetailList, String scope,
+      CommandUnitsProgress commandUnitsProgress) {
+    super(accountId, taskType, connectorDTO, encryptedDataDetailList, timeoutInMs, commandUnitsProgress);
     this.blueprintJson = blueprintJson;
     this.artifacts = artifacts;
     this.assignmentJson = assignmentJson;
     this.assignmentName = assignmentName;
     this.scope = scope;
+  }
+
+  @Override
+  public List<Pair<DecryptableEntity, List<EncryptedDataDetail>>> fetchDecryptionDetails() {
+    List<Pair<DecryptableEntity, List<EncryptedDataDetail>>> decryptionDetails = new ArrayList<>();
+    List<DecryptableEntity> decryptableEntities = this.azureConnectorDTO.getDecryptableEntities();
+    decryptableEntities.forEach(
+        decryptableEntity -> decryptionDetails.add(Pair.of(decryptableEntity, encryptedDataDetails)));
+    return decryptionDetails;
   }
 }

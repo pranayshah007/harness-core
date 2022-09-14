@@ -8,7 +8,6 @@
 package io.harness.delegate.task.azure.arm.handlers;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.azure.arm.AzureResourceCreationBaseHelper;
@@ -16,7 +15,6 @@ import io.harness.delegate.task.azure.arm.AzureResourceCreationTaskNGParameters;
 import io.harness.delegate.task.azure.arm.AzureResourceCreationTaskNGResponse;
 import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
 import io.harness.exception.TimeoutException;
-import io.harness.logging.LogLevel;
 
 import com.google.inject.Inject;
 import java.io.IOException;
@@ -33,13 +31,6 @@ public abstract class AzureResourceCreationAbstractTaskHandler {
 
   public AzureResourceCreationTaskNGResponse executeTask(AzureResourceCreationTaskNGParameters azureTaskNGParameters,
       String delegateId, String taskId, AzureLogCallbackProvider logCallback) throws Exception {
-    AzureResourceCreationTaskNGResponse response =
-        executeTaskInternal(azureTaskNGParameters, delegateId, taskId, logCallback);
-    if (SUCCESS.equals(response.getCommandExecutionStatus())) {
-      logCallback.obtainLogCallback("Create").saveExecutionLog("Execution finished successfully.", LogLevel.INFO);
-    } else {
-      logCallback.obtainLogCallback("Create").saveExecutionLog("Execution has been failed.", LogLevel.ERROR);
-    }
-    return response;
+    return executeTaskInternal(azureTaskNGParameters, delegateId, taskId, logCallback);
   }
 }

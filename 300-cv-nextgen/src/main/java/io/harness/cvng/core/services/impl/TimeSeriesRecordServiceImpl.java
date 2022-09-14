@@ -339,7 +339,7 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
       for (MetricDefinition metricDefinition : metricCVConfig.getMetricPack().getMetrics()) {
         if (isNotEmpty(metricDefinition.getThresholds())) {
           for (TimeSeriesThreshold timeSeriesThreshold : metricDefinition.getThresholds()) {
-            if (ThresholdConfigType.CUSTOMER.equals(timeSeriesThreshold.getThresholdConfigType())) {
+            if (ThresholdConfigType.USER_DEFINED.equals(timeSeriesThreshold.getThresholdConfigType())) {
               metricPackThresholds.add(timeSeriesThreshold);
             }
           }
@@ -360,6 +360,7 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
                                                .thresholdType(timeSeriesThreshold.getCriteria().getThresholdType())
                                                .value(timeSeriesThreshold.getCriteria().getValue())
                                                .thresholdConfigType(timeSeriesThreshold.getThresholdConfigType())
+                                               .deviationType(timeSeriesThreshold.getDeviationType())
                                                .build()));
 
     // add data source level thresholds
@@ -370,7 +371,7 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
         .forEach(metricDefinition -> {
           if (isNotEmpty(metricDefinition.getThresholds())) {
             metricDefinition.getThresholds().forEach(timeSeriesThreshold -> {
-              if (!ThresholdConfigType.CUSTOMER.equals(timeSeriesThreshold.getThresholdConfigType())) {
+              if (!ThresholdConfigType.USER_DEFINED.equals(timeSeriesThreshold.getThresholdConfigType())) {
                 timeSeriesMetricDefinitions.add(
                     TimeSeriesMetricDefinition.builder()
                         .metricName(metricDefinition.getName())
@@ -384,6 +385,7 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
                         .thresholdType(timeSeriesThreshold.getCriteria().getThresholdType())
                         .value(timeSeriesThreshold.getCriteria().getValue())
                         .thresholdConfigType(timeSeriesThreshold.getThresholdConfigType())
+                        .deviationType(timeSeriesThreshold.getDeviationType())
                         .build());
               }
             });

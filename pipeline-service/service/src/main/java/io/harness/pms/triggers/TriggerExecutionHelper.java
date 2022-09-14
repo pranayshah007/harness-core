@@ -473,7 +473,7 @@ public class TriggerExecutionHelper {
     NGTriggerConfigV2 triggerConfigV2 = triggerDetails.getNgTriggerConfigV2();
     String pipelineBranch = triggerConfigV2.getPipelineBranchName();
     if (isEmpty(triggerConfigV2.getInputSetRefs())) {
-      return null;
+      return triggerConfigV2.getInputYaml();
     }
 
     String branch = null;

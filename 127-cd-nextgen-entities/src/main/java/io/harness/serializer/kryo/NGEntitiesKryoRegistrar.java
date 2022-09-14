@@ -12,11 +12,13 @@ import io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactOverrideSetWrapper;
 import io.harness.cdng.artifact.bean.yaml.ArtifactOverrideSets;
+import io.harness.cdng.artifact.bean.yaml.ArtifactSource;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.GithubPackagesArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig;
 import io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
@@ -37,6 +39,7 @@ import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GarArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GcrArtifactOutcome;
+import io.harness.cdng.artifact.outcome.GithubPackagesArtifactOutcome;
 import io.harness.cdng.artifact.outcome.JenkinsArtifactOutcome;
 import io.harness.cdng.artifact.outcome.S3ArtifactOutcome;
 import io.harness.cdng.azure.config.yaml.ApplicationSettingsConfiguration;
@@ -105,6 +108,7 @@ import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.service.beans.AzureWebAppServiceSpec;
+import io.harness.cdng.service.beans.CustomDeploymentServiceSpec;
 import io.harness.cdng.service.beans.EcsServiceSpec;
 import io.harness.cdng.service.beans.KubernetesServiceSpec;
 import io.harness.cdng.service.beans.NativeHelmServiceSpec;
@@ -237,11 +241,12 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(CustomScriptInlineSource.class, 130019);
     kryo.register(FetchAllArtifacts.class, 130020);
     kryo.register(ConfigFileOutcome.class, 130013);
-
+    kryo.register(CustomDeploymentServiceSpec.class, 130100);
     kryo.register(ApplicationSettingsConfiguration.class, 130014);
     kryo.register(ConnectionStringsConfiguration.class, 130015);
     kryo.register(StartupCommandConfiguration.class, 130016);
-
+    kryo.register(GithubPackagesArtifactConfig.class, 130028);
+    kryo.register(GithubPackagesArtifactOutcome.class, 130029);
     kryo.register(EcsServiceDefinitionManifest.class, 140001);
     kryo.register(EcsTaskDefinitionManifest.class, 140002);
     kryo.register(EcsTaskDefinitionManifestOutcome.class, 140003);
@@ -252,12 +257,12 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(EcsServiceSpec.class, 140008);
     kryo.register(EcsScalableTargetDefinitionManifest.class, 140009);
     kryo.register(EcsScalingPolicyDefinitionManifest.class, 140010);
-
     kryo.register(CustomArtifactScriptInfo.class, 140017);
     kryo.register(CustomArtifactScripts.class, 140018);
     kryo.register(CustomArtifactScriptSourceWrapper.class, 140019);
     kryo.register(CustomScriptBaseSource.class, 140020);
     kryo.register(GoogleArtifactRegistryConfig.class, 130021);
     kryo.register(GarArtifactOutcome.class, 130022);
+    kryo.register(ArtifactSource.class, 130023);
   }
 }

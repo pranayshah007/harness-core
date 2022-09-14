@@ -1969,9 +1969,9 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     if (isEmpty(deploymentTypes) || deploymentTypes.size() > 1) {
       throw new InvalidRequestException("Execution Hosts only supported for single deployment type", USER);
     }
-
-    if (deploymentTypes.get(0) != DeploymentType.SSH) {
-      throw new InvalidRequestException("Execution Hosts only supported for SSH deployment type", USER);
+    DeploymentType deploymentType = deploymentTypes.get(0);
+    if (deploymentType != DeploymentType.SSH && deploymentType != DeploymentType.WINRM) {
+      throw new InvalidRequestException("Execution Hosts only supported for SSH and WinRM deployment type", USER);
     }
   }
 
@@ -3263,12 +3263,16 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     final Query<WorkflowExecution> query =
         wingsPersistence.createQuery(WorkflowExecution.class)
             .filter(WorkflowExecutionKeys.appId, workflowExecution.getAppId())
+            .filter(WorkflowExecutionKeys.workflowType, ORCHESTRATION)
             .filter(WorkflowExecutionKeys.status, SUCCESS)
             .filter(WorkflowExecutionKeys.infraMappingIds, workflowExecution.getInfraMappingIds())
             .order(Sort.descending(WorkflowExecutionKeys.createdAt));
+
     List<WorkflowExecution> workflowExecutionList = new ArrayList<>();
     if (featureFlagService.isEnabled(
             FeatureName.ON_DEMAND_ROLLBACK_WITH_DIFFERENT_ARTIFACT, workflowExecution.getAccountId())) {
+      query.field(WorkflowExecutionKeys.serviceExecutionSummaries_instanceStatusSummaries_instanceElement_uuid)
+          .exists();
       boolean firstEntry = true;
       try (HIterator<WorkflowExecution> iterator = new HIterator<>(query.fetch())) {
         for (WorkflowExecution wfExecution : iterator) {

@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.cdng.ecs;
 
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
@@ -439,10 +446,11 @@ public class EcsStepCommonHelper extends EcsStepUtils {
                   -> ecsScalableTargetFetchFilesResult.getFiles().get(0).getFileContent())
               .collect(Collectors.toList());
 
-      ecsScalableTargetManifestContentList.stream()
-          .map(ecsScalableTargetManifestContent
-              -> engineExpressionService.renderExpression(ambiance, ecsScalableTargetManifestContent))
-          .collect(Collectors.toList());
+      ecsScalableTargetManifestContentList =
+          ecsScalableTargetManifestContentList.stream()
+              .map(ecsScalableTargetManifestContent
+                  -> engineExpressionService.renderExpression(ambiance, ecsScalableTargetManifestContent))
+              .collect(Collectors.toList());
     }
 
     // Get ecsScalingPolicyManifestContentList from ecsGitFetchResponse if present
@@ -457,10 +465,11 @@ public class EcsStepCommonHelper extends EcsStepUtils {
                   -> ecsScalingPolicyFetchFilesResult.getFiles().get(0).getFileContent())
               .collect(Collectors.toList());
 
-      ecsScalingPolicyManifestContentList.stream()
-          .map(ecsScalingPolicyManifestContent
-              -> engineExpressionService.renderExpression(ambiance, ecsScalingPolicyManifestContent))
-          .collect(Collectors.toList());
+      ecsScalingPolicyManifestContentList =
+          ecsScalingPolicyManifestContentList.stream()
+              .map(ecsScalingPolicyManifestContent
+                  -> engineExpressionService.renderExpression(ambiance, ecsScalingPolicyManifestContent))
+              .collect(Collectors.toList());
     }
 
     EcsExecutionPassThroughData ecsExecutionPassThroughData =
@@ -497,7 +506,10 @@ public class EcsStepCommonHelper extends EcsStepUtils {
     if (ecsStepExecutor instanceof EcsRollingDeployStep) {
       EcsPrepareRollbackDataResult ecsPrepareRollbackDataResult =
           ecsPrepareRollbackDataResponse.getEcsPrepareRollbackDataResult();
+
       EcsRollingRollbackDataOutcomeBuilder ecsRollbackDataOutcomeBuilder = EcsRollingRollbackDataOutcome.builder();
+
+      ecsRollbackDataOutcomeBuilder.serviceName(ecsPrepareRollbackDataResult.getServiceName());
       ecsRollbackDataOutcomeBuilder.createServiceRequestBuilderString(
           ecsPrepareRollbackDataResult.getCreateServiceRequestBuilderString());
       ecsRollbackDataOutcomeBuilder.isFirstDeployment(ecsPrepareRollbackDataResult.isFirstDeployment());

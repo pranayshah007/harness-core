@@ -160,6 +160,23 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
   @Test
   @Owner(developers = BHAVYA)
   @Category(UnitTests.class)
+  public void testListBranchesV2_WithDuplicates() {
+    ListBranchesWithDefaultResponse listBranchesWithDefaultResponse =
+        ListBranchesWithDefaultResponse.newBuilder()
+            .setDefaultBranch(defaultBranch)
+            .addAllBranches(Arrays.asList(branch, branch, "branch1", "branch1"))
+            .build();
+    when(scmOrchestratorService.processScmRequestUsingConnectorSettings(any(), any()))
+        .thenReturn(listBranchesWithDefaultResponse);
+    GitBranchesResponseDTO gitBranchesResponseDTO = scmFacilitatorService.listBranchesV2(
+        accountIdentifier, orgIdentifier, projectIdentifier, connectorRef, repoName, pageRequest, "");
+    assertThat(gitBranchesResponseDTO.getDefaultBranch().getName()).isEqualTo(defaultBranch);
+    assertThat(gitBranchesResponseDTO.getBranches().size()).isEqualTo(2);
+    assertThat(gitBranchesResponseDTO.getBranches().get(0).getName()).isEqualTo(branch);
+  }
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
   public void testGetDefaultBranch() {
     GetUserRepoResponse getUserRepoResponse =
         GetUserRepoResponse.newBuilder()

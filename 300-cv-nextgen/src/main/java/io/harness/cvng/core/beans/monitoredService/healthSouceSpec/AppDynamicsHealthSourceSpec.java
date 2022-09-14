@@ -163,7 +163,7 @@ public class AppDynamicsHealthSourceSpec extends MetricHealthSourceSpec {
                            return appDynamicsCVConfig;
                          })
                          .collect(Collectors.toList()));
-    cvConfigs.forEach(appDynamicsCVConfig -> appDynamicsCVConfig.addMetricThresholds(metricPacks));
+    cvConfigs.forEach(appDynamicsCVConfig -> appDynamicsCVConfig.addMetricThresholds(metricPacks, metricDefinitions));
     cvConfigs.stream()
         .filter(cvConfig -> CollectionUtils.isNotEmpty(cvConfig.getMetricInfos()))
         .flatMap(cvConfig -> cvConfig.getMetricInfos().stream())

@@ -28,6 +28,7 @@ import io.harness.eraro.ResponseMessage;
 import io.harness.exception.WingsException;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
+import io.harness.metrics.impl.CachedMetricsPublisher;
 import io.harness.serializer.JsonUtils;
 import io.harness.service.intfc.DelegateCache;
 
@@ -40,6 +41,10 @@ import com.google.common.io.CharStreams;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.List;
+/**
+ * Created by peeyushaggarwal on 8/15/16.
+ */
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.atmosphere.cache.UUIDBroadcasterCache;
 import org.atmosphere.config.service.AtmosphereHandlerService;
@@ -51,27 +56,27 @@ import org.atmosphere.cpr.AtmosphereResponse;
 import org.atmosphere.handler.AtmosphereHandlerAdapter;
 import org.atmosphere.interceptor.AtmosphereResourceLifecycleInterceptor;
 
-/**
- * Created by peeyushaggarwal on 8/15/16.
- */
 @Slf4j
+@RequiredArgsConstructor(onConstructor_ = @Inject)
 @AtmosphereHandlerService(path = "/stream/delegate/{accountId}",
     interceptors = {AtmosphereResourceLifecycleInterceptor.class}, broadcasterCache = UUIDBroadcasterCache.class,
     broadcastFilters = {DelegateEventFilter.class})
 public class DelegateStreamHandler extends AtmosphereHandlerAdapter {
   public static final Splitter SPLITTER = Splitter.on("/").omitEmptyStrings();
 
-  @Inject private AuthService authService;
-  @Inject private DelegateService delegateService;
-  @Inject private DelegateCache delegateCache;
+  private final AuthService authService;
+  private final DelegateService delegateService;
+  private final DelegateCache delegateCache;
+  private final CachedMetricsPublisher cachedMetrics;
 
   @Override
   public void onRequest(AtmosphereResource resource) throws IOException {
-    AtmosphereRequest req = resource.getRequest();
+    final AtmosphereRequest req = resource.getRequest();
+    final String websocketId = resource.uuid();
 
     // get mTLS information independent of request type
-    String agentMtlsAuthority = req.getHeader(HEADER_AGENT_MTLS_AUTHORITY);
-    boolean isConnectedUsingMtls = isAgentConnectedUsingMtls(agentMtlsAuthority);
+    final String agentMtlsAuthority = req.getHeader(HEADER_AGENT_MTLS_AUTHORITY);
+    final boolean isConnectedUsingMtls = isAgentConnectedUsingMtls(agentMtlsAuthority);
 
     if (req.getMethod().equals("GET")) {
       String accountId;
@@ -80,12 +85,15 @@ public class DelegateStreamHandler extends AtmosphereHandlerAdapter {
         List<String> pathSegments = SPLITTER.splitToList(req.getPathInfo());
         accountId = pathSegments.get(1);
         delegateId = req.getParameter("delegateId");
+        final String delegateConnectionId = req.getParameter("delegateConnectionId");
+
+        cachedMetrics.recordDelegateProcess(accountId, delegateConnectionId);
+        cachedMetrics.recordDelegateWebsocketConnection(accountId, websocketId);
 
         try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
              AutoLogContext ignore2 = new DelegateLogContext(delegateId, OVERRIDE_ERROR);
-             AutoLogContext ignore3 = new WebsocketLogContext(resource.uuid(), OVERRIDE_ERROR)) {
+             AutoLogContext ignore3 = new WebsocketLogContext(websocketId, OVERRIDE_ERROR)) {
           log.info("delegate socket connected");
-          String delegateConnectionId = req.getParameter("delegateConnectionId");
           String delegateVersion = req.getParameter("version");
 
           // These 2 will be sent by ECS delegate only
@@ -112,7 +120,7 @@ public class DelegateStreamHandler extends AtmosphereHandlerAdapter {
               try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
                    AutoLogContext ignore2 = new DelegateLogContext(delegateId, OVERRIDE_ERROR);
                    AutoLogContext ignore3 = new WebsocketLogContext(event.getResource().uuid(), OVERRIDE_ERROR)) {
-                log.info("delegate socket disconnected");
+                log.info("delegate socket disconnected {}", event);
                 Delegate delegate = delegateCache.get(accountId, delegateId, true);
                 delegateService.register(delegate);
                 delegateService.delegateDisconnected(accountId, delegateId, delegateConnectionId);
@@ -124,7 +132,7 @@ public class DelegateStreamHandler extends AtmosphereHandlerAdapter {
               try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
                    AutoLogContext ignore2 = new DelegateLogContext(delegateId, OVERRIDE_ERROR);
                    AutoLogContext ignore3 = new WebsocketLogContext(event.getResource().uuid(), OVERRIDE_ERROR)) {
-                log.info("delegate socket closed");
+                log.info("delegate socket closed {}", event);
               }
             }
           });
@@ -146,8 +154,12 @@ public class DelegateStreamHandler extends AtmosphereHandlerAdapter {
       String delegateId = req.getParameter("delegateId");
       String delegateConnectionId = req.getParameter("delegateConnectionId");
 
+      cachedMetrics.recordDelegateProcess(accountId, delegateConnectionId);
+      cachedMetrics.recordDelegateWebsocketConnection(accountId, websocketId);
+
       try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
-           AutoLogContext ignore2 = new DelegateLogContext(delegateId, OVERRIDE_ERROR)) {
+           AutoLogContext ignore2 = new DelegateLogContext(delegateId, OVERRIDE_ERROR);
+           AutoLogContext ignore3 = new WebsocketLogContext(websocketId, OVERRIDE_ERROR)) {
         DelegateParams delegateParams = JsonUtils.asObject(CharStreams.toString(req.getReader()), DelegateParams.class);
         String delegateVersion = delegateParams.getVersion();
 

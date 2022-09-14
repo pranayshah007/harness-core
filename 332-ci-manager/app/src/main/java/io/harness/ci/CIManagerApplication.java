@@ -247,6 +247,13 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
       MongoConfig mongoConfig() {
         return configuration.getHarnessCIMongo();
       }
+
+      @Provides
+      @Singleton
+      @Named("dbAliases")
+      public List<String> getDbAliases() {
+        return configuration.getDbAliases();
+      }
     });
 
     modules.add(new AbstractMongoModule() {

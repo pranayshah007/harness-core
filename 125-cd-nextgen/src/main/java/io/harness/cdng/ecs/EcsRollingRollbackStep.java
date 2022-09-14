@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.cdng.ecs;
 
 import io.harness.account.services.AccountService;
@@ -80,7 +87,7 @@ public class EcsRollingRollbackStep extends TaskExecutableWithRollbackAndRbac<Ec
 
       stepResponse = generateStepResponse(ambiance, ecsRollingRollbackResponse, stepResponseBuilder);
     } catch (Exception e) {
-      log.error("Error while processing Serverless Aws Lambda rollback response: {}", ExceptionUtils.getMessage(e), e);
+      log.error("Error while processing ecs rolling rollback response: {}", ExceptionUtils.getMessage(e), e);
       throw e;
     } finally {
       String accountName = accountService.getAccount(AmbianceUtils.getAccountId(ambiance)).getName();
@@ -162,6 +169,7 @@ public class EcsRollingRollbackStep extends TaskExecutableWithRollbackAndRbac<Ec
 
     EcsRollingRollbackConfig ecsRollingRollbackConfig =
         EcsRollingRollbackConfig.builder()
+            .serviceName(ecsRollingRollbackDataOutcome.getServiceName())
             .isFirstDeployment(ecsRollingRollbackDataOutcome.isFirstDeployment())
             .createServiceRequestBuilderString(ecsRollingRollbackDataOutcome.getCreateServiceRequestBuilderString())
             .registerScalableTargetRequestBuilderStrings(

@@ -1250,7 +1250,7 @@ public class BuilderFactory {
 
   public TimeSeriesThreshold getMetricThresholdBuilder(String metricName, String metricGroupName) {
     return TimeSeriesThreshold.builder()
-        .thresholdConfigType(ThresholdConfigType.CUSTOMER)
+        .thresholdConfigType(ThresholdConfigType.USER_DEFINED)
         .metricName(metricName)
         .metricGroupName(metricGroupName)
         .action(IGNORE)

@@ -300,7 +300,16 @@ public class ScriptSshExecutor extends AbstractScriptExecutor {
                     new BoundedInputStream(((ChannelSftp) channel).get(envVariablesFilename), CHUNK_SIZE);
                 br = new BufferedReader(new InputStreamReader(stream, Charsets.UTF_8));
                 processScriptOutputFile(envVariablesMap, br, secretEnvVariablesToCollect);
-              } catch (JSchException | SftpException | IOException e) {
+              } catch (SftpException e) {
+                log.error("[ScriptSshExecutor]: Exception occurred during reading file from SFTP server due to "
+                        + e.getMessage(),
+                    e);
+                // No such file found error
+                if (e.id == 2) {
+                  saveExecutionLogError(
+                      "Error while reading variables to process Script Output. Avoid exiting from script early: " + e);
+                }
+              } catch (JSchException | IOException e) {
                 log.error("Exception occurred during reading file from SFTP server due to " + e.getMessage(), e);
               } finally {
                 if (br != null) {
