@@ -129,4 +129,6 @@ exports_files([
     "keystore.jks",
     "newrelic.yml",
     "config.yml",
-])
+    ],
+    visibility = ["//dockerization/manager:__subpackages__"],
+)

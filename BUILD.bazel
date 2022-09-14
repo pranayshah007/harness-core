@@ -1,5 +1,6 @@
 exports_files([
     "tools/bazel/signer.sh",
+    "protocol.info"
 ])
 
 filegroup(

@@ -1,0 +1,102 @@
+load("@io_bazel_rules_docker//container:container.bzl", "container_image", "container_pull", "container_push", "container_run_and_extract")
+load("@io_bazel_rules_docker//docker/util:run.bzl", "container_run_and_commit_layer")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
+
+container_run_and_commit_layer(
+    name = "manager-saas-run",
+    image = "@ubi-java-base//image",
+    commands = [
+        "curl https://get.et.harness.io/releases/latest/nix/harness-et-agent.tar.gz --output harness-et-agent.tar.gz",
+        "tar -xzf harness-et-agent.tar.gz -C /opt/harness",
+        "rm /opt/harness/harness-et-agent.tar.gz",
+        "curl https://harness.jfrog.io/artifactory/BuildsTools/docker/apm/appd/AppServerAgent-1.8-21.11.2.33305.zip --output AppServerAgent-1.8-21.11.2.33305.zip",
+        "curl https://harness.jfrog.io/artifactory/BuildsTools/docker/apm/opentelemetry/opentelemetry-javaagent.jar --output opentelemetry-javaagent.jar",
+        "chmod 711 /opt/harness/harness AppServerAgent-1.8-21.11.2.33305.zip opentelemetry-javaagent.jar",
+    ],
+    tags = [
+            "manual",
+            "no-cache",
+            "no-ide",
+        ],
+)
+
+container_run_and_extract(
+    name = "manager-saas-classpath",
+)
+
+pkg_tar(
+    name = "scripts",
+    srcs = glob([
+        "scripts/*",
+        ]),
+    mode = "0500",
+    owner = "65534.65534",
+    package_dir = "/opt/harness",
+    tags = [
+                "manual",
+                "no-cache",
+                "no-ide",
+            ],
+)
+
+pkg_tar(
+    name = "files",
+    srcs = [
+        "//:protocol.info",
+        "//360-cg-manager:newrelic.yml",
+        "//360-cg-manager:keystore.jks",
+        "//360-cg-manager:config.yml",
+        "//400-rest/src/main/resources:redisson-jcache.yaml",
+        "//400-rest/src/main/resources:hazelcast.xml",
+#        "//dockerization/base-images/apm:inject-saas-apm-bins-into-dockerimage.sh"
+    ],
+    files = {
+        "//360-cg-manager:module_deploy.jar": "rest-capsule.jar",
+        },
+    mode = "0500",
+    owner = "65534.65534",
+    package_dir = "/opt/harness",
+    tags = [
+                "manual",
+                "no-cache",
+                "no-ide",
+            ],
+)
+
+container_image(
+    name = "manager-image",
+    base = "@ubi-java-base//image",
+    layers = [
+        ":manager-saas-run"
+        ],
+    user = "65534",
+    workdir = "/opt/harness",
+    cmd = [
+        "./run.sh",
+        ],
+    tars = [
+        ":files",
+        ":scripts",
+    ],
+    env = {
+    },
+    tags = [
+            "manual",
+            "no-cache",
+            "no-ide",
+        ],
+)
+
+container_push(
+        name = "manager-push",
+        format = "Docker",
+        image = "manager-image",
+        registry = "us.gcr.io",
+        repository = "platform-205701/harness/harness-services-bazel/manager-bazel-test",
+        tag = "latest-test",
+        tags = [
+                "manual",
+                "no-cache",
+                "no-ide",
+            ],
+)
