@@ -592,7 +592,7 @@ public class NGTemplateResource {
 
   @GET
   @Path("/templateWithInputs/{templateIdentifier}")
-  @ApiOperation(value = "Gets template along with input set yaml", nickname = "getTemplateAlongWithInputSetYaml")
+  @ApiOperation(value = "Get Template along with Input Set YAML", nickname = "getTemplateAlongWithInputSetYaml")
   @Operation(operationId = "getTemplateAlongWithInputSetYaml", summary = "Gets Template along with Input Set YAML",
       responses =
       {
@@ -632,8 +632,8 @@ public class NGTemplateResource {
 
   @POST
   @Path("/mergeTemplateInputs/")
-  @ApiOperation(value = "Gets merged template input yaml", nickname = "getsMergedTemplateInputYaml")
-  @Operation(operationId = "getsMergedTemplateInputYaml", summary = "Gets merged template input yaml",
+  @ApiOperation(value = "Get merged Template input YAML", nickname = "getsMergedTemplateInputYaml")
+  @Operation(operationId = "getsMergedTemplateInputYaml", summary = "Gets merged Template input YAML",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.

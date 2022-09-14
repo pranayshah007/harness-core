@@ -167,7 +167,13 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
         throw new InvalidRequestException("Environment " + envRef.getValue() + " not found");
       }
 
-      final NGEnvironmentConfig ngEnvironmentConfig = mergeEnvironmentInputs(environment.get().getYaml(), envInputs);
+      NGEnvironmentConfig ngEnvironmentConfig;
+      try {
+        ngEnvironmentConfig = mergeEnvironmentInputs(environment.get().getYaml(), envInputs);
+      } catch (IOException ex) {
+        throw new InvalidRequestException(
+            "Unable to read yaml for environment: " + environment.get().getIdentifier(), ex);
+      }
 
       final Optional<NGServiceOverridesEntity> ngServiceOverridesEntity =
           serviceOverrideService.get(AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
@@ -214,7 +220,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
   @Override
   public StepResponse handleChildrenResponse(
       Ambiance ambiance, ServiceStepV3Parameters stepParameters, Map<String, ResponseData> responseDataMap) {
-    ServiceSweepingOutput serviceSweepingOutput = (ServiceSweepingOutput) sweepingOutputService.resolve(
+    final ServiceSweepingOutput serviceSweepingOutput = (ServiceSweepingOutput) sweepingOutputService.resolve(
         ambiance, RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_SWEEPING_OUTPUT));
 
     NGServiceConfig ngServiceConfig = null;
@@ -234,7 +240,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
 
     StepResponse stepResponse = SdkCoreStepUtils.createStepResponseFromChildResponse(responseDataMap);
 
-    NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
+    final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
     if (StatusUtils.brokeStatuses().contains(stepResponse.getStatus())) {
       saveExecutionLog(logCallback, LogHelper.color("Failed to complete service step", LogColor.Red), LogLevel.INFO,
           CommandExecutionStatus.FAILURE);
@@ -291,8 +297,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
         serviceEntityService.get(AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
             AmbianceUtils.getProjectIdentifier(ambiance), stepParameters.getServiceRef().getValue(), false);
     if (serviceOpt.isEmpty()) {
-      throw new InvalidRequestException(
-          format("serviceOpt with identifier %s not found", stepParameters.getServiceRef()));
+      throw new InvalidRequestException(format("service with identifier %s not found", stepParameters.getServiceRef()));
     }
 
     final ServiceEntity serviceEntity = serviceOpt.get();

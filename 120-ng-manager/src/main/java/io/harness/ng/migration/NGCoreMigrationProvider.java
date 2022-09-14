@@ -35,6 +35,7 @@ public class NGCoreMigrationProvider implements MigrationProvider {
     return new ArrayList<Class<? extends MigrationDetails>>() {
       { add(NGCoreMigrationDetails.class); }
       { add(NGCoreDataMigrationDetails.class); }
+      { add(NGCoreBackgroundMigrationDetails.class); }
     };
   }
 }

@@ -122,6 +122,7 @@ import io.harness.cvng.core.services.api.DatadogService;
 import io.harness.cvng.core.services.api.DebugService;
 import io.harness.cvng.core.services.api.DeleteEntityByHandler;
 import io.harness.cvng.core.services.api.DynatraceService;
+import io.harness.cvng.core.services.api.ELKService;
 import io.harness.cvng.core.services.api.EntityDisabledTimeService;
 import io.harness.cvng.core.services.api.ExecutionLogService;
 import io.harness.cvng.core.services.api.FeatureFlagService;
@@ -169,6 +170,7 @@ import io.harness.cvng.core.services.impl.DebugServiceImpl;
 import io.harness.cvng.core.services.impl.DefaultDeleteEntityByHandler;
 import io.harness.cvng.core.services.impl.DynatraceDataCollectionInfoMapper;
 import io.harness.cvng.core.services.impl.DynatraceServiceImpl;
+import io.harness.cvng.core.services.impl.ELKServiceImpl;
 import io.harness.cvng.core.services.impl.EntityDisabledTimeServiceImpl;
 import io.harness.cvng.core.services.impl.ErrorTrackingDataCollectionInfoMapper;
 import io.harness.cvng.core.services.impl.ExecutionLogServiceImpl;
@@ -917,6 +919,7 @@ public class CVServiceModule extends AbstractModule {
     install(EnforcementClientModule.getInstance(verificationConfiguration.getNgManagerClientConfig(),
         verificationConfiguration.getNgManagerServiceSecret(), CV_NEXT_GEN.getServiceId(),
         verificationConfiguration.getEnforcementClientConfiguration()));
+    bind(ELKService.class).to(ELKServiceImpl.class);
   }
 
   private void bindChangeSourceUpdatedEntity() {

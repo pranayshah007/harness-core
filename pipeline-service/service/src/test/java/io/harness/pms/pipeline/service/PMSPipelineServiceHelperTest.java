@@ -314,7 +314,7 @@ public class PMSPipelineServiceHelperTest extends CategoryTest {
     Set<ExpansionResponseBatch> dummyResponseSet = Collections.singleton(dummyResponseBatch);
     doReturn(dummyResponseSet).when(jsonExpander).fetchExpansionResponses(dummyRequestSet, expansionRequestMetadata);
     pmsPipelineServiceHelper.fetchExpandedPipelineJSONFromYaml(
-        accountIdentifier, orgIdentifier, projectIdentifier, dummyYaml);
+        accountIdentifier, orgIdentifier, projectIdentifier, dummyYaml, false);
     verify(pmsFeatureFlagService, times(1)).isEnabled(accountIdentifier, FeatureName.OPA_PIPELINE_GOVERNANCE);
     verify(gitSyncHelper, times(1)).getGitSyncBranchContextBytesThreadLocal();
     verify(expansionRequestsExtractor, times(1)).fetchExpansionRequests(dummyYaml);
@@ -322,7 +322,7 @@ public class PMSPipelineServiceHelperTest extends CategoryTest {
 
     doReturn(false).when(pmsFeatureFlagService).isEnabled(accountIdentifier, FeatureName.OPA_PIPELINE_GOVERNANCE);
     String noExp = pmsPipelineServiceHelper.fetchExpandedPipelineJSONFromYaml(
-        accountIdentifier, orgIdentifier, projectIdentifier, dummyYaml);
+        accountIdentifier, orgIdentifier, projectIdentifier, dummyYaml, false);
     assertThat(noExp).isEqualTo(dummyYaml);
     verify(pmsFeatureFlagService, times(2)).isEnabled(accountIdentifier, FeatureName.OPA_PIPELINE_GOVERNANCE);
     verify(gitSyncHelper, times(1)).getGitSyncBranchContextBytesThreadLocal();

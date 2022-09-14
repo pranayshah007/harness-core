@@ -89,7 +89,7 @@ public class WaitNotifyEngine {
     return waitForAllOn(publisherName, callback, null, list, timeout);
   }
 
-  private String waitForAllOn(String publisherName, NotifyCallback callback, ProgressCallback progressCallback,
+  public String waitForAllOn(String publisherName, NotifyCallback callback, ProgressCallback progressCallback,
       List<String> list, Duration timeout) {
     final WaitInstanceBuilder waitInstanceBuilder = WaitInstance.builder()
                                                         .uuid(generateUuid())

@@ -72,6 +72,8 @@ public class K8sCanaryDeleteStepTest extends CategoryTest {
 
   private final Ambiance ambiance = Ambiance.newBuilder().build();
   private final StepInputPackage stepInputPackage = StepInputPackage.builder().build();
+  private final String canaryStepFqn = "canaryStep";
+  private final String canaryDeleteStepFqn = "canaryDeleteStep";
   private String releaseName = "test-release-name";
 
   private final Ambiance rollback = Ambiance.newBuilder()
@@ -92,23 +94,28 @@ public class K8sCanaryDeleteStepTest extends CategoryTest {
     doReturn(releaseName).when(cdStepHelper).getReleaseName(rollback, infrastructureOutcome);
     doReturn(OptionalSweepingOutput.builder().found(false).build())
         .when(executionSweepingOutputService)
-        .resolveOptional(
-            ambiance, RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.K8S_CANARY_OUTCOME));
+        .resolveOptional(ambiance,
+            RefObjectUtils.getSweepingOutputRefObject(
+                canaryStepFqn + "." + OutcomeExpressionConstants.K8S_CANARY_OUTCOME));
     doReturn(OptionalSweepingOutput.builder().found(false).build())
         .when(executionSweepingOutputService)
-        .resolveOptional(ambiance, RefObjectUtils.getSweepingOutputRefObject(K8sCanaryExecutionOutput.OUTPUT_NAME));
+        .resolveOptional(ambiance,
+            RefObjectUtils.getSweepingOutputRefObject(canaryStepFqn + "." + K8sCanaryExecutionOutput.OUTPUT_NAME));
 
     doReturn(OptionalSweepingOutput.builder().found(false).build())
         .when(executionSweepingOutputService)
-        .resolveOptional(rollback, RefObjectUtils.getSweepingOutputRefObject(K8sCanaryExecutionOutput.OUTPUT_NAME));
+        .resolveOptional(rollback,
+            RefObjectUtils.getSweepingOutputRefObject(canaryStepFqn + "." + K8sCanaryExecutionOutput.OUTPUT_NAME));
     doReturn(OptionalSweepingOutput.builder().found(false).build())
         .when(executionSweepingOutputService)
-        .resolveOptional(
-            rollback, RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.K8S_CANARY_OUTCOME));
+        .resolveOptional(rollback,
+            RefObjectUtils.getSweepingOutputRefObject(
+                canaryStepFqn + "." + OutcomeExpressionConstants.K8S_CANARY_OUTCOME));
     doReturn(OptionalSweepingOutput.builder().found(false).build())
         .when(executionSweepingOutputService)
-        .resolveOptional(
-            rollback, RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.K8S_CANARY_DELETE_OUTCOME));
+        .resolveOptional(rollback,
+            RefObjectUtils.getSweepingOutputRefObject(
+                canaryDeleteStepFqn + "." + OutcomeExpressionConstants.K8S_CANARY_DELETE_OUTCOME));
   }
 
   @Test
@@ -117,6 +124,8 @@ public class K8sCanaryDeleteStepTest extends CategoryTest {
   public void testObtainTask() {
     final String canaryWorkload = "default/Deployment/canary-deployment";
     final K8sCanaryDeleteStepParameters stepParameters = K8sCanaryDeleteStepParameters.infoBuilder().build();
+    stepParameters.setCanaryStepFqn(canaryStepFqn);
+    stepParameters.setCanaryDeleteStepFqn(canaryDeleteStepFqn);
     final StepElementParameters stepElementParameters =
         StepElementParameters.builder().spec(stepParameters).timeout(ParameterField.createValueField("10m")).build();
 
@@ -136,8 +145,9 @@ public class K8sCanaryDeleteStepTest extends CategoryTest {
         .queueK8sTask(eq(stepElementParameters), any(), eq(ambiance), eq(expectedPassThroughData));
     doReturn(OptionalSweepingOutput.builder().found(true).output(k8sCanaryOutcome).build())
         .when(executionSweepingOutputService)
-        .resolveOptional(
-            ambiance, RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.K8S_CANARY_OUTCOME));
+        .resolveOptional(ambiance,
+            RefObjectUtils.getSweepingOutputRefObject(
+                canaryStepFqn + "." + OutcomeExpressionConstants.K8S_CANARY_OUTCOME));
 
     canaryDeleteStep.obtainTask(ambiance, stepElementParameters, stepInputPackage);
     ArgumentCaptor<K8sCanaryDeleteRequest> requestCaptor = ArgumentCaptor.forClass(K8sCanaryDeleteRequest.class);
@@ -198,19 +208,25 @@ public class K8sCanaryDeleteStepTest extends CategoryTest {
   @Owner(developers = ABOSII)
   @Category(UnitTests.class)
   public void testSkipRollbackCanaryWorkloadNotDeployed() {
-    final StepElementParameters stepElementParameters =
-        StepElementParameters.builder().spec(K8sCanaryDeleteStepParameters.infoBuilder().build()).build();
+    final StepElementParameters stepElementParameters = StepElementParameters.builder()
+                                                            .spec(K8sCanaryDeleteStepParameters.infoBuilder()
+                                                                      .canaryStepFqn(canaryStepFqn)
+                                                                      .canaryDeleteStepFqn(canaryDeleteStepFqn)
+                                                                      .build())
+                                                            .build();
 
     doReturn(OptionalSweepingOutput.builder().found(true).output(K8sCanaryExecutionOutput.builder().build()).build())
         .when(executionSweepingOutputService)
-        .resolveOptional(rollback, RefObjectUtils.getSweepingOutputRefObject(K8sCanaryExecutionOutput.OUTPUT_NAME));
+        .resolveOptional(rollback,
+            RefObjectUtils.getSweepingOutputRefObject(canaryStepFqn + "." + K8sCanaryExecutionOutput.OUTPUT_NAME));
     doReturn(OptionalSweepingOutput.builder()
                  .found(true)
                  .output(K8sCanaryOutcome.builder().canaryWorkloadDeployed(false).build())
                  .build())
         .when(executionSweepingOutputService)
-        .resolveOptional(
-            rollback, RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.K8S_CANARY_OUTCOME));
+        .resolveOptional(rollback,
+            RefObjectUtils.getSweepingOutputRefObject(
+                canaryStepFqn + "." + OutcomeExpressionConstants.K8S_CANARY_OUTCOME));
 
     TaskRequest result = canaryDeleteStep.obtainTask(rollback, stepElementParameters, stepInputPackage);
 
@@ -223,7 +239,10 @@ public class K8sCanaryDeleteStepTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testSkipRollbackCanaryWorkloadAlreadyDeleted() {
     final StepElementParameters stepElementParameters = StepElementParameters.builder()
-                                                            .spec(K8sCanaryDeleteStepParameters.infoBuilder().build())
+                                                            .spec(K8sCanaryDeleteStepParameters.infoBuilder()
+                                                                      .canaryStepFqn(canaryStepFqn)
+                                                                      .canaryDeleteStepFqn(canaryDeleteStepFqn)
+                                                                      .build())
                                                             .timeout(ParameterField.createValueField("10m"))
                                                             .build();
 
@@ -233,13 +252,15 @@ public class K8sCanaryDeleteStepTest extends CategoryTest {
             .output(K8sCanaryOutcome.builder().canaryWorkloadDeployed(true).canaryWorkload("test-workload").build())
             .build())
         .when(executionSweepingOutputService)
-        .resolveOptional(
-            rollback, RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.K8S_CANARY_OUTCOME));
+        .resolveOptional(rollback,
+            RefObjectUtils.getSweepingOutputRefObject(
+                canaryStepFqn + "." + OutcomeExpressionConstants.K8S_CANARY_OUTCOME));
 
     doReturn(OptionalSweepingOutput.builder().found(true).build())
         .when(executionSweepingOutputService)
-        .resolveOptional(
-            rollback, RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.K8S_CANARY_DELETE_OUTCOME));
+        .resolveOptional(rollback,
+            RefObjectUtils.getSweepingOutputRefObject(
+                canaryDeleteStepFqn + "." + OutcomeExpressionConstants.K8S_CANARY_DELETE_OUTCOME));
 
     TaskRequest result = canaryDeleteStep.obtainTask(rollback, stepElementParameters, stepInputPackage);
 
@@ -251,8 +272,12 @@ public class K8sCanaryDeleteStepTest extends CategoryTest {
   @Owner(developers = ABOSII)
   @Category(UnitTests.class)
   public void testObtainTaskNoCanaryWorkloadDeployed() {
-    final StepElementParameters stepElementParameters =
-        StepElementParameters.builder().spec(K8sCanaryDeleteStepParameters.infoBuilder().build()).build();
+    final StepElementParameters stepElementParameters = StepElementParameters.builder()
+                                                            .spec(K8sCanaryDeleteStepParameters.infoBuilder()
+                                                                      .canaryStepFqn(canaryStepFqn)
+                                                                      .canaryDeleteStepFqn(canaryDeleteStepFqn)
+                                                                      .build())
+                                                            .build();
 
     assertThatThrownBy(() -> canaryDeleteStep.obtainTask(ambiance, stepElementParameters, stepInputPackage))
         .hasMessageContaining(K8S_CANARY_STEP_MISSING);
@@ -262,15 +287,20 @@ public class K8sCanaryDeleteStepTest extends CategoryTest {
   @Owner(developers = ABOSII)
   @Category(UnitTests.class)
   public void testObtainTaskNoCanaryWorkloadDeployedInRollback() {
-    final StepElementParameters stepElementParameters =
-        StepElementParameters.builder().spec(K8sCanaryDeleteStepParameters.infoBuilder().build()).build();
+    final StepElementParameters stepElementParameters = StepElementParameters.builder()
+                                                            .spec(K8sCanaryDeleteStepParameters.infoBuilder()
+                                                                      .canaryStepFqn(canaryStepFqn)
+                                                                      .canaryDeleteStepFqn(canaryDeleteStepFqn)
+                                                                      .build())
+                                                            .build();
     doReturn(OptionalSweepingOutput.builder()
                  .found(true)
                  .output(K8sCanaryOutcome.builder().canaryWorkloadDeployed(false).build())
                  .build())
         .when(executionSweepingOutputService)
-        .resolveOptional(
-            rollback, RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.K8S_CANARY_OUTCOME));
+        .resolveOptional(rollback,
+            RefObjectUtils.getSweepingOutputRefObject(
+                canaryStepFqn + "." + OutcomeExpressionConstants.K8S_CANARY_OUTCOME));
 
     TaskRequest result = canaryDeleteStep.obtainTask(rollback, stepElementParameters, stepInputPackage);
 
@@ -283,7 +313,10 @@ public class K8sCanaryDeleteStepTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testObtainTaskUsingK8sCanaryReleaseName() {
     final StepElementParameters stepElementParameters = StepElementParameters.builder()
-                                                            .spec(K8sCanaryDeleteStepParameters.infoBuilder().build())
+                                                            .spec(K8sCanaryDeleteStepParameters.infoBuilder()
+                                                                      .canaryStepFqn(canaryStepFqn)
+                                                                      .canaryDeleteStepFqn(canaryDeleteStepFqn)
+                                                                      .build())
                                                             .timeout(ParameterField.createValueField("10m"))
                                                             .build();
     final K8sExecutionPassThroughData expectedPassThroughData =
@@ -297,7 +330,8 @@ public class K8sCanaryDeleteStepTest extends CategoryTest {
 
     doReturn(OptionalSweepingOutput.builder().found(true).output(K8sCanaryExecutionOutput.builder().build()).build())
         .when(executionSweepingOutputService)
-        .resolveOptional(rollback, RefObjectUtils.getSweepingOutputRefObject(K8sCanaryExecutionOutput.OUTPUT_NAME));
+        .resolveOptional(rollback,
+            RefObjectUtils.getSweepingOutputRefObject(canaryStepFqn + "." + K8sCanaryExecutionOutput.OUTPUT_NAME));
 
     canaryDeleteStep.obtainTask(rollback, stepElementParameters, stepInputPackage);
     ArgumentCaptor<K8sCanaryDeleteRequest> requestCaptor = ArgumentCaptor.forClass(K8sCanaryDeleteRequest.class);

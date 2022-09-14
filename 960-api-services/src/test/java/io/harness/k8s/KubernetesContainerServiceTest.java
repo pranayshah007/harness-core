@@ -158,7 +158,7 @@ public class KubernetesContainerServiceTest extends CategoryTest {
     doReturn(mockGetCommand).when(mockClient).get();
     doReturn(new ProcessResult(1, null))
         .when(mockGetCommand)
-        .execute(anyString(), any(OutputStream.class), any(OutputStream.class), anyBoolean());
+        .execute(anyString(), any(), any(OutputStream.class), anyBoolean());
     KubernetesConfig kubernetesConfig = KubernetesConfig.builder().namespace("harness").build();
 
     assertThatExceptionOfType(InvalidRequestException.class)

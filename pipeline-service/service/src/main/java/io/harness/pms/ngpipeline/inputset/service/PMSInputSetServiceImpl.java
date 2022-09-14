@@ -412,7 +412,6 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
   public InputSetEntity importInputSetFromRemote(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String pipelineIdentifier, String inputSetIdentifier,
       InputSetImportRequestDTO inputSetImportRequestDTO, boolean isForceImport) {
-    gitAwareEntityHelper.checkRootFolder();
     String repoUrl = getRepoUrlAndCheckForFileUniqueness(
         accountIdentifier, orgIdentifier, projectIdentifier, inputSetIdentifier, isForceImport);
     String importedInputSetYAML =

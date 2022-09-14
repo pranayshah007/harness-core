@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.cdng.artifact.steps;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -20,6 +27,7 @@ import io.harness.cdng.service.steps.ServiceStepsHelper;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.delegate.TaskSelector;
+import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.task.artifacts.ArtifactSourceDelegateRequest;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.ArtifactTaskType;
@@ -149,6 +157,17 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
       Ambiance ambiance, EmptyStepParameters stepParameters, Map<String, ResponseData> responseDataMap) {
     if (isEmpty(responseDataMap)) {
       return StepResponse.builder().status(Status.SKIPPED).build();
+    }
+
+    final List<ErrorNotifyResponseData> failedResponses = responseDataMap.values()
+                                                              .stream()
+                                                              .filter(ErrorNotifyResponseData.class ::isInstance)
+                                                              .map(ErrorNotifyResponseData.class ::cast)
+                                                              .collect(Collectors.toList());
+
+    if (isNotEmpty(failedResponses)) {
+      log.error("Error notify response found for artifacts step " + failedResponses);
+      throw new ArtifactServerException("Failed to fetch artifacts. " + failedResponses.get(0).getErrorMessage());
     }
 
     OptionalSweepingOutput outputOptional =

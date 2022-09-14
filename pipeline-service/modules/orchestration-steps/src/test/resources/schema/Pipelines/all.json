@@ -2083,39 +2083,6 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "ParameterFieldTimeout": {
-      "type": "object",
-      "properties": {
-        "defaultValue": {
-          "$ref": "#/definitions/Timeout"
-        },
-        "executionInput": {
-          "type": "boolean"
-        },
-        "expression": {
-          "type": "boolean"
-        },
-        "expressionValue": {
-          "type": "string"
-        },
-        "inputSetValidator": {
-          "$ref": "#/definitions/InputSetValidator"
-        },
-        "jsonResponseField": {
-          "type": "boolean"
-        },
-        "responseField": {
-          "type": "string"
-        },
-        "typeString": {
-          "type": "boolean"
-        },
-        "value": {
-          "$ref": "#/definitions/Timeout"
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
     "PatchInstruction": {
       "type": "object",
       "discriminator": "type",
@@ -3989,22 +3956,12 @@
         "templateRef": {
           "type": "string"
         },
+        "templateVariables": {
+          "$ref": "#/definitions/JsonNode"
+        },
         "versionLabel": {
           "type": "string",
           "pattern": "^[0-9a-zA-Z][^\\s]{0,63}$"
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "Timeout": {
-      "type": "object",
-      "properties": {
-        "timeoutInMillis": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "timeoutString": {
-          "type": "string"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -4105,7 +4062,8 @@
           "type": "object",
           "properties": {
             "duration": {
-              "$ref": "#/definitions/ParameterFieldTimeout"
+              "type": "string",
+              "pattern": "^(([1-9])+\\d+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|(<\\+input>.*)|(.*<\\+.*>.*)|(^$))$"
             },
             "metadata": {
               "type": "string"

@@ -66,6 +66,7 @@ import lombok.extern.slf4j.Slf4j;
 public class PodWatcher implements ResourceEventHandler<V1Pod> {
   private static final TypeRegistry TYPE_REGISTRY =
       TypeRegistry.newBuilder().add(PodInfo.getDescriptor()).add(PodEvent.getDescriptor()).build();
+  public static final String RUNNING_PHASE = "Running";
 
   private final String clusterId;
   private final EventPublisher eventPublisher;
@@ -180,7 +181,7 @@ public class PodWatcher implements ResourceEventHandler<V1Pod> {
     String uid = pod.getMetadata().getUid();
     V1PodCondition podScheduledCondition = getPodScheduledCondition(pod);
 
-    if (podScheduledCondition != null && !publishedPods.contains(uid)) {
+    if (podScheduledCondition != null && !publishedPods.contains(uid) && isPodInRunningPhase(pod)) {
       Timestamp creationTimestamp =
           HTimestamps.fromMillis(pod.getMetadata().getCreationTimestamp().toInstant().toEpochMilli());
 
@@ -230,6 +231,11 @@ public class PodWatcher implements ResourceEventHandler<V1Pod> {
       }
       publishedPods.remove(uid);
     }
+  }
+
+  private static boolean isPodInRunningPhase(V1Pod pod) {
+    V1PodStatus status = pod.getStatus();
+    return status != null && status.getPhase() != null && status.getPhase().equalsIgnoreCase(RUNNING_PHASE);
   }
 
   private Map<String, String> getNamespaceLabels(String namespaceName) {

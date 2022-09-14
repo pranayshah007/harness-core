@@ -30,6 +30,8 @@ public interface InstanceService {
 
   void deleteById(String id);
 
+  void softDeleteById(String id);
+
   void deleteAll(List<InstanceDTO> instanceDTOList);
 
   Optional<InstanceDTO> delete(@NotEmpty String instanceKey, @NotEmpty String accountIdentifier,

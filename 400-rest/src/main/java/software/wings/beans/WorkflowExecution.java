@@ -30,6 +30,7 @@ import io.harness.beans.WorkflowType;
 import io.harness.dataretention.AccountDataRetentionEntity;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.CompoundMongoIndex;
+import io.harness.mongo.index.CompoundTextMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdSparseIndex;
 import io.harness.mongo.index.FdTtlIndex;
@@ -236,6 +237,13 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
                  .name("appId_createdAt")
                  .field(WorkflowExecutionKeys.appId)
                  .descSortField(WorkflowExecutionKeys.createdAt)
+                 .build())
+        .add(CompoundTextMongoIndex.builder()
+                 .name("accountId_cdPageCandidate_createdAt_keywords")
+                 .field(WorkflowExecutionKeys.accountId)
+                 .field(WorkflowExecutionKeys.cdPageCandidate)
+                 .descSortField(WorkflowExecutionKeys.createdAt)
+                 .textField(WorkflowExecutionKeys.keywords)
                  .build())
         .build();
   }

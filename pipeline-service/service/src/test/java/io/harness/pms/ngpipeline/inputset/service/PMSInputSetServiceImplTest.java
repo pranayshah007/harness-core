@@ -19,7 +19,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
@@ -401,7 +400,6 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
     InputSetImportRequestDTO inputSetImportRequest =
         InputSetImportRequestDTO.builder().inputSetName(name).inputSetDescription(description).build();
     doReturn(inputSetEntity).when(inputSetRepository).saveForImportedYAML(inBetweenEntity);
-    doNothing().when(gitAwareEntityHelper).checkRootFolder();
     doReturn("repoUrl")
         .when(pmsInputSetServiceMock)
         .getRepoUrlAndCheckForFileUniqueness(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, false);

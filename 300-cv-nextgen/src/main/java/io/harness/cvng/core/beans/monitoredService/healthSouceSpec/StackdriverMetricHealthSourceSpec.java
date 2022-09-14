@@ -140,7 +140,7 @@ public class StackdriverMetricHealthSourceSpec extends MetricHealthSourceSpec {
                                          .monitoredServiceIdentifier(monitoredServiceIdentifier)
                                          .build();
       cvConfig.populateFromMetricDefinitions(stackdriverDefinitions, key.getCategory());
-      cvConfig.addMetricThresholds(metricPacks);
+      cvConfig.addMetricThresholds(metricPacks, metricDefinitions);
       cvConfigs.add(cvConfig);
     });
 

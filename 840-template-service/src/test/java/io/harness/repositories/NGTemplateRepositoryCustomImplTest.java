@@ -33,6 +33,7 @@ import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.persistance.GitAwarePersistence;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.manage.GlobalContextManager;
+import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.outbox.api.OutboxService;
 import io.harness.rule.Owner;
 import io.harness.template.entity.TemplateEntity;
@@ -156,7 +157,7 @@ public class NGTemplateRepositoryCustomImplTest {
                                         .orgIdentifier(orgIdentifier)
                                         .projectIdentifier(projectIdentifier)
                                         .identifier(templateId)
-
+                                        .templateEntityType(TemplateEntityType.STEP_TEMPLATE)
                                         .yaml(pipelineYaml)
                                         .build();
     TemplateEntity templateToSaveWithStoreType = templateToSave.withStoreType(StoreType.REMOTE)
