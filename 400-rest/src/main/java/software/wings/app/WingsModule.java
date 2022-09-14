@@ -241,6 +241,8 @@ import io.harness.time.TimeModule;
 import io.harness.timescaledb.TimeScaleDBConfig;
 import io.harness.timescaledb.TimeScaleDBService;
 import io.harness.timescaledb.TimeScaleDBServiceImpl;
+import io.harness.timescaledb.retention.RetentionManager;
+import io.harness.timescaledb.retention.RetentionManagerImpl;
 import io.harness.usermembership.UserMembershipClientModule;
 import io.harness.version.VersionModule;
 
@@ -825,6 +827,7 @@ import org.jetbrains.annotations.NotNull;
 @TargetModule(_360_CG_MANAGER)
 public class WingsModule extends AbstractModule implements ServersModule {
   private static final int OPEN_CENSUS_EXPORT_INTERVAL_MINUTES = 5;
+  private static final String RETENTION_PERIOD_FORMAT = "%s months";
   private final String hashicorpvault = "hashicorpvault";
   private final MainConfiguration configuration;
   private final StartupMode startupMode;
@@ -1359,6 +1362,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     try {
       bind(TimeScaleDBService.class)
           .toConstructor(TimeScaleDBServiceImpl.class.getConstructor(TimeScaleDBConfig.class));
+      bind(RetentionManager.class).to(RetentionManagerImpl.class);
     } catch (NoSuchMethodException e) {
       log.error("TimeScaleDbServiceImpl Initialization Failed in due to missing constructor", e);
     }
@@ -1766,5 +1770,12 @@ public class WingsModule extends AbstractModule implements ServersModule {
   @Singleton
   public ObjectMapper getYamlSchemaObjectMapperWithoutNamed() {
     return Jackson.newObjectMapper();
+  }
+
+  @Provides
+  @Singleton
+  @Named("cdTsDbRetentionPeriodMonths")
+  public String cdTsDbRetentionPeriodMonths() {
+    return String.format(RETENTION_PERIOD_FORMAT, configuration.getCdTsDbRetentionPeriodMonths());
   }
 }

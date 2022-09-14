@@ -716,3 +716,5 @@ ldapSyncJobConfig:
   defaultCronExpression: "0 0/15 * 1/1 * ? *"
 
 useGlobalKMSAsBaseAlgo: false
+
+cdTsDbRetentionPeriodMonths: 7
