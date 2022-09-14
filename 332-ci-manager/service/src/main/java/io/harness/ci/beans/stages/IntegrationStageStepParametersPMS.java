@@ -86,10 +86,10 @@ public class IntegrationStageStepParametersPMS implements SpecParameters, StepPa
       if (useFromStageInfraYaml.getUseFromStage() != null) {
         YamlField yamlField = ctx.getCurrentField();
         String identifier = useFromStageInfraYaml.getUseFromStage();
-        IntegrationStageConfig integrationStage = getIntegrationStageConfig(yamlField, identifier);
-        infrastructure = integrationStage.getInfrastructure();
+        IntegrationStageConfig useFromStage = getIntegrationStageConfig(yamlField, identifier);
+        infrastructure = useFromStage.getInfrastructure();
         if (infrastructure == null) {
-          infrastructure = getRuntimeInfrastructure(integrationStageConfig);
+          infrastructure = getRuntimeInfrastructure(useFromStage);
         }
       }
     }
