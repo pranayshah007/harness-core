@@ -55,6 +55,11 @@ public class PerspectiveAnomalyServiceImpl implements PerspectiveAnomalyService 
         date);
   }
 
+  @Override
+  public void updateAnomalySentStatus(@NonNull String accountId, String anomalyId, boolean notificationSentStatus) {
+    anomalyDao.updateAnomalyNotificationSentStatus(accountId, anomalyId, notificationSentStatus);
+  }
+
   private List<AnomalyData> listAnomalies(
       @NonNull String accountIdentifier, AnomalyQueryDTO anomalyQuery, Instant date) {
     if (anomalyQuery == null) {

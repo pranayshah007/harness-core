@@ -117,4 +117,13 @@ public class AnomalyDao {
         .where(ANOMALIES.ACCOUNTID.eq(accountId).and(ANOMALIES.ID.eq(anomalyId)))
         .execute();
   }
+
+  @Nullable
+  @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)
+  public void updateAnomalyNotificationSentStatus(@NonNull String accountId, String anomalyId, boolean notificationSentStatus) {
+    dslContext.update(ANOMALIES)
+        .set(ANOMALIES.NOTIFICATIONSENT, notificationSentStatus)
+        .where(ANOMALIES.ACCOUNTID.eq(accountId).and(ANOMALIES.ID.eq(anomalyId)))
+        .execute();
+  }
 }
