@@ -50,7 +50,6 @@ public class CreatePRBaseStepInfo {
   // TODO: Remove this field
   ParameterField<Map<String, String>> stringMap;
 
-//  TODO GABRIEL
   CreatePRStepUpdateConfigScriptWrapper source;
 
   @YamlSchemaTypes({runtime})
@@ -59,7 +58,8 @@ public class CreatePRBaseStepInfo {
 
   @YamlSchemaTypes({string})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  @Expression(ALLOW_SECRETS) ParameterField<String> script;
+  @Expression(ALLOW_SECRETS)
+  ParameterField<String> script;
 
   List<String> outputVars;
   List<String> secretOutputVars;

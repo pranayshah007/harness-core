@@ -22,7 +22,9 @@ public class CreatePRStepParams extends CreatePRBaseStepInfo implements GitOpsSp
   @Builder(builderMethodName = "infoBuilder")
   public CreatePRStepParams(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
       ParameterField<Map<String, String>> stringMap, CreatePRStepUpdateConfigScriptWrapper updateConfigScriptWrapper,
-      ShellType shellType, ParameterField<Boolean> overrideConfig, ParameterField<String> script, List<String> outputVars, List<String> secretOutputVars, ScriptType scriptType) {
-    super(shellType, overrideConfig, stringMap, updateConfigScriptWrapper, delegateSelectors, script, outputVars, secretOutputVars, scriptType);
+      ShellType shellType, ParameterField<Boolean> overrideConfig, ParameterField<String> script,
+      List<String> outputVars, List<String> secretOutputVars, ScriptType scriptType) {
+    super(shellType, overrideConfig, stringMap, updateConfigScriptWrapper, delegateSelectors, script, outputVars,
+        secretOutputVars, scriptType);
   }
 }

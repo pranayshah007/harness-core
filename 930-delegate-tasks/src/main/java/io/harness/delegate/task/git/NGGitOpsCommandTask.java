@@ -8,7 +8,6 @@
 package io.harness.delegate.task.git;
 import static io.harness.annotations.dev.HarnessTeam.GITOPS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.git.model.ChangeType.MODIFY;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
@@ -29,8 +28,6 @@ import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.connector.ConnectorType;
-import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
-import io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
@@ -46,14 +43,13 @@ import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
-import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.gitapi.client.impl.AzureRepoApiClient;
 import io.harness.delegate.task.gitapi.client.impl.GithubApiClient;
 import io.harness.delegate.task.gitapi.client.impl.GitlabApiClient;
-import io.harness.delegate.task.k8s.GcpK8sInfraDelegateConfig;
-import io.harness.delegate.task.shell.*;
+import io.harness.delegate.task.shell.ShellExecutorFactoryNG;
+import io.harness.delegate.task.shell.ShellScriptTaskResponseNG;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.git.model.CommitAndPushRequest;
@@ -61,8 +57,6 @@ import io.harness.git.model.CommitAndPushResult;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.git.model.GitFile;
 import io.harness.git.model.GitFileChange;
-import io.harness.k8s.K8sCommandUnitConstants;
-import io.harness.k8s.K8sConstants;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -71,7 +65,11 @@ import io.harness.product.ci.scm.proto.CreateBranchResponse;
 import io.harness.product.ci.scm.proto.CreatePRResponse;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
-import io.harness.shell.*;
+import io.harness.shell.ExecuteCommandResponse;
+import io.harness.shell.ScriptProcessExecutor;
+import io.harness.shell.ScriptType;
+import io.harness.shell.ShellExecutorConfig;
+import io.harness.shell.SshSessionConfig;
 
 import software.wings.beans.LogColor;
 import software.wings.beans.LogWeight;
@@ -88,7 +86,12 @@ import com.google.gson.GsonBuilder;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.nio.file.NoSuchFileException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
@@ -153,26 +156,27 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
     }
   }
 
-  private ShellScriptTaskResponseNG executeShellScript(NGGitOpsTaskParams taskParams, CommandUnitsProgress commandUnitsProgress) {
+  private ShellScriptTaskResponseNG executeShellScript(
+      NGGitOpsTaskParams taskParams, CommandUnitsProgress commandUnitsProgress) {
     try {
       ShellExecutorConfig shellExecutorConfig = getShellExecutorConfig(taskParams);
       ScriptProcessExecutor executor =
-              shellExecutorFactory.getExecutor(shellExecutorConfig, getLogStreamingTaskClient(), commandUnitsProgress);
+          shellExecutorFactory.getExecutor(shellExecutorConfig, getLogStreamingTaskClient(), commandUnitsProgress);
       ExecuteCommandResponse executeCommandResponse = executor.executeCommandString(
-              taskParams.getScript(), taskParams.getOutputVars(), taskParams.getSecretOutputVars(), null);
+          taskParams.getScript(), taskParams.getOutputVars(), taskParams.getSecretOutputVars(), null);
       return ShellScriptTaskResponseNG.builder()
-              .executeCommandResponse(executeCommandResponse)
-              .status(executeCommandResponse.getStatus())
-              .errorMessage(getErrorMessage(executeCommandResponse.getStatus()))
-              .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
-              .build();
-    } catch(Exception e) {
+          .executeCommandResponse(executeCommandResponse)
+          .status(executeCommandResponse.getStatus())
+          .errorMessage(getErrorMessage(executeCommandResponse.getStatus()))
+          .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
+          .build();
+    } catch (Exception e) {
       log.error("Bash Script Failed to execute.", e);
       return ShellScriptTaskResponseNG.builder()
-              .status(CommandExecutionStatus.FAILURE)
-              .errorMessage("Bash Script Failed to execute. Reason: " + e.getMessage())
-              .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
-              .build();
+          .status(CommandExecutionStatus.FAILURE)
+          .errorMessage("Bash Script Failed to execute. Reason: " + e.getMessage())
+          .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
+          .build();
     }
   }
 
@@ -193,13 +197,13 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
   }
   public ShellExecutorConfig getShellExecutorConfig(NGGitOpsTaskParams taskParameters) {
     return ShellExecutorConfig.builder()
-            .accountId(taskParameters.getAccountId())
-            .executionId(taskParameters.getActivityId())
-            .commandUnitName(COMMAND_UNIT)
-            .workingDirectory(COMMAND_PATH)
-            .environment(new HashMap<>())
-            .scriptType(ScriptType.BASH)
-            .build();
+        .accountId(taskParameters.getAccountId())
+        .executionId(taskParameters.getActivityId())
+        .commandUnitName(COMMAND_UNIT)
+        .workingDirectory(COMMAND_PATH)
+        .environment(new HashMap<>())
+        .scriptType(ScriptType.BASH)
+        .build();
   }
 
   public DelegateResponseData handleMergePR(NGGitOpsTaskParams gitOpsTaskParams) {
@@ -297,7 +301,8 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
     try {
       log.info("Running Create PR Task for activityId {}", gitOpsTaskParams.getActivityId());
       executeShellScript(gitOpsTaskParams, commandUnitsProgress);
-      logCallback = markDoneAndStartNew(this.getLogStreamingTaskClient().obtainLogCallback(COMMAND_UNIT), FetchFiles, commandUnitsProgress);
+      logCallback = markDoneAndStartNew(
+          this.getLogStreamingTaskClient().obtainLogCallback(COMMAND_UNIT), FetchFiles, commandUnitsProgress);
 
       FetchFilesResult fetchFilesResult = getFiles(gitOpsTaskParams, commandUnitsProgress);
       List<GitFile> fetchFilesResultFiles = fetchFilesResult.getFiles();
@@ -311,7 +316,7 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
       String baseBranch = gitOpsTaskParams.getGitFetchFilesConfig().getGitStoreDelegateConfig().getBranch();
       String newBranch = baseBranch + "_" + RandomStringUtils.randomAlphabetic(12);
       ScmConnector scmConnector =
-              gitOpsTaskParams.getGitFetchFilesConfig().getGitStoreDelegateConfig().getGitConfigDTO();
+          gitOpsTaskParams.getGitFetchFilesConfig().getGitStoreDelegateConfig().getGitConfigDTO();
 
       createNewBranch(scmConnector, newBranch, baseBranch);
       CommitAndPushResult gitCommitAndPushResult = commit(gitOpsTaskParams, fetchFilesResult, COMMIT_MSG, newBranch);
@@ -319,7 +324,7 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
       List<GitFileChange> files = gitCommitAndPushResult.getFilesCommittedToGit();
       if (files == null || isEmpty(files)) {
         logCallback.saveExecutionLog(
-                "No files were committed. Hence not creating a pull request.", ERROR, CommandExecutionStatus.FAILURE);
+            "No files were committed. Hence not creating a pull request.", ERROR, CommandExecutionStatus.FAILURE);
         throw new InvalidRequestException("No files were committed. Hence not creating a pull request.");
       }
 
@@ -331,7 +336,7 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
       logCallback = markDoneAndStartNew(logCallback, CreatePR, commandUnitsProgress);
 
       CreatePRResponse createPRResponse =
-              createPullRequest(scmConnector, newBranch, baseBranch, PR_TITLE, gitOpsTaskParams.getAccountId());
+          createPullRequest(scmConnector, newBranch, baseBranch, PR_TITLE, gitOpsTaskParams.getAccountId());
 
       String prLink = getPRLink(createPRResponse.getNumber(), scmConnector, scmConnector.getConnectorType());
 
@@ -339,20 +344,20 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
       logCallback.saveExecutionLog("Done.", INFO, CommandExecutionStatus.SUCCESS);
 
       return NGGitOpsResponse.builder()
-              .commitId(gitCommitAndPushResult.getGitCommitResult().getCommitId())
-              .prNumber(createPRResponse.getNumber())
-              .prLink(prLink)
-              .ref(newBranch)
-              .taskStatus(TaskStatus.SUCCESS)
-              .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
-              .build();
+          .commitId(gitCommitAndPushResult.getGitCommitResult().getCommitId())
+          .prNumber(createPRResponse.getNumber())
+          .prLink(prLink)
+          .ref(newBranch)
+          .taskStatus(TaskStatus.SUCCESS)
+          .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
+          .build();
     } catch (Exception e) {
       logCallback.saveExecutionLog(e.getMessage(), ERROR, CommandExecutionStatus.FAILURE);
       return NGGitOpsResponse.builder()
-              .taskStatus(TaskStatus.FAILURE)
-              .errorMessage(e.getMessage())
-              .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
-              .build();
+          .taskStatus(TaskStatus.FAILURE)
+          .errorMessage(e.getMessage())
+          .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
+          .build();
     }
   }
 

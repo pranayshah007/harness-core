@@ -83,7 +83,6 @@ public class ShellScriptTaskNG extends AbstractDelegateRunnableTask {
           .build();
     } else {
       try {
-        // TODO lets make a method similar to this GABRIEL
         SshSessionConfig sshSessionConfig = getSshSessionConfig(taskParameters);
         ScriptSshExecutor executor =
             sshExecutorFactoryNG.getExecutor(sshSessionConfig, this.getLogStreamingTaskClient(), commandUnitsProgress);
@@ -136,7 +135,7 @@ public class ShellScriptTaskNG extends AbstractDelegateRunnableTask {
     return sshSessionConfig;
   }
 
-  public ShellExecutorConfig getShellExecutorConfig(ShellScriptTaskParametersNG taskParameters) {
+  private ShellExecutorConfig getShellExecutorConfig(ShellScriptTaskParametersNG taskParameters) {
     String kubeConfigFileContent = taskParameters.getScript().contains(K8sConstants.HARNESS_KUBE_CONFIG_PATH)
             && taskParameters.getK8sInfraDelegateConfig() != null
         ? containerDeploymentDelegateBaseHelper.getKubeconfigFileContent(taskParameters.getK8sInfraDelegateConfig())

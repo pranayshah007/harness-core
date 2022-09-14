@@ -141,7 +141,8 @@ public class CreatePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsResp
    */
     CreatePRStepParams gitOpsSpecParams = (CreatePRStepParams) stepParameters.getSpec();
     try {
-      ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
+      ILogStreamingStepClient logStreamingStepClient =
+          logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
       logStreamingStepClient.openStream(ShellScriptTaskNG.COMMAND_UNIT);
 
       ManifestOutcome releaseRepoOutcome = gitOpsStepHelper.getReleaseRepoOutcome(ambiance);
@@ -150,7 +151,8 @@ public class CreatePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsResp
 
       List<GitFetchFilesConfig> gitFetchFilesConfig = new ArrayList<>();
       gitFetchFilesConfig.add(getGitFetchFilesConfig(ambiance, releaseRepoOutcome, filesToVariablesMap.keySet()));
-      NGGitOpsTaskParams ngGitOpsTaskParams = NGGitOpsTaskParams.builder()
+      NGGitOpsTaskParams ngGitOpsTaskParams =
+          NGGitOpsTaskParams.builder()
               .gitOpsTaskType(GitOpsTaskType.CREATE_PR)
               .gitFetchFilesConfig(gitFetchFilesConfig.get(0))
               .overrideConfig(CDStepHelper.getParameterFieldBooleanValue(gitOpsSpecParams.getOverrideConfig(),
@@ -159,11 +161,10 @@ public class CreatePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsResp
               .connectorInfoDTO(
                   cdStepHelper.getConnector(releaseRepoOutcome.getStore().getConnectorReference().getValue(), ambiance))
               .filesToVariablesMap(filesToVariablesMap)
-// TODO add the new fields here
-                  .script(getParameterFieldValue(gitOpsSpecParams.getSource().getSpec().updateConfigScript))
-                  .scriptType(gitOpsSpecParams.getScriptType())
-                  .outputVars(gitOpsSpecParams.getOutputVars())
-                  .secretOutputVars(gitOpsSpecParams.getSecretOutputVars())
+              .script(getParameterFieldValue(gitOpsSpecParams.getSource().getSpec().updateConfigScript))
+              .scriptType(gitOpsSpecParams.getScriptType())
+              .outputVars(gitOpsSpecParams.getOutputVars())
+              .secretOutputVars(gitOpsSpecParams.getSecretOutputVars())
               .build();
 
       final TaskData taskData = TaskData.builder()

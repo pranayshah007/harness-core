@@ -22,12 +22,11 @@ import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
+import io.harness.shell.ScriptType;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
-import io.harness.shell.ScriptType;
 import lombok.Builder;
 import lombok.Data;
 
@@ -50,8 +49,7 @@ public class NGGitOpsTaskParams implements TaskParameters, ExecutionCapabilityDe
   private GitApiTaskParams gitApiTaskParams;
 
   @Expression(ALLOW_SECRETS) String script;
-//  String workingDirectory;
-
+  //  String workingDirectory;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
