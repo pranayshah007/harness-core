@@ -8,3 +8,7 @@ filegroup(
     name = "resource",
     srcs = glob(["**/*"]),
 )
+
+exports_files([
+  "redisson-jcache.yaml",
+])
