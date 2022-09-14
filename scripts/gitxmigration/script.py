@@ -19,6 +19,8 @@ PMS_DB_NAME = "pms-harness"
 NG_MANAGER_DB_NAME = "ng-harness"
 
 STORE_TYPE_REMOTE = "REMOTE"
+PIPELINE = "PIPELINE"
+INPUTSET = "INPUTSET"
 
 class DBKeys(Enum):
     ACCOUNT_ID = "accountId"
@@ -61,6 +63,8 @@ def get_repo_from_repo_url(repo_url):
     delimiter_index = repo_url.rfind("/")
     return repo_url[delimiter_index+1:]
 
+def prepare_key(identifier, entity):
+    return identifier + "_" + entity
 
 def setup_mongo_client():
     global mongo_client
@@ -88,11 +92,11 @@ def prepare_yaml_git_config_list():
     print(yaml_git_config_list)
 
 
-def cache_pipeline_locally(record):
-    migrated_pipelines[record.get("_id")] = record
+def cache_pipeline_locally(record, entity):
+    migrated_pipelines[prepare_key(record.get(DBKeys.IDENTIFIER.value), entity)] = record
 
 
-def migrate_records(collection, yaml_git_config):
+def migrate_records(collection, yaml_git_config, entity):
     query = {
         DBKeys.ACCOUNT_ID.value: INPUT_ACCOUNT_ID,
         DBKeys.ORG_IDENTIFIER.value: INPUT_ORG_ID,
@@ -112,7 +116,7 @@ def migrate_records(collection, yaml_git_config):
         record[DBKeys.FILE_PATH.value] = old_root_folder[1:] + old_file_path
 
         collection.update_one({"_id": record.get("_id")}, {"$set": record}, upsert=False)
-        cache_pipeline_locally(record)
+        cache_pipeline_locally(record, entity)
 
     collection.update_many(query, {"$unset": {
                                     DBKeys.ROOT_FOLDER.value: 1,
@@ -128,8 +132,8 @@ def migrate_records(collection, yaml_git_config):
 def migrate_records_from_inline_to_remote():
     for yaml_git_config in yaml_git_config_list:
         print(yaml_git_config)
-        migrate_records(pms_db.pipelinesPMS, yaml_git_config)
-        migrate_records(pms_db.inputSetsPMS, yaml_git_config)
+        migrate_records(pms_db.pipelinesPMS, yaml_git_config, PIPELINE)
+        migrate_records(pms_db.inputSetsPMS, yaml_git_config, INPUTSET)
 
 
 def delete_non_default_pipelines_input_sets():
@@ -230,7 +234,7 @@ def update_triggers():
 
     for trigger in triggers:
         pipelineId = trigger.get(DBKeys.TARGET_IDENTIFIER.value)
-        pipeline = migrated_pipelines[pipelineId]
+        pipeline = migrated_pipelines.get(prepare_key(pipelineId, PIPELINE))
         if pipeline is None:
             continue
 
@@ -247,7 +251,7 @@ if __name__ == "__main__":
     delete_yaml_git_configs()
     delete_non_default_branch_entities()
     enable_new_gitx()
-    update_triggers()
     migrate_records_from_inline_to_remote()
+    update_triggers()
     cleanup_connector_entities()
     # reset_git_sync_sdk_cache()
