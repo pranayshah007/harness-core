@@ -2,6 +2,7 @@
     <blaze-settings handler-id="BlazeJavaRunConfigurationHandlerProvider" blaze-command="run" debug_port="6010"
                     kind="java_binary">
         <blaze-target>//270-verification:module</blaze-target>
+        <blaze-user-exe-flag>classpath_limit=400000</blaze-user-exe-flag>
         <blaze-user-exe-flag>server</blaze-user-exe-flag>
         <blaze-user-exe-flag>$PROJECT_DIR$/../270-verification/verification-config.yml</blaze-user-exe-flag>
     </blaze-settings>

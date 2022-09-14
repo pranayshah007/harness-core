@@ -3,6 +3,7 @@
     <blaze-settings handler-id="BlazeJavaRunConfigurationHandlerProvider" kind="java_binary"
                     debug_port="6011" blaze-command="run" >
         <blaze-target>//960-watcher:module</blaze-target>
+        <blaze-user-exe-flag>classpath_limit=400000</blaze-user-exe-flag>
         <blaze-user-exe-flag>$PROJECT_DIR$/../960-watcher/config-watcher.yml</blaze-user-exe-flag>
     </blaze-settings>
     <method v="2">

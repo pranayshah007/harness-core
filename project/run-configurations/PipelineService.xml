@@ -1,6 +1,7 @@
 <configuration name="PipelineService" type="BlazeCommandRunConfigurationType" factoryName="Bazel Command">
     <blaze-settings handler-id="BlazeJavaRunConfigurationHandlerProvider" blaze-command="run" kind="java_binary">
         <blaze-target>//pipeline-service/service:module</blaze-target>
+        <blaze-user-exe-flag>classpath_limit=400000</blaze-user-exe-flag>
         <blaze-user-exe-flag>server</blaze-user-exe-flag>
         <blaze-user-exe-flag>$PROJECT_DIR$/../pipeline-service/config/config.yml</blaze-user-exe-flag>
     </blaze-settings>

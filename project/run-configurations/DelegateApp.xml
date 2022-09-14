@@ -7,6 +7,7 @@
                     blaze-command="run"
                     keep-in-sync="true">
         <blaze-target>//260-delegate:execute</blaze-target>
+        <blaze-user-exe-flag>classpath_limit=400000</blaze-user-exe-flag>
         <blaze-user-exe-flag>$PROJECT_DIR$/../260-delegate/config-delegate.yml</blaze-user-exe-flag>
     </blaze-settings>
     <method v="2">

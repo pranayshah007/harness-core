@@ -10,6 +10,7 @@
         <blaze-user-flag>
             --jvmopt=""
         </blaze-user-flag>
+        <blaze-user-exe-flag>classpath_limit=400000</blaze-user-exe-flag>
         <blaze-user-exe-flag>server</blaze-user-exe-flag>
         <blaze-user-exe-flag>$PROJECT_DIR$/../315-sto-manager/sto-manager-config.yml</blaze-user-exe-flag>
     </blaze-settings>
