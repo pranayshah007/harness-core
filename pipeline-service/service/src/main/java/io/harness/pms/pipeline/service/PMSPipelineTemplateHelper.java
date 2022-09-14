@@ -155,17 +155,11 @@ public class PMSPipelineTemplateHelper {
     GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
     RefreshRequestDTO refreshRequest = RefreshRequestDTO.builder().yaml(yaml).build();
     if (gitEntityInfo != null) {
-      if (pipelineEntity != null) {
-        return NGRestUtils.getResponse(templateResourceClient.validateTemplateInputsForGivenYaml(accountId, orgId,
-            projectId, gitEntityInfo.isNewBranch() ? gitEntityInfo.getBaseBranch() : gitEntityInfo.getBranch(),
-            gitEntityInfo.getYamlGitConfigId(), true, pipelineEntity.getConnectorRef(), pipelineEntity.getRepo(),
-            pipelineEntity.getAccountIdentifier(), pipelineEntity.getOrgIdentifier(),
-            pipelineEntity.getProjectIdentifier(), refreshRequest));
-      } else {
-        return NGRestUtils.getResponse(templateResourceClient.validateTemplateInputsForGivenYaml(accountId, orgId,
-            projectId, gitEntityInfo.isNewBranch() ? gitEntityInfo.getBaseBranch() : gitEntityInfo.getBranch(),
-            gitEntityInfo.getYamlGitConfigId(), true, null, null, null, null, null, refreshRequest));
-      }
+      return NGRestUtils.getResponse(templateResourceClient.validateTemplateInputsForGivenYaml(accountId, orgId,
+          projectId, gitEntityInfo.isNewBranch() ? gitEntityInfo.getBaseBranch() : gitEntityInfo.getBranch(),
+          gitEntityInfo.getYamlGitConfigId(), true, pipelineEntity.getConnectorRef(), pipelineEntity.getRepo(),
+          pipelineEntity.getAccountIdentifier(), pipelineEntity.getOrgIdentifier(),
+          pipelineEntity.getProjectIdentifier(), refreshRequest));
     }
 
     return NGRestUtils.getResponse(templateResourceClient.validateTemplateInputsForGivenYaml(
