@@ -5024,6 +5024,8 @@ plain_artifacts = [
     "io.swagger.core.v3:swagger-annotations:2.2.0",
     "io.swagger.core.v3:swagger-models:2.2.0",
     "io.swagger.core.v3:swagger-integration:2.2.0",
+    "io.harness:smp-license:1.0.0-SNAPSHOT"
+
 ]
 
 amazon_artifacts = [

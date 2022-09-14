@@ -28,6 +28,7 @@ java_library(
         "@maven//:org_hibernate_validator_hibernate_validator",
         "@maven//:org_modelmapper_modelmapper",
         "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:io_harness_smp_license"
     ],
 )
 
