@@ -58,6 +58,7 @@ public class RecommendationsDetailsQuery {
       @GraphQLArgument(name = "endTime", description = "defaults to Now()") OffsetDateTime endTime,
       @GraphQLArgument(name = "bufferPercentage", description = "defaults to zero", defaultValue = "0") Integer bufferPercentage,
       @GraphQLEnvironment final ResolutionEnvironment env) {
+    log.info("recommendationDetails: bufferPercentage: {}", bufferPercentage);
     final String accountIdentifier = graphQLUtils.getAccountIdentifier(env);
 
     return recommendationDetailsInternal(
@@ -71,6 +72,7 @@ public class RecommendationsDetailsQuery {
       @GraphQLArgument(name = "endTime", description = "defaults to Now()") OffsetDateTime endTime,
       @GraphQLArgument(name = "bufferPercentage", description = "defaults to zero", defaultValue = "0") Integer bufferPercentage,
       @GraphQLEnvironment final ResolutionEnvironment env) {
+    log.info("recommendationDetails: bufferPercentage: {}", bufferPercentage);
     final String accountIdentifier = graphQLUtils.getAccountIdentifier(env);
 
     return recommendationDetailsInternal(accountIdentifier, resourceType, id, startTime, endTime, bufferPercentage);
@@ -91,6 +93,7 @@ public class RecommendationsDetailsQuery {
   private RecommendationDetailsDTO recommendationDetailsInternal(@NotNull final String accountIdentifier,
       @NotNull ResourceType resourceType, @NotNull String id, @Nullable OffsetDateTime startTime,
       @Nullable OffsetDateTime endTime, @Nullable Integer bufferPercentage) {
+    log.info("recommendationDetailsInternal: bufferPercentage: {}", bufferPercentage);
     switch (resourceType) {
       case WORKLOAD:
         return workloadRecommendationService.getWorkloadRecommendationById(accountIdentifier, id,
