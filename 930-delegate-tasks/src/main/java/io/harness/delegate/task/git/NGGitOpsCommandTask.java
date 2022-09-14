@@ -53,10 +53,7 @@ import io.harness.delegate.task.gitapi.client.impl.AzureRepoApiClient;
 import io.harness.delegate.task.gitapi.client.impl.GithubApiClient;
 import io.harness.delegate.task.gitapi.client.impl.GitlabApiClient;
 import io.harness.delegate.task.k8s.GcpK8sInfraDelegateConfig;
-import io.harness.delegate.task.shell.ShellExecutorFactoryNG;
-import io.harness.delegate.task.shell.ShellScriptTaskNG;
-import io.harness.delegate.task.shell.ShellScriptTaskParametersNG;
-import io.harness.delegate.task.shell.SshCommandTaskParameters;
+import io.harness.delegate.task.shell.*;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.git.model.CommitAndPushRequest;
@@ -105,7 +102,7 @@ import org.jose4j.lang.JoseException;
 @OwnedBy(GITOPS)
 public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
   public static final String COMMAND_UNIT = "Execute";
-
+  public static final String COMMAND_PATH = "/tmp";
   private static final String PR_TITLE = "Harness: Updating config overrides";
   private static final String COMMIT_MSG = "Updating Config files";
   @Inject private SecretDecryptionService secretDecryptionService;
@@ -147,39 +144,7 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
       case MERGE_PR:
         return handleMergePR(gitOpsTaskParams);
       case CREATE_PR:
-        //        SEARCH COMMAND_TASK_NG
-        // TODO Start Stuff here
-        // We something here
-        // TODO
-        // The script is useful so that we don't do the create the pr for them
-        // variables we expose they want to do more things to them
-        // we dump from env and service variables
-        // customer wants to modify these variables themselves
-
-        // TODO STEP ONE
-        CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
-        ShellExecutorConfig shellExecutorConfig = getShellExecutorConfig(gitOpsTaskParams);
-
-        // TODO DELETE THESE
-        // TODO THIS SHOULD BE SYNC
-        // while, sleep before checking again , while != terminalState()
-        //        while execution status is terminal state, this way we know that this is finished
-
-
-        logCallback = new NGDelegateLogCallback(getLogStreamingTaskClient(), COMMAND_UNIT, true, commandUnitsProgress);
-
-
-        ScriptProcessExecutor executor =
-                shellExecutorFactory.getExecutor(shellExecutorConfig, getLogStreamingTaskClient(), commandUnitsProgress);
-
-        ExecuteCommandResponse executeCommandResponse = executor.executeCommandString(
-                gitOpsTaskParams.getScript(), gitOpsTaskParams.getOutputVars(), gitOpsTaskParams.getSecretOutputVars(), null);
-        // TODO FINAL STEP -- Add to Delegate ResponseData
-        // Step needs to go to the next step EXPORT MY CV
-        this.logCallback = markDoneAndStartNew(this.getLogStreamingTaskClient().obtainLogCallback(COMMAND_UNIT), FetchFiles, commandUnitsProgress);
-//        this.logCallback = markDoneAndStartNew(this.getLogStreamingTaskClient()., UpdateFiles, commandUnitsProgress);
-
-        return handleCreatePR(gitOpsTaskParams, commandUnitsProgress);
+        return handleCreatePR(gitOpsTaskParams);
       default:
         return NGGitOpsResponse.builder()
             .taskStatus(TaskStatus.FAILURE)
@@ -188,18 +153,52 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
     }
   }
 
-  public ShellExecutorConfig getShellExecutorConfig(NGGitOpsTaskParams taskParameters) {
-    Map<String, String> x = new HashMap<>();
+  private ShellScriptTaskResponseNG executeShellScript(NGGitOpsTaskParams taskParams, CommandUnitsProgress commandUnitsProgress) {
+    try {
+      ShellExecutorConfig shellExecutorConfig = getShellExecutorConfig(taskParams);
+      ScriptProcessExecutor executor =
+              shellExecutorFactory.getExecutor(shellExecutorConfig, getLogStreamingTaskClient(), commandUnitsProgress);
+      ExecuteCommandResponse executeCommandResponse = executor.executeCommandString(
+              taskParams.getScript(), taskParams.getOutputVars(), taskParams.getSecretOutputVars(), null);
+      return ShellScriptTaskResponseNG.builder()
+              .executeCommandResponse(executeCommandResponse)
+              .status(executeCommandResponse.getStatus())
+              .errorMessage(getErrorMessage(executeCommandResponse.getStatus()))
+              .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
+              .build();
+    } catch(Exception e) {
+      log.error("Bash Script Failed to execute.", e);
+      return ShellScriptTaskResponseNG.builder()
+              .status(CommandExecutionStatus.FAILURE)
+              .errorMessage("Bash Script Failed to execute. Reason: " + e.getMessage())
+              .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
+              .build();
+    }
+  }
 
+  private String getErrorMessage(CommandExecutionStatus status) {
+    switch (status) {
+      case QUEUED:
+        return "Shell Script execution queued.";
+      case FAILURE:
+        return "Shell Script execution failed. Please check execution logs.";
+      case RUNNING:
+        return "Shell Script execution running.";
+      case SKIPPED:
+        return "Shell Script execution skipped.";
+      case SUCCESS:
+      default:
+        return "";
+    }
+  }
+  public ShellExecutorConfig getShellExecutorConfig(NGGitOpsTaskParams taskParameters) {
     return ShellExecutorConfig.builder()
             .accountId(taskParameters.getAccountId())
-            .executionId(taskParameters.getAccountId())
-            .appId(taskParameters.getAccountId())
+            .executionId(taskParameters.getActivityId())
             .commandUnitName(COMMAND_UNIT)
-            .workingDirectory("/tmp")
-            .environment(x)
+            .workingDirectory(COMMAND_PATH)
+            .environment(new HashMap<>())
             .scriptType(ScriptType.BASH)
-//            .gcpKeyFileContent(serviceAccountKeyFileContent)
             .build();
   }
 
@@ -293,11 +292,13 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
     }
   }
 
-  public DelegateResponseData handleCreatePR(NGGitOpsTaskParams gitOpsTaskParams, CommandUnitsProgress commandUnitsProgress) {
+  public DelegateResponseData handleCreatePR(NGGitOpsTaskParams gitOpsTaskParams) {
+    CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
     try {
       log.info("Running Create PR Task for activityId {}", gitOpsTaskParams.getActivityId());
+      executeShellScript(gitOpsTaskParams, commandUnitsProgress);
+      logCallback = markDoneAndStartNew(this.getLogStreamingTaskClient().obtainLogCallback(COMMAND_UNIT), FetchFiles, commandUnitsProgress);
 
-//      logCallback = new NGDelegateLogCallback(getLogStreamingTaskClient(), FetchFiles, true, commandUnitsProgress);
       FetchFilesResult fetchFilesResult = getFiles(gitOpsTaskParams, commandUnitsProgress);
       List<GitFile> fetchFilesResultFiles = fetchFilesResult.getFiles();
       StringBuilder sb = new StringBuilder(1024);
@@ -310,7 +311,7 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
       String baseBranch = gitOpsTaskParams.getGitFetchFilesConfig().getGitStoreDelegateConfig().getBranch();
       String newBranch = baseBranch + "_" + RandomStringUtils.randomAlphabetic(12);
       ScmConnector scmConnector =
-          gitOpsTaskParams.getGitFetchFilesConfig().getGitStoreDelegateConfig().getGitConfigDTO();
+              gitOpsTaskParams.getGitFetchFilesConfig().getGitStoreDelegateConfig().getGitConfigDTO();
 
       createNewBranch(scmConnector, newBranch, baseBranch);
       CommitAndPushResult gitCommitAndPushResult = commit(gitOpsTaskParams, fetchFilesResult, COMMIT_MSG, newBranch);
@@ -318,7 +319,7 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
       List<GitFileChange> files = gitCommitAndPushResult.getFilesCommittedToGit();
       if (files == null || isEmpty(files)) {
         logCallback.saveExecutionLog(
-            "No files were committed. Hence not creating a pull request.", ERROR, CommandExecutionStatus.FAILURE);
+                "No files were committed. Hence not creating a pull request.", ERROR, CommandExecutionStatus.FAILURE);
         throw new InvalidRequestException("No files were committed. Hence not creating a pull request.");
       }
 
@@ -330,7 +331,7 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
       logCallback = markDoneAndStartNew(logCallback, CreatePR, commandUnitsProgress);
 
       CreatePRResponse createPRResponse =
-          createPullRequest(scmConnector, newBranch, baseBranch, PR_TITLE, gitOpsTaskParams.getAccountId());
+              createPullRequest(scmConnector, newBranch, baseBranch, PR_TITLE, gitOpsTaskParams.getAccountId());
 
       String prLink = getPRLink(createPRResponse.getNumber(), scmConnector, scmConnector.getConnectorType());
 
@@ -338,20 +339,20 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
       logCallback.saveExecutionLog("Done.", INFO, CommandExecutionStatus.SUCCESS);
 
       return NGGitOpsResponse.builder()
-          .commitId(gitCommitAndPushResult.getGitCommitResult().getCommitId())
-          .prNumber(createPRResponse.getNumber())
-          .prLink(prLink)
-          .ref(newBranch)
-          .taskStatus(TaskStatus.SUCCESS)
-          .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
-          .build();
+              .commitId(gitCommitAndPushResult.getGitCommitResult().getCommitId())
+              .prNumber(createPRResponse.getNumber())
+              .prLink(prLink)
+              .ref(newBranch)
+              .taskStatus(TaskStatus.SUCCESS)
+              .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
+              .build();
     } catch (Exception e) {
       logCallback.saveExecutionLog(e.getMessage(), ERROR, CommandExecutionStatus.FAILURE);
       return NGGitOpsResponse.builder()
-          .taskStatus(TaskStatus.FAILURE)
-          .errorMessage(e.getMessage())
-          .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
-          .build();
+              .taskStatus(TaskStatus.FAILURE)
+              .errorMessage(e.getMessage())
+              .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
+              .build();
     }
   }
 

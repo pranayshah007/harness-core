@@ -169,11 +169,6 @@ public class LogStreamingTaskClient implements ILogStreamingTaskClient {
 
   @Override
   public LogCallback obtainLogCallback(String commandName) {
-//    if (isBlank(appId) || isBlank(activityId)) {
-//      throw new InvalidArgumentsException(
-//          "Application id and activity id were not available as part of task params. Please make sure that task params class implements Cd1ApplicationAccess and ActivityAccess interfaces.");
-//    }
-
     return new ExecutionLogCallback(logService, accountId, appId, activityId, commandName);
   }
 
