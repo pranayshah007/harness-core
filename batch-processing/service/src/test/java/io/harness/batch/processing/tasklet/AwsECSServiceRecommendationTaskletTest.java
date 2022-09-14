@@ -129,8 +129,8 @@ public class AwsECSServiceRecommendationTaskletTest extends BaseTaskletTest {
         .thenReturn(
             Collections.singletonMap(new ClusterIdAndServiceArn(CLUSTER_ID, SERVICE_ARN), Collections.emptyList()));
     when(ecsServiceDao.fetchServices(any(), any()))
-        .thenReturn(
-            Collections.singletonMap(SERVICE_ARN, ECSService.builder().resource(Resource.builder().cpuUnits(CPU_UNITS).memoryMb(MEMORY_MB).build()).build()));
+        .thenReturn(Collections.singletonMap(SERVICE_ARN,
+            ECSService.builder().resource(Resource.builder().cpuUnits(CPU_UNITS).memoryMb(MEMORY_MB).build()).build()));
     when(ecsRecommendationDAO.fetchPartialRecommendationHistograms(any(), any(), any(), any(), any()))
         .thenReturn(new ArrayList<>());
     when(billingDataService.getECSServiceLastAvailableDayCost(any(), any(), any(), any())).thenReturn(cost());
