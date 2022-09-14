@@ -10,6 +10,7 @@ import static java.util.Comparator.comparingInt;
 import static org.apache.commons.lang3.StringUtils.trim;
 
 import com.amazonaws.services.elasticloadbalancingv2.model.DescribeRulesResult;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.aws.v2.ecs.EcsV2Client;
@@ -484,6 +485,73 @@ public class EcsCommandTaskNGHelper {
         createServiceResponse.service().serviceName(), ecsInfraConfig.getCluster(), ecsInfraConfig.getRegion(),
         logCallback);
   }
+
+  public List<String> getScalableTargetsAsString(LogCallback prepareRollbackDataLogCallback, String serviceName,
+                                                Service service, EcsInfraConfig ecsInfraConfig ) {
+    List<String> registerScalableTargetRequestBuilderStrings = null;
+    prepareRollbackDataLogCallback.saveExecutionLog(
+            format("Fetching Scalable Target Details for Service %s..", serviceName), LogLevel.INFO);
+    DescribeScalableTargetsResponse describeScalableTargetsResponse =
+            listScalableTargets(ecsInfraConfig.getAwsConnectorDTO(), ecsInfraConfig.getCluster(),
+                    service.serviceName(), ecsInfraConfig.getRegion());
+    if (describeScalableTargetsResponse != null
+            && CollectionUtils.isNotEmpty(describeScalableTargetsResponse.scalableTargets())) {
+      registerScalableTargetRequestBuilderStrings =
+              describeScalableTargetsResponse.scalableTargets()
+                      .stream()
+                      .map(scalableTarget -> {
+                        try {
+                          return EcsMapper.createRegisterScalableTargetRequestFromScalableTarget(scalableTarget);
+                        } catch (Exception e) {
+                          String message = "Error while creating register scalable target request json from scalable target";
+                          log.error(message);
+                          throw new InvalidRequestException(message, e);
+                        }
+                      })
+                      .collect(Collectors.toList());
+      prepareRollbackDataLogCallback.saveExecutionLog(
+              format("Fetched Scalable Target Details for Service %s", serviceName), LogLevel.INFO);
+    } else {
+      prepareRollbackDataLogCallback.saveExecutionLog(
+              format("Didn't find Scalable Target Details for Service %s", serviceName), LogLevel.INFO);
+    }
+    return registerScalableTargetRequestBuilderStrings;
+  }
+
+  public List<String> getScalingPoliciesAsString(LogCallback prepareRollbackDataLogCallback, String serviceName,
+                                                 Service service, EcsInfraConfig ecsInfraConfig) {
+    List<String> registerScalingPolicyRequestBuilderStrings = null;
+    prepareRollbackDataLogCallback.saveExecutionLog(
+            format("Fetching Scaling Policy Details for Service %s..", serviceName), LogLevel.INFO);
+    DescribeScalingPoliciesResponse describeScalingPoliciesResponse =
+            listScalingPolicies(ecsInfraConfig.getAwsConnectorDTO(), ecsInfraConfig.getCluster(),
+                    service.serviceName(), ecsInfraConfig.getRegion());
+
+    if (describeScalingPoliciesResponse != null
+            && CollectionUtils.isNotEmpty(describeScalingPoliciesResponse.scalingPolicies())) {
+      registerScalingPolicyRequestBuilderStrings =
+              describeScalingPoliciesResponse.scalingPolicies()
+                      .stream()
+                      .map(scalingPolicy -> {
+                        try {
+                          return EcsMapper.createPutScalingPolicyRequestFromScalingPolicy(scalingPolicy);
+                        } catch (JsonProcessingException e) {
+                          String message = "Error while creating put scaling policy request json from scaling policy";
+                          log.error(message);
+                          throw new InvalidRequestException(message, e);
+                        }
+                      })
+                      .collect(Collectors.toList());
+      prepareRollbackDataLogCallback.saveExecutionLog(
+              format("Fetched Scaling Policy Details for Service %s", serviceName), LogLevel.INFO);
+    } else {
+      prepareRollbackDataLogCallback.saveExecutionLog(
+              format("Didn't find Scaling Policy Details for Service %s", serviceName), LogLevel.INFO);
+    }
+    return registerScalingPolicyRequestBuilderStrings;
+  }
+
+
 
   public void createStageService(String ecsServiceDefinitionManifestContent,
                                  List<String> ecsScalableTargetManifestContentList, List<String> ecsScalingPolicyManifestContentList,

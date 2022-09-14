@@ -85,64 +85,13 @@ public class EcsPrepareRollbackCommandTaskHandler extends EcsCommandTaskNGHandle
           format("Fetched Service Definition Details for Service %s", serviceName), LogLevel.INFO);
 
       // Get registerScalableTargetRequestBuilderStrings if present
-      prepareRollbackDataLogCallback.saveExecutionLog(
-          format("Fetching Scalable Target Details for Service %s..", serviceName), LogLevel.INFO);
-      DescribeScalableTargetsResponse describeScalableTargetsResponse =
-          ecsCommandTaskHelper.listScalableTargets(ecsInfraConfig.getAwsConnectorDTO(), ecsInfraConfig.getCluster(),
-              service.serviceName(), ecsInfraConfig.getRegion());
+      List<String> registerScalableTargetRequestBuilderStrings = ecsCommandTaskHelper.getScalableTargetsAsString(
+              prepareRollbackDataLogCallback, serviceName, service, ecsInfraConfig);
 
-      List<String> registerScalableTargetRequestBuilderStrings = null;
-      if (describeScalableTargetsResponse != null
-          && CollectionUtils.isNotEmpty(describeScalableTargetsResponse.scalableTargets())) {
-        registerScalableTargetRequestBuilderStrings =
-            describeScalableTargetsResponse.scalableTargets()
-                .stream()
-                .map(scalableTarget -> {
-                  try {
-                    return EcsMapper.createRegisterScalableTargetRequestFromScalableTarget(scalableTarget);
-                  } catch (Exception e) {
-                    String message = "Error while creating register scalable target request json from scalable target";
-                    log.error(message);
-                    throw new InvalidRequestException(message, e);
-                  }
-                })
-                .collect(Collectors.toList());
-        prepareRollbackDataLogCallback.saveExecutionLog(
-            format("Fetched Scalable Target Details for Service %s", serviceName), LogLevel.INFO);
-      } else {
-        prepareRollbackDataLogCallback.saveExecutionLog(
-            format("Didn't find Scalable Target Details for Service %s", serviceName), LogLevel.INFO);
-      }
 
       // Get putScalingPolicyRequestBuilderStrings if present
-      prepareRollbackDataLogCallback.saveExecutionLog(
-          format("Fetching Scaling Policy Details for Service %s..", serviceName), LogLevel.INFO);
-      DescribeScalingPoliciesResponse describeScalingPoliciesResponse =
-          ecsCommandTaskHelper.listScalingPolicies(ecsInfraConfig.getAwsConnectorDTO(), ecsInfraConfig.getCluster(),
-              service.serviceName(), ecsInfraConfig.getRegion());
-
-      List<String> registerScalingPolicyRequestBuilderStrings = null;
-      if (describeScalingPoliciesResponse != null
-          && CollectionUtils.isNotEmpty(describeScalingPoliciesResponse.scalingPolicies())) {
-        registerScalingPolicyRequestBuilderStrings =
-            describeScalingPoliciesResponse.scalingPolicies()
-                .stream()
-                .map(scalingPolicy -> {
-                  try {
-                    return EcsMapper.createPutScalingPolicyRequestFromScalingPolicy(scalingPolicy);
-                  } catch (JsonProcessingException e) {
-                    String message = "Error while creating put scaling policy request json from scaling policy";
-                    log.error(message);
-                    throw new InvalidRequestException(message, e);
-                  }
-                })
-                .collect(Collectors.toList());
-        prepareRollbackDataLogCallback.saveExecutionLog(
-            format("Fetched Scaling Policy Details for Service %s", serviceName), LogLevel.INFO);
-      } else {
-        prepareRollbackDataLogCallback.saveExecutionLog(
-            format("Didn't find Scaling Policy Details for Service %s", serviceName), LogLevel.INFO);
-      }
+      List<String> registerScalingPolicyRequestBuilderStrings = ecsCommandTaskHelper.getScalingPoliciesAsString(
+              prepareRollbackDataLogCallback, serviceName, service, ecsInfraConfig);
 
       EcsPrepareRollbackDataResult ecsPrepareRollbackDataResult =
           EcsPrepareRollbackDataResult.builder()
