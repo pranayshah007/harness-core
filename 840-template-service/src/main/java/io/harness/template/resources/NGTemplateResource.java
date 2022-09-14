@@ -14,6 +14,8 @@ import static java.lang.Long.parseLong;
 import static javax.ws.rs.core.HttpHeaders.IF_MATCH;
 import static org.apache.commons.lang3.StringUtils.isNumeric;
 
+import com.codahale.metrics.annotation.ExceptionMetered;
+import com.codahale.metrics.annotation.Timed;
 import io.harness.NGCommonEntityConstants;
 import io.harness.NGResourceFilterConstants;
 import io.harness.accesscontrol.AccountIdentifier;
@@ -56,6 +58,7 @@ import io.harness.pms.contracts.service.VariablesServiceRequestV2;
 import io.harness.pms.mappers.VariablesResponseDtoMapper;
 import io.harness.pms.variables.VariableMergeServiceResponse;
 import io.harness.remote.client.NGRestUtils;
+import io.harness.rest.RestResponse;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.template.TemplateFilterPropertiesDTO;
 import io.harness.template.beans.FilterParamsDTO;
@@ -79,6 +82,7 @@ import io.harness.template.services.TemplateMergeService;
 import io.harness.utils.PageUtils;
 
 import com.google.inject.Inject;
+import io.harness.yaml.core.variables.NGVariable;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -117,6 +121,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
 import retrofit2.http.Body;
+import software.wings.beans.FailureStrategy;
 
 @OwnedBy(CDC)
 @Api("templates")
@@ -850,5 +855,29 @@ public class NGTemplateResource {
       @NotNull TemplateReferenceRequestDTO templateReferenceRequestDTO) {
     return ResponseDTO.newResponse(templateReferenceHelper.getNestedTemplateReferences(
         accountId, orgId, projectId, templateReferenceRequestDTO.getYaml(), false));
+  }
+
+  @PUT
+  @Path("/copyTemplateWithVariables")
+  @ApiOperation(value = "Gets complete yaml with templateRefs resolved", nickname = "getYamlWithTemplateRefsResolved")
+  @Operation(operationId = "getYamlWithTemplateRefsResolved", summary = "Gets complete yaml with templateRefs resolved",
+          responses =
+                  {
+                          @io.swagger.v3.oas.annotations.responses.
+                                  ApiResponse(responseCode = "default", description = "Gets complete yaml with templateRefs resolved")
+                  })
+  @Hidden
+  @Timed
+  @ExceptionMetered
+  public ResponseDTO<String> copyTemplateWithVariables(@NotBlank @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+                                                                     @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+                                                                             NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+                                                                     @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+                                                                             NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+                                                                     @Parameter(description = TEMPLATE_PARAM_MESSAGE) @QueryParam(
+                                                                             NGCommonEntityConstants.IDENTIFIER_KEY) @ResourceIdentifier String templateIdentifier,
+                                                                     @Parameter(description = "Version Label") @QueryParam(
+                                                                             NGCommonEntityConstants.VERSION_LABEL_KEY) String versionLabel, @Parameter(description = "Template YAML") @NotNull String templateYaml, List<NGVariable> templateVariables) {
+    return ResponseDTO.newResponse(templateService.copyTemplateWithVariables(accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, templateVariables));
   }
 }

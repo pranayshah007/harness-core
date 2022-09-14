@@ -88,6 +88,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import io.harness.yaml.core.variables.NGVariable;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
@@ -726,7 +728,12 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     return templateRepository.deleteAllOrgLevelTemplates(accountId, orgId);
   }
 
-  private void assureThatTheProjectAndOrgExists(String accountId, String orgId, String projectId) {
+    @Override
+    public String copyTemplateWithVariables(String accountIdentifier, String orgIdentifier, String projectIdentifier, String templateIdentifier, String versionLabel, List<NGVariable> templateVariables) {
+        return null;
+    }
+
+    private void assureThatTheProjectAndOrgExists(String accountId, String orgId, String projectId) {
     if (isNotEmpty(projectId)) {
       // it's project level template
       if (isEmpty(orgId)) {

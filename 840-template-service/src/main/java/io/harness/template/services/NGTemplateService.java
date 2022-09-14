@@ -19,8 +19,11 @@ import io.harness.template.beans.FilterParamsDTO;
 import io.harness.template.beans.PageParamsDTO;
 import io.harness.template.entity.TemplateEntity;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+
+import io.harness.yaml.core.variables.NGVariable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -76,4 +79,6 @@ public interface NGTemplateService {
   boolean deleteAllTemplatesInAProject(String accountId, String orgId, String projectId);
 
   boolean deleteAllOrgLevelTemplates(String accountId, String orgId);
+
+    String copyTemplateWithVariables(String accountIdentifier, String orgIdentifier, String projectIdentifier, String templateIdentifier, String versionLabel, List<NGVariable> templateVariables);
 }
