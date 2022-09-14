@@ -104,6 +104,9 @@ import io.harness.delegate.cf.PcfRouteUpdateCommandTaskHandler;
 import io.harness.delegate.cf.PcfRunPluginCommandTaskHandler;
 import io.harness.delegate.cf.PcfValidationCommandTaskHandler;
 import io.harness.delegate.configuration.DelegateConfiguration;
+import io.harness.delegate.ecs.EcsBlueGreenCreateServiceCommandTaskHandler;
+import io.harness.delegate.ecs.EcsBlueGreenPrepareRollbackCommandTaskHandler;
+import io.harness.delegate.ecs.EcsBlueGreenSwapTargetGroupsCommandTaskHandler;
 import io.harness.delegate.ecs.EcsCanaryDeleteCommandTaskHandler;
 import io.harness.delegate.ecs.EcsCanaryDeployCommandTaskHandler;
 import io.harness.delegate.ecs.EcsCommandTaskNGHandler;
@@ -1833,6 +1836,12 @@ public class DelegateModule extends AbstractModule {
         .to(EcsCanaryDeleteCommandTaskHandler.class);
     ecsTaskTypeToTaskHandlerMap.addBinding(EcsCommandTypeNG.ECS_CANARY_DEPLOY.name())
         .to(EcsCanaryDeployCommandTaskHandler.class);
+    ecsTaskTypeToTaskHandlerMap.addBinding(EcsCommandTypeNG.ECS_BLUE_GREEN_CREATE_SERVICE.name())
+                    .to(EcsBlueGreenCreateServiceCommandTaskHandler.class);
+    ecsTaskTypeToTaskHandlerMap.addBinding(EcsCommandTypeNG.ECS_BLUE_GREEN_PREPARE_ROLLBACK_DATA.name())
+              .to(EcsBlueGreenPrepareRollbackCommandTaskHandler.class);
+    ecsTaskTypeToTaskHandlerMap.addBinding(EcsCommandTypeNG.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS.name())
+              .to(EcsBlueGreenSwapTargetGroupsCommandTaskHandler.class);
 
     mapBinder.addBinding(TaskType.ECS_GIT_FETCH_TASK_NG).toInstance(EcsGitFetchTask.class);
     mapBinder.addBinding(TaskType.ECS_COMMAND_TASK_NG).toInstance(EcsCommandTaskNG.class);

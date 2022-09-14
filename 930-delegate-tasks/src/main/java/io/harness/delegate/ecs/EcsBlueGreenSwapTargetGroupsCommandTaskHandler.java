@@ -3,22 +3,33 @@ package io.harness.delegate.ecs;
 import com.google.inject.Inject;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.aws.beans.AwsInternalConfig;
+import io.harness.delegate.beans.ecs.EcsBlueGreenSwapTargetGroupsResult;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.exception.EcsNGException;
+import io.harness.delegate.task.aws.AwsNgConfigMapper;
 import io.harness.delegate.task.ecs.EcsCommandTaskNGHelper;
 import io.harness.delegate.task.ecs.EcsInfraConfig;
 import io.harness.delegate.task.ecs.EcsInfraConfigHelper;
 import io.harness.delegate.task.ecs.EcsTaskHelperBase;
-import io.harness.delegate.task.ecs.request.EcsBlueGreenCreateServiceRequest;
 import io.harness.delegate.task.ecs.request.EcsBlueGreenSwapTargetGroupsRequest;
 import io.harness.delegate.task.ecs.request.EcsCommandRequest;
+import io.harness.delegate.task.ecs.response.EcsBlueGreenSwapTargetGroupsResponse;
 import io.harness.delegate.task.ecs.response.EcsCommandResponse;
 import io.harness.ecs.EcsCommandUnitConstants;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
+import io.harness.logging.LogLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
+import software.wings.beans.LogColor;
+import software.wings.beans.LogWeight;
+
+import static java.lang.String.format;
+import static software.wings.beans.LogHelper.color;
 
 @OwnedBy(HarnessTeam.CDP)
 @NoArgsConstructor
@@ -27,6 +38,7 @@ public class EcsBlueGreenSwapTargetGroupsCommandTaskHandler extends EcsCommandTa
     @Inject private EcsTaskHelperBase ecsTaskHelperBase;
     @Inject private EcsInfraConfigHelper ecsInfraConfigHelper;
     @Inject private EcsCommandTaskNGHelper ecsCommandTaskHelper;
+    @Inject private AwsNgConfigMapper awsNgConfigMapper;
     private EcsInfraConfig ecsInfraConfig;
     private long timeoutInMillis;
 
@@ -44,11 +56,54 @@ public class EcsBlueGreenSwapTargetGroupsCommandTaskHandler extends EcsCommandTa
         LogCallback swapTargetGroupLogCallback = ecsTaskHelperBase.getLogCallback(
                 iLogStreamingTaskClient, EcsCommandUnitConstants.swapTargetGroup.toString(), true, commandUnitsProgress);
 
-        try{
+        try {
+            AwsInternalConfig awsInternalConfig = awsNgConfigMapper.createAwsInternalConfig(ecsInfraConfig.getAwsConnectorDTO());
 
+            // modify target group of prod listener with stage target group and target group of stage listener with prod target group
+            ecsCommandTaskHelper.swapTargetGroups(ecsInfraConfig, swapTargetGroupLogCallback,
+                    ecsBlueGreenSwapTargetGroupsRequest, awsInternalConfig);
+
+            // update service tag of new service with blue version
+            ecsCommandTaskHelper.updateTag(ecsBlueGreenSwapTargetGroupsRequest.getNewServiceName(), ecsInfraConfig,
+                    EcsCommandTaskNGHelper.BG_BLUE, awsInternalConfig);
+
+            // update service tag of old service with green version
+            ecsCommandTaskHelper.updateTag(ecsBlueGreenSwapTargetGroupsRequest.getOldServiceName(), ecsInfraConfig,
+                    EcsCommandTaskNGHelper.BG_GREEN, awsInternalConfig);
+
+            // downsize old service desired count to zero
+            ecsCommandTaskHelper.updateDesiredCount(ecsBlueGreenSwapTargetGroupsRequest.getOldServiceName(),
+                    ecsInfraConfig, awsInternalConfig, 0);
+
+            EcsBlueGreenSwapTargetGroupsResult ecsBlueGreenSwapTargetGroupsResult =
+                    EcsBlueGreenSwapTargetGroupsResult.builder()
+                            .region(ecsInfraConfig.getRegion())
+                            .ecsTasks(ecsCommandTaskHelper.getRunningEcsTasks(ecsInfraConfig.getAwsConnectorDTO(),
+                                    ecsInfraConfig.getCluster(), ecsBlueGreenSwapTargetGroupsRequest.getNewServiceName(),
+                                    ecsInfraConfig.getRegion()))
+                            .loadBalancer(ecsBlueGreenSwapTargetGroupsRequest.getLoadBalancer())
+                            .prodTargetGroupArn(ecsBlueGreenSwapTargetGroupsRequest.getProdTargetGroupArn())
+                            .prodListenerArn(ecsBlueGreenSwapTargetGroupsRequest.getProdListenerArn())
+                            .prodListenerRuleArn(ecsBlueGreenSwapTargetGroupsRequest.getProdListenerRuleArn())
+                            .stageListenerArn(ecsBlueGreenSwapTargetGroupsRequest.getStageListenerArn())
+                            .stageListenerRuleArn(ecsBlueGreenSwapTargetGroupsRequest.getStageListenerRuleArn())
+                            .stageTargetGroupArn(ecsBlueGreenSwapTargetGroupsRequest.getStageTargetGroupArn())
+                            .trafficShifted(true)
+                            .infrastructureKey(ecsInfraConfig.getInfraStructureKey())
+                            .build();
+            EcsBlueGreenSwapTargetGroupsResponse ecsBlueGreenSwapTargetGroupsResponse =
+                    EcsBlueGreenSwapTargetGroupsResponse.builder()
+                    .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                    .ecsBlueGreenSwapTargetGroupsResult(ecsBlueGreenSwapTargetGroupsResult)
+                    .build();
+            swapTargetGroupLogCallback.saveExecutionLog(color(format("%n Swapping Successful."), LogColor.Green, LogWeight.Bold),
+                    LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+            return ecsBlueGreenSwapTargetGroupsResponse;
         }
-        catch(Exception e) {
-
+        catch (Exception e) {
+            swapTargetGroupLogCallback.saveExecutionLog(color(format("%n Swapping Failed."), LogColor.Red, LogWeight.Bold),
+                    LogLevel.ERROR, CommandExecutionStatus.FAILURE);
+            throw new EcsNGException(e);
         }
     }
 }

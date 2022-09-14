@@ -3,6 +3,8 @@ package io.harness.aws.v2.ecs;
 import io.harness.aws.beans.AwsInternalConfig;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeListenersRequest;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeListenersResponse;
+import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeLoadBalancersRequest;
+import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeLoadBalancersResponse;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeRulesRequest;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeRulesResponse;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.ModifyListenerRequest;
@@ -21,5 +23,8 @@ public interface ElbV2Client {
     ModifyRuleResponse modifyRule(AwsInternalConfig awsConfig, ModifyRuleRequest modifyRuleRequest, String region);
 
     ModifyListenerResponse modifyListener(AwsInternalConfig awsConfig, ModifyListenerRequest modifyListenerRequest, String region);
+
+    DescribeLoadBalancersResponse describeLoadBalancer(AwsInternalConfig awsConfig, DescribeLoadBalancersRequest
+                                                       describeLoadBalancersRequest, String region);
 
 }

@@ -14,6 +14,9 @@ import static java.util.Objects.nonNull;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.azure.webapp.AzureWebAppRollbackStep;
 import io.harness.cdng.azure.webapp.AzureWebAppSlotDeploymentStep;
+import io.harness.cdng.ecs.EcsBlueGreenCreateServiceStep;
+import io.harness.cdng.ecs.EcsBlueGreenRollbackStep;
+import io.harness.cdng.ecs.EcsBlueGreenSwapTargetGroupsStep;
 import io.harness.cdng.ecs.EcsCanaryDeployStep;
 import io.harness.cdng.ecs.EcsRollingDeployStep;
 import io.harness.cdng.ecs.EcsRollingRollbackStep;
@@ -41,9 +44,9 @@ public class InstanceSyncStepResolver {
       HelmRollbackStep.STEP_TYPE.getType(), ServerlessAwsLambdaDeployStep.STEP_TYPE.getType(),
       AzureWebAppSlotDeploymentStep.STEP_TYPE.getType(), AzureWebAppRollbackStep.STEP_TYPE.getType(),
       CommandStep.STEP_TYPE.getType(), EcsRollingDeployStep.STEP_TYPE.getType(),
-      EcsRollingRollbackStep.STEP_TYPE.getType(), EcsCanaryDeployStep.STEP_TYPE.getType()));
+      EcsRollingRollbackStep.STEP_TYPE.getType(), EcsCanaryDeployStep.STEP_TYPE.getType(),
+      EcsBlueGreenSwapTargetGroupsStep.STEP_TYPE.getType(), EcsBlueGreenRollbackStep.STEP_TYPE.getType()));
 
-  // add ecs blue green also
 
   public boolean shouldRunInstanceSync(StepType stepType) {
     return nonNull(stepType) && INSTANCE_SYN_STEP_TYPES.contains(stepType.getType());

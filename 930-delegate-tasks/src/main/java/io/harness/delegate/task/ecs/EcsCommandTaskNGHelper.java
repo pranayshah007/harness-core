@@ -86,12 +86,19 @@ import software.amazon.awssdk.services.ecs.model.Service;
 import software.amazon.awssdk.services.ecs.model.ServiceField;
 import software.amazon.awssdk.services.ecs.model.Tag;
 import software.amazon.awssdk.services.ecs.model.ServiceEvent;
+import software.amazon.awssdk.services.ecs.model.TagResourceRequest;
+import software.amazon.awssdk.services.ecs.model.UntagResourceRequest;
 import software.amazon.awssdk.services.ecs.model.UpdateServiceRequest;
 import software.amazon.awssdk.services.ecs.model.UpdateServiceResponse;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.Action;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.ActionTypeEnum;
+import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeListenersRequest;
+import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeListenersResponse;
+import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeLoadBalancersRequest;
+import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeLoadBalancersResponse;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeRulesRequest;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeRulesResponse;
+import software.amazon.awssdk.services.elasticloadbalancingv2.model.Listener;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.ModifyListenerRequest;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.ModifyRuleRequest;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.Rule;
@@ -106,10 +113,10 @@ public class EcsCommandTaskNGHelper {
   @Inject private TimeLimiter timeLimiter;
 
   private YamlUtils yamlUtils = new YamlUtils();
-  private static final String DELIMITER = "__";
-  private static final String BG_VERSION = "BG_VERSION";
-  private static final String BG_GREEN = "GREEN";
-  private static final String BG_BLUE = "BLUE";
+  public static final String DELIMITER = "__";
+  public static final String BG_VERSION = "BG_VERSION";
+  public static final String BG_GREEN = "GREEN";
+  public static final String BG_BLUE = "BLUE";
   private static final String TARGET_GROUP_ARN_EXPRESSION = "<+targetGroupArn>";
 
 
@@ -648,43 +655,40 @@ public class EcsCommandTaskNGHelper {
 
 
 
-  public void createStageService(String ecsServiceDefinitionManifestContent,
+  public String createStageService(String ecsServiceDefinitionManifestContent,
                                  List<String> ecsScalableTargetManifestContentList, List<String> ecsScalingPolicyManifestContentList,
                                  EcsInfraConfig ecsInfraConfig, LogCallback logCallback, long timeoutInMillis,
                                  EcsBlueGreenCreateServiceRequest ecsBlueGreenCreateServiceRequest,
-                                 String taskDefinitionArn) {
+                                 String taskDefinitionArn, String targetGroupArn) {
 
-    // find target group arn from stage listener and stage listener rule arn
-    String targetGroupArn = getTargetGroupArnFromListener(ecsInfraConfig, ecsBlueGreenCreateServiceRequest.getStageListener(),
-            ecsBlueGreenCreateServiceRequest.getStageListenerRuleArn());
+    AwsInternalConfig awsInternalConfig = awsNgConfigMapper.createAwsInternalConfig(ecsInfraConfig.getAwsConnectorDTO());
 
     // render target group arn value in its expression in ecs service definition yaml
     ecsServiceDefinitionManifestContent = updateTargetGroupArn(ecsServiceDefinitionManifestContent, targetGroupArn);
 
-    CreateServiceRequest tempServiceRequest = parseYamlAsObject(
+    CreateServiceRequest createServiceRequest = parseYamlAsObject(
             ecsServiceDefinitionManifestContent, CreateServiceRequest.serializableBuilderClass()).build();
-    //todo: change into builder to crate new req
 
     // get list of all available prefix matching services in cluster
-    List<Service> existingBGServices = getMatchingServicesInCluster(ecsInfraConfig, trim(tempServiceRequest.serviceName()+DELIMITER));
+    List<Service> existingBGServices = getMatchingServicesInCluster(ecsInfraConfig, trim(createServiceRequest.serviceName()+DELIMITER));
 
-    // get green version services using tags
-    List<Service> greenVersionServices = existingBGServices.stream()
-            .filter(service -> isServiceBGVersion(service.tags(), BG_GREEN))
+    // get services other than blue version using tags
+    List<Service> servicesOtherThanBlueVersion = existingBGServices.stream()
+            .filter(service -> !isServiceBGVersion(service.tags(), BG_BLUE))
             .collect(Collectors.toList());
-    //todo: delete services other than blue and check regex to handle corner cases
 
-    //deleting all existing green versions of service
-    deleteServices(greenVersionServices, ecsInfraConfig, logCallback, timeoutInMillis);
-
-    // add green tag in create service request
-    CreateServiceRequest.Builder createServiceRequestBuilder = addGreenTagInCreateServiceRequest(tempServiceRequest);
+    //deleting all existing versions of service except blue one
+    deleteServices(servicesOtherThanBlueVersion, ecsInfraConfig, logCallback, timeoutInMillis);
 
     // get stage service name
-    String stageServiceName = evaluateNewStageServiceName(existingBGServices,trim(tempServiceRequest.serviceName()+DELIMITER));
+    String stageServiceName = evaluateNewStageServiceName(existingBGServices,trim(createServiceRequest.serviceName()+DELIMITER));
+
+    // add green tag in create service request
+    CreateServiceRequest.Builder createServiceRequestBuilder = addGreenTagInCreateServiceRequest(createServiceRequest);
 
     // update service name, cluster and task definition
-    CreateServiceRequest createServiceRequest = createServiceRequestBuilder.serviceName(stageServiceName)
+     createServiceRequest = createServiceRequestBuilder
+            .serviceName(stageServiceName)
             .cluster(ecsInfraConfig.getCluster())
             .taskDefinition(taskDefinitionArn)
             .build();
@@ -701,7 +705,6 @@ public class EcsCommandTaskNGHelper {
     ecsServiceSteadyStateCheck(logCallback, ecsInfraConfig.getAwsConnectorDTO(), createServiceRequest.cluster(),
             createServiceRequest.serviceName(), ecsInfraConfig.getRegion(),
             (long) TimeUnit.MILLISECONDS.toMinutes(timeoutInMillis), eventsAlreadyProcessed);
-    //todo: take develop pull and correct service steady check
 
     logCallback.saveExecutionLog(format("Created Service %s with Arn %s %n", createServiceRequest.serviceName(),
                     createServiceResponse.service().serviceArn()),
@@ -714,38 +717,71 @@ public class EcsCommandTaskNGHelper {
     attachScalingPolicies(ecsScalingPolicyManifestContentList, ecsInfraConfig.getAwsConnectorDTO(),
             createServiceResponse.service().serviceName(), ecsInfraConfig.getCluster(), ecsInfraConfig.getRegion(),
             logCallback);
+    return  createServiceResponse.service().serviceName();
   }
 
-  public void swapTargetGroups(EcsInfraConfig ecsInfraConfig, LogCallback logCallback, long timeoutInMillis,
-                          EcsBlueGreenSwapTargetGroupsRequest ecsBlueGreenSwapTargetGroupsRequest) {
-
-    AwsInternalConfig awsInternalConfig = awsNgConfigMapper.createAwsInternalConfig(ecsInfraConfig.getAwsConnectorDTO());
-    //todo: refactor awsInternalConfig
-
-    // get prod target group arn
-    String prodTargetGroup = getTargetGroupArnFromListener(ecsInfraConfig, ecsBlueGreenSwapTargetGroupsRequest.getProdListener(),
-            ecsBlueGreenSwapTargetGroupsRequest.getProdListenerRuleArn());
-    //todo: get target group from previous step outcome
-
-    // get stage target group arn
-    String stageTargetGroup = getTargetGroupArnFromListener(ecsInfraConfig, ecsBlueGreenSwapTargetGroupsRequest.getStageListener(),
-            ecsBlueGreenSwapTargetGroupsRequest.getStageListenerRuleArn());
-    //todo: get target group from previous step outcome
+  public void swapTargetGroups(EcsInfraConfig ecsInfraConfig, LogCallback logCallback,
+                          EcsBlueGreenSwapTargetGroupsRequest ecsBlueGreenSwapTargetGroupsRequest,
+                               AwsInternalConfig awsInternalConfig) {
 
     // modify prod listener rule with stage target group
-    modifyListenerRule(ecsInfraConfig, ecsBlueGreenSwapTargetGroupsRequest.getProdListener(),
+    modifyListenerRule(ecsInfraConfig, ecsBlueGreenSwapTargetGroupsRequest.getProdListenerArn(),
             ecsBlueGreenSwapTargetGroupsRequest.getProdListenerRuleArn(),
-            stageTargetGroup, awsInternalConfig);
+            ecsBlueGreenSwapTargetGroupsRequest.getStageTargetGroupArn(), awsInternalConfig);
 
     // modify stage listener rule with prod target group
-    modifyListenerRule(ecsInfraConfig, ecsBlueGreenSwapTargetGroupsRequest.getStageListener(),
+    modifyListenerRule(ecsInfraConfig, ecsBlueGreenSwapTargetGroupsRequest.getStageListenerArn(),
             ecsBlueGreenSwapTargetGroupsRequest.getStageListenerRuleArn(),
-            prodTargetGroup, awsInternalConfig);
-
-    // update tags
-    // downsize old service
+            ecsBlueGreenSwapTargetGroupsRequest.getProdTargetGroupArn(), awsInternalConfig);
 
   }
+
+  public void updateTag(String serviceName, EcsInfraConfig ecsInfraConfig, String value, AwsInternalConfig awsInternalConfig) {
+    // Describe ecs service and get service details
+    Optional<Service> optionalService = describeService(
+            ecsInfraConfig.getCluster(), serviceName, ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
+    if(optionalService.isPresent() && isServiceActive(optionalService.get())) {
+      UntagResourceRequest untagResourceRequest = UntagResourceRequest.builder()
+              .resourceArn(optionalService.get().serviceArn())
+              .tagKeys(BG_VERSION)
+              .build();
+
+      // remove BG tag from service
+      ecsV2Client.untagService(awsInternalConfig, untagResourceRequest, ecsInfraConfig.getRegion());
+      TagResourceRequest tagResourceRequest = TagResourceRequest.builder()
+              .resourceArn(optionalService.get().serviceArn())
+              .tags(Tag.builder().key(BG_VERSION).value(value).build())
+              .build();
+
+      // update BG tag to service
+      ecsV2Client.tagService(awsInternalConfig, tagResourceRequest, ecsInfraConfig.getRegion());
+    }
+    else{
+
+    }
+  }
+
+  public void updateDesiredCount(String serviceName, EcsInfraConfig ecsInfraConfig,AwsInternalConfig awsInternalConfig,
+                                 int desiredCount) {
+    // Describe ecs service and get service details
+    Optional<Service> optionalService = describeService(
+            ecsInfraConfig.getCluster(), serviceName, ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
+    if(optionalService.isPresent() && isServiceActive(optionalService.get())) {
+      UpdateServiceRequest updateServiceRequest = UpdateServiceRequest.builder()
+              .service(optionalService.get().serviceName())
+              .cluster(ecsInfraConfig.getCluster())
+              .desiredCount(desiredCount)
+              .build();
+      // updating desired count
+      ecsV2Client.updateService(awsInternalConfig, updateServiceRequest, ecsInfraConfig.getRegion());
+      //todo: do we need to update steady state check
+    }
+    else{
+
+    }
+  }
+
+
 
   private void modifyListenerRule(EcsInfraConfig ecsInfraConfig, String listenerArn, String listenerRuleArn,
                                   String targetGroupArn, AwsInternalConfig awsInternalConfig) {
@@ -811,35 +847,26 @@ public class EcsCommandTaskNGHelper {
     return servicePrefix+1;
   }
 
+  public String getBlueVersionServiceName(String servicePrefix, EcsInfraConfig ecsInfraConfig) {
+    // get list of all available prefix matching services in cluster
+    List<Service> existingBGServices = getMatchingServicesInCluster(ecsInfraConfig, trim(servicePrefix));
+    Service blueVersionService = existingBGServices.stream()
+            .filter(service -> isServiceBGVersion(service.tags(), BG_BLUE))
+            .findFirst()
+            .orElse(null);
+    if(blueVersionService!=null) {
+      return blueVersionService.serviceName();
+    }
+    return null;
+  }
+
   private CreateServiceRequest.Builder addGreenTagInCreateServiceRequest(CreateServiceRequest serviceRequest) {
     List<Tag> tags = newArrayList();
     tags.addAll(serviceRequest.tags());
 
     Tag greenTag = Tag.builder().key(BG_VERSION).value(BG_GREEN).build();
     tags.add(greenTag);
-    return CreateServiceRequest.builder()
-            .cluster(serviceRequest.cluster())
-            .serviceName(serviceRequest.serviceName())
-            .taskDefinition(serviceRequest.taskDefinition())
-            .loadBalancers(serviceRequest.loadBalancers())
-            .serviceRegistries(serviceRequest.serviceRegistries())
-            .desiredCount(serviceRequest.desiredCount())
-            .clientToken(serviceRequest.clientToken())
-            .launchType(serviceRequest.launchType())
-            .capacityProviderStrategy(serviceRequest.capacityProviderStrategy())
-            .platformVersion(serviceRequest.platformVersion())
-            .role(serviceRequest.role())
-            .deploymentConfiguration(serviceRequest.deploymentConfiguration())
-            .placementConstraints(serviceRequest.placementConstraints())
-            .placementStrategy(serviceRequest.placementStrategy())
-            .networkConfiguration(serviceRequest.networkConfiguration())
-            .healthCheckGracePeriodSeconds(serviceRequest.healthCheckGracePeriodSeconds())
-            .schedulingStrategy(serviceRequest.schedulingStrategy())
-            .deploymentController(serviceRequest.deploymentController())
-            .tags(tags)
-            .enableECSManagedTags(serviceRequest.enableECSManagedTags())
-            .propagateTags(serviceRequest.propagateTags())
-            .enableExecuteCommand(serviceRequest.enableExecuteCommand());
+    return serviceRequest.toBuilder().tags(tags);
   }
 
   private String updateTargetGroupArn(String ecsServiceDefinitionManifestContent, String targetGroupArn) {
@@ -850,10 +877,47 @@ public class EcsCommandTaskNGHelper {
     return ecsServiceDefinitionManifestContent;
   }
 
-  public String getTargetGroupArnFromListener(EcsInfraConfig ecsInfraConfig, String listenerArn, String listenerRuleArn ) {
-    AwsInternalConfig awsInternalConfig = awsNgConfigMapper.createAwsInternalConfig(ecsInfraConfig.getAwsConnectorDTO());
+  public String getTargetGroupArnFromLoadBalancer(EcsInfraConfig ecsInfraConfig, String listenerArn, String listenerRuleArn,
+                                              String loadBalancer, AwsInternalConfig awsInternalConfig) {
+    DescribeLoadBalancersRequest describeLoadBalancersRequest = DescribeLoadBalancersRequest.builder()
+            .names(loadBalancer)
+            .marker(null)
+            .pageSize(10)
+            .build();
+    DescribeLoadBalancersResponse describeLoadBalancersResponse = elbV2Client.describeLoadBalancer(awsInternalConfig,
+            describeLoadBalancersRequest, ecsInfraConfig.getRegion());
+    if(EmptyPredicate.isEmpty(describeLoadBalancersResponse.loadBalancers())) {
+      throw new InvalidRequestException("load balancer with name:" + loadBalancer+ "is not present in this aws account");
+    }
+    String loadBalancerArn = describeLoadBalancersResponse.loadBalancers().get(0).loadBalancerArn();
+    List<Listener> listeners = newArrayList();
     String nextToken=null;
+    do{
+      DescribeListenersRequest describeListenersRequest = DescribeListenersRequest.builder()
+              .loadBalancerArn(loadBalancerArn)
+              .marker(nextToken)
+              .pageSize(10)
+              .build();
+      DescribeListenersResponse describeListenersResponse = elbV2Client.describeListener(awsInternalConfig,
+              describeListenersRequest, ecsInfraConfig.getRegion());
+      listeners.addAll(describeListenersResponse.listeners());
+      nextToken=describeLoadBalancersResponse.nextMarker();
+    }
+    while(nextToken!=null);
+    if(EmptyPredicate.isNotEmpty(listeners)) {
+      for(Listener listener: listeners) {
+        if(isListenerArnMatching(listenerArn, listener))
+          return getFirstTargetGroupFromListener(awsInternalConfig, ecsInfraConfig, listenerArn, listenerRuleArn);
+      }
+    }
+    throw new InvalidRequestException("listener with arn:" + listenerArn+ "is not present in load balancer: "+loadBalancer);
+  }
+
+  private String getFirstTargetGroupFromListener(AwsInternalConfig awsInternalConfig,
+                                                 EcsInfraConfig ecsInfraConfig, String listenerArn,
+                                                 String listenerRuleArn) {
     List<Rule> rules = newArrayList();
+    String nextToken=null;
     do{
       DescribeRulesRequest describeRulesRequest = DescribeRulesRequest.builder()
               .listenerArn(listenerArn)
@@ -874,26 +938,30 @@ public class EcsCommandTaskNGHelper {
         }
       }
     }
-    else {
-      throw new InvalidRequestException("listener rule is not present in listener: "+listenerArn);
-    }
-    throw new InvalidRequestException("listener rule arn: "+listenerRuleArn+" is not present in listener: "+listenerArn);
+    throw new InvalidRequestException("listener rule with arn: "+listenerRuleArn+" is not present in listener: "+listenerArn);
   }
 
   private String getFirstTargetGroupFromListenerRule(Rule rule) {
     if(EmptyPredicate.isNotEmpty(rule.actions())){
       Action action = rule.actions().stream().findFirst().orElse(null);
       if(action== null || EmptyPredicate.isEmpty(action.targetGroupArn())) {
-        throw new InvalidRequestException("action is not present in listener rule:"+
+        throw new InvalidRequestException("No action is present in listener rule:"+
                 rule.ruleArn()+" or there is no target group attached");
       }
       return action.targetGroupArn();
     }
-    throw new InvalidRequestException("action is not present in listener rule: "+ rule.ruleArn());
+    throw new InvalidRequestException("No action is present in listener rule: "+ rule.ruleArn());
   }
 
   private boolean isListenerRuleArnMatching(String listenerRuleArn, Rule rule) {
     if(EmptyPredicate.isNotEmpty(rule.ruleArn()) && listenerRuleArn.equalsIgnoreCase(rule.ruleArn())){
+      return true;
+    }
+    return false;
+  }
+
+  private boolean isListenerArnMatching(String listenerArn, Listener listener) {
+    if(EmptyPredicate.isNotEmpty(listener.listenerArn()) && listenerArn.equalsIgnoreCase(listener.listenerArn())){
       return true;
     }
     return false;

@@ -36,6 +36,10 @@ import software.amazon.awssdk.services.ecs.model.ListTasksRequest;
 import software.amazon.awssdk.services.ecs.model.ListTasksResponse;
 import software.amazon.awssdk.services.ecs.model.RegisterTaskDefinitionRequest;
 import software.amazon.awssdk.services.ecs.model.RegisterTaskDefinitionResponse;
+import software.amazon.awssdk.services.ecs.model.TagResourceRequest;
+import software.amazon.awssdk.services.ecs.model.TagResourceResponse;
+import software.amazon.awssdk.services.ecs.model.UntagResourceRequest;
+import software.amazon.awssdk.services.ecs.model.UntagResourceResponse;
 import software.amazon.awssdk.services.ecs.model.UpdateServiceRequest;
 import software.amazon.awssdk.services.ecs.model.UpdateServiceResponse;
 
@@ -88,4 +92,10 @@ public interface EcsV2Client {
 
   DescribeServicesResponse describeServices(
           AwsInternalConfig awsConfig, DescribeServicesRequest describeServicesRequest, String region);
+
+  UntagResourceResponse untagService(AwsInternalConfig awsInternalConfig, UntagResourceRequest untagResourceRequest,
+                                     String region);
+
+  TagResourceResponse tagService(AwsInternalConfig awsInternalConfig, TagResourceRequest tagResourceRequest,
+                                 String region);
 }

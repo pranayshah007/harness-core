@@ -30,9 +30,9 @@ public class EcsBlueGreenCreateServiceRequest implements EcsCommandRequest, Expr
     @Expression(ALLOW_SECRETS) List<String> ecsScalableTargetManifestContentList;
     @Expression(ALLOW_SECRETS) List<String> ecsScalingPolicyManifestContentList;
     @NonFinal @Expression(ALLOW_SECRETS) String loadBalancer;
-    @NonFinal @Expression(ALLOW_SECRETS) String stageListener;
+    @NonFinal @Expression(ALLOW_SECRETS) String stageListenerArn;
     @NonFinal @Expression(ALLOW_SECRETS) String stageListenerRuleArn;
-    @NonFinal @Expression(ALLOW_SECRETS) String prodListener;
+    @NonFinal @Expression(ALLOW_SECRETS) String prodListenerArn;
     @NonFinal @Expression(ALLOW_SECRETS) String prodListenerRuleArn;
 
 }

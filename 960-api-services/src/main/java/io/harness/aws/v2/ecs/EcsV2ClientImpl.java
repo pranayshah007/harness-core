@@ -67,6 +67,10 @@ import software.amazon.awssdk.services.ecs.model.RegisterTaskDefinitionRequest;
 import software.amazon.awssdk.services.ecs.model.RegisterTaskDefinitionResponse;
 import software.amazon.awssdk.services.ecs.model.ServiceNotActiveException;
 import software.amazon.awssdk.services.ecs.model.ServiceNotFoundException;
+import software.amazon.awssdk.services.ecs.model.TagResourceRequest;
+import software.amazon.awssdk.services.ecs.model.TagResourceResponse;
+import software.amazon.awssdk.services.ecs.model.UntagResourceRequest;
+import software.amazon.awssdk.services.ecs.model.UntagResourceResponse;
 import software.amazon.awssdk.services.ecs.model.UpdateServiceRequest;
 import software.amazon.awssdk.services.ecs.model.UpdateServiceResponse;
 import software.amazon.awssdk.services.ecs.waiters.EcsWaiter;
@@ -368,4 +372,31 @@ public class EcsV2ClientImpl extends AwsClientHelper implements EcsV2Client {
     return DescribeServicesResponse.builder().build();
   }
   //todo: refactor it
+
+
+  @Override
+  public UntagResourceResponse untagService(AwsInternalConfig awsInternalConfig,
+                                            UntagResourceRequest untagResourceRequest, String region) {
+    try (EcsClient ecsClient = (EcsClient) getClient(awsInternalConfig, region)) {
+      super.logCall(client(), Thread.currentThread().getStackTrace()[1].getMethodName());
+      return ecsClient.untagResource(untagResourceRequest);
+    } catch (Exception exception) {
+      super.logError(client(), Thread.currentThread().getStackTrace()[1].getMethodName(), exception.getMessage());
+      super.handleException(exception);
+    }
+    return UntagResourceResponse.builder().build();
+  }
+
+  @Override
+  public TagResourceResponse tagService(AwsInternalConfig awsInternalConfig,
+                                        TagResourceRequest tagResourceRequest, String region) {
+    try (EcsClient ecsClient = (EcsClient) getClient(awsInternalConfig, region)) {
+      super.logCall(client(), Thread.currentThread().getStackTrace()[1].getMethodName());
+      return ecsClient.tagResource(tagResourceRequest);
+    } catch (Exception exception) {
+      super.logError(client(), Thread.currentThread().getStackTrace()[1].getMethodName(), exception.getMessage());
+      super.handleException(exception);
+    }
+    return TagResourceResponse.builder().build();
+  }
 }

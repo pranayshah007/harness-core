@@ -16,21 +16,18 @@ import static io.harness.expression.Expression.ALLOW_SECRETS;
 @Value
 @Builder
 @OwnedBy(HarnessTeam.CDP)
-public class EcsBlueGreenSwapTargetGroupsRequest implements EcsCommandRequest, ExpressionReflectionUtils.NestedAnnotationResolver {
+public class EcsBlueGreenPrepareRollbackRequest implements EcsCommandRequest, ExpressionReflectionUtils.NestedAnnotationResolver  {
     String accountId;
     EcsCommandTypeNG ecsCommandType;
     String commandName;
     CommandUnitsProgress commandUnitsProgress;
-    @NonFinal @Expression(ALLOW_SECRETS) EcsInfraConfig ecsInfraConfig;
+    @Expression(ALLOW_SECRETS) String ecsServiceDefinitionManifestContent;
+    @NonFinal @Expression(ALLOW_SECRETS)
+    EcsInfraConfig ecsInfraConfig;
     @NonFinal @Expression(ALLOW_SECRETS) Integer timeoutIntervalInMin;
     @NonFinal @Expression(ALLOW_SECRETS) String loadBalancer;
-    @NonFinal @Expression(ALLOW_SECRETS) String stageListenerArn;
+    @NonFinal @Expression(ALLOW_SECRETS) String stageListener;
     @NonFinal @Expression(ALLOW_SECRETS) String stageListenerRuleArn;
-    @NonFinal @Expression(ALLOW_SECRETS) String prodListenerArn;
+    @NonFinal @Expression(ALLOW_SECRETS) String prodListener;
     @NonFinal @Expression(ALLOW_SECRETS) String prodListenerRuleArn;
-    String prodTargetGroupArn;
-    String stageTargetGroupArn;
-    String oldServiceName;
-    String newServiceName;
-
 }
