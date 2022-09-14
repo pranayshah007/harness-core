@@ -406,14 +406,31 @@ func TestInvokeParallelism_ManualAutodetectPass(t *testing.T) {
 	oldIsManual := isManualFn
 	oldGetStepStrategyIteration := getStepStrategyIteration
 	oldGetStepStrategyIterations := getStepStrategyIterations
+	oldGetStageStrategyIteration := getStageStrategyIteration
+	oldGetStageStrategyIterations := getStageStrategyIterations
 	oldIsParallelismEnabled := isParallelismEnabled
+	oldIsStepParallelismEnabled := isStepParallelismEnabled
+	oldIsStageParallelismEnabled := isStageParallelismEnabled
 	defer func() {
 		isManualFn = oldIsManual
 		getStepStrategyIteration = oldGetStepStrategyIteration
 		getStepStrategyIterations = oldGetStepStrategyIterations
+		getStageStrategyIteration = oldGetStageStrategyIteration
+		getStageStrategyIterations = oldGetStageStrategyIterations
 		isParallelismEnabled = oldIsParallelismEnabled
+		isStepParallelismEnabled = oldIsStepParallelismEnabled
+		isStageParallelismEnabled = oldIsStageParallelismEnabled
 	}()
 	isManualFn = func() bool {
+		return true
+	}
+	isParallelismEnabled = func() bool {
+		return true
+	}
+	isStepParallelismEnabled = func() bool {
+		return true
+	}
+	isStageParallelismEnabled = func() bool {
 		return true
 	}
 	getStepStrategyIteration = func() (int, error) {
@@ -421,6 +438,12 @@ func TestInvokeParallelism_ManualAutodetectPass(t *testing.T) {
 	}
 	getStepStrategyIterations = func() (int, error) {
 		return 2, nil
+	}
+	getStageStrategyIteration = func() (int, error) {
+		return 0, nil
+	}
+	getStageStrategyIterations = func() (int, error) {
+		return 1, nil
 	}
 
 	r := runTestsTask{
@@ -433,12 +456,13 @@ func TestInvokeParallelism_ManualAutodetectPass(t *testing.T) {
 		language:             "java",
 		log:                  log.Sugar(),
 		addonLogger:          log.Sugar(),
-		splitStrategy:        defaultSplitStrategy,
+		testSplitStrategy:    countTestSplitStrategy,
+		parallelizeTests:     true,
 	}
 	ignoreInstr := true
 	selectTestsResponse := types.SelectTestsResp{}
 
-	ignoreInstrResp := r.invokeParallelism(ctx, runner, &selectTestsResponse, ignoreInstr, false)
+	ignoreInstrResp := r.computeSelectedTests(ctx, runner, &selectTestsResponse, ignoreInstr)
 	assert.Equal(t, r.runOnlySelectedTests, true)
 	assert.Equal(t, len(selectTestsResponse.Tests), 1)
 	assert.False(t, ignoreInstrResp)
@@ -455,14 +479,31 @@ func TestInvokeParallelism_ManualAutodetectFailStepZero(t *testing.T) {
 	oldIsManual := isManualFn
 	oldGetStepStrategyIteration := getStepStrategyIteration
 	oldGetStepStrategyIterations := getStepStrategyIterations
+	oldGetStageStrategyIteration := getStageStrategyIteration
+	oldGetStageStrategyIterations := getStageStrategyIterations
 	oldIsParallelismEnabled := isParallelismEnabled
+	oldIsStepParallelismEnabled := isStepParallelismEnabled
+	oldIsStageParallelismEnabled := isStageParallelismEnabled
 	defer func() {
 		isManualFn = oldIsManual
 		getStepStrategyIteration = oldGetStepStrategyIteration
 		getStepStrategyIterations = oldGetStepStrategyIterations
+		getStageStrategyIteration = oldGetStageStrategyIteration
+		getStageStrategyIterations = oldGetStageStrategyIterations
 		isParallelismEnabled = oldIsParallelismEnabled
+		isStepParallelismEnabled = oldIsStepParallelismEnabled
+		isStageParallelismEnabled = oldIsStageParallelismEnabled
 	}()
 	isManualFn = func() bool {
+		return true
+	}
+	isParallelismEnabled = func() bool {
+		return true
+	}
+	isStepParallelismEnabled = func() bool {
+		return true
+	}
+	isStageParallelismEnabled = func() bool {
 		return true
 	}
 	getStepStrategyIteration = func() (int, error) {
@@ -470,6 +511,12 @@ func TestInvokeParallelism_ManualAutodetectFailStepZero(t *testing.T) {
 	}
 	getStepStrategyIterations = func() (int, error) {
 		return 2, nil
+	}
+	getStageStrategyIteration = func() (int, error) {
+		return 0, nil
+	}
+	getStageStrategyIterations = func() (int, error) {
+		return 1, nil
 	}
 
 	r := runTestsTask{
@@ -482,12 +529,13 @@ func TestInvokeParallelism_ManualAutodetectFailStepZero(t *testing.T) {
 		language:             "java",
 		log:                  log.Sugar(),
 		addonLogger:          log.Sugar(),
-		splitStrategy:        defaultSplitStrategy,
+		testSplitStrategy:    countTestSplitStrategy,
+		parallelizeTests:     true,
 	}
 	ignoreInstr := true
 	selectTestsResponse := types.SelectTestsResp{}
 
-	ignoreInstrResp := r.invokeParallelism(ctx, runner, &selectTestsResponse, ignoreInstr, false)
+	ignoreInstrResp := r.computeSelectedTests(ctx, runner, &selectTestsResponse, ignoreInstr)
 	assert.Equal(t, r.runOnlySelectedTests, false)
 	assert.Equal(t, len(selectTestsResponse.Tests), 0)
 	assert.Equal(t, ignoreInstrResp, ignoreInstr)
@@ -504,14 +552,31 @@ func TestInvokeParallelism_ManualAutodetectFailStepNonZero(t *testing.T) {
 	oldIsManual := isManualFn
 	oldGetStepStrategyIteration := getStepStrategyIteration
 	oldGetStepStrategyIterations := getStepStrategyIterations
+	oldGetStageStrategyIteration := getStageStrategyIteration
+	oldGetStageStrategyIterations := getStageStrategyIterations
 	oldIsParallelismEnabled := isParallelismEnabled
+	oldIsStepParallelismEnabled := isStepParallelismEnabled
+	oldIsStageParallelismEnabled := isStageParallelismEnabled
 	defer func() {
 		isManualFn = oldIsManual
 		getStepStrategyIteration = oldGetStepStrategyIteration
 		getStepStrategyIterations = oldGetStepStrategyIterations
+		getStageStrategyIteration = oldGetStageStrategyIteration
+		getStageStrategyIterations = oldGetStageStrategyIterations
 		isParallelismEnabled = oldIsParallelismEnabled
+		isStepParallelismEnabled = oldIsStepParallelismEnabled
+		isStageParallelismEnabled = oldIsStageParallelismEnabled
 	}()
 	isManualFn = func() bool {
+		return true
+	}
+	isParallelismEnabled = func() bool {
+		return true
+	}
+	isStepParallelismEnabled = func() bool {
+		return true
+	}
+	isStageParallelismEnabled = func() bool {
 		return true
 	}
 	getStepStrategyIteration = func() (int, error) {
@@ -519,6 +584,12 @@ func TestInvokeParallelism_ManualAutodetectFailStepNonZero(t *testing.T) {
 	}
 	getStepStrategyIterations = func() (int, error) {
 		return 2, nil
+	}
+	getStageStrategyIteration = func() (int, error) {
+		return 0, nil
+	}
+	getStageStrategyIterations = func() (int, error) {
+		return 1, nil
 	}
 
 	r := runTestsTask{
@@ -531,12 +602,13 @@ func TestInvokeParallelism_ManualAutodetectFailStepNonZero(t *testing.T) {
 		language:             "java",
 		log:                  log.Sugar(),
 		addonLogger:          log.Sugar(),
-		splitStrategy:        defaultSplitStrategy,
+		testSplitStrategy:    countTestSplitStrategy,
+		parallelizeTests:     true,
 	}
 	ignoreInstr := true
 	selectTestsResponse := types.SelectTestsResp{}
 
-	ignoreInstrResp := r.invokeParallelism(ctx, runner, &selectTestsResponse, ignoreInstr, false)
+	ignoreInstrResp := r.computeSelectedTests(ctx, runner, &selectTestsResponse, ignoreInstr)
 	assert.Equal(t, r.runOnlySelectedTests, true)
 	assert.Equal(t, len(selectTestsResponse.Tests), 0)
 	assert.Equal(t, ignoreInstrResp, false)
@@ -560,14 +632,31 @@ func TestInvokeParallelism_TestSelectionRunSelected(t *testing.T) {
 	oldIsManual := isManualFn
 	oldGetStepStrategyIteration := getStepStrategyIteration
 	oldGetStepStrategyIterations := getStepStrategyIterations
+	oldGetStageStrategyIteration := getStageStrategyIteration
+	oldGetStageStrategyIterations := getStageStrategyIterations
 	oldIsParallelismEnabled := isParallelismEnabled
+	oldIsStepParallelismEnabled := isStepParallelismEnabled
+	oldIsStageParallelismEnabled := isStageParallelismEnabled
 	defer func() {
 		isManualFn = oldIsManual
 		getStepStrategyIteration = oldGetStepStrategyIteration
 		getStepStrategyIterations = oldGetStepStrategyIterations
+		getStageStrategyIteration = oldGetStageStrategyIteration
+		getStageStrategyIterations = oldGetStageStrategyIterations
 		isParallelismEnabled = oldIsParallelismEnabled
+		isStepParallelismEnabled = oldIsStepParallelismEnabled
+		isStageParallelismEnabled = oldIsStageParallelismEnabled
 	}()
 	isManualFn = func() bool {
+		return true
+	}
+	isParallelismEnabled = func() bool {
+		return true
+	}
+	isStepParallelismEnabled = func() bool {
+		return true
+	}
+	isStageParallelismEnabled = func() bool {
 		return true
 	}
 	getStepStrategyIteration = func() (int, error) {
@@ -575,6 +664,12 @@ func TestInvokeParallelism_TestSelectionRunSelected(t *testing.T) {
 	}
 	getStepStrategyIterations = func() (int, error) {
 		return 2, nil
+	}
+	getStageStrategyIteration = func() (int, error) {
+		return 0, nil
+	}
+	getStageStrategyIterations = func() (int, error) {
+		return 1, nil
 	}
 
 	r := runTestsTask{
@@ -587,13 +682,14 @@ func TestInvokeParallelism_TestSelectionRunSelected(t *testing.T) {
 		language:             "java",
 		log:                  log.Sugar(),
 		addonLogger:          log.Sugar(),
-		splitStrategy:        defaultSplitStrategy,
+		testSplitStrategy:    countTestSplitStrategy,
+		parallelizeTests:     true,
 	}
 	ignoreInstr := true
 	selectTestsResponse := types.SelectTestsResp{}
 	selectTestsResponse.Tests = append(selectTestsResponse.Tests, t1, t2)
 
-	ignoreInstrResp := r.invokeParallelism(ctx, runner, &selectTestsResponse, ignoreInstr, false)
+	ignoreInstrResp := r.computeSelectedTests(ctx, runner, &selectTestsResponse, ignoreInstr)
 	assert.Equal(t, r.runOnlySelectedTests, true)
 	assert.Equal(t, len(selectTestsResponse.Tests), 1)
 	assert.False(t, ignoreInstrResp)
@@ -624,13 +720,13 @@ func TestInvokeParallelism_Skip(t *testing.T) {
 		language:             "java",
 		log:                  log.Sugar(),
 		addonLogger:          log.Sugar(),
-		splitStrategy:        defaultSplitStrategy,
+		testSplitStrategy:    countTestSplitStrategy,
 	}
 	ignoreInstr := true
 	selectTestsResponse := types.SelectTestsResp{}
 	selectTestsResponse.Tests = append(selectTestsResponse.Tests, t1, t2)
 
-	ignoreInstrResp := r.invokeParallelism(ctx, runner, &selectTestsResponse, ignoreInstr, true)
+	ignoreInstrResp := r.computeSelectedTests(ctx, runner, &selectTestsResponse, ignoreInstr)
 	assert.Equal(t, r.runOnlySelectedTests, false)
 	assert.Equal(t, len(selectTestsResponse.Tests), 2)
 	assert.Equal(t, ignoreInstrResp, ignoreInstr)
