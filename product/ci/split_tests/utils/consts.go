@@ -15,5 +15,5 @@ const (
 	SplitByTestcaseTimeStr  = "testcase_timing"
 	SplitByTestSuiteTimeStr = "testsuite_timing"
 	SplitByFileSizeStr      = "file_size"
-	SplitByCount            = "test_count"
+	SplitByTestCount        = "test_count"
 )
