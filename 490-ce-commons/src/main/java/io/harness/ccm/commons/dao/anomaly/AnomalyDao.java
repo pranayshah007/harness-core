@@ -81,6 +81,21 @@ public class AnomalyDao {
     return finalStep.fetchInto(Anomalies.class);
   }
 
+  @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)
+  public List<Anomalies> fetchAnomaliesForNotification(@NonNull String accountId, @Nullable Condition condition,
+       @NonNull List<OrderField<?>> orderFields, @NonNull Integer offset, @NonNull Integer limit, Instant date) {
+    SelectFinalStep<AnomaliesRecord> finalStep = dslContext.selectFrom(ANOMALIES)
+        .where(ANOMALIES.ACCOUNTID.eq(accountId)
+            .and(ANOMALIES.ANOMALYTIME.eq(toOffsetDateTime(date)))
+            .and(ANOMALIES.NOTIFICATIONSENT.eq(false))
+            .and(firstNonNull(condition, DSL.noCondition())))
+        .orderBy(orderFields)
+        .offset(offset)
+        .limit(limit);
+    log.info("Anomaly Query: {}", finalStep.getQuery());
+    return finalStep.fetchInto(Anomalies.class);
+  }
+
   @Nullable
   @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)
   public List<AnomalySummary> fetchAnomaliesTotalCost(@NonNull String accountId, @Nullable Condition condition) {
