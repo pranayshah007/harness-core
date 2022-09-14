@@ -67,7 +67,7 @@ public class RESTWrapperRecommendationDetailsTest extends CategoryTest {
   public void testNodeRecommendationDetail() throws Exception {
     RecommendationDetailsDTO recommendationDetailsDTO = NodeRecommendationDTO.builder().id(RECOMMENDATION_ID).build();
     when(detailsQuery.recommendationDetails(
-             any(String.class), eq(ResourceType.NODE_POOL), eq(null), eq(null), eq(0), envCaptor.capture()))
+             any(String.class), eq(ResourceType.NODE_POOL), eq(null), eq(null), eq(0L), envCaptor.capture()))
         .thenReturn(recommendationDetailsDTO);
 
     NodeRecommendationDTO nodeRecommendationDTO =
@@ -89,7 +89,7 @@ public class RESTWrapperRecommendationDetailsTest extends CategoryTest {
     RecommendationDetailsDTO recommendationDetailsDTO =
         WorkloadRecommendationDTO.builder().id(RECOMMENDATION_ID).build();
     when(detailsQuery.recommendationDetails(any(String.class), eq(ResourceType.WORKLOAD), startTimeCaptor.capture(),
-             endTimeCaptor.capture(), any(Integer.class), envCaptor.capture()))
+             endTimeCaptor.capture(), any(Long.class), envCaptor.capture()))
         .thenReturn(recommendationDetailsDTO);
 
     WorkloadRecommendationDTO workloadRecommendationDTO =
@@ -115,7 +115,7 @@ public class RESTWrapperRecommendationDetailsTest extends CategoryTest {
     RecommendationDetailsDTO recommendationDetailsDTO =
         WorkloadRecommendationDTO.builder().id(RECOMMENDATION_ID).build();
     when(detailsQuery.recommendationDetails(any(String.class), eq(ResourceType.WORKLOAD), startTimeCaptor.capture(),
-             endTimeCaptor.capture(), any(Integer.class), envCaptor.capture()))
+             endTimeCaptor.capture(), any(Long.class), envCaptor.capture()))
         .thenReturn(recommendationDetailsDTO);
 
     WorkloadRecommendationDTO workloadRecommendationDTO =
@@ -141,11 +141,11 @@ public class RESTWrapperRecommendationDetailsTest extends CategoryTest {
 
     RecommendationDetailsDTO recommendationDetailsDTO = ECSRecommendationDTO.builder().id(RECOMMENDATION_ID).build();
     when(detailsQuery.recommendationDetails(any(String.class), eq(ResourceType.ECS_SERVICE), startTimeCaptor.capture(),
-             endTimeCaptor.capture(), any(Integer.class), envCaptor.capture()))
+             endTimeCaptor.capture(), any(Long.class), envCaptor.capture()))
         .thenReturn(recommendationDetailsDTO);
 
     ECSRecommendationDTO ecsRecommendationDTO =
-        restWrapperRecommendationDetails.ecsRecommendationDetail(ACCOUNT_ID, RECOMMENDATION_ID, null, null, 0).getData();
+        restWrapperRecommendationDetails.ecsRecommendationDetail(ACCOUNT_ID, RECOMMENDATION_ID, null, null, 0L).getData();
 
     assertThat(ecsRecommendationDTO).isInstanceOf(RecommendationDetailsDTO.class);
     assertThat(ecsRecommendationDTO).isEqualTo(recommendationDetailsDTO);
@@ -165,12 +165,12 @@ public class RESTWrapperRecommendationDetailsTest extends CategoryTest {
 
     RecommendationDetailsDTO recommendationDetailsDTO = ECSRecommendationDTO.builder().id(RECOMMENDATION_ID).build();
     when(detailsQuery.recommendationDetails(any(String.class), eq(ResourceType.ECS_SERVICE), startTimeCaptor.capture(),
-             endTimeCaptor.capture(), any(Integer.class), envCaptor.capture()))
+             endTimeCaptor.capture(), any(Long.class), envCaptor.capture()))
         .thenReturn(recommendationDetailsDTO);
 
     ECSRecommendationDTO ecsRecommendationDTO =
         restWrapperRecommendationDetails
-            .ecsRecommendationDetail(ACCOUNT_ID, RECOMMENDATION_ID, "2022-01-03", "2022-01-10", 0)
+            .ecsRecommendationDetail(ACCOUNT_ID, RECOMMENDATION_ID, "2022-01-03", "2022-01-10", 0L)
             .getData();
 
     assertThat(ecsRecommendationDTO).isInstanceOf(RecommendationDetailsDTO.class);

@@ -46,7 +46,7 @@ public class ECSRecommendationService {
 
   @Nullable
   public ECSRecommendationDTO getECSRecommendationById(@NonNull final String accountIdentifier, String id,
-      @NonNull OffsetDateTime startTime, @NonNull OffsetDateTime endTime, Integer bufferPercentage) {
+      @NonNull OffsetDateTime startTime, @NonNull OffsetDateTime endTime, Long bufferPercentage) {
     log.info("getECSRecommendationById: bufferPercentage: {}", bufferPercentage);
     final Optional<ECSServiceRecommendation> ecsRecommendation =
         ecsRecommendationDAO.fetchECSRecommendationById(accountIdentifier, id);
@@ -65,7 +65,7 @@ public class ECSRecommendationService {
 
   @NonNull
   private ECSRecommendationDTO mergeHistogram(
-      final List<ECSPartialRecommendationHistogram> histogramList, ECSServiceRecommendation recommendation, Integer bufferPercentage) {
+      final List<ECSPartialRecommendationHistogram> histogramList, ECSServiceRecommendation recommendation, Long bufferPercentage) {
     log.info("mergeHistogram: bufferPercentage: {}", bufferPercentage);
     long memoryMb = memoryMbFromReadableFormat(recommendation.getCurrentResourceRequirements().get(MEMORY));
     long cpuUnits = cpuUnitsFromReadableFormat(recommendation.getCurrentResourceRequirements().get(CPU));
@@ -114,7 +114,7 @@ public class ECSRecommendationService {
         .build();
   }
 
-  private Map<String, Map<String, String>> getRecommendationWithBuffer(Map<String, Map<String, String>> percentileBased, Integer bufferPercentage) {
+  private Map<String, Map<String, String>> getRecommendationWithBuffer(Map<String, Map<String, String>> percentileBased, Long bufferPercentage) {
     Map<String, Map<String, String>> withBuffer = new HashMap<>();
     for (Map.Entry<String, Map<String, String>> mapEntry: percentileBased.entrySet()) {
       long memoryMb = memoryMbFromReadableFormat(mapEntry.getValue().get(MEMORY));

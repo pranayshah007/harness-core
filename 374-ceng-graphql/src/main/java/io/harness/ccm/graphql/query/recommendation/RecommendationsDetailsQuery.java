@@ -56,7 +56,7 @@ public class RecommendationsDetailsQuery {
   public RecommendationDetailsDTO recommendationDetails(@GraphQLContext RecommendationItemDTO nodeDTO,
       @GraphQLArgument(name = "startTime", description = "defaults to Now().minusDays(7)") OffsetDateTime startTime,
       @GraphQLArgument(name = "endTime", description = "defaults to Now()") OffsetDateTime endTime,
-      @GraphQLArgument(name = "bufferPercentage", description = "defaults to zero", defaultValue = "0") Integer bufferPercentage,
+      @GraphQLArgument(name = "bufferPercentage", description = "defaults to zero", defaultValue = "0") Long bufferPercentage,
       @GraphQLEnvironment final ResolutionEnvironment env) {
     log.info("recommendationDetails: bufferPercentage: {}", bufferPercentage);
     final String accountIdentifier = graphQLUtils.getAccountIdentifier(env);
@@ -70,7 +70,7 @@ public class RecommendationsDetailsQuery {
       @GraphQLNonNull @GraphQLArgument(name = "resourceType") ResourceType resourceType,
       @GraphQLArgument(name = "startTime", description = "defaults to Now().minusDays(7)") OffsetDateTime startTime,
       @GraphQLArgument(name = "endTime", description = "defaults to Now()") OffsetDateTime endTime,
-      @GraphQLArgument(name = "bufferPercentage", description = "defaults to zero", defaultValue = "0") Integer bufferPercentage,
+      @GraphQLArgument(name = "bufferPercentage", description = "defaults to zero", defaultValue = "0") Long bufferPercentage,
       @GraphQLEnvironment final ResolutionEnvironment env) {
     log.info("recommendationDetails: bufferPercentage: {}", bufferPercentage);
     final String accountIdentifier = graphQLUtils.getAccountIdentifier(env);
@@ -92,7 +92,7 @@ public class RecommendationsDetailsQuery {
 
   private RecommendationDetailsDTO recommendationDetailsInternal(@NotNull final String accountIdentifier,
       @NotNull ResourceType resourceType, @NotNull String id, @Nullable OffsetDateTime startTime,
-      @Nullable OffsetDateTime endTime, @Nullable Integer bufferPercentage) {
+      @Nullable OffsetDateTime endTime, @Nullable Long bufferPercentage) {
     log.info("recommendationDetailsInternal: bufferPercentage: {}", bufferPercentage);
     switch (resourceType) {
       case WORKLOAD:

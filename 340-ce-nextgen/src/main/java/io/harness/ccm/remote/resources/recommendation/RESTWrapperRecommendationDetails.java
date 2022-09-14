@@ -96,7 +96,7 @@ public class RESTWrapperRecommendationDetails {
     final ResolutionEnvironment env = GraphQLToRESTHelper.createResolutionEnv(accountId);
 
     NodeRecommendationDTO nodeRecommendation =
-        (NodeRecommendationDTO) detailsQuery.recommendationDetails(id, ResourceType.NODE_POOL, null, null, 0, env);
+        (NodeRecommendationDTO) detailsQuery.recommendationDetails(id, ResourceType.NODE_POOL, null, null, 0L, env);
     return ResponseDTO.newResponse(nodeRecommendation);
   }
 
@@ -145,7 +145,7 @@ public class RESTWrapperRecommendationDetails {
 
     WorkloadRecommendationDTO workloadRecommendation =
         (WorkloadRecommendationDTO) detailsQuery.recommendationDetails(id, ResourceType.WORKLOAD,
-            TimeUtils.toOffsetDateTime(startTime.getMillis()), TimeUtils.toOffsetDateTime(endTime.getMillis()), 0, env);
+            TimeUtils.toOffsetDateTime(startTime.getMillis()), TimeUtils.toOffsetDateTime(endTime.getMillis()), 0L, env);
     return ResponseDTO.newResponse(workloadRecommendation);
   }
 
@@ -175,7 +175,7 @@ public class RESTWrapperRecommendationDetails {
       @Parameter(required = false, description = DATETIME_DESCRIPTION + " Defaults to Today") @QueryParam(
           "to") @Nullable @Valid String to,
       @Parameter(required = false, description = "Buffer Percentage defaults to zero") @QueryParam("bufferPercentage")
-          @Nullable @Valid Integer bufferPercentage) {
+          @Nullable @Valid Long bufferPercentage) {
     log.info("ecsRecommendationDetail: bufferPercentage: {}", bufferPercentage);
     final ResolutionEnvironment env = GraphQLToRESTHelper.createResolutionEnv(accountId);
 
@@ -190,7 +190,7 @@ public class RESTWrapperRecommendationDetails {
     }
 
     if (bufferPercentage == null) {
-      bufferPercentage = 0;
+      bufferPercentage = 0L;
     }
 
     if (startTime.isAfter(endTime)) {
