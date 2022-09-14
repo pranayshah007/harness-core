@@ -219,6 +219,10 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
     if (!response.isSuccessful()) {
       log.error("Failed to send email notification: {}",
           (response.errorBody() != null) ? response.errorBody().string() : response.code());
+    } else {
+      for (AnomalyData anomalyData: perspectiveAnomalies) {
+        perspectiveAnomalyService.updateAnomalySentStatus(accountId, anomalyData.getId(), true);
+      }
     }
 
     Map<String, String> slackTemplateData = new HashMap<>();
@@ -240,6 +244,10 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
     if (!response.isSuccessful()) {
       log.error("Failed to send slack notification: {}",
           (response.errorBody() != null) ? response.errorBody().string() : response.code());
+    } else {
+      for (AnomalyData anomalyData: perspectiveAnomalies) {
+        perspectiveAnomalyService.updateAnomalySentStatus(accountId, anomalyData.getId(), true);
+      }
     }
   }
 
