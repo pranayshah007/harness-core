@@ -32,6 +32,7 @@ import io.harness.outbox.api.OutboxService;
 import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.repositories.UpsertOptions;
 import io.harness.repositories.infrastructure.spring.InfrastructureRepository;
 import io.harness.utils.YamlPipelineUtils;
 
@@ -159,7 +160,7 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
   }
 
   @Override
-  public InfrastructureEntity upsert(@Valid InfrastructureEntity requestInfra) {
+  public InfrastructureEntity upsert(@Valid InfrastructureEntity requestInfra, UpsertOptions upsertOptions) {
     validatePresenceOfRequiredFields(requestInfra.getAccountId(), requestInfra.getIdentifier());
     setNameIfNotPresent(requestInfra);
     modifyInfraRequest(requestInfra);

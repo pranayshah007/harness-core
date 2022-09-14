@@ -10,6 +10,7 @@ package io.harness.steps.wait;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.SwaggerConstants;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
@@ -32,6 +33,7 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(HarnessTeam.CDC)
 @RecasterAlias("io.harness.steps.wait.WaitStepParameters")
 public class WaitStepParameters implements SpecParameters {
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   @Pattern(regexp = NGRegexValidatorConstants.TIMEOUT_PATTERN)
   @VariableExpression(skipInnerObjectTraversal = true)
   ParameterField<Timeout> duration;

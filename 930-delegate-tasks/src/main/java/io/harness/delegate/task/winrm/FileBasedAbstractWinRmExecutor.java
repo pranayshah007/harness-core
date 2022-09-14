@@ -217,7 +217,10 @@ public abstract class FileBasedAbstractWinRmExecutor {
     log.info("Execute Command String returned exit code. {}", exitCode);
     io.harness.delegate.task.winrm.WinRmExecutorHelper.cleanupFiles(
         session, psScriptFile, getPowershell(), disableCommandEncoding, config.getCommandParameters());
-    return exitCode == 0 ? SUCCESS : FAILURE;
+    CommandExecutionStatus commandExecutionStatus = exitCode == 0 ? SUCCESS : FAILURE;
+    saveExecutionLog(format("%nCommand completed with ExitCode (%d)", exitCode), INFO);
+
+    return commandExecutionStatus;
   }
 
   private int executeCommandsWithoutEncoding(WinRmSession session, ExecutionLogWriter outputWriter,

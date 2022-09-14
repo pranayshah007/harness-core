@@ -25,7 +25,6 @@ import io.harness.repositories.instance.InstanceRepository;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.mongodb.client.result.UpdateResult;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -83,6 +82,14 @@ public class InstanceServiceImpl implements InstanceService {
   @Override
   public void deleteById(String id) {
     instanceRepository.deleteById(id);
+  }
+
+  @Override
+  public void softDeleteById(String id) {
+    Criteria criteria = Criteria.where(InstanceKeys.id).is(id);
+    Update update =
+        new Update().set(InstanceKeys.isDeleted, true).set(InstanceKeys.deletedAt, System.currentTimeMillis());
+    instanceRepository.findAndModify(criteria, update);
   }
 
   @Override
@@ -242,8 +249,16 @@ public class InstanceServiceImpl implements InstanceService {
 
   @Override
   public void updateInfrastructureMapping(List<String> instanceIds, String infrastructureMappingId) {
-    UpdateResult updateResult = instanceRepository.updateInfrastructureMapping(instanceIds, infrastructureMappingId);
-    log.info("Updated infrastructure mapping for {} instances", updateResult.getModifiedCount());
+    for (String instanceId : instanceIds) {
+      try {
+        instanceRepository.updateInfrastructureMapping(instanceId, infrastructureMappingId);
+        log.info("Updated infrastructure mapping for instance {}", instanceId);
+      } catch (DuplicateKeyException ex) {
+        log.warn("Error while update instance {}. Instance already exists with infrastructure mapping {}", instanceId,
+            infrastructureMappingId, ex);
+        softDeleteById(instanceId);
+      }
+    }
   }
 
   // ----------------------------------- PRIVATE METHODS -------------------------------------

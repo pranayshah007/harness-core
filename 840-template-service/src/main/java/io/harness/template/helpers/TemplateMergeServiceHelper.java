@@ -11,7 +11,14 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.pms.merger.helpers.MergeHelper.mergeInputSetFormatYamlToOriginYaml;
 import static io.harness.pms.yaml.validation.RuntimeInputValuesValidator.validateStaticValues;
-import static io.harness.template.beans.NGTemplateConstants.*;
+import static io.harness.template.beans.NGTemplateConstants.DUMMY_NODE;
+import static io.harness.template.beans.NGTemplateConstants.SPEC;
+import static io.harness.template.beans.NGTemplateConstants.STABLE_VERSION;
+import static io.harness.template.beans.NGTemplateConstants.TEMPLATE;
+import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_INPUTS;
+import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_REF;
+import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_VARIABLES;
+import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_VERSION_LABEL;
 
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
@@ -45,7 +52,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -213,7 +219,6 @@ public class TemplateMergeServiceHelper {
                 .get(YAMLFieldNameConstants.VARIABLES);
       ObjectMapper mapper = new ObjectMapper();
       ObjectNode finalTemplateJson = mapper.createObjectNode();
-      ;
 
       if (templateVariablesJson != null) {
         finalTemplateJson.set(TEMPLATE_VARIABLES, templateVariablesJson);

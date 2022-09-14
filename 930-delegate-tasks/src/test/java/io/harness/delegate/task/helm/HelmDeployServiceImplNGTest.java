@@ -104,8 +104,8 @@ import io.harness.k8s.model.Kind;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
-import io.harness.k8s.model.Release;
-import io.harness.k8s.model.ReleaseHistory;
+import io.harness.k8s.releasehistory.IK8sRelease;
+import io.harness.k8s.releasehistory.ReleaseHistory;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
@@ -665,7 +665,7 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
     releaseHistory.createNewRelease(Collections.singletonList(
         KubernetesResourceId.builder().namespace("default").name("resource-1").kind(Kind.StatefulSet.name()).build()));
     releaseHistory.setReleaseNumber(2);
-    releaseHistory.setReleaseStatus(Release.Status.Succeeded);
+    releaseHistory.setReleaseStatus(IK8sRelease.Status.Succeeded);
     doReturn("1.16").when(kubernetesContainerService).getVersionAsString(eq(kubernetesConfig));
 
     HelmInstallCmdResponseNG helmInstallCmdResponseNG =
@@ -675,7 +675,7 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
         .containsExactlyInAnyOrder("resource-1");
 
     // K8SteadyStateCheckEnabled true -- failed release
-    releaseHistory.setReleaseStatus(Release.Status.Failed);
+    releaseHistory.setReleaseStatus(IK8sRelease.Status.Failed);
 
     assertThatThrownBy(() -> executeRollbackWithReleaseHistory(releaseHistory, 2))
         .isInstanceOf(InvalidRequestException.class)

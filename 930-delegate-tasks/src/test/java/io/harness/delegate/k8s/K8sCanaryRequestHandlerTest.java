@@ -63,8 +63,8 @@ import io.harness.k8s.model.K8sPod;
 import io.harness.k8s.model.K8sSteadyStateDTO;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
-import io.harness.k8s.model.Release;
-import io.harness.k8s.model.ReleaseHistory;
+import io.harness.k8s.releasehistory.K8sLegacyRelease;
+import io.harness.k8s.releasehistory.ReleaseHistory;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 
@@ -249,7 +249,7 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
     K8sCanaryHandlerConfig k8sCanaryHandlerConfig = spyRequestHandler.getK8sCanaryHandlerConfig();
 
     ReleaseHistory releaseHistory = ReleaseHistory.createNew();
-    releaseHistory.setReleases(asList(Release.builder().number(2).build()));
+    releaseHistory.setReleases(asList(K8sLegacyRelease.builder().number(2).build()));
     k8sCanaryHandlerConfig.setCanaryWorkload(ManifestHelper.processYaml(K8sTestConstants.DEPLOYMENT_YAML).get(0));
     k8sCanaryHandlerConfig.setResources(Collections.emptyList());
     k8sCanaryHandlerConfig.setReleaseHistory(releaseHistory);
@@ -424,7 +424,7 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
     final K8sDelegateTaskParams delegateTaskParams =
         K8sDelegateTaskParams.builder().workingDirectory(workingDirectory).build();
     ReleaseHistory releaseHist = ReleaseHistory.createNew();
-    releaseHist.setReleases(asList(Release.builder().number(2).build()));
+    releaseHist.setReleases(asList(K8sLegacyRelease.builder().number(2).build()));
     K8sClient k8sClient = mock(K8sClient.class);
     doReturn(k8sClient).when(k8sTaskHelperBase).getKubernetesClient(anyBoolean());
     doReturn(true).when(k8sClient).performSteadyStateCheck(any(K8sSteadyStateDTO.class));
@@ -513,7 +513,7 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
     doReturn(k8sClient).when(k8sTaskHelperBase).getKubernetesClient(anyBoolean());
 
     ReleaseHistory releaseHist = ReleaseHistory.createNew();
-    releaseHist.setReleases(asList(Release.builder().number(2).build()));
+    releaseHist.setReleases(asList(K8sLegacyRelease.builder().number(2).build()));
     doReturn(releaseHist.getAsYaml())
         .when(k8sTaskHelperBase)
         .getReleaseHistoryDataFromConfigMap(kubernetesConfig, "success");

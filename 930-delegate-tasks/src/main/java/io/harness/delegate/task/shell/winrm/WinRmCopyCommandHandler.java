@@ -20,7 +20,9 @@ import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_DE
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.UNDECRYPTABLE_CONFIG_FILE_PROVIDED;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.UNDECRYPTABLE_CONFIG_FILE_PROVIDED_EXPLANATION;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.UNDECRYPTABLE_CONFIG_FILE_PROVIDED_HINT;
+import static io.harness.logging.CommandExecutionStatus.RUNNING;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
+import static io.harness.logging.LogLevel.INFO;
 
 import static software.wings.common.Constants.WINDOWS_HOME_DIR;
 
@@ -127,6 +129,7 @@ public class WinRmCopyCommandHandler implements CommandHandler {
       CopyCommandUnit copyCommandUnit, FileBasedWinRmExecutorNG executor) {
     CommandExecutionStatus result = CommandExecutionStatus.SUCCESS;
     List<ConfigFileParameters> configFiles = getConfigFileParameters(winRmCommandTaskParameters);
+    executor.saveExecutionLog(format("Begin execution of command: %s", copyCommandUnit.getName()), INFO, RUNNING);
     for (ConfigFileParameters configFile : configFiles) {
       log.info(format("Copying config file : %s, isEncrypted: %b", configFile.getFileName(), configFile.isEncrypted()));
       if (configFile.isEncrypted()) {
@@ -152,6 +155,7 @@ public class WinRmCopyCommandHandler implements CommandHandler {
         break;
       }
     }
+    executor.saveExecutionLog("Command execution finished with status " + result, LogLevel.INFO, result);
     return result;
   }
 
@@ -160,7 +164,7 @@ public class WinRmCopyCommandHandler implements CommandHandler {
     log.info("About to copy artifact");
     if (taskParameters.getArtifactDelegateConfig() instanceof SkipCopyArtifactDelegateConfig) {
       log.info("Artifactory docker registry found, skipping copy artifact.");
-      executor.saveExecutionLog("Command finished with status " + SUCCESS, LogLevel.INFO, SUCCESS);
+      executor.saveExecutionLog("Command execution finished with status " + SUCCESS, LogLevel.INFO, SUCCESS);
       return SUCCESS;
     }
     if (taskParameters.getArtifactDelegateConfig() instanceof CustomArtifactDelegateConfig) {

@@ -191,7 +191,9 @@ public class YamlMapGenerator {
       if (FQNHelper.isKeyInsideUUIdsToIdentityElementInList(uuidKey)) {
         generateYamlMap(fqnMap, currFQN, element, tempRes, topKey, isSanitiseFlow);
         if (tempRes.containsKey(topKey)) {
-          topKeyList.add(tempRes.get(topKey));
+          Map<String, Object> map = (Map) tempRes.get(topKey);
+          map.put(uuidKey, element.get(uuidKey));
+          topKeyList.add(map);
         }
       } else {
         Map<String, Object> tempMap = new LinkedHashMap<>();

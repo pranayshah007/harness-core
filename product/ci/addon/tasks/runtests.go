@@ -295,7 +295,8 @@ func (r *runTestsTask) getTestSelection(ctx context.Context, files []types.File,
 		r.runOnlySelectedTests = false
 	} else {
 		// PR execution: Call TI svc only when there is a chance of running selected tests
-		resp, err := selectTestsFn(ctx, files, r.runOnlySelectedTests, r.id, r.log, r.fs)
+		var err error
+		resp, err = selectTestsFn(ctx, files, r.runOnlySelectedTests, r.id, r.log, r.fs)
 		if err != nil {
 			log.Errorw("There was some issue in trying to intelligently figure out tests to run. Running all the tests", "error", zap.Error(err))
 			r.runOnlySelectedTests = false

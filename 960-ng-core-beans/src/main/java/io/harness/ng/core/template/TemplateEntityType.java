@@ -37,30 +37,36 @@ import lombok.Getter;
 
 @OwnedBy(CDC)
 public enum TemplateEntityType {
-  @JsonProperty(STEP) STEP_TEMPLATE(STEP, STEP_ROOT_FIELD, asList(IDENTIFIER_KEY, NAME_KEY), HarnessTeam.PIPELINE),
-  @JsonProperty(STAGE) STAGE_TEMPLATE(STAGE, STAGE_ROOT_FIELD, asList(IDENTIFIER_KEY, NAME_KEY), HarnessTeam.PIPELINE),
+  @JsonProperty(STEP)
+  STEP_TEMPLATE(STEP, STEP_ROOT_FIELD, asList(IDENTIFIER_KEY, NAME_KEY), HarnessTeam.PIPELINE, true),
+  @JsonProperty(STAGE)
+  STAGE_TEMPLATE(STAGE, STAGE_ROOT_FIELD, asList(IDENTIFIER_KEY, NAME_KEY), HarnessTeam.PIPELINE, true),
   @JsonProperty(PIPELINE)
-  PIPELINE_TEMPLATE(PIPELINE, PIPELINE_ROOT_FIELD, asList(IDENTIFIER_KEY, NAME_KEY), HarnessTeam.PIPELINE),
+  PIPELINE_TEMPLATE(PIPELINE, PIPELINE_ROOT_FIELD, asList(IDENTIFIER_KEY, NAME_KEY), HarnessTeam.PIPELINE, true),
   @JsonProperty(CUSTOM_DEPLOYMENT)
   CUSTOM_DEPLOYMENT_TEMPLATE(
-      CUSTOM_DEPLOYMENT, CUSTOM_DEPLOYMENT_ROOT_FIELD, asList(IDENTIFIER_KEY, NAME_KEY), HarnessTeam.CDP),
+      CUSTOM_DEPLOYMENT, CUSTOM_DEPLOYMENT_ROOT_FIELD, asList(IDENTIFIER_KEY, NAME_KEY), HarnessTeam.CDP, false),
   @JsonProperty(MONITORED_SERVICE)
   MONITORED_SERVICE_TEMPLATE(
-      MONITORED_SERVICE, MONITORED_SERVICE_ROOT_FIELD, asList(IDENTIFIER_KEY, NAME_KEY), HarnessTeam.CV),
+      MONITORED_SERVICE, MONITORED_SERVICE_ROOT_FIELD, asList(IDENTIFIER_KEY, NAME_KEY), HarnessTeam.CV, false),
 
   @JsonProperty(SECRET_MANAGER)
-  SECRET_MANAGER_TEMPLATE(SECRET_MANAGER, SECRET_MANAGER_ROOT_FIELD, asList(IDENTIFIER_KEY, NAME_KEY), HarnessTeam.PL);
+  SECRET_MANAGER_TEMPLATE(
+      SECRET_MANAGER, SECRET_MANAGER_ROOT_FIELD, asList(IDENTIFIER_KEY, NAME_KEY), HarnessTeam.PL, false);
 
   private final String yamlType;
   private String rootYamlName;
   private final List<String> yamlFieldKeys;
   @Getter private HarnessTeam ownerTeam;
+  private boolean isGitEntity;
 
-  TemplateEntityType(String yamlType, String rootYamlName, List<String> yamlFieldKeys, HarnessTeam ownerTeam) {
+  TemplateEntityType(
+      String yamlType, String rootYamlName, List<String> yamlFieldKeys, HarnessTeam ownerTeam, boolean isGitEntity) {
     this.yamlType = yamlType;
     this.rootYamlName = rootYamlName;
     this.yamlFieldKeys = yamlFieldKeys;
     this.ownerTeam = ownerTeam;
+    this.isGitEntity = isGitEntity;
   }
 
   @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
@@ -90,5 +96,9 @@ public enum TemplateEntityType {
 
   public HarnessTeam getOwnerTeam() {
     return ownerTeam;
+  }
+
+  public boolean isGitEntity() {
+    return isGitEntity;
   }
 }

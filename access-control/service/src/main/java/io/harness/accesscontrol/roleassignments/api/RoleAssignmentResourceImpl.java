@@ -526,6 +526,23 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
     }));
   }
 
+  @Override
+  public ResponseDTO<RoleAssignmentResponseDTO> get(HarnessScopeParams harnessScopeParams, String identifier) {
+    Scope scope = fromParams(harnessScopeParams);
+    RoleAssignment roleAssignment =
+        roleAssignmentService.get(identifier, scope.toString()).<NotFoundException>orElseThrow(() -> {
+          throw new NotFoundException("Role Assignment with given identifier doesn't exists");
+        });
+    if (!checkViewPermission(harnessScopeParams, roleAssignment.getPrincipalType())) {
+      throw new UnauthorizedException(
+          String.format("Current principal is not authorized to the view the role assignments for Principal Type %s",
+              roleAssignment.getPrincipalType().name()),
+          USER_NOT_AUTHORIZED, WingsException.USER);
+    }
+    RoleAssignmentResponseDTO response = roleAssignmentDTOMapper.toResponseDTO(roleAssignment);
+    return ResponseDTO.newResponse(response);
+  }
+
   private List<RoleAssignmentResponseDTO> createRoleAssignments(
       HarnessScopeParams harnessScopeParams, RoleAssignmentCreateRequestDTO requestDTO, boolean managed) {
     Scope scope = fromParams(harnessScopeParams);
