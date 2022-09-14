@@ -7,9 +7,9 @@
 
 package io.harness.ccm.graphql.dto.recommendation;
 
-import com.amazonaws.services.ecs.model.LaunchType;
 import software.wings.graphql.datafetcher.ce.recommendation.entity.Cost;
 
+import com.amazonaws.services.ecs.model.LaunchType;
 import java.util.Map;
 import lombok.Builder;
 import lombok.Value;

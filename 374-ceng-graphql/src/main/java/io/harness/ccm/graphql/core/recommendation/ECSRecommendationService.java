@@ -63,8 +63,8 @@ public class ECSRecommendationService {
   }
 
   @NonNull
-  private ECSRecommendationDTO mergeHistogram(
-      final List<ECSPartialRecommendationHistogram> histogramList, ECSServiceRecommendation recommendation, Long bufferPercentage) {
+  private ECSRecommendationDTO mergeHistogram(final List<ECSPartialRecommendationHistogram> histogramList,
+      ECSServiceRecommendation recommendation, Long bufferPercentage) {
     long memoryMb = memoryMbFromReadableFormat(recommendation.getCurrentResourceRequirements().get(MEMORY));
     long cpuUnits = cpuUnitsFromReadableFormat(recommendation.getCurrentResourceRequirements().get(CPU));
     Histogram memoryHistogram = newHistogram(memoryMb);
@@ -91,7 +91,8 @@ public class ECSRecommendationService {
         .serviceName(recommendation.getServiceName())
         .launchType(recommendation.getLaunchType())
         .current(recommendation.getCurrentResourceRequirements())
-        .percentileBased(getRecommendationWithBuffer(recommendation.getPercentileBasedResourceRecommendation(), bufferPercentage))
+        .percentileBased(
+            getRecommendationWithBuffer(recommendation.getPercentileBasedResourceRecommendation(), bufferPercentage))
         .lastDayCost(recommendation.getLastDayCost())
         .memoryHistogram(HistogramExp.builder()
                              .numBuckets(memStripped.getNumBuckets())
@@ -112,9 +113,10 @@ public class ECSRecommendationService {
         .build();
   }
 
-  private Map<String, Map<String, String>> getRecommendationWithBuffer(Map<String, Map<String, String>> percentileBased, Long bufferPercentage) {
+  private Map<String, Map<String, String>> getRecommendationWithBuffer(
+      Map<String, Map<String, String>> percentileBased, Long bufferPercentage) {
     Map<String, Map<String, String>> withBuffer = new HashMap<>();
-    for (Map.Entry<String, Map<String, String>> mapEntry: percentileBased.entrySet()) {
+    for (Map.Entry<String, Map<String, String>> mapEntry : percentileBased.entrySet()) {
       long memoryMb = memoryMbFromReadableFormat(mapEntry.getValue().get(MEMORY));
       long cpuUnits = cpuUnitsFromReadableFormat(mapEntry.getValue().get(CPU));
       memoryMb += (long) ((double) memoryMb * (double) bufferPercentage) / 100.0;
@@ -168,10 +170,10 @@ public class ECSRecommendationService {
 
   static String readableCpuAmount(long cpuAmount) {
     BigDecimal cpuInCores = BigDecimal
-            // milliCore to core
-            .valueOf(cpuAmount, 3)
-            // round up to nearest milliCore
-            .setScale(3, HALF_UP);
+                                // milliCore to core
+                                .valueOf(cpuAmount, 3)
+                                // round up to nearest milliCore
+                                .setScale(3, HALF_UP);
     return toDecimalSuffixedString(cpuInCores);
   }
 
