@@ -143,9 +143,9 @@ public class RESTWrapperRecommendationDetails {
           String.format(INVALID_DATETIME_INPUT, startTime.toString(), endTime.toString()));
     }
 
-    WorkloadRecommendationDTO workloadRecommendation =
-        (WorkloadRecommendationDTO) detailsQuery.recommendationDetails(id, ResourceType.WORKLOAD,
-            TimeUtils.toOffsetDateTime(startTime.getMillis()), TimeUtils.toOffsetDateTime(endTime.getMillis()), 0L, env);
+    WorkloadRecommendationDTO workloadRecommendation = (WorkloadRecommendationDTO) detailsQuery.recommendationDetails(
+        id, ResourceType.WORKLOAD, TimeUtils.toOffsetDateTime(startTime.getMillis()),
+        TimeUtils.toOffsetDateTime(endTime.getMillis()), 0L, env);
     return ResponseDTO.newResponse(workloadRecommendation);
   }
 
@@ -174,8 +174,8 @@ public class RESTWrapperRecommendationDetails {
           "from") @Nullable @Valid String from,
       @Parameter(required = false, description = DATETIME_DESCRIPTION + " Defaults to Today") @QueryParam(
           "to") @Nullable @Valid String to,
-      @Parameter(required = false, description = "Buffer Percentage defaults to zero") @QueryParam("bufferPercentage")
-          @Nullable @Valid Long bufferPercentage) {
+      @Parameter(required = false, description = "Buffer Percentage defaults to zero") @QueryParam(
+          "bufferPercentage") @Nullable @Valid Long bufferPercentage) {
     final ResolutionEnvironment env = GraphQLToRESTHelper.createResolutionEnv(accountId);
 
     DateTime endTime = DateTime.now().withTimeAtStartOfDay();
@@ -197,9 +197,9 @@ public class RESTWrapperRecommendationDetails {
           String.format(INVALID_DATETIME_INPUT, startTime.toString(), endTime.toString()));
     }
 
-    ECSRecommendationDTO ecsRecommendation =
-        (ECSRecommendationDTO) detailsQuery.recommendationDetails(id, ResourceType.ECS_SERVICE,
-            TimeUtils.toOffsetDateTime(startTime.getMillis()), TimeUtils.toOffsetDateTime(endTime.getMillis()), bufferPercentage, env);
+    ECSRecommendationDTO ecsRecommendation = (ECSRecommendationDTO) detailsQuery.recommendationDetails(id,
+        ResourceType.ECS_SERVICE, TimeUtils.toOffsetDateTime(startTime.getMillis()),
+        TimeUtils.toOffsetDateTime(endTime.getMillis()), bufferPercentage, env);
     return ResponseDTO.newResponse(ecsRecommendation);
   }
 }

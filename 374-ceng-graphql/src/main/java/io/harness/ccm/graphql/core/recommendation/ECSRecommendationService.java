@@ -8,12 +8,13 @@
 package io.harness.ccm.graphql.core.recommendation;
 
 import static io.harness.ccm.RecommenderUtils.EPSILON;
-import static io.kubernetes.client.custom.Quantity.Format.DECIMAL_SI;
-import static java.math.RoundingMode.HALF_UP;
+
 import static software.wings.graphql.datafetcher.ce.recommendation.entity.ResourceRequirement.CPU;
 import static software.wings.graphql.datafetcher.ce.recommendation.entity.ResourceRequirement.MEMORY;
 
-import com.google.common.collect.ImmutableMap;
+import static io.kubernetes.client.custom.Quantity.Format.DECIMAL_SI;
+import static java.math.RoundingMode.HALF_UP;
+
 import io.harness.ccm.commons.dao.recommendation.ECSRecommendationDAO;
 import io.harness.ccm.commons.entities.ecs.recommendation.ECSPartialRecommendationHistogram;
 import io.harness.ccm.commons.entities.ecs.recommendation.ECSServiceRecommendation;
@@ -25,6 +26,7 @@ import io.harness.histogram.HistogramCheckpoint;
 import io.harness.histogram.HistogramImpl;
 import io.harness.histogram.LinearHistogramOptions;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.kubernetes.client.custom.Quantity;

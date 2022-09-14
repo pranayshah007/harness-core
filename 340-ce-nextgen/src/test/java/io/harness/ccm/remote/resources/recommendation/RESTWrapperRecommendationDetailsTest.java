@@ -145,7 +145,8 @@ public class RESTWrapperRecommendationDetailsTest extends CategoryTest {
         .thenReturn(recommendationDetailsDTO);
 
     ECSRecommendationDTO ecsRecommendationDTO =
-        restWrapperRecommendationDetails.ecsRecommendationDetail(ACCOUNT_ID, RECOMMENDATION_ID, null, null, 0L).getData();
+        restWrapperRecommendationDetails.ecsRecommendationDetail(ACCOUNT_ID, RECOMMENDATION_ID, null, null, 0L)
+            .getData();
 
     assertThat(ecsRecommendationDTO).isInstanceOf(RecommendationDetailsDTO.class);
     assertThat(ecsRecommendationDTO).isEqualTo(recommendationDetailsDTO);
