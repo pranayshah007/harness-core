@@ -74,6 +74,7 @@ import io.harness.template.resources.NGTemplateResource;
 import io.harness.template.utils.TemplateUtils;
 import io.harness.template.yaml.TemplateRefHelper;
 import io.harness.utils.PageUtils;
+import io.harness.yaml.core.variables.NGVariable;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -88,8 +89,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import io.harness.yaml.core.variables.NGVariable;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
@@ -728,12 +727,13 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     return templateRepository.deleteAllOrgLevelTemplates(accountId, orgId);
   }
 
-    @Override
-    public String copyTemplateWithVariables(String accountIdentifier, String orgIdentifier, String projectIdentifier, String templateIdentifier, String versionLabel, List<NGVariable> templateVariables) {
-        return null;
-    }
+  @Override
+  public String copyTemplateWithVariables(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String templateIdentifier, String versionLabel, List<NGVariable> templateVariables) {
+    return null;
+  }
 
-    private void assureThatTheProjectAndOrgExists(String accountId, String orgId, String projectId) {
+  private void assureThatTheProjectAndOrgExists(String accountId, String orgId, String projectId) {
     if (isNotEmpty(projectId)) {
       // it's project level template
       if (isEmpty(orgId)) {
