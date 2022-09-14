@@ -1,0 +1,94 @@
+load("@io_bazel_rules_docker//container:container.bzl", "container_image", "container_pull", "container_push")
+load("@io_bazel_rules_docker//docker/util:run.bzl", "container_run_and_commit_layer")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
+
+container_run_and_commit_layer(
+    name = "template-service-run",
+    image = "@ubi-java-base//image",
+    commands = [
+        "curl https://get.et.harness.io/releases/latest/nix/harness-et-agent.tar.gz --output harness-et-agent.tar.gz",
+        "tar -xzf harness-et-agent.tar.gz -C /opt/harness",
+        "rm /opt/harness/harness-et-agent.tar.gz",
+        "curl https://harness.jfrog.io/artifactory/BuildsTools/docker/apm/appd/AppServerAgent-1.8-21.11.2.33305.zip --output AppServerAgent-1.8-21.11.2.33305.zip",
+        "curl https://harness.jfrog.io/artifactory/BuildsTools/docker/apm/opentelemetry/opentelemetry-javaagent.jar --output opentelemetry-javaagent.jar",
+        "chmod 711 /opt/harness/harness AppServerAgent-1.8-21.11.2.33305.zip opentelemetry-javaagent.jar",
+    ],
+    tags = [
+            "manual",
+            "no-cache",
+            "no-ide",
+        ],
+)
+
+pkg_tar(
+    name = "scripts",
+    srcs = glob([
+        "scripts/*",
+        ]),
+    mode = "0500",
+    owner = "65534.65534",
+    package_dir = "/opt/harness",
+    tags = [
+                "manual",
+                "no-cache",
+                "no-ide",
+            ],
+)
+
+pkg_tar(
+    name = "files",
+    srcs = [
+        "//:protocol.info",
+        "//840-template-service:config.yml",
+        "//840-template-service/src/main/resources:redisson-jcache.yaml"
+    ],
+    files = {
+        "//840-template-service:module_deploy.jar": "template-service-capsule.jar",
+        },
+    mode = "0500",
+    owner = "65534.65534",
+    package_dir = "/opt/harness",
+    tags = [
+                "manual",
+                "no-cache",
+                "no-ide",
+            ],
+)
+
+container_image(
+    name = "template-service-image",
+    base = "@ubi-java-base//image",
+    layers = [
+        ":template-service-run"
+        ],
+    user = "65534",
+    workdir = "/opt/harness",
+    cmd = [
+        "./run.sh",
+        ],
+    tars = [
+        ":files",
+        ":scripts",
+    ],
+    env = {
+    },
+    tags = [
+            "manual",
+            "no-cache",
+            "no-ide",
+        ],
+)
+
+container_push(
+    name = "template-service-push",
+    format = "Docker",
+    image = "template-service-image",
+    registry = "us.gcr.io",
+    repository = "platform-205701/harness/harness-services-bazel/template-service-bazel-test",
+    tag = "latest-test",
+    tags = [
+            "manual",
+            "no-cache",
+            "no-ide",
+        ],
+)
