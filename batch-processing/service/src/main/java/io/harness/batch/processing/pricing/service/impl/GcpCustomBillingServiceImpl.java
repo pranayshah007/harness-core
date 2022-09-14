@@ -61,9 +61,10 @@ public class GcpCustomBillingServiceImpl implements GcpCustomBillingService {
         log.info("GCP: fetching custom data from cache. RETURNED NULL");
         return null;
       }
-      log.info("GCP: fetching custom data from cache. ComputeCost: {}, CPU Cost: {}, MemoryCost: {}",
+      log.info(
+          "GCP: fetching custom data from cache. ComputeCost: {}, CPU Cost: {}, MemoryCost: {}, resourceId: {}, startTime: {}, endTime: {}",
           vmInstanceBillingData.getComputeCost(), vmInstanceBillingData.getCpuCost(),
-          vmInstanceBillingData.getMemoryCost());
+          vmInstanceBillingData.getMemoryCost(), resourceId, startTime, endTime);
       return vmInstanceBillingData;
     }
     return null;

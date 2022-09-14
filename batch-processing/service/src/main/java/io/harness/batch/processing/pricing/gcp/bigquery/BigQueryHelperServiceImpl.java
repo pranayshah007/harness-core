@@ -209,6 +209,7 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
     });
 
     log.debug("GCP: resource map data {} ", vmInstanceBillingDataMap);
+    log.info("GCP: resource map data {} ", vmInstanceBillingDataMap);
     return vmInstanceBillingDataMap;
   }
 

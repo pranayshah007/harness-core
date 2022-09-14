@@ -123,6 +123,8 @@ public class BillingCalculationService {
     double pricePerHour = pricingData.getPricePerHour();
     BigDecimal billingAmount = BigDecimal.valueOf((pricePerHour * instanceActiveSeconds) / 3600);
     log.debug("Billing amount {} {} {}", billingAmount, pricePerHour, instanceActiveSeconds);
+    log.info("Billing amount {}, perHour: {}, instanceActiveSeconds: {}, pricingSource: {}", billingAmount,
+        pricePerHour, instanceActiveSeconds, pricingData.getPricingSource());
 
     PricingSource pricingSource =
         null != pricingData.getPricingSource() ? pricingData.getPricingSource() : PricingSource.PUBLIC_API;

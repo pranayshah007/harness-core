@@ -113,10 +113,8 @@ public class InstanceBillingDataTasklet implements Tasklet {
 
     Map<String, MutableInt> pvcClaimCount = getPvcClaimCount(accountId, startTime, endTime);
     List<InstanceData> instanceDataLists;
-    InstanceDataReader instanceDataReader = new InstanceDataReader(instanceDataDao, accountId,
-        ImmutableList.of(
-            ECS_TASK_FARGATE, ECS_TASK_EC2, ECS_CONTAINER_INSTANCE, K8S_POD, K8S_POD_FARGATE, K8S_NODE, K8S_PVC),
-        startTime, endTime, batchSize);
+    InstanceDataReader instanceDataReader =
+        new InstanceDataReader(instanceDataDao, accountId, ImmutableList.of(K8S_NODE), startTime, endTime, batchSize);
 
     do {
       instanceDataLists = instanceDataReader.getNext();
@@ -159,16 +157,6 @@ public class InstanceBillingDataTasklet implements Tasklet {
     List<InstanceData> instanceDataLists;
     InstanceDataReader instanceDataReader =
         new InstanceDataReader(instanceDataDao, accountId, ImmutableList.of(K8S_PV), startTime, endTime, batchSize);
-    do {
-      instanceDataLists = instanceDataReader.getNext();
-      try {
-        instanceBillingDataList.addAll(createBillingData(
-            accountId, startTime, endTime, batchJobType, instanceDataLists, ImmutableMap.of(), ImmutableMap.of()));
-      } catch (Exception ex) {
-        log.error("Exception in billing step", ex);
-        throw ex;
-      }
-    } while (instanceDataLists.size() == batchSize);
     return instanceBillingDataList;
   }
 
@@ -346,6 +334,8 @@ public class InstanceBillingDataTasklet implements Tasklet {
         instanceData, utilizationData, parentInstanceActiveSecond, startTime, endTime);
 
     log.trace("Instance detail {} :: {} ", instanceData.getInstanceId(), billingData.getBillingAmountBreakup());
+    log.info("Instance Id: {}, BillingAmountBreakup: {} ", instanceData.getInstanceId(),
+        billingData.getBillingAmountBreakup());
 
     HarnessServiceInfo harnessServiceInfo = getHarnessServiceInfo(instanceData);
     HarnessServiceInfoNG harnessServiceInfoNG = getHarnessServiceInfoNG(instanceData);

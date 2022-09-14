@@ -85,6 +85,7 @@ public class ComputeInstancePricingStrategy implements InstancePricingStrategy {
         instanceData, startTime, endTime, parentInstanceActiveSecond, instanceFamily, region, cloudProvider);
 
     if (null == customVMPricing) {
+      log.info("customVMPricing is null for instanceId: {}", instanceData.getInstanceId());
       if (GCPCustomInstanceDetailProvider.isCustomGCPInstance(instanceFamily, cloudProvider)) {
         return GCPCustomInstanceDetailProvider.getGCPCustomInstancePricingData(instanceFamily, instanceCategory);
       } else if (ImmutableList.of(CloudProvider.ON_PREM, CloudProvider.IBM).contains(cloudProvider)) {
@@ -170,11 +171,13 @@ public class ComputeInstancePricingStrategy implements InstancePricingStrategy {
       vmInstanceBillingData = azureCustomBillingService.getComputeVMPricingInfo(instanceData, startTime, endTime);
     } else if (cloudProvider == CloudProvider.GCP && null != gcpDataSetId) {
       vmInstanceBillingData = gcpCustomBillingService.getComputeVMPricingInfo(instanceData, startTime, endTime);
+      log.info("Check: vmInstanceBillingData: {}, resourceId: {}", vmInstanceBillingData,
+          vmInstanceBillingData.getResourceId());
     }
 
     if (null != vmInstanceBillingData && !Double.isNaN(vmInstanceBillingData.getComputeCost())) {
       double pricePerHr = (vmInstanceBillingData.getComputeCost() * 3600) / parentInstanceActiveSecond;
-      log.info("CUR Pricing, pricePerHour: {}", pricePerHr);
+      log.info("CUR Pricing, pricePerHour: {}, resourceId: {}", pricePerHr, vmInstanceBillingData.getResourceId());
       if (!Double.isNaN(vmInstanceBillingData.getRate()) && vmInstanceBillingData.getRate() > 0.0) {
         pricePerHr = vmInstanceBillingData.getRate();
       }
@@ -186,6 +189,7 @@ public class ComputeInstancePricingStrategy implements InstancePricingStrategy {
                         .memoryMb(memoryMb)
                         .build();
     }
+    log.info("resourceId: {} ==>  PRICINGDATA: {}", vmInstanceBillingData.getResourceId(), pricingData);
     return pricingData;
   }
 }
