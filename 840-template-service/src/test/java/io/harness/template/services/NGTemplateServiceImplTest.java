@@ -546,6 +546,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
 
     String description = "Updated Description";
     TemplateEntity updateTemplate = entity.withDescription(description);
+
     TemplateEntity updatedTemplateEntity =
         templateService.updateTemplateEntity(updateTemplate, ChangeType.MODIFY, false, "");
     assertThat(updatedTemplateEntity).isNotNull();
@@ -947,6 +948,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
                                         .versionLabel(TEMPLATE_VERSION_LABEL)
                                         .templateEntityType(TemplateEntityType.MONITORED_SERVICE_TEMPLATE)
                                         .templateScope(Scope.PROJECT)
+                                        .yaml(yaml)
                                         .build();
     GitEntityInfo branchInfo = GitEntityInfo.builder().storeType(StoreType.REMOTE).build();
     setupGitContext(branchInfo);

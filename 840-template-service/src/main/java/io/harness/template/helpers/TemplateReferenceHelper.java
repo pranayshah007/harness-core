@@ -33,6 +33,7 @@ import io.harness.template.entity.TemplateEntity;
 import io.harness.template.helpers.crud.TemplateCrudHelper;
 import io.harness.template.helpers.crud.TemplateCrudHelperFactory;
 import io.harness.template.services.NGTemplateServiceHelper;
+import io.harness.template.utils.TemplateUtils;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.IdentifierRefProtoUtils;
 
@@ -110,6 +111,7 @@ public class TemplateReferenceHelper {
       String accountId, String orgId, String projectId, String yaml, boolean shouldModifyFqn) {
     List<EntityDetailProtoDTO> referredEntities = new ArrayList<>();
     YamlConfig yamlConfig = new YamlConfig(yaml);
+    TemplateUtils.setupGitParentEntityDetails(accountId, orgId, projectId);
     Map<FQN, Object> fqnToValueMap = yamlConfig.getFqnToValueMap();
     Set<FQN> fqnSet = new LinkedHashSet<>(yamlConfig.getFqnToValueMap().keySet());
     Map<String, Object> fqnStringToValueMap = new HashMap<>();
