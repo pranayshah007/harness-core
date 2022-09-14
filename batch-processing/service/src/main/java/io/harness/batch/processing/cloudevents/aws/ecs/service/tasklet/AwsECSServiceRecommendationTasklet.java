@@ -17,7 +17,6 @@ import static software.wings.graphql.datafetcher.ce.recommendation.entity.Resour
 import static java.math.RoundingMode.HALF_UP;
 import static java.util.Optional.ofNullable;
 
-import com.amazonaws.services.ecs.model.LaunchType;
 import io.harness.batch.processing.billing.timeseries.service.impl.BillingDataServiceImpl;
 import io.harness.batch.processing.billing.timeseries.service.impl.UtilizationDataServiceImpl;
 import io.harness.batch.processing.ccm.CCMJobConstants;
@@ -41,6 +40,7 @@ import io.harness.histogram.LinearHistogramOptions;
 
 import software.wings.graphql.datafetcher.ce.recommendation.entity.Cost;
 
+import com.amazonaws.services.ecs.model.LaunchType;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.inject.Singleton;
@@ -139,8 +139,8 @@ public class AwsECSServiceRecommendationTasklet implements Tasklet {
         partialHistograms.add(partialRecommendationHistogram);
 
         // Create ECSServiceRecommendation
-        ECSServiceRecommendation recommendation =
-            getRecommendation(accountId, clusterId, clusterName, serviceName, serviceArn, launchType, cpuMilliUnits, memoryBytes);
+        ECSServiceRecommendation recommendation = getRecommendation(
+            accountId, clusterId, clusterName, serviceName, serviceArn, launchType, cpuMilliUnits, memoryBytes);
 
         // Merge partial recommendations and compute recommendations
         mergePartialRecommendations(partialHistograms, recommendation, cpuMilliUnits, memoryBytes);
@@ -271,8 +271,8 @@ public class AwsECSServiceRecommendationTasklet implements Tasklet {
         cpuAmount = resourceValues.getCpuMilliUnits();
         memoryAmount = resourceValues.getMemoryBytes();
       }
-      computedPercentiles.put(String.format(PERCENTILE_KEY, percentile),
-          convertToReadableForm(makeResourceMap(cpuAmount, memoryAmount)));
+      computedPercentiles.put(
+          String.format(PERCENTILE_KEY, percentile), convertToReadableForm(makeResourceMap(cpuAmount, memoryAmount)));
     }
     recommendation.setPercentileBasedResourceRecommendation(computedPercentiles);
   }

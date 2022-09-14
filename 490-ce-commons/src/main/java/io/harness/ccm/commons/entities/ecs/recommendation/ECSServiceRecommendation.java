@@ -9,7 +9,6 @@ package io.harness.ccm.commons.entities.ecs.recommendation;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
 
-import com.amazonaws.services.ecs.model.LaunchType;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.commons.beans.HarnessServiceInfo;
@@ -28,6 +27,7 @@ import io.harness.persistence.UuidAware;
 
 import software.wings.graphql.datafetcher.ce.recommendation.entity.Cost;
 
+import com.amazonaws.services.ecs.model.LaunchType;
 import com.google.common.collect.ImmutableList;
 import java.math.BigDecimal;
 import java.time.Instant;

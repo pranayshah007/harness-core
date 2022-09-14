@@ -9,7 +9,6 @@ package io.harness.ccm.commons.entities.ecs;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
 
-import com.amazonaws.services.ecs.model.LaunchType;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.commons.beans.Resource;
@@ -22,6 +21,7 @@ import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UuidAware;
 
+import com.amazonaws.services.ecs.model.LaunchType;
 import com.google.common.collect.ImmutableList;
 import java.util.List;
 import java.util.Map;
