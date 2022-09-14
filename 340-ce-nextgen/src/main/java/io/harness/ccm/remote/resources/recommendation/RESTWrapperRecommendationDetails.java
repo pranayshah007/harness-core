@@ -176,7 +176,6 @@ public class RESTWrapperRecommendationDetails {
           "to") @Nullable @Valid String to,
       @Parameter(required = false, description = "Buffer Percentage defaults to zero") @QueryParam("bufferPercentage")
           @Nullable @Valid Long bufferPercentage) {
-    log.info("ecsRecommendationDetail: bufferPercentage: {}", bufferPercentage);
     final ResolutionEnvironment env = GraphQLToRESTHelper.createResolutionEnv(accountId);
 
     DateTime endTime = DateTime.now().withTimeAtStartOfDay();

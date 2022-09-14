@@ -36,10 +36,8 @@ import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import lombok.NonNull;
-import lombok.extern.slf4j.Slf4j;
 
 @Singleton
-@Slf4j
 public class ECSRecommendationService {
   private static final int NUMBER_OF_BUCKETS = 1000;
   @Inject private ECSRecommendationDAO ecsRecommendationDAO;
@@ -47,7 +45,6 @@ public class ECSRecommendationService {
   @Nullable
   public ECSRecommendationDTO getECSRecommendationById(@NonNull final String accountIdentifier, String id,
       @NonNull OffsetDateTime startTime, @NonNull OffsetDateTime endTime, Long bufferPercentage) {
-    log.info("getECSRecommendationById: bufferPercentage: {}", bufferPercentage);
     final Optional<ECSServiceRecommendation> ecsRecommendation =
         ecsRecommendationDAO.fetchECSRecommendationById(accountIdentifier, id);
 
@@ -66,7 +63,6 @@ public class ECSRecommendationService {
   @NonNull
   private ECSRecommendationDTO mergeHistogram(
       final List<ECSPartialRecommendationHistogram> histogramList, ECSServiceRecommendation recommendation, Long bufferPercentage) {
-    log.info("mergeHistogram: bufferPercentage: {}", bufferPercentage);
     long memoryMb = memoryMbFromReadableFormat(recommendation.getCurrentResourceRequirements().get(MEMORY));
     long cpuUnits = cpuUnitsFromReadableFormat(recommendation.getCurrentResourceRequirements().get(CPU));
     Histogram memoryHistogram = newHistogram(memoryMb);
