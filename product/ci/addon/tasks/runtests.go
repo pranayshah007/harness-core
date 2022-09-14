@@ -29,15 +29,15 @@ import (
 )
 
 const (
-	defaultRunTestsTimeout   int64 = 14400 // 4 hour
-	defaultRunTestsRetries   int32 = 1
-	outDir                         = "ti/callgraph/"    // path passed as outDir in the config.ini file
-	cgDir                          = "ti/callgraph/cg/" // path where callgraph files will be generated
-	javaAgentArg                   = "-javaagent:/addon/bin/java-agent.jar=%s"
-	tiConfigPath                   = ".ticonfig.yaml"
-	classTimingSplitStrategy       = stutils.SplitByClassTimeStr
-	countSplitStrategy             = stutils.SplitByCount
-	defaultSplitStrategy           = classTimingSplitStrategy
+	defaultRunTestsTimeout       int64 = 14400 // 4 hour
+	defaultRunTestsRetries       int32 = 1
+	outDir                             = "ti/callgraph/"    // path passed as outDir in the config.ini file
+	cgDir                              = "ti/callgraph/cg/" // path where callgraph files will be generated
+	javaAgentArg                       = "-javaagent:/addon/bin/java-agent.jar=%s"
+	tiConfigPath                       = ".ticonfig.yaml"
+	classTimingTestSplitStrategy       = stutils.SplitByClassTimeStr
+	countTestSplitStrategy             = stutils.SplitByCount
+	defaultTestSplitStrategy           = classTimingTestSplitStrategy
 )
 
 var (
@@ -93,7 +93,8 @@ type runTestsTask struct {
 	addonLogger          *zap.SugaredLogger
 	procWriter           io.Writer
 	cmdContextFactory    exec.CmdContextFactory
-	splitStrategy        string
+	testSplitStrategy    string
+	parallelizeTests     bool
 }
 
 func NewRunTestsTask(step *pb.UnitStep, tmpFilePath string, log *zap.SugaredLogger,
@@ -109,9 +110,9 @@ func NewRunTestsTask(step *pb.UnitStep, tmpFilePath string, log *zap.SugaredLogg
 	if numRetries == 0 {
 		numRetries = defaultRunTestsRetries
 	}
-	splitStrategy := r.GetSplitStrategy()
-	if splitStrategy == "" {
-		splitStrategy = defaultSplitStrategy
+	testSplitStrategy := r.GetTestSplitStrategy()
+	if testSplitStrategy == "" {
+		testSplitStrategy = defaultTestSplitStrategy
 	}
 	return &runTestsTask{
 		id:                   step.GetId(),
@@ -140,7 +141,8 @@ func NewRunTestsTask(step *pb.UnitStep, tmpFilePath string, log *zap.SugaredLogg
 		log:                  log,
 		procWriter:           w,
 		addonLogger:          addonLogger,
-		splitStrategy:        splitStrategy,
+		testSplitStrategy:    testSplitStrategy,
+		parallelizeTests:     r.GetParallelizeTests(),
 	}
 }
 
@@ -329,21 +331,21 @@ func (r *runTestsTask) getTestSelection(ctx context.Context, files []types.File,
 	return resp
 }
 
-func (r *runTestsTask) getSplitTests(ctx context.Context, tests []types.RunnableTest, splitStrategy string, idx, total int) ([]types.RunnableTest, error) {
+// getSplitTests takes a list of tests as input and returns the slice of tests to run depending on
+// the test split strategy and index
+func (r *runTestsTask) getSplitTests(ctx context.Context, tests []types.RunnableTest, splitStrategy string, splitIdx, splitTotal int) ([]types.RunnableTest, error) {
 	if len(tests) == 0 {
 		return tests, nil
 	}
-
-	res := make([]types.RunnableTest, 0)
 
 	currentTestMap := make(map[string][]types.RunnableTest)
 	currentTestSet := make(map[string]bool)
 	var testID string
 	for _, t := range tests {
 		switch splitStrategy {
-		case classTimingSplitStrategy:
+		case classTimingTestSplitStrategy:
 			testID = t.Pkg + t.Class
-		case countSplitStrategy:
+		case countTestSplitStrategy:
 			testID = t.Pkg + t.Class
 		default:
 			testID = t.Pkg + t.Class
@@ -357,14 +359,14 @@ func (r *runTestsTask) getSplitTests(ctx context.Context, tests []types.Runnable
 
 	// Get weights for each test depending on the strategy
 	switch splitStrategy {
-	case classTimingSplitStrategy:
+	case classTimingTestSplitStrategy:
 		// Call TI svc to get the test timing data
 		fileTimes, err = getTestTime(ctx, r.log, splitStrategy)
 		if err != nil {
 			return tests, err
 		}
 		r.log.Infow("Successfully retrieved timing data for splitting")
-	case countSplitStrategy:
+	case countTestSplitStrategy:
 		// Send empty fileTimesMap while processing to assign equal weights
 		r.log.Infow("Assigning all tests equal weight for splitting")
 	default:
@@ -377,16 +379,17 @@ func (r *runTestsTask) getSplitTests(ctx context.Context, tests []types.Runnable
 	stutils.ProcessFiles(fileTimes, currentTestSet, float64(1), false)
 
 	// Split tests into buckets and return tests from the current node's bucket
-	buckets, _ := stutils.SplitFiles(fileTimes, total)
-	for _, id := range buckets[idx] {
+	testsToRun := make([]types.RunnableTest, 0)
+	buckets, _ := stutils.SplitFiles(fileTimes, splitTotal)
+	for _, id := range buckets[splitIdx] {
 		if _, ok := currentTestMap[id]; !ok {
 			// This should not happen
 			r.log.Warnw(fmt.Sprintf("Test %s from the split not present in the original set of tests, skipping", id))
 			continue
 		}
-		res = append(res, currentTestMap[id]...)
+		testsToRun = append(testsToRun, currentTestMap[id]...)
 	}
-	return res, nil
+	return testsToRun, nil
 }
 
 func formatTests(tests []types.RunnableTest) string {
@@ -401,8 +404,8 @@ func formatTests(tests []types.RunnableTest) string {
 	return strings.Join(testStrings, ", ")
 }
 
-func (r *runTestsTask) invokeParallelism(ctx context.Context, runner testintelligence.TestRunner, selection *types.SelectTestsResp, ignoreInstr, skip bool) bool {
-	if skip {
+func (r *runTestsTask) computeSelectedTests(ctx context.Context, runner testintelligence.TestRunner, selection *types.SelectTestsResp, ignoreInstr bool) bool {
+	if !r.parallelizeTests {
 		r.log.Info("Skipping test splitting as requested")
 		return ignoreInstr
 	}
@@ -415,7 +418,7 @@ func (r *runTestsTask) invokeParallelism(ctx context.Context, runner testintelli
 
 	r.log.Info("Splitting the tests as parallelism is enabled")
 
-	stepIdx, _ := getStepStrategyIterations()
+	stepIdx, _ := getStepStrategyIteration()
 	stepTotal, _ := getStepStrategyIterations()
 	if !isStepParallelismEnabled() {
 		stepIdx = 0
@@ -461,11 +464,11 @@ func (r *runTestsTask) invokeParallelism(ctx context.Context, runner testintelli
 	}
 
 	// Split the tests and send the split slice to the runner
-	splitTests, err := r.getSplitTests(ctx, tests, r.splitStrategy, idx, total)
+	splitTests, err := r.getSplitTests(ctx, tests, r.testSplitStrategy, idx, total)
 	if err != nil {
 		// Error while splitting by input strategy, splitting tests equally
 		r.log.Errorw("Error occurred while splitting the tests by input strategy. Splitting detected tests equally")
-		splitTests, _ = r.getSplitTests(ctx, tests, countSplitStrategy, idx, total)
+		splitTests, _ = r.getSplitTests(ctx, tests, countTestSplitStrategy, idx, total)
 	}
 	r.log.Infow(fmt.Sprintf("Test split for this run: %s", formatTests(splitTests)))
 
@@ -547,9 +550,8 @@ func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile stri
 	}
 
 	// Test splitting: only when parallelism is enabled
-	doNotSplit := false // Take from config as per design. Rename after review
 	if isParallelismEnabled() {
-		ignoreInstr = r.invokeParallelism(ctx, runner, &selection, ignoreInstr, doNotSplit)
+		ignoreInstr = r.computeSelectedTests(ctx, runner, &selection, ignoreInstr)
 	}
 
 	// Test command
