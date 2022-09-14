@@ -184,7 +184,6 @@ public enum FeatureName {
   WEBHOOK_TRIGGER_AUTHORIZATION,
   ENHANCED_GCR_CONNECTIVITY_CHECK,
   USE_TF_CLIENT,
-  SERVICE_DASHBOARD_NG,
   GITHUB_WEBHOOK_AUTHENTICATION,
   NG_SIGNUP(Scope.GLOBAL),
   NG_LICENSES_ENABLED,
@@ -321,7 +320,6 @@ public enum FeatureName {
   INHERITED_USER_GROUP,
   JDK11_UPGRADE_BANNER,
   DISABLE_CI_STAGE_DEL_SELECTOR,
-  CLEANUP_INCOMPLETE_CANARY_DEPLOY_RELEASE,
   JENKINS_ARTIFACT,
   ENABLE_DEFAULT_TIMEFRAME_IN_DEPLOYMENTS,
   EXPORT_TF_PLAN_JSON_NG,
@@ -348,7 +346,6 @@ public enum FeatureName {
   SEARCH_USERGROUP_BY_APPLICATION("Search in usergroup by application in CG", HarnessTeam.SPG),
   GITOPS_BYO_ARGO,
   CCM_MICRO_FRONTEND("Micro front for CCM", HarnessTeam.CE),
-  NG_GIT_EXPERIENCE_IMPORT_FLOW,
   CVNG_LICENSE_ENFORCEMENT,
   CVNG_SLO_DISABLE_ENABLE,
   SERVICE_DASHBOARD_V2,
@@ -395,13 +392,12 @@ public enum FeatureName {
       HarnessTeam.CDP),
   TERRAFORM_REMOTE_BACKEND_CONFIG("Enables storing Terraform backend configuration in a remote repo", HarnessTeam.CDP),
   NG_OPTIMIZE_FETCH_FILES_KUSTOMIZE("Used to Optimize kustomize Manifest files fetch in NG", HarnessTeam.CDP),
-  FIXED_INSTANCE_ZERO_ALLOW("To allow user to set the fixed instance count to 0 for ECS Deployments", HarnessTeam.CDP),
   REMOVE_HINT_YAML_GIT_COMMITS("Removes the hint usage in GitCommits collection", HarnessTeam.SPG),
+  FIXED_INSTANCE_ZERO_ALLOW("To allow user to set the fixed instance count to 0 for ECS Deployments", HarnessTeam.CDP),
   USE_PAGINATED_ENCRYPT_FOR_VARIABLE_OVERRIDES(
       "Enables PaginatedComponent & Formik for VariableOverrides in CG-UI", HarnessTeam.PL),
   ON_DEMAND_ROLLBACK_WITH_DIFFERENT_ARTIFACT(
       "Used to do on demand rollback to previously deployed different artifact on same inframapping", HarnessTeam.CDC),
-
   CG_GIT_POLLING("Poll git based on account config for git sync in CG.", HarnessTeam.SPG),
   GRAPHQL_WORKFLOW_EXECUTION_OPTIMIZATION(
       "Making multiple optimizations for workflow execution graphql in CG", HarnessTeam.SPG),
@@ -412,6 +408,7 @@ public enum FeatureName {
   GIT_WEBHOOK_POLLING("Used to poll git webhook recent delivery events", HarnessTeam.CDP),
   MULTI_SERVICE_INFRA("Enable multiple service/environment support in NG", HarnessTeam.CDP),
   TRIGGERS_REFACTOR("Enable NG Triggers UI refactoring", HarnessTeam.CDP),
+  SORT_ARTIFACTS_IN_UPDATED_ORDER("Sort the collected artifacts by lastUpdatedAt", HarnessTeam.SPG),
   NG_SERVICE_MANIFEST_OVERRIDE("Enable Service Manifests override from Environment", HarnessTeam.CDP),
   NG_SERVICE_CONFIG_FILES_OVERRIDE("Enable Service Config Files override from Environment", HarnessTeam.CDP),
   ENABLE_CHECK_STATE_EXECUTION_STARTING(
@@ -434,7 +431,19 @@ public enum FeatureName {
   CHANGE_INSTANCE_QUERY_OPERATOR_TO_NE("Change instance service query operator from $exists to $ne", HarnessTeam.SPG),
   NEXUS3_RAW_REPOSITORY("Enable support for Nexus3 raw repository format on CG", HarnessTeam.SPG),
   NG_ARTIFACT_SOURCES("Flag to support multi artifact sources for service V2", HarnessTeam.CDC),
-  UPDATE_EMAILS_VIA_SCIM("Will enable updating emails in Harness via SCIM", HarnessTeam.PL);
+  UPDATE_EMAILS_VIA_SCIM("Will enable updating emails in Harness via SCIM", HarnessTeam.PL),
+  ELK_HEALTH_SOURCE("Will enable ELK health source in SRM", HarnessTeam.CV),
+  WAIT_STEP(
+      "Automatically pause a pipeline execution for a specific amount of time, after time expires the pipeline proceeds and eventually completes",
+      HarnessTeam.PIPELINE),
+
+  PIPELINE_CHAINING("UI flag to enable/disable Pipeline Chaining feature", HarnessTeam.PIPELINE),
+  MERGE_RUNTIME_VARIABLES_IN_RESUME(
+      "merge context elements workflow variables while resuming pipeline from a stage", HarnessTeam.SPG),
+  USE_TEXT_SEARCH_FOR_EXECUTION(
+      "With this instead of using regex search we will use text search for CD page in CG", HarnessTeam.SPG),
+  AZURE_WEBAPP_NG_S3_ARTIFACTS(
+      "UI FF to enable AWS S3 as an artifact source option for Azure Web App NG", HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {

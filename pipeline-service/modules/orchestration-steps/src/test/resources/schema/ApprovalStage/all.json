@@ -1272,6 +1272,9 @@
             "issueType": {
               "type": "string"
             },
+            "projectKey": {
+              "type": "string"
+            },
             "rejectionCriteria": {
               "$ref": "#/definitions/CriteriaSpecWrapper"
             }
@@ -3071,6 +3074,22 @@
               }
             }
           }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Wait"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/WaitStepInfo"
+              }
+            }
+          }
         }
       ]
     },
@@ -3343,6 +3362,26 @@
           "format": "int32"
         }
       },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "WaitStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "duration": {
+              "type": "string",
+              "pattern": "^(([1-9])+\\d+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|(<\\+input>.*)|(.*<\\+.*>.*)|(^$))$"
+            },
+            "metadata": {
+              "type": "string"
+            }
+          }
+        }
+      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "WeightedVariation": {

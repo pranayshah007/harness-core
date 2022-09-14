@@ -320,6 +320,7 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     assertThat(sloDashboardWidget.getEnvironmentIdentifier()).isEqualTo(monitoredServiceDTO.getEnvironmentRef());
     assertThat(sloDashboardWidget.getServiceName()).isEqualTo("Mocked service name");
     assertThat(sloDashboardWidget.getEnvironmentName()).isEqualTo("Mocked env name");
+    assertThat(sloDashboardWidget.getUserJourneyIdentifier()).isEqualTo("userJourney");
   }
 
   @Test

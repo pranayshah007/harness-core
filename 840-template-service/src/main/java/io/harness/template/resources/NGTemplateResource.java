@@ -48,6 +48,7 @@ import io.harness.ng.core.template.TemplateReferenceRequestDTO;
 import io.harness.ng.core.template.TemplateRetainVariablesRequestDTO;
 import io.harness.ng.core.template.TemplateRetainVariablesResponse;
 import io.harness.ng.core.template.TemplateSummaryResponseDTO;
+import io.harness.ng.core.template.TemplateWithInputsResponseDTO;
 import io.harness.pms.contracts.service.VariableMergeResponseProto;
 import io.harness.pms.contracts.service.VariablesServiceGrpc.VariablesServiceBlockingStub;
 import io.harness.pms.contracts.service.VariablesServiceRequest;
@@ -583,10 +584,50 @@ public class NGTemplateResource {
         templateMergeService.getTemplateInputs(accountId, orgId, projectId, templateIdentifier, templateLabel));
   }
 
+  @GET
+  @Path("/templateWithInputs/{templateIdentifier}")
+  @ApiOperation(value = "Get Template along with Input Set YAML", nickname = "getTemplateAlongWithInputSetYaml")
+  @Operation(operationId = "getTemplateAlongWithInputSetYaml", summary = "Gets Template along with Input Set YAML",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns the Template along with Input Set YAML")
+      })
+  @Hidden
+  public ResponseDTO<TemplateWithInputsResponseDTO>
+  getTemplateAlongWithInputsYaml(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull
+                                 @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
+      @Parameter(description = TEMPLATE_PARAM_MESSAGE) @PathParam(
+          "templateIdentifier") @ResourceIdentifier String templateIdentifier,
+      @Parameter(description = "Template Label") @NotNull @QueryParam(
+          NGCommonEntityConstants.VERSION_LABEL_KEY) String templateLabel,
+      @Parameter(
+          description = "This contains details of Git Entity") @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
+        Resource.of(TEMPLATE, templateIdentifier), PermissionTypes.TEMPLATE_VIEW_PERMISSION);
+    // if label not given, then consider stable template label
+    // returns template along with templateInputs yaml
+    log.info(String.format(
+        "Gets Template along with Template inputs for template with identifier %s in project %s, org %s, account %s",
+        templateIdentifier, projectId, orgId, accountId));
+    TemplateWithInputsResponseDTO templateWithInputs =
+        templateService.getTemplateWithInputs(accountId, orgId, projectId, templateIdentifier, templateLabel);
+    String version = "0";
+    if (templateWithInputs != null && templateWithInputs.getTemplateResponseDTO() != null
+        && templateWithInputs.getTemplateResponseDTO().getVersion() != null) {
+      version = String.valueOf(templateWithInputs.getTemplateResponseDTO().getVersion());
+    }
+    return ResponseDTO.newResponse(version, templateWithInputs);
+  }
+
   @POST
   @Path("/mergeTemplateInputs/")
-  @ApiOperation(value = "Gets merged template input yaml", nickname = "getsMergedTemplateInputYaml")
-  @Operation(operationId = "getsMergedTemplateInputYaml", summary = "Gets merged template input yaml",
+  @ApiOperation(value = "Get merged Template input YAML", nickname = "getsMergedTemplateInputYaml")
+  @Operation(operationId = "getsMergedTemplateInputYaml", summary = "Gets merged Template input YAML",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.

@@ -89,8 +89,8 @@ import io.harness.k8s.model.Kind;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
-import io.harness.k8s.model.Release.Status;
-import io.harness.k8s.model.ReleaseHistory;
+import io.harness.k8s.releasehistory.IK8sRelease;
+import io.harness.k8s.releasehistory.ReleaseHistory;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.manifest.CustomManifestSource;
 import io.harness.rule.Owner;
@@ -1017,14 +1017,14 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
     // Trying to rollback to failed release
     releaseHistory.createNewRelease(singletonList(resource1));
     releaseHistory.setReleaseNumber(1);
-    releaseHistory.setReleaseStatus(Status.Failed);
+    releaseHistory.setReleaseStatus(IK8sRelease.Status.Failed);
     assertThatThrownBy(() -> executeRollbackWithReleaseHistory(releaseHistory, 1))
         .hasMessageContaining(
             "Invalid status for release with number 1. Expected 'Succeeded' status, actual status is 'Failed'");
 
     releaseHistory.createNewRelease(singletonList(resource1));
     releaseHistory.setReleaseNumber(1);
-    releaseHistory.setReleaseStatus(Status.Succeeded);
+    releaseHistory.setReleaseStatus(IK8sRelease.Status.Succeeded);
     // No such release
     assertThatThrownBy(() -> executeRollbackWithReleaseHistory(releaseHistory, 2))
         .hasMessageContaining("Unable to find release 2");
@@ -1036,7 +1036,7 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
 
     releaseHistory.createNewRelease(asList(resource1, resource2));
     releaseHistory.setReleaseNumber(2);
-    releaseHistory.setReleaseStatus(Status.Succeeded);
+    releaseHistory.setReleaseStatus(IK8sRelease.Status.Succeeded);
     // Rollback to release 2
     result = executeRollbackWithReleaseHistory(releaseHistory, 2);
     assertThat(result.getContainerInfoList().stream().map(ContainerInfo::getHostName))
@@ -1045,10 +1045,10 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
 
     releaseHistory.createNewRelease(asList(resource1, resource2, resource3));
     releaseHistory.setReleaseNumber(3);
-    releaseHistory.setReleaseStatus(Status.Succeeded);
+    releaseHistory.setReleaseStatus(IK8sRelease.Status.Succeeded);
     releaseHistory.createNewRelease(singletonList(resource1));
     releaseHistory.setReleaseNumber(4);
-    releaseHistory.setReleaseStatus(Status.Succeeded);
+    releaseHistory.setReleaseStatus(IK8sRelease.Status.Succeeded);
     // Rollback to release 3
     result = executeRollbackWithReleaseHistory(releaseHistory, 3);
     assertThat(result.getContainerInfoList().stream().map(ContainerInfo::getHostName))

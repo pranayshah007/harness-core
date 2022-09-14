@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.aws.v2.ecs;
 
 import io.harness.aws.beans.AwsInternalConfig;
@@ -47,7 +54,7 @@ public interface EcsV2Client {
       AwsInternalConfig awsConfig, RegisterTaskDefinitionRequest registerTaskDefinitionRequest, String region);
 
   WaiterResponse<DescribeServicesResponse> ecsServiceSteadyStateCheck(AwsInternalConfig awsConfig,
-      DescribeServicesRequest describeServicesRequest, String region, int serviceSteadyStateTimeout);
+      DescribeServicesRequest describeServicesRequest, String region, long serviceSteadyStateTimeout);
 
   WaiterResponse<DescribeServicesResponse> ecsServiceInactiveStateCheck(AwsInternalConfig awsConfig,
       DescribeServicesRequest describeServicesRequest, String region, int serviceInactiveStateTimeout);

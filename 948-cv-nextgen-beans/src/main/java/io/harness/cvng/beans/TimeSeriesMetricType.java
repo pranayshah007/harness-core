@@ -12,61 +12,59 @@ import java.util.List;
 
 public enum TimeSeriesMetricType {
   INFRA("INFRA",
-      Lists.newArrayList(
-          TimeSeriesThresholdCriteria.builder().criteria("> 0.2").type(TimeSeriesThresholdComparisonType.RATIO).build(),
-          TimeSeriesThresholdCriteria.builder().criteria("< 0.2").type(TimeSeriesThresholdComparisonType.RATIO).build(),
-          TimeSeriesThresholdCriteria.builder().criteria("> 20").type(TimeSeriesThresholdComparisonType.DELTA).build(),
-          TimeSeriesThresholdCriteria.builder()
-              .criteria("< 20")
-              .type(TimeSeriesThresholdComparisonType.DELTA)
-              .build())),
-
-  RESP_TIME("RESP_TIME",
-      Lists.newArrayList(
-          TimeSeriesThresholdCriteria.builder().criteria("> 0.2").type(TimeSeriesThresholdComparisonType.RATIO).build(),
+      Lists.newArrayList(TimeSeriesThresholdCriteria.builder()
+                             .criteria("> 0.2")
+                             .type(TimeSeriesThresholdComparisonType.RATIO)
+                             .deviationType(DeviationType.BOTH_ARE_RISKY)
+                             .build(),
           TimeSeriesThresholdCriteria.builder()
               .criteria("> 20")
               .type(TimeSeriesThresholdComparisonType.DELTA)
               .build())),
 
+  RESP_TIME("RESP_TIME",
+      Lists.newArrayList(TimeSeriesThresholdCriteria.builder()
+                             .criteria("> 0.1")
+                             .type(TimeSeriesThresholdComparisonType.RATIO)
+                             .deviationType(DeviationType.HIGHER_IS_RISKY)
+                             .build())),
+
   THROUGHPUT("THROUGHPUT",
-      Lists.newArrayList(
-          TimeSeriesThresholdCriteria.builder().criteria("< 0.2").type(TimeSeriesThresholdComparisonType.RATIO).build(),
-          TimeSeriesThresholdCriteria.builder()
-              .criteria("< 20")
-              .type(TimeSeriesThresholdComparisonType.DELTA)
-              .build())),
+      Lists.newArrayList(TimeSeriesThresholdCriteria.builder()
+                             .criteria("< 0.1")
+                             .type(TimeSeriesThresholdComparisonType.RATIO)
+                             .deviationType(DeviationType.LOWER_IS_RISKY)
+                             .build())),
 
   ERROR("ERROR",
       Lists.newArrayList(TimeSeriesThresholdCriteria.builder()
                              .criteria("> 0.01")
                              .type(TimeSeriesThresholdComparisonType.RATIO)
+                             .deviationType(DeviationType.HIGHER_IS_RISKY)
                              .build(),
           TimeSeriesThresholdCriteria.builder()
               .criteria("> 0.01")
               .type(TimeSeriesThresholdComparisonType.DELTA)
+              .deviationType(DeviationType.HIGHER_IS_RISKY)
               .build())),
 
   APDEX("APDEX",
-      Lists.newArrayList(
-          TimeSeriesThresholdCriteria.builder().criteria("< 0.2").type(TimeSeriesThresholdComparisonType.RATIO).build(),
+      Lists.newArrayList(TimeSeriesThresholdCriteria.builder()
+                             .criteria("< 0.2")
+                             .type(TimeSeriesThresholdComparisonType.RATIO)
+                             .deviationType(DeviationType.LOWER_IS_RISKY)
+                             .build(),
           TimeSeriesThresholdCriteria.builder()
               .criteria("< 0.01")
               .type(TimeSeriesThresholdComparisonType.DELTA)
               .build())),
 
   OTHER("OTHER",
-      Lists.newArrayList(
-          TimeSeriesThresholdCriteria.builder().criteria("> 0.2").type(TimeSeriesThresholdComparisonType.RATIO).build(),
-          TimeSeriesThresholdCriteria.builder()
-              .criteria("> 0.01")
-              .type(TimeSeriesThresholdComparisonType.DELTA)
-              .build(),
-          TimeSeriesThresholdCriteria.builder().criteria("> 20").type(TimeSeriesThresholdComparisonType.DELTA).build(),
-          TimeSeriesThresholdCriteria.builder()
-              .criteria("< 20")
-              .type(TimeSeriesThresholdComparisonType.DELTA)
-              .build()));
+      Lists.newArrayList(TimeSeriesThresholdCriteria.builder()
+                             .criteria("> 0.2")
+                             .type(TimeSeriesThresholdComparisonType.RATIO)
+                             .deviationType(DeviationType.HIGHER_IS_RISKY)
+                             .build()));
 
   private String name;
   private List<TimeSeriesThresholdCriteria> thresholds;

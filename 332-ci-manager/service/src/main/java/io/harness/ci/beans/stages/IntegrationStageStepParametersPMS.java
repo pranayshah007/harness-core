@@ -78,18 +78,9 @@ public class IntegrationStageStepParametersPMS implements SpecParameters, StepPa
 
   public static Infrastructure getInfrastructure(StageElementConfig stageElementConfig, PlanCreationContext ctx) {
     IntegrationStageConfig integrationStageConfig = (IntegrationStageConfig) stageElementConfig.getStageType();
-
     Infrastructure infrastructure = integrationStageConfig.getInfrastructure();
     if (infrastructure == null) {
-      Runtime runtime = integrationStageConfig.getRuntime();
-      if (runtime == null || runtime.getType() != Runtime.Type.CLOUD) {
-        throw new CIStageExecutionException(
-            "Infrastructure or runtime field with Cloud type is mandatory for execution");
-      }
-
-      infrastructure = HostedVmInfraYaml.builder()
-                           .spec(HostedVmInfraSpec.builder().platform(integrationStageConfig.getPlatform()).build())
-                           .build();
+      infrastructure = getRuntimeInfrastructure(integrationStageConfig);
     } else if (integrationStageConfig.getInfrastructure().getType() == Type.USE_FROM_STAGE) {
       UseFromStageInfraYaml useFromStageInfraYaml = (UseFromStageInfraYaml) integrationStageConfig.getInfrastructure();
       if (useFromStageInfraYaml.getUseFromStage() != null) {
@@ -97,10 +88,24 @@ public class IntegrationStageStepParametersPMS implements SpecParameters, StepPa
         String identifier = useFromStageInfraYaml.getUseFromStage();
         IntegrationStageConfig integrationStage = getIntegrationStageConfig(yamlField, identifier);
         infrastructure = integrationStage.getInfrastructure();
+        if (infrastructure == null) {
+          infrastructure = getRuntimeInfrastructure(integrationStageConfig);
+        }
       }
     }
 
     return infrastructure;
+  }
+
+  public static Infrastructure getRuntimeInfrastructure(IntegrationStageConfig integrationStageConfig) {
+    Runtime runtime = integrationStageConfig.getRuntime();
+    if (runtime == null || runtime.getType() != Runtime.Type.CLOUD) {
+      throw new CIStageExecutionException("Infrastructure or runtime field with Cloud type is mandatory for execution");
+    }
+
+    return HostedVmInfraYaml.builder()
+        .spec(HostedVmInfraSpec.builder().platform(integrationStageConfig.getPlatform()).build())
+        .build();
   }
 
   private static IntegrationStageConfig getIntegrationStageConfig(YamlField yamlField, String identifier) {

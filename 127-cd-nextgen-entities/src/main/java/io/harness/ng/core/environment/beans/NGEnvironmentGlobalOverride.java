@@ -10,6 +10,8 @@ package io.harness.ng.core.environment.beans;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.azure.config.yaml.ApplicationSettingsConfiguration;
+import io.harness.cdng.azure.config.yaml.ConnectionStringsConfiguration;
 import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.data.structure.EmptyPredicate;
@@ -33,6 +35,8 @@ import org.springframework.data.annotation.TypeAlias;
 public class NGEnvironmentGlobalOverride implements Visitable {
   List<ManifestConfigWrapper> manifests;
   List<ConfigFileWrapper> configFiles;
+  ApplicationSettingsConfiguration applicationSettings;
+  ConnectionStringsConfiguration connectionStrings;
 
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
@@ -47,6 +51,12 @@ public class NGEnvironmentGlobalOverride implements Visitable {
     }
     if (EmptyPredicate.isNotEmpty(configFiles)) {
       configFiles.forEach(configFile -> children.add("configFiles", configFile));
+    }
+    if (applicationSettings != null) {
+      children.add("applicationSettings", applicationSettings);
+    }
+    if (connectionStrings != null) {
+      children.add("connectionStrings", connectionStrings);
     }
     return children;
   }

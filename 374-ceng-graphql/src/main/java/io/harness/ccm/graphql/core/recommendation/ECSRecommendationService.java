@@ -7,7 +7,8 @@
 
 package io.harness.ccm.graphql.core.recommendation;
 
-import static software.wings.graphql.datafetcher.ce.recommendation.entity.RecommenderUtils.EPSILON;
+import static io.harness.ccm.RecommenderUtils.EPSILON;
+
 import static software.wings.graphql.datafetcher.ce.recommendation.entity.ResourceRequirement.CPU;
 import static software.wings.graphql.datafetcher.ce.recommendation.entity.ResourceRequirement.MEMORY;
 

@@ -592,10 +592,6 @@ public class CDStepHelper {
     return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.NG_OPTIMIZE_FETCH_FILES_KUSTOMIZE);
   }
 
-  public boolean shouldCleanUpIncompleteCanaryDeployRelease(String accountId) {
-    return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CLEANUP_INCOMPLETE_CANARY_DEPLOY_RELEASE);
-  }
-
   public boolean shouldUseK8sApiForSteadyStateCheck(String accountId) {
     return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.USE_K8S_API_FOR_STEADY_STATE_CHECK);
   }

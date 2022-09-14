@@ -228,6 +228,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
   private static final String STANDARD_TIME_ZONE = "GMT";
   private static final long ONE_DAY_MILLIS = 86400000L;
   private static final long OBSERVATION_PERIOD = 29 * ONE_DAY_MILLIS;
+  private static final int MAX_LIMIT_VALUE = 10_000;
   private static final List<String> UNALLOCATED_COST_CLUSTER_FIELDS = ImmutableList.of(
       NAMESPACE_FIELD_ID, WORKLOAD_NAME_FIELD_ID, CLOUD_SERVICE_NAME_FIELD_ID, TASK_FIELD_ID, LAUNCH_TYPE_FIELD_ID);
 
@@ -360,6 +361,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     query.addCustomization(new PgLimitClause(limit));
     query.addCustomization(new PgOffsetClause(offset));
     QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query.toString()).build();
+    log.info("Query for grid (with limit as {}): {}", limit, query.toString());
     TableResult result;
     try {
       result = bigQuery.query(queryConfig);
@@ -1568,7 +1570,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
             id = getUpdatedId(id, name);
             break;
           case FLOAT64:
-            if (field.getName().equalsIgnoreCase(COST)) {
+            if (field.getName().equalsIgnoreCase(COST) || field.getName().equalsIgnoreCase(BILLING_AMOUNT)) {
               cost = getNumericValue(row, field, skipRoundOff);
               dataPointBuilder.cost(cost);
             } else if (sharedCostBucketNames.contains(field.getName())) {
@@ -1596,6 +1598,9 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
       entityStatsDataPoints = addSharedCosts(entityStatsDataPoints, sharedCosts, businessMapping);
     }
 
+    if (entityStatsDataPoints.size() > MAX_LIMIT_VALUE) {
+      log.warn("Grid result set size: {}", entityStatsDataPoints.size());
+    }
     return QLCEViewGridData.builder().data(entityStatsDataPoints).fields(fieldNames).build();
   }
 
@@ -1800,6 +1805,9 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
           .fields(fieldNames)
           .build();
     }
+    if (entityStatsDataPoints.size() > MAX_LIMIT_VALUE) {
+      log.warn("Grid result set size (for cluster): {}", entityStatsDataPoints.size());
+    }
     return QLCEViewGridData.builder().data(entityStatsDataPoints).fields(fieldNames).build();
   }
 
@@ -1843,9 +1851,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
                 "Invalid Unallocated Cost Strategy / Unallocated Cost Strategy not supported");
         }
       }
-    }
-
-    if (updatedDataPoints.isEmpty()) {
+    } else {
       updatedDataPoints = response.getData();
     }
 
@@ -2061,6 +2067,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     query.addCustomization(new PgLimitClause(limit));
     query.addCustomization(new PgOffsetClause(offset));
     QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query.toString()).build();
+    log.info("Query for cost trend (with limit as {}): {}", limit, query.toString());
     TableResult result;
     try {
       result = bigQuery.query(queryConfig);
@@ -2108,6 +2115,9 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
         }
       }
       costTrendData.put(id, viewCostDataBuilder.build());
+    }
+    if (costTrendData.size() > MAX_LIMIT_VALUE) {
+      log.warn("Cost trend result set size: {}", costTrendData.size());
     }
     return costTrendData;
   }

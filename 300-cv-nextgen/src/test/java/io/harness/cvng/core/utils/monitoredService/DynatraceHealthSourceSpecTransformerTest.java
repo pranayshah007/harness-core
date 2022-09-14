@@ -8,7 +8,7 @@
 package io.harness.cvng.core.utils.monitoredService;
 
 import static io.harness.cvng.core.beans.monitoredService.metricThresholdSpec.MetricThresholdCriteriaType.ABSOLUTE;
-import static io.harness.rule.OwnerRule.PAVIC;
+import static io.harness.rule.OwnerRule.VARSHA_LALWANI;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -26,7 +26,10 @@ import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -58,7 +61,7 @@ public class DynatraceHealthSourceSpecTransformerTest extends CvNextGenTestBase 
   }
 
   @Test
-  @Owner(developers = PAVIC)
+  @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
   public void testTransformToHealthSourceConfig() {
     DynatraceHealthSourceSpec dynatraceHealthSourceSpec = classUnderTest.transform(createCVConfigs());
@@ -79,8 +82,9 @@ public class DynatraceHealthSourceSpecTransformerTest extends CvNextGenTestBase 
     assertThat(dynatraceMetricDefinition.getIdentifier()).isEqualTo(MOCKED_METRIC_NAME_ONE);
 
     assertThat(dynatraceHealthSourceSpec.getMetricPacks().size()).isEqualTo(METRIC_PACK_COUNT);
-    TimeSeriesMetricPackDTO metricPackOne = dynatraceHealthSourceSpec.getMetricPacks().stream().iterator().next();
-    TimeSeriesMetricPackDTO metricPackTwo = dynatraceHealthSourceSpec.getMetricPacks().stream().iterator().next();
+    Iterator<TimeSeriesMetricPackDTO> iterator = dynatraceHealthSourceSpec.getMetricPacks().stream().iterator();
+    TimeSeriesMetricPackDTO metricPackOne = iterator.next();
+    TimeSeriesMetricPackDTO metricPackTwo = iterator.next();
     assertThat(metricPackOne).isNotNull();
     assertThat(metricPackTwo).isNotNull();
     assertThat(metricPackOne.getIdentifier()).isEqualTo(CUSTOM_IDENTIFIER);
@@ -91,8 +95,8 @@ public class DynatraceHealthSourceSpecTransformerTest extends CvNextGenTestBase 
     TimeSeriesMetricPackDTO.MetricThreshold metricThresholdTwo = metricPackTwo.getMetricThresholds().get(0);
     assertThat(metricThresholdOne.getMetricType()).isEqualTo(CUSTOM_IDENTIFIER);
     assertThat(metricThresholdTwo.getMetricType()).isEqualTo(CUSTOM_IDENTIFIER);
-    assertThat(metricThresholdOne.getMetricName()).isEqualTo(MOCKED_METRIC_NAME_ONE);
-    assertThat(metricThresholdTwo.getMetricName()).isEqualTo(MOCKED_METRIC_NAME_ONE);
+    assertThat(new HashSet<>(Arrays.asList(metricThresholdOne.getMetricName(), metricThresholdTwo.getMetricName())))
+        .isEqualTo(new HashSet<>(Arrays.asList(MOCKED_METRIC_NAME_ONE, MOCKED_METRIC_NAME_TWO)));
     assertThat(metricThresholdOne.getGroupName()).isEqualTo(MOCKED_METRIC_GROUP_NAME);
     assertThat(metricThresholdTwo.getGroupName()).isEqualTo(MOCKED_METRIC_GROUP_NAME);
     assertThat(metricThresholdOne.getType()).isEqualTo(MetricThresholdActionType.IGNORE);

@@ -8,16 +8,18 @@
 package io.harness.ng.core.infrastructure.mappers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 
 import io.harness.NGResourceFilterConstants;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.service.beans.ServiceDefinitionType;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity.InfrastructureEntityKeys;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
 
+import java.util.List;
 import lombok.experimental.UtilityClass;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
@@ -25,17 +27,23 @@ import org.springframework.data.mongodb.core.query.Update;
 @OwnedBy(PIPELINE)
 @UtilityClass
 public class InfrastructureFilterHelper {
-  public Criteria createCriteriaForGetList(
-      String accountId, String orgIdentifier, String projectIdentifier, String envIdentifier, String searchTerm) {
+  public Criteria createListCriteria(String accountId, String orgIdentifier, String projectIdentifier,
+      String envIdentifier, String searchTerm, List<String> infraIdentifiers, ServiceDefinitionType deploymentType) {
     Criteria criteria = CoreCriteriaUtils.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier);
     criteria.and(InfrastructureEntityKeys.envIdentifier).is(envIdentifier);
-    if (isNotEmpty(searchTerm)) {
+    if (EmptyPredicate.isNotEmpty(searchTerm)) {
       Criteria searchCriteria =
           new Criteria().orOperator(where(InfrastructureEntityKeys.name)
                                         .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
               where(InfrastructureEntityKeys.identifier)
                   .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS));
       criteria.andOperator(searchCriteria);
+    }
+    if (EmptyPredicate.isNotEmpty(infraIdentifiers)) {
+      criteria.and(InfrastructureEntityKeys.identifier).in(infraIdentifiers);
+    }
+    if (deploymentType != null) {
+      criteria.and(InfrastructureEntityKeys.deploymentType).is(deploymentType);
     }
     return criteria;
   }
@@ -53,6 +61,7 @@ public class InfrastructureFilterHelper {
     update.set(InfrastructureEntityKeys.lastModifiedAt, System.currentTimeMillis());
     update.set(InfrastructureEntityKeys.yaml, infrastructureEntity.getYaml());
     update.set(InfrastructureEntityKeys.envIdentifier, infrastructureEntity.getEnvIdentifier());
+    update.set(InfrastructureEntityKeys.deploymentType, infrastructureEntity.getDeploymentType());
     return update;
   }
 }

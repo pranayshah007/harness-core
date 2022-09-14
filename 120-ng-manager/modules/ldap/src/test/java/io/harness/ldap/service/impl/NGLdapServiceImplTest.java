@@ -17,6 +17,7 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertNull;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -40,6 +41,7 @@ import io.harness.delegate.beans.ldap.NGLdapGroupSearchTaskResponse;
 import io.harness.delegate.beans.ldap.NGLdapGroupSyncTaskResponse;
 import io.harness.delegate.beans.ldap.NGLdapTestAuthenticationTaskResponse;
 import io.harness.delegate.utils.TaskSetupAbstractionHelper;
+import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
@@ -59,6 +61,7 @@ import software.wings.beans.sso.LdapConnectionSettings;
 import software.wings.beans.sso.LdapGroupResponse;
 import software.wings.beans.sso.LdapTestResponse;
 import software.wings.beans.sso.LdapUserResponse;
+import software.wings.helpers.ext.ldap.LdapConstants;
 import software.wings.helpers.ext.ldap.LdapResponse;
 
 import java.io.IOException;
@@ -427,6 +430,46 @@ public class NGLdapServiceImplTest extends CategoryTest {
     assertNotNull(resultResponse);
     assertThat(resultResponse.getStatus()).isEqualTo(LdapResponse.Status.SUCCESS);
     assertThat(resultResponse.getMessage()).isEqualTo(authSuccessMsg);
+  }
+
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void testLDAPAuthenticationInErrorCase() throws IOException {
+    // Arrange
+    final EncryptedRecordData encryptedRecord = EncryptedRecordData.builder()
+                                                    .name("testLdapRecord")
+                                                    .encryptedValue("encryptedTestPassword".toCharArray())
+                                                    .kmsId(ACCOUNT_ID)
+                                                    .build();
+    EncryptedDataDetail encryptedPwdDetail =
+        EncryptedDataDetail.builder().fieldName("password").encryptedData(encryptedRecord).build();
+
+    Call<RestResponse<EncryptedDataDetail>> dataRequest = mock(Call.class);
+    RestResponse<EncryptedDataDetail> mockDataResponse = new RestResponse<>(encryptedPwdDetail);
+    String testPassword = "testPassword";
+    final String userName = "testUserName@test.io";
+    doReturn(Response.success(mockDataResponse)).when(dataRequest).execute();
+
+    Call<RestResponse<LdapSettingsWithEncryptedDataAndPasswordDetail>> request = mock(Call.class);
+    RestResponse<LdapSettingsWithEncryptedDataAndPasswordDetail> mockResponse =
+        new RestResponse<>(LdapSettingsWithEncryptedDataAndPasswordDetail.builder()
+                               .ldapSettings(ldapSettingsWithEncryptedDataDetail.getLdapSettings())
+                               .encryptedDataDetail(ldapSettingsWithEncryptedDataDetail.getEncryptedDataDetail())
+                               .encryptedPwdDataDetail(encryptedPwdDetail)
+                               .build());
+    doReturn(request).when(managerClient).getLdapSettingsAndEncryptedPassword(anyString(), any());
+    doReturn(Response.success(mockResponse)).when(request).execute();
+    LdapResponse ldapResponse =
+        LdapResponse.builder().status(LdapResponse.Status.FAILURE).message(LdapConstants.INVALID_CREDENTIALS).build();
+    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+        .thenReturn(NGLdapTestAuthenticationTaskResponse.builder().ldapAuthenticationResponse(ldapResponse).build());
+
+    // Act & Assert
+    assertThatThrownBy(() -> ngLdapService.testLDAPLogin(ACCOUNT_ID, ORG_ID, PROJECT_ID, userName, testPassword))
+        .isInstanceOf(HintException.class)
+        .getCause()
+        .isInstanceOf(ExplanationException.class);
   }
 
   private software.wings.beans.sso.LdapSettings getLdapSettings(String accountId) {

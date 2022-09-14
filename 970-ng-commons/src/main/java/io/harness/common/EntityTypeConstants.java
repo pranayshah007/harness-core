@@ -120,7 +120,5 @@ public interface EntityTypeConstants {
   String ECS_BLUE_GREEN_CREATE_SERVICE = "EcsBlueGreenCreateService";
   String ECS_BLUE_GREEN_SWAP_TARGET_GROUPS = "EcsBlueGreenSwapTargetGroups";
   String ECS_BLUE_GREEN_ROLLBACK = "EcsBlueGreenRollback";
-
-
-
+  String WAIT_STEP = "Wait";
 }

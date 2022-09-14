@@ -21,6 +21,7 @@ import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.GithubPackagesArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig;
 import io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
@@ -44,6 +45,10 @@ import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubApiAccessType;
+import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubTokenSpecDTO;
 import io.harness.delegate.task.artifacts.ArtifactSourceDelegateRequest;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidConnectorTypeException;
@@ -127,6 +132,22 @@ public class ArtifactStepHelper {
         }
         return ArtifactConfigToDelegateReqMapper.getAmazonS3DelegateRequest(amazonS3ArtifactConfig, awsConnectorDTO,
             encryptedDataDetails, amazonS3ArtifactConfig.getConnectorRef().getValue());
+      case GITHUB_PACKAGES:
+        GithubPackagesArtifactConfig githubPackagesArtifactConfig = (GithubPackagesArtifactConfig) artifactConfig;
+        connectorDTO = getConnector(githubPackagesArtifactConfig.getConnectorRef().getValue(), ambiance);
+
+        if (!(connectorDTO.getConnectorConfig() instanceof GithubConnectorDTO)) {
+          throw new InvalidConnectorTypeException("provided Connector "
+                  + githubPackagesArtifactConfig.getConnectorRef().getValue() + " is not compatible with "
+                  + githubPackagesArtifactConfig.getSourceType() + " Artifact",
+              WingsException.USER);
+        }
+
+        GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) connectorDTO.getConnectorConfig();
+        encryptedDataDetails = getGithubEncryptedDetails(githubConnectorDTO, ngAccess);
+
+        return ArtifactConfigToDelegateReqMapper.getGithubPackagesDelegateRequest(githubPackagesArtifactConfig,
+            githubConnectorDTO, encryptedDataDetails, githubPackagesArtifactConfig.getConnectorRef().getValue());
       case GCR:
         GcrArtifactConfig gcrArtifactConfig = (GcrArtifactConfig) artifactConfig;
         connectorDTO = getConnector(gcrArtifactConfig.getConnectorRef().getValue(), ambiance);
@@ -242,6 +263,39 @@ public class ArtifactStepHelper {
     }
   }
 
+  private List<EncryptedDataDetail> getGithubEncryptedDetails(
+      GithubConnectorDTO githubConnectorDTO, NGAccess ngAccess) {
+    List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<>();
+
+    if (githubConnectorDTO.getApiAccess() != null) {
+      encryptedDataDetails = getGithubEncryptionDetails(githubConnectorDTO, ngAccess);
+    } else {
+      throw new InvalidRequestException("Please enable API Access for the Github Connector");
+    }
+
+    return encryptedDataDetails;
+  }
+
+  private List<EncryptedDataDetail> getGithubEncryptionDetails(
+      GithubConnectorDTO githubConnectorDTO, NGAccess ngAccess) {
+    List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<>();
+
+    GithubApiAccessDTO githubApiAccessDTO = githubConnectorDTO.getApiAccess();
+
+    GithubApiAccessType type = githubApiAccessDTO.getType();
+
+    if (type == GithubApiAccessType.TOKEN) {
+      GithubTokenSpecDTO githubTokenSpecDTO = (GithubTokenSpecDTO) githubApiAccessDTO.getSpec();
+
+      encryptedDataDetails = secretManagerClientService.getEncryptionDetails(ngAccess, githubTokenSpecDTO);
+
+    } else {
+      throw new InvalidRequestException("Please select the authentication type for API Access as Token");
+    }
+
+    return encryptedDataDetails;
+  }
+
   private ConnectorInfoDTO getConnector(String connectorIdentifierRef, Ambiance ambiance) {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     IdentifierRef connectorRef = IdentifierRefHelper.getIdentifierRef(connectorIdentifierRef,
@@ -276,6 +330,8 @@ public class ArtifactStepHelper {
         return TaskType.AMAZON_S3_ARTIFACT_TASK_NG;
       case JENKINS:
         return TaskType.JENKINS_ARTIFACT_TASK_NG;
+      case GITHUB_PACKAGES:
+        return TaskType.GITHUB_PACKAGES_TASK_NG;
       case CUSTOM_ARTIFACT:
         return TaskType.CUSTOM_ARTIFACT_NG;
       default:
@@ -357,6 +413,14 @@ public class ArtifactStepHelper {
         JenkinsArtifactConfig jenkinsArtifactConfig = (JenkinsArtifactConfig) artifactConfig;
         connectorDTO = getConnector(jenkinsArtifactConfig.getConnectorRef().getValue(), ambiance);
         return TaskSelectorYaml.toTaskSelector(((JenkinsConnectorDTO) connectorDTO.getConnectorConfig())
+                                                   .getDelegateSelectors()
+                                                   .stream()
+                                                   .map(TaskSelectorYaml::new)
+                                                   .collect(Collectors.toList()));
+      case GITHUB_PACKAGES:
+        GithubPackagesArtifactConfig githubPackagesArtifactConfig = (GithubPackagesArtifactConfig) artifactConfig;
+        connectorDTO = getConnector(githubPackagesArtifactConfig.getConnectorRef().getValue(), ambiance);
+        return TaskSelectorYaml.toTaskSelector(((GithubConnectorDTO) connectorDTO.getConnectorConfig())
                                                    .getDelegateSelectors()
                                                    .stream()
                                                    .map(TaskSelectorYaml::new)

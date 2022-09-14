@@ -979,7 +979,6 @@
 8069:software.wings.beans.s3.FetchS3FilesCommandParams
 8070:software.wings.beans.s3.FetchS3FilesExecutionResponse.FetchS3FilesCommandStatus
 8074:software.wings.service.impl.dynatrace.DynaTraceApplication
-8075:software.wings.security.authentication.totp.RateLimitProtection
 8086:software.wings.helpers.ext.ecs.request.EcsDeployRollbackDataFetchRequest
 8087:software.wings.helpers.ext.ecs.response.EcsDeployRollbackDataFetchResponse
 8090:software.wings.helpers.ext.k8s.response.PodStatus
@@ -1115,6 +1114,9 @@
 9110:io.harness.cvng.beans.SplunkMetricDataCollectionInfo
 9111:io.harness.cvng.beans.SplunkMetricDataCollectionInfo.MetricInfo
 9112:io.harness.cvng.beans.splunk.SplunkMetricSampleDataCollectionRequest
+9121:io.harness.cvng.beans.elk.ELKDataCollectionRequest
+9122:io.harness.cvng.beans.elk.ELKIndexCollectionRequest
+9123:io.harness.cvng.beans.elk.ELKSampleDataCollectionRequest
 9701:io.harness.logging.UnitProgress
 9702:io.harness.logging.UnitStatus
 9709:io.harness.jira.JiraIssueTypeNG
@@ -1755,16 +1757,14 @@
 55504:io.harness.delegate.beans.ci.vm.steps.VmBackgroundStep
 55505:io.harness.delegate.beans.azure.response.AzureLocationsResponse
 55506:io.harness.delegate.beans.azure.response.AzureMngGroupsResponse
+55511:io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactDelegateRequest
+55512:io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactDelegateResponse
 56335:io.harness.delegate.task.gitpolling.request.GitPollingTaskParameters
 56336:io.harness.delegate.task.gitpolling.github.GitHubPollingDelegateRequest
 56337:io.harness.delegate.task.gitpolling.GitPollingSourceType
 56338:io.harness.delegate.task.gitpolling.GitPollingTaskType
 56339:io.harness.delegate.beans.polling.GitPollingDelegateResponse
 56403:io.harness.delegate.beans.storeconfig.CustomRemoteStoreDelegateConfig
-70001:io.harness.accesscontrol.commons.exceptions.AccessDeniedErrorDTO
-70002:io.harness.accesscontrol.acl.api.PermissionCheckDTO
-70003:io.harness.accesscontrol.acl.api.ResourceScope
-70004:io.harness.accesscontrol.NGAccessDeniedException
 71100:software.wings.service.impl.ThirdPartyApiCallLog.ThirdPartyApiCallField
 71101:software.wings.service.impl.ThirdPartyApiCallLog.FieldType
 71102:software.wings.beans.Log
@@ -2314,5 +2314,6 @@
 9800003:io.harness.delegate.task.ssh.artifact.JenkinsArtifactDelegateConfig
 9800004:io.harness.delegate.task.ssh.artifact.SkipCopyArtifactDelegateConfig
 9800005:io.harness.delegate.task.ssh.artifact.ArtifactoryDockerArtifactDelegateConfig
+9800006:io.harness.delegate.task.ssh.artifact.NexusDockerArtifactDelegateConfig
 10000001:io.harness.delegate.beans.connector.elkconnector.ELKConnectorDTO
 10000002:io.harness.delegate.beans.connector.elkconnector.ELKAuthType

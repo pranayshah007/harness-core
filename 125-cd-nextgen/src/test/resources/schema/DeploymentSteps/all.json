@@ -1722,6 +1722,12 @@
                   "minLength": 1
                 }
               ]
+            },
+            "forceNewDeployment": {
+              "type": "boolean"
+            },
+            "sameAsAlreadyRunningInstances": {
+              "type": "boolean"
             }
           }
         }

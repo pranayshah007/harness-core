@@ -147,7 +147,7 @@ public class DynatraceHealthSourceSpec extends MetricHealthSourceSpec {
                                    .build();
                            cvConfig.populateFromMetricDefinitions(metricDefinitionList,
                                metricDefinitionList.get(0).getAnalysis().getRiskProfile().getCategory());
-                           cvConfig.addMetricThresholds(metricPacks);
+                           cvConfig.addMetricThresholds(metricPacks, metricDefinitions);
                            return cvConfig;
                          })
                          .collect(Collectors.toList()));

@@ -73,6 +73,9 @@ import io.harness.accesscontrol.roleassignments.privileged.PrivilegedRoleAssignm
 import io.harness.accesscontrol.roleassignments.privileged.persistence.PrivilegedRoleAssignmentDao;
 import io.harness.accesscontrol.roleassignments.privileged.persistence.PrivilegedRoleAssignmentDaoImpl;
 import io.harness.accesscontrol.roleassignments.validation.RoleAssignmentActionValidator;
+import io.harness.accesscontrol.roles.api.AccountRolesApiImpl;
+import io.harness.accesscontrol.roles.api.OrgRolesApiImpl;
+import io.harness.accesscontrol.roles.api.ProjectRolesApiImpl;
 import io.harness.accesscontrol.roles.api.RoleResource;
 import io.harness.accesscontrol.roles.api.RoleResourceImpl;
 import io.harness.accesscontrol.scopes.core.ScopeLevel;
@@ -113,6 +116,9 @@ import io.harness.redis.RedisConfig;
 import io.harness.remote.client.ClientMode;
 import io.harness.resourcegroupclient.ResourceGroupClientModule;
 import io.harness.serviceaccount.ServiceAccountClientModule;
+import io.harness.spec.server.accesscontrol.AccountRolesApi;
+import io.harness.spec.server.accesscontrol.OrganizationRolesApi;
+import io.harness.spec.server.accesscontrol.ProjectRolesApi;
 import io.harness.telemetry.AbstractTelemetryModule;
 import io.harness.telemetry.TelemetryConfiguration;
 import io.harness.threading.ExecutorModule;
@@ -381,5 +387,8 @@ public class AccessControlModule extends AbstractModule {
     bind(AccessControlPreferenceResource.class).to(AccessControlPreferenceResourceImpl.class);
     bind(RoleAssignmentResource.class).to(RoleAssignmentResourceImpl.class);
     bind(RoleResource.class).to(RoleResourceImpl.class);
+    bind(AccountRolesApi.class).to(AccountRolesApiImpl.class);
+    bind(OrganizationRolesApi.class).to(OrgRolesApiImpl.class);
+    bind(ProjectRolesApi.class).to(ProjectRolesApiImpl.class);
   }
 }

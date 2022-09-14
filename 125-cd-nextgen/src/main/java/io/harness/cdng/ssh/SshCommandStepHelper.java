@@ -93,6 +93,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
@@ -126,14 +127,14 @@ public class SshCommandStepHelper extends CDStepHelper {
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE));
     InfrastructureOutcome infrastructure = getInfrastructureOutcome(ambiance);
     Map<String, String> mergedEnvVariables = getMergedEnvVariablesMap(ambiance, commandStepParameters, infrastructure);
-    switch (serviceOutcome.getType()) {
-      case ServiceSpecType.SSH:
-        return buildSshCommandTaskParameters(ambiance, commandStepParameters, mergedEnvVariables);
-      case ServiceSpecType.WINRM:
-        return buildWinRmTaskParameters(ambiance, commandStepParameters, mergedEnvVariables);
-      default:
-        throw new UnsupportedOperationException(
-            format("Unsupported service type: [%s] selected for command step", serviceOutcome.getType()));
+    if (ServiceSpecType.SSH.toLowerCase(Locale.ROOT).equals(serviceOutcome.getType().toLowerCase(Locale.ROOT))) {
+      return buildSshCommandTaskParameters(ambiance, commandStepParameters, mergedEnvVariables);
+    } else if (ServiceSpecType.WINRM.toLowerCase(Locale.ROOT)
+                   .equals(serviceOutcome.getType().toLowerCase(Locale.ROOT))) {
+      return buildWinRmTaskParameters(ambiance, commandStepParameters, mergedEnvVariables);
+    } else {
+      throw new UnsupportedOperationException(
+          format("Unsupported service type: [%s] selected for command step", serviceOutcome.getType()));
     }
   }
 
@@ -411,7 +412,7 @@ public class SshCommandStepHelper extends CDStepHelper {
             .map(stepCommandUnit
                 -> (stepCommandUnit.isScript())
                     ? mapScriptCommandUnit(ambiance, stepCommandUnit, onDelegate, envVariablesMap)
-                    : mapCopyCommandUnit(stepCommandUnit))
+                    : mapCopyCommandUnit(stepCommandUnit, envVariablesMap))
             .collect(Collectors.toList());
 
     commandUnits.addAll(commandUnitsFromStep);
@@ -419,7 +420,11 @@ public class SshCommandStepHelper extends CDStepHelper {
     return commandUnits;
   }
 
-  private String resolveVariablesInScript(String command, Map<String, String> envVariables) {
+  private String resolveVariablesInString(String targetString, Map<String, String> envVariables) {
+    if (isEmpty(envVariables)) {
+      return targetString;
+    }
+
     return envVariables.entrySet()
         .stream()
         .map(entryToReplace
@@ -427,7 +432,7 @@ public class SshCommandStepHelper extends CDStepHelper {
             -> s.replace(ENV_PREFIX_1 + entryToReplace.getKey(), entryToReplace.getValue())
                    .replace(ENV_PREFIX_2 + entryToReplace.getKey(), entryToReplace.getValue()))
         .reduce(Function.identity(), Function::andThen)
-        .apply(command);
+        .apply(targetString);
   }
 
   private ScriptCommandUnit mapScriptCommandUnit(
@@ -443,16 +448,14 @@ public class SshCommandStepHelper extends CDStepHelper {
     ScriptCommandUnitSpec spec = (ScriptCommandUnitSpec) stepCommandUnit.getSpec();
     return ScriptCommandUnit.builder()
         .name(stepCommandUnit.getName())
-        .script(isEmpty(envVariablesMap)
-                ? getShellScript(ambiance, spec.getSource())
-                : resolveVariablesInScript(getShellScript(ambiance, spec.getSource()), envVariablesMap))
+        .script(resolveVariablesInString(getShellScript(ambiance, spec.getSource()), envVariablesMap))
         .scriptType(spec.getShell().getScriptType())
         .tailFilePatterns(mapTailFilePatterns(spec.getTailFiles()))
         .workingDirectory(getWorkingDirectory(spec.getWorkingDirectory(), spec.getShell().getScriptType(), onDelegate))
         .build();
   }
 
-  private CopyCommandUnit mapCopyCommandUnit(CommandUnitWrapper stepCommandUnit) {
+  private CopyCommandUnit mapCopyCommandUnit(CommandUnitWrapper stepCommandUnit, Map<String, String> envVariablesMap) {
     if (stepCommandUnit == null) {
       throw new InvalidRequestException("Invalid command unit format specified");
     }
@@ -465,7 +468,7 @@ public class SshCommandStepHelper extends CDStepHelper {
     return CopyCommandUnit.builder()
         .name(stepCommandUnit.getName())
         .sourceType(spec.getSourceType().getFileSourceType())
-        .destinationPath(getParameterFieldValue(spec.getDestinationPath()))
+        .destinationPath(resolveVariablesInString(getParameterFieldValue(spec.getDestinationPath()), envVariablesMap))
         .build();
   }
 

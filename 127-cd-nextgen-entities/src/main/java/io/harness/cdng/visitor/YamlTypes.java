@@ -139,4 +139,5 @@ public interface YamlTypes {
 
   String APPLICATION_SETTINGS = "applicationSettings";
   String CONNECTION_STRINGS = "connectionStrings";
+  String DEPLOYMENT_TYPE = "deploymentType";
 }
