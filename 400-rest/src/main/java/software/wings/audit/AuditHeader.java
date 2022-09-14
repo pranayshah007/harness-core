@@ -15,6 +15,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EmbeddedUser;
+import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
@@ -52,7 +53,7 @@ import org.mongodb.morphia.annotations.Entity;
 @Entity(value = "audits", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @TargetModule(HarnessModule._940_CG_AUDIT_SERVICE)
-public class AuditHeader extends Base implements AccountAccess {
+public class AuditHeader extends Base implements AccountAccess, PersistentRegularIterable {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(SortCompoundMongoIndex.builder()
@@ -128,6 +129,7 @@ public class AuditHeader extends Base implements AccountAccess {
   @Getter @Setter private GitAuditDetails gitAuditDetails;
   @Getter @Setter private List<EntityAuditRecord> entityAuditRecords;
   @Getter @Setter private ApiKeyAuditDetails apiKeyAuditDetails;
+  @Setter @FdIndex private Long nextIteration;
 
   /**
    * Gets query params.
@@ -413,6 +415,16 @@ public class AuditHeader extends Base implements AccountAccess {
 
   public void setFailureStatusMsg(String failureStatusMsg) {
     this.failureStatusMsg = failureStatusMsg;
+  }
+
+  @Override
+  public Long obtainNextIteration(String fieldName) {
+    return nextIteration;
+  }
+
+  @Override
+  public void updateNextIteration(String fieldName, long nextIteration) {
+    this.nextIteration = nextIteration;
   }
 
   @UtilityClass

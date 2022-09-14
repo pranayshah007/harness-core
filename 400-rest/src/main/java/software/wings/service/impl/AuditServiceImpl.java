@@ -98,6 +98,8 @@ import io.fabric8.utils.Lists;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.time.Duration;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -383,7 +385,7 @@ public class AuditServiceImpl implements AuditService {
   public void deleteAuditRecords(long retentionMillis) {
     final int batchSize = 1000;
     final int limit = 5000;
-    final long days = TimeUnit.DAYS.convert(retentionMillis, TimeUnit.MILLISECONDS);
+    final long days = Instant.ofEpochMilli(retentionMillis).until(Instant.now(), ChronoUnit.DAYS);
     log.info("Start: Deleting audit records older than {} time", currentTimeMillis() - retentionMillis);
     try {
       log.info("Start: Deleting audit records older than {} days", days);
@@ -391,7 +393,7 @@ public class AuditServiceImpl implements AuditService {
         while (true) {
           List<AuditHeader> auditHeaders = wingsPersistence.createQuery(AuditHeader.class, excludeAuthority)
                                                .field(AuditHeaderKeys.createdAt)
-                                               .lessThan(currentTimeMillis() - retentionMillis)
+                                               .lessThan(retentionMillis)
                                                .asList(new FindOptions().limit(limit).batchSize(batchSize));
           if (isEmpty(auditHeaders)) {
             log.info("No more audit records older than {} days", days);

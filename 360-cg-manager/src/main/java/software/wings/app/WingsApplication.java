@@ -222,6 +222,7 @@ import software.wings.scheduler.YamlChangeSetPruneJob;
 import software.wings.scheduler.account.DeleteAccountHandler;
 import software.wings.scheduler.account.LicenseCheckHandler;
 import software.wings.scheduler.approval.ApprovalPollingHandler;
+import software.wings.scheduler.audit.AuditRetentionHandler;
 import software.wings.scheduler.audit.EntityAuditRecordHandler;
 import software.wings.scheduler.events.segment.SegmentGroupEventJob;
 import software.wings.scheduler.marketplace.gcp.GCPBillingHandler;
@@ -1463,6 +1464,7 @@ public class WingsApplication extends Application<MainConfiguration> {
     injector.getInstance(SegmentGroupEventJob.class).registerIterators();
     injector.getInstance(BarrierServiceImpl.class).registerIterators();
     injector.getInstance(EntityAuditRecordHandler.class).registerIterators();
+    injector.getInstance(AuditRetentionHandler.class).registerIterators();
     injector.getInstance(UsageMetricsHandler.class).registerIterators();
     injector.getInstance(ResourceConstraintBackupHandler.class)
         .registerIterators(iteratorsConfig.getResourceConstraintBackupIteratorConfig().getThreadPoolSize());
