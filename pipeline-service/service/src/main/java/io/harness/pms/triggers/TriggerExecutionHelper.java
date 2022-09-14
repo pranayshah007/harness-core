@@ -282,7 +282,8 @@ public class TriggerExecutionHelper {
         pipelineEnforcementService.validateExecutionEnforcementsBasedOnStage(pipelineEntity);
 
         String expandedJson = pmsPipelineServiceHelper.fetchExpandedPipelineJSONFromYaml(pipelineEntity.getAccountId(),
-            pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineYamlWithTemplateRef);
+            pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineYamlWithTemplateRef,
+            true);
 
         planExecutionMetadataBuilder.yaml(pipelineYaml);
         planExecutionMetadataBuilder.processedYaml(YamlUtils.injectUuid(pipelineYaml));
