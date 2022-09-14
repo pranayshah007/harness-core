@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.appdynamicsconnector.AppDynamicsCapabilityHelper;
+import io.harness.delegate.beans.connector.awsconnector.AwsCapabilityHelper;
 import io.harness.delegate.beans.connector.customhealthconnector.CustomHealthCapabilityHelper;
 import io.harness.delegate.beans.connector.datadogconnector.DatadogCapabilityHelper;
 import io.harness.delegate.beans.connector.dynatraceconnector.DynatraceCapabilityHelper;
@@ -118,6 +119,9 @@ public abstract class DataCollectionRequest<T extends ConnectorConfigDTO> implem
             maskingEvaluator, connectorInfoDTO.getConnectorConfig());
       case ELK:
         return ELKCapabilityHelper.fetchRequiredExecutionCapabilities(
+            connectorInfoDTO.getConnectorConfig(), maskingEvaluator);
+      case AWS:
+        return AwsCapabilityHelper.fetchRequiredExecutionCapabilities(
             connectorInfoDTO.getConnectorConfig(), maskingEvaluator);
       default:
         throw new InvalidRequestException("Connector capability not found");

@@ -38,6 +38,7 @@ import io.harness.cvng.cdng.entities.CVNGStepTask;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.CVNGLog;
+import io.harness.cvng.core.entities.CloudWatchMetricCVConfig;
 import io.harness.cvng.core.entities.CustomHealthLogCVConfig;
 import io.harness.cvng.core.entities.CustomHealthMetricCVConfig;
 import io.harness.cvng.core.entities.DataCollectionTask;
@@ -171,6 +172,7 @@ public class CVNextGenMorphiaRegister implements MorphiaRegistrar {
     set.add(CVNGLog.class);
     set.add(MonitoringSourcePerpetualTask.class);
     set.add(NewRelicCVConfig.class);
+    set.add(CloudWatchMetricCVConfig.class);
     set.add(CVNGStepTask.class);
     set.add(Comparable.class);
     set.add(PrometheusCVConfig.class);
