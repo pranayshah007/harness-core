@@ -433,7 +433,7 @@ if [[ "$EVENTS_FRAMEWORK_USE_SENTINEL" == "true" ]]; then
 fi
 
 if [[ "" != "$CD_TSDB_RETENTION_PERIOD_MONTHS" ]]; then
-  yq write -i $CD_TSDB_RETENTION_PERIOD_MONTHS cdTsDbRetentionPeriodMonths "$CD_TSDB_RETENTION_PERIOD_MONTHS"
+  export CD_TSDB_RETENTION_PERIOD_MONTHS; yq -i '.cdTsDbRetentionPeriodMonths=env(CD_TSDB_RETENTION_PERIOD_MONTHS)' $CD_TSDB_RETENTION_PERIOD_MONTHS
 fi
 
 replace_key_value cacheConfig.cacheNamespace $CACHE_NAMESPACE
