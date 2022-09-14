@@ -37,7 +37,6 @@ container_image(
         "no-cache",
         "no-ide",
     ],
-    visibility = ["//visibility:public"],
 )
 
 #If "registry or "repository" or "tag" is changed then corresponding container_pull macro in WORKSPACE file also has be to modified.
