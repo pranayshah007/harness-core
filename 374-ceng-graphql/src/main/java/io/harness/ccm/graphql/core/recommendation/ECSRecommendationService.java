@@ -115,6 +115,9 @@ public class ECSRecommendationService {
 
   private Map<String, Map<String, String>> getRecommendationWithBuffer(
       Map<String, Map<String, String>> percentileBased, Long bufferPercentage) {
+    if (percentileBased == null) {
+      return null;
+    }
     Map<String, Map<String, String>> withBuffer = new HashMap<>();
     for (Map.Entry<String, Map<String, String>> mapEntry : percentileBased.entrySet()) {
       long memoryMb = memoryMbFromReadableFormat(mapEntry.getValue().get(MEMORY));
