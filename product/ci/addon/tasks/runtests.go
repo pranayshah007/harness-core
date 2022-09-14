@@ -36,7 +36,7 @@ const (
 	javaAgentArg                       = "-javaagent:/addon/bin/java-agent.jar=%s"
 	tiConfigPath                       = ".ticonfig.yaml"
 	classTimingTestSplitStrategy       = stutils.SplitByClassTimeStr
-	countTestSplitStrategy             = stutils.SplitByCount
+	countTestSplitStrategy             = stutils.SplitByTestCount
 	defaultTestSplitStrategy           = classTimingTestSplitStrategy
 )
 
@@ -334,15 +334,15 @@ func (r *runTestsTask) getTestSelection(ctx context.Context, files []types.File,
 
 // getSplitTests takes a list of tests as input and returns the slice of tests to run depending on
 // the test split strategy and index
-func (r *runTestsTask) getSplitTests(ctx context.Context, tests []types.RunnableTest, splitStrategy string, splitIdx, splitTotal int) ([]types.RunnableTest, error) {
-	if len(tests) == 0 {
-		return tests, nil
+func (r *runTestsTask) getSplitTests(ctx context.Context, testsToSplit []types.RunnableTest, splitStrategy string, splitIdx, splitTotal int) ([]types.RunnableTest, error) {
+	if len(testsToSplit) == 0 {
+		return testsToSplit, nil
 	}
 
 	currentTestMap := make(map[string][]types.RunnableTest)
 	currentTestSet := make(map[string]bool)
 	var testID string
-	for _, t := range tests {
+	for _, t := range testsToSplit {
 		switch splitStrategy {
 		case classTimingTestSplitStrategy:
 			testID = t.Pkg + t.Class
@@ -364,7 +364,7 @@ func (r *runTestsTask) getSplitTests(ctx context.Context, tests []types.Runnable
 		// Call TI svc to get the test timing data
 		fileTimes, err = getTestTime(ctx, r.log, splitStrategy)
 		if err != nil {
-			return tests, err
+			return testsToSplit, err
 		}
 		r.log.Infow("Successfully retrieved timing data for splitting")
 	case countTestSplitStrategy:
@@ -431,9 +431,8 @@ func (r *runTestsTask) computeSelectedTests(ctx context.Context, runner testinte
 		stageIdx = 0
 		stageTotal = 1
 	}
-
-	idx := stepTotal*stageIdx + stepIdx
-	total := stepTotal * stageTotal
+	splitIdx := stepTotal*stageIdx + stepIdx
+	splitTotal := stepTotal * stageTotal
 
 	tests := make([]types.RunnableTest, 0)
 	if !r.runOnlySelectedTests {
@@ -444,7 +443,7 @@ func (r *runTestsTask) computeSelectedTests(ctx context.Context, runner testinte
 		if err != nil || len(tests) == 0 {
 			// AutoDetectTests output should be same across all the parallel steps. If one of the step
 			// receives error / no tests to run, all the other steps should have the same output
-			if idx == 0 {
+			if splitIdx == 0 {
 				// Error while auto-detecting, run all tests for parallel step 0
 				r.runOnlySelectedTests = false
 				r.log.Errorw("Error in auto-detecting tests for splitting, running all tests")
@@ -465,11 +464,11 @@ func (r *runTestsTask) computeSelectedTests(ctx context.Context, runner testinte
 	}
 
 	// Split the tests and send the split slice to the runner
-	splitTests, err := r.getSplitTests(ctx, tests, r.testSplitStrategy, idx, total)
+	splitTests, err := r.getSplitTests(ctx, tests, r.testSplitStrategy, splitIdx, splitTotal)
 	if err != nil {
 		// Error while splitting by input strategy, splitting tests equally
-		r.log.Errorw("Error occurred while splitting the tests by input strategy. Splitting detected tests equally")
-		splitTests, _ = r.getSplitTests(ctx, tests, countTestSplitStrategy, idx, total)
+		r.log.Errorw("Error occurred while splitting the tests by input strategy. Splitting tests equally")
+		splitTests, _ = r.getSplitTests(ctx, tests, countTestSplitStrategy, splitIdx, splitTotal)
 	}
 	r.log.Infow(fmt.Sprintf("Test split for this run: %s", formatTests(splitTests)))
 
