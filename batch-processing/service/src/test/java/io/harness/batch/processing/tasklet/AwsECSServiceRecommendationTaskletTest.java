@@ -28,6 +28,7 @@ import io.harness.batch.processing.dao.intfc.ECSServiceDao;
 import io.harness.category.element.UnitTests;
 import io.harness.ccm.commons.beans.Resource;
 import io.harness.ccm.commons.dao.recommendation.ECSRecommendationDAO;
+import io.harness.ccm.commons.entities.ecs.ECSService;
 import io.harness.ccm.commons.entities.ecs.recommendation.ECSPartialRecommendationHistogram;
 import io.harness.ccm.commons.entities.ecs.recommendation.ECSServiceRecommendation;
 import io.harness.ff.FeatureFlagService;
@@ -109,11 +110,11 @@ public class AwsECSServiceRecommendationTaskletTest extends BaseTaskletTest {
     when(utilizationDataService.getUtilizationDataForECSClusters(any(), any(), any(), any()))
         .thenReturn(
             Collections.singletonMap(new ClusterIdAndServiceArn(CLUSTER_ID, SERVICE_ARN), Collections.emptyList()));
-    when(ecsServiceDao.fetchResourceForServices(any(), any())).thenReturn(Collections.emptyMap());
+    when(ecsServiceDao.fetchServices(any(), any())).thenReturn(Collections.emptyMap());
     assertThat(tasklet.execute(null, chunkContext)).isNull();
     verify(ceClusterDao, times(1)).getClusterIdNameMapping(any());
     verify(utilizationDataService, times(1)).getUtilizationDataForECSClusters(any(), any(), any(), any());
-    verify(ecsServiceDao, times(1)).fetchResourceForServices(any(), any());
+    verify(ecsServiceDao, times(1)).fetchServices(any(), any());
     verify(ecsRecommendationDAO, times(0)).savePartialRecommendation(any());
     verify(ecsRecommendationDAO, times(0)).saveRecommendation(any());
   }
@@ -127,9 +128,9 @@ public class AwsECSServiceRecommendationTaskletTest extends BaseTaskletTest {
     when(utilizationDataService.getUtilizationDataForECSClusters(any(), any(), any(), any()))
         .thenReturn(
             Collections.singletonMap(new ClusterIdAndServiceArn(CLUSTER_ID, SERVICE_ARN), Collections.emptyList()));
-    when(ecsServiceDao.fetchResourceForServices(any(), any()))
+    when(ecsServiceDao.fetchServices(any(), any()))
         .thenReturn(
-            Collections.singletonMap(SERVICE_ARN, Resource.builder().cpuUnits(CPU_UNITS).memoryMb(MEMORY_MB).build()));
+            Collections.singletonMap(SERVICE_ARN, ECSService.builder().resource(Resource.builder().cpuUnits(CPU_UNITS).memoryMb(MEMORY_MB).build()).build()));
     when(ecsRecommendationDAO.fetchPartialRecommendationHistograms(any(), any(), any(), any(), any()))
         .thenReturn(new ArrayList<>());
     when(billingDataService.getECSServiceLastAvailableDayCost(any(), any(), any(), any())).thenReturn(cost());
@@ -144,7 +145,7 @@ public class AwsECSServiceRecommendationTaskletTest extends BaseTaskletTest {
     assertThat(tasklet.execute(null, chunkContext)).isNull();
     verify(ceClusterDao, times(1)).getClusterIdNameMapping(any());
     verify(utilizationDataService, times(1)).getUtilizationDataForECSClusters(any(), any(), any(), any());
-    verify(ecsServiceDao, times(1)).fetchResourceForServices(any(), any());
+    verify(ecsServiceDao, times(1)).fetchServices(any(), any());
     verify(ecsRecommendationDAO, times(1)).savePartialRecommendation(any());
     verify(ecsRecommendationDAO, times(1)).saveRecommendation(any());
     verify(ecsRecommendationDAO, times(1))
