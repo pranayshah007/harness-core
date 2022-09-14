@@ -64,7 +64,7 @@ public class PerspectiveAnomalyServiceImpl implements PerspectiveAnomalyService 
         ? anomalyQueryBuilder.applyAllFilters(anomalyQuery.getFilter())
         : DSL.noCondition();
 
-    List<Anomalies> anomalies = anomalyDao.fetchAnomaliesForDate(accountIdentifier, condition,
+    List<Anomalies> anomalies = anomalyDao.fetchAnomaliesForNotification(accountIdentifier, condition,
         anomalyQueryBuilder.getOrderByFields(
             anomalyQuery.getOrderBy() != null ? anomalyQuery.getOrderBy() : Collections.emptyList()),
         anomalyQuery.getOffset() != null ? anomalyQuery.getOffset() : DEFAULT_OFFSET,

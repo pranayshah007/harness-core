@@ -19,6 +19,7 @@ import io.harness.migrations.timescaledb.data.PodInfoPartialIndexForSyncQuery;
 import io.harness.migrations.timescaledb.data.SetInstancesDeployedInDeployment;
 import io.harness.migrations.timescaledb.data.SetRollbackDurationInDeployment;
 import io.harness.migrations.timescaledb.data.UpdateEnvSvcCPInDeployment;
+import io.harness.migrations.timescaledb.data.AddNotificationSentStatusToAnomalies;
 
 import com.google.common.collect.ImmutableList;
 import java.util.List;
@@ -41,6 +42,7 @@ public class TimescaleDBDataMigrationList {
         .add(Pair.of(9, AddWorkflowExecutionFailureDetails.class))
         .add(Pair.of(10, AddParentPipelineDataToDeployment.class))
         .add(Pair.of(11, AddIndexToCERecommendation.class))
+        .add(Pair.of(12, AddNotificationSentStatusToAnomalies.class))
         .build();
   }
 }
