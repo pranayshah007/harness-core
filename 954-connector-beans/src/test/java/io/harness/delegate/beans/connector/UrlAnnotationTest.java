@@ -248,7 +248,7 @@ public class UrlAnnotationTest {
           validator.validateProperty(connectorConfigDTO, field.getName());
       assertThat(violations).isNotNull();
       assertThat(violations.size()).isEqualTo(1);
-      assertThat(violations.stream().filter((violation) -> URL_FAILURE_MSG.equals(violation.getMessage())).count())
+      assertThat(violations.stream().filter(violation -> URL_FAILURE_MSG.equals(violation.getMessage())).count())
           .isEqualTo(1);
     }
   }
