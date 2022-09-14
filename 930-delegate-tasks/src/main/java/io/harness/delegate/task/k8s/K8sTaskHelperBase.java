@@ -997,6 +997,7 @@ public class K8sTaskHelperBase {
   public void delete(Kubectl client, K8sDelegateTaskParams k8sDelegateTaskParams,
       List<KubernetesResourceId> kubernetesResourceIds, LogCallback executionLogCallback, boolean denoteOverallSuccess)
       throws Exception {
+    boolean deleteFailed = false;
     for (KubernetesResourceId resourceId : kubernetesResourceIds) {
       ProcessResult result = executeDeleteCommand(client, k8sDelegateTaskParams, executionLogCallback, resourceId);
       if (result.getExitValue() != 0) {
@@ -1004,12 +1005,13 @@ public class K8sTaskHelperBase {
         String resultOutput = result.outputUTF8().toLowerCase();
         // if result contains "not found" then we don't fail else we fail the step
         if (!resultOutput.contains(NOT_FOUND)) {
-          executionLogCallback.saveExecutionLog(resultOutput, ERROR, FAILURE);
-          throw new KubernetesCliTaskRuntimeException(resultOutput, KubernetesCliCommandType.DELETE);
+          deleteFailed = true;
         }
       }
     }
-    if (denoteOverallSuccess) {
+    if (deleteFailed) {
+      executionLogCallback.saveExecutionLog("Failed", ERROR, FAILURE);
+    } else if (denoteOverallSuccess) {
       executionLogCallback.saveExecutionLog("Done", INFO, SUCCESS);
     }
   }
