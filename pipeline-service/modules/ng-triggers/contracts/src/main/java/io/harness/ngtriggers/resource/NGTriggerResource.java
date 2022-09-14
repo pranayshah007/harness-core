@@ -103,7 +103,7 @@ public interface NGTriggerResource {
       @Parameter(description = "Identifier of the target pipeline") @NotNull @QueryParam("targetIdentifier")
       @ResourceIdentifier String targetIdentifier, @NotNull @ApiParam(hidden = true, type = "") String yaml,
       @QueryParam("ignoreError") @DefaultValue("false") boolean ignoreError,
-      @QueryParam("withServiceV2") @DefaultValue("false") boolean withServiceV2);
+      @QueryParam("withServiceV2") @DefaultValue("true") boolean withServiceV2);
 
   @GET
   @Path("/{triggerIdentifier}")
