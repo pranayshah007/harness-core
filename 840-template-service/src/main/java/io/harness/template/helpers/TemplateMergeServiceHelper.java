@@ -13,7 +13,6 @@ import static io.harness.pms.merger.helpers.MergeHelper.mergeInputSetFormatYamlT
 import static io.harness.pms.yaml.validation.RuntimeInputValuesValidator.validateStaticValues;
 import static io.harness.template.beans.NGTemplateConstants.*;
 
-import com.fasterxml.jackson.databind.node.JsonNodeType;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -43,11 +42,14 @@ import io.harness.template.evaluator.TemplateVariableEvaluator;
 import io.harness.template.services.NGTemplateServiceHelper;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.YamlPipelineUtils;
+import io.harness.yaml.core.variables.NGVariable;
+import io.harness.yaml.utils.NGVariablesUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import java.io.IOException;
@@ -62,9 +64,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-
-import io.harness.yaml.core.variables.NGVariable;
-import io.harness.yaml.utils.NGVariablesUtils;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -390,7 +389,8 @@ public class TemplateMergeServiceHelper {
       throw new NGTemplateException("Could not read template yaml: " + e.getMessage());
     }
 
-    return mergeTemplateInputsToTemplateSpecInTemplateYaml(templateInputs, templateVariablesFromPipeline, templateSpec, variablesFromTemplate);
+    return mergeTemplateInputsToTemplateSpecInTemplateYaml(
+        templateInputs, templateVariablesFromPipeline, templateSpec, variablesFromTemplate);
   }
 
   /**
@@ -402,7 +402,8 @@ public class TemplateMergeServiceHelper {
    * @param variablesFromTemplate
    * @return jsonNode of merged yaml
    */
-  private JsonNode mergeTemplateInputsToTemplateSpecInTemplateYaml(JsonNode templateInputs, JsonNode templateVariables, JsonNode templateSpec, List<NGVariable> variablesFromTemplate) {
+  private JsonNode mergeTemplateInputsToTemplateSpecInTemplateYaml(JsonNode templateInputs, JsonNode templateVariables,
+      JsonNode templateSpec, List<NGVariable> variablesFromTemplate) {
     Map<String, JsonNode> dummyTemplateSpecMap = new LinkedHashMap<>();
     dummyTemplateSpecMap.put(DUMMY_NODE, templateSpec);
     String dummyTemplateSpecYaml = YamlPipelineUtils.writeYamlString(dummyTemplateSpecMap);
@@ -428,24 +429,28 @@ public class TemplateMergeServiceHelper {
     }
   }
 
-  private String applyTemplateVariablesInYaml(JsonNode templateVariablesFromPipeline, List<NGVariable> templateVariablesFromTemplate, String mergedYaml) {
-    if(templateVariablesFromPipeline == null && templateVariablesFromTemplate == null){
+  private String applyTemplateVariablesInYaml(
+      JsonNode templateVariablesFromPipeline, List<NGVariable> templateVariablesFromTemplate, String mergedYaml) {
+    if (templateVariablesFromPipeline == null && templateVariablesFromTemplate == null) {
       return mergedYaml;
     }
     Map<String, String> variableValues = new HashMap<>();
-    if(isNotEmpty(templateVariablesFromTemplate)){
-      Map<String, String> templateVariablesMap = NGVariablesUtils.getStringMapVariables(templateVariablesFromTemplate, 0L);
+    if (isNotEmpty(templateVariablesFromTemplate)) {
+      Map<String, String> templateVariablesMap =
+          NGVariablesUtils.getStringMapVariables(templateVariablesFromTemplate, 0L);
       variableValues.putAll(templateVariablesMap);
     }
-    if(templateVariablesFromPipeline!=null && templateVariablesFromPipeline.getNodeType() == JsonNodeType.ARRAY){
+    if (templateVariablesFromPipeline != null && templateVariablesFromPipeline.getNodeType() == JsonNodeType.ARRAY) {
       ArrayNode templateVariablesArray = (ArrayNode) templateVariablesFromPipeline;
-      for (JsonNode templateVariable: templateVariablesArray) {
-        variableValues.put(templateVariable.get(YAMLFieldNameConstants.NAME).asText(), templateVariable.get(YAMLFieldNameConstants.VALUE).asText());
+      for (JsonNode templateVariable : templateVariablesArray) {
+        variableValues.put(templateVariable.get(YAMLFieldNameConstants.NAME).asText(),
+            templateVariable.get(YAMLFieldNameConstants.VALUE).asText());
       }
     }
     TemplateVariableEvaluator variableEvaluator = new TemplateVariableEvaluator(variableValues);
-    String result = variableEvaluator.renderExpression(mergedYaml, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
-    return isEmpty(result)? mergedYaml: result;
+    String result =
+        variableEvaluator.renderExpression(mergedYaml, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
+    return isEmpty(result) ? mergedYaml : result;
   }
 
   private String removeOmittedRuntimeInputsFromMergedYaml(String mergedYaml, String templateInputsYaml)
