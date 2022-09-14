@@ -401,6 +401,7 @@ func TestComputeSelected_RunSelectedTests(t *testing.T) {
 		// Input
 		runOnlySelectedTestsBool      bool
 		IgnoreInstrBool               bool
+		parallelizeTestsBool          bool
 		isParallelismEnabledBool      bool
 		isStepParallelismEnabled      bool
 		isStageParallelismEnabled     bool
@@ -422,10 +423,45 @@ func TestComputeSelected_RunSelectedTests(t *testing.T) {
 		ignoreInstrResp          bool
 	}{
 		{
+			name: "SkipParallelization_Manual",
+			// Input
+			runOnlySelectedTestsBool: true,
+			IgnoreInstrBool:          false,
+			parallelizeTestsBool:     false,
+			// Expect
+			runOnlySelectedTests: true,
+			ignoreInstrResp:      false,
+		},
+		{
+			name: "SkipParallelization_TiSelection",
+			// Input
+			runOnlySelectedTestsBool: true,
+			IgnoreInstrBool:          false,
+			parallelizeTestsBool:     false,
+			runnableTests:            rts[:1],
+			// Expect
+			runOnlySelectedTests:     true,
+			selectTestsResponseTests: rts[:1],
+			ignoreInstrResp:          false,
+		},
+		{
+			name: "SkipTestSplitting_TiSelectionZeroTests",
+			// Input
+			runOnlySelectedTestsBool: true,
+			IgnoreInstrBool:          false,
+			parallelizeTestsBool:     true,
+			runnableTests:            []types.RunnableTest{}, // TI returned 0 tests to run
+			// Expect
+			runOnlySelectedTests:     true,
+			selectTestsResponseTests: []types.RunnableTest{},
+			ignoreInstrResp:          false,
+		},
+		{
 			name: "ManualAutodetectPass",
 			// Input
 			runOnlySelectedTestsBool:      false,
 			IgnoreInstrBool:               true,
+			parallelizeTestsBool:          true,
 			isParallelismEnabledBool:      true,
 			isStepParallelismEnabled:      true,
 			isStageParallelismEnabled:     false,
@@ -451,6 +487,7 @@ func TestComputeSelected_RunSelectedTests(t *testing.T) {
 			// Input
 			runOnlySelectedTestsBool:      false,
 			IgnoreInstrBool:               true,
+			parallelizeTestsBool:          true,
 			isParallelismEnabledBool:      true,
 			isStepParallelismEnabled:      true,
 			isStageParallelismEnabled:     false,
@@ -476,6 +513,7 @@ func TestComputeSelected_RunSelectedTests(t *testing.T) {
 			// Input
 			runOnlySelectedTestsBool:      false,
 			IgnoreInstrBool:               true,
+			parallelizeTestsBool:          true,
 			isParallelismEnabledBool:      true,
 			isStepParallelismEnabled:      true,
 			isStageParallelismEnabled:     false,
@@ -500,6 +538,7 @@ func TestComputeSelected_RunSelectedTests(t *testing.T) {
 			name: "TestStageParallelismStageParallelismOnly",
 			// Input
 			runOnlySelectedTestsBool:      true,
+			parallelizeTestsBool:          true,
 			isParallelismEnabledBool:      true,
 			isStepParallelismEnabled:      true,
 			isStageParallelismEnabled:     false,
@@ -521,6 +560,7 @@ func TestComputeSelected_RunSelectedTests(t *testing.T) {
 			name: "TestStageParallelismStepParallelismOnly",
 			// Input
 			runOnlySelectedTestsBool:      true,
+			parallelizeTestsBool:          true,
 			isParallelismEnabledBool:      true,
 			isStepParallelismEnabled:      false,
 			isStageParallelismEnabled:     true,
@@ -542,6 +582,7 @@ func TestComputeSelected_RunSelectedTests(t *testing.T) {
 			name: "TestStageParallelismStageStepParallelism_v1",
 			// Input
 			runOnlySelectedTestsBool:      true,
+			parallelizeTestsBool:          true,
 			isParallelismEnabledBool:      true,
 			isStepParallelismEnabled:      true,
 			isStageParallelismEnabled:     true,
@@ -563,6 +604,7 @@ func TestComputeSelected_RunSelectedTests(t *testing.T) {
 			name: "TestStageParallelismStageStepParallelism_v2",
 			// Input
 			runOnlySelectedTestsBool:      true,
+			parallelizeTestsBool:          true,
 			isParallelismEnabledBool:      true,
 			isStepParallelismEnabled:      true,
 			isStageParallelismEnabled:     true,
@@ -584,6 +626,7 @@ func TestComputeSelected_RunSelectedTests(t *testing.T) {
 			name: "TestStageParallelismStageStepParallelism_v30",
 			// Input
 			runOnlySelectedTestsBool:      true,
+			parallelizeTestsBool:          true,
 			isParallelismEnabledBool:      true,
 			isStepParallelismEnabled:      true,
 			isStageParallelismEnabled:     true,
@@ -605,6 +648,7 @@ func TestComputeSelected_RunSelectedTests(t *testing.T) {
 			name: "TestStageParallelismStageStepParallelism_v31",
 			// Input
 			runOnlySelectedTestsBool:      true,
+			parallelizeTestsBool:          true,
 			isParallelismEnabledBool:      true,
 			isStepParallelismEnabled:      true,
 			isStageParallelismEnabled:     true,
@@ -626,6 +670,7 @@ func TestComputeSelected_RunSelectedTests(t *testing.T) {
 			name: "TestStageParallelismStageStepParallelism_v32",
 			// Input
 			runOnlySelectedTestsBool:      true,
+			parallelizeTestsBool:          true,
 			isParallelismEnabledBool:      true,
 			isStepParallelismEnabled:      true,
 			isStageParallelismEnabled:     true,
@@ -647,6 +692,7 @@ func TestComputeSelected_RunSelectedTests(t *testing.T) {
 			name: "TestStageParallelismStageStepParallelism_v33",
 			// Input
 			runOnlySelectedTestsBool:      true,
+			parallelizeTestsBool:          true,
 			isParallelismEnabledBool:      true,
 			isStepParallelismEnabled:      true,
 			isStageParallelismEnabled:     true,
@@ -668,6 +714,7 @@ func TestComputeSelected_RunSelectedTests(t *testing.T) {
 			name: "TestStageParallelismStageStepParallelism_v34",
 			// Input
 			runOnlySelectedTestsBool:      true,
+			parallelizeTestsBool:          true,
 			isParallelismEnabledBool:      true,
 			isStepParallelismEnabled:      true,
 			isStageParallelismEnabled:     true,
@@ -689,6 +736,7 @@ func TestComputeSelected_RunSelectedTests(t *testing.T) {
 			name: "TestStageParallelismStageStepParallelism_v35",
 			// Input
 			runOnlySelectedTestsBool:      true,
+			parallelizeTestsBool:          true,
 			isParallelismEnabledBool:      true,
 			isStepParallelismEnabled:      true,
 			isStageParallelismEnabled:     true,
@@ -767,56 +815,17 @@ func TestComputeSelected_RunSelectedTests(t *testing.T) {
 				log:                  log.Sugar(),
 				addonLogger:          log.Sugar(),
 				testSplitStrategy:    countTestSplitStrategy,
-				parallelizeTests:     true,
+				parallelizeTests:     tt.parallelizeTestsBool,
 			}
-			ignoreInstr := true
 			selectTestsResponse := types.SelectTestsResp{}
 			selectTestsResponse.Tests = tt.runnableTests
 
-			ignoreInstrResp := r.computeSelectedTests(ctx, runner, &selectTestsResponse, ignoreInstr)
-			fmt.Println(tt.name, selectTestsResponse.Tests)
+			ignoreInstrResp := r.computeSelectedTests(ctx, runner, &selectTestsResponse, tt.IgnoreInstrBool)
 			assert.Equal(t, r.runOnlySelectedTests, tt.runOnlySelectedTests)
 			assert.Equal(t, selectTestsResponse.Tests, tt.selectTestsResponseTests)
 			assert.Equal(t, ignoreInstrResp, tt.ignoreInstrResp)
 		})
 	}
-}
-
-func TestComputeSelectedTests_Skip(t *testing.T) {
-	ctrl, ctx := gomock.WithContext(context.Background(), t)
-	defer ctrl.Finish()
-
-	log, _ := logs.GetObservedLogger(zap.InfoLevel)
-	runner := mocks.NewMockTestRunner(ctrl)
-	t1 := types.RunnableTest{
-		Pkg:   "p1",
-		Class: "c1",
-	}
-	t2 := types.RunnableTest{
-		Pkg:   "p2",
-		Class: "c2",
-	}
-
-	r := runTestsTask{
-		id:                   "id",
-		runOnlySelectedTests: false,
-		preCommand:           "echo x",
-		args:                 "test",
-		postCommand:          "echo y",
-		buildTool:            "maven",
-		language:             "java",
-		log:                  log.Sugar(),
-		addonLogger:          log.Sugar(),
-		testSplitStrategy:    countTestSplitStrategy,
-	}
-	ignoreInstr := true
-	selectTestsResponse := types.SelectTestsResp{}
-	selectTestsResponse.Tests = append(selectTestsResponse.Tests, t1, t2)
-
-	ignoreInstrResp := r.computeSelectedTests(ctx, runner, &selectTestsResponse, ignoreInstr)
-	assert.Equal(t, r.runOnlySelectedTests, false)
-	assert.Equal(t, len(selectTestsResponse.Tests), 2)
-	assert.Equal(t, ignoreInstrResp, ignoreInstr)
 }
 
 func TestGetCmd_ErrorIncorrectBuildTool(t *testing.T) {
