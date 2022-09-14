@@ -40,6 +40,7 @@ container_image(
     visibility = ["//visibility:public"],
 )
 
+#If "registry or "repository" or "tag" is changed then corresponding container_pull macro in WORKSPACE file also has be to modified.
 container_push(
     name = "ubi-java-base-push",
     format = "Docker",
