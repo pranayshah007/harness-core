@@ -24,6 +24,7 @@ import io.harness.cvng.beans.DataCollectionRequestType;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.DatadogLogDataCollectionInfo;
 import io.harness.cvng.beans.DatadogMetricsDataCollectionInfo;
+import io.harness.cvng.beans.DeviationType;
 import io.harness.cvng.beans.DynatraceDataCollectionInfo;
 import io.harness.cvng.beans.ErrorTrackingDataCollectionInfo;
 import io.harness.cvng.beans.K8ActivityDataCollectionInfo;
@@ -199,6 +200,7 @@ public class CvNextGenBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(SplunkMetricDataCollectionInfo.class, 9110);
     kryo.register(SplunkMetricDataCollectionInfo.MetricInfo.class, 9111);
     kryo.register(SplunkMetricSampleDataCollectionRequest.class, 9112);
+    kryo.register(DeviationType.class, 9113);
     kryo.register(ELKDataCollectionRequest.class, 9121);
     kryo.register(ELKIndexCollectionRequest.class, 9122);
     kryo.register(ELKSampleDataCollectionRequest.class, 9123);
