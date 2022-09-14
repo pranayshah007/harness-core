@@ -66,10 +66,7 @@ public class LogStreamingTaskClient implements ILogStreamingTaskClient {
   private final String accountId;
   private final String baseLogKey;
   private static ScheduledExecutorService scheduledExecutorService = new ScheduledThreadPoolExecutor(50,
-      new ThreadFactoryBuilder()
-          .setNameFormat("log-streaming-client-%d")
-          .setPriority(Thread.NORM_PRIORITY)
-          .build());
+      new ThreadFactoryBuilder().setNameFormat("log-streaming-client-%d").setPriority(Thread.NORM_PRIORITY).build());
   @Deprecated private final String appId;
   @Deprecated private final String activityId;
   private ScheduledFuture scheduledFuture;
@@ -154,7 +151,6 @@ public class LogStreamingTaskClient implements ILogStreamingTaskClient {
 
   @Override
   public void dispatchLogs() {
-    log.info("in dispatch logs");
     synchronized (logCache) {
       for (Iterator<Map.Entry<String, List<LogLine>>> iterator = logCache.entrySet().iterator(); iterator.hasNext();) {
         Map.Entry<String, List<LogLine>> next = iterator.next();
@@ -167,9 +163,9 @@ public class LogStreamingTaskClient implements ILogStreamingTaskClient {
         iterator.remove();
       }
       logCache.notifyAll();
-      if (taskCompleted) {
-        closeStreamAsync();
-      }
+    }
+    if (taskCompleted) {
+      closeStreamAsync();
     }
   }
 

@@ -2276,7 +2276,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       if (logStreamingTaskClient != null) {
         try {
           // Opens the log stream for task
-          logStreamingTaskClient.openStream(null);
+          logStreamingTaskClient.openStream(delegateTaskPackage.getDelegateTaskId());
         } catch (Exception ex) {
           log.error("Unexpected error occurred while opening the log stream.");
         }
@@ -2309,7 +2309,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       if (logStreamingTaskClient != null) {
         try {
           // Closes the log stream for the task
-          logStreamingTaskClient.closeStream(null);
+          logStreamingTaskClient.closeStream(taskId);
         } catch (Exception ex) {
           log.error("Unexpected error occurred while closing the log stream.");
         }
