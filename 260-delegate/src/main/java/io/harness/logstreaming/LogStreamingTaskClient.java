@@ -82,6 +82,7 @@ public class LogStreamingTaskClient implements ILogStreamingTaskClient {
 
     try {
       SafeHttpCall.executeWithExceptions(logStreamingClient.openLogStream(token, accountId, logKey));
+      log.info("stream created for log key : {}, taskcommpleted {}", logKey, taskCompleted);
     } catch (Exception ex) {
       log.error("Unable to open log stream for account {} and key {}", accountId, logKey, ex);
     }
@@ -92,6 +93,7 @@ public class LogStreamingTaskClient implements ILogStreamingTaskClient {
   public void closeStream(String baseLogKeySuffix) {
     synchronized (logCache) {
       // We can mark this task to be completed. Log upload can happen asynchronously.
+      log.info("close stream request received for log key : {}, taskcompleted {}", logKey, taskCompleted);
       taskCompleted = true;
     }
   }
@@ -165,6 +167,7 @@ public class LogStreamingTaskClient implements ILogStreamingTaskClient {
       logCache.notifyAll();
     }
     if (taskCompleted) {
+      log.info("calling close stream for log key : {}", logKey);
       closeStreamAsync();
     }
   }
