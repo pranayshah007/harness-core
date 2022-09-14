@@ -74,12 +74,14 @@ public class LogStreamingTaskClient implements ILogStreamingTaskClient {
   @Deprecated private final String activityId;
   private ScheduledFuture scheduledFuture;
   private final ITaskProgressClient taskProgressClient;
+  private boolean taskCompleted;
+  private String logKey;
 
   @Default private final Map<String, List<LogLine>> logCache = new HashMap<>();
 
   @Override
   public void openStream(String baseLogKeySuffix) {
-    String logKey = getLogKey(baseLogKeySuffix);
+    logKey = getLogKey(baseLogKeySuffix);
 
     try {
       SafeHttpCall.executeWithExceptions(logStreamingClient.openLogStream(token, accountId, logKey));
@@ -91,17 +93,22 @@ public class LogStreamingTaskClient implements ILogStreamingTaskClient {
 
   @Override
   public void closeStream(String baseLogKeySuffix) {
-    String logKey = getLogKey(baseLogKeySuffix);
+    synchronized (logCache) {
+      // We can mark this task to be completed. Log upload can happen asynchronously.
+      taskCompleted = true;
+    }
+  }
 
-    // we don't want workflow steps to hang because of any log reasons. Putting a safety net just in case
+  private void closeStreamAsync() {
+    // Waiting for finite time allow log upload to finish.
     long startTime = currentTimeMillis();
     synchronized (logCache) {
       while (logCache.containsKey(logKey) && currentTimeMillis() < startTime + TimeUnit.SECONDS.toMillis(5)) {
-        log.debug("for {} the logs are not drained yet. sleeping...", logKey);
+        log.debug("For {} the logs are not drained yet. sleeping...", logKey);
         try {
           logCache.wait(100);
         } catch (InterruptedException e) {
-          // ignore
+          log.warn("Log upload didn't completed successfully for {} ", logKey);
         }
       }
     }
@@ -116,6 +123,8 @@ public class LogStreamingTaskClient implements ILogStreamingTaskClient {
     } finally {
       if (scheduledFuture != null) {
         scheduledFuture.cancel(true);
+      } else {
+        log.error("Scheduled future is missing for logkey {}", logKey);
       }
     }
   }
@@ -132,6 +141,10 @@ public class LogStreamingTaskClient implements ILogStreamingTaskClient {
     colorLog(logLine);
 
     synchronized (logCache) {
+      if (taskCompleted) {
+        log.warn("Trying to insert logline post task completion.");
+        return;
+      }
       if (!logCache.containsKey(logKey)) {
         logCache.put(logKey, new ArrayList<>());
       }
@@ -141,6 +154,7 @@ public class LogStreamingTaskClient implements ILogStreamingTaskClient {
 
   @Override
   public void dispatchLogs() {
+    log.info("in dispatch logs");
     synchronized (logCache) {
       for (Iterator<Map.Entry<String, List<LogLine>>> iterator = logCache.entrySet().iterator(); iterator.hasNext();) {
         Map.Entry<String, List<LogLine>> next = iterator.next();
@@ -153,6 +167,9 @@ public class LogStreamingTaskClient implements ILogStreamingTaskClient {
         iterator.remove();
       }
       logCache.notifyAll();
+      if (taskCompleted) {
+        closeStreamAsync();
+      }
     }
   }
 
