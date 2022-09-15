@@ -418,10 +418,10 @@ public class TemplateMergeServiceHelper {
       mergedYaml = mergeInputSetFormatYamlToOriginYaml(dummyTemplateSpecYaml, dummyTemplateInputsYaml);
     }
 
-    String mergedYamlWithTemplates = applyTemplateVariablesInYaml(templateVariables, variablesFromTemplate, mergedYaml);
+    String mergedYamlWithResolvedVariables = applyTemplateVariablesInYaml(templateVariables, variablesFromTemplate, mergedYaml);
 
     try {
-      String finalMergedYaml = removeOmittedRuntimeInputsFromMergedYaml(mergedYaml, dummyTemplateInputsYaml);
+      String finalMergedYaml = removeOmittedRuntimeInputsFromMergedYaml(mergedYamlWithResolvedVariables, dummyTemplateInputsYaml);
       return YamlUtils.readTree(finalMergedYaml).getNode().getCurrJsonNode().get(DUMMY_NODE);
     } catch (IOException e) {
       log.error("Could not convert merged yaml to JsonNode. Yaml:\n" + mergedYaml, e);
@@ -684,5 +684,9 @@ public class TemplateMergeServiceHelper {
     }
     return new YamlConfig(linkedTemplateInputsConfig.getFqnToValueMap(), linkedTemplateInputsConfig.getYamlMap())
         .getYaml();
+  }
+
+  public String applyVariablesToCopiedTemplate(List<NGVariable> variables, String templateYaml){
+    return applyTemplateVariablesInYaml(null, variables, templateYaml);
   }
 }
