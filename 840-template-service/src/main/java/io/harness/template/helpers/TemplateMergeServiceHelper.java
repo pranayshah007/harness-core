@@ -417,9 +417,8 @@ public class TemplateMergeServiceHelper {
       mergedYaml = mergeInputSetFormatYamlToOriginYaml(dummyTemplateSpecYaml, dummyTemplateInputsYaml);
     }
 
-    String mergedYamlWithResolvedVariables =
-        applyTemplateVariablesInYaml(prepareVariableValueMap(templateVariables),
-                NGVariablesUtils.getStringMapVariables(variablesFromTemplate, 0L), mergedYaml);
+    String mergedYamlWithResolvedVariables = applyTemplateVariablesInYaml(prepareVariableValueMap(templateVariables),
+        NGVariablesUtils.getStringMapVariables(variablesFromTemplate, 0L), mergedYaml);
 
     try {
       String finalMergedYaml =
@@ -437,14 +436,14 @@ public class TemplateMergeServiceHelper {
       ArrayNode templateVariablesArray = (ArrayNode) templateVariables;
       for (JsonNode templateVariable : templateVariablesArray) {
         variableValues.put(templateVariable.get(YAMLFieldNameConstants.NAME).asText(),
-                templateVariable.get(YAMLFieldNameConstants.VALUE).asText());
+            templateVariable.get(YAMLFieldNameConstants.VALUE).asText());
       }
     }
     return variableValues;
   }
 
-  private String applyTemplateVariablesInYaml(
-      Map<String, String> templateVariablesFromPipeline, Map<String, String> templateVariablesFromTemplateMap, String mergedYaml) {
+  private String applyTemplateVariablesInYaml(Map<String, String> templateVariablesFromPipeline,
+      Map<String, String> templateVariablesFromTemplateMap, String mergedYaml) {
     if (templateVariablesFromPipeline == null && templateVariablesFromTemplateMap == null) {
       return mergedYaml;
     }
@@ -452,7 +451,7 @@ public class TemplateMergeServiceHelper {
     if (isNotEmpty(templateVariablesFromTemplateMap)) {
       variableValues.putAll(templateVariablesFromTemplateMap);
     }
-    if(isNotEmpty(templateVariablesFromPipeline)){
+    if (isNotEmpty(templateVariablesFromPipeline)) {
       variableValues.putAll(templateVariablesFromPipeline);
     }
     TemplateVariableEvaluator variableEvaluator = new TemplateVariableEvaluator(variableValues);
@@ -697,10 +696,11 @@ public class TemplateMergeServiceHelper {
   public String applyVariablesToCopiedTemplate(Map<String, String> variableValues, String templateYaml) {
     try {
       YamlField templateYamlField = YamlUtils.readTree(templateYaml).getNode().getField(TEMPLATE);
-      ObjectNode templateJson = ( ObjectNode) templateYamlField.getNode().getCurrJsonNode();
+      ObjectNode templateJson = (ObjectNode) templateYamlField.getNode().getCurrJsonNode();
       JsonNode templateVariables = templateJson.remove(YAMLFieldNameConstants.VARIABLES);
       templateJson.remove(YAMLFieldNameConstants.VARIABLES);
-      return applyTemplateVariablesInYaml( variableValues, prepareVariableValueMap(templateVariables), YamlUtils.writeYamlString(templateYamlField));
+      return applyTemplateVariablesInYaml(
+          variableValues, prepareVariableValueMap(templateVariables), YamlUtils.writeYamlString(templateYamlField));
     } catch (IOException e) {
       log.error("Error occurred while creating template inputs " + e);
       throw new NGTemplateException("Error occurred while creating template inputs ", e);

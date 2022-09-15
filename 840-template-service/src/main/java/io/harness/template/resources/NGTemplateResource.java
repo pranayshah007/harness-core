@@ -862,8 +862,8 @@ public class NGTemplateResource {
   @Operation(operationId = "copyTemplateWithVariables", summary = "Gets complete yaml with templateRefs resolved",
       responses =
       {
-        @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Gets the template ready for copying to pipeline by applying variables")
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
+            description = "Gets the template ready for copying to pipeline by applying variables")
       })
   @Hidden
   public ResponseDTO<String>
