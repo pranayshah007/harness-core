@@ -1,4 +1,4 @@
-package io.harness.batch.processing.cloudevents.aws.ecs.service.util;
+package io.harness.ccm.graphql.core.recommendation.fargate;
 
 import com.google.inject.Singleton;
 import java.util.ArrayList;

@@ -15,10 +15,13 @@ import static software.wings.graphql.datafetcher.ce.recommendation.entity.Resour
 import static io.kubernetes.client.custom.Quantity.Format.DECIMAL_SI;
 import static java.math.RoundingMode.HALF_UP;
 
+import com.amazonaws.services.ecs.model.LaunchType;
+import io.harness.ccm.graphql.core.recommendation.fargate.CpuMillsAndMemoryBytes;
 import io.harness.ccm.commons.dao.recommendation.ECSRecommendationDAO;
 import io.harness.ccm.commons.entities.ecs.recommendation.ECSPartialRecommendationHistogram;
 import io.harness.ccm.commons.entities.ecs.recommendation.ECSServiceRecommendation;
 import io.harness.ccm.commons.utils.StrippedHistogram;
+import io.harness.ccm.graphql.core.recommendation.fargate.FargateResourceValues;
 import io.harness.ccm.graphql.dto.recommendation.ContainerHistogramDTO.HistogramExp;
 import io.harness.ccm.graphql.dto.recommendation.ECSRecommendationDTO;
 import io.harness.histogram.Histogram;
@@ -32,7 +35,6 @@ import com.google.inject.Singleton;
 import io.kubernetes.client.custom.Quantity;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -43,6 +45,7 @@ import lombok.NonNull;
 public class ECSRecommendationService {
   private static final int NUMBER_OF_BUCKETS = 1000;
   @Inject private ECSRecommendationDAO ecsRecommendationDAO;
+  @Inject private FargateResourceValues fargateResourceValues;
 
   @Nullable
   public ECSRecommendationDTO getECSRecommendationById(@NonNull final String accountIdentifier, String id,
@@ -83,6 +86,11 @@ public class ECSRecommendationService {
     HistogramCheckpoint cpuHistogramCp = cpuHistogram.saveToCheckpoint();
     StrippedHistogram memStripped = StrippedHistogram.fromCheckpoint(memoryHistogramCp, NUMBER_OF_BUCKETS + 1);
     StrippedHistogram cpuStripped = StrippedHistogram.fromCheckpoint(cpuHistogramCp, NUMBER_OF_BUCKETS + 1);
+    Map<String, Map<String, String>> percentileBased = recommendation.getPercentileBasedResourceRecommendation();
+    getRecommendationWithBuffer(percentileBased, bufferPercentage);
+    if (recommendation.getLaunchType() != null && recommendation.getLaunchType().equals(LaunchType.FARGATE)) {
+      getFargateRecommendationValues(percentileBased);
+    }
 
     return ECSRecommendationDTO.builder()
         .id(recommendation.getUuid())
@@ -91,8 +99,7 @@ public class ECSRecommendationService {
         .serviceName(recommendation.getServiceName())
         .launchType(recommendation.getLaunchType())
         .current(recommendation.getCurrentResourceRequirements())
-        .percentileBased(
-            getRecommendationWithBuffer(recommendation.getPercentileBasedResourceRecommendation(), bufferPercentage))
+        .percentileBased(percentileBased)
         .lastDayCost(recommendation.getLastDayCost())
         .memoryHistogram(HistogramExp.builder()
                              .numBuckets(memStripped.getNumBuckets())
@@ -113,12 +120,11 @@ public class ECSRecommendationService {
         .build();
   }
 
-  private Map<String, Map<String, String>> getRecommendationWithBuffer(
+  private void getRecommendationWithBuffer(
       Map<String, Map<String, String>> percentileBased, Long bufferPercentage) {
     if (percentileBased == null) {
-      return null;
+      return;
     }
-    Map<String, Map<String, String>> withBuffer = new HashMap<>();
     for (Map.Entry<String, Map<String, String>> mapEntry : percentileBased.entrySet()) {
       long memoryMb = memoryMbFromReadableFormat(mapEntry.getValue().get(MEMORY));
       long cpuUnits = cpuUnitsFromReadableFormat(mapEntry.getValue().get(CPU));
@@ -126,9 +132,22 @@ public class ECSRecommendationService {
       cpuUnits += (long) ((double) cpuUnits * (double) bufferPercentage) / 100.0;
       long memoryBytes = BigDecimal.valueOf(memoryMb).scaleByPowerOfTen(6).longValue();
       long cpuMilliUnits = BigDecimal.valueOf(cpuUnits).scaleByPowerOfTen(3).longValue();
-      withBuffer.put(mapEntry.getKey(), convertToReadableForm(makeResourceMap(cpuMilliUnits, memoryBytes)));
+      percentileBased.put(mapEntry.getKey(), convertToReadableForm(makeResourceMap(cpuMilliUnits, memoryBytes)));
     }
-    return withBuffer;
+  }
+
+  private void getFargateRecommendationValues(Map<String, Map<String, String>> percentileBased) {
+    for (Map.Entry<String, Map<String, String>> percentileBasedEntry : percentileBased.entrySet()) {
+      long percentileMemoryMb = memoryMbFromReadableFormat(percentileBasedEntry.getValue().get(MEMORY));
+      long percentileCpuUnits = cpuUnitsFromReadableFormat(percentileBasedEntry.getValue().get(CPU));
+      long memoryBytes = BigDecimal.valueOf(percentileMemoryMb).scaleByPowerOfTen(6).longValue();
+      long cpuMilliUnits = BigDecimal.valueOf(percentileCpuUnits).scaleByPowerOfTen(3).longValue();
+      CpuMillsAndMemoryBytes resourceValues = fargateResourceValues.get(cpuMilliUnits, memoryBytes);
+      long cpuAmount = resourceValues.getCpuMilliUnits();
+      long memoryAmount = resourceValues.getMemoryBytes();
+      percentileBased.put(
+          percentileBasedEntry.getKey(), convertToReadableForm(makeResourceMap(cpuAmount, memoryAmount)));
+    }
   }
 
   private static Histogram newHistogram(long maxUnits) {

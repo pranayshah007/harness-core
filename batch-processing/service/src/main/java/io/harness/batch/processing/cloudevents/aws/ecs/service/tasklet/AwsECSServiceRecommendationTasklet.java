@@ -22,9 +22,9 @@ import io.harness.batch.processing.billing.timeseries.service.impl.UtilizationDa
 import io.harness.batch.processing.ccm.CCMJobConstants;
 import io.harness.batch.processing.cloudevents.aws.ecs.service.CEClusterDao;
 import io.harness.batch.processing.cloudevents.aws.ecs.service.util.ClusterIdAndServiceArn;
-import io.harness.batch.processing.cloudevents.aws.ecs.service.util.CpuMillsAndMemoryBytes;
+import io.harness.ccm.graphql.core.recommendation.fargate.CpuMillsAndMemoryBytes;
 import io.harness.batch.processing.cloudevents.aws.ecs.service.util.ECSUtilizationData;
-import io.harness.batch.processing.cloudevents.aws.ecs.service.util.FargateResourceValues;
+import io.harness.ccm.graphql.core.recommendation.fargate.FargateResourceValues;
 import io.harness.batch.processing.dao.intfc.ECSServiceDao;
 import io.harness.ccm.commons.beans.JobConstants;
 import io.harness.ccm.commons.beans.Resource;

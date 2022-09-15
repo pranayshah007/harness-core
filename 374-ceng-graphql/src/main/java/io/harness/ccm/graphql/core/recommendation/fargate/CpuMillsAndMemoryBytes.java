@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.batch.processing.cloudevents.aws.ecs.service.util;
+package io.harness.ccm.graphql.core.recommendation.fargate;
 
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
