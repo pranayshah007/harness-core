@@ -65,6 +65,7 @@ public class CEMetaDataRecordUpdateService {
 
   private void updateCloudProviderMetadata(String accountId) {
     try {
+      log.info("entered in updateCloudProviderMetadata func!");
       List<SettingAttribute> ceConnectors = cloudToHarnessMappingService.getCEConnectors(accountId);
       boolean isAwsConnectorPresent = ceConnectors.stream().anyMatch(
           connector -> connector.getValue().getType().equals(SettingVariableTypes.CE_AWS.toString()));
@@ -104,6 +105,7 @@ public class CEMetaDataRecordUpdateService {
           || ceMetadataRecord.getGcpDataPresent()) {
         CEMetadataRecord currentCEMetadataRecord = metadataRecordDao.getByAccountId(accountId);
         Boolean isSegmentDataReadyEventSent = currentCEMetadataRecord.getSegmentDataReadyEventSent();
+        Boolean dataGeneratedForCloudProvider = currentCEMetadataRecord.getDataGeneratedForCloudProvider();
         if (isSegmentDataReadyEventSent == null || !isSegmentDataReadyEventSent) {
           HashMap<String, Object> properties = new HashMap<>();
           properties.put(MODULE, "CCM");
@@ -111,6 +113,13 @@ public class CEMetaDataRecordUpdateService {
           telemetryReporter.sendTrackEvent(FIRST_DATA_RECEIVED, null, accountId, properties,
               Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
           ceMetadataRecord.setSegmentDataReadyEventSent(true);
+        }
+        if (dataGeneratedForCloudProvider == null || !dataGeneratedForCloudProvider) {
+          sendEmail();
+          log.info("Mail sent for cloud data generated first time for account {} and ceMetadata {}", accountId,
+                  ceMetadataRecord);
+        } else {
+          log.info("dataGeneratedForCloudProvider already true for account id {}", accountId);
         }
       }
 
@@ -146,5 +155,9 @@ public class CEMetaDataRecordUpdateService {
           connectorResponseDTO -> connectorResponseDTO.getConnector().getConnectorType().equals(connectorType));
     }
     return connectorPresent;
+  }
+
+  private void sendEmail() {
+    log.info("Sending mail for cloud data!");
   }
 }
