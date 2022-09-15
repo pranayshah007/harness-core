@@ -30,6 +30,7 @@ import io.harness.beans.IdentifierRef;
 import io.harness.beans.environment.K8BuildJobEnvInfo;
 import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
 import io.harness.beans.executionargs.CIExecutionArgs;
+import io.harness.beans.stages.IntegrationStageNode;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.sweepingoutputs.ContainerPortDetails;
 import io.harness.beans.sweepingoutputs.ContextElement;
@@ -48,6 +49,7 @@ import io.harness.ci.license.CILicenseService;
 import io.harness.ci.utils.HarnessImageUtils;
 import io.harness.ci.utils.LiteEngineSecretEvaluator;
 import io.harness.ci.utils.PortFinder;
+import io.harness.cimanager.stages.IntegrationStageConfigImpl;
 import io.harness.delegate.beans.ci.k8s.CIK8InitializeTaskParams;
 import io.harness.delegate.beans.ci.pod.CIContainerType;
 import io.harness.delegate.beans.ci.pod.CIK8ContainerParams;
@@ -62,7 +64,6 @@ import io.harness.delegate.task.citasks.cik8handler.params.CIConstants;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.k8s.model.ImageDetails;
 import io.harness.ng.core.NGAccess;
-import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
@@ -392,21 +393,22 @@ public class K8InitializeTaskParamsBuilder {
     Set<Integer> usedPorts = new HashSet<>();
     PortFinder portFinder = PortFinder.builder().startingPort(PORT_STARTING_RANGE).usedPorts(usedPorts).build();
 
-    StageElementConfig stageElementConfig = StageElementConfig.builder()
-                                                .type("CI")
-                                                .identifier(initializeStepInfo.getStageIdentifier())
-                                                .variables(initializeStepInfo.getVariables())
-                                                .stageType(initializeStepInfo.getStageElementConfig())
-                                                .build();
+    IntegrationStageNode stageNode =
+        IntegrationStageNode.builder()
+            .type(IntegrationStageNode.StepType.CI)
+            .identifier(initializeStepInfo.getStageIdentifier())
+            .variables(initializeStepInfo.getVariables())
+            .integrationStageConfig((IntegrationStageConfigImpl) initializeStepInfo.getStageElementConfig())
+            .build();
     CIExecutionArgs ciExecutionArgs = CIExecutionArgs.builder()
                                           .runSequence(String.valueOf(ambiance.getMetadata().getRunSequence()))
                                           .executionSource(initializeStepInfo.getExecutionSource())
                                           .build();
     List<ContainerDefinitionInfo> serviceCtrDefinitionInfos =
-        k8InitializeServiceUtils.createServiceContainerDefinitions(stageElementConfig, portFinder, os);
+        k8InitializeServiceUtils.createServiceContainerDefinitions(stageNode, portFinder, os);
     List<ContainerDefinitionInfo> stepCtrDefinitionInfos =
-        k8InitializeStepUtils.createStepContainerDefinitions(initializeStepInfo, stageElementConfig, ciExecutionArgs,
-            portFinder, AmbianceUtils.getAccountId(ambiance), os, ambiance, 0);
+        k8InitializeStepUtils.createStepContainerDefinitions(initializeStepInfo, stageNode, ciExecutionArgs, portFinder,
+            AmbianceUtils.getAccountId(ambiance), os, ambiance, 0);
 
     List<ContainerDefinitionInfo> containerDefinitionInfos = new ArrayList<>();
     containerDefinitionInfos.addAll(serviceCtrDefinitionInfos);

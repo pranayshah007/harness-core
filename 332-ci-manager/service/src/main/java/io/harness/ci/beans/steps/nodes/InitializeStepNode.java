@@ -1,10 +1,3 @@
-/*
- * Copyright 2022 Harness Inc. All rights reserved.
- * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
- * that can be found in the licenses directory at the root of this repository, also available at
- * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
- */
-
 package io.harness.beans.steps.nodes;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
@@ -16,7 +9,7 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.CIAbstractStepNode;
 import io.harness.beans.steps.CIStepInfoType;
-import io.harness.beans.steps.stepinfo.PluginStepInfo;
+import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.core.StepSpecType;
 import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
@@ -37,39 +30,41 @@ import org.springframework.data.annotation.TypeAlias;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@JsonTypeName("Plugin")
-@TypeAlias("PluginStepNode")
+@JsonTypeName("liteEngineTask")
+@TypeAlias("InitializeStepNode")
 @OwnedBy(CI)
-@RecasterAlias("io.harness.beans.steps.nodes.PluginStepNode")
-public class PluginStepNode extends CIAbstractStepNode {
-  @JsonProperty("type") @NotNull PluginStepNode.StepType type = PluginStepNode.StepType.Plugin;
+@RecasterAlias("io.harness.beans.steps.nodes.InitializeStepNode")
+public class InitializeStepNode extends CIAbstractStepNode {
+  @JsonProperty("type") @NotNull StepType type = StepType.liteEngineTask;
   @NotNull
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
-  PluginStepInfo pluginStepInfo;
+  InitializeStepInfo initializeStepInfo;
+
   @Override
   public String getType() {
-    return CIStepInfoType.PLUGIN.getDisplayName();
+    return CIStepInfoType.INITIALIZE_TASK.getDisplayName();
   }
 
   @Override
   public StepSpecType getStepSpecType() {
-    return pluginStepInfo;
+    return initializeStepInfo;
   }
 
   public enum StepType {
-    Plugin(CIStepInfoType.PLUGIN.getDisplayName());
+    liteEngineTask(CIStepInfoType.INITIALIZE_TASK.getDisplayName());
     @Getter String name;
+
     StepType(String name) {
       this.name = name;
     }
   }
 
   @Builder
-  public PluginStepNode(String uuid, String identifier, String name, List<FailureStrategyConfig> failureStrategies,
-      PluginStepInfo pluginStepInfo, PluginStepNode.StepType type, ParameterField<Timeout> timeout) {
+  public InitializeStepNode(String uuid, String identifier, String name, List<FailureStrategyConfig> failureStrategies,
+      InitializeStepInfo initializeStepInfo, StepType type, ParameterField<Timeout> timeout) {
     this.setFailureStrategies(failureStrategies);
-    this.pluginStepInfo = pluginStepInfo;
+    this.initializeStepInfo = initializeStepInfo;
     this.type = type;
     this.setFailureStrategies(failureStrategies);
     this.setTimeout(timeout);
