@@ -5,16 +5,16 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.functional.ci;
+package io.harness.functional.sto;
 
-import static io.harness.rule.OwnerRule.ALEKSANDAR;
+import static io.harness.rule.OwnerRule.SERGEY;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.FunctionalTests;
 import io.harness.rule.Owner;
-import io.harness.testframework.framework.CIManagerExecutor;
+import io.harness.testframework.framework.STOManagerExecutor;
 import io.harness.testframework.restutils.NGPipelineRestUtils;
 
 import io.restassured.RestAssured;
@@ -24,11 +24,10 @@ import java.util.Map;
 import java.util.UUID;
 import org.apache.commons.io.IOUtils;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-public class CIPipelineCRUDFunctionalTest extends CategoryTest {
+public class STOPipelineCRUDFunctionalTest extends CategoryTest {
   private static final String accountIdentifier = "accountIdentifier";
   private static final String orgIdentifier = "orgIdentifier";
   private static final String projectIdentifier = "projectIdentifier";
@@ -38,28 +37,28 @@ public class CIPipelineCRUDFunctionalTest extends CategoryTest {
   @BeforeClass
   public static void setup() throws IOException {
     RestAssured.useRelaxedHTTPSValidation();
-    CIManagerExecutor.ensureCIManager(CIPipelineCRUDFunctionalTest.class);
+    STOManagerExecutor.ensureSTOManager(STOPipelineCRUDFunctionalTest.class);
   }
 
   @Test
-  @Owner(developers = ALEKSANDAR, intermittent = true)
+  @Owner(developers = SERGEY, intermittent = true)
   @Category({FunctionalTests.class})
-  @Ignore("Not required Anymore as we have Rest Assured")
   public void shouldTestCRUDPipelineFlow() throws IOException {
     String pipelineTemplate = IOUtils.toString(
-        CIPipelineCRUDFunctionalTest.class.getResourceAsStream("pipeline.yml"), StandardCharsets.UTF_8);
+        STOPipelineCRUDFunctionalTest.class.getResourceAsStream("pipeline.yml"), StandardCharsets.UTF_8);
     String pipelineName = UUID.randomUUID().toString();
 
     String pipeline = pipelineTemplate.replace(pipelineNamePlaceholder, pipelineName)
                           .replace(pipelineDescriptionPlaceholder, UUID.randomUUID().toString());
 
     // Create
-    String id = NGPipelineRestUtils.createPipeline("ci", accountIdentifier, orgIdentifier, projectIdentifier, pipeline);
+    String id =
+        NGPipelineRestUtils.createPipeline("sto", accountIdentifier, orgIdentifier, projectIdentifier, pipeline);
     assertThat(id).isNotNull().isEqualTo(pipelineName);
 
     // Read
     Map<String, Object> ngPipelineResponseDTO =
-        NGPipelineRestUtils.readPipeline("ci", accountIdentifier, orgIdentifier, projectIdentifier, id);
+        NGPipelineRestUtils.readPipeline("sto", accountIdentifier, orgIdentifier, projectIdentifier, id);
     String yamlPipeline = (String) ngPipelineResponseDTO.get("yamlPipeline");
     assertThat(yamlPipeline).isEqualTo(pipeline);
 
@@ -68,12 +67,12 @@ public class CIPipelineCRUDFunctionalTest extends CategoryTest {
 
     // Update
     String updatedPipelineId = NGPipelineRestUtils.updatePipeline(
-        "ci", accountIdentifier, orgIdentifier, projectIdentifier, id, updatedPipeline);
+        "sto", accountIdentifier, orgIdentifier, projectIdentifier, id, updatedPipeline);
     assertThat(updatedPipelineId).isEqualTo(id);
 
     // Delete
     Boolean deletePipeline =
-        NGPipelineRestUtils.deletePipeline("ci", accountIdentifier, orgIdentifier, projectIdentifier, id);
+        NGPipelineRestUtils.deletePipeline("sto", accountIdentifier, orgIdentifier, projectIdentifier, id);
     assertThat(deletePipeline).isTrue();
   }
 }
