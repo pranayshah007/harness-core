@@ -16,12 +16,14 @@ public class CustomSecretManagerDTOToEntity
     implements ConnectorDTOToEntityMapper<CustomSecretManagerConnectorDTO, CustomSecretManagerConnector> {
   @Override
   public CustomSecretManagerConnector toConnectorEntity(CustomSecretManagerConnectorDTO connectorDTO) {
+    boolean onDelegate = Boolean.TRUE.equals(connectorDTO.getOnDelegate());
     return CustomSecretManagerConnector.builder()
         .isDefault(connectorDTO.isDefault())
         .connectorRef(SecretRefHelper.getSecretConfigString(connectorDTO.getConnectorRef()))
         .template(connectorDTO.getTemplate())
         .host(connectorDTO.getHost())
         .workingDirectory(connectorDTO.getWorkingDirectory())
+        .onDelegate(onDelegate)
         .build();
   }
 }

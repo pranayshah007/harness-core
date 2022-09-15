@@ -44,4 +44,5 @@ public class CustomSecretManagerConnector extends Connector {
   private String host;
   private String workingDirectory;
   private TemplateLinkConfigForCustomSecretManager template;
+  private Boolean onDelegate;
 }

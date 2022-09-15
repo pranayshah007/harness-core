@@ -54,7 +54,7 @@ public class CustomSecretManagerEntityToDTOTest extends CategoryTest {
         customSecretManagerEntitytoDTO.createConnectorDTO(customSecretManagerConnector);
     // Check
     assertNotNull(customSecretManagerConnectorDTO);
-    assertThat(customSecretManagerConnectorDTO.getExecuteOnDelegate()).isEqualTo(true);
+    assertThat(customSecretManagerConnectorDTO.getOnDelegate()).isEqualTo(true);
   }
 
   @Test
@@ -69,7 +69,7 @@ public class CustomSecretManagerEntityToDTOTest extends CategoryTest {
         customSecretManagerEntitytoDTO.createConnectorDTO(customSecretManagerConnector);
     // Check
     assertNotNull(customSecretManagerConnectorDTO);
-    assertThat(customSecretManagerConnectorDTO.getExecuteOnDelegate()).isEqualTo(false);
+    assertThat(customSecretManagerConnectorDTO.getOnDelegate()).isEqualTo(false);
   }
 
   @Test
