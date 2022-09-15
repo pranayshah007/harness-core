@@ -9,7 +9,7 @@ container_run_and_commit_layer(
         "apk update --no-cache",
         "apk upgrade --no-cache",
         "apk add --no-cache bash",
-        "wget https://github.com/mikefarah/yq/releases/download/v4.26.1/yq_linux_amd64 -O /usr/bin/yq",
+        "wget https://github.com/mikefarah/yq/releases/download/v4.27.5/yq_linux_amd64 -O /usr/bin/yq",
         "chmod +x /usr/bin/yq",
         "addgroup -S 65534",
         "adduser -S 65534 -G 65534",
