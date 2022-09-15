@@ -81,7 +81,8 @@ public class CEMetadataRecordDao {
     }
 
     if (null != ceMetadataRecord.getDataGeneratedForCloudProvider()) {
-      updateOperations.set(CEMetadataRecordKeys.dataGeneratedForCloudProvider, ceMetadataRecord.getDataGeneratedForCloudProvider());
+      updateOperations.set(
+          CEMetadataRecordKeys.dataGeneratedForCloudProvider, ceMetadataRecord.getDataGeneratedForCloudProvider());
     }
 
     FindAndModifyOptions findAndModifyOptions = new FindAndModifyOptions().upsert(true).returnNew(true);
