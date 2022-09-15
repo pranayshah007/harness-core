@@ -301,6 +301,7 @@ import io.harness.delegate.task.shell.ssh.ArtifactCommandUnitHandler;
 import io.harness.delegate.task.shell.ssh.ArtifactoryCommandUnitHandler;
 import io.harness.delegate.task.shell.ssh.CommandHandler;
 import io.harness.delegate.task.shell.ssh.JenkinsArtifactCommandUnitHandler;
+import io.harness.delegate.task.shell.ssh.AwsS3ArtifactCommandUnitHandler;
 import io.harness.delegate.task.shell.ssh.SshCleanupCommandHandler;
 import io.harness.delegate.task.shell.ssh.SshCopyCommandHandler;
 import io.harness.delegate.task.shell.ssh.SshInitCommandHandler;
@@ -1446,6 +1447,7 @@ public class DelegateModule extends AbstractModule {
         MapBinder.newMapBinder(binder(), String.class, ArtifactCommandUnitHandler.class);
     artifactCommandHandlers.addBinding(SshWinRmArtifactType.ARTIFACTORY.name()).to(ArtifactoryCommandUnitHandler.class);
     artifactCommandHandlers.addBinding(SshWinRmArtifactType.JENKINS.name()).to(JenkinsArtifactCommandUnitHandler.class);
+    artifactCommandHandlers.addBinding(SshWinRmArtifactType.AWS_S3.name()).to(AwsS3ArtifactCommandUnitHandler.class);
 
     registerSecretManagementBindings();
     registerConnectorValidatorsBindings();

@@ -10,6 +10,9 @@ package io.harness.delegate.beans.aws.s3;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
+import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactDelegateConfig;
+import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactType;
+import io.harness.expression.ExpressionReflectionUtils;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.List;
@@ -21,10 +24,15 @@ import lombok.EqualsAndHashCode;
 @Builder
 @EqualsAndHashCode
 @OwnedBy(HarnessTeam.CDP)
-public class AwsS3FetchFileDelegateConfig {
+public class AwsS3FetchFileDelegateConfig implements SshWinRmArtifactDelegateConfig, ExpressionReflectionUtils.NestedAnnotationResolver {
   String identifier;
   AwsConnectorDTO awsConnector;
   String region;
   List<EncryptedDataDetail> encryptionDetails;
   List<S3FileDetailRequest> fileDetails;
+
+  @Override
+  public SshWinRmArtifactType getArtifactType() {
+    return SshWinRmArtifactType.AWS_S3;
+  }
 }

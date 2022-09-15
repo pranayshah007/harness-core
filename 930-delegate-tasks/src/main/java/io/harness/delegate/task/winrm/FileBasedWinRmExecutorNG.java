@@ -22,6 +22,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifactory.ArtifactoryConfigRequest;
+import io.harness.delegate.beans.aws.s3.AwsS3FetchFileDelegateConfig;
 import io.harness.delegate.beans.connector.jenkins.JenkinsAuthType;
 import io.harness.delegate.beans.connector.jenkins.JenkinsBearerTokenDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
@@ -81,6 +82,8 @@ public class FileBasedWinRmExecutorNG extends FileBasedAbstractWinRmExecutor {
       return handleArtifactoryArtifact((ArtifactoryArtifactDelegateConfig) artifactDelegateConfig, copyCommandUnit);
     } else if (artifactDelegateConfig instanceof JenkinsArtifactDelegateConfig) {
       return handleJenkinsArtifact((JenkinsArtifactDelegateConfig) artifactDelegateConfig, copyCommandUnit);
+    } else if (AwsS3FetchFileDelegateConfig.class.isAssignableFrom(artifactDelegateConfig.getClass())) {
+      return handleS3Artifact((AwsS3FetchFileDelegateConfig) artifactDelegateConfig, copyCommandUnit);
     } else {
       log.warn("Wrong artifact delegate config submitted");
       throw new InvalidRequestException("Expecting artifactory or jenkins delegate config");
@@ -363,5 +366,12 @@ public class FileBasedWinRmExecutorNG extends FileBasedAbstractWinRmExecutor {
       JenkinsBearerTokenDTO jenkinsBearerTokenDTO, JenkinsArtifactDelegateConfig jenkinsArtifactDelegateConfig) {
     return (JenkinsBearerTokenDTO) secretDecryptionService.decrypt(
         jenkinsBearerTokenDTO, jenkinsArtifactDelegateConfig.getEncryptedDataDetails());
+  }
+
+  private CommandExecutionStatus handleS3Artifact(
+          AwsS3FetchFileDelegateConfig s3ArtifactDelegateConfig, CopyCommandUnit copyCommandUnit) {
+    CommandExecutionStatus commandExecutionStatus = FAILURE;
+
+    return commandExecutionStatus;
   }
 }

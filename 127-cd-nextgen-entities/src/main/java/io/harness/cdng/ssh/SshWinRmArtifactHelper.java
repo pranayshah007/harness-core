@@ -24,10 +24,14 @@ import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
 import io.harness.cdng.artifact.outcome.CustomArtifactOutcome;
 import io.harness.cdng.artifact.outcome.JenkinsArtifactOutcome;
 import io.harness.cdng.artifact.outcome.NexusArtifactOutcome;
+import io.harness.cdng.artifact.outcome.S3ArtifactOutcome;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
+import io.harness.delegate.beans.aws.s3.AwsS3FetchFileDelegateConfig;
+import io.harness.delegate.beans.aws.s3.S3FileDetailRequest;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
 import io.harness.delegate.task.ssh.artifact.ArtifactoryArtifactDelegateConfig;
@@ -47,6 +51,8 @@ import io.harness.utils.IdentifierRefHelper;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nonnull;
@@ -117,6 +123,19 @@ public class SshWinRmArtifactHelper {
           .image(nexusArtifactOutcome.getImage())
           .encryptedDataDetails(getArtifactEncryptionDataDetails(connectorDTO, ngAccess))
           .build();
+    } else if (artifactOutcome instanceof S3ArtifactOutcome) {
+      S3ArtifactOutcome s3ArtifactOutcome = (S3ArtifactOutcome) artifactOutcome;
+      connectorDTO = getConnectorInfoDTO(s3ArtifactOutcome.getConnectorRef(), ngAccess);
+      AwsConnectorDTO awsConnectorDTO = (AwsConnectorDTO) connectorDTO.getConnectorConfig();
+      S3FileDetailRequest request = S3FileDetailRequest.builder().fileKey(s3ArtifactOutcome.getFilePath()).bucketName(s3ArtifactOutcome.getBucketName()).build();
+      List<S3FileDetailRequest> fileDetails = Collections.singletonList(request);
+      return AwsS3FetchFileDelegateConfig.builder()
+              .identifier(s3ArtifactOutcome.getIdentifier())
+              .awsConnector(awsConnectorDTO)
+              .encryptionDetails(getArtifactEncryptionDataDetails(connectorDTO, ngAccess))
+              .fileDetails(fileDetails)
+              .region(s3ArtifactOutcome.getRegion())
+              .build();
     } else {
       throw new UnsupportedOperationException(
           format("Unsupported Artifact type: [%s]", artifactOutcome.getArtifactType()));
@@ -150,6 +169,15 @@ public class SshWinRmArtifactHelper {
         if (isNotEmpty(nexusDecryptableEntities)) {
           return secretManagerClientService.getEncryptionDetails(
               ngAccess, nexusConnectorDTO.getAuth().getCredentials());
+        } else {
+          return emptyList();
+        }
+      case AWS:
+        AwsConnectorDTO awsConnectorDTO = (AwsConnectorDTO) connectorDTO.getConnectorConfig();
+        List<DecryptableEntity> awsDecryptableEntities = awsConnectorDTO.getDecryptableEntities();
+        if (isNotEmpty(awsDecryptableEntities)) {
+          return secretManagerClientService.getEncryptionDetails(
+                  ngAccess, awsConnectorDTO.getCredential().getConfig());
         } else {
           return emptyList();
         }
