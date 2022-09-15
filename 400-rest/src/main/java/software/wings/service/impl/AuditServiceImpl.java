@@ -98,8 +98,6 @@ import io.fabric8.utils.Lists;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.time.Duration;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -181,7 +179,7 @@ public class AuditServiceImpl implements AuditService {
   @Override
   @RestrictedApi(AuditTrailFeature.class)
   public PageResponse<AuditHeader> list(PageRequest<AuditHeader> req) {
-    return wingsPersistence.query(AuditHeader.class, req);
+    return wingsPersistence.querySecondary(AuditHeader.class, req);
   }
 
   @Override
@@ -385,7 +383,7 @@ public class AuditServiceImpl implements AuditService {
   public void deleteAuditRecords(long retentionMillis) {
     final int batchSize = 1000;
     final int limit = 5000;
-    final long days = Instant.ofEpochMilli(retentionMillis).until(Instant.now(), ChronoUnit.DAYS);
+    final long days = TimeUnit.DAYS.convert(retentionMillis, TimeUnit.MILLISECONDS);
     log.info("Start: Deleting audit records older than {} time", currentTimeMillis() - retentionMillis);
     try {
       log.info("Start: Deleting audit records older than {} days", days);
@@ -393,7 +391,7 @@ public class AuditServiceImpl implements AuditService {
         while (true) {
           List<AuditHeader> auditHeaders = wingsPersistence.createQuery(AuditHeader.class, excludeAuthority)
                                                .field(AuditHeaderKeys.createdAt)
-                                               .lessThan(retentionMillis)
+                                               .lessThan(currentTimeMillis() - retentionMillis)
                                                .asList(new FindOptions().limit(limit).batchSize(batchSize));
           if (isEmpty(auditHeaders)) {
             log.info("No more audit records older than {} days", days);
@@ -635,7 +633,7 @@ public class AuditServiceImpl implements AuditService {
 
     PageRequest<AuditHeader> pageRequest =
         auditPreferenceHelper.generatePageRequestFromAuditPreference(auditPreference, offset, limit);
-    return wingsPersistence.query(AuditHeader.class, pageRequest);
+    return wingsPersistence.querySecondary(AuditHeader.class, pageRequest);
   }
 
   @VisibleForTesting
