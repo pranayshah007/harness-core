@@ -23,6 +23,7 @@ import io.harness.ccm.license.remote.CeLicenseClient;
 import io.harness.configuration.DeployMode;
 import io.harness.configuration.DeployVariant;
 import io.harness.exception.InvalidRequestException;
+import io.harness.generator.LicenseGenerator;
 import io.harness.licensing.Edition;
 import io.harness.licensing.EditionAction;
 import io.harness.licensing.LicenseStatus;
@@ -74,6 +75,7 @@ public class DefaultLicenseServiceImpl implements LicenseService {
   private final CeLicenseClient ceLicenseClient;
   private final LicenseComplianceResolver licenseComplianceResolver;
   private final Cache<String, List> cache;
+  private final LicenseGenerator licenseGenerator;
 
   static final String FAILED_OPERATION = "START_TRIAL_ATTEMPT_FAILED";
   static final String SUCCEED_START_FREE_OPERATION = "FREE_PLAN";
@@ -85,9 +87,10 @@ public class DefaultLicenseServiceImpl implements LicenseService {
 
   @Inject
   public DefaultLicenseServiceImpl(ModuleLicenseRepository moduleLicenseRepository,
-      LicenseObjectConverter licenseObjectConverter, ModuleLicenseInterface licenseInterface,
-      AccountService accountService, TelemetryReporter telemetryReporter, CeLicenseClient ceLicenseClient,
-      LicenseComplianceResolver licenseComplianceResolver, @Named(LICENSE_CACHE_NAMESPACE) Cache<String, List> cache) {
+                                   LicenseObjectConverter licenseObjectConverter, ModuleLicenseInterface licenseInterface,
+                                   AccountService accountService, TelemetryReporter telemetryReporter, CeLicenseClient ceLicenseClient,
+                                   LicenseComplianceResolver licenseComplianceResolver, @Named(LICENSE_CACHE_NAMESPACE) Cache<String, List> cache,
+                                   LicenseGenerator licenseGenerator) {
     this.moduleLicenseRepository = moduleLicenseRepository;
     this.licenseObjectConverter = licenseObjectConverter;
     this.licenseInterface = licenseInterface;
@@ -96,6 +99,7 @@ public class DefaultLicenseServiceImpl implements LicenseService {
     this.ceLicenseClient = ceLicenseClient;
     this.licenseComplianceResolver = licenseComplianceResolver;
     this.cache = cache;
+    this.licenseGenerator = licenseGenerator;
   }
 
   @Override
