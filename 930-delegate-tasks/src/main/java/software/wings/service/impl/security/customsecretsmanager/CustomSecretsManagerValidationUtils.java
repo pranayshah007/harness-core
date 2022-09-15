@@ -138,8 +138,11 @@ public class CustomSecretsManagerValidationUtils {
     ScriptType scriptType = ScriptType.BASH;
     ShellScriptTaskParametersNGBuilder taskParametersNGBuilder = ShellScriptTaskParametersNG.builder();
     Map<String, String> envVars = new HashMap<>();
+    boolean executeOnDelegate = Boolean.TRUE.equals(customSecretNGManagerConfig.isOnDelegate());
+    String executionId = "custom-sm"
+        + "-" + System.currentTimeMillis();
     return taskParametersNGBuilder.accountId(accountId)
-        .executeOnDelegate(customSecretNGManagerConfig.isOnDelegate())
+        .executeOnDelegate(executeOnDelegate)
         .environmentVariables(envVars)
         .outputVars(Collections.singletonList(OUTPUT_VARIABLE))
         .script(script)
@@ -147,6 +150,8 @@ public class CustomSecretsManagerValidationUtils {
         .workingDirectory(customSecretNGManagerConfig.getWorkingDirectory())
         .host(customSecretNGManagerConfig.getHost())
         .sshKeySpecDTO(customSecretNGManagerConfig.getSshKeySpecDTO())
+        .encryptionDetails(customSecretNGManagerConfig.getSshKeyEncryptionDetails())
+        .executionId(executionId)
         .build();
   }
 }

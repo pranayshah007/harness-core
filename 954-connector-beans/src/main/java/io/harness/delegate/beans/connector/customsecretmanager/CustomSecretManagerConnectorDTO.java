@@ -48,8 +48,7 @@ import lombok.experimental.FieldDefaults;
 @ApiModel("CustomSecretManager")
 @OwnedBy(HarnessTeam.PL)
 @Schema(name = "CustomSecretManager", description = "This contains details of Custom Secret Manager connectors")
-public class CustomSecretManagerConnectorDTO
-    extends ConnectorConfigDTO implements DelegateSelectable, ManagerExecutable {
+public class CustomSecretManagerConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable {
   Set<String> delegateSelectors;
   @NotNull @RecasterFieldName(name = "onDelegate") @JsonProperty("onDelegate") Boolean executeOnDelegate;
   @Schema(description = SecretManagerDescriptionConstants.DEFAULT) private boolean isDefault;
