@@ -5,7 +5,7 @@
     "projectIdentifier": "NGPipeAutoDemoProUsF9qDyXU8",
     "orgIdentifier": "CF_PipelineOrg",
     "tags": {
-      "__uuid": "aMUsMxaGQQi6Hh0iwj0NYw"
+      "__uuid": "mvNtt07MRQe5n8zMsTBZtw"
     },
     "stages": [
       {
@@ -18,7 +18,7 @@
             "deploymentType": "Kubernetes",
             "service": {
               "serviceRef": "dfgh",
-              "__uuid": "rsBvwsqRSROlc-u4qy3iFg"
+              "__uuid": "o-atQ87OStmORoR0MEh2Fg"
             },
             "environment": {
               "environmentRef": "foobar",
@@ -26,10 +26,10 @@
               "infrastructureDefinitions": [
                 {
                   "identifier": "asdf",
-                  "__uuid": "74aQZso6TNelTWWZLrw6wQ"
+                  "__uuid": "OMXTDq1FSja3vr8aZ67FqQ"
                 }
               ],
-              "__uuid": "ZiyWxfs-R4uYgEA5r05PNg"
+              "__uuid": "ZVw0VyKqTMOOCqPfK6s3og"
             },
             "execution": {
               "steps": [
@@ -44,53 +44,48 @@
                         "connectorRef": "foobar",
                         "template": {
                           "store": {
-                            "type": "Github",
+                            "type": "Harness",
                             "spec": {
-                              "connectorRef": "bp2",
-                              "gitFetchType": "Branch",
-                              "branch": "main",
-                              "paths": [
-                                "infra/template"
+                              "files": [
+                                "account:/blueprint"
                               ],
-                              "__uuid": "FAO-VcQmSJauoX1YGFNnrg"
+                              "__uuid": "-O8I3RKhRh--Kbz-n5DXYw"
                             },
-                            "__uuid": "gcBgXOZ3TKaxNrVVqN5cww"
+                            "__uuid": "myRYmxsSQYSmh5bxcONNBg"
                           },
-                          "__uuid": "jPEXI_poQtWAWcxy906sKQ"
+                          "__uuid": "QSK-kZnYRV60o92iKml3nw"
                         },
                         "scope": {
-                          "type": "Subscription",
+                          "type": "ResourceGroup",
                           "spec": {
                             "subscription": "0adb6dd5-9212-432b-ab19-c49e3aa75953",
-                            "location": "UAE Central",
-                            "__uuid": "mQ6mHf20QaeKibA9q72yCQ"
+                            "resourceGroup": "nasserTest",
+                            "mode": "Complete",
+                            "__uuid": "aoiG0MfiSCSwEVSAuf3qtw"
                           },
-                          "__uuid": "0AkKGLlTR12OyeiIWJWnLg"
+                          "__uuid": "nIDeEYeDTbyLhnC9LTxcmw"
                         },
                         "parameters": {
                           "store": {
-                            "type": "Github",
+                            "type": "Harness",
                             "spec": {
-                              "connectorRef": "bp2",
-                              "gitFetchType": "Branch",
-                              "branch": "main",
-                              "paths": [
-                                "infra/parameters"
+                              "files": [
+                                "account:/foobar"
                               ],
-                              "__uuid": "shwgOvHPTJiSlDRteLhBWQ"
+                              "__uuid": "uQJ-Za0pTcaunTyKkxl8KQ"
                             },
-                            "__uuid": "7Iu16MUITp2mOYz2M0_pWw"
+                            "__uuid": "NqAlRiRkQ2OFqrK8G0D6CA"
                           },
-                          "__uuid": "M9IOkjvHQPqW9-nIF8fQ3A"
+                          "__uuid": "ynja_Fu1TCWhWOVFhl3RZw"
                         },
-                        "__uuid": "2NHcDJoaQ8umbrplqY0S2w"
+                        "__uuid": "oeO_Rp1QS-GvwVLNrE9eAw"
                       },
-                      "__uuid": "Pijqjc_NTeeE3s4AyfUJOg"
+                      "__uuid": "w1D0BFpyRDOnFyrkOIReCw"
                     },
                     "timeout": "10m",
-                    "__uuid": "GsvaXKTXS4S6uXCKQ6MsRg"
+                    "__uuid": "vB_ZnfJRS52-2o4741aW5g"
                   },
-                  "__uuid": "T0kd1Vj-QSiYPrivkqj6WQ"
+                  "__uuid": "QyxxzkcRSNegQL1VPX1kIw"
                 }
               ],
               "rollbackSteps": [
@@ -101,19 +96,19 @@
                     "type": "K8sRollingRollback",
                     "timeout": "10m",
                     "spec": {
-                      "__uuid": "ZhxkxweKSRi5W3LHXt0ZYg"
+                      "__uuid": "TGm3oyNHSbuldLmduI9b5A"
                     },
-                    "__uuid": "3pQGjzo8QCmFpGA7V-SgVQ"
+                    "__uuid": "tuE6qpcjRNGEvj3he0XsWQ"
                   },
-                  "__uuid": "U2GFjEuUStmKn6Nyem3nSw"
+                  "__uuid": "UaaF0QiDT3KQ1bvdgIii8Q"
                 }
               ],
-              "__uuid": "HLY4dLxcTaG91nhc8yEPVg"
+              "__uuid": "d8eHkezcSwqbupKuyp0Y9A"
             },
-            "__uuid": "ukkB_ovjQ3yrgVf65M9AFg"
+            "__uuid": "cOUjGWKJSxOsIQmPlcYsMw"
           },
           "tags": {
-            "__uuid": "_IiSdd4HRDuJqgNrMqvlMA"
+            "__uuid": "xWS_eOjBQOKs0yBQW9ow9w"
           },
           "failureStrategies": [
             {
@@ -123,18 +118,19 @@
                 ],
                 "action": {
                   "type": "StageRollback",
-                  "__uuid": "5-hu2fLBQgKwKxXh6eBVDg"
+                  "__uuid": "vfkpL1qjTI65lBk7-A1vyg"
                 },
-                "__uuid": "KSZynNu5T7m4SB5ZtL6aag"
+                "__uuid": "jOR8FgzpTH-wpw5_x1gUBA"
               },
-              "__uuid": "dPowrTMdQEqLZkWIH51HlA"
+              "__uuid": "2ntaoBfbQimC_esSwYmkRw"
             }
           ],
-          "__uuid": "spYJJaHXRRyUL7HHEkpulA"
+          "__uuid": "bSDhgHMsTQao7dlpfQ-MNg"
         },
-        "__uuid": "bqW0I7-tSxCl2QfCrXN8Yw"
+        "__uuid": "0-jLNU7wTa-oCH6263UvBw"
       }
     ],
-    "__uuid": "LF2mUsChTkOey4FNxQCfFw"
-  }
+    "__uuid": "kF_RRXlbSOCd4qOnvw-SFQ"
+  },
+  "__uuid": "epX3RNGRS2-I_gpjYbhCeA"
 }

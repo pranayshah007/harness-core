@@ -917,8 +917,7 @@
         {
           "type": "object",
           "required": [
-            "configuration",
-            "provisionerIdentifier"
+            "configuration"
           ],
           "properties": {
             "configuration": {
@@ -940,9 +939,6 @@
               ]
             },
             "metadata": {
-              "type": "string"
-            },
-            "provisionerIdentifier": {
               "type": "string"
             }
           }
