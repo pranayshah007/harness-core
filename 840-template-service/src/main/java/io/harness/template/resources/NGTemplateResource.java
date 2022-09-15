@@ -96,6 +96,7 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
@@ -855,14 +856,14 @@ public class NGTemplateResource {
         accountId, orgId, projectId, templateReferenceRequestDTO.getYaml(), false));
   }
 
-  @PUT
+  @POST
   @Path("/copyTemplateWithVariables")
   @ApiOperation(value = "Copy yaml with variables resolved", nickname = "copyTemplateWithVariables")
   @Operation(operationId = "copyTemplateWithVariables", summary = "Gets complete yaml with templateRefs resolved",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Gets complete yaml with templateRefs resolved")
+        ApiResponse(responseCode = "default", description = "Gets the template ready for copying to pipeline by applying variables")
       })
   @Hidden
   public ResponseDTO<String>
@@ -875,9 +876,9 @@ public class NGTemplateResource {
           NGCommonEntityConstants.IDENTIFIER_KEY) @ResourceIdentifier String templateIdentifier,
       @Parameter(description = "Version Label") @QueryParam(
           NGCommonEntityConstants.VERSION_LABEL_KEY) String versionLabel,
-      @RequestBody(required = true, description = "") @NotNull @ApiParam(
-          hidden = true) List<NGVariable> templateVariables) {
+      @RequestBody(required = true, description = "List of template variable values") @NotNull @ApiParam(
+          hidden = true) Map<String, String> templateVariableValues) {
     return ResponseDTO.newResponse(templateService.copyTemplateWithVariables(
-        accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, templateVariables));
+        accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, templateVariableValues));
   }
 }

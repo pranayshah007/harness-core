@@ -30,7 +30,6 @@ import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
 import io.harness.pms.merger.helpers.YamlSubMapExtractor;
-import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -419,7 +418,8 @@ public class TemplateMergeServiceHelper {
     }
 
     String mergedYamlWithResolvedVariables =
-        applyTemplateVariablesInYaml(templateVariables, variablesFromTemplate, mergedYaml);
+        applyTemplateVariablesInYaml(prepareVariableValueMap(templateVariables),
+                NGVariablesUtils.getStringMapVariables(variablesFromTemplate, 0L), mergedYaml);
 
     try {
       String finalMergedYaml =
@@ -431,23 +431,29 @@ public class TemplateMergeServiceHelper {
     }
   }
 
+  private static Map<String, String> prepareVariableValueMap(JsonNode templateVariables) {
+    Map<String, String> variableValues = new HashMap<>();
+    if (templateVariables != null && templateVariables.getNodeType() == JsonNodeType.ARRAY) {
+      ArrayNode templateVariablesArray = (ArrayNode) templateVariables;
+      for (JsonNode templateVariable : templateVariablesArray) {
+        variableValues.put(templateVariable.get(YAMLFieldNameConstants.NAME).asText(),
+                templateVariable.get(YAMLFieldNameConstants.VALUE).asText());
+      }
+    }
+    return variableValues;
+  }
+
   private String applyTemplateVariablesInYaml(
-      JsonNode templateVariablesFromPipeline, List<NGVariable> templateVariablesFromTemplate, String mergedYaml) {
-    if (templateVariablesFromPipeline == null && templateVariablesFromTemplate == null) {
+      Map<String, String> templateVariablesFromPipeline, Map<String, String> templateVariablesFromTemplateMap, String mergedYaml) {
+    if (templateVariablesFromPipeline == null && templateVariablesFromTemplateMap == null) {
       return mergedYaml;
     }
     Map<String, String> variableValues = new HashMap<>();
-    if (isNotEmpty(templateVariablesFromTemplate)) {
-      Map<String, String> templateVariablesMap =
-          NGVariablesUtils.getStringMapVariables(templateVariablesFromTemplate, 0L);
-      variableValues.putAll(templateVariablesMap);
+    if (isNotEmpty(templateVariablesFromTemplateMap)) {
+      variableValues.putAll(templateVariablesFromTemplateMap);
     }
-    if (templateVariablesFromPipeline != null && templateVariablesFromPipeline.getNodeType() == JsonNodeType.ARRAY) {
-      ArrayNode templateVariablesArray = (ArrayNode) templateVariablesFromPipeline;
-      for (JsonNode templateVariable : templateVariablesArray) {
-        variableValues.put(templateVariable.get(YAMLFieldNameConstants.NAME).asText(),
-            templateVariable.get(YAMLFieldNameConstants.VALUE).asText());
-      }
+    if(isNotEmpty(templateVariablesFromPipeline)){
+      variableValues.putAll(templateVariablesFromPipeline);
     }
     TemplateVariableEvaluator variableEvaluator = new TemplateVariableEvaluator(variableValues);
     String result =
@@ -688,7 +694,16 @@ public class TemplateMergeServiceHelper {
         .getYaml();
   }
 
-  public String applyVariablesToCopiedTemplate(List<NGVariable> variables, String templateYaml) {
-    return applyTemplateVariablesInYaml(null, variables, templateYaml);
+  public String applyVariablesToCopiedTemplate(Map<String, String> variableValues, String templateYaml) {
+    try {
+      YamlField templateYamlField = YamlUtils.readTree(templateYaml).getNode().getField(TEMPLATE);
+      ObjectNode templateJson = ( ObjectNode) templateYamlField.getNode().getCurrJsonNode();
+      JsonNode templateVariables = templateJson.remove(YAMLFieldNameConstants.VARIABLES);
+      templateJson.remove(YAMLFieldNameConstants.VARIABLES);
+      return applyTemplateVariablesInYaml( variableValues, prepareVariableValueMap(templateVariables), YamlUtils.writeYamlString(templateYamlField));
+    } catch (IOException e) {
+      log.error("Error occurred while creating template inputs " + e);
+      throw new NGTemplateException("Error occurred while creating template inputs ", e);
+    }
   }
 }
