@@ -89,6 +89,8 @@ import io.harness.cvng.core.entities.AnalysisInfo;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig.AppDynamicsCVConfigBuilder;
 import io.harness.cvng.core.entities.CVConfig;
+import io.harness.cvng.core.entities.CloudWatchMetricCVConfig;
+import io.harness.cvng.core.entities.CloudWatchMetricCVConfig.CloudWatchMetricCVConfigBuilder;
 import io.harness.cvng.core.entities.CustomHealthLogCVConfig;
 import io.harness.cvng.core.entities.CustomHealthMetricCVConfig;
 import io.harness.cvng.core.entities.DatadogLogCVConfig;
@@ -515,6 +517,15 @@ public class BuilderFactory {
         .category(CVMonitoringCategory.ERRORS)
         .enabled(true)
         .productName(generateUuid());
+  }
+
+  public CloudWatchMetricCVConfigBuilder cloudWatchMetricCVConfigBuilder() {
+    return CloudWatchMetricCVConfig.builder()
+        .accountId(context.getAccountId())
+        .orgIdentifier(context.getOrgIdentifier())
+        .projectIdentifier(context.getProjectIdentifier())
+        .identifier(context.getMonitoredServiceIdentifier() + "/" + generateUuid())
+        .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier());
   }
 
   public CustomHealthSourceMetricSpec customHealthMetricSourceSpecBuilder(String metricValueJSONPath,
@@ -1250,7 +1261,7 @@ public class BuilderFactory {
 
   public TimeSeriesThreshold getMetricThresholdBuilder(String metricName, String metricGroupName) {
     return TimeSeriesThreshold.builder()
-        .thresholdConfigType(ThresholdConfigType.CUSTOMER)
+        .thresholdConfigType(ThresholdConfigType.USER_DEFINED)
         .metricName(metricName)
         .metricGroupName(metricGroupName)
         .action(IGNORE)

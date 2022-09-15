@@ -501,7 +501,7 @@ public class K8sBlueGreenDeployTaskHandlerTest extends CategoryTest {
     k8sBGBaseHandler.cleanupForBlueGreen(
         delegateTaskParams, releaseHistory, executionLogCallback, "blue", "green", currentRelease, client);
     verify(k8sTaskHelperBase, times(1))
-        .delete(client, delegateTaskParams, asList(kubernetesResource.getResourceId()), executionLogCallback, true);
+        .delete(client, delegateTaskParams, asList(kubernetesResource.getResourceId()), executionLogCallback, false);
   }
 
   @Test

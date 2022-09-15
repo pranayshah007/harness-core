@@ -3956,6 +3956,9 @@
         "templateRef": {
           "type": "string"
         },
+        "templateVariables": {
+          "$ref": "#/definitions/JsonNode"
+        },
         "versionLabel": {
           "type": "string",
           "pattern": "^[0-9a-zA-Z][^\\s]{0,63}$"

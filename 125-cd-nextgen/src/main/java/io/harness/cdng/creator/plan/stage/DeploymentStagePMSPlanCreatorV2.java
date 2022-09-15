@@ -305,11 +305,12 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
 
   private boolean useNewFlow(PlanCreationContext ctx, DeploymentStageNode stageNode) {
     DeploymentStageConfig deploymentStageConfig = stageNode.getDeploymentStageConfig();
-    boolean isServiceV2 = stageNode.getDeploymentStageConfig().getService() != null
-        && ParameterField.isNotNull(stageNode.getDeploymentStageConfig().getService().getServiceRef());
-    boolean serviceV2UseFromStage = deploymentStageConfig.getService().getUseFromStage() != null
+    boolean isServiceV2 = deploymentStageConfig.getService() != null
+        && ParameterField.isNotNull(deploymentStageConfig.getService().getServiceRef());
+    boolean serviceV2UseFromStage = deploymentStageConfig.getService() != null
+        && deploymentStageConfig.getService().getUseFromStage() != null
         && EmptyPredicate.isNotEmpty(deploymentStageConfig.getService().getUseFromStage().getStage());
-    boolean isServices = stageNode.getDeploymentStageConfig().getServices() != null;
+    boolean isServices = deploymentStageConfig.getServices() != null;
     boolean shouldUseNewFlow = isServices || isServiceV2 || serviceV2UseFromStage;
     return shouldUseNewFlow
         && featureFlagHelperService.isEnabled(

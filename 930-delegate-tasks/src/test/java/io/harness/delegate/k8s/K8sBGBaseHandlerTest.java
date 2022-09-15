@@ -227,7 +227,7 @@ public class K8sBGBaseHandlerTest extends CategoryTest {
     assertThat(releaseHistory.getRelease(3)).isNotNull();
 
     // Should delete resource single time since the latest and primary releases shouldn't be cleaned
-    verify(k8sTaskHelperBase).delete(kubectl, delegateTaskParams, asList(versioned), logCallback, true);
+    verify(k8sTaskHelperBase).delete(kubectl, delegateTaskParams, asList(versioned), logCallback, false);
   }
 
   @Test

@@ -79,7 +79,15 @@ public class ExpansionsMergerTest extends CategoryTest {
             .setSuccess(true)
             .setPlacement(MOVE_UP)
             .build();
-    List<ExpansionResponseProto> expansionResponseProtoList = Arrays.asList(resp0, resp1, resp2);
+    ExpansionResponseProto resp3 = ExpansionResponseProto.newBuilder()
+                                       .setFqn("pipeline/stages/[0]/stage/spec/execution/steps/[0]/step/spec")
+                                       .setKey("gitConfig")
+                                       .setValue("{\"isMainBranch\": true}")
+                                       .setSuccess(true)
+                                       .setPlacement(APPEND)
+                                       .build();
+
+    List<ExpansionResponseProto> expansionResponseProtoList = Arrays.asList(resp0, resp1, resp2, resp3);
     ExpansionResponseBatch expansionResponseBatch =
         ExpansionResponseBatch.newBuilder().addAllExpansionResponseProto(expansionResponseProtoList).build();
     String expandedPipeline =
@@ -93,6 +101,7 @@ public class ExpansionsMergerTest extends CategoryTest {
         .isNull();
     assertThat(yamlNode.gotoPath("pipeline/stages/[0]/stage/spec/execution/steps/[0]/step/spec/et2")).isNotNull();
     assertThat(yamlNode.gotoPath("pipeline/stages/[0]/stage/spec/execution/steps/[0]/step/et3")).isNotNull();
+    assertThat(yamlNode.gotoPath("pipeline/stages/[0]/stage/spec/execution/steps/[0]/step/spec/gitConfig")).isNotNull();
   }
 
   @Test

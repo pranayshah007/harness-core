@@ -28,6 +28,7 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
+import io.harness.beans.steps.CIAbstractStepNode;
 import io.harness.beans.steps.CIStepInfo;
 import io.harness.beans.steps.stepinfo.BackgroundStepInfo;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
@@ -44,7 +45,6 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
-import io.harness.plancreator.steps.StepElementConfig;
 import io.harness.plancreator.steps.StepGroupElementConfig;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -68,8 +68,8 @@ public class VmInitializeUtils {
 
   private void validateStageConfigUtil(ExecutionWrapperConfig executionWrapper) {
     if (executionWrapper.getStep() != null && !executionWrapper.getStep().isNull()) {
-      StepElementConfig stepElementConfig = IntegrationStageUtils.getStepElementConfig(executionWrapper);
-      validateStepConfig(stepElementConfig);
+      CIAbstractStepNode stepNode = IntegrationStageUtils.getStepNode(executionWrapper);
+      validateStepConfig(stepNode);
     } else if (executionWrapper.getParallel() != null && !executionWrapper.getParallel().isNull()) {
       ParallelStepElementConfig parallelStepElementConfig =
           IntegrationStageUtils.getParallelStepElementConfig(executionWrapper);
@@ -88,7 +88,7 @@ public class VmInitializeUtils {
     }
   }
 
-  private void validateStepConfig(StepElementConfig stepElementConfig) {
+  private void validateStepConfig(CIAbstractStepNode stepElementConfig) {
     if (stepElementConfig.getStepSpecType() instanceof CIStepInfo) {
       CIStepInfo ciStepInfo = (CIStepInfo) stepElementConfig.getStepSpecType();
       switch (ciStepInfo.getNonYamlInfo().getStepInfoType()) {

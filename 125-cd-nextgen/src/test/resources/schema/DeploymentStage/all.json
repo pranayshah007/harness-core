@@ -310,7 +310,8 @@
             "Jenkins",
             "AmazonS3",
             "GoogleArtifactRegistry",
-            "GithubPackageRegistry"
+            "GithubPackageRegistry",
+            "AzureArtifactsRegistry"
           ]
         }
       },
@@ -360,6 +361,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/ArtifactoryRegistryArtifactConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AzureArtifactsRegistry"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AzureArtifactConfig"
               }
             }
           }
@@ -643,6 +660,73 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "AzureArtifactConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ArtifactConfig"
+        },
+        {
+          "type": "object",
+          "required": [
+            "connectorRef",
+            "feed",
+            "packageName",
+            "packageType",
+            "project",
+            "scope"
+          ],
+          "properties": {
+            "connectorRef": {
+              "type": "string"
+            },
+            "feed": {
+              "type": "string"
+            },
+            "packageName": {
+              "type": "string"
+            },
+            "packageType": {
+              "type": "string",
+              "enum": [
+                "maven",
+                "nuget"
+              ]
+            },
+            "project": {
+              "type": "string"
+            },
+            "scope": {
+              "type": "string",
+              "enum": [
+                "project",
+                "org"
+              ]
+            },
+            "version": {
+              "type": "string"
+            },
+            "versionRegex": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "versionRegex"
+              ]
+            },
+            {
+              "required": [
+                "version"
+              ]
+            }
+          ]
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "AzureCreateARMResourceParameterFile": {
       "type": "object",
       "required": [
@@ -833,8 +917,7 @@
         {
           "type": "object",
           "required": [
-            "configuration",
-            "provisionerIdentifier"
+            "configuration"
           ],
           "properties": {
             "configuration": {
@@ -856,9 +939,6 @@
               ]
             },
             "metadata": {
-              "type": "string"
-            },
-            "provisionerIdentifier": {
               "type": "string"
             }
           }
@@ -6880,7 +6960,8 @@
             "Jenkins",
             "AmazonS3",
             "GoogleArtifactRegistry",
-            "GithubPackageRegistry"
+            "GithubPackageRegistry",
+            "AzureArtifactsRegistry"
           ]
         }
       },
@@ -6930,6 +7011,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/ArtifactoryRegistryArtifactConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AzureArtifactsRegistry"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AzureArtifactConfig"
               }
             }
           }
@@ -7976,7 +8073,8 @@
             "Jenkins",
             "AmazonS3",
             "GoogleArtifactRegistry",
-            "GithubPackageRegistry"
+            "GithubPackageRegistry",
+            "AzureArtifactsRegistry"
           ]
         }
       },
@@ -8026,6 +8124,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/ArtifactoryRegistryArtifactConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AzureArtifactsRegistry"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AzureArtifactConfig"
               }
             }
           }

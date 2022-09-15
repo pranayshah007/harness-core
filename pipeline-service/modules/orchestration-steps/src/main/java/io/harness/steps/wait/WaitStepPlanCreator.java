@@ -7,7 +7,7 @@
 
 package io.harness.steps.wait;
 
-import io.harness.plancreator.steps.internal.PMSStepPlanCreatorV2;
+import io.harness.plancreator.steps.AbstractStepPlanCreator;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.steps.StepSpecTypeConstants;
@@ -15,7 +15,8 @@ import io.harness.steps.StepSpecTypeConstants;
 import com.google.common.collect.Sets;
 import java.util.Set;
 
-public class WaitStepPlanCreator extends PMSStepPlanCreatorV2<WaitStepNode> {
+// TODO: Need to implement plan creator for wait step as it doesn't contain timeout field
+public class WaitStepPlanCreator extends AbstractStepPlanCreator<WaitStepNode> {
   @Override
   public Set<String> getSupportedStepTypes() {
     return Sets.newHashSet(StepSpecTypeConstants.WAIT_STEP);
@@ -28,6 +29,6 @@ public class WaitStepPlanCreator extends PMSStepPlanCreatorV2<WaitStepNode> {
 
   @Override
   public PlanCreationResponse createPlanForField(PlanCreationContext ctx, WaitStepNode field) {
-    return super.createPlanForField(ctx, field);
+    return null;
   }
 }

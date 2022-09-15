@@ -62,6 +62,11 @@ public class SshKeySpecDTOHelper {
 
   public List<EncryptedDataDetail> getKerberosEncryptionDetails(
       KerberosBaseConfigDTO kerberosConfigDTO, NGAccess ngAccess) {
+    // No TGT
+    if (kerberosConfigDTO.getTgtGenerationMethod() == null) {
+      return emptyList();
+    }
+
     switch (kerberosConfigDTO.getTgtGenerationMethod()) {
       case Password:
         TGTPasswordSpecDTO tgtPasswordSpecDTO = (TGTPasswordSpecDTO) kerberosConfigDTO.getSpec();

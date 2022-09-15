@@ -167,7 +167,13 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
         throw new InvalidRequestException("Environment " + envRef.getValue() + " not found");
       }
 
-      final NGEnvironmentConfig ngEnvironmentConfig = mergeEnvironmentInputs(environment.get().getYaml(), envInputs);
+      NGEnvironmentConfig ngEnvironmentConfig;
+      try {
+        ngEnvironmentConfig = mergeEnvironmentInputs(environment.get().getYaml(), envInputs);
+      } catch (IOException ex) {
+        throw new InvalidRequestException(
+            "Unable to read yaml for environment: " + environment.get().getIdentifier(), ex);
+      }
 
       final Optional<NGServiceOverridesEntity> ngServiceOverridesEntity =
           serviceOverrideService.get(AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),

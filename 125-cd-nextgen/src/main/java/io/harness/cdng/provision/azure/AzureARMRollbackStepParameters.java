@@ -20,6 +20,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.NonNull;
 
 @OwnedBy(CDP)
 @Data
@@ -28,7 +29,8 @@ import lombok.NoArgsConstructor;
 @RecasterAlias("io.harness.cdng.provision.azure.AzureARMRollbackStepParameters")
 public class AzureARMRollbackStepParameters extends AzureARMRollbackBaseStepInfo implements SpecParameters {
   @Builder(builderMethodName = "infoBuilder")
-  public AzureARMRollbackStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
-    super(delegateSelectors);
+  public AzureARMRollbackStepParameters(
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors, @NonNull ParameterField<String> provisionerIdentifier) {
+    super(delegateSelectors, provisionerIdentifier);
   }
 }

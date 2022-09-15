@@ -14,40 +14,42 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.plancreator.steps.internal.PmsAbstractStepNode;
+import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.yaml.core.StepSpecType;
+import io.harness.yaml.core.VariableExpression;
+import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.TypeAlias;
 
 @Data
 @NoArgsConstructor
-@EqualsAndHashCode(callSuper = true)
 @JsonTypeName(StepSpecTypeConstants.WAIT_STEP)
 @TypeAlias("WaitStepNode")
 @OwnedBy(PIPELINE)
 @RecasterAlias("io.harness.steps.wait.WaitStepNode")
-public class WaitStepNode extends PmsAbstractStepNode {
+public class WaitStepNode extends AbstractStepNode {
   @JsonProperty("type") @NotNull StepType type = StepType.Wait;
   @NotNull
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
   WaitStepInfo waitStepInfo;
+  @VariableExpression(skipVariableExpression = true) List<FailureStrategyConfig> failureStrategies;
 
-  @Override
+  @JsonIgnore
   public String getType() {
     return StepSpecTypeConstants.WAIT_STEP;
   }
-
-  @Override
+  @JsonIgnore
   public StepSpecType getStepSpecType() {
     return waitStepInfo;
   }

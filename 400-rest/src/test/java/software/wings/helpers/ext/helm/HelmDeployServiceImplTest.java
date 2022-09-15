@@ -212,6 +212,8 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
     when(helmClient.repoUpdate(any())).thenReturn(HelmCliResponse.builder().build());
     when(helmTaskHelperBase.parseHelmReleaseCommandOutput(eq(""), eq(RELEASE_HISTORY)))
         .thenReturn(Collections.emptyList());
+    when(helmTaskHelperBase.isHelmLocalRepoSet()).thenReturn(false);
+    when(helmTaskHelperBase.getHelmLocalRepositoryPath()).thenReturn("");
   }
 
   @Test
@@ -264,7 +266,7 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
     when(containerDeploymentDelegateHelper.useK8sSteadyStateCheck(anyBoolean(), any(), any())).thenReturn(true);
     when(k8sTaskHelperBase.readManifests(any(), any())).thenReturn(resources);
     when(k8sTaskHelperBase.getContainerInfos(any(), any(), any(), anyLong())).thenReturn(containerInfos);
-    when(k8sTaskHelperBase.doStatusCheckAllResourcesForHelm(any(), anyList(), any(), any(), any(), any(), any()))
+    when(k8sTaskHelperBase.doStatusCheckAllResourcesForHelm(any(), anyList(), any(), any(), any(), any(), any(), any()))
         .thenReturn(true);
 
     ArgumentCaptor<io.harness.helm.HelmCommandData> argumentCaptor = ArgumentCaptor.forClass(HelmCommandData.class);
@@ -282,7 +284,7 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
             eq(asList(
                 KubernetesResourceId.builder().name("helm-deploy").namespace("default").kind("Deployment").build(),
                 KubernetesResourceId.builder().name("helm-deploy-2").namespace("default").kind("StatefulSet").build())),
-            any(), any(), eq("default"), any(), any());
+            any(), any(), eq("default"), any(), any(), any());
     verify(k8sTaskHelperBase, times(1))
         .doStatusCheckAllResourcesForHelm(any(Kubectl.class),
             eq(asList(KubernetesResourceId.builder()
@@ -290,7 +292,7 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
                           .namespace("default-1")
                           .kind("StatefulSet")
                           .build())),
-            any(), any(), eq("default-1"), any(), any());
+            any(), any(), eq("default-1"), any(), any(), any());
   }
 
   @Test
@@ -314,8 +316,8 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
     when(containerDeploymentDelegateHelper.useK8sSteadyStateCheck(anyBoolean(), any(), any())).thenReturn(true);
     when(k8sTaskHelperBase.readManifests(any(), any())).thenReturn(resources);
     when(k8sTaskHelperBase.getContainerInfos(any(), any(), any(), anyLong())).thenReturn(containerInfos);
-    when(
-        k8sTaskHelperBase.doStatusCheckAllResourcesForHelm(any(), anyList(), any(), any(), eq("default"), any(), any()))
+    when(k8sTaskHelperBase.doStatusCheckAllResourcesForHelm(
+             any(), anyList(), any(), any(), eq("default"), any(), any(), any()))
         .thenReturn(true);
 
     HelmInstallCommandRequest helmInstallCommandRequest = createHelmInstallCommandRequestNoSourceRepo();
@@ -1093,7 +1095,7 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
         .thenReturn(containerInfosDefault2);
     when(k8sTaskHelperBase.getContainerInfos(any(), eq("release"), eq("default-3"), eq(LONG_TIMEOUT_INTERVAL)))
         .thenReturn(containerInfosDefault3);
-    when(k8sTaskHelperBase.doStatusCheckAllResourcesForHelm(any(), anyList(), any(), any(), any(), any(), any()))
+    when(k8sTaskHelperBase.doStatusCheckAllResourcesForHelm(any(), anyList(), any(), any(), any(), any(), any(), any()))
         .thenReturn(true);
 
     return (HelmInstallCommandResponse) helmDeployService.rollback(request);
@@ -1312,7 +1314,7 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
 
     when(containerDeploymentDelegateHelper.useK8sSteadyStateCheck(anyBoolean(), any(), any())).thenReturn(true);
     when(k8sTaskHelperBase.doStatusCheckAllResourcesForHelm(any(Kubectl.class), eq(resourceIds), anyString(),
-             anyString(), anyString(), anyString(), any(ExecutionLogCallback.class)))
+             anyString(), anyString(), anyString(), any(ExecutionLogCallback.class), any()))
         .thenReturn(false);
 
     assertThatExceptionOfType(InvalidRequestException.class)
@@ -1323,7 +1325,7 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
 
     verify(k8sTaskHelperBase, times(1))
         .doStatusCheckAllResourcesForHelm(
-            any(), any(), any(), anyString(), anyString(), anyString(), any(ExecutionLogCallback.class));
+            any(), any(), any(), anyString(), anyString(), anyString(), any(ExecutionLogCallback.class), any());
   }
 
   @Test

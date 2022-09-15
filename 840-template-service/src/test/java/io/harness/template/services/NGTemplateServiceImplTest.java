@@ -8,6 +8,7 @@
 package io.harness.template.services;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
@@ -32,6 +33,7 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.context.GlobalContext;
 import io.harness.encryption.Scope;
 import io.harness.enforcement.client.services.EnforcementClientService;
 import io.harness.entitysetupusageclient.remote.EntitySetupUsageClient;
@@ -39,7 +41,11 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
 import io.harness.exception.ngexception.NGTemplateException;
 import io.harness.git.model.ChangeType;
+import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.interceptor.GitEntityInfo;
+import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.persistance.GitSyncSdkService;
+import io.harness.manage.GlobalContextManager;
 import io.harness.ng.core.dto.OrganizationResponse;
 import io.harness.ng.core.dto.ProjectResponse;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -540,6 +546,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
 
     String description = "Updated Description";
     TemplateEntity updateTemplate = entity.withDescription(description);
+
     TemplateEntity updatedTemplateEntity =
         templateService.updateTemplateEntity(updateTemplate, ChangeType.MODIFY, false, "");
     assertThat(updatedTemplateEntity).isNotNull();
@@ -926,6 +933,33 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     verify(accessControlClient, times(2))
         .checkForAccessOrThrow(ResourceScope.of(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER),
             Resource.of(NGTemplateResource.TEMPLATE, TEMPLATE_IDENTIFIER), PermissionTypes.TEMPLATE_ACCESS_PERMISSION);
+  }
+
+  @Test(expected = InvalidRequestException.class)
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testCreateRemoteTemplateForNonGitEntityTemplate() throws IOException {
+    TemplateEntity templateEntity = TemplateEntity.builder()
+                                        .accountId(ACCOUNT_ID)
+                                        .orgIdentifier(ORG_IDENTIFIER)
+                                        .projectIdentifier(PROJ_IDENTIFIER)
+                                        .identifier(TEMPLATE_IDENTIFIER)
+                                        .name(TEMPLATE_IDENTIFIER)
+                                        .versionLabel(TEMPLATE_VERSION_LABEL)
+                                        .templateEntityType(TemplateEntityType.MONITORED_SERVICE_TEMPLATE)
+                                        .templateScope(Scope.PROJECT)
+                                        .yaml(yaml)
+                                        .build();
+    GitEntityInfo branchInfo = GitEntityInfo.builder().storeType(StoreType.REMOTE).build();
+    setupGitContext(branchInfo);
+    templateService.create(templateEntity, false, "");
+  }
+
+  private void setupGitContext(GitEntityInfo branchInfo) {
+    if (!GlobalContextManager.isAvailable()) {
+      GlobalContextManager.set(new GlobalContext());
+    }
+    GlobalContextManager.upsertGlobalContextRecord(GitSyncBranchContext.builder().gitBranchInfo(branchInfo).build());
   }
 
   private void assertSavedTemplateEntity(TemplateEntity createdEntity, String templateIdentifier) {

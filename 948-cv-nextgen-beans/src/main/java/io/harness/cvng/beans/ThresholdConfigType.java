@@ -7,4 +7,4 @@
 
 package io.harness.cvng.beans;
 
-public enum ThresholdConfigType { CUSTOMER, DEFAULT }
+public enum ThresholdConfigType { DEFAULT, USER_DEFINED, @Deprecated CUSTOMER }

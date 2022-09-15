@@ -38,6 +38,7 @@ import io.harness.cdng.creator.plan.stage.DeploymentStagePMSPlanCreatorV2;
 import io.harness.cdng.creator.plan.steps.AzureARMRollbackResourceStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.AzureCreateARMResourceStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.AzureCreateBPResourceStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.CDPMSCommandStepFilterJsonCreator;
 import io.harness.cdng.creator.plan.steps.CDPMSStepFilterJsonCreator;
 import io.harness.cdng.creator.plan.steps.CDPMSStepFilterJsonCreatorV2;
 import io.harness.cdng.creator.plan.steps.CloudformationCreateStackStepPlanCreator;
@@ -224,6 +225,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     filterJsonCreators.add(new ExecutionPMSFilterJsonCreator());
     filterJsonCreators.add(new ParallelGenericFilterJsonCreator());
     filterJsonCreators.add(new StepGroupPmsFilterJsonCreator());
+    filterJsonCreators.add(new CDPMSCommandStepFilterJsonCreator());
     injectorUtils.injectMembers(filterJsonCreators);
 
     return filterJsonCreators;

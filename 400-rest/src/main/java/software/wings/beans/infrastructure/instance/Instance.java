@@ -88,6 +88,7 @@ public class Instance extends Base implements AccountAccess, ApplicationAccess {
                  .name("instance_index6")
                  .field(InstanceKeys.accountId)
                  .field(InstanceKeys.isDeleted)
+                 .field(InstanceKeys.serviceId)
                  .build())
         .add(CompoundMongoIndex.builder()
                  .name("instance_index7")
@@ -150,6 +151,13 @@ public class Instance extends Base implements AccountAccess, ApplicationAccess {
                  .name("inframapping_lastUpdated")
                  .field(InstanceKeys.infraMappingId)
                  .descSortField(InstanceKeys.lastUpdatedAt)
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("appid_inframapping_isdeleted_createdatdesc")
+                 .field(InstanceKeys.appId)
+                 .field(InstanceKeys.infraMappingId)
+                 .field(InstanceKeys.isDeleted)
+                 .descSortField(InstanceKeys.createdAt)
                  .build())
         .build();
   }

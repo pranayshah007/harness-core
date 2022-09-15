@@ -109,7 +109,9 @@ def main(jsonData, context):
     jsonData["tableIdAggregated"] = "%s.%s.%s" % (PROJECTID, jsonData["datasetName"], jsonData["tableNameAggregated"])
 
     create_dataset_and_tables(jsonData)
-    ingest_data_from_avro(jsonData)
+    if not ingest_data_from_avro(jsonData):
+        print_("Completed")
+        return
     ingest_data_in_unified(jsonData)
     ingest_aggregated_data(jsonData)
     ingest_data_to_costagg(jsonData)
@@ -145,6 +147,12 @@ def ingest_data_from_avro(jsonData):
     """
     Loads data from Avro to clusterData/clusterDataHourly table
     """
+    uri = "gs://" + jsonData["bucket"] + "/" + jsonData["accountId"] + "/" + jsonData["fileName"]  # or "*.avro"
+    print_(uri)
+    blob_to_delete = check_file_exists_in_gcs(jsonData)
+    if blob_to_delete is None:
+        print_("Nothing to ingest. No blob exists")
+        return False
     delete_existing_data(jsonData)
     job_config = bigquery.LoadJobConfig(
         source_format=bigquery.SourceFormat.AVRO,
@@ -152,8 +160,7 @@ def ingest_data_from_avro(jsonData):
         max_bad_records=0,
         write_disposition="WRITE_APPEND"  # default value
     )
-    uri = "gs://" + jsonData["bucket"] + "/" + jsonData["accountId"] + "/" + jsonData["fileName"]  # or "*.avro"
-    print_(uri)
+
     print_("Loading into %s table..." % jsonData["tableId"])
     load_job = client.load_table_from_uri(
         uri,
@@ -164,13 +171,15 @@ def ingest_data_from_avro(jsonData):
         load_job.result()  # Wait for the job to complete.
         table = client.get_table(jsonData["tableId"])
         print_("Total: {} rows in table {}".format(table.num_rows, jsonData["tableId"]))
-        delete_from_gcs(jsonData)
+        blob_to_delete.delete()
+        print_("Deleted blob : %s" % blob_to_delete.name)
     except Exception as e:
         print_(e, "WARN")
+        return False
         # Probably the file was deleted in earlier runs
+    return True
 
-
-def delete_from_gcs(jsonData):
+def check_file_exists_in_gcs(jsonData):
     """
     Deletes the blob from GCS
     :param jsonData:
@@ -184,10 +193,9 @@ def delete_from_gcs(jsonData):
     for blob in blobs:
         # kmpySmUISimoRrJL6NL73w/billing_data_2020_DECEMBER_10.avro
         if blob.name.endswith(jsonData["fileName"]):  # or .endswith(".avro"):
-            print_("Deleting blob... : %s" % blob.name)
-            blob.delete()
-            print_("Deleted blob : %s" % blob.name)
-            break
+            print_("Will be deleting this blob after ingestion... : %s" % blob.name)
+            return blob
+    return None
 
 
 def delete_existing_data(jsonData):

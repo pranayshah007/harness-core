@@ -184,7 +184,6 @@ public enum FeatureName {
   WEBHOOK_TRIGGER_AUTHORIZATION,
   ENHANCED_GCR_CONNECTIVITY_CHECK,
   USE_TF_CLIENT,
-  SERVICE_DASHBOARD_NG,
   GITHUB_WEBHOOK_AUTHENTICATION,
   NG_SIGNUP(Scope.GLOBAL),
   NG_LICENSES_ENABLED,
@@ -442,7 +441,9 @@ public enum FeatureName {
   MERGE_RUNTIME_VARIABLES_IN_RESUME(
       "merge context elements workflow variables while resuming pipeline from a stage", HarnessTeam.SPG),
   USE_TEXT_SEARCH_FOR_EXECUTION(
-      "With this instead of using regex search we will use text search for CD page in CG", HarnessTeam.SPG);
+      "With this instead of using regex search we will use text search for CD page in CG", HarnessTeam.SPG),
+  AZURE_WEBAPP_NG_S3_ARTIFACTS(
+      "UI FF to enable AWS S3 as an artifact source option for Azure Web App NG", HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {

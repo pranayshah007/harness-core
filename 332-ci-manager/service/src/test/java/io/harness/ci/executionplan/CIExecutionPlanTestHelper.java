@@ -55,6 +55,7 @@ import io.harness.beans.execution.WebhookEvent;
 import io.harness.beans.execution.WebhookExecutionSource;
 import io.harness.beans.executionargs.CIExecutionArgs;
 import io.harness.beans.script.ScriptInfo;
+import io.harness.beans.stages.IntegrationStageNode;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.yaml.extended.CustomSecretVariable;
 import io.harness.beans.yaml.extended.CustomTextVariable;
@@ -332,14 +333,14 @@ public class CIExecutionPlanTestHelper {
   }
 
   public InitializeStepInfo getExpectedLiteEngineTaskInfoOnOtherPods(
-      ExecutionSource executionSource, StageElementConfig stageElementConfig) {
+      ExecutionSource executionSource, IntegrationStageNode stageNode) {
     return InitializeStepInfo.builder()
         .identifier("liteEngineTask")
         .name("liteEngineTask")
         .executionSource(executionSource)
-        .stageIdentifier(stageElementConfig.getIdentifier())
-        .variables(stageElementConfig.getVariables())
-        .stageElementConfig((IntegrationStageConfig) stageElementConfig.getStageType())
+        .stageIdentifier(stageNode.getIdentifier())
+        .variables(stageNode.getVariables())
+        .stageElementConfig(stageNode.getIntegrationStageConfig())
         .executionElementConfig(getExecutionElementConfig())
         .infrastructure(getInfrastructureWithVolume())
         .strategyExpansionMap(new HashMap<>())
@@ -1399,6 +1400,15 @@ public class CIExecutionPlanTestHelper {
         .identifier("ciStage")
         .type("CI")
         .stageType(getIntegrationStageConfig())
+        .variables(getStageNGVariables())
+        .build();
+  }
+
+  public IntegrationStageNode getIntegrationStageNode() {
+    return IntegrationStageNode.builder()
+        .identifier("ciStage")
+        .type(IntegrationStageNode.StepType.CI)
+        .integrationStageConfig((IntegrationStageConfigImpl) getIntegrationStageConfig())
         .variables(getStageNGVariables())
         .build();
   }

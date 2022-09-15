@@ -98,10 +98,10 @@ public class ServerlessInstanceStats implements PersistentEntity, UuidAware, Cre
   @Value
   @Builder
   public static class AggregateInvocationCount {
-    private EntityType entityType;
-    private String name;
-    private String id;
-    @NonFinal private long invocationCount;
-    private InvocationCountKey invocationCountKey;
+    EntityType entityType;
+    String name;
+    String id;
+    @NonFinal long invocationCount;
+    InvocationCountKey invocationCountKey;
   }
 }
