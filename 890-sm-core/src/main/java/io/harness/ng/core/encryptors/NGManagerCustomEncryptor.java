@@ -15,10 +15,14 @@ import io.harness.delegatetasks.ValidateCustomSecretManagerSecretReferenceTaskPa
 import io.harness.delegatetasks.ValidateSecretManagerConfigurationTaskParameters;
 import io.harness.encryptors.CustomEncryptor;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.BaseNGAccess;
+import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
 import io.harness.remote.client.NGRestUtils;
+import io.harness.secretmanagerclient.services.SshKeySpecDTOHelper;
 import io.harness.secrets.remote.SecretNGManagerClient;
+import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptedDataParams;
 import io.harness.security.encryption.EncryptedRecord;
 import io.harness.security.encryption.EncryptedRecordData;
@@ -30,6 +34,7 @@ import software.wings.beans.CustomSecretNGManagerConfig;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import javax.validation.executable.ValidateOnExecution;
@@ -42,6 +47,7 @@ public class NGManagerCustomEncryptor implements CustomEncryptor {
   private static final String SCRIPT = "Script";
   private static final String EXPRESSION_FUNCTOR_TOKEN = "expressionFunctorToken";
   @Inject @Named("PRIVILEGED") private SecretNGManagerClient secretManagerClient;
+  @Inject private SshKeySpecDTOHelper sshKeySpecDTOHelper;
 
   @Inject
   public NGManagerCustomEncryptor(NGManagerEncryptorHelper ngManagerEncryptorHelper) {
@@ -119,7 +125,7 @@ public class NGManagerCustomEncryptor implements CustomEncryptor {
 
   public void getSSHSupportedConfig(EncryptionConfig encryptionConfig) {
     CustomSecretNGManagerConfig customSecretNGManagerConfig = (CustomSecretNGManagerConfig) encryptionConfig;
-    if (!customSecretNGManagerConfig.isOnDelegate()) {
+    if (!Boolean.TRUE.equals(customSecretNGManagerConfig.isOnDelegate())) {
       // Add ssh key
       IdentifierRef identifierRef = IdentifierRefHelper.getIdentifierRef(customSecretNGManagerConfig.getConnectorRef(),
           customSecretNGManagerConfig.getAccountId(), customSecretNGManagerConfig.getOrgIdentifier(),
@@ -132,7 +138,16 @@ public class NGManagerCustomEncryptor implements CustomEncryptor {
       if (secretResponseWrapper == null) {
         throw new InvalidRequestException(errorMSg);
       }
+      SSHKeySpecDTO sshKeySpecDTO = (SSHKeySpecDTO) secretResponseWrapper.getSecret().getSpec();
+      NGAccess ngAccess = BaseNGAccess.builder()
+                              .accountIdentifier(customSecretNGManagerConfig.getAccountIdentifier())
+                              .orgIdentifier(customSecretNGManagerConfig.getOrgIdentifier())
+                              .projectIdentifier(customSecretNGManagerConfig.getProjectIdentifier())
+                              .build();
+      List<EncryptedDataDetail> sshKeyEncryptionDetails =
+          sshKeySpecDTOHelper.getSSHKeyEncryptionDetails(sshKeySpecDTO, ngAccess);
       customSecretNGManagerConfig.setSshKeySpecDTO((SSHKeySpecDTO) secretResponseWrapper.getSecret().getSpec());
+      customSecretNGManagerConfig.setSshKeyEncryptionDetails(sshKeyEncryptionDetails);
     }
   }
 }

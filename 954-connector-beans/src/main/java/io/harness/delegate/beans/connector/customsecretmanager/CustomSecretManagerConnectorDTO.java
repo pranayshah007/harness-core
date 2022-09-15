@@ -8,19 +8,16 @@
 package io.harness.delegate.beans.connector.customsecretmanager;
 
 import io.harness.SecretManagerDescriptionConstants;
-import io.harness.annotation.RecasterFieldName;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
-import io.harness.connector.ManagerExecutable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.encryption.SecretReference;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -48,10 +45,9 @@ import lombok.experimental.FieldDefaults;
 @ApiModel("CustomSecretManager")
 @OwnedBy(HarnessTeam.PL)
 @Schema(name = "CustomSecretManager", description = "This contains details of Custom Secret Manager connectors")
-public class CustomSecretManagerConnectorDTO
-    extends ConnectorConfigDTO implements DelegateSelectable, ManagerExecutable {
+public class CustomSecretManagerConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable {
   Set<String> delegateSelectors;
-  @NotNull @RecasterFieldName(name = "onDelegate") @JsonProperty("onDelegate") Boolean executeOnDelegate;
+  @Builder.Default Boolean onDelegate = Boolean.FALSE;
   @Schema(description = SecretManagerDescriptionConstants.DEFAULT) private boolean isDefault;
   @Schema @JsonIgnore private boolean harnessManaged;
 
