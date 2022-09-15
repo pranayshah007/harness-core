@@ -38,7 +38,7 @@ public class CENGCoreMigrationDetails implements MigrationDetails {
         .add(Pair.of(4, CEViewsFolderRenameMigration.class))
         .add(Pair.of(5, CEViewPreferencesMigration.class))
         .add(Pair.of(6, CCMAdminRoleAssignmentMigration.class))
-        .add(Pair.of(10, CEMetadataRecordMigration.class))
+        .add(Pair.of(7, CEMetadataRecordMigration.class))
         .build();
   }
 }

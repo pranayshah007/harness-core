@@ -7,7 +7,7 @@
 
 package io.harness.ccm.migration;
 
-import static io.harness.persistence.HQuery.excludeValidate;
+import static io.harness.persistence.HQuery.excludeAuthority;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -33,7 +33,7 @@ public class CEMetadataRecordMigration implements NGMigration {
       log.info("Starting migration for CEMetadataRecord table to back-fill the "
           + "column DataGeneratedForCloudProvider with value true for existing records");
       final List<CEMetadataRecord> ceMetadataRecords =
-          hPersistence.createQuery(CEMetadataRecord.class, excludeValidate).asList();
+          hPersistence.createQuery(CEMetadataRecord.class, excludeAuthority).asList();
       for (final CEMetadataRecord ceMetadataRecord : ceMetadataRecords) {
         try {
           if (Objects.isNull(ceMetadataRecord.getDataGeneratedForCloudProvider())) {
@@ -48,7 +48,7 @@ public class CEMetadataRecordMigration implements NGMigration {
       }
       log.info("CEMetadataRecord Migration finished!");
     } catch (final Exception e) {
-      log.error("Failure occurred in CEViewsPreferencesMigration", e);
+      log.error("Failure occurred in CEMetadataRecordMigration", e);
     }
   }
 }
