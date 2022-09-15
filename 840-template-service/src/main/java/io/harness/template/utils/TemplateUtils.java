@@ -28,6 +28,9 @@ public class TemplateUtils {
   }
 
   public boolean isRemoteEntity(GitEntityInfo gitEntityInfo) {
+    if (gitEntityInfo == null) {
+      return false;
+    }
     return StoreType.REMOTE.equals(gitEntityInfo.getStoreType());
   }
 
