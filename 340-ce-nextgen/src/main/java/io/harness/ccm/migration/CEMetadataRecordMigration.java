@@ -50,6 +50,5 @@ public class CEMetadataRecordMigration implements NGMigration {
         } catch (final Exception e) {
             log.error("Failure occurred in CEViewsPreferencesMigration", e);
         }
-        log.info("CEViewsPreferencesMigration has completed");
     }
 }
