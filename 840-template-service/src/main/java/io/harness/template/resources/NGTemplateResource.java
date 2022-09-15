@@ -7,9 +7,13 @@
 
 package io.harness.template.resources;
 
-import com.codahale.metrics.annotation.ExceptionMetered;
-import com.codahale.metrics.annotation.Timed;
-import com.google.inject.Inject;
+import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+
+import static java.lang.Long.parseLong;
+import static javax.ws.rs.core.HttpHeaders.IF_MATCH;
+import static org.apache.commons.lang3.StringUtils.isNumeric;
+
 import io.harness.NGCommonEntityConstants;
 import io.harness.NGResourceFilterConstants;
 import io.harness.accesscontrol.AccountIdentifier;
@@ -74,6 +78,10 @@ import io.harness.template.services.NGTemplateServiceHelper;
 import io.harness.template.services.TemplateMergeService;
 import io.harness.utils.PageUtils;
 import io.harness.yaml.core.variables.NGVariable;
+
+import com.codahale.metrics.annotation.ExceptionMetered;
+import com.codahale.metrics.annotation.Timed;
+import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -86,17 +94,9 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.hibernate.validator.constraints.NotBlank;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.mongodb.core.query.Criteria;
-import retrofit2.http.Body;
-
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
@@ -110,15 +110,16 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-
-import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static java.lang.Long.parseLong;
-import static javax.ws.rs.core.HttpHeaders.IF_MATCH;
-import static org.apache.commons.lang3.StringUtils.isNumeric;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.hibernate.validator.constraints.NotBlank;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.query.Criteria;
+import retrofit2.http.Body;
 
 @OwnedBy(CDC)
 @Api("templates")
@@ -856,16 +857,14 @@ public class NGTemplateResource {
 
   @PUT
   @Path("/copyTemplateWithVariables")
-  @ApiOperation(value = "Gets complete yaml with templateRefs resolved", nickname = "getYamlWithTemplateRefsResolved")
-  @Operation(operationId = "getYamlWithTemplateRefsResolved", summary = "Gets complete yaml with templateRefs resolved",
+  @ApiOperation(value = "Copy yaml with variables resolved", nickname = "copyTemplateWithVariables")
+  @Operation(operationId = "copyTemplateWithVariables", summary = "Gets complete yaml with templateRefs resolved",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Gets complete yaml with templateRefs resolved")
       })
   @Hidden
-  @Timed
-  @ExceptionMetered
   public ResponseDTO<String>
   copyTemplateWithVariables(@NotBlank @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
@@ -875,8 +874,7 @@ public class NGTemplateResource {
       @Parameter(description = TEMPLATE_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.IDENTIFIER_KEY) @ResourceIdentifier String templateIdentifier,
       @Parameter(description = "Version Label") @QueryParam(
-          NGCommonEntityConstants.VERSION_LABEL_KEY) String versionLabel,
-      @Parameter(description = "Template YAML") @NotNull String templateYaml, List<NGVariable> templateVariables) {
+          NGCommonEntityConstants.VERSION_LABEL_KEY) String versionLabel, @RequestBody(required = true, description = "") @NotNull @ApiParam(hidden = true) List<NGVariable> templateVariables) {
     return ResponseDTO.newResponse(templateService.copyTemplateWithVariables(
         accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, templateVariables));
   }
