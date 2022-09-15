@@ -133,7 +133,6 @@ public class MSTeamsServiceImplTest extends CategoryTest {
         NotificationProcessingResponse.builder().result(Arrays.asList(true, false)).shouldRetry(false).build();
     when(notificationTemplateService.getTemplateAsString(eq(msTeamsTemplateName), any()))
         .thenReturn(Optional.empty(), Optional.of("This is a test notification"));
-    when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(false);
     when(msTeamsSender.send(any(), any(), any())).thenReturn(notificationExpectedResponse);
 
     NotificationProcessingResponse notificationProcessingResponse = msTeamService.send(notificationRequest);
@@ -154,7 +153,6 @@ public class MSTeamsServiceImplTest extends CategoryTest {
         NotificationProcessingResponse.builder().result(Arrays.asList(true, false)).shouldRetry(false).build();
     when(notificationTemplateService.getTemplateAsString(eq(msTeamsTemplateName), any()))
         .thenReturn(Optional.of("this is test notification"));
-    when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(true);
     when(delegateGrpcClientWrapper.executeSyncTask(any()))
         .thenReturn(NotificationTaskResponse.builder().processingResponse(notificationExpectedResponse).build());
     notificationProcessingResponse = msTeamService.send(notificationRequest);
@@ -184,7 +182,6 @@ public class MSTeamsServiceImplTest extends CategoryTest {
         NotificationProcessingResponse.builder().result(Arrays.asList(true, false)).shouldRetry(false).build();
     when(notificationTemplateService.getTemplateAsString(eq(msTeamsTemplateName), any()))
         .thenReturn(Optional.empty(), Optional.of("This is a test notification"));
-    when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(false);
     when(msTeamsSender.send(any(), any(), any())).thenReturn(notificationExpectedResponse);
 
     NotificationProcessingResponse notificationProcessingResponse = msTeamService.send(notificationRequest);
@@ -210,7 +207,6 @@ public class MSTeamsServiceImplTest extends CategoryTest {
         NotificationProcessingResponse.builder().result(Arrays.asList(true, false)).shouldRetry(false).build();
     when(notificationTemplateService.getTemplateAsString(eq(msTeamsTemplateName), any()))
         .thenReturn(Optional.of("this is test notification"));
-    when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(true);
     when(delegateGrpcClientWrapper.executeSyncTask(any()))
         .thenReturn(NotificationTaskResponse.builder().processingResponse(notificationExpectedResponse).build());
     notificationProcessingResponse = msTeamService.send(notificationRequest);
@@ -238,7 +234,6 @@ public class MSTeamsServiceImplTest extends CategoryTest {
         NotificationProcessingResponse.builder().result(Arrays.asList(true, false)).shouldRetry(false).build();
     when(notificationTemplateService.getTemplateAsString(eq(msTeamsTemplateName), any()))
         .thenReturn(Optional.empty(), Optional.of("This is a test notification"));
-    when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(false);
     when(msTeamsSender.send(any(), any(), any())).thenReturn(notificationExpectedResponse);
 
     NotificationProcessingResponse notificationProcessingResponse = msTeamService.send(notificationRequest);
@@ -262,7 +257,6 @@ public class MSTeamsServiceImplTest extends CategoryTest {
         NotificationProcessingResponse.builder().result(Arrays.asList(true, false)).shouldRetry(false).build();
     when(notificationTemplateService.getTemplateAsString(eq(msTeamsTemplateName), any()))
         .thenReturn(Optional.of("this is test notification"));
-    when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(true);
     when(delegateGrpcClientWrapper.executeSyncTask(any()))
         .thenReturn(NotificationTaskResponse.builder().processingResponse(notificationExpectedResponse).build());
     notificationProcessingResponse = msTeamService.send(notificationRequest);

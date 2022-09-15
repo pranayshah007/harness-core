@@ -29,11 +29,4 @@ public class NotificationSettingsResourceImpl implements NotificationSettingsRes
     return ResponseDTO.newResponse(
         NotificationSettingMapper.toDTO(notificationSettingsService.getNotificationSetting(accountId).orElse(null)));
   }
-
-  public ResponseDTO<Optional<AccountNotificationSettingDTO>> putSendNotificationViaDelegate(
-      String accountId, boolean sendNotificationViaDelegate) {
-    NotificationSetting notificationSetting =
-        notificationSettingsService.setSendNotificationViaDelegate(accountId, sendNotificationViaDelegate);
-    return ResponseDTO.newResponse(NotificationSettingMapper.toDTO(notificationSetting));
-  }
 }

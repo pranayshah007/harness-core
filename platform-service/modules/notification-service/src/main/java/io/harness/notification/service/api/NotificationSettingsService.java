@@ -27,9 +27,7 @@ public interface NotificationSettingsService {
   List<String> getNotificationSettingsForGroups(
       List<String> userGroups, NotificationChannelType notificationChannelType, String accountId);
   Optional<NotificationSetting> getNotificationSetting(String accountId);
-  boolean getSendNotificationViaDelegate(String accountId);
   Optional<SmtpConfig> getSmtpConfig(String accountId);
-  NotificationSetting setSendNotificationViaDelegate(String accountId, boolean sendNotificationViaDelegate);
   NotificationSetting setSmtpConfig(String accountId, SmtpConfig smtpConfig);
 
   SmtpConfigResponse getSmtpConfigResponse(String accountId);

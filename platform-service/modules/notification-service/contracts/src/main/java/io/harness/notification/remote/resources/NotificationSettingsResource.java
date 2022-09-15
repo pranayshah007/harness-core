@@ -44,10 +44,4 @@ public interface NotificationSettingsResource {
   @ApiOperation(value = "Get NotificationSetting", nickname = "getNotificationSetting")
   ResponseDTO<Optional<AccountNotificationSettingDTO>> getNotificationSetting(
       @QueryParam(ACCOUNT_KEY) @NotNull String accountId);
-
-  @PUT
-  @ApiOperation(value = "Set sendNotificationViaDelegate", nickname = "postSendNotificationViaDelegate")
-  ResponseDTO<Optional<AccountNotificationSettingDTO>> putSendNotificationViaDelegate(
-      @QueryParam(ACCOUNT_KEY) String accountId,
-      @QueryParam("SendNotificationViaDelegate") boolean sendNotificationViaDelegate);
 }

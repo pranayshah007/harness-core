@@ -138,7 +138,6 @@ public class SlackServiceImplTest extends CategoryTest {
         NotificationProcessingResponse.builder().result(Arrays.asList(true, false)).shouldRetry(false).build();
     when(notificationTemplateService.getTemplateAsString(eq(slackTemplateName), any()))
         .thenReturn(Optional.empty(), Optional.of("This is a test notification"));
-    when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(false);
     when(slackSender.send(any(), any(), any())).thenReturn(notificationExpectedResponse);
 
     NotificationProcessingResponse notificationProcessingResponse = slackService.send(notificationRequest);
@@ -164,7 +163,6 @@ public class SlackServiceImplTest extends CategoryTest {
         NotificationProcessingResponse.builder().result(Arrays.asList(true, false)).shouldRetry(false).build();
     when(notificationTemplateService.getTemplateAsString(eq(slackTemplateName), any()))
         .thenReturn(Optional.of("this is test notification"));
-    when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(true);
     when(delegateGrpcClientWrapper.executeSyncTask(any()))
         .thenReturn(NotificationTaskResponse.builder().processingResponse(notificationExpectedResponse).build());
     notificationProcessingResponse = slackService.send(notificationRequest);
@@ -192,7 +190,6 @@ public class SlackServiceImplTest extends CategoryTest {
         NotificationProcessingResponse.builder().result(Arrays.asList(true, false)).shouldRetry(false).build();
     when(notificationTemplateService.getTemplateAsString(eq(slackTemplateName), any()))
         .thenReturn(Optional.empty(), Optional.of("This is a test notification"));
-    when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(false);
     when(slackSender.send(any(), any(), any())).thenReturn(notificationExpectedResponse);
 
     NotificationProcessingResponse notificationProcessingResponse = slackService.send(notificationRequest);
@@ -216,7 +213,6 @@ public class SlackServiceImplTest extends CategoryTest {
         NotificationProcessingResponse.builder().result(Arrays.asList(true, false)).shouldRetry(false).build();
     when(notificationTemplateService.getTemplateAsString(eq(slackTemplateName), any()))
         .thenReturn(Optional.of("this is test notification"));
-    when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(true);
     when(delegateGrpcClientWrapper.executeSyncTask(any()))
         .thenReturn(NotificationTaskResponse.builder().processingResponse(notificationExpectedResponse).build());
     notificationProcessingResponse = slackService.send(notificationRequest);
@@ -241,7 +237,6 @@ public class SlackServiceImplTest extends CategoryTest {
         NotificationProcessingResponse.builder().result(Arrays.asList(true, false)).shouldRetry(false).build();
     when(notificationTemplateService.getTemplateAsString(eq(slackTemplateName), any()))
         .thenReturn(Optional.empty(), Optional.of("This is a test notification"));
-    when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(false);
     when(slackSender.send(any(), any(), any())).thenReturn(notificationExpectedResponse);
 
     NotificationProcessingResponse notificationProcessingResponse = slackService.send(notificationRequest);
@@ -262,7 +257,6 @@ public class SlackServiceImplTest extends CategoryTest {
         NotificationProcessingResponse.builder().result(Arrays.asList(true, false)).shouldRetry(false).build();
     when(notificationTemplateService.getTemplateAsString(eq(slackTemplateName), any()))
         .thenReturn(Optional.of("this is test notification"));
-    when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(true);
     when(delegateGrpcClientWrapper.executeSyncTask(any()))
         .thenReturn(NotificationTaskResponse.builder().processingResponse(notificationExpectedResponse).build());
     notificationProcessingResponse = slackService.send(notificationRequest);

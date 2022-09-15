@@ -138,7 +138,6 @@ public class MailServiceImplTest extends CategoryTest {
         NotificationProcessingResponse.builder().result(Arrays.asList(true, false)).shouldRetry(false).build();
     when(notificationTemplateService.getTemplateAsString(eq(mailTemplateName), any()))
         .thenReturn(Optional.empty(), Optional.of("This is a test notification"));
-    when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(false);
     when(notificationSettingsService.getSmtpConfig(eq(accountId))).thenReturn(Optional.of(smtpConfigDefault));
     when(mailSender.send(any(), any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
     when(yamlUtils.read(any(), (TypeReference<EmailTemplate>) any())).thenReturn(emailTemplate);
@@ -150,7 +149,6 @@ public class MailServiceImplTest extends CategoryTest {
         NotificationProcessingResponse.builder().result(Arrays.asList(true)).shouldRetry(false).build();
     when(notificationTemplateService.getTemplateAsString(eq(mailTemplateName), any()))
         .thenReturn(Optional.of("this is test notification"));
-    when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(true);
     when(delegateGrpcClientWrapper.executeSyncTask(any()))
         .thenReturn(NotificationTaskResponse.builder().processingResponse(notificationExpectedResponse).build());
     notificationProcessingResponse = mailService.send(notificationRequest);
@@ -180,7 +178,6 @@ public class MailServiceImplTest extends CategoryTest {
         NotificationProcessingResponse.builder().result(Arrays.asList(true)).shouldRetry(false).build();
     when(notificationTemplateService.getTemplateAsString(eq(mailTemplateName), any()))
         .thenReturn(Optional.empty(), Optional.of("This is a test notification"));
-    when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(false);
     when(notificationSettingsService.getSmtpConfig(eq(accountId))).thenReturn(Optional.of(smtpConfigDefault));
     when(mailSender.send(any(), any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
     when(yamlUtils.read(any(), (TypeReference<EmailTemplate>) any())).thenReturn(emailTemplate);
@@ -192,7 +189,6 @@ public class MailServiceImplTest extends CategoryTest {
         NotificationProcessingResponse.builder().result(Arrays.asList(true)).shouldRetry(false).build();
     when(notificationTemplateService.getTemplateAsString(eq(mailTemplateName), any()))
         .thenReturn(Optional.of("this is test notification"));
-    when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(true);
     when(delegateGrpcClientWrapper.executeSyncTask(any()))
         .thenReturn(NotificationTaskResponse.builder().processingResponse(notificationExpectedResponse).build());
     notificationProcessingResponse = mailService.send(notificationRequest);

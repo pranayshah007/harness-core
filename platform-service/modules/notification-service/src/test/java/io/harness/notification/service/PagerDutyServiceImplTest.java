@@ -140,7 +140,6 @@ public class PagerDutyServiceImplTest extends CategoryTest {
         NotificationProcessingResponse.builder().result(Arrays.asList(true, false)).shouldRetry(false).build();
     when(notificationTemplateService.getTemplateAsString(eq(pdTemplateName), any()))
         .thenReturn(Optional.empty(), Optional.of("This is a test notification"));
-    when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(false);
     when(pagerDutySender.send(any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
     when(yamlUtils.read(any(), (TypeReference<PagerDutyTemplate>) any())).thenReturn(pdTemplate);
 
@@ -162,7 +161,6 @@ public class PagerDutyServiceImplTest extends CategoryTest {
         NotificationProcessingResponse.builder().result(Arrays.asList(true, false)).shouldRetry(false).build();
     when(notificationTemplateService.getTemplateAsString(eq(pdTemplateName), any()))
         .thenReturn(Optional.of("this is test notification"));
-    when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(true);
     when(delegateGrpcClientWrapper.executeSyncTask(any()))
         .thenReturn(NotificationTaskResponse.builder().processingResponse(notificationExpectedResponse).build());
     notificationProcessingResponse = pagerdutyService.send(notificationRequest);
@@ -190,7 +188,6 @@ public class PagerDutyServiceImplTest extends CategoryTest {
         NotificationProcessingResponse.builder().result(Arrays.asList(true, false)).shouldRetry(false).build();
     when(notificationTemplateService.getTemplateAsString(eq(pdTemplateName), any()))
         .thenReturn(Optional.empty(), Optional.of("This is a test notification"));
-    when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(false);
     when(pagerDutySender.send(any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
     when(yamlUtils.read(any(), (TypeReference<PagerDutyTemplate>) any())).thenReturn(pdTemplate);
 
@@ -215,7 +212,6 @@ public class PagerDutyServiceImplTest extends CategoryTest {
         NotificationProcessingResponse.builder().result(Arrays.asList(true, false)).shouldRetry(false).build();
     when(notificationTemplateService.getTemplateAsString(eq(pdTemplateName), any()))
         .thenReturn(Optional.of("this is test notification"));
-    when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(true);
     when(delegateGrpcClientWrapper.executeSyncTask(any()))
         .thenReturn(NotificationTaskResponse.builder().processingResponse(notificationExpectedResponse).build());
     notificationProcessingResponse = pagerdutyService.send(notificationRequest);
@@ -245,7 +241,6 @@ public class PagerDutyServiceImplTest extends CategoryTest {
         NotificationProcessingResponse.builder().result(Arrays.asList(true, false)).shouldRetry(false).build();
     when(notificationTemplateService.getTemplateAsString(eq(pdTemplateName), any()))
         .thenReturn(Optional.empty(), Optional.of("This is a test notification"));
-    when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(false);
     when(pagerDutySender.send(any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
     when(yamlUtils.read(any(), (TypeReference<PagerDutyTemplate>) any())).thenReturn(pdTemplate);
 
@@ -272,7 +267,6 @@ public class PagerDutyServiceImplTest extends CategoryTest {
         NotificationProcessingResponse.builder().result(Arrays.asList(true, false)).shouldRetry(false).build();
     when(notificationTemplateService.getTemplateAsString(eq(pdTemplateName), any()))
         .thenReturn(Optional.of("this is test notification"));
-    when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(true);
     when(delegateGrpcClientWrapper.executeSyncTask(any()))
         .thenReturn(NotificationTaskResponse.builder().processingResponse(notificationExpectedResponse).build());
     notificationProcessingResponse = pagerdutyService.send(notificationRequest);

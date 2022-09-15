@@ -195,13 +195,6 @@ public class NotificationSettingsServiceImpl implements NotificationSettingsServ
   }
 
   @Override
-  public boolean getSendNotificationViaDelegate(String accountId) {
-    Optional<NotificationSetting> notificationSettingOptional =
-        notificationSettingRepository.findByAccountId(accountId);
-    return notificationSettingOptional.map(NotificationSetting::isSendNotificationViaDelegate).orElse(false);
-  }
-
-  @Override
   public Optional<SmtpConfig> getSmtpConfig(String accountId) {
     Optional<NotificationSetting> notificationSettingOptional =
         notificationSettingRepository.findByAccountId(accountId);
@@ -227,17 +220,6 @@ public class NotificationSettingsServiceImpl implements NotificationSettingsServ
       }
     }
     return false;
-  }
-
-  @Override
-  public NotificationSetting setSendNotificationViaDelegate(String accountId, boolean sendNotificationViaDelegate) {
-    Optional<NotificationSetting> notificationSettingOptional =
-        notificationSettingRepository.findByAccountId(accountId);
-    NotificationSetting notificationSetting =
-        notificationSettingOptional.orElse(NotificationSetting.builder().accountId(accountId).build());
-    notificationSetting.setSendNotificationViaDelegate(sendNotificationViaDelegate);
-    notificationSettingRepository.save(notificationSetting);
-    return notificationSetting;
   }
 
   @Override
