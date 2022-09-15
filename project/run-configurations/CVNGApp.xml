@@ -7,7 +7,7 @@
                     blaze-command="run"
                     keep-in-sync="true">
         <blaze-target>//300-cv-nextgen:module</blaze-target>
-        <blaze-user-exe-flag>classpath_limit=400000</blaze-user-exe-flag>
+        <blaze-user-exe-flag>--classpath_limit=400000</blaze-user-exe-flag>
         <blaze-user-exe-flag>server</blaze-user-exe-flag>
         <blaze-user-exe-flag>$PROJECT_DIR$/../300-cv-nextgen/cv-nextgen-config.yml</blaze-user-exe-flag>
     </blaze-settings>

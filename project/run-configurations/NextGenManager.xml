@@ -5,7 +5,7 @@
                     blaze-command="run"
                     kind="java_library">
         <blaze-target>//120-ng-manager:module</blaze-target>
-        <blaze-user-exe-flag>classpath_limit=400000</blaze-user-exe-flag>
+        <blaze-user-exe-flag>--classpath_limit=400000</blaze-user-exe-flag>
         <blaze-user-exe-flag>server</blaze-user-exe-flag>
         <blaze-user-exe-flag>$PROJECT_DIR$/../120-ng-manager/config.yml</blaze-user-exe-flag>
     </blaze-settings>

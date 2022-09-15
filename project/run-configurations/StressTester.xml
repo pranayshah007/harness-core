@@ -3,7 +3,7 @@
     <blaze-settings handler-id="BlazeJavaRunConfigurationHandlerProvider" kind="java_binary"
                     debug_port="6009" blaze-command="run" >
         <blaze-target>//160-stress-tester:module</blaze-target>
-        <blaze-user-exe-flag>classpath_limit=400000</blaze-user-exe-flag>
+        <blaze-user-exe-flag>--classpath_limit=400000</blaze-user-exe-flag>
         <blaze-user-exe-flag>server $PROJECT_DIR$/../160-stress-tester/config.yml</blaze-user-exe-flag>
     </blaze-settings>
     <method v="2">

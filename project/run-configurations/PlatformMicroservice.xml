@@ -2,7 +2,7 @@
     <blaze-settings handler-id="BlazeJavaRunConfigurationHandlerProvider" kind="java_binary" blaze-command="run"
                     keep-in-sync="true">
         <blaze-target>//platform-service/service:module</blaze-target>
-        <blaze-user-exe-flag>classpath_limit=400000</blaze-user-exe-flag>
+        <blaze-user-exe-flag>--classpath_limit=400000</blaze-user-exe-flag>
         <blaze-user-exe-flag>server</blaze-user-exe-flag>
         <blaze-user-exe-flag>$PROJECT_DIR$/../platform-service/config/config.yml</blaze-user-exe-flag>
     </blaze-settings>
