@@ -170,19 +170,19 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
           taskParams.getScript(), taskParams.getOutputVars(), taskParams.getSecretOutputVars(), null);
       logCallback = new NGDelegateLogCallback(getLogStreamingTaskClient(), FetchFiles, true, commandUnitsProgress);
       return NGGitOpsResponse.builder()
-              .executeCommandResponse(executeCommandResponse)
-              .taskStatus(TaskStatus.SUCCESS)
-              .errorMessage(getErrorMessage(executeCommandResponse.getStatus()))
-              .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
-              .build();
+          .executeCommandResponse(executeCommandResponse)
+          .taskStatus(TaskStatus.SUCCESS)
+          .errorMessage(getErrorMessage(executeCommandResponse.getStatus()))
+          .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
+          .build();
     } catch (Exception e) {
       log.error("Bash Script Failed to execute.", e);
       logCallback.saveExecutionLog(e.getMessage(), ERROR, CommandExecutionStatus.FAILURE);
       return NGGitOpsResponse.builder()
-              .taskStatus(TaskStatus.FAILURE)
-              .errorMessage("Bash Script Failed to execute. Reason: " + e.getMessage())
-              .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
-              .build();
+          .taskStatus(TaskStatus.FAILURE)
+          .errorMessage("Bash Script Failed to execute. Reason: " + e.getMessage())
+          .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
+          .build();
     }
   }
 
@@ -302,7 +302,8 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
     }
   }
 
-  public DelegateResponseData handleCreatePR(NGGitOpsTaskParams gitOpsTaskParams, CommandUnitsProgress commandUnitsProgress) {
+  public DelegateResponseData handleCreatePR(
+      NGGitOpsTaskParams gitOpsTaskParams, CommandUnitsProgress commandUnitsProgress) {
     try {
       log.info("Running Create PR Task for activityId {}", gitOpsTaskParams.getActivityId());
       FetchFilesResult fetchFilesResult = getFiles(gitOpsTaskParams, commandUnitsProgress);
