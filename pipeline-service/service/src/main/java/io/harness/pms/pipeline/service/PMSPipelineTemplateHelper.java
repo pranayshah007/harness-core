@@ -17,6 +17,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
 import io.harness.exception.ngexception.NGTemplateException;
 import io.harness.exception.ngexception.beans.templateservice.TemplateInputsErrorMetadataDTO;
+import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.ng.core.template.RefreshRequestDTO;
@@ -76,15 +77,14 @@ public class PMSPipelineTemplateHelper {
       try {
         GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
         if (gitEntityInfo != null) {
-          return NGRestUtils.getResponse(
-              templateResourceClient.applyTemplatesOnGivenYamlV2(accountId, orgId, projectId, gitEntityInfo.getBranch(),
-                  gitEntityInfo.getYamlGitConfigId(), true, gitEntityInfo.getParentEntityConnectorRef(),
-                  gitEntityInfo.getParentEntityRepoName(), accountId, orgId, projectId,
-                  TemplateApplyRequestDTO.builder()
-                      .originalEntityYaml(yaml)
-                      .checkForAccess(checkForTemplateAccess)
-                      .getMergedYamlWithTemplateField(getMergedTemplateWithTemplateReferences)
-                      .build()));
+          return NGRestUtils.getResponse(templateResourceClient.applyTemplatesOnGivenYamlV2(accountId, orgId, projectId,
+              gitEntityInfo.getBranch(), gitEntityInfo.getYamlGitConfigId(), true, getConnectorRef(), getRepoName(),
+              accountId, orgId, projectId,
+              TemplateApplyRequestDTO.builder()
+                  .originalEntityYaml(yaml)
+                  .checkForAccess(checkForTemplateAccess)
+                  .getMergedYamlWithTemplateField(getMergedTemplateWithTemplateReferences)
+                  .build()));
         }
         return NGRestUtils.getResponse(templateResourceClient.applyTemplatesOnGivenYamlV2(accountId, orgId, projectId,
             null, null, null, null, null, null, null, null,
@@ -173,5 +173,21 @@ public class PMSPipelineTemplateHelper {
 
     return NGRestUtils.getResponse(templateResourceClient.refreshAllTemplatesForYaml(
         accountId, orgId, projectId, null, null, null, refreshRequest));
+  }
+
+  private String getConnectorRef() {
+    GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
+    if (GitAwareContextHelper.isNullOrDefault(gitEntityInfo.getParentEntityConnectorRef())) {
+      return gitEntityInfo.getConnectorRef();
+    }
+    return gitEntityInfo.getParentEntityConnectorRef();
+  }
+
+  private String getRepoName() {
+    GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
+    if (GitAwareContextHelper.isNullOrDefault(gitEntityInfo.getParentEntityRepoName())) {
+      return gitEntityInfo.getRepoName();
+    }
+    return gitEntityInfo.getParentEntityRepoName();
   }
 }
