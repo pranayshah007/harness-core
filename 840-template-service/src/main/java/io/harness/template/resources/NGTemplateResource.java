@@ -874,7 +874,9 @@ public class NGTemplateResource {
       @Parameter(description = TEMPLATE_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.IDENTIFIER_KEY) @ResourceIdentifier String templateIdentifier,
       @Parameter(description = "Version Label") @QueryParam(
-          NGCommonEntityConstants.VERSION_LABEL_KEY) String versionLabel, @RequestBody(required = true, description = "") @NotNull @ApiParam(hidden = true) List<NGVariable> templateVariables) {
+          NGCommonEntityConstants.VERSION_LABEL_KEY) String versionLabel,
+      @RequestBody(required = true, description = "") @NotNull @ApiParam(
+          hidden = true) List<NGVariable> templateVariables) {
     return ResponseDTO.newResponse(templateService.copyTemplateWithVariables(
         accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, templateVariables));
   }
