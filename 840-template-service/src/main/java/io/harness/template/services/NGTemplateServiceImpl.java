@@ -748,12 +748,13 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   @Override
   public String copyTemplateWithVariables(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String templateIdentifier, String versionLabel, List<NGVariable> templateVariables) {
-    Optional<TemplateEntity> templateEntity = get(accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, false);
-    if(!templateEntity.isPresent()) {
+    Optional<TemplateEntity> templateEntity =
+        get(accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, false);
+    if (!templateEntity.isPresent()) {
       throw new InvalidRequestException(String.format(
 
-              "Template with the given Identifier: %s and %s does not exist or has been deleted", templateIdentifier,
-              EmptyPredicate.isEmpty(versionLabel) ? "stable versionLabel" : "versionLabel: " + versionLabel));
+          "Template with the given Identifier: %s and %s does not exist or has been deleted", templateIdentifier,
+          EmptyPredicate.isEmpty(versionLabel) ? "stable versionLabel" : "versionLabel: " + versionLabel));
     }
     return templateMergeServiceHelper.applyVariablesToCopiedTemplate(templateVariables, templateEntity.get().getYaml());
   }
