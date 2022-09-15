@@ -15,12 +15,11 @@ import static software.wings.graphql.datafetcher.ce.recommendation.entity.Resour
 import static io.kubernetes.client.custom.Quantity.Format.DECIMAL_SI;
 import static java.math.RoundingMode.HALF_UP;
 
-import com.amazonaws.services.ecs.model.LaunchType;
-import io.harness.ccm.graphql.core.recommendation.fargate.CpuMillsAndMemoryBytes;
 import io.harness.ccm.commons.dao.recommendation.ECSRecommendationDAO;
 import io.harness.ccm.commons.entities.ecs.recommendation.ECSPartialRecommendationHistogram;
 import io.harness.ccm.commons.entities.ecs.recommendation.ECSServiceRecommendation;
 import io.harness.ccm.commons.utils.StrippedHistogram;
+import io.harness.ccm.graphql.core.recommendation.fargate.CpuMillsAndMemoryBytes;
 import io.harness.ccm.graphql.core.recommendation.fargate.FargateResourceValues;
 import io.harness.ccm.graphql.dto.recommendation.ContainerHistogramDTO.HistogramExp;
 import io.harness.ccm.graphql.dto.recommendation.ECSRecommendationDTO;
@@ -29,6 +28,7 @@ import io.harness.histogram.HistogramCheckpoint;
 import io.harness.histogram.HistogramImpl;
 import io.harness.histogram.LinearHistogramOptions;
 
+import com.amazonaws.services.ecs.model.LaunchType;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -120,8 +120,7 @@ public class ECSRecommendationService {
         .build();
   }
 
-  private void getRecommendationWithBuffer(
-      Map<String, Map<String, String>> percentileBased, Long bufferPercentage) {
+  private void getRecommendationWithBuffer(Map<String, Map<String, String>> percentileBased, Long bufferPercentage) {
     if (percentileBased == null) {
       return;
     }
