@@ -344,9 +344,7 @@ func (r *runTestsTask) getSplitTests(ctx context.Context, testsToSplit []types.R
 	var testID string
 	for _, t := range testsToSplit {
 		switch splitStrategy {
-		case classTimingTestSplitStrategy:
-			testID = t.Pkg + t.Class
-		case countTestSplitStrategy:
+		case classTimingTestSplitStrategy, countTestSplitStrategy:
 			testID = t.Pkg + t.Class
 		default:
 			testID = t.Pkg + t.Class
@@ -405,16 +403,16 @@ func formatTests(tests []types.RunnableTest) string {
 	return strings.Join(testStrings, ", ")
 }
 
-func (r *runTestsTask) computeSelectedTests(ctx context.Context, runner testintelligence.TestRunner, selection *types.SelectTestsResp, ignoreInstr bool) bool {
+func (r *runTestsTask) computeSelectedTests(ctx context.Context, runner testintelligence.TestRunner, selection *types.SelectTestsResp, ignoreInstr *bool) {
 	if !r.parallelizeTests {
 		r.log.Info("Skipping test splitting as requested")
-		return ignoreInstr
+		return
 	}
 
 	if r.runOnlySelectedTests && len(selection.Tests) == 0 {
 		// TI returned zero test cases to run. Skip parallelism as
 		// there are no tests to run
-		return ignoreInstr
+		return
 	}
 
 	r.log.Info("Splitting the tests as parallelism is enabled")
@@ -451,10 +449,10 @@ func (r *runTestsTask) computeSelectedTests(ctx context.Context, runner testinte
 				// Error while auto-detecting, no tests for other parallel steps
 				selection.Tests = []types.RunnableTest{}
 				r.runOnlySelectedTests = true
-				ignoreInstr = false // TODO: (Rutvij) Ignore instrumentation for manual runs with split tests
+				*ignoreInstr = false // TODO: (Rutvij) Ignore instrumentation for manual runs with split tests
 				r.log.Errorw("Error in auto-detecting tests for splitting, running all tests in parallel step 0")
 			}
-			return ignoreInstr
+			return
 		}
 		// Auto-detected tests successfully
 		r.log.Infow(fmt.Sprintf("Autodetected tests: %s", formatTests(tests)))
@@ -475,8 +473,7 @@ func (r *runTestsTask) computeSelectedTests(ctx context.Context, runner testinte
 	// Modify runner input to run selected tests
 	selection.Tests = splitTests
 	r.runOnlySelectedTests = true
-	ignoreInstr = false
-	return ignoreInstr
+	*ignoreInstr = false
 }
 
 func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile string) (string, error) {
@@ -551,7 +548,7 @@ func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile stri
 
 	// Test splitting: only when parallelism is enabled
 	if isParallelismEnabled() {
-		ignoreInstr = r.computeSelectedTests(ctx, runner, &selection, ignoreInstr)
+		r.computeSelectedTests(ctx, runner, &selection, &ignoreInstr)
 	}
 
 	// Test command

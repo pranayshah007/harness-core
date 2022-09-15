@@ -820,10 +820,11 @@ func TestComputeSelected_RunSelectedTests(t *testing.T) {
 			selectTestsResponse := types.SelectTestsResp{}
 			selectTestsResponse.Tests = tt.runnableTests
 
-			ignoreInstrResp := r.computeSelectedTests(ctx, runner, &selectTestsResponse, tt.IgnoreInstrBool)
+			ignoreInstr := tt.IgnoreInstrBool
+			r.computeSelectedTests(ctx, runner, &selectTestsResponse, &ignoreInstr)
 			assert.Equal(t, r.runOnlySelectedTests, tt.runOnlySelectedTests)
 			assert.Equal(t, selectTestsResponse.Tests, tt.selectTestsResponseTests)
-			assert.Equal(t, ignoreInstrResp, tt.ignoreInstrResp)
+			assert.Equal(t, ignoreInstr, tt.ignoreInstrResp)
 		})
 	}
 }
