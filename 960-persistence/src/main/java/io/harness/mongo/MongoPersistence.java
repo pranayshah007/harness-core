@@ -41,6 +41,7 @@ import com.google.inject.name.Named;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
 import com.mongodb.DuplicateKeyException;
+import com.mongodb.ReadPreference;
 import com.mongodb.WriteResult;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -77,10 +78,25 @@ public class MongoPersistence implements HPersistence {
     return query(cls, req, allChecks);
   }
 
+  public <T> PageResponse<T> querySecondary(Class<T> cls, PageRequest<T> req) {
+    return querySecondary(cls, req, allChecks);
+  }
+
   @Override
   public <T> PageResponse<T> query(Class<T> cls, PageRequest<T> req, Set<QueryChecks> queryChecks) {
     AdvancedDatastore advancedDatastore = getDatastore(cls);
     Query<T> query = advancedDatastore.createQuery(cls);
+
+    ((HQuery) query).setQueryChecks(queryChecks);
+    Mapper mapper = ((DatastoreImpl) advancedDatastore).getMapper();
+
+    return PageController.queryPageRequest(advancedDatastore, query, mapper, cls, req);
+  }
+
+  public <T> PageResponse<T> querySecondary(Class<T> cls, PageRequest<T> req, Set<QueryChecks> queryChecks) {
+    AdvancedDatastore advancedDatastore = getDatastore(cls);
+    Query<T> query = advancedDatastore.createQuery(cls);
+    query.useReadPreference(ReadPreference.secondaryPreferred());
 
     ((HQuery) query).setQueryChecks(queryChecks);
     Mapper mapper = ((DatastoreImpl) advancedDatastore).getMapper();
