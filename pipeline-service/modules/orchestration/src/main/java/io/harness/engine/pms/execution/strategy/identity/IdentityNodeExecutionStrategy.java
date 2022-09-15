@@ -236,4 +236,23 @@ public class IdentityNodeExecutionStrategy
       handleError(ambiance, ex);
     }
   }
+
+  @Override
+  public void concludeExecution(
+      Ambiance ambiance, Status toStatus, Status fromStatus, EnumSet<Status> overrideStatusSet) {
+    Level level = Objects.requireNonNull(AmbianceUtils.obtainCurrentLevel(ambiance));
+
+    //      NodeExecution updatedNodeExecution =
+    //              nodeExecutionService.updateStatusWithOps(level.getRuntimeId(), toStatus, null, overrideStatusSet);
+    //      if (updatedNodeExecution == null) {
+    //        log.warn("Cannot conclude node execution. Status update failed To:{}", toStatus);
+    //        return;
+    //      }
+    //      endNodeExecution(updatedNodeExecution.getAmbiance());
+    //      return;
+
+    nodeExecutionService.updateStatusWithOps(level.getRuntimeId(), toStatus, null, EnumSet.noneOf(Status.class));
+    endNodeExecution(ambiance);
+    // throw new UnsupportedOperationException("Start execution node Supported for plan");
+  }
 }

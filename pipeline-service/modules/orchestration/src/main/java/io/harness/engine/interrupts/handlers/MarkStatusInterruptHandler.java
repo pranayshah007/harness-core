@@ -24,6 +24,7 @@ import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.interrupts.Interrupt;
 import io.harness.interrupts.InterruptEffect;
+import io.harness.plan.NodeType;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.execution.utils.StatusUtils;
@@ -53,15 +54,17 @@ public abstract class MarkStatusInterruptHandler implements InterruptHandler {
       throw new InvalidRequestException("NodeExecutionId Cannot be empty for MARK_SUCCESS interrupt");
     }
 
-    NodeExecution nodeExecution =
-        nodeExecutionService.getWithFieldsIncluded(interrupt.getNodeExecutionId(), NodeProjectionUtils.withStatus);
+    NodeExecution nodeExecution = nodeExecutionService.getWithFieldsIncluded(
+        interrupt.getNodeExecutionId(), NodeProjectionUtils.withStatusAndPlanNode);
     if (!StatusUtils.brokeStatuses().contains(nodeExecution.getStatus())
-        && nodeExecution.getStatus() != INTERVENTION_WAITING) {
+        && nodeExecution.getStatus() != INTERVENTION_WAITING
+        && nodeExecution.getNode().getNodeType() != NodeType.IDENTITY_PLAN_NODE) {
       throw new InvalidRequestException(
           "NodeExecution is not in a finalizable or broken status. Current Status: " + nodeExecution.getStatus());
     }
 
     interrupt.setState(Interrupt.State.PROCESSING);
+
     return interruptService.save(interrupt);
   }
 

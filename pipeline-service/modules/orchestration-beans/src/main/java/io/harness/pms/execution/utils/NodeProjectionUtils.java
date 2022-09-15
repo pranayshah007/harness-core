@@ -22,6 +22,8 @@ public class NodeProjectionUtils {
       Sets.newHashSet(NodeExecutionKeys.ambiance, NodeExecutionKeys.status);
 
   public static final Set<String> withStatus = Sets.newHashSet(NodeExecutionKeys.status);
+  public static final Set<String> withStatusAndPlanNode =
+      Sets.newHashSet(NodeExecutionKeys.status, NodeExecutionKeys.planNode);
 
   public static final Set<String> withStatusAndMode = Sets.newHashSet(NodeExecutionKeys.status, NodeExecutionKeys.mode);
 
