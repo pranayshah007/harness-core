@@ -71,6 +71,7 @@ import io.harness.delegate.service.ExecutionConfigOverrideFromFileOnDelegate;
 import io.harness.delegate.task.helm.CustomManifestFetchTaskHelper;
 import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.helm.HelmCommandFlag;
+import io.harness.delegate.task.helm.HelmTaskHelperBase;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.Level;
@@ -173,6 +174,7 @@ public class K8sTaskHelperTest extends CategoryTest {
   @Mock private ScmFetchFilesHelper scmFetchFilesHelper;
   @Mock private ContainerDeploymentDelegateHelper containerDeploymentDelegateHelper;
   @Mock private CustomManifestFetchTaskHelper customManifestFetchTaskHelper;
+  @Mock private HelmTaskHelperBase helmTaskHelperBase;
 
   private static final String REPO_URL = "helm-url";
   private String resourcePath = "k8s";
@@ -195,6 +197,8 @@ public class K8sTaskHelperTest extends CategoryTest {
     LoggingInitializer.initializeLogging();
     spyHelper = Mockito.spy(helper);
     spyHelperBase = Mockito.spy(k8sTaskHelperBase);
+    when(helmTaskHelperBase.isHelmLocalRepoSet()).thenReturn(false);
+    when(helmTaskHelperBase.getHelmLocalRepositoryPath()).thenReturn("");
   }
 
   @Test
