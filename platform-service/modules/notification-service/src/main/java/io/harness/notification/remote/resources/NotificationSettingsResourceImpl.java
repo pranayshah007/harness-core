@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.dto.ResponseDTO;
-import io.harness.notification.entities.NotificationSetting;
 import io.harness.notification.remote.dto.AccountNotificationSettingDTO;
 import io.harness.notification.remote.mappers.NotificationSettingMapper;
 import io.harness.notification.service.api.NotificationSettingsService;
