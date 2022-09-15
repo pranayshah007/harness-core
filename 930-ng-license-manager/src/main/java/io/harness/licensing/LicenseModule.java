@@ -24,6 +24,7 @@ import io.harness.licensing.mappers.LicenseObjectConverter;
 import io.harness.licensing.mappers.LicenseObjectMapper;
 import io.harness.licensing.services.DefaultLicenseServiceImpl;
 import io.harness.licensing.services.LicenseService;
+import io.harness.smp.license.SMPLicenseModule;
 import io.harness.version.VersionInfoManager;
 
 import com.google.inject.AbstractModule;
@@ -52,6 +53,8 @@ public class LicenseModule extends AbstractModule {
 
   @Override
   protected void configure() {
+    install(new SMPLicenseModule());
+
     MapBinder<ModuleType, LicenseObjectMapper> objectMapperMapBinder =
         MapBinder.newMapBinder(binder(), ModuleType.class, LicenseObjectMapper.class);
     MapBinder<ModuleType, ModuleLicenseClient> interfaceMapBinder =

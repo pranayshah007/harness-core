@@ -28,9 +28,7 @@ import io.harness.licensing.EditionAction;
 import io.harness.licensing.LicenseStatus;
 import io.harness.licensing.LicenseType;
 import io.harness.licensing.beans.EditionActionDTO;
-import io.harness.licensing.beans.modules.AccountLicenseDTO;
-import io.harness.licensing.beans.modules.ModuleLicenseDTO;
-import io.harness.licensing.beans.modules.StartTrialDTO;
+import io.harness.licensing.beans.modules.*;
 import io.harness.licensing.beans.response.CheckExpiryResultDTO;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 import io.harness.licensing.checks.LicenseComplianceResolver;
@@ -433,6 +431,21 @@ public class DefaultLicenseServiceImpl implements LicenseService {
   public List<ModuleLicenseDTO> getAllModuleLicences(String accountIdentifier) {
     List<ModuleLicense> licenses = moduleLicenseRepository.findByAccountIdentifier(accountIdentifier);
     return licenses.stream().map(licenseObjectConverter::<ModuleLicenseDTO>toDTO).collect(Collectors.toList());
+  }
+
+  @Override
+  public SMPDecLicenseDTO validateSMPLicense(SMPEncLicenseDTO licenseDTO) {
+    return null;
+  }
+
+  @Override
+  public SMPEncLicenseDTO generateSMPLicense(SMPDecLicenseDTO licenseDTO) {
+    return null;
+  }
+
+  @Override
+  public void applySMPLicense(SMPEncLicenseDTO licenseDTO) {
+
   }
 
   private EditionActionDTO toEditionActionDTO(EditionAction editionAction) {
