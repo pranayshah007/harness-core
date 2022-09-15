@@ -142,12 +142,16 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
   @Override
   public DelegateResponseData run(TaskParameters parameters) throws IOException, JoseException {
     NGGitOpsTaskParams gitOpsTaskParams = (NGGitOpsTaskParams) parameters;
-
     switch (gitOpsTaskParams.getGitOpsTaskType()) {
       case MERGE_PR:
         return handleMergePR(gitOpsTaskParams);
       case CREATE_PR:
-        return handleCreatePR(gitOpsTaskParams);
+        CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
+        if (gitOpsTaskParams.isOverrideConfig()) {
+          return executeShellScript(gitOpsTaskParams, commandUnitsProgress);
+        } else {
+          return handleCreatePR(gitOpsTaskParams, commandUnitsProgress);
+        }
       default:
         return NGGitOpsResponse.builder()
             .taskStatus(TaskStatus.FAILURE)
@@ -156,7 +160,7 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
     }
   }
 
-  private ShellScriptTaskResponseNG executeShellScript(
+  private NGGitOpsResponse executeShellScript(
       NGGitOpsTaskParams taskParams, CommandUnitsProgress commandUnitsProgress) {
     try {
       ShellExecutorConfig shellExecutorConfig = getShellExecutorConfig(taskParams);
@@ -164,19 +168,21 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
           shellExecutorFactory.getExecutor(shellExecutorConfig, getLogStreamingTaskClient(), commandUnitsProgress);
       ExecuteCommandResponse executeCommandResponse = executor.executeCommandString(
           taskParams.getScript(), taskParams.getOutputVars(), taskParams.getSecretOutputVars(), null);
-      return ShellScriptTaskResponseNG.builder()
-          .executeCommandResponse(executeCommandResponse)
-          .status(executeCommandResponse.getStatus())
-          .errorMessage(getErrorMessage(executeCommandResponse.getStatus()))
-          .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
-          .build();
+      logCallback = new NGDelegateLogCallback(getLogStreamingTaskClient(), FetchFiles, true, commandUnitsProgress);
+      return NGGitOpsResponse.builder()
+              .executeCommandResponse(executeCommandResponse)
+              .taskStatus(TaskStatus.SUCCESS)
+              .errorMessage(getErrorMessage(executeCommandResponse.getStatus()))
+              .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
+              .build();
     } catch (Exception e) {
       log.error("Bash Script Failed to execute.", e);
-      return ShellScriptTaskResponseNG.builder()
-          .status(CommandExecutionStatus.FAILURE)
-          .errorMessage("Bash Script Failed to execute. Reason: " + e.getMessage())
-          .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
-          .build();
+      logCallback.saveExecutionLog(e.getMessage(), ERROR, CommandExecutionStatus.FAILURE);
+      return NGGitOpsResponse.builder()
+              .taskStatus(TaskStatus.FAILURE)
+              .errorMessage("Bash Script Failed to execute. Reason: " + e.getMessage())
+              .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
+              .build();
     }
   }
 
@@ -296,14 +302,9 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
     }
   }
 
-  public DelegateResponseData handleCreatePR(NGGitOpsTaskParams gitOpsTaskParams) {
-    CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
+  public DelegateResponseData handleCreatePR(NGGitOpsTaskParams gitOpsTaskParams, CommandUnitsProgress commandUnitsProgress) {
     try {
       log.info("Running Create PR Task for activityId {}", gitOpsTaskParams.getActivityId());
-      executeShellScript(gitOpsTaskParams, commandUnitsProgress);
-      logCallback = markDoneAndStartNew(
-          this.getLogStreamingTaskClient().obtainLogCallback(COMMAND_UNIT), FetchFiles, commandUnitsProgress);
-
       FetchFilesResult fetchFilesResult = getFiles(gitOpsTaskParams, commandUnitsProgress);
       List<GitFile> fetchFilesResultFiles = fetchFilesResult.getFiles();
       StringBuilder sb = new StringBuilder(1024);

@@ -49,7 +49,6 @@ public class NGGitOpsTaskParams implements TaskParameters, ExecutionCapabilityDe
   private GitApiTaskParams gitApiTaskParams;
 
   @Expression(ALLOW_SECRETS) String script;
-  //  String workingDirectory;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
