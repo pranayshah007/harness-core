@@ -53,6 +53,7 @@ public class BusinessMappingDao {
     setUnsetUpdateOperations(updateOperations, BusinessMappingKeys.sharedCosts, businessMapping.getSharedCosts());
     setUnsetUpdateOperations(
         updateOperations, BusinessMappingKeys.unallocatedCost, businessMapping.getUnallocatedCost());
+    setUnsetUpdateOperations(updateOperations, BusinessMappingKeys.dataSources, businessMapping.getDataSources());
 
     return updateOperations;
   }

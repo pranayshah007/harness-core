@@ -274,8 +274,11 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
   }
 
   private PageResponse<ServiceLevelObjective> getResponse(
-      ProjectParams projectParams, Integer offset, Integer pageSize, Filter filter) {
+      ProjectParams projectParams, Integer offset, Integer pageSize, String filterByName, Filter filter) {
     List<ServiceLevelObjective> serviceLevelObjectiveList = get(projectParams, filter);
+    if (!isEmpty(filterByName)) {
+      serviceLevelObjectiveList = filterSLOs(serviceLevelObjectiveList, filterByName);
+    }
     return PageUtils.offsetAndLimit(serviceLevelObjectiveList, offset, pageSize);
   }
 
@@ -377,8 +380,8 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
 
   @Override
   public PageResponse<ServiceLevelObjective> getSLOForListView(
-      ProjectParams projectParams, SLODashboardApiFilter filter, PageParams pageParams) {
-    return getResponse(projectParams, pageParams.getPage(), pageParams.getSize(),
+      ProjectParams projectParams, SLODashboardApiFilter filter, PageParams pageParams, String filterByName) {
+    return getResponse(projectParams, pageParams.getPage(), pageParams.getSize(), filterByName,
         Filter.builder()
             .monitoredServiceIdentifier(filter.getMonitoredServiceIdentifier())
             .userJourneys(filter.getUserJourneyIdentifiers())
@@ -828,6 +831,14 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
                  .build(),
           serviceLevelObjective.getIdentifier());
     });
+  }
+
+  private List<ServiceLevelObjective> filterSLOs(
+      List<ServiceLevelObjective> serviceLevelObjectiveList, String filterByName) {
+    return serviceLevelObjectiveList.stream()
+        .filter(serviceLevelObjective
+            -> serviceLevelObjective.getName().toLowerCase().contains(filterByName.trim().toLowerCase()))
+        .collect(Collectors.toList());
   }
 
   @Value
