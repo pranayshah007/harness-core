@@ -233,8 +233,11 @@ public class RunTimeInputHandler {
         return defaultValue;
       }
     }
-
-    return (String) parameterField.fetchFinalValue();
+    String finalVal = (String) parameterField.fetchFinalValue();
+    if (finalVal == null) {
+      finalVal = "";
+    }
+    return finalVal;
   }
 
   public static Map<String, String> resolveMapParameter(String fieldName, String stepType, String stepIdentifier,
