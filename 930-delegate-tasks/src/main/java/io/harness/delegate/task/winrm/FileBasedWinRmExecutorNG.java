@@ -58,13 +58,15 @@ public class FileBasedWinRmExecutorNG extends FileBasedAbstractWinRmExecutor {
 
   private final SecretDecryptionService secretDecryptionService;
   private final ArtifactoryRequestMapper artifactoryRequestMapper;
+  private final WinRmExecutorHelper winRmExecutorHelper;
 
   public FileBasedWinRmExecutorNG(LogCallback logCallback, boolean shouldSaveExecutionLogs, WinRmSessionConfig config,
       boolean disableCommandEncoding, SecretDecryptionService secretDecryptionService,
-      ArtifactoryRequestMapper artifactoryRequestMapper) {
+      ArtifactoryRequestMapper artifactoryRequestMapper, WinRmExecutorHelper winRmExecutorHelper) {
     super(logCallback, shouldSaveExecutionLogs, config, disableCommandEncoding);
     this.secretDecryptionService = secretDecryptionService;
     this.artifactoryRequestMapper = artifactoryRequestMapper;
+    this.winRmExecutorHelper = winRmExecutorHelper;
   }
 
   @Override
@@ -368,10 +370,41 @@ public class FileBasedWinRmExecutorNG extends FileBasedAbstractWinRmExecutor {
         jenkinsBearerTokenDTO, jenkinsArtifactDelegateConfig.getEncryptedDataDetails());
   }
 
-  private CommandExecutionStatus handleS3Artifact(
-          AwsS3FetchFileDelegateConfig s3ArtifactDelegateConfig, CopyCommandUnit copyCommandUnit) {
+  private CommandExecutionStatus handleS3Artifact(Object s3ArtifactDelegateConfig, CopyCommandUnit copyCommandUnit) {
     CommandExecutionStatus commandExecutionStatus = FAILURE;
 
+    String artifactPathOnTarget = Paths.get(s3ArtifactDelegateConfig.toString()).toString();
+    saveExecutionLog(format("Begin execution of command: %s", copyCommandUnit.getName()), INFO);
+    saveExecutionLog("Downloading artifact from S3 to " + copyCommandUnit.getDestinationPath() + "\\"
+                    + getArtifactFileName(artifactPathOnTarget),
+            INFO);
+    try (WinRmSession session = new WinRmSession(config, this.logCallback);
+         ExecutionLogWriter outputWriter = getExecutionLogWriter(INFO);
+         ExecutionLogWriter errorWriter = getExecutionLogWriter(ERROR)) {
+      saveExecutionLog(format("Connected to %s", config.getHostname()), INFO);
+      saveExecutionLog(format("Executing copy artifact command...\nArtifact filename: %s",
+                      getArtifactFileName(artifactPathOnTarget)),
+              INFO);
+      String command = winRmExecutorHelper.createPsCommandForS3ArtifactDownload(null, null, null, artifactPathOnTarget);
+      commandExecutionStatus = executeRemoteCommand(session, outputWriter, errorWriter, command, true);
+      if (FAILURE == commandExecutionStatus) {
+        saveExecutionLog(format("Failed to copy Jenkins artifact from %s", s3ArtifactDelegateConfig.toString()), ERROR,
+                commandExecutionStatus);
+        return commandExecutionStatus;
+      }
+      saveExecutionLog(
+              format("File successfully transferred to %s\\%s", copyCommandUnit.getDestinationPath(), artifactPathOnTarget),
+              INFO);
+    } catch (Exception e) {
+      log.error(ERROR_WHILE_EXECUTING_COMMAND, e);
+      ResponseMessage details = buildErrorDetailsFromWinRmClientException(e);
+      saveExecutionLog(
+              format("Command execution failed. Error: %s", details.getMessage()), ERROR, commandExecutionStatus);
+    }
+
+    saveExecutionLog("Command execution finished with status " + commandExecutionStatus, INFO, commandExecutionStatus);
+
+    log.info("Copy Config command execution returned status: {}", commandExecutionStatus);
     return commandExecutionStatus;
   }
 }

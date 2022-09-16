@@ -26,6 +26,7 @@ import com.google.inject.Singleton;
 public class WinRmExecutorFactoryNG {
   @Inject private SecretDecryptionService secretDecryptionService;
   @Inject private ArtifactoryRequestMapper artifactoryRequestMapper;
+  @Inject private WinRmExecutorHelper winRmExecutorHelper;
 
   public WinRmExecutor getExecutor(WinRmSessionConfig config, boolean disableCommandEncoding,
       ILogStreamingTaskClient logStreamingTaskClient, CommandUnitsProgress commandUnitsProgress) {
@@ -36,7 +37,7 @@ public class WinRmExecutorFactoryNG {
   public FileBasedWinRmExecutorNG getFiledBasedWinRmExecutor(WinRmSessionConfig config, boolean disableCommandEncoding,
       ILogStreamingTaskClient logStreamingTaskClient, CommandUnitsProgress commandUnitsProgress) {
     return new FileBasedWinRmExecutorNG(getExecutionLogCallback(config, logStreamingTaskClient, commandUnitsProgress),
-        true, config, disableCommandEncoding, secretDecryptionService, artifactoryRequestMapper);
+        true, config, disableCommandEncoding, secretDecryptionService, artifactoryRequestMapper, winRmExecutorHelper);
   }
 
   private static LogCallback getExecutionLogCallback(WinRmSessionConfig sessionConfig,
