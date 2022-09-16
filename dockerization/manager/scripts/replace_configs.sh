@@ -289,7 +289,9 @@ if [[ "" != "$DEPLOY_MODE" ]]; then
   export DEPLOY_MODE; yq -i '.deployMode=env(DEPLOY_MODE)' $CONFIG_FILE
 fi
 
-export NEWRELIC_LICENSE_KEY; yq -i '.common.license_key=env(NEWRELIC_LICENSE_KEY)' $NEWRELIC_FILE
+if [[ "" != "$NEWRELIC_LICENSE_KEY" ]]; then
+  export NEWRELIC_LICENSE_KEY; yq -i '.common.license_key=env(NEWRELIC_LICENSE_KEY)' $NEWRELIC_FILE
+fi
 
 if [[ "$DISABLE_NEW_RELIC" == "true" ]]; then
   yq -i '.common.agent_enabled=false' $NEWRELIC_FILE
