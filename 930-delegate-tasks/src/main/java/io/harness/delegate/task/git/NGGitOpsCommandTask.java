@@ -146,12 +146,7 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
       case MERGE_PR:
         return handleMergePR(gitOpsTaskParams);
       case CREATE_PR:
-        CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
-        if (gitOpsTaskParams.isOverrideConfig()) {
-          return executeShellScript(gitOpsTaskParams, commandUnitsProgress);
-        } else {
-          return handleCreatePR(gitOpsTaskParams, commandUnitsProgress);
-        }
+        return handleCreatePR(gitOpsTaskParams);
       default:
         return NGGitOpsResponse.builder()
             .taskStatus(TaskStatus.FAILURE)
@@ -303,8 +298,11 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
   }
 
   public DelegateResponseData handleCreatePR(
-      NGGitOpsTaskParams gitOpsTaskParams, CommandUnitsProgress commandUnitsProgress) {
+      NGGitOpsTaskParams gitOpsTaskParams) {
+    CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
+    logCallback = new NGDelegateLogCallback(getLogStreamingTaskClient(), MergePR, true, commandUnitsProgress);
     try {
+
       log.info("Running Create PR Task for activityId {}", gitOpsTaskParams.getActivityId());
       FetchFilesResult fetchFilesResult = getFiles(gitOpsTaskParams, commandUnitsProgress);
       List<GitFile> fetchFilesResultFiles = fetchFilesResult.getFiles();
@@ -313,6 +311,9 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
 
       logCallback.saveExecutionLog("Following files will be updated.");
       logCallback.saveExecutionLog(sb.toString(), INFO);
+      if (gitOpsTaskParams.isOverrideConfig()) {
+        executeShellScript(gitOpsTaskParams, commandUnitsProgress);
+      }
       logCallback = markDoneAndStartNew(logCallback, CommitAndPush, commandUnitsProgress);
 
       String baseBranch = gitOpsTaskParams.getGitFetchFilesConfig().getGitStoreDelegateConfig().getBranch();
