@@ -192,8 +192,7 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
     } else if (type == CITaskExecutionResponse.Type.VM || type == CITaskExecutionResponse.Type.DOCKER) {
       return handleVmTaskResponse(ciTaskExecutionResponse);
     } else {
-      throw new CIStageExecutionException(
-          format("Invalid infra type for task response: %s", type));
+      throw new CIStageExecutionException(format("Invalid infra type for task response: %s", type));
     }
   }
 

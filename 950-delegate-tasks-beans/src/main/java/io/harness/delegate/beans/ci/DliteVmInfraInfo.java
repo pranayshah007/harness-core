@@ -7,8 +7,6 @@
 
 package io.harness.delegate.beans.ci;
 
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-
 import io.harness.delegate.beans.executioncapability.CIVmConnectionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 
@@ -40,7 +38,7 @@ public class DliteVmInfraInfo implements InfraInfo {
   public List<ExecutionCapability> fetchExecutionCapabilities() {
     return Collections.singletonList(CIVmConnectionCapability.builder()
                                          .stageRuntimeId(stageRuntimeId)
-                                         .infraInfo(VmInfraInfo.builder().stageRuntimeId(stageRuntimeId).build())
+                                         .infraInfo(DliteVmInfraInfo.builder().stageRuntimeId(stageRuntimeId).build())
                                          .build());
   }
 

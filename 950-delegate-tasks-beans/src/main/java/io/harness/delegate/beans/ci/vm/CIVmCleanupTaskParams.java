@@ -9,14 +9,11 @@ package io.harness.delegate.beans.ci.vm;
 
 import io.harness.delegate.beans.ci.CICleanupTaskParams;
 import io.harness.delegate.beans.ci.InfraInfo;
-import io.harness.delegate.beans.executioncapability.CIVmConnectionCapability;
-import io.harness.delegate.beans.executioncapability.CapabilityType;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.expression.ExpressionEvaluator;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import java.util.Collections;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;

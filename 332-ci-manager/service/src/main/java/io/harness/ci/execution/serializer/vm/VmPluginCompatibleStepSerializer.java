@@ -21,13 +21,13 @@ import io.harness.ci.utils.HarnessImageUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.pod.EnvVariableEnum;
 import io.harness.delegate.beans.ci.vm.steps.VmPluginStep;
+import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.utils.TimeoutUtils;
 import io.harness.yaml.core.timeout.Timeout;
-import io.harness.exception.ngexception.CIStageExecutionException;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -50,7 +50,7 @@ public class VmPluginCompatibleStepSerializer {
     }
 
     Map<String, String> envVars = pluginSettingUtils.getPluginCompatibleEnvVariables(
-            pluginCompatibleStep, identifier, timeout, ambiance, Type.VM);
+        pluginCompatibleStep, identifier, timeout, ambiance, Type.VM);
     String image = CIStepInfoUtils.getPluginCustomStepImage(
         pluginCompatibleStep, ciExecutionConfigService, type, AmbianceUtils.getAccountId(ambiance));
     String connectorRef = PluginSettingUtils.getConnectorRef(pluginCompatibleStep);

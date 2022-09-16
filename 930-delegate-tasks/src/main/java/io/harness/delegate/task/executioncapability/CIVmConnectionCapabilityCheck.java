@@ -32,7 +32,8 @@ public class CIVmConnectionCapabilityCheck implements CapabilityCheck, ProtoCapa
     if (connectionCapabiilty.getInfraInfo().getType() == InfraInfo.Type.DOCKER) {
       isOwner = true;
     } else {
-      isOwner = isPoolOwner(connectionCapabiilty.getPoolId(), connectionCapabiilty.getStageRuntimeId());
+      String poolId = connectionCapabiilty.getPoolId();
+      isOwner = isPoolOwner(poolId, "");
     }
 
     return CapabilityResponse.builder().delegateCapability(delegateCapability).validated(isOwner).build();

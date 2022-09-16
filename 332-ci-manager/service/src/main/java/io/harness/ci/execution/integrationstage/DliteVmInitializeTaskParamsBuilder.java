@@ -11,28 +11,28 @@ import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.delegate.beans.ci.DliteVmInfraInfo;
-import io.harness.delegate.beans.ci.DockerInfraInfo;
 import io.harness.delegate.beans.ci.InfraInfo;
-import io.harness.delegate.beans.ci.vm.CIVmInitializeTaskParams;
 import io.harness.delegate.beans.ci.vm.dlite.DliteVmInitializeTaskParams;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.pms.contracts.ambiance.Ambiance;
 
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 
+@Singleton
 public class DliteVmInitializeTaskParamsBuilder {
   @Inject VmInitializeTaskParamsBuilder vmInitializeTaskParamsBuilder;
 
   public DliteVmInitializeTaskParams getDliteVmInitializeTaskParams(
       InitializeStepInfo initializeStepInfo, Ambiance ambiance) {
     Infrastructure infrastructure = initializeStepInfo.getInfrastructure();
-    InfraInfo infraInfo = validateInfrastructureAndGetInfraInfo(infrastructure);
+    validateInfrastructure(infrastructure);
     return vmInitializeTaskParamsBuilder.getHostedVmInitializeTaskParams(initializeStepInfo, ambiance);
   }
 
-  public static InfraInfo validateInfrastructureAndGetInfraInfo(Infrastructure infrastructure) {
+  public static InfraInfo validateInfrastructureAndGetInfraInfo(Infrastructure infrastructure, String stageRuntimeId) {
     validateInfrastructure(infrastructure);
-    return DliteVmInfraInfo.builder().build();
+    return DliteVmInfraInfo.builder().stageRuntimeId(stageRuntimeId).build();
   }
 
   public static void validateInfrastructure(Infrastructure infrastructure) {

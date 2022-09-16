@@ -13,7 +13,6 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.yaml.extended.platform.Platform;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.beans.yaml.extended.runtime.Runtime;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import javax.validation.constraints.NotNull;

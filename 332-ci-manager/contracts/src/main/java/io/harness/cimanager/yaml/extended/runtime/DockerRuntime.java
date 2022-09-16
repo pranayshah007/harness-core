@@ -36,6 +36,5 @@ public class DockerRuntime implements Runtime {
   @Data
   @Builder
   @NoArgsConstructor
-  public static class DockerRuntimeSpec {
-  }
+  public static class DockerRuntimeSpec {}
 }

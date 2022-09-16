@@ -13,7 +13,6 @@ import io.harness.annotation.HarnessEntity;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.beans.ci.InfraInfo;
 import io.harness.ng.DbAliases;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 

@@ -11,11 +11,16 @@ import static io.harness.beans.serializer.RunTimeInputHandler.resolveOSType;
 
 import static java.lang.String.format;
 
-import io.harness.beans.yaml.extended.infrastrucutre.*;
+import io.harness.beans.yaml.extended.infrastrucutre.DockerInfraYaml;
+import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
+import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.exception.ngexception.CIStageExecutionException;
 
+import com.google.inject.Singleton;
+
+@Singleton
 public class DockerInitializeStepUtils {
-  public static OSType getDockerOS(Infrastructure infrastructure) {
+  public static OSType getOS(Infrastructure infrastructure) {
     DockerInfraYaml dockerInfraYaml = (DockerInfraYaml) infrastructure;
     if (dockerInfraYaml.getSpec() == null) {
       throw new CIStageExecutionException("Docker infrastructure spec should not be empty");

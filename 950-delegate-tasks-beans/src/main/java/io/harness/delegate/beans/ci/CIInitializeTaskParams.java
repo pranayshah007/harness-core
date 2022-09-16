@@ -7,7 +7,6 @@
 
 package io.harness.delegate.beans.ci;
 
-import io.harness.delegate.beans.ci.InfraInfo;
 import io.harness.delegate.task.TaskParameters;
 
 public interface CIInitializeTaskParams extends TaskParameters {

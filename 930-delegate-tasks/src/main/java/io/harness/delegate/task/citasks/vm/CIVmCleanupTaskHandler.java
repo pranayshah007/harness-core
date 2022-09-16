@@ -17,7 +17,6 @@ import io.harness.delegate.beans.ci.vm.runner.DestroyVmRequest;
 import io.harness.delegate.task.citasks.CICleanupTaskHandler;
 import io.harness.delegate.task.citasks.vm.helper.HttpHelper;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.vm.VmExecuteStepUtils;
 
 import com.google.inject.Inject;
 import javax.validation.constraints.NotNull;

@@ -10,7 +10,13 @@ package io.harness.delegate.task.citasks.vm;
 import static io.harness.data.encoding.EncodingUtils.decodeBase64;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.vm.CIVMConstants.*;
+import static io.harness.vm.CIVMConstants.DRONE_COMMIT_BRANCH;
+import static io.harness.vm.CIVMConstants.DRONE_COMMIT_LINK;
+import static io.harness.vm.CIVMConstants.DRONE_COMMIT_SHA;
+import static io.harness.vm.CIVMConstants.DRONE_REMOTE_URL;
+import static io.harness.vm.CIVMConstants.DRONE_SOURCE_BRANCH;
+import static io.harness.vm.CIVMConstants.DRONE_TARGET_BRANCH;
+import static io.harness.vm.CIVMConstants.NETWORK_ID;
 
 import static java.lang.String.format;
 

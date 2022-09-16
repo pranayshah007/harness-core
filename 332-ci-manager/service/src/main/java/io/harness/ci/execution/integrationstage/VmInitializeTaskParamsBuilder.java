@@ -7,12 +7,20 @@
 
 package io.harness.ci.integrationstage;
 
-import static io.harness.beans.serializer.RunTimeInputHandler.*;
+import static io.harness.beans.serializer.RunTimeInputHandler.resolveArchType;
+import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameter;
+import static io.harness.beans.serializer.RunTimeInputHandler.resolveOSType;
 import static io.harness.beans.sweepingoutputs.StageInfraDetails.STAGE_INFRA_DETAILS;
 import static io.harness.data.encoding.EncodingUtils.decodeBase64;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.vm.CIVMConstants.*;
+import static io.harness.vm.CIVMConstants.DRONE_COMMIT_BRANCH;
+import static io.harness.vm.CIVMConstants.DRONE_COMMIT_LINK;
+import static io.harness.vm.CIVMConstants.DRONE_COMMIT_SHA;
+import static io.harness.vm.CIVMConstants.DRONE_REMOTE_URL;
+import static io.harness.vm.CIVMConstants.DRONE_SOURCE_BRANCH;
+import static io.harness.vm.CIVMConstants.DRONE_TARGET_BRANCH;
+import static io.harness.vm.CIVMConstants.NETWORK_ID;
 
 import static java.lang.String.format;
 
@@ -28,7 +36,12 @@ import io.harness.beans.sweepingoutputs.ContextElement;
 import io.harness.beans.sweepingoutputs.DliteVmStageInfraDetails;
 import io.harness.beans.sweepingoutputs.StageDetails;
 import io.harness.beans.sweepingoutputs.VmStageInfraDetails;
-import io.harness.beans.yaml.extended.infrastrucutre.*;
+import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml;
+import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
+import io.harness.beans.yaml.extended.infrastrucutre.OSType;
+import io.harness.beans.yaml.extended.infrastrucutre.VmInfraSpec;
+import io.harness.beans.yaml.extended.infrastrucutre.VmInfraYaml;
+import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml;
 import io.harness.beans.yaml.extended.platform.ArchType;
 import io.harness.beans.yaml.extended.platform.Platform;
 import io.harness.ci.buildstate.CodebaseUtils;
@@ -43,7 +56,6 @@ import io.harness.ci.utils.InfrastructureUtils;
 import io.harness.ci.utils.ValidationUtils;
 import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.connector.SecretSpecBuilder;
-import io.harness.delegate.beans.ci.DockerInfraInfo;
 import io.harness.delegate.beans.ci.InfraInfo;
 import io.harness.delegate.beans.ci.VmInfraInfo;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
@@ -73,7 +85,13 @@ import io.harness.yaml.utils.NGVariablesUtils;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.time.Duration;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
@@ -141,13 +159,15 @@ public class VmInitializeTaskParamsBuilder {
       throw new CIStageExecutionException("Input infrastructure can not be empty");
     }
 
-    InfraInfo infraInfo = InfraInfoUtils.validateInfrastructureAndGetInfraInfo(infrastructure);
+    StageDetails stageDetails = getStageDetails(ambiance);
+    String stageRuntimeId = stageDetails.getStageRuntimeID();
+    InfraInfo infraInfo = InfraInfoUtils.validateInfrastructureAndGetInfraInfo(infrastructure, stageRuntimeId);
 
     String accountID = AmbianceUtils.getAccountId(ambiance);
     IntegrationStageConfig integrationStageConfig = initializeStepInfo.getStageElementConfig();
     vmInitializeUtils.validateStageConfig(integrationStageConfig, accountID);
 
-    OSType os = VmInitializeUtils.getOS(infrastructure);
+    OSType os = InfraInfoUtils.getInfraOS(infrastructure);
     Map<String, String> volToMountPath =
         vmInitializeUtils.getVolumeToMountPath(integrationStageConfig.getSharedPaths(), os);
     String workDir = vmInitializeUtils.getWorkDir(os);
@@ -160,7 +180,6 @@ public class VmInitializeTaskParamsBuilder {
     }
 
     saveStageInfraDetails(ambiance, poolId, workDir, harnessImageConnectorRef, volToMountPath, infraInfo);
-    StageDetails stageDetails = getStageDetails(ambiance);
 
     CIExecutionArgs ciExecutionArgs = CIExecutionArgs.builder()
                                           .runSequence(String.valueOf(ambiance.getMetadata().getRunSequence()))
@@ -189,7 +208,7 @@ public class VmInitializeTaskParamsBuilder {
         .workingDir(workDir)
         .environment(envVars)
         .gitConnector(gitConnector)
-        .stageRuntimeId(stageDetails.getStageRuntimeID())
+        .stageRuntimeId(stageRuntimeId)
         .accountID(accountID)
         .orgID(AmbianceUtils.getOrgIdentifier(ambiance))
         .projectID(AmbianceUtils.getProjectIdentifier(ambiance))
@@ -228,13 +247,13 @@ public class VmInitializeTaskParamsBuilder {
     }
   }
 
-  public static InfraInfo validateInfrastructureAndGetInfraInfo(Infrastructure infrastructure) {
+  public static InfraInfo validateInfrastructureAndGetInfraInfo(Infrastructure infrastructure, String stageRuntimeId) {
     validateInfrastructure(infrastructure);
 
     VmPoolYaml vmPoolYaml = (VmPoolYaml) ((VmInfraYaml) infrastructure).getSpec();
     String poolId = VmInitializeTaskParamsBuilder.getPoolName(vmPoolYaml);
 
-    return VmInfraInfo.builder().poolId(poolId).build();
+    return VmInfraInfo.builder().poolId(poolId).stageRuntimeId(stageRuntimeId).build();
   }
 
   public static String getPoolName(VmPoolYaml vmPoolYaml) {
@@ -276,7 +295,7 @@ public class VmInitializeTaskParamsBuilder {
     }
   }
 
-  private StageDetails getStageDetails(Ambiance ambiance) {
+  public StageDetails getStageDetails(Ambiance ambiance) {
     OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputResolver.resolveOptional(
         ambiance, RefObjectUtils.getSweepingOutputRefObject(ContextElement.stageDetails));
     if (!optionalSweepingOutput.isFound()) {

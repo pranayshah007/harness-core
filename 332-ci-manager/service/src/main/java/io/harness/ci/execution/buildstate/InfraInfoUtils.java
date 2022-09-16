@@ -9,8 +9,17 @@ package io.harness.ci.buildstate;
 
 import static java.lang.String.format;
 
-import io.harness.beans.yaml.extended.infrastrucutre.*;
-import io.harness.ci.integrationstage.*;
+import io.harness.beans.yaml.extended.infrastrucutre.DockerInfraYaml;
+import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
+import io.harness.beans.yaml.extended.infrastrucutre.OSType;
+import io.harness.beans.yaml.extended.infrastrucutre.VmInfraSpec;
+import io.harness.beans.yaml.extended.infrastrucutre.VmInfraYaml;
+import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml;
+import io.harness.ci.integrationstage.DliteVmInitializeTaskParamsBuilder;
+import io.harness.ci.integrationstage.DockerInitializeStepUtils;
+import io.harness.ci.integrationstage.DockerInitializeTaskParamsBuilder;
+import io.harness.ci.integrationstage.VmInitializeTaskParamsBuilder;
+import io.harness.ci.integrationstage.VmInitializeUtils;
 import io.harness.delegate.beans.ci.DockerInfraInfo;
 import io.harness.delegate.beans.ci.InfraInfo;
 import io.harness.delegate.beans.ci.VmInfraInfo;
@@ -32,27 +41,31 @@ public class InfraInfoUtils {
         }
         VmPoolYaml vmPoolYaml = (VmPoolYaml) vmInfraYaml.getSpec();
         String poolId = VmInitializeTaskParamsBuilder.getPoolName(vmPoolYaml);
-        String harnessImageConnectorRef = (vmPoolYaml.getSpec().getHarnessImageConnectorRef().getValue());
-        return VmInfraInfo.builder().poolId(poolId).harnessImageConnectorRef(harnessImageConnectorRef).build();
+        String harnessImageConnectorRef = vmPoolYaml.getSpec().getHarnessImageConnectorRef().getValue();
+        return VmInfraInfo.builder()
+            .poolId(poolId)
+            .stageRuntimeId(stageRuntimeId)
+            .harnessImageConnectorRef(harnessImageConnectorRef)
+            .build();
       case DOCKER:
         if (((DockerInfraYaml) infrastructure).getSpec() == null) {
           throw new CIStageExecutionException("Docker input infrastructure can not be empty");
         }
         return DockerInfraInfo.builder().stageRuntimeId(stageRuntimeId).build();
       default:
-        throw new CIStageExecutionException(String.format("InfraInfo is not supported for %s", type.toString()));
+        throw new CIStageExecutionException(format("InfraInfo is not supported for %s", type.toString()));
     }
   }
 
   public static OSType getInfraOS(Infrastructure infrastructure) {
     Infrastructure.Type infraType = infrastructure.getType();
 
-    if (infraType == Infrastructure.Type.VM) {
+    if (infraType == Infrastructure.Type.VM || infraType == Infrastructure.Type.HOSTED_VM) {
       return VmInitializeUtils.getOS(infrastructure);
     } else if (infraType == Infrastructure.Type.DOCKER) {
-      return DockerInitializeStepUtils.getDockerOS(infrastructure);
+      return DockerInitializeStepUtils.getOS(infrastructure);
     } else {
-      throw new CIStageExecutionException(String.format("InfraInfo is not supported for %s", infraType.toString()));
+      throw new CIStageExecutionException(format("InfraInfo is not supported for %s", infraType.toString()));
     }
   }
 
@@ -64,15 +77,17 @@ public class InfraInfoUtils {
     }
   }
 
-  public static InfraInfo validateInfrastructureAndGetInfraInfo(Infrastructure infrastructure) {
+  public static InfraInfo validateInfrastructureAndGetInfraInfo(Infrastructure infrastructure, String stageRuntimeId) {
     Infrastructure.Type type = infrastructure.getType();
     InfraInfo infraInfo;
     if (type == Infrastructure.Type.VM) {
-      infraInfo = VmInitializeTaskParamsBuilder.validateInfrastructureAndGetInfraInfo(infrastructure);
+      infraInfo = VmInitializeTaskParamsBuilder.validateInfrastructureAndGetInfraInfo(infrastructure, stageRuntimeId);
     } else if (type == Infrastructure.Type.DOCKER) {
-      infraInfo = DockerInitializeTaskParamsBuilder.validateInfrastructureAndGetInfraInfo(infrastructure);
+      infraInfo =
+          DockerInitializeTaskParamsBuilder.validateInfrastructureAndGetInfraInfo(infrastructure, stageRuntimeId);
     } else {
-      infraInfo = DliteVmInitializeTaskParamsBuilder.validateInfrastructureAndGetInfraInfo(infrastructure);
+      infraInfo =
+          DliteVmInitializeTaskParamsBuilder.validateInfrastructureAndGetInfraInfo(infrastructure, stageRuntimeId);
     }
 
     return infraInfo;

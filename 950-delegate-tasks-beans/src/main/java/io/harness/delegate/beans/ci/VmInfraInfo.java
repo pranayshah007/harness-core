@@ -39,6 +39,7 @@ public class VmInfraInfo implements InfraInfo {
   public List<ExecutionCapability> fetchExecutionCapabilities() {
     return Collections.singletonList(
         CIVmConnectionCapability.builder()
+            .poolId(poolId)
             .stageRuntimeId(stageRuntimeId)
             .infraInfo(VmInfraInfo.builder().poolId(poolId).stageRuntimeId(stageRuntimeId).build())
             .build());

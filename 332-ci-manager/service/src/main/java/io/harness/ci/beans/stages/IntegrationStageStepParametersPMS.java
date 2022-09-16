@@ -79,28 +79,20 @@ public class IntegrationStageStepParametersPMS implements SpecParameters, StepPa
 
   private static Infrastructure getRuntimeInfrastructure(IntegrationStageConfig integrationStageConfig) {
     Runtime runtime = integrationStageConfig.getRuntime();
-    Runtime.Type runtimeType;
-
-    Infrastructure infrastructure = null;
-    if (runtime != null) {
-      runtimeType = runtime.getType();
-      if (runtimeType == Runtime.Type.DOCKER) {
-        infrastructure = DockerInfraYaml.builder()
-                             .spec(DockerInfraSpec.builder().platform(integrationStageConfig.getPlatform()).build())
-                             .build();
-      } else if (runtimeType == Runtime.Type.CLOUD) {
-        infrastructure = HostedVmInfraYaml.builder()
-                             .spec(HostedVmInfraSpec.builder().platform(integrationStageConfig.getPlatform()).build())
-                             .build();
-      }
+    if (runtime != null && runtime.getType() == Runtime.Type.DOCKER) {
+      return DockerInfraYaml.builder()
+          .spec(DockerInfraSpec.builder().platform(integrationStageConfig.getPlatform()).build())
+          .build();
     }
 
-    if (infrastructure == null) {
-      throw new CIStageExecutionException(
-          "Infrastructure or runtime field with type Cloud (for vm) or type Docker (for docker) is mandatory for execution");
+    if (runtime != null && runtime.getType() == Runtime.Type.CLOUD) {
+      return HostedVmInfraYaml.builder()
+          .spec(HostedVmInfraSpec.builder().platform(integrationStageConfig.getPlatform()).build())
+          .build();
     }
 
-    return infrastructure;
+    throw new CIStageExecutionException(
+        "Infrastructure or runtime field with type Cloud or type Docker is mandatory for execution");
   }
 
   public static Infrastructure getInfrastructure(IntegrationStageNode stageNode, PlanCreationContext ctx) {

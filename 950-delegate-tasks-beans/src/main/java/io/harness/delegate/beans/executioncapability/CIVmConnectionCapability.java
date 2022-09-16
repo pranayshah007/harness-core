@@ -11,7 +11,6 @@ import io.harness.delegate.beans.ci.InfraInfo;
 
 import java.time.Duration;
 import javax.validation.constraints.NotNull;
-
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Value;

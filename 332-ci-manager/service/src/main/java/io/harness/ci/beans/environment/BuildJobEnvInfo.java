@@ -19,8 +19,8 @@ import com.fasterxml.jackson.annotation.JsonValue;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", defaultImpl = K8BuildJobEnvInfo.class)
 @JsonSubTypes({
   @JsonSubTypes.Type(value = K8BuildJobEnvInfo.class, name = "K8")
-  ,@JsonSubTypes.Type(value = VmBuildJobInfo.class, name = "VM")
-  ,@JsonSubTypes.Type(value = VmBuildJobInfo.class, name = "DOCKER")
+  , @JsonSubTypes.Type(value = VmBuildJobInfo.class, name = "VM"),
+      @JsonSubTypes.Type(value = VmBuildJobInfo.class, name = "DOCKER")
 })
 public interface BuildJobEnvInfo {
   enum Type {

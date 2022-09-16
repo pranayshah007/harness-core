@@ -7,16 +7,66 @@
 
 package io.harness.ci.buildstate;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
+import static io.harness.beans.serializer.RunTimeInputHandler.UNRESOLVED_PARAMETER;
+import static io.harness.beans.serializer.RunTimeInputHandler.resolveArchiveFormat;
+import static io.harness.beans.serializer.RunTimeInputHandler.resolveBooleanParameter;
+import static io.harness.beans.serializer.RunTimeInputHandler.resolveJsonNodeMapParameter;
+import static io.harness.beans.serializer.RunTimeInputHandler.resolveListParameter;
+import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameter;
+import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameter;
+import static io.harness.beans.steps.CIStepInfoType.GIT_CLONE;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_BUILD_EVENT;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_BRANCH;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_SHA;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_NETRC_MACHINE;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_REMOTE_URL;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_TAG;
+import static io.harness.ci.commonconstants.CIExecutionConstants.CLIENT_CERTIFICATE;
+import static io.harness.ci.commonconstants.CIExecutionConstants.CLIENT_ID;
+import static io.harness.ci.commonconstants.CIExecutionConstants.CLIENT_SECRET;
+import static io.harness.ci.commonconstants.CIExecutionConstants.DRONE_WORKSPACE;
+import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_DEPTH_ATTRIBUTE;
+import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_MANUAL_DEPTH;
+import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_SSL_NO_VERIFY;
+import static io.harness.ci.commonconstants.CIExecutionConstants.PATH_SEPARATOR;
+import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_ACCESS_KEY;
+import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_ARTIFACT_FILE_VALUE;
+import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_ASSUME_ROLE;
+import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_ENV_PREFIX;
+import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_EXTERNAL_ID;
+import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_JSON_KEY;
+import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_PASSW;
+import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_SECRET_KEY;
+import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_URL;
+import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_USERNAME;
+import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_MOUNT_PATH;
+import static io.harness.ci.commonconstants.CIExecutionConstants.TENANT_ID;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
+import static java.lang.String.format;
+import static org.springframework.util.StringUtils.trimLeadingCharacter;
+import static org.springframework.util.StringUtils.trimTrailingCharacter;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.executionargs.CIExecutionArgs;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.steps.CIStepInfoType;
-import io.harness.beans.steps.stepinfo.*;
+import io.harness.beans.steps.stepinfo.ACRStepInfo;
+import io.harness.beans.steps.stepinfo.DockerStepInfo;
+import io.harness.beans.steps.stepinfo.ECRStepInfo;
+import io.harness.beans.steps.stepinfo.GCRStepInfo;
+import io.harness.beans.steps.stepinfo.GitCloneStepInfo;
+import io.harness.beans.steps.stepinfo.RestoreCacheGCSStepInfo;
+import io.harness.beans.steps.stepinfo.RestoreCacheS3StepInfo;
+import io.harness.beans.steps.stepinfo.SaveCacheGCSStepInfo;
+import io.harness.beans.steps.stepinfo.SaveCacheS3StepInfo;
+import io.harness.beans.steps.stepinfo.SecurityStepInfo;
+import io.harness.beans.steps.stepinfo.UploadToArtifactoryStepInfo;
+import io.harness.beans.steps.stepinfo.UploadToGCSStepInfo;
+import io.harness.beans.steps.stepinfo.UploadToS3StepInfo;
 import io.harness.beans.sweepingoutputs.StageInfraDetails.Type;
 import io.harness.beans.yaml.extended.ArchiveFormat;
 import io.harness.ci.integrationstage.BuildEnvironmentUtils;
@@ -35,23 +85,16 @@ import io.harness.yaml.extended.ci.codebase.BuildType;
 import io.harness.yaml.extended.ci.codebase.impl.BranchBuildSpec;
 import io.harness.yaml.extended.ci.codebase.impl.PRBuildSpec;
 import io.harness.yaml.extended.ci.codebase.impl.TagBuildSpec;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import static io.harness.beans.serializer.RunTimeInputHandler.*;
-import static io.harness.beans.steps.CIStepInfoType.GIT_CLONE;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.*;
-import static io.harness.ci.commonconstants.CIExecutionConstants.*;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static java.lang.String.format;
-import static org.springframework.util.StringUtils.trimLeadingCharacter;
-import static org.springframework.util.StringUtils.trimTrailingCharacter;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 
 @OwnedBy(HarnessTeam.CI)
 @Singleton
@@ -249,10 +292,8 @@ public class PluginSettingUtils {
       }
 
       setOptionalEnvironmentVariable(map, PLUGIN_ARTIFACT_FILE, PLUGIN_ARTIFACT_FILE_VALUE);
-    } else if (infraType == Type.VM) {
+    } else if (infraType == Type.VM || infraType == Type.DOCKER) {
       setMandatoryEnvironmentVariable(map, PLUGIN_DAEMON_OFF, "true");
-    } else if (infraType == Type.DOCKER) {
-      setMandatoryEnvironmentVariable(map, PLUGIN_DAEMON_OFF, "false");
     }
 
     return map;
@@ -385,10 +426,8 @@ public class PluginSettingUtils {
       }
 
       setOptionalEnvironmentVariable(map, PLUGIN_ARTIFACT_FILE, PLUGIN_ARTIFACT_FILE_VALUE);
-    } else if (infraType == Type.VM) {
+    } else if (infraType == Type.VM || infraType == Type.DOCKER) {
       setMandatoryEnvironmentVariable(map, PLUGIN_DAEMON_OFF, "true");
-    } else if (infraType == Type.DOCKER) {
-      setMandatoryEnvironmentVariable(map, PLUGIN_DAEMON_OFF, "false");
     }
 
     return map;

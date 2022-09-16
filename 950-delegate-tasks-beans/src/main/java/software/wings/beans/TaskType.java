@@ -18,9 +18,6 @@ import io.harness.delegate.beans.ci.vm.VmTaskExecutionResponse;
 import io.harness.delegate.beans.ci.vm.dlite.DliteVmCleanupTaskParams;
 import io.harness.delegate.beans.ci.vm.dlite.DliteVmExecuteStepTaskParams;
 import io.harness.delegate.beans.ci.vm.dlite.DliteVmInitializeTaskParams;
-import io.harness.delegate.beans.ci.vm.CIVmCleanupTaskParams;
-import io.harness.delegate.beans.ci.vm.CIVmExecuteStepTaskParams;
-import io.harness.delegate.beans.ci.vm.CIVmInitializeTaskParams;
 import io.harness.delegate.task.TaskParameters;
 
 @OwnedBy(CDC)

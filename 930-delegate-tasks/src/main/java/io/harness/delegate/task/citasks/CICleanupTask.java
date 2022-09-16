@@ -46,7 +46,7 @@ public class CICleanupTask extends AbstractDelegateRunnableTask {
   public DelegateResponseData run(TaskParameters parameters) {
     CICleanupTaskParams ciCleanupTaskParams = (CICleanupTaskParams) parameters;
     CICleanupTaskParams.Type type = ciCleanupTaskParams.getType();
-    if (type== CICleanupTaskParams.Type.GCP_K8) {
+    if (type == CICleanupTaskParams.Type.GCP_K8) {
       return ciK8CleanupTaskHandler.executeTaskInternal(ciCleanupTaskParams, getTaskId());
     } else if (type == CICleanupTaskParams.Type.VM || type == CICleanupTaskParams.Type.DOCKER) {
       return ciVmCleanupTaskHandler.executeTaskInternal(ciCleanupTaskParams, getTaskId());
