@@ -667,8 +667,8 @@ if [[ "$GRAPHQL_ENABLED" == "false" ]]; then
 fi
 
 if [[ "$MONGO_DEBUGGING_ENABLED" == "true" ]]; then
-  yq -i '.logging.loggers.[org.mongodb.morphia.query]=TRACE' $CONFIG_FILE
-  yq -i '.logging.loggers.connection=TRACE' $CONFIG_FILE
+  yq -i '.logging.loggers.["org.mongodb.morphia.query"]="TRACE"' $CONFIG_FILE
+  yq -i '.logging.loggers.connection="TRACE"' $CONFIG_FILE
 fi
 
 if [[ "" != "$AZURE_MARKETPLACE_ACCESSKEY" ]]; then
