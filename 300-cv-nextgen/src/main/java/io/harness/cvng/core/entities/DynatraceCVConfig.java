@@ -136,40 +136,41 @@ public class DynatraceCVConfig extends MetricCVConfig<DynatraceMetricInfo> {
             .stream()
             .collect(Collectors.toMap(DynatraceMetricDefinition::getMetricName, metricDefinition -> metricDefinition));
     getMetricPack().getMetrics().forEach(metric -> {
-      timeSeriesMetricPacks.stream()
-          .filter(timeSeriesMetricPack
-              -> timeSeriesMetricPack.getIdentifier().equalsIgnoreCase(MonitoredServiceConstants.CUSTOM_METRIC_PACK))
-          .forEach(timeSeriesMetricPackDTO -> {
-            if (!isEmpty(timeSeriesMetricPackDTO.getMetricThresholds())) {
-              timeSeriesMetricPackDTO.getMetricThresholds()
-                  .stream()
-                  .filter(metricPackDTO -> metric.getName().equals(metricPackDTO.getMetricName()))
-                  .forEach(metricPackDTO -> metricPackDTO.getTimeSeriesThresholdCriteria().forEach(criteria -> {
-                    List<TimeSeriesThreshold> timeSeriesThresholds =
-                        metric.getThresholds() != null ? metric.getThresholds() : new ArrayList<>();
-                    String metricName = metricPackDTO.getMetricName();
-                    List<TimeSeriesThresholdType> thresholdTypes = null;
-                    if (mapOfMetricDefinitions.containsKey(metricName)) {
-                      thresholdTypes = mapOfMetricDefinitions.get(metricName).getRiskProfile().getThresholdTypes();
-                    }
-                    TimeSeriesThreshold timeSeriesThreshold =
-                        TimeSeriesThreshold.builder()
-                            .accountId(getAccountId())
-                            .projectIdentifier(getProjectIdentifier())
-                            .dataSourceType(getType())
-                            .metricIdentifier(metric.getIdentifier())
-                            .metricType(metric.getType())
-                            .metricName(metricPackDTO.getMetricName())
-                            .action(metricPackDTO.getType().getTimeSeriesThresholdActionType())
-                            .criteria(criteria)
-                            .thresholdConfigType(ThresholdConfigType.USER_DEFINED)
-                            .deviationType(DeviationType.getDeviationType(thresholdTypes))
-                            .build();
-                    timeSeriesThresholds.add(timeSeriesThreshold);
-                    metric.setThresholds(timeSeriesThresholds);
-                  }));
-            }
-          });
+      timeSeriesMetricPacks.forEach(timeSeriesMetricPackDTO -> {
+        if (!isEmpty(timeSeriesMetricPackDTO.getMetricThresholds())) {
+          timeSeriesMetricPackDTO.getMetricThresholds()
+              .stream()
+              .filter(metricPackDTO -> metric.getName().equals(metricPackDTO.getMetricName()))
+              .forEach(metricPackDTO -> metricPackDTO.getTimeSeriesThresholdCriteria().forEach(criteria -> {
+                List<TimeSeriesThreshold> timeSeriesThresholds =
+                    metric.getThresholds() != null ? metric.getThresholds() : new ArrayList<>();
+                String metricName = metricPackDTO.getMetricName();
+                List<TimeSeriesThresholdType> thresholdTypes = null;
+                if (mapOfMetricDefinitions.containsKey(metricName)) {
+                  thresholdTypes = mapOfMetricDefinitions.get(metricName).getRiskProfile().getThresholdTypes();
+                }
+                TimeSeriesThreshold timeSeriesThreshold =
+                    TimeSeriesThreshold.builder()
+                        .accountId(getAccountId())
+                        .projectIdentifier(getProjectIdentifier())
+                        .dataSourceType(getType())
+                        .metricIdentifier(metric.getIdentifier())
+                        .metricType(metric.getType())
+                        .metricName(metricPackDTO.getMetricName())
+                        .action(metricPackDTO.getType().getTimeSeriesThresholdActionType())
+                        .criteria(criteria)
+                        .thresholdConfigType(ThresholdConfigType.USER_DEFINED)
+                        .deviationType(DeviationType.getDeviationType(thresholdTypes))
+                        .build();
+                if (!MonitoredServiceConstants.CUSTOM_METRIC_PACK.equalsIgnoreCase(
+                        timeSeriesMetricPackDTO.getIdentifier())) {
+                  timeSeriesThreshold.setMetricGroupName(metricPackDTO.getGroupName());
+                }
+                timeSeriesThresholds.add(timeSeriesThreshold);
+                metric.setThresholds(timeSeriesThresholds);
+              }));
+        }
+      });
     });
   }
 

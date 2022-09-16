@@ -13,6 +13,7 @@ import io.harness.cvng.core.beans.HealthSourceMetricDefinition;
 import io.harness.cvng.core.beans.monitoredService.HealthSource;
 import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.constant.MonitoredServiceConstants;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.DynatraceCVConfig;
 import io.harness.cvng.core.entities.MetricPack;
@@ -101,26 +102,30 @@ public class DynatraceHealthSourceSpec extends MetricHealthSourceSpec {
       String identifier, String name, String monitoredServiceIdentifier, MetricPackService metricPackService) {
     List<DynatraceCVConfig> cvConfigs = new ArrayList<>();
     // map metric packs to cvConfigs
-    CollectionUtils.emptyIfNull(metricPacks).forEach(metricPack -> {
-      MetricPack metricPackFromDb = metricPack.toMetricPack(projectParams.getAccountIdentifier(),
-          projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier(), getType(), metricPackService);
-      DynatraceCVConfig cvConfig = DynatraceCVConfig.builder()
-                                       .accountId(projectParams.getAccountIdentifier())
-                                       .orgIdentifier(projectParams.getOrgIdentifier())
-                                       .projectIdentifier(projectParams.getProjectIdentifier())
-                                       .identifier(identifier)
-                                       .monitoredServiceIdentifier(monitoredServiceIdentifier)
-                                       .connectorIdentifier(getConnectorRef())
-                                       .monitoringSourceName(name)
-                                       .productName(feature)
-                                       .dynatraceServiceName(serviceName)
-                                       .dynatraceServiceId(serviceId)
-                                       .serviceMethodIds(serviceMethodIds)
-                                       .metricPack(metricPackFromDb)
-                                       .category(metricPackFromDb.getCategory())
-                                       .build();
-      cvConfigs.add(cvConfig);
-    });
+    CollectionUtils.emptyIfNull(metricPacks)
+        .stream()
+        .filter(
+            metricPack -> !metricPack.getIdentifier().equalsIgnoreCase(MonitoredServiceConstants.CUSTOM_METRIC_PACK))
+        .forEach(metricPack -> {
+          MetricPack metricPackFromDb = metricPack.toMetricPack(projectParams.getAccountIdentifier(),
+              projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier(), getType(), metricPackService);
+          DynatraceCVConfig cvConfig = DynatraceCVConfig.builder()
+                                           .accountId(projectParams.getAccountIdentifier())
+                                           .orgIdentifier(projectParams.getOrgIdentifier())
+                                           .projectIdentifier(projectParams.getProjectIdentifier())
+                                           .identifier(identifier)
+                                           .monitoredServiceIdentifier(monitoredServiceIdentifier)
+                                           .connectorIdentifier(getConnectorRef())
+                                           .monitoringSourceName(name)
+                                           .productName(feature)
+                                           .dynatraceServiceName(serviceName)
+                                           .dynatraceServiceId(serviceId)
+                                           .serviceMethodIds(serviceMethodIds)
+                                           .metricPack(metricPackFromDb)
+                                           .category(metricPackFromDb.getCategory())
+                                           .build();
+          cvConfigs.add(cvConfig);
+        });
 
     // map custom metrics to cvConfigs
     cvConfigs.addAll(CollectionUtils.emptyIfNull(metricDefinitions)
