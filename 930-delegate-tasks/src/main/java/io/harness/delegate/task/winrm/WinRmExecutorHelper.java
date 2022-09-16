@@ -9,6 +9,7 @@ package io.harness.delegate.task.winrm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.exception.WingsException.USER;
 
 import static java.lang.String.format;
 import static org.apache.commons.codec.binary.Base64.encodeBase64String;
@@ -17,16 +18,33 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.exception.InvalidRequestException;
+import io.harness.security.encryption.EncryptedDataDetail;
 
+import software.wings.beans.AWSTemporaryCredentials;
+import software.wings.beans.AwsConfig;
 import software.wings.beans.WinRmCommandParameter;
+import software.wings.beans.artifact.ArtifactMetadataKeys;
+import software.wings.beans.artifact.ArtifactStreamAttributes;
+import software.wings.beans.command.AWS4SignerForAuthorizationHeader;
+import software.wings.service.impl.AwsHelperService;
+import software.wings.service.intfc.security.EncryptionService;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
+import com.google.inject.Inject;
 import java.io.StringWriter;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.SimpleTimeZone;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 
@@ -35,6 +53,13 @@ import lombok.extern.slf4j.Slf4j;
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 public class WinRmExecutorHelper {
   private static final int SPLITLISTOFCOMMANDSBY = 20;
+  private static Map<String, String> bucketRegions = new HashMap<>();
+  private static final String ISO_8601_BASIC_FORMAT = "yyyyMMdd'T'HHmmss'Z'";
+  private static final String EMPTY_BODY_SHA256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+  private static final String AWS_CREDENTIALS_URL = "http://169.254.169.254/";
+
+  @Inject private EncryptionService encryptionService;
+  @Inject private AwsHelperService awsHelperService;
 
   /**
    * To construct the powershell script for running on target windows host.
@@ -182,5 +207,86 @@ public class WinRmExecutorHelper {
     } catch (Exception e) {
       log.error("Exception while trying to remove file {} {}", file, e);
     }
+  }
+
+  @VisibleForTesting
+  public String createPsCommandForS3ArtifactDownload(AwsConfig awsConfig, List<EncryptedDataDetail> encryptionDetails,
+      Map<String, String> metadata, String targetPath) {
+    if (isEmpty(bucketRegions)) {
+      initBucketRegions();
+    }
+    encryptionService.decrypt(awsConfig, encryptionDetails, false);
+    String awsAccessKey;
+    String awsSecretKey;
+    String awsToken = null;
+    // https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html (Retrieving security
+    // credentials from instance metadata)
+    if (awsConfig.isUseEc2IamCredentials()) {
+      AWSTemporaryCredentials credentials =
+          awsHelperService.getCredentialsForIAMROleOnDelegate(AWS_CREDENTIALS_URL, awsConfig);
+      awsAccessKey = credentials.getAccessKeyId();
+      awsSecretKey = credentials.getSecretKey();
+      awsToken = credentials.getToken();
+    } else {
+      awsAccessKey = String.valueOf(awsConfig.getAccessKey());
+      awsSecretKey = String.valueOf(awsConfig.getSecretKey());
+    }
+    String bucketName = metadata.get(ArtifactMetadataKeys.bucketName);
+    String region = awsHelperService.getBucketRegion(awsConfig, encryptionDetails, bucketName);
+    String artifactPath = metadata.get(ArtifactMetadataKeys.artifactPath);
+    String artifactFileName = metadata.get(ArtifactMetadataKeys.artifactFileName);
+    URL endpointUrl;
+    String url = getAmazonS3Url(bucketName, region, artifactPath);
+    try {
+      endpointUrl = new URL(url);
+    } catch (MalformedURLException e) {
+      throw new InvalidRequestException("Unable to parse service endpoint: ", e);
+    }
+
+    Date now = new Date();
+    SimpleDateFormat dateTimeFormat = new SimpleDateFormat(ISO_8601_BASIC_FORMAT);
+    dateTimeFormat.setTimeZone(new SimpleTimeZone(0, "UTC"));
+    String dateTimeStamp = dateTimeFormat.format(now);
+    String authorizationHeader = AWS4SignerForAuthorizationHeader.getAWSV4AuthorizationHeader(
+        endpointUrl, region, awsAccessKey, awsSecretKey, now, awsToken);
+    return "$Headers = @{\n"
+        + "    Authorization = \"" + authorizationHeader + "\"\n"
+        + "    \"x-amz-content-sha256\" = \"" + EMPTY_BODY_SHA256 + "\"\n"
+        + "    \"x-amz-date\" = \"" + dateTimeStamp + "\"\n"
+        + (isEmpty(awsToken) ? "" : " \"x-amz-security-token\" = \"" + awsToken + "\"\n") + "}\n"
+        + " $ProgressPreference = 'SilentlyContinue'\n"
+        + " Invoke-WebRequest -Uri \""
+        + AWS4SignerForAuthorizationHeader.getEndpointWithCanonicalizedResourcePath(endpointUrl, true)
+        + "\" -Headers $Headers -OutFile (New-Item -Path \"" + targetPath + "\\" + artifactFileName + "\""
+        + " -Force)";
+  }
+
+  private String getAmazonS3Url(String bucketName, String region, String artifactPath) {
+    return "https://" + bucketName + ".s3" + bucketRegions.get(region) + ".amazonaws.com"
+        + "/" + artifactPath;
+  }
+
+  private void initBucketRegions() {
+    bucketRegions.put("us-east-2", "-us-east-2");
+    bucketRegions.put("us-east-1", "");
+    bucketRegions.put("us-west-1", "-us-west-1");
+    bucketRegions.put("us-west-2", "-us-west-2");
+    bucketRegions.put("ca-central-1", "-ca-central-1");
+    bucketRegions.put("ap-east-1", "-ap-east-1");
+    bucketRegions.put("ap-south-1", "-ap-south-1");
+    bucketRegions.put("ap-northeast-2", "-ap-northeast-2");
+    bucketRegions.put("ap-northeast-3", "-ap-northeast-3");
+    bucketRegions.put("ap-southeast-1", "-ap-southeast-1");
+    bucketRegions.put("ap-southeast-2", "-ap-southeast-2");
+    bucketRegions.put("ap-northeast-1", "-ap-northeast-1");
+    bucketRegions.put("cn-north-1", ".cn-north-1");
+    bucketRegions.put("cn-northwest-1", ".cn-northwest-1");
+    bucketRegions.put("eu-central-1", "-eu-central-1");
+    bucketRegions.put("eu-west-1", "-eu-west-1");
+    bucketRegions.put("eu-west-2", "-eu-west-2");
+    bucketRegions.put("eu-west-3", "-eu-west-3");
+    bucketRegions.put("eu-north-1", "-eu-north-1");
+    bucketRegions.put("sa-east-1", "-sa-east-1");
+    bucketRegions.put("me-south-1", "-me-south-1");
   }
 }

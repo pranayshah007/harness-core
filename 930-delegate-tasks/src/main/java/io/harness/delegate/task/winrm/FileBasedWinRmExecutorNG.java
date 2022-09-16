@@ -41,13 +41,15 @@ import org.apache.commons.lang3.NotImplementedException;
 public class FileBasedWinRmExecutorNG extends FileBasedAbstractWinRmExecutor {
   private final SecretDecryptionService secretDecryptionService;
   private final ArtifactoryRequestMapper artifactoryRequestMapper;
+  private final WinRmExecutorHelper winRmExecutorHelper;
 
   public FileBasedWinRmExecutorNG(LogCallback logCallback, boolean shouldSaveExecutionLogs, WinRmSessionConfig config,
       boolean disableCommandEncoding, SecretDecryptionService secretDecryptionService,
-      ArtifactoryRequestMapper artifactoryRequestMapper) {
+      ArtifactoryRequestMapper artifactoryRequestMapper, WinRmExecutorHelper winRmExecutorHelper) {
     super(logCallback, shouldSaveExecutionLogs, config, disableCommandEncoding);
     this.secretDecryptionService = secretDecryptionService;
     this.artifactoryRequestMapper = artifactoryRequestMapper;
+    this.winRmExecutorHelper = winRmExecutorHelper;
   }
 
   @Override
@@ -55,7 +57,7 @@ public class FileBasedWinRmExecutorNG extends FileBasedAbstractWinRmExecutor {
     // no need for the implementation for NG
     throw new NotImplementedException("Not implemented");
   }
-
+  
   public CommandExecutionStatus copyConfigFiles(ConfigFileParameters configFileParameters) {
     if (isBlank(configFileParameters.getFileName())) {
       saveExecutionLog("There is no config file to copy. " + configFileParameters, INFO);
