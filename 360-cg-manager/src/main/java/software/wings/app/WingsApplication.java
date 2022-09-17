@@ -1090,6 +1090,7 @@ public class WingsApplication extends Application<MainConfiguration> {
 
     if (!injector.getInstance(FeatureFlagService.class).isGlobalEnabled(GLOBAL_DISABLE_HEALTH_CHECK)) {
       healthService.registerMonitor(injector.getInstance(HPersistence.class));
+      healthService.registerMonitor((HealthMonitor) injector.getInstance(PersistentLocker.class));
     }
   }
 
