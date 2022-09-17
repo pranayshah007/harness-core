@@ -3237,7 +3237,14 @@
               "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
             },
             "skipInstances": {
-              "type": "boolean"
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
             },
             "strategy": {
               "$ref": "#/definitions/StrategyConfig"
@@ -3289,7 +3296,14 @@
               "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
             },
             "skipInstances": {
-              "type": "boolean"
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
             },
             "spec": { },
             "strategy": {
