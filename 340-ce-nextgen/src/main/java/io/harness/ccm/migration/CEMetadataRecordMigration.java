@@ -42,7 +42,7 @@ public class CEMetadataRecordMigration implements NGMigration {
           }
           ceMetadataRecordDao.upsert(ceMetadataRecord);
         } catch (final Exception e) {
-          log.error("Migration Failed for Account {}, ViewId {}", ceMetadataRecord.getAccountId(),
+          log.error("Migration Failed for Account {}, CEMetadataRecordId {}", ceMetadataRecord.getAccountId(),
               ceMetadataRecord.getUuid(), e);
         }
       }
