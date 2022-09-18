@@ -1,0 +1,7 @@
+identifier: Errors
+category: Errors
+metrics:
+  - name: Errors
+    identifier: errors
+    type: ERROR
+    included: false

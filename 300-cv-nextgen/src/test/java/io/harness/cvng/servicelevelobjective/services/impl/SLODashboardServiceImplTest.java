@@ -276,7 +276,7 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
   public void testGetSloHealthListView_emptyResponse() {
     PageResponse<SLOHealthListView> pageResponse =
         sloDashboardService.getSloHealthListView(builderFactory.getProjectParams(),
-            SLODashboardApiFilter.builder().build(), PageParams.builder().page(0).size(4).build());
+            SLODashboardApiFilter.builder().build(), PageParams.builder().page(0).size(10).build(), null);
     assertThat(pageResponse.getPageItemCount()).isEqualTo(0);
     assertThat(pageResponse.getTotalItems()).isEqualTo(0);
     assertThat(pageResponse.getContent()).isEmpty();
@@ -299,7 +299,7 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     serviceLevelObjectiveService.create(builderFactory.getProjectParams(), serviceLevelObjective);
     PageResponse<SLOHealthListView> pageResponse =
         sloDashboardService.getSloHealthListView(builderFactory.getProjectParams(),
-            SLODashboardApiFilter.builder().build(), PageParams.builder().page(0).size(4).build());
+            SLODashboardApiFilter.builder().build(), PageParams.builder().page(0).size(10).build(), null);
     assertThat(pageResponse.getPageItemCount()).isEqualTo(1);
     assertThat(pageResponse.getTotalItems()).isEqualTo(1);
     List<SLOHealthListView> sloDashboardWidgets = pageResponse.getContent();
@@ -321,6 +321,44 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     assertThat(sloDashboardWidget.getServiceName()).isEqualTo("Mocked service name");
     assertThat(sloDashboardWidget.getEnvironmentName()).isEqualTo("Mocked env name");
     assertThat(sloDashboardWidget.getUserJourneyIdentifier()).isEqualTo("userJourney");
+  }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testGetSloHealthListViewSearchFunctionality() {
+    String monitoredServiceIdentifier = "monitoredServiceIdentifier";
+    MonitoredServiceDTO monitoredServiceDTO =
+        builderFactory.monitoredServiceDTOBuilder().identifier(monitoredServiceIdentifier).build();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+
+    ServiceLevelObjectiveDTO serviceLevelObjective1 =
+        builderFactory.getServiceLevelObjectiveDTOBuilder().monitoredServiceRef(monitoredServiceIdentifier).build();
+    serviceLevelObjectiveService.create(builderFactory.getProjectParams(), serviceLevelObjective1);
+
+    ServiceLevelObjectiveDTO serviceLevelObjective2 =
+        builderFactory.getServiceLevelObjectiveDTOBuilder().monitoredServiceRef(monitoredServiceIdentifier).build();
+    serviceLevelObjective2.setName("new two");
+    serviceLevelObjective2.setIdentifier("new_two");
+    serviceLevelObjectiveService.create(builderFactory.getProjectParams(), serviceLevelObjective2);
+
+    ServiceLevelObjectiveDTO serviceLevelObjective3 =
+        builderFactory.getServiceLevelObjectiveDTOBuilder().monitoredServiceRef(monitoredServiceIdentifier).build();
+    serviceLevelObjective3.setName("new three");
+    serviceLevelObjective3.setIdentifier("new_three");
+    serviceLevelObjectiveService.create(builderFactory.getProjectParams(), serviceLevelObjective3);
+
+    PageResponse<SLOHealthListView> pageResponse =
+        sloDashboardService.getSloHealthListView(builderFactory.getProjectParams(),
+            SLODashboardApiFilter.builder().build(), PageParams.builder().page(0).size(10).build(), "ew");
+    assertThat(pageResponse.getPageItemCount()).isEqualTo(2);
+    assertThat(pageResponse.getTotalItems()).isEqualTo(2);
+    List<SLOHealthListView> sloDashboardWidgets = pageResponse.getContent();
+    assertThat(sloDashboardWidgets).hasSize(2);
+    SLOHealthListView sloDashboardWidget = sloDashboardWidgets.get(0);
+    assertThat(sloDashboardWidget.getName()).isEqualTo(serviceLevelObjective3.getName());
+    sloDashboardWidget = sloDashboardWidgets.get(1);
+    assertThat(sloDashboardWidget.getName()).isEqualTo(serviceLevelObjective2.getName());
   }
 
   @Test
@@ -349,7 +387,7 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     serviceLevelObjectiveService.create(builderFactory.getProjectParams(), serviceLevelObjective);
     PageResponse<SLOHealthListView> pageResponse =
         sloDashboardService.getSloHealthListView(builderFactory.getProjectParams(),
-            SLODashboardApiFilter.builder().build(), PageParams.builder().page(0).size(4).build());
+            SLODashboardApiFilter.builder().build(), PageParams.builder().page(0).size(10).build(), null);
     assertThat(pageResponse.getPageItemCount()).isEqualTo(1);
     assertThat(pageResponse.getTotalItems()).isEqualTo(1);
     List<SLOHealthListView> sloDashboardWidgets = pageResponse.getContent();

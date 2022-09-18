@@ -35,6 +35,11 @@ public class GitContextHelper {
       if (gitBranchInfo != null && gitBranchInfo.getStoreType() != null) {
         return gitBranchInfo;
       }
+      // TODO: write cleaner logic to get the branchInfo
+      if (gitBranchInfo != null
+          && (gitBranchInfo.getParentEntityConnectorRef() != null || gitBranchInfo.getConnectorRef() != null)) {
+        return gitBranchInfo;
+      }
       return null;
     }
     return gitBranchInfo;

@@ -66,8 +66,9 @@ public class SLODashboardResource {
   @NGAccessControlCheck(resourceType = SLO, permission = VIEW_PERMISSION)
   public ResponseDTO<PageResponse<SLOHealthListView>> getSloHealthListView(
       @NotNull @BeanParam ProjectParams projectParams, @BeanParam SLODashboardApiFilter filter,
-      @BeanParam PageParams pageParams) {
-    return ResponseDTO.newResponse(sloDashboardService.getSloHealthListView(projectParams, filter, pageParams));
+      @BeanParam PageParams pageParams, @QueryParam("filter") String filterByName) {
+    return ResponseDTO.newResponse(
+        sloDashboardService.getSloHealthListView(projectParams, filter, pageParams, filterByName));
   }
 
   @GET

@@ -30,6 +30,7 @@ import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
 import io.harness.beans.environment.pod.container.ContainerImageDetails;
 import io.harness.beans.execution.ManualExecutionSource;
 import io.harness.beans.executionargs.CIExecutionArgs;
+import io.harness.beans.stages.IntegrationStageNode;
 import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.cimanager.stages.IntegrationStageConfigImpl;
 import io.harness.delegate.beans.ci.pod.ContainerResourceParams;
@@ -37,7 +38,6 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.k8s.model.ImageDetails;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
-import io.harness.plancreator.stages.stage.StageElementConfig;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -84,8 +84,12 @@ public class K8InitializeStepUtilsHelper {
   private static final String BACKGROUND_STEP_LIMIT_MEM = "500Mi";
   private static final String BACKGROUND_STEP_LIMIT_CPU = "300m";
 
-  public static StageElementConfig getIntegrationStageElementConfig() {
-    return StageElementConfig.builder().identifier("ciStage").type("CI").stageType(getIntegrationStageConfig()).build();
+  public static IntegrationStageNode getIntegrationStageNode() {
+    return IntegrationStageNode.builder()
+        .identifier("ciStage")
+        .type(IntegrationStageNode.StepType.CI)
+        .integrationStageConfig((IntegrationStageConfigImpl) getIntegrationStageConfig())
+        .build();
   }
 
   public static IntegrationStageConfig getIntegrationStageConfig() {
@@ -475,19 +479,19 @@ public class K8InitializeStepUtilsHelper {
         .build();
   }
 
-  public static StageElementConfig getIntegrationStageElementConfigWithStepGroup() throws Exception {
-    return StageElementConfig.builder()
+  public static IntegrationStageNode getIntegrationStageNodeWithStepGroup() throws Exception {
+    return IntegrationStageNode.builder()
         .identifier("ciStage")
-        .type("CI")
-        .stageType(getIntegrationStageConfigWithStepGroup1())
+        .type(IntegrationStageNode.StepType.CI)
+        .integrationStageConfig((IntegrationStageConfigImpl) getIntegrationStageConfigWithStepGroup1())
         .build();
   }
 
-  public static StageElementConfig getIntegrationStageElementConfigWithStepGroup1() throws Exception {
-    return StageElementConfig.builder()
+  public static IntegrationStageNode getIntegrationStageNodeWithStepGroup1() throws Exception {
+    return IntegrationStageNode.builder()
         .identifier("ciStage")
-        .type("CI")
-        .stageType(getIntegrationStageConfigWithStepGroup1())
+        .type(IntegrationStageNode.StepType.CI)
+        .integrationStageConfig((IntegrationStageConfigImpl) getIntegrationStageConfigWithStepGroup1())
         .build();
   }
 

@@ -35,6 +35,7 @@ import io.harness.ci.integrationstage.BuildJobEnvInfoBuilder;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
 import io.harness.ci.integrationstage.K8InitializeServiceUtils;
 import io.harness.ci.integrationstage.VmInitializeTaskParamsBuilder;
+import io.harness.ci.validation.CIYAMLSanitizationService;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.TaskData;
@@ -51,6 +52,7 @@ import io.harness.helper.SerializedResponseDataHelper;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logstreaming.LogStreamingHelper;
 import io.harness.ng.core.EntityDetail;
+import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -109,7 +111,7 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
   private static final String DEPENDENCY_OUTCOME = "dependencies";
   public static final StepType STEP_TYPE = InitializeStepInfo.STEP_TYPE;
   @Inject private BuildJobEnvInfoBuilder buildJobEnvInfoBuilder;
-
+  @Inject private CIYAMLSanitizationService sanitizationService;
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
     return StepElementParameters.class;
@@ -132,6 +134,16 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
 
     if (isNotEmpty(connectorsEntityDetails)) {
       pipelineRbacHelper.checkRuntimePermissions(ambiance, connectorsEntityDetails, true);
+    }
+
+    sanitizeExecution(initializeStepInfo);
+  }
+
+  private void sanitizeExecution(InitializeStepInfo initializeStepInfo) {
+    List<ExecutionWrapperConfig> steps = initializeStepInfo.getExecutionElementConfig().getSteps();
+    if (initializeStepInfo.getInfrastructure().getType() == Infrastructure.Type.KUBERNETES_HOSTED
+        || initializeStepInfo.getInfrastructure().getType() == Infrastructure.Type.HOSTED_VM) {
+      sanitizationService.validate(steps);
     }
   }
 

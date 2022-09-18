@@ -146,8 +146,6 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
       + "          spec:\n"
       + "            url: \"https://www.bing.com\"\n"
       + "            method: \"GET\"\n"
-      + "            headers: []\n"
-      + "            outputVariables: []\n"
       + "          timeout: \"10s\"\n"
       + "    - __uuid: \"step4\"\n"
       + "      step:\n"
@@ -253,8 +251,6 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
       + "      spec:\n"
       + "        url: \"https://www.bing.com\"\n"
       + "        method: \"GET\"\n"
-      + "        headers: []\n"
-      + "        outputVariables: []\n"
       + "      timeout: \"10s\"\n";
 
   @Inject MatrixConfigService matrixConfigService;
@@ -521,6 +517,31 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
     for (JsonNode jsonNode : jsonNodes) {
       assertThat(jsonNode.get("identifier").asText()).isEqualTo(current + "_" + current);
       assertThat(jsonNode.get("name").asText()).isEqualTo("10_" + current);
+      current++;
+    }
+    stepYamlField = approvalStageYamlField.getNode()
+                        .getField("spec")
+                        .getNode()
+                        .getField("execution")
+                        .getNode()
+                        .getField("steps")
+                        .getNode()
+                        .asArray()
+                        .get(0)
+                        .getField("stepGroup")
+                        .getNode()
+                        .getField("steps")
+                        .getNode()
+                        .asArray()
+                        .get(1)
+                        .getField("step");
+    jsonNodes = strategyHelper.expandJsonNodes(stepYamlField.getNode().getCurrJsonNode()).getExpandedJsonNodes();
+    current = 0;
+    assertThat(jsonNodes.size()).isEqualTo(1);
+
+    for (JsonNode jsonNode : jsonNodes) {
+      assertThat(jsonNode.get("identifier").asText()).isEqualTo("0");
+      assertThat(jsonNode.get("name").asText()).isEqualTo("1");
       current++;
     }
   }

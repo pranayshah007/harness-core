@@ -49,10 +49,9 @@ public class AzureCreateBPStepInfo
   @NotNull @JsonProperty("configuration") AzureCreateBPStepConfiguration createStepBPConfiguration;
 
   @Builder(builderMethodName = "infoBuilder")
-  public AzureCreateBPStepInfo(ParameterField<String> provisionerIdentifier,
-      ParameterField<List<TaskSelectorYaml>> delegateSelector, AzureCreateBPStepConfiguration createStepBPConfiguration,
-      String uuid) {
-    super(provisionerIdentifier, delegateSelector, uuid);
+  public AzureCreateBPStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelector,
+      AzureCreateBPStepConfiguration createStepBPConfiguration, String uuid) {
+    super(delegateSelector, uuid);
     this.createStepBPConfiguration = createStepBPConfiguration;
   }
 
@@ -88,7 +87,6 @@ public class AzureCreateBPStepInfo
     validateSpecParameters();
     return AzureCreateBPStepParameters.infoBuilder()
         .delegateSelectors(getDelegateSelectors())
-        .provisionerIdentifier(getProvisionerIdentifier())
         .configuration(createStepBPConfiguration.toStepParameters())
         .build();
   }

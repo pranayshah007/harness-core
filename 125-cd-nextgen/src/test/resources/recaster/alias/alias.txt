@@ -477,3 +477,4 @@ io.harness.cdng.infra.beans.host.HostNamesFilter
 io.harness.cdng.infra.beans.host.HostAttributesFilter
 io.harness.cdng.manifest.steps.NgManifestsMetadataSweepingOutput
 io.harness.cdng.configfile.steps.NgConfigFilesMetadataSweepingOutput
+io.harness.cdng.provision.azure.beans.AzureARMValidator

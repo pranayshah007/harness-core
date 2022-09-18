@@ -20,7 +20,9 @@ import io.harness.cvng.servicelevelobjective.beans.SLOErrorBudgetResetDTO;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetType;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.iterator.PersistentRegularIterable;
+import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
+import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.persistence.AccountAccess;
@@ -30,6 +32,7 @@ import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UuidAware;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.google.common.collect.ImmutableList;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -59,7 +62,7 @@ import org.mongodb.morphia.annotations.Id;
 
 @Data
 @SuperBuilder
-@FieldNameConstants(innerTypeName = "ServiceLevelObjectiveKeys")
+@FieldNameConstants(innerTypeName = "ServiceLevelObjectiveV2Keys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @NoArgsConstructor
@@ -87,6 +90,19 @@ public abstract class AbstractServiceLevelObjective
   private long createdAt;
   @NotNull private Double sloTargetPercentage;
   @FdIndex private long nextNotificationIteration;
+
+  public static List<MongoIndex> mongoIndexes() {
+    return ImmutableList.<MongoIndex>builder()
+        .add(CompoundMongoIndex.builder()
+                 .name("unique_query_idx")
+                 .unique(true)
+                 .field(ServiceLevelObjectiveV2Keys.accountId)
+                 .field(ServiceLevelObjectiveV2Keys.orgIdentifier)
+                 .field(ServiceLevelObjectiveV2Keys.projectIdentifier)
+                 .field(ServiceLevelObjectiveV2Keys.identifier)
+                 .build())
+        .build();
+  }
 
   public ZoneOffset getZoneOffset() {
     return ZoneOffset.UTC; // hardcoding it to UTC for now. We need to ask it from user.
@@ -127,7 +143,7 @@ public abstract class AbstractServiceLevelObjective
 
   @Override
   public Long obtainNextIteration(String fieldName) {
-    if (ServiceLevelObjectiveKeys.nextNotificationIteration.equals(fieldName)) {
+    if (ServiceLevelObjectiveV2Keys.nextNotificationIteration.equals(fieldName)) {
       return this.nextNotificationIteration;
     }
     throw new IllegalArgumentException("Invalid fieldName " + fieldName);
@@ -135,7 +151,7 @@ public abstract class AbstractServiceLevelObjective
 
   @Override
   public void updateNextIteration(String fieldName, long nextIteration) {
-    if (ServiceLevelObjectiveKeys.nextNotificationIteration.equals(fieldName)) {
+    if (ServiceLevelObjectiveV2Keys.nextNotificationIteration.equals(fieldName)) {
       this.nextNotificationIteration = nextIteration;
       return;
     }

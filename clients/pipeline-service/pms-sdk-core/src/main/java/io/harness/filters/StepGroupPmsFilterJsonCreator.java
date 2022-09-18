@@ -7,11 +7,17 @@
 
 package io.harness.filters;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.COMMAND;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP_GROUP;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.InvalidYamlException;
+import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.steps.StepGroupElementConfig;
+import io.harness.plancreator.strategy.StrategyConfig;
+import io.harness.pms.filter.creation.FilterCreationResponse;
 import io.harness.pms.pipeline.filter.PipelineFilter;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.sdk.core.filter.creation.beans.FilterCreationContext;
@@ -24,6 +30,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -59,5 +66,36 @@ public class StepGroupPmsFilterJsonCreator extends ChildrenFilterJsonCreator<Ste
   @Override
   public Map<String, Set<String>> getSupportedTypes() {
     return Collections.singletonMap(STEP_GROUP, Collections.singleton(PlanCreatorUtils.ANY_TYPE));
+  }
+
+  @Override
+  public FilterCreationResponse handleNode(FilterCreationContext filterCreationContext, StepGroupElementConfig field) {
+    FilterCreationResponse response = super.handleNode(filterCreationContext, field);
+    validateStrategy(field);
+    return response;
+  }
+
+  private void validateStrategy(StepGroupElementConfig field) {
+    StrategyConfig strategy = field.getStrategy();
+    if (strategy != null && containsCommandStep(field)
+        && (strategy.getMatrixConfig() != null
+            || (strategy.getParallelism() != null
+                && (strategy.getParallelism().getValue() != null
+                    || strategy.getParallelism().getExpressionValue() != null)))) {
+      throw new InvalidYamlException("Only repeat strategy is supported if step group contains command step.");
+    }
+  }
+
+  private boolean containsCommandStep(StepGroupElementConfig field) {
+    if (isEmpty(field.getSteps())) {
+      return false;
+    }
+    return field.getSteps()
+        .stream()
+        .map(ExecutionWrapperConfig::getStep)
+        .filter(Objects::nonNull)
+        .map(i -> i.get("type"))
+        .filter(Objects::nonNull)
+        .anyMatch(i -> COMMAND.equalsIgnoreCase(i.asText()));
   }
 }

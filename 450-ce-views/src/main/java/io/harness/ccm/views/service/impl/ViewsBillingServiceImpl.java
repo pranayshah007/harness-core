@@ -272,8 +272,9 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
           filters, null, null, queryParams.getAccountId(), cloudProviderTableName, isClusterQuery);
     }
 
-    ViewsQueryMetadata viewsQueryMetadata = viewsQueryBuilder.getFilterValuesQuery(
-        viewRuleList, idFilters, getTimeFilters(filters), cloudProviderTableName, limit, offset);
+    ViewsQueryMetadata viewsQueryMetadata = viewsQueryBuilder.getFilterValuesQuery(viewRuleList, idFilters,
+        getTimeFilters(filters), cloudProviderTableName, limit, offset, !isDataFilteredByAwsAccount(idFilters));
+
     QueryJobConfiguration queryConfig =
         QueryJobConfiguration.newBuilder(viewsQueryMetadata.getQuery().toString()).build();
     TableResult result;
@@ -294,6 +295,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     List<String> filterValuesData = convertToFilterValuesData(result, viewsQueryMetadata.getFields(), isClusterQuery);
     if (isDataFilteredByAwsAccount(idFilters)) {
       filterValuesData = awsAccountFieldHelper.mergeAwsAccountNameWithValues(filterValuesData, harnessAccountId);
+      filterValuesData = awsAccountFieldHelper.spiltAndSortAWSAccountIdListBasedOnAccountName(filterValuesData);
     }
     return filterValuesData;
   }

@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotation.HarnessRepo;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.mongo.metrics.HarnessConnectionPoolListener;
 import io.harness.springdata.HMongoTemplate;
 
 import com.google.inject.Inject;
@@ -42,12 +43,14 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
     includeFilters = @ComponentScan.Filter(HarnessRepo.class), mongoTemplateRef = "notification-channel")
 public class NotificationChannelPersistenceConfig extends AbstractMongoConfiguration {
   private final MongoBackendConfiguration mongoBackendConfiguration;
+  private final HarnessConnectionPoolListener harnessConnectionPoolListener;
 
   @Inject
   public NotificationChannelPersistenceConfig(Injector injector) {
     this.mongoBackendConfiguration =
         (MongoBackendConfiguration) injector.getInstance(Key.get(NotificationClientConfiguration.class))
             .getNotificationClientBackendConfiguration();
+    this.harnessConnectionPoolListener = injector.getInstance(HarnessConnectionPoolListener.class);
   }
 
   @Override
@@ -60,6 +63,9 @@ public class NotificationChannelPersistenceConfig extends AbstractMongoConfigura
             .maxConnectionIdleTime(mongoBackendConfiguration.getMaxConnectionIdleTime())
             .connectionsPerHost(mongoBackendConfiguration.getConnectionsPerHost())
             .readPreference(ReadPreference.primary())
+            .addConnectionPoolListener(harnessConnectionPoolListener)
+            .applicationName("ng_manager_notification_channel_client")
+            .description("ng_manager_notification_channel_client")
             .build();
     MongoClientURI uri =
         new MongoClientURI(mongoBackendConfiguration.getUri(), MongoClientOptions.builder(primaryMongoClientOptions));

@@ -281,7 +281,12 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
         logCallback.saveExecutionLog("Deployment failed.");
         deleteAndPurgeHelmRelease(commandRequest, logCallback);
       }
-      cleanUpWorkingDirectory(initWorkingDir);
+      if (!helmTaskHelperBase.isHelmLocalRepoSet()) {
+        cleanUpWorkingDirectory(initWorkingDir);
+      }
+      if (isNotEmpty(commandRequest.getGcpKeyPath())) {
+        deleteDirectoryAndItsContentIfExists(Paths.get(commandRequest.getGcpKeyPath()).getParent().toString());
+      }
     }
   }
 
@@ -396,15 +401,10 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
         if (ocPath.isPresent()) {
           commandRequest.setOcPath(ocPath.get());
         }
-        if (isNotEmpty(commandRequest.getGcpKeyPath())) {
-          Path oldPath = Paths.get(commandRequest.getGcpKeyPath());
-          Path newPath = Paths.get(commandRequest.getWorkingDir(), K8sConstants.GCP_JSON_KEY_FILE_NAME);
-          Files.move(oldPath, newPath);
-          commandRequest.setGcpKeyPath(newPath.toAbsolutePath().toString());
-        }
         success = success
             && doStatusCheckAllResourcesForHelm(client, entry.getValue(), commandRequest.getOcPath(),
-                commandRequest.getWorkingDir(), namespace, commandRequest.getKubeConfigLocation(), logCallback);
+                commandRequest.getWorkingDir(), namespace, commandRequest.getKubeConfigLocation(), logCallback,
+                commandRequest.getGcpKeyPath());
         logCallback.saveExecutionLog(
             format("Status check done with success [%s] for resources in namespace: [%s]", success, namespace));
         String releaseName = commandRequest.getReleaseName();
@@ -422,13 +422,14 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
   }
 
   private boolean doStatusCheckAllResourcesForHelm(Kubectl client, List<KubernetesResourceId> resourceIds,
-      String ocPath, String workingDir, String namespace, String kubeconfigPath, LogCallback executionLogCallback)
-      throws Exception {
+      String ocPath, String workingDir, String namespace, String kubeconfigPath, LogCallback executionLogCallback,
+      String gcpKeyFilePath) throws Exception {
     return k8sTaskHelperBase.doStatusCheckForAllResources(client, resourceIds,
         K8sDelegateTaskParams.builder()
             .ocPath(ocPath)
             .workingDirectory(workingDir)
             .kubeconfigPath(kubeconfigPath)
+            .gcpKeyFilePath(gcpKeyFilePath)
             .build(),
         namespace, executionLogCallback, false, true);
   }
@@ -548,7 +549,12 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
       throw sanitizedException;
 
     } finally {
-      cleanUpWorkingDirectory(commandRequest.getWorkingDir());
+      if (!helmTaskHelperBase.isHelmLocalRepoSet()) {
+        cleanUpWorkingDirectory(commandRequest.getWorkingDir());
+      }
+      if (isNotEmpty(commandRequest.getGcpKeyPath())) {
+        deleteDirectoryAndItsContentIfExists(Paths.get(commandRequest.getGcpKeyPath()).getParent().toString());
+      }
     }
   }
 
@@ -758,14 +764,22 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
   }
 
   private void fetchChartRepo(HelmCommandRequestNG commandRequestNG, long timeoutInMillis) {
-    String workingDir = Paths.get(commandRequestNG.getWorkingDir()).toString();
     HelmChartManifestDelegateConfig helmChartManifestDelegateConfig =
         (HelmChartManifestDelegateConfig) commandRequestNG.getManifestDelegateConfig();
     String chartName = helmChartManifestDelegateConfig.getChartName();
-
-    downloadFilesFromChartRepo(
-        commandRequestNG.getManifestDelegateConfig(), workingDir, commandRequestNG.getLogCallback(), timeoutInMillis);
-
+    String chartVersion = helmChartManifestDelegateConfig.getChartVersion();
+    String workingDir = Paths.get(commandRequestNG.getWorkingDir()).toString();
+    String repoName =
+        helmTaskHelperBase.getRepoNameNG(commandRequestNG.getManifestDelegateConfig().getStoreDelegateConfig());
+    if (helmTaskHelperBase.isHelmLocalRepoSet()) {
+      if (!helmTaskHelperBase.doesChartExistInLocalRepo(repoName, chartName, chartVersion)) {
+        throw new InvalidRequestException(
+            "Env Variable HELM_LOCAL_REPOSITORY set, expecting chart directory to exist locally after helm fetch but did not find it \n");
+      }
+    } else {
+      downloadFilesFromChartRepo(
+          commandRequestNG.getManifestDelegateConfig(), workingDir, commandRequestNG.getLogCallback(), timeoutInMillis);
+    }
     commandRequestNG.setWorkingDir(getChartDirectory(workingDir, chartName));
     commandRequestNG.getLogCallback().saveExecutionLog("Helm Chart Repo checked-out locally");
   }
