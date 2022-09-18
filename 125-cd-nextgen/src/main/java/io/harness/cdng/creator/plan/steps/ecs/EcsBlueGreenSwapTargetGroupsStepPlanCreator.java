@@ -6,11 +6,8 @@ import static io.harness.cdng.visitor.YamlTypes.ECS_BLUE_GREEN_SWAP_TARGET_GROUP
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.creator.plan.steps.CDPMSStepPlanCreatorV2;
-import io.harness.cdng.ecs.EcsBlueGreenCreateServiceStepNode;
 import io.harness.cdng.ecs.EcsBlueGreenSwapTargetGroupsStepNode;
 import io.harness.cdng.ecs.EcsBlueGreenSwapTargetGroupsStepParameters;
-import io.harness.cdng.ecs.EcsCanaryDeleteStepNode;
-import io.harness.cdng.ecs.EcsCanaryDeleteStepParameters;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;

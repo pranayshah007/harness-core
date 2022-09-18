@@ -5084,7 +5084,7 @@ amazon_v2_artifacts = [
         "sts",
         "sdk-core",
         "health",
-        "elasticloadbalancingv2"
+        "elasticloadbalancingv2",
     ]
 ]
 

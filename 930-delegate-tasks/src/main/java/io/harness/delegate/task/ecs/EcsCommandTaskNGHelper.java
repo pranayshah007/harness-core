@@ -749,8 +749,8 @@ public class EcsCommandTaskNGHelper {
 
       // update BG tag to service
       ecsV2Client.tagService(awsInternalConfig, tagResourceRequest, ecsInfraConfig.getRegion());
-    } else {
     }
+    // todo: other cases
   }
 
   public UpdateServiceResponse updateDesiredCount(
