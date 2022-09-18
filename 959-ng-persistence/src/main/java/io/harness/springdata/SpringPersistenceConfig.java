@@ -15,6 +15,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
 import io.harness.mongo.MongoConfig;
+import io.harness.mongo.metrics.HarnessConnectionPoolListener;
 import io.harness.persistence.Store;
 import io.harness.reflection.HarnessReflections;
 
@@ -55,11 +56,13 @@ public class SpringPersistenceConfig extends AbstractMongoConfiguration {
   protected final Injector injector;
   protected final List<Class<? extends Converter<?, ?>>> springConverters;
   protected final MongoConfig mongoConfig;
+  protected final HarnessConnectionPoolListener harnessConnectionPoolListener;
 
   public SpringPersistenceConfig(Injector injector, List<Class<? extends Converter<?, ?>>> springConverters) {
     this.injector = injector;
     this.springConverters = springConverters;
     this.mongoConfig = injector.getInstance(MongoConfig.class);
+    this.harnessConnectionPoolListener = injector.getInstance(HarnessConnectionPoolListener.class);
   }
 
   @Override
@@ -71,6 +74,9 @@ public class SpringPersistenceConfig extends AbstractMongoConfiguration {
                                      .maxConnectionIdleTime(mongoConfig.getMaxConnectionIdleTime())
                                      .connectionsPerHost(mongoConfig.getConnectionsPerHost())
                                      .readPreference(ReadPreference.primary())
+                                     .addConnectionPoolListener(harnessConnectionPoolListener)
+                                     .applicationName("ng_manager_primary_client")
+                                     .description("ng_manager_primary_client")
                                      .build();
     MongoClientURI uri = new MongoClientURI(mongoConfig.getUri(), MongoClientOptions.builder(options));
     return new MongoClient(uri);
@@ -84,10 +90,9 @@ public class SpringPersistenceConfig extends AbstractMongoConfiguration {
   @Bean(name = "primary")
   @Primary
   public MongoTemplate mongoTemplate() throws Exception {
-    MongoConfig config = injector.getInstance(MongoConfig.class);
     MappingMongoConverter mappingMongoConverter = mappingMongoConverter();
     mappingMongoConverter.setMapKeyDotReplacement(DOT_REPLACEMENT);
-    return new HMongoTemplate(mongoDbFactory(), mappingMongoConverter, config.getTraceMode());
+    return new HMongoTemplate(mongoDbFactory(), mappingMongoConverter, mongoConfig.getTraceMode());
   }
 
   @Bean

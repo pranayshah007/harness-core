@@ -39,7 +39,8 @@ import org.hibernate.validator.constraints.NotEmpty;
       @JsonSubTypes.Type(value = ErrorTrackingHealthSourceSpec.class, name = "ErrorTracking"),
       @JsonSubTypes.Type(value = CustomHealthSourceMetricSpec.class, name = "CustomHealthMetric"),
       @JsonSubTypes.Type(value = CustomHealthSourceLogSpec.class, name = "CustomHealthLog"),
-      @JsonSubTypes.Type(value = SplunkMetricHealthSourceSpec.class, name = "SplunkMetric")
+      @JsonSubTypes.Type(value = SplunkMetricHealthSourceSpec.class, name = "SplunkMetric"),
+      @JsonSubTypes.Type(value = CloudWatchMetricsHealthSourceSpec.class, name = "CloudWatchMetrics")
 })
 public abstract class HealthSourceSpec {
   @NotEmpty @EntityIdentifier(allowScoped = true) String connectorRef;

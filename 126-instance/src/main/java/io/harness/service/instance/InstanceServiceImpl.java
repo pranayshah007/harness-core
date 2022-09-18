@@ -72,7 +72,7 @@ public class InstanceServiceImpl implements InstanceService {
       if (undeleteInstance(instance) != null) {
         log.info("Undeleted instance : {}", instanceDTO);
       } else {
-        log.error("Duplicate key error while inserting instance : {}", instanceDTO);
+        log.error("Duplicate key error while inserting instance : {}", instanceDTO, duplicateKeyException);
       }
       return Optional.empty();
     }

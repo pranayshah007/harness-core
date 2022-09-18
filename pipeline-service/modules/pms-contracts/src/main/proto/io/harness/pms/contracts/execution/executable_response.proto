@@ -33,6 +33,7 @@ message AsyncExecutableResponse {
   repeated string callbackIds = 1;
   repeated string logKeys = 2;
   repeated string units = 3;
+  int32 timeout = 5;
 }
 
 message ChildExecutableResponse {

@@ -407,6 +407,8 @@ public class AuthenticationSettingsResource {
           description =
               "Create LdapSettings request body. Values for connection settings are needed, user and group settings can also be provided")
       LDAPSettings ldapSettings) {
+    accessControlClient.checkForAccessOrThrow(
+        ResourceScope.of(accountId, null, null), Resource.of(AUTHSETTING, null), EDIT_AUTHSETTING_PERMISSION);
     LDAPSettings settings = authenticationSettingsService.createLdapSettings(accountId, ldapSettings);
     return new RestResponse<>(settings);
   }
@@ -428,6 +430,8 @@ public class AuthenticationSettingsResource {
           description =
               "This is the updated LdapSettings. Values for all fields is needed, not just the fields you are updating")
       LDAPSettings ldapSettings) {
+    accessControlClient.checkForAccessOrThrow(
+        ResourceScope.of(accountId, null, null), Resource.of(AUTHSETTING, null), EDIT_AUTHSETTING_PERMISSION);
     LDAPSettings settings = authenticationSettingsService.updateLdapSettings(accountId, ldapSettings);
     return new RestResponse<>(settings);
   }
@@ -445,6 +449,8 @@ public class AuthenticationSettingsResource {
   public RestResponse<Boolean>
   deleteLdapSettings(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
       NGCommonEntityConstants.ACCOUNT_KEY) @NotBlank String accountId) {
+    accessControlClient.checkForAccessOrThrow(
+        ResourceScope.of(accountId, null, null), Resource.of(AUTHSETTING, null), DELETE_AUTHSETTING_PERMISSION);
     authenticationSettingsService.deleteLdapSettings(accountId);
     return new RestResponse<>(true);
   }

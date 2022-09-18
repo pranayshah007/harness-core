@@ -83,6 +83,9 @@ public final class TimeSeriesThreshold
     if (Objects.isNull(thresholdConfigType)) {
       return ThresholdConfigType.DEFAULT;
     }
+    if (thresholdConfigType == ThresholdConfigType.CUSTOMER) {
+      return ThresholdConfigType.USER_DEFINED;
+    }
     return thresholdConfigType;
   }
 

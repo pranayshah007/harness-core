@@ -184,6 +184,7 @@ import io.harness.telemetry.filter.APIErrorsTelemetrySenderFilter;
 import io.harness.telemetry.service.CdTelemetryRecordsJob;
 import io.harness.threading.ExecutorModule;
 import io.harness.threading.ThreadPool;
+import io.harness.timescale.CDRetentionHandlerNG;
 import io.harness.token.remote.TokenClient;
 import io.harness.tracing.MongoRedisTracer;
 import io.harness.waiter.NotifierScheduledExecutorService;
@@ -435,6 +436,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
       GitSyncSdkInitHelper.initGitSyncSdk(injector, environment, getGitSyncConfiguration(appConfig));
     }
     registerMigrations(injector);
+    injector.getInstance(CDRetentionHandlerNG.class).configureRetentionPolicy();
 
     log.info("NextGenApplication DEPLOY_VERSION = " + System.getenv().get(DEPLOY_VERSION));
     if (DeployVariant.isCommunity(System.getenv().get(DEPLOY_VERSION))) {
@@ -652,7 +654,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     Map<String, String> aliases = new HashMap<>();
     aliases.put("serviceConfig", "stage.spec.serviceConfig");
     aliases.put("serviceDefinition", "stage.spec.serviceConfig.serviceDefinition");
-    aliases.put("artifact", "stage.spec.serviceConfig.serviceDefinition.spec.artifacts.primary.output");
+    aliases.put("artifact", "artifacts.primary");
     aliases.put("infra", "stage.spec.infrastructure.output");
     aliases.put("INFRA_KEY", "stage.spec.infrastructure.output.infrastructureKey");
     return aliases;

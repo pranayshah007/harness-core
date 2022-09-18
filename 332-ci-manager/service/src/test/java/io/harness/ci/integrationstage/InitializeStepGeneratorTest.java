@@ -12,13 +12,13 @@ import static io.harness.rule.OwnerRule.ALEKSANDAR;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.beans.executionargs.CIExecutionArgs;
+import io.harness.beans.stages.IntegrationStageNode;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.category.element.UnitTests;
 import io.harness.ci.executionplan.CIExecutionPlanTestHelper;
 import io.harness.ci.executionplan.CIExecutionTestBase;
 import io.harness.plancreator.execution.ExecutionElementConfig;
-import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
@@ -36,14 +36,14 @@ public class InitializeStepGeneratorTest extends CIExecutionTestBase {
   public void shouldCreateLiteEngineTaskStepInfoFirstPod() {
     // input
     ExecutionElementConfig executionElementConfig = ciExecutionPlanTestHelper.getExecutionElementConfig();
-    StageElementConfig stageElementConfig = ciExecutionPlanTestHelper.getIntegrationStageElementConfig();
+    IntegrationStageNode stageNode = ciExecutionPlanTestHelper.getIntegrationStageNode();
     Infrastructure infrastructure = ciExecutionPlanTestHelper.getInfrastructureWithVolume();
     String podName = "pod";
     Integer liteEngineCounter = 1;
 
     CIExecutionArgs ciExecutionArgs = ciExecutionPlanTestHelper.getCIExecutionArgs();
     InitializeStepInfo actual = initializeStepGenerator.createInitializeStepInfo(executionElementConfig,
-        ciExecutionPlanTestHelper.getCICodebase(), stageElementConfig, ciExecutionArgs, infrastructure, "abc");
+        ciExecutionPlanTestHelper.getCICodebase(), stageNode, ciExecutionArgs, infrastructure, "abc");
 
     InitializeStepInfo expected = ciExecutionPlanTestHelper.getExpectedLiteEngineTaskInfoOnFirstPod(
         ciExecutionArgs.getExecutionSource(), ciExecutionPlanTestHelper.getIntegrationStageElementConfig());
@@ -62,15 +62,15 @@ public class InitializeStepGeneratorTest extends CIExecutionTestBase {
   public void shouldCreateLiteEngineTaskStepInfoOtherPod() {
     // input
     ExecutionElementConfig executionElementConfig = ciExecutionPlanTestHelper.getExecutionElementConfig();
-    StageElementConfig stageElementConfig = ciExecutionPlanTestHelper.getIntegrationStageElementConfig();
+    IntegrationStageNode stageNode = ciExecutionPlanTestHelper.getIntegrationStageNode();
     Infrastructure infrastructure = ciExecutionPlanTestHelper.getInfrastructureWithVolume();
 
     CIExecutionArgs ciExecutionArgs = ciExecutionPlanTestHelper.getCIExecutionArgs();
     InitializeStepInfo actual = initializeStepGenerator.createInitializeStepInfo(
-        executionElementConfig, null, stageElementConfig, ciExecutionArgs, infrastructure, "ABX");
+        executionElementConfig, null, stageNode, ciExecutionArgs, infrastructure, "ABX");
 
     InitializeStepInfo expected = ciExecutionPlanTestHelper.getExpectedLiteEngineTaskInfoOnOtherPods(
-        ciExecutionArgs.getExecutionSource(), stageElementConfig);
+        ciExecutionArgs.getExecutionSource(), stageNode);
 
     ExecutionElementConfig actualExecutionElementConfig = actual.getExecutionElementConfig();
     actual.setExecutionElementConfig(null);

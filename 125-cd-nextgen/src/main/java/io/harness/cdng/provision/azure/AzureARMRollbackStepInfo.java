@@ -10,7 +10,6 @@ package io.harness.cdng.provision.azure;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -20,9 +19,7 @@ import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
-import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
-import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -35,8 +32,6 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @RecasterAlias("io.harness.cdng.provision.azure.AzureARMRollbackStepInfo")
 public class AzureARMRollbackStepInfo extends AzureARMRollbackBaseStepInfo implements CDStepInfo {
-  @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> provisionerIdentifier;
-
   @Override
   public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
     return getDelegateSelectors();
@@ -54,6 +49,9 @@ public class AzureARMRollbackStepInfo extends AzureARMRollbackBaseStepInfo imple
 
   @Override
   public SpecParameters getSpecParameters() {
-    return AzureARMRollbackStepParameters.infoBuilder().delegateSelectors(getDelegateSelectors()).build();
+    return AzureARMRollbackStepParameters.infoBuilder()
+        .provisionerIdentifier(getProvisionerIdentifier())
+        .delegateSelectors(getDelegateSelectors())
+        .build();
   }
 }

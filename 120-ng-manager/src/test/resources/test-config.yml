@@ -253,3 +253,5 @@ signupNotificationConfiguration:
       gcsFileName: "signup_confirmation.txt"
       templateId: "signup_confirmation"
   expireDurationInMinutes: 60
+
+cdTsDbRetentionPeriodMonths: 5

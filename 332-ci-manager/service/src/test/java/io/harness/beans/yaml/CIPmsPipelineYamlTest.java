@@ -15,9 +15,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.CiBeansTestBase;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.stages.IntegrationStageNode;
+import io.harness.beans.steps.CIAbstractStepNode;
 import io.harness.category.element.UnitTests;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
-import io.harness.plancreator.steps.StepElementConfig;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
@@ -64,9 +64,9 @@ public class CIPmsPipelineYamlTest extends CiBeansTestBase {
       if (integrationStageNode.getIntegrationStageConfig().getExecution() != null) {
         for (ExecutionWrapperConfig executionWrapperConfig :
             integrationStageNode.getIntegrationStageConfig().getExecution().getSteps()) {
-          StepElementConfig stepElementConfig =
-              YamlPipelineUtils.read(executionWrapperConfig.getStep().toString(), StepElementConfig.class);
-          assertThat(stepElementConfig).isNotNull();
+          CIAbstractStepNode stepNode =
+              YamlPipelineUtils.read(executionWrapperConfig.getStep().toString(), CIAbstractStepNode.class);
+          assertThat(stepNode).isNotNull();
         }
       }
     }

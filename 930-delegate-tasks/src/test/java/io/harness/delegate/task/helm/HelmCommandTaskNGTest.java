@@ -57,6 +57,7 @@ public class HelmCommandTaskNGTest extends CategoryTest {
   @Mock private KubernetesConfig kubernetesConfig;
   @Mock private ILogStreamingTaskClient iLogStreamingTaskClient;
   @Mock private LogCallback logCallback;
+  @Mock private HelmTaskHelperBase helmTaskHelperBase;
   private HelmCommandTaskNG spyHelmCommandTask;
 
   @InjectMocks
@@ -79,6 +80,8 @@ public class HelmCommandTaskNGTest extends CategoryTest {
         .when(helmDeployServiceNG)
         .ensureHelmInstalled(any(HelmCommandRequestNG.class));
     when(k8sGlobalConfigService.getOcPath()).thenReturn("/tmp");
+    when(helmTaskHelperBase.isHelmLocalRepoSet()).thenReturn(false);
+    when(helmTaskHelperBase.getHelmLocalRepositoryPath()).thenReturn("");
   }
 
   @Test

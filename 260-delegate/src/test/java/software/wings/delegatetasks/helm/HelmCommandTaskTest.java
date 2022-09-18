@@ -26,6 +26,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.task.helm.HelmCommandResponse;
+import io.harness.delegate.task.helm.HelmTaskHelperBase;
 import io.harness.k8s.K8sGlobalConfigService;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.logging.CommandExecutionStatus;
@@ -64,6 +65,7 @@ public class HelmCommandTaskTest extends WingsBaseTest {
   @Mock private HelmCommandHelper helmCommandHelper;
   @Mock private HelmCommandRequest dummyCommandRequest;
   @Mock private K8sGlobalConfigService k8sGlobalConfigService;
+  @Mock private HelmTaskHelperBase helmTaskHelperBase;
 
   @InjectMocks
   private final HelmCommandTask helmCommandTask = new HelmCommandTask(
@@ -79,6 +81,8 @@ public class HelmCommandTaskTest extends WingsBaseTest {
     when(k8sGlobalConfigService.getOcPath()).thenReturn("/tmp");
     when(containerDeploymentDelegateHelper.getKubernetesConfig(any())).thenReturn(KubernetesConfig.builder().build());
     when(containerDeploymentDelegateHelper.createKubeConfig(any())).thenReturn(".kube/config");
+    when(helmTaskHelperBase.getHelmLocalRepositoryPath()).thenReturn("/helm-dir/");
+    when(helmTaskHelperBase.isHelmLocalRepoSet()).thenReturn(true);
   }
 
   @Test
@@ -118,7 +122,7 @@ public class HelmCommandTaskTest extends WingsBaseTest {
   @Test
   @Owner(developers = ABOSII)
   @Category(UnitTests.class)
-  public void testRunTaskWithRollbackCommand() {
+  public void testRunTaskWithRollbackCommand() throws IOException {
     HelmRollbackCommandRequest request = HelmRollbackCommandRequest.builder().accountId("accountId").build();
     HelmInstallCommandResponse rollbackResponse =
         HelmInstallCommandResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build();

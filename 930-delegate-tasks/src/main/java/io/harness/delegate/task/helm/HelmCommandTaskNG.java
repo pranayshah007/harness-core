@@ -33,10 +33,12 @@ import io.harness.delegate.task.ManifestDelegateConfigHelper;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
 import io.harness.delegate.task.k8s.GcpK8sInfraDelegateConfig;
+import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
+import io.harness.helm.HelmConstants;
 import io.harness.k8s.K8sConstants;
 import io.harness.k8s.K8sGlobalConfigService;
 import io.harness.logging.CommandExecutionStatus;
@@ -60,8 +62,9 @@ public class HelmCommandTaskNG extends AbstractDelegateRunnableTask {
   @Inject private ContainerDeploymentDelegateBaseHelper containerDeploymentDelegateBaseHelper;
   @Inject private K8sGlobalConfigService k8sGlobalConfigService;
   @Inject private ManifestDelegateConfigHelper manifestDelegateConfigHelper;
+  @Inject private HelmTaskHelperBase helmTaskHelperBase;
 
-  private static final String WORKING_DIR_BASE = "./repository/helm/";
+  private static final String WORKING_DIR_BASE = "./repository/helm/source/${REPO_NAME}";
   public static final String MANIFEST_FILES_DIR = "manifest-files";
 
   public static final String FetchFiles = "Fetch Files";
@@ -96,17 +99,26 @@ public class HelmCommandTaskNG extends AbstractDelegateRunnableTask {
     }
     HelmCommandResponseNG helmCommandResponseNG;
 
-    String workingDirectory = Paths.get(WORKING_DIR_BASE, convertBase64UuidToCanonicalForm(generateUuid()))
-                                  .normalize()
-                                  .toAbsolutePath()
-                                  .toString();
-
     try {
-      createDirectoryIfDoesNotExist(workingDirectory);
-      waitForDirectoryToBeAccessibleOutOfProcess(workingDirectory, 10);
-
+      boolean isEnvVarSet = helmTaskHelperBase.isHelmLocalRepoSet();
+      String workingDirectory;
+      if (!isEnvVarSet) {
+        workingDirectory =
+            Paths.get(WORKING_DIR_BASE.replace("${REPO_NAME}", convertBase64UuidToCanonicalForm(generateUuid())))
+                .normalize()
+                .toAbsolutePath()
+                .toString();
+        createDirectoryIfDoesNotExist(workingDirectory);
+        waitForDirectoryToBeAccessibleOutOfProcess(workingDirectory, 10);
+      } else {
+        String repoName =
+            helmTaskHelperBase.getRepoNameNG(helmCommandRequestNG.getManifestDelegateConfig().getStoreDelegateConfig());
+        HelmChartManifestDelegateConfig helmChartConfig =
+            (HelmChartManifestDelegateConfig) helmCommandRequestNG.getManifestDelegateConfig();
+        workingDirectory = helmTaskHelperBase.getHelmLocalRepositoryCompletePath(
+            repoName, helmChartConfig.getChartName(), helmChartConfig.getChartVersion());
+      }
       helmCommandRequestNG.setWorkingDir(workingDirectory);
-
       decryptRequestDTOs(helmCommandRequestNG);
 
       init(helmCommandRequestNG,
@@ -186,7 +198,10 @@ public class HelmCommandTaskNG extends AbstractDelegateRunnableTask {
       if (gcpConnectorDTO.getCredential().getConfig() instanceof GcpManualDetailsDTO) {
         GcpManualDetailsDTO gcpManualDetailsDTO = (GcpManualDetailsDTO) gcpConnectorDTO.getCredential().getConfig();
         char[] gcpFileKeyContent = gcpManualDetailsDTO.getSecretKeyRef().getDecryptedValue();
-        Path gcpKeyFilePath = Paths.get(commandRequestNG.getWorkingDir(), K8sConstants.GCP_JSON_KEY_FILE_NAME);
+        String gcpCredsDirPath = HelmConstants.HELM_GCP_CREDS_PATH.replace(
+            "${ACTIVITY_ID}", convertBase64UuidToCanonicalForm(generateUuid()));
+        createDirectoryIfDoesNotExist(gcpCredsDirPath);
+        Path gcpKeyFilePath = Paths.get(gcpCredsDirPath, K8sConstants.GCP_JSON_KEY_FILE_NAME);
         writeUtf8StringToFile(gcpKeyFilePath.toString(), String.valueOf(gcpFileKeyContent));
         commandRequestNG.setGcpKeyPath(gcpKeyFilePath.toAbsolutePath().toString());
         logCallback.saveExecutionLog("Created and Setting gcpFileKeyPath at: " + gcpKeyFilePath.toAbsolutePath(),

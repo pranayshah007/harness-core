@@ -73,6 +73,7 @@ io.harness.yaml.core.failurestrategy.marksuccess.MarkAsSuccessFailureActionConfi
 io.harness.yaml.core.failurestrategy.rollback.StageRollbackFailureActionConfig
 io.harness.advisers.rollback.RollbackTriggeredOutput
 io.harness.beans.stages.IntegrationStageNode
+io.harness.beans.steps.stepinfo.CIAbstractStepNode
 io.harness.beans.steps.nodes.RunStepNode
 io.harness.beans.steps.nodes.BackgroundStepNode
 io.harness.beans.steps.nodes.RunTestsStepNode
@@ -90,6 +91,7 @@ io.harness.beans.steps.nodes.SaveCacheGCSNode
 io.harness.beans.steps.nodes.SaveCacheS3Node
 io.harness.beans.steps.nodes.SecurityNode
 io.harness.beans.steps.nodes.GitCloneStepNode
+io.harness.beans.steps.nodes.InitializeStepNode
 io.harness.yaml.core.failurestrategy.abort.AbortFailureActionConfig
 io.harness.yaml.core.failurestrategy.ignore.IgnoreFailureActionConfig
 io.harness.yaml.core.failurestrategy.manualintervention.ManualFailureSpecConfig

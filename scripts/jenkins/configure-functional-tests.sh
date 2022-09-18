@@ -16,19 +16,27 @@ replace_text "uri: http://localhost:9200" "uri: ${ELASTICSEARCH_URI}" 360-cg-man
 replace_text "indexSuffix: _default" "indexSuffix: ${ELASTICSEARCH_INDEX_SUFFIX}" 360-cg-manager/config.yml
 replace_text "searchEnabled: false" "searchEnabled: true" 360-cg-manager/config.yml
 replace_text "sentinel: false" "sentinel: true" 360-cg-manager/config.yml
+replace_text "sentinel: false" "sentinel: true" 315-sto-manager/sto-manager-config.yml
+replace_text "enterpriseCacheEnabled: true" "enterpriseCacheEnabled: false" 315-sto-manager/sto-manager-config.yml
+replace_text "cacheBackend: REDIS" "cacheBackend: HAZELCAST" 315-sto-manager/sto-manager-config.yml
 replace_text "masterName: \"test\"" "masterName: \"${REDIS_MASTER_NAME}\"" 360-cg-manager/config.yml
+replace_text "masterName: \"test\"" "masterName: \"${REDIS_MASTER_NAME}\"" 315-sto-manager/sto-manager-config.yml
 replace_text "envNamespace: \"\"" "envNamespace: ${TIMESTAMP}" 360-cg-manager/config.yml
 replace_text "\"redis://redis1:26379\"" "\"${REDIS_SENTINEL1}\"" 360-cg-manager/config.yml
 replace_text "\"redis://redis2:26379\"" "\"${REDIS_SENTINEL2}\"" 360-cg-manager/config.yml
 replace_text "\"redis://redis3:26379\"" "\"${REDIS_SENTINEL3}\"" 360-cg-manager/config.yml
+replace_text "\"redis://redis1:26379\"" "\"${REDIS_SENTINEL1}\"" 315-sto-manager/sto-manager-config.yml
+replace_text "\"redis://redis2:26379\"" "\"${REDIS_SENTINEL2}\"" 315-sto-manager/sto-manager-config.yml
+replace_text "\"redis://redis3:26379\"" "\"${REDIS_SENTINEL3}\"" 315-sto-manager/sto-manager-config.yml
 replace_text "distributedLockImplementation: MONGO" "distributedLockImplementation: REDIS" 360-cg-manager/config.yml
 
 replace_text "uri: mongodb://localhost:27017/harness" "uri: ${MONGO_URI}" 350-event-server/event-service-config.yml
 replace_text "uri: mongodb://localhost:27017/harness" "uri: ${MONGO_URI}" 210-command-library-server/command-library-server-config.yml
 replace_text "uri: mongodb://localhost:27017/harnessci" "uri: ${MONGO_URI}_ci" 332-ci-manager/config/ci-manager-config.yml
+replace_text "uri: mongodb://localhost:27017/sto-harness" "uri: ${MONGO_URI}_sto" 315-sto-manager/sto-manager-config.yml
 replace_text "uri: mongodb://localhost:27017/harness" "uri: ${MONGO_URI}" 332-ci-manager/config/ci-manager-config.yml
 
-CONFIG_FILES=(360-cg-manager/config.yml 350-event-server/event-service-config.yml 210-command-library-server/command-library-server-config.yml 332-ci-manager/config/ci-manager-config.yml)
+CONFIG_FILES=(360-cg-manager/config.yml 350-event-server/event-service-config.yml 210-command-library-server/command-library-server-config.yml 332-ci-manager/config/ci-manager-config.yml 315-sto-manager/sto-manager-config.yml)
 
 for config_file in ${CONFIG_FILES[@]}; do
   mongo_uri_count=$(grep -P "^\s*uri: mongodb://.*:27017" $config_file | grep -v localhost:27017 | wc -l | awk '{print $1}')

@@ -41,6 +41,7 @@ import static io.harness.logging.LogLevel.WARN;
 import static io.harness.rule.OwnerRule.ABHINAV2;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACASIAN;
+import static io.harness.rule.OwnerRule.ACHYUTH;
 import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.ARVIND;
@@ -779,7 +780,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     String RANDOM = "RANDOM";
     K8sDelegateTaskParams k8sDelegateTaskParams = K8sDelegateTaskParams.builder().workingDirectory(RANDOM).build();
     GetJobCommand jobStatusCommand = spy(new GetJobCommand(null, null, null));
-    doReturn(null).when(jobStatusCommand).execute(RANDOM, null, null, false);
+    doReturn(null).when(jobStatusCommand).execute(RANDOM, null, null, false, Collections.emptyMap());
 
     shouldFailWhenCompletedJobCommandFailed(RANDOM, k8sDelegateTaskParams, jobStatusCommand, false);
     shouldFailWhenCompletedTimeCommandFailed(RANDOM, k8sDelegateTaskParams, jobStatusCommand, false);
@@ -795,7 +796,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     String RANDOM = "RANDOM";
     K8sDelegateTaskParams k8sDelegateTaskParams = K8sDelegateTaskParams.builder().workingDirectory(RANDOM).build();
     GetJobCommand jobStatusCommand = spy(new GetJobCommand(null, null, null));
-    doReturn(null).when(jobStatusCommand).execute(RANDOM, null, null, false);
+    doReturn(null).when(jobStatusCommand).execute(RANDOM, null, null, false, Collections.emptyMap());
 
     shouldFailWhenCompletedJobCommandFailed(RANDOM, k8sDelegateTaskParams, jobStatusCommand, true);
     shouldFailWhenCompletedTimeCommandFailed(RANDOM, k8sDelegateTaskParams, jobStatusCommand, true);
@@ -811,8 +812,8 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     GetJobCommand jobFailedCommand = spy(new GetJobCommand(null, null, null));
     ProcessResult jobFailedResult = new ProcessResult(1, new ProcessOutput("Something went wrong".getBytes()));
 
-    doReturn(jobStatusResult).when(jobCompletionStatus).execute(RANDOM, null, null, false);
-    doReturn(jobFailedResult).when(jobFailedCommand).execute(RANDOM, null, null, false);
+    doReturn(jobStatusResult).when(jobCompletionStatus).execute(RANDOM, null, null, false, Collections.emptyMap());
+    doReturn(jobFailedResult).when(jobFailedCommand).execute(RANDOM, null, null, false, Collections.emptyMap());
     doReturn("kubectl --kubeconfig=file get").when(jobFailedCommand).command();
 
     if (isErrorFrameworkEnabled) {
@@ -842,8 +843,10 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     GetJobCommand jobCompletionCommand = spy(new GetJobCommand(null, null, null));
     ProcessResult jobCompletionTimeResult = new ProcessResult(1, new ProcessOutput("Something went wrong".getBytes()));
 
-    doReturn(jobStatusResult).when(jobCompletionStatus).execute(RANDOM, null, null, false);
-    doReturn(jobCompletionTimeResult).when(jobCompletionCommand).execute(RANDOM, null, null, false);
+    doReturn(jobStatusResult).when(jobCompletionStatus).execute(RANDOM, null, null, false, Collections.emptyMap());
+    doReturn(jobCompletionTimeResult)
+        .when(jobCompletionCommand)
+        .execute(RANDOM, null, null, false, Collections.emptyMap());
     doReturn("kubectl --kubeconfig=file get").when(jobCompletionCommand).command();
 
     if (isErrorFrameworkEnabled) {
@@ -873,8 +876,8 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     GetJobCommand jobFailedCommand = spy(new GetJobCommand(null, null, null));
     ProcessResult jobFailedResult = new ProcessResult(0, new ProcessOutput("True".getBytes()));
 
-    doReturn(jobStatusResult).when(jobCompletionStatus).execute(RANDOM, null, null, false);
-    doReturn(jobFailedResult).when(jobFailedCommand).execute(RANDOM, null, null, false);
+    doReturn(jobStatusResult).when(jobCompletionStatus).execute(RANDOM, null, null, false, Collections.emptyMap());
+    doReturn(jobFailedResult).when(jobFailedCommand).execute(RANDOM, null, null, false, Collections.emptyMap());
 
     if (isErrorFrameworkEnabled) {
       assertThatThrownBy(()
@@ -904,8 +907,10 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     GetJobCommand jobCompletionCommand = spy(new GetJobCommand(null, null, null));
     ProcessResult jobCompletionTimeResult = new ProcessResult(0, new ProcessOutput("time".getBytes()));
 
-    doReturn(jobStatusResult).when(jobCompletionStatus).execute(RANDOM, null, null, false);
-    doReturn(jobCompletionTimeResult).when(jobCompletionCommand).execute(RANDOM, null, null, false);
+    doReturn(jobStatusResult).when(jobCompletionStatus).execute(RANDOM, null, null, false, Collections.emptyMap());
+    doReturn(jobCompletionTimeResult)
+        .when(jobCompletionCommand)
+        .execute(RANDOM, null, null, false, Collections.emptyMap());
 
     assertThat(k8sTaskHelperBase.getJobStatus(k8sDelegateTaskParams, null, null, jobCompletionStatus, null,
                    jobStatusCommand, jobCompletionCommand, isErrorFrameworkEnabled))
@@ -917,7 +922,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     GetJobCommand jobCompletionStatus = spy(new GetJobCommand(null, null, null));
     ProcessResult jobStatusResult = new ProcessResult(1, new ProcessOutput("Something went wrong".getBytes()));
 
-    doReturn(jobStatusResult).when(jobCompletionStatus).execute(RANDOM, null, null, false);
+    doReturn(jobStatusResult).when(jobCompletionStatus).execute(RANDOM, null, null, false, Collections.emptyMap());
     doReturn("kubectl --kubeconfig=file get").when(jobCompletionStatus).command();
 
     if (isErrorFrameworkEnabled) {
@@ -2049,7 +2054,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     K8sDelegateTaskParams k8sDelegateTaskParams = K8sDelegateTaskParams.builder().workingDirectory("pwd").build();
     doReturn(getResources).when(client).get();
     doReturn("kubectl --kubeconfig=test").when(client).command();
-    doReturn(executeResult).when(getResources).execute("pwd", null, null, false);
+    doReturn(executeResult).when(getResources).execute("pwd", null, null, false, Collections.emptyMap());
     doReturn(getResources).when(getResources).resources("foo/test1");
     doReturn(getResources).when(getResources).resources("bar/test2");
     doReturn(getResources).when(getResources).resources("boo/test3");
@@ -2901,6 +2906,40 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     verify(helmTaskHelperBase, times(1))
         .printHelmChartInfoInExecutionLogs(manifestDelegateConfig, executionLogCallback);
     verify(helmTaskHelperBase, times(1)).downloadChartFilesFromHttpRepo(manifestDelegateConfig, "manifest", 9000L);
+  }
+
+  @Test
+  @Owner(developers = ACHYUTH)
+  @Category(UnitTests.class)
+  public void testFetchManifestFilesAndWriteToDirectoryHttpHelmEnvVar() throws Exception {
+    K8sTaskHelperBase spyTaskHelperBase = spy(k8sTaskHelperBase);
+    HttpHelmStoreDelegateConfig httpStoreDelegateConfig = HttpHelmStoreDelegateConfig.builder()
+                                                              .repoName("repoName")
+                                                              .repoDisplayName("Repo Name")
+                                                              .httpHelmConnector(HttpHelmConnectorDTO.builder().build())
+                                                              .build();
+
+    HelmChartManifestDelegateConfig manifestDelegateConfig = HelmChartManifestDelegateConfig.builder()
+                                                                 .chartName("chartName")
+                                                                 .chartVersion("1.0.0")
+                                                                 .storeDelegateConfig(httpStoreDelegateConfig)
+                                                                 .helmVersion(HelmVersion.V3)
+                                                                 .build();
+
+    doReturn("/helm-working-dir/").when(helmTaskHelperBase).getHelmLocalRepositoryPath();
+    doReturn(true).when(helmTaskHelperBase).isHelmLocalRepoSet();
+    doReturn("/helm-working-dir/repoName")
+        .when(helmTaskHelperBase)
+        .getHelmLocalRepositoryCompletePath(any(), any(), any());
+    doReturn(true).when(helmTaskHelperBase).doesChartExistInLocalRepo(any(), any(), any());
+    doNothing().when(spyTaskHelperBase).copyHelmChartFolderToWorkingDir(any(), any());
+    doReturn("list of files").when(spyTaskHelperBase).getManifestFileNamesInLogFormat("manifest");
+
+    boolean result = spyTaskHelperBase.fetchManifestFilesAndWriteToDirectory(
+        manifestDelegateConfig, "manifest", executionLogCallback, 9000L, "accountId");
+
+    assertThat(result).isTrue();
+    verify(spyTaskHelperBase, times(1)).getManifestFileNamesInLogFormat(anyString());
   }
 
   @Test

@@ -1,0 +1,65 @@
+pipeline:
+  identifier: NAME_PLACEHOLDER
+  name: Integration Pipeline
+  description: DESCRIPTION_PLACEHOLDER
+  tags: {}
+  properties:
+    ci:
+      codebase:
+        connectorRef: Github
+        build: <+input>
+  stages:
+    - stage:
+        identifier: securitytest
+        type: SecurityTests
+        spec:
+          description: This stage runs STO scan
+          infrastructure:
+            type: KubernetesDirect
+            spec:
+              connectorRef: account.playground
+              namespace: harness-delegate
+          sharedPaths:
+            - /var/run
+            - /shared/customer_artifacts
+          serviceDependencies:
+            - identifier: dind
+              name: dind
+              type: Service
+              spec:
+                connectorRef: account.harnessImage
+                image: docker:dind
+                privileged: true
+                entrypoint:
+                  - dockerd-entrypoint.sh
+                resources:
+                  limits:
+                    memory: 4Gi
+                    cpu: 1000m
+          cloneCodebase: true # default is true
+          execution:
+            steps:
+              - step:
+                  type: Security
+                  name: sonar
+                  identifier: sonar
+                  spec:
+                    privileged: true
+                    settings:
+                      policy_type: orchestratedScan
+                      scan_type: repository
+                      product_domain: https://sonarqube.harness.io
+                      product_name: sonarqube
+                      product_config_name: sonarqube-agent
+                      repository_project: test
+                      repository_branch: <+codebase.branch>
+                      product_access_token: test
+                      product_project_key: vpy
+                      bypass_ssl_check: "true"
+                    imagePullPolicy: Always
+                    resources:
+                      limits:
+                        memory: 4Gi
+                        cpu: 1000m
+                  description: sonar
+                  failureStrategies: []

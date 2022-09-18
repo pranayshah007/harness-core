@@ -48,6 +48,8 @@ import io.harness.serializer.jackson.TemplateServiceJacksonModule;
 import io.harness.service.intfc.DelegateAsyncService;
 import io.harness.service.intfc.DelegateSyncService;
 import io.harness.springdata.HTransactionTemplate;
+import io.harness.template.services.NoOpTemplateGitXServiceImpl;
+import io.harness.template.services.TemplateGitXService;
 import io.harness.testlib.module.MongoRuleMixin;
 import io.harness.testlib.module.TestMongoModule;
 import io.harness.threading.CurrentThreadExecutor;
@@ -182,6 +184,7 @@ public class TemplateServiceTestRule implements InjectorRuleMixin, MethodRule, M
         }).toInstance(DelegateServiceGrpc.newBlockingStub(InProcessChannelBuilder.forName(generateUuid()).build()));
         bind(GitAwarePersistence.class).to(NoOpGitAwarePersistenceImpl.class);
         bind(GitSyncSdkService.class).to(NoOpGitSyncSdkServiceImpl.class);
+        bind(TemplateGitXService.class).to(NoOpTemplateGitXServiceImpl.class);
       }
     });
 

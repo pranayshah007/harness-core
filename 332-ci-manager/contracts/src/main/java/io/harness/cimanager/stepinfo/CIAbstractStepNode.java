@@ -7,6 +7,7 @@
 
 package io.harness.beans.steps;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
@@ -17,13 +18,23 @@ import io.harness.yaml.core.VariableExpression;
 import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
 import io.harness.yaml.core.timeout.Timeout;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
 import javax.validation.constraints.Pattern;
+import lombok.AccessLevel;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.FieldDefaults;
+import org.springframework.data.annotation.TypeAlias;
 
 @OwnedBy(HarnessTeam.CI)
 @Data
+@TypeAlias("CIAbstractStepNode")
+@JsonIgnoreProperties(ignoreUnknown = true)
+@EqualsAndHashCode(callSuper = true)
+@FieldDefaults(level = AccessLevel.PRIVATE)
+@RecasterAlias("io.harness.beans.steps.stepinfo.CIAbstractStepNode")
 public abstract class CIAbstractStepNode extends AbstractStepNode {
   @VariableExpression(skipVariableExpression = true) List<FailureStrategyConfig> failureStrategies;
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
