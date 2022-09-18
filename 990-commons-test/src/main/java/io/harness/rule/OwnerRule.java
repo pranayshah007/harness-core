@@ -299,6 +299,7 @@ public class OwnerRule implements TestRule {
   public static final String VARSHA_LALWANI = "varsha.lalwani";
   public static final String JIMIT_GANDHI = "jimit.gandhi";
   public static final String XINGCHI_JIN = "xingchi.jin";
+  public static final String DIVYANSHU = "divyanshu.chaubisa";
   @Deprecated public static final String UNKNOWN = "unknown";
 
   private static UserInfoBuilder defaultUserInfo(String user) {

@@ -36,6 +36,7 @@ import org.apache.http.client.utils.URIBuilder;
 public class HarnessNgUrl {
   private static final String NG_PATH_CONST = "ng/";
   private static final String PERSPECTIVE_URL_FORMAT_NG = "/account/%s/ce/perspectives/%s/name/%s";
+  private static final String CCM_URL_FORMAT_NG = "/account/%s/ce/overview";
   private static final String FILTER_FORMAT =
       "{\"field\":{\"fieldId\":\"%s\",\"fieldName\":\"%s\",\"identifier\":\"%s\",\"identifierName\":\"%s\"},\"operator\":\"IN\",\"type\":\"VIEW_ID_CONDITION\",\"values\":[\"%s\"]}";
   private static final String GROUP_BY_FORMAT =
@@ -57,6 +58,13 @@ public class HarnessNgUrl {
     uriBuilder.setPath(NG_PATH_CONST);
     uriBuilder.setFragment(
         format(PERSPECTIVE_URL_FORMAT_NG, accountId, perspectiveId, perspectiveName) + "?" + getQuery(anomaly));
+    return uriBuilder.toString();
+  }
+
+  public String getCCMExplorerUrl(String accountId, String baseUrl) throws URISyntaxException {
+    URIBuilder uriBuilder = new URIBuilder(baseUrl);
+    uriBuilder.setPath(NG_PATH_CONST);
+    uriBuilder.setFragment(format(CCM_URL_FORMAT_NG, accountId));
     return uriBuilder.toString();
   }
 

@@ -7,6 +7,7 @@
 
 package io.harness.batch.processing.anomalydetection;
 
+import static io.harness.rule.OwnerRule.DIVYANSHU;
 import static io.harness.rule.OwnerRule.TRUNAPUSHPA;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -47,5 +48,14 @@ public class HarnessNgUrlTest extends CategoryTest {
                    "zEaak-FLS425IEO7OLzMUg", "Shza0IsVQwm_ZMPiCM45pQ", "Gcp", anomalyData, baseUrl))
         .isEqualTo(
             "https://qa.harness.io/ng/#/account/zEaak-FLS425IEO7OLzMUg/ce/perspectives/Shza0IsVQwm_ZMPiCM45pQ/name/Gcp?filters=[%7B%22field%22:%7B%22fieldId%22:%22gcpProduct%22,%22fieldName%22:%22Product%22,%22identifier%22:%22GCP%22,%22identifierName%22:%22GCP%22%7D,%22operator%22:%22IN%22,%22type%22:%22VIEW_ID_CONDITION%22,%22values%22:[%22MongoDB%20Inc.%20MongoDB%20Atlas%22]%7D,%7B%22field%22:%7B%22fieldId%22:%22gcpProjectId%22,%22fieldName%22:%22Project%22,%22identifier%22:%22GCP%22,%22identifierName%22:%22GCP%22%7D,%22operator%22:%22IN%22,%22type%22:%22VIEW_ID_CONDITION%22,%22values%22:[%22pr10406a87045145c3%22]%7D,%7B%22field%22:%7B%22fieldId%22:%22gcpSKUDescription%22,%22fieldName%22:%22SKUs%22,%22identifier%22:%22GCP%22,%22identifierName%22:%22GCP%22%7D,%22operator%22:%22IN%22,%22type%22:%22VIEW_ID_CONDITION%22,%22values%22:[%22MongoDB%20Atlas%20-%20Elastic%20Billing%20Subscription%20Overage%20Atlas%20Credits%22]%7D]&groupBy=%7B%22fieldId%22:%22gcpSkuDescription%22,%22fieldName%22:%22SKUs%22,%22identifier%22:%22GCP%22,%22identifierName%22:%22GCP%22%7D&timeRange=%7B%22to%22:%222022-08-21%22,%22from%22:%222022-08-03%22%7D&aggregation=%22DAY%22&chartType=%22column%22");
+  }
+  @Test
+  @Owner(developers = DIVYANSHU)
+  @Category(UnitTests.class)
+  public void checkCCMNgUrl() throws URISyntaxException {
+    assertThat(HarnessNgUrl.getCCMExplorerUrl(
+            "zEaak-FLS425IEO7OLzMUg", "Shza0IsVQwm_ZMPiCM45pQ"))
+            .isEqualTo(
+                    "https://app.harness.io/ng/#/account/zEaak-FLS425IEO7OLzMUg/ce/overview");
   }
 }

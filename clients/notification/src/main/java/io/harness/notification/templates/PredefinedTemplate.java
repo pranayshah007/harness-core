@@ -60,7 +60,8 @@ public enum PredefinedTemplate {
   EMAIL_CCM_ANOMALY_ALERT("templates/email_ccm_anomaly_alert.txt", "email_ccm_anomaly_alert"),
   SLACK_CCM_ANOMALY_ALERT("templates/slack_ccm_anomaly_alert.txt", "slack_ccm_anomaly_alert"),
   EMAIL_CCM_BUDGET_ALERT("templates/email_ccm_budget_alert.txt", "email_ccm_budget_alert"),
-  SLACK_CCM_BUDGET_ALERT("templates/slack_ccm_budget_alert.txt", "slack_ccm_budget_alert");
+  SLACK_CCM_BUDGET_ALERT("templates/slack_ccm_budget_alert.txt", "slack_ccm_budget_alert"),
+  EMAIL_CCM_CLOUDBILLINGDATAREADY("templates/email_ccm_cloud_data_ready.txt", "email_ccm_cloud_data_ready");
 
   private String path;
   private String identifier;
