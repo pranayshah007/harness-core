@@ -48,7 +48,7 @@ import io.harness.perpetualtask.PerpetualTaskState;
 import io.harness.perpetualtask.PerpetualTaskUnassignedReason;
 import io.harness.perpetualtask.internal.PerpetualTaskRecord.PerpetualTaskRecordKeys;
 import io.harness.serializer.KryoSerializer;
-import io.harness.workers.background.AccountLevelEntityProcessController;
+import io.harness.workers.background.CrossEnvironmentAccountLevelEntityProcessController;
 import io.harness.workers.background.CrossEnvironmentAccountStatusBasedEntityProcessController;
 
 import software.wings.beans.Account;
@@ -123,7 +123,7 @@ public class PerpetualTaskRecordHandler implements PerpetualTaskCrudObserver {
             .acceptableNoAlertDelay(ofSeconds(60))
             .acceptableExecutionTime(ofSeconds(60))
             .handler(this::rebalance)
-            .entityProcessController(new AccountLevelEntityProcessController(accountService))
+            .entityProcessController(new CrossEnvironmentAccountLevelEntityProcessController(accountService))
             .schedulingType(REGULAR)
             .persistenceProvider(persistenceProviderAccount)
             .redistribute(true));
