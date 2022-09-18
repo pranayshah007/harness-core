@@ -159,15 +159,13 @@ public enum NGStepType {
 
   @JsonProperty(StepSpecTypeConstants.ECS_BLUE_GREEN_CREATE_SERVICE)
   ECS_BLUE_GREEN_CREATE_SERVICE("Ecs Blue Green Create Service", Arrays.asList(ServiceDefinitionType.ECS), "ECS",
-          StepSpecTypeConstants.ECS_BLUE_GREEN_CREATE_SERVICE),
+      StepSpecTypeConstants.ECS_BLUE_GREEN_CREATE_SERVICE),
   @JsonProperty(StepSpecTypeConstants.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS)
-  ECS_BLUE_GREEN_SWAP_TARGET_GROUPS(
-          "Ecs Blue Green Swap Target Group",
-          Arrays.asList(ServiceDefinitionType.ECS), "ECS", StepSpecTypeConstants.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS),
+  ECS_BLUE_GREEN_SWAP_TARGET_GROUPS("Ecs Blue Green Swap Target Group", Arrays.asList(ServiceDefinitionType.ECS), "ECS",
+      StepSpecTypeConstants.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS),
   @JsonProperty(StepSpecTypeConstants.ECS_BLUE_GREEN_ROLLBACK)
-  ECS_BLUE_GREEN_ROLLBACK(
-          "Ecs Blue Green Rollback",
-          Arrays.asList(ServiceDefinitionType.ECS), "ECS", StepSpecTypeConstants.ECS_BLUE_GREEN_ROLLBACK);
+  ECS_BLUE_GREEN_ROLLBACK("Ecs Blue Green Rollback", Arrays.asList(ServiceDefinitionType.ECS), "ECS",
+      StepSpecTypeConstants.ECS_BLUE_GREEN_ROLLBACK);
 
   private String displayName;
   private List<ServiceDefinitionType> serviceDefinitionTypes;

@@ -1751,9 +1751,9 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(EcsCanaryDeleteRequest.class, 573523);
     kryo.register(EcsCanaryDeleteResponse.class, 573524);
     kryo.register(EcsCanaryDeleteResult.class, 573525);
-    kryo.register(EcsBlueGreenCreateServiceRequest.class,573526);
-    kryo.register(EcsBlueGreenCreateServiceResult.class,573527);
-    kryo.register(EcsBlueGreenCreateServiceResponse.class,573528);
+    kryo.register(EcsBlueGreenCreateServiceRequest.class, 573526);
+    kryo.register(EcsBlueGreenCreateServiceResult.class, 573527);
+    kryo.register(EcsBlueGreenCreateServiceResponse.class, 573528);
     kryo.register(EcsBlueGreenPrepareRollbackDataResult.class, 573529);
     kryo.register(EcsBlueGreenPrepareRollbackDataResponse.class, 573530);
     kryo.register(EcsBlueGreenPrepareRollbackRequest.class, 573531);
@@ -1765,8 +1765,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(EcsBlueGreenRollbackResult.class, 573537);
     kryo.register(EcsLoadBalancerConfig.class, 573538);
 
-
-      kryo.register(AzurePackageArtifactConfig.class, 55410);
+    kryo.register(AzurePackageArtifactConfig.class, 55410);
     kryo.register(AzureArtifactRequestDetails.class, 55411);
     kryo.register(ArtifactoryAzureArtifactRequestDetails.class, 55412);
     kryo.register(AzureInfraDelegateConfig.class, 55413);

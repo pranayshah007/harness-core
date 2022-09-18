@@ -309,15 +309,14 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.WAIT_STEP)
   WAIT_STEP(ModuleType.PMS, EntityTypeConstants.WAIT_STEP, IdentifierRef.class, EntityYamlRootNames.WAIT_STEP),
   @JsonProperty(EntityTypeConstants.ECS_BLUE_GREEN_CREATE_SERVICE)
-  ECS_BLUE_GREEN_CREATE_SERVICE_STEP(
-          ModuleType.CD, EntityTypeConstants.ECS_BLUE_GREEN_CREATE_SERVICE, IdentifierRef.class, EntityYamlRootNames.ECS_BLUE_GREEN_CREATE_SERVICE),
+  ECS_BLUE_GREEN_CREATE_SERVICE_STEP(ModuleType.CD, EntityTypeConstants.ECS_BLUE_GREEN_CREATE_SERVICE,
+      IdentifierRef.class, EntityYamlRootNames.ECS_BLUE_GREEN_CREATE_SERVICE),
   @JsonProperty(EntityTypeConstants.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS)
-  ECS_BLUE_GREEN_SWAP_TARGET_GROUPS_STEP(
-          ModuleType.CD, EntityTypeConstants.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS, IdentifierRef.class, EntityYamlRootNames.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS),
+  ECS_BLUE_GREEN_SWAP_TARGET_GROUPS_STEP(ModuleType.CD, EntityTypeConstants.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS,
+      IdentifierRef.class, EntityYamlRootNames.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS),
   @JsonProperty(EntityTypeConstants.ECS_BLUE_GREEN_ROLLBACK)
-  ECS_BLUE_GREEN_ROLLBACK_STEP(
-          ModuleType.CD, EntityTypeConstants.ECS_BLUE_GREEN_ROLLBACK, IdentifierRef.class, EntityYamlRootNames.ECS_BLUE_GREEN_ROLLBACK);
-
+  ECS_BLUE_GREEN_ROLLBACK_STEP(ModuleType.CD, EntityTypeConstants.ECS_BLUE_GREEN_ROLLBACK, IdentifierRef.class,
+      EntityYamlRootNames.ECS_BLUE_GREEN_ROLLBACK);
 
   private final ModuleType moduleType;
   String yamlName;

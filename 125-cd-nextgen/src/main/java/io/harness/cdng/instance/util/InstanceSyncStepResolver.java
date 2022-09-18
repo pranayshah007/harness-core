@@ -14,7 +14,6 @@ import static java.util.Objects.nonNull;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.azure.webapp.AzureWebAppRollbackStep;
 import io.harness.cdng.azure.webapp.AzureWebAppSlotDeploymentStep;
-import io.harness.cdng.ecs.EcsBlueGreenCreateServiceStep;
 import io.harness.cdng.ecs.EcsBlueGreenRollbackStep;
 import io.harness.cdng.ecs.EcsBlueGreenSwapTargetGroupsStep;
 import io.harness.cdng.ecs.EcsCanaryDeployStep;
@@ -46,7 +45,6 @@ public class InstanceSyncStepResolver {
       CommandStep.STEP_TYPE.getType(), EcsRollingDeployStep.STEP_TYPE.getType(),
       EcsRollingRollbackStep.STEP_TYPE.getType(), EcsCanaryDeployStep.STEP_TYPE.getType(),
       EcsBlueGreenSwapTargetGroupsStep.STEP_TYPE.getType(), EcsBlueGreenRollbackStep.STEP_TYPE.getType()));
-
 
   public boolean shouldRunInstanceSync(StepType stepType) {
     return nonNull(stepType) && INSTANCE_SYN_STEP_TYPES.contains(stepType.getType());

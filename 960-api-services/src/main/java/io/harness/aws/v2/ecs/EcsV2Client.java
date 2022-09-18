@@ -43,7 +43,6 @@ import software.amazon.awssdk.services.ecs.model.UntagResourceResponse;
 import software.amazon.awssdk.services.ecs.model.UpdateServiceRequest;
 import software.amazon.awssdk.services.ecs.model.UpdateServiceResponse;
 
-
 public interface EcsV2Client {
   CreateServiceResponse createService(
       AwsInternalConfig awsConfig, CreateServiceRequest createServiceRequest, String region);
@@ -88,14 +87,15 @@ public interface EcsV2Client {
 
   DescribeTasksResponse getTasks(AwsInternalConfig awsConfig, String clusterName, List<String> taskArns, String region);
 
-  ListServicesResponse listServices(AwsInternalConfig awsConfig, ListServicesRequest listServicesRequest, String region);
+  ListServicesResponse listServices(
+      AwsInternalConfig awsConfig, ListServicesRequest listServicesRequest, String region);
 
   DescribeServicesResponse describeServices(
-          AwsInternalConfig awsConfig, DescribeServicesRequest describeServicesRequest, String region);
+      AwsInternalConfig awsConfig, DescribeServicesRequest describeServicesRequest, String region);
 
-  UntagResourceResponse untagService(AwsInternalConfig awsInternalConfig, UntagResourceRequest untagResourceRequest,
-                                     String region);
+  UntagResourceResponse untagService(
+      AwsInternalConfig awsInternalConfig, UntagResourceRequest untagResourceRequest, String region);
 
-  TagResourceResponse tagService(AwsInternalConfig awsInternalConfig, TagResourceRequest tagResourceRequest,
-                                 String region);
+  TagResourceResponse tagService(
+      AwsInternalConfig awsInternalConfig, TagResourceRequest tagResourceRequest, String region);
 }

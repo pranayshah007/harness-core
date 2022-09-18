@@ -1,6 +1,5 @@
 package io.harness.cdng.ecs;
 
-import com.google.inject.Inject;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
@@ -37,161 +36,169 @@ import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
-import lombok.extern.slf4j.Slf4j;
 
+import com.google.inject.Inject;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
-public class EcsBlueGreenCreateServiceStep extends TaskChainExecutableWithRollbackAndRbac implements EcsStepExecutor  {
-    public static final StepType STEP_TYPE = StepType.newBuilder()
-            .setType(ExecutionNodeType.ECS_BLUE_GREEN_CREATE_SERVICE.getYamlType())
-            .setStepCategory(StepCategory.STEP)
+public class EcsBlueGreenCreateServiceStep extends TaskChainExecutableWithRollbackAndRbac implements EcsStepExecutor {
+  public static final StepType STEP_TYPE = StepType.newBuilder()
+                                               .setType(ExecutionNodeType.ECS_BLUE_GREEN_CREATE_SERVICE.getYamlType())
+                                               .setStepCategory(StepCategory.STEP)
+                                               .build();
+
+  private final String ECS_BLUE_GREEN__CREATE_SERVICE_COMMAND_NAME = "EcsBlueGreenCreateService";
+  private final String ECS_BLUE_GREEN_PREPARE_ROLLBACK_COMMAND_NAME = "EcsBlueGreenPrepareRollback";
+
+  @Inject private EcsStepCommonHelper ecsStepCommonHelper;
+  @Inject private EcsStepHelperImpl ecsStepHelper;
+  @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
+  @Inject private InstanceInfoService instanceInfoService;
+
+  @Override
+  public TaskChainResponse executeEcsTask(Ambiance ambiance, StepElementParameters stepParameters,
+      EcsExecutionPassThroughData executionPassThroughData, UnitProgressData unitProgressData,
+      EcsStepExecutorParams ecsStepExecutorParams) {
+    InfrastructureOutcome infrastructureOutcome = executionPassThroughData.getInfrastructure();
+    final String accountId = AmbianceUtils.getAccountId(ambiance);
+
+    EcsBlueGreenCreateServiceStepParameters ecsBlueGreenCreateServiceStepParameters =
+        (EcsBlueGreenCreateServiceStepParameters) stepParameters.getSpec();
+
+    EcsLoadBalancerConfig ecsLoadBalancerConfig =
+        EcsLoadBalancerConfig.builder()
+            .loadBalancer(ecsBlueGreenCreateServiceStepParameters.getLoadBalancer().getValue())
+            .prodListenerArn(ecsBlueGreenCreateServiceStepParameters.getProdListener().getValue())
+            .prodListenerRuleArn(ecsBlueGreenCreateServiceStepParameters.getProdListenerRuleArn().getValue())
+            .stageListenerArn(ecsBlueGreenCreateServiceStepParameters.getStageListener().getValue())
+            .stageListenerRuleArn(ecsBlueGreenCreateServiceStepParameters.getStageListenerRuleArn().getValue())
             .build();
 
-    private final String ECS_BLUE_GREEN__CREATE_SERVICE_COMMAND_NAME = "EcsBlueGreenCreateService";
-    private final String ECS_BLUE_GREEN_PREPARE_ROLLBACK_COMMAND_NAME = "EcsBlueGreenPrepareRollback";
+    EcsBlueGreenCreateServiceRequest ecsBlueGreenCreateServiceRequest =
+        EcsBlueGreenCreateServiceRequest.builder()
+            .accountId(accountId)
+            .ecsCommandType(EcsCommandTypeNG.ECS_BLUE_GREEN_CREATE_SERVICE)
+            .commandName(ECS_BLUE_GREEN__CREATE_SERVICE_COMMAND_NAME)
+            .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
+            .ecsInfraConfig(ecsStepCommonHelper.getEcsInfraConfig(infrastructureOutcome, ambiance))
+            .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
+            .ecsTaskDefinitionManifestContent(ecsStepExecutorParams.getEcsTaskDefinitionManifestContent())
+            .ecsServiceDefinitionManifestContent(ecsStepExecutorParams.getEcsServiceDefinitionManifestContent())
+            .ecsScalableTargetManifestContentList(ecsStepExecutorParams.getEcsScalableTargetManifestContentList())
+            .ecsScalingPolicyManifestContentList(ecsStepExecutorParams.getEcsScalingPolicyManifestContentList())
+            .ecsLoadBalancerConfig(ecsLoadBalancerConfig)
+            .targetGroupArnKey(ecsStepExecutorParams.getTargetGroupArnKey())
+            .build();
 
-    @Inject private EcsStepCommonHelper ecsStepCommonHelper;
-    @Inject private EcsStepHelperImpl ecsStepHelper;
-    @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
-    @Inject private InstanceInfoService instanceInfoService;
+    return ecsStepCommonHelper.queueEcsTask(
+        stepParameters, ecsBlueGreenCreateServiceRequest, ambiance, executionPassThroughData, true);
+  }
 
-    @Override
-    public TaskChainResponse executeEcsTask(Ambiance ambiance, StepElementParameters stepParameters,
-                                            EcsExecutionPassThroughData executionPassThroughData, UnitProgressData unitProgressData,
-                                            EcsStepExecutorParams ecsStepExecutorParams) {
-        InfrastructureOutcome infrastructureOutcome = executionPassThroughData.getInfrastructure();
-        final String accountId = AmbianceUtils.getAccountId(ambiance);
+  @Override
+  public TaskChainResponse executeEcsPrepareRollbackTask(Ambiance ambiance, StepElementParameters stepParameters,
+      EcsPrepareRollbackDataPassThroughData ecsStepPassThroughData, UnitProgressData unitProgressData) {
+    InfrastructureOutcome infrastructureOutcome = ecsStepPassThroughData.getInfrastructureOutcome();
+    final String accountId = AmbianceUtils.getAccountId(ambiance);
+    EcsBlueGreenCreateServiceStepParameters ecsBlueGreenCreateServiceStepParameters =
+        (EcsBlueGreenCreateServiceStepParameters) stepParameters.getSpec();
+    EcsLoadBalancerConfig ecsLoadBalancerConfig =
+        EcsLoadBalancerConfig.builder()
+            .loadBalancer(ecsBlueGreenCreateServiceStepParameters.getLoadBalancer().getValue())
+            .prodListenerArn(ecsBlueGreenCreateServiceStepParameters.getProdListener().getValue())
+            .prodListenerRuleArn(ecsBlueGreenCreateServiceStepParameters.getProdListenerRuleArn().getValue())
+            .stageListenerArn(ecsBlueGreenCreateServiceStepParameters.getStageListener().getValue())
+            .stageListenerRuleArn(ecsBlueGreenCreateServiceStepParameters.getStageListenerRuleArn().getValue())
+            .build();
+    EcsBlueGreenPrepareRollbackRequest ecsBlueGreenPrepareRollbackRequest =
+        EcsBlueGreenPrepareRollbackRequest.builder()
+            .commandName(ECS_BLUE_GREEN_PREPARE_ROLLBACK_COMMAND_NAME)
+            .accountId(accountId)
+            .ecsCommandType(EcsCommandTypeNG.ECS_BLUE_GREEN_PREPARE_ROLLBACK_DATA)
+            .ecsInfraConfig(ecsStepCommonHelper.getEcsInfraConfig(infrastructureOutcome, ambiance))
+            .ecsServiceDefinitionManifestContent(ecsStepPassThroughData.getEcsServiceDefinitionManifestContent())
+            .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
+            .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
+            .ecsLoadBalancerConfig(ecsLoadBalancerConfig)
+            .build();
+    return ecsStepCommonHelper.queueEcsTask(
+        stepParameters, ecsBlueGreenPrepareRollbackRequest, ambiance, ecsStepPassThroughData, false);
+  }
 
-        EcsBlueGreenCreateServiceStepParameters ecsBlueGreenCreateServiceStepParameters =
-                (EcsBlueGreenCreateServiceStepParameters) stepParameters.getSpec();
+  @Override
+  public Class<StepElementParameters> getStepParametersClass() {
+    return StepElementParameters.class;
+  }
 
-        EcsLoadBalancerConfig ecsLoadBalancerConfig = EcsLoadBalancerConfig.builder()
-                .loadBalancer(ecsBlueGreenCreateServiceStepParameters.getLoadBalancer().getValue())
-                .prodListenerArn(ecsBlueGreenCreateServiceStepParameters.getProdListener().getValue())
-                .prodListenerRuleArn(ecsBlueGreenCreateServiceStepParameters.getProdListenerRuleArn().getValue())
-                .stageListenerArn(ecsBlueGreenCreateServiceStepParameters.getStageListener().getValue())
-                .stageListenerRuleArn(ecsBlueGreenCreateServiceStepParameters.getStageListenerRuleArn().getValue())
-                .build();
+  @Override
+  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+    // nothing
+  }
 
-        EcsBlueGreenCreateServiceRequest ecsBlueGreenCreateServiceRequest =
-                EcsBlueGreenCreateServiceRequest.builder()
-                        .accountId(accountId)
-                        .ecsCommandType(EcsCommandTypeNG.ECS_BLUE_GREEN_CREATE_SERVICE)
-                        .commandName(ECS_BLUE_GREEN__CREATE_SERVICE_COMMAND_NAME)
-                        .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
-                        .ecsInfraConfig(ecsStepCommonHelper.getEcsInfraConfig(infrastructureOutcome, ambiance))
-                        .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
-                        .ecsTaskDefinitionManifestContent(ecsStepExecutorParams.getEcsTaskDefinitionManifestContent())
-                        .ecsServiceDefinitionManifestContent(ecsStepExecutorParams.getEcsServiceDefinitionManifestContent())
-                        .ecsScalableTargetManifestContentList(ecsStepExecutorParams.getEcsScalableTargetManifestContentList())
-                        .ecsScalingPolicyManifestContentList(ecsStepExecutorParams.getEcsScalingPolicyManifestContentList())
-                        .ecsLoadBalancerConfig(ecsLoadBalancerConfig)
-                        .targetGroupArnKey(ecsStepExecutorParams.getTargetGroupArnKey())
-                        .build();
+  @Override
+  public TaskChainResponse executeNextLinkWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
+      StepInputPackage inputPackage, PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseSupplier)
+      throws Exception {
+    log.info("Calling executeNextLink");
+    return ecsStepCommonHelper.executeNextLinkBlueGreen(
+        this, ambiance, stepParameters, passThroughData, responseSupplier, ecsStepHelper);
+  }
 
-        return ecsStepCommonHelper.queueEcsTask(
-                stepParameters, ecsBlueGreenCreateServiceRequest, ambiance, executionPassThroughData, true);
+  @Override
+  public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
+      PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
+    if (passThroughData instanceof EcsGitFetchFailurePassThroughData) {
+      return ecsStepCommonHelper.handleGitTaskFailure((EcsGitFetchFailurePassThroughData) passThroughData);
+    } else if (passThroughData instanceof EcsStepExceptionPassThroughData) {
+      return ecsStepCommonHelper.handleStepExceptionFailure((EcsStepExceptionPassThroughData) passThroughData);
     }
 
-    @Override
-    public TaskChainResponse executeEcsPrepareRollbackTask(Ambiance ambiance, StepElementParameters stepParameters,
-                                                           EcsPrepareRollbackDataPassThroughData ecsStepPassThroughData, UnitProgressData unitProgressData) {
-        InfrastructureOutcome infrastructureOutcome = ecsStepPassThroughData.getInfrastructureOutcome();
-        final String accountId = AmbianceUtils.getAccountId(ambiance);
-        EcsBlueGreenCreateServiceStepParameters ecsBlueGreenCreateServiceStepParameters =
-                (EcsBlueGreenCreateServiceStepParameters) stepParameters.getSpec();
-        EcsLoadBalancerConfig ecsLoadBalancerConfig = EcsLoadBalancerConfig.builder()
-                .loadBalancer(ecsBlueGreenCreateServiceStepParameters.getLoadBalancer().getValue())
-                .prodListenerArn(ecsBlueGreenCreateServiceStepParameters.getProdListener().getValue())
-                .prodListenerRuleArn(ecsBlueGreenCreateServiceStepParameters.getProdListenerRuleArn().getValue())
-                .stageListenerArn(ecsBlueGreenCreateServiceStepParameters.getStageListener().getValue())
-                .stageListenerRuleArn(ecsBlueGreenCreateServiceStepParameters.getStageListenerRuleArn().getValue())
-                .build();
-        EcsBlueGreenPrepareRollbackRequest ecsBlueGreenPrepareRollbackRequest =
-                EcsBlueGreenPrepareRollbackRequest.builder()
-                        .commandName(ECS_BLUE_GREEN_PREPARE_ROLLBACK_COMMAND_NAME)
-                        .accountId(accountId)
-                        .ecsCommandType(EcsCommandTypeNG.ECS_BLUE_GREEN_PREPARE_ROLLBACK_DATA)
-                        .ecsInfraConfig(ecsStepCommonHelper.getEcsInfraConfig(infrastructureOutcome, ambiance))
-                        .ecsServiceDefinitionManifestContent(
-                                ecsStepPassThroughData.getEcsServiceDefinitionManifestContent())
-                        .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
-                        .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
-                        .ecsLoadBalancerConfig(ecsLoadBalancerConfig)
-                        .build();
-        return ecsStepCommonHelper.queueEcsTask(
-                stepParameters, ecsBlueGreenPrepareRollbackRequest, ambiance, ecsStepPassThroughData, false);
+    log.info("Finalizing execution with passThroughData: " + passThroughData.getClass().getName());
+    EcsExecutionPassThroughData ecsExecutionPassThroughData = (EcsExecutionPassThroughData) passThroughData;
+    InfrastructureOutcome infrastructureOutcome = ecsExecutionPassThroughData.getInfrastructure();
+    EcsBlueGreenCreateServiceResponse ecsBlueGreenCreateServiceResponse;
+    try {
+      ecsBlueGreenCreateServiceResponse = (EcsBlueGreenCreateServiceResponse) responseDataSupplier.get();
+    } catch (Exception e) {
+      log.error("Error while processing ecs task response: {}", e.getMessage(), e);
+      return ecsStepCommonHelper.handleTaskException(ambiance, ecsExecutionPassThroughData, e);
+    }
+    StepResponseBuilder stepResponseBuilder = StepResponse.builder().unitProgressList(
+        ecsBlueGreenCreateServiceResponse.getUnitProgressData().getUnitProgresses());
+    if (ecsBlueGreenCreateServiceResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
+      return EcsStepCommonHelper.getFailureResponseBuilder(ecsBlueGreenCreateServiceResponse, stepResponseBuilder)
+          .build();
     }
 
-    @Override
-    public Class<StepElementParameters> getStepParametersClass() {
-        return StepElementParameters.class;
-    }
+    EcsBlueGreenCreateServiceResult ecsBlueGreenCreateServiceResult =
+        ecsBlueGreenCreateServiceResponse.getEcsBlueGreenCreateServiceResult();
+    EcsBlueGreenCreateServiceDataOutcome ecsBlueGreenCreateServiceDataOutcome =
+        EcsBlueGreenCreateServiceDataOutcome.builder()
+            .isNewServiceCreated(ecsBlueGreenCreateServiceResult.isNewServiceCreated())
+            .serviceName(ecsBlueGreenCreateServiceResult.getServiceName())
+            .targetGroupArn(ecsBlueGreenCreateServiceResult.getTargetGroupArn())
+            .loadBalancer(ecsBlueGreenCreateServiceResult.getLoadBalancer())
+            .listenerArn(ecsBlueGreenCreateServiceResult.getListenerArn())
+            .listenerRuleArn(ecsBlueGreenCreateServiceResult.getListenerRuleArn())
+            .build();
 
-    @Override
-    public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
-        // nothing
-    }
+    executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.ECS_BLUE_GREEN_CREATE_SERVICE_OUTCOME,
+        ecsBlueGreenCreateServiceDataOutcome, StepOutcomeGroup.STEP.name());
 
-    @Override
-    public TaskChainResponse executeNextLinkWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage, PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseSupplier) throws Exception {
-        log.info("Calling executeNextLink");
-        return ecsStepCommonHelper.executeNextLinkBlueGreen(
-                this, ambiance, stepParameters, passThroughData, responseSupplier, ecsStepHelper);
-    }
+    List<ServerInstanceInfo> serverInstanceInfos = ecsStepCommonHelper.getServerInstanceInfos(
+        ecsBlueGreenCreateServiceResponse, infrastructureOutcome.getInfrastructureKey());
+    StepResponse.StepOutcome stepOutcome =
+        instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfos);
+    return stepResponseBuilder.status(Status.SUCCEEDED).stepOutcome(stepOutcome).build();
+  }
 
-    @Override
-    public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters, PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
-        if (passThroughData instanceof EcsGitFetchFailurePassThroughData) {
-            return ecsStepCommonHelper.handleGitTaskFailure((EcsGitFetchFailurePassThroughData) passThroughData);
-        } else if (passThroughData instanceof EcsStepExceptionPassThroughData) {
-            return ecsStepCommonHelper.handleStepExceptionFailure((EcsStepExceptionPassThroughData) passThroughData);
-        }
-
-        log.info("Finalizing execution with passThroughData: " + passThroughData.getClass().getName());
-        EcsExecutionPassThroughData ecsExecutionPassThroughData = (EcsExecutionPassThroughData) passThroughData;
-        InfrastructureOutcome infrastructureOutcome = ecsExecutionPassThroughData.getInfrastructure();
-        EcsBlueGreenCreateServiceResponse ecsBlueGreenCreateServiceResponse;
-        try {
-            ecsBlueGreenCreateServiceResponse = (EcsBlueGreenCreateServiceResponse) responseDataSupplier.get();
-        } catch (Exception e) {
-            log.error("Error while processing ecs task response: {}", e.getMessage(), e);
-            return ecsStepCommonHelper.handleTaskException(ambiance, ecsExecutionPassThroughData, e);
-        }
-        StepResponse.StepResponseBuilder stepResponseBuilder =
-                StepResponse.builder().unitProgressList(ecsBlueGreenCreateServiceResponse.getUnitProgressData().getUnitProgresses());
-        if (ecsBlueGreenCreateServiceResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
-            return EcsStepCommonHelper.getFailureResponseBuilder(ecsBlueGreenCreateServiceResponse, stepResponseBuilder).build();
-        }
-
-        EcsBlueGreenCreateServiceResult ecsBlueGreenCreateServiceResult =
-                ecsBlueGreenCreateServiceResponse.getEcsBlueGreenCreateServiceResult();
-        EcsBlueGreenCreateServiceDataOutcome ecsBlueGreenCreateServiceDataOutcome =
-                EcsBlueGreenCreateServiceDataOutcome.builder()
-                        .isNewServiceCreated(ecsBlueGreenCreateServiceResult.isNewServiceCreated())
-                        .serviceName(ecsBlueGreenCreateServiceResult.getServiceName())
-                        .targetGroupArn(ecsBlueGreenCreateServiceResult.getTargetGroupArn())
-                        .loadBalancer(ecsBlueGreenCreateServiceResult.getLoadBalancer())
-                        .listenerArn(ecsBlueGreenCreateServiceResult.getListenerArn())
-                        .listenerRuleArn(ecsBlueGreenCreateServiceResult.getListenerRuleArn())
-                        .build();
-
-        executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.ECS_BLUE_GREEN_CREATE_SERVICE_OUTCOME,
-                ecsBlueGreenCreateServiceDataOutcome, StepOutcomeGroup.STEP.name());
-
-        List<ServerInstanceInfo> serverInstanceInfos = ecsStepCommonHelper.getServerInstanceInfos(
-                ecsBlueGreenCreateServiceResponse, infrastructureOutcome.getInfrastructureKey());
-        StepResponse.StepOutcome stepOutcome =
-                instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfos);
-        return stepResponseBuilder.status(Status.SUCCEEDED).stepOutcome(stepOutcome).build();
-    }
-
-    @Override
-    public TaskChainResponse startChainLinkAfterRbac(Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
-        return ecsStepCommonHelper.startChainLink(ambiance, stepParameters, ecsStepHelper);
-    }
+  @Override
+  public TaskChainResponse startChainLinkAfterRbac(
+      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
+    return ecsStepCommonHelper.startChainLink(ambiance, stepParameters, ecsStepHelper);
+  }
 }

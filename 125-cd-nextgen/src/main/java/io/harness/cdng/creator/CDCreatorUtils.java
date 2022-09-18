@@ -14,8 +14,6 @@ import io.harness.executions.steps.StepSpecTypeConstants;
 import com.google.common.collect.Sets;
 import java.util.Collections;
 import java.util.Set;
-
-import io.harness.pms.sdk.core.steps.Step;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -35,14 +33,13 @@ public class CDCreatorUtils {
         StepSpecTypeConstants.HELM_DEPLOY, StepSpecTypeConstants.HELM_ROLLBACK,
         StepSpecTypeConstants.CLOUDFORMATION_CREATE_STACK, StepSpecTypeConstants.CLOUDFORMATION_DELETE_STACK,
         StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_DEPLOY, StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK,
-        StepSpecTypeConstants.CLOUDFORMATION_ROLLBACK_STACK,
-        StepSpecTypeConstants.AZURE_CREATE_ARM_RESOURCE, StepSpecTypeConstants.AZURE_CREATE_BP_RESOURCE,
-        StepSpecTypeConstants.AZURE_ROLLBACK_ARM_RESOURCE, StepSpecTypeConstants.AZURE_SLOT_DEPLOYMENT,
-        StepSpecTypeConstants.AZURE_TRAFFIC_SHIFT, StepSpecTypeConstants.AZURE_SWAP_SLOT,
-        StepSpecTypeConstants.AZURE_WEBAPP_ROLLBACK, StepSpecTypeConstants.JENKINS_BUILD,
-        StepSpecTypeConstants.ECS_ROLLING_DEPLOY, StepSpecTypeConstants.ECS_ROLLING_ROLLBACK,
-        StepSpecTypeConstants.ECS_CANARY_DEPLOY, StepSpecTypeConstants.ECS_CANARY_DELETE,
-        StepSpecTypeConstants.ECS_BLUE_GREEN_CREATE_SERVICE, StepSpecTypeConstants.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS,
-        StepSpecTypeConstants.ECS_BLUE_GREEN_ROLLBACK);
+        StepSpecTypeConstants.CLOUDFORMATION_ROLLBACK_STACK, StepSpecTypeConstants.AZURE_CREATE_ARM_RESOURCE,
+        StepSpecTypeConstants.AZURE_CREATE_BP_RESOURCE, StepSpecTypeConstants.AZURE_ROLLBACK_ARM_RESOURCE,
+        StepSpecTypeConstants.AZURE_SLOT_DEPLOYMENT, StepSpecTypeConstants.AZURE_TRAFFIC_SHIFT,
+        StepSpecTypeConstants.AZURE_SWAP_SLOT, StepSpecTypeConstants.AZURE_WEBAPP_ROLLBACK,
+        StepSpecTypeConstants.JENKINS_BUILD, StepSpecTypeConstants.ECS_ROLLING_DEPLOY,
+        StepSpecTypeConstants.ECS_ROLLING_ROLLBACK, StepSpecTypeConstants.ECS_CANARY_DEPLOY,
+        StepSpecTypeConstants.ECS_CANARY_DELETE, StepSpecTypeConstants.ECS_BLUE_GREEN_CREATE_SERVICE,
+        StepSpecTypeConstants.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS, StepSpecTypeConstants.ECS_BLUE_GREEN_ROLLBACK);
   }
 }

@@ -24,22 +24,16 @@ import io.harness.delegate.task.ecs.response.EcsCommandResponse;
 import io.harness.delegate.task.ecs.response.EcsPrepareRollbackDataResponse;
 import io.harness.ecs.EcsCommandUnitConstants;
 import io.harness.exception.InvalidArgumentsException;
-import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.inject.Inject;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import software.amazon.awssdk.services.applicationautoscaling.model.DescribeScalableTargetsResponse;
-import software.amazon.awssdk.services.applicationautoscaling.model.DescribeScalingPoliciesResponse;
 import software.amazon.awssdk.services.ecs.model.CreateServiceRequest;
 import software.amazon.awssdk.services.ecs.model.Service;
 
@@ -93,12 +87,11 @@ public class EcsPrepareRollbackCommandTaskHandler extends EcsCommandTaskNGHandle
 
       // Get registerScalableTargetRequestBuilderStrings if present
       List<String> registerScalableTargetRequestBuilderStrings = ecsCommandTaskHelper.getScalableTargetsAsString(
-              prepareRollbackDataLogCallback, serviceName, service, ecsInfraConfig);
-
+          prepareRollbackDataLogCallback, serviceName, service, ecsInfraConfig);
 
       // Get putScalingPolicyRequestBuilderStrings if present
       List<String> registerScalingPolicyRequestBuilderStrings = ecsCommandTaskHelper.getScalingPoliciesAsString(
-              prepareRollbackDataLogCallback, serviceName, service, ecsInfraConfig);
+          prepareRollbackDataLogCallback, serviceName, service, ecsInfraConfig);
 
       EcsPrepareRollbackDataResult ecsPrepareRollbackDataResult =
           EcsPrepareRollbackDataResult.builder()

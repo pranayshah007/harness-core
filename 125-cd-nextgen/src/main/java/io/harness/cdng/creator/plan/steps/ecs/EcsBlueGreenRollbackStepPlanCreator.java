@@ -6,8 +6,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.creator.plan.steps.CDPMSStepPlanCreatorV2;
 import io.harness.cdng.ecs.EcsBlueGreenRollbackStepNode;
 import io.harness.cdng.ecs.EcsBlueGreenRollbackStepParameters;
-import io.harness.cdng.ecs.EcsRollingRollbackStepNode;
-import io.harness.cdng.ecs.EcsRollingRollbackStepParameters;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;

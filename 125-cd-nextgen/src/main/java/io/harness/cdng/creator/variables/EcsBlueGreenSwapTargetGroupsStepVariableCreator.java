@@ -10,14 +10,15 @@ import java.util.Collections;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDP)
-public class EcsBlueGreenSwapTargetGroupsStepVariableCreator extends GenericStepVariableCreator<EcsBlueGreenSwapTargetGroupsStepNode> {
-    @Override
-    public Set<String> getSupportedStepTypes() {
-        return Collections.singleton(StepSpecTypeConstants.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS);
-    }
+public class EcsBlueGreenSwapTargetGroupsStepVariableCreator
+    extends GenericStepVariableCreator<EcsBlueGreenSwapTargetGroupsStepNode> {
+  @Override
+  public Set<String> getSupportedStepTypes() {
+    return Collections.singleton(StepSpecTypeConstants.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS);
+  }
 
-    @Override
-    public Class<EcsBlueGreenSwapTargetGroupsStepNode> getFieldClass() {
-        return EcsBlueGreenSwapTargetGroupsStepNode.class;
-    }
+  @Override
+  public Class<EcsBlueGreenSwapTargetGroupsStepNode> getFieldClass() {
+    return EcsBlueGreenSwapTargetGroupsStepNode.class;
+  }
 }

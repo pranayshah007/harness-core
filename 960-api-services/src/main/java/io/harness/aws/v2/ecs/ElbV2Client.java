@@ -1,6 +1,7 @@
 package io.harness.aws.v2.ecs;
 
 import io.harness.aws.beans.AwsInternalConfig;
+
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeListenersRequest;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeListenersResponse;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeLoadBalancersRequest;
@@ -13,18 +14,17 @@ import software.amazon.awssdk.services.elasticloadbalancingv2.model.ModifyRuleRe
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.ModifyRuleResponse;
 
 public interface ElbV2Client {
+  DescribeListenersResponse describeListener(
+      AwsInternalConfig awsConfig, DescribeListenersRequest describeListenersRequest, String region);
 
-    DescribeListenersResponse describeListener(AwsInternalConfig awsConfig,
-                                               DescribeListenersRequest describeListenersRequest, String region);
+  DescribeRulesResponse describeRules(
+      AwsInternalConfig awsConfig, DescribeRulesRequest describeRulesRequest, String region);
 
-    DescribeRulesResponse describeRules(AwsInternalConfig awsConfig, DescribeRulesRequest describeRulesRequest,
-                                        String region);
+  ModifyRuleResponse modifyRule(AwsInternalConfig awsConfig, ModifyRuleRequest modifyRuleRequest, String region);
 
-    ModifyRuleResponse modifyRule(AwsInternalConfig awsConfig, ModifyRuleRequest modifyRuleRequest, String region);
+  ModifyListenerResponse modifyListener(
+      AwsInternalConfig awsConfig, ModifyListenerRequest modifyListenerRequest, String region);
 
-    ModifyListenerResponse modifyListener(AwsInternalConfig awsConfig, ModifyListenerRequest modifyListenerRequest, String region);
-
-    DescribeLoadBalancersResponse describeLoadBalancer(AwsInternalConfig awsConfig, DescribeLoadBalancersRequest
-                                                       describeLoadBalancersRequest, String region);
-
+  DescribeLoadBalancersResponse describeLoadBalancer(
+      AwsInternalConfig awsConfig, DescribeLoadBalancersRequest describeLoadBalancersRequest, String region);
 }

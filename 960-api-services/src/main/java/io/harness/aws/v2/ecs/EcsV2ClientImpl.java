@@ -74,9 +74,6 @@ import software.amazon.awssdk.services.ecs.model.UntagResourceResponse;
 import software.amazon.awssdk.services.ecs.model.UpdateServiceRequest;
 import software.amazon.awssdk.services.ecs.model.UpdateServiceResponse;
 import software.amazon.awssdk.services.ecs.waiters.EcsWaiter;
-import software.amazon.awssdk.services.elasticloadbalancingv2.ElasticLoadBalancingV2Client;
-import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeListenersRequest;
-import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeListenersResponse;
 
 @OwnedBy(CDP)
 @Singleton
@@ -348,7 +345,8 @@ public class EcsV2ClientImpl extends AwsClientHelper implements EcsV2Client {
   }
 
   @Override
-  public ListServicesResponse listServices(AwsInternalConfig awsConfig, ListServicesRequest listServicesRequest, String region) {
+  public ListServicesResponse listServices(
+      AwsInternalConfig awsConfig, ListServicesRequest listServicesRequest, String region) {
     try (EcsClient ecsClient = (EcsClient) getClient(awsConfig, region)) {
       super.logCall(client(), Thread.currentThread().getStackTrace()[1].getMethodName());
       return ecsClient.listServices(listServicesRequest);
@@ -361,7 +359,7 @@ public class EcsV2ClientImpl extends AwsClientHelper implements EcsV2Client {
 
   @Override
   public DescribeServicesResponse describeServices(
-          AwsInternalConfig awsConfig, DescribeServicesRequest describeServicesRequest, String region) {
+      AwsInternalConfig awsConfig, DescribeServicesRequest describeServicesRequest, String region) {
     try (EcsClient ecsClient = (EcsClient) getClient(awsConfig, region)) {
       super.logCall(client(), Thread.currentThread().getStackTrace()[1].getMethodName());
       return ecsClient.describeServices(describeServicesRequest);
@@ -371,12 +369,11 @@ public class EcsV2ClientImpl extends AwsClientHelper implements EcsV2Client {
     }
     return DescribeServicesResponse.builder().build();
   }
-  //todo: refactor it
-
+  // todo: refactor it
 
   @Override
-  public UntagResourceResponse untagService(AwsInternalConfig awsInternalConfig,
-                                            UntagResourceRequest untagResourceRequest, String region) {
+  public UntagResourceResponse untagService(
+      AwsInternalConfig awsInternalConfig, UntagResourceRequest untagResourceRequest, String region) {
     try (EcsClient ecsClient = (EcsClient) getClient(awsInternalConfig, region)) {
       super.logCall(client(), Thread.currentThread().getStackTrace()[1].getMethodName());
       return ecsClient.untagResource(untagResourceRequest);
@@ -388,8 +385,8 @@ public class EcsV2ClientImpl extends AwsClientHelper implements EcsV2Client {
   }
 
   @Override
-  public TagResourceResponse tagService(AwsInternalConfig awsInternalConfig,
-                                        TagResourceRequest tagResourceRequest, String region) {
+  public TagResourceResponse tagService(
+      AwsInternalConfig awsInternalConfig, TagResourceRequest tagResourceRequest, String region) {
     try (EcsClient ecsClient = (EcsClient) getClient(awsInternalConfig, region)) {
       super.logCall(client(), Thread.currentThread().getStackTrace()[1].getMethodName());
       return ecsClient.tagResource(tagResourceRequest);

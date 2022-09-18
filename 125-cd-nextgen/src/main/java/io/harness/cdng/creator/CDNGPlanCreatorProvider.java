@@ -493,28 +493,28 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .build();
 
     StepInfo ecsBlueGreenCreateService =
-            StepInfo.newBuilder()
-                    .setName("Ecs Blue Green Create Service")
-                    .setType(StepSpecTypeConstants.ECS_BLUE_GREEN_CREATE_SERVICE)
-                    .setStepMetaData(StepMetaData.newBuilder().addCategory("ECS").setFolderPath("ECS").build())
-                    .setFeatureFlag(FeatureName.ECS_NG.name())
-                    .build();
+        StepInfo.newBuilder()
+            .setName("Ecs Blue Green Create Service")
+            .setType(StepSpecTypeConstants.ECS_BLUE_GREEN_CREATE_SERVICE)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory("ECS").setFolderPath("ECS").build())
+            .setFeatureFlag(FeatureName.ECS_NG.name())
+            .build();
 
     StepInfo ecsBlueGreenSwapTargetGroups =
-            StepInfo.newBuilder()
-                    .setName("Ecs Blue Green Swap Target Groups")
-                    .setType(StepSpecTypeConstants.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS)
-                    .setStepMetaData(StepMetaData.newBuilder().addCategory("ECS").setFolderPath("ECS").build())
-                    .setFeatureFlag(FeatureName.ECS_NG.name())
-                    .build();
+        StepInfo.newBuilder()
+            .setName("Ecs Blue Green Swap Target Groups")
+            .setType(StepSpecTypeConstants.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory("ECS").setFolderPath("ECS").build())
+            .setFeatureFlag(FeatureName.ECS_NG.name())
+            .build();
 
     StepInfo ecsBlueGreenRollback =
-            StepInfo.newBuilder()
-                    .setName("Ecs Blue Green Rollback")
-                    .setType(StepSpecTypeConstants.ECS_BLUE_GREEN_ROLLBACK)
-                    .setStepMetaData(StepMetaData.newBuilder().addCategory("ECS").setFolderPath("ECS").build())
-                    .setFeatureFlag(FeatureName.ECS_NG.name())
-                    .build();
+        StepInfo.newBuilder()
+            .setName("Ecs Blue Green Rollback")
+            .setType(StepSpecTypeConstants.ECS_BLUE_GREEN_ROLLBACK)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory("ECS").setFolderPath("ECS").build())
+            .setFeatureFlag(FeatureName.ECS_NG.name())
+            .build();
 
     StepInfo createStack = StepInfo.newBuilder()
                                .setName("CloudFormation Create Stack")

@@ -72,8 +72,7 @@ import io.swagger.annotations.ApiModel;
         JenkinsBuildStepInfo.class, AzureCreateARMResourceStepInfo.class, AzureCreateBPStepInfo.class,
         AzureARMRollbackStepInfo.class, EcsRollingDeployStepInfo.class, EcsRollingRollbackStepInfo.class,
         EcsCanaryDeployStepInfo.class, EcsCanaryDeleteStepInfo.class, EcsBlueGreenCreateServiceStepInfo.class,
-        EcsBlueGreenSwapTargetGroupsStepInfo.class,
-        EcsBlueGreenRollbackStepInfo.class})
+        EcsBlueGreenSwapTargetGroupsStepInfo.class, EcsBlueGreenRollbackStepInfo.class})
 
 @OwnedBy(HarnessTeam.CDC)
 public interface CDStepInfo extends StepSpecType, WithStepElementParameters, WithDelegateSelector {

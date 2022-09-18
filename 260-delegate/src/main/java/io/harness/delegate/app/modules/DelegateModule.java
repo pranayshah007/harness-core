@@ -1838,13 +1838,13 @@ public class DelegateModule extends AbstractModule {
     ecsTaskTypeToTaskHandlerMap.addBinding(EcsCommandTypeNG.ECS_CANARY_DEPLOY.name())
         .to(EcsCanaryDeployCommandTaskHandler.class);
     ecsTaskTypeToTaskHandlerMap.addBinding(EcsCommandTypeNG.ECS_BLUE_GREEN_CREATE_SERVICE.name())
-                    .to(EcsBlueGreenCreateServiceCommandTaskHandler.class);
+        .to(EcsBlueGreenCreateServiceCommandTaskHandler.class);
     ecsTaskTypeToTaskHandlerMap.addBinding(EcsCommandTypeNG.ECS_BLUE_GREEN_PREPARE_ROLLBACK_DATA.name())
-              .to(EcsBlueGreenPrepareRollbackCommandTaskHandler.class);
+        .to(EcsBlueGreenPrepareRollbackCommandTaskHandler.class);
     ecsTaskTypeToTaskHandlerMap.addBinding(EcsCommandTypeNG.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS.name())
-              .to(EcsBlueGreenSwapTargetGroupsCommandTaskHandler.class);
+        .to(EcsBlueGreenSwapTargetGroupsCommandTaskHandler.class);
     ecsTaskTypeToTaskHandlerMap.addBinding(EcsCommandTypeNG.ECS_BLUE_GREEN_ROLLBACK.name())
-                    .to(EcsBlueGreenRollbackCommandTaskHandler.class);
+        .to(EcsBlueGreenRollbackCommandTaskHandler.class);
 
     mapBinder.addBinding(TaskType.ECS_GIT_FETCH_TASK_NG).toInstance(EcsGitFetchTask.class);
     mapBinder.addBinding(TaskType.ECS_COMMAND_TASK_NG).toInstance(EcsCommandTaskNG.class);
