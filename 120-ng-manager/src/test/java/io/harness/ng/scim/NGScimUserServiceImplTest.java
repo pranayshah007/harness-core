@@ -24,7 +24,6 @@ import static org.mockito.Mockito.when;
 import io.harness.NgManagerTestBase;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
@@ -39,7 +38,6 @@ import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.scim.ScimListResponse;
 import io.harness.scim.ScimUser;
-import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import software.wings.beans.Account;
 import software.wings.beans.UserInvite;
@@ -62,7 +60,6 @@ public class NGScimUserServiceImplTest extends NgManagerTestBase {
   private UserGroupService userGroupService;
   private InviteService inviteService;
   private NGScimUserServiceImpl scimUserService;
-  private NGFeatureFlagHelperService nGFeatureFlagHelperService;
   @Mock private AccountClient accountClient;
 
   @Before
@@ -70,14 +67,12 @@ public class NGScimUserServiceImplTest extends NgManagerTestBase {
     inviteService = mock(InviteService.class);
     ngUserService = mock(NgUserService.class);
     userGroupService = mock(UserGroupService.class);
-    nGFeatureFlagHelperService = mock(NGFeatureFlagHelperService.class);
 
     Call<RestResponse<Boolean>> ffCall = mock(Call.class);
     when(accountClient.isFeatureFlagEnabled(any(), anyString())).thenReturn(ffCall);
     when(ffCall.execute()).thenReturn(retrofit2.Response.success(new RestResponse<>(true)));
 
-    scimUserService = new NGScimUserServiceImpl(
-        ngUserService, inviteService, userGroupService, nGFeatureFlagHelperService, accountClient);
+    scimUserService = new NGScimUserServiceImpl(ngUserService, inviteService, userGroupService, accountClient);
   }
 
   @Test
@@ -112,8 +107,6 @@ public class NGScimUserServiceImplTest extends NgManagerTestBase {
     when(ngUserService.getUserInfoByEmailFromCG(any())).thenReturn(Optional.ofNullable(userInfo));
     when(ngUserService.getUserByEmail(userInfo.getEmail(), true)).thenReturn(Optional.ofNullable(userMetadataDTO));
     when(ngUserService.getUserById(any())).thenReturn(Optional.ofNullable(userInfo));
-    when(nGFeatureFlagHelperService.isEnabled(account.getUuid(), FeatureName.ACCOUNT_BASIC_ROLE_ONLY))
-        .thenReturn(false);
     Response response = scimUserService.createUser(scimUser, account.getUuid());
 
     assertThat(response).isNotNull();
@@ -142,8 +135,6 @@ public class NGScimUserServiceImplTest extends NgManagerTestBase {
     when(ngUserService.getUserInfoByEmailFromCG(anyString())).thenReturn(Optional.ofNullable(userInfo));
     when(ngUserService.getUserByEmail(userInfo.getEmail(), true)).thenReturn(Optional.ofNullable(null));
     when(ngUserService.getUserById(anyString())).thenReturn(Optional.ofNullable(userInfo));
-    when(nGFeatureFlagHelperService.isEnabled(account.getUuid(), FeatureName.ACCOUNT_BASIC_ROLE_ONLY))
-        .thenReturn(false);
     Response response = scimUserService.createUser(scimUser, account.getUuid());
 
     assertThat(response).isNotNull();

@@ -7,7 +7,6 @@
 
 package io.harness.ldap.scheduler;
 
-import static io.harness.NGConstants.ACCOUNT_VIEWER_ROLE;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.core.utils.UserGroupMapper.toDTO;
@@ -20,7 +19,6 @@ import io.harness.ng.core.api.UserGroupService;
 import io.harness.ng.core.dto.UserGroupDTO;
 import io.harness.ng.core.invites.InviteType;
 import io.harness.ng.core.invites.api.InviteService;
-import io.harness.ng.core.invites.dto.RoleBinding;
 import io.harness.ng.core.invites.entities.Invite;
 import io.harness.ng.core.user.UserInfo;
 import io.harness.ng.core.user.UserMembershipUpdateSource;
@@ -36,7 +34,6 @@ import software.wings.beans.sso.LdapUserResponse;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -202,9 +199,8 @@ public class NGLdapGroupSyncHelper {
       final String accountId, final String orgId, final String projectId) {
     log.info("NGLDAP: adding user {} with externalUserId {}, to scope- account: {}, organization: {}, project: {}",
         uuid, userResponse.getUserId(), accountId, orgId, projectId);
-    ngUserService.addUserToScope(uuid, Scope.of(accountId, orgId, projectId),
-        Collections.singletonList(RoleBinding.builder().roleIdentifier(ACCOUNT_VIEWER_ROLE).build()), emptyList(),
-        UserMembershipUpdateSource.SYSTEM);
+    ngUserService.addUserToScope(
+        uuid, Scope.of(accountId, orgId, projectId), emptyList(), emptyList(), UserMembershipUpdateSource.SYSTEM);
     return ngUserService.getUserByEmail(userResponse.getEmail(), false);
   }
 
@@ -217,8 +213,7 @@ public class NGLdapGroupSyncHelper {
                         .inviteType(InviteType.ADMIN_INITIATED_INVITE)
                         .build();
 
-    invite.setRoleBindings(
-        Collections.singletonList(RoleBinding.builder().roleIdentifier(ACCOUNT_VIEWER_ROLE).build()));
+    invite.setRoleBindings(emptyList());
     log.info("NGLDAP: creating user invite for account {} and user Invite {} and externalUserId {}", accountId,
         invite.getEmail(), ldapUserResponse.getUserId());
     inviteService.create(invite, false, true);
