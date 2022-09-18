@@ -90,8 +90,9 @@ public class EcsBlueGreenCreateServiceCommandTaskHandler extends EcsCommandTaskN
 
             // find target group arn from stage listener and stage listener rule arn
             String targetGroupArn = ecsCommandTaskHelper.getTargetGroupArnFromLoadBalancer(ecsInfraConfig,
-                    ecsBlueGreenCreateServiceRequest.getStageListenerArn(),
-                    ecsBlueGreenCreateServiceRequest.getStageListenerRuleArn(), ecsBlueGreenCreateServiceRequest.getLoadBalancer(),
+                    ecsBlueGreenCreateServiceRequest.getEcsLoadBalancerConfig().getStageListenerArn(),
+                    ecsBlueGreenCreateServiceRequest.getEcsLoadBalancerConfig().getStageListenerRuleArn(),
+                    ecsBlueGreenCreateServiceRequest.getEcsLoadBalancerConfig().getLoadBalancer(),
                     awsInternalConfig);
 
             String serviceName = ecsCommandTaskHelper.createStageService(ecsServiceDefinitionManifestContent, ecsScalableTargetManifestContentList,
@@ -106,9 +107,9 @@ public class EcsBlueGreenCreateServiceCommandTaskHandler extends EcsCommandTaskN
                             .targetGroupArn(targetGroupArn)
                             .isNewServiceCreated(true)
                             .serviceName(serviceName)
-                            .loadBalancer(ecsBlueGreenCreateServiceRequest.getLoadBalancer())
-                            .listenerArn(ecsBlueGreenCreateServiceRequest.getStageListenerArn())
-                            .listenerRuleArn(ecsBlueGreenCreateServiceRequest.getStageListenerRuleArn())
+                            .loadBalancer(ecsBlueGreenCreateServiceRequest.getEcsLoadBalancerConfig().getLoadBalancer())
+                            .listenerArn(ecsBlueGreenCreateServiceRequest.getEcsLoadBalancerConfig().getStageListenerArn())
+                            .listenerRuleArn(ecsBlueGreenCreateServiceRequest.getEcsLoadBalancerConfig().getStageListenerRuleArn())
                             .build();
             EcsBlueGreenCreateServiceResponse ecsBlueGreenCreateServiceResponse = EcsBlueGreenCreateServiceResponse.builder()
                     .commandExecutionStatus(CommandExecutionStatus.SUCCESS)

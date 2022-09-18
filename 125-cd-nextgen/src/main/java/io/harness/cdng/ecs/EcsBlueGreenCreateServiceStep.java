@@ -18,6 +18,7 @@ import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.task.ecs.EcsCommandTypeNG;
+import io.harness.delegate.task.ecs.EcsLoadBalancerConfig;
 import io.harness.delegate.task.ecs.request.EcsBlueGreenCreateServiceRequest;
 import io.harness.delegate.task.ecs.request.EcsBlueGreenPrepareRollbackRequest;
 import io.harness.delegate.task.ecs.response.EcsBlueGreenCreateServiceResponse;
@@ -68,10 +69,18 @@ public class EcsBlueGreenCreateServiceStep extends TaskChainExecutableWithRollba
         EcsBlueGreenCreateServiceStepParameters ecsBlueGreenCreateServiceStepParameters =
                 (EcsBlueGreenCreateServiceStepParameters) stepParameters.getSpec();
 
+        EcsLoadBalancerConfig ecsLoadBalancerConfig = EcsLoadBalancerConfig.builder()
+                .loadBalancer(ecsBlueGreenCreateServiceStepParameters.getLoadBalancer().getValue())
+                .prodListenerArn(ecsBlueGreenCreateServiceStepParameters.getProdListener().getValue())
+                .prodListenerRuleArn(ecsBlueGreenCreateServiceStepParameters.getProdListenerRuleArn().getValue())
+                .stageListenerArn(ecsBlueGreenCreateServiceStepParameters.getStageListener().getValue())
+                .stageListenerRuleArn(ecsBlueGreenCreateServiceStepParameters.getStageListenerRuleArn().getValue())
+                .build();
+
         EcsBlueGreenCreateServiceRequest ecsBlueGreenCreateServiceRequest =
                 EcsBlueGreenCreateServiceRequest.builder()
                         .accountId(accountId)
-                        .ecsCommandType(EcsCommandTypeNG.ECS_ROLLING_DEPLOY)
+                        .ecsCommandType(EcsCommandTypeNG.ECS_BLUE_GREEN_CREATE_SERVICE)
                         .commandName(ECS_BLUE_GREEN__CREATE_SERVICE_COMMAND_NAME)
                         .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
                         .ecsInfraConfig(ecsStepCommonHelper.getEcsInfraConfig(infrastructureOutcome, ambiance))
@@ -80,11 +89,8 @@ public class EcsBlueGreenCreateServiceStep extends TaskChainExecutableWithRollba
                         .ecsServiceDefinitionManifestContent(ecsStepExecutorParams.getEcsServiceDefinitionManifestContent())
                         .ecsScalableTargetManifestContentList(ecsStepExecutorParams.getEcsScalableTargetManifestContentList())
                         .ecsScalingPolicyManifestContentList(ecsStepExecutorParams.getEcsScalingPolicyManifestContentList())
-                        .loadBalancer(ecsBlueGreenCreateServiceStepParameters.getLoadBalancer().getValue())
-                        .prodListenerArn(ecsBlueGreenCreateServiceStepParameters.getProdListener().getValue())
-                        .prodListenerRuleArn(ecsBlueGreenCreateServiceStepParameters.getProdListenerRuleArn().getValue())
-                        .stageListenerArn(ecsBlueGreenCreateServiceStepParameters.getStageListener().getValue())
-                        .stageListenerRuleArn(ecsBlueGreenCreateServiceStepParameters.getStageListenerRuleArn().getValue())
+                        .ecsLoadBalancerConfig(ecsLoadBalancerConfig)
+                        .targetGroupArnKey(ecsStepExecutorParams.getTargetGroupArnKey())
                         .build();
 
         return ecsStepCommonHelper.queueEcsTask(
@@ -98,21 +104,24 @@ public class EcsBlueGreenCreateServiceStep extends TaskChainExecutableWithRollba
         final String accountId = AmbianceUtils.getAccountId(ambiance);
         EcsBlueGreenCreateServiceStepParameters ecsBlueGreenCreateServiceStepParameters =
                 (EcsBlueGreenCreateServiceStepParameters) stepParameters.getSpec();
+        EcsLoadBalancerConfig ecsLoadBalancerConfig = EcsLoadBalancerConfig.builder()
+                .loadBalancer(ecsBlueGreenCreateServiceStepParameters.getLoadBalancer().getValue())
+                .prodListenerArn(ecsBlueGreenCreateServiceStepParameters.getProdListener().getValue())
+                .prodListenerRuleArn(ecsBlueGreenCreateServiceStepParameters.getProdListenerRuleArn().getValue())
+                .stageListenerArn(ecsBlueGreenCreateServiceStepParameters.getStageListener().getValue())
+                .stageListenerRuleArn(ecsBlueGreenCreateServiceStepParameters.getStageListenerRuleArn().getValue())
+                .build();
         EcsBlueGreenPrepareRollbackRequest ecsBlueGreenPrepareRollbackRequest =
                 EcsBlueGreenPrepareRollbackRequest.builder()
                         .commandName(ECS_BLUE_GREEN_PREPARE_ROLLBACK_COMMAND_NAME)
                         .accountId(accountId)
-                        .ecsCommandType(EcsCommandTypeNG.ECS_PREPARE_ROLLBACK_DATA)
+                        .ecsCommandType(EcsCommandTypeNG.ECS_BLUE_GREEN_PREPARE_ROLLBACK_DATA)
                         .ecsInfraConfig(ecsStepCommonHelper.getEcsInfraConfig(infrastructureOutcome, ambiance))
                         .ecsServiceDefinitionManifestContent(
                                 ecsStepPassThroughData.getEcsServiceDefinitionManifestContent())
                         .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
                         .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
-                        .loadBalancer(ecsBlueGreenCreateServiceStepParameters.getLoadBalancer().getValue())
-                        .prodListener(ecsBlueGreenCreateServiceStepParameters.getProdListener().getValue())
-                        .prodListenerRuleArn(ecsBlueGreenCreateServiceStepParameters.getProdListenerRuleArn().getValue())
-                        .stageListener(ecsBlueGreenCreateServiceStepParameters.getStageListener().getValue())
-                        .stageListenerRuleArn(ecsBlueGreenCreateServiceStepParameters.getStageListenerRuleArn().getValue())
+                        .ecsLoadBalancerConfig(ecsLoadBalancerConfig)
                         .build();
         return ecsStepCommonHelper.queueEcsTask(
                 stepParameters, ecsBlueGreenPrepareRollbackRequest, ambiance, ecsStepPassThroughData, false);
@@ -166,6 +175,9 @@ public class EcsBlueGreenCreateServiceStep extends TaskChainExecutableWithRollba
                         .isNewServiceCreated(ecsBlueGreenCreateServiceResult.isNewServiceCreated())
                         .serviceName(ecsBlueGreenCreateServiceResult.getServiceName())
                         .targetGroupArn(ecsBlueGreenCreateServiceResult.getTargetGroupArn())
+                        .loadBalancer(ecsBlueGreenCreateServiceResult.getLoadBalancer())
+                        .listenerArn(ecsBlueGreenCreateServiceResult.getListenerArn())
+                        .listenerRuleArn(ecsBlueGreenCreateServiceResult.getListenerRuleArn())
                         .build();
 
         executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.ECS_BLUE_GREEN_CREATE_SERVICE_OUTCOME,

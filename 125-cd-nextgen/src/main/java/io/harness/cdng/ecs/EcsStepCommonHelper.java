@@ -38,6 +38,7 @@ import io.harness.data.structure.HarnessStringUtils;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.ecs.EcsBlueGreenCreateServiceResult;
 import io.harness.delegate.beans.ecs.EcsBlueGreenPrepareRollbackDataResult;
+import io.harness.delegate.beans.ecs.EcsBlueGreenRollbackResult;
 import io.harness.delegate.beans.ecs.EcsBlueGreenSwapTargetGroupsResult;
 import io.harness.delegate.beans.ecs.EcsCanaryDeployResult;
 import io.harness.delegate.beans.ecs.EcsPrepareRollbackDataResult;
@@ -53,6 +54,7 @@ import io.harness.delegate.task.ecs.request.EcsCommandRequest;
 import io.harness.delegate.task.ecs.request.EcsGitFetchRequest;
 import io.harness.delegate.task.ecs.response.EcsBlueGreenCreateServiceResponse;
 import io.harness.delegate.task.ecs.response.EcsBlueGreenPrepareRollbackDataResponse;
+import io.harness.delegate.task.ecs.response.EcsBlueGreenRollbackResponse;
 import io.harness.delegate.task.ecs.response.EcsBlueGreenSwapTargetGroupsResponse;
 import io.harness.delegate.task.ecs.response.EcsCanaryDeployResponse;
 import io.harness.delegate.task.ecs.response.EcsCommandResponse;
@@ -109,6 +111,8 @@ public class EcsStepCommonHelper extends EcsStepUtils {
   @Inject private KryoSerializer kryoSerializer;
   @Inject private StepHelper stepHelper;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
+  private static final String TARGET_GROUP_ARN_EXPRESSION = "<+targetGroupArn>";
+
 
   public TaskChainResponse startChainLink(
       Ambiance ambiance, StepElementParameters stepElementParameters, EcsStepHelper ecsStepHelper) {
@@ -463,7 +467,16 @@ public class EcsStepCommonHelper extends EcsStepUtils {
     String ecsTaskDefinitionFileContent = getRenderedTaskDefinitionFileContent(ecsGitFetchResponse, ambiance);
 
     // Get ecsServiceDefinitionFetchFileResult from ecsGitFetchResponse
-    String ecsServiceDefinitionFileContent = getRenderedServiceDefinitionFileContent(ecsGitFetchResponse, ambiance);
+    FetchFilesResult ecsServiceDefinitionFetchFileResult =
+            ecsGitFetchResponse.getEcsServiceDefinitionFetchFilesResult();
+    String ecsServiceDefinitionFileContent = ecsServiceDefinitionFetchFileResult.getFiles().get(0).getFileContent();
+    long timeStamp = System.currentTimeMillis();
+    StringBuilder key = new StringBuilder().append(timeStamp).append("targetGroup");
+    if(ecsServiceDefinitionFileContent.contains(TARGET_GROUP_ARN_EXPRESSION)) {
+      ecsServiceDefinitionFileContent =
+              ecsServiceDefinitionFileContent.replace(TARGET_GROUP_ARN_EXPRESSION, key.toString());
+    }
+    ecsServiceDefinitionFileContent =  engineExpressionService.renderExpression(ambiance, ecsServiceDefinitionFileContent);
 
     // Get ecsScalableTargetManifestContentList from ecsGitFetchResponse if present
     List<String> ecsScalableTargetManifestContentList = getRenderedScalableTargetsFileContent(ecsGitFetchResponse, ambiance);
@@ -478,6 +491,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
                     .ecsServiceDefinitionManifestContent(ecsServiceDefinitionFileContent)
                     .ecsScalableTargetManifestContentList(ecsScalableTargetManifestContentList)
                     .ecsScalingPolicyManifestContentList(ecsScalingPolicyManifestContentList)
+                    .targetGroupArnKey(key.toString())
                     .build();
 
     return ecsStepExecutor.executeEcsPrepareRollbackTask(ambiance, stepElementParameters,
@@ -663,6 +677,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
                     .ecsServiceDefinitionManifestContent(ecsServiceDefinitionFileContent)
                     .ecsScalableTargetManifestContentList(ecsScalableTargetManifestContentList)
                     .ecsScalingPolicyManifestContentList(ecsScalingPolicyManifestContentList)
+                    .targetGroupArnKey(ecsStepPassThroughData.getTargetGroupArnKey())
                     .build();
 
     return ecsStepExecutor.executeEcsTask(ambiance, stepElementParameters, ecsExecutionPassThroughData,
@@ -785,6 +800,11 @@ public class EcsStepCommonHelper extends EcsStepUtils {
               ((EcsBlueGreenSwapTargetGroupsResponse) ecsCommandResponse).getEcsBlueGreenSwapTargetGroupsResult();
       return EcsTaskToServerInstanceInfoMapper.toServerInstanceInfoList(
               ecsBlueGreenSwapTargetGroupsResult.getEcsTasks(), infrastructureKey, ecsBlueGreenSwapTargetGroupsResult.getRegion());
+    }  else if(ecsCommandResponse instanceof EcsBlueGreenRollbackResponse) {
+      EcsBlueGreenRollbackResult ecsBlueGreenRollbackResult =
+              ((EcsBlueGreenRollbackResponse) ecsCommandResponse).getEcsBlueGreenRollbackResult();
+      return EcsTaskToServerInstanceInfoMapper.toServerInstanceInfoList(
+              ecsBlueGreenRollbackResult.getEcsTasks(), infrastructureKey, ecsBlueGreenRollbackResult.getRegion());
     }
     throw new GeneralException("Invalid ecs command response instance");
   }

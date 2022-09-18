@@ -1,6 +1,7 @@
 package io.harness.cdng.ecs;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.harness.annotation.RecasterAlias;
@@ -46,8 +47,9 @@ public class EcsBlueGreenRollbackStepInfo extends EcsBlueGreenRollbackBaseStepIn
 
     @Builder(builderMethodName = "infoBuilder")
     public EcsBlueGreenRollbackStepInfo(
-            ParameterField<List<TaskSelectorYaml>> delegateSelectors, String ecsBlueGreenCreateServiceFnq) {
-        super(delegateSelectors, ecsBlueGreenCreateServiceFnq);
+            ParameterField<List<TaskSelectorYaml>> delegateSelectors, String ecsBlueGreenCreateServiceFnq,
+            String ecsBlueGreenSwapTargetGroupsFnq) {
+        super(delegateSelectors, ecsBlueGreenCreateServiceFnq, ecsBlueGreenSwapTargetGroupsFnq);
     }
     @Override
     public StepType getStepType() {

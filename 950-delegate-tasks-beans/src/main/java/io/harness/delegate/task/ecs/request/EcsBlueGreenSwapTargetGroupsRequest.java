@@ -5,6 +5,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.task.ecs.EcsCommandTypeNG;
 import io.harness.delegate.task.ecs.EcsInfraConfig;
+import io.harness.delegate.task.ecs.EcsLoadBalancerConfig;
 import io.harness.expression.Expression;
 import io.harness.expression.ExpressionReflectionUtils;
 import lombok.Builder;
@@ -23,14 +24,9 @@ public class EcsBlueGreenSwapTargetGroupsRequest implements EcsCommandRequest, E
     CommandUnitsProgress commandUnitsProgress;
     @NonFinal @Expression(ALLOW_SECRETS) EcsInfraConfig ecsInfraConfig;
     @NonFinal @Expression(ALLOW_SECRETS) Integer timeoutIntervalInMin;
-    @NonFinal @Expression(ALLOW_SECRETS) String loadBalancer;
-    @NonFinal @Expression(ALLOW_SECRETS) String stageListenerArn;
-    @NonFinal @Expression(ALLOW_SECRETS) String stageListenerRuleArn;
-    @NonFinal @Expression(ALLOW_SECRETS) String prodListenerArn;
-    @NonFinal @Expression(ALLOW_SECRETS) String prodListenerRuleArn;
-    String prodTargetGroupArn;
-    String stageTargetGroupArn;
+    @NonFinal @Expression(ALLOW_SECRETS) EcsLoadBalancerConfig ecsLoadBalancerConfig;
     String oldServiceName;
     String newServiceName;
+    boolean isFirstDeployment;
 
 }

@@ -219,6 +219,7 @@ import io.harness.delegate.beans.connector.splunkconnector.SplunkConnectionTaskR
 import io.harness.delegate.beans.connector.vaultconnector.VaultValidationParams;
 import io.harness.delegate.beans.ecs.EcsBlueGreenCreateServiceResult;
 import io.harness.delegate.beans.ecs.EcsBlueGreenPrepareRollbackDataResult;
+import io.harness.delegate.beans.ecs.EcsBlueGreenRollbackResult;
 import io.harness.delegate.beans.ecs.EcsBlueGreenSwapTargetGroupsResult;
 import io.harness.delegate.beans.ecs.EcsCanaryDeleteResult;
 import io.harness.delegate.beans.ecs.EcsCanaryDeployResult;
@@ -472,9 +473,11 @@ import io.harness.delegate.task.ecs.EcsCommandTypeNG;
 import io.harness.delegate.task.ecs.EcsGitFetchFileConfig;
 import io.harness.delegate.task.ecs.EcsInfraConfig;
 import io.harness.delegate.task.ecs.EcsInfraType;
+import io.harness.delegate.task.ecs.EcsLoadBalancerConfig;
 import io.harness.delegate.task.ecs.EcsRollingRollbackConfig;
 import io.harness.delegate.task.ecs.request.EcsBlueGreenCreateServiceRequest;
 import io.harness.delegate.task.ecs.request.EcsBlueGreenPrepareRollbackRequest;
+import io.harness.delegate.task.ecs.request.EcsBlueGreenRollbackRequest;
 import io.harness.delegate.task.ecs.request.EcsBlueGreenSwapTargetGroupsRequest;
 import io.harness.delegate.task.ecs.request.EcsCanaryDeleteRequest;
 import io.harness.delegate.task.ecs.request.EcsCanaryDeployRequest;
@@ -484,6 +487,7 @@ import io.harness.delegate.task.ecs.request.EcsRollingDeployRequest;
 import io.harness.delegate.task.ecs.request.EcsRollingRollbackRequest;
 import io.harness.delegate.task.ecs.response.EcsBlueGreenCreateServiceResponse;
 import io.harness.delegate.task.ecs.response.EcsBlueGreenPrepareRollbackDataResponse;
+import io.harness.delegate.task.ecs.response.EcsBlueGreenRollbackResponse;
 import io.harness.delegate.task.ecs.response.EcsBlueGreenSwapTargetGroupsResponse;
 import io.harness.delegate.task.ecs.response.EcsCanaryDeleteResponse;
 import io.harness.delegate.task.ecs.response.EcsCanaryDeployResponse;
@@ -1756,8 +1760,13 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(EcsBlueGreenSwapTargetGroupsResult.class, 573532);
     kryo.register(EcsBlueGreenSwapTargetGroupsRequest.class, 573533);
     kryo.register(EcsBlueGreenSwapTargetGroupsResponse.class, 573534);
+    kryo.register(EcsBlueGreenRollbackRequest.class, 573535);
+    kryo.register(EcsBlueGreenRollbackResponse.class, 573536);
+    kryo.register(EcsBlueGreenRollbackResult.class, 573537);
+    kryo.register(EcsLoadBalancerConfig.class, 573538);
 
-    kryo.register(AzurePackageArtifactConfig.class, 55410);
+
+      kryo.register(AzurePackageArtifactConfig.class, 55410);
     kryo.register(AzureArtifactRequestDetails.class, 55411);
     kryo.register(ArtifactoryAzureArtifactRequestDetails.class, 55412);
     kryo.register(AzureInfraDelegateConfig.class, 55413);

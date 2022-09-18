@@ -5,6 +5,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.task.ecs.EcsCommandTypeNG;
 import io.harness.delegate.task.ecs.EcsInfraConfig;
+import io.harness.delegate.task.ecs.EcsLoadBalancerConfig;
 import io.harness.expression.Expression;
 import io.harness.expression.ExpressionReflectionUtils;
 import lombok.Builder;
@@ -22,12 +23,8 @@ public class EcsBlueGreenPrepareRollbackRequest implements EcsCommandRequest, Ex
     String commandName;
     CommandUnitsProgress commandUnitsProgress;
     @Expression(ALLOW_SECRETS) String ecsServiceDefinitionManifestContent;
-    @NonFinal @Expression(ALLOW_SECRETS)
-    EcsInfraConfig ecsInfraConfig;
+    @NonFinal @Expression(ALLOW_SECRETS) EcsInfraConfig ecsInfraConfig;
     @NonFinal @Expression(ALLOW_SECRETS) Integer timeoutIntervalInMin;
-    @NonFinal @Expression(ALLOW_SECRETS) String loadBalancer;
-    @NonFinal @Expression(ALLOW_SECRETS) String stageListener;
-    @NonFinal @Expression(ALLOW_SECRETS) String stageListenerRuleArn;
-    @NonFinal @Expression(ALLOW_SECRETS) String prodListener;
-    @NonFinal @Expression(ALLOW_SECRETS) String prodListenerRuleArn;
+    @NonFinal @Expression(ALLOW_SECRETS) EcsLoadBalancerConfig ecsLoadBalancerConfig;
+
 }

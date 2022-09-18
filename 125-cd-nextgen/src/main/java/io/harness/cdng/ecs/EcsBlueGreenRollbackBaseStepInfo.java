@@ -30,4 +30,6 @@ public class EcsBlueGreenRollbackBaseStepInfo {
     ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
     @JsonIgnore String ecsBlueGreenCreateServiceFnq;
+    @JsonIgnore String ecsBlueGreenSwapTargetGroupsFnq;
+
 }

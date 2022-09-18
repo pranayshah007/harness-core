@@ -8,6 +8,7 @@ import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.ecs.beans.EcsBlueGreenCreateServiceDataOutcome;
 import io.harness.cdng.ecs.beans.EcsBlueGreenPrepareRollbackDataOutcome;
 import io.harness.cdng.ecs.beans.EcsBlueGreenSwapTargetGroupsOutcome;
+import io.harness.cdng.ecs.beans.EcsBlueGreenSwapTargetGroupsStartOutcome;
 import io.harness.cdng.ecs.beans.EcsCanaryDeleteOutcome;
 import io.harness.cdng.ecs.beans.EcsExecutionPassThroughData;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
@@ -18,6 +19,7 @@ import io.harness.delegate.beans.ecs.EcsBlueGreenSwapTargetGroupsResult;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.task.ecs.EcsCommandTypeNG;
+import io.harness.delegate.task.ecs.EcsLoadBalancerConfig;
 import io.harness.delegate.task.ecs.request.EcsBlueGreenSwapTargetGroupsRequest;
 import io.harness.delegate.task.ecs.response.EcsBlueGreenSwapTargetGroupsResponse;
 import io.harness.delegate.task.ecs.response.EcsCanaryDeleteResponse;
@@ -173,6 +175,17 @@ public class EcsBlueGreenSwapTargetGroupsStep extends TaskExecutableWithRollback
         InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
                 ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
 
+
+        EcsLoadBalancerConfig ecsLoadBalancerConfig = EcsLoadBalancerConfig.builder()
+                .loadBalancer(ecsBlueGreenPrepareRollbackDataOutcome.getLoadBalancer())
+                .prodListenerArn(ecsBlueGreenPrepareRollbackDataOutcome.getListenerArn())
+                .prodListenerRuleArn(ecsBlueGreenPrepareRollbackDataOutcome.getListenerRuleArn())
+                .prodTargetGroupArn(ecsBlueGreenPrepareRollbackDataOutcome.getTargetGroupArn())
+                .stageListenerArn(ecsBlueGreenCreateServiceDataOutcome.getListenerArn())
+                .stageListenerRuleArn(ecsBlueGreenCreateServiceDataOutcome.getListenerRuleArn())
+                .stageTargetGroupArn(ecsBlueGreenCreateServiceDataOutcome.getTargetGroupArn())
+                .build();
+
         EcsBlueGreenSwapTargetGroupsRequest ecsBlueGreenSwapTargetGroupsRequest =
                 EcsBlueGreenSwapTargetGroupsRequest.builder()
                         .accountId(accountId)
@@ -181,16 +194,19 @@ public class EcsBlueGreenSwapTargetGroupsStep extends TaskExecutableWithRollback
                         .commandUnitsProgress(CommandUnitsProgress.builder().build())
                         .ecsInfraConfig(ecsStepCommonHelper.getEcsInfraConfig(infrastructureOutcome, ambiance))
                         .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
-                        .loadBalancer(ecsBlueGreenPrepareRollbackDataOutcome.getLoadBalancer())
+                        .ecsLoadBalancerConfig(ecsLoadBalancerConfig)
                         .oldServiceName(ecsBlueGreenPrepareRollbackDataOutcome.getServiceName())
-                        .prodListenerArn(ecsBlueGreenPrepareRollbackDataOutcome.getListenerArn())
-                        .prodListenerRuleArn(ecsBlueGreenPrepareRollbackDataOutcome.getListenerRuleArn())
-                        .prodTargetGroupArn(ecsBlueGreenPrepareRollbackDataOutcome.getTargetGroupArn())
                         .newServiceName(ecsBlueGreenCreateServiceDataOutcome.getServiceName())
-                        .stageListenerArn(ecsBlueGreenCreateServiceDataOutcome.getListenerArn())
-                        .stageListenerRuleArn(ecsBlueGreenCreateServiceDataOutcome.getListenerRuleArn())
-                        .stageTargetGroupArn(ecsBlueGreenCreateServiceDataOutcome.getTargetGroupArn())
+                        .isFirstDeployment(ecsBlueGreenPrepareRollbackDataOutcome.isFirstDeployment())
                         .build();
+
+        EcsBlueGreenSwapTargetGroupsStartOutcome ecsBlueGreenSwapTargetGroupsStartOutcome =
+                EcsBlueGreenSwapTargetGroupsStartOutcome.builder()
+                        .isTrafficShiftStarted(true)
+                        .build();
+
+        executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS_START_OUTCOME,
+                ecsBlueGreenSwapTargetGroupsStartOutcome, StepOutcomeGroup.STEP.name());
 
         return ecsStepCommonHelper
                 .queueEcsTask(stepParameters, ecsBlueGreenSwapTargetGroupsRequest, ambiance,

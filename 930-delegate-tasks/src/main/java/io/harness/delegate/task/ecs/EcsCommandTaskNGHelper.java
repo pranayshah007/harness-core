@@ -35,7 +35,6 @@ import io.harness.delegate.beans.ecs.EcsMapper;
 import io.harness.delegate.beans.ecs.EcsTask;
 import io.harness.delegate.task.aws.AwsNgConfigMapper;
 import io.harness.delegate.task.ecs.request.EcsBlueGreenCreateServiceRequest;
-import io.harness.delegate.task.ecs.request.EcsBlueGreenSwapTargetGroupsRequest;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
 import io.harness.logging.LogCallback;
@@ -661,27 +660,29 @@ public class EcsCommandTaskNGHelper {
                                  EcsBlueGreenCreateServiceRequest ecsBlueGreenCreateServiceRequest,
                                  String taskDefinitionArn, String targetGroupArn) {
 
-    AwsInternalConfig awsInternalConfig = awsNgConfigMapper.createAwsInternalConfig(ecsInfraConfig.getAwsConnectorDTO());
-
     // render target group arn value in its expression in ecs service definition yaml
-    ecsServiceDefinitionManifestContent = updateTargetGroupArn(ecsServiceDefinitionManifestContent, targetGroupArn);
+    ecsServiceDefinitionManifestContent = updateTargetGroupArn(ecsServiceDefinitionManifestContent, targetGroupArn,
+            ecsBlueGreenCreateServiceRequest.getTargetGroupArnKey());
 
     CreateServiceRequest createServiceRequest = parseYamlAsObject(
             ecsServiceDefinitionManifestContent, CreateServiceRequest.serializableBuilderClass()).build();
 
-    // get list of all available prefix matching services in cluster
-    List<Service> existingBGServices = getMatchingServicesInCluster(ecsInfraConfig, trim(createServiceRequest.serviceName()+DELIMITER));
-
-    // get services other than blue version using tags
-    List<Service> servicesOtherThanBlueVersion = existingBGServices.stream()
-            .filter(service -> !isServiceBGVersion(service.tags(), BG_BLUE))
-            .collect(Collectors.toList());
-
-    //deleting all existing versions of service except blue one
-    deleteServices(servicesOtherThanBlueVersion, ecsInfraConfig, logCallback, timeoutInMillis);
-
     // get stage service name
-    String stageServiceName = evaluateNewStageServiceName(existingBGServices,trim(createServiceRequest.serviceName()+DELIMITER));
+    String stageServiceName = getNonBlueVersionServiceName(trim(createServiceRequest.serviceName()+DELIMITER), ecsInfraConfig);
+
+    Optional<Service> optionalService = describeService(ecsInfraConfig.getCluster(),
+            stageServiceName, ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
+
+    //delete the existing non-blue version
+    if (optionalService.isPresent() && isServiceActive(optionalService.get())) {
+      Service service = optionalService.get();
+      deleteService(
+              service.serviceName(), service.clusterArn(), ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
+
+      ecsServiceInactiveStateCheck(logCallback, ecsInfraConfig.getAwsConnectorDTO(), createServiceRequest.cluster(),
+              createServiceRequest.serviceName(), ecsInfraConfig.getRegion(),
+              (int) TimeUnit.MILLISECONDS.toMinutes(timeoutInMillis));
+    }
 
     // add green tag in create service request
     CreateServiceRequest.Builder createServiceRequestBuilder = addGreenTagInCreateServiceRequest(createServiceRequest);
@@ -704,7 +705,7 @@ public class EcsCommandTaskNGHelper {
 
     ecsServiceSteadyStateCheck(logCallback, ecsInfraConfig.getAwsConnectorDTO(), createServiceRequest.cluster(),
             createServiceRequest.serviceName(), ecsInfraConfig.getRegion(),
-            (long) TimeUnit.MILLISECONDS.toMinutes(timeoutInMillis), eventsAlreadyProcessed);
+         timeoutInMillis, eventsAlreadyProcessed);
 
     logCallback.saveExecutionLog(format("Created Service %s with Arn %s %n", createServiceRequest.serviceName(),
                     createServiceResponse.service().serviceArn()),
@@ -721,18 +722,18 @@ public class EcsCommandTaskNGHelper {
   }
 
   public void swapTargetGroups(EcsInfraConfig ecsInfraConfig, LogCallback logCallback,
-                          EcsBlueGreenSwapTargetGroupsRequest ecsBlueGreenSwapTargetGroupsRequest,
+                               EcsLoadBalancerConfig ecsLoadBalancerConfig,
                                AwsInternalConfig awsInternalConfig) {
 
     // modify prod listener rule with stage target group
-    modifyListenerRule(ecsInfraConfig, ecsBlueGreenSwapTargetGroupsRequest.getProdListenerArn(),
-            ecsBlueGreenSwapTargetGroupsRequest.getProdListenerRuleArn(),
-            ecsBlueGreenSwapTargetGroupsRequest.getStageTargetGroupArn(), awsInternalConfig);
+    modifyListenerRule(ecsInfraConfig, ecsLoadBalancerConfig.getProdListenerArn(),
+            ecsLoadBalancerConfig.getProdListenerRuleArn(),
+            ecsLoadBalancerConfig.getStageTargetGroupArn(), awsInternalConfig);
 
     // modify stage listener rule with prod target group
-    modifyListenerRule(ecsInfraConfig, ecsBlueGreenSwapTargetGroupsRequest.getStageListenerArn(),
-            ecsBlueGreenSwapTargetGroupsRequest.getStageListenerRuleArn(),
-            ecsBlueGreenSwapTargetGroupsRequest.getProdTargetGroupArn(), awsInternalConfig);
+    modifyListenerRule(ecsInfraConfig, ecsLoadBalancerConfig.getStageListenerArn(),
+            ecsLoadBalancerConfig.getStageListenerRuleArn(),
+            ecsLoadBalancerConfig.getProdTargetGroupArn(), awsInternalConfig);
 
   }
 
@@ -761,7 +762,7 @@ public class EcsCommandTaskNGHelper {
     }
   }
 
-  public void updateDesiredCount(String serviceName, EcsInfraConfig ecsInfraConfig,AwsInternalConfig awsInternalConfig,
+  public UpdateServiceResponse updateDesiredCount(String serviceName, EcsInfraConfig ecsInfraConfig,AwsInternalConfig awsInternalConfig,
                                  int desiredCount) {
     // Describe ecs service and get service details
     Optional<Service> optionalService = describeService(
@@ -773,12 +774,10 @@ public class EcsCommandTaskNGHelper {
               .desiredCount(desiredCount)
               .build();
       // updating desired count
-      ecsV2Client.updateService(awsInternalConfig, updateServiceRequest, ecsInfraConfig.getRegion());
-      //todo: do we need to update steady state check
+      return ecsV2Client.updateService(awsInternalConfig, updateServiceRequest, ecsInfraConfig.getRegion());
     }
-    else{
-
-    }
+    //todo modify it
+    throw new InvalidRequestException("service is not active, not able to update it.");
   }
 
 
@@ -790,8 +789,10 @@ public class EcsCommandTaskNGHelper {
       // update listener with target group
       modifyDefaultListenerRule(ecsInfraConfig, listenerArn, targetGroupArn, awsInternalConfig);
     }
-    // update listener rule with target group
-    modifySpecificListenerRule(ecsInfraConfig, listenerRuleArn, targetGroupArn, awsInternalConfig);
+    else {
+      // update listener rule with target group
+      modifySpecificListenerRule(ecsInfraConfig, listenerRuleArn, targetGroupArn, awsInternalConfig);
+    }
   }
 
   private void modifyDefaultListenerRule(EcsInfraConfig ecsInfraConfig, String listenerArn,
@@ -819,6 +820,7 @@ public class EcsCommandTaskNGHelper {
       DescribeRulesRequest describeRulesRequest = DescribeRulesRequest.builder()
               .listenerArn(listenerArn)
               .marker(nextToken)
+              .pageSize(10)
               .build();
       DescribeRulesResponse describeRulesResponse = elbV2Client.describeRules(awsInternalConfig,describeRulesRequest,
               ecsInfraConfig.getRegion());
@@ -834,30 +836,56 @@ public class EcsCommandTaskNGHelper {
     return false;
   }
 
-  private String evaluateNewStageServiceName(List<Service> services, String servicePrefix) {
-    // get blue version service using tags
-    Service blueVersionService = services.stream()
-            .filter(service -> isServiceBGVersion(service.tags(), BG_BLUE))
-            .findFirst()
-            .orElse(null);
-    if(blueVersionService!=null && blueVersionService.serviceName().contains(servicePrefix)) {
-      int newVersion =  getVersionFromServiceName(blueVersionService.serviceName())+1;
-      return servicePrefix+newVersion;
+  public Optional<String> getBlueVersionServiceName(String servicePrefix, EcsInfraConfig ecsInfraConfig) {
+    // check for service suffix 1
+    String firstVersionServiceName = servicePrefix + 1;
+
+    Optional<Service> optionalService = describeService(ecsInfraConfig.getCluster(),
+            firstVersionServiceName, ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
+
+    // if service with suffix 1 is active and has blue tag, then its blue version
+    if(optionalService.isPresent() && isServiceActive(optionalService.get()) &&
+            isServiceBGVersion(optionalService.get().tags(),BG_BLUE)) {
+      return Optional.of(firstVersionServiceName);
     }
-    return servicePrefix+1;
+
+    // check for service suffix 2
+    String secondVersionServiceName = servicePrefix + 2;
+    optionalService = describeService(ecsInfraConfig.getCluster(),
+            secondVersionServiceName, ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
+
+    // if service with suffix 2 is active and has blue tag, then its blue version
+    if(optionalService.isPresent() && isServiceActive(optionalService.get()) &&
+            isServiceBGVersion(optionalService.get().tags(),BG_BLUE)) {
+      return Optional.of(secondVersionServiceName);
+    }
+    return Optional.empty();
   }
 
-  public String getBlueVersionServiceName(String servicePrefix, EcsInfraConfig ecsInfraConfig) {
-    // get list of all available prefix matching services in cluster
-    List<Service> existingBGServices = getMatchingServicesInCluster(ecsInfraConfig, trim(servicePrefix));
-    Service blueVersionService = existingBGServices.stream()
-            .filter(service -> isServiceBGVersion(service.tags(), BG_BLUE))
-            .findFirst()
-            .orElse(null);
-    if(blueVersionService!=null) {
-      return blueVersionService.serviceName();
+  public String getNonBlueVersionServiceName(String servicePrefix, EcsInfraConfig ecsInfraConfig) {
+    // check for service suffix 1
+    String firstVersionServiceName = servicePrefix + 1;
+
+    Optional<Service> optionalService = describeService(ecsInfraConfig.getCluster(),
+            firstVersionServiceName, ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
+
+    // if service with suffix 1 is active and has not blue tag, then its green version
+    if(optionalService.isPresent() && isServiceActive(optionalService.get()) &&
+            !isServiceBGVersion(optionalService.get().tags(),BG_BLUE)) {
+      return firstVersionServiceName;
     }
-    return null;
+
+    // check for service suffix 2
+    String secondVersionServiceName = servicePrefix + 2;
+    optionalService = describeService(ecsInfraConfig.getCluster(),
+            secondVersionServiceName, ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
+
+    // if service with suffix 2 is active and has not blue tag, then its green version
+    if(optionalService.isPresent() && isServiceActive(optionalService.get()) &&
+            !isServiceBGVersion(optionalService.get().tags(),BG_BLUE)) {
+      return secondVersionServiceName;
+    }
+    return firstVersionServiceName;
   }
 
   private CreateServiceRequest.Builder addGreenTagInCreateServiceRequest(CreateServiceRequest serviceRequest) {
@@ -869,11 +897,13 @@ public class EcsCommandTaskNGHelper {
     return serviceRequest.toBuilder().tags(tags);
   }
 
-  private String updateTargetGroupArn(String ecsServiceDefinitionManifestContent, String targetGroupArn) {
-    if(ecsServiceDefinitionManifestContent.contains(TARGET_GROUP_ARN_EXPRESSION)) {
+  private String updateTargetGroupArn(String ecsServiceDefinitionManifestContent, String targetGroupArn,
+                                      String targetGroupArnKey) {
+    if(ecsServiceDefinitionManifestContent.contains(targetGroupArnKey)) {
       ecsServiceDefinitionManifestContent =
-              ecsServiceDefinitionManifestContent.replaceAll(TARGET_GROUP_ARN_EXPRESSION, targetGroupArn);
+              ecsServiceDefinitionManifestContent.replace(targetGroupArnKey, targetGroupArn);
     }
+    //todo: fail it before target group expression not found
     return ecsServiceDefinitionManifestContent;
   }
 
@@ -881,8 +911,6 @@ public class EcsCommandTaskNGHelper {
                                               String loadBalancer, AwsInternalConfig awsInternalConfig) {
     DescribeLoadBalancersRequest describeLoadBalancersRequest = DescribeLoadBalancersRequest.builder()
             .names(loadBalancer)
-            .marker(null)
-            .pageSize(10)
             .build();
     DescribeLoadBalancersResponse describeLoadBalancersResponse = elbV2Client.describeLoadBalancer(awsInternalConfig,
             describeLoadBalancersRequest, ecsInfraConfig.getRegion());
@@ -979,94 +1007,6 @@ public class EcsCommandTaskNGHelper {
                 (int) TimeUnit.MILLISECONDS.toMinutes(timeoutInMillis));
       });
     }
-  }
-
-  private List<Service> getMatchingServicesInCluster(EcsInfraConfig ecsInfraConfig, String serviceNamePrefix){
-    // get all available services in cluster
-    List<Service> allAvailableServicesInCluster = getAvailableServicesInCluster(ecsInfraConfig);
-
-    // filtering by service name prefix
-    if(EmptyPredicate.isNotEmpty(allAvailableServicesInCluster)) {
-      return allAvailableServicesInCluster.stream()
-              .filter(service -> matchWithServiceRegex(service.serviceName(), serviceNamePrefix))
-              .sorted(comparingInt(service-> getVersionFromServiceName(service.serviceName())))
-              .collect(Collectors.toList());
-    }
-    return newArrayList();
-  }
-
-  public List<Service> getAvailableServicesInCluster(EcsInfraConfig ecsInfraConfig) {
-    AwsInternalConfig awsInternalConfig = awsNgConfigMapper.createAwsInternalConfig(ecsInfraConfig.getAwsConnectorDTO());
-    List<String> serviceArns = newArrayList();
-    String nextToken=null;
-    do {
-      ListServicesRequest listServicesRequest = ListServicesRequest.builder()
-              .cluster(ecsInfraConfig.getCluster())
-              .nextToken(nextToken)
-              .build();
-      ListServicesResponse listServicesResponse = ecsV2Client.listServices(awsInternalConfig, listServicesRequest, ecsInfraConfig.getRegion());
-      if(EmptyPredicate.isNotEmpty(listServicesResponse.serviceArns())){
-        serviceArns.addAll(listServicesResponse.serviceArns());
-      }
-      nextToken = listServicesResponse.nextToken();
-    }
-    while(nextToken!=null);
-    int counter = 0;
-    List<Service> allServices = newArrayList();
-    while (counter < serviceArns.size()) {
-      // Describing 10 services at a time.
-      List<String> arnsBatch = newArrayList();
-      for (int i = 0; i < 10 && counter < serviceArns.size(); i++) {
-        arnsBatch.add(serviceArns.get(counter));
-        counter++;
-      }
-      DescribeServicesRequest describeServicesRequest = DescribeServicesRequest.builder()
-              .cluster(ecsInfraConfig.getCluster())
-              .services(arnsBatch)
-              .include(ServiceField.TAGS)
-              .build();
-      DescribeServicesResponse describeServicesResponse =
-              ecsV2Client.describeServices(awsInternalConfig, describeServicesRequest, ecsInfraConfig.getRegion());
-      allServices.addAll(describeServicesResponse.services());
-    }
-    return allServices;
-  }
-
-  private int getVersionFromServiceName(String name) {
-    if (name != null) {
-      int index = name.lastIndexOf(DELIMITER);
-      if (index >= 0) {
-        try {
-          return Integer.parseInt(name.substring(index + DELIMITER.length()));
-        } catch (NumberFormatException e) {
-          // Ignore
-        }
-      }
-    }
-    return -1;
-  }
-
-  private boolean matchWithServiceRegex(String serviceNameToMatch, String serviceNameForPattern) {
-    String pattern = new StringBuilder(64)
-            .append("^")
-            .append(getServicePrefixByRemovingNumber(serviceNameForPattern))
-            .append("[0-9]+$")
-            .toString();
-    return Pattern.compile(pattern).matcher(serviceNameToMatch).matches();
-  }
-
-  private String getServicePrefixByRemovingNumber(String name) {
-    if (name != null) {
-      int index = name.lastIndexOf(DELIMITER);
-      if (index >= 0) {
-        try {
-          return name.substring(0, index + DELIMITER.length());
-        } catch (NumberFormatException e) {
-          // Ignore
-        }
-      }
-    }
-    return name;
   }
 
   private boolean isServiceBGVersion(List<Tag> tags, String version) {

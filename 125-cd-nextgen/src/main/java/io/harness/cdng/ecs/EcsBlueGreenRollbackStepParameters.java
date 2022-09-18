@@ -25,8 +25,9 @@ import java.util.List;
 public class EcsBlueGreenRollbackStepParameters extends EcsBlueGreenRollbackBaseStepInfo implements EcsSpecParameters {
     @Builder(builderMethodName = "infoBuilder")
     public EcsBlueGreenRollbackStepParameters(
-            ParameterField<List<TaskSelectorYaml>> delegateSelectors, String ecsBlueGreenCreateServiceFnq) {
-        super(delegateSelectors, ecsBlueGreenCreateServiceFnq);
+            ParameterField<List<TaskSelectorYaml>> delegateSelectors, String ecsBlueGreenCreateServiceFnq,
+            String ecsBlueGreenSwapTargetGroupsFnq) {
+        super(delegateSelectors, ecsBlueGreenCreateServiceFnq, ecsBlueGreenSwapTargetGroupsFnq);
     }
 
     public List<String> getCommandUnits() {

@@ -50,6 +50,8 @@ public class OutcomeExpressionConstants {
   public final String ECS_BLUE_GREEN_PREPARE_ROLLBACK_DATA_OUTCOME = "ecsBlueGreenPrepareRollbackOutcome";
   public final String ECS_BLUE_GREEN_CREATE_SERVICE_OUTCOME = "ecsBlueGreenCreateServiceOutcome";
   public final String ECS_BLUE_GREEN_SWAP_TARGET_GROUPS_OUTCOME = "ecsBlueGreenSwapTargetGroupsOutcome";
+  public final String ECS_BLUE_GREEN_SWAP_TARGET_GROUPS_START_OUTCOME = "ecsBlueGreenSwapTargetGroupsStartOutcome";
+  public final String ECS_BLUE_GREEN_ROLLBACK_OUTCOME = "ecsBlueGreenRollbackOutcome";
 
 
 

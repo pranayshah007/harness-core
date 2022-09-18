@@ -61,19 +61,22 @@ public class EcsBlueGreenSwapTargetGroupsCommandTaskHandler extends EcsCommandTa
 
             // modify target group of prod listener with stage target group and target group of stage listener with prod target group
             ecsCommandTaskHelper.swapTargetGroups(ecsInfraConfig, swapTargetGroupLogCallback,
-                    ecsBlueGreenSwapTargetGroupsRequest, awsInternalConfig);
+                    ecsBlueGreenSwapTargetGroupsRequest.getEcsLoadBalancerConfig(), awsInternalConfig);
 
             // update service tag of new service with blue version
             ecsCommandTaskHelper.updateTag(ecsBlueGreenSwapTargetGroupsRequest.getNewServiceName(), ecsInfraConfig,
                     EcsCommandTaskNGHelper.BG_BLUE, awsInternalConfig);
 
-            // update service tag of old service with green version
-            ecsCommandTaskHelper.updateTag(ecsBlueGreenSwapTargetGroupsRequest.getOldServiceName(), ecsInfraConfig,
-                    EcsCommandTaskNGHelper.BG_GREEN, awsInternalConfig);
+            // if its not a first deployment, update old service with zero desired count and change its tag
+            if(!ecsBlueGreenSwapTargetGroupsRequest.isFirstDeployment()) {
+                // update service tag of old service with green version
+                ecsCommandTaskHelper.updateTag(ecsBlueGreenSwapTargetGroupsRequest.getOldServiceName(), ecsInfraConfig,
+                        EcsCommandTaskNGHelper.BG_GREEN, awsInternalConfig);
 
-            // downsize old service desired count to zero
-            ecsCommandTaskHelper.updateDesiredCount(ecsBlueGreenSwapTargetGroupsRequest.getOldServiceName(),
-                    ecsInfraConfig, awsInternalConfig, 0);
+                // downsize old service desired count to zero
+                ecsCommandTaskHelper.updateDesiredCount(ecsBlueGreenSwapTargetGroupsRequest.getOldServiceName(),
+                        ecsInfraConfig, awsInternalConfig, 0);
+            }
 
             EcsBlueGreenSwapTargetGroupsResult ecsBlueGreenSwapTargetGroupsResult =
                     EcsBlueGreenSwapTargetGroupsResult.builder()
@@ -81,13 +84,13 @@ public class EcsBlueGreenSwapTargetGroupsCommandTaskHandler extends EcsCommandTa
                             .ecsTasks(ecsCommandTaskHelper.getRunningEcsTasks(ecsInfraConfig.getAwsConnectorDTO(),
                                     ecsInfraConfig.getCluster(), ecsBlueGreenSwapTargetGroupsRequest.getNewServiceName(),
                                     ecsInfraConfig.getRegion()))
-                            .loadBalancer(ecsBlueGreenSwapTargetGroupsRequest.getLoadBalancer())
-                            .prodTargetGroupArn(ecsBlueGreenSwapTargetGroupsRequest.getProdTargetGroupArn())
-                            .prodListenerArn(ecsBlueGreenSwapTargetGroupsRequest.getProdListenerArn())
-                            .prodListenerRuleArn(ecsBlueGreenSwapTargetGroupsRequest.getProdListenerRuleArn())
-                            .stageListenerArn(ecsBlueGreenSwapTargetGroupsRequest.getStageListenerArn())
-                            .stageListenerRuleArn(ecsBlueGreenSwapTargetGroupsRequest.getStageListenerRuleArn())
-                            .stageTargetGroupArn(ecsBlueGreenSwapTargetGroupsRequest.getStageTargetGroupArn())
+                            .loadBalancer(ecsBlueGreenSwapTargetGroupsRequest.getEcsLoadBalancerConfig().getLoadBalancer())
+                            .prodTargetGroupArn(ecsBlueGreenSwapTargetGroupsRequest.getEcsLoadBalancerConfig().getProdTargetGroupArn())
+                            .prodListenerArn(ecsBlueGreenSwapTargetGroupsRequest.getEcsLoadBalancerConfig().getProdListenerArn())
+                            .prodListenerRuleArn(ecsBlueGreenSwapTargetGroupsRequest.getEcsLoadBalancerConfig().getProdListenerRuleArn())
+                            .stageListenerArn(ecsBlueGreenSwapTargetGroupsRequest.getEcsLoadBalancerConfig().getStageListenerArn())
+                            .stageListenerRuleArn(ecsBlueGreenSwapTargetGroupsRequest.getEcsLoadBalancerConfig().getStageListenerRuleArn())
+                            .stageTargetGroupArn(ecsBlueGreenSwapTargetGroupsRequest.getEcsLoadBalancerConfig().getStageTargetGroupArn())
                             .trafficShifted(true)
                             .infrastructureKey(ecsInfraConfig.getInfraStructureKey())
                             .build();

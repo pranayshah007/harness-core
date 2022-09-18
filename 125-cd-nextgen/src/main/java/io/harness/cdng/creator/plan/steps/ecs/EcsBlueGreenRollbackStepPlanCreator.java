@@ -17,6 +17,7 @@ import io.harness.pms.sdk.core.steps.io.StepParameters;
 import java.util.Set;
 
 import static io.harness.cdng.visitor.YamlTypes.ECS_BLUE_GREEN_CREATE_SERVICE;
+import static io.harness.cdng.visitor.YamlTypes.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS;
 
 @OwnedBy(HarnessTeam.CDP)
 public class EcsBlueGreenRollbackStepPlanCreator extends CDPMSStepPlanCreatorV2<EcsBlueGreenRollbackStepNode> {
@@ -40,8 +41,11 @@ public class EcsBlueGreenRollbackStepPlanCreator extends CDPMSStepPlanCreatorV2<
         final StepParameters stepParameters = super.getStepParameters(ctx, stepElement);
 
         String ecsBlueGreenCreateServiceFnq = getExecutionStepFqn(ctx.getCurrentField(), ECS_BLUE_GREEN_CREATE_SERVICE);
-        ((EcsBlueGreenRollbackStepParameters) ((StepElementParameters) stepParameters).getSpec())
-                .setEcsBlueGreenCreateServiceFnq(ecsBlueGreenCreateServiceFnq);
+        String ecsBlueGreenSwapTargetGroupsFnq = getExecutionStepFqn(ctx.getCurrentField(), ECS_BLUE_GREEN_SWAP_TARGET_GROUPS);
+        EcsBlueGreenRollbackStepParameters ecsBlueGreenRollbackStepParameters =
+                (EcsBlueGreenRollbackStepParameters) ((StepElementParameters) stepParameters).getSpec();
+        ecsBlueGreenRollbackStepParameters.setEcsBlueGreenCreateServiceFnq(ecsBlueGreenCreateServiceFnq);
+        ecsBlueGreenRollbackStepParameters.setEcsBlueGreenSwapTargetGroupsFnq(ecsBlueGreenSwapTargetGroupsFnq);
         return stepParameters;
     }
 }

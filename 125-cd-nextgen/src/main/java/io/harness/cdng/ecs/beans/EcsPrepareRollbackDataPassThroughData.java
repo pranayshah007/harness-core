@@ -29,4 +29,5 @@ public class EcsPrepareRollbackDataPassThroughData implements PassThroughData {
   List<String> ecsScalableTargetManifestContentList;
   List<String> ecsScalingPolicyManifestContentList;
   InfrastructureOutcome infrastructureOutcome;
+  String targetGroupArnKey;
 }
