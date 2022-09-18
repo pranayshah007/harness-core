@@ -40,6 +40,7 @@ public class CENGCoreMigrationDetails implements MigrationDetails {
         .add(Pair.of(6, CCMAdminRoleAssignmentMigration.class))
         .add(Pair.of(7, CEViewDataSourcesMigration.class))
         .add(Pair.of(8, BusinessMappingDataSourcesMigration.class))
+        .add(Pair.of(9, CEMetadataRecordMigration.class))
         .build();
   }
 }
