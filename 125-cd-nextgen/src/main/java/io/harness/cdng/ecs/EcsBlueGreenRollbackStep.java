@@ -188,7 +188,7 @@ public class EcsBlueGreenRollbackStep extends TaskExecutableWithRollbackAndRbac<
         EcsBlueGreenRollbackRequestBuilder ecsBlueGreenRollbackRequestBuilder =
                 EcsBlueGreenRollbackRequest.builder()
                         .accountId(accountId)
-                        .ecsCommandType(EcsCommandTypeNG.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS)
+                        .ecsCommandType(EcsCommandTypeNG.ECS_BLUE_GREEN_ROLLBACK)
                         .commandName(ECS_BLUE_GREEN_ROLLBACK_COMMAND_NAME)
                         .commandUnitsProgress(CommandUnitsProgress.builder().build())
                         .ecsInfraConfig(ecsStepCommonHelper.getEcsInfraConfig(infrastructureOutcome, ambiance))

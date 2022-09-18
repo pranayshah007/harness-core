@@ -23,6 +23,7 @@ import static java.time.Duration.ofSeconds;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
+import com.amazonaws.services.ec2.model.ServiceState;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.beans.AwsInternalConfig;
@@ -57,6 +58,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
+import org.omg.PortableInterceptor.ACTIVE;
 import software.amazon.awssdk.core.waiters.WaiterResponse;
 import software.amazon.awssdk.services.applicationautoscaling.model.DeleteScalingPolicyRequest;
 import software.amazon.awssdk.services.applicationautoscaling.model.DeregisterScalableTargetRequest;
@@ -116,7 +118,6 @@ public class EcsCommandTaskNGHelper {
   public static final String BG_VERSION = "BG_VERSION";
   public static final String BG_GREEN = "GREEN";
   public static final String BG_BLUE = "BLUE";
-  private static final String TARGET_GROUP_ARN_EXPRESSION = "<+targetGroupArn>";
 
 
   public RegisterTaskDefinitionResponse createTaskDefinition(
@@ -480,8 +481,8 @@ public class EcsCommandTaskNGHelper {
     }
   }
 
-  private void waitForTasksToBeInRunningState(AwsInternalConfig awsConfig, String clusterName, String serviceName,
-      String region, List<ServiceEvent> eventsAlreadyProcessed, LogCallback logCallback, long timeOut) {
+  public void waitForTasksToBeInRunningState(AwsInternalConfig awsConfig, String clusterName, String serviceName,
+                                             String region, List<ServiceEvent> eventsAlreadyProcessed, LogCallback logCallback, long timeOut) {
     try {
       HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofMinutes(timeOut), () -> {
         while (notAllDesiredTasksRunning(
@@ -676,12 +677,15 @@ public class EcsCommandTaskNGHelper {
     //delete the existing non-blue version
     if (optionalService.isPresent() && isServiceActive(optionalService.get())) {
       Service service = optionalService.get();
-      deleteService(
+      DeleteServiceResponse deleteServiceResponse = deleteService(
               service.serviceName(), service.clusterArn(), ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
 
-      ecsServiceInactiveStateCheck(logCallback, ecsInfraConfig.getAwsConnectorDTO(), createServiceRequest.cluster(),
-              createServiceRequest.serviceName(), ecsInfraConfig.getRegion(),
-              (int) TimeUnit.MILLISECONDS.toMinutes(timeoutInMillis));
+      service = deleteServiceResponse.service();
+      while(service!=null && !"INACTIVE".equals(service.status())) {
+        Optional<Service> optionService = describeService(ecsInfraConfig.getCluster(), service.serviceName(), ecsInfraConfig.getRegion(),
+                ecsInfraConfig.getAwsConnectorDTO());
+        service = optionService.orElse(null);
+      }
     }
 
     // add green tag in create service request
@@ -702,6 +706,10 @@ public class EcsCommandTaskNGHelper {
             createService(createServiceRequest, ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
 
     List<ServiceEvent> eventsAlreadyProcessed = new ArrayList<>(createServiceResponse.service().events());
+
+    waitForTasksToBeInRunningState(awsNgConfigMapper.createAwsInternalConfig(ecsInfraConfig.getAwsConnectorDTO()),
+            ecsInfraConfig.getCluster(), createServiceRequest.serviceName(), ecsInfraConfig.getRegion(),
+            eventsAlreadyProcessed, logCallback, timeoutInMillis);
 
     ecsServiceSteadyStateCheck(logCallback, ecsInfraConfig.getAwsConnectorDTO(), createServiceRequest.cluster(),
             createServiceRequest.serviceName(), ecsInfraConfig.getRegion(),
@@ -840,52 +848,49 @@ public class EcsCommandTaskNGHelper {
     // check for service suffix 1
     String firstVersionServiceName = servicePrefix + 1;
 
-    Optional<Service> optionalService = describeService(ecsInfraConfig.getCluster(),
-            firstVersionServiceName, ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
-
     // if service with suffix 1 is active and has blue tag, then its blue version
-    if(optionalService.isPresent() && isServiceActive(optionalService.get()) &&
-            isServiceBGVersion(optionalService.get().tags(),BG_BLUE)) {
+    if(isBlueService(firstVersionServiceName, ecsInfraConfig)) {
       return Optional.of(firstVersionServiceName);
     }
 
     // check for service suffix 2
     String secondVersionServiceName = servicePrefix + 2;
-    optionalService = describeService(ecsInfraConfig.getCluster(),
-            secondVersionServiceName, ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
 
     // if service with suffix 2 is active and has blue tag, then its blue version
-    if(optionalService.isPresent() && isServiceActive(optionalService.get()) &&
-            isServiceBGVersion(optionalService.get().tags(),BG_BLUE)) {
+    if(isBlueService(secondVersionServiceName, ecsInfraConfig)) {
       return Optional.of(secondVersionServiceName);
     }
     return Optional.empty();
   }
 
+  private boolean isBlueService(String serviceName, EcsInfraConfig ecsInfraConfig) {
+    DescribeServicesRequest describeServicesRequest = DescribeServicesRequest.builder()
+            .services(serviceName)
+            .cluster(ecsInfraConfig.getCluster())
+            .include(ServiceField.TAGS)
+            .build();
+    DescribeServicesResponse describeServicesResponse = ecsV2Client.describeServices(
+            awsNgConfigMapper.createAwsInternalConfig(ecsInfraConfig.getAwsConnectorDTO()), describeServicesRequest,
+            ecsInfraConfig.getRegion());
+    if(CollectionUtils.isNotEmpty(describeServicesResponse.services())){
+      Service service = describeServicesResponse.services().get(0);
+      if(isServiceActive(service) && isServiceBGVersion(service.tags(), BG_BLUE)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   public String getNonBlueVersionServiceName(String servicePrefix, EcsInfraConfig ecsInfraConfig) {
-    // check for service suffix 1
-    String firstVersionServiceName = servicePrefix + 1;
-
-    Optional<Service> optionalService = describeService(ecsInfraConfig.getCluster(),
-            firstVersionServiceName, ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
-
-    // if service with suffix 1 is active and has not blue tag, then its green version
-    if(optionalService.isPresent() && isServiceActive(optionalService.get()) &&
-            !isServiceBGVersion(optionalService.get().tags(),BG_BLUE)) {
-      return firstVersionServiceName;
+    Optional<String> blueVersionServiceOptional = getBlueVersionServiceName(servicePrefix, ecsInfraConfig);
+    String firstVersionService = servicePrefix+1;
+    if(!blueVersionServiceOptional.isPresent()){
+      return firstVersionService;
     }
-
-    // check for service suffix 2
-    String secondVersionServiceName = servicePrefix + 2;
-    optionalService = describeService(ecsInfraConfig.getCluster(),
-            secondVersionServiceName, ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
-
-    // if service with suffix 2 is active and has not blue tag, then its green version
-    if(optionalService.isPresent() && isServiceActive(optionalService.get()) &&
-            !isServiceBGVersion(optionalService.get().tags(),BG_BLUE)) {
-      return secondVersionServiceName;
+    else if(firstVersionService.equals(blueVersionServiceOptional.get())){
+      return servicePrefix+2;
     }
-    return firstVersionServiceName;
+    return firstVersionService;
   }
 
   private CreateServiceRequest.Builder addGreenTagInCreateServiceRequest(CreateServiceRequest serviceRequest) {

@@ -28,8 +28,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import software.amazon.awssdk.services.ecs.model.CreateServiceRequest;
 import software.amazon.awssdk.services.ecs.model.Service;
+import software.amazon.awssdk.services.ecs.model.ServiceEvent;
 import software.wings.beans.LogColor;
 import software.wings.beans.LogWeight;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static java.lang.String.format;
 import static software.wings.beans.LogHelper.color;
@@ -127,11 +131,17 @@ public class EcsBlueGreenRollbackCommandTaskHandler extends EcsCommandTaskNGHand
             Service service = ecsCommandTaskHelper.updateDesiredCount(ecsBlueGreenRollbackRequest.getOldServiceName(), ecsInfraConfig,
                     awsInternalConfig, createServiceRequest.desiredCount()).service();
 
+            List<ServiceEvent> eventsAlreadyProcessed = new ArrayList<>(service.events());
+
+            ecsCommandTaskHelper.waitForTasksToBeInRunningState(awsNgConfigMapper.createAwsInternalConfig(ecsInfraConfig.getAwsConnectorDTO()),
+                    ecsInfraConfig.getCluster(), service.serviceName(), ecsInfraConfig.getRegion(),
+                    eventsAlreadyProcessed, rollbackLog, timeoutInMillis);
+
             // steady state check to reach stable state
             ecsCommandTaskHelper.ecsServiceSteadyStateCheck(rollbackLog, ecsInfraConfig.getAwsConnectorDTO(),
                     ecsBlueGreenRollbackRequest.getEcsInfraConfig().getCluster(), createServiceRequest.serviceName(),
                     ecsBlueGreenRollbackRequest.getEcsInfraConfig().getRegion(), timeoutInMillis,
-                    service.events());
+                    eventsAlreadyProcessed);
 
             //swap target group with correct listener rule arns
             ecsCommandTaskHelper.swapTargetGroups(ecsInfraConfig, rollbackLog,
