@@ -100,6 +100,7 @@ import io.harness.security.SignVerifier;
 import io.harness.threading.Schedulable;
 import io.harness.utils.ProcessControl;
 import io.harness.version.VersionInfoManager;
+import io.harness.watcher.app.DelegateConfigurationController;
 import io.harness.watcher.app.WatcherApplication;
 import io.harness.watcher.app.WatcherConfiguration;
 import io.harness.watcher.logging.WatcherStackdriverLogAppender;
@@ -215,6 +216,7 @@ public class WatcherServiceImpl implements WatcherService {
   @Inject private WatcherConfiguration watcherConfiguration;
   @Inject private MessageService messageService;
   @Inject private ManagerClientV2 managerClient;
+  @Inject private DelegateConfigurationController delegateConfigurationController;
 
   @Nullable @Inject(optional = true) private ChronicleEventTailer chronicleEventTailer;
 
@@ -997,14 +999,8 @@ public class WatcherServiceImpl implements WatcherService {
   public List<String> findExpectedDelegateVersions() {
     try {
       if (multiVersion) {
-        RestResponse<DelegateConfiguration> restResponse = callInterruptible21(timeLimiter, ofSeconds(30),
-            () -> SafeHttpCall.execute(managerClient.getDelegateConfiguration(watcherConfiguration.getAccountId())));
-
-        if (restResponse == null) {
-          return null;
-        }
-
-        DelegateConfiguration config = restResponse.getResource();
+        DelegateConfiguration config = delegateConfigurationController.delegateConfiguration;
+        log.info("Delegate configuration value {}", config);
 
         if (config != null && config.getAction() == SELF_DESTRUCT) {
           selfDestruct();
