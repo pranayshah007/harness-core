@@ -483,7 +483,8 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
 
   // ToDo-SMP: enable for future releases only for now (add condition on release tag)
   private boolean shouldCheckForSMPLicense() {
-    return DeployMode.isOnPrem(System.getenv(DeployMode.DEPLOY_MODE));
+    return DeployMode.isOnPrem(System.getenv(DeployMode.DEPLOY_MODE)) &&
+            Boolean.parseBoolean(System.getenv("ENABLE_SMP_LICENSING"));
   }
 
   private void initializeNGMonitoring(NextGenConfiguration appConfig, Injector injector) {
