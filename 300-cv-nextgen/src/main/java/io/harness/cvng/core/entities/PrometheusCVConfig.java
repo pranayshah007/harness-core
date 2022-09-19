@@ -16,10 +16,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
-import io.harness.cvng.beans.DeviationType;
 import io.harness.cvng.beans.ThresholdConfigType;
 import io.harness.cvng.beans.TimeSeriesMetricType;
 import io.harness.cvng.beans.TimeSeriesThresholdType;
+import io.harness.cvng.core.beans.HealthSourceMetricDefinition;
 import io.harness.cvng.core.beans.PrometheusMetricDefinition;
 import io.harness.cvng.core.beans.PrometheusMetricDefinition.PrometheusFilter;
 import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
@@ -202,7 +202,7 @@ public class PrometheusCVConfig extends MetricCVConfig<MetricInfo> {
     if (isEmpty(timeSeriesMetricPacks)) {
       return;
     }
-    Map<String, PrometheusMetricDefinition> mapOfMetricDefinitions =
+    Map<String, HealthSourceMetricDefinition> mapOfMetricDefinitions =
         emptyIfNull(metricDefinitions)
             .stream()
             .collect(Collectors.toMap(PrometheusMetricDefinition::getMetricName, metricDefinition -> metricDefinition));
@@ -234,7 +234,8 @@ public class PrometheusCVConfig extends MetricCVConfig<MetricInfo> {
                             .action(metricPackDTO.getType().getTimeSeriesThresholdActionType())
                             .criteria(criteria)
                             .thresholdConfigType(ThresholdConfigType.USER_DEFINED)
-                            .deviationType(DeviationType.getDeviationType(thresholdTypes))
+                            .deviationType(getDeviationType(
+                                mapOfMetricDefinitions, metricName, metric, timeSeriesMetricPackDTO.getIdentifier()))
                             .build();
                     timeSeriesThresholds.add(timeSeriesThreshold);
                     metric.setThresholds(timeSeriesThresholds);
