@@ -7,7 +7,7 @@
 
 package io.harness.ng.chaos;
 
-import io.harness.ng.chaos.client.ChaosClientModule;
+import io.harness.chaos.client.remote.ChaosClientModule;
 import io.harness.remote.client.ServiceHttpClientConfig;
 
 import com.google.inject.AbstractModule;
