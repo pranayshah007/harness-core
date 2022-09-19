@@ -24,6 +24,7 @@ import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCH
 
 import static com.google.common.collect.ImmutableMap.of;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.harness.EntityType;
 import io.harness.Microservice;
 import io.harness.ModuleType;
@@ -454,12 +455,19 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     } else {
       log.info("NextGenApplication DEPLOY_VERSION is not COMMUNITY");
     }
-
+    log.info("Deploy mode: {}, enable smp license: {}", System.getenv(DeployMode.DEPLOY_MODE), System.getenv("ENABLE_SMP_LICENSING"));
     if (shouldCheckForSMPLicense()) {
       String license = System.getenv("SMP_LICENSE");
+      log.info("SMP License value: {}", license);
       LicenseValidator licenseValidator = injector.getInstance(LicenseValidator.class);
       SMPLicenseValidationResult validationResult = licenseValidator.validate(SMPLicenseEnc.builder().encryptedSMPLicense(license).build(), true);
       if (validationResult.isValid()) {
+        log.info("License validation passed");
+        try {
+          log.info("Validation Result: {}", new ObjectMapper().writeValueAsString(validationResult));
+        } catch (Exception e) {
+          log.error("Unable to parse validation result: {}", validationResult, e);
+        }
         // create account
         AccountClient accountClient = injector.getInstance(AccountClient.class);
         AccountDTO accountDTO = AccountDTO.builder()
@@ -468,11 +476,21 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
                 .identifier(validationResult.getSmpLicense().getLicenseMeta().getAccountDTO().getIdentifier())
                 .isProductLed(true)
                 .build();
-        accountClient.create(accountDTO);
+        try {
+
+          accountClient.create(accountDTO);
+        } catch (Exception e ) {
+          log.error("Exception thrown during account creation", e);
+        }
         // create module licenses
-        LicenseService licenseService = injector.getInstance(LicenseService.class);
-        for (ModuleLicenseDTO licenseDTO : validationResult.getSmpLicense().getModuleLicenses()) {
-          licenseService.createModuleLicense(licenseDTO);
+        try{
+
+          LicenseService licenseService = injector.getInstance(LicenseService.class);
+          for (ModuleLicenseDTO licenseDTO : validationResult.getSmpLicense().getModuleLicenses()) {
+            licenseService.createModuleLicense(licenseDTO);
+          }
+        } catch (Exception e) {
+          log.error("Exception during license creation ", e);
         }
         // start validation job with 1 day interval
         SMPLicenseValidationJob licenseValidationJob = injector.getInstance(SMPLicenseValidationJob.class);
