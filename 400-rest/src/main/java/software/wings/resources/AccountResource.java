@@ -177,11 +177,11 @@ public class AccountResource {
   }
 
   @GET
-  @Path("feature-enabled")
+  @Path("global-feature-enabled")
   @Timed
   @ExceptionMetered
   @LearningEngineAuth
-  public RestResponse<Boolean> isFeatureFlagEnabled(@QueryParam("featureName") String featureName) {
+  public RestResponse<Boolean> isFeatureEnabledGlobally(@QueryParam("featureName") String featureName) {
     return new RestResponse<>(accountService.isFeatureFlagEnabled(featureName));
   }
 

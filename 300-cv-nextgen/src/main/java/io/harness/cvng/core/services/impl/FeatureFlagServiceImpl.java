@@ -29,6 +29,6 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
 
   public boolean isGlobalFlagEnabled(String featureFlagName) {
     Preconditions.checkNotNull(featureFlagName);
-    return requestExecutor.execute(verificationManagerClient.isFeatureFlagEnabled(featureFlagName)).getResource();
+    return requestExecutor.execute(verificationManagerClient.isFeatureEnabledGlobally(featureFlagName)).getResource();
   }
 }

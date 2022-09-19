@@ -36,9 +36,8 @@ public interface VerificationManagerClient {
   Call<RestResponse<Boolean>> isFeatureEnabled(
       @Query("featureName") String featureName, @Query("accountId") String accountId);
 
-  @GET("account/feature-enabled")
-  Call<RestResponse<Boolean>> isFeatureFlagEnabled(
-      @Query("featureName") String featureName, @Query("accountId") String accountId);
+  @GET("account/global-feature-enabled")
+  Call<RestResponse<Boolean>> isFeatureEnabledGlobally(@Query("featureName") String featureName);
 
   @POST(CV_DATA_COLLECTION_PATH + "/create-task")
   Call<RestResponse<String>> createDataCollectionPerpetualTask(@Query("accountId") String accountId,
