@@ -14,7 +14,7 @@ container_run_and_commit_layer(
         ],
     commands = [
         "microdnf install yum python3",
-        "ln -s /usr/bin/pyhon3 /usr/bin/pyhon",
+        "ln -s /usr/bin/python3 /usr/bin/python",
         "mkdir -p /deployments",
         "yum install -y mongodb-org-shell google-cloud-cli autoconf binutils gdb glibc-devel redhat-rpm-config rpm-build wget git gcc gcc-c++ jq bc zlib-devel --nodocs --skip-broken",
         "curl -Lo /usr/local/bin/bazel https://github.com/bazelbuild/bazelisk/releases/download/v1.7.4/bazelisk-linux-amd64",

@@ -29,7 +29,7 @@ container_image(
     workdir = "/opt/harness",
     env = {
         "JAVA_HOME": "/opt/harness/OpenJDK11/jdk-11.0.15+10",
-        "PATH": "$$JAVA_HOME/bin:$$PATH",
+        "PATH": "/opt/harness/OpenJDK11/jdk-11.0.15+10/bin:$$PATH",
         "CLASSPATH_LIMIT": "400000",
     },
     tags = [
