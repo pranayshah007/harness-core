@@ -22,6 +22,7 @@ import static software.wings.service.impl.aws.model.AwsConstants.MIN_TRAFFIC_SHI
 
 import static com.amazonaws.services.elasticloadbalancingv2.model.ActionTypeEnum.Forward;
 import static java.lang.String.format;
+import static java.time.Duration.ofMillis;
 import static java.time.Duration.ofSeconds;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
@@ -545,6 +546,12 @@ public class AwsElbHelperServiceDelegateImpl
     return instanceIdsStillRegistered.size() == 0;
   }
 
+  private static Duration getSleepDuration(int currentTry, long minSleepMillis, long maxSleepMillis) {
+    currentTry = Math.max(0, currentTry);
+    long currentSleepMillis = (long) (minSleepMillis * Math.pow(2, currentTry));
+    return ofMillis(Math.min(currentSleepMillis, maxSleepMillis));
+  }
+
   @Override
   public void waitForAsgInstancesToRegisterWithTargetGroup(AwsConfig awsConfig,
       List<EncryptedDataDetail> encryptionDetails, String region, String targetGroupArn, String asgName, int timeout,
@@ -553,15 +560,31 @@ public class AwsElbHelperServiceDelegateImpl
              new CloseableAmazonWebServiceClient(
                  getAmazonElasticLoadBalancingClientV2(Regions.fromName(region), awsConfig))) {
       HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofMinutes(timeout), () -> {
+        int retries = 0;
+        // not using default SDK max backoff, since base delay is 15s
+        long maxBackoffMillis = 1200;
+        long backoffMillis = 15000;
+        Duration backoffDuration = ofMillis(backoffMillis);
         while (true) {
-          List<String> instanceIds = awsAsgHelperServiceDelegate.listAutoScalingGroupInstanceIds(
-              awsConfig, encryptionDetails, region, asgName, false);
-          if (allTargetsRegistered(
-                  closeableAmazonElasticLoadBalancingClient.getClient(), instanceIds, targetGroupArn, logCallback)) {
-            logCallback.saveExecutionLog(format("All targets registered for Asg: [%s]", asgName));
-            return true;
+          try {
+            List<String> instanceIds = awsAsgHelperServiceDelegate.listAutoScalingGroupInstanceIds(
+                awsConfig, encryptionDetails, region, asgName, false);
+            if (allTargetsRegistered(
+                    closeableAmazonElasticLoadBalancingClient.getClient(), instanceIds, targetGroupArn, logCallback)) {
+              logCallback.saveExecutionLog(format("All targets registered for Asg: [%s]", asgName));
+              return true;
+            }
+            sleep(backoffDuration);
+          } catch (AmazonServiceException e) {
+            if ("Throttling".equals(e.getErrorCode()) && "Maximum sending rate exceeded.".equals(e.getMessage())) {
+              System.out.println(
+                  "Maximum send rate exceeded when checking Asg Instances registration. Will retry after backoff.");
+              retries++;
+              backoffDuration = getSleepDuration(retries, backoffMillis, maxBackoffMillis);
+            } else {
+              throw e;
+            }
           }
-          sleep(ofSeconds(15));
         }
       });
     } catch (UncheckedTimeoutException e) {

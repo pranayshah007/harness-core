@@ -9,6 +9,7 @@ package software.wings.service.impl.aws.delegate;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ADWAIT;
+import static io.harness.rule.OwnerRule.JELENA;
 import static io.harness.rule.OwnerRule.RAGHVENDRA;
 import static io.harness.rule.OwnerRule.SATYAM;
 
@@ -23,6 +24,7 @@ import static java.util.Optional.empty;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.anyString;
@@ -31,6 +33,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -47,6 +50,7 @@ import io.harness.spotinst.model.SpotInstConstants;
 import software.wings.WingsBaseTest;
 import software.wings.beans.AwsConfig;
 import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.service.intfc.aws.delegate.AwsAsgHelperServiceDelegate;
 import software.wings.service.intfc.security.EncryptionService;
 
 import com.amazonaws.services.elasticloadbalancing.model.DescribeInstanceHealthResult;
@@ -73,6 +77,9 @@ import com.amazonaws.services.elasticloadbalancingv2.model.TargetGroup;
 import com.amazonaws.services.elasticloadbalancingv2.model.TargetGroupTuple;
 import com.amazonaws.services.elasticloadbalancingv2.model.TargetHealth;
 import com.amazonaws.services.elasticloadbalancingv2.model.TargetHealthDescription;
+import com.google.common.util.concurrent.FakeTimeLimiter;
+import com.google.common.util.concurrent.TimeLimiter;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import org.junit.Test;
@@ -606,5 +613,29 @@ public class AwsElbHelperServiceDelegateImplTest extends WingsBaseTest {
     ModifyListenerRequest modifyListenerRequest = new ModifyListenerRequest();
     modifyListenerRequest.withDefaultActions(forwardAction).withListenerArn("listenerArn");
     verify(mockClient).modifyListener(modifyListenerRequest);
+  }
+
+  @Test
+  @Owner(developers = JELENA)
+  @Category(UnitTests.class)
+  public void testWaitForAsgInstancesToRegisterWithTargetGroup() {
+    TimeLimiter fakeTimeLimiter = new FakeTimeLimiter();
+    AwsElbHelperServiceDelegateImpl elbService = spy(AwsElbHelperServiceDelegateImpl.class);
+    on(elbService).set("timeLimiter", fakeTimeLimiter);
+
+    AmazonElasticLoadBalancingClient mockV2Client = mock(AmazonElasticLoadBalancingClient.class);
+    doReturn(mockV2Client).when(elbService).getAmazonElasticLoadBalancingClientV2(any(), any());
+
+    AwsAsgHelperServiceDelegate asgService = mock(AwsAsgHelperServiceDelegateImpl.class);
+    doReturn(Arrays.asList("1", "2", "3"))
+        .when(asgService)
+        .listAutoScalingGroupInstanceIds(any(), any(), any(), anyString(), anyBoolean());
+    on(elbService).set("awsAsgHelperServiceDelegate", asgService);
+
+    doReturn(true).when(elbService).allTargetsRegistered(any(), any(), any(), any());
+    ExecutionLogCallback mockCallback = mock(ExecutionLogCallback.class);
+    elbService.waitForAsgInstancesToRegisterWithTargetGroup(
+        AwsConfig.builder().build(), null, "us-east-1", "asg-name", "test", 1000, mockCallback);
+    verify(elbService, times(1)).allTargetsRegistered(any(), any(), anyString(), any());
   }
 }
