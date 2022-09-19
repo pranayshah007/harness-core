@@ -78,6 +78,7 @@ public class AuditResource {
   public RestResponse<PageResponse<AuditHeader>> list(
       @QueryParam("accountId") String accountId, @BeanParam PageRequest<AuditHeader> pageRequest) {
     pageRequest.addFilter(AuditHeaderKeys.accountId, EQ, accountId);
+
     return new RestResponse<>(httpAuditService.list(pageRequest));
   }
 
