@@ -36,3 +36,7 @@ initScript: ""
 
 # Specify JAVA_OPTS
 javaOpts: "-Xms64M"
+
+# Set to true to run delegate as root
+securityContext:
+  runAsRoot: ${runAsRoot}

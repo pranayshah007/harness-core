@@ -42,4 +42,5 @@ public class DelegateSetupDetails implements YamlDTO {
 
   @NotNull private String delegateType;
   private String tokenName;
+  private Boolean runAsRoot;
 }

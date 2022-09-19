@@ -1456,6 +1456,7 @@ public class DelegateServiceImpl implements DelegateService {
             .put("scmVersion", mainConfiguration.getScmVersion())
             .put("delegateGrpcServicePort", String.valueOf(delegateGrpcConfig.getPort()))
             .put("kubernetesAccountLabel", getAccountIdentifier(templateParameters.getAccountId()))
+            .put("runAsRoot", String.valueOf(templateParameters.isRunAsRoot()))
             .put("dynamicHandlingOfRequestEnabled",
                 String.valueOf(featureFlagService.isEnabled(
                     DELEGATE_ENABLE_DYNAMIC_HANDLING_OF_REQUEST, templateParameters.getAccountId())));
@@ -1994,7 +1995,7 @@ public class DelegateServiceImpl implements DelegateService {
 
   @Override
   public File downloadKubernetes(String managerHost, String verificationUrl, String accountId, String delegateName,
-      String delegateProfile, String tokenName) throws IOException {
+      String delegateProfile, String tokenName, boolean runAsRoot) throws IOException {
     checkUniquenessOfDelegateName(accountId, delegateName, false);
     File kubernetesDelegateFile = File.createTempFile(KUBERNETES_DELEGATE, ".tar");
 
@@ -2029,6 +2030,7 @@ public class DelegateServiceImpl implements DelegateService {
                   .logStreamingServiceBaseUrl(mainConfiguration.getLogStreamingServiceConfig().getBaseUrl())
                   .delegateTokenName(tokenName)
                   .delegateCpu(1)
+                  .runAsRoot(runAsRoot)
                   .delegateRam(delegateRam)),
           false);
 
@@ -4174,6 +4176,7 @@ public class DelegateServiceImpl implements DelegateService {
                   .delegateNamespace(delegateSetupDetails.getK8sConfigDetails().getNamespace())
                   .k8sPermissionsType(delegateSetupDetails.getK8sConfigDetails().getK8sPermissionType())
                   .logStreamingServiceBaseUrl(mainConfiguration.getLogStreamingServiceConfig().getBaseUrl())
+                  .runAsRoot(delegateSetupDetails.getRunAsRoot() != null ? delegateSetupDetails.getRunAsRoot() : true)
                   .delegateTokenName(delegateSetupDetails.getTokenName())),
           true);
 
@@ -4254,6 +4257,7 @@ public class DelegateServiceImpl implements DelegateService {
             .k8sPermissionsType(delegateSetupDetails.getK8sConfigDetails().getK8sPermissionType())
             .logStreamingServiceBaseUrl(mainConfiguration.getLogStreamingServiceConfig().getBaseUrl())
             .delegateTokenName(delegateSetupDetails.getTokenName())
+            .runAsRoot(delegateSetupDetails.getRunAsRoot() != null ? delegateSetupDetails.getRunAsRoot() : true)
             .build(),
         true);
 

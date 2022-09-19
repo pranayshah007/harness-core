@@ -116,7 +116,7 @@ public interface DelegateService extends OwnedByAccount {
       String delegateProfile, String tokenName) throws IOException;
 
   File downloadKubernetes(String managerHost, String verificationServiceUrl, String accountId, String delegateName,
-      String delegateProfile, String tokenName) throws IOException;
+      String delegateProfile, String tokenName, boolean runAsRoot) throws IOException;
 
   File downloadCeKubernetesYaml(String managerHost, String verificationUrl, String accountId, String delegateName,
       String delegateProfile, String tokenName) throws IOException;

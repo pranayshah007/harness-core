@@ -278,6 +278,7 @@ public class DelegateServiceTest extends WingsBaseTest {
       "Delegate with same name exists. Delegate name must be unique across account.";
   private static final String DELEGATE_TOKEN_ERROR_MESSAGE = "Delegate Token must be provided.";
   private static final String HARNESS_NG_DELEGATE = "harness-ng-delegate";
+  private static final boolean runAsRoot = true;
 
   @Mock private AccountService accountService;
   @Mock private LicenseService licenseService;
@@ -2215,7 +2216,7 @@ public class DelegateServiceTest extends WingsBaseTest {
     when(delegateVersionService.getDelegateImageTag(ACCOUNT_ID, KUBERNETES)).thenReturn("harness/delegate:latest");
     when(delegateVersionService.getUpgraderImageTag(ACCOUNT_ID, KUBERNETES)).thenReturn("harness/upgrader:latest");
     File gzipFile = delegateService.downloadKubernetes(
-        "https://localhost:9090", "https://localhost:7070", ACCOUNT_ID, "harness-delegate", "", TOKEN_NAME);
+        "https://localhost:9090", "https://localhost:7070", ACCOUNT_ID, "harness-delegate", "", TOKEN_NAME, runAsRoot);
     File tarFile = File.createTempFile(DELEGATE_DIR, ".tar");
     uncompressGzipFile(gzipFile, tarFile);
     try (TarArchiveInputStream tarArchiveInputStream = new TarArchiveInputStream(new FileInputStream(tarFile))) {
@@ -2244,7 +2245,7 @@ public class DelegateServiceTest extends WingsBaseTest {
     when(delegateVersionService.getUpgraderImageTag(ACCOUNT_ID, KUBERNETES)).thenReturn(UPGRADER_IMAGE_TAG);
     featureTestHelper.enableFeatureFlag(USE_IMMUTABLE_DELEGATE);
     File gzipFile = delegateService.downloadKubernetes(
-        "https://localhost:9090", "https://localhost:7070", ACCOUNT_ID, "harness-delegate", "", TOKEN_NAME);
+        "https://localhost:9090", "https://localhost:7070", ACCOUNT_ID, "harness-delegate", "", TOKEN_NAME, runAsRoot);
     File tarFile = File.createTempFile(DELEGATE_DIR, ".tar");
     uncompressGzipFile(gzipFile, tarFile);
     try (TarArchiveInputStream tarArchiveInputStream = new TarArchiveInputStream(new FileInputStream(tarFile))) {
@@ -2266,6 +2267,35 @@ public class DelegateServiceTest extends WingsBaseTest {
   }
 
   @Test
+  @Owner(developers = ANUPAM)
+  @Category(UnitTests.class)
+  public void shouldDownloadKubernetesImmutableWithNonRootAccess() throws IOException {
+    when(delegateVersionService.getDelegateImageTag(ACCOUNT_ID, KUBERNETES)).thenReturn(DELEGATE_IMAGE_TAG);
+    when(delegateVersionService.getUpgraderImageTag(ACCOUNT_ID, KUBERNETES)).thenReturn(UPGRADER_IMAGE_TAG);
+    featureTestHelper.enableFeatureFlag(USE_IMMUTABLE_DELEGATE);
+    File gzipFile = delegateService.downloadKubernetes(
+            "https://localhost:9090", "https://localhost:7070", ACCOUNT_ID, "harness-delegate", "", TOKEN_NAME, false);
+    File tarFile = File.createTempFile(DELEGATE_DIR, ".tar");
+    uncompressGzipFile(gzipFile, tarFile);
+    try (TarArchiveInputStream tarArchiveInputStream = new TarArchiveInputStream(new FileInputStream(tarFile))) {
+      assertThat(tarArchiveInputStream.getNextEntry().getName()).isEqualTo(KUBERNETES_DELEGATE + "/");
+
+      TarArchiveEntry file = (TarArchiveEntry) tarArchiveInputStream.getNextEntry();
+      assertThat(file).extracting(ArchiveEntry::getName).isEqualTo(KUBERNETES_DELEGATE + "/harness-delegate.yaml");
+      byte[] buffer = new byte[(int) file.getSize()];
+      IOUtils.read(tarArchiveInputStream, buffer);
+      assertThat(new String(buffer))
+              .isEqualTo(CharStreams
+                      .toString(new InputStreamReader(
+                              getClass().getResourceAsStream("/expectedHarnessDelegateWithNonRoot.yaml")))
+                      .replaceAll("8888", "" + port));
+
+      file = (TarArchiveEntry) tarArchiveInputStream.getNextEntry();
+      assertThat(file).extracting(TarArchiveEntry::getName).isEqualTo(KUBERNETES_DELEGATE + "/README.txt");
+    }
+  }
+
+  @Test
   @Owner(developers = ALEKSANDAR)
   @Category(UnitTests.class)
   public void shouldDownloadKubernetesWithCiEnabled() throws IOException {
@@ -2275,7 +2305,7 @@ public class DelegateServiceTest extends WingsBaseTest {
     when(delegateVersionService.getUpgraderImageTag(ACCOUNT_ID, KUBERNETES)).thenReturn(UPGRADER_IMAGE_TAG);
     when(accountService.isNextGenEnabled(ACCOUNT_ID)).thenReturn(true);
     File gzipFile = delegateService.downloadKubernetes(
-        "https://localhost:9090", "https://localhost:7070", ACCOUNT_ID, "harness-delegate", "", null);
+        "https://localhost:9090", "https://localhost:7070", ACCOUNT_ID, "harness-delegate", "", null, runAsRoot);
     File tarFile = File.createTempFile(DELEGATE_DIR, ".tar");
     uncompressGzipFile(gzipFile, tarFile);
     try (TarArchiveInputStream tarArchiveInputStream = new TarArchiveInputStream(new FileInputStream(tarFile))) {
@@ -2307,7 +2337,7 @@ public class DelegateServiceTest extends WingsBaseTest {
     when(accountService.get(ACCOUNT_ID)).thenReturn(account);
     when(accountService.isNextGenEnabled(ACCOUNT_ID)).thenReturn(true);
     File gzipFile = delegateService.downloadKubernetes(
-        "https://localhost:9090", "https://localhost:7070", ACCOUNT_ID, "harness-delegate", "", null);
+        "https://localhost:9090", "https://localhost:7070", ACCOUNT_ID, "harness-delegate", "", null, runAsRoot);
     File tarFile = File.createTempFile(DELEGATE_DIR, ".tar");
     uncompressGzipFile(gzipFile, tarFile);
     try (TarArchiveInputStream tarArchiveInputStream = new TarArchiveInputStream(new FileInputStream(tarFile))) {
@@ -3867,7 +3897,7 @@ public class DelegateServiceTest extends WingsBaseTest {
     persistence.save(Delegate.builder().accountId(ACCOUNT_ID).ng(false).delegateName(UNIQUE_DELEGATE_NAME).build());
     assertThatThrownBy(()
                            -> delegateService.downloadKubernetes("https://localhost:9090", "https://localhost:7070",
-                               ACCOUNT_ID, UNIQUE_DELEGATE_NAME, DELEGATE_PROFILE_ID, TOKEN_NAME))
+                               ACCOUNT_ID, UNIQUE_DELEGATE_NAME, DELEGATE_PROFILE_ID, TOKEN_NAME, runAsRoot))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(UNIQUE_DELEGATE_NAME_ERROR_MESSAGE);
   }

@@ -716,7 +716,7 @@ public class DelegateSetupResourceTest extends CategoryTest {
 
     when(subdomainUrlHelper.getManagerUrl(httpServletRequest, ACCOUNT_ID)).thenReturn(MANAGER_URL);
     when(delegateService.downloadKubernetes(
-             MANAGER_URL, VERIFICATION_URL, ACCOUNT_ID, DELEGATE_NAME, DELEGATE_PROFILE_ID, TOKEN_NAME))
+             MANAGER_URL, VERIFICATION_URL, ACCOUNT_ID, DELEGATE_NAME, DELEGATE_PROFILE_ID, TOKEN_NAME, true))
         .thenReturn(file);
 
     Response restResponse = RESOURCES.client()

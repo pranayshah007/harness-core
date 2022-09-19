@@ -36,3 +36,6 @@ initScript: ""
 
 # Specify JAVA_OPTS
 javaOpts: "-Xms64M"
+
+securityContext:
+  runAsRoot: ${runAsRoot}

@@ -41,4 +41,5 @@ public class TemplateParameters {
   private final String delegateGroupName;
   private final boolean watcher;
   private final boolean mtlsEnabled;
+  private final boolean runAsRoot;
 }
