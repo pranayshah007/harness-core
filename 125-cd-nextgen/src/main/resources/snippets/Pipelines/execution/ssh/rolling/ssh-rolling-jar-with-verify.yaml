@@ -1,0 +1,242 @@
+spec:
+  execution:
+    steps:
+      - stepGroup:
+          name: Phase
+          identifier: Phase
+          strategy:
+            repeat:
+              items: <+stage.output.hosts>
+              maxConcurrency: <+maxConcurrency>
+              partitionSize: <+partitionSize>
+              unit: <+unit>
+          steps:
+            - stepGroup:
+                name: Phase Group
+                identifier: phase_group
+                strategy:
+                  repeat:
+                    items: <+repeat.partition>
+                steps:
+                  - step:
+                      type: Command
+                      name: "Deploy"
+                      identifier: Deploy
+                      spec:
+                        onDelegate: false
+                        environmentVariables: []
+                        outputVariables: []
+                        timeout: 10m
+                        commandUnits:
+                          - identifier: Setup_Runtime_Paths
+                            name: "Setup Runtime Paths"
+                            type: Script
+                            spec:
+                              shell: Bash
+                              source:
+                                type: Inline
+                                spec:
+                                  script: |-
+                                    <+setup_runtime_paths_script>
+                          - identifier: Stop_Service
+                            name: Stop Service
+                            type: Script
+                            spec:
+                              workingDirectory: $HOME/<+service.name>/<+env.name>/tomcat/bin
+                              shell: Bash
+                              source:
+                                type: Inline
+                                spec:
+                                  script: "# [ -f ./shutdown.sh ] && ./shutdown.sh  || true"
+                          - identifier: Process_Stopped
+                            name: Process Stopped
+                            type: Script
+                            spec:
+                              workingDirectory: $HOME/<+service.name>/<+env.name>/tomcat/bin
+                              shell: Bash
+                              source:
+                                type: Inline
+                                spec:
+                                  script: |-
+                                    <+process_stop_script>
+                          - identifier: Port_Cleared
+                            name: Port Cleared
+                            type: Script
+                            spec:
+                              workingDirectory: $HOME/<+service.name>/<+env.name>/tomcat/bin
+                              shell: Bash
+                              source:
+                                type: Inline
+                                spec:
+                                  script: |-
+                                    <+port_cleared_script>
+                          - identifier: Copy_Artifact
+                            name: "Copy Artifact"
+                            type: Copy
+                            spec:
+                              sourceType: Artifact
+                              destinationPath: $HOME/<+service.name>/<+env.name>
+                          - identifier: Copy_Config
+                            name: "Copy Config"
+                            type: Copy
+                            spec:
+                              sourceType: Config
+                              destinationPath: $HOME/<+service.name>/<+env.name>
+                          - identifier: Start_Service
+                            name: Start Service
+                            type: Script
+                            spec:
+                              workingDirectory: $HOME/<+service.name>/<+env.name>/tomcat/bin
+                              shell: Bash
+                              source:
+                                type: Inline
+                                spec:
+                                  script: "# ./startup.sh"
+                          - identifier: Process_Running
+                            name: Process Running
+                            type: Script
+                            spec:
+                              workingDirectory: $HOME/<+service.name>/<+env.name>/tomcat/bin
+                              shell: Bash
+                              source:
+                                type: Inline
+                                spec:
+                                  script: |-
+                                    <+process_run_script>
+                          - identifier: Port_Listening
+                            name: Port Listening
+                            type: Script
+                            spec:
+                              workingDirectory: $HOME/<+service.name>/<+env.name>/tomcat/bin
+                              shell: Bash
+                              source:
+                                type: Inline
+                                spec:
+                                  script: |-
+                                    <+port_listening_script>
+                  - step:
+                      type: Verify
+                      name: Verify
+                      identifier: Verify
+                      timeout: 2h
+                      spec: { }
+    rollbackSteps:
+      - stepGroup:
+          name: Phase
+          identifier: Phase
+          strategy:
+            repeat:
+              items: <+stage.output.hosts>
+              maxConcurrency: <+maxConcurrency>
+              partitionSize: <+partitionSize>
+              unit: <+unit>
+          steps:
+            - stepGroup:
+                name: Phase Group Rollback
+                identifier: phase_group_rollback
+                strategy:
+                  repeat:
+                    items: <+repeat.partition>
+                steps:
+                  - step:
+                      name: Rollback
+                      identifier: Rollback
+                      type: Command
+                      timeout: 10m
+                      spec:
+                        onDelegate: false
+                        environmentVariables: []
+                        outputVariables: []
+                        commandUnits:
+                          - identifier: Stop_Service_Rollback
+                            name: Stop Service Rollback
+                            type: Script
+                            spec:
+                              workingDirectory: $HOME/<+service.name>/<+env.name>/tomcat/bin
+                              shell: Bash
+                              source:
+                                type: Inline
+                                spec:
+                                  script: "# [ -f ./shutdown.sh ] && ./shutdown.sh  || true"
+                          - identifier: Process_Stopped_Rollback
+                            name: Process Stopped Rollback
+                            type: Script
+                            spec:
+                              workingDirectory: $HOME/<+service.name>/<+env.name>/tomcat/bin
+                              shell: Bash
+                              source:
+                                type: Inline
+                                spec:
+                                  script: |-
+                                    <+process_stop_script>
+                          - identifier: Port_Cleared_Rollback
+                            name: Port Cleared Rollback
+                            type: Script
+                            spec:
+                              workingDirectory: $HOME/<+service.name>/<+env.name>/tomcat/bin
+                              shell: Bash
+                              source:
+                                type: Inline
+                                spec:
+                                  script: |-
+                                    <+port_cleared_script>
+                          - identifier: Setup_Runtime_Paths_Rollback
+                            name: "Setup Runtime Paths Rollback"
+                            type: Script
+                            spec:
+                              shell: Bash
+                              source:
+                                type: Inline
+                                spec:
+                                  script: |-
+                                    <+setup_runtime_paths_script>
+                          - identifier: Copy_Artifact_Rollback
+                            name: "Copy Artifact Rollback"
+                            type: Copy
+                            spec:
+                              sourceType: Artifact
+                              destinationPath: $HOME/<+service.name>/<+env.name>
+                          - identifier: Copy_Config_Rollback
+                            name: "Copy Config Rollback"
+                            type: Copy
+                            spec:
+                              sourceType: Config
+                              destinationPath: $HOME/<+service.name>/<+env.name>
+                          - identifier: Start_Service_Rollback
+                            name: Start Service Rollback
+                            type: Script
+                            spec:
+                              workingDirectory: $HOME/<+service.name>/<+env.name>/tomcat/bin
+                              shell: Bash
+                              source:
+                                type: Inline
+                                spec:
+                                  script: "# ./startup.sh"
+                          - identifier: Process_Running_Rollback
+                            name: Process Running Rollback
+                            type: Script
+                            spec:
+                              workingDirectory: $HOME/<+service.name>/<+env.name>/tomcat/bin
+                              shell: Bash
+                              source:
+                                type: Inline
+                                spec:
+                                  script: |-
+                                    <+process_run_script>
+                          - identifier: Port_Listening_Rollback
+                            name: Port Listening Rollback
+                            type: Script
+                            spec:
+                              workingDirectory: $HOME/<+service.name>/<+env.name>/tomcat/bin
+                              shell: Bash
+                              source:
+                                type: Inline
+                                spec:
+                                  script: |-
+                                    <+port_listening_script>
+                  - step:
+                      type: Verify
+                      name: Verify Rollback
+                      identifier: Verify_Rollback
+                      timeout: 2h
+                      spec: { }

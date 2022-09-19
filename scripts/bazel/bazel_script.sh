@@ -60,9 +60,9 @@ BAZEL_MODULES="\
   //290-dashboard-service:module \
   //295-cdng-contracts:module \
   //300-cv-nextgen:module \
-  //310-ci-manager:module \
   //323-sto-utilities:module \
   //325-sto-beans:module \
+  //332-ci-manager/app:module \
   //332-ci-manager/contracts:module \
   //332-ci-manager/service:module \
   //340-ce-nextgen:module \
@@ -152,7 +152,7 @@ BAZEL_MODULES="\
   //950-events-framework-monitor:module \
   //950-log-client:module \
   //951-cg-git-sync:module \
-  //951-debezium-service:module \
+  //debezium-service/service:module \
   //952-debezium-engine:module \
   //959-debezium-beans:module \
   //950-ng-authentication-service:module \
@@ -387,5 +387,5 @@ bazel ${bazelrc} run ${BAZEL_ARGUMENTS} //001-microservice-intfc-tool:module | g
 
 if [ "${PLATFORM}" == "jenkins" ]; then
  build_protocol_info pipeline-service pipeline-service
- build_protocol_info 310-ci-manager ci-manager
+ build_protocol_info 332-ci-manager ci-manager
 fi

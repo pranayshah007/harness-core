@@ -11,7 +11,7 @@ import static io.harness.remote.client.RestClientUtils.getResponse;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.ng.core.globalkms.client.NgConnectorManagerClient;
+import io.harness.client.NgConnectorManagerClient;
 import io.harness.ng.core.globalkms.services.NgConnectorManagerClientService;
 
 import com.google.inject.Inject;

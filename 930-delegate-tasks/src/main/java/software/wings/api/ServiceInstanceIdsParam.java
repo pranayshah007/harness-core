@@ -30,6 +30,7 @@ public class ServiceInstanceIdsParam implements ContextElement, SweepingOutput {
 
   private String serviceId;
   private List<String> instanceIds;
+  private int initiallyDeployedInstancesCount;
 
   @Override
   public ContextElementType getElementType() {
@@ -99,9 +100,18 @@ public class ServiceInstanceIdsParam implements ContextElement, SweepingOutput {
     return "serviceInstanceIdsParam";
   }
 
+  public int getInitiallyDeployedInstancesCount() {
+    return initiallyDeployedInstancesCount;
+  }
+
+  public void setInitiallyDeployedInstancesCount(int initiallyDeployedInstancesCount) {
+    this.initiallyDeployedInstancesCount = initiallyDeployedInstancesCount;
+  }
+
   public static final class ServiceInstanceIdsParamBuilder {
     private String serviceId;
     private List<String> instanceIds;
+    private int initiallyDeployedInstancesCount;
 
     private ServiceInstanceIdsParamBuilder() {}
 
@@ -119,10 +129,16 @@ public class ServiceInstanceIdsParam implements ContextElement, SweepingOutput {
       return this;
     }
 
+    public ServiceInstanceIdsParamBuilder withInitiallyDeployedInstancesCount(int initiallyDeployedInstancesCount) {
+      this.initiallyDeployedInstancesCount = initiallyDeployedInstancesCount;
+      return this;
+    }
+
     public ServiceInstanceIdsParam build() {
       ServiceInstanceIdsParam serviceInstanceIdsParam = new ServiceInstanceIdsParam();
       serviceInstanceIdsParam.setServiceId(serviceId);
       serviceInstanceIdsParam.setInstanceIds(instanceIds);
+      serviceInstanceIdsParam.setInitiallyDeployedInstancesCount(initiallyDeployedInstancesCount);
       return serviceInstanceIdsParam;
     }
   }

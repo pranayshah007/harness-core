@@ -13,6 +13,7 @@ import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstan
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.azure.AzureHelperService;
 import io.harness.cdng.azure.config.StartupCommandOutcome;
+import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.service.steps.ServiceStepsHelper;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logstreaming.NGLogCallback;
@@ -53,16 +54,16 @@ public class StartupCommandStep implements SyncExecutable<StartupCommandParamete
       StepInputPackage inputPackage, PassThroughData passThroughData) {
     NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
     logCallback.saveExecutionLog("Processing startup command...");
-    azureHelperService.validateSettingsStoreReferences(stepParameters.getStartupCommand(), ambiance, ENTITY_TYPE);
+    StoreConfigWrapper storeConfig = stepParameters.getStartupCommand().getStore();
+    azureHelperService.validateSettingsStoreReferences(storeConfig, ambiance, ENTITY_TYPE);
     logCallback.saveExecutionLog("Processed startup command");
     return StepResponse.builder()
         .status(Status.SUCCEEDED)
-        .stepOutcome(
-            StepResponse.StepOutcome.builder()
-                .name(STARTUP_COMMAND)
-                .outcome(StartupCommandOutcome.builder().store(stepParameters.getStartupCommand().getSpec()).build())
-                .group(StepOutcomeGroup.STAGE.name())
-                .build())
+        .stepOutcome(StepResponse.StepOutcome.builder()
+                         .name(STARTUP_COMMAND)
+                         .outcome(StartupCommandOutcome.builder().store(storeConfig.getSpec()).build())
+                         .group(StepOutcomeGroup.STAGE.name())
+                         .build())
         .build();
   }
 }

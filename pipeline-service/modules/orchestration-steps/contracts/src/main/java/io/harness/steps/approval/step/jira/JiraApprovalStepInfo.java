@@ -56,6 +56,9 @@ public class JiraApprovalStepInfo implements PMSStepInfo, WithConnectorRef, With
 
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> connectorRef;
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> issueKey;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) String issueType;
+
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) String projectKey;
   @NotNull @VariableExpression(skipVariableExpression = true) CriteriaSpecWrapper approvalCriteria;
   @VariableExpression(skipVariableExpression = true) CriteriaSpecWrapper rejectionCriteria;
 
@@ -78,6 +81,8 @@ public class JiraApprovalStepInfo implements PMSStepInfo, WithConnectorRef, With
     return JiraApprovalSpecParameters.builder()
         .connectorRef(connectorRef)
         .issueKey(issueKey)
+        .issueType(issueType)
+        .projectKey(projectKey)
         .approvalCriteria(approvalCriteria)
         .rejectionCriteria(rejectionCriteria)
         .delegateSelectors(delegateSelectors)

@@ -8,7 +8,7 @@
 package io.harness.cvng.analysis.entities;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.cvng.CVConstants;
 import io.harness.cvng.analysis.beans.DeploymentTimeSeriesAnalysisDTO;
 import io.harness.cvng.analysis.beans.Risk;
@@ -45,9 +45,9 @@ import org.mongodb.morphia.annotations.Id;
 @AllArgsConstructor
 @FieldNameConstants(innerTypeName = "DeploymentTimeSeriesAnalysisKeys")
 @JsonIgnoreProperties(ignoreUnknown = true)
+@StoreIn(DbAliases.CVNG)
 @Entity(value = "deploymentTimeSeriesAnalyses", noClassnameStored = true)
 @HarnessEntity(exportable = false)
-@StoreIn(DbAliases.CVNG)
 public final class DeploymentTimeSeriesAnalysis
     implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, AccountAccess {
   public static List<MongoIndex> mongoIndexes() {
@@ -69,6 +69,7 @@ public final class DeploymentTimeSeriesAnalysis
   private Instant endTime;
   private Risk risk;
   private Double score;
+  private boolean failFast;
   private List<DeploymentTimeSeriesAnalysisDTO.HostInfo> hostSummaries;
   private List<DeploymentTimeSeriesAnalysisDTO.TransactionMetricHostData> transactionMetricSummaries;
 

@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.beans.FeatureName.HARD_DELETE_ENTITIES;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.pms.yaml.YamlNode.PATH_SEP;
@@ -18,17 +19,26 @@ import static io.harness.springdata.TransactionUtils.DEFAULT_TRANSACTION_RETRY_P
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.String.format;
+import static java.util.Collections.emptyList;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.visitor.YamlTypes;
+import io.harness.common.NGExpressionUtils;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.eventsframework.EventsFrameworkMetadataConstants;
+import io.harness.eventsframework.api.EventsFrameworkDownException;
+import io.harness.eventsframework.api.Producer;
+import io.harness.eventsframework.entity_crud.EntityChangeDTO;
+import io.harness.eventsframework.producer.Message;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
 import io.harness.exception.UnexpectedException;
 import io.harness.exception.YamlException;
+import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.ng.DuplicateKeyExceptionParser;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
@@ -37,8 +47,10 @@ import io.harness.ng.core.events.ServiceCreateEvent;
 import io.harness.ng.core.events.ServiceDeleteEvent;
 import io.harness.ng.core.events.ServiceUpdateEvent;
 import io.harness.ng.core.events.ServiceUpsertEvent;
+import io.harness.ng.core.service.entity.ArtifactSourcesResponseDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
+import io.harness.ng.core.service.mappers.ServiceFilterHelper;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
@@ -54,12 +66,16 @@ import io.harness.utils.PageUtils;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import com.google.protobuf.StringValue;
 import com.mongodb.client.result.DeleteResult;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -74,7 +90,6 @@ import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
@@ -90,11 +105,11 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 @OwnedBy(PIPELINE)
 @Singleton
-@AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 public class ServiceEntityServiceImpl implements ServiceEntityService {
   private final ServiceRepository serviceRepository;
   private final EntitySetupUsageService entitySetupUsageService;
+  private final Producer eventProducer;
   private static final Integer QUERY_PAGE_SIZE = 10000;
   @Inject @Named(OUTBOX_TRANSACTION_TEMPLATE) private final TransactionTemplate transactionTemplate;
   private final OutboxService outboxService;
@@ -108,6 +123,21 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   private static final String DUP_KEY_EXP_FORMAT_STRING_FOR_ORG =
       "Service [%s] under Organization [%s] in Account [%s] already exists";
   private static final String DUP_KEY_EXP_FORMAT_STRING_FOR_ACCOUNT = "Service [%s] in Account [%s] already exists";
+
+  @Inject
+  public ServiceEntityServiceImpl(ServiceRepository serviceRepository, EntitySetupUsageService entitySetupUsageService,
+      @Named(ENTITY_CRUD) Producer eventProducer, OutboxService outboxService, TransactionTemplate transactionTemplate,
+      NGFeatureFlagHelperService ngFeatureFlagHelperService, ServiceOverrideService serviceOverrideService,
+      ServiceEntitySetupUsageHelper entitySetupUsageHelper) {
+    this.serviceRepository = serviceRepository;
+    this.entitySetupUsageService = entitySetupUsageService;
+    this.eventProducer = eventProducer;
+    this.outboxService = outboxService;
+    this.transactionTemplate = transactionTemplate;
+    this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;
+    this.serviceOverrideService = serviceOverrideService;
+    this.entitySetupUsageHelper = entitySetupUsageHelper;
+  }
 
   void validatePresenceOfRequiredFields(Object... fields) {
     Lists.newArrayList(fields).forEach(field -> Objects.requireNonNull(field, "One of the required fields is null."));
@@ -131,6 +161,8 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
             return service;
           }));
       entitySetupUsageHelper.updateSetupUsages(createdService);
+      publishEvent(serviceEntity.getAccountId(), serviceEntity.getOrgIdentifier(), serviceEntity.getProjectIdentifier(),
+          serviceEntity.getIdentifier(), EventsFrameworkMetadataConstants.CREATE_ACTION);
       return createdService;
     } catch (DuplicateKeyException ex) {
       throw new DuplicateFieldException(
@@ -177,6 +209,9 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
             return updatedResult;
           }));
       entitySetupUsageHelper.updateSetupUsages(updatedService);
+      publishEvent(requestService.getAccountId(), requestService.getOrgIdentifier(),
+          requestService.getProjectIdentifier(), requestService.getIdentifier(),
+          EventsFrameworkMetadataConstants.UPDATE_ACTION);
       return updatedService;
     } else {
       throw new InvalidRequestException(String.format(
@@ -210,7 +245,12 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
           }
           return result;
         }));
-    entitySetupUsageHelper.updateSetupUsages(upsertedService);
+    if (upsertOptions.isPublishSetupUsages()) {
+      entitySetupUsageHelper.updateSetupUsages(upsertedService);
+    }
+    publishEvent(requestService.getAccountId(), requestService.getOrgIdentifier(),
+        requestService.getProjectIdentifier(), requestService.getIdentifier(),
+        EventsFrameworkMetadataConstants.UPSERT_ACTION);
     return upsertedService;
   }
 
@@ -264,11 +304,37 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
                          -> serviceOverrideService.deleteAllInProjectForAService(
                              accountId, orgIdentifier, projectIdentifier, serviceIdentifier));
       entitySetupUsageHelper.deleteSetupUsages(serviceEntityOptional.get());
+      publishEvent(accountId, orgIdentifier, projectIdentifier, serviceIdentifier,
+          EventsFrameworkMetadataConstants.DELETE_ACTION);
       return success;
     } else {
       throw new InvalidRequestException(
           String.format("Service [%s] under Project[%s], Organization [%s] doesn't exist.", serviceIdentifier,
               projectIdentifier, orgIdentifier));
+    }
+  }
+
+  private void publishEvent(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier, String action) {
+    try {
+      EntityChangeDTO.Builder serviceChangeEvent = EntityChangeDTO.newBuilder()
+                                                       .setAccountIdentifier(StringValue.of(accountIdentifier))
+                                                       .setIdentifier(StringValue.of(identifier));
+      if (isNotBlank(orgIdentifier)) {
+        serviceChangeEvent.setOrgIdentifier(StringValue.of(orgIdentifier));
+      }
+      if (isNotBlank(projectIdentifier)) {
+        serviceChangeEvent.setProjectIdentifier(StringValue.of(projectIdentifier));
+      }
+      eventProducer.send(
+          Message.newBuilder()
+              .putAllMetadata(
+                  ImmutableMap.of("accountId", accountIdentifier, EventsFrameworkMetadataConstants.ENTITY_TYPE,
+                      EventsFrameworkMetadataConstants.SERVICE_ENTITY, EventsFrameworkMetadataConstants.ACTION, action))
+              .setData(serviceChangeEvent.build().toByteString())
+              .build());
+    } catch (EventsFrameworkDownException e) {
+      log.error("Failed to send event to events framework service Identifier: {}", identifier, e);
     }
   }
 
@@ -330,6 +396,11 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       populateDefaultNameIfNotPresent(serviceEntities);
       modifyServiceRequestBatch(serviceEntities);
       List<ServiceEntity> outputServiceEntitiesList = (List<ServiceEntity>) serviceRepository.saveAll(serviceEntities);
+      for (ServiceEntity serviceEntity : serviceEntities) {
+        publishEvent(serviceEntity.getAccountId(), serviceEntity.getOrgIdentifier(),
+            serviceEntity.getProjectIdentifier(), serviceEntity.getIdentifier(),
+            EventsFrameworkMetadataConstants.CREATE_ACTION);
+      }
       return new PageImpl<>(outputServiceEntitiesList);
     } catch (DuplicateKeyException ex) {
       throw new DuplicateFieldException(
@@ -355,6 +426,24 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   }
 
   @Override
+  public List<ServiceEntity> getServices(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> serviceIdentifiers) {
+    if (isEmpty(serviceIdentifiers)) {
+      return emptyList();
+    }
+    Criteria criteria = Criteria.where(ServiceEntityKeys.accountId)
+                            .is(accountIdentifier)
+                            .and(ServiceEntityKeys.orgIdentifier)
+                            .is(orgIdentifier)
+                            .and(ServiceEntityKeys.projectIdentifier)
+                            .is(projectIdentifier)
+                            .and(ServiceEntityKeys.identifier)
+                            .in(serviceIdentifiers);
+
+    return serviceRepository.findAll(criteria);
+  }
+
+  @Override
   public Integer findActiveServicesCountAtGivenTimestamp(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, long timestampInMs) {
     if (timestampInMs <= 0) {
@@ -366,14 +455,17 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   }
 
   @Override
-  public String createServiceInputsYaml(String yaml) {
+  public String createServiceInputsYaml(String yaml, String serviceIdentifier) {
     Map<String, Object> serviceInputs = new HashMap<>();
 
     try {
       YamlField serviceYamlField = YamlUtils.readTree(yaml).getNode().getField(YamlTypes.SERVICE_ENTITY);
       if (serviceYamlField == null) {
-        throw new YamlException("Yaml provided is not a service yaml.");
+        throw new YamlException(
+            String.format("Yaml provided for service %s does not have service root field.", serviceIdentifier));
       }
+
+      modifyServiceDefinitionNodeBeforeCreatingServiceInputs(serviceYamlField, serviceIdentifier);
       ObjectNode serviceNode = (ObjectNode) serviceYamlField.getNode().getCurrJsonNode();
       ObjectNode serviceDefinitionNode = serviceNode.retain(YamlTypes.SERVICE_DEFINITION);
       if (EmptyPredicate.isEmpty(serviceDefinitionNode)) {
@@ -388,8 +480,115 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       serviceInputs.put(YamlTypes.SERVICE_INPUTS, serviceDefinitionInputNode);
       return YamlPipelineUtils.writeYamlString(serviceInputs);
     } catch (IOException e) {
-      throw new InvalidRequestException("Error occurred while creating service inputs ", e);
+      throw new InvalidRequestException(
+          String.format("Error occurred while creating service inputs for service %s", serviceIdentifier), e);
     }
+  }
+
+  @Override
+  public ArtifactSourcesResponseDTO getArtifactSourceInputs(String yaml, String serviceIdentifier) {
+    try {
+      YamlField serviceYamlField = YamlUtils.readTree(yaml).getNode().getField(YamlTypes.SERVICE_ENTITY);
+      if (serviceYamlField == null) {
+        throw new YamlException(
+            String.format("Yaml provided for service %s does not have service root field.", serviceIdentifier));
+      }
+
+      YamlField primaryArtifactField = ServiceFilterHelper.getPrimaryArtifactNodeFromServiceYaml(serviceYamlField);
+      if (primaryArtifactField == null) {
+        return ArtifactSourcesResponseDTO.builder().build();
+      }
+
+      YamlField artifactSourcesField = primaryArtifactField.getNode().getField(YamlTypes.ARTIFACT_SOURCES);
+      if (artifactSourcesField == null) {
+        return ArtifactSourcesResponseDTO.builder().build();
+      }
+      List<String> artifactSourceIdentifiers = new ArrayList<>();
+      Map<String, String> sourceIdentifierToSourceInputMap = new HashMap<>();
+
+      List<YamlNode> artifactSources = artifactSourcesField.getNode().asArray();
+      for (YamlNode artifactSource : artifactSources) {
+        String sourceIdentifier = artifactSource.getIdentifier();
+        artifactSourceIdentifiers.add(sourceIdentifier);
+        ObjectMapper objectMapper = new ObjectMapper();
+        ObjectNode tempSourceNode = objectMapper.createObjectNode();
+        // Adding root node because RuntimeInputFormHelper.createTemplateFromYaml() method requires root node.
+        tempSourceNode.set(YamlTypes.ARTIFACT_SOURCES, artifactSource.getCurrJsonNode());
+        String runtimeInputFormWithSourcesRootNode =
+            RuntimeInputFormHelper.createTemplateFromYaml(tempSourceNode.toString());
+        if (EmptyPredicate.isNotEmpty(runtimeInputFormWithSourcesRootNode)) {
+          JsonNode runtimeInputFormNode =
+              YamlUtils.readTree(runtimeInputFormWithSourcesRootNode).getNode().getCurrJsonNode();
+          sourceIdentifierToSourceInputMap.put(sourceIdentifier,
+              YamlPipelineUtils.writeYamlString(runtimeInputFormNode.get(YamlTypes.ARTIFACT_SOURCES)));
+        }
+      }
+
+      return ArtifactSourcesResponseDTO.builder()
+          .sourceIdentifiers(artifactSourceIdentifiers)
+          .sourceIdentifierToSourceInputMap(sourceIdentifierToSourceInputMap)
+          .build();
+    } catch (IOException e) {
+      throw new InvalidRequestException(
+          String.format("Error occurred while creating service inputs for service %s", serviceIdentifier), e);
+    }
+  }
+
+  private void modifyServiceDefinitionNodeBeforeCreatingServiceInputs(
+      YamlField serviceYamlField, String serviceIdentifier) {
+    YamlField primaryArtifactField = ServiceFilterHelper.getPrimaryArtifactNodeFromServiceYaml(serviceYamlField);
+    if (primaryArtifactField == null) {
+      return;
+    }
+    if (!primaryArtifactField.getNode().isObject()) {
+      throw new InvalidRequestException(
+          String.format("Primary field inside service %s should be an OBJECT node but was %s", serviceIdentifier,
+              primaryArtifactField.getNode().getCurrJsonNode().getNodeType()));
+    }
+
+    YamlField primaryArtifactRef = primaryArtifactField.getNode().getField(YamlTypes.PRIMARY_ARTIFACT_REF);
+    YamlField artifactSourcesField = primaryArtifactField.getNode().getField(YamlTypes.ARTIFACT_SOURCES);
+    if (primaryArtifactRef == null || artifactSourcesField == null) {
+      return;
+    }
+
+    String primaryArtifactRefValue = primaryArtifactRef.getNode().asText();
+
+    if (!artifactSourcesField.getNode().isArray()) {
+      throw new InvalidRequestException(
+          String.format("Artifact sources inside service %s should be ARRAY node but was %s", serviceIdentifier,
+              artifactSourcesField.getNode().getCurrJsonNode().getNodeType()));
+    }
+
+    ObjectNode primaryArtifactObjectNode = (ObjectNode) primaryArtifactField.getNode().getCurrJsonNode();
+    if (NGExpressionUtils.matchesInputSetPattern(primaryArtifactRefValue)) {
+      primaryArtifactObjectNode.remove(YamlTypes.ARTIFACT_SOURCES);
+      primaryArtifactObjectNode.put(YamlTypes.ARTIFACT_SOURCES, "<+input>");
+      return;
+    }
+
+    if (EngineExpressionEvaluator.hasExpressions(primaryArtifactRefValue)) {
+      throw new InvalidRequestException(
+          String.format("Primary artifact ref cannot be an expression inside the service %s", serviceIdentifier));
+    }
+
+    ObjectMapper objectMapper = new ObjectMapper();
+    ArrayNode filteredArtifactSourcesNode = objectMapper.createArrayNode();
+    List<YamlNode> artifactSources = artifactSourcesField.getNode().asArray();
+    for (YamlNode artifactSource : artifactSources) {
+      String sourceIdentifier = artifactSource.getIdentifier();
+      if (primaryArtifactRefValue.equals(sourceIdentifier)) {
+        filteredArtifactSourcesNode.add(artifactSource.getCurrJsonNode());
+        break;
+      }
+    }
+
+    if (EmptyPredicate.isEmpty(filteredArtifactSourcesNode)) {
+      throw new InvalidRequestException(
+          String.format("Primary artifact ref value %s provided does not exist in sources in service %s",
+              primaryArtifactRefValue, serviceIdentifier));
+    }
+    primaryArtifactObjectNode.set(YamlTypes.ARTIFACT_SOURCES, filteredArtifactSourcesNode);
   }
 
   @Override
@@ -439,7 +638,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
 
     YamlNode service;
     try {
-      service = YamlNode.fromYamlPath(entity.get().getYaml(), "service");
+      service = YamlNode.fromYamlPath(entity.get().fetchNonEmptyYaml(), "service");
     } catch (IOException e) {
       throw new InvalidRequestException("Service entity yaml must be rooted at \"service\"");
     }

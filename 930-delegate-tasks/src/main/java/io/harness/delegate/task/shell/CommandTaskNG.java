@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
@@ -25,13 +26,21 @@ import io.harness.delegate.task.ssh.NgCommandUnit;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.secret.SecretSanitizerThreadLocal;
+import io.harness.shell.CommandExecutionData;
+import io.harness.shell.ExecuteCommandResponse;
 import io.harness.shell.ScriptType;
+import io.harness.shell.ShellExecutionData;
 import io.harness.shell.SshSessionManager;
 
+import com.google.common.base.Joiner;
 import com.google.inject.Inject;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.tuple.Pair;
@@ -96,19 +105,44 @@ public class CommandTaskNG extends AbstractDelegateRunnableTask {
   private CommandTaskResponse getTaskResponse(
       CommandTaskParameters parameters, CommandUnitsProgress commandUnitsProgress, ScriptType scriptType) {
     CommandExecutionStatus status = CommandExecutionStatus.FAILURE;
+    CommandExecutionData commandExecutionData = null;
+    Map<String, String> outputVariables = new HashMap<>();
+    Map<String, Object> taskContext = new LinkedHashMap<>();
+    logCommandUnits(parameters.getCommandUnits());
     for (NgCommandUnit commandUnit : parameters.getCommandUnits()) {
       CommandHandler handler = commandUnitHandlers.get(Pair.of(commandUnit.getCommandUnitType(), scriptType.name()));
-      status = handler.handle(parameters, commandUnit, this.getLogStreamingTaskClient(), commandUnitsProgress);
+      ExecuteCommandResponse executeCommandResponse =
+          handler.handle(parameters, commandUnit, this.getLogStreamingTaskClient(), commandUnitsProgress, taskContext);
+
+      if (executeCommandResponse.getCommandExecutionData() instanceof ShellExecutionData) {
+        ShellExecutionData shellExecutionData = (ShellExecutionData) executeCommandResponse.getCommandExecutionData();
+        mergeOutputVariablesBetweenCommandUnits(outputVariables, shellExecutionData.getSweepingOutputEnvVariables());
+        shellExecutionData.setSweepingOutputEnvVariables(outputVariables);
+        commandExecutionData = shellExecutionData;
+      }
+
+      status = executeCommandResponse.getStatus();
       if (CommandExecutionStatus.FAILURE.equals(status)) {
         break;
       }
     }
 
+    ExecuteCommandResponse executeCommandResponse =
+        ExecuteCommandResponse.builder().status(status).commandExecutionData(commandExecutionData).build();
+
     return CommandTaskResponse.builder()
         .status(status)
+        .executeCommandResponse(executeCommandResponse)
         .errorMessage(getErrorMessage(status))
         .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
         .build();
+  }
+
+  private void logCommandUnits(List<NgCommandUnit> units) {
+    String commandUnits = "Received command units to execute on delegate: ["
+        + Joiner.on(", ").skipNulls().join(units.stream().map(NgCommandUnit::getName).collect(Collectors.toList()))
+        + "]";
+    log.info(commandUnits);
   }
 
   private String getErrorMessage(CommandExecutionStatus status) {
@@ -130,5 +164,15 @@ public class CommandTaskNG extends AbstractDelegateRunnableTask {
   @Override
   public boolean isSupportingErrorFramework() {
     return true;
+  }
+
+  private void mergeOutputVariablesBetweenCommandUnits(Map<String, String> mergedMap, Map<String, String> nextMap) {
+    if (EmptyPredicate.isEmpty(nextMap)) {
+      return;
+    }
+
+    nextMap.entrySet().stream().filter(entry -> EmptyPredicate.isNotEmpty(entry.getValue())).forEach(entry -> {
+      mergedMap.put(entry.getKey(), entry.getValue());
+    });
   }
 }

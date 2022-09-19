@@ -10,8 +10,10 @@ package io.harness.pms.plan.execution;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
+import static io.harness.rule.OwnerRule.SOUMYAJIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
@@ -24,6 +26,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.retry.RetryExecutionParameters;
+import io.harness.exception.InvalidRequestException;
 import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.gitsync.sdk.EntityGitDetails;
@@ -94,7 +97,7 @@ public class PipelineExecutorTest extends CategoryTest {
     doReturnStatementsForFreshRun(null, false, null);
 
     PlanExecutionResponseDto planExecutionResponse = pipelineExecutor.runPipelineWithInputSetPipelineYaml(
-        accountId, orgId, projectId, pipelineId, moduleType, runtimeInputYaml, useV2);
+        accountId, orgId, projectId, pipelineId, moduleType, runtimeInputYaml, useV2, false);
     assertThat(planExecutionResponse.getPlanExecution()).isEqualTo(planExecution);
     assertThat(planExecutionResponse.getGitDetails()).isEqualTo(EntityGitDetails.builder().build());
 
@@ -191,12 +194,12 @@ public class PipelineExecutorTest extends CategoryTest {
       doReturn(execArgs)
           .when(executionHelper)
           .buildExecutionArgs(pipelineEntity, moduleType, runtimeInputYaml, Collections.emptyList(),
-              Collections.emptyMap(), executionTriggerInfo, originalExecutionId, retryExecutionParameters);
+              Collections.emptyMap(), executionTriggerInfo, originalExecutionId, retryExecutionParameters, false);
     } else {
       doReturn(execArgs)
           .when(executionHelper)
           .buildExecutionArgs(pipelineEntity, moduleType, runtimeInputYaml, stageIdentifiers, Collections.emptyMap(),
-              executionTriggerInfo, originalExecutionId, retryExecutionParameters);
+              executionTriggerInfo, originalExecutionId, retryExecutionParameters, false);
     }
 
     doReturn(planExecution)
@@ -218,11 +221,11 @@ public class PipelineExecutorTest extends CategoryTest {
     if (EmptyPredicate.isEmpty(stageIdentifiers)) {
       verify(executionHelper, times(1))
           .buildExecutionArgs(pipelineEntity, moduleType, runtimeInputYaml, Collections.emptyList(),
-              Collections.emptyMap(), executionTriggerInfo, originalExecutionId, retryExecutionParameters);
+              Collections.emptyMap(), executionTriggerInfo, originalExecutionId, retryExecutionParameters, false);
     } else {
       verify(executionHelper, times(1))
           .buildExecutionArgs(pipelineEntity, moduleType, runtimeInputYaml, stageIdentifiers, Collections.emptyMap(),
-              executionTriggerInfo, originalExecutionId, retryExecutionParameters);
+              executionTriggerInfo, originalExecutionId, retryExecutionParameters, false);
     }
     verify(executionHelper, times(1))
         .startExecution(accountId, orgId, projectId, metadata, planExecutionMetadata, false, null, null, null);
@@ -248,5 +251,19 @@ public class PipelineExecutorTest extends CategoryTest {
     assertThat(retryExecutionParameters.getRetryStagesIdentifier()).isEqualTo(stagesIdentifier);
     assertThat(retryExecutionParameters.getIdentifierOfSkipStages()).isEqualTo(identifierOfSkippedStages);
     assertThat(retryExecutionParameters.getPreviousProcessedYaml()).isEqualTo(processedYaml);
+  }
+
+  @Test
+  @Owner(developers = SOUMYAJIT)
+  @Category(UnitTests.class)
+  public void testDraftExecution() {
+    pipelineEntity.setIsDraft(true);
+    doReturn(pipelineEntity).when(executionHelper).fetchPipelineEntity(accountId, orgId, projectId, pipelineId);
+    assertThatThrownBy(()
+                           -> pipelineExecutor.runPipelineWithInputSetPipelineYaml(
+                               accountId, orgId, projectId, pipelineId, moduleType, runtimeInputYaml, useV2, false))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(
+            String.format("Cannot execute a Draft Pipeline with PipelineID: %s, ProjectID %s", pipelineId, projectId));
   }
 }

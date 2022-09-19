@@ -1,0 +1,19 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "module",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    runtime_deps = [
+        "//:lombok",
+        "//tools/build-cleaner/src/main/java/io/harness/buildcleaner/common:module",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_slf4j_slf4j_api",
+    ],
+    deps = [
+        "//:lombok",
+        "//tools/build-cleaner/src/main/java/io/harness/buildcleaner/common:module",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_slf4j_slf4j_api",
+    ],
+)

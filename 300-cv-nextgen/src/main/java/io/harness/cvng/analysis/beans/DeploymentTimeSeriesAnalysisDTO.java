@@ -23,6 +23,7 @@ public class DeploymentTimeSeriesAnalysisDTO {
     return Risk.valueOfRiskForDeploymentTimeSeriesAnalysis(risk);
   }
   Double score;
+  boolean failFast;
   List<HostInfo> hostSummaries;
   List<TransactionMetricHostData> transactionMetricSummaries;
 
@@ -94,6 +95,7 @@ public class DeploymentTimeSeriesAnalysisDTO {
     Double score;
     // TODO: For load test, this is overall data. Figure out a better name that suits for both canary and load test
     List<HostData> hostData;
+    boolean failFast;
 
     public List<HostData> getHostData() {
       if (hostData == null) {

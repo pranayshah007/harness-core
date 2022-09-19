@@ -40,4 +40,10 @@ public class DelegateGroupDetails {
   private boolean grpcActive;
   private List<DelegateGroupListing.DelegateInner> delegateInstanceDetails;
   private boolean tokenActive;
+  private boolean autoUpgrade;
+  private long delegateGroupExpirationTime;
+  private String delegateVersion;
+  private long upgraderLastUpdated;
+  private boolean immutable;
+  private List<String> versions;
 }

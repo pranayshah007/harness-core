@@ -8,8 +8,11 @@
 package io.harness.cistatus.service.azurerepo;
 
 import java.util.Map;
+import org.json.JSONObject;
 
 public interface AzureRepoService {
   boolean sendStatus(AzureRepoConfig azureRepoConfig, String userName, String token, String sha, String org,
       String project, String repo, Map<String, Object> bodyObjectMap);
+  JSONObject mergePR(AzureRepoConfig azureRepoConfig, String token, String sha, String org, String project, String repo,
+      String prNumber, boolean deleteSourceBranch);
 }

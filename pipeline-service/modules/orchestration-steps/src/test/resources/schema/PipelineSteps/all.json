@@ -170,7 +170,8 @@
       "type": "object",
       "required": [
         "disallowPipelineExecutor",
-        "minimumCount"
+        "minimumCount",
+        "userGroups"
       ],
       "properties": {
         "disallowPipelineExecutor": {
@@ -209,8 +210,7 @@
               "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
               "minLength": 1
             }
-          ],
-          "minLength": 1
+          ]
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -663,6 +663,22 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "HarnessFileStoreSource": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ShellScriptBaseSource"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "file": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "HttpHeaderConfig": {
       "type": "object",
       "properties": {
@@ -795,6 +811,12 @@
               ]
             },
             "issueKey": {
+              "type": "string"
+            },
+            "issueType": {
+              "type": "string"
+            },
+            "projectKey": {
               "type": "string"
             },
             "rejectionCriteria": {
@@ -1293,6 +1315,9 @@
             "approvalCriteria": {
               "$ref": "#/definitions/CriteriaSpecWrapper"
             },
+            "changeWindow": {
+              "$ref": "#/definitions/ServiceNowChangeWindowSpec"
+            },
             "connectorRef": {
               "type": "string"
             },
@@ -1323,6 +1348,22 @@
           }
         }
       ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ServiceNowChangeWindowSpec": {
+      "type": "object",
+      "required": [
+        "endField",
+        "startField"
+      ],
+      "properties": {
+        "endField": {
+          "type": "string"
+        },
+        "startField": {
+          "type": "string"
+        }
+      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "ServiceNowCreateStepInfo": {
@@ -1658,6 +1699,22 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#",
       "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Harness"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/HarnessFileStoreSource"
+              }
+            }
+          }
+        },
         {
           "if": {
             "properties": {

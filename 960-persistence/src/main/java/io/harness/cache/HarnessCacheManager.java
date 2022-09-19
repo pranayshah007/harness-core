@@ -20,6 +20,12 @@ public interface HarnessCacheManager {
   <K, V> Cache<K, V> getCache(
       String cacheName, Class<K> keyType, Class<V> valueType, Factory<ExpiryPolicy> expiryPolicy);
 
+  <K, V> Cache<K, V> getCache(String cacheName, Class<K> keyType, Class<V> valueType,
+      Factory<ExpiryPolicy> expiryPolicy, boolean enterpriseRedis);
+
   <K, V> Cache<K, V> getCache(
       String cacheName, Class<K> keyType, Class<V> valueType, Factory<ExpiryPolicy> expiryPolicy, String keyPrefix);
+
+  <K, V> Cache<K, V> getCache(String cacheName, Class<K> keyType, Class<V> valueType,
+      Factory<ExpiryPolicy> expiryPolicy, String keyPrefix, boolean enterpriseRedis);
 }

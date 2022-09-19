@@ -16,15 +16,18 @@ import io.prometheus.client.CollectorRegistry;
  */
 public class MetricRegistryModule extends AbstractModule {
   private HarnessMetricRegistry harnessMetricRegistry;
+  private MetricRegistry metricRegistry;
 
   private CollectorRegistry collectorRegistry = CollectorRegistry.defaultRegistry;
 
   public MetricRegistryModule(MetricRegistry metricRegistry) {
-    harnessMetricRegistry = new HarnessMetricRegistry(metricRegistry, collectorRegistry);
+    this.metricRegistry = metricRegistry;
+    this.harnessMetricRegistry = new HarnessMetricRegistry(metricRegistry, collectorRegistry);
   }
 
   @Override
   protected void configure() {
+    bind(MetricRegistry.class).toInstance(metricRegistry);
     bind(HarnessMetricRegistry.class).toInstance(harnessMetricRegistry);
   }
 }

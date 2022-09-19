@@ -7,6 +7,7 @@
 
 package io.harness.tracing;
 
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACCOUNT_IDENTIFIER_METRICS_KEY;
 import static io.harness.mongo.tracing.TracerConstants.QUERY_HASH;
 import static io.harness.mongo.tracing.TracerConstants.SERVICE_ID;
 import static io.harness.version.VersionConstants.MAJOR_VERSION_KEY;
@@ -17,6 +18,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.producer.Message;
 import io.harness.mongo.tracing.Tracer;
+import io.harness.ng.persistence.tracer.NgTracer;
 import io.harness.persistence.HQuery;
 import io.harness.serializer.JsonUtils;
 import io.harness.tracing.shapedetector.QueryShapeDetector;
@@ -38,7 +40,7 @@ import org.springframework.data.mongodb.core.query.Query;
 
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
-public class MongoRedisTracer implements Tracer {
+public class MongoRedisTracer implements Tracer, NgTracer {
   private static final int SAMPLE_SIZE = 120; // Consider only 1 sample out of 120 invocations
 
   @Inject @Named(PersistenceTracerConstants.TRACING_THREAD_POOL) private ExecutorService executorService;
@@ -103,6 +105,7 @@ public class MongoRedisTracer implements Tracer {
     Document explainResult = mongoTemplate.getDb().runCommand(command);
     log.debug(String.format("Explain Results: %s", explainResult.toJson()));
     producer.send(Message.newBuilder()
+                      .putMetadata(ACCOUNT_IDENTIFIER_METRICS_KEY, serviceId)
                       .putMetadata(VERSION_KEY, versionInfoManager.getVersionInfo().getVersion())
                       .putMetadata(SERVICE_ID, serviceId)
                       .putMetadata(MAJOR_VERSION_KEY, getMajorVersionFromFullVersion())
@@ -123,6 +126,7 @@ public class MongoRedisTracer implements Tracer {
     String explainResult = JsonUtils.asJson(query.explain());
     log.debug(String.format("Explain Results: %s", explainResult));
     producer.send(Message.newBuilder()
+                      .putMetadata(ACCOUNT_IDENTIFIER_METRICS_KEY, serviceId)
                       .putMetadata(VERSION_KEY, versionInfoManager.getVersionInfo().getVersion())
                       .putMetadata(MAJOR_VERSION_KEY, getMajorVersionFromFullVersion())
                       .putMetadata(SERVICE_ID, serviceId)

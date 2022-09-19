@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -18,9 +19,10 @@ import io.harness.beans.EmbeddedUser;
 import io.harness.beans.ExecutionInterruptType;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
-import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.mongo.index.SortCompoundMongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.CreatedByAware;
 import io.harness.persistence.PersistentEntity;
@@ -52,6 +54,7 @@ import org.mongodb.morphia.annotations.Id;
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._957_CG_BEANS)
 @Data
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "executionInterrupts", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 @FieldNameConstants(innerTypeName = "ExecutionInterruptKeys")
@@ -59,17 +62,18 @@ public class ExecutionInterrupt implements PersistentEntity, UuidAware, CreatedA
                                            UpdatedByAware, ApplicationAccess {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
-        .add(CompoundMongoIndex.builder()
-                 .name("appId_seized_executionUuid")
+        .add(SortCompoundMongoIndex.builder()
+                 .name("appId_seized_executionUuid_createdAt")
                  .field(ExecutionInterruptKeys.appId)
                  .field(ExecutionInterruptKeys.seized)
                  .field(ExecutionInterruptKeys.executionUuid)
+                 .descSortField(ExecutionInterruptKeys.createdAt)
                  .build())
         .build();
   }
 
   @Id @NotNull(groups = {Update.class}) @SchemaIgnore private String uuid;
-  @FdIndex @NotNull @SchemaIgnore protected String appId;
+  @NotNull @SchemaIgnore protected String appId;
   @SchemaIgnore private EmbeddedUser createdBy;
   @SchemaIgnore @FdIndex private long createdAt;
 

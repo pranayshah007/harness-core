@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: rolesConfiguration
-version: 33
+version: 34
 roles:
     - identifier: _project_admin
       name: Project Admin
@@ -123,14 +123,14 @@ roles:
         - chaos_chaoshub_view
         - chaos_chaoshub_edit
         - chaos_chaoshub_delete
-        - chaos_chaosagent_view
-        - chaos_chaosagent_edit
-        - chaos_chaosagent_delete
+        - chaos_chaosdelegate_view
+        - chaos_chaosdelegate_edit
+        - chaos_chaosdelegate_delete
         - chaos_chaosgitops_view
         - chaos_chaosgitops_edit
-        - chaos_chaosworkflow_view
-        - chaos_chaosworkflow_edit
-        - chaos_chaosworkflow_delete
+        - chaos_chaosscenario_view
+        - chaos_chaosscenario_edit
+        - chaos_chaosscenario_delete
         - core_setting_view
         - core_setting_edit
       allowedScopeLevels:
@@ -178,9 +178,9 @@ roles:
         - core_file_view
         - core_variable_view
         - chaos_chaoshub_view
-        - chaos_chaosagent_view
+        - chaos_chaosdelegate_view
         - chaos_chaosgitops_view
-        - chaos_chaosworkflow_view
+        - chaos_chaosscenario_view
         - core_setting_view
       allowedScopeLevels:
         - project
@@ -312,14 +312,14 @@ roles:
         - chaos_chaoshub_view
         - chaos_chaoshub_edit
         - chaos_chaoshub_delete
-        - chaos_chaosagent_view
-        - chaos_chaosagent_edit
-        - chaos_chaosagent_delete
+        - chaos_chaosdelegate_view
+        - chaos_chaosdelegate_edit
+        - chaos_chaosdelegate_delete
         - chaos_chaosgitops_view
         - chaos_chaosgitops_edit
-        - chaos_chaosworkflow_view
-        - chaos_chaosworkflow_edit
-        - chaos_chaosworkflow_delete
+        - chaos_chaosscenario_view
+        - chaos_chaosscenario_edit
+        - chaos_chaosscenario_delete
         - core_setting_view
         - core_setting_edit
       allowedScopeLevels:
@@ -369,9 +369,9 @@ roles:
         - core_file_view
         - core_variable_view
         - chaos_chaoshub_view
-        - chaos_chaosagent_view
+        - chaos_chaosdelegate_view
         - chaos_chaosgitops_view
-        - chaos_chaosworkflow_view
+        - chaos_chaosscenario_view
         - core_setting_view
       allowedScopeLevels:
         - organization
@@ -514,16 +514,35 @@ roles:
         - chaos_chaoshub_view
         - chaos_chaoshub_edit
         - chaos_chaoshub_delete
-        - chaos_chaosagent_view
-        - chaos_chaosagent_edit
-        - chaos_chaosagent_delete
+        - chaos_chaosdelegate_view
+        - chaos_chaosdelegate_edit
+        - chaos_chaosdelegate_delete
         - chaos_chaosgitops_view
         - chaos_chaosgitops_edit
-        - chaos_chaosworkflow_view
-        - chaos_chaosworkflow_edit
-        - chaos_chaosworkflow_delete
+        - chaos_chaosscenario_view
+        - chaos_chaosscenario_edit
+        - chaos_chaosscenario_delete
         - core_setting_view
         - core_setting_edit
+        - ccm_overview_view
+        - ccm_perspective_view
+        - ccm_perspective_edit
+        - ccm_perspective_delete
+        - ccm_budget_view
+        - ccm_budget_edit
+        - ccm_budget_delete
+        - ccm_costCategory_view
+        - ccm_costCategory_edit
+        - ccm_costCategory_delete
+        - ccm_autoStoppingRule_view
+        - ccm_autoStoppingRule_edit
+        - ccm_autoStoppingRule_delete
+        - ccm_loadBalancer_view
+        - ccm_loadBalancer_edit
+        - ccm_loadBalancer_delete
+        - ccm_folder_view
+        - ccm_folder_edit
+        - ccm_folder_delete
       allowedScopeLevels:
         - account
       managed: true
@@ -575,10 +594,17 @@ roles:
         - core_file_view
         - core_variable_view
         - chaos_chaoshub_view
-        - chaos_chaosagent_view
+        - chaos_chaosdelegate_view
         - chaos_chaosgitops_view
-        - chaos_chaosworkflow_view
+        - chaos_chaosscenario_view
         - core_setting_view
+        - ccm_overview_view
+        - ccm_perspective_view
+        - ccm_budget_view
+        - ccm_costCategory_view
+        - ccm_autoStoppingRule_view
+        - ccm_loadBalancer_view
+        - ccm_folder_view
       allowedScopeLevels:
         - account
       managed: true
@@ -704,6 +730,46 @@ roles:
       permissions:
         - core_license_view
         - core_license_edit
+      managed: true
+      allowedScopeLevels:
+        - account
+    - identifier: _ccm_admin
+      name: CCM Admin
+      description: CCM Admin
+      permissions:
+        - ccm_perspective_view
+        - ccm_perspective_edit
+        - ccm_perspective_delete
+        - ccm_budget_view
+        - ccm_budget_edit
+        - ccm_budget_delete
+        - ccm_costCategory_view
+        - ccm_costCategory_edit
+        - ccm_costCategory_delete
+        - ccm_autoStoppingRule_view
+        - ccm_autoStoppingRule_edit
+        - ccm_autoStoppingRule_delete
+        - ccm_folder_view
+        - ccm_folder_edit
+        - ccm_folder_delete
+        - ccm_loadBalancer_view
+        - ccm_loadBalancer_edit
+        - ccm_loadBalancer_delete
+        - ccm_overview_view
+      managed: true
+      allowedScopeLevels:
+        - account
+    - identifier: _ccm_viewer
+      name: CCM Viewer
+      description: CCM Viewer
+      permissions:
+        - ccm_perspective_view
+        - ccm_budget_view
+        - ccm_costCategory_view
+        - ccm_autoStoppingRule_view
+        - ccm_folder_view
+        - ccm_loadBalancer_view
+        - ccm_overview_view
       managed: true
       allowedScopeLevels:
         - account

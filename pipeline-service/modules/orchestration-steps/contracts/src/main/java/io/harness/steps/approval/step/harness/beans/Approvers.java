@@ -25,7 +25,6 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
-import org.hibernate.validator.constraints.NotEmpty;
 
 @OwnedBy(CDC)
 @Data
@@ -33,7 +32,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @RecasterAlias("io.harness.steps.approval.step.harness.beans.Approvers")
 public class Approvers {
-  @NotEmpty
+  @NotNull
   @Size(min = 1)
   @YamlSchemaTypes(value = {runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)

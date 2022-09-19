@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -89,7 +90,8 @@ public class InstanceSyncPerpetualTaskMigrationJob implements Managed {
     for (InstanceHandler instanceHandler : instanceHandlerFactory.getAllInstanceHandlers()) {
       if (instanceHandler instanceof InstanceSyncByPerpetualTaskHandler) {
         InstanceSyncByPerpetualTaskHandler handler = (InstanceSyncByPerpetualTaskHandler) instanceHandler;
-        result.put(handler.getFeatureFlagToEnablePerpetualTaskForInstanceSync(), handler);
+        Optional<FeatureName> featureFlagOpt = handler.getFeatureFlagToEnablePerpetualTaskForInstanceSync();
+        featureFlagOpt.ifPresent(featureName -> result.put(featureName, handler));
       }
     }
 
@@ -151,9 +153,15 @@ public class InstanceSyncPerpetualTaskMigrationJob implements Managed {
   private boolean isFeatureFlagApplicableToInfraMapping(
       FeatureName featureFlag, InfrastructureMapping infrastructureMapping) {
     InstanceHandler instanceHandler = instanceHandlerFactory.getInstanceHandler(infrastructureMapping);
-    return instanceHandler instanceof InstanceSyncByPerpetualTaskHandler
-        && (((InstanceSyncByPerpetualTaskHandler) instanceHandler).getFeatureFlagToEnablePerpetualTaskForInstanceSync())
-        == featureFlag;
+
+    if (instanceHandler instanceof InstanceSyncByPerpetualTaskHandler) {
+      InstanceSyncByPerpetualTaskHandler handler = (InstanceSyncByPerpetualTaskHandler) instanceHandler;
+      Optional<FeatureName> featureFlagOpt = handler.getFeatureFlagToEnablePerpetualTaskForInstanceSync();
+      if (featureFlagOpt.isPresent()) {
+        return featureFlagOpt.get() == featureFlag;
+      }
+    }
+    return false;
   }
 
   private void disableFeatureFlagForAccount(FeatureName featureFlag, String accountId) {

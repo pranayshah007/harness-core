@@ -110,7 +110,7 @@ public class FileBasedWinRmExecutorTest extends CategoryTest {
     executor.copyConfigFiles(buildConfigFileMetadata(size));
 
     final ArgumentCaptor<byte[]> captor = ArgumentCaptor.forClass(byte[].class);
-    verify(executor, atLeastOnce()).getCopyConfigCommand(any(ConfigFileMetaData.class), captor.capture());
+    verify(executor, atLeastOnce()).getCopyConfigCommand(captor.capture(), any(), any());
 
     final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
     captor.getAllValues().forEach(v -> {
@@ -129,10 +129,13 @@ public class FileBasedWinRmExecutorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void getDeleteFileCommand() {
     ConfigFileMetaData configFileMetaData = buildConfigFileMetadata(1);
-    String command = plainOldExecutor.getDeleteFileCommandStr(configFileMetaData);
-    assertThat(command).isEqualTo("$decodedFile = 'TEST_PATH\\TEST_FILE_NAME'\n"
+    String command = plainOldExecutor.getDeleteFileCommandStr(
+        configFileMetaData.getDestinationDirectoryPath(), configFileMetaData.getFilename());
+    assertThat(command).isEqualTo("$decodedFile = \"TEST_PATH\\TEST_FILE_NAME\"\n"
         + "Write-Host \"Clearing target config file $decodedFile  on the host.\"\n"
-        + "[IO.File]::Delete($decodedFile)");
+        + "if ([IO.File]::Exists($decodedFile)) {\n"
+        + "  [IO.File]::Delete($decodedFile)\n"
+        + "}");
   }
 
   /**
@@ -143,13 +146,14 @@ public class FileBasedWinRmExecutorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCopyConfigEncodedAndOptimization() {
     ConfigFileMetaData configFileMetaData = buildConfigFileMetadata(1);
-    String command = plainOldExecutor.getCopyConfigCommand(configFileMetaData, "This is a test".getBytes());
+    String command = plainOldExecutor.getCopyConfigCommand("This is a test".getBytes(),
+        configFileMetaData.getDestinationDirectoryPath(), configFileMetaData.getFilename());
     assertThat(command).isEqualTo("#### Convert Base64 string back to config file ####\n"
         + "\n"
         + "$DecodedString = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String(\"VGhpcyBpcyBhIHRlc3Q=\"))\n"
         + "Write-Host \"Decoding config file on the host.\"\n"
-        + "$decodedFile = \'" + configFileMetaData.getDestinationDirectoryPath() + "\\"
-        + configFileMetaData.getFilename() + "\'\n"
+        + "$decodedFile = \"" + configFileMetaData.getDestinationDirectoryPath() + "\\"
+        + configFileMetaData.getFilename() + "\"\n"
         + "[IO.File]::AppendAllText($decodedFile, $DecodedString) \n"
         + "Write-Host \"Appended to config file on the host.\"\n");
   }
@@ -162,7 +166,8 @@ public class FileBasedWinRmExecutorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCopyConfigCommandDisableEncodingAndOptimization() {
     ConfigFileMetaData configFileMetaData = buildConfigFileMetadata(1);
-    String command = executorWithDisableEncoding.getCopyConfigCommand(configFileMetaData, "This is a test".getBytes());
+    String command = executorWithDisableEncoding.getCopyConfigCommand("This is a test".getBytes(),
+        configFileMetaData.getDestinationDirectoryPath(), configFileMetaData.getFilename());
     assertThat(command).isEqualTo("$fileName = \"" + configFileMetaData.getDestinationDirectoryPath() + "\\"
         + configFileMetaData.getFilename() + "\"\n"
         + "$commandString = @'\n" + new String("This` is` a` test".getBytes()) + "\n'@"

@@ -23,6 +23,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.audittrails.events.PerspectiveFolderCreateEvent;
 import io.harness.ccm.audittrails.events.PerspectiveFolderDeleteEvent;
 import io.harness.ccm.audittrails.events.PerspectiveFolderUpdateEvent;
+import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.utils.LogAccountIdentifier;
 import io.harness.ccm.views.dto.CreatePerspectiveFolderDTO;
 import io.harness.ccm.views.dto.MovePerspectiveDTO;
@@ -96,6 +97,7 @@ public class PerspectiveFolderResource {
   private final CEViewFolderService ceViewFolderService;
   private final CEViewService ceViewService;
   private final TelemetryReporter telemetryReporter;
+  private final CCMRbacHelper rbacHelper;
 
   private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_TRANSACTION_RETRY_POLICY;
   private final TransactionTemplate transactionTemplate;
@@ -104,12 +106,13 @@ public class PerspectiveFolderResource {
   @Inject
   public PerspectiveFolderResource(CEViewFolderService ceViewFolderService, CEViewService ceViewService,
       TelemetryReporter telemetryReporter, @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate,
-      OutboxService outboxService) {
+      OutboxService outboxService, CCMRbacHelper rbacHelper) {
     this.ceViewFolderService = ceViewFolderService;
     this.ceViewService = ceViewService;
     this.telemetryReporter = telemetryReporter;
     this.transactionTemplate = transactionTemplate;
     this.outboxService = outboxService;
+    this.rbacHelper = rbacHelper;
   }
 
   @POST
@@ -133,6 +136,7 @@ public class PerspectiveFolderResource {
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true, description = "Request body containing Perspective's CEViewFolder object")
       @Valid CreatePerspectiveFolderDTO createPerspectiveFolderDTO) {
+    rbacHelper.checkFolderEditPermission(accountId, null, null);
     CEViewFolder ceViewFolder = createPerspectiveFolderDTO.getCeViewFolder();
     ceViewFolder.setAccountId(accountId);
     ceViewFolder.setPinned(false);
@@ -171,6 +175,7 @@ public class PerspectiveFolderResource {
   public ResponseDTO<List<CEViewFolder>>
   getFolders(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
       NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId) {
+    rbacHelper.checkFolderViewPermission(accountId, null, null);
     List<CEViewFolder> ceViewFolders;
     ceViewFolders = ceViewFolderService.getFolders(accountId);
     return ResponseDTO.newResponse(ceViewFolders);
@@ -196,6 +201,7 @@ public class PerspectiveFolderResource {
                       NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @Parameter(required = true, description = "Unique identifier for folder") @PathParam(
           "folderId") String folderId) {
+    rbacHelper.checkFolderViewPermission(accountId, null, null);
     return ResponseDTO.newResponse(ceViewService.getAllViews(accountId, folderId, true, null));
   }
 
@@ -216,6 +222,7 @@ public class PerspectiveFolderResource {
                    NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true,
           description = "Request body containing ceViewFolder object") @Valid CEViewFolder ceViewFolder) {
+    rbacHelper.checkFolderEditPermission(accountId, null, null);
     List<CEViewFolder> oldPerspectiveFolder =
         ceViewFolderService.getFolders(accountId, new ArrayList<>(Arrays.asList(ceViewFolder.getUuid())));
     CEViewFolder newPerspectiveFolder = ceViewFolderService.updateFolder(accountId, ceViewFolder);
@@ -248,6 +255,7 @@ public class PerspectiveFolderResource {
                        NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true, description = "Request body containing perspectiveIds to be moved and newFolderId")
       @Valid MovePerspectiveDTO movePerspectiveDTO) {
+    rbacHelper.checkFolderEditPermission(accountId, null, null);
     List<String> perspectiveIds = movePerspectiveDTO.getPerspectiveIds();
     String newFolderId = movePerspectiveDTO.getNewFolderId();
     return ResponseDTO.newResponse(ceViewFolderService.moveMultipleCEViews(accountId, perspectiveIds, newFolderId));
@@ -272,6 +280,7 @@ public class PerspectiveFolderResource {
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @PathParam("folderId") @Parameter(required = true,
           description = "Unique identifier for the Perspective folder") @NotNull @Valid String folderId) {
+    rbacHelper.checkFolderDeletePermission(accountId, null, null);
     List<CEViewFolder> perspectiveFolder =
         ceViewFolderService.getFolders(accountId, new ArrayList<>(Arrays.asList(folderId)));
     boolean result = ceViewFolderService.delete(accountId, folderId);

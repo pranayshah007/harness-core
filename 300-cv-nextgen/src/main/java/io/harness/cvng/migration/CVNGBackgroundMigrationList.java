@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.migration.list.AddDeploymentMonitoringSourcePerpetualTask;
 import io.harness.cvng.migration.list.AddEnabledFlagToSLISLOMigration;
 import io.harness.cvng.migration.list.AddEnvRefsToMonitoredServiceMigration;
+import io.harness.cvng.migration.list.AddLastDisabledAtToMonitoredServiceMigration;
 import io.harness.cvng.migration.list.AddMetricIdentifierInCVConfigsAndMetricPacks;
 import io.harness.cvng.migration.list.AddMetricIdentifierToTimeSeriesThreshold;
 import io.harness.cvng.migration.list.AddMonitoredServiceToActivityMigration;
@@ -112,6 +113,7 @@ public class CVNGBackgroundMigrationList {
         .add(Pair.of(48, SetNotRequiredActivityAnalysisStatusToIgnored.class))
         .add(Pair.of(49, PrometheusConnectorAuthenticationPerpetualTaskMigration.class))
         .add(Pair.of(50, AddEnabledFlagToSLISLOMigration.class))
+        .add(Pair.of(51, AddLastDisabledAtToMonitoredServiceMigration.class))
         .build();
   }
 }

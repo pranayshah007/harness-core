@@ -22,9 +22,11 @@ import io.harness.metrics.service.api.MetricService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Singleton
+@RequiredArgsConstructor(onConstructor_ = @Inject)
 @Slf4j
 @OwnedBy(HarnessTeam.DEL)
 public class DelegateMetricsServiceImpl implements DelegateMetricsService {
@@ -58,8 +60,16 @@ public class DelegateMetricsServiceImpl implements DelegateMetricsService {
   public static final String SECRETS_CACHE_LOOKUPS = "delegate_secret_cache_lookups";
   public static final String SECRETS_CACHE_INSERTS = "delegate_secret_cache_inserts";
 
-  @Inject private MetricService metricService;
-  @Inject private DelegateTaskMetricContextBuilder metricContextBuilder;
+  public static final String IMMUTABLE_DELEGATES = "immutable_delegate";
+  public static final String MUTABLE_DELEGATES = "mutable_delegate";
+
+  public static final String PERPETUAL_TASKS = "perpetual_tasks_num";
+  public static final String PERPETUAL_TASKS_ASSIGNED = "perpetual_tasks_assigned_num";
+  public static final String PERPETUAL_TASKS_UNASSIGNED = "perpetual_tasks_unassigned_num";
+  public static final String PERPETUAL_TASKS_TO_REBALANCE = "perpetual_tasks_to_rebalance_num";
+
+  private final MetricService metricService;
+  private final DelegateTaskMetricContextBuilder metricContextBuilder;
 
   @Override
   public void recordDelegateTaskMetrics(DelegateTask task, String metricName) {

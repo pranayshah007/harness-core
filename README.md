@@ -100,6 +100,10 @@ Official steps to install docker on mac: [docker.com](https://docs.docker.com/de
 
     NOTE: if you clone the repo to another location you will have to do this again. On the other side you will be getting fixes and updates with no extra effort.
 
+4. Update git configuration to ignore file mode changes and preserve original file permissions.
+
+   `git config --global core.filemode false`
+
 ### Build
 
 #### Some Bazel Best Practices you can follow before building harness-core locally.

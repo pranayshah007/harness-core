@@ -339,9 +339,6 @@ if [[ "" != "$jwtNextGenManagerSecret" ]]; then
   yq write -i $CONFIG_FILE portal.jwtNextGenManagerSecret "$jwtNextGenManagerSecret"
 fi
 
-if [[ "" != "$jwtNextGenManagerSecret" ]]; then
-  yq write -i $CONFIG_FILE portal.jwtManagerServiceSecret "$jwtNextGenManagerSecret"
-fi
 
 if [[ "" != "$FEATURES" ]]; then
   yq write -i $CONFIG_FILE featuresEnabled "$FEATURES"
@@ -758,6 +755,14 @@ if [[ "$REDIS_SCRIPT_CACHE" == "false" ]]; then
   yq write -i $REDISSON_CACHE_FILE useScriptCache false
 fi
 
+if [[ "" != "$REDIS_SUBSCRIPTIONS_PER_CONNECTION" ]]; then
+  yq write -i $CONFIG_FILE redisAtmosphereConfig.subscriptionsPerConnection "$REDIS_SUBSCRIPTIONS_PER_CONNECTION"
+fi
+
+if [[ "" != "$REDIS_SUBSCRIPTION_CONNECTION_POOL_SIZE" ]]; then
+  yq write -i $CONFIG_FILE redisAtmosphereConfig.subscriptionConnectionPoolSize "$REDIS_SUBSCRIPTION_CONNECTION_POOL_SIZE"
+fi
+
 if [[ "" != "$CACHE_NAMESPACE" ]]; then
     yq write -i $CONFIG_FILE cacheConfig.cacheNamespace "$CACHE_NAMESPACE"
 fi
@@ -958,10 +963,6 @@ if [[ "" != "$NG_MANAGER_BASE_URL" ]]; then
   yq write -i $CONFIG_FILE ngManagerServiceHttpClientConfig.baseUrl "$NG_MANAGER_BASE_URL"
 fi
 
-if [[ "" != "$MANAGER_CLIENT_BASEURL" ]]; then
-  yq write -i $CONFIG_FILE managerServiceHttpClientConfig.baseUrl "$MANAGER_CLIENT_BASEURL"
-fi
-
 if [[ "" != "$ENABLE_USER_CHANGESTREAM" ]]; then
   yq write -i $CONFIG_FILE userChangeStreamEnabled "$ENABLE_USER_CHANGESTREAM"
 fi
@@ -1020,4 +1021,8 @@ fi
 
 if [[ "" != "$AGENT_MTLS_SUBDOMAIN" ]]; then
   yq write -i $CONFIG_FILE agentMtlsSubdomain "$AGENT_MTLS_SUBDOMAIN"
+fi
+
+if [[ "" != "$CD_TSDB_RETENTION_PERIOD_MONTHS" ]]; then
+  yq write -i $CD_TSDB_RETENTION_PERIOD_MONTHS cdTsDbRetentionPeriodMonths "$CD_TSDB_RETENTION_PERIOD_MONTHS"
 fi

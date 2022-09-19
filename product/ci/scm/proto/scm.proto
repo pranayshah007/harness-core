@@ -48,6 +48,7 @@ message User {
   string avatar = 4;
   google.protobuf.Timestamp created = 5;
   google.protobuf.Timestamp updated = 6;
+  string id = 7;
 }
 
 // Reference represents a git reference.
@@ -121,6 +122,7 @@ message PullRequest {
   google.protobuf.Timestamp updated = 16;
   repeated Label labels = 17;
   repeated Commit commits = 18;  // List of commits associated with the pull request
+  string mergeSha = 19;
 }
 
 message PullRequestHook {
@@ -212,6 +214,7 @@ message GithubProvider {
     string access_token = 1;
     GithubApp github_app = 2;
   }
+  bool isGithubApp = 3;
 }
 
 message GitlabProvider {
@@ -738,6 +741,20 @@ message FindCommitResponse {
   Commit commit = 3;
 }
 
+message RefreshTokenRequest {
+  string clientID = 1;
+  string clientSecret = 2;
+  string endpoint = 3;
+  string redirectUri = 4;
+  string refreshToken = 5;
+}
+
+message RefreshTokenResponse {
+  string accessToken = 1;
+  int32 expiresIn = 3;
+  string refreshToken = 4;
+}
+
 service SCM {
   // RPC to stop tailing on a file.
   rpc ParseWebhook(ParseWebhookRequest) returns (ParseWebhookResponse);
@@ -780,4 +797,6 @@ service SCM {
   rpc CreateWebhook(CreateWebhookRequest) returns (CreateWebhookResponse);
   rpc DeleteWebhook(DeleteWebhookRequest) returns (DeleteWebhookResponse);
   rpc ListWebhooks(ListWebhooksRequest) returns (ListWebhooksResponse);
+
+  rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
 }

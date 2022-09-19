@@ -30,6 +30,7 @@ import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.helper.GitAwareContextHelper;
+import io.harness.gitaware.helper.GitAwareEntityHelper;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.common.utils.GitEntityFilePath;
 import io.harness.gitsync.common.utils.GitSyncFilePathUtils;
@@ -82,6 +83,10 @@ import org.springframework.data.mongodb.core.query.Update;
 @Slf4j
 @OwnedBy(PIPELINE)
 public class PMSPipelineServiceImpl implements PMSPipelineService {
+  public static final String ERROR_CONNECTING_TO_SYSTEMS_UPSTREAM = "Error connecting to systems upstream";
+  public static final String EVENTS_FRAMEWORK_IS_DOWN_FOR_PIPELINE_SERVICE =
+      "Events framework is down for Pipeline Service.";
+  public static final String INVALID_YAML_IN_NODE = "Invalid yaml in node [%s]";
   @Inject private final PMSPipelineRepository pmsPipelineRepository;
   @Inject private final PmsSdkInstanceService pmsSdkInstanceService;
   @Inject private final PMSPipelineServiceHelper pmsPipelineServiceHelper;
@@ -89,9 +94,10 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Inject private final GitSyncSdkService gitSyncSdkService;
   @Inject private final CommonStepInfo commonStepInfo;
   @Inject private final PipelineCloneHelper pipelineCloneHelper;
+  @Inject private final GitAwareEntityHelper gitAwareEntityHelper;
 
-  public static String CREATING_PIPELINE = "creating new pipeline";
-  public static String UPDATING_PIPELINE = "updating existing pipeline";
+  public static final String CREATING_PIPELINE = "creating new pipeline";
+  public static final String UPDATING_PIPELINE = "updating existing pipeline";
 
   private static final String DUP_KEY_EXP_FORMAT_STRING =
       "Pipeline [%s] under Project[%s], Organization [%s] already exists or has been deleted.";
@@ -116,8 +122,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       createdEntity = pipelineCRUDResult.getPipelineEntity();
       return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).pipelineEntity(createdEntity).build();
     } catch (IOException ex) {
-      log.error(format("Invalid yaml in node [%s]", YamlUtils.getErrorNodePartialFQN(ex)), ex);
-      throw new InvalidYamlException(format("Invalid yaml in node [%s]", YamlUtils.getErrorNodePartialFQN(ex)), ex);
+      log.error(format(INVALID_YAML_IN_NODE, YamlUtils.getErrorNodePartialFQN(ex)), ex);
+      throw new InvalidYamlException(format(INVALID_YAML_IN_NODE, YamlUtils.getErrorNodePartialFQN(ex)), ex);
     }
   }
 
@@ -139,8 +145,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
                                             pipelineEntity.getProjectIdentifier(), pipelineEntity.getOrgIdentifier()),
           USER_SRE, ex);
     } catch (EventsFrameworkDownException ex) {
-      log.error("Events framework is down for Pipeline Service.", ex);
-      throw new InvalidRequestException("Error connecting to systems upstream", ex);
+      log.error(EVENTS_FRAMEWORK_IS_DOWN_FOR_PIPELINE_SERVICE, ex);
+      throw new InvalidRequestException(ERROR_CONNECTING_TO_SYSTEMS_UPSTREAM, ex);
 
     } catch (ExplanationException | HintException | ScmException e) {
       log.error("Error while creating pipeline " + pipelineEntity.getIdentifier(), e);
@@ -352,11 +358,11 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       pmsPipelineServiceHelper.sendPipelineSaveTelemetryEvent(updatedResult, UPDATING_PIPELINE);
       return updatedResult;
     } catch (EventsFrameworkDownException ex) {
-      log.error("Events framework is down for Pipeline Service.", ex);
-      throw new InvalidRequestException("Error connecting to systems upstream", ex);
+      log.error(EVENTS_FRAMEWORK_IS_DOWN_FOR_PIPELINE_SERVICE, ex);
+      throw new InvalidRequestException(ERROR_CONNECTING_TO_SYSTEMS_UPSTREAM, ex);
     } catch (IOException ex) {
-      log.error(format("Invalid yaml in node [%s]", YamlUtils.getErrorNodePartialFQN(ex)), ex);
-      throw new InvalidYamlException(format("Invalid yaml in node [%s]", YamlUtils.getErrorNodePartialFQN(ex)), ex);
+      log.error(format(INVALID_YAML_IN_NODE, YamlUtils.getErrorNodePartialFQN(ex)), ex);
+      throw new InvalidYamlException(format(INVALID_YAML_IN_NODE, YamlUtils.getErrorNodePartialFQN(ex)), ex);
     } catch (ExplanationException | HintException | ScmException e) {
       log.error("Error while updating pipeline " + pipelineEntity.getIdentifier(), e);
       throw e;
@@ -458,7 +464,6 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Override
   public PipelineEntity importPipelineFromRemote(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, PipelineImportRequestDTO pipelineImportRequest, Boolean isForceImport) {
-    PMSPipelineServiceHelper.filePathCheck();
     String repoUrl = pmsPipelineServiceHelper.getRepoUrlAndCheckForFileUniqueness(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, isForceImport);
     String importedPipelineYAML =
@@ -483,11 +488,11 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
                                             pipelineEntity.getProjectIdentifier(), pipelineEntity.getOrgIdentifier()),
           USER_SRE, ex);
     } catch (EventsFrameworkDownException ex) {
-      log.error("Events framework is down for Pipeline Service.", ex);
-      throw new InvalidRequestException("Error connecting to systems upstream", ex);
+      log.error(EVENTS_FRAMEWORK_IS_DOWN_FOR_PIPELINE_SERVICE, ex);
+      throw new InvalidRequestException(ERROR_CONNECTING_TO_SYSTEMS_UPSTREAM, ex);
     } catch (IOException ex) {
-      log.error(format("Invalid yaml in node [%s]", YamlUtils.getErrorNodePartialFQN(ex)), ex);
-      throw new InvalidYamlException(format("Invalid yaml in node [%s]", YamlUtils.getErrorNodePartialFQN(ex)), ex);
+      log.error(format(INVALID_YAML_IN_NODE, YamlUtils.getErrorNodePartialFQN(ex)), ex);
+      throw new InvalidYamlException(format(INVALID_YAML_IN_NODE, YamlUtils.getErrorNodePartialFQN(ex)), ex);
     }
   }
 
@@ -580,7 +585,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     }
 
     return pmsPipelineServiceHelper.fetchExpandedPipelineJSONFromYaml(
-        accountId, orgIdentifier, projectIdentifier, pipelineEntityOptional.get().getYaml());
+        accountId, orgIdentifier, projectIdentifier, pipelineEntityOptional.get().getYaml(), false);
   }
 
   @Override

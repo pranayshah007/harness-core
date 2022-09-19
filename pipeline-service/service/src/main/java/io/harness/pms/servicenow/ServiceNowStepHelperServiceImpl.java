@@ -109,7 +109,7 @@ public class ServiceNowStepHelperServiceImpl implements ServiceNowStepHelperServ
             .stream()
             .map(s -> TaskSelector.newBuilder().setSelector(s).build())
             .collect(Collectors.toList()),
-        Scope.PROJECT, EnvironmentType.ALL);
+        Scope.PROJECT, EnvironmentType.ALL, false, Collections.emptyList(), false, null);
   }
 
   @Override

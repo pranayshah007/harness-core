@@ -64,7 +64,6 @@ import io.harness.beans.PageResponse.PageResponseBuilder;
 import io.harness.cache.HarnessCacheManager;
 import io.harness.ccm.license.CeLicenseInfo;
 import io.harness.cdlicense.impl.CgCdLicenseUsageService;
-import io.harness.configuration.DeployMode;
 import io.harness.cvng.beans.ServiceGuardLimitDTO;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
@@ -104,6 +103,7 @@ import io.harness.ng.core.account.DefaultExperience;
 import io.harness.ng.core.account.OauthProviderType;
 import io.harness.observer.RemoteObserverInformer;
 import io.harness.observer.Subject;
+import io.harness.outbox.api.OutboxService;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 import io.harness.reflection.ReflectionUtils;
@@ -134,6 +134,8 @@ import software.wings.beans.User;
 import software.wings.beans.User.UserKeys;
 import software.wings.beans.governance.GovernanceConfig;
 import software.wings.beans.loginSettings.LoginSettingsService;
+import software.wings.beans.loginSettings.events.LoginSettingsWhitelistedDomainsUpdateEvent;
+import software.wings.beans.loginSettings.events.WhitelistedDomainsYamlDTO;
 import software.wings.beans.sso.LdapSettings;
 import software.wings.beans.sso.LdapSettings.LdapSettingsKeys;
 import software.wings.beans.sso.OauthSettings;
@@ -304,6 +306,7 @@ public class AccountServiceImpl implements AccountService {
   @Inject private HPersistence persistence;
   @Inject private CgCdLicenseUsageService cgCdLicenseUsageService;
   @Inject private DelegateVersionService delegateVersionService;
+  @Inject private OutboxService outboxService;
 
   @Inject @Named("BackgroundJobScheduler") private PersistentScheduler jobScheduler;
   @Inject private GovernanceFeature governanceFeature;
@@ -506,9 +509,10 @@ public class AccountServiceImpl implements AccountService {
     } else if (account.isCreatedFromNG()) {
       updateNextGenEnabled(account.getUuid(), true);
     }
-    if (!DeployMode.isOnPrem(mainConfiguration.getDeployMode().name())) {
-      featureFlagService.enableAccount(FeatureName.USE_IMMUTABLE_DELEGATE, account.getUuid());
-    }
+    // TODO: MARKO uncomment this when immutable UI has been completely developed
+    //    if (!DeployMode.isOnPrem(mainConfiguration.getDeployMode().name())) {
+    //      featureFlagService.enableAccount(FeatureName.USE_IMMUTABLE_DELEGATE, account.getUuid());
+    //    }
   }
 
   List<Role> createDefaultRoles(Account account) {
@@ -990,7 +994,7 @@ public class AccountServiceImpl implements AccountService {
     if (licenseService.isAccountDeleted(accountId)) {
       throw new InvalidRequestException("Deleted AccountId: " + accountId);
     }
-    log.info("Getting delegate configuration from Delegate ring");
+    log.debug("Getting delegate configuration from Delegate ring");
 
     // Prefer using delegateConfiguration from DelegateRing.
     List<String> delegateVersionFromRing = delegateVersionService.getDelegateJarVersions(accountId);
@@ -1706,12 +1710,35 @@ public class AccountServiceImpl implements AccountService {
       throw new WingsException("Invalid domain name");
     }
 
+    List<Account> accounts = getAccounts(Arrays.asList(accountId));
+    if (isEmpty(accounts)) {
+      throw new AccountNotFoundException(
+          "Account is not found for the given id: " + accountId, null, ACCOUNT_DOES_NOT_EXIST, Level.ERROR, USER, null);
+    }
+    Account account = accounts.get(0);
     UpdateOperations<Account> whitelistedDomainsUpdateOperations =
         wingsPersistence.createUpdateOperations(Account.class);
     setUnset(whitelistedDomainsUpdateOperations, AccountKeys.whitelistedDomains, validDomains);
     wingsPersistence.update(wingsPersistence.createQuery(Account.class).filter(Mapper.ID_KEY, accountId),
         whitelistedDomainsUpdateOperations);
+    ngAuditLoginSettings(accountId, account.getWhitelistedDomains(), validDomains);
     return get(accountId);
+  }
+
+  private void ngAuditLoginSettings(
+      String accountIdentifier, Set<String> oldWhitelistedDomains, Set<String> newWhitelistedDomains) {
+    try {
+      outboxService.save(LoginSettingsWhitelistedDomainsUpdateEvent.builder()
+                             .accountIdentifier(accountIdentifier)
+                             .oldWhitelistedDomainsYamlDTO(
+                                 WhitelistedDomainsYamlDTO.builder().whitelistedDomains(oldWhitelistedDomains).build())
+                             .newWhitelistedDomainsYamlDTO(
+                                 WhitelistedDomainsYamlDTO.builder().whitelistedDomains(newWhitelistedDomains).build())
+                             .build());
+    } catch (Exception ex) {
+      log.error(
+          "For account {} Audit trails for LoginSettings update event failed with exception: ", accountIdentifier, ex);
+    }
   }
 
   @Override

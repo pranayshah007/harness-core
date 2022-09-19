@@ -92,11 +92,14 @@ import io.harness.product.ci.scm.proto.NativeEvents;
 import io.harness.product.ci.scm.proto.PRFile;
 import io.harness.product.ci.scm.proto.PageRequest;
 import io.harness.product.ci.scm.proto.Provider;
+import io.harness.product.ci.scm.proto.RefreshTokenRequest;
+import io.harness.product.ci.scm.proto.RefreshTokenResponse;
 import io.harness.product.ci.scm.proto.SCMGrpc;
 import io.harness.product.ci.scm.proto.Signature;
 import io.harness.product.ci.scm.proto.UpdateFileResponse;
 import io.harness.product.ci.scm.proto.WebhookResponse;
 import io.harness.service.ScmServiceClient;
+import io.harness.utils.FilePathUtils;
 import io.harness.utils.ScmGrpcClientUtils;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -599,6 +602,7 @@ public class ScmServiceClientImpl implements ScmServiceClient {
   @Override
   public CreateBranchResponse createNewBranch(
       ScmConnector scmConnector, String branch, String baseBranchName, SCMGrpc.SCMBlockingStub scmBlockingStub) {
+    branch = FilePathUtils.removeStartingAndEndingSlash(branch);
     String slug = scmGitProviderHelper.getSlug(scmConnector);
     Provider gitProvider = scmGitProviderMapper.mapToSCMGitProvider(scmConnector);
     String latestShaOfBranch = getLatestShaOfBranch(slug, gitProvider, baseBranchName, scmBlockingStub);
@@ -872,6 +876,16 @@ public class ScmServiceClientImpl implements ScmServiceClient {
   }
 
   @Override
+  public RefreshTokenResponse refreshToken(ScmConnector scmConnector, String clientId, String clientSecret,
+      String endpoint, String refreshToken, SCMGrpc.SCMBlockingStub scmBlockingStub) {
+    return scmBlockingStub.refreshToken(RefreshTokenRequest.newBuilder()
+                                            .setClientID(clientId)
+                                            .setClientSecret(clientSecret)
+                                            .setRefreshToken(refreshToken)
+                                            .setEndpoint(endpoint)
+                                            .build());
+  }
+
   public GetLatestCommitOnFileResponse getLatestCommitOnFile(
       ScmConnector scmConnector, String branchName, String filepath, SCMGrpc.SCMBlockingStub scmBlockingStub) {
     return getLatestCommitOnFile(scmConnector, scmBlockingStub, branchName, filepath);

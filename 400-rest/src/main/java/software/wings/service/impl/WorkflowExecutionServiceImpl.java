@@ -1968,9 +1968,9 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     if (isEmpty(deploymentTypes) || deploymentTypes.size() > 1) {
       throw new InvalidRequestException("Execution Hosts only supported for single deployment type", USER);
     }
-
-    if (deploymentTypes.get(0) != DeploymentType.SSH) {
-      throw new InvalidRequestException("Execution Hosts only supported for SSH deployment type", USER);
+    DeploymentType deploymentType = deploymentTypes.get(0);
+    if (deploymentType != DeploymentType.SSH && deploymentType != DeploymentType.WINRM) {
+      throw new InvalidRequestException("Execution Hosts only supported for SSH and WinRM deployment type", USER);
     }
   }
 
@@ -3262,10 +3262,33 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     final Query<WorkflowExecution> query =
         wingsPersistence.createQuery(WorkflowExecution.class)
             .filter(WorkflowExecutionKeys.appId, workflowExecution.getAppId())
+            .filter(WorkflowExecutionKeys.workflowType, ORCHESTRATION)
             .filter(WorkflowExecutionKeys.status, SUCCESS)
             .filter(WorkflowExecutionKeys.infraMappingIds, workflowExecution.getInfraMappingIds())
             .order(Sort.descending(WorkflowExecutionKeys.createdAt));
-    final List<WorkflowExecution> workflowExecutionList = query.asList(new FindOptions().limit(2));
+
+    List<WorkflowExecution> workflowExecutionList = new ArrayList<>();
+    if (featureFlagService.isEnabled(
+            FeatureName.ON_DEMAND_ROLLBACK_WITH_DIFFERENT_ARTIFACT, workflowExecution.getAccountId())) {
+      query.field(WorkflowExecutionKeys.serviceExecutionSummaries_instanceStatusSummaries_instanceElement_uuid)
+          .exists();
+      boolean firstEntry = true;
+      try (HIterator<WorkflowExecution> iterator = new HIterator<>(query.fetch())) {
+        for (WorkflowExecution wfExecution : iterator) {
+          if (firstEntry) {
+            firstEntry = false;
+            workflowExecutionList.add(wfExecution);
+            continue;
+          }
+          if (isArtifactsListDifferent(wfExecution.getArtifacts(), workflowExecutionList.get(0).getArtifacts())) {
+            workflowExecutionList.add(wfExecution);
+            break;
+          }
+        }
+      }
+    } else {
+      workflowExecutionList = query.asList(new FindOptions().limit(2));
+    }
 
     if (isEmpty(workflowExecutionList)) {
       throw new InvalidRequestException(
@@ -3288,6 +3311,22 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     WorkflowExecution lastSecondSuccessfulWE = workflowExecutionList.get(1);
     log.info("Fetching artifact from execution: {}", lastSecondSuccessfulWE);
     return lastSecondSuccessfulWE.getArtifacts();
+  }
+
+  boolean isArtifactsListDifferent(List<Artifact> artifactList1, List<Artifact> artifactList2) {
+    // If both artifact list are empty, we should consider them different because artifact must be coming from swimlane.
+    if (isEmpty(artifactList1) && isEmpty(artifactList2)) {
+      return true;
+    }
+
+    if ((isEmpty(artifactList1) && isNotEmpty(artifactList2))
+        || (isNotEmpty(artifactList1) && isEmpty(artifactList2))) {
+      return true;
+    }
+
+    Set<String> artifactBuildNumberList1 = artifactList1.stream().map(Artifact::getUuid).collect(Collectors.toSet());
+    Set<String> artifactBuildNumberList2 = artifactList2.stream().map(Artifact::getUuid).collect(Collectors.toSet());
+    return !artifactBuildNumberList1.equals(artifactBuildNumberList2);
   }
 
   @Override
@@ -5559,6 +5598,21 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
   }
 
   @Override
+  public List<Artifact> obtainLastGoodDeployedArtifacts(String appId, String workflowId, String serviceId) {
+    if (serviceId == null) {
+      return obtainLastGoodDeployedArtifacts(appId, workflowId);
+    }
+    WorkflowExecution workflowExecution = fetchLastSuccessDeployment(appId, workflowId, serviceId);
+    if (workflowExecution != null) {
+      ExecutionArgs executionArgs = workflowExecution.getExecutionArgs();
+      if (executionArgs != null) {
+        return executionArgs.getArtifacts();
+      }
+    }
+    return new ArrayList<>();
+  }
+
+  @Override
   public List<Artifact> obtainLastGoodDeployedArtifacts(String appId, String workflowId) {
     WorkflowExecution workflowExecution = fetchLastSuccessDeployment(appId, workflowId);
     if (workflowExecution != null) {
@@ -5603,6 +5657,16 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
         .filter(WorkflowExecutionKeys.appId, appId)
         .filter(WorkflowExecutionKeys.workflowId, workflowId)
         .filter(WorkflowExecutionKeys.status, SUCCESS)
+        .order("-createdAt")
+        .get();
+  }
+
+  private WorkflowExecution fetchLastSuccessDeployment(String appId, String workflowId, String serviceId) {
+    return wingsPersistence.createQuery(WorkflowExecution.class)
+        .filter(WorkflowExecutionKeys.appId, appId)
+        .filter(WorkflowExecutionKeys.workflowId, workflowId)
+        .filter(WorkflowExecutionKeys.status, SUCCESS)
+        .filter(WorkflowExecutionKeys.deployedServices, serviceId)
         .order("-createdAt")
         .get();
   }
@@ -6689,5 +6753,11 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     WorkflowExecution workflowExecution = getWorkflowExecution(appId, workflowExecutionId);
     workflowExecutionServiceHelper.populateFailureDetailsWithStepInfo(workflowExecution);
     return workflowExecution;
+  }
+
+  @Override
+  public List<WorkflowExecution> getWorkflowExecutionsWithFailureDetails(
+      String appId, List<WorkflowExecution> workflowExecutions) {
+    return workflowExecutionServiceHelper.populateFailureDetailsWithStepInfo(appId, workflowExecutions);
   }
 }

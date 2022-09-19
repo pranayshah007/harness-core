@@ -20,6 +20,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.ccm.audittrails.events.CostCategoryCreateEvent;
 import io.harness.ccm.audittrails.events.CostCategoryDeleteEvent;
 import io.harness.ccm.audittrails.events.CostCategoryUpdateEvent;
+import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.views.businessMapping.entities.BusinessMapping;
 import io.harness.ccm.views.businessMapping.entities.CostTarget;
 import io.harness.ccm.views.businessMapping.entities.SharedCost;
@@ -57,6 +58,7 @@ public class BusinessMappingResourceTest extends CategoryTest {
   @Mock private BusinessMappingService businessMappingService;
   @Mock private OutboxService outboxService;
   @Mock private TransactionTemplate transactionTemplate;
+  @Mock private CCMRbacHelper rbacHelper;
   @InjectMocks private BusinessMappingResource businessMappingResource;
   private BusinessMapping businessMapping;
   private BusinessMapping costCategoryDTO;

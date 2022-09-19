@@ -14,6 +14,7 @@ import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.jackson.JsonNodeUtils;
 import io.harness.plancreator.stages.parallel.ParallelStageElementConfig;
 import io.harness.plancreator.stages.stage.StageElementConfig;
@@ -59,6 +60,10 @@ import lombok.extern.slf4j.Slf4j;
 public class PmsYamlSchemaHelper {
   public static final String STEP_ELEMENT_CONFIG =
       io.harness.yaml.utils.YamlSchemaUtils.getSwaggerName(StepElementConfig.class);
+  public static final String PARALLEL_STEP_ELEMENT_CONFIG = ParallelStepElementConfig.class.getSimpleName();
+  public static final String FLATTENED_PARALLEL_STEP_ELEMENT_CONFIG_SCHEMA =
+      "{\"type\":\"array\",\"items\":{\"$ref\":\"#/definitions/approval/ExecutionWrapperConfig\"},\"$schema\":\"http://json-schema.org/draft-07/schema#\"}";
+  public static final String APPROVAL_NAMESPACE = "approval";
   private static final Class<StepElementConfig> STEP_ELEMENT_CONFIG_CLASS = StepElementConfig.class;
 
   public static final String STAGE_ELEMENT_CONFIG = YamlSchemaUtils.getSwaggerName(StageElementConfig.class);
@@ -119,7 +124,20 @@ public class PmsYamlSchemaHelper {
   }
 
   public void processPartialStageSchema(ObjectNode pipelineDefinitions, ObjectNode pipelineSteps,
-      ObjectNode stageElementConfig, PartialSchemaDTO partialSchemaDTO) {
+      ObjectNode stageElementConfig, PartialSchemaDTO partialSchemaDTO, String accountId) {
+    boolean isApprovalStageSchemaBeingProcessed = partialSchemaDTO.getNamespace().equals(APPROVAL_NAMESPACE);
+    // These logs are only for debugging the invalid schema generation issue. Checking only for approval stage
+    if (isApprovalStageSchemaBeingProcessed
+        && !partialSchemaDTO.getSchema()
+                .get(DEFINITIONS_NODE)
+                .get(APPROVAL_NAMESPACE)
+                .get(PARALLEL_STEP_ELEMENT_CONFIG)
+                .toString()
+                .equals(FLATTENED_PARALLEL_STEP_ELEMENT_CONFIG_SCHEMA)) {
+      log.warn(
+          "flattened ParallelStepElementConfig schema is incorrect for approval stage before merging the partialSchemaDto for account {}",
+          accountId);
+    }
     YamlSchemaTransientHelper.removeV2StepEnumsFromStepElementConfig(partialSchemaDTO.getSchema()
                                                                          .get(DEFINITIONS_NODE)
                                                                          .get(partialSchemaDTO.getNamespace())
@@ -139,6 +157,17 @@ public class PmsYamlSchemaHelper {
     }
 
     pipelineDefinitions.set(partialSchemaDTO.getNamespace(), stageDefinitionsNode.get(partialSchemaDTO.getNamespace()));
+
+    // These logs are only for debugging the invalid schema generation issue. Checking only for approval stage
+    if (isApprovalStageSchemaBeingProcessed
+        && !pipelineDefinitions.get(APPROVAL_NAMESPACE)
+                .get(PARALLEL_STEP_ELEMENT_CONFIG)
+                .toString()
+                .equals(FLATTENED_PARALLEL_STEP_ELEMENT_CONFIG_SCHEMA)) {
+      log.warn(
+          "flattened ParallelStepElementConfig schema is incorrect for approval stage after merging the partialSchemaDto for account {}",
+          accountId);
+    }
   }
 
   private void mergePipelineStepsIntoStage(
@@ -239,9 +268,16 @@ public class PmsYamlSchemaHelper {
 
   public void processStageSchema(List<YamlSchemaWithDetails> allSchemaDetails, ObjectNode pipelineDefinitions) {
     try {
+      // Filtering by the yamlGroup=stage
+      // And the stage namespace must be present in pipeline definitions or the namespace should be empty(for pipeline
+      // service). If namespace is not present then we skip that stage schema detail so that it does not affect other
+      // stages. Only that stage will not work for schema.
       List<YamlSchemaWithDetails> stageSchemaWithDetails =
           allSchemaDetails.stream()
               .filter(o -> o.getYamlSchemaMetadata().getYamlGroup().getGroup().equals(StepCategory.STAGE.name()))
+              .filter(o
+                  -> EmptyPredicate.isEmpty(o.getYamlSchemaMetadata().getNamespace())
+                      || pipelineDefinitions.get(o.getYamlSchemaMetadata().getNamespace()) != null)
               .collect(Collectors.toList());
 
       YamlSchemaUtils.addOneOfInStageElementWrapperConfig(pipelineDefinitions, stageSchemaWithDetails);

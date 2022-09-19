@@ -116,7 +116,7 @@ public class YamlMapGenerator {
       return;
     }
     int noOfKeys = firstNode.size();
-    if (noOfKeys == 1) {
+    if (noOfKeys == 1 && EmptyPredicate.isEmpty(FQNHelper.getUuidKey(list))) {
       generateYamlMapFromListOfSingleKeyMaps(list, baseFQN, fqnMap, res, topKey, isSanitiseFlow);
     } else {
       generateYamlMapFromListOfMultipleKeyMaps(list, baseFQN, fqnMap, res, topKey, isSanitiseFlow);
@@ -188,10 +188,12 @@ public class YamlMapGenerator {
               .uuidValue(element.get(uuidKey).asText())
               .build());
       Map<String, Object> tempRes = new LinkedHashMap<>();
-      if (uuidKey.equals(YAMLFieldNameConstants.IDENTIFIER)) {
+      if (FQNHelper.isKeyInsideUUIdsToIdentityElementInList(uuidKey)) {
         generateYamlMap(fqnMap, currFQN, element, tempRes, topKey, isSanitiseFlow);
         if (tempRes.containsKey(topKey)) {
-          topKeyList.add(tempRes.get(topKey));
+          Map<String, Object> map = (Map) tempRes.get(topKey);
+          map.put(uuidKey, element.get(uuidKey));
+          topKeyList.add(map);
         }
       } else {
         Map<String, Object> tempMap = new LinkedHashMap<>();

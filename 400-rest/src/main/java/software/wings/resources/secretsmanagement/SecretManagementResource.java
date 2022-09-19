@@ -14,6 +14,7 @@ import static io.harness.eraro.ErrorCode.SECRET_MANAGEMENT_ERROR;
 import static io.harness.exception.WingsException.SRE;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
+import static software.wings.security.PermissionAttribute.PermissionType.LOGGED_IN;
 import static software.wings.security.PermissionAttribute.PermissionType.MANAGE_SECRETS;
 import static software.wings.security.PermissionAttribute.ResourceType.SETTING;
 
@@ -42,7 +43,9 @@ import io.harness.serializer.JsonUtils;
 
 import software.wings.app.MainConfiguration;
 import software.wings.beans.SettingAttribute;
+import software.wings.security.PermissionAttribute;
 import software.wings.security.UsageRestrictions;
+import software.wings.security.annotations.ApiKeyAuthorized;
 import software.wings.security.annotations.AuthRule;
 import software.wings.security.annotations.Scope;
 import software.wings.service.intfc.UsageRestrictionsService;
@@ -131,6 +134,7 @@ public class SecretManagementResource {
 
   @GET
   @Path("/list-configs")
+  @ApiKeyAuthorized(permissionType = LOGGED_IN, action = PermissionAttribute.Action.READ)
   public RestResponse<List<SecretManagerConfig>> listEncryptionConfig(@QueryParam("accountId") final String accountId) {
     return new RestResponse<>(secretManager.listSecretManagers(accountId));
   }
@@ -189,6 +193,7 @@ public class SecretManagementResource {
   @POST
   @Path("/add-secret")
   @AuthRule(permissionType = MANAGE_SECRETS)
+  @ApiKeyAuthorized(permissionType = MANAGE_SECRETS, action = PermissionAttribute.Action.CREATE)
   public RestResponse<String> saveSecret(@QueryParam("accountId") final String accountId, @Body SecretText secretText) {
     try (AutoLogContext ignore = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
       log.info("Adding a secret");
@@ -207,6 +212,7 @@ public class SecretManagementResource {
   @POST
   @Path("/update-secret")
   @AuthRule(permissionType = MANAGE_SECRETS)
+  @ApiKeyAuthorized(permissionType = MANAGE_SECRETS, action = PermissionAttribute.Action.UPDATE)
   public RestResponse<Boolean> updateSecret(@QueryParam("accountId") final String accountId,
       @QueryParam("uuid") final String uuid, @Body SecretText secretText) {
     return new RestResponse<>(secretManager.updateSecretText(accountId, uuid, secretText, true));
@@ -233,6 +239,7 @@ public class SecretManagementResource {
   @POST
   @Path("/delete-secret")
   @AuthRule(permissionType = MANAGE_SECRETS)
+  @ApiKeyAuthorized(permissionType = MANAGE_SECRETS, action = PermissionAttribute.Action.DELETE)
   public RestResponse<Boolean> deleteSecret(@QueryParam("accountId") final String accountId,
       @QueryParam("uuid") final String uuId, @Body Map<String, String> runtimeParameters) {
     try (AutoLogContext ignore = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
@@ -335,6 +342,7 @@ public class SecretManagementResource {
 
   @GET
   @Path("/list-secrets-page")
+  @ApiKeyAuthorized(permissionType = LOGGED_IN, action = PermissionAttribute.Action.READ)
   public RestResponse<PageResponse<EncryptedData>> listSecrets(@QueryParam("accountId") final String accountId,
       @QueryParam("type") final SettingVariableTypes type, @QueryParam("currentAppId") String currentAppId,
       @QueryParam("currentEnvId") String currentEnvId, @DefaultValue("true") @QueryParam("details") boolean details,

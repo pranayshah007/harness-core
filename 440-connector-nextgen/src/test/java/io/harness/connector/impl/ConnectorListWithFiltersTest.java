@@ -31,6 +31,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorConnectivityDetails;
+import io.harness.connector.ConnectorConnectivityMode;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorFilterPropertiesDTO;
 import io.harness.connector.ConnectorInfoDTO;
@@ -403,6 +404,16 @@ public class ConnectorListWithFiltersTest extends ConnectorsTestBase {
     }
   }
 
+  private void createConnectorsWithExecuteOnDelegate(int numberOfConnectors, Boolean mode) {
+    for (int i = 0; i < numberOfConnectors; i++) {
+      KubernetesClusterConfig connector = getConnectorEntity();
+      connector.setName(name + System.currentTimeMillis());
+      connector.setIdentifier(generateUuid());
+      connector.setExecuteOnDelegate(mode);
+      connectorRepository.save(connector, ChangeType.ADD);
+    }
+  }
+
   @Test
   @Owner(developers = OwnerRule.DEEPAK)
   @Category(UnitTests.class)
@@ -533,6 +544,34 @@ public class ConnectorListWithFiltersTest extends ConnectorsTestBase {
                                      filterIdentifier, null, false, false)
                                  .getNumberOfElements();
     assertThat(numberOfConnectors).isEqualTo(2);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.TEJAS)
+  @Category(UnitTests.class)
+  public void testListConnectivityModes() {
+    createConnectorsWithExecuteOnDelegate(4, true);
+    createConnectorsWithExecuteOnDelegate(6, false);
+    ConnectorFilterPropertiesDTO connectorFilterPropertiesDTO =
+        ConnectorFilterPropertiesDTO.builder()
+            .connectorConnectivityModes(Arrays.asList(ConnectorConnectivityMode.DELEGATE))
+            .build();
+    Page<ConnectorResponseDTO> connectorWithDelegateMode = connectorService.list(0, 100, accountIdentifier,
+        connectorFilterPropertiesDTO, orgIdentifier, projectIdentifier, "", "", false, false);
+    assertThat(connectorWithDelegateMode.getTotalElements()).isEqualTo(4);
+    connectorFilterPropertiesDTO = ConnectorFilterPropertiesDTO.builder()
+                                       .connectorConnectivityModes(Arrays.asList(ConnectorConnectivityMode.MANAGER))
+                                       .build();
+    Page<ConnectorResponseDTO> connectorWithManagerMode = connectorService.list(0, 100, accountIdentifier,
+        connectorFilterPropertiesDTO, orgIdentifier, projectIdentifier, "", "", false, false);
+    assertThat(connectorWithManagerMode.getTotalElements()).isEqualTo(6);
+    connectorFilterPropertiesDTO = ConnectorFilterPropertiesDTO.builder()
+                                       .connectorConnectivityModes(Arrays.asList(
+                                           ConnectorConnectivityMode.DELEGATE, ConnectorConnectivityMode.MANAGER))
+                                       .build();
+    Page<ConnectorResponseDTO> allConnectors = connectorService.list(0, 100, accountIdentifier,
+        connectorFilterPropertiesDTO, orgIdentifier, projectIdentifier, "", "", false, false);
+    assertThat(allConnectors.getTotalElements()).isEqualTo(10);
   }
 
   private void createConnectorsWithGivenValues(

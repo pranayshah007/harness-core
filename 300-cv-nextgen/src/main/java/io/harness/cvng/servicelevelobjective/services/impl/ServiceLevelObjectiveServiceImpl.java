@@ -219,6 +219,11 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
   }
 
   @Override
+  public List<ServiceLevelObjective> getAllSLOs(ProjectParams projectParams) {
+    return get(projectParams, Filter.builder().build());
+  }
+
+  @Override
   public List<ServiceLevelObjective> getByMonitoredServiceIdentifier(
       ProjectParams projectParams, String monitoredServiceIdentifier) {
     return get(projectParams, Filter.builder().monitoredServiceIdentifier(monitoredServiceIdentifier).build());
@@ -271,6 +276,15 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
         .pageItemCount(sloEntitiesPageResponse.getPageItemCount())
         .content(sloPageResponse)
         .build();
+  }
+
+  private PageResponse<ServiceLevelObjective> getResponse(
+      ProjectParams projectParams, Integer offset, Integer pageSize, String filterByName, Filter filter) {
+    List<ServiceLevelObjective> serviceLevelObjectiveList = get(projectParams, filter);
+    if (!isEmpty(filterByName)) {
+      serviceLevelObjectiveList = filterSLOs(serviceLevelObjectiveList, filterByName);
+    }
+    return PageUtils.offsetAndLimit(serviceLevelObjectiveList, offset, pageSize);
   }
 
   private List<ServiceLevelObjective> get(ProjectParams projectParams, Filter filter) {
@@ -370,6 +384,19 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
   }
 
   @Override
+  public PageResponse<ServiceLevelObjective> getSLOForListView(
+      ProjectParams projectParams, SLODashboardApiFilter filter, PageParams pageParams, String filterByName) {
+    return getResponse(projectParams, pageParams.getPage(), pageParams.getSize(), filterByName,
+        Filter.builder()
+            .monitoredServiceIdentifier(filter.getMonitoredServiceIdentifier())
+            .userJourneys(filter.getUserJourneyIdentifiers())
+            .sliTypes(filter.getSliTypes())
+            .errorBudgetRisks(filter.getErrorBudgetRisks())
+            .targetTypes(filter.getTargetTypes())
+            .build());
+  }
+
+  @Override
   public ServiceLevelObjective getFromSLIIdentifier(
       ProjectParams projectParams, String serviceLevelIndicatorIdentifier) {
     return hPersistence.createQuery(ServiceLevelObjective.class)
@@ -413,7 +440,7 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
       ServiceLevelObjective.TimePeriod timePeriod = serviceLevelObjective.getCurrentTimeRange(currentLocalDate);
       Instant currentTimeMinute = DateTimeUtils.roundDownTo1MinBoundary(clock.instant());
 
-      SLOGraphData sloGraphData = sliRecordService.getGraphData(serviceLevelIndicator.getUuid(),
+      SLOGraphData sloGraphData = sliRecordService.getGraphData(serviceLevelIndicator,
           timePeriod.getStartTime(serviceLevelObjective.getZoneOffset()), currentTimeMinute, totalErrorBudgetMinutes,
           serviceLevelIndicator.getSliMissingDataType(), serviceLevelIndicator.getVersion());
       serviceLevelObjectiveSLOGraphDataMap.put(serviceLevelObjective, sloGraphData);
@@ -630,7 +657,7 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
     updateOperations.set(ServiceLevelObjectiveKeys.serviceLevelIndicators,
         serviceLevelIndicatorService.update(projectParams, serviceLevelObjectiveDTO.getServiceLevelIndicators(),
             serviceLevelObjectiveDTO.getIdentifier(), serviceLevelObjective.getServiceLevelIndicators(),
-            serviceLevelObjective.getMonitoredServiceIdentifier(), serviceLevelObjective.getHealthSourceIdentifier(),
+            serviceLevelObjectiveDTO.getMonitoredServiceRef(), serviceLevelObjectiveDTO.getHealthSourceRef(),
             timePeriod, currentTimePeriod));
     updateOperations.set(ServiceLevelObjectiveKeys.sloTarget,
         sloTargetTypeSLOTargetTransformerMap.get(serviceLevelObjectiveDTO.getTarget().getType())
@@ -640,6 +667,7 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
     updateOperations.set(ServiceLevelObjectiveKeys.notificationRuleRefs,
         getNotificationRuleRefs(projectParams, serviceLevelObjective, serviceLevelObjectiveDTO));
     hPersistence.update(serviceLevelObjective, updateOperations);
+    serviceLevelObjective = getEntity(projectParams, serviceLevelObjectiveDTO.getIdentifier());
     return serviceLevelObjective;
   }
 
@@ -808,6 +836,14 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
                  .build(),
           serviceLevelObjective.getIdentifier());
     });
+  }
+
+  private List<ServiceLevelObjective> filterSLOs(
+      List<ServiceLevelObjective> serviceLevelObjectiveList, String filterByName) {
+    return serviceLevelObjectiveList.stream()
+        .filter(serviceLevelObjective
+            -> serviceLevelObjective.getName().toLowerCase().contains(filterByName.trim().toLowerCase()))
+        .collect(Collectors.toList());
   }
 
   @Value

@@ -7,12 +7,23 @@
 
 package io.harness.ci.stateutils.buildstate;
 
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_REF;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_NETRC_MACHINE;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_REMOTE_URL;
+import static io.harness.rule.OwnerRule.JAMES_RICKS;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.joor.Reflect.on;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
 
+import io.harness.beans.sweepingoutputs.CodebaseSweepingOutput;
 import io.harness.category.element.UnitTests;
 import io.harness.ci.buildstate.CodebaseUtils;
+import io.harness.ci.buildstate.ConnectorUtils;
+import io.harness.ci.executionplan.CIExecutionPlanTestHelper;
 import io.harness.ci.executionplan.CIExecutionTestBase;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.ConnectorType;
@@ -23,12 +34,43 @@ import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectionType
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubAuthenticationDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabAuthenticationDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
+import io.harness.exception.ngexception.CIStageExecutionException;
+import io.harness.ng.core.NGAccess;
+import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
+import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
+import io.harness.yaml.extended.ci.codebase.CodeBase;
 
+import com.google.inject.Inject;
+import java.util.Map;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 
 public class CodebaseUtilsTest extends CIExecutionTestBase {
+  @Inject private CIExecutionPlanTestHelper ciExecutionPlanTestHelper;
+  @Inject public CodebaseUtils codebaseUtils;
+  @Mock private ConnectorUtils connectorUtils;
+  @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
+  private Ambiance ambiance;
+
+  @Before
+  public void setUp() {
+    on(codebaseUtils).set("connectorUtils", connectorUtils);
+    on(codebaseUtils).set("executionSweepingOutputResolver", executionSweepingOutputService);
+    ambiance = Ambiance.newBuilder()
+                   .putSetupAbstractions("accountId", "accountId")
+                   .putSetupAbstractions("projectIdentifier", "projectId")
+                   .putSetupAbstractions("orgIdentifier", "orgIdentifier")
+                   .build();
+  }
+
   @Test
   @Owner(developers = RAGHAV_GUPTA)
   @Category(UnitTests.class)
@@ -136,5 +178,147 @@ public class CodebaseUtilsTest extends CIExecutionTestBase {
 
     String completeURL = CodebaseUtils.getCompleteURLFromConnector(connectorDetails, "repo");
     assertThat(completeURL).isEqualTo("git@ssh.dev.azure.com:v3/org/project/repo");
+  }
+
+  @Test
+  @Owner(developers = JAMES_RICKS)
+  @Category(UnitTests.class)
+  public void testGetGitConnectorSkipClone() {
+    NGAccess ngAccess = Mockito.mock(NGAccess.class);
+    CodeBase codeBase = CodeBase.builder().build();
+    final ConnectorDetails gitConnector = codebaseUtils.getGitConnector(ngAccess, codeBase, true);
+    assertThat(gitConnector).isNull();
+  }
+
+  @Test(expected = CIStageExecutionException.class)
+  @Owner(developers = JAMES_RICKS)
+  @Category(UnitTests.class)
+  public void testGetGitConnectorNullCodeBase() {
+    codebaseUtils.getGitConnector(null, null, false);
+  }
+
+  @Test(expected = CIStageExecutionException.class)
+  @Owner(developers = JAMES_RICKS)
+  @Category(UnitTests.class)
+  public void testGetGitConnectorNullConnectorRefValue() {
+    CodeBase codeBase = CodeBase.builder().connectorRef(ParameterField.createValueField(null)).build();
+    codebaseUtils.getGitConnector(null, codeBase, false);
+  }
+
+  @Test(expected = CIStageExecutionException.class)
+  @Owner(developers = JAMES_RICKS)
+  @Category(UnitTests.class)
+  public void testGetGitConnectorNullConnectorRef() {
+    codebaseUtils.getGitConnector(null, null);
+  }
+
+  @Test
+  @Owner(developers = JAMES_RICKS)
+  @Category(UnitTests.class)
+  public void testGetGitConnectorCodebase() {
+    String connectorRefValue = "myConnectorRef";
+    ConnectorDetails connectorDetails = ConnectorDetails.builder().connectorType(ConnectorType.GITHUB).build();
+    when(connectorUtils.getConnectorDetails(any(), eq(connectorRefValue))).thenReturn(connectorDetails);
+    CodeBase codeBase = CodeBase.builder().connectorRef(ParameterField.createValueField(connectorRefValue)).build();
+    final ConnectorDetails gitConnector = codebaseUtils.getGitConnector(null, codeBase, false);
+    assertThat(gitConnector).isEqualTo(connectorDetails);
+  }
+
+  @Test
+  @Owner(developers = JAMES_RICKS)
+  @Category(UnitTests.class)
+  public void testGetGitConnector() {
+    String connectorRefValue = "myConnectorRef";
+    ConnectorDetails connectorDetails = ConnectorDetails.builder().connectorType(ConnectorType.GITHUB).build();
+    when(connectorUtils.getConnectorDetails(any(), eq(connectorRefValue))).thenReturn(connectorDetails);
+    final ConnectorDetails gitConnector = codebaseUtils.getGitConnector(null, connectorRefValue);
+    assertThat(gitConnector).isEqualTo(connectorDetails);
+  }
+
+  @Test
+  @Owner(developers = JAMES_RICKS)
+  @Category(UnitTests.class)
+  public void testGetGitEnvVariablesCodeBaseSkipGitClone() {
+    final Map<String, String> gitEnvVariables = codebaseUtils.getGitEnvVariables(null, null, true);
+    assertThat(gitEnvVariables).isEmpty();
+  }
+
+  @Test(expected = CIStageExecutionException.class)
+  @Owner(developers = JAMES_RICKS)
+  @Category(UnitTests.class)
+  public void testGetGitEnvVariablesNullCodebase() {
+    codebaseUtils.getGitEnvVariables(null, null, false);
+  }
+
+  @Test
+  @Owner(developers = JAMES_RICKS)
+  @Category(UnitTests.class)
+  public void testGetGitEnvVariablesCodeBase() {
+    String repoName = "myRepoName";
+    String scmHostName = "github.com";
+    String scmUrl = "git@" + scmHostName + ":org";
+    ConnectorDetails connectorDetails =
+        ConnectorDetails.builder()
+            .connectorType(ConnectorType.GITHUB)
+            .connectorConfig(GithubConnectorDTO.builder()
+                                 .connectionType(GitConnectionType.ACCOUNT)
+                                 .url(scmUrl)
+                                 .authentication(GithubAuthenticationDTO.builder().authType(GitAuthType.SSH).build())
+                                 .build())
+            .build();
+    CodeBase codeBase = CodeBase.builder().repoName(ParameterField.createValueField(repoName)).build();
+    final Map<String, String> gitEnvVariables = codebaseUtils.getGitEnvVariables(connectorDetails, codeBase, false);
+    assertThat(gitEnvVariables.get(DRONE_NETRC_MACHINE)).isEqualTo(scmHostName);
+    assertThat(gitEnvVariables.get(DRONE_REMOTE_URL)).isEqualTo(scmUrl + "/" + repoName + ".git");
+  }
+
+  @Test
+  @Owner(developers = JAMES_RICKS)
+  @Category(UnitTests.class)
+  public void testGetGitEnvVariables() {
+    String repoName = "myRepoName";
+    String scmHostName = "gitlab.com";
+    String scmUrl = "git@" + scmHostName + ":org";
+    ConnectorDetails connectorDetails =
+        ConnectorDetails.builder()
+            .connectorType(ConnectorType.GITLAB)
+            .connectorConfig(GitlabConnectorDTO.builder()
+                                 .connectionType(GitConnectionType.ACCOUNT)
+                                 .url(scmUrl)
+                                 .authentication(GitlabAuthenticationDTO.builder().authType(GitAuthType.SSH).build())
+                                 .build())
+            .build();
+    final Map<String, String> gitEnvVariables = codebaseUtils.getGitEnvVariables(connectorDetails, repoName);
+    assertThat(gitEnvVariables.get(DRONE_NETRC_MACHINE)).isEqualTo(scmHostName);
+    assertThat(gitEnvVariables.get(DRONE_REMOTE_URL)).isEqualTo(scmUrl + "/" + repoName + ".git");
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testGetRuntimeCodebaseVarsForBitbucket() {
+    ConnectorDetails connectorDetails = ciExecutionPlanTestHelper.getBitBucketConnector();
+    when(executionSweepingOutputService.resolveOptional(any(), any()))
+        .thenReturn(OptionalSweepingOutput.builder()
+                        .found(true)
+                        .output(CodebaseSweepingOutput.builder().sourceBranch("source").build())
+                        .build());
+    final Map<String, String> runtimeCodebaseVars = codebaseUtils.getRuntimeCodebaseVars(ambiance, connectorDetails);
+    assertThat(runtimeCodebaseVars).isNotEmpty();
+    assertThat(runtimeCodebaseVars).containsKey(DRONE_COMMIT_REF);
+    assertThat(runtimeCodebaseVars.get(DRONE_COMMIT_REF)).isEqualTo("+refs/heads/source");
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testGetRuntimeCodebaseVarsForBitbucketWithoutGitConnector() {
+    when(executionSweepingOutputService.resolveOptional(any(), any()))
+        .thenReturn(OptionalSweepingOutput.builder()
+                        .found(true)
+                        .output(CodebaseSweepingOutput.builder().sourceBranch("source").build())
+                        .build());
+    final Map<String, String> runtimeCodebaseVars = codebaseUtils.getRuntimeCodebaseVars(ambiance, null);
+    assertThat(runtimeCodebaseVars).doesNotContainKey(DRONE_COMMIT_REF);
   }
 }

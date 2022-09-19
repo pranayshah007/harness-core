@@ -61,6 +61,7 @@ public class SLODashboardWidget {
   public static class Point {
     long timestamp;
     double value;
+    boolean enabled;
   }
 
   public static SLODashboardWidgetBuilder withGraphData(SLOGraphData sloGraphData) {
@@ -79,7 +80,7 @@ public class SLODashboardWidget {
     int errorBudgetRemaining;
     List<Point> errorBudgetBurndown;
     List<Point> sloPerformanceTrend;
-    @Deprecated boolean isRecalculatingSLI;
+    boolean isRecalculatingSLI;
     boolean isCalculatingSLI;
     public double errorBudgetSpentPercentage() {
       return 100 - errorBudgetRemainingPercentage;

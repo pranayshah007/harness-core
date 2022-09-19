@@ -1,0 +1,29 @@
+environment:
+  name: envtest
+  identifier: envtest
+  tags: {}
+  type: Production
+  orgIdentifier: default
+  projectIdentifier: pq
+  variables:
+    - name: a
+      type: String
+      value: valueab
+  overrides:
+    configFiles:
+      - configFile:
+          identifier: c1
+          spec:
+            store:
+              type: Harness
+              spec:
+                files:
+                  - account:/Sample manifests
+      - configFile:
+          identifier: c2
+          spec:
+            store:
+              type: Harness
+              spec:
+                files:
+                  - account:/Sample manifests

@@ -10,6 +10,7 @@ package io.harness.beans;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.DelegateTaskRank;
@@ -21,6 +22,7 @@ import io.harness.delegate.task.HDelegateTask;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
@@ -53,6 +55,7 @@ import org.mongodb.morphia.annotations.Transient;
 @Data
 @Builder
 @EqualsAndHashCode(exclude = {"uuid", "createdAt", "lastUpdatedAt", "validUntil"})
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "delegateTasks", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 @FieldNameConstants(innerTypeName = "DelegateTaskKeys")
@@ -169,6 +172,14 @@ public class DelegateTask
   private long expiry;
 
   private LinkedList<String> eligibleToExecuteDelegateIds;
+
+  // below 2 used for harness hosted delegattes
+  private boolean executeOnHarnessHostedDelegates;
+  private String secondaryAccountId;
+
+  private boolean emitEvent;
+  private String stageId;
+
   @Transient private List<String> broadcastToDelegateIds;
 
   @Transient private List<String> taskActivityLogs;

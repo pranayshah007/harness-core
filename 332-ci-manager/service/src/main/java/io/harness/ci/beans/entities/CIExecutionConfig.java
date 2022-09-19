@@ -9,8 +9,9 @@ package io.harness.ci.beans.entities;
 
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotation.RecasterAlias;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.ci.config.VmImageConfig;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAware;
@@ -30,8 +31,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "CIExecutionConfigKeys")
+@StoreIn(DbAliases.CIMANAGER)
 @Entity(value = "ciexecutionconfig", noClassnameStored = true)
-@StoreIn("harnessci")
 @Document("ciexecutionconfig")
 @HarnessEntity(exportable = true)
 @TypeAlias("ciExecutionConfig")
@@ -45,6 +46,7 @@ public class CIExecutionConfig implements PersistentEntity, UuidAware, CreatedAt
   @NotBlank String securityImage;
   @NotBlank String buildAndPushDockerRegistryImage;
   @NotBlank String buildAndPushECRImage;
+  @NotBlank String buildAndPushACRImage;
   @NotBlank String buildAndPushGCRImage;
   @NotBlank String gcsUploadImage;
   @NotBlank String s3UploadImage;

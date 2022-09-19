@@ -6,6 +6,7 @@
 
 CONFIG_FILE=/opt/harness/config.yml
 REDISSON_CACHE_FILE=/opt/harness/redisson-jcache.yaml
+ENTERPRISE_REDISSON_CACHE_FILE=/opt/harness/enterprise-redisson-jcache.yaml
 
 replace_key_value () {
   CONFIG_KEY="$1";
@@ -113,20 +114,6 @@ fi
 
 if [[ "" != "$MONGO_TRANSACTIONS_ALLOWED" ]]; then
   yq write -i $CONFIG_FILE mongo.transactionsEnabled $MONGO_TRANSACTIONS_ALLOWED
-fi
-
-if [[ "" != "$PMS_MONGO_URI" ]]; then
-  yq write -i $CONFIG_FILE pmsMongo.uri "${PMS_MONGO_URI//\\&/&}"
-fi
-
-if [[ "" != "$PMS_MONGO_HOSTS_AND_PORTS" ]]; then
-  yq delete -i $CONFIG_FILE pmsMongo.uri
-  yq write -i $CONFIG_FILE pmsMongo.username "$PMS_MONGO_USERNAME"
-  yq write -i $CONFIG_FILE pmsMongo.password "$PMS_MONGO_PASSWORD"
-  yq write -i $CONFIG_FILE pmsMongo.database "$PMS_MONGO_DATABASE"
-  yq write -i $CONFIG_FILE pmsMongo.schema "$PMS_MONGO_SCHEMA"
-  write_mongo_hosts_and_ports pmsMongo "$PMS_MONGO_HOSTS_AND_PORTS"
-  write_mongo_params pmsMongo "$PMS_MONGO_PARAMS"
 fi
 
 if [[ "" != "$MANAGER_TARGET" ]]; then
@@ -344,6 +331,26 @@ if [[ "" != "$LOCK_CONFIG_REDIS_URL" ]]; then
   yq write -i $REDISSON_CACHE_FILE singleServerConfig.address "$LOCK_CONFIG_REDIS_URL"
 fi
 
+if [[ "" != "$GITLAB_OAUTH_CLIENT" ]]; then
+  yq write -i $CONFIG_FILE gitlabConfig.clientId "$GITLAB_OAUTH_CLIENT"
+fi
+
+if [[ "" != "$GITLAB_OAUTH_SECRET" ]]; then
+  yq write -i $CONFIG_FILE gitlabConfig.clientSecret "$GITLAB_OAUTH_SECRET"
+fi
+
+if [[ "" != "$GITLAB_OAUTH_CALLBACK_URL" ]]; then
+  yq write -i $CONFIG_FILE gitlabConfig.callbackUrl "$GITLAB_OAUTH_CALLBACK_URL"
+fi
+
+if [[ "" != "$OAUTH_REFRESH_FREQUECY" ]]; then
+  yq write -i $CONFIG_FILE oauthRefreshFrequency "$OAUTH_REFRESH_FREQUECY"
+fi
+
+if [[ "" != "$OAUTH_REFRESH_ENABLED" ]]; then
+  yq write -i $CONFIG_FILE oauthRefreshEnabled "$OAUTH_REFRESH_ENABLED"
+fi
+
 if [[ "" != "$DELEGATE_STATUS_ENDPOINT" ]]; then
   yq write -i $CONFIG_FILE delegateStatusEndpoint "$DELEGATE_STATUS_ENDPOINT"
 fi
@@ -374,8 +381,60 @@ if [[ "" != "$REDIS_NETTY_THREADS" ]]; then
   yq write -i $REDISSON_CACHE_FILE nettyThreads "$REDIS_NETTY_THREADS"
 fi
 
+yq delete -i $ENTERPRISE_REDISSON_CACHE_FILE codec
+
+if [[ "$REDIS_SCRIPT_CACHE" == "false" ]]; then
+  yq write -i $ENTERPRISE_REDISSON_CACHE_FILE useScriptCache false
+fi
+
+if [[ "" != "$EVENTS_FRAMEWORK_NETTY_THREADS" ]]; then
+  yq write -i $ENTERPRISE_REDISSON_CACHE_FILE nettyThreads "$EVENTS_FRAMEWORK_NETTY_THREADS"
+fi
+
+if [[ "" != "$EVENTS_FRAMEWORK_REDIS_URL" ]]; then
+  yq write -i $ENTERPRISE_REDISSON_CACHE_FILE singleServerConfig.address "$EVENTS_FRAMEWORK_REDIS_URL"
+fi
+
+if [[ "" != "$EVENTS_FRAMEWORK_REDIS_USERNAME" ]]; then
+  yq write -i $ENTERPRISE_REDISSON_CACHE_FILE singleServerConfig.username "$EVENTS_FRAMEWORK_REDIS_USERNAME"
+fi
+
+if [[ "" != "$EVENTS_FRAMEWORK_REDIS_PASSWORD" ]]; then
+  yq write -i $ENTERPRISE_REDISSON_CACHE_FILE singleServerConfig.password "$EVENTS_FRAMEWORK_REDIS_PASSWORD"
+fi
+
+if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PATH" ]]; then
+  yq write -i $ENTERPRISE_REDISSON_CACHE_FILE singleServerConfig.sslTruststore file:"$EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PATH"
+fi
+
+if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD" ]]; then
+  yq write -i $ENTERPRISE_REDISSON_CACHE_FILE singleServerConfig.sslTruststorePassword "$EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD"
+fi
+
+if [[ "$EVENTS_FRAMEWORK_USE_SENTINEL" == "true" ]]; then
+  yq delete -i $ENTERPRISE_REDISSON_CACHE_FILE singleServerConfig
+
+  if [[ "" != "$EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME" ]]; then
+    yq write -i $ENTERPRISE_REDISSON_CACHE_FILE sentinelServersConfig.masterName "$EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME"
+  fi
+
+  if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then
+    IFS=',' read -ra SENTINEL_URLS <<< "$EVENTS_FRAMEWORK_REDIS_SENTINELS"
+    INDEX=0
+    for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
+      yq write -i $ENTERPRISE_REDISSON_CACHE_FILE sentinelServersConfig.sentinelAddresses.[$INDEX] "${REDIS_SENTINEL_URL}"
+      INDEX=$(expr $INDEX + 1)
+    done
+  fi
+fi
+
+if [[ "" != "$CD_TSDB_RETENTION_PERIOD_MONTHS" ]]; then
+  yq write -i $CD_TSDB_RETENTION_PERIOD_MONTHS cdTsDbRetentionPeriodMonths "$CD_TSDB_RETENTION_PERIOD_MONTHS"
+fi
+
 replace_key_value cacheConfig.cacheNamespace $CACHE_NAMESPACE
 replace_key_value cacheConfig.cacheBackend $CACHE_BACKEND
+replace_key_value cacheConfig.enterpriseCacheEnabled $ENTERPRISE_CACHE_ENABLED
 
 replace_key_value eventsFramework.redis.sentinel $EVENTS_FRAMEWORK_USE_SENTINEL
 replace_key_value eventsFramework.redis.envNamespace $EVENTS_FRAMEWORK_ENV_NAMESPACE

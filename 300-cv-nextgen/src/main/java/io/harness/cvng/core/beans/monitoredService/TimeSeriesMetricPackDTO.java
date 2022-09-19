@@ -7,26 +7,33 @@
 
 package io.harness.cvng.core.beans.monitoredService;
 
-import static io.harness.cvng.CVConstants.DATA_SOURCE_TYPE;
 import static io.harness.cvng.CVConstants.METRIC_THRESHOLD_METRIC_TYPE;
 
 import io.harness.cvng.beans.DataSourceType;
+import io.harness.cvng.beans.TimeSeriesThresholdCriteria;
+import io.harness.cvng.beans.TimeSeriesThresholdType;
+import io.harness.cvng.core.beans.monitoredService.metricThresholdSpec.FailMetricThresholdSpec;
 import io.harness.cvng.core.beans.monitoredService.metricThresholdSpec.MetricThresholdActionType;
 import io.harness.cvng.core.beans.monitoredService.metricThresholdSpec.MetricThresholdCriteriaType;
 import io.harness.cvng.core.beans.monitoredService.metricThresholdSpec.MetricThresholdSpec;
 import io.harness.cvng.core.entities.MetricPack;
 import io.harness.cvng.core.services.api.MetricPackService;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import lombok.experimental.SuperBuilder;
 
 @Data
@@ -46,15 +53,17 @@ public class TimeSeriesMetricPackDTO {
     return TimeSeriesMetricPackDTO.builder().identifier(metricPack.getIdentifier()).build();
   }
 
-  @SuperBuilder
   @Data
+  @SuperBuilder
+  @FieldDefaults(level = AccessLevel.PRIVATE)
   @NoArgsConstructor
   @JsonIgnoreProperties(ignoreUnknown = true)
   public static class MetricThreshold {
     String groupName;
     String metricName;
     String metricIdentifier;
-    @JsonProperty(DATA_SOURCE_TYPE) MetricThresholdActionType type;
+    String metricType;
+    @JsonProperty(METRIC_THRESHOLD_METRIC_TYPE) MetricThresholdActionType type;
 
     @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = METRIC_THRESHOLD_METRIC_TYPE,
         include = JsonTypeInfo.As.EXTERNAL_PROPERTY, visible = true)
@@ -63,16 +72,59 @@ public class TimeSeriesMetricPackDTO {
     MetricThresholdSpec spec;
     MetricThresholdCriteria criteria;
 
-    @SuperBuilder
+    @JsonIgnore
+    public List<TimeSeriesThresholdCriteria> getTimeSeriesThresholdCriteria() {
+      List<TimeSeriesThresholdCriteria> timeSeriesThresholdCriterias = new ArrayList<>();
+      Integer count = null;
+      if (MetricThresholdActionType.FAIL.equals(type)) {
+        count = ((FailMetricThresholdSpec) spec).getSpec().getCount();
+      }
+      if (Objects.nonNull(criteria.getSpec().greaterThan)) {
+        TimeSeriesThresholdCriteria timeSeriesThresholdCriteria =
+            TimeSeriesThresholdCriteria.builder()
+                .type(criteria.getType().getTimeSeriesThresholdComparisonType())
+                .action(spec.getAction().getTimeSeriesCustomThresholdActions())
+                .occurrenceCount(count)
+                .value(criteria.getType().getRatio(criteria.getSpec().greaterThan))
+                .build();
+        if (MetricThresholdActionType.IGNORE.equals(type)) {
+          timeSeriesThresholdCriteria.setThresholdType(TimeSeriesThresholdType.ACT_WHEN_LOWER);
+        } else {
+          timeSeriesThresholdCriteria.setThresholdType(TimeSeriesThresholdType.ACT_WHEN_HIGHER);
+        }
+        timeSeriesThresholdCriterias.add(timeSeriesThresholdCriteria);
+      }
+      if (Objects.nonNull(criteria.getSpec().lessThan)) {
+        TimeSeriesThresholdCriteria timeSeriesThresholdCriteria =
+            TimeSeriesThresholdCriteria.builder()
+                .type(criteria.getType().getTimeSeriesThresholdComparisonType())
+                .action(spec.getAction().getTimeSeriesCustomThresholdActions())
+                .occurrenceCount(count)
+                .thresholdType(TimeSeriesThresholdType.ACT_WHEN_HIGHER)
+                .value(criteria.getType().getRatio(criteria.getSpec().lessThan))
+                .build();
+        if (MetricThresholdActionType.IGNORE.equals(type)) {
+          timeSeriesThresholdCriteria.setThresholdType(TimeSeriesThresholdType.ACT_WHEN_HIGHER);
+        } else {
+          timeSeriesThresholdCriteria.setThresholdType(TimeSeriesThresholdType.ACT_WHEN_LOWER);
+        }
+        timeSeriesThresholdCriterias.add(timeSeriesThresholdCriteria);
+      }
+      return timeSeriesThresholdCriterias;
+    }
+
     @Data
+    @SuperBuilder
+    @FieldDefaults(level = AccessLevel.PRIVATE)
     @NoArgsConstructor
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class MetricThresholdCriteria {
       MetricThresholdCriteriaType type;
       MetricThresholdCriteriaSpec spec;
 
-      @SuperBuilder
       @Data
+      @SuperBuilder
+      @FieldDefaults(level = AccessLevel.PRIVATE)
       @NoArgsConstructor
       @JsonIgnoreProperties(ignoreUnknown = true)
       public static class MetricThresholdCriteriaSpec {

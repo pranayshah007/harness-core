@@ -10,7 +10,7 @@ package io.harness.template.entity;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.EntityName;
@@ -61,11 +61,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "TemplateEntityKeys")
+@StoreIn(DbAliases.TEMPLATE)
 @Entity(value = "templatesNG", noClassnameStored = true)
 @Document("templatesNG")
 @TypeAlias("templatesNG")
 @HarnessEntity(exportable = true)
-@StoreIn(DbAliases.TEMPLATE)
 public class TemplateEntity
     implements GitAware, GitSyncableEntity, PersistentEntity, AccountAccess, UuidAware, CreatedAtAware, UpdatedAtAware {
   @Setter @NonFinal @Id @org.mongodb.morphia.annotations.Id String uuid;
@@ -109,6 +109,7 @@ public class TemplateEntity
   @Wither @Setter @NonFinal StoreType storeType;
   @Wither @Setter @NonFinal String repo;
   @Wither @Setter @NonFinal String connectorRef;
+  @Wither @Setter @NonFinal String repoURL;
 
   @Override
   public String getAccountIdentifier() {
@@ -183,6 +184,12 @@ public class TemplateEntity
                  .fields(Arrays.asList(TemplateEntityKeys.accountId, TemplateEntityKeys.projectIdentifier,
                      TemplateEntityKeys.orgIdentifier, TemplateEntityKeys.isFromDefaultBranch))
                  .descSortField(TemplateEntityKeys.createdAt)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_repoURL_filePath")
+                 .field(TemplateEntityKeys.accountId)
+                 .field(TemplateEntityKeys.repoURL)
+                 .field(TemplateEntityKeys.filePath)
                  .build())
         .build();
   }

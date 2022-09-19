@@ -11,10 +11,14 @@ import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import static java.lang.String.format;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.PageRequestDTO;
 import io.harness.beans.Scope;
+import io.harness.connector.ConnectorValidationResult;
+import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
@@ -54,20 +58,33 @@ import io.harness.product.ci.scm.proto.GetUserReposResponse;
 import io.harness.product.ci.scm.proto.ListBranchesWithDefaultResponse;
 import io.harness.product.ci.scm.proto.Repository;
 import io.harness.product.ci.scm.proto.UpdateFileResponse;
+import io.harness.utils.FilePathUtils;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
-import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
-@AllArgsConstructor(onConstructor = @__({ @Inject }))
+@Slf4j
 @OwnedBy(HarnessTeam.PL)
 public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
   GitSyncConnectorHelper gitSyncConnectorHelper;
+  @Named("connectorDecoratorService") ConnectorService connectorService;
   ScmOrchestratorService scmOrchestratorService;
+
+  @Inject
+  public ScmFacilitatorServiceImpl(GitSyncConnectorHelper gitSyncConnectorHelper,
+      @Named("connectorDecoratorService") ConnectorService connectorService,
+      ScmOrchestratorService scmOrchestratorService) {
+    this.gitSyncConnectorHelper = gitSyncConnectorHelper;
+    this.connectorService = connectorService;
+    this.scmOrchestratorService = scmOrchestratorService;
+  }
 
   @Override
   public List<String> listBranchesUsingConnector(String accountIdentifier, String orgIdentifier,
@@ -115,6 +132,17 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
           ErrorMetadata.builder().connectorRef(connectorRef).build());
     }
 
+    CompletableFuture.runAsync(() -> {
+      try {
+        ConnectorValidationResult testConnectionResult =
+            connectorService.testConnection(accountIdentifier, null, null, "harnessImage");
+        log.info(
+            format("testConnectionResult for harnessImageConnector: %s, account %s" + testConnectionResult.getStatus(),
+                accountIdentifier));
+      } catch (Exception ex) {
+        log.info("failed to test connection for harnessImageConnector for account " + accountIdentifier, ex);
+      }
+    });
     return convertToUserRepo(response.getReposList());
   }
 
@@ -145,6 +173,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
         emptyIfNull(listBranchesWithDefaultResponse.getBranchesList())
             .stream()
             .map(branchName -> GitBranchDetailsDTO.builder().name(branchName).build())
+            .distinct()
             .collect(Collectors.toList());
     return GitBranchesResponseDTO.builder()
         .branches(gitBranches)
@@ -382,7 +411,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
         return GitClientHelper.getCompleteHTTPRepoUrlForAzureRepoSaas(gitConnectionUrl);
       default:
         throw new InvalidRequestException(
-            String.format("Connector of given type : %s isn't supported", scmConnector.getConnectorType()));
+            format("Connector of given type : %s isn't supported", scmConnector.getConnectorType()));
     }
   }
 
@@ -407,16 +436,17 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
 
   @VisibleForTesting
   protected void createNewBranch(Scope scope, ScmConnector scmConnector, String newBranchName, String baseBranchName) {
+    String branchName = FilePathUtils.removeStartingAndEndingSlash(newBranchName);
     CreateBranchResponse createBranchResponse =
         scmOrchestratorService.processScmRequestUsingConnectorSettings(scmClientFacilitatorService
-            -> scmClientFacilitatorService.createNewBranch(scope, scmConnector, newBranchName, baseBranchName),
+            -> scmClientFacilitatorService.createNewBranch(scope, scmConnector, branchName, baseBranchName),
             scmConnector);
 
     if (ScmApiErrorHandlingHelper.isFailureResponse(
             createBranchResponse.getStatus(), scmConnector.getConnectorType())) {
       ScmApiErrorHandlingHelper.processAndThrowError(ScmApis.CREATE_BRANCH, scmConnector.getConnectorType(),
           scmConnector.getUrl(), createBranchResponse.getStatus(), createBranchResponse.getError(),
-          ErrorMetadata.builder().newBranchName(newBranchName).branchName(baseBranchName).build());
+          ErrorMetadata.builder().newBranchName(branchName).branchName(baseBranchName).build());
     }
   }
 

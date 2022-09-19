@@ -19,6 +19,7 @@ import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_REQUEST_MI
 import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_WORK_DIR;
 import static io.harness.ci.commonconstants.CIExecutionConstants.UNIX_STEP_COMMAND;
 import static io.harness.ci.commonconstants.CIExecutionConstants.WIN_STEP_COMMAND;
+import static io.harness.delegate.beans.ci.pod.CIContainerType.BACKGROUND;
 import static io.harness.delegate.beans.ci.pod.CIContainerType.PLUGIN;
 import static io.harness.delegate.beans.ci.pod.CIContainerType.RUN;
 
@@ -29,14 +30,14 @@ import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
 import io.harness.beans.environment.pod.container.ContainerImageDetails;
 import io.harness.beans.execution.ManualExecutionSource;
 import io.harness.beans.executionargs.CIExecutionArgs;
-import io.harness.beans.stages.IntegrationStageConfig;
-import io.harness.beans.stages.IntegrationStageConfigImpl;
+import io.harness.beans.stages.IntegrationStageNode;
+import io.harness.cimanager.stages.IntegrationStageConfig;
+import io.harness.cimanager.stages.IntegrationStageConfigImpl;
 import io.harness.delegate.beans.ci.pod.ContainerResourceParams;
 import io.harness.exception.InvalidRequestException;
 import io.harness.k8s.model.ImageDetails;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
-import io.harness.plancreator.stages.stage.StageElementConfig;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -80,8 +81,15 @@ public class K8InitializeStepUtilsHelper {
   private static final Integer GIT_STEP_LIMIT_MEM = 250;
   private static final Integer GIT_STEP_LIMIT_CPU = 300;
 
-  public static StageElementConfig getIntegrationStageElementConfig() {
-    return StageElementConfig.builder().identifier("ciStage").type("CI").stageType(getIntegrationStageConfig()).build();
+  private static final String BACKGROUND_STEP_LIMIT_MEM = "500Mi";
+  private static final String BACKGROUND_STEP_LIMIT_CPU = "300m";
+
+  public static IntegrationStageNode getIntegrationStageNode() {
+    return IntegrationStageNode.builder()
+        .identifier("ciStage")
+        .type(IntegrationStageNode.StepType.CI)
+        .integrationStageConfig((IntegrationStageConfigImpl) getIntegrationStageConfig())
+        .build();
   }
 
   public static IntegrationStageConfig getIntegrationStageConfig() {
@@ -202,7 +210,7 @@ public class K8InitializeStepUtilsHelper {
   public static JsonNode getDockerStepElementConfigAsJsonNode() {
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode stepElementConfig = mapper.createObjectNode();
-    stepElementConfig.put("identifier", PLUGIN_STEP_ID);
+    stepElementConfig.put("identifier", "step-docker");
 
     stepElementConfig.put("type", "BuildAndPushDockerRegistry");
     stepElementConfig.put("name", "docker step");
@@ -240,6 +248,33 @@ public class K8InitializeStepUtilsHelper {
     settings.put(GIT_CLONE_DEPTH_ATTRIBUTE, GIT_CLONE_MANUAL_DEPTH.toString());
     stepSpecType.set("settings", settings);
 
+    stepElementConfig.set("spec", stepSpecType);
+    return stepElementConfig;
+  }
+
+  public static JsonNode getBackgroundStepElementConfigAsJsonNode() {
+    ObjectMapper mapper = new ObjectMapper();
+    ObjectNode stepElementConfig = mapper.createObjectNode();
+    stepElementConfig.put("identifier", RUN_STEP_ID);
+
+    stepElementConfig.put("type", "Background");
+    stepElementConfig.put("name", RUN_STEP_NAME);
+
+    ObjectNode stepSpecType = mapper.createObjectNode();
+    stepSpecType.put("identifier", RUN_STEP_ID);
+    stepSpecType.put("name", RUN_STEP_NAME);
+    stepSpecType.put("command", BUILD_SCRIPT);
+    stepSpecType.put("image", RUN_STEP_IMAGE);
+    stepSpecType.put("connectorRef", RUN_STEP_CONNECTOR);
+    stepSpecType.put("connectorRef", RUN_STEP_CONNECTOR);
+
+    ArrayNode arrayNode = mapper.createArrayNode();
+    arrayNode.add("redis-server");
+
+    stepSpecType.set("entrypoint", arrayNode);
+    stepSpecType.set("resources",
+        mapper.createObjectNode().set("limits",
+            mapper.createObjectNode().put("cpu", BACKGROUND_STEP_LIMIT_CPU).put("memory", BACKGROUND_STEP_LIMIT_MEM)));
     stepElementConfig.set("spec", stepSpecType);
     return stepElementConfig;
   }
@@ -282,6 +317,12 @@ public class K8InitializeStepUtilsHelper {
         .stepIdentifier(RUN_STEP_ID)
         .stepName(RUN_STEP_NAME)
         .build();
+  }
+
+  public static ContainerDefinitionInfo getBackgroundStepContainer(Integer index) {
+    ContainerDefinitionInfo containerDefinitionInfo = getRunStepContainer(index);
+    containerDefinitionInfo.setContainerType(BACKGROUND);
+    return containerDefinitionInfo;
   }
 
   private static ContainerDefinitionInfo getGitPluginStepContainer(Integer index) {
@@ -438,19 +479,19 @@ public class K8InitializeStepUtilsHelper {
         .build();
   }
 
-  public static StageElementConfig getIntegrationStageElementConfigWithStepGroup() throws Exception {
-    return StageElementConfig.builder()
+  public static IntegrationStageNode getIntegrationStageNodeWithStepGroup() throws Exception {
+    return IntegrationStageNode.builder()
         .identifier("ciStage")
-        .type("CI")
-        .stageType(getIntegrationStageConfigWithStepGroup1())
+        .type(IntegrationStageNode.StepType.CI)
+        .integrationStageConfig((IntegrationStageConfigImpl) getIntegrationStageConfigWithStepGroup1())
         .build();
   }
 
-  public static StageElementConfig getIntegrationStageElementConfigWithStepGroup1() throws Exception {
-    return StageElementConfig.builder()
+  public static IntegrationStageNode getIntegrationStageNodeWithStepGroup1() throws Exception {
+    return IntegrationStageNode.builder()
         .identifier("ciStage")
-        .type("CI")
-        .stageType(getIntegrationStageConfigWithStepGroup1())
+        .type(IntegrationStageNode.StepType.CI)
+        .integrationStageConfig((IntegrationStageConfigImpl) getIntegrationStageConfigWithStepGroup1())
         .build();
   }
 

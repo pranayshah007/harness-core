@@ -27,7 +27,7 @@ public interface ApiKeyService extends OwnedByAccount {
   void delete(String accountId, @NotEmpty String uuid);
 
   ApiKeyEntry get(@NotEmpty String uuid, @NotEmpty String accountId);
-  void validate(@NotEmpty String key, @NotEmpty String accountId);
+  Boolean validate(String key, String accountId);
   String getAccountIdFromApiKey(String apiKey);
   ApiKeyEntry getByKey(String key, String accountId, boolean details);
   UserPermissionInfo getApiKeyPermissions(ApiKeyEntry apiKeyEntry, String accountId);
@@ -37,5 +37,5 @@ public interface ApiKeyService extends OwnedByAccount {
   void evictAndRebuildPermissionsAndRestrictions(String accountId, boolean rebuild);
   void evictPermissionsAndRestrictionsForUserGroup(UserGroup userGroup);
   void loadUserGroupsForApiKeys(List<ApiKeyEntry> apiKeyEntries, String accountId);
-  Boolean isApiKeyValid(@NotEmpty String key, @NotEmpty String accountId);
+  Boolean isApiKeyValid(String key, String accountId);
 }

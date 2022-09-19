@@ -35,6 +35,8 @@ import io.harness.ci.config.VmImageConfig;
 import io.harness.ci.execution.OrchestrationExecutionEventHandlerRegistrar;
 import io.harness.ci.ff.CIFeatureFlagNoopServiceImpl;
 import io.harness.ci.ff.CIFeatureFlagService;
+import io.harness.ci.license.CILicenseNoopServiceImpl;
+import io.harness.ci.license.CILicenseService;
 import io.harness.ci.registrars.ExecutionAdvisers;
 import io.harness.ci.registrars.ExecutionRegistrar;
 import io.harness.cistatus.service.GithubService;
@@ -133,6 +135,12 @@ public class CIExecutionRule implements MethodRule, InjectorRuleMixin, MongoRule
         bind(CIFeatureFlagService.class).to(CIFeatureFlagNoopServiceImpl.class);
       }
     });
+    modules.add(new AbstractModule() {
+      @Override
+      protected void configure() {
+        bind(CILicenseService.class).to(CILicenseNoopServiceImpl.class);
+      }
+    });
 
     modules.add(new AbstractModule() {
       @Override
@@ -193,6 +201,7 @@ public class CIExecutionRule implements MethodRule, InjectorRuleMixin, MongoRule
         CIStepConfig.builder()
             .gitCloneConfig(StepImageConfig.builder().image("gc:1.2.3").build())
             .buildAndPushDockerRegistryConfig(StepImageConfig.builder().image("bpdr:1.2.3").build())
+            .buildAndPushACRConfig(StepImageConfig.builder().image("bpacr:1.2.3").build())
             .buildAndPushECRConfig(StepImageConfig.builder().image("bpecr:1.2.3").build())
             .buildAndPushGCRConfig(StepImageConfig.builder().image("bpgcr:1.2.3").build())
             .gcsUploadConfig(StepImageConfig.builder().image("gcsupload:1.2.3").build())

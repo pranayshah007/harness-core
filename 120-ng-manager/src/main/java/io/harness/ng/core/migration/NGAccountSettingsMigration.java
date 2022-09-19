@@ -9,26 +9,19 @@ package io.harness.ng.core.migration;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
-import io.harness.account.AccountClient;
 import io.harness.migration.NGMigration;
 import io.harness.ng.core.accountsetting.services.NGAccountSettingService;
-import io.harness.ng.core.dto.AccountDTO;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.ng.core.services.OrganizationService;
 
 import com.google.inject.Inject;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class NGAccountSettingsMigration implements NGMigration {
   @Inject NGAccountSettingService accountSettingService;
-  @Inject AccountClient accountClient;
+  @Inject OrganizationService organizationService;
   @Override
   public void migrate() {
-    List<AccountDTO> accountDTOList = RestClientUtils.getResponse(accountClient.getAllAccounts());
-    final List<String> accountIdsToBeInserted = accountDTOList.stream()
-                                                    .filter(AccountDTO::isNextGenEnabled)
-                                                    .map(AccountDTO::getIdentifier)
-                                                    .collect(Collectors.toList());
+    final List<String> accountIdsToBeInserted = organizationService.getDistinctAccounts();
 
     if (isNotEmpty(accountIdsToBeInserted)) {
       for (String accountId : accountIdsToBeInserted) {

@@ -47,7 +47,10 @@ public class RuntimeInputFormHelper {
     Map<FQN, Object> templateMap = new LinkedHashMap<>();
     fullMap.keySet().forEach(key -> {
       String value = HarnessStringUtils.removeLeadingAndTrailingQuotesBothOrNone(fullMap.get(key).toString());
-      if ((keepInput && NGExpressionUtils.matchesInputSetPattern(value))
+      // keepInput can be considered always true if value matches executionInputPattern. As the input will be provided
+      // at execution time.
+      if (NGExpressionUtils.matchesExecutionInputPattern(value)
+          || (keepInput && NGExpressionUtils.matchesInputSetPattern(value))
           || (!keepInput && !NGExpressionUtils.matchesInputSetPattern(value) && !key.isIdentifierOrVariableName()
               && !key.isType())) {
         templateMap.put(key, fullMap.get(key));
@@ -58,7 +61,7 @@ public class RuntimeInputFormHelper {
   }
 
   public String createExecutionInputFormAndUpdateYamlField(JsonNode jsonNode) {
-    YamlConfig yamlConfig = new YamlConfig(jsonNode);
+    YamlConfig yamlConfig = new YamlConfig(jsonNode, true);
     Map<FQN, Object> fullMap = yamlConfig.getFqnToValueMap();
     Map<FQN, Object> templateMap = new LinkedHashMap<>();
     fullMap.keySet().forEach(key -> {
@@ -86,7 +89,7 @@ public class RuntimeInputFormHelper {
         (ObjectNode) jsonNode.get(YAMLFieldNameConstants.STAGE).get(YAMLFieldNameConstants.SPEC),
         YAMLFieldNameConstants.EXECUTION);
 
-    YamlConfig yamlConfig = new YamlConfig(jsonNode);
+    YamlConfig yamlConfig = new YamlConfig(jsonNode, true);
 
     Map<FQN, Object> fullMap = yamlConfig.getFqnToValueMap();
     Map<FQN, Object> templateMap = new LinkedHashMap<>();

@@ -10,11 +10,13 @@ package software.wings.beans;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.delegate.beans.DelegateConfiguration.DelegateConfigurationKeys;
 
+import static software.wings.beans.Account.AccountKeys;
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.common.VerificationConstants.SERVICE_GUAARD_LIMIT;
 
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.ChangeDataCapture;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -27,6 +29,7 @@ import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdUniqueIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.account.DefaultExperience;
 import io.harness.ng.core.account.ServiceAccountConfig;
@@ -65,9 +68,10 @@ import org.mongodb.morphia.annotations.Transient;
 @TargetModule(HarnessModule._955_ACCOUNT_MGMT)
 @FieldNameConstants(innerTypeName = "AccountKeys")
 @JsonIgnoreProperties(ignoreUnknown = true)
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "accounts", noClassnameStored = true)
 @HarnessEntity(exportable = true)
-@ChangeDataCapture(table = "accounts", fields = {}, handler = "Account")
+@ChangeDataCapture(table = "accounts", fields = {AccountKeys.accountName, AccountKeys.createdAt}, handler = "")
 public class Account extends Base implements PersistentRegularIterable, NGMigrationEntity {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
@@ -172,6 +176,8 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
   @Getter @Setter private Long serviceGuardLimit = SERVICE_GUAARD_LIMIT;
 
   @Getter @Setter ServiceAccountConfig serviceAccountConfig;
+
+  @FdIndex @Getter @Setter boolean globalDelegateAccount;
 
   private transient Map<String, String> defaults = new HashMap<>();
   /**
@@ -597,6 +603,7 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
     private boolean isProductLed;
     private boolean accountActivelyUsed;
     private ServiceAccountConfig serviceAccountConfig;
+    private boolean globalDelegateAccount;
 
     private Builder() {}
 
@@ -766,6 +773,11 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
 
     public Builder withServiceAccountConfig(ServiceAccountConfig serviceAccountConfig) {
       this.serviceAccountConfig = serviceAccountConfig;
+      return this;
+    }
+
+    public Builder withGlobalDelegateAccount(boolean globalDelegateAccount) {
+      this.globalDelegateAccount = globalDelegateAccount;
       return this;
     }
 

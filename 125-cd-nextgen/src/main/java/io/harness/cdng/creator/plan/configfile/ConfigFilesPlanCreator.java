@@ -26,6 +26,7 @@ import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
@@ -64,24 +65,62 @@ public class ConfigFilesPlanCreator extends ChildrenPlanCreator<ConfigFiles> {
       PlanCreationContext ctx, ConfigFiles config) {
     LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
 
-    ServiceConfig serviceConfig = (ServiceConfig) kryoSerializer.asInflatedObject(
-        ctx.getDependency().getMetadataMap().get(YamlTypes.SERVICE_CONFIG).toByteArray());
+    if (ctx.getDependency().getMetadataMap().containsKey(YamlTypes.SERVICE_CONFIG)) {
+      // v1
+      ServiceConfig serviceConfig = (ServiceConfig) kryoSerializer.asInflatedObject(
+          ctx.getDependency().getMetadataMap().get(YamlTypes.SERVICE_CONFIG).toByteArray());
 
-    ConfigFileList configFileList = new ConfigFileListBuilder()
-                                        .addServiceDefinition(serviceConfig.getServiceDefinition())
-                                        .addStageOverrides(serviceConfig.getStageOverrides())
-                                        .build();
+      ConfigFileList configFileList = new ConfigFileListBuilder()
+                                          .addServiceDefinition(serviceConfig.getServiceDefinition())
+                                          .addStageOverrides(serviceConfig.getStageOverrides())
+                                          .build();
 
-    if (isEmpty(configFileList.getConfigFiles())) {
-      return planCreationResponseMap;
+      if (isEmpty(configFileList.getConfigFiles())) {
+        return planCreationResponseMap;
+      }
+
+      YamlField configFilesYamlField = ctx.getCurrentField();
+
+      for (Map.Entry<String, ConfigFileStepParameters> identifierToConfigFileStepParametersEntry :
+          configFileList.getConfigFiles().entrySet()) {
+        addDependenciesForIndividualConfigFile(identifierToConfigFileStepParametersEntry.getKey(),
+            identifierToConfigFileStepParametersEntry.getValue(), configFilesYamlField, planCreationResponseMap);
+      }
+    } else if (ctx.getDependency().getMetadataMap().containsKey(YamlTypes.CONFIG_FILES)) {
+      List<ConfigFileWrapper> configFiles = (List<ConfigFileWrapper>) kryoSerializer.asInflatedObject(
+          ctx.getDependency().getMetadataMap().get(YamlTypes.CONFIG_FILES).toByteArray());
+      ConfigFileList configFileList = new ConfigFileListBuilder().addConfigFiles(configFiles).build();
+      if (isEmpty(configFileList.getConfigFiles())) {
+        return planCreationResponseMap;
+      }
+
+      YamlField configFilesYamlField = ctx.getCurrentField();
+
+      for (Map.Entry<String, ConfigFileStepParameters> identifierToConfigFileStepParametersEntry :
+          configFileList.getConfigFiles().entrySet()) {
+        addDependenciesForIndividualConfigFile(identifierToConfigFileStepParametersEntry.getKey(),
+            identifierToConfigFileStepParametersEntry.getValue(), configFilesYamlField, planCreationResponseMap);
+      }
     }
 
-    YamlField configFilesYamlField = ctx.getCurrentField();
+    else if (ctx.getDependency().getMetadataMap().containsKey(YamlTypes.SERVICE_ENTITY)) {
+      // v2
+      NGServiceV2InfoConfig serviceV2InfoConfig = (NGServiceV2InfoConfig) kryoSerializer.asInflatedObject(
+          ctx.getDependency().getMetadataMap().get(YamlTypes.SERVICE_ENTITY).toByteArray());
+      ConfigFileList configFileList =
+          new ConfigFileListBuilder().addServiceDefinition(serviceV2InfoConfig.getServiceDefinition()).build();
 
-    for (Map.Entry<String, ConfigFileStepParameters> identifierToConfigFileStepParametersEntry :
-        configFileList.getConfigFiles().entrySet()) {
-      addDependenciesForIndividualConfigFile(identifierToConfigFileStepParametersEntry.getKey(),
-          identifierToConfigFileStepParametersEntry.getValue(), configFilesYamlField, planCreationResponseMap);
+      if (isEmpty(configFileList.getConfigFiles())) {
+        return planCreationResponseMap;
+      }
+
+      YamlField configFilesYamlField = ctx.getCurrentField();
+
+      for (Map.Entry<String, ConfigFileStepParameters> identifierToConfigFileStepParametersEntry :
+          configFileList.getConfigFiles().entrySet()) {
+        addDependenciesForIndividualConfigFile(identifierToConfigFileStepParametersEntry.getKey(),
+            identifierToConfigFileStepParametersEntry.getValue(), configFilesYamlField, planCreationResponseMap);
+      }
     }
 
     return planCreationResponseMap;
@@ -174,6 +213,10 @@ public class ConfigFilesPlanCreator extends ChildrenPlanCreator<ConfigFiles> {
 
     public ConfigFileListBuilder addServiceDefinition(ServiceDefinition serviceDefinition) {
       List<ConfigFileWrapper> configFileWrappers = serviceDefinition.getServiceSpec().getConfigFiles();
+      return addConfigFiles(configFileWrappers);
+    }
+
+    public ConfigFileListBuilder addConfigFiles(List<ConfigFileWrapper> configFileWrappers) {
       if (configFileWrappers == null) {
         return this;
       }

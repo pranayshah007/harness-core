@@ -7,11 +7,17 @@
 
 package io.harness.cdng.creator.plan.service;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.azure.config.yaml.ApplicationSettingsConfiguration;
+import io.harness.cdng.azure.config.yaml.ConnectionStringsConfiguration;
+import io.harness.cdng.azure.config.yaml.StartupCommandConfiguration;
 import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
-import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.service.ServiceSpec;
 import io.harness.cdng.service.beans.AzureWebAppServiceSpec;
 import io.harness.cdng.service.beans.ServiceConfig;
@@ -24,11 +30,20 @@ import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.environment.beans.Environment;
+import io.harness.ng.core.environment.mappers.EnvironmentMapper;
+import io.harness.ng.core.environment.services.EnvironmentService;
+import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
+import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
+import io.harness.ng.core.serviceoverride.mapper.NGServiceOverrideEntityConfigMapper;
+import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
+import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.contracts.plan.YamlUpdates;
 import io.harness.pms.contracts.steps.SkipType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
@@ -45,6 +60,7 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
@@ -55,11 +71,14 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDC)
 public class ServiceDefinitionPlanCreator extends ChildrenPlanCreator<YamlField> {
   @Inject KryoSerializer kryoSerializer;
+  @Inject ServiceOverrideService serviceOverrideService;
+  @Inject EnvironmentService environmentService;
 
   /*
   TODO: currently we are using many yaml updates. For ex - if we do not have service definition and we need to call plan
@@ -80,7 +99,7 @@ public class ServiceDefinitionPlanCreator extends ChildrenPlanCreator<YamlField>
         addChildrenForServiceV1(planCreationResponseMap, serviceConfigNode);
       } else {
         YamlNode serviceV2Node = YamlUtils.findParentNode(serviceDefField.getNode(), YamlTypes.SERVICE_ENTITY);
-        addChildrenForServiceV2(planCreationResponseMap, serviceV2Node);
+        addChildrenForServiceV2(planCreationResponseMap, serviceV2Node, ctx);
       }
 
       return planCreationResponseMap;
@@ -141,21 +160,21 @@ public class ServiceDefinitionPlanCreator extends ChildrenPlanCreator<YamlField>
       AzureWebAppServiceSpec azureWebAppServiceSpec =
           (AzureWebAppServiceSpec) serviceConfig.getServiceDefinition().getServiceSpec();
 
-      StoreConfigWrapper startupCommand = azureWebAppServiceSpec.getStartupCommand();
+      StartupCommandConfiguration startupCommand = azureWebAppServiceSpec.getStartupCommand();
       if (startupCommand != null) {
         String startupCommandPlanNodeId = ServiceDefinitionPlanCreatorHelper.addDependenciesForStartupCommand(
             serviceConfigNode, planCreationResponseMap, serviceConfig, kryoSerializer);
         serviceSpecChildrenIds.add(startupCommandPlanNodeId);
       }
 
-      StoreConfigWrapper applicationSettings = azureWebAppServiceSpec.getApplicationSettings();
+      ApplicationSettingsConfiguration applicationSettings = azureWebAppServiceSpec.getApplicationSettings();
       if (applicationSettings != null) {
         String applicationSettingsPlanNodeId = ServiceDefinitionPlanCreatorHelper.addDependenciesForApplicationSettings(
             serviceConfigNode, planCreationResponseMap, serviceConfig, kryoSerializer);
         serviceSpecChildrenIds.add(applicationSettingsPlanNodeId);
       }
 
-      StoreConfigWrapper connectionStrings = azureWebAppServiceSpec.getConnectionStrings();
+      ConnectionStringsConfiguration connectionStrings = azureWebAppServiceSpec.getConnectionStrings();
       if (connectionStrings != null) {
         String connectionStringsPlanNodeId = ServiceDefinitionPlanCreatorHelper.addDependenciesForConnectionStrings(
             serviceConfigNode, planCreationResponseMap, serviceConfig, kryoSerializer);
@@ -167,59 +186,87 @@ public class ServiceDefinitionPlanCreator extends ChildrenPlanCreator<YamlField>
     addServiceSpecNode(serviceConfig, planCreationResponseMap, serviceSpecChildrenIds);
   }
 
-  private void addChildrenForServiceV2(
-      Map<String, PlanCreationResponse> planCreationResponseMap, YamlNode serviceV2Node) throws IOException {
-    NGServiceV2InfoConfig config = YamlUtils.read(serviceV2Node.toString(), NGServiceV2InfoConfig.class);
+  private void addChildrenForServiceV2(Map<String, PlanCreationResponse> planCreationResponseMap,
+      YamlNode serviceV2Node, PlanCreationContext ctx) throws IOException {
+    NGServiceV2InfoConfig ngServiceV2InfoConfig = YamlUtils.read(serviceV2Node.toString(), NGServiceV2InfoConfig.class);
 
     List<String> serviceSpecChildrenIds = new ArrayList<>();
-    boolean createPlanForArtifacts = ServiceDefinitionPlanCreatorHelper.validateCreatePlanNodeForArtifactsV2(config);
+    boolean createPlanForArtifacts =
+        ServiceDefinitionPlanCreatorHelper.validateCreatePlanNodeForArtifactsV2(ngServiceV2InfoConfig);
     if (createPlanForArtifacts) {
       String artifactNodeId = ServiceDefinitionPlanCreatorHelper.addDependenciesForArtifactsV2(
-          serviceV2Node, planCreationResponseMap, config, kryoSerializer);
+          serviceV2Node, planCreationResponseMap, ngServiceV2InfoConfig, kryoSerializer);
       serviceSpecChildrenIds.add(artifactNodeId);
     }
 
-    if (ServiceDefinitionPlanCreatorHelper.shouldCreatePlanNodeForManifestsV2(config)) {
-      String manifestPlanNodeId = ServiceDefinitionPlanCreatorHelper.addDependenciesForManifestsV2(
-          serviceV2Node, planCreationResponseMap, config, kryoSerializer);
+    NGEnvironmentConfig ngEnvironmentConfig = fetchEnvironmentConfig(ctx, kryoSerializer);
+    NGServiceOverrideConfig serviceOverrideConfig = fetchServiceOverrideConfig(
+        ctx, ngServiceV2InfoConfig, ngEnvironmentConfig.getNgEnvironmentInfoConfig().getIdentifier());
+
+    final String manifestPlanNodeId = ServiceDefinitionPlanCreatorHelper.addDependenciesForManifestV2(serviceV2Node,
+        planCreationResponseMap, ngServiceV2InfoConfig, serviceOverrideConfig, ngEnvironmentConfig, kryoSerializer);
+    if (isNotBlank(manifestPlanNodeId)) {
       serviceSpecChildrenIds.add(manifestPlanNodeId);
     }
 
-    if (ServiceDefinitionPlanCreatorHelper.shouldCreatePlanNodeForConfigFilesV2(config)) {
-      String configFilesPlanNodeId = ServiceDefinitionPlanCreatorHelper.addDependenciesForConfigFilesV2(
-          serviceV2Node, planCreationResponseMap, config, kryoSerializer);
+    final String configFilesPlanNodeId =
+        ServiceDefinitionPlanCreatorHelper.addDependenciesForConfigFilesV2(serviceV2Node, planCreationResponseMap,
+            ngServiceV2InfoConfig, serviceOverrideConfig, ngEnvironmentConfig, kryoSerializer);
+    if (isNotBlank(configFilesPlanNodeId)) {
       serviceSpecChildrenIds.add(configFilesPlanNodeId);
     }
 
-    if (config.getServiceDefinition().getServiceSpec() instanceof AzureWebAppServiceSpec) {
+    if (ngServiceV2InfoConfig.getServiceDefinition().getServiceSpec() instanceof AzureWebAppServiceSpec) {
       AzureWebAppServiceSpec azureWebAppServiceSpec =
-          (AzureWebAppServiceSpec) config.getServiceDefinition().getServiceSpec();
+          (AzureWebAppServiceSpec) ngServiceV2InfoConfig.getServiceDefinition().getServiceSpec();
 
-      StoreConfigWrapper startupCommand = azureWebAppServiceSpec.getStartupCommand();
+      StartupCommandConfiguration startupCommand = azureWebAppServiceSpec.getStartupCommand();
       if (startupCommand != null) {
-        String configFilesPlanNodeId = ServiceDefinitionPlanCreatorHelper.addDependenciesForStartupCommandV2(
-            serviceV2Node, planCreationResponseMap, config, kryoSerializer);
-        serviceSpecChildrenIds.add(configFilesPlanNodeId);
+        String startupCommandPlanNodeId = ServiceDefinitionPlanCreatorHelper.addDependenciesForStartupCommandV2(
+            serviceV2Node, planCreationResponseMap, ngServiceV2InfoConfig, kryoSerializer);
+        serviceSpecChildrenIds.add(startupCommandPlanNodeId);
       }
 
-      StoreConfigWrapper applicationSettings = azureWebAppServiceSpec.getApplicationSettings();
-      if (applicationSettings != null) {
-        String applicationSettingsPlanNodeId =
-            ServiceDefinitionPlanCreatorHelper.addDependenciesForApplicationSettingsV2(
-                serviceV2Node, planCreationResponseMap, config, kryoSerializer);
+      final String applicationSettingsPlanNodeId =
+          ServiceDefinitionPlanCreatorHelper.addDependenciesForApplicationSettingsV2(serviceV2Node,
+              planCreationResponseMap, ngServiceV2InfoConfig, serviceOverrideConfig, ngEnvironmentConfig,
+              kryoSerializer);
+      if (isNotBlank(applicationSettingsPlanNodeId)) {
         serviceSpecChildrenIds.add(applicationSettingsPlanNodeId);
       }
 
-      StoreConfigWrapper connectionStrings = azureWebAppServiceSpec.getConnectionStrings();
-      if (connectionStrings != null) {
-        String connectionStringsPlanNodeId = ServiceDefinitionPlanCreatorHelper.addDependenciesForConnectionStringsV2(
-            serviceV2Node, planCreationResponseMap, config, kryoSerializer);
+      final String connectionStringsPlanNodeId =
+          ServiceDefinitionPlanCreatorHelper.addDependenciesForConnectionStringsV2(serviceV2Node,
+              planCreationResponseMap, ngServiceV2InfoConfig, serviceOverrideConfig, ngEnvironmentConfig,
+              kryoSerializer);
+      if (isNotBlank(connectionStringsPlanNodeId)) {
         serviceSpecChildrenIds.add(connectionStringsPlanNodeId);
       }
     }
 
     // Add serviceSpec node
-    addServiceSpecNodeV2(config, planCreationResponseMap, serviceSpecChildrenIds);
+    addServiceSpecNodeV2(ngServiceV2InfoConfig, planCreationResponseMap, serviceSpecChildrenIds);
+  }
+
+  @VisibleForTesting
+  NGServiceOverrideConfig fetchServiceOverrideConfig(
+      PlanCreationContext ctx, NGServiceV2InfoConfig serviceV2InfoConfig, String envRef) {
+    PlanCreationContextValue metadata = ctx.getMetadata();
+    final Optional<NGServiceOverridesEntity> serviceOverridesEntity =
+        serviceOverrideService.get(metadata.getAccountIdentifier(), metadata.getOrgIdentifier(),
+            metadata.getProjectIdentifier(), envRef, serviceV2InfoConfig.getIdentifier());
+
+    return serviceOverridesEntity.map(NGServiceOverrideEntityConfigMapper::toNGServiceOverrideConfig).orElse(null);
+  }
+
+  @VisibleForTesting
+  NGEnvironmentConfig fetchEnvironmentConfig(PlanCreationContext ctx, KryoSerializer kryoSerializer) {
+    ParameterField<String> envRefField = (ParameterField<String>) kryoSerializer.asInflatedObject(
+        ctx.getDependency().getMetadataMap().get(YamlTypes.ENVIRONMENT_REF).toByteArray());
+    PlanCreationContextValue metadata = ctx.getMetadata();
+    Optional<Environment> environment = environmentService.get(metadata.getAccountIdentifier(),
+        metadata.getOrgIdentifier(), metadata.getProjectIdentifier(), envRefField.getValue(), false);
+    return EnvironmentMapper.toNGEnvironmentConfig(environment.get());
   }
 
   private void addServiceSpecNode(ServiceConfig serviceConfig,
@@ -306,13 +353,13 @@ public class ServiceDefinitionPlanCreator extends ChildrenPlanCreator<YamlField>
   boolean shouldCreatePlanNodeForConfigFiles(ServiceConfig actualServiceConfig) {
     List<ConfigFileWrapper> configFiles = actualServiceConfig.getServiceDefinition().getServiceSpec().getConfigFiles();
 
-    if (EmptyPredicate.isNotEmpty(configFiles)) {
+    if (isNotEmpty(configFiles)) {
       return true;
     }
 
     return actualServiceConfig.getStageOverrides() != null
         && actualServiceConfig.getStageOverrides().getConfigFiles() != null
-        && EmptyPredicate.isNotEmpty(actualServiceConfig.getStageOverrides().getConfigFiles());
+        && isNotEmpty(actualServiceConfig.getStageOverrides().getConfigFiles());
   }
 
   @Override
@@ -324,6 +371,7 @@ public class ServiceDefinitionPlanCreator extends ChildrenPlanCreator<YamlField>
   public Map<String, Set<String>> getSupportedTypes() {
     return Collections.singletonMap(YamlTypes.SERVICE_DEFINITION,
         ImmutableSet.of(ServiceSpecType.KUBERNETES, ServiceSpecType.SSH, ServiceSpecType.WINRM,
-            ServiceSpecType.NATIVE_HELM, ServiceSpecType.SERVERLESS_AWS_LAMBDA, ServiceSpecType.AZURE_WEBAPP));
+            ServiceSpecType.NATIVE_HELM, ServiceSpecType.SERVERLESS_AWS_LAMBDA, ServiceSpecType.AZURE_WEBAPP,
+            ServiceSpecType.ECS));
   }
 }

@@ -1,7 +1,12 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.delegate.task.shell.winrm;
 
-import io.harness.delegate.task.shell.WinrmTaskParameters;
-import io.harness.delegate.task.ssh.WinRmInfraDelegateConfig;
 import io.harness.delegate.task.winrm.AuthenticationScheme;
 import io.harness.delegate.task.winrm.WinRmSessionConfig;
 import io.harness.delegate.task.winrm.WinRmSessionConfig.WinRmSessionConfigBuilder;
@@ -11,6 +16,7 @@ import io.harness.ng.core.dto.secrets.NTLMConfigDTO;
 import io.harness.ng.core.dto.secrets.TGTKeyTabFilePathSpecDTO;
 import io.harness.ng.core.dto.secrets.TGTPasswordSpecDTO;
 import io.harness.ng.core.dto.secrets.WinRmAuthDTO;
+import io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
 
@@ -26,29 +32,23 @@ public class WinRmConfigAuthEnhancer {
     this.secretDecryptionService = secretDecryptionService;
   }
 
-  public WinRmSessionConfig configureAuthentication(
-      WinrmTaskParameters winRmCommandTaskParameters, WinRmSessionConfigBuilder builder) {
-    WinRmInfraDelegateConfig winRmInfraDelegateConfig = winRmCommandTaskParameters.getWinRmInfraDelegateConfig();
-    if (winRmInfraDelegateConfig == null) {
-      throw new InvalidRequestException("Task parameters must include WinRm Infra Delegate config.");
+  public WinRmSessionConfig configureAuthentication(WinRmCredentialsSpecDTO winRmCredentialsSpecDTO,
+      List<EncryptedDataDetail> encryptionDetails, WinRmSessionConfigBuilder builder,
+      boolean useWinRMKerberosUniqueCacheFile) {
+    if (winRmCredentialsSpecDTO == null) {
+      throw new InvalidRequestException("WinRm credentials are not specified.");
     }
 
-    if (winRmInfraDelegateConfig.getWinRmCredentials() == null) {
-      throw new InvalidRequestException(
-          "Task parameters must include WinRm Infra Delegate config with configured WinRm credentials.");
-    }
-
-    WinRmAuthDTO winRmAuthDTO = winRmInfraDelegateConfig.getWinRmCredentials().getAuth();
-    List<EncryptedDataDetail> encryptionDetails = winRmInfraDelegateConfig.getEncryptionDataDetails();
-    int port = winRmInfraDelegateConfig.getWinRmCredentials().getPort();
+    WinRmAuthDTO winRmAuthDTO = winRmCredentialsSpecDTO.getAuth();
+    int port = winRmCredentialsSpecDTO.getPort();
     switch (winRmAuthDTO.getAuthScheme()) {
       case NTLM:
         NTLMConfigDTO ntlmConfigDTO = (NTLMConfigDTO) winRmAuthDTO.getSpec();
         return generateWinRmSessionConfigForNTLM(ntlmConfigDTO, builder, encryptionDetails, port);
       case Kerberos:
         KerberosWinRmConfigDTO kerberosWinRmConfigDTO = (KerberosWinRmConfigDTO) winRmAuthDTO.getSpec();
-        return generateWinRmSessionConfigForKerberos(kerberosWinRmConfigDTO, builder, encryptionDetails, port,
-            winRmCommandTaskParameters.isUseWinRMKerberosUniqueCacheFile());
+        return generateWinRmSessionConfigForKerberos(
+            kerberosWinRmConfigDTO, builder, encryptionDetails, port, useWinRMKerberosUniqueCacheFile);
       default:
         throw new IllegalArgumentException("Invalid authSchema provided:" + winRmAuthDTO.getAuthScheme());
     }

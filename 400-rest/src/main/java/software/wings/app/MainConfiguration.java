@@ -89,6 +89,7 @@ import io.dropwizard.request.logging.RequestLogFactory;
 import io.dropwizard.server.DefaultServerFactory;
 import io.dropwizard.server.ServerFactory;
 import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -207,7 +208,6 @@ public class MainConfiguration extends Configuration implements AssetsBundleConf
   @JsonProperty("atmosphereBroadcaster") private AtmosphereBroadcaster atmosphereBroadcaster;
   @JsonProperty(value = "jobsFrequencyConfig") private JobsFrequencyConfig jobsFrequencyConfig;
   @JsonProperty("ngManagerServiceHttpClientConfig") private ServiceHttpClientConfig ngManagerServiceHttpClientConfig;
-  @JsonProperty("managerServiceHttpClientConfig") private ServiceHttpClientConfig managerServiceHttpClientConfig;
   @JsonProperty("mockServerConfig") private MockServerConfig mockServerConfig;
   @JsonProperty("numberOfRemindersBeforeAccountDeletion") private int numberOfRemindersBeforeAccountDeletion;
   @JsonProperty("delegateGrpcServicePort") private Integer delegateGrpcServicePort;
@@ -229,6 +229,7 @@ public class MainConfiguration extends Configuration implements AssetsBundleConf
   @JsonProperty("eventListenersCountConfig") private EventListenersCountConfig eventListenersCountConfig;
   @JsonProperty(value = "useGlobalKMSAsBaseAlgo", defaultValue = "false") private boolean useGlobalKMSAsBaseAlgo;
   @JsonProperty("totp") private TotpConfig totpConfig;
+  @JsonProperty(value = "cdTsDbRetentionPeriodMonths") private String cdTsDbRetentionPeriodMonths;
 
   private int applicationPort;
   private boolean sslEnabled;
@@ -343,5 +344,16 @@ public class MainConfiguration extends Configuration implements AssetsBundleConf
   @JsonIgnore
   public boolean useCdnForDelegateStorage() {
     return !DeployMode.isOnPrem(getDeployMode().name());
+  }
+
+  public List<String> getDbAliases() {
+    List<String> dbAliases = new ArrayList<>();
+    if (mongoConnectionFactory != null) {
+      dbAliases.add(mongoConnectionFactory.getAliasDBName());
+    }
+    if (eventsMongo != null) {
+      dbAliases.add(eventsMongo.getAliasDBName());
+    }
+    return dbAliases;
   }
 }

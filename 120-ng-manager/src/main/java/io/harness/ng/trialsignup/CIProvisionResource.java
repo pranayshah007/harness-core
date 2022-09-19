@@ -27,7 +27,6 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
-import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
@@ -86,20 +85,5 @@ public class CIProvisionResource {
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier) {
     return ResponseDTO.newResponse(
         provisionService.createDefaultScm(accountIdentifier, orgIdentifier, projectIdentifier, scmConnectorDTO));
-  }
-
-  @GET
-  @Path("fetch-repo-list")
-  @ApiOperation(value = "Get all repositories of the user from scm", nickname = "getAllUserRepos")
-  public ResponseDTO<List<UserRepoResponse>> getAllUserRepos(
-      @Parameter(description = "Connector ID") @QueryParam("connectorRef") String connectorIdentifier,
-      @Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotBlank @QueryParam(
-          NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
-      @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
-      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier) {
-    return ResponseDTO.newResponse(
-        provisionService.getAllUserRepos(accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier));
   }
 }

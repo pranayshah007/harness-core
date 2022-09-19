@@ -23,6 +23,8 @@ import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.GithubPackagesArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig;
 import io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
 import io.harness.data.structure.EmptyPredicate;
@@ -116,7 +118,8 @@ public class ArtifactUtils {
             dockerHubArtifactConfig.getConnectorRef().getValue());
       case AMAZONS3:
         AmazonS3ArtifactConfig amazonS3ArtifactConfig = (AmazonS3ArtifactConfig) artifactConfig;
-        return String.format(placeholder, sourceType, amazonS3ArtifactConfig.getBucketName().getValue(),
+        return String.format("\ntype: %s \nbucketName: %s \nfilePath: %s \nfilePathRegex: %s \nconnectorRef: %s\n",
+            sourceType, amazonS3ArtifactConfig.getBucketName().getValue(),
             amazonS3ArtifactConfig.getFilePath().getValue(), amazonS3ArtifactConfig.getFilePathRegex().getValue(),
             amazonS3ArtifactConfig.getConnectorRef().getValue());
       case GCR:
@@ -168,6 +171,26 @@ public class ArtifactUtils {
         return String.format(placeholder, sourceType, jenkinsArtifactConfig.getJobName().getValue(),
             jenkinsArtifactConfig.getArtifactPath().getValue(), jenkinsArtifactConfig.getBuild().getValue(),
             jenkinsArtifactConfig.getConnectorRef().getValue());
+      case GITHUB_PACKAGES:
+        GithubPackagesArtifactConfig githubPackagesArtifactConfig = (GithubPackagesArtifactConfig) artifactConfig;
+        return String.format(placeholder, sourceType, githubPackagesArtifactConfig.getPackageName().getValue(),
+            githubPackagesArtifactConfig.getVersion().getValue(),
+            githubPackagesArtifactConfig.getVersionRegex().getValue(),
+            githubPackagesArtifactConfig.getConnectorRef().getValue());
+      case GOOGLE_ARTIFACT_REGISTRY:
+        GoogleArtifactRegistryConfig googleArtifactRegistryConfig = (GoogleArtifactRegistryConfig) artifactConfig;
+        String version = googleArtifactRegistryConfig.getVersion().getValue() != null
+            ? googleArtifactRegistryConfig.getVersion().getValue()
+            : googleArtifactRegistryConfig.getVersionRegex().getValue();
+        return String.format(
+            "\ntype: %s \nregion: %s \nproject: %s \nrepositoryName: %s \npackage: %s \nversion/versionRegex: %s \nconnectorRef: %s \nregistryType: %s\n",
+            sourceType, googleArtifactRegistryConfig.getRegion().getValue(),
+            googleArtifactRegistryConfig.getProject().getValue(),
+            googleArtifactRegistryConfig.getRepositoryName().getValue(),
+            googleArtifactRegistryConfig.getPkg().getValue(), version,
+            googleArtifactRegistryConfig.getConnectorRef().getValue(),
+            googleArtifactRegistryConfig.getGoogleArtifactRegistryType().getValue());
+
       default:
         throw new UnsupportedOperationException(String.format("Unknown Artifact Config type: [%s]", sourceType));
     }

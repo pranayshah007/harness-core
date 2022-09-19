@@ -48,7 +48,6 @@ import io.harness.ng.core.utils.NGUtils;
 import io.harness.observer.RemoteObserverInformer;
 import io.harness.observer.Subject;
 import io.harness.persistence.HPersistence;
-import io.harness.reflection.ReflectionUtils;
 import io.harness.secrets.SecretService;
 import io.harness.service.intfc.DelegateCache;
 import io.harness.service.intfc.DelegateProfileObserver;
@@ -182,13 +181,6 @@ public class DelegateProfileServiceImpl implements DelegateProfileService, Accou
     DelegateProfile updatedDelegateProfile = get(delegateProfile.getAccountId(), delegateProfile.getUuid());
     log.info("Updated delegate profile: {}", updatedDelegateProfile.getUuid());
 
-    // Both subject and remote Observer are needed since in few places DMS might not be present
-    delegateProfileSubject.fireInform(
-        DelegateProfileObserver::onProfileUpdated, originalProfile, updatedDelegateProfile);
-    remoteObserverInformer.sendEvent(ReflectionUtils.getMethod(DelegateProfileObserver.class, "onProfileUpdated",
-                                         DelegateProfile.class, DelegateProfile.class),
-        DelegateProfileServiceImpl.class, originalProfile, updatedDelegateProfile);
-
     auditServiceHelper.reportForAuditingUsingAccountId(
         delegateProfile.getAccountId(), delegateProfile, updatedDelegateProfile, Event.Type.UPDATE);
     log.info("Auditing update of Delegate Profile for accountId={}", delegateProfile.getAccountId());
@@ -218,12 +210,6 @@ public class DelegateProfileServiceImpl implements DelegateProfileService, Accou
     DelegateProfile updatedDelegateProfile = getProfileByIdentifier(
         delegateProfile.getAccountId(), delegateProfile.getOwner(), delegateProfile.getIdentifier());
     log.info("Updated delegate profile with identifier: {}", updatedDelegateProfile.getIdentifier());
-
-    delegateProfileSubject.fireInform(
-        DelegateProfileObserver::onProfileUpdated, originalProfile, updatedDelegateProfile);
-    remoteObserverInformer.sendEvent(ReflectionUtils.getMethod(DelegateProfileObserver.class, "onProfileUpdated",
-                                         DelegateProfile.class, DelegateProfile.class),
-        DelegateProfileServiceImpl.class, originalProfile, updatedDelegateProfile);
 
     auditServiceHelper.reportForAuditingUsingAccountId(
         delegateProfile.getAccountId(), delegateProfile, updatedDelegateProfile, Event.Type.UPDATE);

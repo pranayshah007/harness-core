@@ -33,6 +33,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.validator.constraints.NotEmpty;
 import org.springframework.data.annotation.TypeAlias;
 
 @OwnedBy(HarnessTeam.CDP)
@@ -50,7 +51,7 @@ public class AzureWebAppSwapSlotStepInfo extends AzureWebAppSwapSlotBaseStepInfo
   private String uuid;
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
-  @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> targetSlot;
+  @NotNull @NotEmpty @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> targetSlot;
 
   @Builder(builderMethodName = "infoBuilder")
   public AzureWebAppSwapSlotStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,

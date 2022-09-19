@@ -7,6 +7,7 @@
 
 package io.harness.pms.utilities;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -26,7 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 @UtilityClass
 @Slf4j
 public class ResourceConstraintUtility {
-  public JsonNode getResourceConstraintJsonNode(String resourceUnit) {
+  public JsonNode getResourceConstraintJsonNode(String resourceUnit, String whenCondition) {
     String yamlField = "---\n"
         + "name: \"Resource Constraint\"\n"
         + "identifier: \"rc-" + generateUuid() + "\"\n"
@@ -38,12 +39,18 @@ public class ResourceConstraintUtility {
         + "  acquireMode: \"ENSURE\"\n"
         + "  permits: 1\n"
         + "  holdingScope: STAGE";
+    if (isNotEmpty(whenCondition)) {
+      String whenConditionYaml = "\nwhen:\n"
+          + "    stageStatus: Success\n"
+          + "    condition: " + whenCondition + "\n";
+      yamlField = yamlField + whenConditionYaml;
+    }
+
     YamlField resourceConstraintYamlField;
     try {
-      String yamlFieldWithUuid = YamlUtils.injectUuid(yamlField);
-      resourceConstraintYamlField = YamlUtils.readTree(yamlFieldWithUuid);
+      resourceConstraintYamlField = YamlUtils.injectUuidInYamlField(yamlField);
     } catch (IOException e) {
-      log.error("Exception occured while creating resource constraint", e);
+      log.error("Exception occurred while creating resource constraint", e);
       throw new InvalidRequestException("Exception while creating resource constraint");
     }
     return resourceConstraintYamlField.getNode().getCurrJsonNode();

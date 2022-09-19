@@ -14,14 +14,33 @@ import static io.harness.beans.serializer.RunTimeInputHandler.resolveJsonNodeMap
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveListParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameter;
+import static io.harness.beans.steps.CIStepInfoType.GIT_CLONE;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_BUILD_EVENT;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_BRANCH;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_SHA;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_NETRC_MACHINE;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_REMOTE_URL;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_TAG;
+import static io.harness.ci.commonconstants.CIExecutionConstants.CLIENT_CERTIFICATE;
+import static io.harness.ci.commonconstants.CIExecutionConstants.CLIENT_ID;
+import static io.harness.ci.commonconstants.CIExecutionConstants.CLIENT_SECRET;
+import static io.harness.ci.commonconstants.CIExecutionConstants.DRONE_WORKSPACE;
+import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_DEPTH_ATTRIBUTE;
+import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_MANUAL_DEPTH;
+import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_SSL_NO_VERIFY;
+import static io.harness.ci.commonconstants.CIExecutionConstants.PATH_SEPARATOR;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_ACCESS_KEY;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_ARTIFACT_FILE_VALUE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_ASSUME_ROLE;
+import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_ENV_PREFIX;
+import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_EXTERNAL_ID;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_JSON_KEY;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_PASSW;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_SECRET_KEY;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_URL;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_USERNAME;
+import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_MOUNT_PATH;
+import static io.harness.ci.commonconstants.CIExecutionConstants.TENANT_ID;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -31,12 +50,15 @@ import static org.springframework.util.StringUtils.trimTrailingCharacter;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.executionargs.CIExecutionArgs;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.steps.CIStepInfoType;
+import io.harness.beans.steps.stepinfo.ACRStepInfo;
 import io.harness.beans.steps.stepinfo.DockerStepInfo;
 import io.harness.beans.steps.stepinfo.ECRStepInfo;
 import io.harness.beans.steps.stepinfo.GCRStepInfo;
+import io.harness.beans.steps.stepinfo.GitCloneStepInfo;
 import io.harness.beans.steps.stepinfo.RestoreCacheGCSStepInfo;
 import io.harness.beans.steps.stepinfo.RestoreCacheS3StepInfo;
 import io.harness.beans.steps.stepinfo.SaveCacheGCSStepInfo;
@@ -47,18 +69,40 @@ import io.harness.beans.steps.stepinfo.UploadToGCSStepInfo;
 import io.harness.beans.steps.stepinfo.UploadToS3StepInfo;
 import io.harness.beans.sweepingoutputs.StageInfraDetails.Type;
 import io.harness.beans.yaml.extended.ArchiveFormat;
+import io.harness.ci.integrationstage.BuildEnvironmentUtils;
 import io.harness.ci.serializer.SerializerUtils;
+import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.pod.EnvVariableEnum;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.exception.ngexception.CIStageExecutionException;
+import io.harness.exception.ngexception.CIStageExecutionUserException;
+import io.harness.ng.core.NGAccess;
+import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.yaml.ParameterField;
+import io.harness.yaml.extended.ci.codebase.Build;
+import io.harness.yaml.extended.ci.codebase.BuildType;
+import io.harness.yaml.extended.ci.codebase.impl.BranchBuildSpec;
+import io.harness.yaml.extended.ci.codebase.impl.PRBuildSpec;
+import io.harness.yaml.extended.ci.codebase.impl.TagBuildSpec;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 
 @OwnedBy(HarnessTeam.CI)
+@Singleton
 public class PluginSettingUtils {
   public static final String PLUGIN_REGISTRY = "PLUGIN_REGISTRY";
+  public static final String TAG_BUILD_EVENT = "tag";
+
+  public static final String REPOSITORY = "REPOSITORY";
   public static final String PLUGIN_REPO = "PLUGIN_REPO";
   public static final String PLUGIN_TAGS = "PLUGIN_TAGS";
   public static final String PLUGIN_DOCKERFILE = "PLUGIN_DOCKERFILE";
@@ -93,11 +137,15 @@ public class PluginSettingUtils {
   public static final String PLUGIN_DAEMON_OFF = "PLUGIN_DAEMON_OFF";
   public static final String ECR_REGISTRY_PATTERN = "%s.dkr.ecr.%s.amazonaws.com";
 
-  public static Map<String, String> getPluginCompatibleEnvVariables(
-      PluginCompatibleStep stepInfo, String identifier, long timeout, Type infraType) {
+  @Inject private CodebaseUtils codebaseUtils;
+
+  public Map<String, String> getPluginCompatibleEnvVariables(
+      PluginCompatibleStep stepInfo, String identifier, long timeout, Ambiance ambiance, Type infraType) {
     switch (stepInfo.getNonYamlInfo().getStepInfoType()) {
       case ECR:
         return getECRStepInfoEnvVariables((ECRStepInfo) stepInfo, identifier, infraType);
+      case ACR:
+        return getACRStepInfoEnvVariables((ACRStepInfo) stepInfo, identifier, infraType);
       case GCR:
         return getGCRStepInfoEnvVariables((GCRStepInfo) stepInfo, identifier, infraType);
       case DOCKER:
@@ -118,6 +166,8 @@ public class PluginSettingUtils {
         return getSaveCacheS3StepInfoEnvVariables((SaveCacheS3StepInfo) stepInfo, identifier, timeout);
       case RESTORE_CACHE_S3:
         return getRestoreCacheS3StepInfoEnvVariables((RestoreCacheS3StepInfo) stepInfo, identifier, timeout);
+      case GIT_CLONE:
+        return getGitCloneStepInfoEnvVariables((GitCloneStepInfo) stepInfo, ambiance, identifier);
       default:
         throw new IllegalStateException("Unexpected value: " + stepInfo.getNonYamlInfo().getStepInfoType());
     }
@@ -142,8 +192,7 @@ public class PluginSettingUtils {
         map.put(EnvVariableEnum.AWS_ACCESS_KEY, PLUGIN_ACCESS_KEY);
         map.put(EnvVariableEnum.AWS_SECRET_KEY, PLUGIN_SECRET_KEY);
         map.put(EnvVariableEnum.AWS_CROSS_ACCOUNT_ROLE_ARN, PLUGIN_ASSUME_ROLE);
-        // TODO: uncomment in the next release to ensure fix with delegateq backward compatibility.
-        //        map.put(EnvVariableEnum.AWS_CROSS_ACCOUNT_EXTERNAL_ID, PLUGIN_EXTERNAL_ID);
+        map.put(EnvVariableEnum.AWS_CROSS_ACCOUNT_EXTERNAL_ID, PLUGIN_EXTERNAL_ID);
         return map;
       case RESTORE_CACHE_S3:
       case SAVE_CACHE_S3:
@@ -151,6 +200,12 @@ public class PluginSettingUtils {
         map.put(EnvVariableEnum.AWS_ACCESS_KEY, PLUGIN_ACCESS_KEY);
         map.put(EnvVariableEnum.AWS_SECRET_KEY, PLUGIN_SECRET_KEY);
         map.put(EnvVariableEnum.AWS_CROSS_ACCOUNT_ROLE_ARN, PLUGIN_ASSUME_ROLE);
+        return map;
+      case ACR:
+        map.put(EnvVariableEnum.AZURE_APP_SECRET, CLIENT_SECRET);
+        map.put(EnvVariableEnum.AZURE_APP_ID, CLIENT_ID);
+        map.put(EnvVariableEnum.AZURE_TENANT_ID, TENANT_ID);
+        map.put(EnvVariableEnum.AZURE_CERT, CLIENT_CERTIFICATE);
         return map;
       case GCR:
       case RESTORE_CACHE_GCS:
@@ -168,6 +223,8 @@ public class PluginSettingUtils {
         map.put(EnvVariableEnum.ARTIFACTORY_ENDPOINT, PLUGIN_URL);
         map.put(EnvVariableEnum.ARTIFACTORY_USERNAME, PLUGIN_USERNAME);
         map.put(EnvVariableEnum.ARTIFACTORY_PASSWORD, PLUGIN_PASSW);
+        return map;
+      case GIT_CLONE:
         return map;
       default:
         throw new IllegalStateException("Unexpected value: " + stepInfoType);
@@ -240,6 +297,70 @@ public class PluginSettingUtils {
     }
 
     return map;
+  }
+
+  private static Map<String, String> getACRStepInfoEnvVariables(
+      ACRStepInfo stepInfo, String identifier, Type infraType) {
+    Map<String, String> map = new HashMap<>();
+    String pluginRepo =
+        resolveStringParameter(REPOSITORY, "BuildAndPushACR", identifier, stepInfo.getRepository(), true);
+    String pluginRegistry = StringUtils.substringBefore(pluginRepo, "/");
+    setMandatoryEnvironmentVariable(map, PLUGIN_REGISTRY, pluginRegistry);
+    setMandatoryEnvironmentVariable(map, PLUGIN_REPO, pluginRepo);
+
+    setMandatoryEnvironmentVariable(map, PLUGIN_TAGS,
+        listToStringSlice(resolveListParameter("tags", "BuildAndPushECR", identifier, stepInfo.getTags(), true)));
+
+    String dockerfile =
+        resolveStringParameter("dockerfile", "BuildAndPushACR", identifier, stepInfo.getDockerfile(), false);
+    if (dockerfile != null && !dockerfile.equals(UNRESOLVED_PARAMETER)) {
+      setOptionalEnvironmentVariable(map, PLUGIN_DOCKERFILE, dockerfile);
+    }
+
+    String context = resolveStringParameter("context", "BuildAndPushACR", identifier, stepInfo.getContext(), false);
+    if (context != null && !context.equals(UNRESOLVED_PARAMETER)) {
+      setOptionalEnvironmentVariable(map, PLUGIN_CONTEXT, context);
+    }
+
+    String target = resolveStringParameter("target", "BuildAndPushACR", identifier, stepInfo.getTarget(), false);
+    if (target != null && !target.equals(UNRESOLVED_PARAMETER)) {
+      setOptionalEnvironmentVariable(map, PLUGIN_TARGET, target);
+    }
+
+    Map<String, String> buildArgs =
+        resolveMapParameter("buildArgs", "BuildAndPushACR", identifier, stepInfo.getBuildArgs(), false);
+    if (isNotEmpty(buildArgs)) {
+      setOptionalEnvironmentVariable(map, PLUGIN_BUILD_ARGS, mapToStringSlice(buildArgs));
+    }
+
+    Map<String, String> labels =
+        resolveMapParameter("labels", "BuildAndPushACR", identifier, stepInfo.getLabels(), false);
+    if (isNotEmpty(labels)) {
+      setOptionalEnvironmentVariable(map, PLUGIN_CUSTOM_LABELS, mapToStringSlice(labels));
+    }
+
+    if (infraType == Type.K8) {
+      getACRStepInfoVariablesForK8s(stepInfo, identifier, map);
+    } else if (infraType == Type.VM) {
+      setMandatoryEnvironmentVariable(map, PLUGIN_DAEMON_OFF, "true");
+    }
+    return map;
+  }
+
+  private static void getACRStepInfoVariablesForK8s(ACRStepInfo stepInfo, String identifier, Map<String, String> map) {
+    boolean optimize = resolveBooleanParameter(stepInfo.getOptimize(), true);
+    if (optimize) {
+      setOptionalEnvironmentVariable(map, PLUGIN_SNAPSHOT_MODE, REDO_SNAPSHOT_MODE);
+    }
+
+    String remoteCacheImage = resolveStringParameter(
+        "remoteCacheImage", "BuildAndPushACR", identifier, stepInfo.getRemoteCacheImage(), false);
+    if (remoteCacheImage != null && !remoteCacheImage.equals(UNRESOLVED_PARAMETER)) {
+      setOptionalEnvironmentVariable(map, PLUGIN_ENABLE_CACHE, "true");
+      setOptionalEnvironmentVariable(map, PLUGIN_CACHE_REPO, remoteCacheImage);
+    }
+
+    setOptionalEnvironmentVariable(map, PLUGIN_ARTIFACT_FILE, PLUGIN_ARTIFACT_FILE_VALUE);
   }
 
   private static Map<String, String> getECRStepInfoEnvVariables(
@@ -582,6 +703,211 @@ public class PluginSettingUtils {
     return map;
   }
 
+  private Map<String, String> getGitCloneStepInfoEnvVariables(
+      GitCloneStepInfo stepInfo, Ambiance ambiance, String identifier) {
+    Map<String, String> map = new HashMap<>();
+
+    final String connectorRef = stepInfo.getConnectorRef().getValue();
+    String repoName = stepInfo.getRepoName().getValue();
+    Pair<String, String> buildEnvVar = getBuildEnvVar(stepInfo);
+
+    // Overwrite all codebase env variables by setting to blank
+    map.putAll(getBlankCodebaseEnvVars());
+
+    map.putAll(getSslVerifyEnvVars(stepInfo.getSslVerify()));
+    map.putAll(getGitEnvVars(connectorRef, repoName, ambiance));
+    map.putAll(getBuildEnvVars(buildEnvVar));
+    map.putAll(getCloneDirEnvVars(stepInfo.getCloneDirectory(), repoName, map.get(DRONE_REMOTE_URL), identifier));
+    map.putAll(getPluginDepthEnvVars(stepInfo.getDepth(), buildEnvVar));
+
+    return map;
+  }
+
+  private static Map<String, String> getBlankCodebaseEnvVars() {
+    Map<String, String> map = new HashMap<>();
+    map.put(DRONE_TAG, "");
+    map.put(DRONE_NETRC_MACHINE, "");
+    map.put(DRONE_BUILD_EVENT, "");
+    map.put(DRONE_COMMIT_BRANCH, "");
+    map.put(DRONE_REMOTE_URL, "");
+    map.put(DRONE_COMMIT_SHA, "");
+    return map;
+  }
+
+  private static Map<String, String> getSslVerifyEnvVars(ParameterField<Boolean> sslVerifyParameter) {
+    Map<String, String> map = new HashMap<>();
+    boolean sslVerify = resolveBooleanParameter(sslVerifyParameter, true);
+    setOptionalEnvironmentVariable(map, GIT_SSL_NO_VERIFY, String.valueOf(!sslVerify));
+    return map;
+  }
+
+  private Map<String, String> getGitEnvVars(String connectorRef, String repoName, Ambiance ambiance) {
+    // Get the Git Connector
+    final NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+    final ConnectorDetails gitConnector = codebaseUtils.getGitConnector(ngAccess, connectorRef);
+
+    // Get the Git Connector Reference environment variables
+    return codebaseUtils.getGitEnvVariables(gitConnector, repoName);
+  }
+
+  private static Map<String, String> getBuildEnvVars(Pair<String, String> buildEnvVar) {
+    Map<String, String> map = new HashMap<>();
+    if (buildEnvVar != null) {
+      String type = buildEnvVar.getKey();
+      setMandatoryEnvironmentVariable(map, type, buildEnvVar.getValue());
+      if (DRONE_TAG.equals(type)) {
+        setMandatoryEnvironmentVariable(map, DRONE_BUILD_EVENT, TAG_BUILD_EVENT);
+      }
+    } else {
+      throw new CIStageExecutionException("Build environment variables are null");
+    }
+    return map;
+  }
+
+  /**
+   * Get Clone Directory Env Vars
+   *
+   * Priority order of DRONE_WORKSPACE value
+   *    1. cloneDirParameter if not empty
+   *    2. repoName if not empty, appended to STEP_MOUNT_PATH
+   *    3. repoName extracted from remoteUrl, appended to STEP_MOUNT_PATH
+   *
+   *    Note: "/harness" not allowed
+   *
+   * @return a map containing DRONE_WORKSPACE env variable and value
+   */
+  private static Map<String, String> getCloneDirEnvVars(
+      ParameterField<String> cloneDirParameter, String repoName, String repoUrl, String identifier) {
+    Map<String, String> map = new HashMap<>();
+    String cloneDir = resolveStringParameter("cloneDirectory", "GitClone", identifier, cloneDirParameter, false);
+    if (cloneDir != null) {
+      cloneDir = cloneDir.trim();
+    }
+    if (isEmpty(cloneDir)) {
+      if (repoName != null) {
+        repoName = repoName.trim();
+      }
+      if (isEmpty(repoName)) {
+        repoName = getRepoNameFromRepoUrl(repoUrl);
+      }
+      cloneDir = STEP_MOUNT_PATH + PATH_SEPARATOR + repoName;
+    }
+    if (STEP_MOUNT_PATH.equals(cloneDir)) {
+      throw new CIStageExecutionUserException(
+          format("%s is an invalid value for the cloneDirectory field in the GitClone step with identifier %s",
+              STEP_MOUNT_PATH, identifier));
+    }
+    setMandatoryEnvironmentVariable(map, DRONE_WORKSPACE, cloneDir);
+    return map;
+  }
+
+  private static Map<String, String> getPluginDepthEnvVars(
+      ParameterField<Integer> depthParameter, Pair<String, String> buildEnvVar) {
+    Map<String, String> map = new HashMap<>();
+    Integer depth = null;
+    if (depthParameter != null && depthParameter.getValue() != null) {
+      depth = depthParameter.getValue();
+    } else {
+      if (buildEnvVar != null && isNotEmpty(buildEnvVar.getValue())) {
+        depth = GIT_CLONE_MANUAL_DEPTH;
+      }
+    }
+    if (depth != null && depth != 0) {
+      String pluginDepthKey = PLUGIN_ENV_PREFIX + GIT_CLONE_DEPTH_ATTRIBUTE.toUpperCase();
+      map.put(pluginDepthKey, depth.toString());
+    }
+    return map;
+  }
+
+  /**
+   * Get Build Env variable - branch or tag
+   *
+   * @param gitCloneStepInfo gitCloneStepInfo
+   * @return a pair containing whether the build is configured for a branch or tag, and the value of the branch or tag
+   */
+  private static Pair<String, String> getBuildEnvVar(GitCloneStepInfo gitCloneStepInfo) {
+    final String identifier = gitCloneStepInfo.getIdentifier();
+    final String type = gitCloneStepInfo.getStepType().getType();
+    Pair<String, String> buildEnvVar = null;
+    Build build = RunTimeInputHandler.resolveBuild(gitCloneStepInfo.getBuild());
+
+    final Pair<BuildType, String> buildTypeAndValue = getBuildTypeAndValue(build);
+    if (buildTypeAndValue != null) {
+      final String buildValue = buildTypeAndValue.getValue();
+      switch (buildTypeAndValue.getKey()) {
+        case BRANCH:
+          if (isNotEmpty(buildValue)) {
+            buildEnvVar = new ImmutablePair<>(DRONE_COMMIT_BRANCH, buildValue);
+          } else {
+            throw new CIStageExecutionException("Branch should not be empty for branch build type");
+          }
+          break;
+        case TAG:
+          if (isNotEmpty(buildValue)) {
+            buildEnvVar = new ImmutablePair<>(DRONE_TAG, buildValue);
+          } else {
+            throw new CIStageExecutionException("Tag should not be empty for tag build type");
+          }
+          break;
+        default:
+          throw new CIStageExecutionException(format("%s is not a valid build type in step type %s with identifier %s",
+              buildTypeAndValue.getKey(), type, identifier));
+      }
+    }
+    return buildEnvVar;
+  }
+
+  private static Pair<BuildType, String> getBuildTypeAndValue(Build build) {
+    Pair<BuildType, String> buildTypeAndValue = null;
+    if (build != null) {
+      switch (build.getType()) {
+        case PR:
+          ParameterField<String> number = ((PRBuildSpec) build.getSpec()).getNumber();
+          String numberString = resolveStringParameter("number", "Git Clone", "identifier", number, false);
+          buildTypeAndValue = new ImmutablePair<>(BuildType.PR, numberString);
+          break;
+        case BRANCH:
+          ParameterField<String> branch = ((BranchBuildSpec) build.getSpec()).getBranch();
+          String branchString = resolveStringParameter("branch", "Git Clone", "identifier", branch, false);
+          buildTypeAndValue = new ImmutablePair<>(BuildType.BRANCH, branchString);
+          break;
+        case TAG:
+          ParameterField<String> tag = ((TagBuildSpec) build.getSpec()).getTag();
+          String tagString = resolveStringParameter("tag", "Git Clone", "identifier", tag, false);
+          buildTypeAndValue = new ImmutablePair<>(BuildType.TAG, tagString);
+          break;
+        default:
+          throw new CIStageExecutionException(format("%s is not a valid build type.", build.getType()));
+      }
+    }
+    return buildTypeAndValue;
+  }
+
+  /**
+   * Get Repo Name from Repo Url.
+   *
+   * Note that GIT SSH URLs aren't actually URLs or URIs, but rather follow a legacy scp-like syntax
+   * @param repoUrl the git url or scp-like ssh path
+   * @return the repository from the url or by default "repository"
+   */
+  public static String getRepoNameFromRepoUrl(String repoUrl) {
+    String repoName = "repository";
+    if (!isEmpty(repoUrl)) {
+      int lastPathSeparatorIndex = repoUrl.lastIndexOf(PATH_SEPARATOR);
+      if (lastPathSeparatorIndex != -1) {
+        repoUrl = repoUrl.substring(lastPathSeparatorIndex + 1);
+      }
+      int lastDotIndex = repoUrl.lastIndexOf('.');
+      if (lastDotIndex != -1) {
+        repoUrl = repoUrl.substring(0, lastDotIndex);
+      }
+      if (!isEmpty(repoUrl)) {
+        repoName = repoUrl;
+      }
+    }
+    return repoName;
+  }
+
   // converts map "key1":"value1","key2":"value2" to string "key1=value1,key2=value2"
   private static String mapToStringSlice(Map<String, String> map) {
     if (isEmpty(map)) {
@@ -620,5 +946,21 @@ public class PluginSettingUtils {
       throw new InvalidArgumentsException(format("Environment variable %s can't be empty or null", var));
     }
     envVarMap.put(var, value);
+  }
+
+  /**
+   * Get Build Environment Variables
+   * CiExecutionArgs contains codebase tag and branch variables, these are not included in the ciExecutionArgsCopy for
+   * the GIT_CLONE step, so they do not conflict with the GIT_CLONE step build env variables
+   *
+   * @return build environment variables
+   */
+  public static Map<String, String> getBuildEnvironmentVariables(
+      PluginCompatibleStep stepInfo, CIExecutionArgs ciExecutionArgs) {
+    CIExecutionArgs ciExecutionArgsCopy = ciExecutionArgs;
+    if (GIT_CLONE.equals(stepInfo.getNonYamlInfo().getStepInfoType())) {
+      ciExecutionArgsCopy = CIExecutionArgs.builder().runSequence(ciExecutionArgs.getRunSequence()).build();
+    }
+    return BuildEnvironmentUtils.getBuildEnvironmentVariables(ciExecutionArgsCopy);
   }
 }

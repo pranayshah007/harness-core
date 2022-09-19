@@ -30,6 +30,7 @@ public class OutcomeExpressionConstants {
   public final String K8S_CANARY_DELETE_OUTCOME = "k8sCanaryDeleteOutcome";
   public final String K8S_BG_SWAP_SERVICES_OUTCOME = "k8sBGSwapServicesOutcome";
   public final String OUTPUT = "output";
+  public final String INFRA_TASK_EXECUTABLE_STEP_OUTPUT = "InfrastructureStepOutput";
   public final String TERRAFORM_CONFIG = "terraformConfig";
   public final String DEPLOYMENT_INFO_OUTCOME = "deploymentInfoOutcome";
   public final String HELM_DEPLOY_OUTCOME = "helmDeployOutcome";
@@ -41,4 +42,9 @@ public class OutcomeExpressionConstants {
   public final String STARTUP_COMMAND = "startupCommand";
   public final String APPLICATION_SETTINGS = "applicationSettings";
   public final String CONNECTION_STRINGS = "connectionStrings";
+  public final String ECS_ROLLING_ROLLBACK_OUTCOME = "ecsRollingRollbackOutcome";
+  public final String ECS_CANARY_DELETE_DATA_OUTCOME = "ecsCanaryDeleteDataOutcome";
+  public final String ECS_CANARY_DELETE_OUTCOME = "ecsCanaryDeleteOutcome";
+  public final String ECS_CANARY_DEPLOY_OUTCOME = "ecsCanaryDeployOutcome";
+  public final String ROLLBACK_ARTIFACT = "rollbackArtifact";
 }

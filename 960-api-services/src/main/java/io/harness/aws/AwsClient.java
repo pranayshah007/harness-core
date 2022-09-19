@@ -26,7 +26,7 @@ import javax.validation.constraints.NotNull;
 import org.hibernate.validator.constraints.NotEmpty;
 
 public interface AwsClient {
-  void validateAwsAccountCredential(AwsConfig awsConfig);
+  void validateAwsAccountCredential(AwsConfig awsConfig, @NotNull String region);
 
   void validateAwsCodeCommitCredential(AwsConfig awsConfig, String region, String repo);
 
@@ -41,6 +41,9 @@ public interface AwsClient {
   AWSCredentialsProvider getAssumedCredentialsProvider(
       AWSCredentialsProvider credentialsProvider, String crossAccountRoleArn, @Nullable String externalId);
 
+  AWSCredentialsProvider getAssumedCredentialsProviderWithRegion(AWSCredentialsProvider credentialsProvider,
+      String crossAccountRoleArn, @Nullable String externalId, @NotNull String region);
+
   Optional<ReportDefinition> getReportDefinition(AWSCredentialsProvider credentialsProvider, String curReportName);
 
   AWSCredentialsProvider constructStaticBasicAwsCredentials(@NotNull String accessKey, @NotNull String secretKey);
@@ -48,7 +51,8 @@ public interface AwsClient {
   List<String> listRolePolicyNames(AWSCredentialsProvider awsCredentialsProvider, @NotNull String roleName);
 
   List<EvaluationResult> simulatePrincipalPolicy(AWSCredentialsProvider credentialsProvider,
-      @NotNull String policySourceArn, @NotEmpty List<String> actionNames, @Nullable List<String> resourceArns);
+      @NotNull String policySourceArn, @NotEmpty List<String> actionNames, @Nullable List<String> resourceArns,
+      @NotNull String region);
 
   Policy getRolePolicy(AWSCredentialsProvider credentialsProvider, String roleName, String policyName);
 

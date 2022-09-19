@@ -10,12 +10,14 @@ package io.harness.delegate.task.shell.ssh;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.ARTIFACT_CONFIGURATION_NOT_FOUND;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.ARTIFACT_CONFIGURATION_NOT_FOUND_EXPLANATION;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.ARTIFACT_CONFIGURATION_NOT_FOUND_HINT;
-import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_CONFIG_FILE_PROVIDED;
-import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_CONFIG_FILE_PROVIDED_EXPLANATION;
-import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_CONFIG_FILE_PROVIDED_HINT;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT_HINT;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_DESTINATION_PATH_SPECIFIED;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_DESTINATION_PATH_SPECIFIED_EXPLANATION;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_DESTINATION_PATH_SPECIFIED_HINT;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.UNDECRYPTABLE_CONFIG_FILE_PROVIDED;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.UNDECRYPTABLE_CONFIG_FILE_PROVIDED_EXPLANATION;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.UNDECRYPTABLE_CONFIG_FILE_PROVIDED_HINT;
 
 import static java.lang.String.format;
 
@@ -32,20 +34,26 @@ import io.harness.delegate.task.shell.FileBasedAbstractScriptExecutorNG;
 import io.harness.delegate.task.shell.SshCommandTaskParameters;
 import io.harness.delegate.task.ssh.CopyCommandUnit;
 import io.harness.delegate.task.ssh.NgCommandUnit;
+import io.harness.delegate.task.ssh.artifact.CustomArtifactDelegateConfig;
+import io.harness.delegate.task.ssh.artifact.SkipCopyArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.config.ConfigFileParameters;
 import io.harness.delegate.task.ssh.config.SecretConfigFile;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.runtime.SshCommandExecutionException;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.LogLevel;
 import io.harness.security.encryption.SecretDecryptionService;
+import io.harness.shell.ExecuteCommandResponse;
 import io.harness.ssh.FileSourceType;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -56,8 +64,9 @@ public class SshCopyCommandHandler implements CommandHandler {
   @Inject private SecretDecryptionService secretDecryptionService;
 
   @Override
-  public CommandExecutionStatus handle(CommandTaskParameters parameters, NgCommandUnit commandUnit,
-      ILogStreamingTaskClient logStreamingTaskClient, CommandUnitsProgress commandUnitsProgress) {
+  public ExecuteCommandResponse handle(CommandTaskParameters parameters, NgCommandUnit commandUnit,
+      ILogStreamingTaskClient logStreamingTaskClient, CommandUnitsProgress commandUnitsProgress,
+      Map<String, Object> taskContext) {
     if (!(parameters instanceof SshCommandTaskParameters)) {
       throw new InvalidRequestException("Invalid task parameters submitted for command task.");
     }
@@ -85,6 +94,8 @@ public class SshCopyCommandHandler implements CommandHandler {
             .destinationPath(copyCommandUnit.getDestinationPath())
             .build();
 
+    context.getEnvironmentVariables().putAll((Map<String, String>) taskContext.get(RESOLVED_ENV_VARIABLES_KEY));
+
     if (EmptyPredicate.isEmpty(copyCommandUnit.getDestinationPath())) {
       log.info("Destination path no provided for copy command unit");
       throw NestedExceptionUtils.hintWithExplanationException(
@@ -103,12 +114,24 @@ public class SshCopyCommandHandler implements CommandHandler {
             ARTIFACT_CONFIGURATION_NOT_FOUND_EXPLANATION,
             new SshCommandExecutionException(ARTIFACT_CONFIGURATION_NOT_FOUND));
       }
+      if (context.getArtifactDelegateConfig() instanceof SkipCopyArtifactDelegateConfig) {
+        log.info("Artifactory docker registry found, skipping copy artifact.");
+        executor.getLogCallback().saveExecutionLog("Command finished with status " + result, LogLevel.INFO, result);
+        return ExecuteCommandResponse.builder().status(result).build();
+      }
+      if (sshCommandTaskParameters.getArtifactDelegateConfig() instanceof CustomArtifactDelegateConfig) {
+        throw NestedExceptionUtils.hintWithExplanationException(COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT_HINT,
+            COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT,
+            new SshCommandExecutionException(COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT));
+      }
+
       result = executor.copyFiles(context);
+      executor.getLogCallback().saveExecutionLog("Command finished with status " + result, LogLevel.INFO, result);
       if (result == CommandExecutionStatus.FAILURE) {
-        log.info(
+        log.error(
             "Failed to copy artifact with id: " + sshCommandTaskParameters.getArtifactDelegateConfig().getIdentifier());
       }
-      return result;
+      return ExecuteCommandResponse.builder().status(result).build();
     }
 
     if (FileSourceType.CONFIG.equals(copyCommandUnit.getSourceType())) {
@@ -117,28 +140,36 @@ public class SshCopyCommandHandler implements CommandHandler {
       for (ConfigFileParameters configFile : configFiles) {
         log.info(format("Copy config file : %s, isEncrypted: %b", configFile.getFileName(), configFile.isEncrypted()));
         if (configFile.isEncrypted()) {
-          SecretConfigFile secretConfigFile = (SecretConfigFile) secretDecryptionService.decrypt(
-              configFile.getSecretConfigFile(), configFile.getEncryptionDataDetails());
+          SecretConfigFile secretConfigFile;
+          try {
+            secretConfigFile = (SecretConfigFile) secretDecryptionService.decrypt(
+                configFile.getSecretConfigFile(), configFile.getEncryptionDataDetails());
+          } catch (Exception e) {
+            throw NestedExceptionUtils.hintWithExplanationException(
+                format(UNDECRYPTABLE_CONFIG_FILE_PROVIDED_HINT, configFile.getFileName()),
+                format(UNDECRYPTABLE_CONFIG_FILE_PROVIDED_EXPLANATION, configFile.getFileName()),
+                new SshCommandExecutionException(format(UNDECRYPTABLE_CONFIG_FILE_PROVIDED, configFile.getFileName())));
+          }
           String fileData = new String(secretConfigFile.getEncryptedConfigFile().getDecryptedValue());
           configFile.setFileContent(fileData);
           configFile.setFileSize(fileData.getBytes(StandardCharsets.UTF_8).length);
         }
-        result = executor.copyConfigFiles(copyCommandUnit.getDestinationPath(), configFile);
+        result = executor.copyConfigFiles(context.getEvaluatedDestinationPath(), configFile);
         if (result == CommandExecutionStatus.FAILURE) {
-          log.info("Failed to copy config file: " + configFile.getFileName());
+          log.error("Failed to copy config file: " + configFile.getFileName());
           break;
         }
       }
+      executor.getLogCallback().saveExecutionLog("Command finished with status " + result, LogLevel.INFO, result);
     }
 
-    return result;
+    return ExecuteCommandResponse.builder().status(result).build();
   }
 
   private List<ConfigFileParameters> getConfigFileParameters(
       SshCommandTaskParameters sshCommandTaskParameters, CopyCommandUnit copyCommandUnit) {
     if (sshCommandTaskParameters.getFileDelegateConfig() == null) {
-      throw NestedExceptionUtils.hintWithExplanationException(NO_CONFIG_FILE_PROVIDED_HINT,
-          NO_CONFIG_FILE_PROVIDED_EXPLANATION, new SshCommandExecutionException(NO_CONFIG_FILE_PROVIDED));
+      return Collections.emptyList();
     }
 
     List<ConfigFileParameters> configFiles = new ArrayList<>();

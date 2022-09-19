@@ -10,13 +10,18 @@ package io.harness.ng.core.environment.beans;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.ChangeDataCapture;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.EntityName;
 import io.harness.data.validator.Trimmed;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.ng.core.common.beans.NGTag;
+import io.harness.ng.core.environment.mappers.EnvironmentMapper;
+import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
 import io.harness.persistence.PersistentEntity;
 
 import com.google.common.collect.ImmutableList;
@@ -41,6 +46,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @OwnedBy(PIPELINE)
 @Data
 @Builder
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "environmentsNG", noClassnameStored = true)
 @FieldNameConstants(innerTypeName = "EnvironmentKeys")
 @Document("environmentsNG")
@@ -88,4 +94,12 @@ public class Environment implements PersistentEntity {
   @Setter @NonFinal String yamlGitConfigRef;
   @Setter @NonFinal String filePath;
   @Setter @NonFinal String rootFolder;
+
+  public String fetchNonEmptyYaml() {
+    if (EmptyPredicate.isEmpty(yaml)) {
+      NGEnvironmentConfig ngEnvironmentConfig = EnvironmentMapper.toNGEnvironmentConfig(this);
+      return EnvironmentMapper.toYaml(ngEnvironmentConfig);
+    }
+    return yaml;
+  }
 }

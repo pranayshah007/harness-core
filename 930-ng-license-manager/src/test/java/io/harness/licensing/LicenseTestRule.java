@@ -12,7 +12,6 @@ import io.harness.govern.ProviderModule;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.rule.InjectorRuleMixin;
 import io.harness.serializer.KryoRegistrar;
-import io.harness.springdata.SpringPersistenceTestModule;
 import io.harness.telemetry.AbstractTelemetryModule;
 import io.harness.telemetry.TelemetryConfiguration;
 import io.harness.telemetry.segment.SegmentConfiguration;
@@ -40,7 +39,6 @@ public class LicenseTestRule implements InjectorRuleMixin, MethodRule {
 
     List<Module> modules = new ArrayList<>();
     modules.add(LicenseModule.getInstance());
-    modules.add(new SpringPersistenceTestModule());
     modules.add(new AccountClientModule(ServiceHttpClientConfig.builder().build(), "test", "test"));
     modules.add(new ProviderModule() {
       @Provides

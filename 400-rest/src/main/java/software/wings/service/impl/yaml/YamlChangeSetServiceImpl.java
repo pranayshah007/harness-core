@@ -20,6 +20,7 @@ import static software.wings.yaml.gitSync.YamlChangeSet.Status.SKIPPED;
 import static java.lang.Boolean.TRUE;
 import static java.lang.String.format;
 
+import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageRequest.PageRequestBuilder;
 import io.harness.beans.PageResponse;
@@ -44,6 +45,7 @@ import software.wings.service.intfc.yaml.YamlSuccessfulChangeService;
 import software.wings.service.intfc.yaml.sync.YamlGitConfigService;
 import software.wings.yaml.gitSync.GitSyncMetadata;
 import software.wings.yaml.gitSync.GitSyncMetadata.GitSyncMetadataKeys;
+import software.wings.yaml.gitSync.GitWebhookRequestAttributes;
 import software.wings.yaml.gitSync.YamlChangeSet;
 import software.wings.yaml.gitSync.YamlChangeSet.Status;
 import software.wings.yaml.gitSync.YamlChangeSet.YamlChangeSetKeys;
@@ -53,6 +55,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -177,7 +180,7 @@ public class YamlChangeSetServiceImpl implements YamlChangeSetService {
     if (yamlGitConfig == null) {
       throw NoResultFoundException.newBuilder()
           .message(format(
-              "Unable to find yamlGitConfig for account = {}, appId = {}. Git Sync might not have been configured",
+              "Unable to find yamlGitConfig for account = %s, appId = %s. Git Sync might not have been configured",
               accountId, appId))
           .build();
     }
@@ -539,6 +542,30 @@ public class YamlChangeSetServiceImpl implements YamlChangeSetService {
       query.and(getHarnessToGitChangeSetCriteria(query, appId));
     }
     return query.asList(new FindOptions().limit(displayCount));
+  }
+
+  @Override
+  public YamlChangeSet pushYamlChangeSetForGitToHarness(
+      String accountId, String branchName, String connectorId, String repositoryName, String appId) {
+    if (!featureFlagService.isEnabled(FeatureName.CG_GIT_POLLING, accountId)) {
+      return null;
+    }
+    YamlChangeSet yamlChangeSet = YamlChangeSet.builder()
+                                      .status(YamlChangeSet.Status.QUEUED)
+                                      .accountId(accountId)
+                                      .fullSync(false)
+                                      .gitToHarness(true)
+                                      .gitWebhookRequestAttributes(GitWebhookRequestAttributes.builder()
+                                                                       .branchName(branchName)
+                                                                       .gitConnectorId(connectorId)
+                                                                       .repositoryFullName(repositoryName)
+                                                                       .isPollingBased(true)
+                                                                       .build())
+                                      .queuedOn(System.currentTimeMillis())
+                                      .appId(appId)
+                                      .gitFileChanges(Collections.emptyList())
+                                      .build();
+    return save(yamlChangeSet);
   }
 
   private CriteriaContainer getGitToHarnessChangeSetCriteria(Query<YamlChangeSet> query, YamlGitConfig yamlGitConfig) {

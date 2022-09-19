@@ -42,6 +42,7 @@ import io.harness.delegate.task.ssh.ScriptCommandUnit;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.rule.Owner;
+import io.harness.shell.ExecuteCommandResponse;
 import io.harness.shell.ScriptType;
 
 import com.google.inject.Inject;
@@ -115,22 +116,25 @@ public class CommandTaskNGTest extends CategoryTest {
             .sshInfraDelegateConfig(PdcSshInfraDelegateConfig.builder()
                                         .sshKeySpecDto(SSHKeySpecDTO.builder().build())
                                         .encryptionDataDetails(Collections.emptyList())
-                                        .hosts(Arrays.asList("host1"))
+                                        .hosts(Collections.singleton("host1"))
                                         .build())
             .accountId("accountId")
             .executionId("executionId")
             .host("host1")
             .build();
 
-    doReturn(CommandExecutionStatus.SUCCESS)
+    ExecuteCommandResponse executeCommandResponse =
+        ExecuteCommandResponse.builder().status(CommandExecutionStatus.SUCCESS).build();
+
+    doReturn(executeCommandResponse)
         .when(sshInitCommandHandler)
-        .handle(eq(taskParameters), eq(initCommandUnit), eq(logStreamingTaskClient), any());
-    doReturn(CommandExecutionStatus.SUCCESS)
+        .handle(eq(taskParameters), eq(initCommandUnit), eq(logStreamingTaskClient), any(), any());
+    doReturn(executeCommandResponse)
         .when(sshScriptCommandHandler)
-        .handle(eq(taskParameters), eq(scriptCommandUnit), eq(logStreamingTaskClient), any());
-    doReturn(CommandExecutionStatus.SUCCESS)
+        .handle(eq(taskParameters), eq(scriptCommandUnit), eq(logStreamingTaskClient), any(), any());
+    doReturn(executeCommandResponse)
         .when(sshCleanupCommandHandler)
-        .handle(eq(taskParameters), eq(cleanupCommandUnit), eq(logStreamingTaskClient), any());
+        .handle(eq(taskParameters), eq(cleanupCommandUnit), eq(logStreamingTaskClient), any(), any());
 
     DelegateResponseData responseData = task.run(taskParameters);
     assertThat(responseData).isInstanceOf(CommandTaskResponse.class);
@@ -138,12 +142,12 @@ public class CommandTaskNGTest extends CategoryTest {
     assertThat(commandTaskResponse.getStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
 
     verify(sshInitCommandHandler, times(1))
-        .handle(eq(taskParameters), eq(initCommandUnit), eq(logStreamingTaskClient), any());
+        .handle(eq(taskParameters), eq(initCommandUnit), eq(logStreamingTaskClient), any(), any());
     verify(sshScriptCommandHandler, times(1))
-        .handle(eq(taskParameters), eq(scriptCommandUnit), eq(logStreamingTaskClient), any());
-    verify(sshCopyCommandHandler, times(0)).handle(eq(taskParameters), any(), eq(logStreamingTaskClient), any());
+        .handle(eq(taskParameters), eq(scriptCommandUnit), eq(logStreamingTaskClient), any(), any());
+    verify(sshCopyCommandHandler, times(0)).handle(eq(taskParameters), any(), eq(logStreamingTaskClient), any(), any());
     verify(sshCleanupCommandHandler, times(1))
-        .handle(eq(taskParameters), eq(cleanupCommandUnit), eq(logStreamingTaskClient), any());
+        .handle(eq(taskParameters), eq(cleanupCommandUnit), eq(logStreamingTaskClient), any(), any());
   }
 
   @Test
@@ -157,29 +161,32 @@ public class CommandTaskNGTest extends CategoryTest {
             .sshInfraDelegateConfig(PdcSshInfraDelegateConfig.builder()
                                         .sshKeySpecDto(SSHKeySpecDTO.builder().build())
                                         .encryptionDataDetails(Collections.emptyList())
-                                        .hosts(Arrays.asList("host1"))
+                                        .hosts(Collections.singleton("host1"))
                                         .build())
             .accountId("accountId")
             .executionId("executionId")
             .host("host1")
             .build();
 
-    doReturn(CommandExecutionStatus.SUCCESS)
+    ExecuteCommandResponse executeCommandResponse =
+        ExecuteCommandResponse.builder().status(CommandExecutionStatus.SUCCESS).build();
+
+    doReturn(executeCommandResponse)
         .when(sshInitCommandHandler)
-        .handle(eq(taskParameters), any(NgCommandUnit.class), eq(logStreamingTaskClient), any());
+        .handle(eq(taskParameters), any(NgCommandUnit.class), eq(logStreamingTaskClient), any(), any());
     lenient()
         .doThrow(new RuntimeException("failed to execute script"))
         .when(sshScriptCommandHandler)
-        .handle(eq(taskParameters), any(NgCommandUnit.class), eq(logStreamingTaskClient), any());
+        .handle(eq(taskParameters), any(NgCommandUnit.class), eq(logStreamingTaskClient), any(), any());
 
     assertThatThrownBy(() -> task.run(taskParameters)).isInstanceOf(TaskNGDataException.class);
 
     verify(sshInitCommandHandler, times(1))
-        .handle(eq(taskParameters), eq(initCommandUnit), eq(logStreamingTaskClient), any());
+        .handle(eq(taskParameters), eq(initCommandUnit), eq(logStreamingTaskClient), any(), any());
     verify(sshScriptCommandHandler, times(1))
-        .handle(eq(taskParameters), eq(scriptCommandUnit), eq(logStreamingTaskClient), any());
-    verify(sshCopyCommandHandler, times(0)).handle(eq(taskParameters), any(), eq(logStreamingTaskClient), any());
+        .handle(eq(taskParameters), eq(scriptCommandUnit), eq(logStreamingTaskClient), any(), any());
+    verify(sshCopyCommandHandler, times(0)).handle(eq(taskParameters), any(), eq(logStreamingTaskClient), any(), any());
     verify(sshCleanupCommandHandler, times(0))
-        .handle(eq(taskParameters), eq(cleanupCommandUnit), eq(logStreamingTaskClient), any());
+        .handle(eq(taskParameters), eq(cleanupCommandUnit), eq(logStreamingTaskClient), any(), any());
   }
 }

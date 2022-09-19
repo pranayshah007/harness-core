@@ -8,6 +8,7 @@
 package software.wings.service.impl.pipeline;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.rule.OwnerRule.LUCAS_SALES;
 import static io.harness.rule.OwnerRule.POOJA;
 import static io.harness.rule.OwnerRule.PRABU;
 
@@ -505,5 +506,40 @@ public class PipelineServiceHelperTest extends WingsBaseTest {
     assertThat(pipelineStage.isLooped()).isEqualTo(true);
     assertThat(pipelineStage.getLoopedVarName()).isEqualTo("infra1");
     assertThat(infraDefIds).isEmpty();
+  }
+
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void shouldResolveEnvIdsForParallelStage1UsingPipelineVariables() {
+    PipelineStageElement pipelineStageElement = PipelineStageElement.builder()
+                                                    .properties(ImmutableMap.of(EnvStateKeys.envId, "${env}"))
+                                                    .name("test step")
+                                                    .type("ENV_STATE")
+                                                    .workflowVariables(ImmutableMap.of("envName", "anotherEnvId"))
+                                                    .parallelIndex(1)
+                                                    .build();
+    PipelineStageElement pipelineStageElement2 = PipelineStageElement.builder()
+                                                     .properties(ImmutableMap.of(EnvStateKeys.envId, "${env}"))
+                                                     .name("test step")
+                                                     .type("ENV_STATE")
+                                                     .workflowVariables(ImmutableMap.of("envName", ENV_ID))
+                                                     .parallelIndex(1)
+                                                     .build();
+    PipelineStage pipelineStage = PipelineStage.builder()
+                                      .pipelineStageElements(asList(pipelineStageElement))
+                                      .loopedVarName("infra1")
+                                      .looped(true)
+                                      .build();
+    PipelineStage pipelineStage2 = PipelineStage.builder()
+                                       .pipelineStageElements(asList(pipelineStageElement2))
+                                       .loopedVarName("infra1")
+                                       .looped(true)
+                                       .build();
+    Pipeline pipeline =
+        Pipeline.builder().name("Test pipeline").pipelineStages(asList(pipelineStage, pipelineStage2)).build();
+    pipeline.getPipelineVariables().add(aVariable().entityType(ENVIRONMENT).name("envName").value("envId").build());
+    List<String> envIds = PipelineServiceHelper.getEnvironmentIdsForParallelIndex(pipeline, 1);
+    assertThat(envIds).hasSize(2).containsExactly("anotherEnvId", ENV_ID);
   }
 }

@@ -73,6 +73,14 @@ while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symli
 done
 DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 
+if [[ $KUBERNETES_SERVICE_HOST != "" ]]; then
+  if [[ $NO_PROXY == "" ]]; then
+    export NO_PROXY=$KUBERNETES_SERVICE_HOST
+  else
+    export NO_PROXY="$NO_PROXY,$KUBERNETES_SERVICE_HOST"
+  fi
+fi
+
 if [ ! -e proxy.config ]; then
   echo "PROXY_HOST='$PROXY_HOST'" > proxy.config
   echo "PROXY_PORT='$PROXY_PORT'" >> proxy.config
@@ -129,7 +137,9 @@ fi
 
 if [ -e init.sh ]; then
     echo "Starting initialization script for delegate"
+    CURRENT_WORKING_DIRECTORY=$(pwd)
     source ./init.sh
+    cd "$CURRENT_WORKING_DIRECTORY"
     if [ $? -eq 0 ];
     then
       echo "Completed executing initialization script"
@@ -283,7 +293,7 @@ else
   sed -i.bak "s|^watcherCheckLocation:.*$|watcherCheckLocation: $WATCHER_STORAGE_URL/$WATCHER_CHECK_LOCATION|" config-delegate.yml
 fi
 if ! `grep heartbeatIntervalMs config-delegate.yml > /dev/null`; then
-  echo "heartbeatIntervalMs: 60000" >> config-delegate.yml
+  echo "heartbeatIntervalMs: 50000" >> config-delegate.yml
 fi
 if ! `grep doUpgrade config-delegate.yml > /dev/null`; then
   echo "doUpgrade: true" >> config-delegate.yml
@@ -346,12 +356,12 @@ if [[ $1 == "upgrade" ]]; then
   WATCHER_CURRENT_VERSION=$(jar_app_version watcher.jar)
   mkdir -p watcherBackup.$WATCHER_CURRENT_VERSION
   cp watcher.jar watcherBackup.$WATCHER_CURRENT_VERSION
-  $JRE_BINARY $PROXY_SYS_PROPS $OVERRIDE_TMP_PROPS -Dwatchersourcedir="$DIR" -Xmx192m -XX:+HeapDumpOnOutOfMemoryError -Xloggc:mygclogfilename.gc -XX:+UseParallelGC -XX:MaxGCPauseMillis=500 -Dfile.encoding=UTF-8 $WATCHER_JAVA_OPTS -jar watcher.jar config-watcher.yml upgrade $2
+  $JRE_BINARY $PROXY_SYS_PROPS $OVERRIDE_TMP_PROPS -Dwatchersourcedir="$DIR" -Xmx192m -XX:+HeapDumpOnOutOfMemoryError -XX:+UseParallelGC -XX:MaxGCPauseMillis=500 -Dfile.encoding=UTF-8 $WATCHER_JAVA_OPTS -jar watcher.jar config-watcher.yml upgrade $2
 else
   if `pgrep -f "\-Dwatchersourcedir=$DIR"> /dev/null`; then
     echo "Watcher already running"
   else
-    nohup $JRE_BINARY $PROXY_SYS_PROPS $OVERRIDE_TMP_PROPS -Dwatchersourcedir="$DIR" -Xmx192m -XX:+HeapDumpOnOutOfMemoryError -Xloggc:mygclogfilename.gc -XX:+UseParallelGC -XX:MaxGCPauseMillis=500 -Dfile.encoding=UTF-8 $WATCHER_JAVA_OPTS -jar watcher.jar config-watcher.yml >nohup-watcher.out 2>&1 &
+    nohup $JRE_BINARY $PROXY_SYS_PROPS $OVERRIDE_TMP_PROPS -Dwatchersourcedir="$DIR" -Xmx192m -XX:+HeapDumpOnOutOfMemoryError -XX:+UseParallelGC -XX:MaxGCPauseMillis=500 -Dfile.encoding=UTF-8 $WATCHER_JAVA_OPTS -jar watcher.jar config-watcher.yml >nohup-watcher.out 2>&1 &
     sleep 1
     if [ -s nohup-watcher.out ]; then
       echo "Failed to start Watcher."

@@ -10,6 +10,7 @@ package io.harness.ngtriggers.beans.entity;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.EntityName;
@@ -17,6 +18,7 @@ import io.harness.iterator.PersistentNGCronIterable;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ngtriggers.beans.entity.metadata.NGTriggerMetadata;
 import io.harness.ngtriggers.beans.entity.metadata.status.TriggerStatus;
@@ -45,6 +47,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "NGTriggerEntityKeys")
+@StoreIn(DbAliases.PMS)
 @Entity(value = "triggersNG", noClassnameStored = true)
 @Document("triggersNG")
 @TypeAlias("triggersNG")
@@ -116,6 +119,7 @@ public class NGTriggerEntity implements PersistentEntity, PersistentNGCronIterab
   @Builder.Default Boolean deleted = Boolean.FALSE;
   @Singular @Size(max = 128) List<NGTag> tags;
   @Builder.Default Boolean enabled = Boolean.TRUE;
+  String pollInterval;
   @FdIndex private List<Long> nextIterations; // List of activation times for cron triggers
   @Builder.Default Long ymlVersion = Long.valueOf(3);
 

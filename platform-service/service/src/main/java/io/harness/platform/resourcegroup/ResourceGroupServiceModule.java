@@ -44,6 +44,8 @@ import io.harness.persistence.UserProvider;
 import io.harness.platform.PlatformConfiguration;
 import io.harness.redis.RedisConfig;
 import io.harness.resourcegroup.ResourceGroupModule;
+import io.harness.resourcegroup.framework.v2.service.ResourceGroupValidator;
+import io.harness.resourcegroup.framework.v2.service.impl.ResourceGroupValidatorImpl;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.PrimaryVersionManagerRegistrars;
 import io.harness.serializer.morphia.ResourceGroupSerializer;
@@ -121,6 +123,7 @@ public class ResourceGroupServiceModule extends AbstractModule {
     install(ExecutorModule.getInstance());
     bind(PlatformConfiguration.class).toInstance(appConfig);
     bind(HPersistence.class).to(MongoPersistence.class);
+    bind(ResourceGroupValidator.class).to(ResourceGroupValidatorImpl.class);
     install(VersionModule.getInstance());
     install(PrimaryVersionManagerModule.getInstance());
     install(new ValidationModule(getValidatorFactory()));

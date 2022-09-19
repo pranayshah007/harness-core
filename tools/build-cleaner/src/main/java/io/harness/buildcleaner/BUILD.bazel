@@ -1,0 +1,29 @@
+load("@rules_java//java:defs.bzl", "java_binary")
+
+java_library(
+    name = "module",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tools/build-cleaner/src/main/java/io/harness/buildcleaner/bazel:module",
+        "//tools/build-cleaner/src/main/java/io/harness/buildcleaner/common:module",
+        "//tools/build-cleaner/src/main/java/io/harness/buildcleaner/javaparser:module",
+        "//tools/build-cleaner/src/main/java/io/harness/buildcleaner/proto:module",
+        "@maven//:com_google_code_gson_gson",
+        "@maven//:com_google_guava_guava",
+        "@maven//:commons_cli_commons_cli",
+        "@maven//:org_slf4j_slf4j_api",
+    ],
+)
+
+java_binary(
+    name = "build_cleaner",
+    main_class = "io.harness.buildcleaner.BuildCleaner",
+    resources = ["//tools/build-cleaner/src/main/java/io/harness/buildcleaner/resources:resource"],
+    visibility = ["//visibility:public"],
+    runtime_deps = [
+        ":module",
+        "//tools/build-cleaner/src/main/java/io/harness/buildcleaner/resources",
+        "@maven//:ch_qos_logback_logback_classic",
+    ],
+)

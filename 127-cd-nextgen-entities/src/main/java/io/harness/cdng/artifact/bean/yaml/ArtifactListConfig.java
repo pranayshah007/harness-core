@@ -56,8 +56,10 @@ public class ArtifactListConfig implements Visitable {
     this.uuid = uuid;
     this.primary = primary;
     if (primary != null) {
-      this.primary.getSpec().setIdentifier("primary");
-      this.primary.getSpec().setPrimaryArtifact(true);
+      if (this.primary.getSpec() != null) {
+        this.primary.getSpec().setIdentifier("primary");
+        this.primary.getSpec().setPrimaryArtifact(true);
+      }
     }
     this.sidecars = sidecars;
     if (isNotEmpty(sidecars)) {

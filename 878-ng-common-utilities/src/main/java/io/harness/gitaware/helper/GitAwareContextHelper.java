@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.context.GlobalContext;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
@@ -25,6 +26,8 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 @OwnedBy(DX)
 public class GitAwareContextHelper {
+  public static final String DEFAULT = "__default__";
+
   public GitEntityInfo getGitRequestParamsInfo() {
     final GitSyncBranchContext gitSyncBranchContext =
         GlobalContextManager.get(GitSyncBranchContext.NG_GIT_SYNC_CONTEXT);
@@ -90,5 +93,16 @@ public class GitAwareContextHelper {
   public String getFilepathInRequest() {
     GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
     return gitEntityInfo == null ? "" : gitEntityInfo.getFilePath();
+  }
+
+  public boolean isNullOrDefault(String val) {
+    return EmptyPredicate.isEmpty(val) || val.equals(DEFAULT);
+  }
+
+  public void updateGitEntityContext(GitEntityInfo branchInfo) {
+    if (!GlobalContextManager.isAvailable()) {
+      GlobalContextManager.set(new GlobalContext());
+    }
+    GlobalContextManager.upsertGlobalContextRecord(GitSyncBranchContext.builder().gitBranchInfo(branchInfo).build());
   }
 }

@@ -9,10 +9,11 @@ package io.harness.ng.core.service.entity;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
-import io.harness.annotation.StoreIn;
 import io.harness.annotations.ChangeDataCapture;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.EntityName;
 import io.harness.data.validator.Trimmed;
@@ -20,6 +21,8 @@ import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.ng.core.common.beans.NGTag;
+import io.harness.ng.core.service.mappers.NGServiceEntityMapper;
+import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.persistence.PersistentEntity;
 
 import com.google.common.collect.ImmutableList;
@@ -45,11 +48,12 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "ServiceEntityKeys")
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "servicesNG", noClassnameStored = true)
 @Document("servicesNG")
 @TypeAlias("io.harness.ng.core.service.entity.ServiceEntity")
 @ChangeDataCapture(table = "services", dataStore = "ng-harness", fields = {}, handler = "Services")
-@StoreIn(DbAliases.NG_MANAGER)
+@ChangeDataCapture(table = "tags_info", dataStore = "ng-harness", fields = {}, handler = "TagsInfoCD")
 public class ServiceEntity implements PersistentEntity {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
@@ -100,4 +104,12 @@ public class ServiceEntity implements PersistentEntity {
   @Setter @NonFinal String yamlGitConfigRef;
   @Setter @NonFinal String filePath;
   @Setter @NonFinal String rootFolder;
+
+  public String fetchNonEmptyYaml() {
+    if (EmptyPredicate.isEmpty(yaml)) {
+      NGServiceConfig ngServiceConfig = NGServiceEntityMapper.toNGServiceConfig(this);
+      return NGServiceEntityMapper.toYaml(ngServiceConfig);
+    }
+    return yaml;
+  }
 }

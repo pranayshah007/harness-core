@@ -76,7 +76,7 @@ public class DeploymentTableSchema {
   DbColumn instancesDeployed;
   DbColumn tags;
   DbColumn parentPipelineId;
-
+  DbColumn cause;
   public DeploymentTableSchema() {
     dbSpec = new DbSpec();
     dbSchema = dbSpec.addDefaultSchema();
@@ -106,5 +106,6 @@ public class DeploymentTableSchema {
     instancesDeployed = deploymentTable.addColumn("INSTANCES_DEPLOYED", "int", null);
     tags = deploymentTable.addColumn("TAGS", "hstore", null);
     parentPipelineId = deploymentTable.addColumn("PARENT_PIPELINE_ID", "text", null);
+    cause = deploymentTable.addColumn("CREATED_BY_TYPE", "text", null);
   }
 }

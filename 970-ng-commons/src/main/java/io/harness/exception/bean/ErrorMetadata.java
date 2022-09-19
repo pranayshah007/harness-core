@@ -12,8 +12,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ErrorCode;
 
 import lombok.Builder;
+import lombok.Getter;
 
 @OwnedBy(HarnessTeam.PIPELINE)
+@Getter
 @Builder
 public class ErrorMetadata {
   ErrorCode errorCode;

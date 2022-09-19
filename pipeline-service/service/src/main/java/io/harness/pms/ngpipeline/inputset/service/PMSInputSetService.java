@@ -28,7 +28,7 @@ public interface PMSInputSetService {
   InputSetEntity create(InputSetEntity inputSetEntity, String pipelineBranch, String pipelineRepoID);
 
   Optional<InputSetEntity> get(String accountId, String orgIdentifier, String projectIdentifier,
-      String pipelineIdentifier, String identifier, boolean deleted);
+      String pipelineIdentifier, String identifier, boolean deleted, String pipelineBranch, String pipelineRepoID);
 
   Optional<InputSetEntity> getWithoutValidations(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String identifier, boolean deleted);
@@ -60,5 +60,6 @@ public interface PMSInputSetService {
       String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier);
 
   InputSetEntity importInputSetFromRemote(String accountId, String orgIdentifier, String projectIdentifier,
-      String pipelineIdentifier, String inputSetIdentifier, InputSetImportRequestDTO inputSetImportRequestDTO);
+      String pipelineIdentifier, String inputSetIdentifier, InputSetImportRequestDTO inputSetImportRequestDTO,
+      boolean isForceImport);
 }

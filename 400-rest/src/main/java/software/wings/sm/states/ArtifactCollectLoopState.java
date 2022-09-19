@@ -195,13 +195,15 @@ public class ArtifactCollectLoopState extends State {
     }
 
     if (ExecutionStatus.SUCCESS.equals(executionStatusOfChildren)) {
-      updateArtifactsInContext((ExecutionContextImpl) context);
-      updateManifestsInContext((ExecutionContextImpl) context);
+      ExecutionContextImpl implContext = (ExecutionContextImpl) context;
+      WorkflowStandardParams workflowStandardParams = implContext.fetchWorkflowStandardParamsFromContext();
+      updateArtifactsInContext(implContext, workflowStandardParams);
+      updateManifestsInContext(implContext, workflowStandardParams);
     }
     return ExecutionResponse.builder().executionStatus(executionStatusOfChildren).build();
   }
 
-  public void updateManifestsInContext(ExecutionContextImpl context) {
+  public void updateManifestsInContext(ExecutionContextImpl context, WorkflowStandardParams workflowStandardParams) {
     String appId = context.getAppId();
     String workflowExecutionId = context.getWorkflowExecutionId();
     List<HelmChart> helmCharts = executionService.getManifestsCollected(appId, workflowExecutionId);
@@ -210,7 +212,6 @@ public class ArtifactCollectLoopState extends State {
     }
     StateExecutionInstance stateExecutionInstance = context.getStateExecutionInstance();
     addHelmChartsToWorkflowExecution(appId, workflowExecutionId, helmCharts);
-    WorkflowStandardParams workflowStandardParams = context.fetchWorkflowStandardParamsFromContext();
     if (workflowStandardParams != null && workflowStandardParams.getWorkflowElement() != null) {
       String pipelineWorkflowExecutionId = workflowStandardParams.getWorkflowElement().getPipelineDeploymentUuid();
       if (!workflowExecutionId.equals(pipelineWorkflowExecutionId)) {
@@ -223,7 +224,7 @@ public class ArtifactCollectLoopState extends State {
     addHelmChartsToParentStateExecutionInstance(appId, stateExecutionInstance.getParentInstanceId(), helmCharts);
   }
 
-  public void updateArtifactsInContext(ExecutionContextImpl context) {
+  public void updateArtifactsInContext(ExecutionContextImpl context, WorkflowStandardParams workflowStandardParams) {
     String appId = context.getAppId();
     String workflowExecutionId = context.getWorkflowExecutionId();
     List<Artifact> artifacts = executionService.getArtifactsCollected(appId, workflowExecutionId);
@@ -232,6 +233,12 @@ public class ArtifactCollectLoopState extends State {
     }
     StateExecutionInstance stateExecutionInstance = context.getStateExecutionInstance();
     addArtifactsToWorkflowExecution(appId, workflowExecutionId, artifacts);
+    if (workflowStandardParams != null && workflowStandardParams.getWorkflowElement() != null) {
+      String pipelineWorkflowExecutionId = workflowStandardParams.getWorkflowElement().getPipelineDeploymentUuid();
+      if (!workflowExecutionId.equals(pipelineWorkflowExecutionId)) {
+        addArtifactsToWorkflowExecution(appId, pipelineWorkflowExecutionId, artifacts);
+      }
+    }
     addArtifactsToStateExecutionInstance(appId, stateExecutionInstance, artifacts);
     // need to add artifact to parent stateExecutionInstance so that it gets transferred to all the other phases in
     // workflow.

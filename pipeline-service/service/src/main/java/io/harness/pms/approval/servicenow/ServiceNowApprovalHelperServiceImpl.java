@@ -8,6 +8,7 @@
 package io.harness.pms.approval.servicenow;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.delegate.task.shell.ShellScriptTaskNG.COMMAND_UNIT;
 
 import static software.wings.beans.TaskType.SERVICENOW_TASK_NG;
 
@@ -142,8 +143,7 @@ public class ServiceNowApprovalHelperServiceImpl implements ServiceNowApprovalHe
 
   private void handlePollingEventInternal(ServiceNowApprovalInstance instance) {
     Ambiance ambiance = instance.getAmbiance();
-    NGLogCallback logCallback = new NGLogCallback(
-        logStreamingStepClientFactory, ambiance, null, instance.getVersion() == null || instance.getVersion() == 0);
+    NGLogCallback logCallback = new NGLogCallback(logStreamingStepClientFactory, ambiance, COMMAND_UNIT, false);
     try {
       log.info("Polling serviceNow approval instance");
       logCallback.saveExecutionLog("-----");
@@ -238,7 +238,7 @@ public class ServiceNowApprovalHelperServiceImpl implements ServiceNowApprovalHe
     return StepUtils.prepareTaskRequest(ambiance, taskDetails, new ArrayList<>(), selectors, null, false);
   }
 
-  private void validateField(String name, String value) {
+  private void validateField(String value, String name) {
     if (isBlank(value)) {
       throw new InvalidRequestException(format("Field %s can't be empty", name));
     }

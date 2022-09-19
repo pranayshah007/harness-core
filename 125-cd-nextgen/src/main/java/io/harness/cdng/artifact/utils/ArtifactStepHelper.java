@@ -17,9 +17,12 @@ import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.GithubPackagesArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig;
 import io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
 import io.harness.cdng.artifact.mappers.ArtifactConfigToDelegateReqMapper;
@@ -42,6 +45,10 @@ import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubApiAccessType;
+import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubTokenSpecDTO;
 import io.harness.delegate.task.artifacts.ArtifactSourceDelegateRequest;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidConnectorTypeException;
@@ -92,6 +99,23 @@ public class ArtifactStepHelper {
         }
         return ArtifactConfigToDelegateReqMapper.getDockerDelegateRequest(
             dockerConfig, connectorConfig, encryptedDataDetails, dockerConfig.getConnectorRef().getValue());
+      case GOOGLE_ARTIFACT_REGISTRY:
+        GoogleArtifactRegistryConfig googleArtifactRegistryConfig = (GoogleArtifactRegistryConfig) artifactConfig;
+        connectorDTO = getConnector(googleArtifactRegistryConfig.getConnectorRef().getValue(), ambiance);
+        if (!(connectorDTO.getConnectorConfig() instanceof GcpConnectorDTO)) {
+          throw new InvalidConnectorTypeException("provided Connector "
+                  + googleArtifactRegistryConfig.getConnectorRef().getValue() + " is not compatible with "
+                  + googleArtifactRegistryConfig.getSourceType() + " Artifact",
+              WingsException.USER);
+        }
+        GcpConnectorDTO gcpConnectorDTO = (GcpConnectorDTO) connectorDTO.getConnectorConfig();
+        if (gcpConnectorDTO.getCredential() != null && gcpConnectorDTO.getCredential().getConfig() != null) {
+          encryptedDataDetails =
+              secretManagerClientService.getEncryptionDetails(ngAccess, gcpConnectorDTO.getCredential().getConfig());
+        }
+        return ArtifactConfigToDelegateReqMapper.getGarDelegateRequest(googleArtifactRegistryConfig, gcpConnectorDTO,
+            encryptedDataDetails, googleArtifactRegistryConfig.getConnectorRef().getValue());
+
       case AMAZONS3:
         AmazonS3ArtifactConfig amazonS3ArtifactConfig = (AmazonS3ArtifactConfig) artifactConfig;
         connectorDTO = getConnector(amazonS3ArtifactConfig.getConnectorRef().getValue(), ambiance);
@@ -108,6 +132,22 @@ public class ArtifactStepHelper {
         }
         return ArtifactConfigToDelegateReqMapper.getAmazonS3DelegateRequest(amazonS3ArtifactConfig, awsConnectorDTO,
             encryptedDataDetails, amazonS3ArtifactConfig.getConnectorRef().getValue());
+      case GITHUB_PACKAGES:
+        GithubPackagesArtifactConfig githubPackagesArtifactConfig = (GithubPackagesArtifactConfig) artifactConfig;
+        connectorDTO = getConnector(githubPackagesArtifactConfig.getConnectorRef().getValue(), ambiance);
+
+        if (!(connectorDTO.getConnectorConfig() instanceof GithubConnectorDTO)) {
+          throw new InvalidConnectorTypeException("provided Connector "
+                  + githubPackagesArtifactConfig.getConnectorRef().getValue() + " is not compatible with "
+                  + githubPackagesArtifactConfig.getSourceType() + " Artifact",
+              WingsException.USER);
+        }
+
+        GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) connectorDTO.getConnectorConfig();
+        encryptedDataDetails = getGithubEncryptedDetails(githubConnectorDTO, ngAccess);
+
+        return ArtifactConfigToDelegateReqMapper.getGithubPackagesDelegateRequest(githubPackagesArtifactConfig,
+            githubConnectorDTO, encryptedDataDetails, githubPackagesArtifactConfig.getConnectorRef().getValue());
       case GCR:
         GcrArtifactConfig gcrArtifactConfig = (GcrArtifactConfig) artifactConfig;
         connectorDTO = getConnector(gcrArtifactConfig.getConnectorRef().getValue(), ambiance);
@@ -116,7 +156,7 @@ public class ArtifactStepHelper {
                   + " is not compatible with " + gcrArtifactConfig.getSourceType() + " Artifact",
               WingsException.USER);
         }
-        GcpConnectorDTO gcpConnectorDTO = (GcpConnectorDTO) connectorDTO.getConnectorConfig();
+        gcpConnectorDTO = (GcpConnectorDTO) connectorDTO.getConnectorConfig();
         if (gcpConnectorDTO.getCredential() != null && gcpConnectorDTO.getCredential().getConfig() != null) {
           encryptedDataDetails =
               secretManagerClientService.getEncryptionDetails(ngAccess, gcpConnectorDTO.getCredential().getConfig());
@@ -214,10 +254,46 @@ public class ArtifactStepHelper {
         }
         return ArtifactConfigToDelegateReqMapper.getJenkinsDelegateRequest(jenkinsArtifactConfig, jenkinsConnectorDTO,
             encryptedDataDetails, jenkinsArtifactConfig.getConnectorRef().getValue());
+      case CUSTOM_ARTIFACT:
+        CustomArtifactConfig customArtifactConfig = (CustomArtifactConfig) artifactConfig;
+        return ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(customArtifactConfig, ambiance);
       default:
         throw new UnsupportedOperationException(
             String.format("Unknown Artifact Config type: [%s]", artifactConfig.getSourceType()));
     }
+  }
+
+  private List<EncryptedDataDetail> getGithubEncryptedDetails(
+      GithubConnectorDTO githubConnectorDTO, NGAccess ngAccess) {
+    List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<>();
+
+    if (githubConnectorDTO.getApiAccess() != null) {
+      encryptedDataDetails = getGithubEncryptionDetails(githubConnectorDTO, ngAccess);
+    } else {
+      throw new InvalidRequestException("Please enable API Access for the Github Connector");
+    }
+
+    return encryptedDataDetails;
+  }
+
+  private List<EncryptedDataDetail> getGithubEncryptionDetails(
+      GithubConnectorDTO githubConnectorDTO, NGAccess ngAccess) {
+    List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<>();
+
+    GithubApiAccessDTO githubApiAccessDTO = githubConnectorDTO.getApiAccess();
+
+    GithubApiAccessType type = githubApiAccessDTO.getType();
+
+    if (type == GithubApiAccessType.TOKEN) {
+      GithubTokenSpecDTO githubTokenSpecDTO = (GithubTokenSpecDTO) githubApiAccessDTO.getSpec();
+
+      encryptedDataDetails = secretManagerClientService.getEncryptionDetails(ngAccess, githubTokenSpecDTO);
+
+    } else {
+      throw new InvalidRequestException("Please select the authentication type for API Access as Token");
+    }
+
+    return encryptedDataDetails;
   }
 
   private ConnectorInfoDTO getConnector(String connectorIdentifierRef, Ambiance ambiance) {
@@ -240,6 +316,8 @@ public class ArtifactStepHelper {
         return TaskType.DOCKER_ARTIFACT_TASK_NG;
       case GCR:
         return TaskType.GCR_ARTIFACT_TASK_NG;
+      case GOOGLE_ARTIFACT_REGISTRY:
+        return TaskType.GOOGLE_ARTIFACT_REGISTRY_TASK_NG;
       case ECR:
         return TaskType.ECR_ARTIFACT_TASK_NG;
       case ACR:
@@ -252,6 +330,10 @@ public class ArtifactStepHelper {
         return TaskType.AMAZON_S3_ARTIFACT_TASK_NG;
       case JENKINS:
         return TaskType.JENKINS_ARTIFACT_TASK_NG;
+      case GITHUB_PACKAGES:
+        return TaskType.GITHUB_PACKAGES_TASK_NG;
+      case CUSTOM_ARTIFACT:
+        return TaskType.CUSTOM_ARTIFACT_NG;
       default:
         throw new UnsupportedOperationException(
             String.format("Unknown Artifact Config type: [%s]", artifactConfig.getSourceType()));
@@ -269,6 +351,15 @@ public class ArtifactStepHelper {
                                                    .stream()
                                                    .map(TaskSelectorYaml::new)
                                                    .collect(Collectors.toList()));
+      case GOOGLE_ARTIFACT_REGISTRY:
+        GoogleArtifactRegistryConfig garconfig = (GoogleArtifactRegistryConfig) artifactConfig;
+        connectorDTO = getConnector(garconfig.getConnectorRef().getValue(), ambiance);
+        return TaskSelectorYaml.toTaskSelector(((GcpConnectorDTO) connectorDTO.getConnectorConfig())
+                                                   .getDelegateSelectors()
+                                                   .stream()
+                                                   .map(TaskSelectorYaml::new)
+                                                   .collect(Collectors.toList()));
+
       case GCR:
         GcrArtifactConfig gcrArtifactConfig = (GcrArtifactConfig) artifactConfig;
         connectorDTO = getConnector(gcrArtifactConfig.getConnectorRef().getValue(), ambiance);
@@ -326,6 +417,16 @@ public class ArtifactStepHelper {
                                                    .stream()
                                                    .map(TaskSelectorYaml::new)
                                                    .collect(Collectors.toList()));
+      case GITHUB_PACKAGES:
+        GithubPackagesArtifactConfig githubPackagesArtifactConfig = (GithubPackagesArtifactConfig) artifactConfig;
+        connectorDTO = getConnector(githubPackagesArtifactConfig.getConnectorRef().getValue(), ambiance);
+        return TaskSelectorYaml.toTaskSelector(((GithubConnectorDTO) connectorDTO.getConnectorConfig())
+                                                   .getDelegateSelectors()
+                                                   .stream()
+                                                   .map(TaskSelectorYaml::new)
+                                                   .collect(Collectors.toList()));
+      case CUSTOM_ARTIFACT:
+        return TaskSelectorYaml.toTaskSelector(((CustomArtifactConfig) artifactConfig).getDelegateSelectors());
       default:
         throw new UnsupportedOperationException(
             String.format("Unknown Artifact Config type: [%s]", artifactConfig.getSourceType()));

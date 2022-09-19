@@ -23,11 +23,11 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.ChangeType;
+import io.harness.gitaware.helper.GitImportInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityCreateInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityDeleteInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityUpdateInfoDTO;
-import io.harness.gitsync.interceptor.GitImportInfoDTO;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -89,13 +89,13 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
   public ResponseDTO<InputSetResponseDTOPMS> getInputSet(String inputSetIdentifier,
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgIdentifier,
       @NotNull @ProjectIdentifier String projectIdentifier, @NotNull @ResourceIdentifier String pipelineIdentifier,
-      GitEntityFindInfoDTO gitEntityBasicInfo) {
+      String pipelineBranch, String pipelineRepoId, GitEntityFindInfoDTO gitEntityBasicInfo) {
     log.info(String.format("Retrieving input set with identifier %s for pipeline %s in project %s, org %s, account %s",
         inputSetIdentifier, pipelineIdentifier, projectIdentifier, orgIdentifier, accountId));
     Optional<InputSetEntity> optionalInputSetEntity;
     try {
-      optionalInputSetEntity = pmsInputSetService.get(
-          accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetIdentifier, false);
+      optionalInputSetEntity = pmsInputSetService.get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+          inputSetIdentifier, false, pipelineBranch, pipelineRepoId);
     } catch (InvalidInputSetException e) {
       return ResponseDTO.newResponse(PMSInputSetElementMapper.toInputSetResponseDTOPMSWithErrors(
           e.getInputSetEntity(), (InputSetErrorWrapperDTOPMS) e.getMetadata()));
@@ -114,14 +114,14 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
   public ResponseDTO<OverlayInputSetResponseDTOPMS> getOverlayInputSet(String inputSetIdentifier,
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgIdentifier,
       @NotNull @ProjectIdentifier String projectIdentifier, @NotNull @ResourceIdentifier String pipelineIdentifier,
-      GitEntityFindInfoDTO gitEntityBasicInfo) {
+      String pipelineBranch, String pipelineRepoId, GitEntityFindInfoDTO gitEntityBasicInfo) {
     log.info(String.format(
         "Retrieving overlay input set with identifier %s for pipeline %s in project %s, org %s, account %s",
         inputSetIdentifier, pipelineIdentifier, projectIdentifier, orgIdentifier, accountId));
     Optional<InputSetEntity> optionalInputSetEntity;
     try {
-      optionalInputSetEntity = pmsInputSetService.get(
-          accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetIdentifier, false);
+      optionalInputSetEntity = pmsInputSetService.get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+          inputSetIdentifier, false, pipelineBranch, pipelineRepoId);
     } catch (InvalidOverlayInputSetException e) {
       return ResponseDTO.newResponse(PMSInputSetElementMapper.toOverlayInputSetResponseDTOPMS(
           e.getInputSetEntity(), true, ((OverlayInputSetErrorWrapperDTOPMS) e.getMetadata()).getInvalidReferences()));
@@ -233,8 +233,7 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
         pmsInputSetService.list(criteria, pageRequest, accountId, orgIdentifier, projectIdentifier);
 
     Page<InputSetSummaryResponseDTOPMS> inputSetList =
-        PMSInputSetElementMapper.toInputSetSummaryResponseDTOPMSList(pmsInputSetService, pipelineService,
-            gitSyncSdkService, accountId, orgIdentifier, projectIdentifier, inputSetEntities);
+        inputSetEntities.map(PMSInputSetElementMapper::toInputSetSummaryResponseDTOPMS);
     return ResponseDTO.newResponse(getNGPageResponse(inputSetList));
   }
 
@@ -342,8 +341,9 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
       @NotNull @OrgIdentifier String orgIdentifier, @NotNull @ProjectIdentifier String projectIdentifier,
       @NotNull @ResourceIdentifier String pipelineIdentifier, String inputSetIdentifier,
       GitImportInfoDTO gitImportInfoDTO, InputSetImportRequestDTO inputSetImportRequestDTO) {
-    InputSetEntity inputSetEntity = pmsInputSetService.importInputSetFromRemote(
-        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetIdentifier, inputSetImportRequestDTO);
+    InputSetEntity inputSetEntity =
+        pmsInputSetService.importInputSetFromRemote(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+            inputSetIdentifier, inputSetImportRequestDTO, gitImportInfoDTO.getIsForceImport());
     return ResponseDTO.newResponse(
         InputSetImportResponseDTO.builder().identifier(inputSetEntity.getIdentifier()).build());
   }

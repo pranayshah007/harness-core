@@ -38,6 +38,7 @@ import io.harness.exception.ImageNotFoundException;
 import io.harness.exception.InterruptedRuntimeException;
 import io.harness.exception.InvalidArtifactServerException;
 import io.harness.exception.InvalidCredentialsException;
+import io.harness.exception.InvalidIdentifierRefException;
 import io.harness.exception.InvalidTagException;
 import io.harness.exception.InvalidThirdPartyCredentialsException;
 import io.harness.exception.InvalidYamlException;
@@ -55,6 +56,9 @@ import io.harness.exception.ShellExecutionException;
 import io.harness.exception.TerraformCommandExecutionException;
 import io.harness.exception.UnresolvedExpressionsException;
 import io.harness.exception.VerificationOperationException;
+import io.harness.exception.ngexception.AzureAppServiceTaskException;
+import io.harness.exception.ngexception.beans.templateservice.TemplateInputsErrorDTO;
+import io.harness.exception.ngexception.beans.templateservice.TemplateInputsErrorMetadataDTO;
 import io.harness.exception.runtime.SshCommandExecutionException;
 import io.harness.exception.runtime.serverless.ServerlessAwsLambdaRuntimeException;
 import io.harness.exception.runtime.serverless.ServerlessCommandExecutionException;
@@ -70,6 +74,7 @@ import io.harness.tasks.BinaryResponseData;
 import io.harness.tasks.FailureResponseData;
 
 import software.wings.beans.NameValuePair;
+import software.wings.beans.NameValuePairWithDefault;
 import software.wings.beans.appmanifest.StoreType;
 
 import com.esotericsoftware.kryo.Kryo;
@@ -142,10 +147,15 @@ public class CommonsKryoRegistrar implements KryoRegistrar {
     kryo.register(AzureContainerRegistryException.class, 980024);
     kryo.register(DataProcessingException.class, 980025);
     kryo.register(NameValuePair.class, 5226);
+    kryo.register(NameValuePairWithDefault.class, 5232);
     kryo.register(ServerlessAwsLambdaRuntimeException.class, 980026);
     kryo.register(ServerlessCommandExecutionException.class, 980027);
     kryo.register(AzureAKSException.class, 980028);
     kryo.register(SshCommandExecutionException.class, 980029);
     kryo.register(InterruptedRuntimeException.class, 980030);
+    kryo.register(InvalidIdentifierRefException.class, 980031);
+    kryo.register(AzureAppServiceTaskException.class, 980032);
+    kryo.register(TemplateInputsErrorDTO.class, 980033);
+    kryo.register(TemplateInputsErrorMetadataDTO.class, 980034);
   }
 }

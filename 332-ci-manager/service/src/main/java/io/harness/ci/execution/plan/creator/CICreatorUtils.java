@@ -17,12 +17,12 @@ import java.util.Set;
 public class CICreatorUtils {
   public static Set<String> getSupportedSteps() {
     // These are internal steps does not need to be in V2
-    return Sets.newHashSet("Test", "SaveCache", "liteEngineTask", "GitClone", "Cleanup", "PublishArtifacts");
+    return Sets.newHashSet();
   }
 
   public static Set<String> getSupportedStepsV2() {
-    return Sets.newHashSet("Run", "SaveCacheS3", "RunTests", "BuildAndPushGCR", "BuildAndPushECR",
-        "BuildAndPushDockerRegistry", "Plugin", "RestoreCacheGCS", "RestoreCacheS3", "SaveCacheGCS", "S3Upload",
-        "GCSUpload", "ArtifactoryUpload", "Security");
+    return Sets.newHashSet("Run", "SaveCacheS3", "RunTests", "liteEngineTask", "BuildAndPushACR", "BuildAndPushGCR",
+        "BuildAndPushECR", "BuildAndPushDockerRegistry", "Plugin", "RestoreCacheGCS", "RestoreCacheS3", "SaveCacheGCS",
+        "S3Upload", "GCSUpload", "ArtifactoryUpload", "Security", "GitClone", "Background");
   }
 }

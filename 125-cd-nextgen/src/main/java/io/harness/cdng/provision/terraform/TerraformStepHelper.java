@@ -20,7 +20,6 @@ import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
@@ -296,7 +295,7 @@ public class TerraformStepHelper {
         builder.configFiles(getStoreConfigAtCommitId(
             configuration.getConfigFiles().getStore().getSpec(), commitIdMap.get(TF_CONFIG_FILES)));
         builder.useConnectorCredentials(isExportCredentialForSourceModule(
-            ambiance, configuration.getConfigFiles(), ExecutionNodeType.TERRAFORM_PLAN.getYamlType()));
+            configuration.getConfigFiles(), ExecutionNodeType.TERRAFORM_PLAN.getYamlType()));
 
         break;
       case ARTIFACTORY:
@@ -401,24 +400,28 @@ public class TerraformStepHelper {
     switch (storeConfig.getKind()) {
       case ManifestStoreType.BITBUCKET: {
         BitbucketStore bitbucketStore = (BitbucketStore) gitStoreConfig;
+        bitbucketStore.setBranch(ParameterField.ofNull());
         bitbucketStore.setGitFetchType(FetchType.COMMIT);
         bitbucketStore.setCommitId(commitIdField);
         break;
       }
       case ManifestStoreType.GITLAB: {
         GitLabStore gitLabStore = (GitLabStore) gitStoreConfig;
+        gitLabStore.setBranch(ParameterField.ofNull());
         gitLabStore.setGitFetchType(FetchType.COMMIT);
         gitLabStore.setCommitId(commitIdField);
         break;
       }
       case ManifestStoreType.GIT: {
         GitStore gitStore = (GitStore) gitStoreConfig;
+        gitStore.setBranch(ParameterField.ofNull());
         gitStore.setGitFetchType(FetchType.COMMIT);
         gitStore.setCommitId(commitIdField);
         break;
       }
       case ManifestStoreType.GITHUB: {
         GithubStore githubStore = (GithubStore) gitStoreConfig;
+        githubStore.setBranch(ParameterField.ofNull());
         githubStore.setGitFetchType(FetchType.COMMIT);
         githubStore.setCommitId(commitIdField);
         break;
@@ -525,7 +528,7 @@ public class TerraformStepHelper {
                 .toGitStoreConfigDTO());
 
         builder.useConnectorCredentials(isExportCredentialForSourceModule(
-            ambiance, configuration.getSpec().getConfigFiles(), ExecutionNodeType.TERRAFORM_APPLY.getYamlType()));
+            configuration.getSpec().getConfigFiles(), ExecutionNodeType.TERRAFORM_APPLY.getYamlType()));
 
         break;
       case ARTIFACTORY:
@@ -628,11 +631,9 @@ public class TerraformStepHelper {
     }
   }
 
-  public boolean isExportCredentialForSourceModule(
-      Ambiance ambiance, TerraformConfigFilesWrapper configFiles, String type) {
+  public boolean isExportCredentialForSourceModule(TerraformConfigFilesWrapper configFiles, String type) {
     String description = String.format("%s step", type);
-    return cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.TF_MODULE_SOURCE_INHERIT_SSH)
-        && configFiles.getModuleSource() != null
+    return configFiles.getModuleSource() != null
         && !ParameterField.isNull(configFiles.getModuleSource().getUseConnectorCredentials())
         && CDStepHelper.getParameterFieldBooleanValue(
             configFiles.getModuleSource().getUseConnectorCredentials(), USE_CONNECTOR_CREDENTIALS, description);

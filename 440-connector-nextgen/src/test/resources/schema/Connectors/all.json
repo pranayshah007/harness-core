@@ -117,6 +117,9 @@
               "items": {
                 "type": "string"
               }
+            },
+            "executeOnDelegate": {
+              "type": "boolean"
             }
           }
         }
@@ -340,6 +343,9 @@
               "items": {
                 "type": "string"
               }
+            },
+            "executeOnDelegate": {
+              "type": "boolean"
             }
           }
         }
@@ -354,6 +360,9 @@
       "properties": {
         "crossAccountAccess": {
           "$ref": "#/definitions/CrossAccountAccess"
+        },
+        "region": {
+          "type": "string"
         },
         "type": {
           "type": "string",
@@ -961,6 +970,9 @@
               "items": {
                 "type": "string"
               }
+            },
+            "executeOnDelegate": {
+              "type": "boolean"
             }
           }
         }
@@ -1239,6 +1251,9 @@
               "items": {
                 "type": "string"
               }
+            },
+            "executeOnDelegate": {
+              "type": "boolean"
             },
             "type": {
               "type": "string",
@@ -1555,6 +1570,9 @@
                 "type": "string"
               }
             },
+            "executeOnDelegate": {
+              "type": "boolean"
+            },
             "type": {
               "type": "string",
               "enum": [
@@ -1749,6 +1767,9 @@
                 ]
               },
               "minLength": 1
+            },
+            "isAWSGovCloudAccount": {
+              "type": "boolean"
             }
           }
         }
@@ -1909,7 +1930,9 @@
             "Pdc",
             "AzureRepo",
             "Jenkins",
-            "OciHelmRepo"
+            "OciHelmRepo",
+            "CustomSecretManager",
+            "ELK"
           ]
         }
       },
@@ -2143,6 +2166,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "CustomSecretManager"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CustomSecretManager"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "Datadog"
               }
             }
@@ -2183,6 +2222,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/DynatraceConnectorDTO"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "ELK"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ELKConnectorDTO"
               }
             }
           }
@@ -2629,6 +2684,48 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "CustomSecretManager": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ConnectorConfigDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "onDelegate",
+            "template"
+          ],
+          "properties": {
+            "connectorRef": {
+              "type": "string"
+            },
+            "default": {
+              "type": "boolean"
+            },
+            "delegateSelectors": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string"
+              }
+            },
+            "host": {
+              "type": "string"
+            },
+            "onDelegate": {
+              "type": "boolean"
+            },
+            "template": {
+              "$ref": "#/definitions/TemplateLinkConfigForCustomSecretManager"
+            },
+            "workingDirectory": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "DatadogConnectorDTO": {
       "allOf": [
         {
@@ -2726,6 +2823,9 @@
             "dockerRegistryUrl": {
               "type": "string"
             },
+            "executeOnDelegate": {
+              "type": "boolean"
+            },
             "providerType": {
               "type": "string",
               "enum": [
@@ -2802,6 +2902,52 @@
               }
             },
             "url": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ELKConnectorDTO": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ConnectorConfigDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "url"
+          ],
+          "properties": {
+            "apiKeyId": {
+              "type": "string"
+            },
+            "apiKeyRef": {
+              "type": "string"
+            },
+            "authType": {
+              "type": "string",
+              "enum": [
+                "UsernamePassword",
+                "ApiClientToken",
+                "None"
+              ]
+            },
+            "delegateSelectors": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string"
+              }
+            },
+            "passwordRef": {
+              "type": "string"
+            },
+            "url": {
+              "type": "string"
+            },
+            "username": {
               "type": "string"
             }
           }
@@ -2913,6 +3059,9 @@
               "items": {
                 "type": "string"
               }
+            },
+            "executeOnDelegate": {
+              "type": "boolean"
             }
           }
         }
@@ -3712,6 +3861,9 @@
               "items": {
                 "type": "string"
               }
+            },
+            "executeOnDelegate": {
+              "type": "boolean"
             },
             "type": {
               "type": "string",
@@ -4650,6 +4802,28 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "NameValuePairWithDefault": {
+      "type": "object",
+      "required": [
+        "type",
+        "value"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "useAsDefault": {
+          "type": "boolean"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "NewRelicConnectorDTO": {
       "allOf": [
         {
@@ -5111,6 +5285,32 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "TemplateLinkConfigForCustomSecretManager": {
+      "type": "object",
+      "required": [
+        "templateRef",
+        "versionLabel"
+      ],
+      "properties": {
+        "templateInputs": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/NameValuePairWithDefault"
+            }
+          }
+        },
+        "templateRef": {
+          "type": "string"
+        },
+        "versionLabel": {
+          "type": "string",
+          "pattern": "^[0-9a-zA-Z][^\\s]{0,63}$"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "VaultConnectorDTO": {
       "allOf": [
         {
@@ -5162,6 +5362,9 @@
               "type": "string"
             },
             "readOnly": {
+              "type": "boolean"
+            },
+            "renewAppRoleToken": {
               "type": "boolean"
             },
             "renewalIntervalMinutes": {

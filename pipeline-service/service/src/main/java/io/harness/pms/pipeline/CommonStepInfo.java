@@ -72,7 +72,6 @@ public class CommonStepInfo {
                                .addFolderPaths(FolderPathConstants.APPROVAL)
                                .build())
           .setFeatureRestrictionName(FeatureRestrictionName.INTEGRATED_APPROVALS_WITH_CUSTOM_SCRIPT.name())
-          .setFeatureFlag(FeatureName.NG_CUSTOM_APPROVAL.name())
           .build();
   StepInfo jiraApprovalStepInfo =
       StepInfo.newBuilder()
@@ -84,7 +83,6 @@ public class CommonStepInfo {
                                .addFolderPaths(FolderPathConstants.APPROVAL)
                                .build())
           .setFeatureRestrictionName(FeatureRestrictionName.INTEGRATED_APPROVALS_WITH_JIRA.name())
-
           .build();
   StepInfo jiraCreateStepInfo =
       StepInfo.newBuilder()
@@ -92,7 +90,6 @@ public class CommonStepInfo {
           .setType(StepSpecTypeConstants.JIRA_CREATE)
           .setStepMetaData(StepMetaData.newBuilder().addCategory("Jira").addFolderPaths("Jira").build())
           .setFeatureRestrictionName(FeatureRestrictionName.INTEGRATED_APPROVALS_WITH_JIRA.name())
-
           .build();
   StepInfo jiraUpdateStepInfo =
       StepInfo.newBuilder()
@@ -100,7 +97,6 @@ public class CommonStepInfo {
           .setType(StepSpecTypeConstants.JIRA_UPDATE)
           .setStepMetaData(StepMetaData.newBuilder().addCategory("Jira").addFolderPaths("Jira").build())
           .setFeatureRestrictionName(FeatureRestrictionName.INTEGRATED_APPROVALS_WITH_JIRA.name())
-
           .build();
   StepInfo barrierStepInfo =
       StepInfo.newBuilder()
@@ -112,7 +108,6 @@ public class CommonStepInfo {
                                .setName("Queue")
                                .setType("Queue")
                                .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("FlowControl/Queue").build())
-                               .setFeatureFlag(FeatureName.PIPELINE_QUEUE_STEP.name())
                                .build();
   StepInfo serviceNowApprovalStepInfo =
       StepInfo.newBuilder()
@@ -145,7 +140,6 @@ public class CommonStepInfo {
                                .addFolderPaths(FolderPathConstants.SERVICENOW)
                                .build())
           .setFeatureRestrictionName(FeatureRestrictionName.INTEGRATED_APPROVALS_WITH_SERVICE_NOW.name())
-          .setFeatureFlag(FeatureName.SERVICENOW_CREATE_UPDATE_NG.name())
           .build();
 
   StepInfo serviceNowUpdateStepInfo =
@@ -157,7 +151,14 @@ public class CommonStepInfo {
                                .addFolderPaths(FolderPathConstants.SERVICENOW)
                                .build())
           .setFeatureRestrictionName(FeatureRestrictionName.INTEGRATED_APPROVALS_WITH_SERVICE_NOW.name())
-          .setFeatureFlag(FeatureName.SERVICENOW_CREATE_UPDATE_NG.name())
+          .build();
+
+  StepInfo waitStepInfo =
+      StepInfo.newBuilder()
+          .setName("Wait Step")
+          .setType(StepSpecTypeConstants.WAIT_STEP)
+          .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Utilities/Non-Scripted").build())
+          .setFeatureFlag(FeatureName.WAIT_STEP.name())
           .build();
 
   public List<StepInfo> getCommonSteps(String category) {
@@ -176,6 +177,7 @@ public class CommonStepInfo {
     stepInfos.add(serviceNowCreateStepInfo);
     stepInfos.add(serviceNowUpdateStepInfo);
     stepInfos.add(emailStepInfo);
+    stepInfos.add(waitStepInfo);
     return stepInfos;
   }
 }

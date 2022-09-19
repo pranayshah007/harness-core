@@ -3,6 +3,7 @@ DockerFile* diptiman.adak@harness.io udham.singh@harness.io guna.chandrasekaran@
 bazel* diptiman.adak@harness.io udham.singh@harness.io
 /dockerization/delegate/ raghu@harness.io jenny.james@harness.io marko.milic@harness.io arpit.tiwari@harness.io gaurav.jain@harness.io
 /access-control/ utkarsh.gupta@harness.io ankit.singhal@harness.io mallavarapu.reetika@harness.io manish.manchanda@harness.io
+/batch-processing/ hitesh.aringa@harness.io nikunj.badjatya@harness.io shubhanshu.verma@harness.io trunapushpa.surkar@harness.io
 /clients/access-control/ utkarsh.gupta@harness.io ankit.singhal@harness.io mallavarapu.reetika@harness.io manish.manchanda@harness.io
 /platform-service/modules/resource-group-service/ utkarsh.gupta@harness.io ankit.singhal@harness.io jimit.gandhi@harness.io mallavarapu.reetika@harness.io manish.manchanda@harness.io
 /clients/resource-group/ utkarsh.gupta@harness.io ankit.singhal@harness.io jimit.gandhi@harness.io mallavarapu.reetika@harness.io manish.manchanda@harness.io
@@ -14,10 +15,11 @@ bazel* diptiman.adak@harness.io udham.singh@harness.io
 /125-cd-nextgen/src/main/java/io/harness/cdng/creator/CDNGPlanCreatorProvider.java prashant.sharma@harness.io vaibhav.si@harness.io
 /pipeline-service/service/src/main/java/io/harness/pms/plan/creation/PipelineServiceInternalInfoProvider.java prashant.sharma@harness.io vaibhav.si@harness.io archit.singla@harness.io
 /320-ci-execution/src/main/java/io/harness/ci/plan/creator/CIPipelineServiceInfoProvider.java prashant.sharma@harness.io vaibhav.si@harness.io
-/300-cv-nextgen/src/main/java* praveen.sugavanam@harness.io abhijith.pradeep@harness.io deepak.chhikara@harness.io kapil.choudhary@harness.io
+/300-cv-nextgen/src/main/java* praveen.sugavanam@harness.io abhijith.pradeep@harness.io deepak.chhikara@harness.io
 /pipeline-service/service/src/main/java/**/*Resource*.java vaibhav.si@harness.io prashant.pal@harness.io archit.singla@harness.io
 
 /pipeline-service/ vaibhav.si@harness.io archit.singla@harness.io sahil.hindwani@harness.io sanyasi.naidu@harness.io
+/dockerization/pipeline-service/ prashant.sharma@harness.io archit.singla@harness.io sanyasi.naidu@harness.io
 
 /315-sto-manager/ @harness/sto
 /323-sto-utilities/ @harness/sto
@@ -87,3 +89,11 @@ bazel* diptiman.adak@harness.io udham.singh@harness.io
 /platform-service/modules/audit-service/contracts/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
 /platform-service/modules/notification-service/contracts/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
 /platform-service/modules/notification-service/delegate-tasks/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
+/pipeline-service/modules/orchestration-steps/ vaibhav.si@harness.io archit.singla@harness.io sahil.hindwani@harness.io sanyasi.naidu@harness.io deepak.puthraya@harness.io abhinav.mittal@harness.io pooja.singhal@harness.io
+/pipeline-service/service/src/main/java/io/harness/pms/jira/ vaibhav.si@harness.io archit.singla@harness.io sahil.hindwani@harness.io sanyasi.naidu@harness.io deepak.puthraya@harness.io abhinav.mittal@harness.io pooja.singhal@harness.io
+/pipeline-service/service/src/main/java/io/harness/pms/approval/ vaibhav.si@harness.io archit.singla@harness.io sahil.hindwani@harness.io sanyasi.naidu@harness.io deepak.puthraya@harness.io abhinav.mittal@harness.io pooja.singhal@harness.io
+/pipeline-service/service/src/main/java/io/harness/pms/servicenow/ vaibhav.si@harness.io archit.singla@harness.io sahil.hindwani@harness.io sanyasi.naidu@harness.io deepak.puthraya@harness.io abhinav.mittal@harness.io pooja.singhal@harness.io
+/pipeline-service/service/src/main/java/io/harness/pms/triggers/ vaibhav.si@harness.io archit.singla@harness.io sahil.hindwani@harness.io sanyasi.naidu@harness.io deepak.puthraya@harness.io abhinav.mittal@harness.io pooja.singhal@harness.io
+/pipeline-service/service/src/test/ vaibhav.si@harness.io archit.singla@harness.io sahil.hindwani@harness.io sanyasi.naidu@harness.io deepak.puthraya@harness.io abhinav.mittal@harness.io pooja.singhal@harness.io
+/pipeline-service/pms-sdk-core/ archit.singla@harness.io sahil.hindwani@harness.io vaibhav.si@harness.io sanyasi.naidu@harness.io
+/tools/build-cleaner/ gaurav.nanda@harness.io

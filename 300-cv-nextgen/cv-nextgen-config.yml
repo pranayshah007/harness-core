@@ -157,6 +157,8 @@ cacheConfig:
   cacheBackend: REDIS
   cacheNamespace: ""
   disabledCaches: [ ]
+  enterpriseCacheEnabled: true
+
 
 accessControlClientConfig:
   enableAccessControl: false
@@ -165,3 +167,8 @@ accessControlClientConfig:
     connectTimeOutSeconds: 15
     readTimeOutSeconds: 15
   accessControlServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+
+
+hostname: ${HOSTNAME:-localhost}
+
+basePathPrefix: ${BASE_PATH_PREFIX:-""}

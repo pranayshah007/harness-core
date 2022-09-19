@@ -20,6 +20,7 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.jackson.JsonNodeUtils;
+import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.source.NGTriggerSpecV2;
@@ -39,7 +40,9 @@ import io.harness.polling.contracts.ArtifactoryRegistryPayload;
 import io.harness.polling.contracts.BuildInfo;
 import io.harness.polling.contracts.DockerHubPayload;
 import io.harness.polling.contracts.EcrPayload;
+import io.harness.polling.contracts.GARPayload;
 import io.harness.polling.contracts.GcrPayload;
+import io.harness.polling.contracts.JenkinsPayload;
 import io.harness.polling.contracts.PollingItem;
 import io.harness.polling.contracts.PollingPayloadData;
 import io.harness.polling.contracts.PollingResponse;
@@ -65,10 +68,12 @@ import org.apache.logging.log4j.util.Strings;
 public class BuildTriggerHelper {
   private PipelineServiceClient pipelineServiceClient;
 
-  public Optional<String> fetchPipelineForTrigger(NGTriggerEntity ngTriggerEntity) {
+  public Optional<String> fetchPipelineForTrigger(TriggerDetails triggerDetails) {
+    NGTriggerEntity ngTriggerEntity = triggerDetails.getNgTriggerEntity();
+    NGTriggerConfigV2 ngTriggerConfigV2 = triggerDetails.getNgTriggerConfigV2();
     PMSPipelineResponseDTO response = NGRestUtils.getResponse(pipelineServiceClient.getPipelineByIdentifier(
         ngTriggerEntity.getTargetIdentifier(), ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
-        ngTriggerEntity.getProjectIdentifier(), null, null, false));
+        ngTriggerEntity.getProjectIdentifier(), ngTriggerConfigV2.getPipelineBranchName(), null, false));
 
     return response != null ? Optional.of(response.getYamlPipeline()) : Optional.empty();
   }
@@ -205,6 +210,10 @@ public class BuildTriggerHelper {
         .build();
   }
 
+  public BuildTriggerOpsData generateBuildTriggerOpsDataForGitPolling(TriggerDetails triggerDetails) throws Exception {
+    return BuildTriggerOpsData.builder().triggerDetails(triggerDetails).build();
+  }
+
   public String fetchStoreTypeForHelm(BuildTriggerOpsData buildTriggerOpsData) {
     EngineExpressionEvaluator engineExpressionEvaluator = new EngineExpressionEvaluator(null);
     Object evaluateExpression =
@@ -246,6 +255,10 @@ public class BuildTriggerHelper {
       validatePollingItemForAcr(pollingItem);
     } else if (pollingPayloadData.hasAmazonS3Payload()) {
       validatePollingItemForS3(pollingItem);
+    } else if (pollingPayloadData.hasJenkinsPayload()) {
+      validatePollingItemForJenkins(pollingItem);
+    } else if (pollingPayloadData.hasGarPayload()) {
+      validatePollingItemForGoogleArtifactRegistry(pollingItem);
     } else {
       throw new InvalidRequestException("Invalid Polling Type");
     }
@@ -254,6 +267,25 @@ public class BuildTriggerHelper {
   private void validatePollingItemForS3(PollingItem pollingItem) {
     AmazonS3Payload amazonS3Payload = pollingItem.getPollingPayloadData().getAmazonS3Payload();
     String error = checkFiledValueError("bucketName", amazonS3Payload.getBucketName());
+    if (isNotBlank(error)) {
+      throw new InvalidRequestException(error);
+    }
+  }
+
+  private void validatePollingItemForJenkins(PollingItem pollingItem) {
+    JenkinsPayload jenkinsPayload = pollingItem.getPollingPayloadData().getJenkinsPayload();
+
+    String error = checkFiledValueError("jobName", jenkinsPayload.getJobName());
+    if (isNotBlank(error)) {
+      throw new InvalidRequestException(error);
+    }
+  }
+
+  private void validatePollingItemForGoogleArtifactRegistry(PollingItem pollingItem) {
+    GARPayload garPayload = pollingItem.getPollingPayloadData().getGarPayload();
+
+    String error = checkFiledValueError("Package", garPayload.getPkg());
+
     if (isNotBlank(error)) {
       throw new InvalidRequestException(error);
     }

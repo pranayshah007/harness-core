@@ -7,8 +7,8 @@
 
 package io.harness.artifactory;
 
+import static java.util.stream.Collectors.toList;
 import static org.jfrog.artifactory.client.model.impl.PackageTypeImpl.docker;
-import static org.jfrog.artifactory.client.model.impl.PackageTypeImpl.generic;
 import static org.jfrog.artifactory.client.model.impl.PackageTypeImpl.maven;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -25,12 +25,12 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.InputStream;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.jfrog.artifactory.client.model.impl.PackageTypeImpl;
 
 @Singleton
 @Slf4j
@@ -100,10 +100,10 @@ public class ArtifactoryNgServiceImpl implements ArtifactoryNgService {
       case maven:
         return artifactoryClient.getRepositories(artifactoryConfig, Arrays.asList(maven));
       case generic:
-        return artifactoryClient.getRepositoriesByRepoType(artifactoryConfig, generic);
       case any:
       default:
-        return artifactoryClient.getRepositories(artifactoryConfig, new ArrayList<>());
+        return artifactoryClient.getRepositories(artifactoryConfig,
+            Arrays.stream(PackageTypeImpl.values()).filter(type -> docker != type).collect(toList()));
     }
   }
 

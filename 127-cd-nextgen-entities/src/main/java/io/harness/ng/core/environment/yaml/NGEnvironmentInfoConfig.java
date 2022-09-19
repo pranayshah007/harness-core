@@ -18,6 +18,7 @@ import io.harness.beans.SwaggerConstants;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.EntityName;
 import io.harness.ng.core.environment.beans.EnvironmentType;
+import io.harness.ng.core.environment.beans.NGEnvironmentGlobalOverride;
 import io.harness.validator.NGRegexValidatorConstants;
 import io.harness.yaml.core.variables.NGVariable;
 
@@ -63,7 +64,7 @@ public class NGEnvironmentInfoConfig {
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) String description;
   @ApiModelProperty(required = true) EnvironmentType type;
   @Valid List<NGVariable> variables;
-
+  @JsonProperty("overrides") NGEnvironmentGlobalOverride ngEnvironmentGlobalOverride;
   @AssertTrue(message = "duplicate variables are present. Please remove them and retry")
   private boolean isValid() {
     try {

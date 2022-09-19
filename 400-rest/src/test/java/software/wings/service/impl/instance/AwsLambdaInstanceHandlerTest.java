@@ -775,7 +775,7 @@ public class AwsLambdaInstanceHandlerTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void test_getPerpetualTaskFeatureName() {
     assertThat(awsLambdaInstanceHandler.getFeatureFlagToEnablePerpetualTaskForInstanceSync())
-        .isEqualTo(MOVE_AWS_LAMBDA_INSTANCE_SYNC_TO_PERPETUAL_TASK);
+        .isEqualTo(Optional.of(MOVE_AWS_LAMBDA_INSTANCE_SYNC_TO_PERPETUAL_TASK));
   }
 
   private List<DeploymentSummary> getDeploymentSummarList() {

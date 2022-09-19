@@ -8,6 +8,7 @@
 package software.wings.delegatetasks.aws.ecs.ecstaskhandler.deploy;
 
 import static io.harness.rule.OwnerRule.ARVIND;
+import static io.harness.rule.OwnerRule.LOVISH_BANSAL;
 import static io.harness.rule.OwnerRule.SAINATH;
 import static io.harness.rule.OwnerRule.SATYAM;
 
@@ -364,6 +365,24 @@ public class EcsDeployCommandTaskHelperTest extends WingsBaseTest {
                                        .build(),
             15, 5, 0))
         .isEqualTo(10);
+  }
+  @Test
+  @Owner(developers = LOVISH_BANSAL)
+  @Category(UnitTests.class)
+  public void testGetDownsizeByAmountifTargetInstancesZero() {
+    assertThat(helper.getDownsizeByAmount(ContextData.builder().blueGreen(true).build(), 15, 5, 0)).isEqualTo(0);
+    assertThat(
+        helper.getDownsizeByAmount(ContextData.builder()
+                                       .blueGreen(false)
+                                       .resizeParams(anEcsResizeParams()
+                                                         .withDownsizeInstanceCount(100)
+                                                         .withFixedInstances(0)
+                                                         .withUseFixedInstances(true)
+                                                         .withDownsizeInstanceUnitType(InstanceUnitType.PERCENTAGE)
+                                                         .build())
+                                       .build(),
+            15, 0, 0))
+        .isEqualTo(0);
   }
 
   @Test

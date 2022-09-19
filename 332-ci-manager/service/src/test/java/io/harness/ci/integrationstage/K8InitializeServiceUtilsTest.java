@@ -14,12 +14,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.beans.environment.ServiceDefinitionInfo;
 import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
-import io.harness.beans.stages.IntegrationStageConfig;
+import io.harness.beans.stages.IntegrationStageNode;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.category.element.UnitTests;
 import io.harness.ci.executionplan.CIExecutionTestBase;
 import io.harness.ci.utils.PortFinder;
-import io.harness.plancreator.stages.stage.StageElementConfig;
+import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
@@ -36,12 +36,12 @@ public class K8InitializeServiceUtilsTest extends CIExecutionTestBase {
   @Owner(developers = SHUBHAM)
   @Category(UnitTests.class)
   public void createServiceContainerDefinitions() {
-    StageElementConfig stageElementConfig = K8InitializeServiceUtilsHelper.getStageElementConfig();
+    IntegrationStageNode stageNode = K8InitializeServiceUtilsHelper.getStageNode();
     PortFinder portFinder = PortFinder.builder().startingPort(PORT_STARTING_RANGE).usedPorts(new HashSet<>()).build();
 
     List<ContainerDefinitionInfo> expected = Arrays.asList(K8InitializeServiceUtilsHelper.getServiceContainer());
     List<ContainerDefinitionInfo> serviceContainers =
-        k8InitializeServiceUtils.createServiceContainerDefinitions(stageElementConfig, portFinder, OSType.Linux);
+        k8InitializeServiceUtils.createServiceContainerDefinitions(stageNode, portFinder, OSType.Linux);
 
     assertThat(serviceContainers).isEqualTo(expected);
   }

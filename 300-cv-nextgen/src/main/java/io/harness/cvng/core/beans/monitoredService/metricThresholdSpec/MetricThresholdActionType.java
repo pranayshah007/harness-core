@@ -7,11 +7,34 @@
 
 package io.harness.cvng.core.beans.monitoredService.metricThresholdSpec;
 
+import io.harness.cvng.beans.TimeSeriesThresholdActionType;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public enum MetricThresholdActionType {
-
   @JsonProperty("IgnoreThreshold") IGNORE,
-  @JsonProperty("FailImmediately") FAIL
+  @JsonProperty("FailImmediately") FAIL;
 
+  public TimeSeriesThresholdActionType getTimeSeriesThresholdActionType() {
+    switch (this) {
+      case IGNORE:
+        return TimeSeriesThresholdActionType.IGNORE;
+      case FAIL:
+        return TimeSeriesThresholdActionType.FAIL;
+      default:
+        throw new IllegalStateException("Unhanded MetricThresholdActionType " + this);
+    }
+  }
+
+  public static MetricThresholdActionType getMetricThresholdActionType(
+      TimeSeriesThresholdActionType timeSeriesThresholdActionType) {
+    switch (timeSeriesThresholdActionType) {
+      case IGNORE:
+        return MetricThresholdActionType.IGNORE;
+      case FAIL:
+        return MetricThresholdActionType.FAIL;
+      default:
+        throw new IllegalStateException("Unhanded TimeSeriesThresholdActionType " + timeSeriesThresholdActionType);
+    }
+  }
 }

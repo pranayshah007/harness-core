@@ -11,13 +11,11 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.common.NGExpressionUtils;
+import io.harness.jackson.JsonNodeUtils;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.BooleanNode;
-import com.fasterxml.jackson.databind.node.NumericNode;
-import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.inject.Singleton;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -42,7 +40,7 @@ public class ExecutionInputServiceHelper {
       String value = fullTemplateMap.get(key).toString().replace("\\\"", "").replace("\"", "");
       if (NGExpressionUtils.matchesExecutionInputPattern(value)) {
         Object rawInputValue = fullUserInputMap.get(key);
-        Object inputValue = getValueFromJsonNode(rawInputValue);
+        Object inputValue = JsonNodeUtils.getValueFromJsonNode(rawInputValue);
         inputMap.put(key.getExpressionFqnWithoutIgnoring(), inputValue);
       }
     });
@@ -66,17 +64,5 @@ public class ExecutionInputServiceHelper {
       currentMap.put(fqnComponents[fqnComponents.length - 1], value);
     });
     return finalMap;
-  }
-
-  private Object getValueFromJsonNode(Object objectNode) {
-    if (objectNode instanceof TextNode) {
-      return ((TextNode) objectNode).asText();
-    } else if (objectNode instanceof NumericNode) {
-      return ((NumericNode) objectNode).doubleValue();
-    } else if (objectNode instanceof BooleanNode) {
-      return ((BooleanNode) objectNode).booleanValue();
-    } else {
-      return objectNode.toString().replace("\\\"", "").replace("\"", "");
-    }
   }
 }

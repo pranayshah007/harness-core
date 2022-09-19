@@ -13,6 +13,7 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.EntityName;
 import io.harness.ng.core.infrastructure.InfrastructureType;
@@ -54,6 +55,7 @@ public class InfrastructureDefinitionConfig {
   String orgIdentifier;
   String projectIdentifier;
   String environmentRef;
+  ServiceDefinitionType deploymentType;
 
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) String description;
   Map<String, String> tags;

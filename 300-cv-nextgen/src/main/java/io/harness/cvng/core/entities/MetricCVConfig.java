@@ -9,14 +9,22 @@ package io.harness.cvng.core.entities;
 
 import static io.harness.cvng.analysis.CVAnalysisConstants.TIMESERIES_SERVICE_GUARD_DATA_LENGTH;
 import static io.harness.cvng.core.utils.ErrorMessageUtils.generateErrorMessageFromParam;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import io.harness.cvng.beans.DeviationType;
+import io.harness.cvng.beans.ThresholdConfigType;
 import io.harness.cvng.beans.TimeSeriesMetricType;
 import io.harness.cvng.beans.TimeSeriesThresholdActionType;
 import io.harness.cvng.beans.TimeSeriesThresholdCriteria;
 import io.harness.cvng.beans.TimeSeriesThresholdType;
 import io.harness.cvng.core.beans.TimeRange;
+import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
+import io.harness.cvng.core.beans.monitoredService.metricThresholdSpec.MetricThresholdActionType;
+import io.harness.cvng.core.beans.monitoredService.metricThresholdSpec.MetricThresholdCriteriaType;
+import io.harness.cvng.core.transformer.metricThresholdSpec.MetricThresholdSpecDTOTransformer;
 import io.harness.cvng.core.utils.DateTimeUtils;
 import io.harness.cvng.models.VerificationType;
 
@@ -24,11 +32,14 @@ import com.google.gson.Gson;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -96,6 +107,8 @@ public abstract class MetricCVConfig<I extends AnalysisInfo> extends CVConfig {
                              .metricName(metricName)
                              .action(TimeSeriesThresholdActionType.IGNORE)
                              .criteria(criteria)
+                             .thresholdConfigType(ThresholdConfigType.DEFAULT)
+                             .deviationType(DeviationType.getDeviationType(thresholdTypes))
                              .build());
         });
       });
@@ -114,5 +127,88 @@ public abstract class MetricCVConfig<I extends AnalysisInfo> extends CVConfig {
       }
     }
     return new ArrayList<>(thresholdTypes);
+  }
+
+  public List<TimeSeriesMetricPackDTO.MetricThreshold> getMetricThresholdDTOs() {
+    List<TimeSeriesMetricPackDTO.MetricThreshold> metricThresholds = new ArrayList<>();
+    Map<String, List<TimeSeriesThreshold>> mapOfTimeSeriesThreshold = new HashMap<>();
+    metricPack.getMetrics().forEach(metricDefinition -> {
+      if (!isEmpty(metricDefinition.getThresholds())) {
+        List<TimeSeriesThreshold> customThresholds =
+            metricDefinition.getThresholds()
+                .stream()
+                .filter(m -> ThresholdConfigType.USER_DEFINED.equals(m.getThresholdConfigType()))
+                .collect(Collectors.toList());
+        for (TimeSeriesThreshold timeSeriesThreshold : customThresholds) {
+          String key = getKey(timeSeriesThreshold);
+          List<TimeSeriesThreshold> timeSeriesThresholds =
+              mapOfTimeSeriesThreshold.getOrDefault(key, new ArrayList<>());
+          timeSeriesThresholds.add(timeSeriesThreshold);
+          mapOfTimeSeriesThreshold.put(key, timeSeriesThresholds);
+        }
+      }
+    });
+
+    for (Map.Entry<String, List<TimeSeriesThreshold>> entry : mapOfTimeSeriesThreshold.entrySet()) {
+      List<TimeSeriesThreshold> customThresholds = entry.getValue();
+      MetricThresholdCriteriaType thresholdCriteriaType =
+          MetricThresholdCriteriaType.getTimeSeriesThresholdComparisonType(
+              customThresholds.get(0).getCriteria().getType());
+      Optional<TimeSeriesThreshold> lessThanTimeSeriesThreshold =
+          customThresholds.stream()
+              .filter(m -> TimeSeriesThresholdType.ACT_WHEN_LOWER.equals(m.getCriteria().getThresholdType()))
+              .findFirst();
+      Optional<TimeSeriesThreshold> greaterThanTimeSeriesThreshold =
+          customThresholds.stream()
+              .filter(m -> TimeSeriesThresholdType.ACT_WHEN_HIGHER.equals(m.getCriteria().getThresholdType()))
+              .findFirst();
+      Double lessThan = null;
+      Double greaterThan = null;
+      if (lessThanTimeSeriesThreshold.isPresent()) {
+        double value = thresholdCriteriaType.getPercentage(lessThanTimeSeriesThreshold.get().getCriteria().getValue());
+        if (lessThanTimeSeriesThreshold.get().getAction().equals(TimeSeriesThresholdActionType.IGNORE)) {
+          greaterThan = value;
+        } else {
+          lessThan = value;
+        }
+      }
+      if (greaterThanTimeSeriesThreshold.isPresent()) {
+        double value =
+            thresholdCriteriaType.getPercentage(greaterThanTimeSeriesThreshold.get().getCriteria().getValue());
+        if (greaterThanTimeSeriesThreshold.get().getAction().equals(TimeSeriesThresholdActionType.IGNORE)) {
+          lessThan = value;
+        } else {
+          greaterThan = value;
+        }
+      }
+      TimeSeriesThreshold baseMetricThreshold = customThresholds.get(0);
+      metricThresholds.add(
+          TimeSeriesMetricPackDTO.MetricThreshold.builder()
+              .metricName(baseMetricThreshold.getMetricName())
+              .groupName(maybeGetGroupName().orElse(baseMetricThreshold.getMetricGroupName()))
+              .metricIdentifier(baseMetricThreshold.getMetricIdentifier())
+              .type(MetricThresholdActionType.getMetricThresholdActionType(customThresholds.get(0).getAction()))
+              .spec(MetricThresholdSpecDTOTransformer.getDto(baseMetricThreshold))
+              .criteria(
+                  TimeSeriesMetricPackDTO.MetricThreshold.MetricThresholdCriteria.builder()
+                      .type(thresholdCriteriaType)
+                      .spec(TimeSeriesMetricPackDTO.MetricThreshold.MetricThresholdCriteria.MetricThresholdCriteriaSpec
+                                .builder()
+                                .lessThan(lessThan)
+                                .greaterThan(greaterThan)
+                                .build())
+                      .build())
+              .build());
+    }
+    if (isNotEmpty(metricThresholds)) {
+      return metricThresholds;
+    }
+    return null;
+  }
+
+  private String getKey(TimeSeriesThreshold timeSeriesThreshold) {
+    return timeSeriesThreshold.getMetricName() + timeSeriesThreshold.getMetricGroupName()
+        + timeSeriesThreshold.getAction() + timeSeriesThreshold.getCriteria().getType()
+        + timeSeriesThreshold.getCriteria().getAction();
   }
 }

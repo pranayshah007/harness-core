@@ -35,7 +35,7 @@ public abstract class AbstractSlotDataRequest extends AbstractWebAppTaskRequest 
   @Expression(ALLOW_SECRETS) private AppSettingsFile startupCommand;
   @Expression(ALLOW_SECRETS) private AppSettingsFile applicationSettings;
   @Expression(ALLOW_SECRETS) private AppSettingsFile connectionStrings;
-  private AzureArtifactConfig artifact;
+  @Expression(ALLOW_SECRETS) private AzureArtifactConfig artifact;
   private Integer timeoutIntervalInMin;
 
   protected AbstractSlotDataRequest(String accountId, CommandUnitsProgress commandUnitsProgress,

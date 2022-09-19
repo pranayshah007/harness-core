@@ -8,10 +8,9 @@
 package io.harness.perpetualtask.k8s.metrics.collector;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.ccm.RecommenderUtils.RECOMMENDER_VERSION;
+import static io.harness.ccm.RecommenderUtils.checkpointToProto;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-
-import static software.wings.graphql.datafetcher.ce.recommendation.entity.RecommenderUtils.RECOMMENDER_VERSION;
-import static software.wings.graphql.datafetcher.ce.recommendation.entity.RecommenderUtils.checkpointToProto;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.Optional.ofNullable;
@@ -19,7 +18,7 @@ import static java.util.Optional.ofNullable;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.ccm.commons.constants.Constants;
+import io.harness.ccm.CcmConstants;
 import io.harness.event.client.EventPublisher;
 import io.harness.event.payloads.AggregatedStorage;
 import io.harness.event.payloads.AggregatedUsage;
@@ -287,7 +286,7 @@ public class K8sMetricCollector {
         })
         .forEach(nodeMetric
             -> eventPublisher.publishMessage(nodeMetric, nodeMetric.getTimestamp(),
-                ImmutableMap.of(Constants.CLUSTER_ID_IDENTIFIER, clusterDetails.getClusterId())));
+                ImmutableMap.of(CcmConstants.CLUSTER_ID_IDENTIFIER, clusterDetails.getClusterId())));
     nodeMetricsCache.invalidateAll();
   }
 
@@ -314,7 +313,7 @@ public class K8sMetricCollector {
         })
         .forEach(pvMetric
             -> eventPublisher.publishMessage(pvMetric, pvMetric.getTimestamp(),
-                ImmutableMap.of(Constants.CLUSTER_ID_IDENTIFIER, clusterDetails.getClusterId())));
+                ImmutableMap.of(CcmConstants.CLUSTER_ID_IDENTIFIER, clusterDetails.getClusterId())));
     pvMetricsCache.invalidateAll();
   }
 
@@ -342,7 +341,7 @@ public class K8sMetricCollector {
         })
         .forEach(podMetric
             -> eventPublisher.publishMessage(podMetric, podMetric.getTimestamp(),
-                ImmutableMap.of(Constants.CLUSTER_ID_IDENTIFIER, clusterDetails.getClusterId())));
+                ImmutableMap.of(CcmConstants.CLUSTER_ID_IDENTIFIER, clusterDetails.getClusterId())));
     podMetricsCache.invalidateAll();
   }
 
@@ -375,7 +374,7 @@ public class K8sMetricCollector {
         })
         .forEach(containerStateProto
             -> eventPublisher.publishMessage(containerStateProto, containerStateProto.getFirstSampleStart(),
-                ImmutableMap.of(Constants.CLUSTER_ID_IDENTIFIER, clusterDetails.getClusterId())));
+                ImmutableMap.of(CcmConstants.CLUSTER_ID_IDENTIFIER, clusterDetails.getClusterId())));
     containerStatesCache.invalidateAll();
   }
 }

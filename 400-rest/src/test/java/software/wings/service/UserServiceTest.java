@@ -1089,6 +1089,14 @@ public class UserServiceTest extends WingsBaseTest {
   }
 
   @Test
+  @Owner(developers = UJJAWAL)
+  @Category(UnitTests.class)
+  public void checkInviteUser() {
+    boolean val = userService.checkIfUserLimitHasReached(ACCOUNT_ID, "admin@harness.io");
+    assertThat(val).isFalse();
+  }
+
+  @Test
   @Owner(developers = ANUBHAW)
   @Category(UnitTests.class)
   public void testInviteNewUser_invalidEmail_shouldFail() {

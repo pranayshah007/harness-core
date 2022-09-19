@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.vm;
 
 import static io.harness.data.encoding.EncodingUtils.decodeBase64;
@@ -22,6 +29,7 @@ import io.harness.delegate.beans.ci.vm.runner.ExecuteStepRequest.Config;
 import io.harness.delegate.beans.ci.vm.runner.ExecuteStepRequest.Config.ConfigBuilder;
 import io.harness.delegate.beans.ci.vm.runner.ExecuteStepRequest.ExecuteStepRequestBuilder;
 import io.harness.delegate.beans.ci.vm.runner.ExecuteStepRequest.ImageAuth;
+import io.harness.delegate.beans.ci.vm.steps.VmBackgroundStep;
 import io.harness.delegate.beans.ci.vm.steps.VmJunitTestReport;
 import io.harness.delegate.beans.ci.vm.steps.VmPluginStep;
 import io.harness.delegate.beans.ci.vm.steps.VmRunStep;
@@ -65,6 +73,9 @@ public class VmExecuteStepUtils {
     } else if (params.getStepInfo().getType() == VmStepInfo.Type.RUN_TEST) {
       VmRunTestStep runTestStep = (VmRunTestStep) params.getStepInfo();
       secrets = setRunTestConfig(runTestStep, configBuilder);
+    } else if (params.getStepInfo().getType() == VmStepInfo.Type.BACKGROUND) {
+      VmBackgroundStep vmBackgroundStep = (VmBackgroundStep) params.getStepInfo();
+      secrets = setBackgroundConfig(vmBackgroundStep, configBuilder);
     }
 
     if (isNotEmpty(params.getSecrets())) {
@@ -134,6 +145,40 @@ public class VmExecuteStepUtils {
         .outputVars(runStep.getOutputVariables())
         .testReport(convertTestReport(runStep.getUnitTestReport()))
         .timeout(runStep.getTimeoutSecs());
+    return secrets;
+  }
+
+  private List<String> setBackgroundConfig(VmBackgroundStep vmBackgroundStep, ConfigBuilder configBuilder) {
+    List<String> secrets = new ArrayList<>();
+    ImageAuth imageAuth = getImageAuth(vmBackgroundStep.getImage(), vmBackgroundStep.getImageConnector());
+
+    if (imageAuth != null) {
+      configBuilder.imageAuth(imageAuth);
+      secrets.add(imageAuth.getPassword());
+    }
+
+    List<String> command = null;
+    if (!isEmpty(vmBackgroundStep.getCommand())) {
+      command = Arrays.asList(vmBackgroundStep.getCommand());
+    }
+
+    configBuilder.kind(RUN_STEP_KIND)
+        .runConfig(ExecuteStepRequest.RunConfig.builder()
+                       .command(command)
+                       .entrypoint(vmBackgroundStep.getEntrypoint())
+                       .build())
+        .image(vmBackgroundStep.getImage())
+        .pull(vmBackgroundStep.getPullPolicy())
+        .user(vmBackgroundStep.getRunAsUser())
+        .envs(vmBackgroundStep.getEnvVariables())
+        .privileged(vmBackgroundStep.isPrivileged())
+        .testReport(convertTestReport(vmBackgroundStep.getUnitTestReport()))
+        .detach(true);
+
+    if (isNotEmpty(vmBackgroundStep.getPortBindings())) {
+      configBuilder.portBindings(vmBackgroundStep.getPortBindings());
+    }
+
     return secrets;
   }
 

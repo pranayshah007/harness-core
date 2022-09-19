@@ -28,6 +28,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.ConnectorCategory;
 import io.harness.data.validator.EntityIdentifier;
+import io.harness.encryption.Scope;
+import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.DecryptableEntityWithEncryptionConsumers;
@@ -52,6 +54,7 @@ import io.harness.serializer.JsonUtils;
 import software.wings.service.impl.security.NGEncryptorService;
 
 import com.google.inject.Inject;
+import io.dropwizard.jersey.validation.JerseyViolationException;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -64,12 +67,13 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.InputStream;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import javax.validation.ConstraintViolation;
-import javax.validation.ConstraintViolationException;
 import javax.validation.Valid;
 import javax.validation.Validator;
 import javax.validation.constraints.NotNull;
@@ -239,6 +243,8 @@ public class NGSecretResourceV2 {
     secretPermissionValidator.checkForAccessOrThrow(
         ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier), Resource.of(SECRET_RESOURCE_TYPE, null),
         SECRET_EDIT_PERMISSION, privateSecret ? SecurityContextBuilder.getPrincipal() : null);
+
+    ngSecretService.validateSshWinRmPasswords(accountIdentifier, orgIdentifier, projectIdentifier, dto.getSecret());
     if (privateSecret) {
       dto.getSecret().setOwner(SecurityContextBuilder.getPrincipal());
     }
@@ -423,6 +429,8 @@ public class NGSecretResourceV2 {
         Resource.of(SECRET_RESOURCE_TYPE, identifier), SECRET_EDIT_PERMISSION,
         secret != null ? secret.getSecret().getOwner() : null);
 
+    ngSecretService.validateSshWinRmPasswords(accountIdentifier, orgIdentifier, projectIdentifier, dto.getSecret());
+
     return ResponseDTO.newResponse(ngSecretService.updateViaYaml(
         accountIdentifier, orgIdentifier, projectIdentifier, identifier, dto.getSecret()));
   }
@@ -430,7 +438,7 @@ public class NGSecretResourceV2 {
   private void validateRequestPayload(SecretRequestWrapper dto) {
     Set<ConstraintViolation<SecretRequestWrapper>> violations = validator.validate(dto);
     if (!violations.isEmpty()) {
-      throw new ConstraintViolationException(violations);
+      throw new JerseyViolationException(violations, null);
     }
   }
 
@@ -554,7 +562,44 @@ public class NGSecretResourceV2 {
     if (ngAccess == null || decryptableEntity == null) {
       return ResponseDTO.newResponse(new ArrayList<>());
     }
+    for (Field field : decryptableEntity.getSecretReferenceFields()) {
+      try {
+        field.setAccessible(true);
+        SecretRefData secretRefData = (SecretRefData) field.get(decryptableEntity);
+        if (!Optional.ofNullable(secretRefData).isPresent() || secretRefData.isNull()) {
+          continue;
+        }
+        Scope secretScope = secretRefData.getScope();
+        SecretResponseWrapper secret =
+            ngSecretService
+                .get(accountIdentifier, getOrgIdentifier(ngAccess.getOrgIdentifier(), secretScope),
+                    getProjectIdentifier(ngAccess.getProjectIdentifier(), secretScope), secretRefData.getIdentifier())
+                .orElse(null);
+        secretPermissionValidator.checkForAccessOrThrow(
+            ResourceScope.of(accountIdentifier, getOrgIdentifier(ngAccess.getOrgIdentifier(), secretScope),
+                getProjectIdentifier(ngAccess.getProjectIdentifier(), secretScope)),
+            Resource.of(SECRET_RESOURCE_TYPE, secretRefData.getIdentifier()), SECRET_ACCESS_PERMISSION,
+            secret != null ? secret.getSecret().getOwner() : null);
+
+      } catch (IllegalAccessException illegalAccessException) {
+        log.error("Error while checking access permission for secret: {}", field, illegalAccessException);
+      }
+    }
     return ResponseDTO.newResponse(encryptedDataService.getEncryptionDetails(
         ngAccessWithEncryptionConsumer.getNgAccess(), ngAccessWithEncryptionConsumer.getDecryptableEntity()));
+  }
+
+  private String getOrgIdentifier(String parentOrgIdentifier, @NotNull Scope scope) {
+    if (scope != Scope.ACCOUNT) {
+      return parentOrgIdentifier;
+    }
+    return null;
+  }
+
+  private String getProjectIdentifier(String parentProjectIdentifier, @NotNull Scope scope) {
+    if (scope == Scope.PROJECT) {
+      return parentProjectIdentifier;
+    }
+    return null;
   }
 }

@@ -46,4 +46,7 @@ public class QLBaseExecutionFilter implements EntityFilter {
   private QLIdFilter pipeline;
   private QLTimeFilter creationTime;
   private QLDeploymentTagFilter tag;
+  private String applicationId;
+  private QLIdFilter artifactBuildNo;
+  private QLIdFilter helmChartVersion;
 }

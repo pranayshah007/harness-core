@@ -20,8 +20,11 @@ public final class CIConstants {
   public static final String STORAGE_FORMAT = "Mi";
   public static final String PVC_READ_WRITE_ONCE = "ReadWriteOnce";
   public static final String RESTART_POLICY = "Never";
+  public static final long STAGE_MAX_TTL_SECS = 86400L; // 1 day
+  public static final long STAGE_MAX_TTL_SECS_HOSTED_FREE = 3600L; // 1 hour
 
   public static final long POD_MAX_TTL_SECS = 86400L; // 1 day
+  public static final long POD_MAX_TTL_SECS_HOSTED_FREE = 3600L; // 1 hour
   public static final String POD_PENDING_PHASE = "Pending";
   public static final String POD_RUNNING_PHASE = "Running";
   public static final int POD_MAX_WAIT_UNTIL_READY_SECS = 8 * 60; // 8 minutes

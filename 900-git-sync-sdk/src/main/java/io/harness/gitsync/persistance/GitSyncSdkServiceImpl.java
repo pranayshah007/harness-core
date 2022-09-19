@@ -15,9 +15,11 @@ import static io.harness.gitsync.interceptor.GitSyncBranchContext.NG_GIT_SYNC_CO
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.context.GlobalContextData;
 import io.harness.eventsframework.schemas.entity.EntityScopeInfo;
+import io.harness.exception.UnexpectedException;
 import io.harness.gitsync.BranchDetails;
 import io.harness.gitsync.HarnessToGitPushInfoServiceGrpc.HarnessToGitPushInfoServiceBlockingStub;
 import io.harness.gitsync.IsGitSimplificationEnabled;
+import io.harness.gitsync.IsGitSimplificationEnabledRequest;
 import io.harness.gitsync.RepoDetails;
 import io.harness.gitsync.exceptions.GitSyncException;
 import io.harness.gitsync.interceptor.GitEntityInfo;
@@ -51,12 +53,26 @@ public class GitSyncSdkServiceImpl implements GitSyncSdkService {
   }
 
   @Override
+  public void resetGitSyncSDKCache(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    try {
+      entityKeySource.updateKey(buildEntityScopeInfo(projectIdentifier, orgIdentifier, accountIdentifier));
+    } catch (Exception ex) {
+      log.error("Faced exception while resetting Git Sync Cache", ex);
+      throw new UnexpectedException("Faced exception while resetting git-sync cache");
+    }
+  }
+
+  @Override
   public boolean isGitSimplificationEnabled(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     try {
       // Need to add caching
+      IsGitSimplificationEnabledRequest isGitSimplificationEnabledRequest =
+          IsGitSimplificationEnabledRequest.newBuilder()
+              .setEntityScopeInfo(buildEntityScopeInfo(projectIdentifier, orgIdentifier, accountIdentifier))
+              .setIsNotForFFModule(true)
+              .build();
       IsGitSimplificationEnabled isGitSimplificationEnabled =
-          harnessToGitPushInfoServiceBlockingStub.isGitSimplificationEnabledForScope(
-              buildEntityScopeInfo(projectIdentifier, orgIdentifier, accountIdentifier));
+          harnessToGitPushInfoServiceBlockingStub.isGitSimplificationEnabledForScope(isGitSimplificationEnabledRequest);
       return isGitSimplificationEnabled.getEnabled();
     } catch (Exception ex) {
       log.error(

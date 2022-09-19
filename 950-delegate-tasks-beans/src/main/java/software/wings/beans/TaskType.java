@@ -205,7 +205,6 @@ public enum TaskType {
   ARTIFACTORY_VALIDATE_ARTIFACT_STREAM(TaskGroup.ARTIFACTORY),
 
   // Secret Management (Old Tasks)
-  CYBERARK_VALIDATE_CONFIG(TaskGroup.KMS),
   VAULT_GET_CHANGELOG(TaskGroup.KMS),
   VAULT_RENEW_TOKEN(TaskGroup.KMS),
   VAULT_LIST_ENGINES(TaskGroup.KMS),
@@ -295,15 +294,18 @@ public enum TaskType {
   GIT_FETCH_NEXT_GEN_TASK(TaskGroup.GIT, "Git Fetch Files Task"),
   BUILD_SOURCE_TASK(TaskGroup.BUILD_SOURCE),
   DOCKER_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG, "DockerHub Task"),
+  GOOGLE_ARTIFACT_REGISTRY_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG, "Google Artifact Registry Task"),
   JENKINS_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG, "Jenkins Task"),
   GCR_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG, "GCR Task"),
   NEXUS_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG),
   ARTIFACTORY_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG),
   AMAZON_S3_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG),
+  GITHUB_PACKAGES_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG),
   AWS_ROUTE53_TASK(TaskGroup.AWS),
   SHELL_SCRIPT_APPROVAL(TaskGroup.SCRIPT),
   CUSTOM_GET_BUILDS(TaskGroup.CUSTOM),
   CUSTOM_VALIDATE_ARTIFACT_STREAM(TaskGroup.CUSTOM),
+  CUSTOM_ARTIFACT_NG(TaskGroup.ARTIFACT_COLLECT_NG, "Custom Artifacts Task"),
   SHELL_SCRIPT_PROVISION_TASK(TaskGroup.SHELL_SCRIPT_PROVISION),
   SERVICENOW_ASYNC(TaskGroup.SERVICENOW),
   SERVICENOW_SYNC(TaskGroup.SERVICENOW),
@@ -372,6 +374,9 @@ public enum TaskType {
   OCI_HELM_CONNECTIVITY_TASK(TaskGroup.HELM_REPO_CONFIG_VALIDATION),
   AZURE_WEB_APP_TASK_NG(TaskGroup.AZURE, "Azure Web App Task"),
   COMMAND_TASK_NG(TaskGroup.COMMAND_TASK_NG, "Command Task"),
+  VALIDATE_CUSTOM_SECRET_MANAGER_SECRET_REFERENCE(TaskGroup.COMMAND_TASK_NG),
+  FETCH_CUSTOM_SECRET(TaskGroup.COMMAND_TASK_NG),
+  RESOLVE_CUSTOM_SM_CONFIG(TaskGroup.COMMAND_TASK_NG),
   CI_DOCKER_INITIALIZE_TASK(TaskGroup.CI, CIDockerInitializeTaskRequest.class, DockerTaskExecutionResponse.class, true),
   CI_DOCKER_EXECUTE_TASK(TaskGroup.CI, CIDockerExecuteStepRequest.class, DockerTaskExecutionResponse.class, true),
   CI_DOCKER_CLEANUP_TASK(TaskGroup.CI, CIDockerCleanupStepRequest.class, DockerTaskExecutionResponse.class, true),
@@ -380,7 +385,12 @@ public enum TaskType {
   DLITE_CI_VM_INITIALIZE_TASK(TaskGroup.CI, DliteVmInitializeTaskParams.class, VmTaskExecutionResponse.class, true),
   DLITE_CI_VM_EXECUTE_TASK(TaskGroup.CI, DliteVmExecuteStepTaskParams.class, VmTaskExecutionResponse.class, true),
   DLITE_CI_VM_CLEANUP_TASK(TaskGroup.CI, DliteVmCleanupTaskParams.class, VmTaskExecutionResponse.class, true),
-  NG_LDAP_GROUPS_SYNC(TaskGroup.LDAP);
+  NG_LDAP_GROUPS_SYNC(TaskGroup.LDAP),
+  AZURE_NG_ARM(TaskGroup.AZURE_NG_ARM_BLUEPRINT, "Azure ARM"),
+  NG_LDAP_TEST_AUTHENTICATION(TaskGroup.LDAP),
+  ECS_GIT_FETCH_TASK_NG(TaskGroup.ECS),
+  ECS_COMMAND_TASK_NG(TaskGroup.ECS),
+  WIN_RM_SHELL_SCRIPT_TASK_NG(TaskGroup.SHELL_SCRIPT_NG, "Shell Script Task");
 
   private final TaskGroup taskGroup;
   private final String displayName;

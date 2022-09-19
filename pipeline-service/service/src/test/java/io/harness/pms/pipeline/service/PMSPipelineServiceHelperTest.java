@@ -10,6 +10,7 @@ package io.harness.pms.pipeline.service;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.SAMARTH;
+import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -24,7 +25,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.GovernanceService;
-import io.harness.exception.GitYamlException;
+import io.harness.exception.DuplicateFileImportException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.filter.FilterType;
 import io.harness.filter.dto.FilterDTO;
@@ -35,6 +36,7 @@ import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
+import io.harness.ng.core.template.TemplateReferenceSummary;
 import io.harness.pms.PmsFeatureFlagService;
 import io.harness.pms.contracts.governance.ExpansionRequestMetadata;
 import io.harness.pms.contracts.governance.ExpansionResponseBatch;
@@ -55,6 +57,7 @@ import io.harness.yaml.validator.InvalidYamlException;
 
 import com.google.protobuf.ByteString;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -156,6 +159,44 @@ public class PMSPipelineServiceHelperTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testUpdatePipelineInfoWithEmptyFilterValue() throws IOException {
+    FilterCreatorMergeServiceResponse response = FilterCreatorMergeServiceResponse.builder()
+                                                     .stageCount(1)
+                                                     .stageNames(Collections.singletonList("stage-1"))
+                                                     .filters(Collections.singletonMap("whatKey?", ""))
+                                                     .build();
+    doReturn(response).when(filterCreatorMergeService).getPipelineInfo(any());
+    PipelineEntity entity = PipelineEntity.builder().build();
+    PipelineEntity updatedEntity = pmsPipelineServiceHelper.updatePipelineInfo(entity);
+    assertThat(updatedEntity.getStageCount()).isEqualTo(1);
+    assertThat(updatedEntity.getStageNames().size()).isEqualTo(1);
+    assertThat(updatedEntity.getStageNames().contains("stage-1")).isTrue();
+    assertThat(updatedEntity.getFilters().size()).isEqualTo(1);
+    assertThat(updatedEntity.getFilters().containsKey("whatKey?")).isTrue();
+    assertThat(updatedEntity.getFilters().containsValue(Document.parse("{}"))).isTrue();
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testUpdatePipelineInfoWithInvalidFilterValue() throws IOException {
+    FilterCreatorMergeServiceResponse response = FilterCreatorMergeServiceResponse.builder()
+                                                     .stageCount(1)
+                                                     .stageNames(Collections.singletonList("stage-1"))
+                                                     .filters(Collections.singletonMap("whatKey?", "-`6^!"))
+                                                     .build();
+    doReturn(response).when(filterCreatorMergeService).getPipelineInfo(any());
+    PipelineEntity entity = PipelineEntity.builder().build();
+    PipelineEntity updatedEntity = pmsPipelineServiceHelper.updatePipelineInfo(entity);
+    assertThat(updatedEntity.getStageCount()).isEqualTo(1);
+    assertThat(updatedEntity.getStageNames().size()).isEqualTo(1);
+    assertThat(updatedEntity.getStageNames().contains("stage-1")).isTrue();
+    assertThat(updatedEntity.getFilters().size()).isEqualTo(0);
+  }
+
+  @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testPopulateFilterUsingIdentifier() {
@@ -232,8 +273,11 @@ public class PMSPipelineServiceHelperTest extends CategoryTest {
                                         .projectIdentifier(projectIdentifier)
                                         .yaml(yaml)
                                         .build();
-    TemplateMergeResponseDTO templateMergeResponseDTO =
-        TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build();
+    List<TemplateReferenceSummary> templateReferenceSummaryList = new ArrayList<>();
+    TemplateMergeResponseDTO templateMergeResponseDTO = TemplateMergeResponseDTO.builder()
+                                                            .mergedPipelineYaml(yaml)
+                                                            .templateReferenceSummaries(templateReferenceSummaryList)
+                                                            .build();
     doReturn(templateMergeResponseDTO)
         .when(pipelineTemplateHelper)
         .resolveTemplateRefsInPipeline(pipelineEntity, false);
@@ -270,7 +314,7 @@ public class PMSPipelineServiceHelperTest extends CategoryTest {
     Set<ExpansionResponseBatch> dummyResponseSet = Collections.singleton(dummyResponseBatch);
     doReturn(dummyResponseSet).when(jsonExpander).fetchExpansionResponses(dummyRequestSet, expansionRequestMetadata);
     pmsPipelineServiceHelper.fetchExpandedPipelineJSONFromYaml(
-        accountIdentifier, orgIdentifier, projectIdentifier, dummyYaml);
+        accountIdentifier, orgIdentifier, projectIdentifier, dummyYaml, false);
     verify(pmsFeatureFlagService, times(1)).isEnabled(accountIdentifier, FeatureName.OPA_PIPELINE_GOVERNANCE);
     verify(gitSyncHelper, times(1)).getGitSyncBranchContextBytesThreadLocal();
     verify(expansionRequestsExtractor, times(1)).fetchExpansionRequests(dummyYaml);
@@ -278,7 +322,7 @@ public class PMSPipelineServiceHelperTest extends CategoryTest {
 
     doReturn(false).when(pmsFeatureFlagService).isEnabled(accountIdentifier, FeatureName.OPA_PIPELINE_GOVERNANCE);
     String noExp = pmsPipelineServiceHelper.fetchExpandedPipelineJSONFromYaml(
-        accountIdentifier, orgIdentifier, projectIdentifier, dummyYaml);
+        accountIdentifier, orgIdentifier, projectIdentifier, dummyYaml, false);
     assertThat(noExp).isEqualTo(dummyYaml);
     verify(pmsFeatureFlagService, times(2)).isEnabled(accountIdentifier, FeatureName.OPA_PIPELINE_GOVERNANCE);
     verify(gitSyncHelper, times(1)).getGitSyncBranchContextBytesThreadLocal();
@@ -328,20 +372,9 @@ public class PMSPipelineServiceHelperTest extends CategoryTest {
     assertThatThrownBy(()
                            -> pmsPipelineServiceHelper.getRepoUrlAndCheckForFileUniqueness(
                                accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, false))
-        .isInstanceOf(GitYamlException.class);
+        .isInstanceOf(DuplicateFileImportException.class);
     assertThat(pmsPipelineServiceHelper.getRepoUrlAndCheckForFileUniqueness(
                    accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, true))
         .isEqualTo(repoUrl);
-  }
-
-  @Test
-  @Owner(developers = VIVEK_DIXIT)
-  @Category(UnitTests.class)
-  public void testFilePathCheck() {
-    String filePath = ".notInHarnessFolder";
-    GitEntityInfo gitEntityInfo = GitEntityInfo.builder().filePath(filePath).build();
-    MockedStatic<GitAwareContextHelper> utilities = Mockito.mockStatic(GitAwareContextHelper.class);
-    utilities.when(GitAwareContextHelper::getGitRequestParamsInfo).thenReturn(gitEntityInfo);
-    assertThatThrownBy(() -> pmsPipelineServiceHelper.filePathCheck()).isInstanceOf(InvalidRequestException.class);
   }
 }

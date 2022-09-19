@@ -13,9 +13,11 @@ import io.harness.annotations.ExposeInternalException;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.servicelevelobjective.SLORiskCountResponse;
+import io.harness.cvng.servicelevelobjective.beans.MSDropdownResponse;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardApiFilter;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardDetail;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget;
+import io.harness.cvng.servicelevelobjective.beans.SLOHealthListView;
 import io.harness.cvng.servicelevelobjective.services.api.SLODashboardService;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -59,6 +61,18 @@ public class SLODashboardResource {
   }
 
   @GET
+  @Path("widgets/list")
+  @ExceptionMetered
+  @ApiOperation(value = "get slo list view", nickname = "getSLOHealthListView")
+  @NGAccessControlCheck(resourceType = SLO, permission = VIEW_PERMISSION)
+  public ResponseDTO<PageResponse<SLOHealthListView>> getSloHealthListView(
+      @NotNull @BeanParam ProjectParams projectParams, @BeanParam SLODashboardApiFilter filter,
+      @BeanParam PageParams pageParams, @QueryParam("filter") String filterByName) {
+    return ResponseDTO.newResponse(
+        sloDashboardService.getSloHealthListView(projectParams, filter, pageParams, filterByName));
+  }
+
+  @GET
   @Path("widget/{identifier}")
   @ExceptionMetered
   @ApiOperation(value = "get SLO Dashboard Detail", nickname = "getSLODetails")
@@ -82,5 +96,17 @@ public class SLODashboardResource {
   getServiceLevelObjectivesRiskCount(
       @NotNull @BeanParam ProjectParams projectParams, @BeanParam SLODashboardApiFilter serviceLevelObjectiveFilter) {
     return ResponseDTO.newResponse(sloDashboardService.getRiskCount(projectParams, serviceLevelObjectiveFilter));
+  }
+
+  @GET
+  @Timed
+  @ExceptionMetered
+  @Path("monitored-services")
+  @ApiOperation(
+      value = "get all monitored services associated with the slos", nickname = "getSLOAssociatedMonitoredServices")
+  @NGAccessControlCheck(resourceType = SLO, permission = VIEW_PERMISSION)
+  public ResponseDTO<PageResponse<MSDropdownResponse>>
+  getSLOAssociatedMonitoredServices(@NotNull @BeanParam ProjectParams projectParams, @BeanParam PageParams pageParams) {
+    return ResponseDTO.newResponse(sloDashboardService.getSLOAssociatedMonitoredServices(projectParams, pageParams));
   }
 }

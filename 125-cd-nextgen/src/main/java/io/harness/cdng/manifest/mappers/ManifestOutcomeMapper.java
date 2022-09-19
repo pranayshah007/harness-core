@@ -8,6 +8,10 @@
 package io.harness.cdng.manifest.mappers;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.cdng.manifest.ManifestType.EcsScalableTargetDefinition;
+import static io.harness.cdng.manifest.ManifestType.EcsScalingPolicyDefinition;
+import static io.harness.cdng.manifest.ManifestType.EcsServiceDefinition;
+import static io.harness.cdng.manifest.ManifestType.EcsTaskDefinition;
 import static io.harness.cdng.manifest.ManifestType.HelmChart;
 import static io.harness.cdng.manifest.ManifestType.K8Manifest;
 import static io.harness.cdng.manifest.ManifestType.Kustomize;
@@ -21,6 +25,10 @@ import static io.harness.cdng.manifest.ManifestType.VALUES;
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.manifest.yaml.EcsScalableTargetDefinitionManifestOutcome;
+import io.harness.cdng.manifest.yaml.EcsScalingPolicyDefinitionManifestOutcome;
+import io.harness.cdng.manifest.yaml.EcsServiceDefinitionManifestOutcome;
+import io.harness.cdng.manifest.yaml.EcsTaskDefinitionManifestOutcome;
 import io.harness.cdng.manifest.yaml.HelmChartManifestOutcome;
 import io.harness.cdng.manifest.yaml.K8sManifestOutcome;
 import io.harness.cdng.manifest.yaml.KustomizeManifestOutcome;
@@ -32,6 +40,10 @@ import io.harness.cdng.manifest.yaml.OpenshiftParamManifestOutcome;
 import io.harness.cdng.manifest.yaml.ReleaseRepoManifestOutcome;
 import io.harness.cdng.manifest.yaml.ServerlessAwsLambdaManifestOutcome;
 import io.harness.cdng.manifest.yaml.ValuesManifestOutcome;
+import io.harness.cdng.manifest.yaml.kinds.EcsScalableTargetDefinitionManifest;
+import io.harness.cdng.manifest.yaml.kinds.EcsScalingPolicyDefinitionManifest;
+import io.harness.cdng.manifest.yaml.kinds.EcsServiceDefinitionManifest;
+import io.harness.cdng.manifest.yaml.kinds.EcsTaskDefinitionManifest;
 import io.harness.cdng.manifest.yaml.kinds.HelmChartManifest;
 import io.harness.cdng.manifest.yaml.kinds.K8sManifest;
 import io.harness.cdng.manifest.yaml.kinds.KustomizeManifest;
@@ -81,6 +93,14 @@ public class ManifestOutcomeMapper {
         return getServerlessAwsOutcome(manifestAttributes, order);
       case ReleaseRepo:
         return getReleaseRepoOutcome(manifestAttributes);
+      case EcsTaskDefinition:
+        return getEcsTaskDefinitionOutcome(manifestAttributes, order);
+      case EcsServiceDefinition:
+        return getEcsServiceDefinitionOutcome(manifestAttributes, order);
+      case EcsScalableTargetDefinition:
+        return getEcsScalableTargetDefinitionOutcome(manifestAttributes, order);
+      case EcsScalingPolicyDefinition:
+        return getEcsScalingPolicyDefinitionOutcome(manifestAttributes, order);
       default:
         throw new UnsupportedOperationException(
             format("Unknown Artifact Config type: [%s]", manifestAttributes.getKind()));
@@ -138,7 +158,6 @@ public class ManifestOutcomeMapper {
         .skipResourceVersioning(kustomizeManifest.getSkipResourceVersioning())
         .pluginPath(kustomizeManifest.getPluginPath())
         .patchesPaths(kustomizeManifest.getPatchesPaths())
-        .manifestScope(kustomizeManifest.getManifestScope())
         .overlayConfiguration(kustomizeManifest.getOverlayConfiguration())
         .build();
   }
@@ -179,6 +198,46 @@ public class ManifestOutcomeMapper {
         .identifier(attributes.getIdentifier())
         .store(attributes.getStoreConfig())
         .configOverridePath(attributes.getConfigOverridePath())
+        .order(order)
+        .build();
+  }
+
+  private EcsTaskDefinitionManifestOutcome getEcsTaskDefinitionOutcome(
+      ManifestAttributes manifestAttributes, int order) {
+    EcsTaskDefinitionManifest attributes = (EcsTaskDefinitionManifest) manifestAttributes;
+    return EcsTaskDefinitionManifestOutcome.builder()
+        .identifier(attributes.getIdentifier())
+        .store(attributes.getStoreConfig())
+        .order(order)
+        .build();
+  }
+
+  private EcsServiceDefinitionManifestOutcome getEcsServiceDefinitionOutcome(
+      ManifestAttributes manifestAttributes, int order) {
+    EcsServiceDefinitionManifest attributes = (EcsServiceDefinitionManifest) manifestAttributes;
+    return EcsServiceDefinitionManifestOutcome.builder()
+        .identifier(attributes.getIdentifier())
+        .store(attributes.getStoreConfig())
+        .order(order)
+        .build();
+  }
+
+  private EcsScalableTargetDefinitionManifestOutcome getEcsScalableTargetDefinitionOutcome(
+      ManifestAttributes manifestAttributes, int order) {
+    EcsScalableTargetDefinitionManifest attributes = (EcsScalableTargetDefinitionManifest) manifestAttributes;
+    return EcsScalableTargetDefinitionManifestOutcome.builder()
+        .identifier(attributes.getIdentifier())
+        .store(attributes.getStoreConfig())
+        .order(order)
+        .build();
+  }
+
+  private EcsScalingPolicyDefinitionManifestOutcome getEcsScalingPolicyDefinitionOutcome(
+      ManifestAttributes manifestAttributes, int order) {
+    EcsScalingPolicyDefinitionManifest attributes = (EcsScalingPolicyDefinitionManifest) manifestAttributes;
+    return EcsScalingPolicyDefinitionManifestOutcome.builder()
+        .identifier(attributes.getIdentifier())
+        .store(attributes.getStoreConfig())
         .order(order)
         .build();
   }

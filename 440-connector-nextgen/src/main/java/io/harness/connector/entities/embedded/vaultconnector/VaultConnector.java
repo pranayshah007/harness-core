@@ -9,10 +9,12 @@ package io.harness.connector.entities.embedded.vaultconnector;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.entities.Connector;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.FdIndex;
+import io.harness.ng.DbAliases;
 import io.harness.security.encryption.AccessType;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -36,6 +38,7 @@ import org.springframework.data.annotation.TypeAlias;
 @EqualsAndHashCode(callSuper = true)
 @FieldNameConstants(innerTypeName = "VaultConnectorKeys")
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "connectors", noClassnameStored = true)
 @Persistent
 @TypeAlias("io.harness.connector.entities.embedded.vaultconnector.VaultConnector")
@@ -70,6 +73,8 @@ public class VaultConnector extends Connector implements PersistentRegularIterab
   String serviceAccountTokenPath;
   String k8sAuthEndpoint;
 
+  @Setter @NonFinal @Builder.Default Boolean renewAppRoleToken = Boolean.TRUE;
+
   public long getRenewedAt() {
     if (renewedAt == null) {
       return 0;
@@ -93,10 +98,14 @@ public class VaultConnector extends Connector implements PersistentRegularIterab
   }
 
   public String getK8sAuthEndpoint() {
-    if (!useK8sAuth) {
+    if (!getUseK8sAuth()) {
       return null;
     }
     return Optional.ofNullable(k8sAuthEndpoint).filter(x -> !x.isEmpty()).orElse("kubernetes");
+  }
+
+  public Boolean getRenewAppRoleToken() {
+    return renewAppRoleToken == null ? Boolean.TRUE : renewAppRoleToken;
   }
 
   @Override

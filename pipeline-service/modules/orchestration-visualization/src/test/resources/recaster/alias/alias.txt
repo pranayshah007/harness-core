@@ -50,3 +50,5 @@ io.harness.plancreator.strategy.StrategyConfig
 io.harness.plancreator.strategy.HarnessForConfig
 io.harness.plancreator.steps.TaskSelectorYaml
 io.harness.logging.CommandExecutionStatus
+io.harness.plancreator.strategy.ExpressionAxisConfig
+io.harness.yaml.core.failurestrategy.ProceedWithDefaultValuesFailureActionConfig

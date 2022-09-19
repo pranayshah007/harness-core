@@ -129,8 +129,8 @@ public class TerraformPlanStep extends TaskExecutableWithRollbackAndRbac<Terrafo
     builder.taskType(TFTaskType.PLAN)
         .terraformCommandUnit(TerraformCommandUnit.Plan)
         .entityId(entityId)
-        .tfModuleSourceInheritSSH(helper.isExportCredentialForSourceModule(
-            ambiance, configuration.getConfigFiles(), stepElementParameters.getType()))
+        .tfModuleSourceInheritSSH(
+            helper.isExportCredentialForSourceModule(configuration.getConfigFiles(), stepElementParameters.getType()))
         .currentStateFileId(helper.getLatestFileId(entityId))
         .workspace(ParameterFieldHelper.getParameterFieldValue(configuration.getWorkspace()))
         .configFile(helper.getGitFetchFilesConfig(
@@ -153,7 +153,9 @@ public class TerraformPlanStep extends TaskExecutableWithRollbackAndRbac<Terrafo
         .planName(helper.getTerraformPlanName(planStepParameters.getConfiguration().getCommand(), ambiance,
             planStepParameters.getProvisionerIdentifier().getValue()))
         .timeoutInMillis(
-            StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT));
+            StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
+        .useOptimizedTfPlan(
+            featureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.OPTIMIZED_TF_PLAN_NG));
 
     TaskData taskData =
         TaskData.builder()

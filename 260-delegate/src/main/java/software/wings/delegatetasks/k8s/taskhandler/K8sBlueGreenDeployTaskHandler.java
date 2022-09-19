@@ -59,8 +59,8 @@ import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.K8sPod;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
-import io.harness.k8s.model.Release.Status;
-import io.harness.k8s.model.ReleaseHistory;
+import io.harness.k8s.releasehistory.IK8sRelease;
+import io.harness.k8s.releasehistory.ReleaseHistory;
 import io.harness.logging.CommandExecutionStatus;
 
 import software.wings.beans.LogColor;
@@ -163,7 +163,7 @@ public class K8sBlueGreenDeployTaskHandler extends K8sTaskHandler {
         k8sBlueGreenHandlerConfig.getResources(), k8sDelegateTaskParams,
         k8sTaskHelper.getExecutionLogCallback(k8sBlueGreenDeployTaskParameters, Apply), true);
     if (!success) {
-      k8sBlueGreenHandlerConfig.getReleaseHistory().setReleaseStatus(Status.Failed);
+      k8sBlueGreenHandlerConfig.getReleaseHistory().setReleaseStatus(IK8sRelease.Status.Failed);
       k8sTaskHelperBase.saveReleaseHistoryInConfigMap(k8sBlueGreenHandlerConfig.getKubernetesConfig(),
           k8sBlueGreenDeployTaskParameters.getReleaseName(), k8sBlueGreenHandlerConfig.getReleaseHistory().getAsYaml());
       return getFailureResponse(null);
@@ -183,7 +183,7 @@ public class K8sBlueGreenDeployTaskHandler extends K8sTaskHandler {
         k8sBlueGreenHandlerConfig.getManagedWorkload().getResourceId(), k8sDelegateTaskParams, executionLogCallback);
 
     if (!success) {
-      k8sBlueGreenHandlerConfig.getReleaseHistory().setReleaseStatus(Status.Failed);
+      k8sBlueGreenHandlerConfig.getReleaseHistory().setReleaseStatus(IK8sRelease.Status.Failed);
       k8sTaskHelperBase.saveReleaseHistoryInConfigMap(k8sBlueGreenHandlerConfig.getKubernetesConfig(),
           k8sBlueGreenDeployTaskParameters.getReleaseName(), k8sBlueGreenHandlerConfig.getReleaseHistory().getAsYaml());
       return getFailureResponse(null);
@@ -204,7 +204,7 @@ public class K8sBlueGreenDeployTaskHandler extends K8sTaskHandler {
       k8sBlueGreenHandlerConfig.getCurrentRelease().setManagedWorkloadRevision(
           k8sTaskHelperBase.getLatestRevision(k8sBlueGreenHandlerConfig.getClient(),
               k8sBlueGreenHandlerConfig.getManagedWorkload().getResourceId(), k8sDelegateTaskParams));
-      k8sBlueGreenHandlerConfig.getReleaseHistory().setReleaseStatus(Status.Succeeded);
+      k8sBlueGreenHandlerConfig.getReleaseHistory().setReleaseStatus(IK8sRelease.Status.Succeeded);
       k8sTaskHelperBase.saveReleaseHistoryInConfigMap(k8sBlueGreenHandlerConfig.getKubernetesConfig(),
           k8sBlueGreenDeployTaskParameters.getReleaseName(), k8sBlueGreenHandlerConfig.getReleaseHistory().getAsYaml());
 
@@ -231,7 +231,7 @@ public class K8sBlueGreenDeployTaskHandler extends K8sTaskHandler {
           SUCCESS);
     } catch (Exception e) {
       wrapUpLogCallback.saveExecutionLog(e.getMessage(), ERROR, FAILURE);
-      k8sBlueGreenHandlerConfig.getReleaseHistory().setReleaseStatus(Status.Failed);
+      k8sBlueGreenHandlerConfig.getReleaseHistory().setReleaseStatus(IK8sRelease.Status.Failed);
       k8sTaskHelperBase.saveReleaseHistoryInConfigMap(k8sBlueGreenHandlerConfig.getKubernetesConfig(),
           k8sBlueGreenDeployTaskParameters.getReleaseName(), k8sBlueGreenHandlerConfig.getReleaseHistory().getAsYaml());
       throw e;

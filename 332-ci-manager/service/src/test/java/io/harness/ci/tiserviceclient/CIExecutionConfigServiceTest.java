@@ -235,7 +235,7 @@ public class CIExecutionConfigServiceTest extends CIExecutionTestBase {
   @Test
   @Owner(developers = DEV_MITTAL)
   @Category(UnitTests.class)
-  public void getDefaulttest() {
+  public void getDefaultTest() {
     CIExecutionImages ciExecutionImages = ciExecutionConfigService.getDefaultConfig(StageInfraDetails.Type.VM);
     assertThat(ciExecutionImages.getAddonTag()).isNull();
     assertThat(ciExecutionImages.getGitCloneTag()).isEqualTo("vm-gitClone");
@@ -263,6 +263,7 @@ public class CIExecutionConfigServiceTest extends CIExecutionTestBase {
                                             .gitCloneImage("gc:abc")
                                             .buildAndPushECRImage("bpecr:1.2.3")
                                             .buildAndPushGCRImage("bpgcr:1.2.3")
+                                            .buildAndPushACRImage("bpacr:1.2.3")
                                             .gcsUploadImage("gcsupload:1.2.3")
                                             .vmImageConfig(vmImageConfig)
                                             .build();
@@ -297,6 +298,7 @@ public class CIExecutionConfigServiceTest extends CIExecutionTestBase {
                                             .accountIdentifier("acct")
                                             .buildAndPushDockerRegistryImage("bpdr:1.2.4")
                                             .gitCloneImage("gc:abc")
+                                            .buildAndPushACRImage("bpacr:1.2.3")
                                             .buildAndPushECRImage("bpecr:1.2.3")
                                             .buildAndPushGCRImage("bpgcr:1.2.3")
                                             .gcsUploadImage("gcsupload:1.2.3")
@@ -356,6 +358,7 @@ public class CIExecutionConfigServiceTest extends CIExecutionTestBase {
                                             .gitCloneImage("gc:abc")
                                             .buildAndPushECRImage("bpecr:1.2.3")
                                             .buildAndPushGCRImage("bpgcr:1.2.3")
+                                            .buildAndPushACRImage("bpacr:1.2.3")
                                             .gcsUploadImage("gcsupload:1.2.3")
                                             .vmImageConfig(vmImageConfig)
                                             .build();
@@ -396,6 +399,7 @@ public class CIExecutionConfigServiceTest extends CIExecutionTestBase {
                                             .gitCloneImage("gc:abc")
                                             .buildAndPushECRImage("bpecr:1.2.3")
                                             .buildAndPushGCRImage("bpgcr:1.2.3")
+                                            .buildAndPushACRImage("bpacr:1.2.3")
                                             .gcsUploadImage("gcsupload:1.2.3")
                                             .s3UploadImage("s3upload:1.2.3")
                                             .artifactoryUploadTag("art:1.2.3")

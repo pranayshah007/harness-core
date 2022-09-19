@@ -8,6 +8,7 @@
 package io.harness.cdng.azure.webapp;
 
 import static io.harness.azure.model.AzureConstants.DEPLOY_TO_SLOT;
+import static io.harness.azure.model.AzureConstants.FETCH_ARTIFACT_FILE;
 import static io.harness.azure.model.AzureConstants.SAVE_EXISTING_CONFIGURATIONS;
 import static io.harness.azure.model.AzureConstants.UPDATE_SLOT_CONFIGURATION_SETTINGS;
 import static io.harness.cdng.manifest.yaml.harness.HarnessStoreConstants.HARNESS_STORE_TYPE;
@@ -19,16 +20,19 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.k8s.K8sCommandUnitConstants.FetchFiles;
 
 import static java.lang.String.format;
-import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.Scope;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.azure.webapp.beans.AzureSlotDeploymentPassThroughData;
 import io.harness.cdng.azure.webapp.beans.AzureSlotDeploymentPassThroughData.AzureSlotDeploymentPassThroughDataBuilder;
 import io.harness.cdng.azure.webapp.beans.AzureWebAppPreDeploymentDataOutput;
 import io.harness.cdng.azure.webapp.beans.AzureWebAppSlotDeploymentDataOutput;
+import io.harness.cdng.execution.StageExecutionInfo.StageExecutionInfoKeys;
+import io.harness.cdng.execution.azure.webapps.AzureWebAppsStageExecutionDetails.AzureWebAppsStageExecutionDetailsKeys;
+import io.harness.cdng.execution.service.StageExecutionInfoService;
 import io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
@@ -40,12 +44,15 @@ import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.delegate.beans.instancesync.mapper.AzureWebAppToServerInstanceInfoMapper;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
+import io.harness.delegate.task.azure.appservice.AzureAppServicePreDeploymentData;
 import io.harness.delegate.task.azure.appservice.settings.AppSettingsFile;
 import io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppFetchPreDeploymentDataRequest;
 import io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppSlotDeploymentRequest;
 import io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppFetchPreDeploymentDataResponse;
 import io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppSlotDeploymentResponse;
 import io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppTaskResponse;
+import io.harness.delegate.task.azure.artifact.AzureArtifactConfig;
+import io.harness.delegate.task.azure.artifact.AzureArtifactType;
 import io.harness.delegate.task.git.GitFetchResponse;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.executions.steps.ExecutionNodeType;
@@ -68,8 +75,12 @@ import io.harness.tasks.ResponseData;
 
 import software.wings.beans.TaskType;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -83,10 +94,13 @@ public class AzureWebAppSlotDeploymentStep extends TaskChainExecutableWithRollba
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
 
+  @VisibleForTesting static final String FETCH_PREDEPLOYMENT_DATA_TASK_NAME = "Save App Service Configurations Task";
+
   @Inject private AzureWebAppStepHelper azureWebAppStepHelper;
   @Inject private CDStepHelper cdStepHelper;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private InstanceInfoService instanceInfoService;
+  @Inject private StageExecutionInfoService stageExecutionInfoService;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
@@ -107,7 +121,8 @@ public class AzureWebAppSlotDeploymentStep extends TaskChainExecutableWithRollba
             .infrastructure((AzureWebAppInfrastructureOutcome) infrastructure)
             .configs(emptyMap())
             .commandUnitsProgress(CommandUnitsProgress.builder().build())
-            .unprocessedConfigs(emptyMap());
+            .unprocessedConfigs(emptyMap())
+            .primaryArtifactOutcome(azureWebAppStepHelper.getPrimaryArtifactOutcome(ambiance));
 
     if (isNotEmpty(webAppConfig)) {
       return processAndFetchWebAppConfigs(
@@ -180,12 +195,35 @@ public class AzureWebAppSlotDeploymentStep extends TaskChainExecutableWithRollba
             .deploymentProgressMarker(slotDeploymentResponse.getDeploymentProgressMarker())
             .build(),
         StepCategory.STEP.name());
+    AzureSlotDeploymentPassThroughData azureSlotDeploymentPassThroughData =
+        (AzureSlotDeploymentPassThroughData) passThroughData;
+    AzureArtifactConfig azureArtifactConfig = azureWebAppStepHelper.getPrimaryArtifactConfig(
+        ambiance, azureSlotDeploymentPassThroughData.getPrimaryArtifactOutcome());
+
+    if (azureArtifactConfig.getArtifactType().equals(AzureArtifactType.PACKAGE)) {
+      updateStageExecutionDetails(
+          ambiance, azureArtifactConfig, azureSlotDeploymentPassThroughData.getPreDeploymentData());
+    }
 
     StepResponse.StepOutcome stepOutcome = instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance,
         AzureWebAppToServerInstanceInfoMapper.toServerInstanceInfoList(
             slotDeploymentResponse.getAzureAppDeploymentData()));
 
     return stepResponseBuilder.stepOutcome(stepOutcome).build();
+  }
+
+  private void updateStageExecutionDetails(
+      Ambiance ambiance, AzureArtifactConfig azureArtifactConfig, AzureAppServicePreDeploymentData preDeploymentData) {
+    Scope scope = Scope.of(AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
+        AmbianceUtils.getProjectIdentifier(ambiance));
+    Map<String, Object> updates = new HashMap<>();
+    updates.put(StageExecutionInfoKeys.deploymentIdentifier,
+        azureWebAppStepHelper.getDeploymentIdentifier(
+            ambiance, preDeploymentData.getAppName(), preDeploymentData.getSlotName()));
+    updates.put(String.format("%s.%s", StageExecutionInfoKeys.executionDetails,
+                    AzureWebAppsStageExecutionDetailsKeys.artifactConfig),
+        azureArtifactConfig);
+    stageExecutionInfoService.update(scope, ambiance.getStageExecutionId(), updates);
   }
 
   @Override
@@ -206,9 +244,8 @@ public class AzureWebAppSlotDeploymentStep extends TaskChainExecutableWithRollba
       return TaskChainResponse.builder()
           .chainEnd(false)
           .passThroughData(newPassThroughDataBuilder.build())
-          .taskRequest(
-              azureWebAppStepHelper.prepareGitFetchTaskRequest(stepElementParameters, ambiance, gitStoreConfigs,
-                  asList(FetchFiles, SAVE_EXISTING_CONFIGURATIONS, UPDATE_SLOT_CONFIGURATION_SETTINGS, DEPLOY_TO_SLOT)))
+          .taskRequest(azureWebAppStepHelper.prepareGitFetchTaskRequest(
+              stepElementParameters, ambiance, gitStoreConfigs, getCommandUnits(passThroughData, true)))
           .build();
     }
 
@@ -253,7 +290,8 @@ public class AzureWebAppSlotDeploymentStep extends TaskChainExecutableWithRollba
             .applicationSettings(passThroughData.getConfigs().get(APPLICATION_SETTINGS))
             .connectionStrings(passThroughData.getConfigs().get(CONNECTION_STRINGS))
             .startupCommand(passThroughData.getConfigs().get(STARTUP_COMMAND))
-            .artifact(azureWebAppStepHelper.getPrimaryArtifactConfig(ambiance))
+            .artifact(
+                azureWebAppStepHelper.getPrimaryArtifactConfig(ambiance, passThroughData.getPrimaryArtifactOutcome()))
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
             .commandUnitsProgress(passThroughData.getCommandUnitsProgress())
             .build();
@@ -261,8 +299,8 @@ public class AzureWebAppSlotDeploymentStep extends TaskChainExecutableWithRollba
     return TaskChainResponse.builder()
         .chainEnd(false)
         .taskRequest(azureWebAppStepHelper.prepareTaskRequest(stepElementParameters, ambiance,
-            fetchPreDeploymentDataRequest, TaskType.AZURE_WEB_APP_TASK_NG,
-            asList(SAVE_EXISTING_CONFIGURATIONS, UPDATE_SLOT_CONFIGURATION_SETTINGS, DEPLOY_TO_SLOT)))
+            fetchPreDeploymentDataRequest, TaskType.AZURE_WEB_APP_TASK_NG, FETCH_PREDEPLOYMENT_DATA_TASK_NAME,
+            getCommandUnits(passThroughData, false)))
         .passThroughData(passThroughData)
         .build();
   }
@@ -281,7 +319,8 @@ public class AzureWebAppSlotDeploymentStep extends TaskChainExecutableWithRollba
             .infrastructure(azureWebAppStepHelper.getInfraDelegateConfig(ambiance, passThroughData.getInfrastructure(),
                 getParameterFieldValue(azureWebAppSlotDeploymentStepParameters.getWebApp()),
                 getParameterFieldValue(azureWebAppSlotDeploymentStepParameters.getDeploymentSlot())))
-            .artifact(azureWebAppStepHelper.getPrimaryArtifactConfig(ambiance))
+            .artifact(
+                azureWebAppStepHelper.getPrimaryArtifactConfig(ambiance, passThroughData.getPrimaryArtifactOutcome()))
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
             .commandUnitsProgress(passThroughData.getCommandUnitsProgress())
             .build();
@@ -289,8 +328,24 @@ public class AzureWebAppSlotDeploymentStep extends TaskChainExecutableWithRollba
     return TaskChainResponse.builder()
         .chainEnd(true)
         .taskRequest(azureWebAppStepHelper.prepareTaskRequest(stepElementParameters, ambiance, slotDeploymentRequest,
-            TaskType.AZURE_WEB_APP_TASK_NG, asList(UPDATE_SLOT_CONFIGURATION_SETTINGS, DEPLOY_TO_SLOT)))
+            TaskType.AZURE_WEB_APP_TASK_NG, getCommandUnits(passThroughData, false)))
         .passThroughData(passThroughData)
         .build();
+  }
+
+  private List<String> getCommandUnits(AzureSlotDeploymentPassThroughData passThroughData, boolean fetchFiles) {
+    List<String> units = new ArrayList<>();
+    if (fetchFiles) {
+      units.add(FetchFiles);
+    }
+
+    units.add(SAVE_EXISTING_CONFIGURATIONS);
+    if (azureWebAppStepHelper.isPackageArtifactType(passThroughData.getPrimaryArtifactOutcome())) {
+      units.add(FETCH_ARTIFACT_FILE);
+    }
+
+    units.add(UPDATE_SLOT_CONFIGURATION_SETTINGS);
+    units.add(DEPLOY_TO_SLOT);
+    return units;
   }
 }

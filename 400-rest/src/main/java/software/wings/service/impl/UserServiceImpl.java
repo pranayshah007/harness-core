@@ -1143,10 +1143,14 @@ public class UserServiceImpl implements UserService {
 
     boolean shouldMailContainTwoFactorInfo = user.isTwoFactorAuthenticationEnabled();
     model.put("shouldMailContainTwoFactorInfo", Boolean.toString(shouldMailContainTwoFactorInfo));
+
+    log.info("The shouldMailContainTwoFactorInfo for userId {} and accountId {} is {}", user.getUuid(),
+        account.getUuid(), shouldMailContainTwoFactorInfo);
+
     model.put("totpSecret", user.getTotpSecretKey());
     String otpUrl = totpAuthHandler.generateOtpUrl(account.getCompanyName(), user.getEmail(), user.getTotpSecretKey());
     model.put("totpUrl", otpUrl);
-
+    log.info("The totpUrl for userId {} and accountId {} is {}", user.getUuid(), account.getUuid(), otpUrl);
     return model;
   }
 
@@ -1337,6 +1341,17 @@ public class UserServiceImpl implements UserService {
     }
   }
 
+  @Override
+  public boolean checkIfUserLimitHasReached(String accountId, String email) {
+    try {
+      limitCheck(accountId, email);
+      return false;
+    } catch (WingsException e) {
+      log.error("Exception while checking user limit for account {}", accountId, e);
+      return true;
+    }
+  }
+
   private void limitCheck(String accountId, String email) {
     try {
       Account account = accountService.get(accountId);
@@ -1349,6 +1364,7 @@ public class UserServiceImpl implements UserService {
       List<User> existingUsersAndInvites = query.asList();
       userServiceLimitChecker.limitCheck(accountId, existingUsersAndInvites, new HashSet<>(Arrays.asList(email)));
     } catch (WingsException e) {
+      log.error("The user limit has been reached for account {} and email {}", accountId, email);
       throw e;
     } catch (Exception e) {
       // catching this because we don't want to stop user invites due to failure in limit check

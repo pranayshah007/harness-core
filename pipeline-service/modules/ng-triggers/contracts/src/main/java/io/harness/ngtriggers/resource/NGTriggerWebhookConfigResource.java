@@ -15,7 +15,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ngtriggers.beans.dto.NGProcessWebhookResponseDTO;
 import io.harness.ngtriggers.beans.dto.WebhookEventProcessingDetails;
+import io.harness.ngtriggers.beans.dto.WebhookExecutionDetails;
 import io.harness.ngtriggers.beans.source.WebhookTriggerType;
 import io.harness.ngtriggers.beans.source.webhook.WebhookAction;
 import io.harness.ngtriggers.beans.source.webhook.WebhookEvent;
@@ -27,6 +29,7 @@ import io.harness.ngtriggers.beans.source.webhook.v2.github.action.GithubPRActio
 import io.harness.ngtriggers.beans.source.webhook.v2.github.event.GithubTriggerEvent;
 import io.harness.ngtriggers.beans.source.webhook.v2.gitlab.action.GitlabPRAction;
 import io.harness.ngtriggers.beans.source.webhook.v2.gitlab.event.GitlabTriggerEvent;
+import io.harness.pms.pipeline.PipelineResourceConstants;
 import io.harness.security.annotations.PublicApi;
 
 import io.swagger.annotations.Api;
@@ -34,6 +37,7 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -44,6 +48,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
@@ -248,6 +253,29 @@ public interface NGTriggerWebhookConfigResource {
       @QueryParam(TRIGGER_KEY) String triggerIdentifier, @NotNull String eventPayload,
       @Context HttpHeaders httpHeaders);
 
+  @POST
+  @Operation(operationId = "processCustomWebhookEventV2",
+      summary = "Handles event payload for custom webhook triggers.",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
+            description = "Returns data about of newly created custom webhook processing event.")
+      })
+  @Path("/custom/v2")
+  @ApiOperation(value = "accept custom webhook event V2", nickname = "customWebhookEndpointV2")
+  @PublicApi
+  ResponseDTO<NGProcessWebhookResponseDTO>
+  processWebhookEventV2(@Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+                            NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Parameter(description = PipelineResourceConstants.ORG_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Parameter(description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Parameter(description = PipelineResourceConstants.PIPELINE_ID_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
+      @Parameter(description = "Trigger Key") @QueryParam(TRIGGER_KEY) String triggerIdentifier,
+      @Parameter(description = "Trigger Payload") @NotNull String eventPayload, @Context HttpHeaders httpHeaders);
+
   @GET
   @Operation(operationId = "fetchWebhookDetails", summary = "Gets webhook event processing details for input eventId.",
       responses =
@@ -261,4 +289,19 @@ public interface NGTriggerWebhookConfigResource {
   ResponseDTO<WebhookEventProcessingDetails>
   fetchWebhookDetails(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @NotNull @QueryParam("eventId") String eventId);
+
+  @GET
+  @Operation(operationId = "fetchWebhookExecutionDetails",
+      summary = "Gets webhook event processing details for input eventId.",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "default", description = "Returns webhook event processing details for input eventId.")
+      })
+  @Path("/triggerExecutionDetails/{eventId}")
+  @ApiOperation(value = "fetch webhook event details with execution summary", nickname = "triggerExecutionDetails")
+  @PublicApi
+  ResponseDTO<WebhookExecutionDetails>
+  fetchWebhookExecutionDetails(@NotNull @PathParam("eventId") String eventId,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier);
 }

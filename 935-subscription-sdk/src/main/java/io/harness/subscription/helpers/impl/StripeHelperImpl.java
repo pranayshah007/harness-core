@@ -9,6 +9,7 @@ package io.harness.subscription.helpers.impl;
 
 import io.harness.ModuleType;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.subscription.dto.AddressDto;
 import io.harness.subscription.dto.CardDTO;
 import io.harness.subscription.dto.CustomerDetailDTO;
 import io.harness.subscription.dto.CustomerDetailDTO.CustomerDetailDTOBuilder;
@@ -33,6 +34,7 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.inject.Singleton;
+import com.stripe.model.Address;
 import com.stripe.model.Customer;
 import com.stripe.model.Invoice;
 import com.stripe.model.InvoiceLineItem;
@@ -75,12 +77,23 @@ public class StripeHelperImpl implements StripeHelper {
 
   @Override
   public CustomerDetailDTO createCustomer(CustomerParams customerParams) {
+    CustomerCreateParams.Address address = CustomerCreateParams.Address.builder()
+                                               .setCity(customerParams.getAddress().getCity())
+                                               .setCountry(customerParams.getAddress().getCountry())
+                                               .setLine1(customerParams.getAddress().getLine1())
+                                               .setLine2(customerParams.getAddress().getLine2())
+                                               .setPostalCode(customerParams.getAddress().getPostalCode())
+                                               .setState(customerParams.getAddress().getState())
+                                               .build();
+
     CustomerCreateParams params =
         CustomerCreateParams.builder()
+            .setAddress(address)
             .setEmail(customerParams.getBillingContactEmail())
             .setName(customerParams.getName())
             .setMetadata(ImmutableMap.of(ACCOUNT_IDENTIFIER_KEY, customerParams.getAccountIdentifier()))
             .build();
+
     Customer customer = stripeHandler.createCustomer(params);
     return toCustomerDetailDTO(customer);
   }
@@ -222,7 +235,9 @@ public class StripeHelperImpl implements StripeHelper {
     creationParamsBuilder.setCustomer(subscriptionParams.getCustomerId())
         .setPaymentBehavior(SubscriptionCreateParams.PaymentBehavior.DEFAULT_INCOMPLETE)
         .addAllExpand(subscriptionExpandList)
-        .setProrationBehavior(SubscriptionCreateParams.ProrationBehavior.ALWAYS_INVOICE);
+        .setProrationBehavior(SubscriptionCreateParams.ProrationBehavior.ALWAYS_INVOICE)
+        .setCollectionMethod(SubscriptionCreateParams.CollectionMethod.SEND_INVOICE)
+        .setDaysUntilDue(7L);
 
     // Register subscription items
     subscriptionParams.getItems().forEach(item
@@ -366,6 +381,11 @@ public class StripeHelperImpl implements StripeHelper {
     return toPaymentMethodCollectionDTO(paymentMethodCollection);
   }
 
+  @Override
+  public InvoiceDetailDTO finalizeInvoice(String invoiceId) {
+    return toInvoiceDetailDTO(stripeHandler.finalizeInvoice(invoiceId));
+  }
+
   private InvoiceDetailDTO toInvoiceDetailDTO(Invoice invoice) {
     if (invoice == null) {
       return null;
@@ -417,9 +437,30 @@ public class StripeHelperImpl implements StripeHelper {
     return NextActionDetailDTO.builder().type(nextAction.getType()).useStripeSdk(nextAction.getUseStripeSdk()).build();
   }
 
+  private AddressDto toAddressDto(Address address) {
+    if (address == null) {
+      return null;
+    }
+
+    return AddressDto.builder()
+        .city(address.getCity())
+        .country(address.getCountry())
+        .city(address.getCity())
+        .line1(address.getLine1())
+        .line2(address.getLine2())
+        .postalCode(address.getPostalCode())
+        .state(address.getState())
+        .build();
+  }
+
   private CustomerDetailDTO toCustomerDetailDTO(Customer customer) {
+    AddressDto address = toAddressDto(customer.getAddress());
+
     CustomerDetailDTOBuilder builder = CustomerDetailDTO.builder();
-    builder.customerId(customer.getId()).billingEmail(customer.getEmail()).companyName(customer.getName());
+    builder.customerId(customer.getId())
+        .address(address)
+        .billingEmail(customer.getEmail())
+        .companyName(customer.getName());
     // display default payment method
     if (customer.getInvoiceSettings() != null) {
       builder.defaultSource(customer.getInvoiceSettings().getDefaultPaymentMethod());

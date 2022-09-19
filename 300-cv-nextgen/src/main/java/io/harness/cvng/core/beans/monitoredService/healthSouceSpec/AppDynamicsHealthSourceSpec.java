@@ -12,6 +12,7 @@ import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition;
 import io.harness.cvng.core.beans.monitoredService.HealthSource;
 import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
+import io.harness.cvng.core.constant.MonitoredServiceConstants;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.MetricPack;
@@ -69,7 +70,7 @@ public class AppDynamicsHealthSourceSpec extends MetricHealthSourceSpec {
                 && metricDefinition.getAnalysis().getDeploymentVerification().getEnabled()
                 && StringUtils.isEmpty(
                     metricDefinition.getAnalysis().getDeploymentVerification().getServiceInstanceMetricPath())),
-            "Service metric path shouldnt be empty for Deployment Verification"));
+            "Service metric path shouldn't be empty for Deployment Verification"));
   }
 
   @Override
@@ -113,28 +114,32 @@ public class AppDynamicsHealthSourceSpec extends MetricHealthSourceSpec {
       String environmentRef, String serviceRef, String monitoredServiceIdentifier, String identifier, String name,
       MetricPackService metricPackService) {
     List<AppDynamicsCVConfig> cvConfigs = new ArrayList<>();
-    CollectionUtils.emptyIfNull(metricPacks).forEach(metricPack -> {
-      MetricPack metricPackFromDb =
-          metricPack.toMetricPack(accountId, orgIdentifier, projectIdentifier, getType(), metricPackService);
-      AppDynamicsCVConfig appDynamicsCVConfig = AppDynamicsCVConfig.builder()
-                                                    .accountId(accountId)
-                                                    .orgIdentifier(orgIdentifier)
-                                                    .projectIdentifier(projectIdentifier)
-                                                    .identifier(identifier)
-                                                    .connectorIdentifier(getConnectorRef())
-                                                    .monitoringSourceName(name)
-                                                    .monitoredServiceIdentifier(monitoredServiceIdentifier)
-                                                    .productName(feature)
-                                                    .applicationName(applicationName)
-                                                    .tierName(tierName)
-                                                    .metricPack(metricPackFromDb)
-                                                    .category(metricPackFromDb.getCategory())
-                                                    .build();
-      cvConfigs.add(appDynamicsCVConfig);
-    });
+    CollectionUtils.emptyIfNull(metricPacks)
+        .stream()
+        .filter(
+            metricPack -> !metricPack.getIdentifier().equalsIgnoreCase(MonitoredServiceConstants.CUSTOM_METRIC_PACK))
+        .forEach(metricPack -> {
+          MetricPack metricPackFromDb =
+              metricPack.toMetricPack(accountId, orgIdentifier, projectIdentifier, getType(), metricPackService);
+          AppDynamicsCVConfig appDynamicsCVConfig = AppDynamicsCVConfig.builder()
+                                                        .accountId(accountId)
+                                                        .orgIdentifier(orgIdentifier)
+                                                        .projectIdentifier(projectIdentifier)
+                                                        .identifier(identifier)
+                                                        .connectorIdentifier(getConnectorRef())
+                                                        .monitoringSourceName(name)
+                                                        .monitoredServiceIdentifier(monitoredServiceIdentifier)
+                                                        .productName(feature)
+                                                        .applicationName(applicationName)
+                                                        .tierName(tierName)
+                                                        .metricPack(metricPackFromDb)
+                                                        .category(metricPackFromDb.getCategory())
+                                                        .build();
+          cvConfigs.add(appDynamicsCVConfig);
+        });
     cvConfigs.addAll(CollectionUtils.emptyIfNull(metricDefinitions)
                          .stream()
-                         .collect(Collectors.groupingBy(md -> MetricDefinitionKey.fromMetricDefinition(md)))
+                         .collect(Collectors.groupingBy(MetricDefinitionKey::fromMetricDefinition))
                          .values()
                          .stream()
                          .map(mdList -> {
@@ -158,6 +163,7 @@ public class AppDynamicsHealthSourceSpec extends MetricHealthSourceSpec {
                            return appDynamicsCVConfig;
                          })
                          .collect(Collectors.toList()));
+    cvConfigs.forEach(appDynamicsCVConfig -> appDynamicsCVConfig.addMetricThresholds(metricPacks, metricDefinitions));
     cvConfigs.stream()
         .filter(cvConfig -> CollectionUtils.isNotEmpty(cvConfig.getMetricInfos()))
         .flatMap(cvConfig -> cvConfig.getMetricInfos().stream())

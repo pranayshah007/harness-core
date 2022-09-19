@@ -22,6 +22,8 @@ public class ExecutionInputDTOMapper {
         .nodeExecutionId(executionInputInstance.getNodeExecutionId())
         .inputTemplate(executionInputInstance.getTemplate())
         .inputInstanceId(executionInputInstance.getInputInstanceId())
+        .userInput(executionInputInstance.getUserInput())
+        .fieldYaml(executionInputInstance.getFieldYaml())
         .build();
   }
 }

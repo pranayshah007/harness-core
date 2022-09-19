@@ -416,7 +416,7 @@ public class AwsInstanceHandlerTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void getFeatureFlagToStopIteratorBasedInstanceSync() {
     assertThat(awsInstanceHandler.getFeatureFlagToStopIteratorBasedInstanceSync())
-        .isEqualTo(FeatureName.STOP_INSTANCE_SYNC_VIA_ITERATOR_FOR_AWS_SSH_DEPLOYMENTS);
+        .isEqualTo(Optional.of(FeatureName.STOP_INSTANCE_SYNC_VIA_ITERATOR_FOR_AWS_SSH_DEPLOYMENTS));
   }
 
   @Test
@@ -424,6 +424,6 @@ public class AwsInstanceHandlerTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void getFeatureFlagToEnablePerpetualTaskForInstanceSync() {
     assertThat(awsInstanceHandler.getFeatureFlagToEnablePerpetualTaskForInstanceSync())
-        .isEqualTo(FeatureName.MOVE_AWS_SSH_INSTANCE_SYNC_TO_PERPETUAL_TASK);
+        .isEqualTo(Optional.of(FeatureName.MOVE_AWS_SSH_INSTANCE_SYNC_TO_PERPETUAL_TASK));
   }
 }

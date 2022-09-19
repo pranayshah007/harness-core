@@ -7,7 +7,7 @@
 
 package io.harness.persistence;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.exception.ExceptionUtils;
@@ -31,7 +31,6 @@ import org.mongodb.morphia.query.UpdateOperations;
 import org.mongodb.morphia.query.UpdateResults;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.OptimisticLockingFailureException;
 
 public interface HPersistence extends HealthMonitor {
   String ANALYTICS_STORE_NAME = "analytic";
@@ -385,6 +384,17 @@ public interface HPersistence extends HealthMonitor {
   <T> PageResponse<T> query(Class<T> cls, PageRequest<T> req);
 
   /**
+   * Query. Read preference is set to secondary mongo
+   *
+   * @param <T> the generic type
+   * @param cls the cls
+   * @param req the req
+   * @return the page response
+   */
+
+  <T> PageResponse<T> querySecondary(Class<T> cls, PageRequest<T> req);
+
+  /**
    * Query page response.
    *
    * @param <T>          the type parameter
@@ -403,7 +413,7 @@ public interface HPersistence extends HealthMonitor {
     for (int i = 1; i < RETRIES; ++i) {
       try {
         return executor.execute();
-      } catch (MongoSocketOpenException | MongoSocketReadException | OptimisticLockingFailureException e) {
+      } catch (MongoSocketOpenException | MongoSocketReadException e) {
         logger().error("Exception ignored on retry ", e);
         continue;
       } catch (RuntimeException exception) {

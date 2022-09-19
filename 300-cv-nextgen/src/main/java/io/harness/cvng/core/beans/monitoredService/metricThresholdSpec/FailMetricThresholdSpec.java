@@ -27,6 +27,6 @@ public class FailMetricThresholdSpec extends MetricThresholdSpec {
   @NoArgsConstructor
   @JsonIgnoreProperties(ignoreUnknown = true)
   public static class FailMetricCustomThresholdSpec {
-    private int count;
+    private Integer count;
   }
 }

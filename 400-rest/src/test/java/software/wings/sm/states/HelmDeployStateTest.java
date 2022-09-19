@@ -118,6 +118,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.expression.VariableResolverTracker;
 import io.harness.ff.FeatureFlagService;
 import io.harness.helm.HelmCliCommandType;
+import io.harness.helm.HelmCommandType;
 import io.harness.helm.HelmSubCommandType;
 import io.harness.k8s.model.HelmVersion;
 import io.harness.k8s.model.ImageDetails;
@@ -182,7 +183,6 @@ import software.wings.helpers.ext.helm.HelmCommandExecutionResponse;
 import software.wings.helpers.ext.helm.HelmHelper;
 import software.wings.helpers.ext.helm.request.HelmChartConfigParams;
 import software.wings.helpers.ext.helm.request.HelmCommandRequest;
-import software.wings.helpers.ext.helm.request.HelmCommandRequest.HelmCommandType;
 import software.wings.helpers.ext.helm.request.HelmInstallCommandRequest;
 import software.wings.helpers.ext.helm.request.HelmRollbackCommandRequest;
 import software.wings.helpers.ext.helm.request.HelmValuesFetchTaskParameters;
@@ -460,8 +460,8 @@ public class HelmDeployStateTest extends CategoryTest {
     when(featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, ACCOUNT_ID)).thenReturn(false);
 
     WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService =
-        new WorkflowStandardParamsExtensionService(
-            appService, null, artifactService, environmentService, artifactStreamServiceBindingService, null);
+        new WorkflowStandardParamsExtensionService(appService, null, artifactService, environmentService,
+            artifactStreamServiceBindingService, null, featureFlagService);
 
     on(helmDeployState).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
     on(helmRollbackState).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
@@ -1759,7 +1759,7 @@ public class HelmDeployStateTest extends CategoryTest {
         ContainerServiceParams.builder().settingAttribute(aSettingAttribute().withValue(settingValue).build()).build();
     assertThatThrownBy(()
                            -> helmDeployState.getPreviousReleaseVersion(context, app, RELEASE_NAME, params, gitConfig,
-                               emptyList(), "", version, 0, HelmDeployStateExecutionData.builder(), null))
+                               emptyList(), "", version, 0, HelmDeployStateExecutionData.builder(), null, null))
         .hasMessageContaining(expectedMessage);
   }
 

@@ -7,7 +7,9 @@
 
 package io.harness.ci.integrationstage;
 
+import static io.harness.beans.serializer.RunTimeInputHandler.resolveArchType;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameter;
+import static io.harness.beans.serializer.RunTimeInputHandler.resolveOSType;
 import static io.harness.beans.sweepingoutputs.StageInfraDetails.STAGE_INFRA_DETAILS;
 import static io.harness.data.encoding.EncodingUtils.decodeBase64;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -29,18 +31,19 @@ import io.harness.beans.dependencies.CIServiceInfo;
 import io.harness.beans.dependencies.DependencyElement;
 import io.harness.beans.executionargs.CIExecutionArgs;
 import io.harness.beans.serializer.RunTimeInputHandler;
-import io.harness.beans.stages.IntegrationStageConfig;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.sweepingoutputs.ContextElement;
 import io.harness.beans.sweepingoutputs.DliteVmStageInfraDetails;
 import io.harness.beans.sweepingoutputs.StageDetails;
 import io.harness.beans.sweepingoutputs.VmStageInfraDetails;
+import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
-import io.harness.beans.yaml.extended.infrastrucutre.RunsOnInfra;
 import io.harness.beans.yaml.extended.infrastrucutre.VmInfraSpec;
 import io.harness.beans.yaml.extended.infrastrucutre.VmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml;
+import io.harness.beans.yaml.extended.platform.ArchType;
+import io.harness.beans.yaml.extended.platform.Platform;
 import io.harness.ci.buildstate.CodebaseUtils;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.ff.CIFeatureFlagService;
@@ -50,6 +53,7 @@ import io.harness.ci.utils.CIVmSecretEvaluator;
 import io.harness.ci.utils.HostedVmSecretResolver;
 import io.harness.ci.utils.InfrastructureUtils;
 import io.harness.ci.utils.ValidationUtils;
+import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.connector.SecretSpecBuilder;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.pod.SecretParams;
@@ -117,8 +121,8 @@ public class VmInitializeTaskParamsBuilder {
 
   public DliteVmInitializeTaskParams getHostedVmInitializeTaskParams(
       InitializeStepInfo initializeStepInfo, Ambiance ambiance) {
-    RunsOnInfra runsOnInfra = (RunsOnInfra) initializeStepInfo.getInfrastructure();
-    String poolId = runsOnInfra.getSpec().getRunsOn();
+    HostedVmInfraYaml hostedVmInfraYaml = (HostedVmInfraYaml) initializeStepInfo.getInfrastructure();
+    String poolId = getHostedPoolId(hostedVmInfraYaml.getSpec().getPlatform());
 
     CIVmInitializeTaskParams params = getVmInitializeParams(initializeStepInfo, ambiance, poolId);
     SetupVmRequest setupVmRequest = convertHostedSetupParams(params);
@@ -155,7 +159,7 @@ public class VmInitializeTaskParamsBuilder {
     IntegrationStageConfig integrationStageConfig = initializeStepInfo.getStageElementConfig();
     vmInitializeUtils.validateStageConfig(integrationStageConfig, accountID);
 
-    OSType os = vmInitializeUtils.getOS(infrastructure);
+    OSType os = VmInitializeUtils.getOS(infrastructure);
     Map<String, String> volToMountPath =
         vmInitializeUtils.getVolumeToMountPath(integrationStageConfig.getSharedPaths(), os);
     String workDir = vmInitializeUtils.getWorkDir(os);
@@ -179,8 +183,9 @@ public class VmInitializeTaskParamsBuilder {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     ConnectorDetails gitConnector = codebaseUtils.getGitConnector(
         ngAccess, initializeStepInfo.getCiCodebase(), initializeStepInfo.isSkipGitClone());
-    Map<String, String> codebaseEnvVars = codebaseUtils.getCodebaseVars(ambiance, ciExecutionArgs);
-    Map<String, String> gitEnvVars = codebaseUtils.getGitEnvVariables(gitConnector, initializeStepInfo.getCiCodebase());
+    Map<String, String> codebaseEnvVars = codebaseUtils.getCodebaseVars(ambiance, ciExecutionArgs, gitConnector);
+    Map<String, String> gitEnvVars = codebaseUtils.getGitEnvVariables(
+        gitConnector, initializeStepInfo.getCiCodebase(), initializeStepInfo.isSkipGitClone());
 
     Map<String, String> envVars = new HashMap<>();
     envVars.putAll(codebaseEnvVars);
@@ -215,15 +220,16 @@ public class VmInitializeTaskParamsBuilder {
         .secrets(new ArrayList<>(secrets))
         .volToMountPath(volToMountPath)
         .serviceDependencies(getServiceDependencies(ambiance, integrationStageConfig))
+        .tags(vmInitializeUtils.getBuildTags(ambiance, stageDetails))
         .build();
   }
 
-  private void validateInfrastructure(Infrastructure infrastructure) {
+  public void validateInfrastructure(Infrastructure infrastructure) {
     if (infrastructure == null) {
       throw new CIStageExecutionException("Input infrastructure can not be empty");
     }
 
-    if (infrastructure.getType() == Infrastructure.Type.RUNS_ON) {
+    if (infrastructure.getType() == Infrastructure.Type.HOSTED_VM) {
       return;
     }
 
@@ -262,7 +268,7 @@ public class VmInitializeTaskParamsBuilder {
               .harnessImageConnectorRef(harnessImageConnectorRef)
               .build(),
           STAGE_INFRA_DETAILS);
-    } else if (infraType == Infrastructure.Type.RUNS_ON) {
+    } else if (infraType == Infrastructure.Type.HOSTED_VM) {
       consumeSweepingOutput(ambiance,
           DliteVmStageInfraDetails.builder()
               .poolId(poolId)
@@ -422,6 +428,21 @@ public class VmInitializeTaskParamsBuilder {
     return LogStreamingHelper.generateLogBaseKey(logAbstractions);
   }
 
+  public String getHostedPoolId(ParameterField<Platform> platform) {
+    OSType os = OSType.Linux;
+    ArchType arch = ArchType.Amd64;
+    if (platform != null && platform.getValue() != null) {
+      os = resolveOSType(platform.getValue().getOs());
+      arch = resolveArchType(platform.getValue().getArch());
+    }
+
+    if (os != OSType.Linux || arch != ArchType.Amd64) {
+      throw new CIStageExecutionException("Only linux amd64 platform is supported for hosted builds");
+    }
+
+    return format("%s-%s", os.toString().toLowerCase(), arch.toString().toLowerCase());
+  }
+
   private SetupVmRequest convertHostedSetupParams(CIVmInitializeTaskParams params) {
     Map<String, String> env = new HashMap<>();
     List<String> secrets = new ArrayList<>();
@@ -456,6 +477,7 @@ public class VmInitializeTaskParamsBuilder {
                                        .build();
     return SetupVmRequest.builder()
         .id(params.getStageRuntimeId())
+        .tags(params.getTags())
         //            .correlationID(taskId)
         .poolID(params.getPoolID())
         .config(config)

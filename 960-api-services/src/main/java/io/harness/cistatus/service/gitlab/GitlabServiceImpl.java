@@ -17,9 +17,11 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.inject.Singleton;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.json.JSONObject;
 import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.jackson.JacksonConverterFactory;
@@ -35,6 +37,27 @@ public class GitlabServiceImpl implements GitlabService {
   private static final String SEPARATOR = "/";
 
   @Override
+  public JSONObject mergePR(String apiUrl, String slug, String token, String prNumber, Boolean deleteSourceBranch) {
+    try {
+      Response<Object> response = getGitlabRestClient(GitlabConfig.builder().gitlabUrl(apiUrl).build())
+                                      .mergePR(token, slug, prNumber, deleteSourceBranch)
+                                      .execute();
+      JSONObject json = new JSONObject();
+      if (response.isSuccessful()) {
+        json.put("sha", ((LinkedHashMap) response.body()).get("sha"));
+        return json;
+      } else {
+        log.error(
+            "Failed to merge PR for github url {} and prNum {}. Response {} ", apiUrl, prNumber, response.errorBody());
+        return json;
+      }
+    } catch (Exception e) {
+      log.error("Failed to merge PR for github url {} and prNum {} ", apiUrl, prNumber, e);
+      return new JSONObject();
+    }
+  }
+
+  @Override
   public boolean sendStatus(GitlabConfig gitlabConfig, String userName, String token,
       List<EncryptedDataDetail> encryptionDetails, String sha, String owner, String repo,
       Map<String, Object> bodyObjectMap) {
@@ -42,10 +65,17 @@ public class GitlabServiceImpl implements GitlabService {
 
     try {
       Response<StatusCreationResponse> statusCreationResponseResponse =
-          getGitlabRestClient(gitlabConfig, encryptionDetails)
+          getGitlabRestClient(gitlabConfig)
               .createStatus(getAuthToken(token), owner + SEPARATOR + repo, sha, (String) bodyObjectMap.get(STATE),
-                  (String) bodyObjectMap.get(CONTEXT), (String) bodyObjectMap.get(DESC))
+                  (String) bodyObjectMap.get(CONTEXT), (String) bodyObjectMap.get(DESC),
+                  (String) bodyObjectMap.get(TARGET_URL))
               .execute();
+
+      if (!statusCreationResponseResponse.isSuccessful()) {
+        log.error("Failed to send status for bitbucket url {} and sha {} error {}, message {}",
+            gitlabConfig.getGitlabUrl(), sha, statusCreationResponseResponse.errorBody().string(),
+            statusCreationResponseResponse.message());
+      }
 
       return statusCreationResponseResponse.isSuccessful();
     } catch (Exception e) {
@@ -56,7 +86,7 @@ public class GitlabServiceImpl implements GitlabService {
   }
 
   @VisibleForTesting
-  public GitlabRestClient getGitlabRestClient(GitlabConfig gitlabConfig, List<EncryptedDataDetail> encryptionDetails) {
+  public GitlabRestClient getGitlabRestClient(GitlabConfig gitlabConfig) {
     try {
       String gitlabUrl = gitlabConfig.getGitlabUrl();
       Preconditions.checkNotNull(gitlabUrl, "Gitlab api url is null");
@@ -73,7 +103,7 @@ public class GitlabServiceImpl implements GitlabService {
       throw e;
     } catch (Exception e) {
       throw new InvalidRequestException(
-          "Failed to post commit status request to github :" + gitlabConfig.getGitlabUrl(), e);
+          "Failed to post commit status request to gitlab :" + gitlabConfig.getGitlabUrl(), e);
     }
   }
 

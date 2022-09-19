@@ -9,6 +9,7 @@ package io.harness.delegate.beans.connector.vaultconnector;
 
 import static io.harness.SecretManagerDescriptionConstants.AWS_REGION;
 import static io.harness.SecretManagerDescriptionConstants.K8S_AUTH_ENDPOINT;
+import static io.harness.SecretManagerDescriptionConstants.RENEW_APPROLE_TOKEN;
 import static io.harness.SecretManagerDescriptionConstants.SERVICE_ACCOUNT_TOKEN_PATH;
 import static io.harness.SecretManagerDescriptionConstants.SINK_PATH;
 import static io.harness.SecretManagerDescriptionConstants.USE_AWS_IAM;
@@ -68,7 +69,10 @@ public class VaultConnectorDTO extends ConnectorConfigDTO implements DelegateSel
   @Schema(description = SecretManagerDescriptionConstants.AUTH_TOKEN)
   private SecretRefData authToken;
   @Schema(description = SecretManagerDescriptionConstants.BASE_PATH) private String basePath;
-  @NotNull @Schema(description = SecretManagerDescriptionConstants.VAULT_URL) private String vaultUrl;
+  @org.hibernate.validator.constraints.URL
+  @NotNull
+  @Schema(description = SecretManagerDescriptionConstants.VAULT_URL)
+  private String vaultUrl;
   @Schema(description = SecretManagerDescriptionConstants.READ_ONLY) private boolean isReadOnly;
   @NotNull
   @Schema(description = SecretManagerDescriptionConstants.RENEWAL_INTERVAL_MINUTES)
@@ -99,6 +103,7 @@ public class VaultConnectorDTO extends ConnectorConfigDTO implements DelegateSel
   @Schema(description = VAULT_K8S_AUTH_ROLE) private String vaultK8sAuthRole;
   @Schema(description = SERVICE_ACCOUNT_TOKEN_PATH) private String serviceAccountTokenPath;
   @Schema(description = K8S_AUTH_ENDPOINT) private String k8sAuthEndpoint;
+  @Schema(description = RENEW_APPROLE_TOKEN) private boolean renewAppRoleToken;
 
   public AccessType getAccessType() {
     if (useVaultAgent) {

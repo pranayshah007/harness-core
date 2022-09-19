@@ -14,11 +14,15 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.GithubPackagesArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig;
 import io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.customartifact.CustomScriptInlineSource;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
@@ -27,23 +31,31 @@ import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.task.artifacts.ArtifactDelegateRequestUtils;
 import io.harness.delegate.task.artifacts.ArtifactSourceDelegateRequest;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.gar.GarDelegateRequest;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.s3.S3ArtifactDelegateRequest;
+import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.yaml.utils.NGVariablesUtils;
 
 import java.util.Arrays;
 import java.util.List;
 import lombok.experimental.UtilityClass;
+import org.apache.commons.lang3.StringUtils;
 
 @UtilityClass
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -72,7 +84,33 @@ public class ArtifactConfigToDelegateReqMapper {
       filePathRegex = "*";
     }
     return ArtifactDelegateRequestUtils.getAmazonS3DelegateRequest(artifactConfig.getBucketName().getValue(), filePath,
-        filePathRegex, null, connectorRef, connectorDTO, encryptedDataDetails, ArtifactSourceType.AMAZONS3);
+        filePathRegex, null, connectorRef, connectorDTO, encryptedDataDetails, ArtifactSourceType.AMAZONS3,
+        artifactConfig.getRegion() != null ? artifactConfig.getRegion().getValue() : "us-east-1");
+  }
+
+  public GithubPackagesArtifactDelegateRequest getGithubPackagesDelegateRequest(
+      GithubPackagesArtifactConfig artifactConfig, GithubConnectorDTO connectorDTO,
+      List<EncryptedDataDetail> encryptedDataDetails, String connectorRef) {
+    String versionRegex = artifactConfig.getVersionRegex().getValue();
+
+    if (StringUtils.isBlank(versionRegex)) {
+      versionRegex = "";
+    }
+
+    String version = artifactConfig.getVersion().getValue();
+
+    if (StringUtils.isBlank(version)) {
+      version = "";
+    }
+
+    // If both version and versionRegex are empty, versionRegex is latest among all versions.
+    if (EmptyPredicate.isEmpty(version) && EmptyPredicate.isEmpty(versionRegex)) {
+      versionRegex = "*";
+    }
+
+    return ArtifactDelegateRequestUtils.getGithubPackagesDelegateRequest(artifactConfig.getPackageName().getValue(),
+        artifactConfig.getPackageType().getValue(), version, versionRegex, artifactConfig.getOrg().getValue(),
+        connectorRef, connectorDTO, encryptedDataDetails, ArtifactSourceType.GITHUB_PACKAGES);
   }
 
   public JenkinsArtifactDelegateRequest getJenkinsDelegateRequest(JenkinsArtifactConfig artifactConfig,
@@ -81,6 +119,25 @@ public class ArtifactConfigToDelegateReqMapper {
     String jobName = artifactConfig.getJobName() != null ? artifactConfig.getJobName().getValue() : "";
     return ArtifactDelegateRequestUtils.getJenkinsDelegateRequest(connectorRef, connectorDTO, encryptedDataDetails,
         ArtifactSourceType.JENKINS, null, null, jobName, Arrays.asList(artifactPath));
+  }
+  public CustomArtifactDelegateRequest getCustomDelegateRequest(
+      CustomArtifactConfig artifactConfig, Ambiance ambiance) {
+    CustomScriptInlineSource customScriptInlineSource = (CustomScriptInlineSource) artifactConfig.getScripts()
+                                                            .getFetchAllArtifacts()
+                                                            .getShellScriptBaseStepInfo()
+                                                            .getSource()
+                                                            .getSpec();
+    return ArtifactDelegateRequestUtils.getCustomDelegateRequest(
+        artifactConfig.getScripts().getFetchAllArtifacts().getArtifactsArrayPath().getValue(),
+        artifactConfig.getVersionRegex().getValue(),
+        artifactConfig.getScripts().getFetchAllArtifacts().getShellScriptBaseStepInfo().getSource().getType(),
+        ArtifactSourceType.CUSTOM_ARTIFACT,
+        artifactConfig.getScripts().getFetchAllArtifacts().getVersionPath().getValue(),
+        customScriptInlineSource.getScript().fetchFinalValue().toString(),
+        NGVariablesUtils.getStringMapVariables(artifactConfig.getScripts().getFetchAllArtifacts().getAttributes(), 0L),
+        NGVariablesUtils.getStringMapVariables(artifactConfig.getInputs(), 0L), artifactConfig.getVersion().getValue(),
+        AmbianceUtils.obtainCurrentRuntimeId(ambiance), artifactConfig.getTimeout().getValue().getTimeoutInMillis(),
+        AmbianceUtils.getAccountId(ambiance));
   }
 
   public GcrArtifactDelegateRequest getGcrDelegateRequest(GcrArtifactConfig gcrArtifactConfig,
@@ -94,6 +151,20 @@ public class ArtifactConfigToDelegateReqMapper {
     return ArtifactDelegateRequestUtils.getGcrDelegateRequest(gcrArtifactConfig.getImagePath().getValue(), tag,
         tagRegex, null, gcrArtifactConfig.getRegistryHostname().getValue(), connectorRef, gcpConnectorDTO,
         encryptedDataDetails, ArtifactSourceType.GCR);
+  }
+  public GarDelegateRequest getGarDelegateRequest(GoogleArtifactRegistryConfig garArtifactConfig,
+      GcpConnectorDTO gcpConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef) {
+    // If both are empty, regex is latest among all gcr artifacts.
+    String versionRegex =
+        garArtifactConfig.getVersionRegex() != null ? garArtifactConfig.getVersionRegex().getValue() : "";
+    String version = garArtifactConfig.getVersion() != null ? garArtifactConfig.getVersion().getValue() : "";
+    if (StringUtils.isBlank(version) && StringUtils.isBlank(versionRegex)) {
+      versionRegex = "/*";
+    }
+    return ArtifactDelegateRequestUtils.getGoogleArtifactDelegateRequest(garArtifactConfig.getRegion().getValue(),
+        garArtifactConfig.getRepositoryName().getValue(), garArtifactConfig.getProject().getValue(),
+        garArtifactConfig.getPkg().getValue(), version, versionRegex, gcpConnectorDTO, encryptedDataDetails,
+        ArtifactSourceType.GOOGLE_ARTIFACT_REGISTRY, Integer.MAX_VALUE);
   }
 
   public EcrArtifactDelegateRequest getEcrDelegateRequest(EcrArtifactConfig ecrArtifactConfig,

@@ -115,10 +115,16 @@ public class ArtifactoryArtifactResource {
       if (isEmpty(repository)) {
         repository = (String) artifactoryRegistryArtifactConfig.getRepository().fetchFinalValue();
       }
+      // There is an overload in this endpoint so to make things clearer:
+      // artifactPath is the artifactDirectory for Artifactory Generic
+      // artifactPath is the artifactPath for Artifactory Docker
       if (isEmpty(artifactPath)) {
-        artifactPath = (String) artifactoryRegistryArtifactConfig.getArtifactPath().fetchFinalValue();
+        if (artifactoryRegistryArtifactConfig.getRepositoryFormat().fetchFinalValue().equals("docker")) {
+          artifactPath = (String) artifactoryRegistryArtifactConfig.getArtifactPath().fetchFinalValue();
+        } else {
+          artifactPath = (String) artifactoryRegistryArtifactConfig.getArtifactDirectory().fetchFinalValue();
+        }
       }
-
       if (isEmpty(repositoryFormat)) {
         repositoryFormat = (String) artifactoryRegistryArtifactConfig.getRepositoryFormat().fetchFinalValue();
       }

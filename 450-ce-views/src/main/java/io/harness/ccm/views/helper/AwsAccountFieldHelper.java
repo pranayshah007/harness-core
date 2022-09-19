@@ -22,6 +22,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -49,7 +50,7 @@ public class AwsAccountFieldHelper {
   public static String removeAwsAccountNameFromValue(final String value) {
     String accountId = value;
     final Matcher matcher = ACCOUNT_ID_EXTRACT_PATTERN.matcher(value);
-    if (matcher.find()) {
+    while (matcher.find()) {
       accountId = matcher.group(1);
     }
     return accountId;
@@ -172,5 +173,21 @@ public class AwsAccountFieldHelper {
       }
     });
     return updatedRuleFilters;
+  }
+
+  public List<String> spiltAndSortAWSAccountIdListBasedOnAccountName(final List<String> values) {
+    List<String> accountIdsWithNames = new ArrayList<>();
+    List<String> accountIdsWithoutNames = new ArrayList<>();
+    for (String value : values) {
+      if (value.contains("(")) {
+        accountIdsWithoutNames.add(value);
+      } else {
+        accountIdsWithNames.add(value);
+      }
+    }
+    Collections.sort(accountIdsWithNames);
+    Collections.sort(accountIdsWithoutNames);
+    accountIdsWithNames.addAll(accountIdsWithoutNames);
+    return accountIdsWithNames;
   }
 }

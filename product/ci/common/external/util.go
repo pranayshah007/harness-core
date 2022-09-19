@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/harness/harness-core/commons/go/lib/exec"
@@ -46,6 +47,8 @@ const (
 	logUploadFf      = "HARNESS_CI_INDIRECT_LOG_UPLOAD_FF"
 	gitBin           = "git"
 	diffFilesCmd     = "%s diff --name-status --diff-filter=MADR HEAD@{1} HEAD -1"
+	harnessNodeIndex = "HARNESS_NODE_INDEX"
+	harnessNodeTotal = "HARNESS_NODE_TOTAL"
 )
 
 // GetChangedFiles executes a shell command and returns a list of files changed in the PR
@@ -201,6 +204,19 @@ func GetTiHTTPClient() (ticlient.Client, error) {
 	return ticlient.NewHTTPClient(l, account, token, false), nil
 }
 
+// GetTiHTTPClientWithToken returns a client to talk to the TI service
+func GetTiHTTPClientWithToken(token string) (ticlient.Client, error) {
+	l, ok := os.LookupEnv(tiSvcEp)
+	if !ok {
+		return nil, fmt.Errorf("ti service endpoint variable not set %s", tiSvcEp)
+	}
+	account, err := GetAccountId()
+	if err != nil {
+		return nil, err
+	}
+	return ticlient.NewHTTPClient(l, account, token, false), nil
+}
+
 func GetAccountId() (string, error) {
 	account, ok := os.LookupEnv(accountIDEnv)
 	if !ok {
@@ -315,6 +331,38 @@ func GetCommitLink() (string, error) {
 		return "", fmt.Errorf("commit link variable not set %s", dCommitLink)
 	}
 	return link, nil
+}
+
+func GetTiSvcToken() (string, error) {
+	token, ok := os.LookupEnv(tiSvcToken)
+	if !ok {
+		return "", fmt.Errorf("ti service token variable not set %s", tiSvcToken)
+	}
+	return token, nil
+}
+
+func GetStepStrategyIteration() (int, error) {
+	idxStr, ok := os.LookupEnv(harnessNodeIndex)
+	if !ok {
+		return -1, fmt.Errorf("parallelism strategy iteration variable not set %s", harnessNodeIndex)
+	}
+	idx, err := strconv.Atoi(idxStr)
+	if err != nil {
+		return -1, fmt.Errorf("unable to convert %s from string to int", harnessNodeIndex)
+	}
+	return idx, nil
+}
+
+func GetStepStrategyIterations() (int, error) {
+	totalStr, ok := os.LookupEnv(harnessNodeTotal)
+	if !ok {
+		return -1, fmt.Errorf("parallelism total iteration variable not set %s", harnessNodeTotal)
+	}
+	total, err := strconv.Atoi(totalStr)
+	if err != nil {
+		return -1, fmt.Errorf("unable to convert %s from string to int", harnessNodeTotal)
+	}
+	return total, nil
 }
 
 func IsManualExecution() bool {

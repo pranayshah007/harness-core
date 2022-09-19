@@ -25,6 +25,7 @@ import io.harness.beans.yaml.extended.TIDotNetVersion;
 import io.harness.beans.yaml.extended.TILanguage;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.beans.yaml.extended.infrastrucutre.k8.Toleration;
+import io.harness.beans.yaml.extended.platform.ArchType;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.ngexception.CIStageExecutionUserException;
 import io.harness.pms.yaml.ParameterField;
@@ -85,6 +86,14 @@ public class RunTimeInputHandler {
       return OSType.Linux;
     } else {
       return OSType.fromString(osType.fetchFinalValue().toString());
+    }
+  }
+
+  public static ArchType resolveArchType(ParameterField<ArchType> archType) {
+    if (archType == null || archType.isExpression() || archType.getValue() == null) {
+      return ArchType.Amd64;
+    } else {
+      return ArchType.fromString(archType.fetchFinalValue().toString());
     }
   }
 
@@ -224,8 +233,11 @@ public class RunTimeInputHandler {
         return defaultValue;
       }
     }
-
-    return (String) parameterField.fetchFinalValue();
+    String finalVal = (String) parameterField.fetchFinalValue();
+    if (finalVal == null) {
+      finalVal = "";
+    }
+    return finalVal;
   }
 
   public static Map<String, String> resolveMapParameter(String fieldName, String stepType, String stepIdentifier,

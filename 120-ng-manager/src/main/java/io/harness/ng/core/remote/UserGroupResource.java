@@ -23,6 +23,7 @@ import static io.harness.utils.PageUtils.getPageRequest;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.NGResourceFilterConstants;
+import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
@@ -31,6 +32,8 @@ import io.harness.accesscontrol.scopes.ScopeDTO;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.beans.SortOrder;
+import io.harness.enforcement.client.annotation.FeatureRestrictionCheck;
+import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.accesscontrol.scopes.ScopeNameDTO;
 import io.harness.ng.beans.PageRequest;
@@ -180,15 +183,15 @@ public class UserGroupResource {
       description = "Copy a User Group in an account/org/project",
       responses =
       { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns whether the copy was successful") })
+  @Deprecated
   public ResponseDTO<Boolean>
   copy(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotEmpty @QueryParam(
            NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @Parameter(description = GROUP_IDENTIFIER_KEY, required = true) @QueryParam(
           NGCommonEntityConstants.GROUP_IDENTIFIER_KEY) String userGroupIdentifier,
       @RequestBody(description = "List of scopes", required = true) List<ScopeDTO> scopes) {
-    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, null, null),
-        Resource.of(USERGROUP, userGroupIdentifier), MANAGE_USERGROUP_PERMISSION);
-    return ResponseDTO.newResponse(userGroupService.copy(accountIdentifier, userGroupIdentifier, scopes));
+    throw new InvalidRequestException(
+        "This feature is no longer available. You can now directly assign role assignments at project/organization to user groups linked in the account.");
   }
 
   @GET
@@ -519,6 +522,7 @@ public class UserGroupResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(description = "Returns the updated User Group after linking LDAP Group")
       })
+  @FeatureRestrictionCheck(FeatureRestrictionName.LDAP_SUPPORT)
   public RestResponse<UserGroup>
   linkToLdapGroup(@Parameter(description = "Identifier of the user group", required = true) @PathParam(
                       "userGroupId") String userGroupId,
@@ -526,7 +530,7 @@ public class UserGroupResource {
       @RequestBody(
           description = "LDAP Link Group Request", required = true) @NotNull @Valid LdapLinkGroupRequest groupRequest,
       @Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
-          NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {

@@ -35,6 +35,6 @@ public class MatrixConfigTest {
     assertThat(matrixConfig).isNotNull();
     assertThat(matrixConfig.getAxes().get("a").getAxisValue().getValue().size()).isEqualTo(2);
     assertThat(matrixConfig.getAxes().get("b").getAxisValue().getValue().size()).isEqualTo(2);
-    assertThat(matrixConfig.getAxes().get("c").getAxisValue().getExpressionValue()).isEqualTo("<+pipeline>");
+    assertThat(matrixConfig.getExpressionAxes().get("c").getExpression().getExpressionValue()).isEqualTo("<+pipeline>");
   }
 }

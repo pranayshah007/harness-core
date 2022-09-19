@@ -126,6 +126,8 @@ featureFlagConfig:
   featureFlagSystem: LOCAL
   syncFeaturesToCF: false
 
+deploymentClusterName: ""
+
 gcpConfig:
   gcpProjectId: gcpProjectIdPlaceHolder
   gcpAwsConnectorCrudPubSubTopic: "ce-aws-connector-crud"
@@ -146,6 +148,13 @@ awsConfig:
   destinationBucket: destinationBucket_placeholder
   destinationBucketsCount : 1
   harnessAwsAccountId: 108817434118
+  awsConnectorTemplate: https://continuous-efficiency-templates.s3.amazonaws.com/templateOptimOnly.yaml
+
+awsGovCloudConfig:
+  accessKey: govCloud_AccessKey_placeholder
+  secretKey: govCloud_SecretKey_placeholder
+  harnessAwsAccountId: 054036368597
+  awsRegionName: us-gov-west-1
   awsConnectorTemplate: https://continuous-efficiency-templates.s3.amazonaws.com/templateOptimOnly.yaml
 
 hostname: ${HOSTNAME:-localhost}
@@ -177,6 +186,23 @@ segmentConfiguration:
   url: https://api.segment.io/v1/
   apiKey: UvSVfxy6KzApDrrlhCqSjJBlgPeEDBdf
 
+accessControlClient:
+  enableAccessControl: true
+  accessControlServiceConfig:
+    baseUrl: http://localhost:9006
+    connectTimeOutSeconds: 15
+    readTimeOutSeconds: 15
+  accessControlServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+
+accessControlAdminClient:
+  accessControlServiceConfig:
+    baseUrl: http://localhost:9006/api/
+    connectTimeOutSeconds: 15
+    readTimeOutSeconds: 15
+    enableHttpLogging: ${ENABLE_HTTP_LOGGING:-false}
+  accessControlServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+  mockAccessControlService: true
+
 auditClientConfig:
   baseUrl: http://localhost:9005/api/
   connectTimeOutSeconds: 15
@@ -191,3 +217,10 @@ outboxPollConfig:
   lockId: NextGenCE
 
 exportMetricsToStackDriver: false
+
+enableLightwingAutoCUDDC: false
+
+lightwingAutoCUDClientConfig:
+  baseUrl: http://localhost:9090/
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15

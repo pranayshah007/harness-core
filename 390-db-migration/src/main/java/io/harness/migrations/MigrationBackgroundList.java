@@ -91,6 +91,7 @@ import io.harness.migrations.all.DeleteStaleSlackConfigs;
 import io.harness.migrations.all.DeleteStaleThirdPartyApiCallLogsMigration;
 import io.harness.migrations.all.DeletedAccountStatusMigration;
 import io.harness.migrations.all.DisableServiceGuardsWithDeletedConnectorsMigration;
+import io.harness.migrations.all.ExecuteWorkflowAbortActionMigration;
 import io.harness.migrations.all.ExecuteWorkflowRollbackActionMigration;
 import io.harness.migrations.all.ExplodeLogMLFeedbackRecordsMigration;
 import io.harness.migrations.all.FetchAndSaveAccounts;
@@ -131,8 +132,11 @@ import io.harness.migrations.all.SetDefaultTimeOutAndActionForManualIntervention
 import io.harness.migrations.all.SetDummyTechStackForOldAccounts;
 import io.harness.migrations.all.SetEmailToIndividualMemberFlag;
 import io.harness.migrations.all.SetLastLoginTimeToAllUsers;
+import io.harness.migrations.all.SettingAttributesServiceAccountTokenMigration;
 import io.harness.migrations.all.TemplateLibraryYamlMigration;
 import io.harness.migrations.all.TerraformIsTemplatizedMigration;
+import io.harness.migrations.all.TimeSeriesMLScoresTTLMigration;
+import io.harness.migrations.all.TimeSeriesRiskSummaryTTLMigration;
 import io.harness.migrations.all.TimeSeriesThresholdsMigration;
 import io.harness.migrations.all.UpdateAccountEncryptionClassNames;
 import io.harness.migrations.all.UpdateCorruptedEmptyClusterNameInstanceStatsMigration;
@@ -390,6 +394,12 @@ public class MigrationBackgroundList {
         .add(Pair.of(226, AddClusterNameInGcpTypeInstanceMigration.class))
         .add(Pair.of(227, AddDeploymentFreezeReferenceToUserGroups.class))
         .add(Pair.of(228, DeleteStaleDelegateInsightsSummaryMigration.class))
+        .add(Pair.of(229, TimeSeriesRiskSummaryTTLMigration.class))
+        .add(Pair.of(230, TimeSeriesMLScoresTTLMigration.class))
+        .add(Pair.of(231, TimeSeriesRiskSummaryTTLMigration.class))
+        .add(Pair.of(232, TimeSeriesMLScoresTTLMigration.class))
+        .add(Pair.of(233, ExecuteWorkflowAbortActionMigration.class))
+        .add(Pair.of(234, SettingAttributesServiceAccountTokenMigration.class))
         .build();
   }
 }

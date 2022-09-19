@@ -24,6 +24,7 @@ import lombok.experimental.FieldDefaults;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class DelegateParams {
   String delegateId;
+  String delegateConnectionId;
   String accountId;
   String sessionIdentifier;
   String orgIdentifier;
@@ -42,6 +43,8 @@ public class DelegateParams {
   String sequenceNum;
   String location;
   long lastHeartBeat;
+  String tokenName;
+  String token;
 
   boolean ng;
   boolean sampleDelegate;
@@ -50,6 +53,7 @@ public class DelegateParams {
   boolean proxy;
   boolean ceEnabled;
   boolean heartbeatAsObject;
+  boolean immutable;
 
   List<String> supportedTaskTypes;
 

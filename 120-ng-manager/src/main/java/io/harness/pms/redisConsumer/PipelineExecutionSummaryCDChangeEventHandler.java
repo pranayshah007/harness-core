@@ -11,14 +11,10 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.plan.execution.PipelineExecutionSummaryKeys;
 import io.harness.redisHandler.RedisAbstractHandler;
-import io.harness.timescaledb.DBUtils;
 import io.harness.timescaledb.Tables;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
-import com.mongodb.DBObject;
-import java.util.HashMap;
-import java.util.List;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.jooq.DSLContext;
@@ -110,12 +106,13 @@ public class PipelineExecutionSummaryCDChangeEventHandler extends RedisAbstractH
       }
 
       if (ciExecutionInfo != null) {
-        DBObject branch = (DBObject) (ciExecutionInfo.get(PipelineExecutionSummaryKeys.branch));
-
-        HashMap firstCommit;
+        JsonNode branch = ciExecutionInfo.get(PipelineExecutionSummaryKeys.branch);
+        JsonNode commitsNode;
+        JsonNode firstCommit;
         String commits = PipelineExecutionSummaryKeys.commits;
-        if (branch != null && branch.get(commits) != null && ((List) branch.get(commits)).size() > 0) {
-          firstCommit = (HashMap) ((List) branch.get(commits)).get(0);
+        if (branch != null && branch.get(commits) != null && (branch.get(commits)).size() > 0) {
+          commitsNode = branch.get(commits);
+          firstCommit = commitsNode.get("_0");
           if (firstCommit != null) {
             if (firstCommit.get(PipelineExecutionSummaryKeys.commitId) != null) {
               record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.MODULEINFO_BRANCH_COMMIT_ID,
@@ -127,15 +124,16 @@ public class PipelineExecutionSummaryCDChangeEventHandler extends RedisAbstractH
             }
           }
         } else if (ciExecutionInfo.get(PipelineExecutionSummaryKeys.pullRequest) != null) {
-          DBObject pullRequestObject = (DBObject) ciExecutionInfo.get(PipelineExecutionSummaryKeys.pullRequest);
+          JsonNode pullRequestObject = ciExecutionInfo.get(PipelineExecutionSummaryKeys.pullRequest);
 
           if (pullRequestObject.get(PipelineExecutionSummaryKeys.sourceBranch) != null) {
             record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.SOURCE_BRANCH,
                 pullRequestObject.get(PipelineExecutionSummaryKeys.sourceBranch).toString());
           }
 
-          if (pullRequestObject.get(commits) != null && ((List) pullRequestObject.get(commits)).size() > 0) {
-            firstCommit = (HashMap) ((List) pullRequestObject.get(commits)).get(0);
+          if (pullRequestObject.get(commits) != null && pullRequestObject.get(commits).size() > 0) {
+            commitsNode = pullRequestObject.get(commits);
+            firstCommit = commitsNode.get("_0");
             if (firstCommit != null) {
               if (firstCommit.get(PipelineExecutionSummaryKeys.commitId) != null) {
                 record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.MODULEINFO_BRANCH_COMMIT_ID,
@@ -148,7 +146,7 @@ public class PipelineExecutionSummaryCDChangeEventHandler extends RedisAbstractH
             }
           }
         }
-        DBObject author = (DBObject) (ciExecutionInfo.get(PipelineExecutionSummaryKeys.author));
+        JsonNode author = ciExecutionInfo.get(PipelineExecutionSummaryKeys.author);
         if (author != null) {
           record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.MODULEINFO_AUTHOR_ID,
               author.get(PipelineExecutionSummaryKeys.commitId).toString());
@@ -176,14 +174,13 @@ public class PipelineExecutionSummaryCDChangeEventHandler extends RedisAbstractH
       dsl.insertInto(Tables.PIPELINE_EXECUTION_SUMMARY_CD)
           .set(record)
           .onConflict(Tables.PIPELINE_EXECUTION_SUMMARY_CD.ID, Tables.PIPELINE_EXECUTION_SUMMARY_CD.STARTTS)
-          .doNothing()
+          .doUpdate()
+          .set(record)
           .execute();
-      log.info("Successfully inserted data for id {}", id);
+      log.debug("Successfully inserted data for id {}", id);
     } catch (DataAccessException ex) {
       log.error("Caught Exception while inserting data", ex);
-      if (DBUtils.isConnectionError(ex)) {
-        return false;
-      }
+      return false;
     }
     return true;
   }
@@ -192,12 +189,10 @@ public class PipelineExecutionSummaryCDChangeEventHandler extends RedisAbstractH
   public boolean handleDeleteEvent(String id) {
     try {
       dsl.delete(Tables.PIPELINE_EXECUTION_SUMMARY_CD).where(Tables.PIPELINE_EXECUTION_SUMMARY_CD.ID.eq(id)).execute();
-      log.info("Successfully deleted data for id {}", id);
+      log.debug("Successfully deleted data for id {}", id);
     } catch (DataAccessException ex) {
       log.error("Caught Exception while deleting data", ex);
-      if (DBUtils.isConnectionError(ex)) {
-        return false;
-      }
+      return false;
     }
     return true;
   }
@@ -215,12 +210,10 @@ public class PipelineExecutionSummaryCDChangeEventHandler extends RedisAbstractH
           .doUpdate()
           .set(record)
           .execute();
-      log.info("Successfully updated data for id {}", id);
+      log.debug("Successfully updated data for id {}", id);
     } catch (DataAccessException ex) {
       log.error("Caught Exception while updating data", ex);
-      if (DBUtils.isConnectionError(ex)) {
-        return false;
-      }
+      return false;
     }
     return true;
   }

@@ -22,6 +22,7 @@ import io.harness.tasks.ResponseData;
 import io.harness.tasks.Task;
 
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Use this interface when your task spawns a task. The queuing of the task will be taken care by the framework itself.
@@ -37,6 +38,9 @@ import java.util.Map;
 @OwnedBy(PIPELINE)
 public interface TaskExecutable<T extends StepParameters, R extends ResponseData>
     extends Step<T>, Abortable<T, TaskExecutableResponse>, Failable<T>, Progressable<T> {
+  default Optional<TaskRequest> obtainTaskOptional(Ambiance ambiance, T stepParameters, StepInputPackage inputPackage) {
+    return Optional.ofNullable(obtainTask(ambiance, stepParameters, inputPackage));
+  }
   TaskRequest obtainTask(Ambiance ambiance, T stepParameters, StepInputPackage inputPackage);
 
   StepResponse handleTaskResult(Ambiance ambiance, T stepParameters, ThrowingSupplier<R> responseDataSupplier)

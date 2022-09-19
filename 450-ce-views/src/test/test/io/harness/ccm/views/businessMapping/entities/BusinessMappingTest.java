@@ -33,7 +33,7 @@ public class BusinessMappingTest extends CategoryTest {
     final long currentTime = System.currentTimeMillis();
     final BusinessMapping businessMapping =
         new BusinessMapping(BusinessMappingHelper.TEST_ID, TEST_NAME, BusinessMappingHelper.TEST_ACCOUNT_ID,
-            BusinessMappingHelper.getCostTargets(), null, null, currentTime, currentTime, null, null);
+            BusinessMappingHelper.getCostTargets(), null, null, null, currentTime, currentTime, null, null);
     assertThat(businessMapping).isNotNull();
   }
 

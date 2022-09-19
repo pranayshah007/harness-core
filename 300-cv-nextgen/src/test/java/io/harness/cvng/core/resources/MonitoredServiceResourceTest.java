@@ -11,6 +11,7 @@ import static io.harness.rule.OwnerRule.ABHIJITH;
 import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
 import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.KAPIL;
+import static io.harness.rule.OwnerRule.VARSHA_LALWANI;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -19,6 +20,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.CVNGTestConstants;
 import io.harness.cvng.beans.CVMonitoringCategory;
+import io.harness.cvng.beans.MonitoredServiceDataSourceType;
 import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition;
 import io.harness.cvng.core.beans.PrometheusMetricDefinition;
@@ -26,6 +28,8 @@ import io.harness.cvng.core.beans.monitoredService.HealthSource;
 import io.harness.cvng.core.beans.monitoredService.MetricDTO;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceResponse;
+import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
+import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.DatadogMetricHealthSourceSpec;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.PrometheusHealthSourceSpec;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.SplunkMetricHealthSourceSpec;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
@@ -122,6 +126,57 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
     assertThat(monitoredServiceDTO.getProjectIdentifier())
         .isEqualTo(builderFactory.getContext().getProjectIdentifier());
     assertThat(monitoredServiceDTO.getOrgIdentifier()).isEqualTo(builderFactory.getContext().getOrgIdentifier());
+  }
+
+  @Test
+  @Owner(developers = DEEPAK_CHHIKARA)
+  @Category(UnitTests.class)
+  public void testCreateFromYamlWithMetricThresholds() throws IOException {
+    String monitoredServiceYaml = getResource("monitoredservice/monitored-service-with-metric-threshold.yaml");
+
+    Response response = RESOURCES.client()
+                            .target("http://localhost:9998/monitored-service/")
+                            .queryParam("accountId", builderFactory.getContext().getAccountId())
+                            .request(MediaType.APPLICATION_JSON_TYPE)
+                            .post(Entity.json(convertToJson(monitoredServiceYaml)));
+    assertThat(response.getStatus()).isEqualTo(200);
+    RestResponse<MonitoredServiceResponse> restResponse =
+        response.readEntity(new GenericType<RestResponse<MonitoredServiceResponse>>() {});
+    MonitoredServiceDTO monitoredServiceDTO = restResponse.getResource().getMonitoredServiceDTO();
+    assertThat(monitoredServiceDTO.getSources().getHealthSources()).hasSize(1);
+    HealthSource healthSource = monitoredServiceDTO.getSources().getHealthSources().iterator().next();
+    HealthSourceMetricDefinition healthSourceMetricDefinition =
+        ((PrometheusHealthSourceSpec) healthSource.getSpec()).getMetricDefinitions().get(0);
+    // assertThat(healthSourceMetricDefinition.getIdentifier()).isEqualTo("prometheus_metric123");
+    assertThat(healthSourceMetricDefinition.getIdentifier())
+        .isEqualTo("PrometheusMetric"); // TODO: remove this after enabling validation.
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testCreateFromYamlWithDataDogMetricThresholds() throws IOException {
+    String monitoredServiceYaml = getResource("monitoredservice/monitored-service-with-datadog-metric-threshold.yaml");
+
+    Response response = RESOURCES.client()
+                            .target("http://localhost:9998/monitored-service/")
+                            .queryParam("accountId", builderFactory.getContext().getAccountId())
+                            .request(MediaType.APPLICATION_JSON_TYPE)
+                            .post(Entity.json(convertToJson(monitoredServiceYaml)));
+    assertThat(response.getStatus()).isEqualTo(200);
+    RestResponse<MonitoredServiceResponse> restResponse =
+        response.readEntity(new GenericType<RestResponse<MonitoredServiceResponse>>() {});
+    MonitoredServiceDTO monitoredServiceDTO = restResponse.getResource().getMonitoredServiceDTO();
+    assertThat(monitoredServiceDTO.getSources().getHealthSources()).hasSize(1);
+    HealthSource healthSource = monitoredServiceDTO.getSources().getHealthSources().iterator().next();
+    assertThat(healthSource.getType()).isEqualTo(MonitoredServiceDataSourceType.DATADOG_METRICS);
+    HealthSourceMetricDefinition healthSourceMetricDefinition =
+        ((DatadogMetricHealthSourceSpec) healthSource.getSpec()).getMetricDefinitions().get(0);
+    assertThat(healthSourceMetricDefinition.getIdentifier()).isEqualTo("metric");
+    TimeSeriesMetricPackDTO metricPackDTO =
+        ((DatadogMetricHealthSourceSpec) healthSource.getSpec()).getMetricPacks().iterator().next();
+    assertThat(metricPackDTO.getMetricThresholds()).hasSize(1);
+    assertThat(metricPackDTO.getMetricThresholds().get(0).getMetricType()).isEqualTo("Custom");
   }
 
   @Test

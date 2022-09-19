@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 # Copyright 2021 Harness Inc. All rights reserved.
-# Use of this source code is governed by the PolyForm Shield 1.0.0 license
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
 # that can be found in the licenses directory at the root of this repository, also available at
-# https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
 CONFIG_FILE=/opt/harness/config.yml
 REDISSON_CACHE_FILE=/opt/harness/redisson-jcache.yaml
+ENTERPRISE_REDISSON_CACHE_FILE=/opt/harness/enterprise-redisson-jcache.yaml
 
 replace_key_value () {
   CONFIG_KEY="$1";
@@ -131,6 +132,22 @@ fi
 
 if [[ "" != "$CI_MANAGER_SERVICE_SECRET" ]]; then
   yq write -i $CONFIG_FILE yamlSchemaClientConfig.yamlSchemaHttpClientMap.ci.secret $CI_MANAGER_SERVICE_SECRET
+fi
+
+if [[ "" != "$STO_MANAGER_BASE_URL" ]]; then
+  yq write -i $CONFIG_FILE yamlSchemaClientConfig.yamlSchemaHttpClientMap.sto.serviceHttpClientConfig.baseUrl $STO_MANAGER_BASE_URL
+fi
+
+if [[ "" != "$STO_MANAGER_SERVICE_CONNECT_TIMEOUT_IN_SECONDS" ]]; then
+  yq write -i $CONFIG_FILE yamlSchemaClientConfig.yamlSchemaHttpClientMap.sto.serviceHttpClientConfig.connectTimeOutSeconds $STO_MANAGER_SERVICE_CONNECT_TIMEOUT_IN_SECONDS
+fi
+
+if [[ "" != "$STO_MANAGER_SERVICE_READ_TIMEOUT_IN_SECONDS" ]]; then
+  yq write -i $CONFIG_FILE yamlSchemaClientConfig.yamlSchemaHttpClientMap.sto.serviceHttpClientConfig.readTimeOutSeconds $STO_MANAGER_SERVICE_READ_TIMEOUT_IN_SECONDS
+fi
+
+if [[ "" != "$STO_MANAGER_SERVICE_SECRET" ]]; then
+  yq write -i $CONFIG_FILE yamlSchemaClientConfig.yamlSchemaHttpClientMap.sto.secret $STO_MANAGER_SERVICE_SECRET
 fi
 
 if [[ "" != "$NG_MANAGER_BASE_URL" ]]; then
@@ -301,8 +318,56 @@ if [[ "" != "$REDIS_NETTY_THREADS" ]]; then
   yq write -i $REDISSON_CACHE_FILE nettyThreads "$REDIS_NETTY_THREADS"
 fi
 
+yq delete -i $ENTERPRISE_REDISSON_CACHE_FILE codec
+
+if [[ "$REDIS_SCRIPT_CACHE" == "false" ]]; then
+  yq write -i $ENTERPRISE_REDISSON_CACHE_FILE useScriptCache false
+fi
+
+if [[ "" != "$EVENTS_FRAMEWORK_NETTY_THREADS" ]]; then
+  yq write -i $ENTERPRISE_REDISSON_CACHE_FILE nettyThreads "$EVENTS_FRAMEWORK_NETTY_THREADS"
+fi
+
+if [[ "" != "$EVENTS_FRAMEWORK_REDIS_URL" ]]; then
+  yq write -i $ENTERPRISE_REDISSON_CACHE_FILE singleServerConfig.address "$EVENTS_FRAMEWORK_REDIS_URL"
+fi
+
+if [[ "" != "$EVENTS_FRAMEWORK_REDIS_USERNAME" ]]; then
+  yq write -i $ENTERPRISE_REDISSON_CACHE_FILE singleServerConfig.username "$EVENTS_FRAMEWORK_REDIS_USERNAME"
+fi
+
+if [[ "" != "$EVENTS_FRAMEWORK_REDIS_PASSWORD" ]]; then
+  yq write -i $ENTERPRISE_REDISSON_CACHE_FILE singleServerConfig.password "$EVENTS_FRAMEWORK_REDIS_PASSWORD"
+fi
+
+if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PATH" ]]; then
+  yq write -i $ENTERPRISE_REDISSON_CACHE_FILE singleServerConfig.sslTruststore file:"$EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PATH"
+fi
+
+if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD" ]]; then
+  yq write -i $ENTERPRISE_REDISSON_CACHE_FILE singleServerConfig.sslTruststorePassword "$EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD"
+fi
+
+if [[ "$EVENTS_FRAMEWORK_USE_SENTINEL" == "true" ]]; then
+  yq delete -i $ENTERPRISE_REDISSON_CACHE_FILE singleServerConfig
+
+  if [[ "" != "$EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME" ]]; then
+    yq write -i $ENTERPRISE_REDISSON_CACHE_FILE sentinelServersConfig.masterName "$EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME"
+  fi
+
+  if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then
+    IFS=',' read -ra SENTINEL_URLS <<< "$EVENTS_FRAMEWORK_REDIS_SENTINELS"
+    INDEX=0
+    for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
+      yq write -i $ENTERPRISE_REDISSON_CACHE_FILE sentinelServersConfig.sentinelAddresses.[$INDEX] "${REDIS_SENTINEL_URL}"
+      INDEX=$(expr $INDEX + 1)
+    done
+  fi
+fi
+
 replace_key_value cacheConfig.cacheNamespace $CACHE_NAMESPACE
 replace_key_value cacheConfig.cacheBackend $CACHE_BACKEND
+replace_key_value cacheConfig.enterpriseCacheEnabled $ENTERPRISE_CACHE_ENABLED
 
 replace_key_value eventsFramework.redis.sentinel $EVENTS_FRAMEWORK_USE_SENTINEL
 replace_key_value eventsFramework.redis.envNamespace $EVENTS_FRAMEWORK_ENV_NAMESPACE
@@ -358,6 +423,14 @@ replace_key_value triggerConfig.customBaseUrl "$CUSTOM_TRIGGER_BASEURL"
 
 replace_key_value opaServerConfig.baseUrl "$OPA_SERVER_BASEURL"
 replace_key_value opaServerConfig.secret "$OPA_SERVER_SECRET"
+replace_key_value policyManagerSecret "$OPA_SERVER_SECRET"
+replace_key_value opaClientConfig.baseUrl "$OPA_SERVER_BASEURL"
+if [[ "" != "$OPA_CONNECT_TIMEOUT" ]]; then
+  replace_key_value opaClientConfig.connectTimeOutSeconds "$OPA_CONNECT_TIMEOUT"
+fi
+if [[ "" != "$OPA_READ_TIMEOUT" ]]; then
+  replace_key_value opaClientConfig.readTimeOutSeconds "$OPA_READ_TIMEOUT"
+fi
 
 replace_key_value delegatePollingConfig.syncDelay "$POLLING_SYNC_DELAY"
 replace_key_value delegatePollingConfig.asyncDelay "$POLLING_ASYNC_DELAY"
@@ -411,6 +484,7 @@ replace_key_value pipelineEventConsumersConfig.planNotify.threads "$PLAN_NOTIFY_
 replace_key_value pipelineEventConsumersConfig.pmsNotify.threads "$PMS_NOTIFY_EVENT_CONSUMER_THREAD_COUNT"
 replace_key_value pipelineEventConsumersConfig.webhookEvent.threads "$PMS_WEBHOOK_EVENT_CONSUMER_THREAD_COUNT"
 replace_key_value pipelineEventConsumersConfig.initiateNode.threads "$INITIATE_NODE_EVENT_CONSUMER_THREAD_COUNT"
+
 
 replace_key_value enforcementClientConfiguration.enforcementCheckEnabled "$ENFORCEMENT_CHECK_ENABLED"
 replace_key_value segmentConfiguration.url "$SEGMENT_URL"

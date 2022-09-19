@@ -38,7 +38,7 @@ import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
 import io.harness.execution.NodeExecution;
 import io.harness.git.model.ChangeType;
-import io.harness.gitsync.interceptor.GitImportInfoDTO;
+import io.harness.gitaware.helper.GitImportInfoDTO;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.core.dto.ResponseDTO;

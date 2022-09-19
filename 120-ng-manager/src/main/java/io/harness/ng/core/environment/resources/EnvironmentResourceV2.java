@@ -7,10 +7,16 @@
 
 package io.harness.ng.core.environment.resources;
 
+import static io.harness.beans.FeatureName.NG_SERVICE_CONFIG_FILES_OVERRIDE;
+import static io.harness.beans.FeatureName.NG_SERVICE_MANIFEST_OVERRIDE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_PROJECT_PERMISSION;
 import static io.harness.ng.accesscontrol.PlatformResourceTypes.PROJECT;
+import static io.harness.ng.core.environment.mappers.EnvironmentMapper.checkDuplicateConfigFilesIdentifiersWithIn;
+import static io.harness.ng.core.environment.mappers.EnvironmentMapper.checkDuplicateManifestIdentifiersWithIn;
+import static io.harness.ng.core.environment.mappers.EnvironmentMapper.toNGEnvironmentConfig;
+import static io.harness.ng.core.serviceoverride.mapper.NGServiceOverrideEntityConfigMapper.toNGServiceOverrideConfig;
 import static io.harness.pms.rbac.NGResourceType.ENVIRONMENT;
 import static io.harness.pms.rbac.NGResourceType.SERVICE;
 import static io.harness.rbac.CDNGRbacPermissions.ENVIRONMENT_CREATE_PERMISSION;
@@ -38,6 +44,7 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
@@ -66,6 +73,7 @@ import io.harness.ng.core.serviceoverride.beans.ServiceOverrideResponseDTO;
 import io.harness.ng.core.serviceoverride.mapper.ServiceOverridesMapper;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
+import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideInfoConfig;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.rbac.CDNGRbacUtility;
 import io.harness.repositories.UpsertOptions;
@@ -156,6 +164,7 @@ public class EnvironmentResourceV2 {
   private final EnvironmentValidationHelper environmentValidationHelper;
   private final ServiceEntityValidationHelper serviceEntityValidationHelper;
   private final EnvironmentFilterHelper environmentFilterHelper;
+  private final CDFeatureFlagHelper cdFeatureFlagHelper;
 
   public static final String ENVIRONMENT_PARAM_MESSAGE = "Environment Identifier for the entity";
 
@@ -186,7 +195,7 @@ public class EnvironmentResourceV2 {
     if (environment.isPresent()) {
       version = environment.get().getVersion().toString();
       if (EmptyPredicate.isEmpty(environment.get().getYaml())) {
-        NGEnvironmentConfig ngEnvironmentConfig = EnvironmentMapper.toNGEnvironmentConfig(environment.get());
+        NGEnvironmentConfig ngEnvironmentConfig = toNGEnvironmentConfig(environment.get());
         environment.get().setYaml(EnvironmentMapper.toYaml(ngEnvironmentConfig));
       }
     } else {
@@ -219,7 +228,11 @@ public class EnvironmentResourceV2 {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, environmentRequestDTO.getOrgIdentifier(),
                                                   environmentRequestDTO.getProjectIdentifier()),
         Resource.of(ENVIRONMENT, null, environmentAttributes), ENVIRONMENT_CREATE_PERMISSION);
-    Environment environmentEntity = EnvironmentMapper.toEnvironmentEntity(accountId, environmentRequestDTO);
+    final boolean ngSvcManifestOverrideEnabled = cdFeatureFlagHelper.isEnabled(accountId, NG_SERVICE_MANIFEST_OVERRIDE);
+    final boolean ngSvcConfigFileOverrideEnabled =
+        cdFeatureFlagHelper.isEnabled(accountId, NG_SERVICE_CONFIG_FILES_OVERRIDE);
+    Environment environmentEntity = EnvironmentMapper.toEnvironmentEntity(
+        accountId, environmentRequestDTO, ngSvcManifestOverrideEnabled, ngSvcConfigFileOverrideEnabled);
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(environmentEntity.getOrgIdentifier(),
         environmentEntity.getProjectIdentifier(), environmentEntity.getAccountId());
     Environment createdEnvironment = environmentService.create(environmentEntity);
@@ -270,7 +283,11 @@ public class EnvironmentResourceV2 {
                                                   environmentRequestDTO.getProjectIdentifier()),
         Resource.of(ENVIRONMENT, environmentRequestDTO.getIdentifier()), ENVIRONMENT_UPDATE_PERMISSION);
 
-    Environment requestEnvironment = EnvironmentMapper.toEnvironmentEntity(accountId, environmentRequestDTO);
+    final boolean ngSvcManifestOverrideEnabled = cdFeatureFlagHelper.isEnabled(accountId, NG_SERVICE_MANIFEST_OVERRIDE);
+    final boolean ngSvcConfigFileOverrideEnabled =
+        cdFeatureFlagHelper.isEnabled(accountId, NG_SERVICE_CONFIG_FILES_OVERRIDE);
+    Environment requestEnvironment = EnvironmentMapper.toEnvironmentEntity(
+        accountId, environmentRequestDTO, ngSvcManifestOverrideEnabled, ngSvcConfigFileOverrideEnabled);
     requestEnvironment.setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     Environment updatedEnvironment = environmentService.update(requestEnvironment);
     return ResponseDTO.newResponse(
@@ -297,7 +314,11 @@ public class EnvironmentResourceV2 {
                                                   environmentRequestDTO.getProjectIdentifier()),
         Resource.of(ENVIRONMENT, environmentRequestDTO.getIdentifier()), ENVIRONMENT_UPDATE_PERMISSION);
 
-    Environment requestEnvironment = EnvironmentMapper.toEnvironmentEntity(accountId, environmentRequestDTO);
+    final boolean ngSvcManifestOverrideEnabled = cdFeatureFlagHelper.isEnabled(accountId, NG_SERVICE_MANIFEST_OVERRIDE);
+    final boolean ngSvcConfigFileOverrideEnabled =
+        cdFeatureFlagHelper.isEnabled(accountId, NG_SERVICE_CONFIG_FILES_OVERRIDE);
+    Environment requestEnvironment = EnvironmentMapper.toEnvironmentEntity(
+        accountId, environmentRequestDTO, ngSvcManifestOverrideEnabled, ngSvcConfigFileOverrideEnabled);
     requestEnvironment.setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(requestEnvironment.getOrgIdentifier(),
         requestEnvironment.getProjectIdentifier(), requestEnvironment.getAccountId());
@@ -349,7 +370,7 @@ public class EnvironmentResourceV2 {
     Page<Environment> environmentEntities = environmentService.list(criteria, pageRequest);
     environmentEntities.forEach(environment -> {
       if (EmptyPredicate.isEmpty(environment.getYaml())) {
-        NGEnvironmentConfig ngEnvironmentConfig = EnvironmentMapper.toNGEnvironmentConfig(environment);
+        NGEnvironmentConfig ngEnvironmentConfig = toNGEnvironmentConfig(environment);
         environment.setYaml(EnvironmentMapper.toYaml(ngEnvironmentConfig));
       }
     });
@@ -404,7 +425,7 @@ public class EnvironmentResourceV2 {
     Page<Environment> environmentEntities = environmentService.list(criteria, pageRequest);
     environmentEntities.forEach(environment -> {
       if (EmptyPredicate.isEmpty(environment.getYaml())) {
-        NGEnvironmentConfig ngEnvironmentConfig = EnvironmentMapper.toNGEnvironmentConfig(environment);
+        NGEnvironmentConfig ngEnvironmentConfig = toNGEnvironmentConfig(environment);
         environment.setYaml(EnvironmentMapper.toYaml(ngEnvironmentConfig));
       }
     });
@@ -494,9 +515,45 @@ public class EnvironmentResourceV2 {
     checkForServiceOverrideUpdateAccess(accountId, serviceOverridesEntity.getOrgIdentifier(),
         serviceOverridesEntity.getProjectIdentifier(), serviceOverridesEntity.getEnvironmentRef(),
         serviceOverridesEntity.getServiceRef());
+    final boolean ngManifestOverrideEnabled = cdFeatureFlagHelper.isEnabled(accountId, NG_SERVICE_MANIFEST_OVERRIDE);
+    final boolean ngConfigOverrideEnabled = cdFeatureFlagHelper.isEnabled(accountId, NG_SERVICE_CONFIG_FILES_OVERRIDE);
+    validateServiceOverrides(serviceOverridesEntity, ngManifestOverrideEnabled, ngConfigOverrideEnabled);
 
     NGServiceOverridesEntity createdServiceOverride = serviceOverrideService.upsert(serviceOverridesEntity);
     return ResponseDTO.newResponse(ServiceOverridesMapper.toResponseWrapper(createdServiceOverride));
+  }
+
+  private void validateServiceOverrides(NGServiceOverridesEntity serviceOverridesEntity,
+      boolean ngManifestOverrideEnabled, boolean ngConfigOverrideEnabled) {
+    final NGServiceOverrideConfig serviceOverrideConfig = toNGServiceOverrideConfig(serviceOverridesEntity);
+    if (serviceOverrideConfig.getServiceOverrideInfoConfig() != null) {
+      final NGServiceOverrideInfoConfig serviceOverrideInfoConfig =
+          serviceOverrideConfig.getServiceOverrideInfoConfig();
+      if (!ngManifestOverrideEnabled && isNotEmpty(serviceOverrideInfoConfig.getManifests())) {
+        throw new InvalidRequestException(
+            "Manifest Override is not supported with FF disabled NG_SERVICE_MANIFEST_OVERRIDE");
+      }
+      if (!ngConfigOverrideEnabled && isNotEmpty(serviceOverrideInfoConfig.getConfigFiles())) {
+        throw new InvalidRequestException(
+            "Config Files Override is not supported with FF disabled NG_SERVICE_CONFIG_FILES_OVERRIDE");
+      }
+
+      if (isEmpty(serviceOverrideInfoConfig.getManifests()) && isEmpty(serviceOverrideInfoConfig.getConfigFiles())
+          && isEmpty(serviceOverrideInfoConfig.getVariables())
+          && serviceOverrideInfoConfig.getApplicationSettings() == null
+          && serviceOverrideInfoConfig.getConnectionStrings() == null) {
+        final Optional<NGServiceOverridesEntity> optionalNGServiceOverrides =
+            serviceOverrideService.get(serviceOverridesEntity.getAccountId(), serviceOverridesEntity.getOrgIdentifier(),
+                serviceOverridesEntity.getProjectIdentifier(), serviceOverridesEntity.getEnvironmentRef(),
+                serviceOverridesEntity.getServiceRef());
+        if (!optionalNGServiceOverrides.isPresent()) {
+          throw new InvalidRequestException("No overrides found in request");
+        }
+      }
+
+      checkDuplicateManifestIdentifiersWithIn(serviceOverrideInfoConfig.getManifests());
+      checkDuplicateConfigFilesIdentifiersWithIn(serviceOverrideInfoConfig.getConfigFiles());
+    }
   }
 
   @DELETE
@@ -653,7 +710,7 @@ public class EnvironmentResourceV2 {
 
   private void checkForServiceOverrideUpdateAccess(
       String accountId, String orgIdentifier, String projectIdentifier, String environmentRef, String serviceRef) {
-    List<PermissionCheckDTO> permissionCheckDTOList = new ArrayList<>();
+    final List<PermissionCheckDTO> permissionCheckDTOList = new ArrayList<>();
     permissionCheckDTOList.add(PermissionCheckDTO.builder()
                                    .permission(ENVIRONMENT_UPDATE_PERMISSION)
                                    .resourceIdentifier(environmentRef)
@@ -667,18 +724,19 @@ public class EnvironmentResourceV2 {
                                    .resourceScope(ResourceScope.of(accountId, orgIdentifier, projectIdentifier))
                                    .build());
 
-    AccessCheckResponseDTO accessCheckResponse = accessControlClient.checkForAccess(permissionCheckDTOList);
-    AccessControlDTO accessControlDTO = accessCheckResponse.getAccessControlList().get(0);
-    if (!accessControlDTO.isPermitted()) {
-      String errorMessage;
-      errorMessage = String.format("Missing permission %s on %s", accessControlDTO.getPermission(),
-          accessControlDTO.getResourceType().toLowerCase());
-      if (!StringUtils.isEmpty(accessControlDTO.getResourceIdentifier())) {
-        errorMessage =
-            errorMessage.concat(String.format(" with identifier %s", accessControlDTO.getResourceIdentifier()));
+    final AccessCheckResponseDTO accessCheckResponse = accessControlClient.checkForAccess(permissionCheckDTOList);
+    accessCheckResponse.getAccessControlList().forEach(accessControlDTO -> {
+      if (!accessControlDTO.isPermitted()) {
+        String errorMessage;
+        errorMessage = String.format("Missing permission %s on %s", accessControlDTO.getPermission(),
+            accessControlDTO.getResourceType().toLowerCase());
+        if (!StringUtils.isEmpty(accessControlDTO.getResourceIdentifier())) {
+          errorMessage =
+              errorMessage.concat(String.format(" with identifier %s", accessControlDTO.getResourceIdentifier()));
+        }
+        throw new InvalidRequestException(errorMessage, WingsException.USER);
       }
-      throw new InvalidRequestException(errorMessage, WingsException.USER);
-    }
+    });
   }
 
   private List<EnvironmentResponse> filterEnvironmentResponseByPermissionAndId(

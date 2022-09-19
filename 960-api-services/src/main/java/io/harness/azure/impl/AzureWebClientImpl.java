@@ -31,6 +31,8 @@ import io.harness.azure.model.AzureAppServiceApplicationSetting;
 import io.harness.azure.model.AzureAppServiceConnectionString;
 import io.harness.azure.model.WebAppHostingOS;
 import io.harness.azure.utility.AzureResourceUtility;
+import io.harness.exception.runtime.azure.AzureAppServicesDeploymentSlotNotFoundException;
+import io.harness.exception.runtime.azure.AzureAppServicesWebAppNotFoundException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 
 import com.google.inject.Singleton;
@@ -114,8 +116,7 @@ public class AzureWebClientImpl extends AzureClient implements AzureWebClient {
   private WebApp getWebApp(Azure azure, String resourceGroupName, String webAppName) {
     WebApp webApp = azure.webApps().getByResourceGroup(resourceGroupName, webAppName);
     if (webApp == null) {
-      throw new IllegalArgumentException(
-          format("Not found web app with name: %s, resource group name: %s", webAppName, resourceGroupName));
+      throw new AzureAppServicesWebAppNotFoundException(webAppName, resourceGroupName);
     }
     return webApp;
   }
@@ -714,9 +715,8 @@ public class AzureWebClientImpl extends AzureClient implements AzureWebClient {
   private DeploymentSlot getDeploymentSlot(AzureWebClientContext context, final String slotName) {
     Optional<DeploymentSlot> deploymentSlotOp = getDeploymentSlotByName(context, slotName);
     if (!deploymentSlotOp.isPresent()) {
-      throw new IllegalArgumentException(format(
-          "Unable to get deployment slot by slot name: %s, app name: %s, subscription id: %s, resource group name: %s",
-          slotName, context.getAppName(), context.getSubscriptionId(), context.getResourceGroupName()));
+      throw new AzureAppServicesDeploymentSlotNotFoundException(
+          slotName, context.getAppName(), context.getResourceGroupName(), context.getSubscriptionId());
     }
     return deploymentSlotOp.get();
   }

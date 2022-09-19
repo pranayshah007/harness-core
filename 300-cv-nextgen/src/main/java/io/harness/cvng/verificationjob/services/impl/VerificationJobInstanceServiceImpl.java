@@ -24,8 +24,11 @@ import static io.harness.persistence.HQuery.excludeValidate;
 import io.harness.cvng.activity.beans.ActivityVerificationSummary;
 import io.harness.cvng.activity.beans.DeploymentActivityResultDTO.DeploymentVerificationJobInstanceSummary;
 import io.harness.cvng.analysis.beans.Risk;
+import io.harness.cvng.analysis.services.api.DeploymentTimeSeriesAnalysisService;
 import io.harness.cvng.analysis.services.api.VerificationJobInstanceAnalysisService;
+import io.harness.cvng.beans.DataCollectionExecutionStatus;
 import io.harness.cvng.beans.DataCollectionInfo;
+import io.harness.cvng.beans.DataCollectionTaskDTO;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.activity.ActivityVerificationStatus;
 import io.harness.cvng.beans.job.VerificationJobType;
@@ -99,6 +102,7 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
   @Inject private MonitoringSourcePerpetualTaskService monitoringSourcePerpetualTaskService;
   @Inject private MetricService metricService;
   @Inject private MetricContextBuilder metricContextBuilder;
+  @Inject private DeploymentTimeSeriesAnalysisService deploymentTimeSeriesAnalysisService;
 
   @Override
   public String create(VerificationJobInstance verificationJobInstance) {
@@ -222,6 +226,60 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
     }
   }
 
+  private void updateStatusIfDone(VerificationJobInstance verificationJobInstance) {
+    if (verificationJobInstance.getExecutionStatus() != ExecutionStatus.RUNNING) {
+      // If the last update already updated the status.
+      return;
+    }
+    int verificationTaskCount =
+        verificationTaskService
+            .getVerificationTaskIds(verificationJobInstance.getAccountId(), verificationJobInstance.getUuid())
+            .size();
+    boolean hasAllVerificationTaskCompleted =
+        verificationJobInstance.getProgressLogs()
+            .stream()
+            .filter(progressLog -> progressLog.isLastProgressLog(verificationJobInstance))
+            .map(ProgressLog::getVerificationTaskId)
+            .distinct()
+            .count()
+        == verificationTaskCount;
+    boolean hasAnyVerificationTaskTerminated =
+        verificationJobInstance.getProgressLogs().stream().anyMatch(ProgressLog::shouldTerminate);
+    if (hasAllVerificationTaskCompleted || hasAnyVerificationTaskTerminated) {
+      verificationJobInstance.setExecutionStatus(ExecutionStatus.SUCCESS);
+      ActivityVerificationStatus activityVerificationStatus = getDeploymentVerificationStatus(verificationJobInstance);
+      metricService.incCounter(CVNGMetricsUtils.getVerificationJobInstanceStatusMetricName(activityVerificationStatus));
+      metricService.incCounter(CVNGMetricsUtils.getVerificationJobInstanceStatusMetricName(ExecutionStatus.SUCCESS));
+      metricService.recordDuration(
+          VERIFICATION_JOB_INSTANCE_EXTRA_TIME, verificationJobInstance.getExtraTimeTakenToFinish(clock.instant()));
+      UpdateOperations<VerificationJobInstance> verificationJobInstanceUpdateOperations =
+          hPersistence.createUpdateOperations(VerificationJobInstance.class);
+      verificationJobInstanceUpdateOperations.set(VerificationJobInstanceKeys.executionStatus, SUCCESS)
+          .set(VerificationJobInstanceKeys.verificationStatus, activityVerificationStatus);
+      hPersistence.getDatastore(VerificationJobInstance.class)
+          .update(hPersistence.createQuery(VerificationJobInstance.class)
+                      .filter(VerificationJobInstanceKeys.uuid, verificationJobInstance.getUuid()),
+              verificationJobInstanceUpdateOperations, new UpdateOptions());
+
+      Set<String> verificationTaskIds = verificationTaskService.getVerificationTaskIds(
+          verificationJobInstance.getAccountId(), verificationJobInstance.getUuid());
+      if (hasAnyVerificationTaskTerminated) {
+        terminate(verificationJobInstance.getUuid());
+      } else {
+        orchestrationService.markCompleted(verificationTaskIds);
+      }
+    }
+  }
+
+  public void terminate(String verificationJobInstanceId) {
+    List<String> verificationTaskIds =
+        verificationTaskService.maybeGetVerificationTaskIds(Collections.singletonList(verificationJobInstanceId));
+    dataCollectionTaskService.abortDeploymentDataCollectionTasks(verificationTaskIds);
+    for (String verificationTaskId : verificationTaskIds) {
+      orchestrationService.markStateMachineTerminated(verificationTaskId);
+    }
+  }
+
   @Override
   public void abort(List<String> verificationJobInstanceIds) {
     UpdateOperations<VerificationJobInstance> abortUpdateOperation =
@@ -272,43 +330,6 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
   @Override
   public List<ProgressLog> getProgressLogs(String verificationJobInstanceId) {
     return getVerificationJobInstance(verificationJobInstanceId).getProgressLogs();
-  }
-
-  private void updateStatusIfDone(VerificationJobInstance verificationJobInstance) {
-    if (verificationJobInstance.getExecutionStatus() != ExecutionStatus.RUNNING) {
-      // If the last update already updated the status.
-      return;
-    }
-    int verificationTaskCount =
-        verificationTaskService
-            .getVerificationTaskIds(verificationJobInstance.getAccountId(), verificationJobInstance.getUuid())
-            .size();
-    if (verificationJobInstance.getProgressLogs()
-            .stream()
-            .filter(progressLog -> progressLog.isLastProgressLog(verificationJobInstance))
-            .map(ProgressLog::getVerificationTaskId)
-            .distinct()
-            .count()
-        == verificationTaskCount) {
-      verificationJobInstance.setExecutionStatus(ExecutionStatus.SUCCESS);
-      ActivityVerificationStatus activityVerificationStatus = getDeploymentVerificationStatus(verificationJobInstance);
-      metricService.incCounter(CVNGMetricsUtils.getVerificationJobInstanceStatusMetricName(activityVerificationStatus));
-      metricService.incCounter(CVNGMetricsUtils.getVerificationJobInstanceStatusMetricName(ExecutionStatus.SUCCESS));
-      metricService.recordDuration(
-          VERIFICATION_JOB_INSTANCE_EXTRA_TIME, verificationJobInstance.getExtraTimeTakenToFinish(clock.instant()));
-      UpdateOperations<VerificationJobInstance> verificationJobInstanceUpdateOperations =
-          hPersistence.createUpdateOperations(VerificationJobInstance.class);
-      verificationJobInstanceUpdateOperations.set(VerificationJobInstanceKeys.executionStatus, SUCCESS)
-          .set(VerificationJobInstanceKeys.verificationStatus, activityVerificationStatus);
-      hPersistence.getDatastore(VerificationJobInstance.class)
-          .update(hPersistence.createQuery(VerificationJobInstance.class)
-                      .filter(VerificationJobInstanceKeys.uuid, verificationJobInstance.getUuid()),
-              verificationJobInstanceUpdateOperations, new UpdateOptions());
-
-      Set<String> verificationTaskIds = verificationTaskService.getVerificationTaskIds(
-          verificationJobInstance.getAccountId(), verificationJobInstance.getUuid());
-      orchestrationService.markCompleted(verificationTaskIds);
-    }
   }
 
   @Override
@@ -515,8 +536,6 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
 
   private void createDataCollectionTasks(
       VerificationJobInstance verificationJobInstance, VerificationJob verificationJob, List<CVConfig> cvConfigs) {
-    Optional<TimeRange> preDeploymentTimeRange =
-        verificationJob.getPreActivityTimeRange(verificationJobInstance.getDeploymentStartTime());
     List<TimeRange> timeRanges =
         verificationJob.getDataCollectionTimeRanges(roundDownTo1MinBoundary(verificationJobInstance.getStartTime()));
     cvConfigs.forEach(cvConfig -> {
@@ -527,25 +546,49 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
       DataCollectionInfoMapper dataCollectionInfoMapper =
           dataSourceTypeDataCollectionInfoMapperMap.get(cvConfig.getType());
 
-      if (preDeploymentTimeRange.isPresent()) {
+      if (deploymentTimeSeriesAnalysisService.isAnalysisFailFastForLatestTimeRange(verificationTaskId)) {
+        log.info(
+            "DeploymentTimeSeriesAnalysis from LE is FailFast, so not creating DataCollectionTask for verificationTaskId: {}",
+            verificationTaskId);
+        List<DataCollectionTask> allDataCollectionTasks = dataCollectionTaskService.getAllNonFinalDataCollectionTasks(
+            verificationJobInstance.getAccountId(), verificationTaskId);
+        allDataCollectionTasks.forEach(dataCollectionTask -> {
+          DataCollectionTaskDTO.DataCollectionTaskResult dataCollectionTaskResult =
+              DataCollectionTaskDTO.DataCollectionTaskResult.builder()
+                  .dataCollectionTaskId(dataCollectionTask.getUuid())
+                  .status(DataCollectionExecutionStatus.ABORTED)
+                  .exception(
+                      "DeploymentTimeSeriesAnalysis from LE is FailFast, so terminating DataCollectionTask with ID: "
+                      + dataCollectionTask.getUuid())
+                  .build();
+          dataCollectionTaskService.updateTaskStatus(dataCollectionTaskResult);
+        });
+        return;
+      }
+      List<TimeRange> preDeploymentDataCollectionTimeRanges =
+          verificationJobInstance.getResolvedJob().getPreActivityDataCollectionTimeRanges(
+              verificationJobInstance.getDeploymentStartTime());
+      if (CollectionUtils.isNotEmpty(preDeploymentDataCollectionTimeRanges)) {
         DataCollectionInfo preDeploymentDataCollectionInfo =
             dataCollectionInfoMapper.toDataCollectionInfo(cvConfig, TaskType.DEPLOYMENT);
         preDeploymentDataCollectionInfo.setDataCollectionDsl(cvConfig.getDataCollectionDsl());
         preDeploymentDataCollectionInfo.setCollectHostData(verificationJob.collectHostData());
-        dataCollectionTasks.add(DeploymentDataCollectionTask.builder()
-                                    .verificationTaskId(verificationTaskId)
-                                    .dataCollectionWorkerId(getDataCollectionWorkerId(verificationJobInstance,
-                                        cvConfig.getIdentifier(), cvConfig.getConnectorIdentifier()))
-                                    .startTime(preDeploymentTimeRange.get().getStartTime())
-                                    .endTime(preDeploymentTimeRange.get().getEndTime())
-                                    .validAfter(preDeploymentTimeRange.get().getEndTime().plus(
-                                        verificationJobInstance.getDataCollectionDelay()))
-                                    .accountId(verificationJob.getAccountId())
-                                    .type(Type.DEPLOYMENT)
-                                    .status(QUEUED)
-                                    .dataCollectionInfo(preDeploymentDataCollectionInfo)
-                                    .queueAnalysis(cvConfig.queueAnalysisForPreDeploymentTask())
-                                    .build());
+        preDeploymentDataCollectionTimeRanges.forEach(timeRange -> {
+          dataCollectionTasks.add(
+              DeploymentDataCollectionTask.builder()
+                  .verificationTaskId(verificationTaskId)
+                  .dataCollectionWorkerId(getDataCollectionWorkerId(
+                      verificationJobInstance, cvConfig.getIdentifier(), cvConfig.getConnectorIdentifier()))
+                  .startTime(timeRange.getStartTime())
+                  .endTime(timeRange.getEndTime())
+                  .validAfter(timeRange.getEndTime().plus(verificationJobInstance.getDataCollectionDelay()))
+                  .accountId(verificationJob.getAccountId())
+                  .type(Type.DEPLOYMENT)
+                  .status(QUEUED)
+                  .dataCollectionInfo(preDeploymentDataCollectionInfo)
+                  .queueAnalysis(cvConfig.queueAnalysisForPreDeploymentTask())
+                  .build());
+        });
       }
 
       timeRanges.forEach(timeRange -> {

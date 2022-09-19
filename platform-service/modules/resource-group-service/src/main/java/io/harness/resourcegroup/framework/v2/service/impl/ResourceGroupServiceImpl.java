@@ -79,29 +79,20 @@ public class ResourceGroupServiceImpl implements ResourceGroupService {
     this.transactionTemplate = transactionTemplate;
   }
 
-  private ResourceGroup createInternal(ResourceGroup resourceGroup) {
+  private ResourceGroup createInternal(ResourceGroup resourceGroup, boolean pushEvent) {
     return Failsafe.with(DEFAULT_TRANSACTION_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
       ResourceGroup savedResourceGroup = resourceGroupV2Repository.save(resourceGroup);
-      outboxService.save(new ResourceGroupCreateEvent(
-          savedResourceGroup.getAccountIdentifier(), null, ResourceGroupMapper.toDTO(savedResourceGroup)));
+      if (pushEvent) {
+        outboxService.save(new ResourceGroupCreateEvent(
+            savedResourceGroup.getAccountIdentifier(), null, ResourceGroupMapper.toDTO(savedResourceGroup)));
+      }
       return savedResourceGroup;
     }));
   }
 
-  private ResourceGroup createV2Internal(ResourceGroup resourceGroup) {
+  private ResourceGroup create(ResourceGroup resourceGroup, boolean pushEvent) {
     try {
-      return resourceGroupV2Repository.save(resourceGroup);
-    } catch (DuplicateKeyException ex) {
-      throw new DuplicateFieldException(
-          String.format("A resource group with identifier %s already exists at the specified scope",
-              resourceGroup.getIdentifier()),
-          USER_SRE, ex);
-    }
-  }
-
-  private ResourceGroup create(ResourceGroup resourceGroup) {
-    try {
-      return createInternal(resourceGroup);
+      return createInternal(resourceGroup, pushEvent);
     } catch (DuplicateKeyException ex) {
       throw new DuplicateFieldException(
           String.format("A resource group with identifier %s already exists at the specified scope",
@@ -115,7 +106,7 @@ public class ResourceGroupServiceImpl implements ResourceGroupService {
     ResourceGroup resourceGroup = ResourceGroupMapper.fromDTO(resourceGroupDTO);
     resourceGroup.setHarnessManaged(harnessManaged);
 
-    return ResourceGroupMapper.toResponseWrapper(create(resourceGroup));
+    return ResourceGroupMapper.toResponseWrapper(create(resourceGroup, true));
   }
 
   @Override
@@ -127,12 +118,10 @@ public class ResourceGroupServiceImpl implements ResourceGroupService {
             Boolean.TRUE.equals(resourceGroup.getHarnessManaged()) ? ManagedFilter.ONLY_MANAGED
                                                                    : ManagedFilter.ONLY_CUSTOM);
     if (!resourceGroupOpt.isPresent()) {
-      return Optional.ofNullable(
-          ResourceGroupMapper.toResponseWrapper(isInternal ? createV2Internal(resourceGroup) : create(resourceGroup)));
+      return Optional.ofNullable(ResourceGroupMapper.toResponseWrapper(
+          isInternal ? create(resourceGroup, false) : create(resourceGroup, true)));
     } else {
-      return Optional.ofNullable(
-          updateV2(ResourceGroupMapper.toDTO(resourceGroup), resourceGroup.getHarnessManaged(), isInternal)
-              .orElse(null));
+      return updateV2(ResourceGroupMapper.toDTO(resourceGroup), resourceGroup.getHarnessManaged(), isInternal);
     }
   }
 

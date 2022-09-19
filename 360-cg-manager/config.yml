@@ -127,7 +127,7 @@ datadogConfig:
   enabled: false #datadogConfigEnable
   apiKey: ""
 
-distributedLockImplementation: MONGO
+distributedLockImplementation: REDIS
 
 redisLockConfig:
   sentinel: false
@@ -156,6 +156,8 @@ redisAtmosphereConfig:
   readMode: MASTER
   nettyThreads: 16
   useScriptCache: true
+  subscriptionsPerConnection: 5
+  subscriptionConnectionPoolSize: 50
 
 githubConfig:
   clientId: githubClientId
@@ -299,6 +301,7 @@ mongo:
   analyticNodeConfig:
     mongoTagKey: none
     mongoTagValue: none
+  aliasDBName: harness
 
 events-mongo:
   uri: mongodb://localhost:27017/events
@@ -307,6 +310,7 @@ events-mongo:
   maxConnectionIdleTime: 600000
   connectionsPerHost: 300
   indexManagerMode: AUTO
+  aliasDBName: events
 
 searchEnabled: false
 graphQLEnabled: true
@@ -326,7 +330,7 @@ deployMode: KUBERNETES
 deployVariant: SAAS
 envPath: ""
 
-scmVersion: 36d92fd8
+scmVersion: 519da179
 
 ngAuthUIEnabled: false
 
@@ -347,7 +351,6 @@ portal:
   jwtIdentityServiceSecret: HVSKUYqD4e5Rxu12hFDdCJKGM64sxgEynvdDhaOHaTHhwwn0K4Ttr0uoOxSsEVYNrUU=
   jwtDataHandlerSecret: RdL7j9ZdCz6TVSHO7obJRS6ywYLJjH8tdfPP39i4MbevKjVodvjdhakdhashsh4371dasjldas
   jwtNextGenManagerSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
-  jwtManagerServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
   delegateDockerImage: harness/delegate:latest
   externalGraphQLRateLimitPerMinute: 500
   customDashGraphQLRateLimitPerMinute: 1000
@@ -619,10 +622,6 @@ ngManagerServiceHttpClientConfig:
   readTimeOutSeconds: 15
   enableHttpLogging: ${ENABLE_HTTP_LOGGING:-false}
 
-managerServiceHttpClientConfig:
-  baseUrl: http://localhost:3457/api/
-  connectTimeOutSeconds: 15
-  readTimeOutSeconds: 15
 
 eventsFramework:
   redis:
@@ -717,3 +716,5 @@ ldapSyncJobConfig:
   defaultCronExpression: "0 0/15 * 1/1 * ? *"
 
 useGlobalKMSAsBaseAlgo: false
+
+cdTsDbRetentionPeriodMonths: 7

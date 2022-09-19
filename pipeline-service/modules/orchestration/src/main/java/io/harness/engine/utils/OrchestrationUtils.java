@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.execution.NodeExecution;
+import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.plan.IdentityPlanNode;
 import io.harness.plan.Node;
 import io.harness.plan.NodeType;
@@ -22,8 +23,15 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.StatusUtils;
+import io.harness.pms.sdk.core.execution.NodeExecutionUtils;
+import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
+import io.harness.pms.timeout.SdkTimeoutTrackerParameters;
+import io.harness.serializer.KryoSerializer;
+import io.harness.timeout.TimeoutParameters;
+import io.harness.timeout.contracts.TimeoutObtainment;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
@@ -71,5 +79,27 @@ public class OrchestrationUtils {
       return ((IdentityPlanNode) node).getOriginalNodeExecutionId();
     }
     return null;
+  }
+
+  public TimeoutParameters buildTimeoutParameters(
+      KryoSerializer kryoSerializer, EngineExpressionEvaluator evaluator, TimeoutObtainment timeoutObtainment) {
+    // TODO (prashant) : Change this this should not be kryo we should trat then exactly like step parameters. Should be
+    // json string bytes Evaluate timeout expressions and convert sdk timeout parameters to timeout engine specific
+    // parameters.
+    SdkTimeoutTrackerParameters sdkTimeoutTrackerParameters =
+        (SdkTimeoutTrackerParameters) kryoSerializer.asObject(timeoutObtainment.getParameters().toByteArray());
+    sdkTimeoutTrackerParameters = resolve(evaluator, sdkTimeoutTrackerParameters);
+    return sdkTimeoutTrackerParameters.prepareTimeoutParameters();
+  }
+
+  private <T> T resolve(EngineExpressionEvaluator evaluator, T o) {
+    if (o == null) {
+      return null;
+    }
+
+    Class<?> cls = o.getClass();
+    Map<String, Object> m = NodeExecutionUtils.extractObject(RecastOrchestrationUtils.toJson(o));
+    String json = RecastOrchestrationUtils.toJson(evaluator.resolve(m, false));
+    return (T) RecastOrchestrationUtils.fromJson(json, cls);
   }
 }

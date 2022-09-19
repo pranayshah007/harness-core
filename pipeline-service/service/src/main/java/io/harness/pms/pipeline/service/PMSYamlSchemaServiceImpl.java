@@ -7,6 +7,9 @@
 
 package io.harness.pms.pipeline.service;
 
+import static io.harness.pms.pipeline.service.yamlschema.PmsYamlSchemaHelper.APPROVAL_NAMESPACE;
+import static io.harness.pms.pipeline.service.yamlschema.PmsYamlSchemaHelper.FLATTENED_PARALLEL_STEP_ELEMENT_CONFIG_SCHEMA;
+import static io.harness.pms.pipeline.service.yamlschema.PmsYamlSchemaHelper.PARALLEL_STEP_ELEMENT_CONFIG;
 import static io.harness.yaml.schema.beans.SchemaConstants.ALL_OF_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.DEFINITIONS_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.ONE_OF_NODE;
@@ -56,6 +59,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.io.IOException;
@@ -126,7 +130,11 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
 
   @Override
   public void validateYamlSchema(String accountId, String orgId, String projectId, String yaml) {
-    validateYamlSchemaInternal(accountId, orgId, projectId, yaml);
+    // Keeping pipeline yaml schema validation behind ff. If ff is disabled then schema validation will happen. Will
+    // remove after finding the root cause of invalid schema generation and fixing it.
+    if (!pmsYamlSchemaHelper.isFeatureFlagEnabled(FeatureName.DISABLE_PIPELINE_SCHEMA_VALIDATION, accountId)) {
+      validateYamlSchemaInternal(accountId, orgId, projectId, yaml);
+    }
   }
 
   private void validateYamlSchemaInternal(String accountIdentifier, String orgId, String projectId, String yaml) {
@@ -207,8 +215,17 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
           .filter(Objects::nonNull)
           .forEach(partialSchemaDTOList1
               -> partialSchemaDTOList1.forEach(partialSchemaDTO
-                  -> pmsYamlSchemaHelper.processPartialStageSchema(
-                      finalMergedDefinitions, pipelineStepsDefinitions, stageElementConfig, partialSchemaDTO)));
+                  -> pmsYamlSchemaHelper.processPartialStageSchema(finalMergedDefinitions, pipelineStepsDefinitions,
+                      stageElementConfig, partialSchemaDTO, accountIdentifier)));
+      // These logs are only for debugging the invalid schema generation issue. Checking only for approval stage
+      if (!finalMergedDefinitions.get(APPROVAL_NAMESPACE)
+               .get(PARALLEL_STEP_ELEMENT_CONFIG)
+               .toString()
+               .equals(FLATTENED_PARALLEL_STEP_ELEMENT_CONFIG_SCHEMA)) {
+        log.warn(
+            "Final flattened ParallelStepElementConfig schema is incorrect for approval stage merging all stage schemas for account after {}",
+            accountIdentifier);
+      }
     } catch (Exception e) {
       log.error(format("[PMS] Exception while merging yaml schema: %s", e.getMessage()), e);
     }
@@ -221,7 +238,8 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
     return ((ObjectNode) pipelineSchema).set(DEFINITIONS_NODE, pipelineDefinitions);
   }
 
-  private void removeDuplicateIfThenFromStageElementConfig(ObjectNode stageElementConfig) {
+  @VisibleForTesting
+  void removeDuplicateIfThenFromStageElementConfig(ObjectNode stageElementConfig) {
     ArrayNode stageElementConfigAllOfNode =
         getAllOfNodeWithTypeAndSpec((ArrayNode) stageElementConfig.get(ONE_OF_NODE));
     if (stageElementConfigAllOfNode == null) {
@@ -321,6 +339,15 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
       List<ModuleType> enabledModules = obtainEnabledModules(accountId);
       enabledModules.add(ModuleType.PMS);
       yamlSchemaWithDetailsList = fetchSchemaWithDetailsFromModules(accountId, enabledModules);
+      nameSpaces =
+          yamlSchemaWithDetailsList.stream()
+              .filter(o -> o.getYamlSchemaMetadata().getYamlGroup().getGroup().equals(StepCategory.STAGE.name()))
+              .map(o -> o.getYamlSchemaMetadata().getNamespace())
+              .collect(Collectors.toSet());
+      yamlSchemaWithDetailsList =
+          yamlSchemaWithDetailsList.stream()
+              .filter(o -> o.getYamlSchemaMetadata().getYamlGroup().getGroup().equals(StepCategory.STEP.name()))
+              .collect(Collectors.toList());
       yamlSchemaWithDetailsList =
           filterYamlSchemaDetailsByModule(yamlSchemaWithDetailsList, entityType.getEntityProduct());
       // Hack to handle proper schema generation for stage

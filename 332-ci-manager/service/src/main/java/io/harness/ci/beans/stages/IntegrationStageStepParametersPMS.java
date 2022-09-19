@@ -7,24 +7,23 @@
 
 package io.harness.beans.stages;
 
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.build.BuildStatusUpdateParameter;
 import io.harness.beans.dependencies.DependencyElement;
+import io.harness.beans.steps.CIAbstractStepNode;
+import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml;
+import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml.HostedVmInfraSpec;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type;
-import io.harness.beans.yaml.extended.infrastrucutre.RunsOnInfra;
-import io.harness.beans.yaml.extended.infrastrucutre.RunsOnInfra.RunOnInfraSpec;
 import io.harness.beans.yaml.extended.infrastrucutre.UseFromStageInfraYaml;
+import io.harness.beans.yaml.extended.runtime.Runtime;
+import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
-import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
-import io.harness.plancreator.steps.StepElementConfig;
 import io.harness.plancreator.steps.StepGroupElementConfig;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
@@ -54,14 +53,14 @@ public class IntegrationStageStepParametersPMS implements SpecParameters, StepPa
   List<String> stepIdentifiers;
   String childNodeID;
 
-  public static IntegrationStageStepParametersPMS getStepParameters(StageElementConfig stageElementConfig,
-      String childNodeID, BuildStatusUpdateParameter buildStatusUpdateParameter, PlanCreationContext ctx) {
-    if (stageElementConfig == null) {
+  public static IntegrationStageStepParametersPMS getStepParameters(IntegrationStageNode stageNode, String childNodeID,
+      BuildStatusUpdateParameter buildStatusUpdateParameter, PlanCreationContext ctx) {
+    if (stageNode == null) {
       return IntegrationStageStepParametersPMS.builder().childNodeID(childNodeID).build();
     }
-    IntegrationStageConfig integrationStageConfig = (IntegrationStageConfig) stageElementConfig.getStageType();
+    IntegrationStageConfig integrationStageConfig = stageNode.getIntegrationStageConfig();
 
-    Infrastructure infrastructure = getInfrastructure(stageElementConfig, ctx);
+    Infrastructure infrastructure = getInfrastructure(stageNode, ctx);
 
     List<String> stepIdentifiers = getStepIdentifiers(integrationStageConfig);
 
@@ -76,36 +75,45 @@ public class IntegrationStageStepParametersPMS implements SpecParameters, StepPa
         .build();
   }
 
-  public static Infrastructure getInfrastructure(StageElementConfig stageElementConfig, PlanCreationContext ctx) {
-    IntegrationStageConfig integrationStageConfig = (IntegrationStageConfig) stageElementConfig.getStageType();
+  public static Infrastructure getInfrastructure(IntegrationStageNode stageNode, PlanCreationContext ctx) {
+    IntegrationStageConfig integrationStageConfig = (IntegrationStageConfig) stageNode.getIntegrationStageConfig();
 
     Infrastructure infrastructure = integrationStageConfig.getInfrastructure();
     if (infrastructure == null) {
-      String runsOn = integrationStageConfig.getRunsOn().getValue();
-      if (isEmpty(runsOn)) {
-        throw new CIStageExecutionException("Infrastructure or runsOn field is mandatory for execution");
-      }
-
-      infrastructure = RunsOnInfra.builder().spec(RunOnInfraSpec.builder().runsOn(runsOn).build()).build();
+      infrastructure = getRuntimeInfrastructure(integrationStageConfig);
     } else if (integrationStageConfig.getInfrastructure().getType() == Type.USE_FROM_STAGE) {
       UseFromStageInfraYaml useFromStageInfraYaml = (UseFromStageInfraYaml) integrationStageConfig.getInfrastructure();
       if (useFromStageInfraYaml.getUseFromStage() != null) {
         YamlField yamlField = ctx.getCurrentField();
         String identifier = useFromStageInfraYaml.getUseFromStage();
-        IntegrationStageConfig integrationStage = getIntegrationStageConfig(yamlField, identifier);
-        infrastructure = integrationStage.getInfrastructure();
+        IntegrationStageConfig useFromStage = getIntegrationStageConfig(yamlField, identifier);
+        infrastructure = useFromStage.getInfrastructure();
+        if (infrastructure == null) {
+          infrastructure = getRuntimeInfrastructure(useFromStage);
+        }
       }
     }
 
     return infrastructure;
   }
 
+  public static Infrastructure getRuntimeInfrastructure(IntegrationStageConfig integrationStageConfig) {
+    Runtime runtime = integrationStageConfig.getRuntime();
+    if (runtime == null || runtime.getType() != Runtime.Type.CLOUD) {
+      throw new CIStageExecutionException("Infrastructure or runtime field with Cloud type is mandatory for execution");
+    }
+
+    return HostedVmInfraYaml.builder()
+        .spec(HostedVmInfraSpec.builder().platform(integrationStageConfig.getPlatform()).build())
+        .build();
+  }
+
   private static IntegrationStageConfig getIntegrationStageConfig(YamlField yamlField, String identifier) {
     try {
       YamlField stageYamlField = PlanCreatorUtils.getStageConfig(yamlField, identifier);
-      StageElementConfig stageElementConfig =
-          YamlUtils.read(YamlUtils.writeYamlString(stageYamlField), StageElementConfig.class);
-      return (IntegrationStageConfig) stageElementConfig.getStageType();
+      IntegrationStageNode stageNode =
+          YamlUtils.read(YamlUtils.writeYamlString(stageYamlField), IntegrationStageNode.class);
+      return (IntegrationStageConfig) stageNode.getStageInfoConfig();
 
     } catch (Exception ex) {
       throw new CIStageExecutionException(
@@ -123,8 +131,8 @@ public class IntegrationStageStepParametersPMS implements SpecParameters, StepPa
   private static void addStepIdentifier(ExecutionWrapperConfig executionWrapper, List<String> stepIdentifiers) {
     if (executionWrapper != null) {
       if (executionWrapper.getStep() != null && !executionWrapper.getStep().isNull()) {
-        StepElementConfig stepElementConfig = getStepElementConfig(executionWrapper);
-        stepIdentifiers.add(stepElementConfig.getIdentifier());
+        CIAbstractStepNode stepNode = getStepElementConfig(executionWrapper);
+        stepIdentifiers.add(stepNode.getIdentifier());
       } else if (executionWrapper.getParallel() != null && !executionWrapper.getParallel().isNull()) {
         ParallelStepElementConfig parallelStepElementConfig = getParallelStepElementConfig(executionWrapper);
         parallelStepElementConfig.getSections().forEach(section -> addStepIdentifier(section, stepIdentifiers));
@@ -147,9 +155,9 @@ public class IntegrationStageStepParametersPMS implements SpecParameters, StepPa
     }
   }
 
-  private static StepElementConfig getStepElementConfig(ExecutionWrapperConfig executionWrapperConfig) {
+  private static CIAbstractStepNode getStepElementConfig(ExecutionWrapperConfig executionWrapperConfig) {
     try {
-      return YamlUtils.read(executionWrapperConfig.getStep().toString(), StepElementConfig.class);
+      return YamlUtils.read(executionWrapperConfig.getStep().toString(), CIAbstractStepNode.class);
     } catch (Exception ex) {
       throw new CIStageExecutionException("Failed to deserialize ExecutionWrapperConfig step node", ex);
     }

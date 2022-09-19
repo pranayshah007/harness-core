@@ -166,7 +166,10 @@ public class GitAwareEntityHelper {
       throw new InvalidRequestException("No base branch provided for committing to new branch");
     }
     // if branch is empty, then git sdk will figure out the default branch for the repo by itself
-    String branch = isNullOrDefault(gitEntityInfo.getBranch()) ? "" : gitEntityInfo.getBranch();
+    String branch = gitEntityInfo.getBranch();
+    if (isNullOrDefault(branch)) {
+      throw new InvalidRequestException("No branch provided for updating the file.");
+    }
     // if commitMsg is empty, then git sdk will use some default Commit Message
     String commitMsg = isNullOrDefault(gitEntityInfo.getCommitMsg()) ? "" : gitEntityInfo.getCommitMsg();
     ScmUpdateFileGitRequest scmUpdateFileGitRequest = ScmUpdateFileGitRequest.builder()

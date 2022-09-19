@@ -45,8 +45,9 @@ public class MergePRStepInfo extends MergePRBaseStepInfo implements CDStepInfo, 
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
   @Builder(builderMethodName = "infoBuilder")
-  public MergePRStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
-    super(delegateSelectors);
+  public MergePRStepInfo(
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors, ParameterField<Boolean> deleteSourceBranch) {
+    super(delegateSelectors, deleteSourceBranch);
   }
 
   @Override
@@ -66,6 +67,9 @@ public class MergePRStepInfo extends MergePRBaseStepInfo implements CDStepInfo, 
 
   @Override
   public SpecParameters getSpecParameters() {
-    return MergePRStepParams.infoBuilder().build();
+    return MergePRStepParams.infoBuilder()
+        .delegateSelectors(getDelegateSelectors())
+        .deleteSourceBranch(getDeleteSourceBranch())
+        .build();
   }
 }

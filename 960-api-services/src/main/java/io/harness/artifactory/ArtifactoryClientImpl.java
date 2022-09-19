@@ -506,6 +506,9 @@ public class ArtifactoryClientImpl {
   }
 
   private String constructBuildNumber(String artifactPattern, String path) {
+    if (artifactPattern.equals("./*")) {
+      return path;
+    }
     String[] tokens = artifactPattern.split("/");
     for (String token : tokens) {
       if (token.contains("*") || token.contains("+")) {

@@ -23,6 +23,9 @@ message PollingPayloadData {
     ArtifactoryRegistryPayload artifactoryRegistryPayload = 10;
     AcrPayload acrPayload = 11;
     AmazonS3Payload amazonS3Payload = 12;
+    JenkinsPayload jenkinsPayload = 13;
+    GitPollingPayload gitPollPayload = 14;
+    GARPayload garPayload = 15;
   }
 }
 
@@ -38,6 +41,9 @@ enum Type {
   ARTIFACTORY = 8;
   ACR = 9;
   AMAZON_S3 = 10;
+  JENKINS = 11;
+  GIT_POLL = 12;
+  GOOGLE_ARTIFACT_REGISTRY = 13;
 }
 
 message HttpHelmPayload {
@@ -103,4 +109,23 @@ message AcrPayload {
 message AmazonS3Payload {
   string bucketName = 1;
   string filePathRegex = 2;
+  string region = 3;
+}
+
+message JenkinsPayload {
+  string jobName = 1;
+  string artifactPath = 2;
+}
+
+message GitPollingPayload {
+  string eventType = 1;
+  string webhookId = 2;
+  int32 pollInterval = 3;
+}
+
+message GARPayload {
+  string region = 1;
+  string project = 2;
+  string repositoryName = 3;
+  string pkg = 4;
 }

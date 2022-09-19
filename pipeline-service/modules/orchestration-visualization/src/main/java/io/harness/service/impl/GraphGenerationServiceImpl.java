@@ -12,7 +12,6 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EphemeralOrchestrationGraph;
-import io.harness.beans.FeatureName;
 import io.harness.beans.GraphVertex;
 import io.harness.beans.OrchestrationEventLog;
 import io.harness.beans.OrchestrationGraph;
@@ -41,9 +40,9 @@ import io.harness.plan.NodeType;
 import io.harness.pms.PmsFeatureFlagService;
 import io.harness.pms.contracts.execution.events.OrchestrationEventType;
 import io.harness.pms.contracts.steps.StepCategory;
-import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.plan.execution.ExecutionSummaryUpdateUtils;
+import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
 import io.harness.repositories.orchestrationEventLog.OrchestrationEventLogRepository;
 import io.harness.service.GraphGenerationService;
@@ -176,12 +175,10 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
           }
           processedNodeExecutionIds.add(nodeExecutionId);
           NodeExecution nodeExecution = nodeExecutionService.get(nodeExecutionId);
-          if (pmsFeatureFlagService.isEnabled(
-                  AmbianceUtils.getAccountId(nodeExecution.getAmbiance()), FeatureName.PIPELINE_MATRIX)) {
-            pmsExecutionSummaryService.addStageNodeInGraphIfUnderStrategy(
-                planExecutionId, nodeExecution, executionSummaryUpdate);
-            pmsExecutionSummaryService.updateStrategyNode(planExecutionId, nodeExecution, executionSummaryUpdate);
-          }
+          pmsExecutionSummaryService.addStageNodeInGraphIfUnderStrategy(
+              planExecutionId, nodeExecution, executionSummaryUpdate);
+          pmsExecutionSummaryService.updateStrategyNode(planExecutionId, nodeExecution, executionSummaryUpdate);
+
           if (OrchestrationUtils.isStageNode(nodeExecution)
               && nodeExecution.getNodeType() == NodeType.IDENTITY_PLAN_NODE
               && StatusUtils.isFinalStatus(nodeExecution.getStatus())) {
@@ -246,6 +243,13 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
     } catch (Exception ex) {
       orchestrationGraph = buildOrchestrationGraph(planExecutionId);
       return generatePartialGraph(startingNodeId, orchestrationGraph);
+    }
+  }
+
+  @Override
+  public void sendUpdateEventIfAny(PipelineExecutionSummaryEntity executionSummaryEntity) {
+    if (!StatusUtils.isFinalStatus(executionSummaryEntity.getStatus().getEngineStatus())) {
+      orchestrationLogPublisher.sendLogEvent(executionSummaryEntity.getPlanExecutionId());
     }
   }
 

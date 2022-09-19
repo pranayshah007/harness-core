@@ -25,14 +25,14 @@ import io.harness.service.instancestats.InstanceStatsService;
 import io.harness.service.stats.usagemetrics.eventpublisher.UsageMetricsEventPublisher;
 
 import java.time.Instant;
-import java.util.Arrays;
+import java.util.Collections;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
 public class InstanceStatsCollectorImplTest extends InstancesTestBase {
-  private final String ACCOUNT_ID = "acc";
+  private static final String ACCOUNT_ID = "acc";
   private static final int SYNC_INTERVAL_MINUTES = 30;
 
   @Mock private InstanceStatsService instanceStatsService;
@@ -47,7 +47,8 @@ public class InstanceStatsCollectorImplTest extends InstancesTestBase {
     Instant lastSnapshot = Instant.now().minusSeconds((SYNC_INTERVAL_MINUTES + 5) * 60);
     InstanceDTO instanceDTO = InstanceDTO.builder().build();
     when(instanceStatsService.getLastSnapshotTime(ACCOUNT_ID)).thenReturn(lastSnapshot);
-    when(instanceService.getActiveInstancesByAccount(eq(ACCOUNT_ID), anyLong())).thenReturn(Arrays.asList(instanceDTO));
+    when(instanceService.getActiveInstancesByAccount(eq(ACCOUNT_ID), anyLong()))
+        .thenReturn(Collections.singletonList(instanceDTO));
     assertThat(instanceStatsCollector.createStats(ACCOUNT_ID)).isTrue();
     verify(instanceService, times(1)).getActiveInstancesByAccount(eq(ACCOUNT_ID), anyLong());
   }

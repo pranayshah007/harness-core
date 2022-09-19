@@ -94,7 +94,10 @@ public class NewRelicHealthSourceSpecTransformerTest extends CvNextGenTestBase {
                                     .identifier(identifier)
                                     .monitoringSourceName(monitoringSourceName)
                                     .build();
-    cvConfig.setMetricPack(MetricPack.builder().category(CVMonitoringCategory.PERFORMANCE).build());
+    cvConfig.setMetricPack(MetricPack.builder()
+                               .identifier(CVMonitoringCategory.PERFORMANCE.getDisplayName())
+                               .category(CVMonitoringCategory.PERFORMANCE)
+                               .build());
     cvConfig.setMetricInfos(Arrays.asList(
         NewRelicMetricInfo.builder()
             .metricName("metric1")
@@ -124,7 +127,7 @@ public class NewRelicHealthSourceSpecTransformerTest extends CvNextGenTestBase {
     assertThat(newRelicHealthSourceSpec.getNewRelicMetricDefinitions().size()).isEqualTo(1);
     assertThat(newRelicHealthSourceSpec.getConnectorRef()).isEqualTo(connectorIdentifier);
     assertThat(newRelicHealthSourceSpec.getFeature()).isEqualTo(productName);
-    assertThat(newRelicHealthSourceSpec.getMetricPacks().size()).isEqualTo(0);
+    assertThat(newRelicHealthSourceSpec.getMetricPacks().size()).isEqualTo(1);
     NewRelicMetricDefinition metricDefinition = newRelicHealthSourceSpec.getNewRelicMetricDefinitions().get(0);
 
     assertThat(metricDefinition.getGroupName()).isEqualTo(newRelicCVConfig.getGroupName());

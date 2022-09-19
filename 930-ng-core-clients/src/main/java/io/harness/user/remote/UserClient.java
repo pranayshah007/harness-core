@@ -53,6 +53,8 @@ public interface UserClient {
   String USER_SAFE_DELETE = "ng/user/safeDelete/{userId}";
   String UPDATE_USER_API = "ng/user/user";
   String CREATE_USER_VIA_INVITE = "ng/user/invites/create-user";
+  String CHECK_USER_LIMIT = "ng/user/limit-check";
+
   String USER_TWO_FACTOR_AUTH_SETTINGS = "ng/user/two-factor-auth/{auth-mechanism}";
   String USER_ENABLE_TWO_FACTOR_AUTH = "ng/user/enable-two-factor-auth";
   String USER_DISABLE_TWO_FACTOR_AUTH = "ng/user/disable-two-factor-auth";
@@ -71,7 +73,11 @@ public interface UserClient {
 
   @GET(USERS_SIGNUP_INVITE_API) Call<RestResponse<SignupInviteDTO>> getSignupInvite(@Query("email") String email);
 
-  @PUT(USERS_SIGNUP_INVITE_API) Call<RestResponse<UserInfo>> completeSignupInvite(@Query("email") String email);
+  @GET(CHECK_USER_LIMIT)
+  Call<RestResponse<Boolean>> checkUserLimit(@Query("accountId") String accountId, @Query("email") String email);
+
+  @PUT(USERS_SIGNUP_INVITE_API)
+  Call<RestResponse<UserInfo>> completeSignupInvite(@Query("email") String email, @Query("referer") String referer);
 
   @PUT(SCIM_USER_PATCH_UPDATE)
   Call<RestResponse<ScimUser>> scimUserPatchUpdate(

@@ -582,6 +582,12 @@ public class CloudFormationCreateStackState extends CloudFormationState {
         break;
       }
     }
+    if (EmptyPredicate.isEmpty(gitTemplateBody)) {
+      return ExecutionResponse.builder()
+          .executionStatus(ExecutionStatus.FAILED)
+          .errorMessage("No Template file found in Git")
+          .build();
+    }
 
     if (useParametersFile) {
       setParametersFilePaths(

@@ -40,6 +40,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.licensing.services.LicenseService;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.core.AccountOrgProjectHelper;
+import io.harness.ng.core.api.DefaultUserGroupService;
 import io.harness.ng.core.api.UserGroupService;
 import io.harness.ng.core.dto.UserGroupFilterDTO;
 import io.harness.ng.core.invites.dto.RoleBinding;
@@ -105,6 +106,7 @@ public class NgUserServiceImplTest extends CategoryTest {
   @Mock private LicenseService licenseService;
   @Mock private LastAdminCheckService lastAdminCheckService;
   @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
+  @Mock private DefaultUserGroupService defaultUserGroupService;
   @Spy @Inject @InjectMocks private NgUserServiceImpl ngUserService;
   private String accountIdentifier;
   private String orgIdentifier;
@@ -357,13 +359,14 @@ public class NgUserServiceImplTest extends CategoryTest {
         .thenReturn(isAccountBasicRoleFeatureFlag);
     doNothing()
         .when(ngUserService)
-        .addUserToScopeInternal(userId, UserMembershipUpdateSource.USER, scope, getDefaultRoleIdentifier(scope));
+        .addUserToScopeInternal(userId, UserMembershipUpdateSource.USER, scope, getDefaultRoleIdentifier(scope),
+            isAccountBasicRoleFeatureFlag);
 
     parentScopes.forEach(parentScope
         -> doNothing()
                .when(ngUserService)
-               .addUserToScopeInternal(
-                   userId, UserMembershipUpdateSource.USER, parentScope, getDefaultRoleIdentifier(parentScope)));
+               .addUserToScopeInternal(userId, UserMembershipUpdateSource.USER, parentScope,
+                   getDefaultRoleIdentifier(parentScope), isAccountBasicRoleFeatureFlag));
     doNothing()
         .when(ngUserService)
         .createRoleAssignments(
@@ -414,8 +417,9 @@ public class NgUserServiceImplTest extends CategoryTest {
 
   private void assertAddUserToScope(Scope scope, List<String> userIds, List<String> userGroups) {
     verify(userMetadataRepository, times(userIds.size())).findDistinctByUserId(any());
-    verify(ngUserService, times(userIds.size() * getRank(scope))).addUserToScopeInternal(any(), any(), any(), any());
-    verify(ngUserService, times(userIds.size())).createRoleAssignments(any(), any(), any(), anyBoolean());
+    verify(ngUserService, times(userIds.size() * getRank(scope)))
+        .addUserToScopeInternal(any(), any(), any(), any(), anyBoolean());
+    verify(ngUserService, times(userIds.size() * 2)).createRoleAssignments(any(), any(), any(), anyBoolean());
     verify(userGroupService, times(isEmpty(userGroups) ? 0 : userIds.size())).list(any(UserGroupFilterDTO.class));
     verify(userGroupService, times(userIds.size())).addUserToUserGroups(any(Scope.class), any(), any());
   }

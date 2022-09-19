@@ -12,6 +12,8 @@ import static io.harness.beans.ExecutionStatus.FAILED;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
 import static io.harness.beans.FeatureName.ADD_MANIFEST_COLLECTION_STEP;
 import static io.harness.beans.FeatureName.ARTIFACT_COLLECTION_CONFIGURABLE;
+import static io.harness.beans.FeatureName.SAVE_ARTIFACT_TO_DB;
+import static io.harness.beans.FeatureName.SORT_ARTIFACTS_IN_UPDATED_ORDER;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
@@ -287,7 +289,8 @@ public class ArtifactCollectionState extends State {
   }
 
   private boolean shouldCollectArtifact(ExecutionContext context) {
-    return featureFlagService.isEnabled(ARTIFACT_COLLECTION_CONFIGURABLE, context.getAccountId());
+    return featureFlagService.isEnabled(ARTIFACT_COLLECTION_CONFIGURABLE, context.getAccountId())
+        || featureFlagService.isEnabled(SORT_ARTIFACTS_IN_UPDATED_ORDER, context.getAccountId());
   }
 
   private boolean shouldCollectManifest(ExecutionContext context) {
@@ -620,6 +623,8 @@ public class ArtifactCollectionState extends State {
           if (shouldUpdateMetadata(artifact, savedArtifact)) {
             artifactService.updateMetadataAndRevision(
                 savedArtifact.getUuid(), savedArtifact.getAccountId(), metadata, artifact.getRevision());
+          } else if (featureFlagService.isEnabled(SORT_ARTIFACTS_IN_UPDATED_ORDER, context.getAccountId())) {
+            artifactService.updateLastUpdatedAt(savedArtifact.getUuid(), savedArtifact.getAccountId());
           }
         }
         ArtifactCollectionExecutionData artifactCollectionExecutionData =
@@ -638,6 +643,33 @@ public class ArtifactCollectionState extends State {
             .executionStatus(SUCCESS)
             .build();
       } else {
+        if (isNotEmpty(evaluatedBuildNo)) {
+          Artifact artifact = artifactService.getArtifactByBuildNumber(artifactStream, evaluatedBuildNo, isRegex());
+          if (artifact == null && featureFlagService.isEnabled(SAVE_ARTIFACT_TO_DB, context.getAccountId())
+              && !isRegex()) {
+            artifact = artifactService.create(artifactCollectionUtils.getArtifact(
+                artifactStream, BuildDetails.Builder.aBuildDetails().withNumber(evaluatedBuildNo).build()));
+          }
+          if (artifact != null) {
+            Map<String, String> metadata =
+                artifact.getMetadata() != null ? MappingUtils.safeCopy(artifact.getMetadata()) : new HashMap<>();
+            ArtifactCollectionExecutionData artifactCollectionExecutionData =
+                ArtifactCollectionExecutionData.builder()
+                    .artifactStreamId(artifactStreamId)
+                    .buildNo(artifact.getBuildNo())
+                    .metadata(metadata)
+                    .artifactSource(artifactStream.getSourceName())
+                    .revision(artifact.getRevision())
+                    .artifactId(artifact.getUuid())
+                    .build();
+
+            addBuildExecutionSummary(context, artifactCollectionExecutionData, artifactStream);
+            return ExecutionResponse.builder()
+                .stateExecutionData(artifactCollectionExecutionData)
+                .executionStatus(SUCCESS)
+                .build();
+          }
+        }
         String errorMessage = buildSourceExecutionResponse.getErrorMessage();
         return ExecutionResponse.builder()
             .executionStatus(FAILED)

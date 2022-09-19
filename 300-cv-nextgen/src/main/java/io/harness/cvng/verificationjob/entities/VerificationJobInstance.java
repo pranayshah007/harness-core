@@ -10,7 +10,7 @@ package io.harness.cvng.verificationjob.entities;
 import static java.util.stream.Collectors.groupingBy;
 
 import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.cvng.CVConstants;
 import io.harness.cvng.beans.DataCollectionExecutionStatus;
 import io.harness.cvng.beans.activity.ActivityVerificationStatus;
@@ -54,8 +54,10 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.Setter;
 import lombok.Value;
+import lombok.experimental.Accessors;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
 import org.mongodb.morphia.annotations.Entity;
@@ -66,9 +68,9 @@ import org.mongodb.morphia.annotations.Id;
 @FieldNameConstants(innerTypeName = "VerificationJobInstanceKeys")
 @EqualsAndHashCode(callSuper = false)
 @JsonIgnoreProperties(ignoreUnknown = true)
+@StoreIn(DbAliases.CVNG)
 @Entity(value = "verificationJobInstances", noClassnameStored = true)
 @HarnessEntity(exportable = true)
-@StoreIn(DbAliases.CVNG)
 public final class VerificationJobInstance
     implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, AccountAccess, PersistentRegularIterable {
   public static List<MongoIndex> mongoIndexes() {
@@ -194,6 +196,7 @@ public final class VerificationJobInstance
     Instant startTime;
     Instant endTime;
     boolean isFinalState;
+    @Accessors(fluent = true) @Getter boolean shouldTerminate;
     String log;
     private String verificationTaskId;
     private Instant createdAt;
@@ -209,7 +212,7 @@ public final class VerificationJobInstance
       return isFailedStatus();
     }
     public boolean isLastProgressLog(VerificationJobInstance verificationJobInstance) {
-      return getEndTime().equals(verificationJobInstance.getEndTime()) && isFinalState();
+      return (getEndTime().equals(verificationJobInstance.getEndTime()) && isFinalState()) || shouldTerminate();
     }
     public Duration getTimeTakenToFinish() {
       return Duration.between(getStartTime(), getEndTime());

@@ -42,6 +42,7 @@ public class EntityYamlRootNames {
   public static final String DELEGATE_CONFIGURATION = "delegateConfigurations";
   public static final String CV_VERIFICATION_JOB = "cvVerificationJob";
   public static final String INTEGRATION_STAGE = "integrationStage";
+
   public static final String INTEGRATION_STEP = "integrationSteps";
   public static final String CV_KUBERNETES_ACTIVITY_SOURCE = "cvKubernetesActivitySource";
   public static final String DEPLOYMENT_STEP = "deploymentSteps";
@@ -84,11 +85,13 @@ public class EntityYamlRootNames {
   public static final String OPAPOLICY = "governancePolicy";
   public static final String POLICY_STEP = "Policy";
   public static final String RUN_STEP = "Run";
+  public static final String BACKGROUND_STEP = "Background";
   public static final String RUN_TEST = "RunTests";
   public static final String PLUGIN = "Plugin";
   public static final String SECURITY = "Security";
   public static final String SECURITY_STAGE = "securityStage";
   public static final String SECURITY_STEP = "securitySteps";
+  public static final String GIT_CLONE = "GitClone";
   public static final String RESTORE_CACHE_GCS = "RestoreCacheGCS";
   public static final String RESTORE_CACHE_S3 = "RestoreCacheS3";
   public static final String SAVE_CACHE_GCS = "SaveCacheGCS";
@@ -97,6 +100,7 @@ public class EntityYamlRootNames {
   public static final String GCS_UPLOAD = "GCSUpload";
   public static final String S3_UPLOAD = "S3Upload";
   public static final String BUILD_AND_PUSH_GCR = "BuildAndPushGCR";
+  public static final String BUILD_AND_PUSH_ACR = "BuildAndPushACR";
   public static final String BUILD_AND_PUSH_ECR = "BuildAndPushECR";
   public static final String BUILD_AND_PUSH_DOCKER_REGISTRY = "BuildAndPushDockerRegistry";
   public static final String NG_FILE = "NgFile";
@@ -115,4 +119,12 @@ public class EntityYamlRootNames {
   public static final String AZURE_SWAP_SLOT_STEP = "AzureSwapSlot";
   public static final String AZURE_WEBAPP_ROLLBACK_STEP = "AzureWebAppRollback";
   public static final String EMAIL = "EMAIL";
+  public static final String ECS_ROLLING_DEPLOY = "EcsRollingDeploy";
+  public static final String ECS_ROLLING_ROLLBACK = "EcsRollingRollback";
+  public static final String ECS_CANARY_DEPLOY = "EcsCanaryDeploy";
+  public static final String ECS_CANARY_DELETE = "EcsCanaryDelete";
+  public static final String AZURE_CREATE_ARM_RESOURCE_STEP = "AzureCreateARMResource";
+  public static final String AZURE_CREATE_BP_RESOURCE_STEP = "AzureCreateBPResource";
+  public static final String AZURE_ROLLBACK_ARM_RESOURCE_STEP = "AzureARMRollback";
+  public static final String WAIT_STEP = "Wait";
 }

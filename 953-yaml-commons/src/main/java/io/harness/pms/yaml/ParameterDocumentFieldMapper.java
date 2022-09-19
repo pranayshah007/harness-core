@@ -145,6 +145,10 @@ public class ParameterDocumentFieldMapper {
     if (type instanceof Class<?>) {
       return (Class<?>) type;
     } else if (type instanceof ParameterizedType) {
+      // Sometimes the RawType itself is of class and doing a getClass on it converts to Class
+      if (((ParameterizedType) type).getRawType() instanceof Class) {
+        return (Class<?>) ((ParameterizedType) type).getRawType();
+      }
       return ((ParameterizedType) type).getRawType().getClass();
     }
     return null;

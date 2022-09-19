@@ -148,7 +148,7 @@ public class TerraformApplyStep extends TaskExecutableWithRollbackAndRbac<Terraf
         .terraformCommandUnit(TerraformCommandUnit.Apply)
         .entityId(entityId)
         .tfModuleSourceInheritSSH(helper.isExportCredentialForSourceModule(
-            ambiance, configuration.getSpec().getConfigFiles(), stepElementParameters.getType()))
+            configuration.getSpec().getConfigFiles(), stepElementParameters.getType()))
         .workspace(ParameterFieldHelper.getParameterFieldValue(spec.getWorkspace()))
         .configFile(helper.getGitFetchFilesConfig(
             spec.getConfigFiles().getStore().getSpec(), ambiance, TerraformStepHelper.TF_CONFIG_FILES))
@@ -162,7 +162,9 @@ public class TerraformApplyStep extends TaskExecutableWithRollbackAndRbac<Terraf
                 ? new HashMap<>()
                 : helper.getEnvironmentVariablesMap(spec.getEnvironmentVariables()))
         .timeoutInMillis(
-            StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT));
+            StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
+        .useOptimizedTfPlan(
+            cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.OPTIMIZED_TF_PLAN_NG));
 
     TaskData taskData =
         TaskData.builder()
@@ -193,9 +195,7 @@ public class TerraformApplyStep extends TaskExecutableWithRollbackAndRbac<Terraf
     builder.workspace(inheritOutput.getWorkspace())
         .configFile(helper.getGitFetchFilesConfig(
             inheritOutput.getConfigFiles(), ambiance, TerraformStepHelper.TF_CONFIG_FILES))
-        .tfModuleSourceInheritSSH(cdFeatureFlagHelper.isEnabled(
-                                      AmbianceUtils.getAccountId(ambiance), FeatureName.TF_MODULE_SOURCE_INHERIT_SSH)
-            && inheritOutput.isUseConnectorCredentials())
+        .tfModuleSourceInheritSSH(inheritOutput.isUseConnectorCredentials())
         .fileStoreConfigFiles(helper.getFileStoreFetchFilesConfig(
             inheritOutput.getFileStoreConfig(), ambiance, TerraformStepHelper.TF_CONFIG_FILES))
         .varFileInfos(helper.prepareTerraformVarFileInfo(inheritOutput.getVarFileConfigs(), ambiance))
@@ -208,7 +208,9 @@ public class TerraformApplyStep extends TaskExecutableWithRollbackAndRbac<Terraf
         .environmentVariables(
             inheritOutput.getEnvironmentVariables() == null ? new HashMap<>() : inheritOutput.getEnvironmentVariables())
         .timeoutInMillis(
-            StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT));
+            StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
+        .useOptimizedTfPlan(
+            cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.OPTIMIZED_TF_PLAN_NG));
 
     TaskData taskData =
         TaskData.builder()

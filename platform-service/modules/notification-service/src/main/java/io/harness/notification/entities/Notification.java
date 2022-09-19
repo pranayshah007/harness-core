@@ -10,7 +10,7 @@ package io.harness.notification.entities;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.notification.Team.OTHER;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.CompoundMongoIndex;
@@ -36,10 +36,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "NotificationKeys")
+@StoreIn(DbAliases.NOTIFICATION)
 @Entity(value = "notificationsNg", noClassnameStored = true)
 @Document("notificationsNg")
 @TypeAlias("notificationsNg")
-@StoreIn(DbAliases.NOTIFICATION)
 @OwnedBy(PL)
 public class Notification implements PersistentRegularIterable, PersistentEntity {
   public static List<MongoIndex> mongoIndexes() {

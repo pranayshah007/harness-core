@@ -27,6 +27,7 @@ import static io.harness.ci.commonconstants.CIExecutionConstants.UNIX_STEP_COMMA
 import static io.harness.delegate.beans.ci.pod.CIContainerType.PLUGIN;
 import static io.harness.delegate.beans.ci.pod.CIContainerType.RUN;
 import static io.harness.delegate.beans.ci.pod.CIContainerType.SERVICE;
+import static io.harness.delegate.beans.connector.azureconnector.AzureSecretType.SECRET_KEY;
 import static io.harness.pms.yaml.ParameterField.createValueField;
 
 import static java.util.Arrays.asList;
@@ -35,6 +36,7 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.util.Lists.newArrayList;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.azure.AzureEnvironmentType;
 import io.harness.beans.dependencies.CIServiceInfo;
 import io.harness.beans.dependencies.DependencyElement;
 import io.harness.beans.environment.BuildJobEnvInfo;
@@ -53,8 +55,7 @@ import io.harness.beans.execution.WebhookEvent;
 import io.harness.beans.execution.WebhookExecutionSource;
 import io.harness.beans.executionargs.CIExecutionArgs;
 import io.harness.beans.script.ScriptInfo;
-import io.harness.beans.stages.IntegrationStageConfig;
-import io.harness.beans.stages.IntegrationStageConfigImpl;
+import io.harness.beans.stages.IntegrationStageNode;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.yaml.extended.CustomSecretVariable;
 import io.harness.beans.yaml.extended.CustomTextVariable;
@@ -69,6 +70,8 @@ import io.harness.beans.yaml.extended.volumes.HostPathYaml.HostPathYamlSpec;
 import io.harness.beans.yaml.extended.volumes.PersistentVolumeClaimYaml;
 import io.harness.beans.yaml.extended.volumes.PersistentVolumeClaimYaml.PersistentVolumeClaimYamlSpec;
 import io.harness.ci.commonconstants.CIExecutionConstants;
+import io.harness.cimanager.stages.IntegrationStageConfig;
+import io.harness.cimanager.stages.IntegrationStageConfigImpl;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.ci.pod.CIK8ContainerParams;
@@ -85,6 +88,12 @@ import io.harness.delegate.beans.ci.pod.PodVolume;
 import io.harness.delegate.beans.ci.pod.SecretVariableDTO;
 import io.harness.delegate.beans.ci.pod.SecretVariableDetails;
 import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.azureconnector.AzureAuthDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureClientSecretKeyDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureCredentialDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureCredentialType;
+import io.harness.delegate.beans.connector.azureconnector.AzureManualDetailsDTO;
 import io.harness.delegate.beans.connector.docker.DockerAuthType;
 import io.harness.delegate.beans.connector.docker.DockerAuthenticationDTO;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
@@ -324,14 +333,14 @@ public class CIExecutionPlanTestHelper {
   }
 
   public InitializeStepInfo getExpectedLiteEngineTaskInfoOnOtherPods(
-      ExecutionSource executionSource, StageElementConfig stageElementConfig) {
+      ExecutionSource executionSource, IntegrationStageNode stageNode) {
     return InitializeStepInfo.builder()
         .identifier("liteEngineTask")
         .name("liteEngineTask")
         .executionSource(executionSource)
-        .stageIdentifier(stageElementConfig.getIdentifier())
-        .variables(stageElementConfig.getVariables())
-        .stageElementConfig((IntegrationStageConfig) stageElementConfig.getStageType())
+        .stageIdentifier(stageNode.getIdentifier())
+        .variables(stageNode.getVariables())
+        .stageElementConfig(stageNode.getIntegrationStageConfig())
         .executionElementConfig(getExecutionElementConfig())
         .infrastructure(getInfrastructureWithVolume())
         .strategyExpansionMap(new HashMap<>())
@@ -1241,6 +1250,35 @@ public class CIExecutionPlanTestHelper {
         .build();
   }
 
+  public ConnectorDTO getAzureConnectorDTO() {
+    return ConnectorDTO.builder()
+        .connectorInfo(
+            ConnectorInfoDTO.builder()
+                .name("azureConnector")
+                .identifier("azureConnector")
+                .connectorType(ConnectorType.AZURE)
+                .connectorConfig(
+                    AzureConnectorDTO.builder()
+                        .azureEnvironmentType(AzureEnvironmentType.AZURE)
+                        .credential(
+                            AzureCredentialDTO.builder()
+                                .azureCredentialType(AzureCredentialType.MANUAL_CREDENTIALS)
+                                .config(AzureManualDetailsDTO.builder()
+                                            .clientId("clientId")
+                                            .tenantId("tenantId")
+                                            .authDTO(AzureAuthDTO.builder()
+                                                         .azureSecretType(SECRET_KEY)
+                                                         .credentials(AzureClientSecretKeyDTO.builder()
+                                                                          .secretKey(SecretRefData.builder().build())
+                                                                          .build())
+                                                         .build())
+                                            .build())
+                                .build())
+                        .build())
+                .build())
+        .build();
+  }
+
   public ConnectorDTO getAwsCodeCommitConnectorDTO() {
     return ConnectorDTO.builder()
         .connectorInfo(
@@ -1362,6 +1400,15 @@ public class CIExecutionPlanTestHelper {
         .identifier("ciStage")
         .type("CI")
         .stageType(getIntegrationStageConfig())
+        .variables(getStageNGVariables())
+        .build();
+  }
+
+  public IntegrationStageNode getIntegrationStageNode() {
+    return IntegrationStageNode.builder()
+        .identifier("ciStage")
+        .type(IntegrationStageNode.StepType.CI)
+        .integrationStageConfig((IntegrationStageConfigImpl) getIntegrationStageConfig())
         .variables(getStageNGVariables())
         .build();
   }

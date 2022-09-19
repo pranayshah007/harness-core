@@ -11,7 +11,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitProgress.CommandUnitProgressBuilder;
 import io.harness.delegate.beans.taskprogress.ITaskProgressClient;
-import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -25,20 +24,17 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class NGDelegateLogCallback implements LogCallback {
-  private ILogStreamingTaskClient iLogStreamingTaskClient;
-  private String commandUnitName;
-  private CommandUnitsProgress commandUnitsProgress;
+  private final ILogStreamingTaskClient iLogStreamingTaskClient;
+  private final String commandUnitName;
+  private final CommandUnitsProgress commandUnitsProgress;
 
   public NGDelegateLogCallback(ILogStreamingTaskClient iLogStreamingTaskClient, String commandUnitName,
       boolean shouldOpenStream, CommandUnitsProgress commandUnitsProgress) {
-    if (iLogStreamingTaskClient == null) {
-      throw new InvalidRequestException("Log Streaming Client is not present.");
-    }
     this.iLogStreamingTaskClient = iLogStreamingTaskClient;
     this.commandUnitName = commandUnitName;
     this.commandUnitsProgress = commandUnitsProgress;
 
-    if (shouldOpenStream) {
+    if (this.iLogStreamingTaskClient != null && shouldOpenStream) {
       iLogStreamingTaskClient.openStream(commandUnitName);
     }
   }
@@ -55,6 +51,9 @@ public class NGDelegateLogCallback implements LogCallback {
 
   @Override
   public void saveExecutionLog(String line, LogLevel logLevel, CommandExecutionStatus commandExecutionStatus) {
+    if (this.iLogStreamingTaskClient == null) {
+      return;
+    }
     Instant now = Instant.now();
     LogLine logLine = LogLine.builder().message(line).level(logLevel).timestamp(now).build();
     iLogStreamingTaskClient.writeLogLine(logLine, commandUnitName);
@@ -104,10 +103,33 @@ public class NGDelegateLogCallback implements LogCallback {
   void sendTaskProgressUpdate(ITaskProgressClient taskProgressClient) {
     if (taskProgressClient != null) {
       try {
-        taskProgressClient.sendTaskProgressUpdate(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress));
+        log.info("Send task progress for unit: {}", commandUnitName);
+        if (commandUnitsProgress == null) {
+          // Not sure how valid is this logic, keeping it for backward compatibility
+          taskProgressClient.sendTaskProgressUpdate(UnitProgressDataMapper.toUnitProgressData(null));
+        } else {
+          // We want to ensure that only one thread is owning commandUnitsProgress and will not send task progress for
+          // same commandUnitsProgress instance in parallel otherwise it could lead to a race condition:
+          // 1. t1 send progress with { u1, u2 } and t2 send progress with { u1, u2, u3 } in a small range of time
+          // 2. t2 progress is acknowledged before t1
+          // 3. t1 overrides t2 because it was acknowledged later
+          // This sync expects that executor service will use a scheduler based on FIFO priority and update of
+          // commandUnitsProgress is happening in the same thread
+          synchronized (commandUnitsProgress) {
+            taskProgressClient.sendTaskProgressUpdate(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress));
+          }
+        }
+        log.info("Task progress sent for unit: {}", commandUnitsProgress);
       } catch (Exception exception) {
         log.error("Failed to send task progress update {}", commandUnitsProgress, exception);
       }
+    }
+  }
+
+  @Override
+  public void dispatchLogs() {
+    if (this.iLogStreamingTaskClient != null) {
+      this.iLogStreamingTaskClient.dispatchLogs();
     }
   }
 }

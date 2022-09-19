@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.servicenow.ServiceNowTicketKeyNG;
 import io.harness.steps.approval.step.beans.ApprovalInstanceDetailsDTO;
 import io.harness.steps.approval.step.beans.CriteriaSpecWrapperDTO;
+import io.harness.steps.approval.step.beans.ServiceNowChangeWindowSpecDTO;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -28,10 +29,12 @@ import org.hibernate.validator.constraints.NotEmpty;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @ApiModel("ServiceNowApprovalInstanceDetails")
-@Schema(name = "ServiceNowApprovalInstanceDetails", description = "This contains details of Jira Approval Instance")
+@Schema(
+    name = "ServiceNowApprovalInstanceDetails", description = "This contains details of ServiceNow Approval Instance")
 public class ServiceNowApprovalInstanceDetailsDTO implements ApprovalInstanceDetailsDTO {
   @NotEmpty String connectorRef;
   @NotNull ServiceNowTicketKeyNG ticket;
   @NotNull CriteriaSpecWrapperDTO approvalCriteria;
-  @NotNull CriteriaSpecWrapperDTO rejectionCriteria;
+  CriteriaSpecWrapperDTO rejectionCriteria;
+  ServiceNowChangeWindowSpecDTO changeWindowSpec;
 }

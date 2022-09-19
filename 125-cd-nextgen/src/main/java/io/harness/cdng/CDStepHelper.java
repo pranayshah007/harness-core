@@ -14,6 +14,7 @@ import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
 import static io.harness.data.structure.ListUtils.trimStrings;
+import static io.harness.delegate.beans.connector.scm.bitbucket.BitbucketApiAccessType.USERNAME_AND_TOKEN;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
@@ -46,6 +47,8 @@ import io.harness.cdng.manifest.mappers.ManifestOutcomeValidator;
 import io.harness.cdng.manifest.steps.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
+import io.harness.cdng.service.steps.ServiceStepV3;
+import io.harness.cdng.service.steps.ServiceSweepingOutput;
 import io.harness.cdng.ssh.SshEntityHelper;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.common.NGTimeConversionHelper;
@@ -67,7 +70,12 @@ import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpAuthenticationType;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpCredentialsDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketHttpAuthenticationType;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketHttpCredentialsDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketUsernamePasswordDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketUsernameTokenApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessType;
@@ -106,6 +114,8 @@ import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
+import io.harness.ng.core.service.yaml.NGServiceConfig;
+import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -117,10 +127,13 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
+import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
+import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.pms.yaml.validation.ExpressionUtils;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -130,9 +143,9 @@ import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
 import io.harness.validation.Validator;
 
-import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -141,11 +154,11 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 
+@Slf4j
 public class CDStepHelper {
-  private static final Set<String> VALUES_YAML_SUPPORTED_MANIFEST_TYPES =
-      ImmutableSet.of(ManifestType.K8Manifest, ManifestType.HelmChart);
   public static final String MISSING_INFRASTRUCTURE_ERROR = "Infrastructure section is missing or is not configured";
   @Inject private GitConfigAuthenticationInfoHelper gitConfigAuthenticationInfoHelper;
   @Named("PRIVILEGED") @Inject private SecretManagerClientService secretManagerClientService;
@@ -161,6 +174,7 @@ public class CDStepHelper {
   @Inject protected OutcomeService outcomeService;
   @Inject protected KryoSerializer kryoSerializer;
   @Inject protected StepHelper stepHelper;
+  @Inject private ExecutionSweepingOutputService sweepingOutputService;
 
   public static final String RELEASE_NAME_VALIDATION_REGEX =
       "[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*";
@@ -179,6 +193,19 @@ public class CDStepHelper {
         && ((GitlabHttpCredentialsDTO) gitlabConnectorDTO.getAuthentication().getCredentials())
                .getType()
                .equals(GitlabHttpAuthenticationType.USERNAME_AND_TOKEN);
+  }
+
+  public boolean isBitbucketTokenAuth(ScmConnector scmConnector) {
+    return scmConnector instanceof BitbucketConnectorDTO
+        && (((BitbucketConnectorDTO) scmConnector).getApiAccess() != null
+            || isBitbucketUsernameTokenAuth((BitbucketConnectorDTO) scmConnector));
+  }
+
+  public boolean isBitbucketUsernameTokenAuth(BitbucketConnectorDTO bitbucketConnectorDTO) {
+    return bitbucketConnectorDTO.getAuthentication().getCredentials() instanceof BitbucketHttpCredentialsDTO
+        && ((BitbucketHttpCredentialsDTO) bitbucketConnectorDTO.getAuthentication().getCredentials())
+               .getType()
+               .equals(BitbucketHttpAuthenticationType.USERNAME_AND_PASSWORD);
   }
 
   public boolean isGithubUsernameTokenAuth(GithubConnectorDTO githubConnectorDTO) {
@@ -216,7 +243,8 @@ public class CDStepHelper {
     return cdFeatureFlagHelper.isEnabled(accountId, OPTIMIZED_GIT_FETCH_FILES)
         && ((isGithubTokenAuth((ScmConnector) connectorDTO.getConnectorConfig())
                 || isGitlabTokenAuth((ScmConnector) connectorDTO.getConnectorConfig()))
-            || (isAzureRepoTokenAuth((ScmConnector) connectorDTO.getConnectorConfig())));
+            || (isAzureRepoTokenAuth((ScmConnector) connectorDTO.getConnectorConfig()))
+            || (isBitbucketTokenAuth((ScmConnector) connectorDTO.getConnectorConfig())));
   }
 
   public void addApiAuthIfRequired(ScmConnector scmConnector) {
@@ -244,7 +272,30 @@ public class CDStepHelper {
                                             .spec(GitlabTokenSpecDTO.builder().tokenRef(tokenRef).build())
                                             .build();
       gitlabConnectorDTO.setApiAccess(apiAccessDTO);
+    } else if (scmConnector instanceof BitbucketConnectorDTO
+        && ((BitbucketConnectorDTO) scmConnector).getApiAccess() == null
+        && isBitbucketUsernameTokenAuth((BitbucketConnectorDTO) scmConnector)) {
+      addApiAuthIfRequiredBitbucket(scmConnector);
     }
+  }
+
+  public void addApiAuthIfRequiredBitbucket(ScmConnector scmConnector) {
+    BitbucketConnectorDTO bitbucketConnectorDTO = (BitbucketConnectorDTO) scmConnector;
+    BitbucketUsernamePasswordDTO credentials =
+        (BitbucketUsernamePasswordDTO) ((BitbucketHttpCredentialsDTO) bitbucketConnectorDTO.getAuthentication()
+                                            .getCredentials())
+            .getHttpCredentialsSpec();
+    SecretRefData tokenRef = credentials.getPasswordRef();
+    String usernameRef = credentials.getUsername();
+    BitbucketApiAccessDTO apiAccessDTO =
+        BitbucketApiAccessDTO.builder()
+            .type(USERNAME_AND_TOKEN)
+            .spec(BitbucketUsernameTokenApiAccessDTO.builder()
+                      .tokenRef(tokenRef)
+                      .usernameRef(SecretRefData.builder().decryptedValue(usernameRef.toCharArray()).build())
+                      .build())
+            .build();
+    bitbucketConnectorDTO.setApiAccess(apiAccessDTO);
   }
 
   public String getGitRepoUrl(ScmConnector scmConnector, String repoName) {
@@ -277,6 +328,13 @@ public class CDStepHelper {
         String repoUrl = getGitRepoUrl(gitlabConnectorDTO, repoName);
         gitlabConnectorDTO.setUrl(repoUrl);
         gitlabConnectorDTO.setConnectionType(GitConnectionType.REPO);
+      }
+    } else if (scmConnector instanceof BitbucketConnectorDTO) {
+      BitbucketConnectorDTO bitbucketConnectorDTO = (BitbucketConnectorDTO) scmConnector;
+      if (bitbucketConnectorDTO.getConnectionType() == GitConnectionType.ACCOUNT) {
+        String repoUrl = getGitRepoUrl(bitbucketConnectorDTO, repoName);
+        bitbucketConnectorDTO.setUrl(repoUrl);
+        bitbucketConnectorDTO.setConnectionType(GitConnectionType.REPO);
       }
     }
   }
@@ -534,10 +592,6 @@ public class CDStepHelper {
     return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.NG_OPTIMIZE_FETCH_FILES_KUSTOMIZE);
   }
 
-  public boolean shouldCleanUpIncompleteCanaryDeployRelease(String accountId) {
-    return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CLEANUP_INCOMPLETE_CANARY_DEPLOY_RELEASE);
-  }
-
   public boolean shouldUseK8sApiForSteadyStateCheck(String accountId) {
     return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.USE_K8S_API_FOR_STEADY_STATE_CHECK);
   }
@@ -671,5 +725,27 @@ public class CDStepHelper {
       Ambiance ambiance, TaskData taskData, List<String> units, String taskName, List<TaskSelector> selectors) {
     return StepUtils.prepareCDTaskRequest(
         ambiance, taskData, kryoSerializer, units, taskName, selectors, stepHelper.getEnvironmentType(ambiance));
+  }
+
+  @Nonnull
+  public Optional<NGServiceV2InfoConfig> fetchServiceConfigFromSweepingOutput(Ambiance ambiance) {
+    final OptionalSweepingOutput resolveOptional = sweepingOutputService.resolveOptional(
+        ambiance, RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_SWEEPING_OUTPUT));
+    NGServiceConfig ngServiceConfig = null;
+    if (resolveOptional.isFound()) {
+      try {
+        ngServiceConfig = YamlUtils.read(
+            ((ServiceSweepingOutput) resolveOptional.getOutput()).getFinalServiceYaml(), NGServiceConfig.class);
+      } catch (IOException e) {
+        throw new InvalidRequestException("Failed to read service yaml", e);
+      }
+    }
+
+    if (ngServiceConfig == null || ngServiceConfig.getNgServiceV2InfoConfig() == null) {
+      log.info("No service configuration found in the service sweeping output");
+      return Optional.empty();
+    }
+
+    return Optional.ofNullable(ngServiceConfig.getNgServiceV2InfoConfig());
   }
 }

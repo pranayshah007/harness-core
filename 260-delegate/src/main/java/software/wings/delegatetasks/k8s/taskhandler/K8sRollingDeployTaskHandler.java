@@ -60,9 +60,10 @@ import io.harness.k8s.model.K8sPod;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
-import io.harness.k8s.model.Release;
-import io.harness.k8s.model.Release.Status;
-import io.harness.k8s.model.ReleaseHistory;
+import io.harness.k8s.releasehistory.IK8sRelease;
+import io.harness.k8s.releasehistory.IK8sRelease.Status;
+import io.harness.k8s.releasehistory.K8sLegacyRelease;
+import io.harness.k8s.releasehistory.ReleaseHistory;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 
@@ -215,7 +216,7 @@ public class K8sRollingDeployTaskHandler extends K8sTaskHandler {
           k8sDelegateTaskParams, k8sRollingHandlerConfig.getRelease(), k8sRollingHandlerConfig.getClient());
 
       if (!success || !customWorkloadsStatusSuccess) {
-        saveRelease(k8sRollingDeployTaskParameters, Status.Failed);
+        saveRelease(k8sRollingDeployTaskParameters, IK8sRelease.Status.Failed);
         return getFailureResponse();
       }
     }
@@ -243,11 +244,11 @@ public class K8sRollingDeployTaskHandler extends K8sTaskHandler {
               .helmChartInfo(helmChartInfo)
               .build();
 
-      saveRelease(k8sRollingDeployTaskParameters, Status.Succeeded);
+      saveRelease(k8sRollingDeployTaskParameters, IK8sRelease.Status.Succeeded);
       executionLogCallback.saveExecutionLog("\nDone.", INFO, CommandExecutionStatus.SUCCESS);
 
       if (k8sRollingDeployTaskParameters.isPruningEnabled()) {
-        Release previousSuccessfulRelease =
+        K8sLegacyRelease previousSuccessfulRelease =
             k8sRollingHandlerConfig.getReleaseHistory().getPreviousRollbackEligibleRelease(
                 k8sRollingHandlerConfig.getRelease().getNumber());
         List<KubernetesResourceId> prunedResourcesIds =
@@ -261,13 +262,13 @@ public class K8sRollingDeployTaskHandler extends K8sTaskHandler {
           .build();
     } catch (Exception ex) {
       executionLogCallback.saveExecutionLog(getMessage(ex), ERROR, FAILURE);
-      saveRelease(k8sRollingDeployTaskParameters, Status.Failed);
+      saveRelease(k8sRollingDeployTaskParameters, IK8sRelease.Status.Failed);
       throw ex;
     }
   }
 
   public List<KubernetesResourceId> prune(K8sRollingDeployTaskParameters k8sRollingDeployTaskParameters,
-      K8sDelegateTaskParams k8sDelegateTaskParams, Release previousSuccessfulRelease) {
+      K8sDelegateTaskParams k8sDelegateTaskParams, K8sLegacyRelease previousSuccessfulRelease) {
     ExecutionLogCallback executionLogCallback =
         k8sTaskHelper.getExecutionLogCallback(k8sRollingDeployTaskParameters, Prune);
     try {
@@ -457,7 +458,7 @@ public class K8sRollingDeployTaskHandler extends K8sTaskHandler {
       k8sRollingHandlerConfig.setRelease(
           k8sRollingHandlerConfig.getReleaseHistory().createNewReleaseWithResourceMap(resourcesWithoutSkipPruning));
     } else {
-      Release release = k8sRollingHandlerConfig.getReleaseHistory().getLatestRelease();
+      K8sLegacyRelease release = k8sRollingHandlerConfig.getReleaseHistory().getLatestRelease();
       k8sRollingHandlerConfig.setRelease(release);
       release.setResources(
           resourcesWithoutSkipPruning.stream().map(KubernetesResource::getResourceId).collect(toList()));

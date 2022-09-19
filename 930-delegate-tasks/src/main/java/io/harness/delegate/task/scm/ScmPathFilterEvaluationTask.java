@@ -89,7 +89,7 @@ public class ScmPathFilterEvaluationTask extends AbstractDelegateRunnableTask {
       GitlabConnectorDTO gitlabConnectorDTO = (GitlabConnectorDTO) connector;
       secretDecryptionService.decrypt(
           gitlabConnectorDTO.getApiAccess().getSpec(), filterQueryParams.getEncryptedDataDetails());
-    } else if (BitbucketConnectorDTO.class.isAssignableFrom(BitbucketConnectorDTO.class)) {
+    } else if (BitbucketConnectorDTO.class.isAssignableFrom(connector.getClass())) {
       BitbucketConnectorDTO bitbucketConnectorDTO = (BitbucketConnectorDTO) connector;
       secretDecryptionService.decrypt(
           bitbucketConnectorDTO.getApiAccess().getSpec(), filterQueryParams.getEncryptedDataDetails());
@@ -110,7 +110,7 @@ public class ScmPathFilterEvaluationTask extends AbstractDelegateRunnableTask {
       // push case
       CompareCommitsResponse compareCommitsResponse = scmDelegateClient.processScmRequest(c
           -> scmServiceClient.compareCommits(
-              connector, params.getLatestCommit(), params.getPreviousCommit(), SCMGrpc.newBlockingStub(c)));
+              connector, params.getPreviousCommit(), params.getLatestCommit(), SCMGrpc.newBlockingStub(c)));
 
       Set<String> filepaths = emptySet();
       if (compareCommitsResponse.getFilesCount() > 0) {

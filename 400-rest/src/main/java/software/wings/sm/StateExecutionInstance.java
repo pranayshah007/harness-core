@@ -10,6 +10,7 @@ package software.wings.sm;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -26,6 +27,8 @@ import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.mongo.index.SortCompoundMongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UpdatedAtAware;
@@ -62,6 +65,7 @@ import org.simpleframework.xml.Transient;
 @Data
 @FieldNameConstants(innerTypeName = "StateExecutionInstanceKeys")
 @JsonIgnoreProperties(ignoreUnknown = true)
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "stateExecutionInstances", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @TargetModule(HarnessModule._957_CG_BEANS)
@@ -87,10 +91,15 @@ public class StateExecutionInstance implements PersistentEntity, AccountDataRete
                  .field(StateExecutionInstanceKeys.parentInstanceId)
                  .field(StateExecutionInstanceKeys.createdAt)
                  .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("appId_endTs")
+                 .field(StateExecutionInstanceKeys.appId)
+                 .ascSortField(StateExecutionInstanceKeys.endTs)
+                 .build())
         .build();
   }
   @Id private String uuid;
-  @FdIndex protected String appId;
+  protected String appId;
   @FdIndex private long createdAt;
   private long lastUpdatedAt;
 

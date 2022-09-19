@@ -9,11 +9,13 @@ package io.harness.gitsync.common.beans;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
 import io.harness.common.EntityReference;
 import io.harness.data.validator.Trimmed;
 import io.harness.encryption.Scope;
+import io.harness.ng.DbAliases;
 import io.harness.ng.core.ProjectAccess;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
@@ -39,9 +41,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
 @Builder
+@EqualsAndHashCode(callSuper = false)
+@StoreIn(DbAliases.NG_MANAGER)
 @Document("gitFileLocation")
 @TypeAlias("io.harness.gitsync.common.beans.gitFileLocation")
-@EqualsAndHashCode(callSuper = false)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Entity(value = "gitFileLocation", noClassnameStored = true)
 @FieldNameConstants(innerTypeName = "GitFileLocationKeys")

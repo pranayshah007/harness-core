@@ -32,11 +32,12 @@ public class ChangeConsumerFactoryTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetConsumer() {
     String collectionName = "coll";
-    EventsFrameworkChangeConsumer eventsFrameworkChangeConsumer =
-        changeConsumerFactory.get(collectionName, new ChangeConsumerConfig(ConsumerType.EVENTS_FRAMEWORK, null));
+    EventsFrameworkChangeConsumer eventsFrameworkChangeConsumer = changeConsumerFactory.get(
+        60, collectionName, new ChangeConsumerConfig(ConsumerType.EVENTS_FRAMEWORK, null), 1000, 1000);
     assertNotNull(eventsFrameworkChangeConsumer);
     assertThat(eventsFrameworkChangeConsumer).isInstanceOf(EventsFrameworkChangeConsumer.class);
-    assertThatThrownBy(() -> changeConsumerFactory.get(collectionName, new ChangeConsumerConfig(null, null)))
+    assertThatThrownBy(
+        () -> changeConsumerFactory.get(60, collectionName, new ChangeConsumerConfig(null, null), 1000, 1000))
         .isInstanceOf(InvalidRequestException.class);
   }
 }

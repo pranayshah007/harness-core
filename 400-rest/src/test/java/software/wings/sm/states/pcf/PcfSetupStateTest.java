@@ -26,6 +26,7 @@ import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.ANIL;
 import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.ARVIND;
+import static io.harness.rule.OwnerRule.RISHABH;
 import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.VAIBHAV_KUMAR;
 
@@ -411,8 +412,8 @@ public class PcfSetupStateTest extends WingsBaseTest {
     doNothing().when(stateExecutionService).appendDelegateTaskDetails(anyString(), any());
 
     WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService =
-        spy(new WorkflowStandardParamsExtensionService(
-            appService, null, artifactService, environmentService, artifactStreamServiceBindingService, null));
+        spy(new WorkflowStandardParamsExtensionService(appService, null, artifactService, environmentService,
+            artifactStreamServiceBindingService, null, featureFlagService));
 
     on(context).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
     on(pcfSetupState).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
@@ -456,6 +457,43 @@ public class PcfSetupStateTest extends WingsBaseTest {
     metadata.put("url", url2);
     result = pcfSetupState.artifactPathForSource(artifact, artifactStreamAttributes);
     assertThat(result).isEqualTo(path);
+  }
+
+  @Test(expected = InvalidRequestException.class)
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testArtifactPathForSourceNoURL() {
+    when(pcfSetupState.artifactPathForSource(any(), any())).thenCallRealMethod();
+
+    String path = "harness-internal/harness-internal/20211208.2.zip";
+    String jobName = "harness-internal";
+    Map<String, String> metadata = new HashMap<String, String>() {
+      { put("artifactPath", path); }
+    };
+
+    Artifact artifact = new Artifact();
+    ArtifactStreamAttributes artifactStreamAttributes = ArtifactStreamAttributes.builder()
+                                                            .artifactStreamType(SettingVariableTypes.NEXUS.name())
+                                                            .jobName(jobName)
+                                                            .metadata(metadata)
+                                                            .build();
+    String result = pcfSetupState.artifactPathForSource(artifact, artifactStreamAttributes);
+  }
+
+  @Test(expected = InvalidRequestException.class)
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testArtifactPathForSourceNoMetadata() {
+    when(pcfSetupState.artifactPathForSource(any(), any())).thenCallRealMethod();
+
+    String jobName = "harness-internal";
+
+    Artifact artifact = new Artifact();
+    ArtifactStreamAttributes artifactStreamAttributes = ArtifactStreamAttributes.builder()
+                                                            .artifactStreamType(SettingVariableTypes.NEXUS.name())
+                                                            .jobName(jobName)
+                                                            .build();
+    String result = pcfSetupState.artifactPathForSource(artifact, artifactStreamAttributes);
   }
 
   @Test

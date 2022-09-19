@@ -23,4 +23,5 @@ public class GitWebhookRequestAttributes {
   private String repositoryFullName;
   @NotEmpty private String gitConnectorId;
   String headCommitId;
+  Boolean isPollingBased;
 }

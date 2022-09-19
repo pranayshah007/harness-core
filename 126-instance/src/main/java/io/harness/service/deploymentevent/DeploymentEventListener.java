@@ -21,6 +21,7 @@ import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.dtos.DeploymentSummaryDTO;
 import io.harness.dtos.InfrastructureMappingDTO;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
+import io.harness.dtos.deploymentinfo.SshWinrmDeploymentInfoDTO;
 import io.harness.entities.ArtifactDetails;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.AccountLogContext;
@@ -122,8 +123,8 @@ public class DeploymentEventListener implements OrchestrationEventHandler {
   private DeploymentSummaryDTO createDeploymentSummary(Ambiance ambiance, ServiceStepOutcome serviceOutcome,
       InfrastructureOutcome infrastructureOutcome, InfrastructureMappingDTO infrastructureMappingDTO,
       List<ServerInstanceInfo> serverInstanceInfoList) {
-    AbstractInstanceSyncHandler abstractInstanceSyncHandler =
-        instanceSyncHandlerFactoryService.getInstanceSyncHandler(serviceOutcome.getType());
+    AbstractInstanceSyncHandler abstractInstanceSyncHandler = instanceSyncHandlerFactoryService.getInstanceSyncHandler(
+        serviceOutcome.getType(), infrastructureOutcome.getKind());
     DeploymentInfoDTO deploymentInfoDTO =
         abstractInstanceSyncHandler.getDeploymentInfo(infrastructureOutcome, serverInstanceInfoList);
 
@@ -137,13 +138,14 @@ public class DeploymentEventListener implements OrchestrationEventHandler {
             .deployedByName(ambiance.getMetadata().getTriggerInfo().getTriggeredBy().getIdentifier())
             .deployedById(ambiance.getMetadata().getTriggerInfo().getTriggeredBy().getUuid())
             .infrastructureMappingId(infrastructureMappingDTO.getId())
+            .infrastructureMapping(infrastructureMappingDTO)
             .instanceSyncKey(deploymentInfoDTO.prepareInstanceSyncHandlerKey())
             .deploymentInfoDTO(deploymentInfoDTO)
             .deployedAt(AmbianceUtils.getCurrentLevelStartTs(ambiance))
             .infrastructureIdentifier(infrastructureOutcome.getInfraIdentifier())
             .infrastructureName(infrastructureOutcome.getInfraName())
             .build();
-    setArtifactDetails(ambiance, deploymentSummaryDTO);
+    setArtifactDetails(ambiance, deploymentSummaryDTO, deploymentInfoDTO);
     deploymentSummaryDTO = deploymentSummaryService.save(deploymentSummaryDTO);
 
     deploymentSummaryDTO.setServerInstanceInfoList(serverInstanceInfoList);
@@ -152,15 +154,24 @@ public class DeploymentEventListener implements OrchestrationEventHandler {
     return deploymentSummaryDTO;
   }
 
-  private void setArtifactDetails(Ambiance ambiance, DeploymentSummaryDTO deploymentSummaryDTO) {
+  private void setArtifactDetails(
+      Ambiance ambiance, DeploymentSummaryDTO deploymentSummaryDTO, DeploymentInfoDTO deploymentInfoDTO) {
     if (isRollbackDeploymentEvent(ambiance)) {
-      /**
-       * Fetch the 2nd deployment summary in DB for the given deployment info
-       * The 1st one will be the deployment summary for which changes have to be reverted, its prev one will
-       * be the last stable one
-       */
-      Optional<DeploymentSummaryDTO> deploymentSummaryDTOOptional =
-          deploymentSummaryService.getNthDeploymentSummaryFromNow(2, deploymentSummaryDTO.getInstanceSyncKey());
+      Optional<DeploymentSummaryDTO> deploymentSummaryDTOOptional;
+      if (deploymentInfoDTO instanceof SshWinrmDeploymentInfoDTO) {
+        deploymentSummaryDTOOptional = deploymentSummaryService.getLatestByInstanceKeyAndPipelineExecutionIdNot(
+            deploymentSummaryDTO.getInstanceSyncKey(), deploymentSummaryDTO.getInfrastructureMapping(),
+            deploymentSummaryDTO.getPipelineExecutionId());
+      } else {
+        /**
+         * Fetch the 2nd deployment summary in DB for the given deployment info
+         * The 1st one will be the deployment summary for which changes have to be reverted, its prev one will
+         * be the last stable one
+         */
+        deploymentSummaryDTOOptional = deploymentSummaryService.getNthDeploymentSummaryFromNow(
+            2, deploymentSummaryDTO.getInstanceSyncKey(), deploymentSummaryDTO.getInfrastructureMapping());
+      }
+
       if (deploymentSummaryDTOOptional.isPresent()) {
         deploymentSummaryDTO.setArtifactDetails(deploymentSummaryDTOOptional.get().getArtifactDetails());
         deploymentSummaryDTO.setRollbackDeployment(true);
@@ -175,14 +186,16 @@ public class DeploymentEventListener implements OrchestrationEventHandler {
     OptionalOutcome optionalOutcome = outcomeService.resolveOptional(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.ARTIFACTS));
     if (!optionalOutcome.isFound()) {
-      deploymentSummaryDTO.setArtifactDetails(ArtifactDetails.builder().artifactId("").tag("").build());
+      deploymentSummaryDTO.setArtifactDetails(ArtifactDetails.builder().artifactId("").tag("").displayName("").build());
       return;
     }
     ArtifactsOutcome artifactsOutcome = (ArtifactsOutcome) optionalOutcome.getOutcome();
-    deploymentSummaryDTO.setArtifactDetails(ArtifactDetails.builder()
-                                                .tag(artifactsOutcome.getPrimary().getTag())
-                                                .artifactId(artifactsOutcome.getPrimary().getIdentifier())
-                                                .build());
+    deploymentSummaryDTO.setArtifactDetails(
+        ArtifactDetails.builder()
+            .tag(artifactsOutcome.getPrimary().getTag())
+            .artifactId(artifactsOutcome.getPrimary().getIdentifier())
+            .displayName(artifactsOutcome.getPrimary().getArtifactSummary().getDisplayName())
+            .build());
   }
 
   private ServiceStepOutcome getServiceOutcomeFromAmbiance(Ambiance ambiance) {

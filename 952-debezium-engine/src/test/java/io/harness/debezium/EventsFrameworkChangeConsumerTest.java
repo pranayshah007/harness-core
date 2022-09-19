@@ -10,60 +10,52 @@ package io.harness.debezium;
 import static io.harness.rule.OwnerRule.SHALINI;
 
 import static junit.framework.TestCase.assertEquals;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.eventsframework.api.Producer;
+import io.harness.eventsframework.producer.Message;
 import io.harness.rule.Owner;
 
+import com.google.protobuf.InvalidProtocolBufferException;
+import io.debezium.embedded.EmbeddedEngineChangeEvent;
 import io.debezium.engine.ChangeEvent;
+import io.debezium.engine.DebeziumEngine;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.header.ConnectHeaders;
+import org.apache.kafka.connect.source.SourceRecord;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
 
 @OwnedBy(HarnessTeam.PIPELINE)
-
+@RunWith(MockitoJUnitRunner.class)
 public class EventsFrameworkChangeConsumerTest extends CategoryTest {
   private static final String DEFAULT_STRING = "default";
+  @Mock Producer producer;
   private static final String collection = "coll";
+  @Mock private static DebeziumProducerFactory producerFactory;
   private static final EventsFrameworkChangeConsumer eventsFrameworkChangeConsumer =
-      new EventsFrameworkChangeConsumer(collection, null);
+      new EventsFrameworkChangeConsumer(60, collection, producerFactory, 1000, 1000);
   private static final String key = "key";
   private static final String value = "value";
-  private static final String destination = "destination";
-  ChangeEvent<String, String> testRecord = new ChangeEvent<String, String>() {
-    @Override
-    public String key() {
-      return key;
-    }
-
-    @Override
-    public String value() {
-      return value;
-    }
-
-    @Override
-    public String destination() {
-      return destination;
-    }
-  };
-  ChangeEvent<String, String> emptyRecord = new ChangeEvent<String, String>() {
-    @Override
-    public String key() {
-      return null;
-    }
-
-    @Override
-    public String value() {
-      return null;
-    }
-
-    @Override
-    public String destination() {
-      return null;
-    }
-  };
-
+  ChangeEvent<String, String> testRecord = new EmbeddedEngineChangeEvent<>(key, value, null);
+  ChangeEvent<String, String> emptyRecord = new EmbeddedEngineChangeEvent<>(null, null, null);
+  @Mock DebeziumEngine.RecordCommitter<ChangeEvent<String, String>> recordCommitter;
   @Test
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
@@ -83,7 +75,46 @@ public class EventsFrameworkChangeConsumerTest extends CategoryTest {
   @Test
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
+  public void testGetOperationType() {
+    ConnectHeaders headers = new ConnectHeaders();
+    headers.add("__op", "c", Schema.STRING_SCHEMA);
+    Optional<OpType> opType = eventsFrameworkChangeConsumer.getOperationType(new SourceRecord(
+        new HashMap<>(), new HashMap<>(), "", 0, Schema.BOOLEAN_SCHEMA, "", Schema.BOOLEAN_SCHEMA, "", 0L, headers));
+    assertEquals(opType, Optional.of(OpType.CREATE));
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
   public void testGetCollection() {
     assertEquals(collection, eventsFrameworkChangeConsumer.getCollection());
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testHandleBatch() throws InterruptedException, InvalidProtocolBufferException {
+    EventsFrameworkChangeConsumer eventsFrameworkChangeConsumer =
+        new EventsFrameworkChangeConsumer(60, collection, producerFactory, 1000, 1000);
+    List<ChangeEvent<String, String>> records = new ArrayList<>();
+    ConnectHeaders headers = new ConnectHeaders();
+    headers.add("__op", "c", Schema.STRING_SCHEMA);
+    ChangeEvent<String, String> testRecord = new EmbeddedEngineChangeEvent<>(key, value,
+        new SourceRecord(new HashMap<>(), new HashMap<>(), "topic", 0, Schema.BOOLEAN_SCHEMA, "", Schema.BOOLEAN_SCHEMA,
+            "", 0L, headers));
+    records.add(testRecord);
+    doReturn(producer).when(producerFactory).get("topic", 1000);
+    doNothing().when(recordCommitter).markBatchFinished();
+    doNothing().when(recordCommitter).markProcessed(testRecord);
+    eventsFrameworkChangeConsumer.handleBatch(records, recordCommitter);
+    ArgumentCaptor<Message> captor = ArgumentCaptor.forClass(Message.class);
+    verify(producer, times(1)).send(captor.capture());
+    DebeziumChangeEvent debeziumChangeEvent =
+        Objects.requireNonNull(DebeziumChangeEvent.parseFrom(captor.getValue().getData()));
+    assertEquals(debeziumChangeEvent.getKey(), key);
+    assertEquals(debeziumChangeEvent.getValue(), value);
+    assertEquals(debeziumChangeEvent.getOptype(), Optional.of(OpType.CREATE).get().toString());
+    verify(recordCommitter, times(1)).markProcessed(testRecord);
+    verify(recordCommitter, times(1)).markBatchFinished();
   }
 }

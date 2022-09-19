@@ -13,10 +13,13 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.StoreIn;
 import io.harness.exception.WingsException;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
+import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.serializer.JsonUtils;
 
@@ -27,6 +30,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.collect.ImmutableList;
 import java.io.IOException;
+import java.time.OffsetDateTime;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import lombok.AllArgsConstructor;
@@ -50,6 +55,7 @@ import org.mongodb.morphia.annotations.Transient;
 @EqualsAndHashCode(callSuper = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "TimeSeriesRiskSummaryKeys")
+@StoreIn(DbAliases.HARNESS)
 @Entity(value = "timeSeriesRiskSummary", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 public class TimeSeriesRiskSummary extends Base implements AccountAccess {
@@ -72,6 +78,8 @@ public class TimeSeriesRiskSummary extends Base implements AccountAccess {
   @JsonIgnore private byte[] compressedLongTermPattern;
   @JsonIgnore private byte[] compressedRiskData;
   @FdIndex private String accountId;
+
+  @FdTtlIndex private Date validUntil = Date.from(OffsetDateTime.now().plusMonths(6).toInstant());
 
   private String tag;
 

@@ -97,8 +97,10 @@ public interface NodeExecutionService {
 
   default List<NodeExecution> findAllChildrenOnlyIds(String planExecutionId, String parentId, boolean includeParent) {
     return findAllChildrenWithStatusIn(planExecutionId, parentId, EnumSet.noneOf(Status.class), includeParent, true,
-        Sets.newHashSet(NodeExecutionKeys.id, NodeExecutionKeys.parentId, NodeExecutionKeys.status), new HashSet<>());
-  };
+        Sets.newHashSet(
+            NodeExecutionKeys.id, NodeExecutionKeys.parentId, NodeExecutionKeys.status, NodeExecutionKeys.stepType),
+        new HashSet<>());
+  }
 
   List<NodeExecution> findAllChildrenWithStatusIn(String planExecutionId, String parentId, EnumSet<Status> statuses,
       boolean includeParent, boolean shouldUseProjections, Set<String> fieldsToBeIncluded,
@@ -113,6 +115,9 @@ public interface NodeExecutionService {
       String nodeExecutionId, boolean oldRetry, boolean includeParent);
 
   boolean errorOutActiveNodes(String planExecutionId);
+
+  List<NodeExecution> extractChildExecutions(
+      String parentId, boolean includeParent, List<NodeExecution> finalList, List<NodeExecution> allExecutions);
 
   boolean removeTimeoutInstances(String nodeExecutionId);
 

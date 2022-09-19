@@ -95,9 +95,19 @@ public class WorkflowServiceTemplateHelper {
   public void validatePhaseStepsProperties(PhaseStep phaseStep) {
     phaseStep.getSteps().forEach(step -> {
       if (step.getType().equals(APPROVAL.name())) {
-        Number timeoutMillis = (Number) step.getProperties().get(TIMEOUT_PROPERTY_KEY);
-        if (timeoutMillis != null && timeoutMillis.longValue() > MAXIMUM_TIMEOUT) {
-          throw new InvalidRequestException("Value exceeded maximum timeout of 3w 3d 20h 30m.");
+        Object timeoutMillis = step.getProperties().get(TIMEOUT_PROPERTY_KEY);
+        if (timeoutMillis != null) {
+          try {
+            Integer timeoutMillisNumber = Integer.valueOf(timeoutMillis.toString());
+            if (timeoutMillisNumber > MAXIMUM_TIMEOUT) {
+              throw new InvalidRequestException("Value exceeded maximum timeout of 3w 3d 20h 30m.");
+            } else if (timeoutMillisNumber < 0) {
+              throw new InvalidRequestException("Timeout value should be positive");
+            }
+          } catch (NumberFormatException ex) {
+            throw new InvalidRequestException(
+                "Invalid value for timeoutMillis or value exceeded maximum timeout of 3w 3d 20h 30m.");
+          }
         }
       }
     });
@@ -108,9 +118,8 @@ public class WorkflowServiceTemplateHelper {
     if (orchestrationWorkflow instanceof CanaryOrchestrationWorkflow) {
       CanaryOrchestrationWorkflow canaryOrchestrationWorkflow =
           (CanaryOrchestrationWorkflow) newWorkflow.getOrchestrationWorkflow();
-      canaryOrchestrationWorkflow.getWorkflowPhases().forEach(workflowPhase -> {
-        workflowPhase.getPhaseSteps().forEach(phaseStep -> { validatePhaseStepsProperties(phaseStep); });
-      });
+      canaryOrchestrationWorkflow.getWorkflowPhases().forEach(
+          workflowPhase -> workflowPhase.getPhaseSteps().forEach(this::validatePhaseStepsProperties));
     }
   }
 

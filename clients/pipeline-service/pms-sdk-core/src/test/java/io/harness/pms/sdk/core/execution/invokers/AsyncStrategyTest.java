@@ -11,6 +11,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.PRASHANT;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.eq;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -99,11 +100,11 @@ public class AsyncStrategyTest extends PmsSdkCoreTestBase {
         ArgumentCaptor.forClass(AsyncSdkResumeCallback.class);
     ArgumentCaptor<AsyncSdkProgressCallback> progressCallbackArgumentCaptor =
         ArgumentCaptor.forClass(AsyncSdkProgressCallback.class);
-    ArgumentCaptor<String> correlationIdsCaptor = ArgumentCaptor.forClass(String.class);
+    ArgumentCaptor<List<String>> correlationIdsCaptor = ArgumentCaptor.forClass(List.class);
 
     Mockito.verify(asyncWaitEngine, Mockito.times(1))
         .waitForAllOn(notifyCallbackArgumentCaptor.capture(), progressCallbackArgumentCaptor.capture(),
-            correlationIdsCaptor.capture());
+            correlationIdsCaptor.capture(), eq(TestAsyncStep.timeout));
     // Wait Engine Mock verify interactions
     AsyncSdkResumeCallback resumeCallback = notifyCallbackArgumentCaptor.getValue();
     assertThat(resumeCallback.getAmbianceBytes()).isEqualTo(ambiance.toByteArray());
@@ -122,7 +123,7 @@ public class AsyncStrategyTest extends PmsSdkCoreTestBase {
     AsyncExecutableResponse asyncExecutableResponse = executableResponse.getAsync();
     assertThat(asyncExecutableResponse.getCallbackIdsList()).hasSize(1);
     String callbackId = asyncExecutableResponse.getCallbackIdsList().get(0);
-    String corrId = correlationIdsCaptor.getValue();
+    String corrId = correlationIdsCaptor.getValue().get(0);
     assertThat(callbackId).isEqualTo(corrId);
   }
 

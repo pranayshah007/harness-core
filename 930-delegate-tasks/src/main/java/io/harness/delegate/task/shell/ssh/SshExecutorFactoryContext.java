@@ -7,6 +7,9 @@
 
 package io.harness.delegate.task.shell.ssh;
 
+import static java.lang.String.format;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
@@ -21,10 +24,12 @@ import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 
 @Data
 @Builder
 @AllArgsConstructor
+@Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class SshExecutorFactoryContext {
   private final String accountId;
@@ -42,4 +47,31 @@ public class SshExecutorFactoryContext {
   private final String destinationPath;
   private final SshWinRmArtifactDelegateConfig artifactDelegateConfig;
   private final Map<String, String> artifactMetadata = new HashMap<>();
+  private final Map<String, String> environmentVariables = new HashMap<>();
+
+  public String evaluateVariable(String text) {
+    if (isNotBlank(text)) {
+      for (Map.Entry<String, String> entry : environmentVariables.entrySet()) {
+        String key = entry.getKey();
+        String value = entry.getValue();
+        try {
+          text = text.replaceAll("\\$" + key, value);
+        } catch (IllegalArgumentException exception) {
+          log.info(format("ENV variable evaluation failed for %s with error: %s. Skipping evaluation.", key,
+              exception.getMessage()));
+        }
+      }
+    }
+    return text;
+  }
+
+  public void addEnvVariables(Map<String, String> envVariables) {
+    for (Map.Entry<String, String> envVariable : envVariables.entrySet()) {
+      this.environmentVariables.put(envVariable.getKey(), evaluateVariable(envVariable.getValue()));
+    }
+  }
+
+  public String getEvaluatedDestinationPath() {
+    return evaluateVariable(destinationPath);
+  }
 }

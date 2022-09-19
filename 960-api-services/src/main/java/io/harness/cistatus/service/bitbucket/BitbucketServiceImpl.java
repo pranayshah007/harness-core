@@ -53,6 +53,12 @@ public class BitbucketServiceImpl implements BitbucketService {
                 .execute();
       }
 
+      if (!statusCreationResponseResponse.isSuccessful()) {
+        log.error("Failed to send status for bitbucket url {} and sha {} error {}, message {}",
+            bitbucketConfig.getBitbucketUrl(), sha, statusCreationResponseResponse.errorBody().string(),
+            statusCreationResponseResponse.message());
+      }
+
       return statusCreationResponseResponse.isSuccessful();
 
     } catch (Exception e) {

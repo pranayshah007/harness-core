@@ -22,18 +22,17 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
-import io.harness.exception.ngexception.beans.templateservice.TemplateInputsErrorMetadataDTO;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.RefreshRequestDTO;
 import io.harness.ng.core.template.RefreshResponseDTO;
 import io.harness.ng.core.template.TemplateApplyRequestDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ng.core.template.TemplateReferenceRequestDTO;
-import io.harness.ng.core.template.exception.NGTemplateResolveException;
+import io.harness.ng.core.template.exception.NGTemplateResolveExceptionV2;
 import io.harness.pms.helpers.PmsFeatureFlagHelper;
 import io.harness.rule.Owner;
 import io.harness.template.beans.refresh.ErrorNodeSummary;
@@ -41,10 +40,12 @@ import io.harness.template.beans.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.template.beans.refresh.YamlFullRefreshResponseDTO;
 import io.harness.template.remote.TemplateResourceClient;
 
+import com.google.common.io.Resources;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -74,59 +75,55 @@ public class PMSPipelineTemplateHelperTest extends CategoryTest {
     doReturn(true).when(pipelineEnforcementService).isFeatureRestricted(any(), anyString());
   }
 
-  @Test
-  @Owner(developers = ARCHIT)
-  @Category(UnitTests.class)
-  public void testResolveTemplateRefsInPipelineWhenFFIsOff() {
-    doReturn(false).when(pmsFeatureFlagHelper).isEnabled(ACCOUNT_ID, FeatureName.NG_TEMPLATES);
-    TemplateMergeResponseDTO templateMergeResponseDTO =
-        pipelineTemplateHelper.resolveTemplateRefsInPipeline(ACCOUNT_ID, ORG_ID, PROJECT_ID, GIVEN_YAML);
-    String resolveTemplateRefsInPipeline = templateMergeResponseDTO.getMergedPipelineYaml();
-    String resolveTemplateRefsInPipelineWithOPAresponse =
-        templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef();
-    assertThat(resolveTemplateRefsInPipeline).isEqualTo(GIVEN_YAML);
-    assertThat(resolveTemplateRefsInPipelineWithOPAresponse).isEqualTo(GIVEN_YAML);
+  private String readFile(String filename) {
+    ClassLoader classLoader = getClass().getClassLoader();
+    try {
+      return Resources.toString(Objects.requireNonNull(classLoader.getResource(filename)), StandardCharsets.UTF_8);
+    } catch (IOException e) {
+      throw new InvalidRequestException("Could not read resource file: " + filename);
+    }
   }
 
   @Test
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
-  public void testValidTemplateInPipelineWhenFFIsOn() throws IOException {
-    String mergedYaml = "MERGED_YAML";
-    doReturn(true).when(pmsFeatureFlagHelper).isEnabled(ACCOUNT_ID, FeatureName.NG_TEMPLATES);
+  public void testValidTemplateInPipelineHasTemplateRef() throws IOException {
+    String fileName = "pipeline-with-template-ref.yaml";
+    String givenYaml = readFile(fileName);
     Call<ResponseDTO<TemplateMergeResponseDTO>> callRequest = mock(Call.class);
     doReturn(callRequest)
         .when(templateResourceClient)
-        .applyTemplatesOnGivenYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, null, null, null,
-            TemplateApplyRequestDTO.builder().originalEntityYaml(GIVEN_YAML).build());
+        .applyTemplatesOnGivenYamlV2(anyString(), anyString(), anyString(), any(), any(), any(), any(), any(), any(),
+            any(), any(), any(TemplateApplyRequestDTO.class));
     when(callRequest.execute())
         .thenReturn(Response.success(
-            ResponseDTO.newResponse(TemplateMergeResponseDTO.builder().mergedPipelineYaml(mergedYaml).build())));
+            ResponseDTO.newResponse(TemplateMergeResponseDTO.builder().mergedPipelineYaml(givenYaml).build())));
     String resolveTemplateRefsInPipeline =
-        pipelineTemplateHelper.resolveTemplateRefsInPipeline(ACCOUNT_ID, ORG_ID, PROJECT_ID, GIVEN_YAML)
+        pipelineTemplateHelper.resolveTemplateRefsInPipeline(ACCOUNT_ID, ORG_ID, PROJECT_ID, givenYaml)
             .getMergedPipelineYaml();
-    assertThat(resolveTemplateRefsInPipeline).isEqualTo(mergedYaml);
+    assertThat(resolveTemplateRefsInPipeline).isEqualTo(givenYaml);
   }
 
   @Test
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
-  public void testInValidTemplateInPipelineWhenFFIsOn() throws IOException {
+  public void testInValidTemplateInPipelineWhenDoesNotContainTemplateRef() throws IOException {
     String errorYaml = "ERROR_YAML";
-    doReturn(true).when(pmsFeatureFlagHelper).isEnabled(ACCOUNT_ID, FeatureName.NG_TEMPLATES);
+    String fileName = "pipeline-with-template-ref.yaml";
+    String givenYaml = readFile(fileName);
     Call<ResponseDTO<TemplateMergeResponseDTO>> callRequest = mock(Call.class);
     doReturn(callRequest)
         .when(templateResourceClient)
-        .applyTemplatesOnGivenYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, null, null, null,
-            TemplateApplyRequestDTO.builder().originalEntityYaml(GIVEN_YAML).build());
-    TemplateInputsErrorMetadataDTO templateInputsErrorMetadataDTO =
-        new TemplateInputsErrorMetadataDTO(errorYaml, new HashMap<>());
+        .applyTemplatesOnGivenYamlV2(ACCOUNT_ID, ORG_ID, PROJECT_ID, null, null, null, null, null, null, null, null,
+            TemplateApplyRequestDTO.builder().originalEntityYaml(givenYaml).build());
+    ValidateTemplateInputsResponseDTO validateTemplateInputsResponseDTO =
+        ValidateTemplateInputsResponseDTO.builder().build();
     when(callRequest.execute())
-        .thenThrow(new NGTemplateResolveException(
-            "Exception in resolving template refs in given yaml.", USER, templateInputsErrorMetadataDTO));
+        .thenThrow(new NGTemplateResolveExceptionV2(
+            "Exception in resolving template refs in given yaml.", USER, validateTemplateInputsResponseDTO));
     assertThatThrownBy(
-        () -> pipelineTemplateHelper.resolveTemplateRefsInPipeline(ACCOUNT_ID, ORG_ID, PROJECT_ID, GIVEN_YAML))
-        .isInstanceOf(NGTemplateResolveException.class)
+        () -> pipelineTemplateHelper.resolveTemplateRefsInPipeline(ACCOUNT_ID, ORG_ID, PROJECT_ID, givenYaml))
+        .isInstanceOf(NGTemplateResolveExceptionV2.class)
         .hasMessage("Exception in resolving template refs in given yaml.");
   }
 
@@ -134,7 +131,6 @@ public class PMSPipelineTemplateHelperTest extends CategoryTest {
   @Owner(developers = INDER)
   @Category(UnitTests.class)
   public void testGetTemplateReferencesForGivenYamlWhenFFIsOnAndGitSyncNotEnabled() throws IOException {
-    doReturn(true).when(pmsFeatureFlagHelper).isEnabled(ACCOUNT_ID, FeatureName.NG_TEMPLATE_REFERENCES_SUPPORT);
     Call<ResponseDTO<List<EntityDetailProtoDTO>>> callRequest = mock(Call.class);
     doReturn(callRequest)
         .when(templateResourceClient)

@@ -37,11 +37,11 @@ public class TrackingExpressionResolver implements ExpressionResolver {
   List<String> expressions = new ArrayList<>();
 
   @Override
-  public String resolve(String expression) {
+  public String resolveInternal(String expression) {
     if (onlyVariables) {
       List<String> nested = findExpressions(expressionPrefix, expressionSuffix, false, false, expression);
       if (EmptyPredicate.isNotEmpty(nested)) {
-        nested.forEach(this::resolve);
+        nested.forEach(this::resolveInternal);
         return "";
       }
     }

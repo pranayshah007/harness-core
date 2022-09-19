@@ -14,7 +14,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.HeaderConfig;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ngtriggers.beans.dto.NGProcessWebhookResponseDTO;
 import io.harness.ngtriggers.beans.dto.WebhookEventProcessingDetails;
+import io.harness.ngtriggers.beans.dto.WebhookExecutionDetails;
 import io.harness.ngtriggers.beans.entity.TriggerWebhookEvent;
 import io.harness.ngtriggers.beans.source.WebhookTriggerType;
 import io.harness.ngtriggers.beans.source.webhook.WebhookAction;
@@ -27,6 +29,7 @@ import io.harness.ngtriggers.beans.source.webhook.v2.github.action.GithubPRActio
 import io.harness.ngtriggers.beans.source.webhook.v2.github.event.GithubTriggerEvent;
 import io.harness.ngtriggers.beans.source.webhook.v2.gitlab.action.GitlabPRAction;
 import io.harness.ngtriggers.beans.source.webhook.v2.gitlab.event.GitlabTriggerEvent;
+import io.harness.ngtriggers.helpers.UrlHelper;
 import io.harness.ngtriggers.helpers.WebhookConfigHelper;
 import io.harness.ngtriggers.mapper.NGTriggerElementMapper;
 import io.harness.ngtriggers.service.NGTriggerService;
@@ -53,6 +56,7 @@ public class NGTriggerWebhookConfigResourceImpl implements NGTriggerWebhookConfi
   private final NGTriggerService ngTriggerService;
   private final NGTriggerElementMapper ngTriggerElementMapper;
   private final TriggerWebhookValidator triggerWebhookValidator;
+  @Inject private UrlHelper urlHelper;
 
   public ResponseDTO<Map<WebhookSourceRepo, List<WebhookEvent>>> getSourceRepoToEvent() {
     return ResponseDTO.newResponse(WebhookConfigHelper.getSourceRepoToEvent());
@@ -143,8 +147,60 @@ public class NGTriggerWebhookConfigResourceImpl implements NGTriggerWebhookConfi
     }
   }
 
+  public ResponseDTO<NGProcessWebhookResponseDTO> processWebhookEventV2(@NotNull String accountIdentifier,
+      @NotNull String orgIdentifier, @NotNull String projectIdentifier, String pipelineIdentifier,
+      String triggerIdentifier, @NotNull String eventPayload, HttpHeaders httpHeaders) {
+    List<HeaderConfig> headerConfigs = new ArrayList<>();
+    httpHeaders.getRequestHeaders().forEach(
+        (k, v) -> headerConfigs.add(HeaderConfig.builder().key(k).values(v).build()));
+
+    TriggerWebhookEvent eventEntity =
+        ngTriggerElementMapper
+            .toNGTriggerWebhookEventForCustom(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier,
+                triggerIdentifier, eventPayload, headerConfigs)
+            .build();
+    if (eventEntity != null) {
+      triggerWebhookValidator.applyValidationsForCustomWebhook(eventEntity);
+      TriggerWebhookEvent newEvent = ngTriggerService.addEventToQueue(eventEntity);
+      String uuid = newEvent.getUuid();
+      return ResponseDTO.newResponse(
+          NGProcessWebhookResponseDTO.builder()
+              .eventCorrelationId(uuid)
+              .apiUrl(urlHelper.buildApiExecutionUrl(uuid, accountIdentifier))
+              .uiUrl(urlHelper.buildUiUrl(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier))
+              .uiSetupUrl(
+                  urlHelper.buildUiSetupUrl(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier))
+              .build());
+    } else {
+      return ResponseDTO.newResponse(
+          NGProcessWebhookResponseDTO.builder().eventCorrelationId(UNRECOGNIZED_WEBHOOK).build());
+    }
+  }
+
   public ResponseDTO<WebhookEventProcessingDetails> fetchWebhookDetails(
       @NotNull String accountIdentifier, @NotNull String eventId) {
     return ResponseDTO.newResponse(ngTriggerService.fetchTriggerEventHistory(accountIdentifier, eventId));
+  }
+
+  public ResponseDTO<WebhookExecutionDetails> fetchWebhookExecutionDetails(
+      @NotNull String eventId, @NotNull String accountIdentifier) {
+    WebhookEventProcessingDetails webhookProcessingDetails =
+        ngTriggerService.fetchTriggerEventHistory(accountIdentifier, eventId);
+    if (!webhookProcessingDetails.isEventFound()) {
+      throw new InvalidRequestException(String.format("Trigger event history %s does not exist", eventId));
+    }
+    Object executionDetails = null;
+    try {
+      executionDetails =
+          ngTriggerService.fetchExecutionSummaryV2(webhookProcessingDetails.getPipelineExecutionId(), accountIdentifier,
+              webhookProcessingDetails.getOrgIdentifier(), webhookProcessingDetails.getProjectIdentifier());
+    } catch (InvalidRequestException e) {
+      log.error(
+          String.format("Unable to find execution details for custom trigger with eventCorrelationId %s", eventId), e);
+    }
+    return ResponseDTO.newResponse(WebhookExecutionDetails.builder()
+                                       .webhookProcessingDetails(webhookProcessingDetails)
+                                       .executionDetails(executionDetails)
+                                       .build());
   }
 }

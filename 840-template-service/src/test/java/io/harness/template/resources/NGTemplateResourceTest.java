@@ -26,12 +26,15 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.customDeployment.remote.CustomDeploymentResourceClient;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.ChangeType;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.template.TemplateApplyRequestDTO;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ng.core.template.TemplateListType;
+import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ng.core.template.TemplateSummaryResponseDTO;
 import io.harness.pms.contracts.plan.YamlOutputProperties;
 import io.harness.pms.contracts.service.VariableMergeResponseProto;
@@ -94,6 +97,7 @@ public class NGTemplateResourceTest extends CategoryTest {
   @Inject VariablesServiceBlockingStub variablesServiceBlockingStub;
   @Mock TemplateYamlConversionHelper templateYamlConversionHelper;
   @Mock TemplateReferenceHelper templateReferenceHelper;
+  @Mock CustomDeploymentResourceClient customDeploymentResourceClient;
 
   private final String ACCOUNT_ID = "account_id";
   private final String ORG_IDENTIFIER = "orgId";
@@ -139,7 +143,8 @@ public class NGTemplateResourceTest extends CategoryTest {
     variablesServiceBlockingStub = VariablesServiceGrpc.newBlockingStub(channel);
 
     templateResource = new NGTemplateResource(templateService, templateServiceHelper, accessControlClient,
-        templateMergeService, variablesServiceBlockingStub, templateYamlConversionHelper, templateReferenceHelper);
+        templateMergeService, variablesServiceBlockingStub, templateYamlConversionHelper, templateReferenceHelper,
+        customDeploymentResourceClient);
     ClassLoader classLoader = this.getClass().getClassLoader();
     String filename = "template.yaml";
     yaml = Resources.toString(Objects.requireNonNull(classLoader.getResource(filename)), StandardCharsets.UTF_8);
@@ -361,5 +366,22 @@ public class NGTemplateResourceTest extends CategoryTest {
     verify(templateService)
         .validateIdentifierIsUnique(
             ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL);
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void testApplyTemplatesV2() {
+    TemplateMergeResponseDTO templateMergeResponseDTO =
+        TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build();
+    doReturn(templateMergeResponseDTO)
+        .when(templateMergeService)
+        .applyTemplatesToYamlV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml, false);
+
+    ResponseDTO<TemplateMergeResponseDTO> responseDTO = templateResource.applyTemplatesV2(ACCOUNT_ID, ORG_IDENTIFIER,
+        PROJ_IDENTIFIER, null, TemplateApplyRequestDTO.builder().originalEntityYaml(yaml).checkForAccess(true).build());
+    assertThat(responseDTO.getData()).isEqualTo(templateMergeResponseDTO);
+    verify(templateService)
+        .checkLinkedTemplateAccess(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, templateMergeResponseDTO);
   }
 }

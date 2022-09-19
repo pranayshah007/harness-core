@@ -10,7 +10,7 @@ package io.harness.cdng.azure.webapp;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
+import io.harness.cdng.azure.config.yaml.StartupCommandConfiguration;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 
 import lombok.Builder;
@@ -23,5 +23,5 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("startupCommandParameters")
 @RecasterAlias("io.harness.cdng.azure.webapp.StartupCommandParameters")
 public class StartupCommandParameters implements StepParameters {
-  StoreConfigWrapper startupCommand;
+  StartupCommandConfiguration startupCommand;
 }

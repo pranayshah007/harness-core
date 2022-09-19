@@ -7,7 +7,7 @@
 
 package io.harness.execution;
 
-import io.harness.annotation.StoreIn;
+import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.FdUniqueIndex;
@@ -25,11 +25,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
 @Builder
+@StoreIn(DbAliases.PMS)
 @Entity(value = "executionInputInstance", noClassnameStored = true)
 @Document("executionInputInstance")
 @FieldNameConstants(innerTypeName = "ExecutionInputInstanceKeys")
 @TypeAlias("executionInputInstance")
-@StoreIn(DbAliases.PMS)
 @OwnedBy(HarnessTeam.PIPELINE)
 public class ExecutionInputInstance {
   @Id @org.mongodb.morphia.annotations.Id String inputInstanceId;
@@ -38,5 +38,6 @@ public class ExecutionInputInstance {
   @CreatedDate Long validUntil;
   String template;
   String userInput;
+  String fieldYaml;
   Map<String, Object> mergedInputTemplate;
 }

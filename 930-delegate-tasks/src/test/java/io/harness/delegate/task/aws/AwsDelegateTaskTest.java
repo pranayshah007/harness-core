@@ -15,6 +15,7 @@ import static io.harness.rule.OwnerRule.VLICA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
@@ -28,6 +29,8 @@ import io.harness.aws.AwsClient;
 import io.harness.aws.AwsConfig;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectivityStatus;
+import io.harness.connector.task.aws.AwsNgConfigMapper;
+import io.harness.connector.task.aws.AwsValidationHandler;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.TaskData;
@@ -74,6 +77,7 @@ public class AwsDelegateTaskTest extends CategoryTest {
   @Mock private AwsIAMDelegateTaskHelper awsIAMDelegateTaskHelper;
   @Mock private AwsListEC2InstancesDelegateTaskHelper awsListEC2InstancesDelegateTaskHelper;
   @Mock private AwsASGDelegateTaskHelper awsASGDelegateTaskHelper;
+  @InjectMocks private AwsValidationHandler awsValidationHandler;
 
   @InjectMocks
   private AwsDelegateTask task =
@@ -164,10 +168,12 @@ public class AwsDelegateTaskTest extends CategoryTest {
   @Owner(developers = ACASIAN)
   @Category(UnitTests.class)
   public void testShouldHandleValidationTask() {
-    AwsConnectorDTO awsConnectorDTO =
-        AwsConnectorDTO.builder()
-            .credential(AwsCredentialDTO.builder().awsCredentialType(AwsCredentialType.INHERIT_FROM_DELEGATE).build())
-            .build();
+    AwsConnectorDTO awsConnectorDTO = AwsConnectorDTO.builder()
+                                          .credential(AwsCredentialDTO.builder()
+                                                          .awsCredentialType(AwsCredentialType.INHERIT_FROM_DELEGATE)
+                                                          .testRegion("us-east-1")
+                                                          .build())
+                                          .build();
     AwsTaskParams awsTaskParams = AwsTaskParams.builder()
                                       .awsConnector(awsConnectorDTO)
                                       .awsTaskType(AwsTaskType.VALIDATE)
@@ -175,7 +181,8 @@ public class AwsDelegateTaskTest extends CategoryTest {
                                       .build();
 
     AwsConfig awsConfig = AwsConfig.builder().build();
-    doReturn(awsConfig).when(awsNgConfigMapper).mapAwsConfigWithDecryption(any(), any(), any());
+    doReturn(awsConfig).when(awsNgConfigMapper).mapAwsConfigWithDecryption(any(), any());
+    on(task).set("awsValidationHandler", awsValidationHandler);
 
     DelegateResponseData result = task.run(awsTaskParams);
     assertThat(result).isNotNull();
@@ -185,8 +192,8 @@ public class AwsDelegateTaskTest extends CategoryTest {
         .isEqualTo(ConnectivityStatus.SUCCESS);
     assertThat(awsValidateTaskResponse.getConnectorValidationResult().getTestedAt()).isNotNull();
 
-    verify(awsNgConfigMapper, times(1)).mapAwsConfigWithDecryption(any(), any(), any());
-    verify(awsClient, times(1)).validateAwsAccountCredential(eq(awsConfig));
+    verify(awsNgConfigMapper, times(1)).mapAwsConfigWithDecryption(any(), any());
+    verify(awsClient, times(1)).validateAwsAccountCredential(eq(awsConfig), eq("us-east-1"));
   }
 
   @Test
@@ -195,7 +202,8 @@ public class AwsDelegateTaskTest extends CategoryTest {
   public void testShouldHandleValidationTaskIRSA() {
     AwsConnectorDTO awsConnectorDTO =
         AwsConnectorDTO.builder()
-            .credential(AwsCredentialDTO.builder().awsCredentialType(AwsCredentialType.IRSA).build())
+            .credential(
+                AwsCredentialDTO.builder().awsCredentialType(AwsCredentialType.IRSA).testRegion("us-east-1").build())
             .build();
     AwsTaskParams awsTaskParams = AwsTaskParams.builder()
                                       .awsConnector(awsConnectorDTO)
@@ -205,7 +213,8 @@ public class AwsDelegateTaskTest extends CategoryTest {
 
     AwsConfig awsConfig = AwsConfig.builder().isIRSA(true).build();
 
-    doReturn(awsConfig).when(awsNgConfigMapper).mapAwsConfigWithDecryption(any(), any(), any());
+    doReturn(awsConfig).when(awsNgConfigMapper).mapAwsConfigWithDecryption(any(), any());
+    on(task).set("awsValidationHandler", awsValidationHandler);
 
     DelegateResponseData result = task.run(awsTaskParams);
     assertThat(result).isNotNull();
@@ -216,8 +225,8 @@ public class AwsDelegateTaskTest extends CategoryTest {
     assertThat(awsValidateTaskResponse.getConnectorValidationResult().getTestedAt()).isNotNull();
     assertThat(awsConfig.isIRSA()).isEqualTo(true);
 
-    verify(awsNgConfigMapper, times(1)).mapAwsConfigWithDecryption(any(), any(), any());
-    verify(awsClient, times(1)).validateAwsAccountCredential(eq(awsConfig));
+    verify(awsNgConfigMapper, times(1)).mapAwsConfigWithDecryption(any(), any());
+    verify(awsClient, times(1)).validateAwsAccountCredential(eq(awsConfig), eq("us-east-1"));
   }
 
   @Test

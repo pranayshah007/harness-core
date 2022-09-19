@@ -186,6 +186,7 @@ public class WatcherServiceImpl implements WatcherService {
   private static final String FILE_HANDLES_LOGS_FOLDER = "file_handle_logs";
   private final String watcherJreVersion = System.getProperty("java.version");
   private long delegateRestartedToUpgradeJreAt;
+  private static String WatcherVersion;
 
   private static final String DELEGATE_NAME =
       isNotBlank(System.getenv().get("DELEGATE_NAME")) ? System.getenv().get("DELEGATE_NAME") : "";
@@ -253,16 +254,19 @@ public class WatcherServiceImpl implements WatcherService {
         log.info(message != null ? "[New] Got go-ahead. Proceeding"
                                  : "[New] Timed out waiting for go-ahead. Proceeding anyway");
       }
-      if (chronicleEventTailer != null) {
-        chronicleEventTailer.startAsync().awaitRunning();
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-          // needed to satisfy infer since chronicleEventTailer is not final and it's nullable so it could be null
-          // technically when the hook is executed.
-          if (chronicleEventTailer != null) {
-            chronicleEventTailer.stopAsync().awaitTerminated();
-          }
-        }));
-      }
+
+      watchExecutor.submit(() -> {
+        if (chronicleEventTailer != null) {
+          chronicleEventTailer.startAsync().awaitRunning();
+          Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            // needed to satisfy infer since chronicleEventTailer is not final and it's nullable so it could be null
+            // technically when the hook is executed.
+            if (chronicleEventTailer != null) {
+              chronicleEventTailer.stopAsync().awaitTerminated();
+            }
+          }));
+        }
+      });
       messageService.removeData(WATCHER_DATA, NEXT_WATCHER);
 
       log.info(upgrade ? "[New] Watcher upgraded" : "Watcher started");
@@ -286,8 +290,8 @@ public class WatcherServiceImpl implements WatcherService {
       }
 
       checkAccountStatus();
-      startUpgradeCheck();
       startWatching();
+      startUpgradeCheck();
       startMonitoringFileHandles();
 
       synchronized (waiter) {
@@ -444,7 +448,7 @@ public class WatcherServiceImpl implements WatcherService {
 
   private void startUpgradeCheck() {
     upgradeExecutor.scheduleWithFixedDelay(
-        new Schedulable("Error while checking for upgrades", this::syncCheckForWatcherUpgrade), 0,
+        new Schedulable("Error while checking for upgrades", this::syncCheckForWatcherUpgrade), 10,
         watcherConfiguration.getUpgradeCheckIntervalSeconds(), TimeUnit.SECONDS);
   }
 
@@ -1331,6 +1335,7 @@ public class WatcherServiceImpl implements WatcherService {
 
   @VisibleForTesting
   void checkForWatcherUpgrade() {
+    log.info("Checking for watcher upgrade");
     try {
       if (!watcherConfiguration.isDoUpgrade()) {
         log.info("Auto upgrade is disabled in watcher configuration");
@@ -1338,27 +1343,27 @@ public class WatcherServiceImpl implements WatcherService {
         return;
       }
     } catch (VersionInfoException e) {
+      log.error("Exception while reading watcher configuration ", e);
       return;
     }
     try {
       // TODO - if multiVersion use manager endpoint
       boolean upgrade = false;
-      String latestVersion = "";
+      String latestWatcherVersion = "";
       if (!watcherConfiguration.getDelegateCheckLocation().startsWith("file://")) {
-        String watcherMetadata = fetchLatestWatcherVersion();
-        latestVersion = substringBefore(watcherMetadata, " ").trim();
-        if (Pattern.matches("\\d\\.\\d\\.\\d{5,7}(-\\d{3})?", latestVersion)) {
-          upgrade = !StringUtils.equals(getVersion(), latestVersion);
+        latestWatcherVersion = substringBefore(fetchLatestWatcherVersion(), "-").trim();
+        if (Pattern.matches("\\d\\.\\d\\.\\d{5,7}(-\\d{3})?", latestWatcherVersion)) {
+          upgrade = !StringUtils.equals(getVersion(), latestWatcherVersion);
         }
       }
       if (upgrade) {
-        log.info("[Old] Upgrading watcher");
+        log.info("[Old] Upgrading watcher from version {} to version {}", getVersion(), latestWatcherVersion);
         working.set(true);
         final boolean isDownloaded = downloadRunScriptsBeforeRestartingDelegateAndWatcher();
         if (isDownloaded) {
-          upgradeWatcher(getVersion(), latestVersion);
+          upgradeWatcher(getVersion(), latestWatcherVersion);
         } else {
-          log.error("Failed to download run scripts before upgrading watcher to {}", latestVersion);
+          log.error("Failed to download run scripts before upgrading watcher to {}", latestWatcherVersion);
         }
       } else {
         log.info("Watcher up to date");
@@ -1384,7 +1389,9 @@ public class WatcherServiceImpl implements WatcherService {
         log.warn("Failed to fetch watcher version from Manager ", e);
       }
     }
-    return Http.getResponseStringFromUrl(watcherConfiguration.getUpgradeCheckLocation(), 10, 10);
+    final String watcherMetadata =
+        Http.getResponseStringFromUrl(watcherConfiguration.getUpgradeCheckLocation(), 10, 10);
+    return substringBefore(watcherMetadata, " ").trim();
   }
 
   private static void logConfigWatcherYml() {
@@ -1425,9 +1432,11 @@ public class WatcherServiceImpl implements WatcherService {
           if (message != null && message.getMessage().equals(WATCHER_STARTED)) {
             log.info(
                 "[Old] Retrieved watcher-started message from new watcher {}. Sending go-ahead", newWatcherProcess);
-            if (chronicleEventTailer != null) {
-              chronicleEventTailer.stopAsync().awaitTerminated();
-            }
+            watchExecutor.submit(() -> {
+              if (chronicleEventTailer != null) {
+                chronicleEventTailer.stopAsync().awaitTerminated();
+              }
+            });
             messageService.writeMessageToChannel(WATCHER, newWatcherProcess, WATCHER_GO_AHEAD);
             log.info("[Old] Watcher upgraded. Stopping");
             removeWatcherVersionFromCapsule(version, newVersion);
@@ -1527,7 +1536,10 @@ public class WatcherServiceImpl implements WatcherService {
 
   @VisibleForTesting
   String getVersion() {
-    return (new VersionInfoManager()).getVersionInfo().getVersion();
+    if (isEmpty(WatcherVersion)) {
+      WatcherVersion = (new VersionInfoManager()).getVersionInfo().getVersion();
+    }
+    return WatcherVersion;
   }
 
   private void migrate(String newUrl) {

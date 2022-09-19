@@ -65,6 +65,7 @@ public class GitStatusCheckHelper {
   private static final String AZURE_REPO_API_URL = "https://dev.azure.com/";
   private static final String AZURE_REPO_GENRE = "HarnessCI";
   private static final String PATH_SEPARATOR = "/";
+  private static final String GITLAB_GENRE = "Harness CI";
 
   private static final Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(2);
   private static final int MAX_ATTEMPTS = 3;
@@ -174,7 +175,7 @@ public class GitStatusCheckHelper {
   private boolean sendBuildStatusToGitLab(GitStatusCheckParams gitStatusCheckParams) {
     Map<String, Object> bodyObjectMap = new HashMap<>();
     bodyObjectMap.put(GitlabServiceImpl.DESC, gitStatusCheckParams.getDesc());
-    bodyObjectMap.put(GitlabServiceImpl.CONTEXT, gitStatusCheckParams.getIdentifier());
+    bodyObjectMap.put(GitlabServiceImpl.CONTEXT, GITLAB_GENRE + ": " + gitStatusCheckParams.getIdentifier());
     bodyObjectMap.put(GitlabServiceImpl.STATE, gitStatusCheckParams.getState());
     bodyObjectMap.put(GitlabServiceImpl.TARGET_URL, gitStatusCheckParams.getDetailsUrl());
 
@@ -270,8 +271,35 @@ public class GitStatusCheckHelper {
       return BITBUCKET_API_URL;
     } else {
       String domain = GitClientHelper.getGitSCM(url);
+      domain = fetchCustomBitbucketDomain(url, domain);
       return "https://" + domain + "/";
     }
+  }
+
+  private static String fetchCustomBitbucketDomain(String url, String domain) {
+    final String SCM_SPLITTER = "/scm";
+    String[] splits = url.split(domain);
+    if (splits.length <= 1) {
+      // URL only contains the domain
+      return domain;
+    }
+
+    String scmString = splits[1];
+    if (!scmString.contains(SCM_SPLITTER)) {
+      // Remaining URL does not contain the custom splitter string
+      // Fallback to the original domain
+      return domain;
+    }
+
+    String[] endpointSplits = scmString.split(SCM_SPLITTER);
+    if (endpointSplits.length == 0) {
+      // URL does not have anything after the splitter
+      // as well as between domain and splitter
+      return domain;
+    }
+
+    String customEndpoint = endpointSplits[0];
+    return domain + customEndpoint;
   }
 
   private String getGitlabApiURL(String url) {

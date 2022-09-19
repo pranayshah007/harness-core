@@ -297,11 +297,15 @@ public class ApiKeyServiceImpl implements ApiKeyService {
   }
 
   @Override
-  public void validate(String apiKey, String accountId) {
+  public Boolean validate(String apiKey, String accountId) {
+    if (isEmpty(apiKey) || isEmpty(accountId)) {
+      return false;
+    }
     ApiKeyEntry apiKeyEntry = getApiKeyFromCacheOrDB(apiKey, accountId, true);
     if (apiKeyEntry == null) {
       throw new UnauthorizedException("Invalid Api Key", USER);
     }
+    return true;
   }
 
   @Override
@@ -340,6 +344,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
         }
       } catch (Exception ex) {
         // If there was any exception, remove that entry from cache
+        log.error("Exception while fetching the apiKeyEntry from cache", ex);
         apiKeyCache.remove(getKeyForAPIKeyCache(accountId, apiKey));
         apiKeyEntry = getByKeyFromDB(apiKey, accountId, details);
         if (apiKeyEntry != null) {
@@ -362,15 +367,32 @@ public class ApiKeyServiceImpl implements ApiKeyService {
         apiKeyPermissionInfo = apiKeyPermissionInfoCache.get(getKeyForAPIKeyCache(accountId, apiKey));
         if (apiKeyPermissionInfo == null) {
           apiKeyPermissionInfo = authHandler.evaluateUserPermissionInfo(accountId, apiKeyEntry.getUserGroups(), null);
+          logApiKeyPermissions(apiKeyPermissionInfo);
           apiKeyPermissionInfoCache.put(getKeyForAPIKeyCache(accountId, apiKey), apiKeyPermissionInfo);
         }
       } catch (Exception ex) {
         // If there was any exception, remove that entry from cache
+        log.info("Encountered exception while getting api key permissions for the accountId [{}]", accountId);
         apiKeyPermissionInfoCache.remove(getKeyForAPIKeyCache(accountId, apiKey));
         apiKeyPermissionInfo = authHandler.evaluateUserPermissionInfo(accountId, apiKeyEntry.getUserGroups(), null);
+        logApiKeyPermissions(apiKeyPermissionInfo);
         apiKeyPermissionInfoCache.put(getKeyForAPIKeyCache(accountId, apiKey), apiKeyPermissionInfo);
       }
       return apiKeyPermissionInfo;
+    }
+  }
+
+  private void logApiKeyPermissions(UserPermissionInfo apiKeyPermissionInfo) {
+    try {
+      if (apiKeyPermissionInfo.getAppPermissionMap().isEmpty()) {
+        log.error("Api key app permission map is empty");
+      }
+      if (apiKeyPermissionInfo.getAccountPermissionSummary() == null
+          || apiKeyPermissionInfo.getAccountPermissionSummary().getPermissions().isEmpty()) {
+        log.error("Api key account permission set is empty");
+      }
+    } catch (Exception e) {
+      log.error("Exception while getting account permission set", e);
     }
   }
 
@@ -392,6 +414,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
         }
       } catch (Exception ex) {
         // If there was any exception, remove that entry from cache
+        log.info("Encountered exception while getting api key restrictions for the accountId [{}]", accountId);
         apiKeyRestrictionInfoCache.remove(getKeyForAPIKeyCache(accountId, apiKey));
         apiKeyPermissionInfo =
             authService.getUserRestrictionInfoFromDB(accountId, userPermissionInfo, apiKeyEntry.getUserGroups());
@@ -488,10 +511,9 @@ public class ApiKeyServiceImpl implements ApiKeyService {
   @Override
   public Boolean isApiKeyValid(String apiKey, String accountId) {
     try {
-      validate(apiKey, accountId);
+      return validate(apiKey, accountId);
     } catch (UnauthorizedException | InvalidRequestException exception) {
       return false;
     }
-    return true;
   }
 }

@@ -9,18 +9,28 @@ package io.harness.mappers.instanceinfo;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.dtos.instanceinfo.AwsSshWinrmInstanceInfoDTO;
+import io.harness.dtos.instanceinfo.AzureSshWinrmInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.AzureWebAppInstanceInfoDTO;
+import io.harness.dtos.instanceinfo.CustomDeploymentInstanceInfoDTO;
+import io.harness.dtos.instanceinfo.EcsInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.GitOpsInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.InstanceInfoDTO;
 import io.harness.dtos.instanceinfo.K8sInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.NativeHelmInstanceInfoDTO;
+import io.harness.dtos.instanceinfo.PdcInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.ReferenceInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.ServerlessAwsLambdaInstanceInfoDTO;
+import io.harness.entities.instanceinfo.AwsSshWinrmInstanceInfo;
+import io.harness.entities.instanceinfo.AzureSshWinrmInstanceInfo;
 import io.harness.entities.instanceinfo.AzureWebAppNGInstanceInfo;
+import io.harness.entities.instanceinfo.CustomDeploymentInstanceInfo;
+import io.harness.entities.instanceinfo.EcsInstanceInfo;
 import io.harness.entities.instanceinfo.GitopsInstanceInfo;
 import io.harness.entities.instanceinfo.InstanceInfo;
 import io.harness.entities.instanceinfo.K8sInstanceInfo;
 import io.harness.entities.instanceinfo.NativeHelmInstanceInfo;
+import io.harness.entities.instanceinfo.PdcInstanceInfo;
 import io.harness.entities.instanceinfo.ReferenceInstanceInfo;
 import io.harness.entities.instanceinfo.ServerlessAwsLambdaInstanceInfo;
 import io.harness.exception.InvalidRequestException;
@@ -43,6 +53,16 @@ public class InstanceInfoMapper {
       return GitOpsInstanceInfoMapper.toDTO((GitopsInstanceInfo) instanceInfo);
     } else if (instanceInfo instanceof AzureWebAppNGInstanceInfo) {
       return AzureWebAppInstanceInfoMapper.toDTO((AzureWebAppNGInstanceInfo) instanceInfo);
+    } else if (instanceInfo instanceof EcsInstanceInfo) {
+      return EcsInstanceInfoMapper.toDTO((EcsInstanceInfo) instanceInfo);
+    } else if (instanceInfo instanceof PdcInstanceInfo) {
+      return PdcInstanceInfoMapper.toDTO((PdcInstanceInfo) instanceInfo);
+    } else if (instanceInfo instanceof AzureSshWinrmInstanceInfo) {
+      return AzureSshWinrmInstanceInfoMapper.toDTO((AzureSshWinrmInstanceInfo) instanceInfo);
+    } else if (instanceInfo instanceof AwsSshWinrmInstanceInfo) {
+      return AwsSshWinrmInstanceInfoMapper.toDTO((AwsSshWinrmInstanceInfo) instanceInfo);
+    } else if (instanceInfo instanceof CustomDeploymentInstanceInfo) {
+      return CustomDeploymentInstanceInfoMapper.toDTO((CustomDeploymentInstanceInfo) instanceInfo);
     }
     throw new InvalidRequestException("No InstanceInfoMapper toDTO found for instanceInfo : {}" + instanceInfo);
   }
@@ -60,6 +80,16 @@ public class InstanceInfoMapper {
       return GitOpsInstanceInfoMapper.toEntity((GitOpsInstanceInfoDTO) instanceInfoDTO);
     } else if (instanceInfoDTO instanceof AzureWebAppInstanceInfoDTO) {
       return AzureWebAppInstanceInfoMapper.toEntity((AzureWebAppInstanceInfoDTO) instanceInfoDTO);
+    } else if (instanceInfoDTO instanceof EcsInstanceInfoDTO) {
+      return EcsInstanceInfoMapper.toEntity((EcsInstanceInfoDTO) instanceInfoDTO);
+    } else if (instanceInfoDTO instanceof PdcInstanceInfoDTO) {
+      return PdcInstanceInfoMapper.toEntity((PdcInstanceInfoDTO) instanceInfoDTO);
+    } else if (instanceInfoDTO instanceof AzureSshWinrmInstanceInfoDTO) {
+      return AzureSshWinrmInstanceInfoMapper.toEntity((AzureSshWinrmInstanceInfoDTO) instanceInfoDTO);
+    } else if (instanceInfoDTO instanceof AwsSshWinrmInstanceInfoDTO) {
+      return AwsSshWinrmInstanceInfoMapper.toEntity((AwsSshWinrmInstanceInfoDTO) instanceInfoDTO);
+    } else if (instanceInfoDTO instanceof CustomDeploymentInstanceInfoDTO) {
+      return CustomDeploymentInstanceInfoMapper.toEntity((CustomDeploymentInstanceInfoDTO) instanceInfoDTO);
     }
     throw new InvalidRequestException(
         "No InstanceInfoMapper toEntity found for instanceInfoDTO : {}" + instanceInfoDTO);

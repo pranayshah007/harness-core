@@ -59,6 +59,6 @@ public class PVCFetcher {
     }
 
     log.warn("PVC not found in PVCInformerStore, fetching using coreV1Api.");
-    return this.coreV1Api.readNamespacedPersistentVolumeClaim(name, namespace, null, null, null);
+    return this.coreV1Api.readNamespacedPersistentVolumeClaim(name, namespace, null);
   }
 }
