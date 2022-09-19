@@ -48,7 +48,6 @@ import static software.wings.sm.ContextElement.DEPLOYMENT_URL;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 
-import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
 import io.harness.ff.FeatureFlagService;
 
@@ -56,7 +55,6 @@ import software.wings.beans.EntityType;
 import software.wings.beans.ServiceTemplate;
 import software.wings.beans.ServiceVariable;
 import software.wings.beans.ServiceVariable.ServiceVariableKeys;
-import software.wings.beans.ServiceVariableType;
 import software.wings.beans.SubEntityType;
 import software.wings.beans.artifact.Artifact.ArtifactKeys;
 import software.wings.service.intfc.AppService;
@@ -350,23 +348,6 @@ public abstract class ExpressionBuilder {
       serviceVariablePageRequest.addFilter("entityType", EQ, entityType);
     }
     List<ServiceVariable> serviceVariables = serviceVariablesService.list(serviceVariablePageRequest, MASKED);
-
-    String accountId = appService.getAccountIdByAppId(appId);
-    if (featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId)) {
-      Set<String> serviceVariableMentions = new HashSet<>();
-      serviceVariables.forEach(serviceVariable -> {
-        if (ServiceVariableType.ARTIFACT == serviceVariable.getType()) {
-          String artifactMentions = "artifacts." + serviceVariable.getName();
-          serviceVariableMentions.add(artifactMentions);
-          for (String suffix : getArtifactExpressionSuffixes()) {
-            serviceVariableMentions.add(artifactMentions + suffix);
-          }
-        } else {
-          serviceVariableMentions.add("serviceVariable." + serviceVariable.getName());
-        }
-      });
-      return serviceVariableMentions;
-    }
 
     return serviceVariables.stream()
         .map(serviceVariable -> "serviceVariable." + serviceVariable.getName())
