@@ -1369,9 +1369,10 @@ public class WatcherServiceImpl implements WatcherService {
         log.info("Watcher up to date");
       }
     } catch (Exception e) {
-      working.set(false);
       log.error("Exception while checking for upgrade", e);
       logConfigWatcherYml();
+    } finally {
+      working.set(false);
     }
   }
 
