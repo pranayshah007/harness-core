@@ -34,12 +34,12 @@ public class BQConst {
       + "GROUP BY  azureInstanceId, azureVMProviderId, azureMeterCategory; ";
 
   public static final String GCP_VM_BILLING_QUERY =
-      "SELECT %s as productFamily, SUM(cost) as cost, MAX(usage.amount_in_pricing_units) as gcpRate, resource.name as gcpResourceName, service.description gcpServiceName "
+      "SELECT %s as productfamily, SUM(cost) as cost, MAX(usage.amount_in_pricing_units) as gcpRate, resource.name as gcpResourceName, service.description gcpServiceName "
       + "FROM `%s` "
       + "WHERE DATE(_PARTITIONTIME) >= Date('%s') and "
       + "%s and "
       + "usage_start_time >= '%s' and usage_end_time <= '%s' and %s "
-      + "group by gcpResourceName, gcpServiceName, productFamily";
+      + "group by gcpResourceName, gcpServiceName, productfamily";
 
   public static final String GCP_DESCRIPTION_CONDITION = "(sku.description like '%E2 Instance Core running%' OR "
       + "sku.description like '%RAM cost%' OR "
