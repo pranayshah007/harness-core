@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javax.validation.constraints.NotNull;
+import org.hibernate.validator.constraints.NotBlank;
 import org.hibernate.validator.constraints.NotEmpty;
 import retrofit2.Call;
 import retrofit2.http.Body;
@@ -54,6 +55,11 @@ public interface ConnectorResourceClient {
       @Query(NGResourceFilterConstants.PAGE_KEY) int page, @Query(NGResourceFilterConstants.SIZE_KEY) int size,
       @Body ConnectorFilterPropertiesDTO connectorListFilter,
       @Query("getDistinctFromBranches") Boolean getDistinctFromBranches);
+
+  @POST(CONNECTORS_API)
+  Call<ResponseDTO<ConnectorResponseDTO>> createConnector(
+      @NotBlank @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @NotNull @Body ConnectorDTO connector);
 
   @POST(CONNECTORS_API + "/testConnectionInternal/{identifier}")
   Call<ResponseDTO<ConnectorValidationResult>> testConnectionInternal(

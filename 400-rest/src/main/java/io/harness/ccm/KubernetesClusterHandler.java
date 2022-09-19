@@ -15,7 +15,16 @@ import static software.wings.security.GenericEntityFilter.FilterType.ALL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.config.CCMConfig;
+import io.harness.connector.ConnectorDTO;
+import io.harness.connector.ConnectorInfoDTO;
+import io.harness.connector.ConnectorResourceClient;
 import io.harness.delegate.beans.Delegate;
+import io.harness.delegate.beans.connector.CEFeatures;
+import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.cek8s.CEKubernetesClusterConfigDTO;
+import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO;
+import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialDTO;
+import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialType;
 import io.harness.event.handler.impl.segment.SegmentHelper;
 
 import software.wings.beans.KubernetesClusterConfig;
@@ -40,10 +49,45 @@ import lombok.extern.slf4j.Slf4j;
 public class KubernetesClusterHandler implements DelegateObserver {
   @Inject SettingsService settingsService;
   @Inject SegmentHelper segmentHelper;
+  @Inject ConnectorResourceClient connectorResourceClient;
 
   @Override
   public void onAdded(Delegate delegate) {
-    createKubernetes(delegate);
+    if (delegate.isNg()) {
+      // create NextGen CD-K8s connector
+      connectorResourceClient.createConnector(delegate.getAccountId(),
+          ConnectorDTO.builder()
+              .connectorInfo(
+                  ConnectorInfoDTO.builder()
+                      .connectorType(ConnectorType.KUBERNETES_CLUSTER)
+                      .name(delegate.getDelegateName())
+                      .identifier(delegate.getDelegateName())
+                      .connectorConfig(
+                          KubernetesClusterConfigDTO.builder()
+                              .delegateSelectors(ImmutableSet.of(delegate.getDelegateName()))
+                              .credential(KubernetesCredentialDTO.builder()
+                                              .kubernetesCredentialType(KubernetesCredentialType.INHERIT_FROM_DELEGATE)
+                                              .build())
+                              .build())
+                      .build())
+              .build());
+
+      // create NextGen CE-K8s connector
+      connectorResourceClient.createConnector(delegate.getAccountId(),
+          ConnectorDTO.builder()
+              .connectorInfo(ConnectorInfoDTO.builder()
+                                 .connectorType(ConnectorType.CE_KUBERNETES_CLUSTER)
+                                 .connectorConfig(CEKubernetesClusterConfigDTO.builder()
+                                                      .connectorRef(delegate.getDelegateName())
+                                                      .featuresEnabled(Collections.singletonList(CEFeatures.VISIBILITY))
+                                                      .build())
+                                 .identifier(delegate.getDelegateName() + "Costaccess")
+                                 .name(delegate.getDelegateName() + "-Cost-access")
+                                 .build())
+              .build());
+    } else {
+      createKubernetes(delegate);
+    }
     segmentHelper.enqueue(TrackMessage.builder("Delegate Connected")
                               .properties(ImmutableMap.<String, Object>builder()
                                               .put("accountId", delegate.getAccountId())
