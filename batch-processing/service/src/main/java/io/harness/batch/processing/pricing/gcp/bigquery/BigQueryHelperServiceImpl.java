@@ -197,13 +197,16 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
         double networkCost = 0;
         if (vmInstanceServiceBillingData.getProductFamily().equalsIgnoreCase("CPU Cost")) {
           cpuCost = vmInstanceBillingData.getCpuCost();
+          log.info("Existing CPU cost: {} for resourceId: {}", cpuCost, resourceId);
           cpuCost += vmInstanceServiceBillingData.getCost();
         } else if (vmInstanceServiceBillingData.getProductFamily().equalsIgnoreCase("RAM Cost")) {
           ramCost = vmInstanceBillingData.getMemoryCost();
+          log.info("Existing MemoryCost cost: {} for resourceId: {}", ramCost, resourceId);
           ramCost += vmInstanceServiceBillingData.getCost();
         }
         if (vmInstanceServiceBillingData.getProductFamily().equalsIgnoreCase("Network Cost")) {
           networkCost = vmInstanceBillingData.getNetworkCost();
+          log.info("Existing network cost: {} for resourceId: {}", networkCost, resourceId);
           networkCost += vmInstanceServiceBillingData.getCost();
         }
 
