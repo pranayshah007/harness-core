@@ -49,7 +49,6 @@ import io.harness.delegate.task.gitapi.client.impl.AzureRepoApiClient;
 import io.harness.delegate.task.gitapi.client.impl.GithubApiClient;
 import io.harness.delegate.task.gitapi.client.impl.GitlabApiClient;
 import io.harness.delegate.task.shell.ShellExecutorFactoryNG;
-import io.harness.delegate.task.shell.ShellScriptTaskResponseNG;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.git.model.CommitAndPushRequest;
@@ -297,12 +296,10 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
     }
   }
 
-  public DelegateResponseData handleCreatePR(
-      NGGitOpsTaskParams gitOpsTaskParams) {
+  public DelegateResponseData handleCreatePR(NGGitOpsTaskParams gitOpsTaskParams) {
     CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
     logCallback = new NGDelegateLogCallback(getLogStreamingTaskClient(), MergePR, true, commandUnitsProgress);
     try {
-
       log.info("Running Create PR Task for activityId {}", gitOpsTaskParams.getActivityId());
       FetchFilesResult fetchFilesResult = getFiles(gitOpsTaskParams, commandUnitsProgress);
       List<GitFile> fetchFilesResultFiles = fetchFilesResult.getFiles();
