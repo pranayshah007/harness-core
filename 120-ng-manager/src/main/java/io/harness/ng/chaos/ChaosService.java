@@ -9,4 +9,6 @@ package io.harness.ng.chaos;
 
 public interface ChaosService {
   String applyK8sManifest(ChaosK8sRequest chaosK8sRequest);
+
+  void notifyStep(String notifyId, ChaosStepNotifyData data);
 }

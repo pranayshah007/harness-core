@@ -127,4 +127,5 @@ public class EntityYamlRootNames {
   public static final String AZURE_CREATE_BP_RESOURCE_STEP = "AzureCreateBPResource";
   public static final String AZURE_ROLLBACK_ARM_RESOURCE_STEP = "AzureARMRollback";
   public static final String WAIT_STEP = "Wait";
+  public static final String CHAOS_STEP = "Chaos";
 }

@@ -50,4 +50,17 @@ public class ChaosK8sResource {
     String taskId = chaosService.applyK8sManifest(request);
     return ResponseDTO.newResponse(taskId);
   }
+
+  @POST
+  @Path("/notify")
+  @InternalApi
+  @ApiOperation(value = "Notify on completion of chaos experiment", nickname = "chaosStepNotify", hidden = true)
+  public ResponseDTO<Boolean> chaosStepNotify(@Body ChaosStepNotifyResponse stepNotifyResponse) {
+    try {
+      chaosService.notifyStep(stepNotifyResponse.getNotifyId(), stepNotifyResponse.getData());
+      return ResponseDTO.newResponse(true);
+    } catch (Exception e) {
+      return ResponseDTO.newResponse(true);
+    }
+  }
 }

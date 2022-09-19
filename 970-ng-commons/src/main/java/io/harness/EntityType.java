@@ -310,7 +310,9 @@ public enum EntityType {
   WAIT_STEP(ModuleType.PMS, EntityTypeConstants.WAIT_STEP, IdentifierRef.class, EntityYamlRootNames.WAIT_STEP),
   @JsonProperty(EntityTypeConstants.ARTIFACT_SOURCE_TEMPLATE)
   ARTIFACT_SOURCE_TEMPLATE(ModuleType.TEMPLATESERVICE, EntityTypeConstants.ARTIFACT_SOURCE_TEMPLATE,
-      NGTemplateReference.class, EntityYamlRootNames.TEMPLATE);
+      NGTemplateReference.class, EntityYamlRootNames.TEMPLATE),
+  @JsonProperty(EntityTypeConstants.CHAOS_STEP)
+  CHAOS_STEP(ModuleType.CHAOS, EntityTypeConstants.CHAOS_STEP, IdentifierRef.class, EntityYamlRootNames.CHAOS_STEP);
 
   private final ModuleType moduleType;
   String yamlName;

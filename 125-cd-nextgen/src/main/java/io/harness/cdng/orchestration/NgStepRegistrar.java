@@ -172,6 +172,10 @@ public class NgStepRegistrar {
     engineSteps.put(MultiDeploymentSpawnerStep.STEP_TYPE, MultiDeploymentSpawnerStep.class);
     engineSteps.put(AzureCreateBPStep.STEP_TYPE, AzureCreateBPStep.class);
     engineSteps.put(AzureARMRollbackStep.STEP_TYPE, AzureARMRollbackStep.class);
+
+    // Chaos
+    // TODO : Enable this for UI
+    // engineSteps.put(ChaosStep.STEP_TYPE, ChaosStep.class);
     return engineSteps;
   }
 }

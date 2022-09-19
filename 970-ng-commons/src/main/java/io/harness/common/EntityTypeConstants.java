@@ -119,4 +119,5 @@ public interface EntityTypeConstants {
   String AZURE_ROLLBACK_ARM_RESOURCE_STEP = "AzureARMRollback";
   String WAIT_STEP = "Wait";
   String ARTIFACT_SOURCE_TEMPLATE = "ArtifactSource";
+  String CHAOS_STEP = "Chaos";
 }

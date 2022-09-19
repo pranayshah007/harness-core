@@ -47,6 +47,11 @@ public class ChaosServiceImpl implements ChaosService {
   private final String K8S_APPLY_COMMAND_NAME = "K8s Apply";
 
   @Override
+  public void notifyStep(String notifyId, ChaosStepNotifyData data) {
+    waitNotifyEngine.doneWith(notifyId, data);
+  }
+
+  @Override
   public String applyK8sManifest(ChaosK8sRequest chaosK8sRequest) {
     String chaosUid = generateUuid();
     LinkedHashMap<String, String> logAbstractions = buildLogAbstractions(chaosK8sRequest, chaosUid);
