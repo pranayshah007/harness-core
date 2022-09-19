@@ -10,10 +10,7 @@ package io.harness.licensing.api.resource;
 import com.google.inject.Inject;
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
-import io.harness.licensing.beans.modules.AccountLicenseDTO;
-import io.harness.licensing.beans.modules.ModuleLicenseDTO;
-import io.harness.licensing.beans.modules.SMPDecLicenseDTO;
-import io.harness.licensing.beans.modules.SMPEncLicenseDTO;
+import io.harness.licensing.beans.modules.*;
 import io.harness.licensing.services.LicenseService;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
@@ -53,10 +50,10 @@ public class SMPLicenseResource {
     @Path("validate/{accountIdentifier}")
     @InternalApi
     @ApiOperation(value = "Validate License Under Account", nickname = "validateSMPLicense", hidden = true)
-    public ResponseDTO<SMPDecLicenseDTO> validateSMPLicense(
+    public ResponseDTO<SMPValidationResultDTO> validateSMPLicense(
             @PathParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
             @NotNull @Valid SMPEncLicenseDTO licenseDTO) {
-        SMPDecLicenseDTO decryptedLicense = licenseService.validateSMPLicense(licenseDTO);
+        SMPValidationResultDTO decryptedLicense = licenseService.validateSMPLicense(licenseDTO);
         return ResponseDTO.newResponse(decryptedLicense);
     }
 

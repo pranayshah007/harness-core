@@ -9,9 +9,8 @@ package io.harness.licensing.mappers;
 
 import io.harness.licensing.beans.modules.SMPDecLicenseDTO;
 import io.harness.licensing.beans.modules.SMPEncLicenseDTO;
+import io.harness.licensing.beans.modules.SMPValidationResultDTO;
 import io.harness.smp.license.models.*;
-
-import java.util.UUID;
 
 public class SMPLicenseMapper {
 
@@ -39,6 +38,26 @@ public class SMPLicenseMapper {
         return SMPLicense.builder()
                 .licenseMeta(licenseMeta)
                 .moduleLicenses(decLicenseDTO.getModuleLicenses())
+                .build();
+    }
+
+    public SMPDecLicenseDTO toSMPDecLicenseDTO(SMPLicense smpLicense) {
+        return SMPDecLicenseDTO.builder()
+                .companyName(smpLicense.getLicenseMeta().getAccountDTO().getCompanyName())
+                .accountIdentifier(smpLicense.getLicenseMeta().getAccountDTO().getIdentifier())
+                .accountName(smpLicense.getLicenseMeta().getAccountDTO().getName())
+                .libraryVersion(smpLicense.getLicenseMeta().getLibraryVersion().name())
+                .licenseVersion(String.valueOf(smpLicense.getLicenseMeta().getLicenseVersion()))
+                .moduleLicenses(smpLicense.getModuleLicenses())
+                .build();
+    }
+
+    public SMPValidationResultDTO toSMPValidationResultDTO(SMPLicenseValidationResult validationResult) {
+        SMPDecLicenseDTO licenseDto = toSMPDecLicenseDTO(validationResult.getSmpLicense());
+        return SMPValidationResultDTO.builder()
+                .licenseDTO(licenseDto)
+                .isValid(validationResult.isValid())
+                .message(validationResult.getResultMessage())
                 .build();
     }
 

@@ -10,10 +10,7 @@ package io.harness.licensing.services;
 import io.harness.ModuleType;
 import io.harness.licensing.Edition;
 import io.harness.licensing.beans.EditionActionDTO;
-import io.harness.licensing.beans.modules.ModuleLicenseDTO;
-import io.harness.licensing.beans.modules.SMPDecLicenseDTO;
-import io.harness.licensing.beans.modules.SMPEncLicenseDTO;
-import io.harness.licensing.beans.modules.StartTrialDTO;
+import io.harness.licensing.beans.modules.*;
 import io.harness.licensing.beans.response.CheckExpiryResultDTO;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 
@@ -44,7 +41,7 @@ public interface LicenseService extends LicenseCrudService {
 
   List<ModuleLicenseDTO> getAllModuleLicences(String accountIdentifier);
 
-  SMPDecLicenseDTO validateSMPLicense(SMPEncLicenseDTO licenseDTO);
+  SMPValidationResultDTO validateSMPLicense(SMPEncLicenseDTO licenseDTO);
 
   SMPEncLicenseDTO generateSMPLicense(String accountId);
 
