@@ -25,6 +25,8 @@ import software.wings.beans.User;
 import software.wings.security.UserThreadLocal;
 import software.wings.service.intfc.HarnessUserGroupService;
 
+import com.codahale.metrics.annotation.ExceptionMetered;
+import com.codahale.metrics.annotation.Timed;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
@@ -33,8 +35,10 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import lombok.extern.slf4j.Slf4j;
+import retrofit2.http.Query;
 
 @Api("feature-flag")
 @Path("/feature-flag")
@@ -71,6 +75,14 @@ public class FeatureFlagResource {
               ResponseMessage.builder().message("User not allowed get list of feature flags ").build()))
           .build();
     }
+  }
+
+  @GET
+  @Path("/feature-flag-enabled")
+  @Timed
+  @ExceptionMetered
+  public RestResponse<Boolean> isFeatureFlagEnabled(@QueryParam("featureName") String featureName) {
+    return new RestResponse<>(featureFlagService.isGlobalEnabled(FeatureName.valueOf(featureName)));
   }
 
   @GET

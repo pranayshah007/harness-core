@@ -177,6 +177,15 @@ public class AccountResource {
   }
 
   @GET
+  @Path("feature-enabled")
+  @Timed
+  @ExceptionMetered
+  @LearningEngineAuth
+  public RestResponse<Boolean> isFeatureFlagEnabled(@QueryParam("featureName") String featureName) {
+    return new RestResponse<>(accountService.isFeatureFlagEnabled(featureName));
+  }
+
+  @GET
   @Path("services-cv-24x7")
   @Timed
   @ExceptionMetered
