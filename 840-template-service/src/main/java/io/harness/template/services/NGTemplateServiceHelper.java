@@ -564,13 +564,11 @@ public class NGTemplateServiceHelper {
       if (templateVariablesJson != null && templateVariablesJson.getNodeType() == JsonNodeType.ARRAY) {
         ArrayNode templateVariableArray = (ArrayNode) templateVariablesJson;
         for (JsonNode variable : templateVariableArray) {
+          String name = variable.get(YAMLFieldNameConstants.NAME).asText();
           variableMergeServiceResponse.getMetadataMap().put(generateUuid(),
               VariableMergeServiceResponse.VariableResponseMapValue.builder()
-                  .yamlProperties(YamlProperties.newBuilder()
-                                      .setLocalName(variable.get("name").asText())
-                                      .setFqn(variable.get("name").asText())
-                                      .setVariableName(variable.get("name").asText())
-                                      .build())
+                  .yamlProperties(
+                      YamlProperties.newBuilder().setLocalName(name).setFqn(name).setVariableName(name).build())
                   .build());
         }
       }
