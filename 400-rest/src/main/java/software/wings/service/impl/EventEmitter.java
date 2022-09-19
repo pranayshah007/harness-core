@@ -71,8 +71,6 @@ public class EventEmitter {
      */
     ACTIVITIES("activities", "ui", ResourceType.ENVIRONMENT),
 
-    DELEGATES("delegates", "ui", null);
-
     private String channelName;
     private ResourceType permission;
     private String target;
