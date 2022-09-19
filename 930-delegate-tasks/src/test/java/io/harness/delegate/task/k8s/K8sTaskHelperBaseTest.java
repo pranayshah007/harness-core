@@ -41,6 +41,7 @@ import static io.harness.logging.LogLevel.WARN;
 import static io.harness.rule.OwnerRule.ABHINAV2;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACASIAN;
+import static io.harness.rule.OwnerRule.ACHYUTH;
 import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.ARVIND;
@@ -174,9 +175,10 @@ import io.harness.k8s.model.Kind;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
-import io.harness.k8s.model.Release;
-import io.harness.k8s.model.ReleaseHistory;
 import io.harness.k8s.model.response.CEK8sDelegatePrerequisite;
+import io.harness.k8s.releasehistory.IK8sRelease;
+import io.harness.k8s.releasehistory.K8sLegacyRelease;
+import io.harness.k8s.releasehistory.ReleaseHistory;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -384,8 +386,8 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
 
     List<KubernetesResourceId> kubernetesResourceIdList = getKubernetesResourceIdList("1");
     ReleaseHistory releaseHistory = ReleaseHistory.createNew();
-    releaseHistory.setReleases(
-        asList(Release.builder().status(Release.Status.Succeeded).resources(kubernetesResourceIdList).build()));
+    releaseHistory.setReleases(asList(
+        K8sLegacyRelease.builder().status(IK8sRelease.Status.Succeeded).resources(kubernetesResourceIdList).build()));
 
     String releaseHistoryString = releaseHistory.getAsYaml();
     doReturn(releaseHistoryString)
@@ -455,8 +457,8 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     doReturn(configMap).when(mockKubernetesContainerService).getConfigMap(any(), eq(releaseName));
 
     ReleaseHistory releaseHistorySecret = ReleaseHistory.createNew();
-    releaseHistorySecret.setReleases(asList(Release.builder()
-                                                .status(Release.Status.Succeeded)
+    releaseHistorySecret.setReleases(asList(K8sLegacyRelease.builder()
+                                                .status(IK8sRelease.Status.Succeeded)
                                                 .resources(getKubernetesResourceIdList("-from-secret"))
                                                 .build()));
 
@@ -465,8 +467,10 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     secret.getData().put(ReleaseHistoryKeyName, releaseHistoryString.getBytes());
 
     ReleaseHistory releaseHistoryConfigMap = ReleaseHistory.createNew();
-    releaseHistoryConfigMap.setReleases(asList(
-        Release.builder().status(Release.Status.Succeeded).resources(getKubernetesResourceIdList("-from-cm")).build()));
+    releaseHistoryConfigMap.setReleases(asList(K8sLegacyRelease.builder()
+                                                   .status(IK8sRelease.Status.Succeeded)
+                                                   .resources(getKubernetesResourceIdList("-from-cm"))
+                                                   .build()));
 
     configMap.getData().put(ReleaseHistoryKeyName, releaseHistoryConfigMap.getAsYaml());
 
@@ -522,8 +526,8 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
 
     List<KubernetesResourceId> kubernetesResourceIdList = getKubernetesResourceIdList("1");
     ReleaseHistory releaseHistory = ReleaseHistory.createNew();
-    releaseHistory.setReleases(
-        asList(Release.builder().status(Release.Status.Succeeded).resources(kubernetesResourceIdList).build()));
+    releaseHistory.setReleases(asList(
+        K8sLegacyRelease.builder().status(IK8sRelease.Status.Succeeded).resources(kubernetesResourceIdList).build()));
 
     String releaseHistoryString = releaseHistory.getAsYaml();
     doReturn(releaseHistoryString).when(mockKubernetesContainerService).fetchReleaseHistoryValue(any(V1Secret.class));
@@ -776,7 +780,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     String RANDOM = "RANDOM";
     K8sDelegateTaskParams k8sDelegateTaskParams = K8sDelegateTaskParams.builder().workingDirectory(RANDOM).build();
     GetJobCommand jobStatusCommand = spy(new GetJobCommand(null, null, null));
-    doReturn(null).when(jobStatusCommand).execute(RANDOM, null, null, false);
+    doReturn(null).when(jobStatusCommand).execute(RANDOM, null, null, false, Collections.emptyMap());
 
     shouldFailWhenCompletedJobCommandFailed(RANDOM, k8sDelegateTaskParams, jobStatusCommand, false);
     shouldFailWhenCompletedTimeCommandFailed(RANDOM, k8sDelegateTaskParams, jobStatusCommand, false);
@@ -792,7 +796,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     String RANDOM = "RANDOM";
     K8sDelegateTaskParams k8sDelegateTaskParams = K8sDelegateTaskParams.builder().workingDirectory(RANDOM).build();
     GetJobCommand jobStatusCommand = spy(new GetJobCommand(null, null, null));
-    doReturn(null).when(jobStatusCommand).execute(RANDOM, null, null, false);
+    doReturn(null).when(jobStatusCommand).execute(RANDOM, null, null, false, Collections.emptyMap());
 
     shouldFailWhenCompletedJobCommandFailed(RANDOM, k8sDelegateTaskParams, jobStatusCommand, true);
     shouldFailWhenCompletedTimeCommandFailed(RANDOM, k8sDelegateTaskParams, jobStatusCommand, true);
@@ -808,8 +812,8 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     GetJobCommand jobFailedCommand = spy(new GetJobCommand(null, null, null));
     ProcessResult jobFailedResult = new ProcessResult(1, new ProcessOutput("Something went wrong".getBytes()));
 
-    doReturn(jobStatusResult).when(jobCompletionStatus).execute(RANDOM, null, null, false);
-    doReturn(jobFailedResult).when(jobFailedCommand).execute(RANDOM, null, null, false);
+    doReturn(jobStatusResult).when(jobCompletionStatus).execute(RANDOM, null, null, false, Collections.emptyMap());
+    doReturn(jobFailedResult).when(jobFailedCommand).execute(RANDOM, null, null, false, Collections.emptyMap());
     doReturn("kubectl --kubeconfig=file get").when(jobFailedCommand).command();
 
     if (isErrorFrameworkEnabled) {
@@ -839,8 +843,10 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     GetJobCommand jobCompletionCommand = spy(new GetJobCommand(null, null, null));
     ProcessResult jobCompletionTimeResult = new ProcessResult(1, new ProcessOutput("Something went wrong".getBytes()));
 
-    doReturn(jobStatusResult).when(jobCompletionStatus).execute(RANDOM, null, null, false);
-    doReturn(jobCompletionTimeResult).when(jobCompletionCommand).execute(RANDOM, null, null, false);
+    doReturn(jobStatusResult).when(jobCompletionStatus).execute(RANDOM, null, null, false, Collections.emptyMap());
+    doReturn(jobCompletionTimeResult)
+        .when(jobCompletionCommand)
+        .execute(RANDOM, null, null, false, Collections.emptyMap());
     doReturn("kubectl --kubeconfig=file get").when(jobCompletionCommand).command();
 
     if (isErrorFrameworkEnabled) {
@@ -870,8 +876,8 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     GetJobCommand jobFailedCommand = spy(new GetJobCommand(null, null, null));
     ProcessResult jobFailedResult = new ProcessResult(0, new ProcessOutput("True".getBytes()));
 
-    doReturn(jobStatusResult).when(jobCompletionStatus).execute(RANDOM, null, null, false);
-    doReturn(jobFailedResult).when(jobFailedCommand).execute(RANDOM, null, null, false);
+    doReturn(jobStatusResult).when(jobCompletionStatus).execute(RANDOM, null, null, false, Collections.emptyMap());
+    doReturn(jobFailedResult).when(jobFailedCommand).execute(RANDOM, null, null, false, Collections.emptyMap());
 
     if (isErrorFrameworkEnabled) {
       assertThatThrownBy(()
@@ -901,8 +907,10 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     GetJobCommand jobCompletionCommand = spy(new GetJobCommand(null, null, null));
     ProcessResult jobCompletionTimeResult = new ProcessResult(0, new ProcessOutput("time".getBytes()));
 
-    doReturn(jobStatusResult).when(jobCompletionStatus).execute(RANDOM, null, null, false);
-    doReturn(jobCompletionTimeResult).when(jobCompletionCommand).execute(RANDOM, null, null, false);
+    doReturn(jobStatusResult).when(jobCompletionStatus).execute(RANDOM, null, null, false, Collections.emptyMap());
+    doReturn(jobCompletionTimeResult)
+        .when(jobCompletionCommand)
+        .execute(RANDOM, null, null, false, Collections.emptyMap());
 
     assertThat(k8sTaskHelperBase.getJobStatus(k8sDelegateTaskParams, null, null, jobCompletionStatus, null,
                    jobStatusCommand, jobCompletionCommand, isErrorFrameworkEnabled))
@@ -914,7 +922,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     GetJobCommand jobCompletionStatus = spy(new GetJobCommand(null, null, null));
     ProcessResult jobStatusResult = new ProcessResult(1, new ProcessOutput("Something went wrong".getBytes()));
 
-    doReturn(jobStatusResult).when(jobCompletionStatus).execute(RANDOM, null, null, false);
+    doReturn(jobStatusResult).when(jobCompletionStatus).execute(RANDOM, null, null, false, Collections.emptyMap());
     doReturn("kubectl --kubeconfig=file get").when(jobCompletionStatus).command();
 
     if (isErrorFrameworkEnabled) {
@@ -985,10 +993,10 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
 
   private void cleanUpAllOlderReleases() throws Exception {
     final ReleaseHistory releaseHistory = ReleaseHistory.createNew();
-    releaseHistory.getReleases().add(K8sTestHelper.buildRelease(Release.Status.Succeeded, 3));
-    releaseHistory.getReleases().add(K8sTestHelper.buildRelease(Release.Status.Succeeded, 2));
-    releaseHistory.getReleases().add(K8sTestHelper.buildRelease(Release.Status.Succeeded, 1));
-    releaseHistory.getReleases().add(K8sTestHelper.buildRelease(Release.Status.Succeeded, 0));
+    releaseHistory.getReleases().add(K8sTestHelper.buildRelease(IK8sRelease.Status.Succeeded, 3));
+    releaseHistory.getReleases().add(K8sTestHelper.buildRelease(IK8sRelease.Status.Succeeded, 2));
+    releaseHistory.getReleases().add(K8sTestHelper.buildRelease(IK8sRelease.Status.Succeeded, 1));
+    releaseHistory.getReleases().add(K8sTestHelper.buildRelease(IK8sRelease.Status.Succeeded, 0));
     ProcessResponse response = ProcessResponse.builder().processResult(K8sTestHelper.buildProcessResult(0)).build();
     doReturn(response).when(spyK8sTaskHelperBase).runK8sExecutable(any(), any(), any());
     spyK8sTaskHelperBase.cleanup(Kubectl.client("kubectl", "kubeconfig"), K8sDelegateTaskParams.builder().build(),
@@ -1003,10 +1011,10 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
 
   private void cleanUpIfMultipleFailedReleases() throws Exception {
     final ReleaseHistory releaseHistory = ReleaseHistory.createNew();
-    releaseHistory.getReleases().add(K8sTestHelper.buildRelease(Release.Status.Failed, 3));
-    releaseHistory.getReleases().add(K8sTestHelper.buildRelease(Release.Status.Failed, 2));
-    releaseHistory.getReleases().add(K8sTestHelper.buildRelease(Release.Status.Succeeded, 1));
-    releaseHistory.getReleases().add(K8sTestHelper.buildRelease(Release.Status.Failed, 0));
+    releaseHistory.getReleases().add(K8sTestHelper.buildRelease(IK8sRelease.Status.Failed, 3));
+    releaseHistory.getReleases().add(K8sTestHelper.buildRelease(IK8sRelease.Status.Failed, 2));
+    releaseHistory.getReleases().add(K8sTestHelper.buildRelease(IK8sRelease.Status.Succeeded, 1));
+    releaseHistory.getReleases().add(K8sTestHelper.buildRelease(IK8sRelease.Status.Failed, 0));
     ProcessResponse response = ProcessResponse.builder().processResult(K8sTestHelper.buildProcessResult(0)).build();
     doReturn(response).when(spyK8sTaskHelperBase).runK8sExecutable(any(), any(), any());
     spyK8sTaskHelperBase.cleanup(Kubectl.client("kubectl", "kubeconfig"), K8sDelegateTaskParams.builder().build(),
@@ -1021,10 +1029,10 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
 
   private void cleanUpIfOnly1FailedRelease() throws Exception {
     final ReleaseHistory releaseHistory = ReleaseHistory.createNew();
-    releaseHistory.getReleases().add(Release.builder()
+    releaseHistory.getReleases().add(K8sLegacyRelease.builder()
                                          .number(0)
                                          .resources(asList(K8sTestHelper.deployment().getResourceId()))
-                                         .status(Release.Status.Failed)
+                                         .status(IK8sRelease.Status.Failed)
                                          .build());
     k8sTaskHelperBase.cleanup(
         mock(Kubectl.class), K8sDelegateTaskParams.builder().build(), releaseHistory, executionLogCallback);
@@ -2046,7 +2054,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     K8sDelegateTaskParams k8sDelegateTaskParams = K8sDelegateTaskParams.builder().workingDirectory("pwd").build();
     doReturn(getResources).when(client).get();
     doReturn("kubectl --kubeconfig=test").when(client).command();
-    doReturn(executeResult).when(getResources).execute("pwd", null, null, false);
+    doReturn(executeResult).when(getResources).execute("pwd", null, null, false, Collections.emptyMap());
     doReturn(getResources).when(getResources).resources("foo/test1");
     doReturn(getResources).when(getResources).resources("bar/test2");
     doReturn(getResources).when(getResources).resources("boo/test3");
@@ -2898,6 +2906,40 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     verify(helmTaskHelperBase, times(1))
         .printHelmChartInfoInExecutionLogs(manifestDelegateConfig, executionLogCallback);
     verify(helmTaskHelperBase, times(1)).downloadChartFilesFromHttpRepo(manifestDelegateConfig, "manifest", 9000L);
+  }
+
+  @Test
+  @Owner(developers = ACHYUTH)
+  @Category(UnitTests.class)
+  public void testFetchManifestFilesAndWriteToDirectoryHttpHelmEnvVar() throws Exception {
+    K8sTaskHelperBase spyTaskHelperBase = spy(k8sTaskHelperBase);
+    HttpHelmStoreDelegateConfig httpStoreDelegateConfig = HttpHelmStoreDelegateConfig.builder()
+                                                              .repoName("repoName")
+                                                              .repoDisplayName("Repo Name")
+                                                              .httpHelmConnector(HttpHelmConnectorDTO.builder().build())
+                                                              .build();
+
+    HelmChartManifestDelegateConfig manifestDelegateConfig = HelmChartManifestDelegateConfig.builder()
+                                                                 .chartName("chartName")
+                                                                 .chartVersion("1.0.0")
+                                                                 .storeDelegateConfig(httpStoreDelegateConfig)
+                                                                 .helmVersion(HelmVersion.V3)
+                                                                 .build();
+
+    doReturn("/helm-working-dir/").when(helmTaskHelperBase).getHelmLocalRepositoryPath();
+    doReturn(true).when(helmTaskHelperBase).isHelmLocalRepoSet();
+    doReturn("/helm-working-dir/repoName")
+        .when(helmTaskHelperBase)
+        .getHelmLocalRepositoryCompletePath(any(), any(), any());
+    doReturn(true).when(helmTaskHelperBase).doesChartExistInLocalRepo(any(), any(), any());
+    doNothing().when(spyTaskHelperBase).copyHelmChartFolderToWorkingDir(any(), any());
+    doReturn("list of files").when(spyTaskHelperBase).getManifestFileNamesInLogFormat("manifest");
+
+    boolean result = spyTaskHelperBase.fetchManifestFilesAndWriteToDirectory(
+        manifestDelegateConfig, "manifest", executionLogCallback, 9000L, "accountId");
+
+    assertThat(result).isTrue();
+    verify(spyTaskHelperBase, times(1)).getManifestFileNamesInLogFormat(anyString());
   }
 
   @Test

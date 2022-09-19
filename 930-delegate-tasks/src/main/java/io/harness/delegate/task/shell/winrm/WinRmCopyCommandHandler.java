@@ -11,13 +11,15 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.delegate.task.shell.winrm.WinRmCommandConstants.SESSION_TIMEOUT;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT_HINT;
-import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_CONFIG_FILE_PROVIDED;
-import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_CONFIG_FILE_PROVIDED_EXPLANATION;
-import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_CONFIG_FILE_PROVIDED_HINT;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_DESTINATION_PATH_SPECIFIED;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_DESTINATION_PATH_SPECIFIED_EXPLANATION;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_DESTINATION_PATH_SPECIFIED_HINT;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.UNDECRYPTABLE_CONFIG_FILE_PROVIDED;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.UNDECRYPTABLE_CONFIG_FILE_PROVIDED_EXPLANATION;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.UNDECRYPTABLE_CONFIG_FILE_PROVIDED_HINT;
+import static io.harness.logging.CommandExecutionStatus.RUNNING;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
+import static io.harness.logging.LogLevel.INFO;
 
 import static software.wings.common.Constants.WINDOWS_HOME_DIR;
 
@@ -45,6 +47,7 @@ import io.harness.delegate.task.winrm.WinRmSessionConfig;
 import io.harness.delegate.task.winrm.WinRmSessionConfig.WinRmSessionConfigBuilder;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
+import io.harness.exception.runtime.SshCommandExecutionException;
 import io.harness.exception.runtime.WinRmCommandExecutionException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogLevel;
@@ -52,12 +55,13 @@ import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.shell.ExecuteCommandResponse;
 import io.harness.ssh.FileSourceType;
 
-import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -123,11 +127,21 @@ public class WinRmCopyCommandHandler implements CommandHandler {
       CopyCommandUnit copyCommandUnit, FileBasedWinRmExecutorNG executor) {
     CommandExecutionStatus result = CommandExecutionStatus.SUCCESS;
     List<ConfigFileParameters> configFiles = getConfigFileParameters(winRmCommandTaskParameters);
+    executor.saveExecutionLog(format("Begin execution of command: %s", copyCommandUnit.getName()), INFO, RUNNING);
     for (ConfigFileParameters configFile : configFiles) {
       log.info(format("Copying config file : %s, isEncrypted: %b", configFile.getFileName(), configFile.isEncrypted()));
       if (configFile.isEncrypted()) {
-        SecretConfigFile secretConfigFile = (SecretConfigFile) secretDecryptionService.decrypt(
-            configFile.getSecretConfigFile(), configFile.getEncryptionDataDetails());
+        SecretConfigFile secretConfigFile;
+        try {
+          secretConfigFile = (SecretConfigFile) secretDecryptionService.decrypt(
+              configFile.getSecretConfigFile(), configFile.getEncryptionDataDetails());
+        } catch (Exception e) {
+          throw NestedExceptionUtils.hintWithExplanationException(
+              format(UNDECRYPTABLE_CONFIG_FILE_PROVIDED_HINT, configFile.getFileName()),
+              format(UNDECRYPTABLE_CONFIG_FILE_PROVIDED_EXPLANATION, configFile.getFileName()),
+              new SshCommandExecutionException(format(UNDECRYPTABLE_CONFIG_FILE_PROVIDED, configFile.getFileName())));
+        }
+
         String fileData = new String(secretConfigFile.getEncryptedConfigFile().getDecryptedValue());
         configFile.setFileContent(fileData);
         configFile.setFileSize(fileData.getBytes(StandardCharsets.UTF_8).length);
@@ -139,6 +153,7 @@ public class WinRmCopyCommandHandler implements CommandHandler {
         break;
       }
     }
+    executor.saveExecutionLog("Command execution finished with status " + result, LogLevel.INFO, result);
     return result;
   }
 
@@ -147,7 +162,7 @@ public class WinRmCopyCommandHandler implements CommandHandler {
     log.info("About to copy artifact");
     if (taskParameters.getArtifactDelegateConfig() instanceof SkipCopyArtifactDelegateConfig) {
       log.info("Artifactory docker registry found, skipping copy artifact.");
-      executor.saveExecutionLog("Command finished with status " + SUCCESS, LogLevel.INFO, SUCCESS);
+      executor.saveExecutionLog("Command execution finished with status " + SUCCESS, LogLevel.INFO, SUCCESS);
       return SUCCESS;
     }
     if (taskParameters.getArtifactDelegateConfig() instanceof CustomArtifactDelegateConfig) {
@@ -170,8 +185,7 @@ public class WinRmCopyCommandHandler implements CommandHandler {
 
   private List<ConfigFileParameters> getConfigFileParameters(WinrmTaskParameters winrmTaskParameters) {
     if (winrmTaskParameters.getFileDelegateConfig() == null) {
-      throw NestedExceptionUtils.hintWithExplanationException(NO_CONFIG_FILE_PROVIDED_HINT,
-          NO_CONFIG_FILE_PROVIDED_EXPLANATION, new WinRmCommandExecutionException(NO_CONFIG_FILE_PROVIDED));
+      return Collections.emptyList();
     }
 
     return winrmTaskParameters.getFileDelegateConfig()
@@ -179,8 +193,7 @@ public class WinRmCopyCommandHandler implements CommandHandler {
         .stream()
         .filter(storeDelegateConfig -> StoreDelegateConfigType.HARNESS.equals(storeDelegateConfig.getType()))
         .map(storeDelegateConfig -> (HarnessStoreDelegateConfig) storeDelegateConfig)
-        .findFirst()
-        .map(harnessStoreDelegateConfig -> Lists.newArrayList(harnessStoreDelegateConfig.getConfigFiles()))
-        .orElse(Lists.newArrayList());
+        .flatMap(harnessStoreDelegateConfig -> harnessStoreDelegateConfig.getConfigFiles().stream())
+        .collect(Collectors.toList());
   }
 }

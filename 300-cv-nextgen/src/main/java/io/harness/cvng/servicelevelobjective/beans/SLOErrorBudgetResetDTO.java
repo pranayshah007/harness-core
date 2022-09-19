@@ -7,11 +7,13 @@
 
 package io.harness.cvng.servicelevelobjective.beans;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
+@Schema(name = "SLOErrorBudgetReset", description = "This is the SLO Error Budget Reset entity defined in Harness")
 public class SLOErrorBudgetResetDTO {
   String serviceLevelObjectiveIdentifier;
   @Deprecated Double errorBudgetIncrementPercentage;

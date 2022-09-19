@@ -29,6 +29,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldDefaults;
 import org.hibernate.validator.constraints.NotBlank;
+import org.hibernate.validator.constraints.URL;
 
 @OwnedBy(CDC)
 @Data
@@ -39,7 +40,7 @@ import org.hibernate.validator.constraints.NotBlank;
 @ApiModel("NexusConnector")
 @Schema(name = "NexusConnector", description = "Nexus Connector details.")
 public class NexusConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable {
-  @NotNull @NotBlank String nexusServerUrl;
+  @URL @NotNull @NotBlank String nexusServerUrl;
   @NotNull @NotBlank String version;
   @Valid NexusAuthenticationDTO auth;
   Set<String> delegateSelectors;

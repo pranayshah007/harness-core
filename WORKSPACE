@@ -1022,8 +1022,8 @@ go_repository(
 go_repository(
     name = "com_github_drone_go_scm",
     importpath = "github.com/drone/go-scm",
-    sum = "h1:Fk0PoJGQ2xjJEnXej3uYpuAzroaUsGN6Bpt8k+l/atM=",
-    version = "v1.27.1-0.20220908090541-7ee0aa5806a5",
+    sum = "h1:H2nUtly+xsrVMlbmI2a+C9okAjgEYThL9wb4FgIXglg=",
+    version = "v1.27.1-0.20220914214843-b1a365cc57af",
 )
 
 go_repository(
@@ -4663,9 +4663,10 @@ plain_artifacts = [
     "io.grpc:grpc-services:1.48.0",
     "io.grpc:grpc-stub:1.48.0",
     "io.gsonfire:gson-fire:1.8.3",
-    "io.harness.cv:data-collection-dsl:0.39-RELEASE",
+    "io.harness.cv:data-collection-dsl:0.41-RELEASE",
     "io.harness:ff-java-server-sdk:1.0.5.1",
-    "io.harness:ng-manager-server-spec:1.0.10",
+    "io.harness:access-control-server-spec:1.0.7",
+    "io.harness:ng-manager-server-spec:1.0.16",
     "io.jsonwebtoken:jjwt:0.9.1",
     "io.kubernetes:client-java-api:16.0.0",
     "io.kubernetes:client-java-extended:16.0.0",
@@ -5027,12 +5028,12 @@ plain_artifacts = [
 
 amazon_artifacts = [
     maven.artifact(
-        group = "com.amazonaws",
         artifact = x,
-        version = "1.12.261",
         exclusions = [
             "commons-logging:commons-logging",
         ],
+        group = "com.amazonaws",
+        version = "1.12.261",
     )
     for x in [
         "aws-java-sdk-applicationautoscaling",
@@ -5067,12 +5068,12 @@ amazon_artifacts = [
 
 amazon_v2_artifacts = [
     maven.artifact(
-        group = "software.amazon.awssdk",
         artifact = x,
-        version = "2.17.220",
         exclusions = [
             "commons-logging:commons-logging",
         ],
+        group = "software.amazon.awssdk",
+        version = "2.17.220",
     )
     for x in [
         "ecs",
@@ -5088,10 +5089,10 @@ amazon_v2_artifacts = [
 
 powermock_artifacts = [
     maven.artifact(
-        group = "org.powermock",
-        artifact = x,
-        version = "2.0.2",
         testonly = True,
+        artifact = x,
+        group = "org.powermock",
+        version = "2.0.2",
     )
     for x in [
         "powermock-api-mockito2",
@@ -5107,94 +5108,94 @@ maven_install(
     name = "maven",
     artifacts = plain_artifacts + amazon_artifacts + amazon_v2_artifacts + powermock_artifacts + [
         maven.artifact(
-            group = "io.netty",
             artifact = "netty-transport-native-kqueue",
-            version = "4.1.77.Final",
             classifier = "osx-x86_64",
+            group = "io.netty",
+            version = "4.1.77.Final",
         ),
         maven.artifact(
-            group = "com.github.reinert",
             artifact = "jjschema",
-            version = "1.0",
             exclusions = [
                 "javax.ws.rs:jsr311-api",
             ],
+            group = "com.github.reinert",
+            version = "1.0",
         ),
         maven.artifact(
-            group = "com.google.apis",
             artifact = "google-api-services-container",
-            version = "v1-rev48-1.23.0",
             exclusions = [
                 "com.google.guava:guava-jdk5",
             ],
+            group = "com.google.apis",
+            version = "v1-rev48-1.23.0",
         ),
         maven.artifact(
-            group = "com.microsoft.azure",
             artifact = "azure",
-            version = "1.31.1",
             exclusions = [
                 "org.slf4j:slf4j-simple",
             ],
+            group = "com.microsoft.azure",
+            version = "1.31.1",
         ),
         maven.artifact(
-            group = "org.clojure",
             artifact = "clojure",
+            exclusions = [
+                "org.clojure:clojure",
+            ],
+            group = "org.clojure",
             version = "1.9.0",
-            exclusions = [
-                "org.clojure:clojure",
-            ],
         ),
         maven.artifact(
-            group = "org.clojure",
             artifact = "core.specs.alpha",
-            version = "0.1.24",
             exclusions = [
                 "org.clojure:clojure",
             ],
-        ),
-        maven.artifact(
             group = "org.clojure",
+            version = "0.1.24",
+        ),
+        maven.artifact(
             artifact = "spec.alpha",
-            version = "0.1.143",
             exclusions = [
                 "org.clojure:clojure",
             ],
+            group = "org.clojure",
+            version = "0.1.143",
         ),
         maven.artifact(
-            group = "io.debezium",
             artifact = "debezium-embedded",
+            exclusions = [
+                "log4j:log4j",
+                "org.slf4j:slf4j-log4j12",
+            ],
+            group = "io.debezium",
             version = "1.7.2.Final",
-            exclusions = [
-                "log4j:log4j",
-                "org.slf4j:slf4j-log4j12",
-            ],
         ),
         maven.artifact(
-            group = "org.apache.kafka",
             artifact = "connect-runtime",
-            version = "2.8.1",
             exclusions = [
                 "log4j:log4j",
                 "org.slf4j:slf4j-log4j12",
             ],
+            group = "org.apache.kafka",
+            version = "2.8.1",
         ),
         maven.artifact(
-            group = "org.opensaml",
             artifact = "opensaml-saml-impl",
-            version = "3.4.3",
             exclusions = [
                 "org.apache.velocity:velocity-engine-core",
                 "org.apache.velocity:velocity",
             ],
+            group = "org.opensaml",
+            version = "3.4.3",
         ),
         maven.artifact(
-            group = "com.coveo",
             artifact = "saml-client",
-            version = "3.0.2",
             exclusions = [
                 "org.apache.velocity:velocity-engine-core",
                 "org.apache.velocity:velocity",
             ],
+            group = "com.coveo",
+            version = "3.0.2",
         ),
         maven_test_artifact("com.github.tomakehurst:wiremock-jre8-standalone:2.27.2"),
         maven_test_artifact("com.icegreen:greenmail:1.5.0"),
@@ -5317,13 +5318,13 @@ maven_install(
         "io.debezium:debezium-connector-mongodb:1.8.0.Final",
         "io.debezium:debezium-core:1.8.0.Final",
         maven.artifact(
-            group = "io.debezium",
             artifact = "debezium-embedded",
-            version = "1.8.0.Final",
             exclusions = [
                 "log4j:log4j",
                 "org.slf4j:slf4j-log4j12",
             ],
+            group = "io.debezium",
+            version = "1.8.0.Final",
         ),
     ],
     repositories = [
@@ -5531,3 +5532,29 @@ go_repository(
     sum = "h1:1jLE2y0VpSrOn/QR9G4f2RmrCtkM3AuATcWradjHUvM=",
     version = "v1.3.0",
 )
+
+# Contrib rules jvm for build cleaner.
+http_archive(
+    name = "contrib_rules_jvm",
+    sha256 = "a939cd04da2deee16131898d91d8e23559dcd1a30a5128beac30a2b01b33c94f",
+    strip_prefix = "rules_jvm-0.4.0",
+    url = "https://github.com/bazel-contrib/rules_jvm/archive/v0.4.0.tar.gz",
+)
+
+# Fetches the contrib_rules_jvm dependencies.
+# If you want to have a different version of some dependency,
+# you should fetch it *before* calling this.
+load("@contrib_rules_jvm//:repositories.bzl", "contrib_rules_jvm_deps", "contrib_rules_jvm_gazelle_deps")
+
+contrib_rules_jvm_deps()
+
+contrib_rules_jvm_gazelle_deps()
+
+# Now ensure that the downloaded deps are properly configured
+load("@contrib_rules_jvm//:setup.bzl", "contrib_rules_jvm_setup")
+
+contrib_rules_jvm_setup()
+
+load("@contrib_rules_jvm//:gazelle_setup.bzl", "contib_rules_jvm_gazelle_setup")
+
+contib_rules_jvm_gazelle_setup()

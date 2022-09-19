@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.cdng.pipeline.steps;
 
 import static io.harness.steps.SdkCoreStepUtils.createStepResponseFromChildResponse;
@@ -60,12 +67,14 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
       int currentIteration = 0;
       int totalIterations = environmentsMapList.size();
       int maxConcurrency = 1;
-      if (stepParameters.getEnvironments().getEnvironmentsMetadata().getParallel() != null
+      if (stepParameters.getEnvironments().getEnvironmentsMetadata() != null
+          && stepParameters.getEnvironments().getEnvironmentsMetadata().getParallel() != null
           && stepParameters.getEnvironments().getEnvironmentsMetadata().getParallel()) {
         maxConcurrency = 0;
       }
       for (Map<String, String> environmentMap : environmentsMapList) {
-        children.add(getChild(childNodeId, currentIteration, totalIterations, environmentMap));
+        children.add(getChild(childNodeId, currentIteration, totalIterations, environmentMap,
+            MultiDeploymentSpawnerUtils.MULTI_ENV_DEPLOYMENT));
         currentIteration++;
       }
       return ChildrenExecutableResponse.newBuilder().addAllChildren(children).setMaxConcurrency(maxConcurrency).build();
@@ -75,20 +84,24 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
       int currentIteration = 0;
       int totalIterations = servicesMap.size();
       int maxConcurrency = 1;
-      if (stepParameters.getServices().getServicesMetadata().getParallel() != null
+      if (stepParameters.getServices().getServicesMetadata() != null
+          && stepParameters.getServices().getServicesMetadata().getParallel() != null
           && stepParameters.getServices().getServicesMetadata().getParallel()) {
         maxConcurrency = 0;
       }
       for (Map<String, String> serviceMap : servicesMap) {
-        children.add(getChild(childNodeId, currentIteration, totalIterations, serviceMap));
+        children.add(getChild(childNodeId, currentIteration, totalIterations, serviceMap,
+            MultiDeploymentSpawnerUtils.MULTI_SERVICE_DEPLOYMENT));
         currentIteration++;
       }
       return ChildrenExecutableResponse.newBuilder().addAllChildren(children).setMaxConcurrency(maxConcurrency).build();
     }
 
-    boolean isServiceParallel = stepParameters.getServices().getServicesMetadata().getParallel() != null
+    boolean isServiceParallel = stepParameters.getServices().getServicesMetadata() != null
+        && stepParameters.getServices().getServicesMetadata().getParallel() != null
         && stepParameters.getServices().getServicesMetadata().getParallel();
-    boolean isEnvironmentParallel = stepParameters.getEnvironments().getEnvironmentsMetadata().getParallel() != null
+    boolean isEnvironmentParallel = stepParameters.getEnvironments().getEnvironmentsMetadata() != null
+        && stepParameters.getEnvironments().getEnvironmentsMetadata().getParallel() != null
         && stepParameters.getEnvironments().getEnvironmentsMetadata().getParallel();
     int currentIteration = 0;
     int totalIterations = servicesMap.size() + environmentsMapList.size();
@@ -117,20 +130,29 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
       }
     } else {
       maxConcurrency = 1;
+      for (Map<String, String> environmentMap : environmentsMapList) {
+        for (Map<String, String> serviceMap : servicesMap) {
+          children.add(
+              getChildForMultiServiceInfra(childNodeId, currentIteration, totalIterations, serviceMap, environmentMap));
+          currentIteration++;
+        }
+      }
     }
     // Todo: Add support for environment group
     return ChildrenExecutableResponse.newBuilder().addAllChildren(children).setMaxConcurrency(maxConcurrency).build();
   }
 
   private ChildrenExecutableResponse.Child getChild(
-      String childNodeId, int currentIteration, int totalIterations, Map<String, String> serviceMap) {
+      String childNodeId, int currentIteration, int totalIterations, Map<String, String> serviceMap, String subType) {
     return ChildrenExecutableResponse.Child.newBuilder()
         .setChildNodeId(childNodeId)
-        .setStrategyMetadata(StrategyMetadata.newBuilder()
-                                 .setCurrentIteration(currentIteration)
-                                 .setTotalIterations(totalIterations)
-                                 .setMatrixMetadata(MatrixMetadata.newBuilder().putAllMatrixValues(serviceMap).build())
-                                 .build())
+        .setStrategyMetadata(
+            StrategyMetadata.newBuilder()
+                .setCurrentIteration(currentIteration)
+                .setTotalIterations(totalIterations)
+                .setMatrixMetadata(
+                    MatrixMetadata.newBuilder().setSubType(subType).putAllMatrixValues(serviceMap).build())
+                .build())
         .build();
   }
 
@@ -139,7 +161,15 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
     Map<String, String> matrixMetadataMap = new HashMap<>();
     matrixMetadataMap.putAll(serviceMap);
     matrixMetadataMap.putAll(environmentMap);
-    return getChild(childNodeId, currentIteration, totalIterations, matrixMetadataMap);
+    String subType;
+    if (environmentMap.isEmpty()) {
+      subType = MultiDeploymentSpawnerUtils.MULTI_SERVICE_DEPLOYMENT;
+    } else if (serviceMap.isEmpty()) {
+      subType = MultiDeploymentSpawnerUtils.MULTI_ENV_DEPLOYMENT;
+    } else {
+      subType = MultiDeploymentSpawnerUtils.MULTI_SERVICE_ENV_DEPLOYMENT;
+    }
+    return getChild(childNodeId, currentIteration, totalIterations, matrixMetadataMap, subType);
   }
 
   private List<Map<String, String>> getEnvironmentMapList(EnvironmentsYaml environmentsYaml) {

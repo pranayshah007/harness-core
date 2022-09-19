@@ -17,7 +17,6 @@ import static software.wings.beans.yaml.YamlConstants.YAML_EXTENSION;
 
 import static com.google.common.base.Charsets.UTF_8;
 
-import io.harness.beans.FeatureName;
 import io.harness.delegate.beans.FileBucket;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
@@ -191,22 +190,14 @@ public class EntityUpdateServiceImpl implements EntityUpdateService {
     }
 
     boolean isNonLeafEntity;
-    if (!featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId)) {
-      isNonLeafEntity = yamlHandlerFactory.isNonLeafEntity(entity);
-    } else {
-      isNonLeafEntity = yamlHandlerFactory.isNonLeafEntityWithFeatureFlag(entity);
-    }
+    isNonLeafEntity = yamlHandlerFactory.isNonLeafEntity(entity);
     boolean isEntityNeedsActualFile = yamlHandlerFactory.isEntityNeedsActualFile(entity);
     if (changeType != ChangeType.DELETE && !isEntityNeedsActualFile) {
       yaml = yamlResourceService.obtainEntityYamlVersion(accountId, entity).getResource().getYaml();
     }
 
     String yamlFileName;
-    if (!featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId)) {
-      yamlFileName = yamlHandlerFactory.obtainYamlFileName(entity);
-    } else {
-      yamlFileName = yamlHandlerFactory.obtainYamlFileNameWithFeatureFlag(entity);
-    }
+    yamlFileName = yamlHandlerFactory.obtainYamlFileName(entity);
 
     // For Manifest File "/" is allowed in name
     if (!(entity instanceof ManifestFile)) {

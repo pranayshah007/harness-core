@@ -33,6 +33,7 @@ import com.google.inject.Inject;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -319,6 +320,12 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
         try (BufferedReader br = new BufferedReader(
                  new InputStreamReader(new FileInputStream(envVariablesOutputFile), StandardCharsets.UTF_8))) {
           processScriptOutputFile(envVariablesMap, br, secretVariablesToCollect);
+        } catch (FileNotFoundException e) {
+          log.error("[ScriptProcessExecutor-02] Error in processing script output: ", e);
+          saveExecutionLog(
+              "Error while reading variables to process Script Output. Avoid exiting from script early. IOException: "
+                  + e,
+              ERROR);
         } catch (IOException e) {
           log.error("[ScriptProcessExecutor-02] Error in processing script output: ", e);
           saveExecutionLog("IOException:" + e, ERROR);

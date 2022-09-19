@@ -68,4 +68,9 @@ public class SshExceptionConstants {
       "Copy Artifact is not supported for Custom Repository artifacts";
   public final String COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT_HINT =
       "Please make sure there is no copy artifact command unit specified";
+  public final String UNDECRYPTABLE_CONFIG_FILE_PROVIDED = "Could not decrypt the encrypted secret config file %s";
+  public final String UNDECRYPTABLE_CONFIG_FILE_PROVIDED_HINT =
+      "Please provide a valid encrypted config file instead of %s";
+  public final String UNDECRYPTABLE_CONFIG_FILE_PROVIDED_EXPLANATION =
+      "Encrypted config file %s could not be decrypted";
 }

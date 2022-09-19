@@ -19,7 +19,6 @@ import static software.wings.beans.EntityType.SERVICE;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ff.FeatureFlagService;
 
@@ -46,7 +45,7 @@ public class EnvironmentExpressionBuilder extends ExpressionBuilder {
   @Override
   public Set<String> getExpressions(String appId, String entityId, String serviceId) {
     String accountId = appService.getAccountIdByAppId(appId);
-    boolean isMultiArtifact = featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId);
+    boolean isMultiArtifact = false;
     Set<String> expressions = new TreeSet<>(getStaticExpressions(isMultiArtifact));
     if (isNotBlank(serviceId)) {
       expressions.addAll(serviceExpressionBuilder.getDynamicExpressions(appId, serviceId));
@@ -60,8 +59,7 @@ public class EnvironmentExpressionBuilder extends ExpressionBuilder {
 
   @Override
   public Set<String> getExpressions(String appId, String entityId) {
-    String accountId = appService.getAccountIdByAppId(appId);
-    boolean isMultiArtifact = featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId);
+    boolean isMultiArtifact = false;
     return getStaticExpressions(isMultiArtifact);
   }
   @Override

@@ -57,7 +57,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.beans.ArtifactMetadata;
-import io.harness.beans.FeatureName;
 import io.harness.beans.SweepingOutput;
 import io.harness.beans.SweepingOutputInstance;
 import io.harness.beans.SweepingOutputInstance.Scope;
@@ -85,8 +84,6 @@ import software.wings.api.ServiceTemplateElement;
 import software.wings.api.WorkflowElement;
 import software.wings.api.artifact.ServiceArtifactElement;
 import software.wings.api.artifact.ServiceArtifactElements;
-import software.wings.api.artifact.ServiceArtifactVariableElement;
-import software.wings.api.artifact.ServiceArtifactVariableElements;
 import software.wings.api.helm.HelmReleaseInfoElement;
 import software.wings.api.instancedetails.InstanceApiResponse;
 import software.wings.api.instancedetails.InstanceInfoVariables;
@@ -252,8 +249,6 @@ public class ExecutionContextImplTest extends WingsBaseTest {
     Application app = anApplication().name("AppA").accountId(ACCOUNT_ID).build();
     app = appService.save(app);
 
-    when(featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, ACCOUNT_ID)).thenReturn(false);
-
     WorkflowStandardParams std = new WorkflowStandardParams();
     std.setAppId(app.getUuid());
     std.setArtifactIds(asList(ARTIFACT_ID));
@@ -287,51 +282,11 @@ public class ExecutionContextImplTest extends WingsBaseTest {
     Application app = anApplication().name("AppA").accountId(ACCOUNT_ID).build();
     app = appService.save(app);
 
-    when(featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, ACCOUNT_ID)).thenReturn(false);
-
     WorkflowStandardParams std = new WorkflowStandardParams();
     std.setAppId(app.getUuid());
     std.setWorkflowElement(WorkflowElement.builder().pipelineDeploymentUuid(PIPELINE_EXECUTION_ID).build());
     context.pushContextElement(std);
 
-    context.getArtifacts();
-    verify(artifactService).get(eq("u1"));
-    verify(artifactService).get(eq("u2"));
-    verify(artifactService).get(eq("u3"));
-    verify(artifactService).get(eq("u4"));
-  }
-
-  @Test
-  @Owner(developers = GARVIT)
-  @Category(UnitTests.class)
-  public void shouldFetchArtifactVariablesFromSweepingOutputFFOn() {
-    when(limitCheckerFactory.getInstance(Mockito.any())).thenReturn(mockChecker());
-    doReturn(asList(ServiceArtifactVariableElements.builder()
-                        .artifactVariableElements(asList(ServiceArtifactVariableElement.builder().uuid("u1").build(),
-                            ServiceArtifactVariableElement.builder().uuid("u2").build()))
-                        .build(),
-                 ServiceArtifactVariableElements.builder().artifactVariableElements(emptyList()).build(),
-                 ServiceArtifactVariableElements.builder()
-                     .artifactVariableElements(asList(ServiceArtifactVariableElement.builder().uuid("u3").build(),
-                         ServiceArtifactVariableElement.builder().uuid("u4").build()))
-                     .build()))
-        .when(sweepingOutputService)
-        .findSweepingOutputsWithNamePrefix(any(SweepingOutputInquiry.class), eq(Scope.PIPELINE));
-    ExecutionContextImpl context = new ExecutionContextImpl(new StateExecutionInstance());
-    injector.injectMembers(context);
-    on(context).set("sweepingOutputService", sweepingOutputService);
-    on(context).set("artifactService", artifactService);
-    on(context).set("featureFlagService", featureFlagService);
-
-    Application app = anApplication().name("AppA").accountId(ACCOUNT_ID).build();
-    app = appService.save(app);
-
-    when(featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, ACCOUNT_ID)).thenReturn(true);
-
-    WorkflowStandardParams std = new WorkflowStandardParams();
-    std.setAppId(app.getUuid());
-    std.setWorkflowElement(WorkflowElement.builder().pipelineDeploymentUuid(PIPELINE_EXECUTION_ID).build());
-    context.pushContextElement(std);
     context.getArtifacts();
     verify(artifactService).get(eq("u1"));
     verify(artifactService).get(eq("u2"));
@@ -511,7 +466,7 @@ public class ExecutionContextImplTest extends WingsBaseTest {
     WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService =
         new WorkflowStandardParamsExtensionService(appService, injector.getInstance(AccountService.class),
             artifactService, environmentService, artifactStreamServiceBindingService,
-            injector.getInstance(HelmChartService.class));
+            injector.getInstance(HelmChartService.class), featureFlagService);
     on(context).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
 
     ContextElementParamMapperFactory contextElementParamMapperFactory =

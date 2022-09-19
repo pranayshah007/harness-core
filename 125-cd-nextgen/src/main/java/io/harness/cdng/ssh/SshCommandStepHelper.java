@@ -93,6 +93,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
@@ -126,14 +127,14 @@ public class SshCommandStepHelper extends CDStepHelper {
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE));
     InfrastructureOutcome infrastructure = getInfrastructureOutcome(ambiance);
     Map<String, String> mergedEnvVariables = getMergedEnvVariablesMap(ambiance, commandStepParameters, infrastructure);
-    switch (serviceOutcome.getType()) {
-      case ServiceSpecType.SSH:
-        return buildSshCommandTaskParameters(ambiance, commandStepParameters, mergedEnvVariables);
-      case ServiceSpecType.WINRM:
-        return buildWinRmTaskParameters(ambiance, commandStepParameters, mergedEnvVariables);
-      default:
-        throw new UnsupportedOperationException(
-            format("Unsupported service type: [%s] selected for command step", serviceOutcome.getType()));
+    if (ServiceSpecType.SSH.toLowerCase(Locale.ROOT).equals(serviceOutcome.getType().toLowerCase(Locale.ROOT))) {
+      return buildSshCommandTaskParameters(ambiance, commandStepParameters, mergedEnvVariables);
+    } else if (ServiceSpecType.WINRM.toLowerCase(Locale.ROOT)
+                   .equals(serviceOutcome.getType().toLowerCase(Locale.ROOT))) {
+      return buildWinRmTaskParameters(ambiance, commandStepParameters, mergedEnvVariables);
+    } else {
+      throw new UnsupportedOperationException(
+          format("Unsupported service type: [%s] selected for command step", serviceOutcome.getType()));
     }
   }
 

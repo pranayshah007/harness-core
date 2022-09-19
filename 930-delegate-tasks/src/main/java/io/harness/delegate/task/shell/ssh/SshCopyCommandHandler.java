@@ -12,12 +12,12 @@ import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.ARTIF
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.ARTIFACT_CONFIGURATION_NOT_FOUND_HINT;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT_HINT;
-import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_CONFIG_FILE_PROVIDED;
-import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_CONFIG_FILE_PROVIDED_EXPLANATION;
-import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_CONFIG_FILE_PROVIDED_HINT;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_DESTINATION_PATH_SPECIFIED;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_DESTINATION_PATH_SPECIFIED_EXPLANATION;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_DESTINATION_PATH_SPECIFIED_HINT;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.UNDECRYPTABLE_CONFIG_FILE_PROVIDED;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.UNDECRYPTABLE_CONFIG_FILE_PROVIDED_EXPLANATION;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.UNDECRYPTABLE_CONFIG_FILE_PROVIDED_HINT;
 
 import static java.lang.String.format;
 
@@ -51,6 +51,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
@@ -139,8 +140,16 @@ public class SshCopyCommandHandler implements CommandHandler {
       for (ConfigFileParameters configFile : configFiles) {
         log.info(format("Copy config file : %s, isEncrypted: %b", configFile.getFileName(), configFile.isEncrypted()));
         if (configFile.isEncrypted()) {
-          SecretConfigFile secretConfigFile = (SecretConfigFile) secretDecryptionService.decrypt(
-              configFile.getSecretConfigFile(), configFile.getEncryptionDataDetails());
+          SecretConfigFile secretConfigFile;
+          try {
+            secretConfigFile = (SecretConfigFile) secretDecryptionService.decrypt(
+                configFile.getSecretConfigFile(), configFile.getEncryptionDataDetails());
+          } catch (Exception e) {
+            throw NestedExceptionUtils.hintWithExplanationException(
+                format(UNDECRYPTABLE_CONFIG_FILE_PROVIDED_HINT, configFile.getFileName()),
+                format(UNDECRYPTABLE_CONFIG_FILE_PROVIDED_EXPLANATION, configFile.getFileName()),
+                new SshCommandExecutionException(format(UNDECRYPTABLE_CONFIG_FILE_PROVIDED, configFile.getFileName())));
+          }
           String fileData = new String(secretConfigFile.getEncryptedConfigFile().getDecryptedValue());
           configFile.setFileContent(fileData);
           configFile.setFileSize(fileData.getBytes(StandardCharsets.UTF_8).length);
@@ -160,8 +169,7 @@ public class SshCopyCommandHandler implements CommandHandler {
   private List<ConfigFileParameters> getConfigFileParameters(
       SshCommandTaskParameters sshCommandTaskParameters, CopyCommandUnit copyCommandUnit) {
     if (sshCommandTaskParameters.getFileDelegateConfig() == null) {
-      throw NestedExceptionUtils.hintWithExplanationException(NO_CONFIG_FILE_PROVIDED_HINT,
-          NO_CONFIG_FILE_PROVIDED_EXPLANATION, new SshCommandExecutionException(NO_CONFIG_FILE_PROVIDED));
+      return Collections.emptyList();
     }
 
     List<ConfigFileParameters> configFiles = new ArrayList<>();

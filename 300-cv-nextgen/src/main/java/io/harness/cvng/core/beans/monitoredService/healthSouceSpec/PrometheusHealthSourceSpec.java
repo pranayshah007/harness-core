@@ -142,7 +142,7 @@ public class PrometheusHealthSourceSpec extends MetricHealthSourceSpec {
                                         .build();
 
       cvConfig.populateFromMetricDefinitions(definitionList, category);
-      cvConfig.addMetricThresholds(metricPacks);
+      cvConfig.addMetricThresholds(metricPacks, metricDefinitions);
       cvConfigs.add(cvConfig);
     });
 

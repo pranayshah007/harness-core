@@ -72,7 +72,9 @@ public class MetricPackServiceImpl implements MetricPackService {
       Lists.newArrayList("/customhealth/metric-packs/default-custom-pack.yaml");
   static final List<String> SPLUNK_METRICS_METRICPACK_FILES =
       Lists.newArrayList("/splunk/metric-packs/default-custom-pack.yaml");
-
+  static final List<String> CLOUDWATCH_METRICS_METRICPACK_FILES =
+      Lists.newArrayList("/cloudwatch/metric-packs/default-error-pack.yaml",
+          "/cloudwatch/metric-packs/default-performance-pack.yaml", "/cloudwatch/metric-packs/default-infra-pack.yaml");
   private static final URL APPDYNAMICS_PERFORMANCE_PACK_DSL_PATH =
       MetricPackServiceImpl.class.getResource("/appdynamics/dsl/performance-pack.datacollection");
   public static final String APPDYNAMICS_PERFORMANCE_PACK_DSL;
@@ -115,7 +117,9 @@ public class MetricPackServiceImpl implements MetricPackService {
   public static final URL SPLUNK_METRIC_HEALTH_DSL_PATH =
       MetricPackServiceImpl.class.getResource("/splunk/dsl/metric-collection.datacollection");
   public static final String SPLUNK_METRIC_HEALTH_DSL;
-
+  private static final URL CLOUDWATCH_METRICS_DSL_PATH =
+      MetricPackServiceImpl.class.getResource("/cloudwatch/dsl/cloudwatch-metrics.datacollection");
+  public static final String CLOUDWATCH_METRICS_DSL;
   static {
     String appDPeformancePackDsl = null;
     String appDqualityPackDsl = null;
@@ -129,6 +133,7 @@ public class MetricPackServiceImpl implements MetricPackService {
     String customHealthDsl = null;
     String dynatraceMetricPackDsl = null;
     String splunkMetricDsl = null;
+    String cloudWatchMetricsDsl = null;
     try {
       appDPeformancePackDsl = Resources.toString(APPDYNAMICS_PERFORMANCE_PACK_DSL_PATH, Charsets.UTF_8);
       appDqualityPackDsl = Resources.toString(APPDYNAMICS_QUALITY_PACK_DSL_PATH, Charsets.UTF_8);
@@ -142,6 +147,7 @@ public class MetricPackServiceImpl implements MetricPackService {
       customHealthDsl = Resources.toString(CUSTOM_HEALTH_DSL_PATH, Charsets.UTF_8);
       dynatraceMetricPackDsl = Resources.toString(DYNATRACE_METRIC_PACK_DSL_PATH, Charsets.UTF_8);
       splunkMetricDsl = Resources.toString(SPLUNK_METRIC_HEALTH_DSL_PATH, Charsets.UTF_8);
+      cloudWatchMetricsDsl = Resources.toString(CLOUDWATCH_METRICS_DSL_PATH, Charsets.UTF_8);
     } catch (Exception e) {
       // TODO: this should throw an exception but we risk delegate not starting up. We can remove this log term and
       // throw and exception once things stabilize
@@ -159,6 +165,7 @@ public class MetricPackServiceImpl implements MetricPackService {
     DATADOG_DSL = datadogDsl;
     CUSTOM_HEALTH_DSL = customHealthDsl;
     SPLUNK_METRIC_HEALTH_DSL = splunkMetricDsl;
+    CLOUDWATCH_METRICS_DSL = cloudWatchMetricsDsl;
   }
 
   @Inject private HPersistence hPersistence;
@@ -266,6 +273,9 @@ public class MetricPackServiceImpl implements MetricPackService {
         break;
       case SPLUNK_METRIC:
         yamlFileNames.addAll(SPLUNK_METRICS_METRICPACK_FILES);
+        break;
+      case CLOUDWATCH_METRICS:
+        yamlFileNames.addAll(CLOUDWATCH_METRICS_METRICPACK_FILES);
         break;
       default:
         unhandled(dataSourceType);
@@ -401,6 +411,9 @@ public class MetricPackServiceImpl implements MetricPackService {
         break;
       case SPLUNK_METRIC:
         metricPack.setDataCollectionDsl(SPLUNK_METRIC_HEALTH_DSL);
+        break;
+      case CLOUDWATCH_METRICS:
+        metricPack.setDataCollectionDsl(CLOUDWATCH_METRICS_DSL);
         break;
       default:
         throw new IllegalArgumentException("Invalid type " + dataSourceType);

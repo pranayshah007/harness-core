@@ -330,7 +330,7 @@ deployMode: KUBERNETES
 deployVariant: SAAS
 envPath: ""
 
-scmVersion: 140a857a
+scmVersion: 519da179
 
 ngAuthUIEnabled: false
 
@@ -716,3 +716,5 @@ ldapSyncJobConfig:
   defaultCronExpression: "0 0/15 * 1/1 * ? *"
 
 useGlobalKMSAsBaseAlgo: false
+
+cdTsDbRetentionPeriodMonths: 7

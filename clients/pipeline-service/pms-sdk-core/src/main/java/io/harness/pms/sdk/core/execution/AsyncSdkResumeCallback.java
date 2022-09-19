@@ -52,4 +52,10 @@ public class AsyncSdkResumeCallback implements OldNotifyCallback {
       log.error("Not able to deserialize Ambiance bytes. Progress Callback will not be executed");
     }
   }
+
+  @Override
+  public void notifyTimeout(Map<String, ResponseData> responseMap) {
+    responseMap.put("timeoutData", AsyncTimeoutResponseData.builder().build());
+    notifyWithError(responseMap, false);
+  }
 }

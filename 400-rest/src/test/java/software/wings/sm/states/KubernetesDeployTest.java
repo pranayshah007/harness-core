@@ -269,8 +269,8 @@ public class KubernetesDeployTest extends WingsBaseTest {
     when(serviceResourceService.getCommandByName(APP_ID, SERVICE_ID, ENV_ID, COMMAND_NAME)).thenReturn(serviceCommand);
 
     WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService =
-        new WorkflowStandardParamsExtensionService(
-            appService, null, artifactService, environmentService, artifactStreamServiceBindingService, null);
+        new WorkflowStandardParamsExtensionService(appService, null, artifactService, environmentService,
+            artifactStreamServiceBindingService, null, featureFlagService);
     on(kubernetesDeploy).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
     on(kubernetesDeployRollback).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
 

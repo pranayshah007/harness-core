@@ -9,6 +9,7 @@ package io.harness.cdng.provision.azure;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig.GitStoreDelegateConfigBuilder;
 import static io.harness.steps.StepUtils.prepareCDTaskRequest;
@@ -18,6 +19,7 @@ import static java.util.Collections.emptyList;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.azure.model.ARMScopeType;
+import io.harness.azure.model.AzureConstants;
 import io.harness.azure.model.AzureDeploymentMode;
 import io.harness.beans.DecryptableEntity;
 import io.harness.cdng.CDStepHelper;
@@ -26,6 +28,7 @@ import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.provision.azure.beans.AzureCreateARMResourcePassThroughData;
+import io.harness.cdng.provision.azure.beans.AzureCreateBPPassThroughData;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.validator.scmValidators.GitConfigAuthenticationInfoHelper;
@@ -62,14 +65,21 @@ import io.harness.validator.NGRegexValidatorConstants;
 
 import software.wings.beans.TaskType;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.IOUtils;
 
 @Slf4j
 @OwnedBy(CDP)
@@ -152,6 +162,7 @@ public class AzureCommonHelper {
     GitFetchRequest gitFetchRequest = GitFetchRequest.builder()
                                           .gitFetchFilesConfigs(gitFetchFilesConfigs)
                                           .accountId(AmbianceUtils.getAccountId(ambiance))
+                                          .closeLogStream(true)
                                           .build();
 
     final TaskData taskData = TaskData.builder()
@@ -162,8 +173,7 @@ public class AzureCommonHelper {
                                   .build();
 
     final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-        Arrays.asList(K8sCommandUnitConstants.FetchFiles, AzureCommandUnit.Create.name()),
-        TaskType.GIT_FETCH_NEXT_GEN_TASK.getDisplayName(),
+        getCommandUnits(passThroughData), TaskType.GIT_FETCH_NEXT_GEN_TASK.getDisplayName(),
         StepUtils.getTaskSelectors(stepElementParameters.getDelegateSelectors()),
         stepHelper.getEnvironmentType(ambiance));
 
@@ -195,10 +205,10 @@ public class AzureCommonHelper {
 
   List<GitFetchFilesConfig> getParametersGitFetchFileConfigs(
       Ambiance ambiance, AzureCreateARMResourceStepConfigurationParameters stepConfiguration) {
-    GitStoreConfig gitStoreConfig = (GitStoreConfig) stepConfiguration.getParameters().getStore().getSpec();
-    List<String> paths = new ArrayList<>(ParameterFieldHelper.getParameterFieldValue(gitStoreConfig.getPaths()));
     if (stepConfiguration.getParameters() != null
         && ManifestStoreType.isInGitSubset(stepConfiguration.getParameters().getStore().getSpec().getKind())) {
+      GitStoreConfig gitStoreConfig = (GitStoreConfig) stepConfiguration.getParameters().getStore().getSpec();
+      List<String> paths = new ArrayList<>(ParameterFieldHelper.getParameterFieldValue(gitStoreConfig.getPaths()));
       return new ArrayList<>(
           Collections.singletonList(GitFetchFilesConfig.builder()
                                         .manifestType(AZURE_PARAMETER_TYPE)
@@ -226,6 +236,35 @@ public class AzureCommonHelper {
     } else {
       throw new InvalidRequestException(
           format("Provisioner Identifier cannot contain special characters or spaces: [%s]", provisionerIdentifier));
+    }
+  }
+
+  protected Map<String, Object> getARMOutputs(String outputs) {
+    Map<String, Object> outputMap = new LinkedHashMap<>();
+    if (isEmpty(outputs)) {
+      return outputMap;
+    }
+    try {
+      TypeReference<HashMap<String, Object>> typeRef = new TypeReference<HashMap<String, Object>>() {};
+      Map<String, Object> json = new ObjectMapper().readValue(IOUtils.toInputStream(outputs), typeRef);
+
+      json.forEach((key, object) -> outputMap.put(key, ((Map<String, Object>) object).get("value")));
+    } catch (IOException exception) {
+      log.warn("Exception while parsing ARM outputs", exception);
+      return new LinkedHashMap<>();
+    }
+    return outputMap;
+  }
+
+  private List<String> getCommandUnits(PassThroughData passThroughData) {
+    if (passThroughData instanceof AzureCreateBPPassThroughData) {
+      return Arrays.asList(K8sCommandUnitConstants.FetchFiles, AzureConstants.BLUEPRINT_DEPLOYMENT,
+          AzureConstants.BLUEPRINT_DEPLOYMENT_STEADY_STATE);
+    } else if (passThroughData instanceof AzureCreateARMResourcePassThroughData) {
+      return Arrays.asList(K8sCommandUnitConstants.FetchFiles, AzureConstants.EXECUTE_ARM_DEPLOYMENT,
+          AzureConstants.ARM_DEPLOYMENT_STEADY_STATE, AzureConstants.ARM_DEPLOYMENT_OUTPUTS);
+    } else {
+      return emptyList();
     }
   }
 }

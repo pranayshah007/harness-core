@@ -113,6 +113,17 @@ public class JenkinsTest extends WingsBaseTest {
         JenkinsInternalConfig.builder().jenkinsUrl(rootUrl).username(USERNAME).password(PASSWORD.toCharArray()).build();
   }
 
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void shouldGetJobFromJenkins_withSlashInJobName() throws IOException {
+    CustomJenkinsServer jenkinsServer = mock(CustomJenkinsServer.class);
+    Reflect.on(jenkins).set("jenkinsServer", jenkinsServer);
+
+    when(jenkinsServer.getJob(any(FolderJob.class), eq("release/v1"))).thenReturn(mock(JobWithDetails.class));
+    assertThat(jenkins.getJobWithDetails("harness/release%2Fv1")).isNotNull();
+  }
+
   /**
    * Should get job from jenkins.
    *

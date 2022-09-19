@@ -31,6 +31,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.environment.beans.Environment;
+import io.harness.ng.core.environment.beans.NGEnvironmentGlobalOverride;
 import io.harness.ng.core.environment.mappers.EnvironmentMapper;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
@@ -79,6 +80,11 @@ public class ServiceDefinitionPlanCreator extends ChildrenPlanCreator<YamlField>
   @Inject KryoSerializer kryoSerializer;
   @Inject ServiceOverrideService serviceOverrideService;
   @Inject EnvironmentService environmentService;
+
+  public static final String SVC_PLAN_CREATOR_ENVIRONMENT_DEPS = "SVC_PLAN_CREATOR_ENVIRONMENT_DEPS";
+  public static final String ENVIRONMENT_CONFIG = "ENVIRONMENT_CONFIG";
+  public static final String ENVIRONMENT_ID = "ENVIRONMENT_IDENTIFIER";
+  public static final String SVC_OVERRIDE_CONFIG = "SVC_OVERRIDE_CONFIG";
 
   /*
   TODO: currently we are using many yaml updates. For ex - if we do not have service definition and we need to call plan
@@ -199,19 +205,25 @@ public class ServiceDefinitionPlanCreator extends ChildrenPlanCreator<YamlField>
       serviceSpecChildrenIds.add(artifactNodeId);
     }
 
-    NGEnvironmentConfig ngEnvironmentConfig = fetchEnvironmentConfig(ctx, kryoSerializer);
-    NGServiceOverrideConfig serviceOverrideConfig = fetchServiceOverrideConfig(
-        ctx, ngServiceV2InfoConfig, ngEnvironmentConfig.getNgEnvironmentInfoConfig().getIdentifier());
+    final Map<String, Object> svcPlanCreatorEnvDeps = (Map) kryoSerializer.asInflatedObject(
+        ctx.getDependency().getMetadataMap().get(SVC_PLAN_CREATOR_ENVIRONMENT_DEPS).toByteArray());
 
-    final String manifestPlanNodeId = ServiceDefinitionPlanCreatorHelper.addDependenciesForManifestV2(serviceV2Node,
-        planCreationResponseMap, ngServiceV2InfoConfig, serviceOverrideConfig, ngEnvironmentConfig, kryoSerializer);
+    final NGServiceOverrideConfig serviceOverrideConfig =
+        (NGServiceOverrideConfig) svcPlanCreatorEnvDeps.get(SVC_OVERRIDE_CONFIG);
+    final NGEnvironmentGlobalOverride environmentGlobalOverride =
+        (NGEnvironmentGlobalOverride) svcPlanCreatorEnvDeps.get(ENVIRONMENT_CONFIG);
+    final String envId = (String) svcPlanCreatorEnvDeps.get(ENVIRONMENT_ID);
+
+    final String manifestPlanNodeId =
+        ServiceDefinitionPlanCreatorHelper.addDependenciesForManifestV2(serviceV2Node, planCreationResponseMap,
+            ngServiceV2InfoConfig, serviceOverrideConfig, environmentGlobalOverride, kryoSerializer, envId);
     if (isNotBlank(manifestPlanNodeId)) {
       serviceSpecChildrenIds.add(manifestPlanNodeId);
     }
 
     final String configFilesPlanNodeId =
         ServiceDefinitionPlanCreatorHelper.addDependenciesForConfigFilesV2(serviceV2Node, planCreationResponseMap,
-            ngServiceV2InfoConfig, serviceOverrideConfig, ngEnvironmentConfig, kryoSerializer);
+            ngServiceV2InfoConfig, serviceOverrideConfig, environmentGlobalOverride, kryoSerializer);
     if (isNotBlank(configFilesPlanNodeId)) {
       serviceSpecChildrenIds.add(configFilesPlanNodeId);
     }
@@ -227,18 +239,19 @@ public class ServiceDefinitionPlanCreator extends ChildrenPlanCreator<YamlField>
         serviceSpecChildrenIds.add(startupCommandPlanNodeId);
       }
 
-      ApplicationSettingsConfiguration applicationSettings = azureWebAppServiceSpec.getApplicationSettings();
-      if (applicationSettings != null) {
-        String applicationSettingsPlanNodeId =
-            ServiceDefinitionPlanCreatorHelper.addDependenciesForApplicationSettingsV2(
-                serviceV2Node, planCreationResponseMap, ngServiceV2InfoConfig, kryoSerializer);
+      final String applicationSettingsPlanNodeId =
+          ServiceDefinitionPlanCreatorHelper.addDependenciesForApplicationSettingsV2(serviceV2Node,
+              planCreationResponseMap, ngServiceV2InfoConfig, serviceOverrideConfig, environmentGlobalOverride,
+              kryoSerializer);
+      if (isNotBlank(applicationSettingsPlanNodeId)) {
         serviceSpecChildrenIds.add(applicationSettingsPlanNodeId);
       }
 
-      ConnectionStringsConfiguration connectionStrings = azureWebAppServiceSpec.getConnectionStrings();
-      if (connectionStrings != null) {
-        String connectionStringsPlanNodeId = ServiceDefinitionPlanCreatorHelper.addDependenciesForConnectionStringsV2(
-            serviceV2Node, planCreationResponseMap, ngServiceV2InfoConfig, kryoSerializer);
+      final String connectionStringsPlanNodeId =
+          ServiceDefinitionPlanCreatorHelper.addDependenciesForConnectionStringsV2(serviceV2Node,
+              planCreationResponseMap, ngServiceV2InfoConfig, serviceOverrideConfig, environmentGlobalOverride,
+              kryoSerializer);
+      if (isNotBlank(connectionStringsPlanNodeId)) {
         serviceSpecChildrenIds.add(connectionStringsPlanNodeId);
       }
     }

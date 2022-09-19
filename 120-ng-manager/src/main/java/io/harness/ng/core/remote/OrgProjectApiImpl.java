@@ -8,15 +8,12 @@
 package io.harness.ng.core.remote;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.exception.WingsException.USER;
 import static io.harness.ng.accesscontrol.PlatformPermissions.CREATE_PROJECT_PERMISSION;
 import static io.harness.ng.accesscontrol.PlatformPermissions.DELETE_PROJECT_PERMISSION;
 import static io.harness.ng.accesscontrol.PlatformPermissions.EDIT_PROJECT_PERMISSION;
 import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_PROJECT_PERMISSION;
 import static io.harness.ng.accesscontrol.PlatformResourceTypes.PROJECT;
-import static io.harness.ng.core.remote.ProjectApiMapper.addLinksHeader;
-import static io.harness.ng.core.remote.ProjectApiMapper.getPageRequest;
-import static io.harness.ng.core.remote.ProjectApiMapper.getProjectDto;
-import static io.harness.ng.core.remote.ProjectApiMapper.getProjectResponse;
 
 import static java.lang.String.format;
 
@@ -26,6 +23,7 @@ import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ResourceIdentifier;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.ProjectFilterDTO;
 import io.harness.ng.core.entities.Project;
 import io.harness.ng.core.services.ProjectService;
@@ -39,6 +37,7 @@ import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import javax.ws.rs.NotFoundException;
@@ -53,6 +52,7 @@ import org.springframework.data.domain.Page;
 @NextGenManagerAuth
 public class OrgProjectApiImpl implements OrgProjectApi {
   private final ProjectService projectService;
+  private final ProjectApiMapper projectApiMapper;
 
   @NGAccessControlCheck(resourceType = PROJECT, permission = CREATE_PROJECT_PERMISSION)
   @Override
@@ -83,8 +83,8 @@ public class OrgProjectApiImpl implements OrgProjectApi {
 
     ResponseBuilder responseBuilder = Response.ok();
 
-    ResponseBuilder responseBuilderWithLinks =
-        addLinksHeader(responseBuilder, format("/v1/orgs/%s/projects)", org), projects.size(), page, limit);
+    ResponseBuilder responseBuilderWithLinks = projectApiMapper.addLinksHeader(
+        responseBuilder, format("/v1/orgs/%s/projects", org), projects.size(), page, limit);
 
     return responseBuilderWithLinks.entity(projects).build();
   }
@@ -92,20 +92,32 @@ public class OrgProjectApiImpl implements OrgProjectApi {
   @NGAccessControlCheck(resourceType = PROJECT, permission = EDIT_PROJECT_PERMISSION)
   @Override
   public Response updateOrgScopedProject(UpdateProjectRequest updateProjectRequest, @OrgIdentifier String org,
-      @ResourceIdentifier String id, @AccountIdentifier String account) {
-    return updateProject(id, updateProjectRequest, account, org);
+      @ResourceIdentifier String project, @AccountIdentifier String account) {
+    if (!Objects.equals(updateProjectRequest.getProject().getSlug(), project)
+        || !Objects.equals(updateProjectRequest.getProject().getOrg(), org)) {
+      throw new InvalidRequestException(
+          "Org scoped request is having different project slug or org in payload and param", USER);
+    }
+    return updateProject(project, updateProjectRequest, account, org);
   }
 
-  private Response createProject(CreateProjectRequest project, String account, String org) {
-    Project createdProject = projectService.create(account, org, getProjectDto(org, project));
-    ProjectResponse projectResponse = getProjectResponse(createdProject);
+  private Response createProject(CreateProjectRequest createProjectRequest, String account, String org) {
+    if (!Objects.equals(org, createProjectRequest.getProject().getOrg())) {
+      throw new InvalidRequestException("Org scoped request is having different org in payload and param", USER);
+    }
+    Project createdProject = projectService.create(account, org, projectApiMapper.getProjectDto(createProjectRequest));
+    ProjectResponse projectResponse = projectApiMapper.getProjectResponse(createdProject);
 
-    return Response.ok().entity(projectResponse).tag(createdProject.getVersion().toString()).build();
+    return Response.status(Response.Status.CREATED)
+        .entity(projectResponse)
+        .tag(createdProject.getVersion().toString())
+        .build();
   }
 
   private Response updateProject(String id, UpdateProjectRequest updateProjectRequest, String account, String org) {
-    Project updatedProject = projectService.update(account, org, id, getProjectDto(org, id, updateProjectRequest));
-    ProjectResponse projectResponse = getProjectResponse(updatedProject);
+    Project updatedProject =
+        projectService.update(account, org, id, projectApiMapper.getProjectDto(updateProjectRequest));
+    ProjectResponse projectResponse = projectApiMapper.getProjectResponse(updatedProject);
 
     return Response.ok().entity(projectResponse).tag(updatedProject.getVersion().toString()).build();
   }
@@ -115,7 +127,7 @@ public class OrgProjectApiImpl implements OrgProjectApi {
     if (!projectOptional.isPresent()) {
       throw new NotFoundException(format("Project with org [%s] and slug [%s] not found", org, id));
     }
-    ProjectResponse projectResponse = getProjectResponse(projectOptional.get());
+    ProjectResponse projectResponse = projectApiMapper.getProjectResponse(projectOptional.get());
 
     return Response.ok().entity(projectResponse).tag(projectOptional.get().getVersion().toString()).build();
   }
@@ -130,9 +142,9 @@ public class OrgProjectApiImpl implements OrgProjectApi {
                                             .identifiers(project)
                                             .build();
     Page<Project> projectPages =
-        projectService.listPermittedProjects(account, getPageRequest(page, limit), projectFilterDTO);
+        projectService.listPermittedProjects(account, projectApiMapper.getPageRequest(page, limit), projectFilterDTO);
 
-    Page<ProjectResponse> projectResponsePage = projectPages.map(ProjectApiMapper::getProjectResponse);
+    Page<ProjectResponse> projectResponsePage = projectPages.map(projectApiMapper::getProjectResponse);
 
     return new ArrayList<>(projectResponsePage.getContent());
   }
@@ -146,7 +158,7 @@ public class OrgProjectApiImpl implements OrgProjectApi {
     if (!deleted) {
       throw new NotFoundException(format("Project with orgIdentifier [%s] and identifier [%s] not found", org, id));
     }
-    ProjectResponse projectResponse = getProjectResponse(projectOptional.get());
+    ProjectResponse projectResponse = projectApiMapper.getProjectResponse(projectOptional.get());
 
     return Response.ok().entity(projectResponse).build();
   }

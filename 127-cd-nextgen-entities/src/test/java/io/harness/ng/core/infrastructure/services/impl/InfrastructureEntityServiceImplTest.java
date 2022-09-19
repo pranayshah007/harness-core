@@ -8,6 +8,7 @@
 package io.harness.ng.core.infrastructure.services.impl;
 
 import static io.harness.rule.OwnerRule.HINGER;
+import static io.harness.rule.OwnerRule.INDER;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -16,10 +17,12 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGEntitiesTestBase;
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.mappers.InfrastructureFilterHelper;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
+import io.harness.repositories.UpsertOptions;
 import io.harness.rule.Owner;
 import io.harness.utils.PageUtils;
 
@@ -28,8 +31,10 @@ import com.google.inject.Inject;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.springframework.data.domain.Page;
@@ -112,6 +117,7 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
                                                   .projectIdentifier(PROJECT_ID)
                                                   .envIdentifier("ENV_IDENTIFIER")
                                                   .yaml(yaml)
+                                                  .deploymentType(ServiceDefinitionType.KUBERNETES)
                                                   .build();
 
     InfrastructureEntity createdInfra = infrastructureEntityService.create(createInfraRequest);
@@ -121,6 +127,7 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
     assertThat(createdInfra.getProjectIdentifier()).isEqualTo(createInfraRequest.getProjectIdentifier());
     assertThat(createdInfra.getIdentifier()).isEqualTo(createInfraRequest.getIdentifier());
     assertThat(createdInfra.getName()).isEqualTo(createInfraRequest.getName());
+    assertThat(createdInfra.getDeploymentType()).isEqualTo(ServiceDefinitionType.KUBERNETES);
 
     // Get operations
     Optional<InfrastructureEntity> getInfra =
@@ -139,6 +146,7 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
                                                   .name("UPDATED_INFRA")
                                                   .description("NEW_DESCRIPTION")
                                                   .yaml(yaml)
+                                                  .deploymentType(ServiceDefinitionType.NATIVE_HELM)
                                                   .build();
 
     InfrastructureEntity updatedInfraResponse = infrastructureEntityService.update(updateInfraRequest);
@@ -148,6 +156,7 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
     assertThat(updatedInfraResponse.getIdentifier()).isEqualTo(updateInfraRequest.getIdentifier());
     assertThat(updatedInfraResponse.getName()).isEqualTo(updateInfraRequest.getName());
     assertThat(updatedInfraResponse.getDescription()).isEqualTo(updateInfraRequest.getDescription());
+    assertThat(updatedInfraResponse.getDeploymentType()).isEqualTo(ServiceDefinitionType.NATIVE_HELM);
 
     updateInfraRequest.setAccountId("NEW_ACCOUNT");
     assertThatThrownBy(() -> infrastructureEntityService.update(updateInfraRequest))
@@ -164,7 +173,7 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
                                                   .name("UPSERTED_INFRA")
                                                   .description("NEW_DESCRIPTION")
                                                   .build();
-    InfrastructureEntity upsertedInfra = infrastructureEntityService.upsert(upsertInfraRequest);
+    InfrastructureEntity upsertedInfra = infrastructureEntityService.upsert(upsertInfraRequest, UpsertOptions.DEFAULT);
     assertThat(upsertedInfra.getAccountId()).isEqualTo(upsertInfraRequest.getAccountId());
     assertThat(upsertedInfra.getOrgIdentifier()).isEqualTo(upsertInfraRequest.getOrgIdentifier());
     assertThat(upsertedInfra.getProjectIdentifier()).isEqualTo(upsertInfraRequest.getProjectIdentifier());
@@ -174,8 +183,8 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
     assertThat(upsertedInfra.getDescription()).isEqualTo(upsertInfraRequest.getDescription());
 
     // List infra operations.
-    Criteria criteriaForInfraFilter =
-        InfrastructureFilterHelper.createCriteriaForGetList(ACCOUNT_ID, ORG_ID, PROJECT_ID, "ENV_IDENTIFIER", "");
+    Criteria criteriaForInfraFilter = InfrastructureFilterHelper.createListCriteria(
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, "ENV_IDENTIFIER", "", Collections.emptyList(), null);
     Pageable pageRequest = PageUtils.getPageRequest(0, 10, null);
     Page<InfrastructureEntity> list = infrastructureEntityService.list(criteriaForInfraFilter, pageRequest);
     assertThat(list.getContent()).isNotNull();
@@ -221,8 +230,8 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
     infrastructureEntityService.create(createInfraRequestDiffEnv);
 
     // List infra operations.
-    Criteria criteriaForInfraFilter =
-        InfrastructureFilterHelper.createCriteriaForGetList(ACCOUNT_ID, ORG_ID, PROJECT_ID, "ENV_IDENTIFIER", "");
+    Criteria criteriaForInfraFilter = InfrastructureFilterHelper.createListCriteria(
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, "ENV_IDENTIFIER", "", Collections.emptyList(), null);
     Pageable pageRequest = PageUtils.getPageRequest(0, 10, null);
     Page<InfrastructureEntity> list = infrastructureEntityService.list(criteriaForInfraFilter, pageRequest);
     assertThat(list.getContent()).isNotNull();
@@ -244,6 +253,70 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
     listPostDeletion = infrastructureEntityService.list(criteriaAllInProject, pageRequest);
     assertThat(listPostDeletion.getContent()).isNotNull();
     assertThat(listPostDeletion.getContent().size()).isEqualTo(0);
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void testInfraList() {
+    String filename = "infrastructure-without-runtime-inputs.yaml";
+    String yaml = readFile(filename);
+    for (int i = 1; i < 3; i++) {
+      InfrastructureEntity createInfraRequest = InfrastructureEntity.builder()
+                                                    .accountId(ACCOUNT_ID)
+                                                    .identifier("IDENTIFIER" + i)
+                                                    .orgIdentifier(ORG_ID)
+                                                    .projectIdentifier(PROJECT_ID)
+                                                    .envIdentifier("ENV_IDENTIFIER")
+                                                    .yaml(yaml)
+                                                    .deploymentType(ServiceDefinitionType.KUBERNETES)
+                                                    .build();
+
+      infrastructureEntityService.create(createInfraRequest);
+    }
+
+    for (int i = 1; i < 3; i++) {
+      InfrastructureEntity createInfraRequest = InfrastructureEntity.builder()
+                                                    .accountId(ACCOUNT_ID)
+                                                    .identifier("IDENTIFIER" + i + 2)
+                                                    .orgIdentifier(ORG_ID)
+                                                    .projectIdentifier(PROJECT_ID)
+                                                    .envIdentifier("ENV_IDENTIFIER")
+                                                    .yaml(yaml)
+                                                    .deploymentType(ServiceDefinitionType.NATIVE_HELM)
+                                                    .build();
+
+      infrastructureEntityService.create(createInfraRequest);
+    }
+
+    Criteria criteriaForInfraFilter = InfrastructureFilterHelper.createListCriteria(
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, "ENV_IDENTIFIER", "", Collections.emptyList(), null);
+    Pageable pageRequest = PageUtils.getPageRequest(0, 10, null);
+    Page<InfrastructureEntity> list = infrastructureEntityService.list(criteriaForInfraFilter, pageRequest);
+    assertThat(list.getContent()).isNotNull();
+    assertThat(list.getContent().size()).isEqualTo(4);
+
+    criteriaForInfraFilter = InfrastructureFilterHelper.createListCriteria(ACCOUNT_ID, ORG_ID, PROJECT_ID,
+        "ENV_IDENTIFIER", "", Collections.emptyList(), ServiceDefinitionType.KUBERNETES);
+    list = infrastructureEntityService.list(criteriaForInfraFilter, pageRequest);
+    assertThat(list.getContent()).isNotNull();
+    assertThat(list.getContent().size()).isEqualTo(2);
+    assertThat(list.getContent()
+                   .stream()
+                   .filter(i -> i.getDeploymentType() == ServiceDefinitionType.KUBERNETES)
+                   .collect(Collectors.toList()))
+        .hasSize(2);
+
+    criteriaForInfraFilter = InfrastructureFilterHelper.createListCriteria(ACCOUNT_ID, ORG_ID, PROJECT_ID,
+        "ENV_IDENTIFIER", "", Collections.emptyList(), ServiceDefinitionType.NATIVE_HELM);
+    list = infrastructureEntityService.list(criteriaForInfraFilter, pageRequest);
+    assertThat(list.getContent()).isNotNull();
+    assertThat(list.getContent().size()).isEqualTo(2);
+    assertThat(list.getContent()
+                   .stream()
+                   .filter(i -> i.getDeploymentType() == ServiceDefinitionType.NATIVE_HELM)
+                   .collect(Collectors.toList()))
+        .hasSize(2);
   }
 
   private String readFile(String filename) {

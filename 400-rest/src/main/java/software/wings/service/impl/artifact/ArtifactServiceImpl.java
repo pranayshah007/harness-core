@@ -258,15 +258,11 @@ public class ArtifactServiceImpl implements ArtifactService {
     artifact.setArtifactSourceName(artifactStream.getSourceName());
     setAccountId(artifact);
     setArtifactStatus(artifact, artifactStream);
-    boolean isMultiArtifact =
-        featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, artifact.getAccountId());
-    if (!isMultiArtifact) {
-      artifact.setServiceIds(artifactStreamServiceBindingService.listServiceIds(artifactStream.getUuid()));
-    }
+    artifact.setServiceIds(artifactStreamServiceBindingService.listServiceIds(artifactStream.getUuid()));
 
     if (!skipDuplicateCheck) {
       ArtifactStreamAttributes artifactStreamAttributes =
-          artifactCollectionUtils.getArtifactStreamAttributes(artifactStream, isMultiArtifact);
+          artifactCollectionUtils.getArtifactStreamAttributes(artifactStream, false);
       Artifact savedArtifact = getArtifactByUniqueKey(artifactStream, artifactStreamAttributes, artifact);
       if (savedArtifact != null) {
         log.info(
@@ -486,6 +482,16 @@ public class ArtifactServiceImpl implements ArtifactService {
     Query<Artifact> query = prepareArtifactWithMetadataQuery(artifactStream);
     UpdateOperations<Artifact> ops = wingsPersistence.createUpdateOperations(Artifact.class);
     ops.set("artifactSourceName", artifactStream.getSourceName());
+    wingsPersistence.update(query, ops);
+  }
+
+  @Override
+  public void updateLastUpdatedAt(String artifactId, String accountId) {
+    Query<Artifact> query = wingsPersistence.createQuery(Artifact.class)
+                                .filter(ID_KEY, artifactId)
+                                .filter(ArtifactKeys.accountId, accountId);
+    UpdateOperations<Artifact> ops = wingsPersistence.createUpdateOperations(Artifact.class);
+    ops.set(ArtifactKeys.lastUpdatedAt, System.currentTimeMillis());
     wingsPersistence.update(query, ops);
   }
 

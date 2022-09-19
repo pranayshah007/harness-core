@@ -23,6 +23,7 @@ import io.harness.rule.Owner;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.Map;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -50,7 +51,8 @@ public class AbstractExecutableTest {
     Path gcpFile = Files.createFile(tempDirectory.resolve(K8sConstants.GCP_JSON_KEY_FILE_NAME));
 
     // when
-    dummyExecutable().execute(tempDirectory.toString(), NULL_OUTPUT_STREAM, NULL_OUTPUT_STREAM, false);
+    dummyExecutable().execute(
+        tempDirectory.toString(), NULL_OUTPUT_STREAM, NULL_OUTPUT_STREAM, false, Collections.emptyMap());
 
     // then
     Map<String, String> capturedEnvironment = captureEnvironment();
@@ -66,7 +68,8 @@ public class AbstractExecutableTest {
     Path tempDirectory = Files.createTempDirectory("abstractExecTest");
 
     // when
-    dummyExecutable().execute(tempDirectory.toString(), NULL_OUTPUT_STREAM, NULL_OUTPUT_STREAM, false);
+    dummyExecutable().execute(
+        tempDirectory.toString(), NULL_OUTPUT_STREAM, NULL_OUTPUT_STREAM, false, Collections.emptyMap());
 
     // then
     Map<String, String> environment = captureEnvironment();

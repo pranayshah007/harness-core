@@ -610,7 +610,11 @@ public class SignupServiceImpl implements SignupService {
     groupProperties.put("group_id", accountId);
     groupProperties.put("group_type", "Account");
     groupProperties.put("group_name", accountName);
+    groupProperties.put("created_by_user_id", email);
 
+    if (referer != null) {
+      groupProperties.put("refererURL", referer);
+    }
     // group event to register new signed-up user with new account
     telemetryReporter.sendGroupEvent(
         accountId, email, groupProperties, ImmutableMap.<Destination, Boolean>builder().build());

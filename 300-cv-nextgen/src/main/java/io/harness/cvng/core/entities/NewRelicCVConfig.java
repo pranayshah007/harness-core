@@ -8,6 +8,7 @@
 package io.harness.cvng.core.entities;
 
 import static io.harness.cvng.core.utils.ErrorMessageUtils.generateErrorMessageFromParam;
+import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -15,10 +16,14 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
+import io.harness.cvng.beans.ThresholdConfigType;
 import io.harness.cvng.beans.TimeSeriesMetricType;
+import io.harness.cvng.core.beans.HealthSourceMetricDefinition;
 import io.harness.cvng.core.beans.HealthSourceQueryType;
+import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.MetricResponseMapping;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.NewRelicHealthSourceSpec.NewRelicMetricDefinition;
+import io.harness.cvng.core.constant.MonitoredServiceConstants;
 import io.harness.cvng.core.entities.NewRelicCVConfig.NewRelicMetricInfo;
 import io.harness.cvng.core.services.CVNextGenConstants;
 import io.harness.cvng.core.utils.analysisinfo.AnalysisInfoUtility;
@@ -32,8 +37,10 @@ import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -180,6 +187,51 @@ public class NewRelicCVConfig extends MetricCVConfig<NewRelicMetricInfo> {
     });
 
     this.setMetricPack(metricPack);
+  }
+
+  public void addMetricThresholds(
+      Set<TimeSeriesMetricPackDTO> timeSeriesMetricPacks, List<NewRelicMetricDefinition> metricDefinitions) {
+    if (isEmpty(timeSeriesMetricPacks)) {
+      return;
+    }
+    Map<String, HealthSourceMetricDefinition> mapOfMetricDefinitions =
+        emptyIfNull(metricDefinitions)
+            .stream()
+            .collect(Collectors.toMap(NewRelicMetricDefinition::getMetricName, metricDefinition -> metricDefinition));
+    getMetricPack().getMetrics().forEach(metric -> {
+      timeSeriesMetricPacks.forEach(timeSeriesMetricPackDTO -> {
+        if (!isEmpty(timeSeriesMetricPackDTO.getMetricThresholds())) {
+          timeSeriesMetricPackDTO.getMetricThresholds()
+              .stream()
+              .filter(metricPackDTO -> metric.getName().equals(metricPackDTO.getMetricName()))
+              .forEach(metricPackDTO -> metricPackDTO.getTimeSeriesThresholdCriteria().forEach(criteria -> {
+                List<TimeSeriesThreshold> timeSeriesThresholds =
+                    metric.getThresholds() != null ? metric.getThresholds() : new ArrayList<>();
+                String metricName = metricPackDTO.getMetricName();
+                TimeSeriesThreshold timeSeriesThreshold =
+                    TimeSeriesThreshold.builder()
+                        .accountId(getAccountId())
+                        .projectIdentifier(getProjectIdentifier())
+                        .dataSourceType(getType())
+                        .metricType(metric.getType())
+                        .metricIdentifier(metric.getIdentifier())
+                        .metricName(metricName)
+                        .action(metricPackDTO.getType().getTimeSeriesThresholdActionType())
+                        .criteria(criteria)
+                        .thresholdConfigType(ThresholdConfigType.USER_DEFINED)
+                        .deviationType(getDeviationType(
+                            mapOfMetricDefinitions, metricName, metric, timeSeriesMetricPackDTO.getIdentifier()))
+                        .build();
+                if (!MonitoredServiceConstants.CUSTOM_METRIC_PACK.equalsIgnoreCase(
+                        timeSeriesMetricPackDTO.getIdentifier())) {
+                  timeSeriesThreshold.setMetricGroupName(metricPackDTO.getGroupName());
+                }
+                timeSeriesThresholds.add(timeSeriesThreshold);
+                metric.setThresholds(timeSeriesThresholds);
+              }));
+        }
+      });
+    });
   }
 
   @Value

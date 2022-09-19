@@ -14,7 +14,6 @@ import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
-import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
@@ -52,8 +51,8 @@ public class AzureCreateARMResourceStepConfiguration {
     Validator.notNullCheck("Template file can't be empty", template);
     Validator.notNullCheck("Connector ref can't be empty", connectorRef);
     Validator.notNullCheck("Scope can't be empty", scope);
-    isNumberOfFilesValid(template.getStore(), "Number of files in template file should be equal to 1");
-    isNumberOfFilesValid(parameters.getStore(), "Number of files in parameters file should be equal to 1");
+    isNumberOfFilesValid(template, "Number of files in template file should be equal to 1");
+    isNumberOfFilesValid(parameters, "Number of files in parameters file should be equal 1 or 0");
     scope.getSpec().validateParams();
   }
 
@@ -67,17 +66,44 @@ public class AzureCreateARMResourceStepConfiguration {
   }
 
   // Check that the number of parameters files is 1.
-  private void isNumberOfFilesValid(StoreConfigWrapper store, String errMsg) {
-    if (ManifestStoreType.isInGitSubset(store.getSpec().getKind())) {
-      GitStoreConfig gitStoreConfig = (GitStoreConfig) store.getSpec();
+
+  private void isNumberOfFilesValid(AzureTemplateFile template, String errMsg) {
+    if (ManifestStoreType.isInGitSubset(template.getStore().getSpec().getKind())) {
+      GitStoreConfig gitStoreConfig = (GitStoreConfig) template.getStore().getSpec();
       if (gitStoreConfig.getPaths().getValue() == null || gitStoreConfig.getPaths().getValue().size() != 1) {
         throw new InvalidRequestException(errMsg);
-      } else if (Objects.equals(store.getSpec().getKind(), ManifestStoreType.HARNESS)) {
-        HarnessStore harnessStore = (HarnessStore) store.getSpec();
-        if (harnessStore.getFiles().getValue() == null || harnessStore.getFiles().getValue().size() != 1) {
+      }
+    } else if (Objects.equals(template.getStore().getSpec().getKind(), ManifestStoreType.HARNESS)) {
+      HarnessStore harnessStore = (HarnessStore) template.getStore().getSpec();
+      if (harnessStore.getFiles() != null) {
+        if (harnessStore.getFiles().getValue().size() != 1) {
           throw new InvalidRequestException(errMsg);
-        } else {
-          throw new InvalidRequestException("Unsupported store type");
+        }
+      }
+      if (harnessStore.getSecretFiles() != null) {
+        if (harnessStore.getSecretFiles().getValue().size() != 1) {
+          throw new InvalidRequestException(errMsg);
+        }
+      }
+    }
+  }
+
+  private void isNumberOfFilesValid(AzureCreateARMResourceParameterFile template, String errMsg) {
+    if (ManifestStoreType.isInGitSubset(template.getStore().getSpec().getKind())) {
+      GitStoreConfig gitStoreConfig = (GitStoreConfig) template.getStore().getSpec();
+      if (gitStoreConfig.getPaths().getValue() == null || gitStoreConfig.getPaths().getValue().size() > 1) {
+        throw new InvalidRequestException(errMsg);
+      }
+    } else if (Objects.equals(template.getStore().getSpec().getKind(), ManifestStoreType.HARNESS)) {
+      HarnessStore harnessStore = (HarnessStore) template.getStore().getSpec();
+      if (harnessStore.getFiles() != null) {
+        if (harnessStore.getFiles().getValue().size() > 1) {
+          throw new InvalidRequestException(errMsg);
+        }
+      }
+      if (harnessStore.getSecretFiles() != null) {
+        if (harnessStore.getSecretFiles().getValue().size() > 1) {
+          throw new InvalidRequestException(errMsg);
         }
       }
     }

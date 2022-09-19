@@ -14,10 +14,6 @@ import static io.harness.ng.accesscontrol.PlatformPermissions.DELETE_ORGANIZATIO
 import static io.harness.ng.accesscontrol.PlatformPermissions.EDIT_ORGANIZATION_PERMISSION;
 import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_ORGANIZATION_PERMISSION;
 import static io.harness.ng.accesscontrol.PlatformResourceTypes.ORGANIZATION;
-import static io.harness.ng.core.remote.OrganizationApiUtils.addLinksHeader;
-import static io.harness.ng.core.remote.OrganizationApiUtils.getOrganizationDto;
-import static io.harness.ng.core.remote.OrganizationApiUtils.getOrganizationResponse;
-import static io.harness.ng.core.remote.OrganizationApiUtils.getPageRequest;
 
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
@@ -46,6 +42,7 @@ import org.springframework.data.domain.Page;
 @NextGenManagerAuth
 public class OrganizationApiImpl implements OrganizationApi {
   private final OrganizationService organizationService;
+  private final OrganizationApiUtils organizationApiUtils;
 
   @NGAccessControlCheck(resourceType = ORGANIZATION, permission = CREATE_ORGANIZATION_PERMISSION)
   @Override
@@ -53,9 +50,10 @@ public class OrganizationApiImpl implements OrganizationApi {
     if (DEFAULT_ORG_IDENTIFIER.equals(request.getOrg().getSlug())) {
       throw new InvalidRequestException(String.format("%s cannot be used as org slug", DEFAULT_ORG_IDENTIFIER), USER);
     }
-    Organization createdOrganization = organizationService.create(account, getOrganizationDto(request));
-    return Response.ok()
-        .entity(getOrganizationResponse(createdOrganization))
+    Organization createdOrganization =
+        organizationService.create(account, organizationApiUtils.getOrganizationDto(request));
+    return Response.status(Response.Status.CREATED)
+        .entity(organizationApiUtils.getOrganizationResponse(createdOrganization))
         .tag(createdOrganization.getVersion().toString())
         .build();
   }
@@ -68,7 +66,7 @@ public class OrganizationApiImpl implements OrganizationApi {
       throw new NotFoundException(String.format("Organization with slug [%s] not found", slug));
     }
     return Response.ok()
-        .entity(getOrganizationResponse(organizationOptional.get()))
+        .entity(organizationApiUtils.getOrganizationResponse(organizationOptional.get()))
         .tag(organizationOptional.get().getVersion().toString())
         .build();
   }
@@ -78,17 +76,17 @@ public class OrganizationApiImpl implements OrganizationApi {
     OrganizationFilterDTO organizationFilterDTO =
         OrganizationFilterDTO.builder().searchTerm(searchTerm).identifiers(org).ignoreCase(true).build();
 
-    Page<Organization> orgPage =
-        organizationService.listPermittedOrgs(account, getPageRequest(page, limit), organizationFilterDTO);
+    Page<Organization> orgPage = organizationService.listPermittedOrgs(
+        account, organizationApiUtils.getPageRequest(page, limit), organizationFilterDTO);
 
-    Page<OrganizationResponse> organizationResponsePage = orgPage.map(OrganizationApiUtils::getOrganizationResponse);
+    Page<OrganizationResponse> organizationResponsePage = orgPage.map(organizationApiUtils::getOrganizationResponse);
 
     List<OrganizationResponse> organizations = organizationResponsePage.getContent();
 
     ResponseBuilder responseBuilder = Response.ok();
 
     ResponseBuilder responseBuilderWithLinks =
-        addLinksHeader(responseBuilder, "/v1/orgs", organizations.size(), page, limit);
+        organizationApiUtils.addLinksHeader(responseBuilder, "/v1/orgs", organizations.size(), page, limit);
 
     return responseBuilderWithLinks.entity(organizations).build();
   }
@@ -97,9 +95,10 @@ public class OrganizationApiImpl implements OrganizationApi {
   @Override
   public Response updateOrganization(
       UpdateOrganizationRequest request, @ResourceIdentifier String slug, @AccountIdentifier String account) {
-    Organization updatedOrganization = organizationService.update(account, slug, getOrganizationDto(slug, request));
+    Organization updatedOrganization =
+        organizationService.update(account, slug, organizationApiUtils.getOrganizationDto(slug, request));
     return Response.ok()
-        .entity(getOrganizationResponse(updatedOrganization))
+        .entity(organizationApiUtils.getOrganizationResponse(updatedOrganization))
         .tag(updatedOrganization.getVersion().toString())
         .build();
   }
@@ -123,7 +122,7 @@ public class OrganizationApiImpl implements OrganizationApi {
       throw new InvalidRequestException(String.format("Organization with slug [%s] could not be deleted", slug));
     }
     return Response.ok()
-        .entity(getOrganizationResponse(organizationOptional.get()))
+        .entity(organizationApiUtils.getOrganizationResponse(organizationOptional.get()))
         .tag(organizationOptional.get().getVersion().toString())
         .build();
   }

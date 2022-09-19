@@ -1,9 +1,17 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.cdng.artifact.steps;
 
 import static io.harness.cdng.artifact.steps.ArtifactsStepV2.ARTIFACTS_STEP_V_2;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -30,12 +38,14 @@ import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.steps.ServiceStepsHelper;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.data.structure.UUIDGenerator;
+import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactBuildDetailsNG;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
+import io.harness.exception.ArtifactServerException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
@@ -44,7 +54,6 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
-import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
@@ -90,6 +99,10 @@ public class ArtifactsStepV2Test {
   private final StepInputPackage inputPackage = StepInputPackage.builder().build();
   private AutoCloseable mocks;
 
+  private final Ambiance ambiance = buildAmbiance();
+  private final ArtifactTaskResponse successResponse = sampleArtifactTaskResponse();
+  private final ErrorNotifyResponseData errorNotifyResponse = sampleErrorNotifyResponse();
+
   @Before
   public void setUp() throws Exception {
     mocks = MockitoAnnotations.openMocks(this);
@@ -123,8 +136,8 @@ public class ArtifactsStepV2Test {
   @Owner(developers = OwnerRule.YOGESH)
   @Category(UnitTests.class)
   public void executeAsyncServiceSweepingOutputNotPresent() {
-    AsyncExecutableResponse response = step.executeAsync(
-        buildAmbiance(ArtifactsStepV2.STEP_TYPE), stepParameters, StepInputPackage.builder().build(), null);
+    AsyncExecutableResponse response =
+        step.executeAsync(ambiance, stepParameters, StepInputPackage.builder().build(), null);
 
     assertThat(response.getCallbackIdsCount()).isEqualTo(0);
   }
@@ -148,8 +161,7 @@ public class ArtifactsStepV2Test {
         .when(cdStepHelper)
         .fetchServiceConfigFromSweepingOutput(Mockito.any(Ambiance.class));
 
-    AsyncExecutableResponse response =
-        step.executeAsync(buildAmbiance(ArtifactsStepV2.STEP_TYPE), stepParameters, inputPackage, null);
+    AsyncExecutableResponse response = step.executeAsync(ambiance, stepParameters, inputPackage, null);
 
     verify(mockSweepingOutputService).consume(any(Ambiance.class), anyString(), captor.capture(), eq(""));
     verify(expressionResolver, times(1)).updateExpressions(any(Ambiance.class), any());
@@ -205,8 +217,7 @@ public class ArtifactsStepV2Test {
         .when(cdStepHelper)
         .fetchServiceConfigFromSweepingOutput(Mockito.any(Ambiance.class));
 
-    AsyncExecutableResponse response =
-        step.executeAsync(buildAmbiance(ArtifactsStepV2.STEP_TYPE), stepParameters, inputPackage, null);
+    AsyncExecutableResponse response = step.executeAsync(ambiance, stepParameters, inputPackage, null);
 
     verify(mockSweepingOutputService).consume(any(Ambiance.class), anyString(), captor.capture(), eq(""));
     verify(expressionResolver, times(1)).updateExpressions(any(Ambiance.class), any());
@@ -254,8 +265,7 @@ public class ArtifactsStepV2Test {
         .when(cdStepHelper)
         .fetchServiceConfigFromSweepingOutput(Mockito.any(Ambiance.class));
 
-    AsyncExecutableResponse response =
-        step.executeAsync(buildAmbiance(ArtifactsStepV2.STEP_TYPE), stepParameters, inputPackage, null);
+    AsyncExecutableResponse response = step.executeAsync(ambiance, stepParameters, inputPackage, null);
 
     verify(mockSweepingOutputService).consume(any(Ambiance.class), anyString(), captor.capture(), eq(""));
     verify(expressionResolver, times(1)).updateExpressions(any(Ambiance.class), any());
@@ -274,8 +284,7 @@ public class ArtifactsStepV2Test {
   @Owner(developers = OwnerRule.YOGESH)
   @Category(UnitTests.class)
   public void handleAsyncResponseEmpty() {
-    StepResponse stepResponse =
-        step.handleAsyncResponse(buildAmbiance(ArtifactsStepV2.STEP_TYPE), stepParameters, new HashMap<>());
+    StepResponse stepResponse = step.handleAsyncResponse(ambiance, stepParameters, new HashMap<>());
 
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SKIPPED);
   }
@@ -294,8 +303,7 @@ public class ArtifactsStepV2Test {
         .when(mockSweepingOutputService)
         .resolveOptional(any(Ambiance.class), eq(RefObjectUtils.getSweepingOutputRefObject(ARTIFACTS_STEP_V_2)));
 
-    StepResponse stepResponse = step.handleAsyncResponse(
-        buildAmbiance(ArtifactsStepV2.STEP_TYPE), stepParameters, Map.of("taskId-1", sampleArtifactTaskResponse()));
+    StepResponse stepResponse = step.handleAsyncResponse(ambiance, stepParameters, Map.of("taskId-1", successResponse));
 
     final ArgumentCaptor<ArtifactsOutcome> captor = ArgumentCaptor.forClass(ArtifactsOutcome.class);
     verify(mockSweepingOutputService, times(1))
@@ -306,6 +314,30 @@ public class ArtifactsStepV2Test {
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
     assertThat(outcome.getPrimary()).isNotNull();
     assertThat(outcome.getSidecars()).isEmpty();
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.YOGESH)
+  @Category(UnitTests.class)
+  public void handleAsyncErrorNotifyResponse() {
+    doReturn(OptionalSweepingOutput.builder()
+                 .found(true)
+                 .output(ArtifactsStepV2SweepingOutput.builder()
+                             .primaryArtifactTaskId("taskId-1")
+                             .artifactConfigMap(Map.of("taskId-1", sampleDockerConfig("image1")))
+                             .build())
+                 .build())
+        .when(mockSweepingOutputService)
+        .resolveOptional(any(Ambiance.class), eq(RefObjectUtils.getSweepingOutputRefObject(ARTIFACTS_STEP_V_2)));
+
+    try {
+      step.handleAsyncResponse(
+          ambiance, stepParameters, Map.of("taskId-1", errorNotifyResponse, "taskId-2", successResponse));
+    } catch (ArtifactServerException ase) {
+      assertThat(ase.getMessage()).contains("No Eligible Delegates");
+      return;
+    }
+    fail("ArtifactServerException expected");
   }
 
   @Test
@@ -323,9 +355,8 @@ public class ArtifactsStepV2Test {
         .when(mockSweepingOutputService)
         .resolveOptional(any(Ambiance.class), eq(RefObjectUtils.getSweepingOutputRefObject(ARTIFACTS_STEP_V_2)));
 
-    StepResponse stepResponse = step.handleAsyncResponse(buildAmbiance(ArtifactsStepV2.STEP_TYPE), stepParameters,
-        Map.of("taskId-1", sampleArtifactTaskResponse(), "taskId-2", sampleArtifactTaskResponse(), "taskId-3",
-            sampleArtifactTaskResponse()));
+    StepResponse stepResponse = step.handleAsyncResponse(ambiance, stepParameters,
+        Map.of("taskId-1", successResponse, "taskId-2", successResponse, "taskId-3", successResponse));
 
     final ArgumentCaptor<ArtifactsOutcome> captor = ArgumentCaptor.forClass(ArtifactsOutcome.class);
     verify(mockSweepingOutputService, times(1))
@@ -352,9 +383,8 @@ public class ArtifactsStepV2Test {
         .when(mockSweepingOutputService)
         .resolveOptional(any(Ambiance.class), eq(RefObjectUtils.getSweepingOutputRefObject(ARTIFACTS_STEP_V_2)));
 
-    StepResponse stepResponse = step.handleAsyncResponse(buildAmbiance(ArtifactsStepV2.STEP_TYPE), stepParameters,
-        Map.of("taskId-1", sampleArtifactTaskResponse(), "taskId-2", sampleArtifactTaskResponse(), "taskId-3",
-            sampleArtifactTaskResponse()));
+    StepResponse stepResponse = step.handleAsyncResponse(ambiance, stepParameters,
+        Map.of("taskId-1", successResponse, "taskId-2", successResponse, "taskId-3", successResponse));
 
     final ArgumentCaptor<ArtifactsOutcome> captor = ArgumentCaptor.forClass(ArtifactsOutcome.class);
     verify(mockSweepingOutputService, times(1))
@@ -388,6 +418,10 @@ public class ArtifactsStepV2Test {
         .build();
   }
 
+  private ErrorNotifyResponseData sampleErrorNotifyResponse() {
+    return ErrorNotifyResponseData.builder().errorMessage("No Eligible Delegates").build();
+  }
+
   private Optional<NGServiceV2InfoConfig> getServiceConfig(ArtifactListConfig artifactListConfig) {
     NGServiceV2InfoConfig config =
         NGServiceV2InfoConfig.builder()
@@ -402,10 +436,13 @@ public class ArtifactsStepV2Test {
     return Optional.of(config);
   }
 
-  private Ambiance buildAmbiance(StepType stepType) {
+  private Ambiance buildAmbiance() {
     List<Level> levels = new ArrayList<>();
-    levels.add(
-        Level.newBuilder().setRuntimeId(generateUuid()).setSetupId(generateUuid()).setStepType(stepType).build());
+    levels.add(Level.newBuilder()
+                   .setRuntimeId(generateUuid())
+                   .setSetupId(generateUuid())
+                   .setStepType(ArtifactsStepV2.STEP_TYPE)
+                   .build());
     return Ambiance.newBuilder()
         .setPlanExecutionId(generateUuid())
         .putAllSetupAbstractions(Map.of("accountId", ACCOUNT_ID))

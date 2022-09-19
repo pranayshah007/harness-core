@@ -141,3 +141,6 @@ io.harness.logging.CommandExecutionStatus
 io.harness.steps.approval.step.harness.beans.HarnessApprovalAction
 io.harness.plancreator.strategy.ExpressionAxisConfig
 io.harness.yaml.core.failurestrategy.ProceedWithDefaultValuesFailureActionConfig
+io.harness.steps.wait.WaitStepParameters
+io.harness.steps.wait.WaitStepNode
+io.harness.steps.wait.WaitStepInfo

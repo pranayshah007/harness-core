@@ -1226,7 +1226,6 @@ public class WorkflowExecutionServiceTest extends WingsBaseTest {
   }
 
   private void validateFetchDeploymentMetadata(boolean isPipeline, boolean ffOn) {
-    when(featureFlagService.isEnabled(eq(FeatureName.ARTIFACT_STREAM_REFACTOR), any())).thenReturn(ffOn);
     ExecutionArgs executionArgs = new ExecutionArgs();
     if (isPipeline) {
       executionArgs.setWorkflowType(WorkflowType.PIPELINE);
@@ -1454,7 +1453,6 @@ public class WorkflowExecutionServiceTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldPopulateHelmChartsInWorkflowExecution() {
     when(featureFlagService.isEnabled(FeatureName.HELM_CHART_AS_ARTIFACT, ACCOUNT_ID)).thenReturn(true);
-    when(featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, ACCOUNT_ID)).thenReturn(false);
     WorkflowExecution workflowExecution = createNewWorkflowExecution();
     workflowExecution.setServiceIds(asList(SERVICE_ID + 1, SERVICE_ID + 2));
 
@@ -1482,7 +1480,6 @@ public class WorkflowExecutionServiceTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldThrowExceptionForInvalidHelmChart() {
     when(featureFlagService.isEnabled(FeatureName.HELM_CHART_AS_ARTIFACT, ACCOUNT_ID)).thenReturn(true);
-    when(featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, ACCOUNT_ID)).thenReturn(false);
     WorkflowExecution workflowExecution = createNewWorkflowExecution();
     workflowExecution.setServiceIds(asList(SERVICE_ID + 1, SERVICE_ID + 2));
 

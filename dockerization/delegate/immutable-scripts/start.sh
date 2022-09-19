@@ -46,7 +46,7 @@ echo "managerUrl: $MANAGER_HOST_AND_PORT/api/" >> config.yml
 echo "verificationServiceUrl: $MANAGER_HOST_AND_PORT/verification/" >> config.yml
 echo "cvNextGenUrl: $MANAGER_HOST_AND_PORT/cv/api/" >> config.yml
 echo "logStreamingServiceBaseUrl: $LOG_STREAMING_SERVICE_URL" >> config.yml
-echo "heartbeatIntervalMs: 60000" >> config.yml
+echo "heartbeatIntervalMs: 50000" >> config.yml
 echo "localDiskPath: /tmp" >> config.yml
 echo "maxCachedArtifacts: 2" >> config.yml
 echo "pollForTasks: ${POLL_FOR_TASKS:-false}" >> config.yml

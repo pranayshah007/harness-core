@@ -87,10 +87,8 @@ import io.harness.beans.DelegateTask;
 import io.harness.beans.DelegateTask.DelegateTaskBuilder;
 import io.harness.beans.EmbeddedUser;
 import io.harness.beans.ExecutionStatus;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.context.ContextElementType;
-import io.harness.delegate.beans.DelegateTaskDetails;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.command.CommandExecutionResult;
@@ -189,7 +187,6 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
@@ -709,7 +706,6 @@ public class CommandStateTest extends WingsBaseTest {
   @Owner(developers = SAHIL)
   @Category(UnitTests.class)
   public void executeWithArtifactStreamRefactorTrue() {
-    when(featureFlagService.isEnabled(eq(FeatureName.ARTIFACT_STREAM_REFACTOR), any())).thenReturn(true);
     Artifact artifact =
         anArtifact().withUuid(ARTIFACT_ID).withAppId(APP_ID).withArtifactStreamId(ARTIFACT_STREAM_ID).build();
 
@@ -772,101 +768,7 @@ public class CommandStateTest extends WingsBaseTest {
     verify(context, times(6)).renderExpression(anyString());
     verify(context, times(1)).getServiceVariables();
     verify(context, times(1)).getSafeDisplayServiceVariables();
-    verify(context, times(3)).getAppId();
-    verify(context).getStateExecutionData();
-
-    verify(activityHelperService).updateStatus(ACTIVITY_ID, APP_ID, ExecutionStatus.SUCCESS);
-    verify(settingsService, times(4)).getByName(eq(ACCOUNT_ID), eq(APP_ID), eq(ENV_ID), anyString());
-    verify(settingsService, times(3)).get(anyString());
-
-    verify(workflowExecutionService).incrementInProgressCount(eq(APP_ID), any(), eq(1));
-    verify(workflowExecutionService).incrementSuccess(eq(APP_ID), any(), eq(1));
-    verify(artifactStreamService).get(ARTIFACT_STREAM_ID);
-    verifyNoMoreInteractions(serviceResourceService, serviceInstanceService, activityHelperService,
-        serviceCommandExecutorService, settingsService, workflowExecutionService, artifactStreamService);
-    verify(activityService).getCommandUnits(APP_ID, ACTIVITY_ID);
-  }
-
-  @Test
-  @Owner(developers = SAHIL)
-  @Category(UnitTests.class)
-  public void executeWithArtifactStreamRefactorTrueWithArtifactNull() {
-    when(featureFlagService.isEnabled(eq(FeatureName.ARTIFACT_STREAM_REFACTOR), any())).thenReturn(true);
-    Artifact artifact =
-        anArtifact().withUuid(ARTIFACT_ID).withAppId(APP_ID).withArtifactStreamId(ARTIFACT_STREAM_ID).build();
-
-    ArtifactStreamAttributes artifactStreamAttributes = ArtifactStreamAttributes.builder().metadataOnly(false).build();
-    Command command =
-        aCommand()
-            .addCommandUnits(
-                ScpCommandUnit.Builder.aScpCommandUnit().withFileCategory(ScpFileCategory.ARTIFACTS).build())
-            .withTemplateVariables(Arrays.asList(variable))
-            .build();
-
-    setWorkflowStandardParams(artifact, command);
-
-    commandState.setHost(HOST_NAME);
-    commandState.setSshKeyRef("ssh_key_ref");
-    SettingAttribute settingAttribute = new SettingAttribute();
-    settingAttribute.setValue(HostConnectionAttributes.Builder.aHostConnectionAttributes().build());
-    when(settingsService.get("ssh_key_ref")).thenReturn(settingAttribute);
-    when(serviceResourceService.getWithDetails(APP_ID, null)).thenReturn(SERVICE);
-
-    when(context.getContextElement(ContextElementType.STANDARD)).thenReturn(workflowStandardParams);
-    when(artifactStreamService.get(ARTIFACT_STREAM_ID)).thenReturn(artifactStream);
-    when(artifactStream.fetchArtifactStreamAttributes(featureFlagService)).thenReturn(artifactStreamAttributes);
-    when(artifactStream.getSettingId()).thenReturn(SETTING_ID);
-    when(artifactStream.getUuid()).thenReturn(ARTIFACT_STREAM_ID);
-    when(serviceCommandExecutorService.execute(CommandMapper.toCommandDTO(command),
-             aCommandExecutionContext()
-                 .appId(APP_ID)
-                 .backupPath(BACKUP_PATH)
-                 .runtimePath(RUNTIME_PATH)
-                 .stagingPath(STAGING_PATH)
-                 .executionCredential(null)
-                 .activityId(ACTIVITY_ID)
-                 .artifactStreamAttributes(artifactStreamAttributes)
-                 .artifactServerEncryptedDataDetails(new ArrayList<>())
-                 .build()))
-        .thenReturn(SUCCESS);
-    when(artifactService.fetchArtifactFiles(ARTIFACT_ID)).thenReturn(new ArrayList<>());
-
-    ExecutionResponse executionResponse = commandState.execute(context);
-    when(context.getStateExecutionData()).thenReturn(executionResponse.getStateExecutionData());
-    commandState.handleAsyncResponse(
-        context, ImmutableMap.of(ACTIVITY_ID, CommandExecutionResult.builder().status(SUCCESS).build()));
-
-    ArgumentCaptor<DelegateTask> delegateTaskArgumentCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(delegateTaskArgumentCaptor.capture());
-    assertThat(delegateTaskArgumentCaptor.getValue())
-        .isNotNull()
-        .hasFieldOrPropertyWithValue("data.taskType", TaskType.COMMAND.name());
-    assertThat(delegateTaskArgumentCaptor.getValue().isSelectionLogsTrackingEnabled()).isTrue();
-    verify(stateExecutionService).appendDelegateTaskDetails(eq(null), any(DelegateTaskDetails.class));
-
-    verify(serviceResourceService).getCommandByName(APP_ID, SERVICE_ID, ENV_ID, "START");
-    verify(serviceResourceService).getWithDetails(APP_ID, null);
-    verify(serviceResourceService).getDeploymentType(any(), any(), any());
-
-    verify(serviceInstanceService).get(APP_ID, ENV_ID, SERVICE_INSTANCE_ID);
-    verify(activityHelperService)
-        .createAndSaveActivity(any(ExecutionContext.class), any(Activity.Type.class), any(), any(), anyList(), any());
-    verify(activityHelperService).updateStatus(ACTIVITY_ID, APP_ID, ExecutionStatus.SUCCESS);
-    verify(serviceResourceService).getFlattenCommandUnitList(APP_ID, SERVICE_ID, ENV_ID, "START");
-
-    DelegateTaskBuilder delegateBuilder = getDelegateBuilder(artifact, artifactStreamAttributes, command);
-    DelegateTask delegateTask = delegateBuilder.build();
-
-    delegateService.queueTask(delegateTask);
-
-    verify(context, times(4)).getContextElement(ContextElementType.STANDARD);
-    verify(context, times(1)).getContextElement(ContextElementType.INSTANCE);
-    verify(context, times(1)).fetchInfraMappingId();
-    verify(context, times(2)).getContextElementList(ContextElementType.PARAM);
-    verify(context, times(6)).renderExpression(anyString());
-    verify(context, times(1)).getServiceVariables();
-    verify(context, times(1)).getSafeDisplayServiceVariables();
-    verify(context, times(3)).getAppId();
+    verify(context, times(4)).getAppId();
     verify(context).getStateExecutionData();
 
     verify(activityHelperService).updateStatus(ACTIVITY_ID, APP_ID, ExecutionStatus.SUCCESS);
@@ -2261,7 +2163,6 @@ public class CommandStateTest extends WingsBaseTest {
   @Owner(developers = TMACARI)
   @Category(UnitTests.class)
   public void executeFailureWhenArtifactIsNotNeededArtifactStreamRefactorEnabled() {
-    when(featureFlagService.isEnabled(eq(FeatureName.ARTIFACT_STREAM_REFACTOR), any())).thenReturn(true);
     when(serviceResourceService.getCommandByName(APP_ID, SERVICE_ID, ENV_ID, COMMAND_NAME))
         .thenReturn(aServiceCommand()
                         .withTargetToAllEnv(true)

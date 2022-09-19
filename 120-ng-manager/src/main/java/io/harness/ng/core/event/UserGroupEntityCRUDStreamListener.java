@@ -29,6 +29,7 @@ import io.harness.ng.core.api.UserGroupService;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.protobuf.InvalidProtocolBufferException;
+import java.util.Collections;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
@@ -147,7 +148,7 @@ public class UserGroupEntityCRUDStreamListener implements MessageListener {
 
   private boolean processCreateEvent(Scope scope) {
     try {
-      defaultUserGroupService.createOrUpdateUserGroupAtScope(scope);
+      defaultUserGroupService.create(scope, Collections.emptyList());
       log.info("processed scope create event for user group.");
     } catch (Exception ex) {
       log.error("Could not process scope create event for user group.", ex);

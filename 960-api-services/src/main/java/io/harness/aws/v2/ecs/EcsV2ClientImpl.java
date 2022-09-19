@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.aws.v2.ecs;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
@@ -120,10 +127,10 @@ public class EcsV2ClientImpl extends AwsClientHelper implements EcsV2Client {
 
   @Override
   public WaiterResponse<DescribeServicesResponse> ecsServiceSteadyStateCheck(AwsInternalConfig awsConfig,
-      DescribeServicesRequest describeServicesRequest, String region, int serviceSteadyStateTimeout) {
+      DescribeServicesRequest describeServicesRequest, String region, long serviceSteadyStateTimeout) {
     // Polling interval of 10 sec with total waiting done till a timeout of <serviceSteadyStateTimeout> min
     int delayInSeconds = 10;
-    int maxAttempts = (int) TimeUnit.MINUTES.toSeconds(serviceSteadyStateTimeout) / delayInSeconds;
+    int maxAttempts = (int) TimeUnit.MILLISECONDS.toSeconds(serviceSteadyStateTimeout) / delayInSeconds;
     try (EcsClient ecsClient = (EcsClient) getClient(awsConfig, region);
          EcsWaiter ecsWaiter = getEcsWaiter(ecsClient, delayInSeconds, maxAttempts)) {
       super.logCall(client(), Thread.currentThread().getStackTrace()[1].getMethodName());
