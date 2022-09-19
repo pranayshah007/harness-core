@@ -17,6 +17,7 @@ public class SubscriptionParams {
   private String accountIdentifier;
   private String subscriptionId;
   private String customerId;
+  private String customerEmail;
   private String paymentMethodId;
   private String moduleType;
   private String paymentFrequency;
