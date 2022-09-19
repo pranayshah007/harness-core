@@ -14,6 +14,7 @@ import io.harness.cdng.azure.webapp.variablecreator.AzureWebAppRollbackStepVaria
 import io.harness.cdng.azure.webapp.variablecreator.AzureWebAppSlotDeploymentStepVariableCreator;
 import io.harness.cdng.azure.webapp.variablecreator.AzureWebAppSwapSlotStepVariableCreator;
 import io.harness.cdng.azure.webapp.variablecreator.AzureWebAppTrafficShiftStepVariableCreator;
+import io.harness.cdng.chaos.ChaosStepPlanCreator;
 import io.harness.cdng.creator.filters.DeploymentStageFilterJsonCreatorV2;
 import io.harness.cdng.creator.plan.CDStepsPlanCreator;
 import io.harness.cdng.creator.plan.artifact.ArtifactsPlanCreator;
@@ -212,6 +213,9 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new AzureCreateBPResourceStepPlanCreator());
 
     planCreators.add(new AzureARMRollbackResourceStepPlanCreator());
+
+    // CHaos
+    planCreators.add(new ChaosStepPlanCreator());
     injectorUtils.injectMembers(planCreators);
     return planCreators;
   }
