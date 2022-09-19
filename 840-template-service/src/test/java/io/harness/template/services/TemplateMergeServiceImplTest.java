@@ -8,6 +8,7 @@
 package io.harness.template.services;
 
 import static io.harness.rule.OwnerRule.*;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
@@ -29,6 +30,7 @@ import io.harness.ng.core.template.exception.NGTemplateResolveException;
 import io.harness.rule.Owner;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.helpers.TemplateMergeServiceHelper;
+import io.harness.template.helpers.TemplateYamlSchemaMergeHelper;
 
 import com.google.common.io.Resources;
 import java.io.IOException;
@@ -38,8 +40,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-
-import io.harness.template.helpers.TemplateYamlSchemaMergeHelper;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -56,8 +56,7 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
   @Mock private NGTemplateServiceHelper templateServiceHelper;
   @InjectMocks TemplateMergeServiceHelper templateMergeServiceHelper;
 
-  @Mock
-  TemplateYamlSchemaMergeHelper templateYamlSchemaMergeHelper;
+  @Mock TemplateYamlSchemaMergeHelper templateYamlSchemaMergeHelper;
 
   private static final String ACCOUNT_ID = "accountId";
   private static final String ORG_ID = "orgId";
@@ -77,11 +76,11 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
     on(templateMergeServiceHelper).set("templateServiceHelper", templateServiceHelper);
     on(templateMergeService).set("templateMergeServiceHelper", templateMergeServiceHelper);
     MockedStatic<TemplateYamlSchemaMergeHelper> templateYamlSchemaMergeHelperMockedStatic =
-            Mockito.mockStatic(TemplateYamlSchemaMergeHelper.class);
+        Mockito.mockStatic(TemplateYamlSchemaMergeHelper.class);
     when(TemplateYamlSchemaMergeHelper.).thenReturn(false);
     templateYamlSchemaMergeHelperMockedStatic
-            .when(() -> TemplateYamlSchemaMergeHelper.isFeatureFlagEnabled(any(), anyString(), any()))
-            .thenAnswer((Answer<Boolean>) invocation -> false);
+        .when(() -> TemplateYamlSchemaMergeHelper.isFeatureFlagEnabled(any(), anyString(), any()))
+        .thenAnswer((Answer<Boolean>) invocation -> false);
   }
 
   @Test
