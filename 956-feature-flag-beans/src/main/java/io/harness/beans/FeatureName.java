@@ -28,7 +28,6 @@ public enum FeatureName {
   ARGO_PHASE2_MANAGED,
   ARTIFACT_PERPETUAL_TASK,
   ARTIFACT_PERPETUAL_TASK_MIGRATION,
-  ARTIFACT_STREAM_REFACTOR,
   ARTIFACT_STREAM_DELEGATE_SCOPING,
   ARTIFACT_STREAM_DELEGATE_TIMEOUT,
   AUTO_ACCEPT_SAML_ACCOUNT_INVITES,
@@ -324,7 +323,6 @@ public enum FeatureName {
   ENABLE_DEFAULT_TIMEFRAME_IN_DEPLOYMENTS,
   EXPORT_TF_PLAN_JSON_NG,
   ADD_MANIFEST_COLLECTION_STEP,
-  NG_CUSTOM_APPROVAL,
   NG_FILE_STORE,
   ACCOUNT_BASIC_ROLE,
   CVNG_TEMPLATE_MONITORED_SERVICE,
@@ -444,7 +442,11 @@ public enum FeatureName {
       "With this instead of using regex search we will use text search for CD page in CG", HarnessTeam.SPG),
   AZURE_WEBAPP_NG_S3_ARTIFACTS(
       "UI FF to enable AWS S3 as an artifact source option for Azure Web App NG", HarnessTeam.CDP),
-  NG_TEMPLATE_VARIABLES("Enable support for Template variables in NG", HarnessTeam.CDC);
+  NG_TEMPLATE_VARIABLES("Enable support for Template variables in NG", HarnessTeam.CDC),
+  SRM_ENABLE_HEALTHSOURCE_CLOUDWATCH_METRICS("UI FF to enable CloudWatch Metrics healthsource", HarnessTeam.CV),
+  SRM_ENABLE_VERIFY_STEP_LONG_DURATION("Enable longer duration for verify step", HarnessTeam.CV),
+  SETTING_ATTRIBUTES_SERVICE_ACCOUNT_TOKEN_MIGRATION("Migrate erroneous service account tokens", HarnessTeam.PL),
+  ARTIFACT_SOURCE_TEMPLATE("Flag to add support for artifact source templates", HarnessTeam.CDC);
 
   @Deprecated
   FeatureName() {

@@ -1114,6 +1114,13 @@
 9110:io.harness.cvng.beans.SplunkMetricDataCollectionInfo
 9111:io.harness.cvng.beans.SplunkMetricDataCollectionInfo.MetricInfo
 9112:io.harness.cvng.beans.splunk.SplunkMetricSampleDataCollectionRequest
+9113:io.harness.cvng.beans.DeviationType
+9114:io.harness.cvng.beans.CloudWatchMetricDataCollectionInfo
+9115:io.harness.cvng.beans.CloudWatchMetricDataCollectionInfo.CloudWatchMetricInfoDTO
+9116:io.harness.cvng.beans.cloudwatch.CloudWatchMetricFetchSampleDataRequest
+9121:io.harness.cvng.beans.elk.ELKDataCollectionRequest
+9122:io.harness.cvng.beans.elk.ELKIndexCollectionRequest
+9123:io.harness.cvng.beans.elk.ELKSampleDataCollectionRequest
 9701:io.harness.logging.UnitProgress
 9702:io.harness.logging.UnitStatus
 9709:io.harness.jira.JiraIssueTypeNG

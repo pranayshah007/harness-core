@@ -16,6 +16,7 @@ import static io.harness.polling.contracts.Type.DOCKER_HUB;
 import static io.harness.polling.contracts.Type.ECR;
 import static io.harness.polling.contracts.Type.GCR;
 import static io.harness.polling.contracts.Type.GCS_HELM;
+import static io.harness.polling.contracts.Type.GITHUB_PACKAGES;
 import static io.harness.polling.contracts.Type.GIT_POLL;
 import static io.harness.polling.contracts.Type.GOOGLE_ARTIFACT_REGISTRY;
 import static io.harness.polling.contracts.Type.HTTP_HELM;
@@ -52,6 +53,7 @@ import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.gar.GarDelegateResponse;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactDelegateResponse;
 import io.harness.gitpolling.github.GitPollingWebhookData;
@@ -68,6 +70,7 @@ import io.harness.polling.bean.artifact.DockerHubArtifactInfo;
 import io.harness.polling.bean.artifact.EcrArtifactInfo;
 import io.harness.polling.bean.artifact.GARArtifactInfo;
 import io.harness.polling.bean.artifact.GcrArtifactInfo;
+import io.harness.polling.bean.artifact.GithubPackagesArtifactInfo;
 import io.harness.polling.bean.artifact.NexusRegistryArtifactInfo;
 import io.harness.polling.bean.gitpolling.GitHubPollingInfo;
 import io.harness.polling.bean.gitpolling.GitPollingInfo;
@@ -213,6 +216,12 @@ public class PollingResponseHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testSuccessGARPollingResponseWithDelegateRebalance() {
     testSuccessResponse(GOOGLE_ARTIFACT_REGISTRY, PollingType.ARTIFACT);
+  }
+  @Test
+  @Owner(developers = OwnerRule.vivekveman)
+  @Category(UnitTests.class)
+  public void testSuccessGithubPackagePollingResponseWithDelegateRebalance() {
+    testSuccessResponse(GITHUB_PACKAGES, PollingType.ARTIFACT);
   }
 
   @Test
@@ -444,6 +453,10 @@ public class PollingResponseHandlerTest extends CategoryTest {
       case GOOGLE_ARTIFACT_REGISTRY:
         artifactDelegateResponses = getGARArtifactDelegateResponseList(startIndexUnpublished, endIndexUnpublished);
         break;
+      case GITHUB_PACKAGES:
+        artifactDelegateResponses =
+            getGithubPackagesArtifactDelegateResponseList(startIndexUnpublished, endIndexUnpublished);
+        break;
       default:
         artifactDelegateResponses = getEcrArtifactDelegateResponseList(startIndexUnpublished, endIndexUnpublished);
     }
@@ -528,6 +541,16 @@ public class PollingResponseHandlerTest extends CategoryTest {
                    .build())
         .collect(Collectors.toList());
   }
+  private List<ArtifactDelegateResponse> getGithubPackagesArtifactDelegateResponseList(int startIndex, int endIndex) {
+    return IntStream.rangeClosed(startIndex, endIndex)
+        .boxed()
+        .map(i
+            -> GithubPackagesArtifactDelegateResponse.builder()
+                   .sourceType(ArtifactSourceType.GITHUB_PACKAGES)
+                   .version(String.valueOf(i))
+                   .build())
+        .collect(Collectors.toList());
+  }
 
   private List<GitPollingWebhookData> getGitPollingDelegateResponseList(int startIndex, int endIndex) {
     return IntStream.rangeClosed(startIndex, endIndex)
@@ -578,6 +601,8 @@ public class PollingResponseHandlerTest extends CategoryTest {
         return getGitPollingDocument(polledResponse);
       case GOOGLE_ARTIFACT_REGISTRY:
         return getGoogleArtifactRegistryPollingDocument(polledResponse);
+      case GITHUB_PACKAGES:
+        return getGithubPackagesPollingDocument(polledResponse);
       default:
         return null;
     }
@@ -642,6 +667,11 @@ public class PollingResponseHandlerTest extends CategoryTest {
   private PollingDocument getGoogleArtifactRegistryPollingDocument(PolledResponse polledResponse) {
     GARArtifactInfo garArtifactInfo = GARArtifactInfo.builder().pkg("imagePath").build();
     return getPollingDocument(polledResponse, garArtifactInfo, PollingType.ARTIFACT);
+  }
+  private PollingDocument getGithubPackagesPollingDocument(PolledResponse polledResponse) {
+    GithubPackagesArtifactInfo githubPackagesArtifactInfo =
+        GithubPackagesArtifactInfo.builder().packageName("imagePath").build();
+    return getPollingDocument(polledResponse, githubPackagesArtifactInfo, PollingType.ARTIFACT);
   }
 
   private PollingDocument getAcrRegistryPollingDocument(PolledResponse polledResponse) {

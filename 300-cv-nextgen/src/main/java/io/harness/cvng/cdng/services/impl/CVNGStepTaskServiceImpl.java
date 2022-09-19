@@ -106,6 +106,11 @@ public class CVNGStepTaskServiceImpl implements CVNGStepTaskService {
   }
 
   @Override
+  public VerificationJobInstance getByVerificationJobInstanceId(String verificationJobInstanceId) {
+    return verificationJobInstanceService.getVerificationJobInstance(verificationJobInstanceId);
+  }
+
+  @Override
   public DeploymentActivitySummaryDTO getDeploymentSummary(String callbackId) {
     CVNGStepTask stepTask = getByCallBackId(callbackId);
     DeploymentVerificationJobInstanceSummary deploymentVerificationJobInstanceSummary =

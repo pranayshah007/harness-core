@@ -466,6 +466,7 @@ public class SettingAttribute
     public static final String value_type = SettingAttributeKeys.value + ".type";
     public static final String isCEEnabled = SettingAttributeKeys.value + ".ccmConfig.cloudCostEnabled";
     public static final String referencedConnector = SettingAttributeKeys.value + ".connectorId";
+    public static final String authType = SettingAttributeKeys.value + ".authType";
   }
 
   @Nonnull

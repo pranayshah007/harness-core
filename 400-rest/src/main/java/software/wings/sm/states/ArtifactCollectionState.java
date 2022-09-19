@@ -981,7 +981,7 @@ public class ArtifactCollectionState extends State {
   }
 
   private boolean isMultiArtifact(String accountId) {
-    return featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId);
+    return false;
   }
 
   public void setRuntimeValues(Map<String, Object> runtimeValues) {

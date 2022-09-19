@@ -38,6 +38,7 @@ import io.harness.cvng.cdng.entities.CVNGStepTask;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.CVNGLog;
+import io.harness.cvng.core.entities.CloudWatchMetricCVConfig;
 import io.harness.cvng.core.entities.CustomHealthLogCVConfig;
 import io.harness.cvng.core.entities.CustomHealthMetricCVConfig;
 import io.harness.cvng.core.entities.DataCollectionTask;
@@ -83,12 +84,15 @@ import io.harness.cvng.migration.beans.CVNGSchema;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule;
 import io.harness.cvng.notification.entities.NotificationRule;
 import io.harness.cvng.notification.entities.SLONotificationRule;
+import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.RatioServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.entities.SLOErrorBudgetReset;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.ThresholdServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.UserJourney;
 import io.harness.cvng.statemachine.entities.AnalysisOrchestrator;
@@ -168,6 +172,7 @@ public class CVNextGenMorphiaRegister implements MorphiaRegistrar {
     set.add(CVNGLog.class);
     set.add(MonitoringSourcePerpetualTask.class);
     set.add(NewRelicCVConfig.class);
+    set.add(CloudWatchMetricCVConfig.class);
     set.add(CVNGStepTask.class);
     set.add(Comparable.class);
     set.add(PrometheusCVConfig.class);
@@ -208,6 +213,9 @@ public class CVNextGenMorphiaRegister implements MorphiaRegistrar {
     set.add(MonitoredServiceNotificationRule.class);
     set.add(SplunkMetricCVConfig.class);
     set.add(EntityDisableTime.class);
+    set.add(AbstractServiceLevelObjective.class);
+    set.add(SimpleServiceLevelObjective.class);
+    set.add(CompositeServiceLevelObjective.class);
   }
 
   @Override

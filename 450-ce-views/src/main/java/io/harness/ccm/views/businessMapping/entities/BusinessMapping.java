@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CE;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
+import io.harness.ccm.views.entities.ViewFieldIdentifier;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
@@ -48,6 +49,7 @@ public final class BusinessMapping implements PersistentEntity, UuidAware, Creat
   List<CostTarget> costTargets;
   List<SharedCost> sharedCosts;
   UnallocatedCost unallocatedCost;
+  List<ViewFieldIdentifier> dataSources;
 
   long createdAt;
   long lastUpdatedAt;

@@ -34,7 +34,7 @@ public class AzureCreateBPStepParameters extends AzureCreateBPBaseStepInfo imple
   public AzureCreateBPStepParameters(ParameterField<String> provisionerIdentifier,
       ParameterField<List<TaskSelectorYaml>> delegateSelectors, String uuid,
       @NonNull AzureCreateBPStepConfigurationParameters configuration) {
-    super(provisionerIdentifier, delegateSelectors, uuid);
+    super(delegateSelectors, uuid);
     this.configuration = configuration;
   }
 }

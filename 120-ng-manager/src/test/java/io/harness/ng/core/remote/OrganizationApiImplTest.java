@@ -9,7 +9,6 @@ package io.harness.ng.core.remote;
 
 import static io.harness.NGCommonEntityConstants.SELF_REL;
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.ng.core.remote.OrganizationApiUtils.getOrganizationDto;
 import static io.harness.ng.core.remote.OrganizationMapper.toOrganization;
 import static io.harness.rule.OwnerRule.ASHISHSANODIA;
 import static io.harness.utils.PageTestUtils.getPage;
@@ -41,6 +40,9 @@ import io.harness.spec.server.ng.model.UpdateOrganizationRequest;
 
 import java.util.List;
 import java.util.Optional;
+import javax.validation.Validation;
+import javax.validation.Validator;
+import javax.validation.ValidatorFactory;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 import org.junit.Before;
@@ -52,6 +54,9 @@ import org.mockito.ArgumentCaptor;
 public class OrganizationApiImplTest extends CategoryTest {
   private OrganizationService organizationService;
   private OrganizationApiImpl organizationApi;
+  private OrganizationApiUtils organizationApiUtils;
+
+  private Validator validator;
 
   String account = randomAlphabetic(10);
   String slug = randomAlphabetic(10);
@@ -60,7 +65,12 @@ public class OrganizationApiImplTest extends CategoryTest {
   @Before
   public void setup() {
     organizationService = mock(OrganizationService.class);
-    organizationApi = new OrganizationApiImpl(organizationService);
+
+    ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+    validator = factory.getValidator();
+
+    organizationApiUtils = new OrganizationApiUtils(validator);
+    organizationApi = new OrganizationApiImpl(organizationService, organizationApiUtils);
   }
 
   private OrganizationDTO getOrganizationDTO(String identifier, String name) {
@@ -77,13 +87,14 @@ public class OrganizationApiImplTest extends CategoryTest {
     org.setName(name);
     organizationRequest.setOrg(org);
 
-    OrganizationDTO organizationDTO = getOrganizationDto(organizationRequest);
+    OrganizationDTO organizationDTO = organizationApiUtils.getOrganizationDto(organizationRequest);
     Organization organization = toOrganization(organizationDTO);
     organization.setVersion(0L);
 
     when(organizationService.create(account, organizationDTO)).thenReturn(organization);
 
     Response response = organizationApi.createOrganization(organizationRequest, account);
+    assertEquals(201, response.getStatus());
 
     assertEquals(organization.getVersion().toString(), response.getEntityTag().getValue());
     OrganizationResponse entity = (OrganizationResponse) response.getEntity();
@@ -130,7 +141,7 @@ public class OrganizationApiImplTest extends CategoryTest {
     org.setSlug(slug);
     org.setName(name);
 
-    OrganizationDTO organizationDTO = getOrganizationDto(organizationRequest);
+    OrganizationDTO organizationDTO = organizationApiUtils.getOrganizationDto(organizationRequest);
     Organization organization = toOrganization(organizationDTO);
     organization.setVersion(0L);
 
@@ -161,7 +172,7 @@ public class OrganizationApiImplTest extends CategoryTest {
     org.setName("updated_name");
     request.setOrg(org);
 
-    OrganizationDTO organizationDTO = getOrganizationDto(slug, request);
+    OrganizationDTO organizationDTO = organizationApiUtils.getOrganizationDto(slug, request);
     Organization organization = toOrganization(organizationDTO);
     organization.setVersion(0L);
 

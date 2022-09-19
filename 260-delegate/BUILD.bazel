@@ -564,7 +564,6 @@ java_library(
         "@maven//:org_bitbucket_b_c_jose4j",
         "@maven//:org_bouncycastle_bcpg_jdk15on",
         "@maven//:org_bouncycastle_bcpkix_jdk15on",
-        "@maven//:org_bouncycastle_bcprov_ext_jdk15on",
         "@maven//:org_bouncycastle_bcprov_jdk15on",
         "@maven//:org_checkerframework_checker_compat_qual",
         "@maven//:org_checkerframework_checker_qual",

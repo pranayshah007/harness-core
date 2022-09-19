@@ -27,7 +27,8 @@ public enum DataSourceType {
   ERROR_TRACKING("ErrorTracking", VerificationType.LOG, "splunk"),
   DYNATRACE("Dynatrace", VerificationType.TIME_SERIES, "prometheus"),
   CUSTOM_HEALTH_METRIC("CustomHealthMetric", VerificationType.TIME_SERIES, "prometheus"),
-  CUSTOM_HEALTH_LOG("CustomHealthLog", VerificationType.LOG, "splunk");
+  CUSTOM_HEALTH_LOG("CustomHealthLog", VerificationType.LOG, "splunk"),
+  CLOUDWATCH_METRICS("CloudWatchMetrics", VerificationType.TIME_SERIES, "appdynamics");
 
   private String displayName;
   private VerificationType verificationType;
@@ -49,8 +50,8 @@ public enum DataSourceType {
   }
 
   public static List<DataSourceType> getTimeSeriesTypes() {
-    return new ArrayList<>(
-        EnumSet.of(APP_DYNAMICS, STACKDRIVER, NEW_RELIC, PROMETHEUS, DATADOG_METRICS, DYNATRACE, CUSTOM_HEALTH_METRIC));
+    return new ArrayList<>(EnumSet.of(APP_DYNAMICS, STACKDRIVER, NEW_RELIC, PROMETHEUS, DATADOG_METRICS, DYNATRACE,
+        CUSTOM_HEALTH_METRIC, CLOUDWATCH_METRICS));
   }
 
   public String getDemoTemplatePrefix() {

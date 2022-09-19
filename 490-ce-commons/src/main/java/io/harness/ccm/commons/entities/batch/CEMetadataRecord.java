@@ -52,4 +52,5 @@ public final class CEMetadataRecord implements PersistentEntity, UuidAware, Acco
   private Boolean segmentDataReadyEventSent;
   private Boolean segmentModuleInterfaceLoadedEventSent;
   private long lastUpdatedAt;
+  private Boolean dataGeneratedForCloudProvider;
 }

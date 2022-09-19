@@ -36,6 +36,7 @@ import io.harness.template.entity.TemplateEntity;
 import io.harness.template.helpers.MergeTemplateInputsInObject;
 import io.harness.template.helpers.TemplateInputsValidator;
 import io.harness.template.helpers.TemplateMergeServiceHelper;
+import io.harness.template.utils.TemplateUtils;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -85,7 +86,7 @@ public class TemplateMergeServiceImpl implements TemplateMergeService {
   public TemplateMergeResponseDTO applyTemplatesToYaml(
       String accountId, String orgId, String projectId, String yaml, boolean getMergedYamlWithTemplateField) {
     YamlNode yamlNode = validateAndGetYamlNode(yaml);
-
+    TemplateUtils.setupGitParentEntityDetails(accountId, orgId, projectId);
     Map<String, TemplateEntity> templateCacheMap = new HashMap<>();
     TemplateInputsErrorMetadataDTO errorResponse = templateMergeServiceHelper.validateLinkedTemplateInputsInYaml(
         accountId, orgId, projectId, yamlNode, templateCacheMap);
@@ -103,7 +104,7 @@ public class TemplateMergeServiceImpl implements TemplateMergeService {
   public TemplateMergeResponseDTO applyTemplatesToYamlV2(
       String accountId, String orgId, String projectId, String yaml, boolean getMergedYamlWithTemplateField) {
     YamlNode yamlNode = validateAndGetYamlNode(yaml);
-
+    TemplateUtils.setupGitParentEntityDetails(accountId, orgId, projectId);
     Map<String, TemplateEntity> templateCacheMap = new HashMap<>();
     ValidateTemplateInputsResponseDTO validateTemplateInputsResponse =
         templateInputsValidator.validateNestedTemplateInputsForGivenYaml(

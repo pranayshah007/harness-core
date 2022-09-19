@@ -22,6 +22,7 @@ import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.mongo.SampleEntity.SampleEntityKeys;
+import io.harness.mongo.metrics.HarnessConnectionPoolListener;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.CreatedByAware;
 import io.harness.persistence.HPersistence;
@@ -41,6 +42,7 @@ import com.google.inject.name.Named;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
 import com.mongodb.DuplicateKeyException;
+import com.mongodb.ReadPreference;
 import com.mongodb.WriteResult;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -77,10 +79,25 @@ public class MongoPersistence implements HPersistence {
     return query(cls, req, allChecks);
   }
 
+  public <T> PageResponse<T> querySecondary(Class<T> cls, PageRequest<T> req) {
+    return querySecondary(cls, req, allChecks);
+  }
+
   @Override
   public <T> PageResponse<T> query(Class<T> cls, PageRequest<T> req, Set<QueryChecks> queryChecks) {
     AdvancedDatastore advancedDatastore = getDatastore(cls);
     Query<T> query = advancedDatastore.createQuery(cls);
+
+    ((HQuery) query).setQueryChecks(queryChecks);
+    Mapper mapper = ((DatastoreImpl) advancedDatastore).getMapper();
+
+    return PageController.queryPageRequest(advancedDatastore, query, mapper, cls, req);
+  }
+
+  public <T> PageResponse<T> querySecondary(Class<T> cls, PageRequest<T> req, Set<QueryChecks> queryChecks) {
+    AdvancedDatastore advancedDatastore = getDatastore(cls);
+    Query<T> query = advancedDatastore.createQuery(cls);
+    query.useReadPreference(ReadPreference.secondaryPreferred());
 
     ((HQuery) query).setQueryChecks(queryChecks);
     Mapper mapper = ((DatastoreImpl) advancedDatastore).getMapper();
@@ -101,12 +118,15 @@ public class MongoPersistence implements HPersistence {
   private Map<String, Info> storeInfo = new ConcurrentHashMap<>();
   private Map<Class, Store> classStores = new ConcurrentHashMap<>();
   private Map<String, AdvancedDatastore> datastoreMap;
+  private final HarnessConnectionPoolListener harnessConnectionPoolListener;
   @Inject UserProvider userProvider;
 
   @Inject
-  public MongoPersistence(@Named("primaryDatastore") AdvancedDatastore primaryDatastore) {
+  public MongoPersistence(@Named("primaryDatastore") AdvancedDatastore primaryDatastore,
+      HarnessConnectionPoolListener harnessConnectionPoolListener) {
     datastoreMap = new HashMap<>();
     datastoreMap.put(DEFAULT_STORE.getName(), primaryDatastore);
+    this.harnessConnectionPoolListener = harnessConnectionPoolListener;
   }
 
   @Override
@@ -144,7 +164,7 @@ public class MongoPersistence implements HPersistence {
       if (info == null || isEmpty(info.getUri())) {
         return getDatastore(DEFAULT_STORE);
       }
-      return MongoModule.createDatastore(morphia, info.getUri());
+      return MongoModule.createDatastore(morphia, info.getUri(), store.getName(), harnessConnectionPoolListener);
     });
   }
 

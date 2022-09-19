@@ -20,6 +20,7 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.jackson.JsonNodeUtils;
+import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.source.NGTriggerSpecV2;
@@ -41,6 +42,7 @@ import io.harness.polling.contracts.DockerHubPayload;
 import io.harness.polling.contracts.EcrPayload;
 import io.harness.polling.contracts.GARPayload;
 import io.harness.polling.contracts.GcrPayload;
+import io.harness.polling.contracts.GithubPackagesPollingPayload;
 import io.harness.polling.contracts.JenkinsPayload;
 import io.harness.polling.contracts.PollingItem;
 import io.harness.polling.contracts.PollingPayloadData;
@@ -67,10 +69,12 @@ import org.apache.logging.log4j.util.Strings;
 public class BuildTriggerHelper {
   private PipelineServiceClient pipelineServiceClient;
 
-  public Optional<String> fetchPipelineForTrigger(NGTriggerEntity ngTriggerEntity) {
+  public Optional<String> fetchPipelineForTrigger(TriggerDetails triggerDetails) {
+    NGTriggerEntity ngTriggerEntity = triggerDetails.getNgTriggerEntity();
+    NGTriggerConfigV2 ngTriggerConfigV2 = triggerDetails.getNgTriggerConfigV2();
     PMSPipelineResponseDTO response = NGRestUtils.getResponse(pipelineServiceClient.getPipelineByIdentifier(
         ngTriggerEntity.getTargetIdentifier(), ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
-        ngTriggerEntity.getProjectIdentifier(), null, null, false));
+        ngTriggerEntity.getProjectIdentifier(), ngTriggerConfigV2.getPipelineBranchName(), null, false));
 
     return response != null ? Optional.of(response.getYamlPipeline()) : Optional.empty();
   }
@@ -256,6 +260,8 @@ public class BuildTriggerHelper {
       validatePollingItemForJenkins(pollingItem);
     } else if (pollingPayloadData.hasGarPayload()) {
       validatePollingItemForGoogleArtifactRegistry(pollingItem);
+    } else if (pollingPayloadData.hasGithubPackagesPollingPayload()) {
+      validatePollingItemForGithubPackages(pollingItem);
     } else {
       throw new InvalidRequestException("Invalid Polling Type");
     }
@@ -273,6 +279,14 @@ public class BuildTriggerHelper {
     JenkinsPayload jenkinsPayload = pollingItem.getPollingPayloadData().getJenkinsPayload();
 
     String error = checkFiledValueError("jobName", jenkinsPayload.getJobName());
+    if (isNotBlank(error)) {
+      throw new InvalidRequestException(error);
+    }
+  }
+  private void validatePollingItemForGithubPackages(PollingItem pollingItem) {
+    GithubPackagesPollingPayload githubPackagesPollingPayload =
+        pollingItem.getPollingPayloadData().getGithubPackagesPollingPayload();
+    String error = checkFiledValueError("package Name", githubPackagesPollingPayload.getPackageName());
     if (isNotBlank(error)) {
       throw new InvalidRequestException(error);
     }

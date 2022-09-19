@@ -39,7 +39,14 @@
       "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
     },
     "skipInstances": {
-      "type": "boolean"
+      "oneOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "string"
+        }
+      ]
     },
     "strategy": {
       "$ref": "#/definitions/StrategyConfig"
@@ -917,8 +924,7 @@
         {
           "type": "object",
           "required": [
-            "configuration",
-            "provisionerIdentifier"
+            "configuration"
           ],
           "properties": {
             "configuration": {
@@ -940,9 +946,6 @@
               ]
             },
             "metadata": {
-              "type": "string"
-            },
-            "provisionerIdentifier": {
               "type": "string"
             }
           }
@@ -2733,7 +2736,14 @@
           "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
         },
         "skipInstances": {
-          "type": "boolean"
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string"
+            }
+          ]
         },
         "strategy": {
           "$ref": "#/definitions/StrategyConfig"

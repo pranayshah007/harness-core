@@ -30,6 +30,7 @@ import io.harness.logging.LogCallback;
 import com.google.common.base.Preconditions;
 import com.google.inject.Singleton;
 import java.io.ByteArrayOutputStream;
+import java.util.Collections;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.zeroturnaround.exec.ProcessResult;
@@ -75,8 +76,8 @@ public class K8sCliWatcher implements WorkloadWatcher {
       printableExecutedCommand = getPrintableCommand(rolloutStatusCommand.command());
       executionLogCallback.saveExecutionLog(printableExecutedCommand + "\n");
 
-      result = rolloutStatusCommand.execute(
-          k8sDelegateTaskParams.getWorkingDirectory(), statusInfoStream, statusErrorStream, false);
+      result = rolloutStatusCommand.execute(k8sDelegateTaskParams.getWorkingDirectory(), statusInfoStream,
+          statusErrorStream, false, Collections.emptyMap());
       boolean success = 0 == result.getExitValue();
       if (!success) {
         log.warn(result.outputUTF8());

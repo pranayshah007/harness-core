@@ -197,9 +197,9 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     if (node.getDeploymentStageConfig().getServices() != null
         || node.getDeploymentStageConfig().getEnvironments() != null
         || node.getDeploymentStageConfig().getEnvironmentGroup() != null) {
-      return node.getIdentifier() + StrategyValidationUtils.STRATEGY_IDENTIFIER_POSTFIX;
+      return identifier + StrategyValidationUtils.STRATEGY_IDENTIFIER_POSTFIX;
     }
-    return StrategyUtils.getIdentifierWithExpression(ctx, node.getIdentifier());
+    return StrategyUtils.getIdentifierWithExpression(ctx, identifier);
   }
   @Override
   public LinkedHashMap<String, PlanCreationResponse> createPlanForChildrenNodes(

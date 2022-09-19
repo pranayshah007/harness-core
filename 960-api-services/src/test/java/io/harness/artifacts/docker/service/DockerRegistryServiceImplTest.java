@@ -13,6 +13,7 @@ import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
+import static io.harness.rule.OwnerRule.SHIVAM;
 import static io.harness.rule.OwnerRule.SRINIVAS;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
@@ -543,5 +544,23 @@ public class DockerRegistryServiceImplTest extends CategoryTest {
         .isInstanceOf(InvalidArtifactServerException.class)
         .extracting("params.message")
         .isEqualTo("ProtocolException: Expected leading [0-9a-fA-F] character but was 0x6c");
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testForValidURL() {
+    String url2 = "http://localhost:" + wireMockRule.port() + "/";
+    DockerInternalConfig dockerConfig2 =
+        DockerInternalConfig.builder().dockerRegistryUrl(url2).username("username").password("password").build();
+    doReturn(dockerRegistryRestClient).when(dockerRestClientFactory).getDockerRegistryRestClient(dockerConfig2);
+    wireMockRule.stubFor(get(urlEqualTo("/v2/")).willReturn(aResponse().withStatus(200)));
+    wireMockRule.stubFor(get(urlEqualTo("/")).willReturn(aResponse().withStatus(400)));
+    assertThat(dockerRegistryService.validateCredentials(dockerConfig));
+    url2 = "http://localhost:" + wireMockRule.port() + "/v2/";
+    dockerConfig2 =
+        DockerInternalConfig.builder().dockerRegistryUrl(url2).username("username").password("password").build();
+    doReturn(dockerRegistryRestClient).when(dockerRestClientFactory).getDockerRegistryRestClient(dockerConfig2);
+    assertThat(dockerRegistryService.validateCredentials(dockerConfig));
   }
 }
