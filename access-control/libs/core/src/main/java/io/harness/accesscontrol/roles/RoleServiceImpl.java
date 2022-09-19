@@ -264,4 +264,9 @@ public class RoleServiceImpl implements RoleService {
                                             .collect(Collectors.toSet());
     role.getPermissions().addAll(compulsoryPermissions);
   }
+
+  @Override
+  public List<Role> getAll() {
+    return roleDao.getAll();
+  }
 }

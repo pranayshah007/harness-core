@@ -15,6 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 
+import java.util.List;
 import java.util.Optional;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -39,4 +40,6 @@ public interface RoleService {
   Role deleteManaged(@NotEmpty String identifier);
 
   long deleteMulti(@Valid @NotNull RoleFilter roleFilter);
+
+  List<Role> getAll();
 }

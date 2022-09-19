@@ -50,6 +50,8 @@ import javax.ws.rs.QueryParam;
 import org.hibernate.validator.constraints.NotEmpty;
 import retrofit2.http.Body;
 
+import java.util.List;
+
 @OwnedBy(PL)
 @Api("/roles")
 @Path("/roles")
@@ -131,4 +133,11 @@ public interface RoleResource {
   ResponseDTO<RoleResponseDTO>
   delete(@Parameter(description = "Identifier of the Role") @NotNull @PathParam(IDENTIFIER_KEY) String identifier,
       @BeanParam HarnessScopeParams harnessScopeParams);
+
+  @GET
+  @Path("")
+  @ApiOperation(value = "Get All Roles", nickname = "getAllRoles")
+  @Operation(operationId = "getAll", summary = "Get All Roles", description = "Get All Roles",
+          responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Get All Roles") })
+  List<ResponseDTO<RoleResponseDTO>> getAll();
 }

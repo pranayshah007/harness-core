@@ -38,6 +38,9 @@ import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.client.result.UpdateResult;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
 import javax.validation.executable.ValidateOnExecution;
@@ -201,4 +204,13 @@ public class RoleDaoImpl implements RoleDao {
 
     return criteria;
   }
+
+  @Override
+  public List<Role> getAll() {
+    List<Role> roles = new ArrayList<>();
+    Iterable<RoleDBO> roleDBOS = roleRepository.findAll();
+    roleDBOS.forEach(roleDBO -> roles.add(fromDBO(roleDBO)));
+    return roles;
+  }
+
 }

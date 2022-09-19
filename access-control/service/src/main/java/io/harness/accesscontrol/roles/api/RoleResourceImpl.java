@@ -54,6 +54,9 @@ import net.jodah.failsafe.RetryPolicy;
 import org.springframework.transaction.support.TransactionTemplate;
 import retrofit2.http.Body;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @ValidateOnExecution
 @Singleton
 @Slf4j
@@ -165,5 +168,13 @@ public class RoleResourceImpl implements RoleResource {
           new RoleDeleteEvent(response.getScope().getAccountIdentifier(), response.getRole(), response.getScope()));
       return ResponseDTO.newResponse(response);
     }));
+  }
+
+  @Override
+  public List<ResponseDTO<RoleResponseDTO>> getAll() {
+    List<Role> roles = roleService.getAll();
+    List<ResponseDTO<RoleResponseDTO>> rolesResponse = new ArrayList<>();
+     roles.forEach(role -> rolesResponse.add(ResponseDTO.newResponse(roleDTOMapper.toResponseDTO(role))));
+     return rolesResponse;
   }
 }
