@@ -23,6 +23,7 @@ import io.harness.cdng.azure.webapp.AzureWebAppSwapSlotStep;
 import io.harness.cdng.azure.webapp.AzureWebAppTrafficShiftStep;
 import io.harness.cdng.azure.webapp.ConnectionStringsStep;
 import io.harness.cdng.azure.webapp.StartupCommandStep;
+import io.harness.cdng.chaos.ChaosStep;
 import io.harness.cdng.configfile.steps.ConfigFilesStep;
 import io.harness.cdng.configfile.steps.ConfigFilesStepV2;
 import io.harness.cdng.configfile.steps.IndividualConfigFileStep;
@@ -175,7 +176,7 @@ public class NgStepRegistrar {
 
     // Chaos
     // TODO : Enable this for UI
-    // engineSteps.put(ChaosStep.STEP_TYPE, ChaosStep.class);
+    engineSteps.put(ChaosStep.STEP_TYPE, ChaosStep.class);
     return engineSteps;
   }
 }
