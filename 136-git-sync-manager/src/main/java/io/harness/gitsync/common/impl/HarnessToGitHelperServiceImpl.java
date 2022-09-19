@@ -276,7 +276,7 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
           String.format(
               "Exception while checking git Simplification status for accountId: %s , orgId: %s , projectId: %s "),
           accountIdentifier, orgIdentifier, projectIdentifier, ex);
-      return false;
+      throw new UnexpectedException("Something went wrong while performing operation. Please contact harness support.");
     }
   }
 
