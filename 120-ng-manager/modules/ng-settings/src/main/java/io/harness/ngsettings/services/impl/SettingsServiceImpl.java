@@ -66,9 +66,9 @@ public class SettingsServiceImpl implements SettingsService {
 
   @Inject
   public SettingsServiceImpl(SettingConfigurationRepository settingConfigurationRepository,
-                             SettingRepository settingRepository, SettingsMapper settingsMapper,
-                             @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate, OutboxService outboxService,
-                             Map<String, SettingValidator> settingValidatorMap) {
+      SettingRepository settingRepository, SettingsMapper settingsMapper,
+      @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate, OutboxService outboxService,
+      Map<String, SettingValidator> settingValidatorMap) {
     this.settingConfigurationRepository = settingConfigurationRepository;
     this.settingRepository = settingRepository;
     this.settingsMapper = settingsMapper;
