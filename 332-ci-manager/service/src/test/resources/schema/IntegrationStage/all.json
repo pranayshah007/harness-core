@@ -2274,7 +2274,9 @@
           ]
         },
         "namespace": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2147483647
         },
         "nodeSelector": {
           "oneOf": [
