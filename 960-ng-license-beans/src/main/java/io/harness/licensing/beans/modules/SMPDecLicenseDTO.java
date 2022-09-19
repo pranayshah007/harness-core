@@ -37,4 +37,5 @@ public class SMPDecLicenseDTO {
   String accountName;
   String libraryVersion = "V1";
   String licenseVersion = "0";
+  boolean accountOptional;
 }

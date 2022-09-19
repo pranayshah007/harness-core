@@ -7,8 +7,7 @@
 
 package io.harness.account.services.impl;
 
-import static io.harness.annotations.dev.HarnessTeam.GTM;
-
+import com.google.inject.Inject;
 import io.harness.account.AccountClient;
 import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.OwnedBy;
@@ -16,10 +15,13 @@ import io.harness.ng.core.account.DefaultExperience;
 import io.harness.ng.core.dto.AccountDTO;
 import io.harness.remote.client.CGRestUtils;
 import io.harness.signup.dto.SignupDTO;
-
-import com.google.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+
+import java.util.List;
+import java.util.Optional;
+
+import static io.harness.annotations.dev.HarnessTeam.GTM;
 
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @OwnedBy(GTM)
@@ -41,6 +43,11 @@ public class AccountServiceImpl implements AccountService {
   }
 
   @Override
+  public AccountDTO createAccount(AccountDTO accountDTO) {
+    return CGRestUtils.getResponse(accountClient.create(accountDTO));
+  }
+
+  @Override
   public Boolean updateDefaultExperienceIfApplicable(String accountId, DefaultExperience defaultExperience) {
     return CGRestUtils.getResponse(accountClient.updateDefaultExperienceIfApplicable(accountId, defaultExperience));
   }
@@ -53,5 +60,15 @@ public class AccountServiceImpl implements AccountService {
   @Override
   public AccountDTO getAccount(String accountId) {
     return CGRestUtils.getResponse(accountClient.getAccountDTO(accountId));
+  }
+
+  @Override
+  public AccountDTO getOnPremAccount() {
+    List<AccountDTO> accountDTOS = CGRestUtils.getResponse(accountClient.getAllAccounts());
+    if (accountDTOS == null || accountDTOS.isEmpty()) {
+      return null;
+    }
+    Optional<AccountDTO> onPremAccount = accountDTOS.stream().filter(dto -> !dto.getIdentifier().equals("__GLOBAL_ACCOUNT_ID__")).findAny();
+    return onPremAccount.orElse(null);
   }
 }
