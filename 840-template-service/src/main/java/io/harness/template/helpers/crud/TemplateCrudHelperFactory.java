@@ -18,6 +18,7 @@ public class TemplateCrudHelperFactory {
   @Inject NoOpTemplateCrudHelper noOpTemplateCrudHelper;
   @Inject PipelineTemplateCrudHelper pipelineTemplateCrudHelper;
   @Inject CustomDeploymentCrudHelper customDeploymentCrudHelper;
+  @Inject ArtifactSourceTemplateCrudHelper artifactSourceTemplateCrudHelper;
 
   public TemplateCrudHelper getCrudHelperForTemplateType(TemplateEntityType templateEntityType) {
     switch (templateEntityType) {
@@ -27,6 +28,8 @@ public class TemplateCrudHelperFactory {
         return pipelineTemplateCrudHelper;
       case CUSTOM_DEPLOYMENT_TEMPLATE:
         return customDeploymentCrudHelper;
+      case ARTIFACT_SOURCE_TEMPLATE:
+        return artifactSourceTemplateCrudHelper;
       default:
         return noOpTemplateCrudHelper;
     }
