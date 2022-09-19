@@ -69,7 +69,7 @@ public class EventEmitter {
     /**
      * Activities channel.
      */
-    ACTIVITIES("activities", "ui", ResourceType.ENVIRONMENT),
+    ACTIVITIES("activities", "ui", ResourceType.ENVIRONMENT);
 
     private String channelName;
     private ResourceType permission;
