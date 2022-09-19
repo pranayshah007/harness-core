@@ -39,4 +39,6 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class GcpSMConnector extends Connector {
   // Fields to be added later
+  @Builder.Default private Boolean isDefault = false;
+  String credentialsRef;
 }

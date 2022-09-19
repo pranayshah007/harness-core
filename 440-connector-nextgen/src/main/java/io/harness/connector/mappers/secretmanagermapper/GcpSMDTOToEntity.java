@@ -10,10 +10,14 @@ package io.harness.connector.mappers.secretmanagermapper;
 import io.harness.connector.entities.embedded.gcpsm.GcpSMConnector;
 import io.harness.connector.mappers.ConnectorDTOToEntityMapper;
 import io.harness.delegate.beans.connector.gcpsecretmanager.GcpSMConnectorDTO;
+import io.harness.encryption.SecretRefHelper;
 
 public class GcpSMDTOToEntity implements ConnectorDTOToEntityMapper<GcpSMConnectorDTO, GcpSMConnector> {
   @Override
   public GcpSMConnector toConnectorEntity(GcpSMConnectorDTO connectorDTO) {
-    return null;
+    return GcpSMConnector.builder()
+        .isDefault(connectorDTO.isDefault())
+        .credentialsRef(SecretRefHelper.getSecretConfigString(connectorDTO.getCredentials()))
+        .build();
   }
 }

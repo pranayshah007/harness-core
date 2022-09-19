@@ -13,12 +13,17 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.encryption.SecretRefData;
+import io.harness.encryption.SecretReference;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -40,18 +45,16 @@ import lombok.experimental.FieldDefaults;
 @OwnedBy(HarnessTeam.PL)
 @Schema(name = "GcpSM", description = "This contains details of GCP Secret Manager")
 public class GcpSMConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable {
-  // Other Fields to be added
   @Schema(description = SecretManagerDescriptionConstants.DEFAULT) private boolean isDefault;
+
+  // Credentials
+  @ApiModelProperty(dataType = "string") @NotNull @SecretReference SecretRefData credentials;
+
+  // Delegates
+  Set<String> delegateSelectors;
+
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {
-    return null;
+    return Collections.singletonList(this);
   }
-
-  @Override
-  public Set<String> getDelegateSelectors() {
-    return null;
-  }
-
-  @Override
-  public void setDelegateSelectors(Set<String> delegateSelectors) {}
 }

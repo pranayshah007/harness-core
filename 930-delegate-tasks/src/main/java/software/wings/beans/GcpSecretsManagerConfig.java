@@ -25,6 +25,7 @@ import io.harness.delegate.beans.executioncapability.SelectorCapability;
 import io.harness.delegate.task.mixin.HttpConnectionExecutionCapabilityGenerator;
 import io.harness.encryption.Encrypted;
 import io.harness.expression.ExpressionEvaluator;
+import io.harness.secretmanagerclient.dto.GCPSMConfigDTO;
 import io.harness.secretmanagerclient.dto.SecretManagerConfigDTO;
 import io.harness.security.encryption.EncryptionType;
 import io.harness.security.encryption.SecretManagerType;
@@ -116,6 +117,10 @@ public class GcpSecretsManagerConfig extends SecretManagerConfig {
 
   @Override
   public SecretManagerConfigDTO toDTO(boolean maskSecrets) {
-    return null;
+    GCPSMConfigDTO configDTO = GCPSMConfigDTO.builder().delegateSelectors(getDelegateSelectors()).build();
+    if (!maskSecrets) {
+      configDTO.setCredentials(getCredentials());
+    }
+    return configDTO;
   }
 }
