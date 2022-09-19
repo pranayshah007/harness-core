@@ -87,14 +87,10 @@ public class DynatraceHealthSourceSpecTransformerTest extends CvNextGenTestBase 
     TimeSeriesMetricPackDTO metricPackTwo = iterator.next();
     assertThat(metricPackOne).isNotNull();
     assertThat(metricPackTwo).isNotNull();
-    assertThat(metricPackOne.getIdentifier()).isEqualTo(CUSTOM_IDENTIFIER);
-    assertThat(metricPackTwo.getIdentifier()).isEqualTo(CUSTOM_IDENTIFIER);
     assertThat(metricPackOne.getMetricThresholds()).hasSize(1);
     assertThat(metricPackTwo.getMetricThresholds()).hasSize(1);
     TimeSeriesMetricPackDTO.MetricThreshold metricThresholdOne = metricPackOne.getMetricThresholds().get(0);
     TimeSeriesMetricPackDTO.MetricThreshold metricThresholdTwo = metricPackTwo.getMetricThresholds().get(0);
-    assertThat(metricThresholdOne.getMetricType()).isEqualTo(CUSTOM_IDENTIFIER);
-    assertThat(metricThresholdTwo.getMetricType()).isEqualTo(CUSTOM_IDENTIFIER);
     assertThat(new HashSet<>(Arrays.asList(metricThresholdOne.getMetricName(), metricThresholdTwo.getMetricName())))
         .isEqualTo(new HashSet<>(Arrays.asList(MOCKED_METRIC_NAME_ONE, MOCKED_METRIC_NAME_TWO)));
     assertThat(metricThresholdOne.getGroupName()).isEqualTo(MOCKED_METRIC_GROUP_NAME);
