@@ -32,6 +32,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
@@ -69,7 +70,9 @@ public class OrgSecretApiImpl implements OrgSecretApi {
 
     SecretResponseWrapper secretResponseWrapper = ngSecretService.createFile(account, secretDto, fileInputStream);
 
-    return Response.ok().entity(secretApiUtils.toSecretResponse(secretResponseWrapper)).build();
+    return Response.status(Response.Status.CREATED)
+        .entity(secretApiUtils.toSecretResponse(secretResponseWrapper))
+        .build();
   }
 
   @Override
@@ -172,7 +175,12 @@ public class OrgSecretApiImpl implements OrgSecretApi {
 
     List<SecretResponse> secretResponse =
         content.stream().map(secretApiUtils::toSecretResponse).collect(Collectors.toList());
-    return Response.ok().entity(secretResponse).build();
+
+    ResponseBuilder responseBuilder = Response.ok();
+    ResponseBuilder responseBuilderWithLinks = secretApiUtils.addLinksHeader(
+        responseBuilder, format("/v1/orgs/%s/secrets", org), secretResponse.size(), page, limit);
+
+    return responseBuilderWithLinks.entity(secretResponse).build();
   }
 
   private Response createSecret(String account, SecretRequest secretRequest, Boolean privateSecret) {
@@ -188,6 +196,6 @@ public class OrgSecretApiImpl implements OrgSecretApi {
     }
     SecretResponseWrapper entity = ngSecretService.create(account, secretDto);
 
-    return Response.ok().entity(secretApiUtils.toSecretResponse(entity)).build();
+    return Response.status(Response.Status.CREATED).entity(secretApiUtils.toSecretResponse(entity)).build();
   }
 }

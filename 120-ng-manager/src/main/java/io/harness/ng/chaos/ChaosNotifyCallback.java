@@ -7,9 +7,9 @@
 
 package io.harness.ng.chaos;
 
-import io.harness.ng.chaos.client.ChaosApplyManifestResponse;
-import io.harness.ng.chaos.client.ChaosApplyManifestResponse.ChaosApplyManifestResponseBuilder;
-import io.harness.ng.chaos.client.ChaosHttpClient;
+import io.harness.chaos.client.beans.ChaosApplyManifestResponse;
+import io.harness.chaos.client.beans.ChaosApplyManifestResponse.ChaosApplyManifestResponseBuilder;
+import io.harness.chaos.client.remote.ChaosHttpClient;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.tasks.ResponseData;
 import io.harness.waiter.NotifyCallbackWithErrorHandling;

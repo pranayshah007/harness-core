@@ -447,7 +447,10 @@ public enum FeatureName {
 
   SETTING_ATTRIBUTES_SERVICE_ACCOUNT_TOKEN_MIGRATION("Migrate erroneous service account tokens", HarnessTeam.PL),
 
-  NG_TEMPLATE_VARIABLES("Enable support for Template variables in NG", HarnessTeam.CDC);
+  NG_TEMPLATE_VARIABLES("Enable support for Template variables in NG", HarnessTeam.CDC),
+  SRM_ENABLE_HEALTHSOURCE_CLOUDWATCH_METRICS("UI FF to enable CloudWatch Metrics healthsource", HarnessTeam.CV),
+  SRM_ENABLE_VERIFY_STEP_LONG_DURATION("Enable longer duration for verify step", HarnessTeam.CV),
+  ARTIFACT_SOURCE_TEMPLATE("Flag to add support for artifact source templates", HarnessTeam.CDC);
 
   @Deprecated
   FeatureName() {

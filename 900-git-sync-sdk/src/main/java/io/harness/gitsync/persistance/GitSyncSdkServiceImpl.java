@@ -48,7 +48,7 @@ public class GitSyncSdkServiceImpl implements GitSyncSdkService {
       return entityKeySource.fetchKey(buildEntityScopeInfo(projectIdentifier, orgIdentifier, accountIdentifier));
     } catch (Exception ex) {
       log.error("Exception while communicating to the git sync service", ex);
-      return false;
+      throw new UnexpectedException("Something went wrong, Please retry after sometime.");
     }
   }
 
@@ -80,7 +80,7 @@ public class GitSyncSdkServiceImpl implements GitSyncSdkService {
               "Exception while checking git simplification status for accountId : %s , orgId : %s , projectId : %s",
               accountIdentifier, orgIdentifier, projectIdentifier),
           ex);
-      return false;
+      throw new UnexpectedException("Something went wrong, Please retry after sometime.");
     }
   }
 
