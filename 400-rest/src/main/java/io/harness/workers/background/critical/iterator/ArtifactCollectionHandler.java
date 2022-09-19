@@ -47,6 +47,7 @@ import com.codahale.metrics.InstrumentedExecutorService;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -89,8 +90,11 @@ public class ArtifactCollectionHandler implements Handler<ArtifactStream> {
             .filterExpander(query -> query.field(ArtifactStreamKeys.collectionEnabled).in(Arrays.asList(true, null)))
             .redistribute(true));
 
+    final SecureRandom random = new SecureRandom();
+
     if (iterator != null) {
-      artifactCollectionExecutor.scheduleAtFixedRate(() -> iterator.process(), 0, 10, TimeUnit.SECONDS);
+      artifactCollectionExecutor.scheduleAtFixedRate(
+          () -> iterator.process(), random.nextInt((int) ofSeconds(10).toMillis()), 10, TimeUnit.SECONDS);
     }
   }
 
