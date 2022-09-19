@@ -456,7 +456,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     }
 
     if (shouldCheckForSMPLicense()) {
-      String license = "Some license from config";
+      String license = System.getenv("SMP_LICENSE");
       LicenseValidator licenseValidator = injector.getInstance(LicenseValidator.class);
       SMPLicenseValidationResult validationResult = licenseValidator.validate(SMPLicenseEnc.builder().encryptedSMPLicense(license).build(), true);
       if (validationResult.isValid()) {
