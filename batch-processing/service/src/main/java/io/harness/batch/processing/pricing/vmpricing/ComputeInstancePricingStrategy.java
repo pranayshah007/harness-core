@@ -171,14 +171,14 @@ public class ComputeInstancePricingStrategy implements InstancePricingStrategy {
       vmInstanceBillingData = azureCustomBillingService.getComputeVMPricingInfo(instanceData, startTime, endTime);
     } else if (cloudProvider == CloudProvider.GCP && null != gcpDataSetId) {
       vmInstanceBillingData = gcpCustomBillingService.getComputeVMPricingInfo(instanceData, startTime, endTime);
-      log.info("Check: vmInstanceBillingData: {}, resourceId: {}", vmInstanceBillingData,
-          vmInstanceBillingData.getResourceId());
+      log.info("Check: vmInstanceBillingData: {}", vmInstanceBillingData);
     }
 
     if (null != vmInstanceBillingData && !Double.isNaN(vmInstanceBillingData.getComputeCost())) {
       double pricePerHr = (vmInstanceBillingData.getComputeCost() * 3600) / parentInstanceActiveSecond;
       log.info("CUR Pricing, pricePerHour: {}, resourceId: {}", pricePerHr, vmInstanceBillingData.getResourceId());
-      if (!Double.isNaN(vmInstanceBillingData.getRate()) && vmInstanceBillingData.getRate() > 0.0) {
+      if (!Double.isNaN(vmInstanceBillingData.getRate()) && vmInstanceBillingData.getRate() > 0.0
+          && cloudProvider != CloudProvider.GCP) {
         pricePerHr = vmInstanceBillingData.getRate();
       }
       pricingData = PricingData.builder()

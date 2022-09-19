@@ -180,7 +180,7 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
     log.info("GCP: vmInstanceServiceBillingDataList size for GCP: {}", vmInstanceServiceBillingDataList.size());
 
     Map<String, VMInstanceBillingData> vmInstanceBillingDataMap = new HashMap<>();
-    vmInstanceServiceBillingDataList.forEach(vmInstanceServiceBillingData -> {
+    for (VMInstanceServiceBillingData vmInstanceServiceBillingData : vmInstanceServiceBillingDataList) {
       String resourceId = vmInstanceServiceBillingData.getResourceId();
       log.info("GCP: Processing for resourceId: {}", resourceId);
       VMInstanceBillingData vmInstanceBillingData = VMInstanceBillingData.builder().resourceId(resourceId).build();
@@ -188,25 +188,42 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
         vmInstanceBillingData = vmInstanceBillingDataMap.get(resourceId);
       }
 
-      // Network cost calculation is avoided as of now.
-      //      if (BQConst.gcpNetworkProductFamily.equals(vmInstanceServiceBillingData.getProductFamily())) {
-      //        vmInstanceBillingData =
-      //                vmInstanceBillingData.toBuilder().networkCost(vmInstanceServiceBillingData.getCost()).build();
-      //      }
-
-      if (BQConst.gcpComputeService.equals(vmInstanceServiceBillingData.getProductFamily())
+      if (BQConst.gcpComputeService.equals(vmInstanceServiceBillingData.getServiceCode())
           || vmInstanceServiceBillingData.getProductFamily() == null) {
-        double cost = vmInstanceServiceBillingData.getCost();
         double rate = vmInstanceServiceBillingData.getRate();
-        if (null != vmInstanceServiceBillingData.getEffectiveCost()) {
-          cost = vmInstanceServiceBillingData.getEffectiveCost();
+
+        double cpuCost = 0;
+        double ramCost = 0;
+        double networkCost = 0;
+        if (vmInstanceServiceBillingData.getProductFamily().equalsIgnoreCase("CPU Cost")) {
+          cpuCost = vmInstanceBillingData.getCpuCost();
+          cpuCost += vmInstanceServiceBillingData.getCost();
+        } else if (vmInstanceServiceBillingData.getProductFamily().equalsIgnoreCase("RAM Cost")) {
+          ramCost = vmInstanceBillingData.getMemoryCost();
+          ramCost += vmInstanceServiceBillingData.getCost();
         }
-        log.info("GCP: Cost: {}, Rate: {} for resourceId: {}", cost, rate, resourceId);
-        vmInstanceBillingData = vmInstanceBillingData.toBuilder().computeCost(cost).rate(rate).build();
+        if (vmInstanceServiceBillingData.getProductFamily().equalsIgnoreCase("Network Cost")) {
+          networkCost = vmInstanceBillingData.getNetworkCost();
+          networkCost += vmInstanceServiceBillingData.getCost();
+        }
+
+        double computeCost = cpuCost + ramCost + networkCost;
+
+        vmInstanceBillingData = vmInstanceBillingData.toBuilder()
+                                    .computeCost(computeCost)
+                                    .cpuCost(cpuCost)
+                                    .memoryCost(ramCost)
+                                    .networkCost(networkCost)
+                                    .rate(rate)
+                                    .build();
+
+        log.info(
+            "===== GCP: ComputeCost: {}, CPU Cost: {}, Memory Cost: {}, Network Cost: {}, Rate: {} for resourceId: {}",
+            computeCost, cpuCost, ramCost, networkCost, rate, resourceId);
       }
 
       vmInstanceBillingDataMap.put(resourceId, vmInstanceBillingData);
-    });
+    }
 
     log.debug("GCP: resource map data {} ", vmInstanceBillingDataMap);
     log.info("GCP: resource map data {} ", vmInstanceBillingDataMap);
