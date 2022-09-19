@@ -23,7 +23,6 @@ import io.harness.ccm.license.remote.CeLicenseClient;
 import io.harness.configuration.DeployMode;
 import io.harness.configuration.DeployVariant;
 import io.harness.exception.InvalidRequestException;
-import io.harness.generator.LicenseGenerator;
 import io.harness.licensing.Edition;
 import io.harness.licensing.EditionAction;
 import io.harness.licensing.LicenseStatus;
@@ -38,12 +37,15 @@ import io.harness.licensing.helpers.ModuleLicenseHelper;
 import io.harness.licensing.helpers.ModuleLicenseSummaryHelper;
 import io.harness.licensing.interfaces.ModuleLicenseInterface;
 import io.harness.licensing.mappers.LicenseObjectConverter;
+import io.harness.licensing.mappers.SMPLicenseMapper;
 import io.harness.ng.core.account.DefaultExperience;
 import io.harness.ng.core.dto.AccountDTO;
 import io.harness.repositories.ModuleLicenseRepository;
 import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.security.dto.Principal;
 import io.harness.security.dto.UserPrincipal;
+import io.harness.smp.license.models.SMPLicense;
+import io.harness.smp.license.v1.LicenseGenerator;
 import io.harness.telemetry.Category;
 import io.harness.telemetry.Destination;
 import io.harness.telemetry.TelemetryReporter;
@@ -76,6 +78,7 @@ public class DefaultLicenseServiceImpl implements LicenseService {
   private final LicenseComplianceResolver licenseComplianceResolver;
   private final Cache<String, List> cache;
   private final LicenseGenerator licenseGenerator;
+  private final SMPLicenseMapper smpLicenseMapper;
 
   static final String FAILED_OPERATION = "START_TRIAL_ATTEMPT_FAILED";
   static final String SUCCEED_START_FREE_OPERATION = "FREE_PLAN";
@@ -90,7 +93,7 @@ public class DefaultLicenseServiceImpl implements LicenseService {
                                    LicenseObjectConverter licenseObjectConverter, ModuleLicenseInterface licenseInterface,
                                    AccountService accountService, TelemetryReporter telemetryReporter, CeLicenseClient ceLicenseClient,
                                    LicenseComplianceResolver licenseComplianceResolver, @Named(LICENSE_CACHE_NAMESPACE) Cache<String, List> cache,
-                                   LicenseGenerator licenseGenerator) {
+                                   LicenseGenerator licenseGenerator, SMPLicenseMapper smpLicenseMapper) {
     this.moduleLicenseRepository = moduleLicenseRepository;
     this.licenseObjectConverter = licenseObjectConverter;
     this.licenseInterface = licenseInterface;
@@ -100,6 +103,7 @@ public class DefaultLicenseServiceImpl implements LicenseService {
     this.licenseComplianceResolver = licenseComplianceResolver;
     this.cache = cache;
     this.licenseGenerator = licenseGenerator;
+    this.smpLicenseMapper = smpLicenseMapper;
   }
 
   @Override
@@ -444,7 +448,15 @@ public class DefaultLicenseServiceImpl implements LicenseService {
 
   @Override
   public SMPEncLicenseDTO generateSMPLicense(SMPDecLicenseDTO licenseDTO) {
-    return null;
+    SMPLicense smpLicense = smpLicenseMapper.toSMPLicense(licenseDTO);
+    String license = "";
+    try {
+      license = licenseGenerator.generateLicense(smpLicense);
+    } catch (Exception e) {
+      log.error("Unable to generate license: {}", e.getMessage());
+      return SMPEncLicenseDTO.builder().build();
+    }
+    return SMPEncLicenseDTO.builder().encryptedLicense(license).build();
   }
 
   @Override
