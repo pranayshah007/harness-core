@@ -795,6 +795,7 @@ public class NGTemplateResource {
       VariablesServiceRequestV2 request = requestBuilder.build();
       VariableMergeResponseProto variables = variablesServiceBlockingStub.getVariablesV2(request);
       VariableMergeServiceResponse variableMergeServiceResponse = VariablesResponseDtoMapper.toDto(variables);
+      variableMergeServiceResponse = templateServiceHelper.addTemplateVariablesToVariablesApi(variableMergeServiceResponse, appliedTemplateYaml);
       return ResponseDTO.newResponse(variableMergeServiceResponse);
     } else if (templateEntity.getTemplateEntityType().equals(TemplateEntityType.CUSTOM_DEPLOYMENT_TEMPLATE)) {
       CustomDeploymentYamlRequestDTO requestDTO =

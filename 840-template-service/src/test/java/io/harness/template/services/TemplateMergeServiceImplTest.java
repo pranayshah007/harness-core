@@ -7,10 +7,7 @@
 
 package io.harness.template.services;
 
-import static io.harness.rule.OwnerRule.ABHINAV_MITTAL;
-import static io.harness.rule.OwnerRule.INDER;
-import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
-
+import static io.harness.rule.OwnerRule.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
@@ -41,11 +38,16 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+
+import io.harness.template.helpers.TemplateYamlSchemaMergeHelper;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.stubbing.Answer;
 
 @OwnedBy(HarnessTeam.CDC)
 public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
@@ -53,6 +55,9 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
 
   @Mock private NGTemplateServiceHelper templateServiceHelper;
   @InjectMocks TemplateMergeServiceHelper templateMergeServiceHelper;
+
+  @Mock
+  TemplateYamlSchemaMergeHelper templateYamlSchemaMergeHelper;
 
   private static final String ACCOUNT_ID = "accountId";
   private static final String ORG_ID = "orgId";
@@ -71,6 +76,12 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
   public void setup() throws IllegalAccessException {
     on(templateMergeServiceHelper).set("templateServiceHelper", templateServiceHelper);
     on(templateMergeService).set("templateMergeServiceHelper", templateMergeServiceHelper);
+    MockedStatic<TemplateYamlSchemaMergeHelper> templateYamlSchemaMergeHelperMockedStatic =
+            Mockito.mockStatic(TemplateYamlSchemaMergeHelper.class);
+    when(TemplateYamlSchemaMergeHelper.).thenReturn(false);
+    templateYamlSchemaMergeHelperMockedStatic
+            .when(() -> TemplateYamlSchemaMergeHelper.isFeatureFlagEnabled(any(), anyString(), any()))
+            .thenAnswer((Answer<Boolean>) invocation -> false);
   }
 
   @Test
@@ -119,6 +130,21 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
     String yaml = readFile(filename);
     String templateYaml = templateMergeServiceHelper.createTemplateInputsFromTemplate(yaml, null);
     assertThat(templateYaml).isNullOrEmpty();
+  }
+
+  @Test
+  @Owner(developers = PRABU)
+  @Category(UnitTests.class)
+  public void testCreateTemplateInputsFromStepTemplateWithVariables() {
+    when(TemplateYamlSchemaMergeHelper.isFeatureFlagEnabled(any(), anyString(), any())).thenReturn(true);
+    String filename = "step-template-with-variables.yaml";
+    String yaml = readFile(filename);
+    String templateYaml = templateMergeServiceHelper.createTemplateInputsFromTemplate(yaml, null);
+    assertThat(templateYaml).isNotNull();
+
+    String resFile = "template-pipeline-templateInputs.yaml";
+    String resTemplate = readFile(resFile);
+    assertThat(templateYaml).isEqualTo(resTemplate);
   }
 
   @Test
