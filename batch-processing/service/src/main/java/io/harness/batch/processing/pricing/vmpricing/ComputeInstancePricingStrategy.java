@@ -189,7 +189,7 @@ public class ComputeInstancePricingStrategy implements InstancePricingStrategy {
                         .memoryMb(memoryMb)
                         .build();
     }
-    log.info("resourceId: {} ==>  PRICINGDATA: {}", vmInstanceBillingData.getResourceId(), pricingData);
+    log.info("vmInstanceBillingData: {} ==>  PRICINGDATA: {}", vmInstanceBillingData, pricingData);
     return pricingData;
   }
 }
