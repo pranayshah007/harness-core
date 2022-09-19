@@ -7,14 +7,10 @@
 
 package io.harness.licensing.services;
 
-import static io.harness.configuration.DeployMode.DEPLOY_MODE;
-import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
-import static io.harness.licensing.LicenseModule.LICENSE_CACHE_NAMESPACE;
-import static io.harness.licensing.interfaces.ModuleLicenseImpl.TRIAL_DURATION;
-import static io.harness.remote.client.RestClientUtils.getResponse;
-
-import static java.lang.String.format;
-
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Sets;
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import io.harness.ModuleType;
 import io.harness.account.services.AccountService;
 import io.harness.beans.EmbeddedUser;
@@ -44,28 +40,29 @@ import io.harness.repositories.ModuleLicenseRepository;
 import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.security.dto.Principal;
 import io.harness.security.dto.UserPrincipal;
+import io.harness.smp.license.models.AccountInfo;
+import io.harness.smp.license.models.LibraryVersion;
+import io.harness.smp.license.models.LicenseMeta;
 import io.harness.smp.license.models.SMPLicense;
 import io.harness.smp.license.v1.LicenseGenerator;
 import io.harness.telemetry.Category;
 import io.harness.telemetry.Destination;
 import io.harness.telemetry.TelemetryReporter;
+import lombok.extern.slf4j.Slf4j;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Sets;
-import com.google.inject.Inject;
-import com.google.inject.name.Named;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 import javax.cache.Cache;
 import javax.ws.rs.NotFoundException;
-import lombok.extern.slf4j.Slf4j;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import static io.harness.configuration.DeployMode.DEPLOY_MODE;
+import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
+import static io.harness.licensing.LicenseModule.LICENSE_CACHE_NAMESPACE;
+import static io.harness.licensing.interfaces.ModuleLicenseImpl.TRIAL_DURATION;
+import static io.harness.remote.client.RestClientUtils.getResponse;
+import static java.lang.String.format;
 
 @Slf4j
 public class DefaultLicenseServiceImpl implements LicenseService {
@@ -447,8 +444,22 @@ public class DefaultLicenseServiceImpl implements LicenseService {
   }
 
   @Override
-  public SMPEncLicenseDTO generateSMPLicense(SMPDecLicenseDTO licenseDTO) {
-    SMPLicense smpLicense = smpLicenseMapper.toSMPLicense(licenseDTO);
+  public SMPEncLicenseDTO generateSMPLicense(String accountId) {
+    List<ModuleLicenseDTO> moduleLicenseDTOS = getAllModuleLicences(accountId);
+    AccountDTO accountDTO = accountService.getAccount(accountId);
+    LicenseMeta licenseMeta = new LicenseMeta();
+    licenseMeta.setAccountDTO(AccountInfo.builder()
+            .name(accountDTO.getName())
+            .identifier(accountDTO.getIdentifier())
+            .companyName(accountDTO.getCompanyName())
+            .build());
+    licenseMeta.setIssueDate(new Date());
+    licenseMeta.setLicenseVersion(0);
+    licenseMeta.setLibraryVersion(LibraryVersion.V1);
+    SMPLicense smpLicense = SMPLicense.builder()
+            .licenseMeta(licenseMeta)
+            .moduleLicenses(moduleLicenseDTOS)
+            .build();
     String license = "";
     try {
       license = licenseGenerator.generateLicense(smpLicense);
