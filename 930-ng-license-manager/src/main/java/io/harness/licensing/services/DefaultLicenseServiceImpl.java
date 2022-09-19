@@ -7,14 +7,10 @@
 
 package io.harness.licensing.services;
 
-import static io.harness.configuration.DeployMode.DEPLOY_MODE;
-import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
-import static io.harness.licensing.LicenseModule.LICENSE_CACHE_NAMESPACE;
-import static io.harness.licensing.interfaces.ModuleLicenseImpl.TRIAL_DURATION;
-import static io.harness.remote.client.CGRestUtils.getResponse;
-
-import static java.lang.String.format;
-
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Sets;
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import io.harness.ModuleType;
 import io.harness.account.services.AccountService;
 import io.harness.beans.EmbeddedUser;
@@ -32,6 +28,7 @@ import io.harness.licensing.beans.modules.AccountLicenseDTO;
 import io.harness.licensing.beans.modules.ModuleLicenseDTO;
 import io.harness.licensing.beans.modules.SMPEncLicenseDTO;
 import io.harness.licensing.beans.modules.SMPLicenseRequestDTO;
+import io.harness.licensing.beans.modules.SMPValidationResultDTO;
 import io.harness.licensing.beans.modules.StartTrialDTO;
 import io.harness.licensing.beans.response.CheckExpiryResultDTO;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
@@ -41,6 +38,7 @@ import io.harness.licensing.helpers.ModuleLicenseHelper;
 import io.harness.licensing.helpers.ModuleLicenseSummaryHelper;
 import io.harness.licensing.interfaces.ModuleLicenseInterface;
 import io.harness.licensing.mappers.LicenseObjectConverter;
+import io.harness.licensing.mappers.SMPLicenseMapper;
 import io.harness.ng.core.account.DefaultExperience;
 import io.harness.ng.core.dto.AccountDTO;
 import io.harness.repositories.ModuleLicenseRepository;
@@ -51,15 +49,18 @@ import io.harness.smp.license.models.AccountInfo;
 import io.harness.smp.license.models.LibraryVersion;
 import io.harness.smp.license.models.LicenseMeta;
 import io.harness.smp.license.models.SMPLicense;
+import io.harness.smp.license.models.SMPLicenseEnc;
+import io.harness.smp.license.models.SMPLicenseValidationResult;
 import io.harness.smp.license.v1.LicenseGenerator;
+import io.harness.smp.license.v1.LicenseValidator;
 import io.harness.telemetry.Category;
 import io.harness.telemetry.Destination;
 import io.harness.telemetry.TelemetryReporter;
+import lombok.extern.slf4j.Slf4j;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Sets;
-import com.google.inject.Inject;
-import com.google.inject.name.Named;
+import javax.cache.Cache;
+import javax.ws.rs.NotFoundException;
+import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Collection;
@@ -71,9 +72,13 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.cache.Cache;
-import javax.ws.rs.NotFoundException;
-import lombok.extern.slf4j.Slf4j;
+
+import static io.harness.configuration.DeployMode.DEPLOY_MODE;
+import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
+import static io.harness.licensing.LicenseModule.LICENSE_CACHE_NAMESPACE;
+import static io.harness.licensing.interfaces.ModuleLicenseImpl.TRIAL_DURATION;
+import static io.harness.remote.client.CGRestUtils.getResponse;
+import static java.lang.String.format;
 
 @Slf4j
 public class DefaultLicenseServiceImpl implements LicenseService {
@@ -86,6 +91,8 @@ public class DefaultLicenseServiceImpl implements LicenseService {
   private final LicenseComplianceResolver licenseComplianceResolver;
   private final Cache<String, List> cache;
   private final LicenseGenerator licenseGenerator;
+  private final LicenseValidator licenseValidator;
+  private final SMPLicenseMapper smpLicenseMapper;
 
   static final String FAILED_OPERATION = "START_TRIAL_ATTEMPT_FAILED";
   static final String SUCCEED_START_FREE_OPERATION = "FREE_PLAN";
@@ -100,7 +107,7 @@ public class DefaultLicenseServiceImpl implements LicenseService {
       LicenseObjectConverter licenseObjectConverter, ModuleLicenseInterface licenseInterface,
       AccountService accountService, TelemetryReporter telemetryReporter, CeLicenseClient ceLicenseClient,
       LicenseComplianceResolver licenseComplianceResolver, @Named(LICENSE_CACHE_NAMESPACE) Cache<String, List> cache,
-      LicenseGenerator licenseGenerator) {
+      LicenseGenerator licenseGenerator, LicenseValidator licenseValidator, SMPLicenseMapper smpLicenseMapper) {
     this.moduleLicenseRepository = moduleLicenseRepository;
     this.licenseObjectConverter = licenseObjectConverter;
     this.licenseInterface = licenseInterface;
@@ -110,6 +117,8 @@ public class DefaultLicenseServiceImpl implements LicenseService {
     this.licenseComplianceResolver = licenseComplianceResolver;
     this.cache = cache;
     this.licenseGenerator = licenseGenerator;
+    this.licenseValidator = licenseValidator;
+    this.smpLicenseMapper = smpLicenseMapper;
   }
 
   @Override
@@ -445,6 +454,18 @@ public class DefaultLicenseServiceImpl implements LicenseService {
   public List<ModuleLicenseDTO> getAllModuleLicences(String accountIdentifier) {
     List<ModuleLicense> licenses = moduleLicenseRepository.findByAccountIdentifier(accountIdentifier);
     return licenses.stream().map(licenseObjectConverter::<ModuleLicenseDTO>toDTO).collect(Collectors.toList());
+  }
+
+  @Override
+  public SMPValidationResultDTO validateSMPLicense(SMPEncLicenseDTO licenseDTO) {
+    SMPLicenseEnc smpLicenseEnc = smpLicenseMapper.toSMPLicenseEnc(licenseDTO);
+    SMPLicenseValidationResult validationResult = null;
+    try {
+      validationResult = licenseValidator.validate(smpLicenseEnc, licenseDTO.isDecrypt());
+    } catch (NoSuchAlgorithmException e) {
+      throw new InvalidRequestException("Invalid license provided for validation");
+    }
+    return smpLicenseMapper.toSMPValidationResultDTO(validationResult);
   }
 
   @Override
