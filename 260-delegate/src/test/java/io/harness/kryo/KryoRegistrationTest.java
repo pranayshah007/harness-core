@@ -182,9 +182,6 @@ public class KryoRegistrationTest extends CategoryTest {
     log(String.format("Load expected kryo registrations from resources file '%s'.", KRYO_REGISTRATION_FILE));
     Map<Integer, String> expectedRegisteredClasses = loadAllExpectedKryoRegistrations();
 
-    Collection<String> diff =
-        CollectionUtils.disjunction(expectedRegisteredClasses.values(), registeredClasses.values());
-
     // ensure all registered classes match the expected registrations
     for (Map.Entry<Integer, String> registeredEntry : registeredClasses.entrySet()) {
       assertThat(expectedRegisteredClasses.containsKey(registeredEntry.getKey()))
