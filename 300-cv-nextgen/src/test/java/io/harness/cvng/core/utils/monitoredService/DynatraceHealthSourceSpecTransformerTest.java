@@ -22,6 +22,7 @@ import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.DynatraceHeal
 import io.harness.cvng.core.beans.monitoredService.metricThresholdSpec.MetricThresholdActionType;
 import io.harness.cvng.core.entities.DynatraceCVConfig;
 import io.harness.cvng.core.entities.MetricPack;
+import io.harness.cvng.core.services.CVNextGenConstants;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
@@ -49,8 +50,6 @@ public class DynatraceHealthSourceSpecTransformerTest extends CvNextGenTestBase 
   private static final String MOCKED_METRIC_GROUP_NAME = "group";
   private static final String MOCKED_QUERY_SELECTOR = "builtin:service.response.time";
   private static final String CONNECTOR_IDENTIFIER = "connectorId";
-  private static final String METRIC_PACK_IDENTIFIER = "mock_metric_pack_identifier";
-  private static final String CUSTOM_IDENTIFIER = "Custom";
 
   private BuilderFactory builderFactory;
   @Inject DynatraceHealthSourceSpecTransformer classUnderTest;
@@ -77,9 +76,8 @@ public class DynatraceHealthSourceSpecTransformerTest extends CvNextGenTestBase 
     assertThat(dynatraceMetricDefinition.getMetricName()).isEqualTo(MOCKED_METRIC_NAME_ONE);
     assertThat(dynatraceMetricDefinition.getMetricSelector()).isEqualTo(MOCKED_QUERY_SELECTOR);
     assertThat(dynatraceMetricDefinition.isManualQuery()).isEqualTo(true);
-    assertThat(dynatraceMetricDefinition.getRiskProfile().getCategory()).isEqualTo(CVMonitoringCategory.ERRORS);
+    assertThat(dynatraceMetricDefinition.getRiskProfile().getCategory()).isEqualTo(CVMonitoringCategory.INFRASTRUCTURE);
     assertThat(dynatraceMetricDefinition.getRiskProfile().getMetricType()).isEqualTo(TimeSeriesMetricType.RESP_TIME);
-    assertThat(dynatraceMetricDefinition.getIdentifier()).isEqualTo(MOCKED_METRIC_NAME_ONE);
 
     assertThat(dynatraceHealthSourceSpec.getMetricPacks().size()).isEqualTo(METRIC_PACK_COUNT);
     Iterator<TimeSeriesMetricPackDTO> iterator = dynatraceHealthSourceSpec.getMetricPacks().stream().iterator();
@@ -87,14 +85,12 @@ public class DynatraceHealthSourceSpecTransformerTest extends CvNextGenTestBase 
     TimeSeriesMetricPackDTO metricPackTwo = iterator.next();
     assertThat(metricPackOne).isNotNull();
     assertThat(metricPackTwo).isNotNull();
-    assertThat(metricPackOne.getIdentifier()).isEqualTo(CUSTOM_IDENTIFIER);
-    assertThat(metricPackTwo.getIdentifier()).isEqualTo(CUSTOM_IDENTIFIER);
     assertThat(metricPackOne.getMetricThresholds()).hasSize(1);
     assertThat(metricPackTwo.getMetricThresholds()).hasSize(1);
     TimeSeriesMetricPackDTO.MetricThreshold metricThresholdOne = metricPackOne.getMetricThresholds().get(0);
     TimeSeriesMetricPackDTO.MetricThreshold metricThresholdTwo = metricPackTwo.getMetricThresholds().get(0);
-    assertThat(metricThresholdOne.getMetricType()).isEqualTo(CUSTOM_IDENTIFIER);
-    assertThat(metricThresholdTwo.getMetricType()).isEqualTo(CUSTOM_IDENTIFIER);
+    assertThat(metricThresholdOne.getMetricType()).isEqualTo(CVNextGenConstants.PERFORMANCE_PACK_IDENTIFIER);
+    assertThat(metricThresholdTwo.getMetricType()).isEqualTo(CVNextGenConstants.CUSTOM_PACK_IDENTIFIER);
     assertThat(new HashSet<>(Arrays.asList(metricThresholdOne.getMetricName(), metricThresholdTwo.getMetricName())))
         .isEqualTo(new HashSet<>(Arrays.asList(MOCKED_METRIC_NAME_ONE, MOCKED_METRIC_NAME_TWO)));
     assertThat(metricThresholdOne.getGroupName()).isEqualTo(MOCKED_METRIC_GROUP_NAME);
@@ -113,7 +109,7 @@ public class DynatraceHealthSourceSpecTransformerTest extends CvNextGenTestBase 
     cvConfigWithPerformancePack.setConnectorIdentifier(CONNECTOR_IDENTIFIER);
     cvConfigWithPerformancePack.setMetricPack(
         MetricPack.builder()
-            .identifier(METRIC_PACK_IDENTIFIER)
+            .identifier(CVNextGenConstants.PERFORMANCE_PACK_IDENTIFIER)
             .category(CVMonitoringCategory.PERFORMANCE)
             .metrics(Collections.singleton(
                 MetricPack.MetricDefinition.builder()
@@ -127,7 +123,8 @@ public class DynatraceHealthSourceSpecTransformerTest extends CvNextGenTestBase 
     cvConfigWithCustomMetrics.setConnectorIdentifier(CONNECTOR_IDENTIFIER);
     cvConfigWithCustomMetrics.setMetricPack(
         MetricPack.builder()
-            .category(CVMonitoringCategory.ERRORS)
+            .identifier(CVNextGenConstants.CUSTOM_PACK_IDENTIFIER)
+            .category(CVMonitoringCategory.INFRASTRUCTURE)
             .metrics(Collections.singleton(
                 MetricPack.MetricDefinition.builder()
                     .name(MOCKED_METRIC_NAME_TWO)
