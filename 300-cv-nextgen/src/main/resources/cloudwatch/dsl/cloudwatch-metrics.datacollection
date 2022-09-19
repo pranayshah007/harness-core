@@ -1,0 +1,57 @@
+Var timeSeriesList = []
+Var one = 1
+
+Var collectHostDataString = concat("", Env:collectHostData)
+
+Var numberOfRequests = Env:bodies.length()
+print Var:numberOfRequests
+Var requestIndex = 0
+while Var:requestIndex !=  Var:numberOfRequests{
+
+    print Var:requestIndex
+
+    Var body = Env:bodies[Var:requestIndex]
+    print Var:body
+
+    Var metricName = Env:metricNames[Var:requestIndex]
+    Var metricIdentifier = Env:metricIdentifiers[Var:requestIndex]
+    Var metricNameWithSpace = concat(Var:metricName, " ")
+
+    Var bodyMap = {}
+    Var:bodyMap.put("EndTime", Env:endTimeSeconds)
+    Var:bodyMap.put("StartTime",  Env:startTimeSeconds)
+    Var:bodyMap.put("MetricDataQueries", Var:body)
+
+    Var response = sync-call-aws(url=Env:url, header=Env:commonHeaders, options=Env:commonOptions, body=Var:bodyMap, bodyType=JSON, method=POST, region=Env:region, serviceName=Env:serviceName, secretAccessKey=Env:awsSecretKey, accessKeyId=Env:awsAccessKey, awsTarget=Env:awsTarget)
+
+    Var metricDataResults = extract(Var:response,$.MetricDataResults)
+
+    Var lengthOfmetricDataResults = Var:metricDataResults.length()
+    Var resultIndex = 0
+
+    while Var:resultIndex !=  Var:lengthOfmetricDataResults{
+        Var metricDataResult = Var:metricDataResults[Var:resultIndex]
+        Var timeseries = extract(Var:metricDataResult,$.Timestamps)
+        Var values = extract(Var:metricDataResult,$.Values)
+        Var hostName = extract(Var:metricDataResult,$.Label)
+        Var:hostName.replaceAll(Var:metricNameWithSpace,"")
+        Var lengthOfItems = Var:values.length()
+        Var index = 0
+        while Var:index !=  Var:lengthOfItems{
+            Var value = Var:values[Var:index]
+            Var timestamp = Var:timeseries[Var:index]
+            if Var:collectHostDataString != "true" {
+                Var tsRecord = new TimeseriesRecord(txnName=Env:groupName, metricIdentifier=Var:metricIdentifier, metricName=Var:metricName, metricValue=Var:value, timestamp=Var:timestamp)
+                Var:timeSeriesList.append(Var:tsRecord)
+            }
+            if Var:collectHostDataString == "true" {
+                Var tsRecord = new TimeseriesRecord(txnName=Env:groupName, metricIdentifier=Var:metricIdentifier, metricName=Var:metricName, metricValue=Var:value, timestamp=Var:timestamp, host=Var:hostName)
+                Var:timeSeriesList.append(Var:tsRecord)
+            }
+            index = Var:index + Var:one
+        }
+        resultIndex = Var:resultIndex + Var:one
+    }
+    requestIndex = Var:requestIndex + Var:one
+}
+return Var:timeSeriesList

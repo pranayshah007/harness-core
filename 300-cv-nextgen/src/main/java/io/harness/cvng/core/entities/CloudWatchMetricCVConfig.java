@@ -164,25 +164,26 @@ public class CloudWatchMetricCVConfig extends MetricCVConfig<CloudWatchMetricInf
                  if (!isEmpty(timeSeriesMetricPackDTO.getMetricThresholds())) {
                    timeSeriesMetricPackDTO.getMetricThresholds()
                        .stream()
-                       .filter(metricPackDTO -> metric.getName().equals(metricPackDTO.getMetricName()))
-                       .forEach(metricPackDTO -> metricPackDTO.getTimeSeriesThresholdCriteria().forEach(criteria -> {
-                         List<TimeSeriesThreshold> timeSeriesThresholds =
-                             metric.getThresholds() != null ? metric.getThresholds() : new ArrayList<>();
-                         TimeSeriesThreshold timeSeriesThreshold =
-                             TimeSeriesThreshold.builder()
-                                 .accountId(getAccountId())
-                                 .projectIdentifier(getProjectIdentifier())
-                                 .dataSourceType(getType())
-                                 .metricIdentifier(metric.getIdentifier())
-                                 .metricType(metric.getType())
-                                 .metricName(metricPackDTO.getMetricName())
-                                 .action(metricPackDTO.getType().getTimeSeriesThresholdActionType())
-                                 .criteria(criteria)
-                                 .thresholdConfigType(ThresholdConfigType.USER_DEFINED)
-                                 .build();
-                         timeSeriesThresholds.add(timeSeriesThreshold);
-                         metric.setThresholds(timeSeriesThresholds);
-                       }));
+                       .filter(metricThreshold -> metric.getName().equals(metricThreshold.getMetricName()))
+                       .forEach(
+                           metricThreshold -> metricThreshold.getTimeSeriesThresholdCriteria().forEach(criteria -> {
+                             List<TimeSeriesThreshold> timeSeriesThresholds =
+                                 metric.getThresholds() != null ? metric.getThresholds() : new ArrayList<>();
+                             TimeSeriesThreshold timeSeriesThreshold =
+                                 TimeSeriesThreshold.builder()
+                                     .accountId(getAccountId())
+                                     .projectIdentifier(getProjectIdentifier())
+                                     .dataSourceType(getType())
+                                     .metricIdentifier(metric.getIdentifier())
+                                     .metricType(metric.getType())
+                                     .metricName(metricThreshold.getMetricName())
+                                     .action(metricThreshold.getType().getTimeSeriesThresholdActionType())
+                                     .criteria(criteria)
+                                     .thresholdConfigType(ThresholdConfigType.USER_DEFINED)
+                                     .build();
+                             timeSeriesThresholds.add(timeSeriesThreshold);
+                             metric.setThresholds(timeSeriesThresholds);
+                           }));
                  }
                }));
   }
