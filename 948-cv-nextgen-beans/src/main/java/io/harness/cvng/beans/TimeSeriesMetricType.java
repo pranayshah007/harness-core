@@ -20,6 +20,7 @@ public enum TimeSeriesMetricType {
           TimeSeriesThresholdCriteria.builder()
               .criteria("> 20")
               .type(TimeSeriesThresholdComparisonType.DELTA)
+              .deviationType(DeviationType.BOTH_ARE_RISKY)
               .build())),
 
   RESP_TIME("RESP_TIME",
@@ -57,6 +58,7 @@ public enum TimeSeriesMetricType {
           TimeSeriesThresholdCriteria.builder()
               .criteria("< 0.01")
               .type(TimeSeriesThresholdComparisonType.DELTA)
+              .deviationType(DeviationType.LOWER_IS_RISKY)
               .build())),
 
   OTHER("OTHER",
@@ -76,5 +78,9 @@ public enum TimeSeriesMetricType {
 
   public List<TimeSeriesThresholdCriteria> getThresholds() {
     return thresholds;
+  }
+
+  public DeviationType getDeviationType() {
+    return thresholds.get(0).getDeviationType();
   }
 }

@@ -323,7 +323,9 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
     List<TimeSeriesThreshold> metricPackThresholds = metricPackService.getMetricPackThresholds(
         metricCVConfig.getAccountId(), metricCVConfig.getOrgIdentifier(), metricCVConfig.getProjectIdentifier(),
         metricCVConfig.getMetricPack().getIdentifier(), metricCVConfig.getType());
-
+    // For backward compatibility
+    metricPackThresholds.forEach(metricPackThreshold
+        -> metricPackThreshold.setDeviationType(metricPackThreshold.getMetricType().getDeviationType()));
     Set<String> includedMetrics = metricCVConfig.getMetricPack()
                                       .getMetrics()
                                       .stream()
@@ -340,6 +342,9 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
         if (isNotEmpty(metricDefinition.getThresholds())) {
           for (TimeSeriesThreshold timeSeriesThreshold : metricDefinition.getThresholds()) {
             if (ThresholdConfigType.USER_DEFINED.equals(timeSeriesThreshold.getThresholdConfigType())) {
+              if (Objects.isNull(timeSeriesThreshold.getDeviationType())) {
+                timeSeriesThreshold.setDeviationType(timeSeriesThreshold.getMetricType().getDeviationType());
+              }
               metricPackThresholds.add(timeSeriesThreshold);
             }
           }
