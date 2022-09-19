@@ -1,6 +1,20 @@
-load("@io_bazel_rules_docker//container:container.bzl", "container_image", "container_pull", "container_push", "container_run_and_extract")
+load("@io_bazel_rules_docker//container:container.bzl", "container_image", "container_pull", "container_push")
 load("@io_bazel_rules_docker//docker/util:run.bzl", "container_run_and_commit_layer")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
+
+container_run_and_commit_layer(
+    name = "manager-onprem-run",
+    image = "@ubi-java-base//image",
+    commands = [
+        "curl -L https://harness.jfrog.io/artifactory/BuildsTools/docker/inspectit-ocelot-agent/inspectit-ocelot-agent-1.16.0.jar --output inspectit-ocelot-agent-1.16.0.jar",
+        "chmod 711 inspectit-ocelot-agent-1.16.0.jar",
+    ],
+    tags = [
+            "manual",
+            "no-cache",
+            "no-ide",
+        ],
+)
 
 container_run_and_commit_layer(
     name = "manager-saas-run",
@@ -18,10 +32,6 @@ container_run_and_commit_layer(
             "no-cache",
             "no-ide",
         ],
-)
-
-container_run_and_extract(
-    name = "manager-saas-classpath",
 )
 
 pkg_tar(
@@ -48,7 +58,6 @@ pkg_tar(
         "//360-cg-manager:config.yml",
         "//400-rest/src/main/resources:redisson-jcache.yaml",
         "//400-rest/src/main/resources:hazelcast.xml",
-#        "//dockerization/base-images/apm:inject-saas-apm-bins-into-dockerimage.sh"
     ],
     files = {
         "//360-cg-manager:module_deploy.jar": "rest-capsule.jar",
@@ -64,10 +73,49 @@ pkg_tar(
 )
 
 container_image(
-    name = "manager-image",
+    name = "manager-saas-image",
     base = "@ubi-java-base//image",
     layers = [
         ":manager-saas-run"
+        ],
+    user = "65534",
+    workdir = "/opt/harness",
+    cmd = [
+        "java -jar rest-capsule.jar scan-classpath-metadata",
+        "./run.sh",
+        ],
+    tars = [
+        ":files",
+        ":scripts",
+    ],
+    env = {
+    },
+    tags = [
+            "manual",
+            "no-cache",
+            "no-ide",
+        ],
+)
+
+container_push(
+        name = "manager-saas-push",
+        format = "Docker",
+        image = "manager-saas-image",
+        registry = "us.gcr.io",
+        repository = "platform-205701/harness/harness-services-bazel/manager-saas-bazel-test",
+        tag = "latest-test",
+        tags = [
+                "manual",
+                "no-cache",
+                "no-ide",
+            ],
+)
+
+container_image(
+    name = "manager-onprem-image",
+    base = "@ubi-java-base//image",
+    layers = [
+        ":manager-onprem-run"
         ],
     user = "65534",
     workdir = "/opt/harness",
@@ -88,11 +136,11 @@ container_image(
 )
 
 container_push(
-        name = "manager-push",
+        name = "manager-onprem-push",
         format = "Docker",
-        image = "manager-image",
+        image = "manager-onprem-image",
         registry = "us.gcr.io",
-        repository = "platform-205701/harness/harness-services-bazel/manager-bazel-test",
+        repository = "platform-205701/harness/harness-services-bazel/manager-onprem-bazel-test",
         tag = "latest-test",
         tags = [
                 "manual",
