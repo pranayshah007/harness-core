@@ -8,14 +8,20 @@
 package io.harness.delegate.beans.connector.gcpsmconnector;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.beans.connector.ConnectorCapabilityBaseHelper.populateDelegateSelectorCapability;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.ConnectorValidationParams;
+import io.harness.delegate.beans.connector.gcpsecretmanager.GcpSMConnectorDTO;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
+import io.harness.delegate.task.mixin.HttpConnectionExecutionCapabilityGenerator;
 import io.harness.expression.ExpressionEvaluator;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import lombok.Builder;
 import lombok.Value;
@@ -24,14 +30,20 @@ import lombok.Value;
 @Value
 @Builder
 public class GcpSMValidationParams implements ConnectorValidationParams, ExecutionCapabilityDemander {
+  GcpSMConnectorDTO gcpSMConnectorDTO;
   String connectorName;
+  public static final String ENCRYPTION_SERVICE_URL = "https://secretmanager.googleapis.com/v1/";
   @Override
   public ConnectorType getConnectorType() {
-    return null;
+    return ConnectorType.GCP_SM;
   }
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
-    return null;
+    List<ExecutionCapability> executionCapabilities =
+        new ArrayList<>(Arrays.asList(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
+            ENCRYPTION_SERVICE_URL, maskingEvaluator)));
+    populateDelegateSelectorCapability(executionCapabilities, gcpSMConnectorDTO.getDelegateSelectors());
+    return executionCapabilities;
   }
 }

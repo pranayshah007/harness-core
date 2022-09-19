@@ -8,13 +8,21 @@
 package io.harness.connector.heartbeat;
 
 import io.harness.connector.ConnectorInfoDTO;
+import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorValidationParams;
+import io.harness.delegate.beans.connector.gcpsecretmanager.GcpSMConnectorDTO;
+import io.harness.delegate.beans.connector.gcpsmconnector.GcpSMValidationParams;
 
 public class GcpSMValidationParamProvider
     extends SecretManagerConnectorValidationParamsProvider implements ConnectorValidationParamsProvider {
   @Override
-  public ConnectorValidationParams getConnectorValidationParams(ConnectorInfoDTO connectorInfoDTO, String connectorName,
-      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
-    return null;
+  public ConnectorValidationParams getConnectorValidationParams(ConnectorInfoDTO connectorConfigDTO,
+      String connectorName, String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    ConnectorConfigDTO connectorConfig =
+        getDecryptedConnectorConfigDTO(connectorConfigDTO, accountIdentifier, orgIdentifier, projectIdentifier);
+    return GcpSMValidationParams.builder()
+        .gcpSMConnectorDTO((GcpSMConnectorDTO) connectorConfig)
+        .connectorName(connectorName)
+        .build();
   }
 }

@@ -14,6 +14,8 @@ import io.harness.beans.SecretManagerConfig;
 import io.harness.ng.core.mapper.TagMapper;
 import io.harness.secretmanagerclient.NGSecretManagerMetadata;
 import io.harness.secretmanagerclient.dto.CustomSecretManagerConfigDTO;
+import io.harness.secretmanagerclient.dto.GCPSMConfigDTO;
+import io.harness.secretmanagerclient.dto.GCPSMConfigUpdateDTO;
 import io.harness.secretmanagerclient.dto.GcpKmsConfigDTO;
 import io.harness.secretmanagerclient.dto.GcpKmsConfigUpdateDTO;
 import io.harness.secretmanagerclient.dto.LocalConfigDTO;
@@ -31,6 +33,7 @@ import io.harness.secretmanagerclient.dto.azurekeyvault.AzureKeyVaultConfigUpdat
 import software.wings.beans.AwsSecretsManagerConfig;
 import software.wings.beans.AzureVaultConfig;
 import software.wings.beans.GcpKmsConfig;
+import software.wings.beans.GcpSecretsManagerConfig;
 import software.wings.beans.KmsConfig;
 import software.wings.beans.VaultConfig;
 
@@ -58,6 +61,8 @@ public class SecretManagerConfigMapper {
         return LocalConfigMapper.fromDTO((LocalConfigDTO) dto);
       case CUSTOM_NG:
         return CustomConfigMapper.fromDTO((CustomSecretManagerConfigDTO) dto);
+      case GCP_SECRETS_MANAGER:
+        return GCPSMConfigMapper.fromDTO((GCPSMConfigDTO) dto);
       default:
         throw new UnsupportedOperationException("Secret Manager not supported");
     }
@@ -78,6 +83,8 @@ public class SecretManagerConfigMapper {
         return AwsKmsConfigMapper.applyUpdate((KmsConfig) secretManagerConfig, (AwsKmsConfigUpdateDTO) dto);
       case AWS_SECRETS_MANAGER:
         return AwsSMConfigMapper.applyUpdate((AwsSecretsManagerConfig) secretManagerConfig, (AwsSMConfigUpdateDTO) dto);
+      case GCP_SECRETS_MANAGER:
+        return GCPSMConfigMapper.applyUpdate((GcpSecretsManagerConfig) secretManagerConfig, (GCPSMConfigUpdateDTO) dto);
       default:
         throw new UnsupportedOperationException("Secret Manager not supported");
     }
