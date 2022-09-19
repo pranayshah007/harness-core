@@ -47,11 +47,8 @@ public class RecommendationUtils {
   }
 
   private boolean isResourceConsistent(@NonNull TotalResourceUsage resource) {
-    boolean inconsistent = Math.round(resource.getSumcpu()) < Math.round(resource.getMaxcpu())
-        || Math.round(resource.getSummemory()) < Math.round(resource.getMaxmemory());
     boolean anyZero = Math.round(resource.getSumcpu()) == 0L || Math.round(resource.getSummemory()) == 0L
         || Math.round(resource.getMaxcpu()) == 0L || Math.round(resource.getMaxmemory()) == 0L;
-
-    return !inconsistent && !anyZero;
+    return !anyZero;
   }
 }
