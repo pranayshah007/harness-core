@@ -33,7 +33,6 @@ import static software.wings.utils.WingsTestConstants.APP_ID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
@@ -326,7 +325,6 @@ public class HarnessSampeAppServiceTest extends WingsBaseTest {
     Account savedAccount = wingsPersistence.saveAndGet(
         Account.class, anAccount().withAccountName(ACCOUNT_NAME).withUuid(ACCOUNT_ID).build());
     assertThat(savedAccount).isNotNull();
-    when(featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, savedAccount.getUuid())).thenReturn(true);
 
     sampleDataProviderService.createK8sV2SampleApp(savedAccount);
     Application app = appService.getAppByName(savedAccount.getUuid(), HARNESS_SAMPLE_APP);
