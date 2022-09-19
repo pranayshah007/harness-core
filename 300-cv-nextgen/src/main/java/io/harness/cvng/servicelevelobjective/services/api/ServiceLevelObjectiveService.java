@@ -36,6 +36,7 @@ public interface ServiceLevelObjectiveService extends DeleteEntityByHandler<Serv
 
   PageResponse<ServiceLevelObjectiveResponse> get(ProjectParams projectParams, Integer offset, Integer pageSize,
       ServiceLevelObjectiveFilter serviceLevelObjectiveFilter);
+  List<ServiceLevelObjective> getAllSLOs(ProjectParams projectParams);
   List<ServiceLevelObjective> getByMonitoredServiceIdentifier(
       ProjectParams projectParams, String monitoredServiceIdentifier);
   SLORiskCountResponse getRiskCount(ProjectParams projectParams, SLODashboardApiFilter serviceLevelObjectiveFilter);

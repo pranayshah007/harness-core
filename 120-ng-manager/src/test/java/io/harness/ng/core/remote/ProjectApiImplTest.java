@@ -44,6 +44,9 @@ import io.harness.spec.server.ng.model.UpdateProjectRequest;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import javax.validation.Validation;
+import javax.validation.Validator;
+import javax.validation.ValidatorFactory;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 import org.junit.Before;
@@ -58,6 +61,8 @@ public class ProjectApiImplTest extends CategoryTest {
   private AccessControlClient accessControlClient;
   private AccountProjectApiImpl accountProjectApi;
   private OrgProjectApiImpl orgProjectApi;
+  private Validator validator;
+  private ProjectApiMapper projectApiMapper;
 
   String account = randomAlphabetic(10);
   String org = randomAlphabetic(10);
@@ -71,8 +76,13 @@ public class ProjectApiImplTest extends CategoryTest {
     projectService = mock(ProjectService.class);
     organizationService = mock(OrganizationService.class);
     accessControlClient = mock(AccessControlClient.class);
-    accountProjectApi = new AccountProjectApiImpl(projectService);
-    orgProjectApi = new OrgProjectApiImpl(projectService);
+
+    ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+    validator = factory.getValidator();
+    projectApiMapper = new ProjectApiMapper(validator);
+
+    accountProjectApi = new AccountProjectApiImpl(projectService, projectApiMapper);
+    orgProjectApi = new OrgProjectApiImpl(projectService, projectApiMapper);
   }
 
   private ProjectDTO getProjectDTO(String orgIdentifier, String identifier, String name) {
@@ -89,13 +99,14 @@ public class ProjectApiImplTest extends CategoryTest {
     proj.setName(name);
     request.setProject(proj);
 
-    ProjectDTO projectDTO = ProjectApiMapper.getProjectDto(null, request);
+    ProjectDTO projectDTO = projectApiMapper.getProjectDto(request);
     Project project = toProject(projectDTO);
     project.setVersion(0L);
 
     when(projectService.create(account, null, projectDTO)).thenReturn(project);
 
     Response response = accountProjectApi.createAccountScopedProject(request, account);
+    assertEquals(201, response.getStatus());
 
     assertEquals(project.getVersion().toString(), response.getEntityTag().getValue());
     ProjectResponse entity = (ProjectResponse) response.getEntity();
@@ -112,15 +123,17 @@ public class ProjectApiImplTest extends CategoryTest {
     io.harness.spec.server.ng.model.Project proj = new io.harness.spec.server.ng.model.Project();
     proj.setSlug(slug);
     proj.setName(name);
+    proj.setOrg(org);
     request.setProject(proj);
 
-    ProjectDTO projectDTO = ProjectApiMapper.getProjectDto(org, request);
+    ProjectDTO projectDTO = projectApiMapper.getProjectDto(request);
     Project project = toProject(projectDTO);
     project.setVersion(0L);
 
     when(projectService.create(account, org, projectDTO)).thenReturn(project);
 
     Response response = orgProjectApi.createOrgScopedProject(request, org, account);
+    assertEquals(201, response.getStatus());
 
     assertEquals(project.getVersion().toString(), response.getEntityTag().getValue());
     ProjectResponse entity = (ProjectResponse) response.getEntity();
@@ -265,7 +278,7 @@ public class ProjectApiImplTest extends CategoryTest {
     proj.setName("updated_name");
     request.setProject(proj);
 
-    ProjectDTO projectDTO = ProjectApiMapper.getProjectDto(null, slug, request);
+    ProjectDTO projectDTO = projectApiMapper.getProjectDto(request);
     Project project = toProject(projectDTO);
     project.setVersion(0L);
 
@@ -288,9 +301,10 @@ public class ProjectApiImplTest extends CategoryTest {
     io.harness.spec.server.ng.model.Project proj = new io.harness.spec.server.ng.model.Project();
     proj.setSlug(slug);
     proj.setName("updated_name");
+    proj.setOrg(org);
     request.setProject(proj);
 
-    ProjectDTO projectDTO = ProjectApiMapper.getProjectDto(org, slug, request);
+    ProjectDTO projectDTO = projectApiMapper.getProjectDto(request);
     Project project = toProject(projectDTO);
     project.setVersion(0L);
 
