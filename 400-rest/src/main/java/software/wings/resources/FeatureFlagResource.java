@@ -38,7 +38,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import lombok.extern.slf4j.Slf4j;
-import retrofit2.http.Query;
 
 @Api("feature-flag")
 @Path("/feature-flag")

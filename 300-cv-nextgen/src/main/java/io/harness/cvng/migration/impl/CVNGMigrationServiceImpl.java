@@ -12,15 +12,12 @@ import static io.harness.cvng.core.utils.FeatureFlagNames.SERVICE_LEVEL_OBJECTIV
 import static io.harness.cvng.migration.beans.CVNGSchema.CVNGMigrationStatus.PENDING;
 import static io.harness.cvng.migration.beans.CVNGSchema.SCHEMA_ID;
 
-import io.harness.beans.FeatureName;
 import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.migration.CVNGBackgroundMigrationList;
 import io.harness.cvng.migration.CVNGMigration;
 import io.harness.cvng.migration.beans.CVNGSchema;
 import io.harness.cvng.migration.service.CVNGMigrationService;
 import io.harness.persistence.HPersistence;
-
-import software.wings.beans.Log;
 
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.inject.Inject;
