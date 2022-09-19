@@ -784,7 +784,8 @@ public class DelegateSetupResourceV3 {
       @Parameter(description = "Token value") @QueryParam("token") @NotEmpty String token,
       @Parameter(description = "Is Ce enabled") @QueryParam("isCeEnabled") @DefaultValue("false") boolean isCeEnabled,
       @Parameter(description = "Token name") @QueryParam("tokenName") String tokenName,
-  @Parameter(description = "root access fot delegate") @QueryParam("runAsRoot") @DefaultValue("true") boolean runAsRoot) throws IOException {
+      @Parameter(description = "root access fot delegate") @QueryParam("runAsRoot") @DefaultValue(
+          "true") boolean runAsRoot) throws IOException {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
       downloadTokenService.validateDownloadToken(DELEGATE + accountId, token);
 
