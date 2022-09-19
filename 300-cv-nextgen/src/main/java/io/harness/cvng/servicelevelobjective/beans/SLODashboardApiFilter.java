@@ -7,6 +7,9 @@
 
 package io.harness.cvng.servicelevelobjective.beans;
 
+import io.harness.cvng.CVConstants;
+
+import io.swagger.v3.oas.annotations.Parameter;
 import java.util.List;
 import javax.ws.rs.QueryParam;
 import lombok.AccessLevel;
@@ -15,15 +18,26 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
+
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class SLODashboardApiFilter {
-  @QueryParam("userJourneyIdentifiers") List<String> userJourneyIdentifiers;
-  @QueryParam("monitoredServiceIdentifier") String monitoredServiceIdentifier;
-  @QueryParam("sliTypes") List<ServiceLevelIndicatorType> sliTypes;
-  @QueryParam("targetTypes") List<SLOTargetType> targetTypes;
-  @QueryParam("errorBudgetRisks") List<ErrorBudgetRisk> errorBudgetRisks;
+  @Parameter(description = CVConstants.USER_JOURNEY_PARAM_MESSAGE)
+  @QueryParam("userJourneyIdentifiers")
+  List<String> userJourneyIdentifiers;
+  @Parameter(description = CVConstants.MONITORED_SERVICE_PARAM_MESSAGE)
+  @QueryParam("monitoredServiceIdentifier")
+  String monitoredServiceIdentifier;
+  @Parameter(description = CVConstants.SLI_TYPE_PARAM_MESSAGE)
+  @QueryParam("sliTypes")
+  List<ServiceLevelIndicatorType> sliTypes;
+  @Parameter(description = CVConstants.TARGET_TYPE_PARAM_MESSAGE)
+  @QueryParam("targetTypes")
+  List<SLOTargetType> targetTypes;
+  @Parameter(description = CVConstants.ERROR_BUDGET_RISK_PARAM_MESSAGE)
+  @QueryParam("errorBudgetRisks")
+  List<ErrorBudgetRisk> errorBudgetRisks;
 }
