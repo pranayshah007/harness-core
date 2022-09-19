@@ -5,8 +5,9 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ng.chaos.client;
+package io.harness.chaos.client.remote;
 
+import io.harness.chaos.client.beans.ChaosApplyManifestResponse;
 import io.harness.ng.core.dto.ResponseDTO;
 
 import retrofit2.Call;

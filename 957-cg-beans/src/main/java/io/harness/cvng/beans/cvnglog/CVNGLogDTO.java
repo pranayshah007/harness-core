@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.EqualsAndHashCode;
@@ -33,6 +34,7 @@ import lombok.experimental.SuperBuilder;
   , @JsonSubTypes.Type(value = ExecutionLogDTO.class, name = "ExecutionLog"),
 })
 @OwnedBy(HarnessTeam.CV)
+@Schema(name = "CVNGLog", description = "This is the CVNG Log entity defined in Harness")
 public abstract class CVNGLogDTO {
   private String accountId;
   private String traceableId;

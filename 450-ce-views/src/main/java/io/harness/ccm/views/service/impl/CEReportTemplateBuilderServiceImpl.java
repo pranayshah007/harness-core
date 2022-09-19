@@ -171,11 +171,13 @@ public class CEReportTemplateBuilderServiceImpl implements CEReportTemplateBuild
     }
     List<QLCEViewGroupBy> groupBy = new ArrayList<>();
 
+    // Todo: Pass default group by to cover cost categories
     // Generating Trend data
-    QLCEViewTrendInfo trendData = viewsBillingService
-                                      .getTrendStatsDataNg(bigQuery, filters, aggregationFunction,
-                                          cloudProviderTableName, viewsQueryHelper.buildQueryParams(accountId, false))
-                                      .getTotalCost();
+    QLCEViewTrendInfo trendData =
+        viewsBillingService
+            .getTrendStatsDataNg(bigQuery, filters, Collections.emptyList(), aggregationFunction,
+                cloudProviderTableName, viewsQueryHelper.buildQueryParams(accountId, false))
+            .getTotalCost();
     if (trendData == null) {
       throw new InvalidRequestException("Exception while generating report. No data to for cost trend");
     }

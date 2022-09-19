@@ -40,6 +40,7 @@ import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.ArtifactSummary;
+import io.harness.cdng.artifact.bean.yaml.ArtifactSourceConfig;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
@@ -537,6 +538,15 @@ public class ServiceResourceV2 {
       throw new NotFoundException(format("Service with identifier [%s] in project [%s], org [%s] not found",
           serviceIdentifier, projectIdentifier, orgIdentifier));
     }
+  }
+
+  @GET
+  @Path("/dummy-artifactSourceConfig-api")
+  @ApiOperation(value = "This is dummy api to expose ArtifactSourceConfig", nickname = "dummyArtifactSourceConfigApi")
+  @Hidden
+  // do not delete this.
+  public ResponseDTO<ArtifactSourceConfig> getArtifactSourceConfig() {
+    return ResponseDTO.newResponse(ArtifactSourceConfig.builder().build());
   }
 
   private List<ServiceResponse> filterByPermissionAndId(

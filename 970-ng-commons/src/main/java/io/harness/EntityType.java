@@ -308,6 +308,9 @@ public enum EntityType {
       ModuleType.CI, EntityTypeConstants.BACKGROUND_STEP, IdentifierRef.class, EntityYamlRootNames.BACKGROUND_STEP),
   @JsonProperty(EntityTypeConstants.WAIT_STEP)
   WAIT_STEP(ModuleType.PMS, EntityTypeConstants.WAIT_STEP, IdentifierRef.class, EntityYamlRootNames.WAIT_STEP),
+  @JsonProperty(EntityTypeConstants.ARTIFACT_SOURCE_TEMPLATE)
+  ARTIFACT_SOURCE_TEMPLATE(ModuleType.TEMPLATESERVICE, EntityTypeConstants.ARTIFACT_SOURCE_TEMPLATE,
+      NGTemplateReference.class, EntityYamlRootNames.TEMPLATE),
   @JsonProperty(EntityTypeConstants.ECS_BLUE_GREEN_CREATE_SERVICE)
   ECS_BLUE_GREEN_CREATE_SERVICE_STEP(ModuleType.CD, EntityTypeConstants.ECS_BLUE_GREEN_CREATE_SERVICE,
       IdentifierRef.class, EntityYamlRootNames.ECS_BLUE_GREEN_CREATE_SERVICE),
@@ -317,7 +320,6 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.ECS_BLUE_GREEN_ROLLBACK)
   ECS_BLUE_GREEN_ROLLBACK_STEP(ModuleType.CD, EntityTypeConstants.ECS_BLUE_GREEN_ROLLBACK, IdentifierRef.class,
       EntityYamlRootNames.ECS_BLUE_GREEN_ROLLBACK);
-
   private final ModuleType moduleType;
   String yamlName;
   List<String> yamlRootElementString;

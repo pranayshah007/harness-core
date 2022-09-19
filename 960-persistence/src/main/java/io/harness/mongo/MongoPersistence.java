@@ -22,6 +22,7 @@ import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.mongo.SampleEntity.SampleEntityKeys;
+import io.harness.mongo.metrics.HarnessConnectionPoolListener;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.CreatedByAware;
 import io.harness.persistence.HPersistence;
@@ -117,12 +118,15 @@ public class MongoPersistence implements HPersistence {
   private Map<String, Info> storeInfo = new ConcurrentHashMap<>();
   private Map<Class, Store> classStores = new ConcurrentHashMap<>();
   private Map<String, AdvancedDatastore> datastoreMap;
+  private final HarnessConnectionPoolListener harnessConnectionPoolListener;
   @Inject UserProvider userProvider;
 
   @Inject
-  public MongoPersistence(@Named("primaryDatastore") AdvancedDatastore primaryDatastore) {
+  public MongoPersistence(@Named("primaryDatastore") AdvancedDatastore primaryDatastore,
+      HarnessConnectionPoolListener harnessConnectionPoolListener) {
     datastoreMap = new HashMap<>();
     datastoreMap.put(DEFAULT_STORE.getName(), primaryDatastore);
+    this.harnessConnectionPoolListener = harnessConnectionPoolListener;
   }
 
   @Override
@@ -160,7 +164,7 @@ public class MongoPersistence implements HPersistence {
       if (info == null || isEmpty(info.getUri())) {
         return getDatastore(DEFAULT_STORE);
       }
-      return MongoModule.createDatastore(morphia, info.getUri());
+      return MongoModule.createDatastore(morphia, info.getUri(), store.getName(), harnessConnectionPoolListener);
     });
   }
 

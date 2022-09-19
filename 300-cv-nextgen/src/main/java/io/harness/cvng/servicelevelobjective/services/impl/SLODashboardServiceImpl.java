@@ -16,6 +16,7 @@ import io.harness.cvng.core.beans.params.TimeRangeParams;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.core.utils.DateTimeUtils;
 import io.harness.cvng.servicelevelobjective.SLORiskCountResponse;
+import io.harness.cvng.servicelevelobjective.beans.MSDropdownResponse;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardApiFilter;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardDetail;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget;
@@ -38,6 +39,7 @@ import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveS
 import io.harness.cvng.servicelevelobjective.services.api.UserJourneyService;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.mapper.TagMapper;
+import io.harness.utils.PageUtils;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
@@ -216,6 +218,33 @@ public class SLODashboardServiceImpl implements SLODashboardService {
         .burnRate(SLODashboardWidget.BurnRate.builder()
                       .currentRatePercentage(sloGraphData.dailyBurnRate(serviceLevelObjective.getZoneOffset()))
                       .build())
+        .build();
+  }
+
+  @Override
+  public PageResponse<MSDropdownResponse> getSLOAssociatedMonitoredServices(
+      ProjectParams projectParams, PageParams pageParams) {
+    List<ServiceLevelObjective> serviceLevelObjectiveList = serviceLevelObjectiveService.getAllSLOs(projectParams);
+    Set<String> monitoredServiceIdentifiers = serviceLevelObjectiveList.stream()
+                                                  .map(ServiceLevelObjective::getMonitoredServiceIdentifier)
+                                                  .collect(Collectors.toSet());
+    List<MonitoredServiceResponse> monitoredServiceResponseList =
+        monitoredServiceService.get(projectParams, monitoredServiceIdentifiers);
+
+    List<MSDropdownResponse> msDropdownResponseList =
+        monitoredServiceResponseList.stream()
+            .map(monitoredServiceResponse -> getMSDropdownResponse(monitoredServiceResponse.getMonitoredServiceDTO()))
+            .collect(Collectors.toList());
+
+    return PageUtils.offsetAndLimit(msDropdownResponseList, pageParams.getPage(), pageParams.getSize());
+  }
+
+  private MSDropdownResponse getMSDropdownResponse(MonitoredServiceDTO monitoredServiceDTO) {
+    return MSDropdownResponse.builder()
+        .identifier(monitoredServiceDTO.getIdentifier())
+        .name(monitoredServiceDTO.getName())
+        .serviceRef(monitoredServiceDTO.getServiceRef())
+        .environmentRef(monitoredServiceDTO.getEnvironmentRef())
         .build();
   }
 
