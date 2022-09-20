@@ -179,8 +179,8 @@ public class AzureCommonHelperTest extends CategoryTest {
     Mockito.mockStatic(StepUtils.class);
     TaskRequest taskRequest = TaskRequest.newBuilder().build();
     when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any())).thenReturn(taskRequest);
-    TaskChainResponse result = azureCommonHelper.getGitFetchFileTaskChainResponse(
-        azureHelperTest.getAmbiance(), files, stepElementParameters, azureCreateARMResourcePassThroughData);
+    TaskChainResponse result = azureCommonHelper.getGitFetchFileTaskChainResponse(azureHelperTest.getAmbiance(), files,
+        stepElementParameters, azureCreateARMResourcePassThroughData, Arrays.asList("test"), null);
     assertThat(result.isChainEnd()).isFalse();
     assertThat(result.getTaskRequest()).isEqualTo(taskRequest);
     assertThat(result.getPassThroughData()).isEqualTo(azureCreateARMResourcePassThroughData);

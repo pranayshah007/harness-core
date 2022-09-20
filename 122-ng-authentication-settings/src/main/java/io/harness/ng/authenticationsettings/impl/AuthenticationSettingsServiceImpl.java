@@ -10,7 +10,7 @@ package io.harness.ng.authenticationsettings.impl;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.expression.SecretString.SECRET_MASK;
-import static io.harness.remote.client.RestClientUtils.getResponse;
+import static io.harness.remote.client.CGRestUtils.getResponse;
 
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.HarnessTeam;

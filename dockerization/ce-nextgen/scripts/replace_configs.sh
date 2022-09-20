@@ -10,7 +10,7 @@ replace_key_value () {
   CONFIG_KEY="$1";
   CONFIG_VALUE="$2";
   if [[ "" != "$CONFIG_VALUE" ]]; then
-    yq write -i $CONFIG_FILE $CONFIG_KEY $CONFIG_VALUE
+    export CONFIG_VALUE; export CONFIG_KEY; export CONFIG_KEY=.$CONFIG_KEY; yq -i 'eval(strenv(CONFIG_KEY))=env(CONFIG_VALUE)' $CONFIG_FILE
   fi
 }
 
@@ -20,9 +20,9 @@ write_mongo_hosts_and_ports() {
     HOST=$(cut -d: -f 1 <<< "${HOST_AND_PORT[$INDEX]}")
     PORT=$(cut -d: -f 2 -s <<< "${HOST_AND_PORT[$INDEX]}")
 
-    yq write -i $CONFIG_FILE $1.hosts[$INDEX].host "$HOST"
+    export HOST; export ARG1=$1; export INDEX; yq -i '.env(ARG1).[env(INDEX)].host=env(HOST)' $CONFIG_FILE
     if [[ "" != "$PORT" ]]; then
-      yq write -i $CONFIG_FILE $1.hosts[$INDEX].port "$PORT"
+      export PORT; export ARG1=$1; export INDEX; yq -i '.env(ARG1).[env(INDEX)].port=env(PORT)' $CONFIG_FILE
     fi
   done
 }
@@ -32,13 +32,13 @@ write_mongo_params() {
   for PARAM_PAIR in "${PARAMS[@]}"; do
     NAME=$(cut -d= -f 1 <<< "$PARAM_PAIR")
     VALUE=$(cut -d= -f 2 <<< "$PARAM_PAIR")
-    yq write -i $CONFIG_FILE $1.params.$NAME "$VALUE"
+    export VALUE; export ARG1=$1; export NAME; yq -i '.env(ARG1).params.env(NAME)=env(VALUE)' $CONFIG_FILE
   done
 }
 
 #
-yq delete -i $CONFIG_FILE server.adminConnectors
-yq delete -i $CONFIG_FILE 'server.applicationConnectors.(type==https)'
+yq -i 'del(.server.adminConnectors)' $CONFIG_FILE
+yq -i 'del(.server.applicationConnectors.[] | select(.type == "https"))' $CONFIG_FILE
 
 replace_key_value logging.level $LOGGING_LEVEL
 
@@ -47,7 +47,7 @@ replace_key_value server.applicationConnectors[0].port $CE_NEXTGEN_PORT
 replace_key_value events-mongo.uri "${EVENTS_MONGO_DB_URL//\\&/&}"
 
 if [[ "" != "$EVENTS_MONGO_HOSTS_AND_PORTS" ]]; then
-  yq delete -i $CONFIG_FILE events-mongo.uri
+  yq -i 'del(.events-mongo.uri)' $CONFIG_FILE
   replace_key_value events-mongo.username "$EVENTS_MONGO_USERNAME"
   replace_key_value events-mongo.password "$EVENTS_MONGO_PASSWORD"
   replace_key_value events-mongo.database "$EVENTS_MONGO_DATABASE"
@@ -133,32 +133,32 @@ if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then
   IFS=',' read -ra SENTINEL_URLS <<< "$EVENTS_FRAMEWORK_REDIS_SENTINELS"
   INDEX=0
   for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
-    yq write -i $CONFIG_FILE eventsFramework.redis.sentinelUrls.[$INDEX] "${REDIS_SENTINEL_URL}"
+    export REDIS_SENTINEL_URL; export INDEX; yq -i '.eventsFramework.redis.sentinelUrls.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
     INDEX=$(expr $INDEX + 1)
   done
 fi
 
 if [[ "$STACK_DRIVER_LOGGING_ENABLED" == "true" ]]; then
-  yq delete -i $CONFIG_FILE 'logging.appenders.(type==console)'
-  yq write -i $CONFIG_FILE 'logging.appenders.(type==gke-console).stackdriverLogEnabled' "true"
+  yq -i 'del(.logging.appenders.[] | select(.type == "console"))' $CONFIG_FILE
+  yq -i '(.logging.appenders.[] | select(.type == "gke-console") | .stackdriverLogEnabled) = true' $CONFIG_FILE
 else
-  yq delete -i $CONFIG_FILE 'logging.appenders.(type==gke-console)'
+  yq -i 'del(.logging.appenders.[] | select(.type == "gke-console"))' $CONFIG_FILE
 fi
 
 if [[ "" != "$SEGMENT_ENABLED" ]]; then
-  yq write -i $CONFIG_FILE segmentConfiguration.enabled "$SEGMENT_ENABLED"
+  export SEGMENT_ENABLED; yq -i '.segmentConfiguration.enabled=env(SEGMENT_ENABLED)' $CONFIG_FILE
 fi
 
 if [[ "" != "$SEGMENT_APIKEY" ]]; then
-  yq write -i $CONFIG_FILE segmentConfiguration.apiKey "$SEGMENT_APIKEY"
+  export SEGMENT_APIKEY; yq -i '.segmentConfiguration.apiKey=env(SEGMENT_APIKEY)' $CONFIG_FILE
 fi
 
 if [[ "" != "$AUDIT_CLIENT_BASEURL" ]]; then
-  yq write -i $CONFIG_FILE auditClientConfig.baseUrl "$AUDIT_CLIENT_BASEURL"
+  export AUDIT_CLIENT_BASEURL; yq -i '.auditClientConfig.baseUrl=env(AUDIT_CLIENT_BASEURL)' $CONFIG_FILE
 fi
 
 if [[ "" != "$AUDIT_ENABLED" ]]; then
-  yq write -i $CONFIG_FILE enableAudit "$AUDIT_ENABLED"
+  export AUDIT_ENABLED; yq -i '.enableAudit=env(AUDIT_ENABLED)' $CONFIG_FILE
 fi
 
 replace_key_value outboxPollConfig.initialDelayInSeconds "$OUTBOX_POLL_INITIAL_DELAY"

@@ -1987,6 +1987,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "DownloadArtifact"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/DownloadArtifactCommandUnitSpec"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "Script"
               }
             }
@@ -2846,6 +2862,25 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "DownloadArtifactCommandUnitSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CommandUnitBaseSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "destinationPath"
+          ],
+          "properties": {
+            "destinationPath": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "EcrArtifactConfig": {
       "allOf": [
         {
@@ -3394,6 +3429,7 @@
             "Abort",
             "StageRollback",
             "StepGroupRollback",
+            "PipelineRollback",
             "ManualIntervention",
             "ProceedWithDefaultValue"
           ]
@@ -6402,6 +6438,9 @@
               "$ref": "#/definitions/MarkAsSuccessFailureActionConfig"
             },
             {
+              "$ref": "#/definitions/PipelineRollbackFailureActionConfig"
+            },
+            {
               "$ref": "#/definitions/ProceedWithDefaultValuesFailureActionConfig"
             },
             {
@@ -6454,6 +6493,9 @@
               "$ref": "#/definitions/MarkAsSuccessFailureActionConfig"
             },
             {
+              "$ref": "#/definitions/PipelineRollbackFailureActionConfig"
+            },
+            {
               "$ref": "#/definitions/ProceedWithDefaultValuesFailureActionConfig"
             },
             {
@@ -6486,6 +6528,9 @@
             },
             {
               "$ref": "#/definitions/MarkAsSuccessFailureActionConfig"
+            },
+            {
+              "$ref": "#/definitions/PipelineRollbackFailureActionConfig"
             },
             {
               "$ref": "#/definitions/ProceedWithDefaultValuesFailureActionConfig"
@@ -6951,6 +6996,28 @@
           ]
         }
       ]
+    },
+    "PipelineRollbackFailureActionConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/FailureStrategyActionConfig"
+        },
+        {
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "PipelineRollback"
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "PrimaryArtifact": {
       "type": "object",
