@@ -176,7 +176,10 @@ public class ComputeInstancePricingStrategy implements InstancePricingStrategy {
 
     if (null != vmInstanceBillingData && !Double.isNaN(vmInstanceBillingData.getComputeCost())) {
       double pricePerHr = (vmInstanceBillingData.getComputeCost() * 3600) / parentInstanceActiveSecond;
-      log.info("CUR Pricing, pricePerHour: {}, resourceId: {}", pricePerHr, vmInstanceBillingData.getResourceId());
+      double cpuPricePerHr = (vmInstanceBillingData.getCpuCost() * 3600) / parentInstanceActiveSecond;
+      double memoryPricePerHr = (vmInstanceBillingData.getMemoryCost() * 3600) / parentInstanceActiveSecond;
+      log.info("CUR Pricing, pricePerHour: {}, cpuPricePerHr: {}, memoryPricePerHr: {}, resourceId: {}", pricePerHr,
+          cpuPricePerHr, memoryPricePerHr, vmInstanceBillingData.getResourceId());
       if (!Double.isNaN(vmInstanceBillingData.getRate()) && vmInstanceBillingData.getRate() > 0.0
           && cloudProvider != CloudProvider.GCP) {
         pricePerHr = vmInstanceBillingData.getRate();
@@ -185,6 +188,8 @@ public class ComputeInstancePricingStrategy implements InstancePricingStrategy {
                         .pricePerHour(pricePerHr)
                         .networkCost(vmInstanceBillingData.getNetworkCost())
                         .pricingSource(PricingSource.CUR_REPORT)
+                        .cpuPricePerHour(cpuPricePerHr)
+                        .memoryPricePerHour(memoryPricePerHr)
                         .cpuUnit(cpuUnit)
                         .memoryMb(memoryMb)
                         .build();
