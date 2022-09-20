@@ -162,7 +162,7 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
           shellExecutorFactory.getExecutor(shellExecutorConfig, getLogStreamingTaskClient(), commandUnitsProgress);
       ExecuteCommandResponse executeCommandResponse = executor.executeCommandString(
           taskParams.getScript(), taskParams.getOutputVars(), taskParams.getSecretOutputVars(), null);
-      logCallback = new NGDelegateLogCallback(getLogStreamingTaskClient(), FetchFiles, true, commandUnitsProgress);
+      logCallback = new NGDelegateLogCallback(getLogStreamingTaskClient(), UpdateFiles, true, commandUnitsProgress);
       return NGGitOpsResponse.builder()
           .executeCommandResponse(executeCommandResponse)
           .taskStatus(TaskStatus.SUCCESS)
@@ -308,7 +308,7 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
 
   public DelegateResponseData handleCreatePR(NGGitOpsTaskParams gitOpsTaskParams) {
     CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
-    logCallback = new NGDelegateLogCallback(getLogStreamingTaskClient(), MergePR, true, commandUnitsProgress);
+    logCallback = new NGDelegateLogCallback(getLogStreamingTaskClient(), FetchFiles, true, commandUnitsProgress);
     try {
       log.info("Running Create PR Task for activityId {}", gitOpsTaskParams.getActivityId());
       FetchFilesResult fetchFilesResult = getFiles(gitOpsTaskParams, commandUnitsProgress);
