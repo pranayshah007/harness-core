@@ -67,6 +67,7 @@ public class PodWatcher implements ResourceEventHandler<V1Pod> {
   private static final TypeRegistry TYPE_REGISTRY =
       TypeRegistry.newBuilder().add(PodInfo.getDescriptor()).add(PodEvent.getDescriptor()).build();
   public static final String RUNNING_PHASE = "Running";
+  public static final String READY_STATE = "Ready";
 
   private final String clusterId;
   private final EventPublisher eventPublisher;
@@ -180,10 +181,28 @@ public class PodWatcher implements ResourceEventHandler<V1Pod> {
   public void eventReceived(V1Pod pod) {
     String uid = pod.getMetadata().getUid();
     V1PodCondition podScheduledCondition = getPodScheduledCondition(pod);
+    Timestamp runningTimestamp = null;
 
     if (podScheduledCondition != null && !publishedPods.contains(uid) && isPodInRunningPhase(pod)) {
       Timestamp creationTimestamp =
           HTimestamps.fromMillis(pod.getMetadata().getCreationTimestamp().toInstant().toEpochMilli());
+
+      if (pod.getStatus() != null && pod.getStatus().getConditions() != null) {
+        List<V1PodCondition> conditions = pod.getStatus().getConditions();
+        runningTimestamp =
+            conditions.stream()
+                .filter(condition -> condition.getType() != null && condition.getType().equalsIgnoreCase(READY_STATE))
+                .findFirst()
+                .map(condition -> HTimestamps.fromMillis(condition.getLastTransitionTime().toInstant().toEpochMilli()))
+                .orElse(null);
+      }
+
+      if (runningTimestamp == null) {
+        log.info("fetched runningTimestamp is NULL, assigning creationTimestamp");
+        runningTimestamp = creationTimestamp;
+      }
+      log.info("UID: {} and PodName: {} -> CreationTimesTamp: {}, runningTimeStamp: {}", uid,
+          pod.getMetadata().getName(), creationTimestamp, runningTimestamp);
 
       PodInfo podInfo =
           PodInfo.newBuilder(podInfoPrototype)
@@ -194,7 +213,7 @@ public class PodWatcher implements ResourceEventHandler<V1Pod> {
               .setTotalResource(K8sResourceUtils.getEffectiveResources(pod.getSpec()))
               .addAllVolume(getAllVolumes(pod))
               .setQosClass(pod.getStatus().getQosClass())
-              .setCreationTimestamp(creationTimestamp)
+              .setCreationTimestamp(runningTimestamp)
               .addAllContainers(getAllContainers(pod.getSpec().getContainers()))
               .putAllLabels(firstNonNull(pod.getMetadata().getLabels(), Collections.emptyMap()))
               .putAllMetadataAnnotations(firstNonNull(pod.getMetadata().getAnnotations(), Collections.emptyMap()))
@@ -205,7 +224,7 @@ public class PodWatcher implements ResourceEventHandler<V1Pod> {
       logMessage(podInfo);
 
       eventPublisher.publishMessage(
-          podInfo, creationTimestamp, ImmutableMap.of(CLUSTER_ID_IDENTIFIER, clusterId, UID, uid));
+          podInfo, runningTimestamp, ImmutableMap.of(CLUSTER_ID_IDENTIFIER, clusterId, UID, uid));
       if (RELATIVITY_CLUSTER_IDS.contains(clusterId)) {
         log.info("published PodInfo UID:[{}], Name:[{}]", uid, pod.getMetadata().getName());
       }
