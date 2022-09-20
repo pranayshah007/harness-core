@@ -2232,9 +2232,6 @@
             },
             "source": {
               "$ref": "#/definitions/CreatePRStepUpdateConfigScriptWrapper"
-            },
-            "stringMap": {
-              "$ref": "#/definitions/ParameterFieldMapStringString"
             }
           }
         }

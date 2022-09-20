@@ -47,9 +47,6 @@ public class CreatePRBaseStepInfo {
   @YamlSchemaTypes({string})
   ParameterField<Boolean> overrideConfig;
 
-  // TODO: Remove this field
-  ParameterField<Map<String, String>> stringMap;
-
   CreatePRStepUpdateConfigScriptWrapper source;
 
   @YamlSchemaTypes({runtime})
