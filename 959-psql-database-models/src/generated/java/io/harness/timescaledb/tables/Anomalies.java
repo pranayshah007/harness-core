@@ -240,8 +240,8 @@ public class Anomalies extends TableImpl<AnomaliesRecord> {
   /**
    * The column <code>public.anomalies.notificationsent</code>.
    */
-  public final TableField<AnomaliesRecord, Boolean> NOTIFICATIONSENT = createField(
-      DSL.name("notificationsent"), SQLDataType.BOOLEAN.defaultValue(DSL.field("false", SQLDataType.BOOLEAN)), this, "");
+  public final TableField<AnomaliesRecord, Boolean> NOTIFICATIONSENT = createField(DSL.name("notificationsent"),
+      SQLDataType.BOOLEAN.defaultValue(DSL.field("false", SQLDataType.BOOLEAN)), this, "");
 
   private Anomalies(Name alias, Table<AnomaliesRecord> aliased) {
     this(alias, aliased, null);
