@@ -40,6 +40,7 @@ import io.harness.exception.WingsException;
 import io.harness.network.Http;
 import io.harness.serializer.JsonUtils;
 
+import org.apache.commons.lang3.ArrayUtils;
 import software.wings.beans.JenkinsConfig;
 import software.wings.beans.command.JenkinsTaskParams;
 import software.wings.common.BuildDetailsComparator;
@@ -802,25 +803,32 @@ public class JenkinsImpl implements Jenkins {
     String parentJobName = null;
     String parentJobUrl = null;
     String childJobName;
+    String decodedJobName;
 
     try {
-      String decodedJobName = URLDecoder.decode(jobname, "UTF-8");
-
-      String[] jobNameSplit = decodedJobName.split("/", 2);
-      int parts = jobNameSplit.length;
-      if (parts > 1) {
-        parentJobUrl = constructParentJobPath(jobNameSplit);
-        parentJobName = jobNameSplit[parts - 2];
-        childJobName = jobNameSplit[parts - 1];
-      } else {
-        childJobName = decodedJobName;
-      }
-
-      return new JobPathDetails(parentJobUrl, parentJobName, childJobName);
-
+      decodedJobName = URLDecoder.decode(jobname, "UTF-8");
     } catch (UnsupportedEncodingException e) {
       throw new ArtifactServerException("Failure in decoding job name: " + ExceptionUtils.getMessage(e), e, USER);
     }
+
+    String[] jobNameSplit = jobname.split("%2F");
+    if (jobNameSplit.length > 1) {
+      String[] parentNameSplit = jobNameSplit[0].split("/");
+      jobNameSplit = ArrayUtils.add(parentNameSplit, jobNameSplit[1]);
+    } else {
+      jobNameSplit = decodedJobName.split("/");
+    }
+
+    int parts = jobNameSplit.length;
+    if (parts > 1) {
+      parentJobUrl = constructParentJobPath(jobNameSplit);
+      parentJobName = jobNameSplit[parts - 2];
+      childJobName = jobNameSplit[parts - 1];
+    } else {
+      childJobName = decodedJobName;
+    }
+
+    return new JobPathDetails(parentJobUrl, parentJobName, childJobName);
   }
 
   /**

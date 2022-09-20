@@ -116,12 +116,25 @@ public class JenkinsTest extends WingsBaseTest {
   @Test
   @Owner(developers = LUCAS_SALES)
   @Category(UnitTests.class)
-  public void shouldGetJobFromJenkins_withSlashInJobName() throws IOException {
+  public void testGetJobWithDetails() throws IOException {
     CustomJenkinsServer jenkinsServer = mock(CustomJenkinsServer.class);
     Reflect.on(jenkins).set("jenkinsServer", jenkinsServer);
+    FolderJob folderJob = new FolderJob("folder", "/job/harness/job/folder/");
 
-    when(jenkinsServer.getJob(any(FolderJob.class), eq("release/v1"))).thenReturn(mock(JobWithDetails.class));
-    assertThat(jenkins.getJobWithDetails("harness/release%2Fv1")).isNotNull();
+    when(jenkinsServer.getJob(eq(folderJob), eq("releasev1"))).thenReturn(mock(JobWithDetails.class));
+    assertThat(jenkins.getJobWithDetails("harness/folder/releasev1")).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void testGetJobWithDetails_withSlashInJobName() throws IOException {
+    CustomJenkinsServer jenkinsServer = mock(CustomJenkinsServer.class);
+    Reflect.on(jenkins).set("jenkinsServer", jenkinsServer);
+    FolderJob folderJob = new FolderJob("harness", "/job/harness/");
+
+    when(jenkinsServer.getJob(eq(folderJob), eq("release/v1"))).thenReturn(mock(JobWithDetails.class));
+    assertThat(jenkins.getJobWithDetails("harness%2Frelease/v1")).isNotNull();
   }
 
   /**
