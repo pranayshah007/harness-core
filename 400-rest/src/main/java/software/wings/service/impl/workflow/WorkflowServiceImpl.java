@@ -992,7 +992,7 @@ public class WorkflowServiceImpl implements WorkflowService {
       wingsPersistence.save(stateMachine);
 
       linkedTemplateUuids = workflow.getOrchestrationWorkflow().getLinkedTemplateUuids();
-      linkedArtifactStreamIds = setLinkedArtifactStreamIdsAtWorkflowLevel(workflow);
+      linkedArtifactStreamIds = new ArrayList<>();
       workflow.setOrchestration(orchestrationWorkflow);
     }
 
@@ -1005,10 +1005,6 @@ public class WorkflowServiceImpl implements WorkflowService {
     Workflow newWorkflow = readWorkflow(workflow.getAppId(), key, workflow.getDefaultVersion());
     updateKeywordsAndLinkedTemplateUuids(newWorkflow, linkedTemplateUuids);
     String accountId = appService.getAccountIdByAppId(workflow.getAppId());
-
-    if (featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId)) {
-      updateLinkedArtifactStreamIds(newWorkflow, linkedArtifactStreamIds);
-    }
 
     if (newWorkflow.getOrchestrationWorkflow() != null) {
       yamlPushService.pushYamlChangeSet(accountId, null, newWorkflow, Type.CREATE, workflow.isSyncFromGit(), false);
@@ -1032,29 +1028,6 @@ public class WorkflowServiceImpl implements WorkflowService {
         && !StringUtils.equals(workflowWithSameName.getUuid(), workflow.getUuid())) {
       throw new InvalidRequestException("Duplicate name " + workflow.getName(), USER);
     }
-  }
-
-  private List<String> setLinkedArtifactStreamIdsAtWorkflowLevel(Workflow workflow) {
-    List<String> linkedArtifactStreamIds = new ArrayList<>();
-    if (featureFlagService.isEnabled(
-            FeatureName.ARTIFACT_STREAM_REFACTOR, appService.getAccountIdByAppId(workflow.getAppId()))) {
-      List<Variable> userVariables = workflow.getOrchestrationWorkflow().getUserVariables();
-      if (isNotEmpty(userVariables)) {
-        for (Variable userVariable : userVariables) {
-          if (userVariable.getType() == VariableType.ARTIFACT) {
-            if (isNotEmpty(userVariable.getAllowedList())) {
-              for (String artifactStreamId : userVariable.getAllowedList()) {
-                if (!linkedArtifactStreamIds.contains(artifactStreamId)) {
-                  linkedArtifactStreamIds.add(artifactStreamId);
-                }
-              }
-            }
-          }
-        }
-        workflow.setLinkedArtifactStreamIds(linkedArtifactStreamIds);
-      }
-    }
-    return linkedArtifactStreamIds;
   }
 
   private boolean isDaemonSet(String appId, String serviceId) {
@@ -1294,7 +1267,7 @@ public class WorkflowServiceImpl implements WorkflowService {
 
       setUnset(ops, "defaultVersion", workflow.getDefaultVersion());
       linkedTemplateUuids = workflow.getOrchestrationWorkflow().getLinkedTemplateUuids();
-      linkedArtifactStreamIds = setLinkedArtifactStreamIdsAtWorkflowLevel(workflow);
+      linkedArtifactStreamIds = new ArrayList<>();
       setUnset(ops, "orchestration", workflow.getOrchestrationWorkflow());
     }
 
@@ -1326,9 +1299,6 @@ public class WorkflowServiceImpl implements WorkflowService {
       }
     }
     updateKeywordsAndLinkedTemplateUuids(finalWorkflow, linkedTemplateUuids);
-    if (featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId)) {
-      updateLinkedArtifactStreamIds(finalWorkflow, linkedArtifactStreamIds);
-    }
     return finalWorkflow;
   }
 
@@ -2601,45 +2571,40 @@ public class WorkflowServiceImpl implements WorkflowService {
 
       String accountId = appService.getAccountIdByAppId(appId);
       List<ArtifactVariable> artifactVariables = new ArrayList<>();
-      if (featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId)) {
-        fetchArtifactNeededServiceIds(
-            appId, workflow, workflowVariables, artifactRequiredServiceIds, artifactVariables);
-      } else {
-        fetchArtifactAndManifestNeededServiceIds(
-            appId, workflow, workflowVariables, artifactRequiredServiceIds, manifestRequiredServiceIds, serviceCache);
-        if (isNotEmpty(artifactRequiredServiceIds)) {
-          for (String serviceId : artifactRequiredServiceIds) {
-            List<String> allowedArtifactStreams =
-                artifactStreamServiceBindingService.listArtifactStreamIds(appId, serviceId);
-            artifactVariables.add(ArtifactVariable.builder()
-                                      .type(VariableType.ARTIFACT)
-                                      .name(DEFAULT_ARTIFACT_VARIABLE_NAME)
-                                      .entityType(SERVICE)
-                                      .entityId(serviceId)
-                                      .allowedList(allowedArtifactStreams)
-                                      .lastDeployedArtifactInfo(includeList.contains(Include.LAST_DEPLOYED_ARTIFACT)
-                                              ? fetchLastDeployedArtifact(workflow, allowedArtifactStreams, serviceId)
-                                              : null)
-                                      .build());
-          }
+      fetchArtifactAndManifestNeededServiceIds(
+          appId, workflow, workflowVariables, artifactRequiredServiceIds, manifestRequiredServiceIds, serviceCache);
+      if (isNotEmpty(artifactRequiredServiceIds)) {
+        for (String serviceId : artifactRequiredServiceIds) {
+          List<String> allowedArtifactStreams =
+              artifactStreamServiceBindingService.listArtifactStreamIds(appId, serviceId);
+          artifactVariables.add(ArtifactVariable.builder()
+                                    .type(VariableType.ARTIFACT)
+                                    .name(DEFAULT_ARTIFACT_VARIABLE_NAME)
+                                    .entityType(SERVICE)
+                                    .entityId(serviceId)
+                                    .allowedList(allowedArtifactStreams)
+                                    .lastDeployedArtifactInfo(includeList.contains(Include.LAST_DEPLOYED_ARTIFACT)
+                                            ? fetchLastDeployedArtifact(workflow, allowedArtifactStreams, serviceId)
+                                            : null)
+                                    .build());
         }
-        if (featureFlagService.isEnabled(HELM_CHART_AS_ARTIFACT, accountId)) {
-          deploymentMetadataBuilder.manifestVariables(
-              manifestRequiredServiceIds.stream()
-                  .map(serviceId
-                      -> ManifestVariable.builder()
-                             .type(VariableType.MANIFEST)
-                             .name(DEFAULT_HELMCHART_VARIABLE_NAME)
-                             .serviceId(serviceId)
-                             .lastDeployedHelmChartInformation(includeList.contains(Include.LAST_DEPLOYED_ARTIFACT)
-                                     ? fetchLastDeployedHelmChart(workflow, serviceId)
-                                     : null)
-                             .applicationManifestSummary(
-                                 prepareApplicationManifestSummary(serviceId, accountId, appId, workflowExecution))
-                             .serviceName(getServiceNameFromCache(serviceCache, serviceId, appId))
-                             .build())
-                  .collect(toList()));
-        }
+      }
+      if (featureFlagService.isEnabled(HELM_CHART_AS_ARTIFACT, accountId)) {
+        deploymentMetadataBuilder.manifestVariables(
+            manifestRequiredServiceIds.stream()
+                .map(serviceId
+                    -> ManifestVariable.builder()
+                           .type(VariableType.MANIFEST)
+                           .name(DEFAULT_HELMCHART_VARIABLE_NAME)
+                           .serviceId(serviceId)
+                           .lastDeployedHelmChartInformation(includeList.contains(Include.LAST_DEPLOYED_ARTIFACT)
+                                   ? fetchLastDeployedHelmChart(workflow, serviceId)
+                                   : null)
+                           .applicationManifestSummary(
+                               prepareApplicationManifestSummary(serviceId, accountId, appId, workflowExecution))
+                           .serviceName(getServiceNameFromCache(serviceCache, serviceId, appId))
+                           .build())
+                .collect(toList()));
       }
 
       // Update artifact variables with display info and artifact stream summaries.

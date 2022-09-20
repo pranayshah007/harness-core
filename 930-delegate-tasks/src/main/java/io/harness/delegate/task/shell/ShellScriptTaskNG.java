@@ -132,6 +132,7 @@ public class ShellScriptTaskNG extends AbstractDelegateRunnableTask {
     sshSessionConfig.setHost(taskParameters.getHost());
     sshSessionConfig.setWorkingDirectory(taskParameters.getWorkingDirectory());
     sshSessionConfig.setCommandUnitName(COMMAND_UNIT);
+    sshSessionConfig.setEnvVariables(taskParameters.getEnvironmentVariables());
     return sshSessionConfig;
   }
 

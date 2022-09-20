@@ -126,8 +126,6 @@ public abstract class AbstractDelegateRunnableTask implements DelegateRunnableTa
           if (returnValueData.getException() instanceof DelegateRetryableException) {
             taskResponse.responseCode(ResponseCode.RETRY_ON_OTHER_DELEGATE);
           }
-        } else {
-          log.error("{} does not implement DelegateTaskNotifyResponseData", result.getClass().getName());
         }
         taskResponse.response(result);
       } else {

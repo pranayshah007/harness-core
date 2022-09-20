@@ -15,11 +15,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
-import io.harness.cvng.beans.DeviationType;
 import io.harness.cvng.beans.ThresholdConfigType;
 import io.harness.cvng.beans.TimeSeriesMetricType;
-import io.harness.cvng.beans.TimeSeriesThresholdType;
 import io.harness.cvng.beans.stackdriver.StackDriverMetricDefinition;
+import io.harness.cvng.core.beans.HealthSourceMetricDefinition;
 import io.harness.cvng.core.beans.StackdriverDefinition;
 import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.constant.MonitoredServiceConstants;
@@ -174,7 +173,7 @@ public class StackdriverCVConfig extends MetricCVConfig<MetricInfo> {
     if (isEmpty(timeSeriesMetricPacks)) {
       return;
     }
-    Map<String, StackdriverDefinition> mapOfMetricDefinitions =
+    Map<String, HealthSourceMetricDefinition> mapOfMetricDefinitions =
         emptyIfNull(metricDefinitions)
             .stream()
             .collect(Collectors.toMap(StackdriverDefinition::getMetricName, metricDefinition -> metricDefinition));
@@ -191,10 +190,6 @@ public class StackdriverCVConfig extends MetricCVConfig<MetricInfo> {
                     List<TimeSeriesThreshold> timeSeriesThresholds =
                         metric.getThresholds() != null ? metric.getThresholds() : new ArrayList<>();
                     String metricName = metricPackDTO.getMetricName();
-                    List<TimeSeriesThresholdType> thresholdTypes = null;
-                    if (mapOfMetricDefinitions.containsKey(metricName)) {
-                      thresholdTypes = mapOfMetricDefinitions.get(metricName).getRiskProfile().getThresholdTypes();
-                    }
                     TimeSeriesThreshold timeSeriesThreshold =
                         TimeSeriesThreshold.builder()
                             .accountId(getAccountId())
@@ -206,7 +201,8 @@ public class StackdriverCVConfig extends MetricCVConfig<MetricInfo> {
                             .action(metricPackDTO.getType().getTimeSeriesThresholdActionType())
                             .criteria(criteria)
                             .thresholdConfigType(ThresholdConfigType.USER_DEFINED)
-                            .deviationType(DeviationType.getDeviationType(thresholdTypes))
+                            .deviationType(getDeviationType(
+                                mapOfMetricDefinitions, metricName, metric, timeSeriesMetricPackDTO.getIdentifier()))
                             .build();
                     timeSeriesThresholds.add(timeSeriesThreshold);
                     metric.setThresholds(timeSeriesThresholds);

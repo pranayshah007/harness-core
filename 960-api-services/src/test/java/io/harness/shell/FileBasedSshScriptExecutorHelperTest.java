@@ -42,6 +42,7 @@ public class FileBasedSshScriptExecutorHelperTest extends CategoryTest {
     doReturn(0).when(inputStreamMock).read();
     assertThat(FileBasedSshScriptExecutorHelper.checkAck(inputStreamMock, loggerMock)).isEqualTo(0);
 
+    doReturn(1).when(inputStreamMock).available();
     doReturn(-1).when(inputStreamMock).read();
     assertThat(FileBasedSshScriptExecutorHelper.checkAck(inputStreamMock, loggerMock)).isEqualTo(-1);
 

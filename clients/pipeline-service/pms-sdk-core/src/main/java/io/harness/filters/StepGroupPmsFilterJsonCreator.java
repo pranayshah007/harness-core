@@ -7,12 +7,14 @@
 
 package io.harness.filters;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.COMMAND;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP_GROUP;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidYamlException;
+import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.steps.StepGroupElementConfig;
 import io.harness.plancreator.strategy.StrategyConfig;
 import io.harness.pms.filter.creation.FilterCreationResponse;
@@ -28,6 +30,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -84,6 +87,15 @@ public class StepGroupPmsFilterJsonCreator extends ChildrenFilterJsonCreator<Ste
   }
 
   private boolean containsCommandStep(StepGroupElementConfig field) {
-    return field.getSteps().stream().anyMatch(i -> COMMAND.equalsIgnoreCase(i.getStep().get("type").asText()));
+    if (isEmpty(field.getSteps())) {
+      return false;
+    }
+    return field.getSteps()
+        .stream()
+        .map(ExecutionWrapperConfig::getStep)
+        .filter(Objects::nonNull)
+        .map(i -> i.get("type"))
+        .filter(Objects::nonNull)
+        .anyMatch(i -> COMMAND.equalsIgnoreCase(i.asText()));
   }
 }

@@ -141,7 +141,6 @@ import org.springframework.transaction.support.TransactionTemplate;
 public class NgUserServiceImpl implements NgUserService {
   private static final String ACCOUNT_ADMIN = "_account_admin";
   private static final String ACCOUNT_VIEWER = "_account_viewer";
-  private static final String ACCOUNT_BASIC = "_account_basic";
   private static final String ORGANIZATION_VIEWER = "_organization_viewer";
   private static final String ORG_ADMIN = "_organization_admin";
   private static final String PROJECT_ADMIN = "_project_admin";
@@ -540,7 +539,8 @@ public class NgUserServiceImpl implements NgUserService {
               .build();
       roleAssignmentDTOs.add(roleAssignmentDTO);
     }
-    createRoleAssignments(serviceAccountId, scope, roleAssignmentDTOs, false);
+    createRoleAssignments(serviceAccountId, scope, getManagedRoleAssignments(roleAssignmentDTOs), true);
+    createRoleAssignments(serviceAccountId, scope, getNonManagedRoleAssignments(roleAssignmentDTOs), false);
   }
 
   @Override
@@ -549,10 +549,15 @@ public class NgUserServiceImpl implements NgUserService {
     ensureUserMetadata(userId);
     boolean isAccountBasicFeatureFlagEnabled =
         ngFeatureFlagHelperService.isEnabled(scope.getAccountIdentifier(), FeatureName.ACCOUNT_BASIC_ROLE);
-    addUserToScopeInternal(userId, source, scope, getDefaultRoleIdentifier(scope, isAccountBasicFeatureFlagEnabled));
+    addUserToScopeInternal(userId, source, scope, getDefaultRoleIdentifier(scope), isAccountBasicFeatureFlagEnabled);
     addUserToParentScope(userId, scope, source, isAccountBasicFeatureFlagEnabled);
-    createRoleAssignments(
-        userId, scope, createRoleAssignmentDTOs(roleBindings, userId, scope), isAccountBasicFeatureFlagEnabled);
+    List<RoleAssignmentDTO> roleAssignmentDTOList = createRoleAssignmentDTOs(roleBindings, userId, scope);
+    if (isAccountBasicFeatureFlagEnabled) {
+      createRoleAssignments(userId, scope, roleAssignmentDTOList, false);
+    } else {
+      createRoleAssignments(userId, scope, getManagedRoleAssignments(roleAssignmentDTOList), true);
+      createRoleAssignments(userId, scope, getNonManagedRoleAssignments(roleAssignmentDTOList), false);
+    }
     defaultUserGroupService.addUserToDefaultUserGroup(scope, userId);
     userGroupService.addUserToUserGroups(scope, userId, getValidUserGroups(scope, userGroups));
   }
@@ -571,38 +576,27 @@ public class NgUserServiceImpl implements NgUserService {
     return userGroupService.list(userGroupFilterDTO).stream().map(UserGroup::getIdentifier).collect(toList());
   }
 
+  private List<RoleAssignmentDTO> getManagedRoleAssignments(List<RoleAssignmentDTO> roleAssignmentDTOs) {
+    return roleAssignmentDTOs.stream().filter(role -> isRoleAssignmentManaged(role)).collect(toList());
+  }
+
+  private List<RoleAssignmentDTO> getNonManagedRoleAssignments(List<RoleAssignmentDTO> roleAssignmentDTOs) {
+    return roleAssignmentDTOs.stream()
+        .filter(((Predicate<RoleAssignmentDTO>) role -> isRoleAssignmentManaged(role)).negate())
+        .collect(toList());
+  }
+
   @VisibleForTesting
-  protected void createRoleAssignments(String userId, Scope scope, List<RoleAssignmentDTO> roleAssignmentDTOs,
-      boolean isAccountBasicFeatureFlagEnabled) {
+  protected void createRoleAssignments(
+      String userId, Scope scope, List<RoleAssignmentDTO> roleAssignmentDTOs, boolean managed) {
     if (isEmpty(roleAssignmentDTOs)) {
       return;
     }
-    List<RoleAssignmentDTO> managedRoleAssignments =
-        roleAssignmentDTOs.stream()
-            .filter(role -> isRoleAssignmentManaged(role, isAccountBasicFeatureFlagEnabled))
-            .collect(toList());
-    List<RoleAssignmentDTO> userRoleAssignments =
-        roleAssignmentDTOs.stream()
-            .filter(
-                ((Predicate<RoleAssignmentDTO>) role -> isRoleAssignmentManaged(role, isAccountBasicFeatureFlagEnabled))
-                    .negate())
-            .collect(toList());
-
     try {
-      if (isNotEmpty(managedRoleAssignments)) {
-        RoleAssignmentCreateRequestDTO createRequestDTO =
-            RoleAssignmentCreateRequestDTO.builder().roleAssignments(managedRoleAssignments).build();
-        getResponse(accessControlAdminClient.createMultiRoleAssignment(scope.getAccountIdentifier(),
-            scope.getOrgIdentifier(), scope.getProjectIdentifier(), true, createRequestDTO));
-      }
-
-      if (isNotEmpty(userRoleAssignments)) {
-        RoleAssignmentCreateRequestDTO createRequestDTO =
-            RoleAssignmentCreateRequestDTO.builder().roleAssignments(userRoleAssignments).build();
-        getResponse(accessControlAdminClient.createMultiRoleAssignment(scope.getAccountIdentifier(),
-            scope.getOrgIdentifier(), scope.getProjectIdentifier(), false, createRequestDTO));
-      }
-
+      RoleAssignmentCreateRequestDTO createRequestDTO =
+          RoleAssignmentCreateRequestDTO.builder().roleAssignments(roleAssignmentDTOs).build();
+      getResponse(accessControlAdminClient.createMultiRoleAssignment(scope.getAccountIdentifier(),
+          scope.getOrgIdentifier(), scope.getProjectIdentifier(), managed, createRequestDTO));
     } catch (Exception e) {
       log.error("Could not create all of the role assignments in [{}] for user [{}] at [{}]", roleAssignmentDTOs,
           userId,
@@ -610,31 +604,22 @@ public class NgUserServiceImpl implements NgUserService {
     }
   }
 
-  private List<String> getManagedRoleIdentifiers(
-      RoleAssignmentDTO roleAssignmentDTO, boolean isAccountBasicFeatureFlagEnabled) {
-    if (roleAssignmentDTO.getPrincipal().getType().equals(USER) && isAccountBasicFeatureFlagEnabled) {
-      return ImmutableList.of(ACCOUNT_BASIC, ORGANIZATION_VIEWER, PROJECT_VIEWER);
-    }
+  private List<String> getManagedRoleIdentifiers() {
     return ImmutableList.of(ACCOUNT_VIEWER, ORGANIZATION_VIEWER, PROJECT_VIEWER);
   }
 
-  private boolean isRoleAssignmentManaged(
-      RoleAssignmentDTO roleAssignmentDTO, boolean isAccountBasicFeatureFlagEnabled) {
-    return getManagedRoleIdentifiers(roleAssignmentDTO, isAccountBasicFeatureFlagEnabled)
-               .stream()
-               .anyMatch(roleIdentifier -> roleIdentifier.equals(roleAssignmentDTO.getRoleIdentifier()))
+  private boolean isRoleAssignmentManaged(RoleAssignmentDTO roleAssignmentDTO) {
+    return getManagedRoleIdentifiers().stream().anyMatch(
+               roleIdentifier -> roleIdentifier.equals(roleAssignmentDTO.getRoleIdentifier()))
         && MANAGED_RESOURCE_GROUP_IDENTIFIERS.stream().anyMatch(
             resourceGroupIdentifier -> resourceGroupIdentifier.equals(roleAssignmentDTO.getResourceGroupIdentifier()));
   }
 
-  private String getDefaultRoleIdentifier(Scope scope, boolean isAccountBasicFeatureFlagEnabled) {
+  private String getDefaultRoleIdentifier(Scope scope) {
     if (!isBlank(scope.getProjectIdentifier())) {
       return PROJECT_VIEWER;
     } else if (!isBlank(scope.getOrgIdentifier())) {
       return ORGANIZATION_VIEWER;
-    }
-    if (isAccountBasicFeatureFlagEnabled) {
-      return ACCOUNT_BASIC;
     }
     return ACCOUNT_VIEWER;
   }
@@ -673,22 +658,18 @@ public class NgUserServiceImpl implements NgUserService {
                            .accountIdentifier(scope.getAccountIdentifier())
                            .orgIdentifier(scope.getOrgIdentifier())
                            .build();
-      addUserToScopeInternal(userId, source, orgScope, ORGANIZATION_VIEWER);
+      addUserToScopeInternal(userId, source, orgScope, ORGANIZATION_VIEWER, isAccountBasicFeatureFlagEnabled);
     }
 
     if (!isBlank(scope.getOrgIdentifier())) {
       Scope accountScope = Scope.builder().accountIdentifier(scope.getAccountIdentifier()).build();
-      if (isAccountBasicFeatureFlagEnabled) {
-        addUserToScopeInternal(userId, source, accountScope, ACCOUNT_BASIC);
-      } else {
-        addUserToScopeInternal(userId, source, accountScope, ACCOUNT_VIEWER);
-      }
+      addUserToScopeInternal(userId, source, accountScope, ACCOUNT_VIEWER, isAccountBasicFeatureFlagEnabled);
     }
   }
 
   @VisibleForTesting
-  protected void addUserToScopeInternal(
-      String userId, UserMembershipUpdateSource source, Scope scope, String roleIdentifier) {
+  protected void addUserToScopeInternal(String userId, UserMembershipUpdateSource source, Scope scope,
+      String roleIdentifier, boolean isAccountBasicFeatureFlagEnabled) {
     Optional<UserMetadata> userMetadata = userMetadataRepository.findDistinctByUserId(userId);
     String publicIdentifier = userMetadata.map(UserMetadata::getEmail).orElse(userId);
 
@@ -707,20 +688,23 @@ public class NgUserServiceImpl implements NgUserService {
       return userMembership;
     });
 
-    try {
-      RoleAssignmentDTO roleAssignmentDTO = RoleAssignmentDTO.builder()
-                                                .principal(PrincipalDTO.builder().type(USER).identifier(userId).build())
-                                                .resourceGroupIdentifier(getDefaultResourceGroupIdentifier(scope))
-                                                .disabled(false)
-                                                .roleIdentifier(roleIdentifier)
-                                                .build();
-      NGRestUtils.getResponse(accessControlAdminClient.createMultiRoleAssignment(scope.getAccountIdentifier(),
-          scope.getOrgIdentifier(), scope.getProjectIdentifier(), true,
-          RoleAssignmentCreateRequestDTO.builder().roleAssignments(singletonList(roleAssignmentDTO)).build()));
-    } catch (Exception e) {
-      /**
-       *  It's expected that user might already have this roleassignment.
-       */
+    if (!isAccountBasicFeatureFlagEnabled) {
+      try {
+        RoleAssignmentDTO roleAssignmentDTO =
+            RoleAssignmentDTO.builder()
+                .principal(PrincipalDTO.builder().type(USER).identifier(userId).build())
+                .resourceGroupIdentifier(getDefaultResourceGroupIdentifier(scope))
+                .disabled(false)
+                .roleIdentifier(roleIdentifier)
+                .build();
+        NGRestUtils.getResponse(accessControlAdminClient.createMultiRoleAssignment(scope.getAccountIdentifier(),
+            scope.getOrgIdentifier(), scope.getProjectIdentifier(), true,
+            RoleAssignmentCreateRequestDTO.builder().roleAssignments(singletonList(roleAssignmentDTO)).build()));
+      } catch (Exception e) {
+        /**
+         *  It's expected that user might already have this roleassignment.
+         */
+      }
     }
   }
 

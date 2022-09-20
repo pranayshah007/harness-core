@@ -114,6 +114,7 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
 
   @Mock private AzureCommonHelper azureCommonHelper;
   @Mock private CDExpressionResolver cdExpressionResolver;
+  @Mock AzureARMConfigDAL azureARMConfigDAL;
   @Captor ArgumentCaptor<List<EntityDetail>> captor;
 
   @InjectMocks private AzureCreateARMResourceStep azureCreateStep;
@@ -155,6 +156,7 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
     parameterFileBuilder.setStore(fileStoreConfigWrapper);
     templateFileBuilder.setStore(templateStore);
 
+    stepParameters.setProvisionerIdentifier(ParameterField.createValueField("foobar"));
     stepParameters.setConfigurationParameters(AzureCreateARMResourceStepConfigurationParameters.builder()
                                                   .templateFile(templateFileBuilder)
                                                   .parameters(parameterFileBuilder)
@@ -180,6 +182,7 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testValidateResourcesWithAllHarnessStore() {
     AzureCreateARMResourceStepParameters stepParameters = new AzureCreateARMResourceStepParameters();
+    stepParameters.setProvisionerIdentifier(ParameterField.createValueField("foobar"));
     AzureTemplateFile templateFileBuilder = new AzureTemplateFile();
     AzureCreateARMResourceParameterFile parameterFileBuilder = new AzureCreateARMResourceParameterFile();
     StoreConfigWrapper fileStoreConfigWrapper =
@@ -218,6 +221,7 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testValidateResourcesWithAllHarnessStoreAndMoreThanOneFileSelected() {
     AzureCreateARMResourceStepParameters stepParameters = new AzureCreateARMResourceStepParameters();
+    stepParameters.setProvisionerIdentifier(ParameterField.createValueField("foobar"));
     AzureTemplateFile templateFileBuilder = new AzureTemplateFile();
     AzureCreateARMResourceParameterFile parameterFileBuilder = new AzureCreateARMResourceParameterFile();
     StoreConfigWrapper fileStoreConfigWrapper =
@@ -796,6 +800,7 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
     azureCreateStep.finalizeExecutionWithSecurityContext(azureHelperTest.getAmbiance(),
         createStep("RG", templateStore, fileStoreConfigWrapper), passThroughData,
         () -> getTaskNGResponse(CommandExecutionStatus.FAILURE, UnitStatus.SUCCESS, "foobar"));
+    verify(azureARMConfigDAL, times(1)).saveAzureARMConfig(any());
     verify(azureCommonHelper, times(1)).getFailureResponse(any(), any());
   }
 
@@ -825,7 +830,7 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
     StepResponse response = azureCreateStep.finalizeExecutionWithSecurityContext(azureHelperTest.getAmbiance(),
         createStep("RG", templateStore, fileStoreConfigWrapper), passThroughData,
         () -> getTaskNGResponse(CommandExecutionStatus.SUCCESS, UnitStatus.SUCCESS, ""));
-
+    verify(azureARMConfigDAL, times(1)).saveAzureARMConfig(any());
     assertThat(taskDataArgumentCaptor.getValue().getResourceGroup()).isEqualTo("123");
     assertThat(taskDataArgumentCaptor.getValue().getSubscriptionId()).isEqualTo("234");
     assertThat(taskDataArgumentCaptor.getValue().getResourceGroupTemplateJson()).isEqualTo("345");

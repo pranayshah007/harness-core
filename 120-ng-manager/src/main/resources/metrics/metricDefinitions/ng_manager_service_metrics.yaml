@@ -1,0 +1,196 @@
+name: NextGen Manager Service Metrics
+identifier: ngManagerServiceMetrics
+metricGroup: ngManagerServiceMetricsGroup
+metrics:
+  - metricName: nextgen_manager_io_dropwizard_jetty_MutableServletContextHandler_percent_4xx_15m
+    metricDefinition: Percentage of 4xx errors in the last 15 minutes
+    type: LastValue
+    unit: count
+  - metricName: nextgen_manager_io_dropwizard_jetty_MutableServletContextHandler_percent_4xx_5m
+    metricDefinition: Percentage of 4xx errors in the last 5 minutes
+    type: LastValue
+    unit: count
+  - metricName: nextgen_manager_io_dropwizard_jetty_MutableServletContextHandler_percent_4xx_1m
+    metricDefinition: Percentage of 4xx errors in the last 1 minute
+    type: LastValue
+    unit: count
+  - metricName: nextgen_manager_io_dropwizard_jetty_MutableServletContextHandler_percent_5xx_15m
+    metricDefinition: Percentage of 5xx errors in the last 15 minutes
+    type: LastValue
+    unit: count
+  - metricName: nextgen_manager_io_dropwizard_jetty_MutableServletContextHandler_percent_5xx_5m
+    metricDefinition: Percentage of 5xx errors in the last 5 minutes
+    type: LastValue
+    unit: count
+  - metricName: nextgen_manager_io_dropwizard_jetty_MutableServletContextHandler_percent_5xx_1m
+    metricDefinition: Percentage of 5xx errors in the last 1 minute
+    type: LastValue
+    unit: count
+  - metricName: nextgen_manager_jvm_memory_total_max
+    metricDefinition: JVM Memory - Max
+    type: LastValue
+    unit: count
+  - metricName: nextgen_manager_jvm_memory_total_committed
+    metricDefinition: JVM Memory - Total Committed
+    type: LastValue
+    unit: count
+  - metricName: nextgen_manager_jvm_memory_total_used
+    metricDefinition: JVM Memory - Used Memory
+    type: LastValue
+    unit: count
+  - metricName: nextgen_manager_jvm_memory_non_heap_max
+    metricDefinition: JVM Memory - Max Non-Heap Memory
+    type: LastValue
+    unit: count
+  - metricName: nextgen_manager_jvm_memory_non_heap_init
+    metricDefinition: JVM Memory - Initial Non-Heap Memory
+    type: LastValue
+    unit: count
+  - metricName: nextgen_manager_jvm_memory_non_heap_committed
+    metricDefinition: JVM Memory - Committed Non-Heap Memory
+    type: LastValue
+    unit: count
+  - metricName: nextgen_manager_jvm_memory_non_heap_usage
+    metricDefinition: JVM Memory - Non-Heap Memory Usage Percentage
+    type: LastValue
+    unit: count
+  - metricName: nextgen_manager_jvm_memory_non_heap_used
+    metricDefinition: JVM Memory - Non-Heap Memory Usage
+    type: LastValue
+    unit: count
+  - metricName: nextgen_manager_jvm_memory_heap_max
+    metricDefinition: JVM Memory - Max Heap Memory
+    type: LastValue
+    unit: count
+  - metricName: nextgen_manager_jvm_memory_heap_init
+    metricDefinition: JVM Memory - Initial Heap Memory
+    type: LastValue
+    unit: count
+  - metricName: nextgen_manager_jvm_memory_heap_committed
+    metricDefinition: JVM Memory - Committed Heap Memory
+    type: LastValue
+    unit: count
+  - metricName: nextgen_manager_jvm_memory_heap_usage
+    metricDefinition: JVM Memory - Heap Memory Usage Percentage
+    type: LastValue
+    unit: count
+  - metricName: nextgen_manager_jvm_memory_heap_used
+    metricDefinition: JVM Memory - Heap Memory Usage
+    type: LastValue
+    unit: count
+  - metricName: nextgen_manager_jvm_memory_pools_Metaspace_committed
+    metricDefinition: JVM Memory - Committed Metaspace Memory
+    type: LastValue
+    unit: count
+  - metricName: nextgen_manager_jvm_memory_pools_Metaspace_usage
+    metricDefinition: JVM Memory - Metaspace Memory Usage Percentage
+    type: LastValue
+    unit: count
+  - metricName: nextgen_manager_jvm_memory_pools_Metaspace_used
+    metricDefinition: JVM Memory - Metaspace Memory Usage
+    type: LastValue
+    unit: count
+  - metricName: nextgen_manager_jvm_threads_count
+    metricDefinition: JVM Threads - Total Count
+    type: LastValue
+    unit: count
+  - metricName: nextgen_manager_jvm_threads_blocked_count
+    metricDefinition: JVM Threads - Blocked Count
+    type: LastValue
+    unit: count
+  - metricName: nextgen_manager_jvm_threads_terminated_count
+    metricDefinition: JVM Threads - Terminated Count
+    type: LastValue
+    unit: count
+  - metricName: nextgen_manager_jvm_threads_daemon_count
+    metricDefinition: JVM Threads - Daemon Count
+    type: LastValue
+    unit: count
+  - metricName: nextgen_manager_jvm_threads_deadlock_count
+    metricDefinition: JVM Threads - Deadlocked Count
+    type: LastValue
+    unit: count
+  - metricName: nextgen_manager_jvm_threads_peak_count
+    metricDefinition: JVM Threads - Peak Count
+    type: LastValue
+    unit: count
+  - metricName: nextgen_manager_jvm_threads_runnable_count
+    metricDefinition: JVM Threads - Runnable Count
+    type: LastValue
+    unit: count
+  - metricName: nextgen_manager_jvm_threads_timed_waiting_count
+    metricDefinition: JVM Threads - Timed_Wait Count
+    type: LastValue
+    unit: count
+  - metricName: nextgen_manager_jvm_threads_waiting_count
+    metricDefinition: JVM Threads - Wait Count
+    type: LastValue
+    unit: count
+  - metricName: nextgen_manager_org_eclipse_jetty_util_thread_QueuedThreadPool_dw_size
+    metricDefinition: Jetty QueuedThreadPool - Thread Count
+    type: LastValue
+    unit: count
+  - metricName: nextgen_manager_org_eclipse_jetty_util_thread_QueuedThreadPool_dw_utilization
+    metricDefinition: Jetty QueuedThreadPool - ThreadPool Utilization
+    type: LastValue
+    unit: count
+  - metricName: nextgen_manager_org_eclipse_jetty_util_thread_QueuedThreadPool_dw_jobs_queue_utilization
+    metricDefinition: Jetty QueuedThreadPool - Queue Utilization
+    type: LastValue
+    unit: count
+  - metricName: nextgen_manager_org_eclipse_jetty_util_thread_QueuedThreadPool_dw_jobs
+    metricDefinition: Jetty QueuedThreadPool - Queued Jobs Count
+    type: LastValue
+    unit: count
+  - metricName: nextgen_manager_io_dropwizard_jetty_MutableServletContextHandler_requests_count
+    metricDefinition: Jetty - Requests Count
+    type: LastValue
+    unit: count
+  - metricName: nextgen_manager_io_dropwizard_jetty_MutableServletContextHandler_requests_oneMinuteRate
+    metricDefinition: Jetty - Requests/sec in Last 1 minute
+    type: LastValue
+    unit: count
+  - metricName: nextgen_manager_io_dropwizard_jetty_MutableServletContextHandler_requests_fiveMinuteRate
+    metricDefinition: Jetty - Requests/sec in Last 5 minutes
+    type: LastValue
+    unit: count
+  - metricName: nextgen_manager_io_dropwizard_jetty_MutableServletContextHandler_requests_fifteenMinuteRate
+    metricDefinition: Jetty - Requests/sec in Last 15 minutes
+    type: LastValue
+    unit: count
+  - metricName: nextgen_manager_io_dropwizard_jetty_MutableServletContextHandler_requests_meanRate
+    metricDefinition: Jetty - Average Requests/sec
+    type: LastValue
+    unit: count
+  - metricName: nextgen_manager_io_dropwizard_jetty_MutableServletContextHandler_requests_snapshot_999thPercentile
+    metricDefinition: Jetty - P999 Response Time
+    type: LastValue
+    unit: count
+  - metricName: nextgen_manager_io_dropwizard_jetty_MutableServletContextHandler_requests_snapshot_99thPercentile
+    metricDefinition: Jetty - P99 Response Time
+    type: LastValue
+    unit: count
+  - metricName: nextgen_manager_io_dropwizard_jetty_MutableServletContextHandler_requests_snapshot_95thPercentile
+    metricDefinition: Jetty - P95 Response Time
+    type: LastValue
+    unit: count
+  - metricName: nextgen_manager_io_dropwizard_jetty_MutableServletContextHandler_requests_snapshot_mean
+    metricDefinition: Jetty - Average Response Time
+    type: LastValue
+    unit: count
+  - metricName: nextgen_manager_io_dropwizard_jetty_MutableServletContextHandler_active_dispatches
+    metricDefinition: Jetty - Dispatched Requests Count
+    type: LastValue
+    unit: count
+  - metricName: nextgen_manager_io_dropwizard_jetty_MutableServletContextHandler_active_suspended
+    metricDefinition: Jetty - Suspended Requests Count
+    type: LastValue
+    unit: count
+  - metricName: nextgen_manager_io_dropwizard_jetty_MutableServletContextHandler_active_requests
+    metricDefinition: Jetty - Active Requests Count
+    type: LastValue
+    unit: count
+  - metricName: nextgen_manager_org_eclipse_jetty_server_HttpConnectionFactory_7090_connections_count
+    metricDefinition: Jetty - Connection Count
+    type: LastValue
+    unit: count

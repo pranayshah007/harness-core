@@ -91,17 +91,14 @@ public class ArtifactConfigToDelegateReqMapper {
   public GithubPackagesArtifactDelegateRequest getGithubPackagesDelegateRequest(
       GithubPackagesArtifactConfig artifactConfig, GithubConnectorDTO connectorDTO,
       List<EncryptedDataDetail> encryptedDataDetails, String connectorRef) {
-    String versionRegex = artifactConfig.getVersionRegex().getValue();
-
-    if (StringUtils.isBlank(versionRegex)) {
-      versionRegex = "";
-    }
-
-    String version = artifactConfig.getVersion().getValue();
-
-    if (StringUtils.isBlank(version)) {
-      version = "";
-    }
+    String versionRegex = artifactConfig.getVersionRegex() != null
+        ? (StringUtils.isBlank(artifactConfig.getVersionRegex().getValue())
+                ? ""
+                : artifactConfig.getVersionRegex().getValue())
+        : "";
+    String version = artifactConfig.getVersion() != null
+        ? StringUtils.isBlank(artifactConfig.getVersion().getValue()) ? "" : artifactConfig.getVersion().getValue()
+        : "";
 
     // If both version and versionRegex are empty, versionRegex is latest among all versions.
     if (EmptyPredicate.isEmpty(version) && EmptyPredicate.isEmpty(versionRegex)) {

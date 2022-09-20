@@ -815,18 +815,10 @@ public class EntityHelper {
       } else if (entity instanceof SettingAttribute) {
         SettingAttribute settingAttribute = (SettingAttribute) entity;
         SettingValue settingValue = settingAttribute.getValue();
-        if (!featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, settingAttribute.getAccountId())) {
-          if (SettingVariableTypes.STRING.name().equals(settingValue.getType())) {
-            finalYaml = format("Setup/Applications/%s/%s", record.getAppName(), DEFAULTS_YAML);
-          } else {
-            finalYaml = format("%s/%s%s", yamlPrefix, settingAttribute.getName(), YAML_EXTENSION);
-          }
+        if (SettingVariableTypes.STRING.name().equals(settingValue.getType())) {
+          finalYaml = format("Setup/Applications/%s/%s", record.getAppName(), DEFAULTS_YAML);
         } else {
-          if (SettingVariableTypes.STRING.name().equals(settingValue.getType())) {
-            finalYaml = format("Setup/Applications/%s/%s", record.getAppName(), DEFAULTS_YAML);
-          } else {
-            finalYaml = format("%s/%s", yamlPrefix, INDEX_YAML);
-          }
+          finalYaml = format("%s/%s%s", yamlPrefix, settingAttribute.getName(), YAML_EXTENSION);
         }
       } else if (entity instanceof ApplicationManifest) {
         ApplicationManifest appManifest = (ApplicationManifest) entity;

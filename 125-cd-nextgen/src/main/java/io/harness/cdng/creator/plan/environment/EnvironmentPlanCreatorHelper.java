@@ -31,6 +31,7 @@ import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverride.mapper.ServiceOverridesMapper;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
+import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
@@ -52,7 +53,6 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
 import io.harness.utils.YamlPipelineUtils;
-import io.harness.yaml.core.variables.NGServiceOverrides;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.protobuf.ByteString;
@@ -101,7 +101,7 @@ public class EnvironmentPlanCreatorHelper {
         accountIdentifier, orgIdentifier, projectIdentifier, environmentV2.getEnvironmentRef().getValue(), false);
 
     String envIdentifier = environmentV2.getEnvironmentRef().getValue();
-    if (!environment.isPresent()) {
+    if (environment.isEmpty()) {
       throw new InvalidRequestException(
           String.format("No environment found with %s identifier in %s project in %s org and %s account", envIdentifier,
               projectIdentifier, orgIdentifier, accountIdentifier));
@@ -110,7 +110,7 @@ public class EnvironmentPlanCreatorHelper {
     // Fetch service overrides And resolve inputs for service override
     Optional<NGServiceOverridesEntity> serviceOverridesOptional = serviceOverrideService.get(
         accountIdentifier, orgIdentifier, projectIdentifier, environmentV2.getEnvironmentRef().getValue(), serviceRef);
-    NGServiceOverrides serviceOverride = getNgServiceOverrides(environmentV2, serviceOverridesOptional);
+    NGServiceOverrideConfig serviceOverrideConfig = getNgServiceOverrides(environmentV2, serviceOverridesOptional);
 
     String originalEnvYaml = environment.get().getYaml();
 
@@ -142,19 +142,19 @@ public class EnvironmentPlanCreatorHelper {
       }
 
       return EnvironmentPlanCreatorConfigMapper.toEnvironmentPlanCreatorConfig(
-          mergedEnvYaml, infrastructureConfigs, serviceOverride);
+          mergedEnvYaml, infrastructureConfigs, serviceOverrideConfig);
     } else {
       if (!environmentV2.getDeployToAll().getValue() && isEmpty(environmentV2.getGitOpsClusters().getValue())) {
         throw new InvalidRequestException("List of Gitops clusters must be provided because deployToAll is false");
       }
       return EnvironmentPlanCreatorConfigMapper.toEnvPlanCreatorConfigWithGitops(
-          mergedEnvYaml, environmentV2, serviceOverride);
+          mergedEnvYaml, environmentV2, serviceOverrideConfig);
     }
   }
 
-  private NGServiceOverrides getNgServiceOverrides(
+  private NGServiceOverrideConfig getNgServiceOverrides(
       EnvironmentYamlV2 environmentV2, Optional<NGServiceOverridesEntity> serviceOverridesOptional) {
-    NGServiceOverrides serviceOverride = NGServiceOverrides.builder().build();
+    NGServiceOverrideConfig serviceOverrideConfig = NGServiceOverrideConfig.builder().build();
     if (serviceOverridesOptional.isPresent()) {
       NGServiceOverridesEntity serviceOverridesEntity = serviceOverridesOptional.get();
       String mergedYaml = serviceOverridesEntity.getYaml();
@@ -163,10 +163,10 @@ public class EnvironmentPlanCreatorHelper {
             serviceOverridesEntity.getYaml(), environmentV2.getServiceOverrideInputs().getValue());
       }
       if (mergedYaml != null) {
-        serviceOverride = ServiceOverridesMapper.toServiceOverrides(mergedYaml);
+        serviceOverrideConfig = ServiceOverridesMapper.toNGServiceOverrideConfig(mergedYaml);
       }
     }
-    return serviceOverride;
+    return serviceOverrideConfig;
   }
 
   private String resolveServiceOverrideInputs(

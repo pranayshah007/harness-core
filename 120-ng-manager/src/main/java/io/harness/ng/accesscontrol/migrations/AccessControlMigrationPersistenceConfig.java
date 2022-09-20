@@ -11,6 +11,7 @@ import io.harness.annotation.HarnessRepo;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.MongoConfig;
+import io.harness.mongo.metrics.HarnessConnectionPoolListener;
 import io.harness.springdata.HMongoTemplate;
 
 import com.google.inject.Inject;
@@ -39,10 +40,12 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
 @OwnedBy(HarnessTeam.PL)
 public class AccessControlMigrationPersistenceConfig extends AbstractMongoConfiguration {
   private final MongoConfig mongoBackendConfiguration;
+  private final HarnessConnectionPoolListener harnessConnectionPoolListener;
 
   @Inject
   public AccessControlMigrationPersistenceConfig(Injector injector) {
     this.mongoBackendConfiguration = injector.getInstance(MongoConfig.class);
+    this.harnessConnectionPoolListener = injector.getInstance(HarnessConnectionPoolListener.class);
   }
 
   @Override
@@ -55,6 +58,9 @@ public class AccessControlMigrationPersistenceConfig extends AbstractMongoConfig
             .maxConnectionIdleTime(mongoBackendConfiguration.getMaxConnectionIdleTime())
             .connectionsPerHost(mongoBackendConfiguration.getConnectionsPerHost())
             .readPreference(ReadPreference.primary())
+            .addConnectionPoolListener(harnessConnectionPoolListener)
+            .applicationName("ng_manager_access_control_migration_client")
+            .description("ng_manager_access_control_migration_client")
             .build();
     MongoClientURI uri =
         new MongoClientURI(mongoBackendConfiguration.getUri(), MongoClientOptions.builder(primaryMongoClientOptions));

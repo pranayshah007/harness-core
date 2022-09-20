@@ -84,4 +84,22 @@ public class SerializerUtils {
     }
     return true;
   }
+
+  public static String getSafeGitDirectoryCmd(CIShellType shellType) {
+    // This adds the safe directory to the end of .gitconfig file
+    String safeDirScript;
+    if (shellType == CIShellType.SH || shellType == CIShellType.BASH) {
+      safeDirScript = "set +x\n"
+          + "git config --global --add safe.directory /harness &>/dev/null | true\n"
+          + "set -x\n";
+    } else {
+      safeDirScript = "try\n"
+          + "{\n"
+          + "    git config --global --add safe.directory /harness | Out-Null\n"
+          + "}\n"
+          + "catch [System.Management.Automation.CommandNotFoundException]\n"
+          + "{\n }";
+    }
+    return safeDirScript;
+  }
 }

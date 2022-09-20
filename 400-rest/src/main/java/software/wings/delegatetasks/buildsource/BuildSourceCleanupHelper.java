@@ -24,7 +24,6 @@ import static software.wings.beans.artifact.ArtifactStreamType.NEXUS;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.beans.FeatureName;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.logging.ExceptionLogger;
@@ -157,8 +156,7 @@ public class BuildSourceCleanupHelper {
     log.info("Artifact Stream {} cleanup started with type {} name {}", artifactStream.getUuid(),
         artifactStream.getArtifactStreamType(), artifactStream.getSourceName());
     ArtifactStreamAttributes artifactStreamAttributes =
-        artifactCollectionUtils.getArtifactStreamAttributes(artifactStream,
-            featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, artifactStream.getAccountId()));
+        artifactCollectionUtils.getArtifactStreamAttributes(artifactStream, false);
     Map<String, BuildDetails> buildDetailsMap;
     if (isEmpty(buildDetails)) {
       buildDetailsMap = Collections.emptyMap();

@@ -122,6 +122,7 @@ message PullRequest {
   google.protobuf.Timestamp updated = 16;
   repeated Label labels = 17;
   repeated Commit commits = 18;  // List of commits associated with the pull request
+  string mergeSha = 19;
 }
 
 message PullRequestHook {

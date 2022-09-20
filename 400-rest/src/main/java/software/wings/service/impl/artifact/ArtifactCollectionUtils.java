@@ -724,7 +724,7 @@ public class ArtifactCollectionUtils {
   }
 
   private boolean multiArtifactEnabled(String accountId) {
-    return featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId);
+    return false;
   }
 
   private BuildSourceRequestType getBuildSourceRequestType(

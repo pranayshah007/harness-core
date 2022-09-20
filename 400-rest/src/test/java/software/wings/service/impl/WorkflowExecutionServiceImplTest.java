@@ -2164,7 +2164,6 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
     String serviceId1 = SERVICE_ID + "_1";
     String artifactId1 = ARTIFACT_ID + "_1";
     String artifactStreamId1 = ARTIFACT_STREAM_ID + "_1";
-    when(featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, ACCOUNT_ID)).thenReturn(false);
     ExecutionArgs executionArgs = new ExecutionArgs();
     executionArgs.setArtifacts(
         asList(anArtifact().withUuid(ARTIFACT_ID).build(), anArtifact().withUuid(artifactId1).build()));
@@ -2227,23 +2226,6 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
     Set<String> keywords = new HashSet<>();
     ((WorkflowExecutionServiceImpl) workflowExecutionService)
         .populateArtifactsAndServices(workflowExecution, stdParams, keywords, executionArgs, ACCOUNT_ID);
-  }
-
-  @Test
-  @Owner(developers = GARVIT)
-  @Category(UnitTests.class)
-  public void shouldPopulateArtifactsAndServicesWithArtifactStreamRefactorBasic() {
-    // This is just to test that populateArtifacts function is called for feature-flag on.
-    when(featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, ACCOUNT_ID)).thenReturn(true);
-    ExecutionArgs executionArgs = new ExecutionArgs();
-    executionArgs.setArtifactVariables(Collections.emptyList());
-    WorkflowExecution workflowExecution = WorkflowExecution.builder().build();
-    WorkflowStandardParams stdParams = aWorkflowStandardParams().build();
-    Set<String> keywords = new HashSet<>();
-    ((WorkflowExecutionServiceImpl) workflowExecutionService)
-        .populateArtifactsAndServices(workflowExecution, stdParams, keywords, executionArgs, ACCOUNT_ID);
-    verify(multiArtifactWorkflowExecutionServiceHelper).filterArtifactsForExecution(any(), any(), any());
-    assertThat(workflowExecution.getArtifacts()).isNullOrEmpty();
   }
 
   @Test

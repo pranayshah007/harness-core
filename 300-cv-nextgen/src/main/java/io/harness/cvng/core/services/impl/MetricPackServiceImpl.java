@@ -118,7 +118,7 @@ public class MetricPackServiceImpl implements MetricPackService {
       MetricPackServiceImpl.class.getResource("/splunk/dsl/metric-collection.datacollection");
   public static final String SPLUNK_METRIC_HEALTH_DSL;
   private static final URL CLOUDWATCH_METRICS_DSL_PATH =
-      MetricPackServiceImpl.class.getResource("/cloudwatch/dsl/metric-collection.datacollection");
+      MetricPackServiceImpl.class.getResource("/cloudwatch/dsl/cloudwatch-metrics.datacollection");
   public static final String CLOUDWATCH_METRICS_DSL;
   static {
     String appDPeformancePackDsl = null;

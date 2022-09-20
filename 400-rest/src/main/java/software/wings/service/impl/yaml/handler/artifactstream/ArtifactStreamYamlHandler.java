@@ -11,14 +11,11 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.validation.Validator.notNullCheck;
 
-import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.beans.artifact.ArtifactStreamType.CUSTOM;
 import static software.wings.service.impl.ArtifactStreamServiceImpl.ARTIFACT_STREAM_DEBUG_LOG;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
-import io.harness.ff.FeatureFlagService;
 
 import software.wings.beans.Application;
 import software.wings.beans.Service;
@@ -27,7 +24,6 @@ import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.ArtifactStream.Yaml;
 import software.wings.beans.template.TemplateHelper;
 import software.wings.beans.yaml.ChangeContext;
-import software.wings.beans.yaml.YamlType;
 import software.wings.service.impl.yaml.handler.BaseYamlHandler;
 import software.wings.service.impl.yaml.service.YamlHelper;
 import software.wings.service.intfc.ArtifactStreamService;
@@ -50,7 +46,6 @@ public abstract class ArtifactStreamYamlHandler<Y extends Yaml, B extends Artifa
   @Inject ArtifactStreamService artifactStreamService;
   @Inject YamlHelper yamlHelper;
   @Inject private TemplateService templateService;
-  @Inject private FeatureFlagService featureFlagService;
 
   protected String getSettingId(String accountId, String appId, String settingName) {
     SettingAttribute settingAttribute = settingsService.getByName(accountId, appId, settingName);
@@ -79,61 +74,29 @@ public abstract class ArtifactStreamYamlHandler<Y extends Yaml, B extends Artifa
   public void delete(ChangeContext<Y> changeContext) {
     String yamlFilePath = changeContext.getChange().getFilePath();
     String accountId = changeContext.getChange().getAccountId();
-    if (!featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId)) {
-      Optional<Application> optionalApplication = yamlHelper.getApplicationIfPresent(accountId, yamlFilePath);
-      if (!optionalApplication.isPresent()) {
-        return;
-      }
+    Optional<Application> optionalApplication = yamlHelper.getApplicationIfPresent(accountId, yamlFilePath);
+    if (!optionalApplication.isPresent()) {
+      return;
+    }
 
-      Application application = optionalApplication.get();
-      Optional<Service> serviceOptional = yamlHelper.getServiceIfPresent(application.getUuid(), yamlFilePath);
-      if (!serviceOptional.isPresent()) {
-        return;
-      }
+    Application application = optionalApplication.get();
+    Optional<Service> serviceOptional = yamlHelper.getServiceIfPresent(application.getUuid(), yamlFilePath);
+    if (!serviceOptional.isPresent()) {
+      return;
+    }
 
-      ArtifactStream artifactStream =
-          yamlHelper.getArtifactStream(application.getUuid(), serviceOptional.get().getUuid(), yamlFilePath);
-      if (artifactStream != null) {
-        log.info(ARTIFACT_STREAM_DEBUG_LOG + "Deleting Artifact Stream {} from yaml", artifactStream.getName());
-        artifactStreamService.deleteWithBinding(
-            application.getUuid(), artifactStream.getUuid(), false, changeContext.getChange().isSyncFromGit());
-      }
-    } else {
-      if (changeContext.getYamlType() == YamlType.ARTIFACT_STREAM) {
-        Optional<Application> optionalApplication = yamlHelper.getApplicationIfPresent(accountId, yamlFilePath);
-        if (!optionalApplication.isPresent()) {
-          return;
-        }
-
-        Application application = optionalApplication.get();
-        Optional<Service> serviceOptional = yamlHelper.getServiceIfPresent(application.getUuid(), yamlFilePath);
-        if (!serviceOptional.isPresent()) {
-          return;
-        }
-
-        ArtifactStream artifactStream =
-            yamlHelper.getArtifactStream(application.getUuid(), serviceOptional.get().getUuid(), yamlFilePath);
-        if (artifactStream != null) {
-          artifactStreamService.deleteWithBinding(
-              application.getUuid(), artifactStream.getUuid(), false, changeContext.getChange().isSyncFromGit());
-        }
-      } else {
-        ArtifactStream artifactStream = yamlHelper.getArtifactStream(accountId, yamlFilePath);
-        if (artifactStream != null) {
-          artifactStreamService.deleteWithBinding(
-              GLOBAL_APP_ID, artifactStream.getUuid(), false, changeContext.getChange().isSyncFromGit());
-        }
-      }
+    ArtifactStream artifactStream =
+        yamlHelper.getArtifactStream(application.getUuid(), serviceOptional.get().getUuid(), yamlFilePath);
+    if (artifactStream != null) {
+      log.info(ARTIFACT_STREAM_DEBUG_LOG + "Deleting Artifact Stream {} from yaml", artifactStream.getName());
+      artifactStreamService.deleteWithBinding(
+          application.getUuid(), artifactStream.getUuid(), false, changeContext.getChange().isSyncFromGit());
     }
   }
 
   protected void toYaml(Y yaml, B bean) {
-    if (featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, bean.getAccountId())) {
+    if (!CUSTOM.name().equals(yaml.getType())) {
       yaml.setServerName(getSettingName(bean.getSettingId()));
-    } else {
-      if (!CUSTOM.name().equals(yaml.getType())) {
-        yaml.setServerName(getSettingName(bean.getSettingId()));
-      }
     }
     yaml.setHarnessApiVersion(getHarnessApiVersion());
     String templateUuid = bean.getTemplateUuid();
@@ -153,38 +116,16 @@ public abstract class ArtifactStreamYamlHandler<Y extends Yaml, B extends Artifa
       previous.setSyncFromGit(changeContext.getChange().isSyncFromGit());
       return (B) artifactStreamService.update(previous, !previous.isSyncFromGit());
     } else {
-      if (!featureFlagService.isEnabled(
-              FeatureName.ARTIFACT_STREAM_REFACTOR, changeContext.getChange().getAccountId())) {
-        String appId = yamlHelper.getAppId(changeContext.getChange().getAccountId(), yamlFilePath);
-        String serviceId = yamlHelper.getServiceId(appId, yamlFilePath);
+      String appId = yamlHelper.getAppId(changeContext.getChange().getAccountId(), yamlFilePath);
+      String serviceId = yamlHelper.getServiceId(appId, yamlFilePath);
 
-        B artifactStream = getNewArtifactStreamObject();
-        artifactStream.setServiceId(serviceId);
-        artifactStream.setAppId(appId);
-        toBean(artifactStream, changeContext, appId);
-        artifactStream.setSyncFromGit(changeContext.getChange().isSyncFromGit());
-        log.info(ARTIFACT_STREAM_DEBUG_LOG + "Creating Artifact Stream {} from yaml", artifactStream.getName());
-        return (B) artifactStreamService.createWithBinding(appId, artifactStream, !artifactStream.isSyncFromGit());
-      } else {
-        if (changeContext.getYamlType() == YamlType.ARTIFACT_STREAM) {
-          String appId = yamlHelper.getAppId(changeContext.getChange().getAccountId(), yamlFilePath);
-          String serviceId = yamlHelper.getServiceId(appId, yamlFilePath);
-
-          B artifactStream = getNewArtifactStreamObject();
-          artifactStream.setServiceId(serviceId);
-          artifactStream.setAppId(appId);
-          toBean(artifactStream, changeContext, appId);
-          artifactStream.setSyncFromGit(changeContext.getChange().isSyncFromGit());
-          return (B) artifactStreamService.createWithBinding(appId, artifactStream, !artifactStream.isSyncFromGit());
-        } else {
-          B artifactStream = getNewArtifactStreamObject();
-          artifactStream.setAppId(GLOBAL_APP_ID);
-          toBean(artifactStream, changeContext, GLOBAL_APP_ID);
-          artifactStream.setSyncFromGit(changeContext.getChange().isSyncFromGit());
-          return (B) artifactStreamService.createWithBinding(
-              GLOBAL_APP_ID, artifactStream, !artifactStream.isSyncFromGit());
-        }
-      }
+      B artifactStream = getNewArtifactStreamObject();
+      artifactStream.setServiceId(serviceId);
+      artifactStream.setAppId(appId);
+      toBean(artifactStream, changeContext, appId);
+      artifactStream.setSyncFromGit(changeContext.getChange().isSyncFromGit());
+      log.info(ARTIFACT_STREAM_DEBUG_LOG + "Creating Artifact Stream {} from yaml", artifactStream.getName());
+      return (B) artifactStreamService.createWithBinding(appId, artifactStream, !artifactStream.isSyncFromGit());
     }
   }
 
@@ -194,12 +135,8 @@ public abstract class ArtifactStreamYamlHandler<Y extends Yaml, B extends Artifa
     String name = yamlHelper.getNameFromYamlFilePath(changeContext.getChange().getFilePath());
     bean.setName(name);
     bean.setAutoPopulate(false);
-    if (featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId)) {
+    if (!CUSTOM.name().equals(yaml.getType())) {
       bean.setSettingId(getSettingId(changeContext.getChange().getAccountId(), appId, yaml.getServerName()));
-    } else {
-      if (!CUSTOM.name().equals(yaml.getType())) {
-        bean.setSettingId(getSettingId(changeContext.getChange().getAccountId(), appId, yaml.getServerName()));
-      }
     }
 
     String templateUri = yaml.getTemplateUri();

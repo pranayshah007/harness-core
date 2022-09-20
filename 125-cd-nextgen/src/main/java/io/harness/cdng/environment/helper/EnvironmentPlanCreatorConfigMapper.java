@@ -19,8 +19,8 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.environment.mappers.EnvironmentMapper;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
 import io.harness.ng.core.environment.yaml.NGEnvironmentInfoConfig;
+import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.yaml.core.variables.NGServiceOverrides;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,7 +32,7 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(CDC)
 public class EnvironmentPlanCreatorConfigMapper {
   public static EnvironmentPlanCreatorConfig toEnvironmentPlanCreatorConfig(
-      String mergedEnvYaml, List<InfrastructureConfig> configs, NGServiceOverrides serviceOverride) {
+      String mergedEnvYaml, List<InfrastructureConfig> configs, NGServiceOverrideConfig serviceOverrideConfig) {
     NGEnvironmentInfoConfig ngEnvironmentInfoConfig = fetchEnvironmentConfig(mergedEnvYaml);
     return EnvironmentPlanCreatorConfig.builder()
         .environmentRef(ParameterField.createValueField(ngEnvironmentInfoConfig.getIdentifier()))
@@ -44,7 +44,8 @@ public class EnvironmentPlanCreatorConfigMapper {
         .tags(ngEnvironmentInfoConfig.getTags())
         .type(ngEnvironmentInfoConfig.getType())
         .variables(ngEnvironmentInfoConfig.getVariables())
-        .serviceOverrides(serviceOverride)
+        .serviceOverrideConfig(serviceOverrideConfig)
+        .environmentGlobalOverride(ngEnvironmentInfoConfig.getNgEnvironmentGlobalOverride())
         .infrastructureDefinitions(InfrastructureEntityConfigMapper.toInfrastructurePlanCreatorConfig(configs))
         .build();
   }
@@ -59,7 +60,7 @@ public class EnvironmentPlanCreatorConfigMapper {
   }
 
   public EnvironmentPlanCreatorConfig toEnvPlanCreatorConfigWithGitops(
-      String mergedEnvYaml, EnvironmentYamlV2 envYaml, NGServiceOverrides serviceOverride) {
+      String mergedEnvYaml, EnvironmentYamlV2 envYaml, NGServiceOverrideConfig serviceOverrideConfig) {
     NGEnvironmentInfoConfig config = fetchEnvironmentConfig(mergedEnvYaml);
     return EnvironmentPlanCreatorConfig.builder()
         .environmentRef(envYaml.getEnvironmentRef())
@@ -71,7 +72,8 @@ public class EnvironmentPlanCreatorConfigMapper {
         .tags(config.getTags())
         .type(config.getType())
         .variables(config.getVariables())
-        .serviceOverrides(serviceOverride)
+        .serviceOverrideConfig(serviceOverrideConfig)
+        .environmentGlobalOverride(config.getNgEnvironmentGlobalOverride())
         .gitOpsClusterRefs(getClusterRefs(envYaml))
         .deployToAll(envYaml.getDeployToAll().getValue())
         .build();

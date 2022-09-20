@@ -33,7 +33,9 @@ public final class HelmConstants {
   public static final String USERNAME = "${USERNAME}";
   public static final String PASSWORD = "${PASSWORD}";
   public static final String HELM_HOME_PATH_FLAG = "${HELM_HOME_PATH_FLAG}";
-  public static final String WORKING_DIR_BASE = "./repository/helm-values/";
+  public static final String HELM_FETCH_OLD_WORKING_DIR_BASE = "./repository/helm-values/" + REPO_NAME;
+  public static final String WORKING_DIR_BASE = "./repository/helm/source/" + REPO_NAME;
+  public static final String HELM_GCP_CREDS_PATH = "./repository/helm/gcpKeyFiles/${ACTIVITY_ID}";
   public static final String VALUES_YAML = "values.yaml";
   public static final String CHARTS_YAML_KEY = "Chart.yaml";
   public static final String CHART_VERSION = "${CHART_VERSION}";

@@ -167,7 +167,6 @@ public class WorkflowServiceImplTest extends WingsBaseTest {
   @Before
   public void setUp() {
     when(featureFlagService.isEnabled(eq(FeatureName.HELM_CHART_AS_ARTIFACT), anyString())).thenReturn(true);
-    when(featureFlagService.isEnabled(eq(FeatureName.ARTIFACT_STREAM_REFACTOR), anyString())).thenReturn(false);
     when(featureFlagService.isEnabled(eq(FeatureName.TIMEOUT_FAILURE_SUPPORT), anyString())).thenReturn(false);
   }
 
