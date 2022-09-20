@@ -26,7 +26,7 @@ import io.harness.ng.core.user.UserInfo;
 import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
 import io.harness.ng.core.user.service.NgUserService;
 import io.harness.ng.userprofile.services.api.UserInfoService;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.CGRestUtils;
 import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.security.dto.PrincipalType;
 import io.harness.security.dto.UserPrincipal;
@@ -49,7 +49,7 @@ public class UserInfoServiceImpl implements UserInfoService {
   public UserInfo getCurrentUser() {
     Optional<String> userEmail = getUserEmail();
     if (userEmail.isPresent()) {
-      Optional<UserInfo> userInfo = RestClientUtils.getResponse(userClient.getUserByEmailId(userEmail.get()));
+      Optional<UserInfo> userInfo = CGRestUtils.getResponse(userClient.getUserByEmailId(userEmail.get()));
       return userInfo.get();
     } else {
       throw new IllegalStateException("user login required");
@@ -65,7 +65,7 @@ public class UserInfoServiceImpl implements UserInfoService {
         throw new InvalidRequestException("Email ID is required to update user details");
       }
       Optional<UserInfo> optionalTargetUserInfo =
-          RestClientUtils.getResponse(userClient.getUserByEmailId(userInfo.getEmail()));
+          CGRestUtils.getResponse(userClient.getUserByEmailId(userInfo.getEmail()));
 
       if (!optionalTargetUserInfo.isPresent()) {
         throw new InvalidRequestException(String.format("User with %s email ID doesn't exist", userInfo.getEmail()));
@@ -75,7 +75,7 @@ public class UserInfoServiceImpl implements UserInfoService {
           Resource.of(USER, optionalTargetUserInfo.get().getUuid()), MANAGE_USER_PERMISSION);
     }
 
-    Optional<UserInfo> updatedUserInfo = RestClientUtils.getResponse(userClient.updateUser(userInfo));
+    Optional<UserInfo> updatedUserInfo = CGRestUtils.getResponse(userClient.updateUser(userInfo));
     return updatedUserInfo.get();
   }
 
@@ -83,8 +83,8 @@ public class UserInfoServiceImpl implements UserInfoService {
   public TwoFactorAuthSettingsInfo getTwoFactorAuthSettingsInfo(TwoFactorAuthMechanismInfo twoFactorAuthMechanismInfo) {
     Optional<String> userEmail = getUserEmail();
     if (userEmail.isPresent()) {
-      Optional<TwoFactorAuthSettingsInfo> twoFactorAuthSettingsInfo = RestClientUtils.getResponse(
-          userClient.getUserTwoFactorAuthSettings(twoFactorAuthMechanismInfo, userEmail.get()));
+      Optional<TwoFactorAuthSettingsInfo> twoFactorAuthSettingsInfo =
+          CGRestUtils.getResponse(userClient.getUserTwoFactorAuthSettings(twoFactorAuthMechanismInfo, userEmail.get()));
       return twoFactorAuthSettingsInfo.get();
     } else {
       throw new IllegalStateException("user login required");
@@ -96,7 +96,7 @@ public class UserInfoServiceImpl implements UserInfoService {
     Optional<String> userEmail = getUserEmail();
     if (userEmail.isPresent()) {
       Optional<UserInfo> userInfo =
-          RestClientUtils.getResponse(userClient.updateUserTwoFactorAuthInfo(userEmail.get(), authSettingsInfo));
+          CGRestUtils.getResponse(userClient.updateUserTwoFactorAuthInfo(userEmail.get(), authSettingsInfo));
       return userInfo.get();
     } else {
       throw new IllegalStateException("user login required");
@@ -107,7 +107,7 @@ public class UserInfoServiceImpl implements UserInfoService {
   public UserInfo disableTFA() {
     Optional<String> userEmail = getUserEmail();
     if (userEmail.isPresent()) {
-      Optional<UserInfo> userInfo = RestClientUtils.getResponse(userClient.disableUserTwoFactorAuth(userEmail.get()));
+      Optional<UserInfo> userInfo = CGRestUtils.getResponse(userClient.disableUserTwoFactorAuth(userEmail.get()));
       return userInfo.get();
     } else {
       throw new IllegalStateException("user login required");
@@ -117,7 +117,7 @@ public class UserInfoServiceImpl implements UserInfoService {
   @Override
   public PasswordChangeResponse changeUserPassword(PasswordChangeDTO passwordChangeDTO) {
     UserInfo user = getCurrentUser();
-    return RestClientUtils.getResponse(userClient.changeUserPassword(user.getUuid(), passwordChangeDTO));
+    return CGRestUtils.getResponse(userClient.changeUserPassword(user.getUuid(), passwordChangeDTO));
   }
 
   @Override
@@ -125,7 +125,7 @@ public class UserInfoServiceImpl implements UserInfoService {
     Optional<UserMetadataDTO> userMetadataOpt = ngUserService.getUserMetadata(userId);
     if (userMetadataOpt.isPresent()) {
       String email = userMetadataOpt.get().getEmail();
-      Optional<UserInfo> userInfo = RestClientUtils.getResponse(userClient.unlockUser(email, accountId));
+      Optional<UserInfo> userInfo = CGRestUtils.getResponse(userClient.unlockUser(email, accountId));
       return userInfo.get();
     } else {
       throw new InvalidRequestException("userMetadata does not exist");

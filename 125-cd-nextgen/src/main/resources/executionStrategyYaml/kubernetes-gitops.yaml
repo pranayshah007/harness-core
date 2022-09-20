@@ -19,5 +19,6 @@ spec:
           type: MergePR
           name: Merge PR
           identifier: mergePR
-          spec: {}
+          spec:
+            deleteSourceBranch: false
           timeout: 10m

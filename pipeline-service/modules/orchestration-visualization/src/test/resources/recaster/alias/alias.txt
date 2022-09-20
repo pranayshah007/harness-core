@@ -52,3 +52,4 @@ io.harness.plancreator.steps.TaskSelectorYaml
 io.harness.logging.CommandExecutionStatus
 io.harness.plancreator.strategy.ExpressionAxisConfig
 io.harness.yaml.core.failurestrategy.ProceedWithDefaultValuesFailureActionConfig
+io.harness.yaml.core.failurestrategy.rollback.PipelineRollbackFailureActionConfig

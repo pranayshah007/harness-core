@@ -12,7 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
-import static io.harness.springdata.TransactionUtils.DEFAULT_TRANSACTION_RETRY_POLICY;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 import static io.harness.utils.PageUtils.getPageRequest;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -91,7 +91,7 @@ public class VariableServiceImpl implements VariableService {
         accountIdentifier, variableDTO.getOrgIdentifier(), variableDTO.getProjectIdentifier());
     try {
       Variable variable = variableMapper.toVariable(accountIdentifier, variableDTO);
-      return Failsafe.with(DEFAULT_TRANSACTION_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
+      return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
         Variable savedVariable = variableRepository.save(variable);
         outboxService.save(new VariableCreateEvent(accountIdentifier, variableMapper.writeDTO(savedVariable)));
         return savedVariable;
@@ -182,7 +182,7 @@ public class VariableServiceImpl implements VariableService {
             String.format("Variable [%s] Not Found with orgIdentifier- [%s], projectIdentifier- [%s]",
                 variableDTO.getIdentifier(), variableDTO.getOrgIdentifier(), variableDTO.getProjectIdentifier()));
       }
-      return Failsafe.with(DEFAULT_TRANSACTION_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
+      return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
         Variable updatedVariable = variableRepository.save(newVariable);
         outboxService.save(new VariableUpdateEvent(accountIdentifier, variableMapper.writeDTO(updatedVariable),
             variableMapper.writeDTO(existingVariable.get())));

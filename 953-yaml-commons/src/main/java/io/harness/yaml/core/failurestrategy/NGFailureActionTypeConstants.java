@@ -20,4 +20,5 @@ public interface NGFailureActionTypeConstants {
   String MANUAL_INTERVENTION = "ManualIntervention";
   String MARK_AS_SUCCESS = "MarkAsSuccess";
   String PROCEED_WITH_DEFAULT_VALUE = "ProceedWithDefaultValue";
+  String PIPELINE_ROLLBACK = "PipelineRollback";
 }

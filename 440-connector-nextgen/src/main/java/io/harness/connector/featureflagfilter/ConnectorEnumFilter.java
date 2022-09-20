@@ -10,7 +10,7 @@ package io.harness.connector.featureflagfilter;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.FeatureName.JENKINS_ARTIFACT;
 import static io.harness.beans.FeatureName.SSH_NG;
-import static io.harness.remote.client.RestClientUtils.getResponse;
+import static io.harness.remote.client.CGRestUtils.getResponse;
 
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;

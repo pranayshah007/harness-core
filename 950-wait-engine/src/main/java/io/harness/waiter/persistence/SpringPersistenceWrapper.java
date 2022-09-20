@@ -9,7 +9,7 @@ package io.harness.waiter.persistence;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.springdata.TransactionUtils.DEFAULT_TRANSACTION_RETRY_POLICY;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 import static io.harness.waiter.WaitInstanceService.MAX_CALLBACK_PROCESSING_TIME;
 import static io.harness.waiter.WaitNotifyEngine.MIN_WAIT_INSTANCE_TIMEOUT;
 
@@ -68,7 +68,7 @@ public class SpringPersistenceWrapper implements PersistenceWrapper {
 
   @Override
   public void deleteWaitInstance(WaitInstance waitInstance) {
-    Failsafe.with(DEFAULT_TRANSACTION_RETRY_POLICY).get(() -> transactionTemplate.execute(transactionStatus -> {
+    Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(transactionStatus -> {
       if (isNotEmpty(waitInstance.getTimeoutInstanceId())) {
         timeoutEngine.deleteTimeout(waitInstance.getTimeoutInstanceId());
       }
@@ -201,7 +201,7 @@ public class SpringPersistenceWrapper implements PersistenceWrapper {
     if (timeout != null && !timeout.isZero() && timeout.compareTo(Duration.ofSeconds(MIN_WAIT_INSTANCE_TIMEOUT)) < 0) {
       throw new InvalidArgumentsException("Timeout should be greater than " + MIN_WAIT_INSTANCE_TIMEOUT + "sec");
     }
-    return Failsafe.with(DEFAULT_TRANSACTION_RETRY_POLICY).get(() -> transactionTemplate.execute(transactionStatus -> {
+    return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(transactionStatus -> {
       if (timeout != null && !timeout.isZero()) {
         TimeoutInstance timeoutInstance = timeoutEngine.registerAbsoluteTimeout(
             timeout, WaitInstanceTimeoutCallback.builder().waitInstanceId(waitInstance.getUuid()).build());

@@ -16,7 +16,6 @@ import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.FILE
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.SECRETS;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.SERVICE;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.TEMPLATE;
-import static io.harness.remote.client.NGRestUtils.getResponseWithRetry;
 
 import io.harness.EntityType;
 import io.harness.PipelineSetupUsageUtils;
@@ -44,6 +43,7 @@ import io.harness.pms.pipeline.observer.PipelineActionObserver;
 import io.harness.pms.rbac.InternalReferredEntityExtractor;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.preflight.PreFlightCheckMetadata;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.utils.FullyQualifiedIdentifierHelper;
 
 import com.google.common.collect.ImmutableMap;
@@ -91,10 +91,10 @@ public class PipelineSetupUsageHelper implements PipelineActionObserver {
   public List<EntityDetail> getReferencesOfPipeline(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String pipelineId, String pipelineYaml, EntityType entityType) {
     List<EntitySetupUsageDTO> allReferredUsages =
-        getResponseWithRetry(entitySetupUsageClient.listAllReferredUsages(PAGE, SIZE, accountIdentifier,
-                                 FullyQualifiedIdentifierHelper.getFullyQualifiedIdentifier(
-                                     accountIdentifier, orgIdentifier, projectIdentifier, pipelineId),
-                                 entityType, null),
+        NGRestUtils.getResponse(entitySetupUsageClient.listAllReferredUsages(PAGE, SIZE, accountIdentifier,
+                                    FullyQualifiedIdentifierHelper.getFullyQualifiedIdentifier(
+                                        accountIdentifier, orgIdentifier, projectIdentifier, pipelineId),
+                                    entityType, null),
             "Could not extract setup usage of pipeline with id " + pipelineId + " after {} attempts.");
     List<EntityDetail> entityDetails = PipelineSetupUsageUtils.extractInputReferredEntityFromYaml(
         accountIdentifier, orgIdentifier, projectIdentifier, pipelineYaml, allReferredUsages);

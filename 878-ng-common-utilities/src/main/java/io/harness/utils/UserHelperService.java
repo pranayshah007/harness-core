@@ -7,7 +7,7 @@
 
 package io.harness.utils;
 
-import static io.harness.remote.client.RestClientUtils.getResponse;
+import static io.harness.remote.client.CGRestUtils.getResponse;
 import static io.harness.security.PrincipalContextData.PRINCIPAL_CONTEXT;
 
 import io.harness.client.NgConnectorManagerClient;

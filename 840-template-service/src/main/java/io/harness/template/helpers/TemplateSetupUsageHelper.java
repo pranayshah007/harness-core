@@ -7,7 +7,7 @@
 
 package io.harness.template.helpers;
 
-import static io.harness.remote.client.NGRestUtils.getResponseWithRetry;
+import static io.harness.remote.client.NGRestUtils.getResponse;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -55,7 +55,7 @@ public class TemplateSetupUsageHelper {
                                                   .build();
 
     String templateReferenceFqn = ngTemplateReference.getFullyQualifiedName();
-    return getResponseWithRetry(
+    return getResponse(
         entitySetupUsageClient.listAllReferredUsages(PAGE, SIZE, accountId, templateReferenceFqn, null, null));
   }
 

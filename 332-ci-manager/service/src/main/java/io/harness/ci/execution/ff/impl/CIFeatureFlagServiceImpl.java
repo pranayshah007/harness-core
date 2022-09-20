@@ -14,7 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureFlag;
 import io.harness.beans.FeatureName;
 import io.harness.ci.ff.CIFeatureFlagService;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.CGRestUtils;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -56,7 +56,7 @@ public class CIFeatureFlagServiceImpl implements CIFeatureFlagService {
 
   private Set<String> listAllEnabledFeatureFlagsForAccount(String accountId) {
     log.info("Getting all FFs for account: {}", accountId);
-    return RestClientUtils.getResponse(accountClient.listAllFeatureFlagsForAccount(accountId))
+    return CGRestUtils.getResponse(accountClient.listAllFeatureFlagsForAccount(accountId))
         .stream()
         .filter(FeatureFlag::isEnabled)
         .map(FeatureFlag::getName)

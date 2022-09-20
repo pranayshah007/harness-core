@@ -185,7 +185,7 @@ public class DefaultUserGroupServiceImpl implements DefaultUserGroupService {
       RoleAssignmentCreateRequestDTO roleAssignmentCreateRequestDTO =
           RoleAssignmentCreateRequestDTO.builder().roleAssignments(roleAssignmentDTOList).build();
 
-      NGRestUtils.getResponseWithRetry(accessControlAdminClient.createMultiRoleAssignment(scope.getAccountIdentifier(),
+      NGRestUtils.getResponse(accessControlAdminClient.createMultiRoleAssignment(scope.getAccountIdentifier(),
           scope.getOrgIdentifier(), scope.getProjectIdentifier(), managed, roleAssignmentCreateRequestDTO));
       log.info("Created role assignment for all users usergroup {} at scope {}", userGroupIdentifier, scope);
     } catch (Exception ex) {

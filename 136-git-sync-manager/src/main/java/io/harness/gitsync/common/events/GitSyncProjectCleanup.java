@@ -23,7 +23,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.common.eventhandlers.GitSyncProjectCleanupHandler;
 import io.harness.logging.AutoLogContext;
 import io.harness.ng.core.event.MessageListener;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.CGRestUtils;
 
 import com.google.inject.Inject;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -62,7 +62,7 @@ public class GitSyncProjectCleanup implements MessageListener {
     }
 
     try {
-      if (!RestClientUtils.getResponse(accountClient.isFeatureFlagEnabled(
+      if (!CGRestUtils.getResponse(accountClient.isFeatureFlagEnabled(
               FeatureName.GIT_SYNC_PROJECT_CLEANUP.name(), projectEntityChangeDTO.getAccountIdentifier()))) {
         return true;
       }

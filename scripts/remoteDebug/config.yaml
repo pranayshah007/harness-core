@@ -1,0 +1,8 @@
+pipeline-service:
+  NAMESPACE: "bt-test"
+  SERVICE: "pipeline-service"
+  HOSTPORT: "7890"
+  TARGETPORT: "5005"
+  MODULE: "~/.bazel-dirs/bin/pipeline-service/service/module_deploy.jar"
+  SERVICE_CAPSULE: "/opt/harness/pipeline-service-capsule.jar"
+  SCRIPT_PATH: "pipeline-service/build"

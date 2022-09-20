@@ -20,6 +20,7 @@ import static io.harness.ng.core.invites.mapper.InviteMapper.toInviteList;
 import static io.harness.ng.core.invites.mapper.InviteMapper.writeDTO;
 import static io.harness.ng.core.invites.mapper.RoleBindingMapper.sanitizeRoleBindings;
 import static io.harness.ng.core.user.UserMembershipUpdateSource.ACCEPTED_INVITE;
+import static io.harness.springdata.PersistenceUtils.getRetryPolicy;
 
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
@@ -67,7 +68,7 @@ import io.harness.notification.channeldetails.EmailChannel;
 import io.harness.notification.channeldetails.EmailChannel.EmailChannelBuilder;
 import io.harness.notification.notificationclient.NotificationClient;
 import io.harness.outbox.api.OutboxService;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.CGRestUtils;
 import io.harness.repositories.invites.spring.InviteRepository;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.dto.Principal;
@@ -76,11 +77,9 @@ import io.harness.telemetry.TelemetryReporter;
 import io.harness.user.remote.UserClient;
 import io.harness.user.remote.UserFilterNG;
 import io.harness.utils.PageUtils;
-import io.harness.utils.RetryUtils;
 
 import com.auth0.jwt.interfaces.Claim;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -90,7 +89,6 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -117,7 +115,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
-import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @Singleton
@@ -150,9 +147,8 @@ public class InviteServiceImpl implements InviteService {
   private final TelemetryReporter telemetryReporter;
 
   private final RetryPolicy<Object> transactionRetryPolicy =
-      RetryUtils.getRetryPolicy("[Retrying]: Failed to mark previous invites as stale; attempt: {}",
-          "[Failed]: Failed to mark previous invites as stale; attempt: {}",
-          ImmutableList.of(TransactionException.class), Duration.ofSeconds(1), 3, log);
+      getRetryPolicy("[Retrying]: Failed to mark previous invites as stale; attempt: {}",
+          "[Failed]: Failed to mark previous invites as stale; attempt: {}");
 
   @Inject
   public InviteServiceImpl(@Named("userVerificationSecret") String jwtPasswordSecret, MongoConfig mongoConfig,
@@ -304,7 +300,7 @@ public class InviteServiceImpl implements InviteService {
     }
 
     UserInfo userInfo = inviteAcceptResponse.getUserInfo();
-    AccountDTO account = RestClientUtils.getResponse(accountClient.getAccountDTO(accountIdentifier));
+    AccountDTO account = CGRestUtils.getResponse(accountClient.getAccountDTO(accountIdentifier));
     if (account == null) {
       throw new IllegalStateException(String.format("Account with identifier [%s] doesn't exists", accountIdentifier));
     }
@@ -348,7 +344,7 @@ public class InviteServiceImpl implements InviteService {
   }
 
   private void checkUserLimit(String accountId, String emailId) {
-    boolean limitHasBeenReached = RestClientUtils.getResponse(userClient.checkUserLimit(accountId, emailId));
+    boolean limitHasBeenReached = CGRestUtils.getResponse(userClient.checkUserLimit(accountId, emailId));
     if (limitHasBeenReached) {
       throw new InvalidRequestException("The user count limit has been reached in this account");
     }
@@ -358,7 +354,7 @@ public class InviteServiceImpl implements InviteService {
       String accountIdentifier, String jwtToken, String email, boolean isScimInvite) {
     UserInviteDTO userInviteDTO =
         UserInviteDTO.builder().accountId(accountIdentifier).email(email).name(email).token(jwtToken).build();
-    RestClientUtils.getResponse(userClient.createUserAndCompleteNGInvite(userInviteDTO, isScimInvite));
+    CGRestUtils.getResponse(userClient.createUserAndCompleteNGInvite(userInviteDTO, isScimInvite));
   }
 
   private URI getUserInfoSubmitUrl(
@@ -531,7 +527,7 @@ public class InviteServiceImpl implements InviteService {
     if (scimLdapArray[0]) {
       createAndInviteNonPasswordUser(accountId, invite.getInviteToken(), email, true);
     } else if (scimLdapArray[1]
-        || RestClientUtils.getResponse(accountClient.checkAutoInviteAcceptanceEnabledForAccount(accountId))) {
+        || CGRestUtils.getResponse(accountClient.checkAutoInviteAcceptanceEnabledForAccount(accountId))) {
       createAndInviteNonPasswordUser(accountId, invite.getInviteToken(), email, false);
     }
     return InviteOperationResponse.USER_INVITED_SUCCESSFULLY;
@@ -571,7 +567,7 @@ public class InviteServiceImpl implements InviteService {
   }
 
   private String getInvitationMailEmbedUrl(Invite invite) throws URISyntaxException {
-    AccountDTO account = RestClientUtils.getResponse(accountClient.getAccountDTO(invite.getAccountIdentifier()));
+    AccountDTO account = CGRestUtils.getResponse(accountClient.getAccountDTO(invite.getAccountIdentifier()));
     String fragment = String.format(INVITE_URL, invite.getAccountIdentifier(), account.getName(),
         account.getCompanyName(), invite.getEmail(), invite.getInviteToken());
 
@@ -627,7 +623,7 @@ public class InviteServiceImpl implements InviteService {
 
     String accountName = "";
     // get the name of the account
-    AccountDTO account = RestClientUtils.getResponse(accountClient.getAccountDTO(accountId));
+    AccountDTO account = CGRestUtils.getResponse(accountClient.getAccountDTO(accountId));
     if (account != null) {
       accountName = account.getName();
     }

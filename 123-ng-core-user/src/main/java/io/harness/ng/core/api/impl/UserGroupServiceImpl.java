@@ -23,8 +23,8 @@ import static io.harness.ng.core.usergroups.filter.UserGroupFilterType.INCLUDE_I
 import static io.harness.ng.core.utils.UserGroupMapper.toDTO;
 import static io.harness.ng.core.utils.UserGroupMapper.toEntity;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
-import static io.harness.remote.client.RestClientUtils.getResponse;
-import static io.harness.springdata.TransactionUtils.DEFAULT_TRANSACTION_RETRY_POLICY;
+import static io.harness.remote.client.CGRestUtils.getResponse;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
@@ -122,7 +122,7 @@ public class UserGroupServiceImpl implements UserGroupService {
   private final AccessControlAdminClient accessControlAdminClient;
   private final AccessControlClient accessControlClient;
   private final ScopeNameMapper scopeNameMapper;
-  private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_TRANSACTION_RETRY_POLICY;
+  private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_RETRY_POLICY;
   private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
   private static final List<String> defaultUserGroups = ImmutableList.of(DEFAULT_ACCOUNT_LEVEL_USER_GROUP_IDENTIFIER,
       DEFAULT_ORGANIZATION_LEVEL_USER_GROUP_IDENTIFIER, DEFAULT_PROJECT_LEVEL_USER_GROUP_IDENTIFIER);

@@ -24,7 +24,7 @@ import io.harness.ng.core.dto.AccountDTO;
 import io.harness.ng.core.entities.Organization;
 import io.harness.ng.core.entities.Organization.OrganizationKeys;
 import io.harness.ng.core.services.OrganizationService;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.CGRestUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -83,8 +83,7 @@ public class AccountSetupListener implements MessageListener {
   }
 
   private boolean processAccountUpdateEvent(AccountEntityChangeDTO accountEntityChangeDTO) {
-    AccountDTO account =
-        RestClientUtils.getResponse(accountClient.getAccountDTO(accountEntityChangeDTO.getAccountId()));
+    AccountDTO account = CGRestUtils.getResponse(accountClient.getAccountDTO(accountEntityChangeDTO.getAccountId()));
     if (account.isNextGenEnabled()) {
       ngAccountSetupService.setupAccountForNG(accountEntityChangeDTO.getAccountId());
     }

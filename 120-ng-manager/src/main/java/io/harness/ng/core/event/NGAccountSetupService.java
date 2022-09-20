@@ -46,8 +46,8 @@ import io.harness.ng.core.services.ProjectService;
 import io.harness.ng.core.user.UserInfo;
 import io.harness.ng.core.user.UserMembershipUpdateSource;
 import io.harness.ng.core.user.service.NgUserService;
+import io.harness.remote.client.CGRestUtils;
 import io.harness.remote.client.NGRestUtils;
-import io.harness.remote.client.RestClientUtils;
 import io.harness.user.remote.UserClient;
 import io.harness.utils.CryptoUtils;
 
@@ -285,7 +285,7 @@ public class NGAccountSetupService {
       int limit = 500;
       int maxIterations = 50;
       while (maxIterations > 0) {
-        PageResponse<UserInfo> usersPage = RestClientUtils.getResponse(
+        PageResponse<UserInfo> usersPage = CGRestUtils.getResponse(
             userClient.list(accountId, String.valueOf(offset), String.valueOf(limit), null, true));
         if (isEmpty(usersPage.getResponse())) {
           break;
