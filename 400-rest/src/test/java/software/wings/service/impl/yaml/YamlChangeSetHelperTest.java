@@ -108,8 +108,6 @@ public class YamlChangeSetHelperTest extends CategoryTest {
                                             .withFileContent(NEW)
                                             .build();
 
-    // TODO: remove when feature flag is cleaned up
-    when(featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, ACCOUNTID)).thenReturn(false);
     // Validate for InfrastructureMapping
     when(entityUpdateService.obtainEntityGitSyncFileChangeSet(anyString(), any(), any(), any()))
         .thenReturn(Lists.newArrayList(gitFileChangeForDelete))
@@ -190,8 +188,6 @@ public class YamlChangeSetHelperTest extends CategoryTest {
                                             .withFileContent(NEW)
                                             .build();
 
-    // TODO: remove when feature flag is cleaned up
-    when(featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, ACCOUNTID)).thenReturn(false);
     // Validate for Artifact Stream
     when(entityUpdateService.obtainEntityGitSyncFileChangeSet(anyString(), any(), any(), any()))
         .thenReturn(Lists.newArrayList(gitFileChangeForDelete))

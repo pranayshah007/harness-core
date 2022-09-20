@@ -25,6 +25,7 @@ import io.harness.ccm.views.businessMapping.helper.BusinessMappingHelper;
 import io.harness.ccm.views.entities.ViewField;
 import io.harness.ccm.views.entities.ViewFieldIdentifier;
 import io.harness.ccm.views.helper.AwsAccountFieldHelper;
+import io.harness.ccm.views.helper.BusinessMappingDataSourceHelper;
 import io.harness.rule.Owner;
 
 import java.util.Collections;
@@ -41,6 +42,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 public class BusinessMappingServiceImplTest extends CategoryTest {
   @Mock private BusinessMappingDao businessMappingDao;
   @Mock private AwsAccountFieldHelper awsAccountFieldHelper;
+  @Mock private BusinessMappingDataSourceHelper businessMappingDataSourceHelper;
   @InjectMocks private BusinessMappingServiceImpl businessMappingService;
   private BusinessMapping businessMapping;
 

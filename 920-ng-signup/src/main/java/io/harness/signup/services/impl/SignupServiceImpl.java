@@ -12,7 +12,7 @@ import static io.harness.beans.FeatureName.AUTO_FREE_MODULE_LICENSE;
 import static io.harness.configuration.DeployMode.DEPLOY_MODE;
 import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
 import static io.harness.exception.WingsException.USER;
-import static io.harness.remote.client.RestClientUtils.getResponse;
+import static io.harness.remote.client.CGRestUtils.getResponse;
 import static io.harness.signup.services.SignupType.COMMUNITY_PROVISION;
 import static io.harness.utils.CryptoUtils.secureRandAlphaNumString;
 
@@ -612,6 +612,9 @@ public class SignupServiceImpl implements SignupService {
     groupProperties.put("group_name", accountName);
     groupProperties.put("created_by_user_id", email);
 
+    if (referer != null) {
+      groupProperties.put("refererURL", referer);
+    }
     // group event to register new signed-up user with new account
     telemetryReporter.sendGroupEvent(
         accountId, email, groupProperties, ImmutableMap.<Destination, Boolean>builder().build());

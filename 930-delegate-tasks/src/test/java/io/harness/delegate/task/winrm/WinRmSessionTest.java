@@ -104,6 +104,7 @@ public class WinRmSessionTest extends CategoryTest {
       winRmSessionConfig = io.harness.delegate.task.winrm.WinRmSessionConfig.builder()
                                .domain("KRB.LOCAL")
                                .skipCertChecks(true)
+                               .password("pwd")
                                .username("TestUser")
                                .environment(new HashMap<>())
                                .hostname("localhost")

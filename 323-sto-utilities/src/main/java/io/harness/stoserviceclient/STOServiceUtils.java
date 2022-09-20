@@ -13,7 +13,6 @@ import io.harness.exception.GeneralException;
 import io.harness.sto.beans.entities.STOServiceConfig;
 
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
@@ -42,8 +41,8 @@ public class STOServiceUtils {
   @NotNull
   public String getSTOServiceToken(String accountID) {
     log.info("Initiating token request to STO service: {}", this.stoServiceConfig.getBaseUrl());
-    Call<String> tokenCall = stoServiceClient.generateToken(accountID, this.stoServiceConfig.getGlobalToken());
-    Response<String> response = null;
+    Call<JsonObject> tokenCall = stoServiceClient.generateToken(accountID, this.stoServiceConfig.getGlobalToken());
+    Response<JsonObject> response = null;
     try {
       response = tokenCall.execute();
     } catch (IOException e) {
@@ -64,8 +63,9 @@ public class STOServiceUtils {
           response.message() == null ? "null" : response.message(), response.errorBody() == null ? "null" : errorBody));
     }
 
-    JsonObject tokenResponse = JsonParser.parseString(response.body()).getAsJsonObject();
-
-    return tokenResponse.get("token").getAsString();
+    if (response.body() == null) {
+      throw new GeneralException("Could not fetch token from STO service. Response body is null");
+    }
+    return response.body().get("token").getAsString();
   }
 }

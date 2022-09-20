@@ -13,7 +13,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.IDENTIFIER;
-import static io.harness.springdata.TransactionUtils.DEFAULT_TRANSACTION_RETRY_POLICY;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
@@ -32,6 +32,7 @@ import io.harness.outbox.api.OutboxService;
 import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.repositories.UpsertOptions;
 import io.harness.repositories.infrastructure.spring.InfrastructureRepository;
 import io.harness.utils.YamlPipelineUtils;
 
@@ -72,7 +73,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 public class InfrastructureEntityServiceImpl implements InfrastructureEntityService {
   private final InfrastructureRepository infrastructureRepository;
   @Inject @Named(OUTBOX_TRANSACTION_TEMPLATE) private final TransactionTemplate transactionTemplate;
-  private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_TRANSACTION_RETRY_POLICY;
+  private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_RETRY_POLICY;
   private final OutboxService outboxService;
 
   private static final String DUP_KEY_EXP_FORMAT_STRING_FOR_PROJECT =
@@ -159,7 +160,7 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
   }
 
   @Override
-  public InfrastructureEntity upsert(@Valid InfrastructureEntity requestInfra) {
+  public InfrastructureEntity upsert(@Valid InfrastructureEntity requestInfra, UpsertOptions upsertOptions) {
     validatePresenceOfRequiredFields(requestInfra.getAccountId(), requestInfra.getIdentifier());
     setNameIfNotPresent(requestInfra);
     modifyInfraRequest(requestInfra);

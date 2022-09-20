@@ -464,7 +464,6 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Override
   public PipelineEntity importPipelineFromRemote(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, PipelineImportRequestDTO pipelineImportRequest, Boolean isForceImport) {
-    gitAwareEntityHelper.checkRootFolder();
     String repoUrl = pmsPipelineServiceHelper.getRepoUrlAndCheckForFileUniqueness(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, isForceImport);
     String importedPipelineYAML =
@@ -586,7 +585,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     }
 
     return pmsPipelineServiceHelper.fetchExpandedPipelineJSONFromYaml(
-        accountId, orgIdentifier, projectIdentifier, pipelineEntityOptional.get().getYaml());
+        accountId, orgIdentifier, projectIdentifier, pipelineEntityOptional.get().getYaml(), false);
   }
 
   @Override

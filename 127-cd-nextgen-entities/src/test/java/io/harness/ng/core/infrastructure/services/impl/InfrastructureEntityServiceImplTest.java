@@ -22,6 +22,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.mappers.InfrastructureFilterHelper;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
+import io.harness.repositories.UpsertOptions;
 import io.harness.rule.Owner;
 import io.harness.utils.PageUtils;
 
@@ -172,7 +173,7 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
                                                   .name("UPSERTED_INFRA")
                                                   .description("NEW_DESCRIPTION")
                                                   .build();
-    InfrastructureEntity upsertedInfra = infrastructureEntityService.upsert(upsertInfraRequest);
+    InfrastructureEntity upsertedInfra = infrastructureEntityService.upsert(upsertInfraRequest, UpsertOptions.DEFAULT);
     assertThat(upsertedInfra.getAccountId()).isEqualTo(upsertInfraRequest.getAccountId());
     assertThat(upsertedInfra.getOrgIdentifier()).isEqualTo(upsertInfraRequest.getOrgIdentifier());
     assertThat(upsertedInfra.getProjectIdentifier()).isEqualTo(upsertInfraRequest.getProjectIdentifier());

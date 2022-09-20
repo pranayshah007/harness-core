@@ -14,10 +14,14 @@ import io.harness.gitsync.GitToHarnessProcessRequest;
 import io.harness.gitsync.MarkEntityInvalidRequest;
 import io.harness.gitsync.MarkEntityInvalidResponse;
 import io.harness.gitsync.ProcessingResponse;
+import io.harness.gitsync.ResetGitSyncSDKCacheRequest;
+import io.harness.gitsync.ResetGitSyncSDKCacheResponse;
 
 @OwnedBy(DX)
 public interface GitToHarnessSdkProcessor {
   ProcessingResponse gitToHarnessProcessingRequest(GitToHarnessProcessRequest changeSets);
 
   MarkEntityInvalidResponse markEntitiesInvalid(MarkEntityInvalidRequest markEntityInvalidRequest);
+
+  ResetGitSyncSDKCacheResponse resetGitSyncSDKCache(ResetGitSyncSDKCacheRequest request);
 }

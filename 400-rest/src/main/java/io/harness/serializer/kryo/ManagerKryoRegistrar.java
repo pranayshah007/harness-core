@@ -259,8 +259,10 @@ import software.wings.sm.states.EnvState.EnvExecutionResponseData;
 import software.wings.sm.states.ForkState.ForkStateExecutionData;
 import software.wings.sm.states.RepeatState.RepeatStateExecutionData;
 import software.wings.sm.states.azure.AzureVMSSDeployExecutionSummary;
+import software.wings.sm.states.azure.AzureVMSSDeployStateExecutionData;
 import software.wings.sm.states.azure.AzureVMSSSetupExecutionSummary;
 import software.wings.sm.states.azure.AzureVMSSSetupStateExecutionData;
+import software.wings.sm.states.azure.AzureVMSSSwitchRouteStateExecutionData;
 import software.wings.sm.states.azure.appservices.AzureAppServiceSlotSetupExecutionData;
 import software.wings.sm.states.azure.appservices.AzureAppServiceSlotSetupExecutionSummary;
 import software.wings.sm.states.azure.appservices.AzureAppServiceSlotShiftTrafficExecutionData;
@@ -592,5 +594,7 @@ public class ManagerKryoRegistrar implements KryoRegistrar {
     kryo.register(UserGroupEntityReference.class, 50010);
     kryo.register(EncryptedDataDetails.class, 50013);
     kryo.register(K8sCanaryDeleteServiceElement.class, 50016);
+    kryo.register(AzureVMSSDeployStateExecutionData.class, 50017);
+    kryo.register(AzureVMSSSwitchRouteStateExecutionData.class, 50018);
   }
 }

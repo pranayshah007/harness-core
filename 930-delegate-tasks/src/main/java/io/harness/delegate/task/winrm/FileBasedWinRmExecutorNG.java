@@ -98,7 +98,7 @@ public class FileBasedWinRmExecutorNG extends FileBasedAbstractWinRmExecutor {
                                   artifactoryArtifactDelegateConfig.getArtifactPath())
                               .toString();
     saveExecutionLog(format("Begin execution of command: %s", copyCommandUnit.getName()), INFO);
-    saveExecutionLog("Downloading artifact from ARTIFACTORY to " + copyCommandUnit.getDestinationPath() + "\\"
+    saveExecutionLog("Copying artifact from ARTIFACTORY to " + copyCommandUnit.getDestinationPath() + "\\"
             + getArtifactFileName(artifactPath),
         INFO);
 
@@ -113,11 +113,13 @@ public class FileBasedWinRmExecutorNG extends FileBasedAbstractWinRmExecutor {
       String command =
           getDownloadArtifactCommand(artifactoryConfigRequest, copyCommandUnit.getDestinationPath(), artifactPath);
       commandExecutionStatus = executeRemoteCommand(session, outputWriter, errorWriter, command, true);
-      saveExecutionLog("Command completed successfully", INFO, commandExecutionStatus);
       if (FAILURE == commandExecutionStatus) {
-        saveExecutionLog("Failed to copy artifact.", ERROR, RUNNING);
+        saveExecutionLog("Failed to copy artifact.", ERROR, commandExecutionStatus);
         return commandExecutionStatus;
       }
+      saveExecutionLog(
+          "Command execution finished with status " + commandExecutionStatus, INFO, commandExecutionStatus);
+
     } catch (Exception e) {
       log.error(ERROR_WHILE_EXECUTING_COMMAND, e);
       ResponseMessage details = buildErrorDetailsFromWinRmClientException(e);
@@ -151,27 +153,27 @@ public class FileBasedWinRmExecutorNG extends FileBasedAbstractWinRmExecutor {
                   jenkinsArtifactDelegateConfig.getArtifactPath())
               .toString();
       saveExecutionLog(
-          format("Begin file transfer from %s", getJenkinsUrl(jenkinsArtifactDelegateConfig, artifactPath)), INFO,
-          RUNNING);
+          format("Begin file transfer from %s", getJenkinsUrl(jenkinsArtifactDelegateConfig, artifactPath)), INFO);
       String command = getDownloadJenkinsArtifactCommand(
           jenkinsArtifactDelegateConfig, copyCommandUnit.getDestinationPath(), artifactPath, artifactPathOnTarget);
       commandExecutionStatus = executeRemoteCommand(session, outputWriter, errorWriter, command, true);
       if (FAILURE == commandExecutionStatus) {
         saveExecutionLog(format("Failed to copy Jenkins artifact from %s",
                              getJenkinsUrl(jenkinsArtifactDelegateConfig, artifactPath)),
-            ERROR, RUNNING);
+            ERROR, commandExecutionStatus);
         return commandExecutionStatus;
       }
       saveExecutionLog(
           format("File successfully transferred to %s\\%s", copyCommandUnit.getDestinationPath(), artifactPathOnTarget),
-          INFO, RUNNING);
-      saveExecutionLog("Command completed successfully", INFO, commandExecutionStatus);
+          INFO);
     } catch (Exception e) {
       log.error(ERROR_WHILE_EXECUTING_COMMAND, e);
       ResponseMessage details = buildErrorDetailsFromWinRmClientException(e);
       saveExecutionLog(
           format("Command execution failed. Error: %s", details.getMessage()), ERROR, commandExecutionStatus);
     }
+
+    saveExecutionLog("Command execution finished with status " + commandExecutionStatus, INFO, commandExecutionStatus);
 
     log.info("Copy Config command execution returned status: {}", commandExecutionStatus);
     return commandExecutionStatus;
@@ -194,7 +196,7 @@ public class FileBasedWinRmExecutorNG extends FileBasedAbstractWinRmExecutor {
           INFO);
 
       commandExecutionStatus = splitFileAndTransfer(configFileParameters, session, outputWriter, errorWriter);
-      saveExecutionLog("Command completed successfully", INFO, commandExecutionStatus);
+      saveExecutionLog("Command completed successfully", INFO);
 
     } catch (Exception e) {
       log.error(ERROR_WHILE_EXECUTING_COMMAND, e);

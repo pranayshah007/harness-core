@@ -46,6 +46,7 @@ import io.harness.ccm.cluster.ClusterRecordObserver;
 import io.harness.ccm.cluster.ClusterRecordService;
 import io.harness.ccm.cluster.ClusterRecordServiceImpl;
 import io.harness.ccm.license.CeLicenseExpiryHandler;
+import io.harness.cd.timescale.CDRetentionHandler;
 import io.harness.cf.AbstractCfModule;
 import io.harness.cf.CfClientConfig;
 import io.harness.cf.CfMigrationConfig;
@@ -489,6 +490,7 @@ public class WingsApplication extends Application<MainConfiguration> {
     Injector injector = Guice.createInjector(modules);
 
     initializeManagerSvc(injector, environment, configuration);
+    injector.getInstance(CDRetentionHandler.class).configureRetentionPolicy();
     log.info("Starting app done");
     log.info("Manager is running on JRE: {}", System.getProperty("java.version"));
   }
@@ -1088,6 +1090,7 @@ public class WingsApplication extends Application<MainConfiguration> {
 
     if (!injector.getInstance(FeatureFlagService.class).isGlobalEnabled(GLOBAL_DISABLE_HEALTH_CHECK)) {
       healthService.registerMonitor(injector.getInstance(HPersistence.class));
+      healthService.registerMonitor((HealthMonitor) injector.getInstance(PersistentLocker.class));
     }
   }
 

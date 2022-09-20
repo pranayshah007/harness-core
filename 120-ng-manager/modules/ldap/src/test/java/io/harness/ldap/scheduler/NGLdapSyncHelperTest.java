@@ -7,7 +7,6 @@
 
 package io.harness.ldap.scheduler;
 
-import static io.harness.NGConstants.ACCOUNT_VIEWER_ROLE;
 import static io.harness.rule.OwnerRule.PRATEEK;
 
 import static java.util.Collections.emptyList;
@@ -30,7 +29,6 @@ import io.harness.category.element.UnitTests;
 import io.harness.ng.core.api.UserGroupService;
 import io.harness.ng.core.dto.GatewayAccountRequestDTO;
 import io.harness.ng.core.invites.api.InviteService;
-import io.harness.ng.core.invites.dto.RoleBinding;
 import io.harness.ng.core.user.UserInfo;
 import io.harness.ng.core.user.UserMembershipUpdateSource;
 import io.harness.ng.core.user.entities.UserGroup;
@@ -254,8 +252,7 @@ public class NGLdapSyncHelperTest extends CategoryTest {
     verify(ngUserService, times(1))
         .addUserToScope(userMetaData.getUuid(),
             Scope.builder().accountIdentifier(ACCOUNT_ID).orgIdentifier(ORG_ID).projectIdentifier(PROJECT_ID).build(),
-            Collections.singletonList(RoleBinding.builder().roleIdentifier(ACCOUNT_VIEWER_ROLE).build()), emptyList(),
-            UserMembershipUpdateSource.SYSTEM);
+            emptyList(), emptyList(), UserMembershipUpdateSource.SYSTEM);
     verify(userGroupService, times(1)).addMember(ACCOUNT_ID, ORG_ID, PROJECT_ID, userGrpId, userMetaData.getUuid());
   }
 

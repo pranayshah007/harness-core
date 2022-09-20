@@ -274,7 +274,9 @@ public class StrategyUtils {
     }
     expressionsMap.put(EXPR_START_ESC + "strategy.iteration" + EXPR_END_ESC, String.valueOf(currentIteration));
     expressionsMap.put(EXPR_START_ESC + "strategy.iterations" + EXPR_END, String.valueOf(totalIteration));
-    expressionsMap.put(EXPR_START_ESC + "strategy.totalIterations" + EXPR_END, String.valueOf(totalIteration));
+    expressionsMap.put(EXPR_START_ESC + "step.iteration" + EXPR_END_ESC, String.valueOf(currentIteration));
+    expressionsMap.put(EXPR_START_ESC + "step.iterations" + EXPR_END, String.valueOf(totalIteration));
+    expressionsMap.put(EXPR_START_ESC + "step.totalIterations" + EXPR_END, String.valueOf(totalIteration));
 
     expressionsMap.put(repeatExpression, itemValue == null ? "" : itemValue);
     return expressionsMap;

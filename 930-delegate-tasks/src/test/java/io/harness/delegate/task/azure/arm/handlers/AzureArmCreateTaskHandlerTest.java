@@ -215,6 +215,45 @@ public class AzureArmCreateTaskHandlerTest extends CategoryTest {
   @Test
   @Owner(developers = NGONZALEZ)
   @Category(UnitTests.class)
+  public void testExecuteTaskInternalForRollbackAtResourceGroupScope() throws IOException, InterruptedException {
+    AzureARMTaskNGParameters parameters = getRollbackParams()
+                                              .scopeType(ARMScopeType.RESOURCE_GROUP)
+                                              .subscriptionId("SUBSCRIPTION_ID")
+                                              .resourceGroupName("RESOURCE_GROUP_NAME")
+                                              .build();
+
+    ArgumentCaptor<DeploymentResourceGroupContext> contextArgumentCaptor =
+        ArgumentCaptor.forClass(DeploymentResourceGroupContext.class);
+    doReturn("{propertyName={type=String, value=propertyValue}}")
+        .when(azureARMDeploymentService)
+        .deployAtResourceGroupScope(any());
+
+    AzureResourceCreationTaskNGResponse response =
+        handler.executeTaskInternal(parameters, "delegateId", "taskId", mockLogStreamingTaskClient);
+    verify(azureARMDeploymentService, times(1)).deployAtResourceGroupScope(contextArgumentCaptor.capture());
+    verify(azureARMDeploymentService, times(0)).validateTemplate(any());
+    DeploymentResourceGroupContext capturedDeploymentResourceGroupContext = contextArgumentCaptor.getValue();
+    assertThat(capturedDeploymentResourceGroupContext).isNotNull();
+    assertThat(capturedDeploymentResourceGroupContext.getAzureClientContext()).isNotNull();
+    assertThat(capturedDeploymentResourceGroupContext.getAzureClientContext().getResourceGroupName())
+        .isEqualTo("RESOURCE_GROUP_NAME");
+    assertThat(capturedDeploymentResourceGroupContext.getAzureClientContext().getSubscriptionId())
+        .isEqualTo("SUBSCRIPTION_ID");
+    assertThat(capturedDeploymentResourceGroupContext.getDeploymentName()).isEqualTo("DEPLOYMENT_NAME");
+    assertThat(capturedDeploymentResourceGroupContext.getTemplateJson()).contains("Microsoft.Storage/storageAccounts");
+    assertThat(capturedDeploymentResourceGroupContext.getParametersJson()).contains("Standard_LRS");
+    assertThat(capturedDeploymentResourceGroupContext.getMode()).isEqualTo(AzureDeploymentMode.INCREMENTAL);
+
+    assertThat(response).isNotNull();
+    assertThat(response).isInstanceOf(AzureResourceCreationTaskNGResponse.class);
+    AzureARMTaskNGResponse armDeploymentResponse = (AzureARMTaskNGResponse) response;
+    assertThat(armDeploymentResponse.getOutputs()).isNotEmpty();
+    assertThat(armDeploymentResponse.getOutputs()).isEqualTo("{propertyName={type=String, value=propertyValue}}");
+  }
+
+  @Test
+  @Owner(developers = NGONZALEZ)
+  @Category(UnitTests.class)
   public void testExecuteTaskInternalThrowExceptions() {
     AzureResourceCreationTaskNGParameters parameters = getAzureARMTaskParametersAtResourceGroupScope();
     doThrow(new InvalidRequestException("InvalidRequestException"))
@@ -228,31 +267,34 @@ public class AzureArmCreateTaskHandlerTest extends CategoryTest {
     verify(handler, times(1)).printDefaultFailureMsgForARMDeploymentUnits(any(), any(), any());
 
     parameters = getAzureARMTaskParametersAtSubscriptionScope();
+    AzureResourceCreationTaskNGParameters finalParameters1 = parameters;
     doThrow(new InvalidRequestException("InvalidRequestException"))
         .when(azureARMDeploymentService)
         .deployAtSubscriptionScope(any());
     assertThatThrownBy(
-        () -> handler.executeTaskInternal(finalParameters, "delegateId", "taskId", mockLogStreamingTaskClient))
+        () -> handler.executeTaskInternal(finalParameters1, "delegateId", "taskId", mockLogStreamingTaskClient))
         .isInstanceOf(InvalidRequestException.class);
 
     verify(handler, times(2)).printDefaultFailureMsgForARMDeploymentUnits(any(), any(), any());
 
     parameters = getAzureARMTaskParametersAtManagementGroupScope();
+    AzureResourceCreationTaskNGParameters finalParameters2 = parameters;
     doThrow(new InvalidRequestException("InvalidRequestException"))
         .when(azureARMDeploymentService)
         .deployAtManagementGroupScope(any());
     assertThatThrownBy(
-        () -> handler.executeTaskInternal(finalParameters, "delegateId", "taskId", mockLogStreamingTaskClient))
+        () -> handler.executeTaskInternal(finalParameters2, "delegateId", "taskId", mockLogStreamingTaskClient))
         .isInstanceOf(InvalidRequestException.class);
 
     verify(handler, times(3)).printDefaultFailureMsgForARMDeploymentUnits(any(), any(), any());
 
     parameters = getAzureARMTaskParametersAtTenantScope();
+    AzureResourceCreationTaskNGParameters finalParameters3 = parameters;
     doThrow(new InvalidRequestException("InvalidRequestException"))
         .when(azureARMDeploymentService)
         .deployAtTenantScope(any());
     assertThatThrownBy(
-        () -> handler.executeTaskInternal(finalParameters, "delegateId", "taskId", mockLogStreamingTaskClient))
+        () -> handler.executeTaskInternal(finalParameters3, "delegateId", "taskId", mockLogStreamingTaskClient))
         .isInstanceOf(InvalidRequestException.class);
 
     verify(handler, times(4)).printDefaultFailureMsgForARMDeploymentUnits(any(), any(), any());
@@ -328,6 +370,50 @@ public class AzureArmCreateTaskHandlerTest extends CategoryTest {
         .deploymentMode(AzureDeploymentMode.INCREMENTAL)
         .parametersBody(AppSettingsFile.create(parameters))
         .templateBody(AppSettingsFile.create(template))
+        .encryptedDataDetails(Collections.emptyList());
+  }
+
+  private AzureARMTaskNGParametersBuilder getRollbackParams() {
+    String template = "{\n"
+        + "  \"$schema\": \"https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#\",\n"
+        + "  \"contentVersion\": \"1.0.0.0\",\n"
+        + "  \"resources\": [\n"
+        + "    {\n"
+        + "      \"type\": \"Microsoft.Storage/storageAccounts\",\n"
+        + "      \"apiVersion\": \"2019-04-01\",\n"
+        + "      \"name\": \"{provide-unique-name}\",\n"
+        + "      \"location\": \"eastus\",\n"
+        + "      \"sku\": {\n"
+        + "        \"name\": \"Standard_LRS\"\n"
+        + "      },\n"
+        + "      \"kind\": \"StorageV2\",\n"
+        + "      \"properties\": {\n"
+        + "        \"supportsHttpsTrafficOnly\": true\n"
+        + "      }\n"
+        + "    }\n"
+        + "  ]\n"
+        + "}";
+
+    String parameters = "{\n"
+        + "  \"location\": \"westus\",\n"
+        + "  \"sku\": {\n"
+        + "    \"name\": \"Standard_LRS\"\n"
+        + "  },\n"
+        + "  \"kind\": \"StorageV2\",\n"
+        + "  \"properties\": {}\n"
+        + "}";
+
+    return AzureARMTaskNGParameters.builder()
+        .accountId("ACCOUNT_ID")
+        .connectorDTO(AzureConnectorDTO.builder().build())
+        .taskType(AzureARMTaskType.ARM_DEPLOYMENT)
+        .timeoutInMs(100000)
+        .deploymentName("DEPLOYMENT_NAME")
+        .deploymentDataLocation("DEPLOYMENT_DATA_LOCATION")
+        .deploymentMode(AzureDeploymentMode.INCREMENTAL)
+        .parametersBody(AppSettingsFile.create(parameters))
+        .templateBody(AppSettingsFile.create(template))
+        .rollback(true)
         .encryptedDataDetails(Collections.emptyList());
   }
 }

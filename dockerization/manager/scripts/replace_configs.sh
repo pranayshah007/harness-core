@@ -1018,3 +1018,7 @@ fi
 if [[ "" != "$AGENT_MTLS_SUBDOMAIN" ]]; then
   yq write -i $CONFIG_FILE agentMtlsSubdomain "$AGENT_MTLS_SUBDOMAIN"
 fi
+
+if [[ "" != "$CD_TSDB_RETENTION_PERIOD_MONTHS" ]]; then
+  yq write -i $CD_TSDB_RETENTION_PERIOD_MONTHS cdTsDbRetentionPeriodMonths "$CD_TSDB_RETENTION_PERIOD_MONTHS"
+fi

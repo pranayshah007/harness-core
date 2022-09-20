@@ -38,6 +38,7 @@ import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
+import io.harness.cdng.provision.azure.beans.AzureARMConfig;
 import io.harness.cdng.provision.azure.beans.AzureARMTemplateDataOutput;
 import io.harness.cdng.provision.azure.beans.AzureCreateARMResourcePassThroughData;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
@@ -91,18 +92,12 @@ import io.harness.utils.IdentifierRefHelper;
 
 import software.wings.beans.TaskType;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.IOUtils;
 
 @OwnedBy(CDP)
 @Slf4j
@@ -125,6 +120,8 @@ public class AzureCreateARMResourceStep extends TaskChainExecutableWithRollbackA
   @Inject private AzureCommonHelper azureCommonHelper;
   @Inject private CDStepHelper cdStepHelper;
 
+  @Inject AzureARMConfigDAL azureARMConfigDAL;
+
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
 
   @Override
@@ -139,9 +136,15 @@ public class AzureCreateARMResourceStep extends TaskChainExecutableWithRollbackA
     String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
     String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
 
+    AzureCreateARMResourceStepParameters azureCreateARMResourceStepParameters =
+        (AzureCreateARMResourceStepParameters) stepParameters.getSpec();
+    if (getParameterFieldValue(azureCreateARMResourceStepParameters.getProvisionerIdentifier()) == null) {
+      throw new InvalidRequestException("Provisioner ID can't be null");
+    }
     // Template file connector
     AzureCreateARMResourceStepConfigurationParameters spec =
-        ((AzureCreateARMResourceStepParameters) stepParameters.getSpec()).getConfigurationParameters();
+        azureCreateARMResourceStepParameters.getConfigurationParameters();
+
     AzureTemplateFile azureTemplateFile = spec.getTemplateFile();
 
     if (ManifestStoreType.isInGitSubset(azureTemplateFile.getStore().getSpec().getKind())) {
@@ -264,21 +267,25 @@ public class AzureCreateARMResourceStep extends TaskChainExecutableWithRollbackA
     AzureARMTaskNGResponse azureARMTaskNGResponse;
     try {
       azureARMTaskNGResponse = (AzureARMTaskNGResponse) responseDataSupplier.get();
+      // We want to save the pre-deployment data before checking if the deployment was a success or not because we may
+      // need to rollback in the next step if this step failed
+      AzureARMConfig azureARMConfig = getAzureARMConfig(ambiance, stepParameters);
+      azureARMConfigDAL.saveAzureARMConfig(azureARMConfig);
       if (azureARMTaskNGResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
         return azureCommonHelper.getFailureResponse(
             azureARMTaskNGResponse.getUnitProgressData().getUnitProgresses(), azureARMTaskNGResponse.getErrorMsg());
       }
       saveAzurePredeploymentData(azureARMTaskNGResponse.getPreDeploymentData(),
           getParameterFieldValue(azureCreateARMResourceStepParameters.getProvisionerIdentifier()), ambiance,
-          stepConfigurationParameters.getScope().getSpec().toString());
+          stepConfigurationParameters.getScope().getType());
 
       return StepResponse.builder()
           .unitProgressList(azureARMTaskNGResponse.getUnitProgressData().getUnitProgresses())
-          .stepOutcome(
-              StepResponse.StepOutcome.builder()
-                  .name(OutcomeExpressionConstants.OUTPUT)
-                  .outcome(new AzureCreateARMResourceOutcome(getARMOutputs(azureARMTaskNGResponse.getOutputs())))
-                  .build())
+          .stepOutcome(StepResponse.StepOutcome.builder()
+                           .name(OutcomeExpressionConstants.OUTPUT)
+                           .outcome(new AzureCreateARMResourceOutcome(
+                               azureCommonHelper.getARMOutputs(azureARMTaskNGResponse.getOutputs())))
+                           .build())
           .status(Status.SUCCEEDED)
           .build();
     } catch (TaskNGDataException ex) {
@@ -289,6 +296,18 @@ public class AzureCreateARMResourceStep extends TaskChainExecutableWithRollbackA
     }
   }
 
+  private AzureARMConfig getAzureARMConfig(Ambiance ambiance, StepElementParameters stepElementParameters) {
+    AzureCreateARMResourceStepParameters params =
+        (AzureCreateARMResourceStepParameters) stepElementParameters.getSpec();
+    return AzureARMConfig.builder()
+        .accountId(AmbianceUtils.getAccountId(ambiance))
+        .orgId(AmbianceUtils.getOrgIdentifier(ambiance))
+        .projectId(AmbianceUtils.getProjectIdentifier(ambiance))
+        .provisionerIdentifier(getParameterFieldValue(params.getProvisionerIdentifier()))
+        .stageExecutionId(ambiance.getStageExecutionId())
+        .connectorRef(getParameterFieldValue(params.getConfigurationParameters().getConnectorRef()))
+        .build();
+  }
   private void saveAzurePredeploymentData(
       AzureARMPreDeploymentData data, String provisionerIdentifier, Ambiance ambiance, String scope) {
     if (data == null || isEmpty(data.getResourceGroupTemplateJson())) {
@@ -305,23 +324,6 @@ public class AzureCreateARMResourceStep extends TaskChainExecutableWithRollbackA
     String sweepingOutputKey = format(AZURE_TEMPLATE_DATA_FORMAT, identifier);
     executionSweepingOutputService.consume(
         ambiance, sweepingOutputKey, azureARMTemplateDataOutput, StepOutcomeGroup.STAGE.name());
-  }
-
-  private Map<String, Object> getARMOutputs(String outputs) {
-    Map<String, Object> outputMap = new LinkedHashMap<>();
-    if (isEmpty(outputs)) {
-      return outputMap;
-    }
-    try {
-      TypeReference<HashMap<String, Object>> typeRef = new TypeReference<HashMap<String, Object>>() {};
-      Map<String, Object> json = new ObjectMapper().readValue(IOUtils.toInputStream(outputs), typeRef);
-
-      json.forEach((key, object) -> outputMap.put(key, ((Map<String, Object>) object).get("value")));
-    } catch (IOException exception) {
-      log.warn("Exception while parsing ARM outputs", exception);
-      return new LinkedHashMap<>();
-    }
-    return outputMap;
   }
 
   @Override

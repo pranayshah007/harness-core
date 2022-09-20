@@ -483,7 +483,7 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
     if (!immutableDelegate) {
       return true;
     }
-    return TimeUnit.MILLISECONDS.toHours(System.currentTimeMillis() - upgraderLastUpdated) <= 90;
+    return TimeUnit.MILLISECONDS.toMinutes(System.currentTimeMillis() - upgraderLastUpdated) <= 90;
   }
 
   private boolean isGrpcActive(String accountId, String delegateId) {

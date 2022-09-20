@@ -12,6 +12,7 @@ import io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactOverrideSetWrapper;
 import io.harness.cdng.artifact.bean.yaml.ArtifactOverrideSets;
+import io.harness.cdng.artifact.bean.yaml.ArtifactSource;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
@@ -125,8 +126,13 @@ import io.harness.cdng.service.beans.WinRmServiceSpec;
 import io.harness.cdng.variables.beans.NGVariableOverrideSetWrapper;
 import io.harness.cdng.variables.beans.NGVariableOverrideSets;
 import io.harness.ng.core.environment.beans.Environment;
+import io.harness.ng.core.environment.beans.NGEnvironmentGlobalOverride;
+import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
+import io.harness.ng.core.environment.yaml.NGEnvironmentInfoConfig;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
+import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
+import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideInfoConfig;
 import io.harness.serializer.KryoRegistrar;
 
 import com.esotericsoftware.kryo.Kryo;
@@ -262,5 +268,11 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(CustomScriptBaseSource.class, 140020);
     kryo.register(GoogleArtifactRegistryConfig.class, 130021);
     kryo.register(GarArtifactOutcome.class, 130022);
+    kryo.register(ArtifactSource.class, 130023);
+    kryo.register(NGEnvironmentInfoConfig.class, 130025);
+    kryo.register(NGServiceOverrideConfig.class, 130026);
+    kryo.register(NGEnvironmentConfig.class, 130027);
+    kryo.register(NGServiceOverrideInfoConfig.class, 130030);
+    kryo.register(NGEnvironmentGlobalOverride.class, 130031);
   }
 }

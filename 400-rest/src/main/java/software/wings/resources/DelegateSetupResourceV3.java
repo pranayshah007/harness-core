@@ -58,6 +58,7 @@ import io.harness.service.intfc.DelegateSetupService;
 import software.wings.beans.CEDelegateStatus;
 import software.wings.beans.DelegateStatus;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
+import software.wings.security.annotations.ApiKeyAuthorized;
 import software.wings.security.annotations.AuthRule;
 import software.wings.security.annotations.Scope;
 import software.wings.service.intfc.DelegateScopeService;
@@ -669,6 +670,7 @@ public class DelegateSetupResourceV3 {
   @ExceptionMetered
   @AuthRule(permissionType = ACCOUNT_MANAGEMENT)
   @AuthRule(permissionType = MANAGE_DELEGATES)
+  @ApiKeyAuthorized(permissionType = MANAGE_DELEGATES)
   @Operation(operationId = "getDownloadUrl", summary = "Retrieves Delegate download url for the account",
       responses =
       {

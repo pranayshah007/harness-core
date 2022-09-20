@@ -86,6 +86,6 @@ public class InfrastructureEntity implements PersistentEntity {
   @Wither @CreatedDate Long createdAt;
   @Wither @LastModifiedDate Long lastModifiedAt;
   @NotNull InfrastructureType type;
-  ServiceDefinitionType deploymentType;
-  String yaml;
+  @Wither ServiceDefinitionType deploymentType;
+  @Wither String yaml;
 }

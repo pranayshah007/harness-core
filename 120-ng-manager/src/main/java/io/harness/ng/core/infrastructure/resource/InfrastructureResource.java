@@ -46,6 +46,7 @@ import io.harness.ng.core.infrastructure.entity.InfrastructureEntity.Infrastruct
 import io.harness.ng.core.infrastructure.mappers.InfrastructureFilterHelper;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.pms.rbac.NGResourceType;
+import io.harness.repositories.UpsertOptions;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.utils.PageUtils;
 
@@ -314,7 +315,7 @@ public class InfrastructureResource {
 
     InfrastructureEntity requestInfra =
         InfrastructureMapper.toInfrastructureEntity(accountId, infrastructureRequestDTO);
-    InfrastructureEntity upsertInfra = infrastructureEntityService.upsert(requestInfra);
+    InfrastructureEntity upsertInfra = infrastructureEntityService.upsert(requestInfra, UpsertOptions.DEFAULT);
     return ResponseDTO.newResponse(InfrastructureMapper.toResponseWrapper(upsertInfra));
   }
 

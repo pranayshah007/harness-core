@@ -15,6 +15,7 @@ import static io.harness.gitsync.interceptor.GitSyncBranchContext.NG_GIT_SYNC_CO
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.context.GlobalContextData;
 import io.harness.eventsframework.schemas.entity.EntityScopeInfo;
+import io.harness.exception.UnexpectedException;
 import io.harness.gitsync.BranchDetails;
 import io.harness.gitsync.HarnessToGitPushInfoServiceGrpc.HarnessToGitPushInfoServiceBlockingStub;
 import io.harness.gitsync.IsGitSimplificationEnabled;
@@ -47,7 +48,17 @@ public class GitSyncSdkServiceImpl implements GitSyncSdkService {
       return entityKeySource.fetchKey(buildEntityScopeInfo(projectIdentifier, orgIdentifier, accountIdentifier));
     } catch (Exception ex) {
       log.error("Exception while communicating to the git sync service", ex);
-      return false;
+      throw new UnexpectedException("Something went wrong, Please retry after sometime.");
+    }
+  }
+
+  @Override
+  public void resetGitSyncSDKCache(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    try {
+      entityKeySource.updateKey(buildEntityScopeInfo(projectIdentifier, orgIdentifier, accountIdentifier));
+    } catch (Exception ex) {
+      log.error("Faced exception while resetting Git Sync Cache", ex);
+      throw new UnexpectedException("Faced exception while resetting git-sync cache");
     }
   }
 
@@ -69,7 +80,7 @@ public class GitSyncSdkServiceImpl implements GitSyncSdkService {
               "Exception while checking git simplification status for accountId : %s , orgId : %s , projectId : %s",
               accountIdentifier, orgIdentifier, projectIdentifier),
           ex);
-      return false;
+      throw new UnexpectedException("Something went wrong, Please retry after sometime.");
     }
   }
 

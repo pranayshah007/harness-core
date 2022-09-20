@@ -44,7 +44,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor(onConstructor_ = @Inject)
 @Singleton
 public class DelegateMetricsPublisher implements MetricsPublisher {
-  private static final String ACTIVE_DELEGATES_COUNT = "active_delegates_count";
+  private static final String ACTIVE_DELEGATES_COUNT = "active_delegate_count";
 
   private final MetricService metricService;
   private final HPersistence persistence;

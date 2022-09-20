@@ -323,7 +323,9 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
     List<TimeSeriesThreshold> metricPackThresholds = metricPackService.getMetricPackThresholds(
         metricCVConfig.getAccountId(), metricCVConfig.getOrgIdentifier(), metricCVConfig.getProjectIdentifier(),
         metricCVConfig.getMetricPack().getIdentifier(), metricCVConfig.getType());
-
+    // For backward compatibility
+    metricPackThresholds.forEach(metricPackThreshold
+        -> metricPackThreshold.setDeviationType(metricPackThreshold.getMetricType().getDeviationType()));
     Set<String> includedMetrics = metricCVConfig.getMetricPack()
                                       .getMetrics()
                                       .stream()
@@ -339,7 +341,10 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
       for (MetricDefinition metricDefinition : metricCVConfig.getMetricPack().getMetrics()) {
         if (isNotEmpty(metricDefinition.getThresholds())) {
           for (TimeSeriesThreshold timeSeriesThreshold : metricDefinition.getThresholds()) {
-            if (ThresholdConfigType.CUSTOMER.equals(timeSeriesThreshold.getThresholdConfigType())) {
+            if (ThresholdConfigType.USER_DEFINED.equals(timeSeriesThreshold.getThresholdConfigType())) {
+              if (Objects.isNull(timeSeriesThreshold.getDeviationType())) {
+                timeSeriesThreshold.setDeviationType(timeSeriesThreshold.getMetricType().getDeviationType());
+              }
               metricPackThresholds.add(timeSeriesThreshold);
             }
           }
@@ -360,6 +365,7 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
                                                .thresholdType(timeSeriesThreshold.getCriteria().getThresholdType())
                                                .value(timeSeriesThreshold.getCriteria().getValue())
                                                .thresholdConfigType(timeSeriesThreshold.getThresholdConfigType())
+                                               .deviationType(timeSeriesThreshold.getDeviationType())
                                                .build()));
 
     // add data source level thresholds
@@ -370,7 +376,7 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
         .forEach(metricDefinition -> {
           if (isNotEmpty(metricDefinition.getThresholds())) {
             metricDefinition.getThresholds().forEach(timeSeriesThreshold -> {
-              if (!ThresholdConfigType.CUSTOMER.equals(timeSeriesThreshold.getThresholdConfigType())) {
+              if (!ThresholdConfigType.USER_DEFINED.equals(timeSeriesThreshold.getThresholdConfigType())) {
                 timeSeriesMetricDefinitions.add(
                     TimeSeriesMetricDefinition.builder()
                         .metricName(metricDefinition.getName())
@@ -384,6 +390,7 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
                         .thresholdType(timeSeriesThreshold.getCriteria().getThresholdType())
                         .value(timeSeriesThreshold.getCriteria().getValue())
                         .thresholdConfigType(timeSeriesThreshold.getThresholdConfigType())
+                        .deviationType(timeSeriesThreshold.getDeviationType())
                         .build());
               }
             });

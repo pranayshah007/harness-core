@@ -72,7 +72,6 @@ public class CommonStepInfo {
                                .addFolderPaths(FolderPathConstants.APPROVAL)
                                .build())
           .setFeatureRestrictionName(FeatureRestrictionName.INTEGRATED_APPROVALS_WITH_CUSTOM_SCRIPT.name())
-          .setFeatureFlag(FeatureName.NG_CUSTOM_APPROVAL.name())
           .build();
   StepInfo jiraApprovalStepInfo =
       StepInfo.newBuilder()
@@ -84,7 +83,6 @@ public class CommonStepInfo {
                                .addFolderPaths(FolderPathConstants.APPROVAL)
                                .build())
           .setFeatureRestrictionName(FeatureRestrictionName.INTEGRATED_APPROVALS_WITH_JIRA.name())
-
           .build();
   StepInfo jiraCreateStepInfo =
       StepInfo.newBuilder()
@@ -92,7 +90,6 @@ public class CommonStepInfo {
           .setType(StepSpecTypeConstants.JIRA_CREATE)
           .setStepMetaData(StepMetaData.newBuilder().addCategory("Jira").addFolderPaths("Jira").build())
           .setFeatureRestrictionName(FeatureRestrictionName.INTEGRATED_APPROVALS_WITH_JIRA.name())
-
           .build();
   StepInfo jiraUpdateStepInfo =
       StepInfo.newBuilder()
@@ -100,7 +97,6 @@ public class CommonStepInfo {
           .setType(StepSpecTypeConstants.JIRA_UPDATE)
           .setStepMetaData(StepMetaData.newBuilder().addCategory("Jira").addFolderPaths("Jira").build())
           .setFeatureRestrictionName(FeatureRestrictionName.INTEGRATED_APPROVALS_WITH_JIRA.name())
-
           .build();
   StepInfo barrierStepInfo =
       StepInfo.newBuilder()
@@ -159,7 +155,7 @@ public class CommonStepInfo {
 
   StepInfo waitStepInfo =
       StepInfo.newBuilder()
-          .setName("Wait Step")
+          .setName(StepSpecTypeConstants.WAIT_STEP)
           .setType(StepSpecTypeConstants.WAIT_STEP)
           .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Utilities/Non-Scripted").build())
           .setFeatureFlag(FeatureName.WAIT_STEP.name())

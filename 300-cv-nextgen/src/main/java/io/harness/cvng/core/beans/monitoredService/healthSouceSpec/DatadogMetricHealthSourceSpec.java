@@ -131,7 +131,7 @@ public class DatadogMetricHealthSourceSpec extends MetricHealthSourceSpec {
                                            .monitoredServiceIdentifier(monitoredServiceIdentifier)
                                            .build();
       cvConfig.populateFromMetricDefinitions(datadogDefinitions, key.getCategory());
-      cvConfig.addMetricThresholds(metricPacks);
+      cvConfig.addMetricThresholds(metricPacks, metricDefinitions);
       cvConfigs.add(cvConfig);
     });
 

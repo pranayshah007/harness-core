@@ -9,6 +9,7 @@ package io.harness.cdng.provision.azure;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig.GitStoreDelegateConfigBuilder;
 import static io.harness.steps.StepUtils.prepareCDTaskRequest;
@@ -64,14 +65,21 @@ import io.harness.validator.NGRegexValidatorConstants;
 
 import software.wings.beans.TaskType;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.IOUtils;
 
 @Slf4j
 @OwnedBy(CDP)
@@ -229,6 +237,23 @@ public class AzureCommonHelper {
       throw new InvalidRequestException(
           format("Provisioner Identifier cannot contain special characters or spaces: [%s]", provisionerIdentifier));
     }
+  }
+
+  protected Map<String, Object> getARMOutputs(String outputs) {
+    Map<String, Object> outputMap = new LinkedHashMap<>();
+    if (isEmpty(outputs)) {
+      return outputMap;
+    }
+    try {
+      TypeReference<HashMap<String, Object>> typeRef = new TypeReference<HashMap<String, Object>>() {};
+      Map<String, Object> json = new ObjectMapper().readValue(IOUtils.toInputStream(outputs), typeRef);
+
+      json.forEach((key, object) -> outputMap.put(key, ((Map<String, Object>) object).get("value")));
+    } catch (IOException exception) {
+      log.warn("Exception while parsing ARM outputs", exception);
+      return new LinkedHashMap<>();
+    }
+    return outputMap;
   }
 
   private List<String> getCommandUnits(PassThroughData passThroughData) {

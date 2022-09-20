@@ -464,3 +464,5 @@ debeziumConsumerConfigs:
   - debeziumTopicName: ${DEBEZIUM_CONSUMER_TOPIC_NAME:-DEBEZIUM_pmsMongo.pms-harness.planExecutionsSummary}
     debeziumNumberOfThreads: ${DEBEZIUM_CONSUMER_THREADS:-2}
     debeziumBatchSize: ${DEBEZIUM_CONSUMER_BATCH_SIZE:-100}
+
+cdTsDbRetentionPeriodMonths: 7

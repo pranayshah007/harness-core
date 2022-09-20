@@ -9,6 +9,7 @@ package io.harness.ci.integrationstage;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.harness.beans.steps.CIAbstractStepNode;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.category.element.UnitTests;
@@ -24,7 +25,6 @@ import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
-import io.harness.plancreator.steps.StepElementConfig;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.yaml.core.StepSpecType;
@@ -140,10 +140,10 @@ public class IntegrationStageUtilsTest {
   public void testGetAllSteps() throws Exception {
     List<ExecutionWrapperConfig> wrapperConfigs =
         K8InitializeStepUtilsHelper.getExecutionWrapperConfigListWithStepGroup1();
-    List<StepElementConfig> steps = IntegrationStageUtils.getAllSteps(wrapperConfigs);
+    List<CIAbstractStepNode> steps = IntegrationStageUtils.getAllSteps(wrapperConfigs);
     assertThat(steps.size()).isEqualTo(9);
     List<String> ids = new ArrayList<>();
-    for (StepElementConfig step : steps) {
+    for (CIAbstractStepNode step : steps) {
       ids.add(step.getIdentifier());
     }
     assertThat(ids.contains("run2")).isTrue();
@@ -180,8 +180,8 @@ public class IntegrationStageUtilsTest {
     for (ExecutionWrapperConfig config : wrapperConfigs) {
       IntegrationStageUtils.injectLoopEnvVariables(config);
     }
-    List<StepElementConfig> steps = IntegrationStageUtils.getAllSteps(wrapperConfigs);
-    for (StepElementConfig step : steps) {
+    List<CIAbstractStepNode> steps = IntegrationStageUtils.getAllSteps(wrapperConfigs);
+    for (CIAbstractStepNode step : steps) {
       StepSpecType spec = step.getStepSpecType();
       StepParameters params = spec.getStepParameters();
       String stepJson = params.toString();
@@ -198,7 +198,7 @@ public class IntegrationStageUtilsTest {
       IntegrationStageUtils.injectLoopEnvVariables(config);
     }
     steps = IntegrationStageUtils.getAllSteps(wrapperConfigs);
-    for (StepElementConfig step : steps) {
+    for (CIAbstractStepNode step : steps) {
       StepSpecType spec = step.getStepSpecType();
       StepParameters params = spec.getStepParameters();
       String stepJson = params.toString();

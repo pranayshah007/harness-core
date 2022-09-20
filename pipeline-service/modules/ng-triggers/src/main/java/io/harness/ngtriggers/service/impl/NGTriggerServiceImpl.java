@@ -685,8 +685,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
   }
 
   private void validatePipelineRef(TriggerDetails triggerDetails) {
-    NGTriggerEntity ngTriggerEntity = triggerDetails.getNgTriggerEntity();
-    Optional<String> pipelineYmlOptional = validationHelper.fetchPipelineForTrigger(ngTriggerEntity);
+    Optional<String> pipelineYmlOptional = validationHelper.fetchPipelineForTrigger(triggerDetails);
     if (pipelineYmlOptional.isPresent()) {
       String pipelineYaml = pipelineYmlOptional.get();
       String templateYaml = createRuntimeInputForm(pipelineYaml);

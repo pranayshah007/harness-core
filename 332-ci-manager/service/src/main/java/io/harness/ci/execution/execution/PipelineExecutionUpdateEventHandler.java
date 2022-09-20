@@ -171,6 +171,9 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
       if (Strings.isNotBlank(delegateId)) {
         eligibleToExecuteDelegateIds.add(delegateId);
         ciTaskDetailsRepository.deleteFirstByStageExecutionId(stageId);
+      } else {
+        log.warn(
+            "Unable to locate delegate ID for stage ID: {}. Cleanup task may be routed to the wrong delegate", stageId);
       }
     }
 
@@ -197,6 +200,8 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
       return vmDetailsOutcome.getDelegateId();
     } else {
       String stageId = ambiance.getStageExecutionId();
+      log.info("Could not process the delegate ID for stage ID: {} from the init response. Trying to look in the DB",
+          stageId);
 
       long currentTime = System.currentTimeMillis();
       long waitTill = currentTime + WAIT_TIME_IN_SECOND * 1000;
@@ -207,6 +212,8 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
         if (taskDetailsOptional.isPresent()) {
           CITaskDetails taskDetails = taskDetailsOptional.get();
           if (Strings.isNotBlank(taskDetails.getDelegateId())) {
+            log.info("Successfully found delegate ID: {} corresponding to stage ID: {}", taskDetails.getDelegateId(),
+                stageId);
             return taskDetails.getDelegateId();
           }
           break;

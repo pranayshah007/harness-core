@@ -109,10 +109,12 @@ public class SecurityStepInfo implements PluginCompatibleStep {
     defaultOutputVariables = Arrays.asList(OutputNGVariable.builder().name("JOB_ID").build(),
         OutputNGVariable.builder().name("JOB_STATUS").build(), OutputNGVariable.builder().name("CRITICAL").build(),
         OutputNGVariable.builder().name("HIGH").build(), OutputNGVariable.builder().name("MEDIUM").build(),
-        OutputNGVariable.builder().name("LOW").build(), OutputNGVariable.builder().name("TOTAL").build(),
+        OutputNGVariable.builder().name("LOW").build(), OutputNGVariable.builder().name("INFO").build(),
+        OutputNGVariable.builder().name("UNASSIGNED").build(), OutputNGVariable.builder().name("TOTAL").build(),
         OutputNGVariable.builder().name("NEW_CRITICAL").build(), OutputNGVariable.builder().name("NEW_HIGH").build(),
         OutputNGVariable.builder().name("NEW_MEDIUM").build(), OutputNGVariable.builder().name("NEW_LOW").build(),
-        OutputNGVariable.builder().name("NEW_VULNERABILITIES").build());
+        OutputNGVariable.builder().name("NEW_INFO").build(), OutputNGVariable.builder().name("NEW_UNASSIGNED").build(),
+        OutputNGVariable.builder().name("NEW_TOTAL").build());
   }
 
   @Builder

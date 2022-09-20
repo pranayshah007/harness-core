@@ -7,6 +7,7 @@
 
 package io.harness.cvng.core.beans;
 
+import io.harness.cvng.beans.DeviationType;
 import io.harness.cvng.beans.ThresholdConfigType;
 import io.harness.cvng.beans.TimeSeriesCustomThresholdActions;
 import io.harness.cvng.beans.TimeSeriesMetricType;
@@ -34,4 +35,5 @@ public class TimeSeriesMetricDefinition {
   TimeSeriesThresholdType thresholdType;
   Double value;
   ThresholdConfigType thresholdConfigType;
+  DeviationType deviationType;
 }

@@ -39,7 +39,14 @@
       "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
     },
     "skipInstances": {
-      "type": "boolean"
+      "oneOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "string"
+        }
+      ]
     },
     "strategy": {
       "$ref": "#/definitions/StrategyConfig"
@@ -310,7 +317,8 @@
             "Jenkins",
             "AmazonS3",
             "GoogleArtifactRegistry",
-            "GithubPackageRegistry"
+            "GithubPackageRegistry",
+            "AzureArtifactsRegistry"
           ]
         }
       },
@@ -360,6 +368,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/ArtifactoryRegistryArtifactConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AzureArtifactsRegistry"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AzureArtifactConfig"
               }
             }
           }
@@ -643,6 +667,73 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "AzureArtifactConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ArtifactConfig"
+        },
+        {
+          "type": "object",
+          "required": [
+            "connectorRef",
+            "feed",
+            "packageName",
+            "packageType",
+            "project",
+            "scope"
+          ],
+          "properties": {
+            "connectorRef": {
+              "type": "string"
+            },
+            "feed": {
+              "type": "string"
+            },
+            "packageName": {
+              "type": "string"
+            },
+            "packageType": {
+              "type": "string",
+              "enum": [
+                "maven",
+                "nuget"
+              ]
+            },
+            "project": {
+              "type": "string"
+            },
+            "scope": {
+              "type": "string",
+              "enum": [
+                "project",
+                "org"
+              ]
+            },
+            "version": {
+              "type": "string"
+            },
+            "versionRegex": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "versionRegex"
+              ]
+            },
+            {
+              "required": [
+                "version"
+              ]
+            }
+          ]
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "AzureCreateARMResourceParameterFile": {
       "type": "object",
       "required": [
@@ -833,8 +924,7 @@
         {
           "type": "object",
           "required": [
-            "configuration",
-            "provisionerIdentifier"
+            "configuration"
           ],
           "properties": {
             "configuration": {
@@ -856,9 +946,6 @@
               ]
             },
             "metadata": {
-              "type": "string"
-            },
-            "provisionerIdentifier": {
               "type": "string"
             }
           }
@@ -2649,7 +2736,14 @@
           "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
         },
         "skipInstances": {
-          "type": "boolean"
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string"
+            }
+          ]
         },
         "strategy": {
           "$ref": "#/definitions/StrategyConfig"
@@ -3297,6 +3391,7 @@
             "Abort",
             "StageRollback",
             "StepGroupRollback",
+            "PipelineRollback",
             "ManualIntervention",
             "ProceedWithDefaultValue"
           ]
@@ -6305,6 +6400,9 @@
               "$ref": "#/definitions/MarkAsSuccessFailureActionConfig"
             },
             {
+              "$ref": "#/definitions/PipelineRollbackFailureActionConfig"
+            },
+            {
               "$ref": "#/definitions/ProceedWithDefaultValuesFailureActionConfig"
             },
             {
@@ -6357,6 +6455,9 @@
               "$ref": "#/definitions/MarkAsSuccessFailureActionConfig"
             },
             {
+              "$ref": "#/definitions/PipelineRollbackFailureActionConfig"
+            },
+            {
               "$ref": "#/definitions/ProceedWithDefaultValuesFailureActionConfig"
             },
             {
@@ -6389,6 +6490,9 @@
             },
             {
               "$ref": "#/definitions/MarkAsSuccessFailureActionConfig"
+            },
+            {
+              "$ref": "#/definitions/PipelineRollbackFailureActionConfig"
             },
             {
               "$ref": "#/definitions/ProceedWithDefaultValuesFailureActionConfig"
@@ -6855,6 +6959,28 @@
         }
       ]
     },
+    "PipelineRollbackFailureActionConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/FailureStrategyActionConfig"
+        },
+        {
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "PipelineRollback"
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "PrimaryArtifact": {
       "type": "object",
       "properties": {
@@ -6880,7 +7006,8 @@
             "Jenkins",
             "AmazonS3",
             "GoogleArtifactRegistry",
-            "GithubPackageRegistry"
+            "GithubPackageRegistry",
+            "AzureArtifactsRegistry"
           ]
         }
       },
@@ -6930,6 +7057,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/ArtifactoryRegistryArtifactConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AzureArtifactsRegistry"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AzureArtifactConfig"
               }
             }
           }
@@ -7976,7 +8119,8 @@
             "Jenkins",
             "AmazonS3",
             "GoogleArtifactRegistry",
-            "GithubPackageRegistry"
+            "GithubPackageRegistry",
+            "AzureArtifactsRegistry"
           ]
         }
       },
@@ -8026,6 +8170,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/ArtifactoryRegistryArtifactConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AzureArtifactsRegistry"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AzureArtifactConfig"
               }
             }
           }

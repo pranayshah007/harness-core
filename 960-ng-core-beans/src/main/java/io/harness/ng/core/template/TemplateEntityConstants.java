@@ -36,4 +36,6 @@ public interface TemplateEntityConstants {
   String CUSTOM_DEPLOYMENT_ROOT_FIELD = "customDeployment";
   String MONITORED_SERVICE_ROOT_FIELD = "monitoredService";
   String SECRET_MANAGER_ROOT_FIELD = "secretManager";
+  String ARTIFACT_SOURCE_ROOT_FIELD = "artifactSource";
+  String ARTIFACT_SOURCE = "ArtifactSource";
 }

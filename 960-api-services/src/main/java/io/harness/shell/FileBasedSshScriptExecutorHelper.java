@@ -148,6 +148,10 @@ public class FileBasedSshScriptExecutorHelper {
    * @throws IOException Signals that an I/O exception has occurred.
    */
   static int checkAck(InputStream in, Consumer<String> saveExecutionLogError) throws IOException {
+    if (in.available() == 0) {
+      return 0;
+    }
+
     int b = in.read();
     // b may be 0 for success,
     //          1 for error,

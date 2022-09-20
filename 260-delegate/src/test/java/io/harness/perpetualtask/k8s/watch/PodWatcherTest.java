@@ -11,6 +11,7 @@ import static io.harness.ccm.CcmConstants.CLUSTER_ID_IDENTIFIER;
 import static io.harness.ccm.CcmConstants.UID;
 import static io.harness.perpetualtask.k8s.watch.PodEvent.EventType.EVENT_TYPE_SCHEDULED;
 import static io.harness.perpetualtask.k8s.watch.PodEvent.EventType.EVENT_TYPE_TERMINATED;
+import static io.harness.rule.OwnerRule.ABHINAV3;
 import static io.harness.rule.OwnerRule.AVMOHAN;
 import static io.harness.rule.OwnerRule.UTSAV;
 
@@ -56,8 +57,10 @@ import io.kubernetes.client.openapi.models.V1NamespaceBuilder;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimBuilder;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodBuilder;
+import io.kubernetes.client.openapi.models.V1PodCondition;
 import io.kubernetes.client.openapi.models.V1PodConditionBuilder;
 import io.kubernetes.client.openapi.models.V1PodList;
+import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1VolumeBuilder;
 import io.kubernetes.client.util.ClientBuilder;
 import io.kubernetes.client.util.Watch;
@@ -199,13 +202,55 @@ public class PodWatcherTest extends CategoryTest {
   @Owner(developers = AVMOHAN)
   @Category(UnitTests.class)
   public void shouldPublishPodScheduledAndPodInfo() throws Exception {
-    podWatcher.eventReceived(scheduledPod());
+    podWatcher.eventReceived(scheduledPodWithStatus());
     verify(eventPublisher, times(1))
         .publishMessage(captor.capture(), any(Timestamp.class), mapArgumentCaptor.capture());
     assertThat(captor.getAllValues()).hasSize(1);
     assertThat(captor.getAllValues().get(0)).isInstanceOfSatisfying(PodInfo.class, this::infoMessageAssertions);
     assertThat(mapArgumentCaptor.getValue().keySet()).contains(CLUSTER_ID_IDENTIFIER);
     assertThat(mapArgumentCaptor.getValue().keySet()).contains(UID);
+  }
+
+  @Test
+  @Owner(developers = ABHINAV3)
+  @Category(UnitTests.class)
+  public void shouldRunningStatusPodInfo() throws Exception {
+    V1Pod v1Pod = podBuilder().build();
+
+    V1PodStatus v1PodStatus = new V1PodStatus();
+    v1PodStatus.setQosClass("Guaranteed");
+    v1PodStatus.setPhase("Running");
+    V1PodCondition v1PodCondition = new V1PodCondition();
+    v1PodCondition.setType("PodScheduled");
+    v1PodCondition.setStatus("True");
+    v1PodStatus.setConditions(Arrays.asList(v1PodCondition));
+    v1Pod.setStatus(v1PodStatus);
+    podWatcher.eventReceived(v1Pod);
+    verify(eventPublisher, times(1))
+        .publishMessage(captor.capture(), any(Timestamp.class), mapArgumentCaptor.capture());
+    assertThat(captor.getAllValues()).hasSize(1);
+    assertThat(captor.getAllValues().get(0)).isInstanceOfSatisfying(PodInfo.class, this::infoMessageAssertions);
+    assertThat(mapArgumentCaptor.getValue().keySet()).contains(CLUSTER_ID_IDENTIFIER);
+    assertThat(mapArgumentCaptor.getValue().keySet()).contains(UID);
+  }
+
+  @Test
+  @Owner(developers = ABHINAV3)
+  @Category(UnitTests.class)
+  public void shouldRunningStatusPodInfoWithPendingStatus() throws Exception {
+    V1Pod v1Pod = podBuilder().build();
+
+    V1PodStatus v1PodStatus = new V1PodStatus();
+    v1PodStatus.setQosClass("Guaranteed");
+    v1PodStatus.setPhase("Pending");
+    V1PodCondition v1PodCondition = new V1PodCondition();
+    v1PodCondition.setType("PodScheduled");
+    v1PodCondition.setStatus("True");
+    v1PodStatus.setConditions(Arrays.asList(v1PodCondition));
+    v1Pod.setStatus(v1PodStatus);
+    podWatcher.eventReceived(v1Pod);
+    verify(eventPublisher, times(0))
+        .publishMessage(captor.capture(), any(Timestamp.class), mapArgumentCaptor.capture());
   }
 
   @Test
@@ -255,7 +300,7 @@ public class PodWatcherTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldNotPublishDuplicates() throws Exception {
     podWatcher.eventReceived(podBuilder().build()); // none
-    podWatcher.eventReceived(scheduledPod()); // info, scheduled
+    podWatcher.eventReceived(scheduledPodWithStatus()); // info, scheduled
     podWatcher.eventReceived(scheduledPod()); // none
     podWatcher.eventReceived(scheduledAndDeletedPod()); // deleted
 
@@ -284,12 +329,32 @@ public class PodWatcherTest extends CategoryTest {
         .build();
   }
 
+  private static V1Pod scheduledPodWithStatus() {
+    return podBuilder()
+        .editSpec()
+        .withNodeName("gke-pr-private-pool-1-49d0f375-12xx")
+        .endSpec()
+        .editOrNewStatus()
+        .withConditions(new V1PodConditionBuilder()
+                            .withLastTransitionTime(TIMESTAMP)
+                            .withType("PodScheduled")
+                            .withStatus("True")
+                            .build())
+        .endStatus()
+        .withStatus(
+            new V1PodStatus()
+                .phase("Running")
+                .qosClass("Guaranteed")
+                .addConditionsItem(new V1PodConditionBuilder().withStatus("True").withType("PodScheduled").build()))
+        .build();
+  }
+
   private static V1Pod scheduledAndDeletedPodWitMetadataAnnotation() {
     return new V1PodBuilder(scheduledAndDeletedPod()).editMetadata().addToAnnotations(SAMPLE_MAP).endMetadata().build();
   }
 
   private static V1Pod scheduledAndDeletedPod() {
-    return new V1PodBuilder(scheduledPod())
+    return new V1PodBuilder(scheduledPodWithStatus())
         .editMetadata()
         .withDeletionGracePeriodSeconds(0L)
         .withDeletionTimestamp(DELETION_TIMESTAMP)
