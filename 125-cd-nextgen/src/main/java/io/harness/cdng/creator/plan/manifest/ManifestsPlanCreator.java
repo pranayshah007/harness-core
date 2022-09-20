@@ -251,6 +251,9 @@ public class ManifestsPlanCreator extends ChildrenPlanCreator<ManifestsListConfi
       if (EmptyPredicate.isNotEmpty(manifestConfigList)) {
         manifestConfigList.forEach(mcw -> {
           ManifestConfig mc = mcw.getManifest();
+          if (mc.getIdentifier() == null) {
+            throw new InvalidRequestException("Service manifests identifier cannot be empty.");
+          }
           if (manifests.containsKey(mc.getIdentifier())) {
             throw new InvalidRequestException(
                 String.format("Duplicate identifier: [%s] in manifests", mc.getIdentifier()));

@@ -23,7 +23,6 @@ import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.beans.EnvironmentType;
-import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageRequest.PageRequestBuilder;
 import io.harness.beans.SearchFilter.Operator;
@@ -474,14 +473,7 @@ public class EnvironmentYamlHandler extends BaseYamlHandler<Environment.Yaml, En
           break;
 
         case ARTIFACT:
-          if (featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId)) {
-            List<String> allowedList = artifactVariableYamlHelper.computeAllowedList(
-                accountId, configVar.getAllowedList(), configVar.getName());
-            serviceVariable.setAllowedList(allowedList);
-          } else {
-            log.warn("Yaml doesn't support {} type service variables", configVar.getValueType());
-            continue;
-          }
+          log.warn("Yaml doesn't support {} type service variables", configVar.getValueType());
           break;
 
         default:
@@ -548,14 +540,7 @@ public class EnvironmentYamlHandler extends BaseYamlHandler<Environment.Yaml, En
       variableBuilder.encryptedValue(encryptedRecordId);
       variableBuilder.value(isBlank(encryptedRecordId) ? null : encryptedRecordId.toCharArray());
     } else if ("ARTIFACT".equals(overrideYaml.getValueType())) {
-      if (featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId)) {
-        variableBuilder.type(ServiceVariableType.ARTIFACT);
-        List<String> allowedList = artifactVariableYamlHelper.computeAllowedList(
-            accountId, overrideYaml.getAllowedList(), overrideYaml.getName());
-        variableBuilder.allowedList(allowedList);
-      } else {
-        log.warn("Yaml doesn't support {} type service variables", overrideYaml.getValueType());
-      }
+      log.warn("Yaml doesn't support {} type service variables", overrideYaml.getValueType());
     } else {
       log.warn("Yaml doesn't support {} type service variables", overrideYaml.getValueType());
       variableBuilder.value(overrideYaml.getValue() != null ? overrideYaml.getValue().toCharArray() : null);

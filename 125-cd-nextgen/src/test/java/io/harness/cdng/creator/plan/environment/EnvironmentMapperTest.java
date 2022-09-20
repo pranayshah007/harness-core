@@ -30,7 +30,6 @@ import io.harness.yaml.core.variables.NGServiceOverrides;
 import io.harness.yaml.core.variables.NumberNGVariable;
 import io.harness.yaml.core.variables.StringNGVariable;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -75,22 +74,26 @@ public class EnvironmentMapperTest extends CDNGTestBase {
             .name("name")
             .identifier("identifier")
             .description("description")
-            .serviceOverrides(
-                NGServiceOverrides.builder()
-                    .serviceRef("ser")
-                    .variables(Collections.singletonList(StringNGVariable.builder()
-                                                             .name("name")
-                                                             .value(ParameterField.createValueField("value"))
-                                                             .build()))
-                    .build())
+            .serviceOverrideConfig(NGServiceOverrideConfig.builder()
+                                       .serviceOverrideInfoConfig(
+                                           NGServiceOverrideInfoConfig.builder()
+                                               .serviceRef("ser")
+                                               .variables(List.of(StringNGVariable.builder()
+                                                                      .name("name")
+                                                                      .value(ParameterField.createValueField("value"))
+                                                                      .build()))
+                                               .build())
+                                       .build())
             .build();
+
     EnvironmentStepParameters environmentStepParameters =
         EnvironmentMapper.toEnvironmentStepParameters(environmentPlanCreatorConfig);
     assertThat(environmentStepParameters.getEnvironmentRef().getValue()).isEqualTo("ref");
     assertThat(environmentStepParameters.getIdentifier()).isEqualTo("identifier");
     assertThat(environmentStepParameters.getName()).isEqualTo("name");
     assertThat(environmentStepParameters.getDescription()).isEqualTo("description");
-    assertThat(environmentStepParameters.getServiceOverrides().size()).isEqualTo(1);
+    assertThat(environmentStepParameters.getServiceOverrides().values().size()).isEqualTo(1);
+    assertThat(environmentStepParameters.getVariables().values().size()).isEqualTo(0);
   }
 
   @Test

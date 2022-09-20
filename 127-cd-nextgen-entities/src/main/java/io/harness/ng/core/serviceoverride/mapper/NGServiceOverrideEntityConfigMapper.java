@@ -38,7 +38,6 @@ public class NGServiceOverrideEntityConfigMapper {
   }
 
   public NGServiceOverrideConfig toNGServiceOverrideConfig(NGServiceOverridesEntity serviceOverridesEntity) {
-    // Todo : Refactor it (Tathagat)
     List<NGVariable> variableOverride = null;
     List<ManifestConfigWrapper> manifestsList = null;
     List<ConfigFileWrapper> configFiles = null;

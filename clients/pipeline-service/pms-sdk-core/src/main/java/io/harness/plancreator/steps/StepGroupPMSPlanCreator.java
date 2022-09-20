@@ -75,11 +75,17 @@ public class StepGroupPMSPlanCreator extends ChildrenPlanCreator<StepGroupElemen
               .dependencies(DependenciesUtils.toDependenciesProto(stepsYamlFieldMap))
               .build());
     }
-    StrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, config.getUuid(), config.getName(),
-        config.getIdentifier(), responseMap, new HashMap<>(),
-        getAdviserObtainmentFromMetaData(ctx.getCurrentField(), false));
+    addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, config.getUuid(), config.getName(), config.getIdentifier(),
+        responseMap, new HashMap<>(), getAdviserObtainmentFromMetaData(ctx.getCurrentField(), false));
 
     return responseMap;
+  }
+
+  public void addStrategyFieldDependencyIfPresent(KryoSerializer kryoSerializer, PlanCreationContext ctx, String uuid,
+      String name, String identifier, LinkedHashMap<String, PlanCreationResponse> responseMap,
+      HashMap<Object, Object> objectObjectHashMap, List<AdviserObtainment> adviserObtainmentFromMetaData) {
+    StrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, uuid, name, identifier, responseMap,
+        new HashMap<>(), getAdviserObtainmentFromMetaData(ctx.getCurrentField(), false));
   }
 
   @Override
@@ -127,7 +133,7 @@ public class StepGroupPMSPlanCreator extends ChildrenPlanCreator<StepGroupElemen
     return Collections.singletonMap(STEP_GROUP, Collections.singleton(PlanCreatorUtils.ANY_TYPE));
   }
 
-  private List<AdviserObtainment> getAdviserObtainmentFromMetaData(YamlField currentField, boolean checkForStrategy) {
+  protected List<AdviserObtainment> getAdviserObtainmentFromMetaData(YamlField currentField, boolean checkForStrategy) {
     List<AdviserObtainment> adviserObtainments = new ArrayList<>();
     if (checkForStrategy) {
       return adviserObtainments;

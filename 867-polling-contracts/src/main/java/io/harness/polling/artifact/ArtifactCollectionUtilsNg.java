@@ -17,6 +17,7 @@ import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.gar.GarDelegateResponse;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactDelegateResponse;
@@ -52,6 +53,8 @@ public class ArtifactCollectionUtilsNg {
         return ((JenkinsArtifactDelegateResponse) artifactDelegateResponse).getBuild();
       case GOOGLE_ARTIFACT_REGISTRY:
         return ((GarDelegateResponse) artifactDelegateResponse).getVersion();
+      case GITHUB_PACKAGES:
+        return ((GithubPackagesArtifactDelegateResponse) artifactDelegateResponse).getVersion();
       default:
         throw new InvalidRequestException(
             String.format("Source type %s not supported", artifactDelegateResponse.getSourceType()));

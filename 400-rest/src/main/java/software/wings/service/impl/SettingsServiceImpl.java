@@ -1414,10 +1414,6 @@ public class SettingsServiceImpl implements SettingsService {
 
     ensureSettingAttributeSafeToDelete(settingAttribute);
 
-    if (featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId)) {
-      pruneQueue.send(new PruneEvent(SettingAttribute.class, appId, settingAttribute.getUuid()));
-    }
-
     closeConnectivityErrorAlert(accountId, settingAttribute.getUuid());
     boolean deleted = wingsPersistence.delete(settingAttribute);
 
@@ -1563,32 +1559,30 @@ public class SettingsServiceImpl implements SettingsService {
             join(", ", infraMappingNames)));
       }
     } else {
-      if (!featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, connectorSetting.getAccountId())) {
-        List<String> allAccountApps = appService.getAppIdsByAccountId(connectorSetting.getAccountId());
-        List<ArtifactStream> artifactStreams =
-            artifactStreamService.listBySettingId(connectorSetting.getUuid())
-                .stream()
-                .filter(artifactStream -> allAccountApps.contains(artifactStream.getAppId()))
-                .filter(artifactStream -> serviceResourceService.get(artifactStream.getServiceId()) != null)
-                .collect(toList());
-        if (!artifactStreams.isEmpty()) {
-          List<String> artifactStreamNames = artifactStreams.stream()
-                                                 .map(ArtifactStream::getSourceName)
-                                                 .filter(java.util.Objects::nonNull)
-                                                 .collect(toList());
-          throw new InvalidRequestException(
-              format("Connector [%s] is referenced by %d Artifact %s [%s].", connectorSetting.getName(),
-                  artifactStreamNames.size(), plural("Source", artifactStreamNames.size()),
-                  join(", ", artifactStreamNames)),
-              USER);
-        }
+      List<String> allAccountApps = appService.getAppIdsByAccountId(connectorSetting.getAccountId());
+      List<ArtifactStream> artifactStreams =
+          artifactStreamService.listBySettingId(connectorSetting.getUuid())
+              .stream()
+              .filter(artifactStream -> allAccountApps.contains(artifactStream.getAppId()))
+              .filter(artifactStream -> serviceResourceService.get(artifactStream.getServiceId()) != null)
+              .collect(toList());
+      if (!artifactStreams.isEmpty()) {
+        List<String> artifactStreamNames = artifactStreams.stream()
+                                               .map(ArtifactStream::getSourceName)
+                                               .filter(java.util.Objects::nonNull)
+                                               .collect(toList());
+        throw new InvalidRequestException(
+            format("Connector [%s] is referenced by %d Artifact %s [%s].", connectorSetting.getName(),
+                artifactStreamNames.size(), plural("Source", artifactStreamNames.size()),
+                join(", ", artifactStreamNames)),
+            USER);
+      }
 
-        List<Rejection> rejections = manipulationSubject.fireApproveFromAll(
-            SettingsServiceManipulationObserver::settingsServiceDeleting, connectorSetting);
-        if (isNotEmpty(rejections)) {
-          throw new InvalidRequestException(
-              format("[%s]", join("\n", rejections.stream().map(Rejection::message).collect(toList()))), USER);
-        }
+      List<Rejection> rejections = manipulationSubject.fireApproveFromAll(
+          SettingsServiceManipulationObserver::settingsServiceDeleting, connectorSetting);
+      if (isNotEmpty(rejections)) {
+        throw new InvalidRequestException(
+            format("[%s]", join("\n", rejections.stream().map(Rejection::message).collect(toList()))), USER);
       }
     }
 
@@ -1607,25 +1601,19 @@ public class SettingsServiceImpl implements SettingsService {
           USER);
     }
 
-    if (!featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId)) {
-      List<ArtifactStream> artifactStreams = artifactStreamService.listBySettingId(cloudProviderSetting.getUuid());
-      if (!artifactStreams.isEmpty()) {
-        List<String> artifactStreamNames = artifactStreams.stream().map(ArtifactStream::getName).collect(toList());
-        throw new InvalidRequestException(
-            format("Cloud provider [%s] is referenced by %d Artifact %s [%s].", cloudProviderSetting.getName(),
-                artifactStreamNames.size(), plural("Source", artifactStreamNames.size()),
-                join(", ", artifactStreamNames)),
-            USER);
-      }
+    List<ArtifactStream> artifactStreams = artifactStreamService.listBySettingId(cloudProviderSetting.getUuid());
+    if (!artifactStreams.isEmpty()) {
+      List<String> artifactStreamNames = artifactStreams.stream().map(ArtifactStream::getName).collect(toList());
+      throw new InvalidRequestException(
+          format("Cloud provider [%s] is referenced by %d Artifact %s [%s].", cloudProviderSetting.getName(),
+              artifactStreamNames.size(), plural("Source", artifactStreamNames.size()),
+              join(", ", artifactStreamNames)),
+          USER);
     }
     // TODO:: workflow scan for finding out usage in Steps ???
   }
 
   private void ensureAzureArtifactsConnectorSafeToDelete(SettingAttribute connectorSetting) {
-    if (featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, connectorSetting.getAccountId())) {
-      return;
-    }
-
     List<ArtifactStream> artifactStreams = artifactStreamService.listBySettingId(connectorSetting.getUuid());
     if (isEmpty(artifactStreams)) {
       return;

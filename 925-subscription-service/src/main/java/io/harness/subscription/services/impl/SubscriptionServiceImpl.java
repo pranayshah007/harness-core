@@ -213,6 +213,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                                    .customerId(stripeCustomer.getCustomerId())
                                    .items(subscriptionItems)
                                    .paymentFrequency(subscriptionDTO.getPaymentFreq())
+                                   .customerEmail(subscriptionDTO.getCustomer().getBillingEmail())
                                    .build();
 
     SubscriptionDetailDTO subscription = stripeHelper.createSubscription(param);
