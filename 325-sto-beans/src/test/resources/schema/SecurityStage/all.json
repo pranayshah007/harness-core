@@ -1325,6 +1325,7 @@
             "Abort",
             "StageRollback",
             "StepGroupRollback",
+            "PipelineRollback",
             "ManualIntervention",
             "ProceedWithDefaultValue"
           ]
@@ -2466,6 +2467,9 @@
               "$ref": "#/definitions/MarkAsSuccessFailureActionConfig"
             },
             {
+              "$ref": "#/definitions/PipelineRollbackFailureActionConfig"
+            },
+            {
               "$ref": "#/definitions/ProceedWithDefaultValuesFailureActionConfig"
             },
             {
@@ -2518,6 +2522,9 @@
               "$ref": "#/definitions/MarkAsSuccessFailureActionConfig"
             },
             {
+              "$ref": "#/definitions/PipelineRollbackFailureActionConfig"
+            },
+            {
               "$ref": "#/definitions/ProceedWithDefaultValuesFailureActionConfig"
             },
             {
@@ -2550,6 +2557,9 @@
             },
             {
               "$ref": "#/definitions/MarkAsSuccessFailureActionConfig"
+            },
+            {
+              "$ref": "#/definitions/PipelineRollbackFailureActionConfig"
             },
             {
               "$ref": "#/definitions/ProceedWithDefaultValuesFailureActionConfig"
@@ -3017,6 +3027,28 @@
           "type": "boolean"
         }
       },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "PipelineRollbackFailureActionConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/FailureStrategyActionConfig"
+        },
+        {
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "PipelineRollback"
+              ]
+            }
+          }
+        }
+      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "Platform": {
