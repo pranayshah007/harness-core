@@ -1,10 +1,9 @@
 load("@io_bazel_rules_docker//container:container.bzl", "container_image", "container_pull", "container_push")
-load("@io_bazel_rules_docker//docker/util:run.bzl", "container_run_and_commit_layer")
+load("//:tools/bazel/docker/docker-utils.bzl", "docker_layers")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 
-container_run_and_commit_layer(
+docker_layers(
     name = "template-service-run",
-    image = "@ubi-java-base//image",
     commands = [
         "curl https://get.et.harness.io/releases/latest/nix/harness-et-agent.tar.gz --output harness-et-agent.tar.gz",
         "tar -xzf harness-et-agent.tar.gz -C /opt/harness",
@@ -13,11 +12,6 @@ container_run_and_commit_layer(
         "curl https://harness.jfrog.io/artifactory/BuildsTools/docker/apm/opentelemetry/opentelemetry-javaagent.jar --output opentelemetry-javaagent.jar",
         "chmod 711 /opt/harness/harness AppServerAgent-1.8-21.11.2.33305.zip opentelemetry-javaagent.jar",
     ],
-    tags = [
-            "manual",
-            "no-cache",
-            "no-ide",
-        ],
 )
 
 pkg_tar(
@@ -79,13 +73,14 @@ container_image(
         ],
 )
 
+#Pass the TAG from the bazel run command by passing --define=TAG=TagValue
 container_push(
     name = "template-service-push",
     format = "Docker",
     image = "template-service-image",
     registry = "us.gcr.io",
     repository = "platform-205701/harness/harness-services-bazel/template-service-bazel-test",
-    tag = "latest-test",
+    tag = "$(TAG)",
     tags = [
             "manual",
             "no-cache",
