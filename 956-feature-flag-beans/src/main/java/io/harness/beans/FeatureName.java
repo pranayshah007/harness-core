@@ -270,7 +270,6 @@ public enum FeatureName {
   STO_CI_PIPELINE_SECURITY("Enable the Security Tests execution results tab for CI on NG", HarnessTeam.STO),
   STO_CD_PIPELINE_SECURITY("Enable the Security Tests execution results tab for CD on NG", HarnessTeam.STO),
   STO_API_V2("Enable the new STO API version on NG", HarnessTeam.STO),
-  GIT_SYNC_WITH_BITBUCKET,
   REFACTOR_ARTIFACT_SELECTION,
   CCM_DEV_TEST("", HarnessTeam.CE),
   CV_FAIL_ON_EMPTY_NODES,
