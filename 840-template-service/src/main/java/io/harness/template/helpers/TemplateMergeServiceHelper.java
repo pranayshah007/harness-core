@@ -220,7 +220,7 @@ public class TemplateMergeServiceHelper {
       ;
 
       if (templateVariablesJson != null) {
-        finalTemplateJson.set(TEMPLATE_VARIABLES, templateVariablesJson);
+        finalTemplateJson.set(YAMLFieldNameConstants.VARIABLES, templateVariablesJson);
       }
       if (templateInputsYaml != null) {
         finalTemplateJson.set(TEMPLATE_INPUTS, templateInputsYaml);
