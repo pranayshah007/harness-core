@@ -10,8 +10,6 @@ package io.harness.pms.rbac;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
-import static java.lang.String.format;
-
 import io.harness.accesscontrol.acl.api.AccessCheckResponseDTO;
 import io.harness.accesscontrol.acl.api.AccessControlDTO;
 import io.harness.accesscontrol.acl.api.PermissionCheckDTO;
@@ -42,12 +40,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import net.jodah.failsafe.Failsafe;
-import net.jodah.failsafe.RetryPolicy;
 
 /**
  * Helper class to perform validation checks on EntityDetail object. It constructs the access permission on its
@@ -96,28 +91,19 @@ public class PipelineRbacHelper {
     List<PermissionCheckDTO> permissionCheckDTOS =
         entityDetails.stream().map(this::convertToPermissionCheckDTO).collect(Collectors.toList());
 
-    Optional<AccessCheckResponseDTO> accessCheckResponseDTO;
-    RetryPolicy<Object> retryPolicy = getRetryPolicy(format("[Retrying failed call to check permissions attempt: {}"),
-        format("Failed to check permissions after retrying {} times"));
-
     if (isNotEmpty(permissionCheckDTOS)) {
-      accessCheckResponseDTO =
-          Failsafe.with(retryPolicy)
-              .get(()
-                       -> Optional.of(accessControlClient.checkForAccess(
-                           Principal.builder().principalIdentifier(principal).principalType(principalType).build(),
-                           permissionCheckDTOS)));
+      AccessCheckResponseDTO accessCheckResponseDTO = accessControlClient.checkForAccess(
+          Principal.builder().principalIdentifier(principal).principalType(principalType).build(), permissionCheckDTOS);
 
-      if (!accessCheckResponseDTO.isPresent()) {
+      if (accessCheckResponseDTO == null) {
         return;
       }
 
-      List<AccessControlDTO> nonPermittedResources = accessCheckResponseDTO.get()
-                                                         .getAccessControlList()
+      List<AccessControlDTO> nonPermittedResources = accessCheckResponseDTO.getAccessControlList()
                                                          .stream()
                                                          .filter(accessControlDTO -> !accessControlDTO.isPermitted())
                                                          .collect(Collectors.toList());
-      if (nonPermittedResources.size() != 0) {
+      if (!nonPermittedResources.isEmpty()) {
         throwAccessDeniedError(nonPermittedResources);
       }
     }
@@ -189,14 +175,5 @@ public class PipelineRbacHelper {
                            .build())
         .resourceType(PipelineReferredEntityPermissionHelper.getEntityName(entityDetail.getType()))
         .build();
-  }
-
-  private RetryPolicy<Object> getRetryPolicy(String failedAttemptMessage, String failureMessage) {
-    return new RetryPolicy<>()
-        .handle(Exception.class)
-        .withDelay(RETRY_SLEEP_DURATION)
-        .withMaxAttempts(MAX_ATTEMPTS)
-        .onFailedAttempt(event -> log.info(failedAttemptMessage, event.getAttemptCount(), event.getLastFailure()))
-        .onFailure(event -> log.error(failureMessage, event.getAttemptCount(), event.getFailure()));
   }
 }

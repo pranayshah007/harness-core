@@ -23,7 +23,7 @@ import io.harness.jackson.JsonNodeUtils;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
 import io.harness.plancreator.steps.StepElementConfig;
 import io.harness.pms.contracts.steps.StepCategory;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.CGRestUtils;
 import io.harness.utils.FeatureRestrictionsGetter;
 import io.harness.yaml.schema.SchemaGeneratorUtils;
 import io.harness.yaml.schema.YamlSchemaGenerator;
@@ -141,7 +141,7 @@ public class CdYamlSchemaServiceImpl implements CdYamlSchemaService {
     yamlSchemaGenerator.modifyRefsNamespace(deploymentStageSchema, CD_NAMESPACE);
 
     Set<String> enabledFeatureFlags =
-        RestClientUtils.getResponse(accountClient.listAllFeatureFlagsForAccount(accountIdentifier))
+        CGRestUtils.getResponse(accountClient.listAllFeatureFlagsForAccount(accountIdentifier))
             .stream()
             .filter(FeatureFlag::isEnabled)
             .map(FeatureFlag::getName)

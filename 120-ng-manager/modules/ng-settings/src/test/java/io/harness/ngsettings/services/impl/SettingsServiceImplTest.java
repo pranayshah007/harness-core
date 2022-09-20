@@ -379,7 +379,7 @@ public class SettingsServiceImplTest extends CategoryTest {
     doNothing().when(settingConfigurationRepository).delete(settingConfiguration);
     when(settingRepository.findByIdentifier(identifier)).thenReturn(List.of(setting));
     doNothing().when(settingRepository).deleteAll(List.of(setting));
-    settingsService.removeSettingFromConfiguration(identifier);
+    settingsService.removeSetting(identifier);
     verify(settingConfigurationRepository, times(1)).findByIdentifier(identifier);
     verify(settingConfigurationRepository, times(1)).delete(settingConfiguration);
     verify(settingRepository, times(1)).findByIdentifier(identifier);

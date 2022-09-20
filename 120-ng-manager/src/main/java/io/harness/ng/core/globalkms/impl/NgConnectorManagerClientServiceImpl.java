@@ -7,7 +7,7 @@
 
 package io.harness.ng.core.globalkms.impl;
 
-import static io.harness.remote.client.RestClientUtils.getResponse;
+import static io.harness.remote.client.CGRestUtils.getResponse;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;

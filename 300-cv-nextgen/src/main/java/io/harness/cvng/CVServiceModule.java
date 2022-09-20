@@ -83,6 +83,7 @@ import io.harness.cvng.core.entities.DataCollectionTask.Type;
 import io.harness.cvng.core.entities.DatadogLogCVConfig.DatadogLogCVConfigUpdatableEntity;
 import io.harness.cvng.core.entities.DatadogMetricCVConfig.DatadogMetricCVConfigUpdatableEntity;
 import io.harness.cvng.core.entities.DynatraceCVConfig.DynatraceCVConfigUpdatableEntity;
+import io.harness.cvng.core.entities.ELKCVConfig.ELKCVConfigUpdatableEntity;
 import io.harness.cvng.core.entities.ErrorTrackingCVConfig.ErrorTrackingCVConfigUpdatableEntity;
 import io.harness.cvng.core.entities.NewRelicCVConfig.NewRelicCVConfigUpdatableEntity;
 import io.harness.cvng.core.entities.PrometheusCVConfig.PrometheusUpdatableEntity;
@@ -174,6 +175,7 @@ import io.harness.cvng.core.services.impl.DebugServiceImpl;
 import io.harness.cvng.core.services.impl.DefaultDeleteEntityByHandler;
 import io.harness.cvng.core.services.impl.DynatraceDataCollectionInfoMapper;
 import io.harness.cvng.core.services.impl.DynatraceServiceImpl;
+import io.harness.cvng.core.services.impl.ELKDataCollectionInfoMapper;
 import io.harness.cvng.core.services.impl.ELKServiceImpl;
 import io.harness.cvng.core.services.impl.EntityDisabledTimeServiceImpl;
 import io.harness.cvng.core.services.impl.ErrorTrackingDataCollectionInfoMapper;
@@ -242,6 +244,7 @@ import io.harness.cvng.core.utils.monitoredService.CustomHealthSourceSpecMetricT
 import io.harness.cvng.core.utils.monitoredService.DatadogLogHealthSourceSpecTransformer;
 import io.harness.cvng.core.utils.monitoredService.DatadogMetricHealthSourceSpecTransformer;
 import io.harness.cvng.core.utils.monitoredService.DynatraceHealthSourceSpecTransformer;
+import io.harness.cvng.core.utils.monitoredService.ELKHealthSourceSpecTransformer;
 import io.harness.cvng.core.utils.monitoredService.ErrorTrackingHealthSourceSpecTransformer;
 import io.harness.cvng.core.utils.monitoredService.NewRelicHealthSourceSpecTransformer;
 import io.harness.cvng.core.utils.monitoredService.PrometheusHealthSourceSpecTransformer;
@@ -489,6 +492,9 @@ public class CVServiceModule extends AbstractModule {
     dataSourceTypeToHealthSourceTransformerMapBinder.addBinding(DataSourceType.CUSTOM_HEALTH_METRIC)
         .to(CustomHealthSourceSpecMetricTransformer.class)
         .in(Scopes.SINGLETON);
+    dataSourceTypeToHealthSourceTransformerMapBinder.addBinding(DataSourceType.ELK_LOG)
+        .to(ELKHealthSourceSpecTransformer.class)
+        .in(Scopes.SINGLETON);
     dataSourceTypeToHealthSourceTransformerMapBinder.addBinding(DataSourceType.CUSTOM_HEALTH_LOG)
         .to(CustomHealthSourceSpecLogTransformer.class)
         .in(Scopes.SINGLETON);
@@ -534,6 +540,9 @@ public class CVServiceModule extends AbstractModule {
         .in(Scopes.SINGLETON);
     dataSourceTypeDataCollectionInfoMapperMapBinder.addBinding(DataSourceType.DATADOG_LOG)
         .to(DatadogLogDataCollectionInfoMapper.class)
+        .in(Scopes.SINGLETON);
+    dataSourceTypeDataCollectionInfoMapperMapBinder.addBinding(DataSourceType.ELK_LOG)
+        .to(ELKDataCollectionInfoMapper.class)
         .in(Scopes.SINGLETON);
     dataSourceTypeDataCollectionInfoMapperMapBinder.addBinding(DataSourceType.DYNATRACE)
         .to(DynatraceDataCollectionInfoMapper.class)
@@ -684,6 +693,9 @@ public class CVServiceModule extends AbstractModule {
         .in(Scopes.SINGLETON);
     dataSourceTypeCVConfigMapBinder.addBinding(DataSourceType.DATADOG_LOG)
         .to(DatadogLogCVConfigUpdatableEntity.class)
+        .in(Scopes.SINGLETON);
+    dataSourceTypeCVConfigMapBinder.addBinding(DataSourceType.ELK_LOG)
+        .to(ELKCVConfigUpdatableEntity.class)
         .in(Scopes.SINGLETON);
     dataSourceTypeCVConfigMapBinder.addBinding(DataSourceType.DYNATRACE)
         .to(DynatraceCVConfigUpdatableEntity.class)

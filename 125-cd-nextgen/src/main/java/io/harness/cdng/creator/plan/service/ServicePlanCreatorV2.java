@@ -7,6 +7,7 @@
 
 package io.harness.cdng.creator.plan.service;
 
+import static io.harness.cdng.creator.plan.service.ServiceDefinitionPlanCreator.SVC_PLAN_CREATOR_ENVIRONMENT_DEPS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -166,6 +167,8 @@ public class ServicePlanCreatorV2 extends ChildrenPlanCreator<NGServiceV2InfoCon
         YamlTypes.ENVIRONMENT_NODE_ID, ctx.getDependency().getMetadataMap().get(YamlTypes.ENVIRONMENT_NODE_ID));
     serviceDefDependencyMap.put(
         YamlTypes.ENVIRONMENT_REF, ctx.getDependency().getMetadataMap().get(YamlTypes.ENVIRONMENT_REF));
+    serviceDefDependencyMap.put(
+        SVC_PLAN_CREATOR_ENVIRONMENT_DEPS, ctx.getDependency().getMetadataMap().get(SVC_PLAN_CREATOR_ENVIRONMENT_DEPS));
     Dependency serviceDefDependency = Dependency.newBuilder().putAllMetadata(serviceDefDependencyMap).build();
     return DependenciesUtils.toDependenciesProto(serviceDefYamlFieldMap)
         .toBuilder()

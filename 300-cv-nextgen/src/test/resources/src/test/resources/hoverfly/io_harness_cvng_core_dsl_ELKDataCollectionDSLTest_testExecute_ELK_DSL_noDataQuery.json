@@ -1,0 +1,48 @@
+{
+  "data" : {
+    "pairs" : [ {
+      "request" : {
+        "path" : [ {
+          "matcher" : "exact",
+          "value" : "/*/_search"
+        } ],
+        "method" : [ {
+          "matcher" : "exact",
+          "value" : "POST"
+        } ],
+        "destination" : [ {
+          "matcher" : "exact",
+          "value" : "elk6.dev.harness.io:9200"
+        } ],
+        "scheme" : [ {
+          "matcher" : "exact",
+          "value" : "http"
+        } ],
+        "body" : [ {
+          "matcher" : "exact",
+          "value" : "{\"size\":10,\"query\":{\"bool\":{\"filter\":[{\"query_string\":{\"query\":\"message: unmatchableString\"}},{\"range\":{\"@timestamp\":{\"lte\":1663503238167,\"gt\":1663503178167}}}]}},\"from\":\"0\"}"
+        } ]
+      },
+      "response" : {
+        "status" : 200,
+        "body" : "H4sIAAAAAAAAAEyLQQrDMAwE/7JnHQotlOorpRhhy8REqUNkQyH47w2FQG87zOyOVusMvl0JrSyaQu0NnMVcCcEn2ZKD9yNrYuDHneA9RnXP/eS5rKsm8IWQpdhvDsJU2v/1sIt8gse6Kfjdzc7k+RrjCwAA//8DAHCj1uqJAAAA",
+        "encodedBody" : true,
+        "templated" : false,
+        "headers" : {
+          "Content-Encoding" : [ "gzip" ],
+          "Content-Length" : [ "129" ],
+          "Content-Type" : [ "application/json; charset=UTF-8" ],
+          "Hoverfly" : [ "Was-Here" ]
+        }
+      }
+    } ],
+    "globalActions" : {
+      "delays" : [ ]
+    }
+  },
+  "meta" : {
+    "schemaVersion" : "v5",
+    "hoverflyVersion" : "v1.1.5",
+    "timeExported" : "2022-09-19T11:29:08Z"
+  }
+}

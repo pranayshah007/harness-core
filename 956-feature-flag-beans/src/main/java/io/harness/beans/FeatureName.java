@@ -28,7 +28,6 @@ public enum FeatureName {
   ARGO_PHASE2_MANAGED,
   ARTIFACT_PERPETUAL_TASK,
   ARTIFACT_PERPETUAL_TASK_MIGRATION,
-  ARTIFACT_STREAM_REFACTOR,
   ARTIFACT_STREAM_DELEGATE_SCOPING,
   ARTIFACT_STREAM_DELEGATE_TIMEOUT,
   AUTO_ACCEPT_SAML_ACCOUNT_INVITES,
@@ -49,7 +48,6 @@ public enum FeatureName {
   CF_ROLLBACK_CONFIG_FILTER,
   CING_ENABLED,
   CI_INDIRECT_LOG_UPLOAD,
-  CLOUD_FORMATION_CREATE_REFACTOR,
   CUSTOM_APM_24_X_7_CV_TASK,
   CUSTOM_APM_CV_TASK,
   CUSTOM_DASHBOARD,
@@ -309,7 +307,6 @@ public enum FeatureName {
   NG_SVC_ENV_REDESIGN,
   NEW_PIPELINE_STUDIO,
   EARLY_ACCESS_ENABLED,
-  AZURE_REPO_CONNECTOR,
   HELP_PANEL,
   CHAOS_ENABLED,
   DEPLOYMENT_SUBFORMIK_APPLICATION_DROPDOWN,
@@ -324,7 +321,6 @@ public enum FeatureName {
   ENABLE_DEFAULT_TIMEFRAME_IN_DEPLOYMENTS,
   EXPORT_TF_PLAN_JSON_NG,
   ADD_MANIFEST_COLLECTION_STEP,
-  NG_CUSTOM_APPROVAL,
   NG_FILE_STORE,
   ACCOUNT_BASIC_ROLE,
   CVNG_TEMPLATE_MONITORED_SERVICE,
@@ -438,15 +434,20 @@ public enum FeatureName {
       HarnessTeam.PIPELINE),
 
   PIPELINE_CHAINING("UI flag to enable/disable Pipeline Chaining feature", HarnessTeam.PIPELINE),
+  PIPELINE_ROLLBACK("Flag to enable/disable Pipeline Rollback", HarnessTeam.PIPELINE),
   MERGE_RUNTIME_VARIABLES_IN_RESUME(
       "merge context elements workflow variables while resuming pipeline from a stage", HarnessTeam.SPG),
   USE_TEXT_SEARCH_FOR_EXECUTION(
       "With this instead of using regex search we will use text search for CD page in CG", HarnessTeam.SPG),
   AZURE_WEBAPP_NG_S3_ARTIFACTS(
       "UI FF to enable AWS S3 as an artifact source option for Azure Web App NG", HarnessTeam.CDP),
+  DEL_EVALUATE_SECRET_EXPRESSION_SYNC(
+      "If true, than performs expression evaluation in same thread synchronously", HarnessTeam.DEL),
+  SRM_ENABLE_HEALTHSOURCE_CLOUDWATCH_METRICS("UI FF to enable CloudWatch Metrics healthsource", HarnessTeam.CV),
+  SRM_ENABLE_VERIFY_STEP_LONG_DURATION("Enable longer duration for verify step", HarnessTeam.CV),
   SETTING_ATTRIBUTES_SERVICE_ACCOUNT_TOKEN_MIGRATION("Migrate erroneous service account tokens", HarnessTeam.PL),
-  ARTIFACT_SOURCE_TEMPLATE("Flag to add support for artifact source templates", HarnessTeam.CDC);
-
+  ARTIFACT_SOURCE_TEMPLATE("Flag to add support for artifact source templates", HarnessTeam.CDC),
+  NG_DEPLOYMENT_FREEZE("Enables Deployment freeze for NG", HarnessTeam.CDC);
   @Deprecated
   FeatureName() {
     scope = Scope.PER_ACCOUNT;

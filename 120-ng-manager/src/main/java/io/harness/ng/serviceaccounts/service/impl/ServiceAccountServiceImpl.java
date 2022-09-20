@@ -15,7 +15,7 @@ import static io.harness.ng.core.utils.NGUtils.validate;
 import static io.harness.ng.core.utils.NGUtils.verifyValuesNotChanged;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.remote.client.NGRestUtils.getResponse;
-import static io.harness.springdata.TransactionUtils.DEFAULT_TRANSACTION_RETRY_POLICY;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
@@ -91,7 +91,7 @@ public class ServiceAccountServiceImpl implements ServiceAccountService {
     ServiceAccount serviceAccount = ServiceAccountDTOMapper.getServiceAccountFromDTO(requestDTO);
     validate(serviceAccount);
     try {
-      return Failsafe.with(DEFAULT_TRANSACTION_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
+      return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
         ServiceAccount savedAccount = serviceAccountRepository.save(serviceAccount);
         ServiceAccountDTO savedDTO = ServiceAccountDTOMapper.getDTOFromServiceAccount(savedAccount);
         outboxService.save(new ServiceAccountCreateEvent(savedDTO));
@@ -134,7 +134,7 @@ public class ServiceAccountServiceImpl implements ServiceAccountService {
     newAccount.setUuid(serviceAccount.getUuid());
     newAccount.setCreatedAt(serviceAccount.getCreatedAt());
     validate(newAccount);
-    return Failsafe.with(DEFAULT_TRANSACTION_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
+    return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
       ServiceAccount savedAccount = serviceAccountRepository.save(newAccount);
       ServiceAccountDTO savedDTO = ServiceAccountDTOMapper.getDTOFromServiceAccount(savedAccount);
       outboxService.save(new ServiceAccountUpdateEvent(oldDTO, savedDTO));
@@ -167,7 +167,7 @@ public class ServiceAccountServiceImpl implements ServiceAccountService {
       throw new InvalidRequestException(String.format("Service account with identifier: %s doesn't exist", identifier));
     }
     ServiceAccountDTO oldDTO = ServiceAccountDTOMapper.getDTOFromServiceAccount(serviceAccount);
-    return Failsafe.with(DEFAULT_TRANSACTION_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
+    return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
       long deleted =
           serviceAccountRepository.deleteByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
               accountIdentifier, orgIdentifier, projectIdentifier, identifier);

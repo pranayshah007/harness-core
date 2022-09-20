@@ -14,7 +14,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.CGRestUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -101,6 +101,6 @@ public class PipelineExpressionHelper {
   }
 
   private String getVanityUrl(String accountIdentifier) {
-    return RestClientUtils.getResponse(accountClient.getVanityUrl(accountIdentifier));
+    return CGRestUtils.getResponse(accountClient.getVanityUrl(accountIdentifier));
   }
 }

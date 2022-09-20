@@ -26,7 +26,7 @@ import io.harness.ng.core.entities.Project;
 import io.harness.ng.core.entities.Project.ProjectKeys;
 import io.harness.ng.core.services.OrganizationService;
 import io.harness.ng.core.services.ProjectService;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.CGRestUtils;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.dto.ServicePrincipal;
 
@@ -91,7 +91,7 @@ public class DefaultUserGroupCreationService implements Runnable {
     log.info(DEBUG_MESSAGE + "User Groups creation started.");
 
     try {
-      List<AccountDTO> allAccounts = RestClientUtils.getResponse(accountClient.getAllAccounts());
+      List<AccountDTO> allAccounts = CGRestUtils.getResponse(accountClient.getAllAccounts());
       List<String> distinctAccountIds = allAccounts.stream()
                                             .filter(AccountDTO::isNextGenEnabled)
                                             .map(AccountDTO::getIdentifier)

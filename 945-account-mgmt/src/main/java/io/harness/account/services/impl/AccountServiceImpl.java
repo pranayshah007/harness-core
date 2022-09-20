@@ -14,7 +14,7 @@ import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.account.DefaultExperience;
 import io.harness.ng.core.dto.AccountDTO;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.CGRestUtils;
 import io.harness.signup.dto.SignupDTO;
 
 import com.google.inject.Inject;
@@ -37,21 +37,21 @@ public class AccountServiceImpl implements AccountService {
                                 .isProductLed(true)
                                 .build();
 
-    return RestClientUtils.getResponse(accountClient.create(accountDTO));
+    return CGRestUtils.getResponse(accountClient.create(accountDTO));
   }
 
   @Override
   public Boolean updateDefaultExperienceIfApplicable(String accountId, DefaultExperience defaultExperience) {
-    return RestClientUtils.getResponse(accountClient.updateDefaultExperienceIfApplicable(accountId, defaultExperience));
+    return CGRestUtils.getResponse(accountClient.updateDefaultExperienceIfApplicable(accountId, defaultExperience));
   }
 
   @Override
   public String getBaseUrl(String accountId) {
-    return RestClientUtils.getResponse(accountClient.getBaseUrl(accountId));
+    return CGRestUtils.getResponse(accountClient.getBaseUrl(accountId));
   }
 
   @Override
   public AccountDTO getAccount(String accountId) {
-    return RestClientUtils.getResponse(accountClient.getAccountDTO(accountId));
+    return CGRestUtils.getResponse(accountClient.getAccountDTO(accountId));
   }
 }

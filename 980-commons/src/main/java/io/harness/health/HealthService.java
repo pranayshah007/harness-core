@@ -18,7 +18,9 @@ import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
@@ -137,5 +139,61 @@ public class HealthService extends HealthCheck {
     }
 
     return result;
+  }
+
+  public List<String> getTimeStampFormats() {
+    List<String> timeStampFormats = new ArrayList<>();
+    timeStampFormats.add("yyyy-MM-dd'T'HH:mm:ss*SSSZZZZ");
+    timeStampFormats.add("yyyy MMM dd HH:mm:ss.SSS zzz");
+    timeStampFormats.add("MMM dd HH:mm:ss ZZZZ yyyy");
+    timeStampFormats.add("dd/MMM/yyyy:HH:mm:ss ZZZZ");
+    timeStampFormats.add("MMM dd, yyyy hh:mm:ss a");
+    timeStampFormats.add("MMM dd yyyy HH:mm:ss");
+    timeStampFormats.add("MMM dd HH:mm:ss yyyy");
+    timeStampFormats.add("MMM dd HH:mm:ss ZZZZ");
+    timeStampFormats.add("MMM dd HH:mm:ss");
+    timeStampFormats.add("yyyy-MM-dd'T'HH:mm:ssZZZZ");
+    timeStampFormats.add("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+    timeStampFormats.add("yyyy-MM-dd HH:mm:ss ZZZZ");
+    timeStampFormats.add("yyyy-MM-dd HH:mm:ssZZZZ");
+    timeStampFormats.add("yyyy-MM-dd HH:mm:ss,SSS");
+    timeStampFormats.add("yyyy/MM/dd*HH:mm:ss");
+    timeStampFormats.add("yyyy MMM dd HH:mm:ss.SSS*zzz");
+    timeStampFormats.add("yyyy MMM dd HH:mm:ss.SSS");
+    timeStampFormats.add("yyyy-MM-dd HH:mm:ss,SSSZZZZ");
+    timeStampFormats.add("yyyy-MM-dd HH:mm:ss.SSS");
+    timeStampFormats.add("yyyy-MM-dd HH:mm:ss.SSSZZZZ");
+    timeStampFormats.add("yyyy-MM-dd'T'HH:mm:ss.SSS");
+    timeStampFormats.add("yyyy-MM-dd'T'HH:mm:ss");
+    timeStampFormats.add("yyyy-MM-dd'T'HH:mm:ss'Z'");
+    timeStampFormats.add("yyyy-MM-dd'T'HH:mm:ss.SSS");
+    timeStampFormats.add("yyyy-MM-dd'T'HH:mm:ss");
+    timeStampFormats.add("yyyy-MM-dd*HH:mm:ss:SSS");
+    timeStampFormats.add("yyyy-MM-dd*HH:mm:ss");
+    timeStampFormats.add("yy-MM-dd HH:mm:ss,SSS ZZZZ");
+    timeStampFormats.add("yy-MM-dd HH:mm:ss,SSS");
+    timeStampFormats.add("yy-MM-dd HH:mm:ss");
+    timeStampFormats.add("yy/MM/dd HH:mm:ss");
+    timeStampFormats.add("yyMMdd HH:mm:ss");
+    timeStampFormats.add("yyyyMMdd HH:mm:ss.SSS");
+    timeStampFormats.add("MM/dd/yy*HH:mm:ss");
+    timeStampFormats.add("MM/dd/yyyy*HH:mm:ss");
+    timeStampFormats.add("MM/dd/yyyy*HH:mm:ss*SSS");
+    timeStampFormats.add("MM/dd/yy HH:mm:ss ZZZZ");
+    timeStampFormats.add("MM/dd/yyyy HH:mm:ss ZZZZ");
+    timeStampFormats.add("HH:mm:ss");
+    timeStampFormats.add("HH:mm:ss.SSS");
+    timeStampFormats.add("HH:mm:ss,SSS");
+    timeStampFormats.add("dd/MMM HH:mm:ss,SSS");
+    timeStampFormats.add("dd/MMM/yyyy:HH:mm:ss");
+    timeStampFormats.add("dd-MMM-yyyy HH:mm:ss");
+    timeStampFormats.add("dd-MMM-yyyy HH:mm:ss.SSS");
+    timeStampFormats.add("dd MMM yyyy HH:mm:ss");
+    timeStampFormats.add("dd MMM yyyy HH:mm:ss*SSS");
+    timeStampFormats.add("MMdd_HH:mm:ss");
+    timeStampFormats.add("MMdd_HH:mm:ss.SSS");
+    timeStampFormats.add("MM/dd/yyyy hh:mm:ss a:SSS");
+    timeStampFormats.add("MM/dd/yyyy hh:mm:ss a");
+    return timeStampFormats;
   }
 }

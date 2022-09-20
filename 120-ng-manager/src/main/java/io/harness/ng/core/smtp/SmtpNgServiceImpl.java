@@ -8,7 +8,7 @@
 package io.harness.ng.core.smtp;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.remote.client.RestClientUtils.getResponse;
+import static io.harness.remote.client.CGRestUtils.getResponse;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.beans.CGConstants.GLOBAL_ENV_ID;

@@ -18,7 +18,7 @@ import io.harness.ng.core.entities.Organization;
 import io.harness.ng.core.entities.Project;
 import io.harness.ng.core.services.OrganizationService;
 import io.harness.ng.core.services.ProjectService;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.CGRestUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -36,15 +36,15 @@ public class AccountOrgProjectHelperImpl implements AccountOrgProjectHelper {
   private final AccountClient accountClient;
 
   public String getBaseUrl(String accountIdentifier) {
-    return RestClientUtils.getResponse(accountClient.getBaseUrl(accountIdentifier));
+    return CGRestUtils.getResponse(accountClient.getBaseUrl(accountIdentifier));
   }
 
   public String getGatewayBaseUrl(String accountIdentifier) {
-    return RestClientUtils.getResponse(accountClient.getGatewayBaseUrl(accountIdentifier));
+    return CGRestUtils.getResponse(accountClient.getGatewayBaseUrl(accountIdentifier));
   }
 
   public String getAccountName(String accountIdentifier) {
-    AccountDTO account = RestClientUtils.getResponse(accountClient.getAccountDTO(accountIdentifier));
+    AccountDTO account = CGRestUtils.getResponse(accountClient.getAccountDTO(accountIdentifier));
     if (account == null) {
       throw new IllegalStateException(String.format("Account with identifier [%s] doesn't exists", accountIdentifier));
     }
@@ -77,6 +77,6 @@ public class AccountOrgProjectHelperImpl implements AccountOrgProjectHelper {
   }
 
   public String getVanityUrl(String accountIdentifier) {
-    return RestClientUtils.getResponse(accountClient.getVanityUrl(accountIdentifier));
+    return CGRestUtils.getResponse(accountClient.getVanityUrl(accountIdentifier));
   }
 }

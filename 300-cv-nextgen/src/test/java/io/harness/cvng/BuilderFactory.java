@@ -99,6 +99,8 @@ import io.harness.cvng.core.entities.DatadogMetricCVConfig;
 import io.harness.cvng.core.entities.DatadogMetricCVConfig.DatadogMetricCVConfigBuilder;
 import io.harness.cvng.core.entities.DynatraceCVConfig;
 import io.harness.cvng.core.entities.DynatraceCVConfig.DynatraceCVConfigBuilder;
+import io.harness.cvng.core.entities.ELKCVConfig;
+import io.harness.cvng.core.entities.ELKCVConfig.ELKCVConfigBuilder;
 import io.harness.cvng.core.entities.ErrorTrackingCVConfig;
 import io.harness.cvng.core.entities.ErrorTrackingCVConfig.ErrorTrackingCVConfigBuilder;
 import io.harness.cvng.core.entities.MetricPack;
@@ -526,6 +528,21 @@ public class BuilderFactory {
         .projectIdentifier(context.getProjectIdentifier())
         .identifier(context.getMonitoredServiceIdentifier() + "/" + generateUuid())
         .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier());
+  }
+
+  public ELKCVConfigBuilder elkCVConfigBuilder() {
+    return ELKCVConfig.builder()
+        .accountId(context.getAccountId())
+        .orgIdentifier(context.getOrgIdentifier())
+        .projectIdentifier(context.getProjectIdentifier())
+        .identifier(context.getMonitoredServiceIdentifier() + "/" + generateUuid())
+        .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
+        .index("*")
+        .timeStampFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+        .messageIdentifier("message")
+        .serviceInstanceIdentifier("hostname")
+        .timeStampIdentifier("@timestamp")
+        .connectorIdentifier("connectorRef");
   }
 
   public CustomHealthSourceMetricSpec customHealthMetricSourceSpecBuilder(String metricValueJSONPath,

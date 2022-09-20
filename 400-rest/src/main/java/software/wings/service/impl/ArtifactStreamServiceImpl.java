@@ -84,7 +84,6 @@ import software.wings.beans.Service;
 import software.wings.beans.Service.ServiceKeys;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.Variable;
-import software.wings.beans.Workflow;
 import software.wings.beans.artifact.AcrArtifactStream;
 import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.Artifact.ArtifactKeys;
@@ -1171,38 +1170,11 @@ public class ArtifactStreamServiceImpl implements ArtifactStreamService {
     }
   }
 
-  private void ensureArtifactStreamSafeToDelete(String appId, String artifactStreamId, String accountId) {
-    if (!featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId)) {
-      validateTriggerUsages(accountId, appId, artifactStreamId);
-    } else if (appId.equals(GLOBAL_APP_ID)) {
-      validateTriggerUsages(accountId, appId, artifactStreamId);
-      validateServiceVariableUsages(artifactStreamId);
-      validateWorkflowUsages(artifactStreamId);
-    }
+  private void ensureArtifactStreamSafeToDelete(String appId, String artifactStreamId) {
+    validateTriggerUsages(appId, artifactStreamId);
   }
 
-  private void validateServiceVariableUsages(String artifactStreamId) {
-    List<Service> services = artifactStreamServiceBindingService.listServices(artifactStreamId);
-    if (isEmpty(services)) {
-      return;
-    }
-
-    List<String> serviceNames = services.stream().map(Service::getName).collect(toList());
-    throw new InvalidRequestException(
-        format("Artifact Stream linked to Services [%s]", String.join(", ", serviceNames)), USER);
-  }
-
-  private void validateWorkflowUsages(String artifactStreamId) {
-    List<Workflow> workflows = artifactStreamServiceBindingService.listWorkflows(artifactStreamId);
-    if (isEmpty(workflows)) {
-      return;
-    }
-    List<String> workflowNames = workflows.stream().map(Workflow::getName).collect(toList());
-    throw new InvalidRequestException(
-        format("Artifact Stream linked to Workflows [%s]", String.join(", ", workflowNames)), USER);
-  }
-
-  private void validateTriggerUsages(String accountId, String appId, String artifactStreamId) {
+  private void validateTriggerUsages(String appId, String artifactStreamId) {
     List<String> triggerNames;
     List<Trigger> triggers = triggerService.getTriggersHasArtifactStreamAction(appId, artifactStreamId);
     if (isEmpty(triggers)) {
@@ -1242,7 +1214,7 @@ public class ArtifactStreamServiceImpl implements ArtifactStreamService {
               settingsService.getUsageRestrictionsForSettingId(artifactStream.getSettingId()), false)) {
         throw new UnauthorizedUsageRestrictionsException(USER);
       }
-      ensureArtifactStreamSafeToDelete(GLOBAL_APP_ID, artifactStreamId, accountId);
+      ensureArtifactStreamSafeToDelete(GLOBAL_APP_ID, artifactStreamId);
     }
 
     artifactStream.setSyncFromGit(syncFromGit);
@@ -1277,7 +1249,7 @@ public class ArtifactStreamServiceImpl implements ArtifactStreamService {
 
     String artifactStreamId = artifactStream.getUuid();
     if (!forceDelete) {
-      ensureArtifactStreamSafeToDelete(appId, artifactStreamId, accountId);
+      ensureArtifactStreamSafeToDelete(appId, artifactStreamId);
     }
 
     artifactStream.setSyncFromGit(syncFromGit);
@@ -1572,45 +1544,14 @@ public class ArtifactStreamServiceImpl implements ArtifactStreamService {
   public List<ArtifactStreamSummary> listArtifactStreamSummary(String appId) {
     Map<String, ArtifactStream> artifactStreamMap = getArtifactStreamMap(appId);
     List<ArtifactStreamSummary> artifactStreamSummaries = new ArrayList<>();
-    String accountId = appService.getAccountIdByAppId(appId);
-    if (!featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId)) {
-      try (HIterator<Service> serviceHIterator = new HIterator<>(wingsPersistence.createQuery(Service.class)
-                                                                     .filter(ServiceKeys.appId, appId)
-                                                                     .project(ServiceKeys.uuid, true)
-                                                                     .project(ServiceKeys.name, true)
-                                                                     .project(ServiceKeys.artifactStreamIds, true)
-                                                                     .fetch())) {
-        for (Service service : serviceHIterator) {
-          List<String> artifactStreamIds = service.getArtifactStreamIds();
-          if (isEmpty(artifactStreamIds)) {
-            continue;
-          }
-
-          String serviceName = service.getName();
-          artifactStreamSummaries.addAll(artifactStreamIds.stream()
-                                             .filter(artifactStreamMap::containsKey)
-                                             .map(artifactStreamId -> {
-                                               ArtifactStream artifactStream = artifactStreamMap.get(artifactStreamId);
-                                               return ArtifactStreamSummary.builder()
-                                                   .artifactStreamId(artifactStreamId)
-                                                   .settingId(artifactStream.getSettingId())
-                                                   .displayName(artifactStream.getName() + " (" + serviceName + ")")
-                                                   .build();
-                                             })
-                                             .collect(Collectors.toList()));
-        }
-      }
-
-      return artifactStreamSummaries;
-    }
-
     try (HIterator<Service> serviceHIterator = new HIterator<>(wingsPersistence.createQuery(Service.class)
                                                                    .filter(ServiceKeys.appId, appId)
                                                                    .project(ServiceKeys.uuid, true)
                                                                    .project(ServiceKeys.name, true)
+                                                                   .project(ServiceKeys.artifactStreamIds, true)
                                                                    .fetch())) {
       for (Service service : serviceHIterator) {
-        List<String> artifactStreamIds = artifactStreamServiceBindingService.listArtifactStreamIds(service);
+        List<String> artifactStreamIds = service.getArtifactStreamIds();
         if (isEmpty(artifactStreamIds)) {
           continue;
         }

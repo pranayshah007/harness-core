@@ -2069,7 +2069,7 @@ public class AuthHandler {
     String accountId = getRequestParamFromContext("accountId", containerRequestContext.getUriInfo().getPathParameters(),
         containerRequestContext.getUriInfo().getQueryParameters());
 
-    ApiKeyEntry apiKeyEntry = apiKeyService.getByKey(apiKey, accountId, true);
+    ApiKeyEntry apiKeyEntry = apiKeyService.getByKey(apiKey, accountId);
     if (apiKeyEntry == null) {
       throw new InvalidRequestException(USER_NOT_AUTHORIZED, USER);
     }

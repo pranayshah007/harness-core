@@ -224,7 +224,7 @@ public class AuthRuleFilter implements ContainerRequestFilter {
         accountId = apiKeyService.getAccountIdFromApiKey(requestContext.getHeaderString("X-Api-Key"));
       }
       if (isNotEmpty(accountId) && featureFlagService.isEnabled(FeatureName.AUDIT_TRAIL_ENHANCEMENT, accountId)) {
-        ApiKeyEntry apiKeyEntry = apiKeyService.getByKey(requestContext.getHeaderString("X-Api-Key"), accountId, true);
+        ApiKeyEntry apiKeyEntry = apiKeyService.getByKey(requestContext.getHeaderString("X-Api-Key"), accountId);
         auditServiceHelper.reportForAuditingUsingAccountId(accountId, null, apiKeyEntry, Event.Type.INVOKED);
       }
     }
@@ -866,7 +866,7 @@ public class AuthRuleFilter implements ContainerRequestFilter {
 
     String apiKey = requestContext.getHeaderString(API_KEY_HEADER);
     User user = new User();
-    ApiKeyEntry apiKeyEntry = apiKeyService.getByKey(apiKey, accountId, true);
+    ApiKeyEntry apiKeyEntry = apiKeyService.getByKey(apiKey, accountId);
     if (apiKeyEntry == null) {
       throw new InvalidRequestException("Invalid Api Key provided", USER);
     }

@@ -13,7 +13,6 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
-import static java.util.Collections.EMPTY_LIST;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 
@@ -26,6 +25,7 @@ import io.harness.cdng.manifest.steps.NgManifestsMetadataSweepingOutput;
 import io.harness.cdng.manifest.yaml.ManifestConfig;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.environment.beans.NGEnvironmentGlobalOverride;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
@@ -37,6 +37,7 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,7 +68,8 @@ public class ServiceStepOverrideHelper {
     }
 
     final Map<String, List<ManifestConfigWrapper>> finalLocationManifestsMap =
-        getManifestsFromAllLocations(ngServiceV2InfoConfig, serviceOverrideConfig, ngEnvironmentConfig);
+        getManifestsFromAllLocations(ngServiceV2InfoConfig, serviceOverrideConfig,
+            ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride());
 
     final NgManifestsMetadataSweepingOutput manifestSweepingOutput =
         NgManifestsMetadataSweepingOutput.builder()
@@ -85,11 +87,11 @@ public class ServiceStepOverrideHelper {
 
   @NotNull
   public static List<ManifestConfigWrapper> prepareFinalManifests(NGServiceV2InfoConfig ngServiceV2InfoConfig,
-      NGServiceOverrideConfig serviceOverrideConfig, NGEnvironmentConfig ngEnvironmentConfig) {
+      NGServiceOverrideConfig serviceOverrideConfig, NGEnvironmentGlobalOverride environmentGlobalOverride,
+      String envId) {
     final Map<String, List<ManifestConfigWrapper>> finalLocationManifestsMap =
-        getManifestsFromAllLocations(ngServiceV2InfoConfig, serviceOverrideConfig, ngEnvironmentConfig);
-    validateOverridesTypeAndUniqueness(finalLocationManifestsMap, ngServiceV2InfoConfig.getIdentifier(),
-        ngEnvironmentConfig.getNgEnvironmentInfoConfig().getIdentifier());
+        getManifestsFromAllLocations(ngServiceV2InfoConfig, serviceOverrideConfig, environmentGlobalOverride);
+    validateOverridesTypeAndUniqueness(finalLocationManifestsMap, ngServiceV2InfoConfig.getIdentifier(), envId);
 
     List<ManifestConfigWrapper> finalManifests = new ArrayList<>();
     finalManifests.addAll(finalLocationManifestsMap.get(SERVICE));
@@ -118,9 +120,9 @@ public class ServiceStepOverrideHelper {
   @NotNull
   public static Map<String, List<ManifestConfigWrapper>> getManifestsFromAllLocations(
       NGServiceV2InfoConfig serviceV2Config, NGServiceOverrideConfig serviceOverrideConfig,
-      NGEnvironmentConfig ngEnvironmentConfig) {
+      NGEnvironmentGlobalOverride environmentGlobalOverride) {
     final List<ManifestConfigWrapper> svcManifests = getSvcManifests(serviceV2Config);
-    final List<ManifestConfigWrapper> envGlobalManifests = getEnvGlobalManifests(ngEnvironmentConfig);
+    final List<ManifestConfigWrapper> envGlobalManifests = getEnvGlobalManifests(environmentGlobalOverride);
     List<ManifestConfigWrapper> svcOverrideManifests = getSvcOverrideManifests(serviceOverrideConfig);
 
     final Map<String, List<ManifestConfigWrapper>> finalManifests = new HashMap<>();
@@ -147,17 +149,11 @@ public class ServiceStepOverrideHelper {
   }
 
   @NonNull
-  private static List<ManifestConfigWrapper> getEnvGlobalManifests(NGEnvironmentConfig ngEnvironmentConfig) {
-    if (isNoManifestAvailable(ngEnvironmentConfig)) {
-      return EMPTY_LIST;
-    }
-    return ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride().getManifests();
-  }
-
-  private static boolean isNoManifestAvailable(NGEnvironmentConfig ngEnvironmentConfig) {
-    return ngEnvironmentConfig == null || ngEnvironmentConfig.getNgEnvironmentInfoConfig() == null
-        || ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride() == null
-        || ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride().getManifests() == null;
+  private static List<ManifestConfigWrapper> getEnvGlobalManifests(
+      NGEnvironmentGlobalOverride environmentGlobalOverride) {
+    return environmentGlobalOverride == null || environmentGlobalOverride.getManifests() == null
+        ? Collections.emptyList()
+        : environmentGlobalOverride.getManifests();
   }
 
   private static void validateAllowedManifestTypesInOverrides(
@@ -209,8 +205,8 @@ public class ServiceStepOverrideHelper {
     if (ngServiceV2InfoConfig == null) {
       throw new InvalidRequestException("No service configuration found in the service");
     }
-    final List<ConfigFileWrapper> finalConfigFiles =
-        prepareFinalConfigFiles(ngServiceV2InfoConfig, serviceOverrideConfig, ngEnvironmentConfig);
+    final List<ConfigFileWrapper> finalConfigFiles = prepareFinalConfigFiles(ngServiceV2InfoConfig,
+        serviceOverrideConfig, ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride());
 
     final NgConfigFilesMetadataSweepingOutput configFileSweepingOutput =
         NgConfigFilesMetadataSweepingOutput.builder()
@@ -227,17 +223,18 @@ public class ServiceStepOverrideHelper {
 
   @VisibleForTesting
   public static List<ConfigFileWrapper> prepareFinalConfigFiles(NGServiceV2InfoConfig serviceV2Config,
-      NGServiceOverrideConfig serviceOverrideConfig, NGEnvironmentConfig ngEnvironmentConfig) {
+      NGServiceOverrideConfig serviceOverrideConfig, NGEnvironmentGlobalOverride environmentGlobalOverride) {
     final Map<String, ConfigFileWrapper> svcConfigFiles = getSvcConfigFiles(serviceV2Config);
-    final Map<String, ConfigFileWrapper> envGlobalConfigFiles = getEnvironmentGlobalConfigFiles(ngEnvironmentConfig);
+    final Map<String, ConfigFileWrapper> envGlobalConfigFiles =
+        getEnvironmentGlobalConfigFiles(environmentGlobalOverride);
     final Map<String, ConfigFileWrapper> svcOverrideConfigFiles = getSvcOverrideConfigFiles(serviceOverrideConfig);
 
-    Map<String, ConfigFileWrapper> finalManifestsMap = new HashMap<>();
-    finalManifestsMap.putAll(svcConfigFiles);
-    finalManifestsMap.putAll(envGlobalConfigFiles);
-    finalManifestsMap.putAll(svcOverrideConfigFiles);
+    Map<String, ConfigFileWrapper> finalConfigFilesMap = new HashMap<>();
+    finalConfigFilesMap.putAll(svcConfigFiles);
+    finalConfigFilesMap.putAll(envGlobalConfigFiles);
+    finalConfigFilesMap.putAll(svcOverrideConfigFiles);
 
-    return new ArrayList<>(finalManifestsMap.values());
+    return new ArrayList<>(finalConfigFilesMap.values());
   }
 
   private static Map<String, ConfigFileWrapper> getSvcConfigFiles(NGServiceV2InfoConfig serviceV2Config) {
@@ -259,21 +256,15 @@ public class ServiceStepOverrideHelper {
   }
 
   private static Map<String, ConfigFileWrapper> getEnvironmentGlobalConfigFiles(
-      NGEnvironmentConfig ngEnvironmentConfig) {
-    if (isNoEnvGlobalConfigFileOverridePresent(ngEnvironmentConfig)) {
+      NGEnvironmentGlobalOverride environmentGlobalOverride) {
+    if (isNoEnvGlobalConfigFileOverridePresent(environmentGlobalOverride)) {
       return emptyMap();
     }
-    return ngEnvironmentConfig.getNgEnvironmentInfoConfig()
-        .getNgEnvironmentGlobalOverride()
-        .getConfigFiles()
-        .stream()
-        .collect(Collectors.toMap(
-            configFileWrapper -> configFileWrapper.getConfigFile().getIdentifier(), Function.identity()));
+    return environmentGlobalOverride.getConfigFiles().stream().collect(
+        Collectors.toMap(configFileWrapper -> configFileWrapper.getConfigFile().getIdentifier(), Function.identity()));
   }
 
-  private static boolean isNoEnvGlobalConfigFileOverridePresent(NGEnvironmentConfig ngEnvironmentConfig) {
-    return ngEnvironmentConfig == null || ngEnvironmentConfig.getNgEnvironmentInfoConfig() == null
-        || ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride() == null
-        || ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride().getConfigFiles() == null;
+  private static boolean isNoEnvGlobalConfigFileOverridePresent(NGEnvironmentGlobalOverride environmentGlobalOverride) {
+    return environmentGlobalOverride == null || environmentGlobalOverride.getConfigFiles() == null;
   }
 }

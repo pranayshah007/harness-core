@@ -16,7 +16,7 @@ import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.secrets.SecretPermissions.SECRET_RESOURCE_TYPE;
 import static io.harness.secrets.SecretPermissions.SECRET_VIEW_PERMISSION;
-import static io.harness.springdata.TransactionUtils.DEFAULT_TRANSACTION_RETRY_POLICY;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import static java.util.stream.Collectors.groupingBy;
 import static org.apache.commons.lang3.StringUtils.isBlank;
@@ -107,7 +107,7 @@ public class NGSecretServiceV2Impl implements NGSecretServiceV2 {
   private final NGSecretActivityService ngSecretActivityService;
   private final OutboxService outboxService;
   private final TransactionTemplate transactionTemplate;
-  private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_TRANSACTION_RETRY_POLICY;
+  private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_RETRY_POLICY;
   private final TaskSetupAbstractionHelper taskSetupAbstractionHelper;
   private final AccessControlClient accessControlClient;
 

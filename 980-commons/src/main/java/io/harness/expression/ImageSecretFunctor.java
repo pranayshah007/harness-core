@@ -14,6 +14,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.encoding.EncodingUtils;
 import io.harness.exception.InvalidRequestException;
 
+import java.util.concurrent.Future;
+
 @OwnedBy(HarnessTeam.CDC)
 public class ImageSecretFunctor implements ExpressionFunctor {
   public static final String FUNCTOR_NAME = "imageSecret";
@@ -26,5 +28,16 @@ public class ImageSecretFunctor implements ExpressionFunctor {
     }
     return EncodingUtils.encodeBase64(format(
         REGISTRY_CREDENTIAL_TEMPLATE, registryUrl, userName, password.replaceAll("\n", "").replaceAll("\"", "\\\\\"")));
+  }
+
+  // This variation will be used in case of nested secrets, which has not been evaluated yet.
+  public String create(String registryUrl, String userName, Future password) {
+    String evaluatedPassword;
+    try {
+      evaluatedPassword = String.valueOf(password.get());
+    } catch (Exception e) {
+      throw new InvalidRequestException("Unable to interpret Future ", e);
+    }
+    return create(registryUrl, userName, evaluatedPassword);
   }
 }

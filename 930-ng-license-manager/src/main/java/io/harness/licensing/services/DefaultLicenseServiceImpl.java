@@ -11,7 +11,7 @@ import static io.harness.configuration.DeployMode.DEPLOY_MODE;
 import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
 import static io.harness.licensing.LicenseModule.LICENSE_CACHE_NAMESPACE;
 import static io.harness.licensing.interfaces.ModuleLicenseImpl.TRIAL_DURATION;
-import static io.harness.remote.client.RestClientUtils.getResponse;
+import static io.harness.remote.client.CGRestUtils.getResponse;
 
 import static java.lang.String.format;
 

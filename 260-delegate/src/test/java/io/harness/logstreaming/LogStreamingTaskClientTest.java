@@ -9,9 +9,11 @@ package io.harness.logstreaming;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.MARKO;
+import static io.harness.threading.Morpheus.sleep;
 
 import static software.wings.beans.LogHelper.COMMAND_UNIT_PLACEHOLDER;
 
+import static java.time.Duration.ofMillis;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.eq;
@@ -78,6 +80,8 @@ public class LogStreamingTaskClientTest extends CategoryTest {
   public void shouldInvokeCloseLogStreamWithoutKeySuffix() {
     completeLogStreamingTaskClient.openStream(null);
     completeLogStreamingTaskClient.closeStream(null);
+    // Sleep for sometime and ensure close stream completed successfully
+    sleep(ofMillis(5000));
     verify(logStreamingClientMock).closeLogStream(TOKEN, ACCOUNT_ID, BASE_LOG_KEY, true);
   }
 
@@ -87,6 +91,8 @@ public class LogStreamingTaskClientTest extends CategoryTest {
   public void shouldInvokeCloseLogStreamWithKeySuffix() {
     completeLogStreamingTaskClient.openStream("keySuffix");
     completeLogStreamingTaskClient.closeStream("keySuffix");
+    // Sleep for sometime and ensure close stream completed successfully
+    sleep(ofMillis(5000));
     verify(logStreamingClientMock)
         .closeLogStream(TOKEN, ACCOUNT_ID, BASE_LOG_KEY + String.format(COMMAND_UNIT_PLACEHOLDER, "keySuffix"), true);
   }

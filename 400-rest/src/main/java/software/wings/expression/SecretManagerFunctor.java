@@ -28,6 +28,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EncryptedData;
 import io.harness.beans.FeatureName;
 import io.harness.data.encoding.EncodingUtils;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.SecretDetail;
 import io.harness.exception.FunctorException;
 import io.harness.exception.InvalidRequestException;
@@ -47,6 +48,7 @@ import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 import javax.cache.Cache;
 import lombok.Builder;
@@ -70,6 +72,8 @@ public class SecretManagerFunctor implements ExpressionFunctor, SecretManagerFun
   private String envId;
   private String workflowExecutionId;
   private int expressionFunctorToken;
+  private final ExecutorService expressionEvaluatorExecutor;
+  private final boolean evaluateSync;
 
   @Default private Map<String, String> evaluatedSecrets = new HashMap<>();
   @Default private Map<String, String> evaluatedDelegateSecrets = new HashMap<>();
@@ -84,6 +88,13 @@ public class SecretManagerFunctor implements ExpressionFunctor, SecretManagerFun
       throw new FunctorException("Inappropriate usage of internal functor");
     }
     try {
+      if (!evaluateSync) {
+        if (expressionEvaluatorExecutor != null) {
+          // Offload expression evaluation of secrets to another threadpool.
+          return expressionEvaluatorExecutor.submit(() -> obtainInternal(secretName));
+        }
+      }
+      log.warn("Expression evaluation is being processed synchronously");
       return obtainInternal(secretName);
     } catch (Exception ex) {
       throw new FunctorException("Error occurred while evaluating the secret [" + secretName + "]", ex);
@@ -184,7 +195,7 @@ public class SecretManagerFunctor implements ExpressionFunctor, SecretManagerFun
       // Cache miss.
       encryptedDataDetails = secretManager.getEncryptionDetails(serviceVariable, appId, workflowExecutionId);
 
-      if (io.harness.data.structure.EmptyPredicate.isEmpty(encryptedDataDetails)) {
+      if (EmptyPredicate.isEmpty(encryptedDataDetails)) {
         throw new InvalidRequestException("No secret found with identifier + [" + secretName + "]", USER);
       }
 

@@ -11,24 +11,18 @@ import io.harness.accesscontrol.support.persistence.SupportPreferenceDao;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.user.UserMetadata;
-import io.harness.remote.client.RestClientUtils;
-import io.harness.utils.RetryUtils;
+import io.harness.remote.client.CGRestUtils;
 
-import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
-import java.time.Duration;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
-import net.jodah.failsafe.Failsafe;
-import net.jodah.failsafe.RetryPolicy;
 
 @OwnedBy(HarnessTeam.PL)
 @Singleton
@@ -37,10 +31,6 @@ import net.jodah.failsafe.RetryPolicy;
 public class SupportServiceImpl implements SupportService {
   private final SupportPreferenceDao supportPreferenceDao;
   private final AccountClient accountClient;
-  private static final RetryPolicy<Object> retryPolicy =
-      RetryUtils.getRetryPolicy("Could not find the support configuration with the given accountIdentifier",
-          "Could not find the support configuration with the given accountIdentifier",
-          Lists.newArrayList(InvalidRequestException.class), Duration.ofSeconds(5), 3, log);
 
   @Inject
   public SupportServiceImpl(
@@ -63,10 +53,8 @@ public class SupportServiceImpl implements SupportService {
   @Override
   public SupportPreference syncSupportPreferenceFromRemote(String accountIdentifier) {
     Boolean isHarnessSupportEnabled =
-        Failsafe.with(retryPolicy)
-            .get(()
-                     -> RestClientUtils.getResponse(
-                         accountClient.checkIfHarnessSupportEnabledForAccount(accountIdentifier)));
+        CGRestUtils.getResponse(accountClient.checkIfHarnessSupportEnabledForAccount(accountIdentifier),
+            "Could not find the support configuration with the given accountIdentifier");
     SupportPreference supportPreference = SupportPreference.builder()
                                               .accountIdentifier(accountIdentifier)
                                               .isSupportEnabled(Boolean.TRUE.equals(isHarnessSupportEnabled))
@@ -81,8 +69,8 @@ public class SupportServiceImpl implements SupportService {
 
   @Override
   public Set<String> fetchSupportUsers() {
-    Collection<UserMetadata> supportUsers =
-        Failsafe.with(retryPolicy).get(() -> RestClientUtils.getResponse(accountClient.listAllHarnessSupportUsers()));
+    Collection<UserMetadata> supportUsers = CGRestUtils.getResponse(accountClient.listAllHarnessSupportUsers(),
+        "Could not find the support configuration with the given accountIdentifier");
     return supportUsers.stream().map(UserMetadata::getId).collect(Collectors.toSet());
   }
 }

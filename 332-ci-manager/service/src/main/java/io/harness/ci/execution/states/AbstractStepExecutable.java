@@ -43,6 +43,7 @@ import io.harness.beans.sweepingoutputs.DliteVmStageInfraDetails;
 import io.harness.beans.sweepingoutputs.K8StageInfraDetails;
 import io.harness.beans.sweepingoutputs.StageDetails;
 import io.harness.beans.sweepingoutputs.StageInfraDetails;
+import io.harness.beans.sweepingoutputs.StepArtifactSweepingOutput;
 import io.harness.beans.sweepingoutputs.VmStageInfraDetails;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.ci.buildstate.ConnectorUtils;
@@ -493,13 +494,22 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
 
       StepArtifacts stepArtifacts = handleArtifact(stepStatus.getArtifactMetadata(), stepParameters);
       if (stepArtifacts != null) {
-        StepResponse.StepOutcome stepArtifactOutcome =
+        // since jexl doesn't understand - therefore we are adding a new outcome with artifact_ appended
+        // Also to have backward compatibility we'll save the old outcome as an output variable.
+        String artifactOutputVariableKey = "artifact-" + stepIdentifier;
+        OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputResolver.resolveOptional(
+            ambiance, RefObjectUtils.getSweepingOutputRefObject(artifactOutputVariableKey));
+        if (!optionalSweepingOutput.isFound()) {
+          executionSweepingOutputResolver.consume(ambiance, artifactOutputVariableKey,
+              StepArtifactSweepingOutput.builder().stepArtifacts(stepArtifacts).build(), StepOutcomeGroup.STAGE.name());
+        }
+        StepResponse.StepOutcome stepArtifactOutcomeOld =
             StepResponse.StepOutcome.builder()
                 .outcome(CIStepArtifactOutcome.builder().stepArtifacts(stepArtifacts).build())
                 .group(StepOutcomeGroup.STAGE.name())
-                .name("artifact-" + stepIdentifier)
+                .name("artifact_" + stepIdentifier)
                 .build();
-        stepResponseBuilder.stepOutcome(stepArtifactOutcome);
+        stepResponseBuilder.stepOutcome(stepArtifactOutcomeOld);
       }
 
       return stepResponseBuilder.status(Status.SUCCEEDED).build();

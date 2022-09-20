@@ -182,7 +182,7 @@ public class EnforcementValidatorTest extends CategoryTest {
         .listAllReferredUsages(anyInt(), anyInt(), eq(ACCOUNT_ID),
             eq(FullyQualifiedIdentifierHelper.getFullyQualifiedIdentifier(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID)),
             eq(EntityType.SERVICE), eq(null));
-    when(NGRestUtils.getResponseWithRetry(any(), any())).thenReturn(allReferredUsages);
+    when(NGRestUtils.getResponse(any(), any())).thenReturn(allReferredUsages);
     Mockito.mockStatic(PipelineSetupUsageUtils.class);
     when(PipelineSetupUsageUtils.extractInputReferredEntityFromYaml(
              eq(ACCOUNT_ID), eq(ORG_ID), eq(PROJECT_ID), eq(YAML), eq(allReferredUsages)))

@@ -479,6 +479,7 @@ io.harness.cdng.manifest.steps.NgManifestsMetadataSweepingOutput
 io.harness.cdng.configfile.steps.NgConfigFilesMetadataSweepingOutput
 io.harness.cdng.provision.azure.beans.AzureARMValidator
 io.harness.cdng.artifact.bean.yaml.ArtifactSourceConfig
+io.harness.yaml.core.failurestrategy.rollback.PipelineRollbackFailureActionConfig
 io.harness.cdng.ecs.EcsBlueGreenSwapTargetGroupsStepInfo
 io.harness.cdng.ecs.EcsBlueGreenRollbackStepInfo
 io.harness.cdng.ecs.EcsBlueGreenPrepareRollbackDataOutcome
@@ -493,3 +494,4 @@ io.harness.cdng.ecs.EcsBlueGreenRollbackStepParameters
 io.harness.cdng.ecs.EcsBlueGreenRollbackOutcome
 io.harness.cdng.ecs.EcsBlueGreenSwapTargetGroupsOutcome
 io.harness.cdng.ecs.EcsBlueGreenRollbackStepNode
+

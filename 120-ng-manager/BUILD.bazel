@@ -34,6 +34,7 @@ shared_dependencies = [
     "//clients/resource-group:module",
     "//123-ng-core-user:module",
     "//125-cd-nextgen:module",
+    "//125-freeze:module",
     "//126-instance:module",
     "//136-git-sync-manager:module",
     "//295-cdng-contracts:module",

@@ -12,7 +12,7 @@ import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.ng.core.account.ServiceAccountConfig.DEFAULT_TOKEN_LIMIT;
 import static io.harness.ng.core.utils.NGUtils.validate;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
-import static io.harness.springdata.TransactionUtils.DEFAULT_TRANSACTION_RETRY_POLICY;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder.BCryptVersion.$2A;
@@ -98,7 +98,7 @@ public class TokenServiceImpl implements TokenService {
       Token token = TokenDTOMapper.getTokenFromDTO(tokenDTO, apiKey.getDefaultTimeToExpireToken());
       token.setEncodedPassword(tokenString);
       validate(token);
-      Token newToken = Failsafe.with(DEFAULT_TRANSACTION_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
+      Token newToken = Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
         Token savedToken = tokenRepository.save(token);
         outboxService.save(new TokenCreateEvent(TokenDTOMapper.getDTOFromToken(savedToken)));
         return savedToken;
@@ -167,7 +167,7 @@ public class TokenServiceImpl implements TokenService {
                 accountIdentifier, orgIdentifier, projectIdentifier, apiKeyType, parentIdentifier, apiKeyIdentifier,
                 identifier);
     Preconditions.checkState(optionalToken.isPresent(), "No token present with identifier: " + identifier);
-    return Failsafe.with(DEFAULT_TRANSACTION_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
+    return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
       tokenRepository.deleteById(optionalToken.get().getUuid());
       outboxService.save(new TokenDeleteEvent(TokenDTOMapper.getDTOFromToken(optionalToken.get())));
       return true;
@@ -220,7 +220,7 @@ public class TokenServiceImpl implements TokenService {
     tokenThatNeedsToBeRotated.setScheduledExpireTime(scheduledExpireTime);
     tokenThatNeedsToBeRotated.setValidUntil(new Date(tokenThatNeedsToBeRotated.getExpiryTimestamp().toEpochMilli()));
 
-    Token newToken = Failsafe.with(DEFAULT_TRANSACTION_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
+    Token newToken = Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
       Token savedRotatedToken = tokenRepository.save(tokenThatNeedsToBeRotated);
       TokenDTO newTokenDTO = TokenDTOMapper.getDTOFromToken(savedRotatedToken);
       outboxService.save(new TokenUpdateEvent(oldTokenDTO, newTokenDTO));
@@ -255,7 +255,7 @@ public class TokenServiceImpl implements TokenService {
     token.setTags(TagMapper.convertToList(tokenDTO.getTags()));
     validate(token);
 
-    return Failsafe.with(DEFAULT_TRANSACTION_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
+    return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
       Token savedToken = tokenRepository.save(token);
       TokenDTO newToken = TokenDTOMapper.getDTOFromToken(savedToken);
       outboxService.save(new TokenUpdateEvent(oldToken, newToken));

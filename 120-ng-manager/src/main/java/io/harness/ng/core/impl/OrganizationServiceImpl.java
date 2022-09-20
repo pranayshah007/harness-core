@@ -20,7 +20,7 @@ import static io.harness.ng.core.user.UserMembershipUpdateSource.SYSTEM;
 import static io.harness.ng.core.utils.NGUtils.validate;
 import static io.harness.ng.core.utils.NGUtils.verifyValuesNotChanged;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
-import static io.harness.springdata.TransactionUtils.DEFAULT_TRANSACTION_RETRY_POLICY;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import static java.lang.Boolean.FALSE;
 import static java.util.Collections.emptyList;
@@ -239,7 +239,7 @@ public class OrganizationServiceImpl implements OrganizationService {
     if (DEFAULT_ORG_IDENTIFIER.equalsIgnoreCase(organization.getIdentifier())) {
       log.info("[AccountSetup]: Creating Default Organization");
     }
-    return Failsafe.with(DEFAULT_TRANSACTION_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
+    return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
       Organization savedOrganization = organizationRepository.save(organization);
       outboxService.save(
           new OrganizationCreateEvent(organization.getAccountIdentifier(), OrganizationMapper.writeDto(organization)));
@@ -275,7 +275,7 @@ public class OrganizationServiceImpl implements OrganizationService {
         organization.setVersion(existingOrganization.getVersion());
       }
       validate(organization);
-      return Failsafe.with(DEFAULT_TRANSACTION_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
+      return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
         Organization updatedOrganization = organizationRepository.save(organization);
         log.info(String.format("Organization with identifier %s was successfully updated", identifier));
         outboxService.save(new OrganizationUpdateEvent(organization.getAccountIdentifier(),
@@ -354,7 +354,7 @@ public class OrganizationServiceImpl implements OrganizationService {
 
   @Override
   public boolean delete(String accountIdentifier, String organizationIdentifier, Long version) {
-    return Failsafe.with(DEFAULT_TRANSACTION_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
+    return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
       Organization organization = organizationRepository.delete(accountIdentifier, organizationIdentifier, version);
       boolean delete = organization != null;
       if (delete && ngFeatureFlagHelperService.isEnabled(accountIdentifier, HARD_DELETE_ENTITIES)) {
@@ -373,7 +373,7 @@ public class OrganizationServiceImpl implements OrganizationService {
 
   @Override
   public boolean restore(String accountIdentifier, String identifier) {
-    return Failsafe.with(DEFAULT_TRANSACTION_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
+    return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
       Organization organization = organizationRepository.restore(accountIdentifier, identifier);
       boolean success = organization != null;
       if (success) {

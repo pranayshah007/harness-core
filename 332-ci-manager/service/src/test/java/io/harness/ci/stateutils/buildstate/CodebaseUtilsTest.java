@@ -8,6 +8,7 @@
 package io.harness.ci.stateutils.buildstate;
 
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_REF;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_SHA;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_NETRC_MACHINE;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_REMOTE_URL;
 import static io.harness.rule.OwnerRule.JAMES_RICKS;
@@ -307,6 +308,49 @@ public class CodebaseUtilsTest extends CIExecutionTestBase {
     assertThat(runtimeCodebaseVars).isNotEmpty();
     assertThat(runtimeCodebaseVars).containsKey(DRONE_COMMIT_REF);
     assertThat(runtimeCodebaseVars.get(DRONE_COMMIT_REF)).isEqualTo("+refs/heads/source");
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testGetRuntimeCodebaseVarsForBitbucketMergedPR() {
+    ConnectorDetails connectorDetails = ciExecutionPlanTestHelper.getBitBucketConnector();
+    when(executionSweepingOutputService.resolveOptional(any(), any()))
+        .thenReturn(OptionalSweepingOutput.builder()
+                        .found(true)
+                        .output(CodebaseSweepingOutput.builder()
+                                    .targetBranch("target")
+                                    .sourceBranch("source")
+                                    .state("merged")
+                                    .commitSha("commitSha")
+                                    .mergeSha("mergeSha")
+                                    .build())
+                        .build());
+    final Map<String, String> runtimeCodebaseVars = codebaseUtils.getRuntimeCodebaseVars(ambiance, connectorDetails);
+    assertThat(runtimeCodebaseVars).isNotEmpty();
+    assertThat(runtimeCodebaseVars.get(DRONE_COMMIT_REF)).isEqualTo("+refs/heads/target");
+    assertThat(runtimeCodebaseVars.get(DRONE_COMMIT_SHA)).isEqualTo("mergeSha");
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testGetRuntimeCodebaseVarsForBitbucketUnMergedPR() {
+    ConnectorDetails connectorDetails = ciExecutionPlanTestHelper.getBitBucketConnector();
+    when(executionSweepingOutputService.resolveOptional(any(), any()))
+        .thenReturn(OptionalSweepingOutput.builder()
+                        .found(true)
+                        .output(CodebaseSweepingOutput.builder()
+                                    .targetBranch("target")
+                                    .sourceBranch("source")
+                                    .state("open")
+                                    .commitSha("commitSha")
+                                    .build())
+                        .build());
+    final Map<String, String> runtimeCodebaseVars = codebaseUtils.getRuntimeCodebaseVars(ambiance, connectorDetails);
+    assertThat(runtimeCodebaseVars).isNotEmpty();
+    assertThat(runtimeCodebaseVars.get(DRONE_COMMIT_REF)).isEqualTo("+refs/heads/source");
+    assertThat(runtimeCodebaseVars.get(DRONE_COMMIT_SHA)).isEqualTo("commitSha");
   }
 
   @Test

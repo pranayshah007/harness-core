@@ -8,7 +8,7 @@
 package io.harness.ng.core.api.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.remote.client.RestClientUtils.getResponse;
+import static io.harness.remote.client.CGRestUtils.getResponse;
 
 import io.harness.ModuleType;
 import io.harness.annotations.dev.OwnedBy;

@@ -1,0 +1,48 @@
+{
+  "data" : {
+    "pairs" : [ {
+      "request" : {
+        "path" : [ {
+          "matcher" : "exact",
+          "value" : "/*/_search"
+        } ],
+        "method" : [ {
+          "matcher" : "exact",
+          "value" : "POST"
+        } ],
+        "destination" : [ {
+          "matcher" : "exact",
+          "value" : "elk6.dev.harness.io:9200"
+        } ],
+        "scheme" : [ {
+          "matcher" : "exact",
+          "value" : "http"
+        } ],
+        "body" : [ {
+          "matcher" : "exact",
+          "value" : "{\"query\":{\"query_string\":{\"query\":\"message: error\"}}}"
+        } ]
+      },
+      "response" : {
+        "status" : 200,
+        "body" : "H4sIAAAAAAAAAOyYbU/bMBCA/0rkT5vUWM5bk/jT2IQqGOMlm0RhTJWJ3eCR2CF2oKjqf59TKAtF06RWQkj4m9/u7Ds/ujt7DrSU1wB7YTgAmleMTmSrAZ6SUrEBmKgr0lAF8Nys06QEOI0HQLV5zpSatqv+Na9rRgFGAzAlvFw2FwNwxXVf1EORZ6QrMpuoXDYM4BBG4TCOYjP6sPbnHEy4oGwGMOBCs6IhmkvhaqY0MMfR97URAxMq867LzUbgUNQnKNz7TKuWzs6Lg2Ca3HeTL/eYKNk2uVEwB1dSaUGqTpmxUBhrXEWqumQuqWtXSypLrrR7Q1wvcmOa5GmSJJepq1JRNkZ7yW6ZsR6c7mSHplsZBaTotP0mtwSWRBQwa0Xn0N1ZzurOCOws57iEe0e9wd2mkY3TMEK5KBwiqHPXcN21tXSmxpkX4kIT7TyXGzHBjG9kA4uHFusp/dBr/13Y7Y694ceVPqE4ZTBjN61x7tOBIJUjpj+8GF5K+376P/GKcPEPaXP/RvoLaRWjzuX9Nv6AEDqBUxmILoRx/6fO0UqbCzQ34CPfd1Hi+uEP38NhiP0EeqkZisFiMdgAMD6usz5g+tidvRpgu1l2lFnCeoC+OcIi7AcwiIabE3Y+1qd9wmgx4q9GmA1haxHwrQEWIRxE0Au3ACwb67NnIWxnr4ubNkcuM/N7z5FRgJEH0+EWOTIT64B9pRawVelnAcPIh2gYb54iz9YimHu3n1rALGAPVb6JYD6Cflf4b1rlI6FJP0WOdg5uLGAWsEfAQhwE0E/R5oDtrwEWF988C5gF7BEw84qMYZKGmwN2PNb0WZF/dxJYwCxgj4AlOEAwRFu8Io/FOmDf7U/r08/puy/yl4BFqxrs12LxBwAA//8DAAO2hXFdGAAA",
+        "encodedBody" : true,
+        "templated" : false,
+        "headers" : {
+          "Content-Encoding" : [ "gzip" ],
+          "Content-Length" : [ "681" ],
+          "Content-Type" : [ "application/json; charset=UTF-8" ],
+          "Hoverfly" : [ "Was-Here" ]
+        }
+      }
+    } ],
+    "globalActions" : {
+      "delays" : [ ]
+    }
+  },
+  "meta" : {
+    "schemaVersion" : "v5",
+    "hoverflyVersion" : "v1.1.5",
+    "timeExported" : "2022-09-19T11:31:32Z"
+  }
+}

@@ -31,6 +31,7 @@ import io.harness.cdng.utilities.ConfigFileUtility;
 import io.harness.cdng.utilities.ManifestsUtility;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.UUIDGenerator;
+import io.harness.ng.core.environment.beans.NGEnvironmentGlobalOverride;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
@@ -234,11 +235,11 @@ public class ServiceDefinitionPlanCreatorHelper {
   @VisibleForTesting
   String addDependenciesForManifestV2(YamlNode serviceV2Node, Map<String, PlanCreationResponse> planCreationResponseMap,
       NGServiceV2InfoConfig serviceV2Config, NGServiceOverrideConfig serviceOverrideConfig,
-      NGEnvironmentConfig ngEnvironmentConfig, KryoSerializer kryoSerializer) throws IOException {
+      NGEnvironmentGlobalOverride envGlobalOverride, KryoSerializer kryoSerializer, String envId) throws IOException {
     if (isSvcOverridesManifestPresent(serviceOverrideConfig)
-        || isEnvGlobalManifestOverridesPresent(ngEnvironmentConfig)) {
+        || isEnvGlobalManifestOverridesPresent(envGlobalOverride)) {
       return ServiceDefinitionPlanCreatorHelper.addDependenciesForSvcAndSvcOverrideManifestsV2(serviceV2Node,
-          planCreationResponseMap, serviceV2Config, serviceOverrideConfig, ngEnvironmentConfig, kryoSerializer);
+          planCreationResponseMap, serviceV2Config, serviceOverrideConfig, envGlobalOverride, kryoSerializer, envId);
     } else if (ServiceDefinitionPlanCreatorHelper.shouldCreatePlanNodeForManifestsV2(serviceV2Config)) {
       return ServiceDefinitionPlanCreatorHelper.addDependenciesForServiceManifestsV2(
           serviceV2Node, planCreationResponseMap, serviceV2Config, kryoSerializer);
@@ -249,12 +250,12 @@ public class ServiceDefinitionPlanCreatorHelper {
 
   String addDependenciesForSvcAndSvcOverrideManifestsV2(YamlNode serviceV2Node,
       Map<String, PlanCreationResponse> planCreationResponseMap, NGServiceV2InfoConfig serviceV2Config,
-      NGServiceOverrideConfig serviceOverrideConfig, NGEnvironmentConfig ngEnvironmentConfig,
-      KryoSerializer kryoSerializer) throws IOException {
+      NGServiceOverrideConfig serviceOverrideConfig, NGEnvironmentGlobalOverride ngEnvironmentConfig,
+      KryoSerializer kryoSerializer, String envId) throws IOException {
     YamlUpdates.Builder yamlUpdates = YamlUpdates.newBuilder();
 
-    List<ManifestConfigWrapper> finalManifests =
-        ServiceStepOverrideHelper.prepareFinalManifests(serviceV2Config, serviceOverrideConfig, ngEnvironmentConfig);
+    List<ManifestConfigWrapper> finalManifests = ServiceStepOverrideHelper.prepareFinalManifests(
+        serviceV2Config, serviceOverrideConfig, ngEnvironmentConfig, envId);
 
     // in case no manifest is present no node should be created
     if (isEmpty(finalManifests)) {
@@ -325,12 +326,12 @@ public class ServiceDefinitionPlanCreatorHelper {
   @VisibleForTesting
   String addDependenciesForConfigFilesV2(YamlNode serviceV2Node,
       Map<String, PlanCreationResponse> planCreationResponseMap, NGServiceV2InfoConfig serviceV2Config,
-      NGServiceOverrideConfig serviceOverrideConfig, NGEnvironmentConfig ngEnvironmentConfig,
+      NGServiceOverrideConfig serviceOverrideConfig, NGEnvironmentGlobalOverride envGlobalOverride,
       KryoSerializer kryoSerializer) throws IOException {
     if (isSvcOverridesConfigFilesPresent(serviceOverrideConfig)
-        || isEnvGlobalConfigFileOverridesPresent(ngEnvironmentConfig)) {
+        || isEnvGlobalConfigFileOverridesPresent(envGlobalOverride)) {
       return ServiceDefinitionPlanCreatorHelper.addDependenciesForSvcAndSvcOverrideConfigFilesV2(serviceV2Node,
-          planCreationResponseMap, serviceV2Config, serviceOverrideConfig, ngEnvironmentConfig, kryoSerializer);
+          planCreationResponseMap, serviceV2Config, serviceOverrideConfig, envGlobalOverride, kryoSerializer);
     } else if (ServiceDefinitionPlanCreatorHelper.shouldCreatePlanNodeForConfigFilesV2(serviceV2Config)) {
       return ServiceDefinitionPlanCreatorHelper.addDependenciesForSvcConfigFilesV2(
           serviceV2Node, planCreationResponseMap, serviceV2Config, kryoSerializer);
@@ -341,7 +342,7 @@ public class ServiceDefinitionPlanCreatorHelper {
 
   String addDependenciesForSvcAndSvcOverrideConfigFilesV2(YamlNode serviceV2Node,
       Map<String, PlanCreationResponse> planCreationResponseMap, NGServiceV2InfoConfig serviceV2Config,
-      NGServiceOverrideConfig serviceOverrideConfig, NGEnvironmentConfig ngEnvironmentConfig,
+      NGServiceOverrideConfig serviceOverrideConfig, NGEnvironmentGlobalOverride ngEnvironmentConfig,
       KryoSerializer kryoSerializer) throws IOException {
     YamlUpdates.Builder yamlUpdates = YamlUpdates.newBuilder();
     List<ConfigFileWrapper> finalConfigFiles =
@@ -503,12 +504,12 @@ public class ServiceDefinitionPlanCreatorHelper {
 
   String addDependenciesForApplicationSettingsV2(YamlNode serviceV2Node,
       Map<String, PlanCreationResponse> planCreationResponseMap, NGServiceV2InfoConfig serviceV2Config,
-      NGServiceOverrideConfig serviceOverrideConfig, NGEnvironmentConfig ngEnvironmentConfig,
+      NGServiceOverrideConfig serviceOverrideConfig, NGEnvironmentGlobalOverride environmentGlobalOverride,
       KryoSerializer kryoSerializer) throws IOException {
     if (isSvcOverridesApplicationSettingsPresent(serviceOverrideConfig)
-        || isEnvGlobalApplicationSettingsOverridesPresent(ngEnvironmentConfig)) {
+        || isEnvGlobalApplicationSettingsOverridesPresent(environmentGlobalOverride)) {
       return ServiceDefinitionPlanCreatorHelper.addDependenciesForSvcAndSvcOverrideApplicationSettingsV2(
-          serviceV2Node, planCreationResponseMap, serviceOverrideConfig, ngEnvironmentConfig, kryoSerializer);
+          serviceV2Node, planCreationResponseMap, serviceOverrideConfig, environmentGlobalOverride, kryoSerializer);
     } else if (ServiceDefinitionPlanCreatorHelper.shouldCreatePlanNodeForApplicationSettingsV2(serviceV2Config)) {
       return ServiceDefinitionPlanCreatorHelper.addDependenciesForServiceApplicationSettingsV2(
           serviceV2Node, planCreationResponseMap, serviceV2Config, kryoSerializer);
@@ -519,7 +520,7 @@ public class ServiceDefinitionPlanCreatorHelper {
 
   private String addDependenciesForSvcAndSvcOverrideApplicationSettingsV2(YamlNode serviceV2Node,
       Map<String, PlanCreationResponse> planCreationResponseMap, NGServiceOverrideConfig serviceOverrideConfig,
-      NGEnvironmentConfig ngEnvironmentConfig, KryoSerializer kryoSerializer) throws IOException {
+      NGEnvironmentGlobalOverride ngEnvironmentConfig, KryoSerializer kryoSerializer) throws IOException {
     YamlUpdates.Builder yamlUpdates = YamlUpdates.newBuilder();
 
     ApplicationSettingsConfiguration finalAppSettingsConfig =
@@ -581,11 +582,11 @@ public class ServiceDefinitionPlanCreatorHelper {
   }
 
   ApplicationSettingsConfiguration getFinalApplicationSettingsConfiguration(
-      NGServiceOverrideConfig serviceOverrideConfig, NGEnvironmentConfig ngEnvironmentConfig) {
+      NGServiceOverrideConfig serviceOverrideConfig, NGEnvironmentGlobalOverride environmentGlobalOverride) {
     if (isSvcOverridesApplicationSettingsPresent(serviceOverrideConfig)) {
       return serviceOverrideConfig.getServiceOverrideInfoConfig().getApplicationSettings();
-    } else if (isEnvGlobalApplicationSettingsOverridesPresent(ngEnvironmentConfig)) {
-      return ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride().getApplicationSettings();
+    } else if (isEnvGlobalApplicationSettingsOverridesPresent(environmentGlobalOverride)) {
+      return environmentGlobalOverride.getApplicationSettings();
     } else {
       return null;
     }
@@ -602,12 +603,12 @@ public class ServiceDefinitionPlanCreatorHelper {
 
   String addDependenciesForConnectionStringsV2(YamlNode serviceV2Node,
       Map<String, PlanCreationResponse> planCreationResponseMap, NGServiceV2InfoConfig serviceV2Config,
-      NGServiceOverrideConfig serviceOverrideConfig, NGEnvironmentConfig ngEnvironmentConfig,
+      NGServiceOverrideConfig serviceOverrideConfig, NGEnvironmentGlobalOverride environmentGlobalOverride,
       KryoSerializer kryoSerializer) throws IOException {
     if (isSvcOverridesConnectionStringsPresent(serviceOverrideConfig)
-        || isEnvGlobalConnectionStringsOverridesPresent(ngEnvironmentConfig)) {
+        || isEnvGlobalConnectionStringsOverridesPresent(environmentGlobalOverride)) {
       return ServiceDefinitionPlanCreatorHelper.addDependenciesForSvcAndSvcOverrideConnectionStringsV2(
-          serviceV2Node, planCreationResponseMap, serviceOverrideConfig, ngEnvironmentConfig, kryoSerializer);
+          serviceV2Node, planCreationResponseMap, serviceOverrideConfig, environmentGlobalOverride, kryoSerializer);
     } else if (ServiceDefinitionPlanCreatorHelper.shouldCreatePlanNodeForConnectionStringsV2(serviceV2Config)) {
       return ServiceDefinitionPlanCreatorHelper.addDependenciesForConnectionStringsV2(
           serviceV2Node, planCreationResponseMap, serviceV2Config, kryoSerializer);
@@ -618,11 +619,11 @@ public class ServiceDefinitionPlanCreatorHelper {
 
   private String addDependenciesForSvcAndSvcOverrideConnectionStringsV2(YamlNode serviceV2Node,
       Map<String, PlanCreationResponse> planCreationResponseMap, NGServiceOverrideConfig serviceOverrideConfig,
-      NGEnvironmentConfig ngEnvironmentConfig, KryoSerializer kryoSerializer) throws IOException {
+      NGEnvironmentGlobalOverride environmentGlobalOverride, KryoSerializer kryoSerializer) throws IOException {
     YamlUpdates.Builder yamlUpdates = YamlUpdates.newBuilder();
 
     ConnectionStringsConfiguration finalConnectionStringsConfig =
-        getFinalConnectionStringsConfiguration(serviceOverrideConfig, ngEnvironmentConfig);
+        getFinalConnectionStringsConfiguration(serviceOverrideConfig, environmentGlobalOverride);
     if (finalConnectionStringsConfig == null) {
       return StringUtils.EMPTY;
     }
@@ -679,11 +680,11 @@ public class ServiceDefinitionPlanCreatorHelper {
   }
 
   private ConnectionStringsConfiguration getFinalConnectionStringsConfiguration(
-      NGServiceOverrideConfig serviceOverrideConfig, NGEnvironmentConfig ngEnvironmentConfig) {
+      NGServiceOverrideConfig serviceOverrideConfig, NGEnvironmentGlobalOverride environmentGlobalOverride) {
     if (isSvcOverridesConnectionStringsPresent(serviceOverrideConfig)) {
       return serviceOverrideConfig.getServiceOverrideInfoConfig().getConnectionStrings();
-    } else if (isEnvGlobalConnectionStringsOverridesPresent(ngEnvironmentConfig)) {
-      return ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride().getConnectionStrings();
+    } else if (isEnvGlobalConnectionStringsOverridesPresent(environmentGlobalOverride)) {
+      return environmentGlobalOverride.getConnectionStrings();
     } else {
       return null;
     }
@@ -734,12 +735,11 @@ public class ServiceDefinitionPlanCreatorHelper {
         && ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride() != null;
   }
 
-  private boolean isEnvGlobalConfigFileOverridesPresent(NGEnvironmentConfig ngEnvironmentConfig) {
-    if (!isEnvGlobalOverridesPresent(ngEnvironmentConfig)) {
+  private boolean isEnvGlobalConfigFileOverridesPresent(NGEnvironmentGlobalOverride environmentGlobalOverride) {
+    if (environmentGlobalOverride == null) {
       return false;
     }
-    return isNotEmpty(
-        ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride().getConfigFiles());
+    return isNotEmpty(environmentGlobalOverride.getConfigFiles());
   }
 
   private boolean isSvcOverridesConfigFilesPresent(NGServiceOverrideConfig serviceOverrideConfig) {
@@ -749,11 +749,11 @@ public class ServiceDefinitionPlanCreatorHelper {
     return isNotEmpty(serviceOverrideConfig.getServiceOverrideInfoConfig().getConfigFiles());
   }
 
-  private boolean isEnvGlobalManifestOverridesPresent(NGEnvironmentConfig ngEnvironmentConfig) {
-    if (!isEnvGlobalOverridesPresent(ngEnvironmentConfig)) {
+  private boolean isEnvGlobalManifestOverridesPresent(NGEnvironmentGlobalOverride environmentGlobalOverride) {
+    if (environmentGlobalOverride == null) {
       return false;
     }
-    return isNotEmpty(ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride().getManifests());
+    return isNotEmpty(environmentGlobalOverride.getManifests());
   }
 
   private boolean isSvcOverridesManifestPresent(NGServiceOverrideConfig serviceOverrideConfig) {
@@ -770,12 +770,12 @@ public class ServiceDefinitionPlanCreatorHelper {
     return serviceOverrideConfig.getServiceOverrideInfoConfig().getApplicationSettings() != null;
   }
 
-  private boolean isEnvGlobalApplicationSettingsOverridesPresent(NGEnvironmentConfig ngEnvironmentConfig) {
-    if (!isEnvGlobalOverridesPresent(ngEnvironmentConfig)) {
+  private boolean isEnvGlobalApplicationSettingsOverridesPresent(
+      NGEnvironmentGlobalOverride environmentGlobalOverride) {
+    if (environmentGlobalOverride == null) {
       return false;
     }
-    return ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride().getApplicationSettings()
-        != null;
+    return environmentGlobalOverride.getApplicationSettings() != null;
   }
 
   private boolean shouldCreatePlanNodeForApplicationSettingsV2(NGServiceV2InfoConfig serviceV2InfoConfig) {
@@ -792,12 +792,11 @@ public class ServiceDefinitionPlanCreatorHelper {
     return serviceOverrideConfig.getServiceOverrideInfoConfig().getConnectionStrings() != null;
   }
 
-  private boolean isEnvGlobalConnectionStringsOverridesPresent(NGEnvironmentConfig ngEnvironmentConfig) {
-    if (!isEnvGlobalOverridesPresent(ngEnvironmentConfig)) {
+  private boolean isEnvGlobalConnectionStringsOverridesPresent(NGEnvironmentGlobalOverride environmentGlobalOverride) {
+    if (environmentGlobalOverride == null) {
       return false;
     }
-    return ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride().getConnectionStrings()
-        != null;
+    return environmentGlobalOverride.getConnectionStrings() != null;
   }
 
   private boolean shouldCreatePlanNodeForConnectionStringsV2(NGServiceV2InfoConfig serviceV2InfoConfig) {

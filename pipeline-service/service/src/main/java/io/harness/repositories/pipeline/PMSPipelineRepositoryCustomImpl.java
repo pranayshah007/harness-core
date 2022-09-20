@@ -34,11 +34,11 @@ import io.harness.pms.pipeline.PipelineMetadataV2;
 import io.harness.pms.pipeline.mappers.PMSPipelineFilterHelper;
 import io.harness.pms.pipeline.service.PipelineCRUDErrorResponse;
 import io.harness.pms.pipeline.service.PipelineMetadataService;
+import io.harness.springdata.PersistenceUtils;
 import io.harness.springdata.TransactionHelper;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
-import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -47,8 +47,6 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
-import org.springframework.dao.DuplicateKeyException;
-import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
@@ -336,19 +334,8 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
   }
 
   private RetryPolicy<Object> getRetryPolicyForPipelineUpdate() {
-    int MAX_ATTEMPTS = 3;
-    Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(10);
-    return new RetryPolicy<>()
-        .handle(OptimisticLockingFailureException.class)
-        .handle(DuplicateKeyException.class)
-        .withDelay(RETRY_SLEEP_DURATION)
-        .withMaxAttempts(MAX_ATTEMPTS)
-        .onFailedAttempt(event
-            -> log.info(
-                "[Retrying]: Failed updating Pipeline; attempt: {}", event.getAttemptCount(), event.getLastFailure()))
-        .onFailure(event
-            -> log.error(
-                "[Failed]: Failed updating Pipeline; attempt: {}", event.getAttemptCount(), event.getFailure()));
+    return PersistenceUtils.getRetryPolicy(
+        "[Retrying]: Failed updating Pipeline; attempt: {}", "[Failed]: Failed updating Pipeline; attempt: {}");
   }
 
   @Override

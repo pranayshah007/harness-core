@@ -9,6 +9,7 @@ package io.harness.gitsync.persistance;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.gitsync.interceptor.GitSyncConstants.DEFAULT;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
@@ -22,14 +23,11 @@ import io.harness.gitsync.scm.beans.ScmPushResponse;
 import io.harness.manage.GlobalContextManager;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.utils.NGYamlUtils;
-import io.harness.utils.RetryUtils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
-import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -37,12 +35,10 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
-import net.jodah.failsafe.RetryPolicy;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @Singleton
@@ -56,9 +52,6 @@ public class GitAwarePersistenceNewImpl implements GitAwarePersistence {
   private GitSyncMsvcHelper gitSyncMsvcHelper;
   private ObjectMapper objectMapper;
   private TransactionTemplate transactionTemplate;
-
-  private final RetryPolicy<Object> transactionRetryPolicy = RetryUtils.getRetryPolicy("[Retrying] attempt: {}",
-      "[Failed] attempt: {}", ImmutableList.of(TransactionException.class), Duration.ofSeconds(1), 3, log);
 
   @Inject
   public GitAwarePersistenceNewImpl(MongoTemplate mongoTemplate, GitSyncSdkService gitSyncSdkService,
@@ -89,7 +82,7 @@ public class GitAwarePersistenceNewImpl implements GitAwarePersistence {
       objectToSave.setIsFromDefaultBranch(true);
     }
     if (!gitSyncEnabled) {
-      return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+      return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
         final B mongoSavedObject = mongoTemplate.save(objectToSave);
         if (functor != null) {
           functor.get();
@@ -110,7 +103,7 @@ public class GitAwarePersistenceNewImpl implements GitAwarePersistence {
     final boolean gitSyncEnabled = isGitSyncEnabled(entityDetail.getEntityRef().getProjectIdentifier(),
         entityDetail.getEntityRef().getOrgIdentifier(), entityDetail.getEntityRef().getAccountIdentifier());
     if (!gitSyncEnabled) {
-      Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+      Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
         mongoTemplate.remove(objectToRemove);
         if (functor != null) {
           functor.get();

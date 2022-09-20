@@ -52,7 +52,7 @@ public class ELKResource {
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "get sample data for a query", nickname = "getELKLogSampleData")
-  public ResponseDTO<List<LinkedHashMap>> getDatadogSampleData(@BeanParam ProjectParams projectParams,
+  public ResponseDTO<List<LinkedHashMap>> getSampleData(@BeanParam ProjectParams projectParams,
       @NotNull @QueryParam("connectorIdentifier") final String connectorIdentifier,
       @NotNull @QueryParam("tracingId") String tracingId, @NotNull @QueryParam("index") String index,
       @Body LogSampleRequestDTO logSampleRequestDTO) {

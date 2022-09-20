@@ -56,7 +56,7 @@ public class RateLimitRestrictionHandlerTest extends CategoryTest {
     restriction =
         new RateLimitRestriction(RestrictionType.RATE_LIMIT, 11, new TimeUnit(ChronoUnit.DAYS, 1), false, client);
     Mockito.mockStatic(NGRestUtils.class);
-    when(NGRestUtils.getResponseWithRetry(any())).thenReturn(FeatureRestrictionUsageDTO.builder().count(10).build());
+    when(NGRestUtils.getResponse(any())).thenReturn(FeatureRestrictionUsageDTO.builder().count(10).build());
   }
 
   @Test

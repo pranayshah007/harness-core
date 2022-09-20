@@ -25,12 +25,15 @@ import io.harness.entities.instanceinfo.InstanceInfo;
 import io.harness.entities.instanceinfo.SshWinrmInstanceInfo;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.lock.AcquiredLock;
+import io.harness.lock.PersistentLocker;
 import io.harness.repositories.instance.InstanceDeploymentInfoRepository;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -44,7 +47,13 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(CDP)
 public class InstanceDeploymentInfoServiceImpl implements InstanceDeploymentInfoService {
+  public static final String INSTANCE_DEPLOYMENT_INFO_PREFIX = "INSTANCE_DEPLOYMENT_INFO:";
+  public static final Duration INSTANCE_DEPLOYMENT_INFO_LOCK_TIMEOUT = Duration.ofSeconds(200);
+  public static final Duration INSTANCE_DEPLOYMENT_INFO_WAIT_TIMEOUT = Duration.ofSeconds(220);
+  private static final String LOCK_KEY_DELIMITER = ";";
+
   private InstanceDeploymentInfoRepository instanceDeploymentInfoRepository;
+  private PersistentLocker persistentLocker;
 
   @Override
   public void updateStatus(@NotNull ExecutionInfoKey key, @NotNull InstanceDeploymentInfoStatus status) {
@@ -107,37 +116,62 @@ public class InstanceDeploymentInfoServiceImpl implements InstanceDeploymentInfo
     List<String> hosts =
         instanceInfos.stream().map(i -> ((SshWinrmInstanceInfo) i).getHost()).distinct().collect(Collectors.toList());
 
-    List<InstanceDeploymentInfo> instanceFromDb = getByHosts(executionInfoKey, hosts);
-    List<String> hostsFromDb = instanceFromDb.stream()
-                                   .map(i -> ((SshWinrmInstanceInfo) i.getInstanceInfo()).getHost())
-                                   .collect(Collectors.toList());
+    String lockKey = getLockKey(executionInfoKey, hosts);
 
-    instanceDeploymentInfoRepository.updateArtifactAndStatus(
-        executionInfoKey, hostsFromDb, artifactDetails, IN_PROGRESS, stageExecutionId);
+    // acquire lock in case of parallel stage execution
+    try (AcquiredLock<?> acquiredLock = persistentLocker.waitToAcquireLock(INSTANCE_DEPLOYMENT_INFO_PREFIX + lockKey,
+             INSTANCE_DEPLOYMENT_INFO_LOCK_TIMEOUT, INSTANCE_DEPLOYMENT_INFO_WAIT_TIMEOUT)) {
+      List<InstanceDeploymentInfo> instanceFromDb = getByHosts(executionInfoKey, hosts);
+      List<String> hostsFromDb = instanceFromDb.stream()
+                                     .map(i -> ((SshWinrmInstanceInfo) i.getInstanceInfo()).getHost())
+                                     .collect(Collectors.toList());
 
-    List<InstanceDeploymentInfo> newInstancesToBeAdded = new ArrayList<>();
-    instanceInfos.stream()
-        .filter(newInstance -> !hostsFromDb.contains(((SshWinrmInstanceInfo) newInstance).getHost()))
-        .forEach(i -> {
-          InstanceDeploymentInfo instanceDeploymentInfo =
-              InstanceDeploymentInfo.builder()
-                  .accountIdentifier(executionInfoKey.getScope().getAccountIdentifier())
-                  .orgIdentifier(executionInfoKey.getScope().getOrgIdentifier())
-                  .projectIdentifier(executionInfoKey.getScope().getProjectIdentifier())
-                  .serviceIdentifier(executionInfoKey.getServiceIdentifier())
-                  .envIdentifier(executionInfoKey.getEnvIdentifier())
-                  .infraIdentifier(executionInfoKey.getInfraIdentifier())
-                  .instanceInfo(i)
-                  .artifactDetails(artifactDetails)
-                  .status(IN_PROGRESS)
-                  .stageExecutionId(stageExecutionId)
-                  .build();
-          newInstancesToBeAdded.add(instanceDeploymentInfo);
-        });
+      instanceDeploymentInfoRepository.updateArtifactAndStatus(
+          executionInfoKey, hostsFromDb, artifactDetails, IN_PROGRESS, stageExecutionId);
 
-    if (isNotEmpty(newInstancesToBeAdded)) {
-      instanceDeploymentInfoRepository.saveAll(newInstancesToBeAdded);
+      List<InstanceDeploymentInfo> newInstancesToBeAdded = new ArrayList<>();
+      instanceInfos.stream()
+          .filter(newInstance -> !hostsFromDb.contains(((SshWinrmInstanceInfo) newInstance).getHost()))
+          .forEach(i -> {
+            InstanceDeploymentInfo instanceDeploymentInfo =
+                InstanceDeploymentInfo.builder()
+                    .accountIdentifier(executionInfoKey.getScope().getAccountIdentifier())
+                    .orgIdentifier(executionInfoKey.getScope().getOrgIdentifier())
+                    .projectIdentifier(executionInfoKey.getScope().getProjectIdentifier())
+                    .serviceIdentifier(executionInfoKey.getServiceIdentifier())
+                    .envIdentifier(executionInfoKey.getEnvIdentifier())
+                    .infraIdentifier(executionInfoKey.getInfraIdentifier())
+                    .instanceInfo(i)
+                    .artifactDetails(artifactDetails)
+                    .status(IN_PROGRESS)
+                    .stageExecutionId(stageExecutionId)
+                    .build();
+            newInstancesToBeAdded.add(instanceDeploymentInfo);
+          });
+
+      if (isNotEmpty(newInstancesToBeAdded)) {
+        instanceDeploymentInfoRepository.saveAll(newInstancesToBeAdded);
+      }
+
+    } catch (Exception e) {
+      throw new InvalidRequestException(
+          format("Unable to create or update instance deployment info, accountIdentifier: %s, orgIdentifier: %s, "
+                  + "projectIdentifier: %s, stageExecutionId: %s, lockKey: %s",
+              executionInfoKey.getScope().getAccountIdentifier(), executionInfoKey.getScope().getOrgIdentifier(),
+              executionInfoKey.getScope().getProjectIdentifier(), stageExecutionId, lockKey));
     }
+  }
+
+  private String getLockKey(ExecutionInfoKey executionInfoKey, List<String> hosts) {
+    StringBuilder sb = new StringBuilder();
+    sb.append(executionInfoKey.getServiceIdentifier())
+        .append(LOCK_KEY_DELIMITER)
+        .append(executionInfoKey.getEnvIdentifier())
+        .append(LOCK_KEY_DELIMITER)
+        .append(executionInfoKey.getInfraIdentifier())
+        .append(LOCK_KEY_DELIMITER);
+    hosts.stream().sorted().forEach(host -> sb.append(host).append(LOCK_KEY_DELIMITER));
+    return sb.toString();
   }
 
   @Override

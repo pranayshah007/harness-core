@@ -471,28 +471,15 @@ public class ExecutionContextImpl implements DeploymentExecutionContext {
   @Override
   public List<Artifact> getArtifacts() {
     WorkflowStandardParams workflowStandardParams = fetchWorkflowStandardParamsFromContext();
-    String accountId = workflowStandardParamsExtensionService.fetchRequiredApp(workflowStandardParams).getAccountId();
-    if (!featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId)) {
-      List<ServiceArtifactElement> artifactElements = getArtifactElements();
-      if (isEmpty(artifactElements)) {
-        return workflowStandardParamsExtensionService.getArtifacts(workflowStandardParams);
-      }
-      List<Artifact> list = new ArrayList<>();
-      for (ServiceArtifactElement artifactElement : artifactElements) {
-        list.add(artifactService.get(artifactElement.getUuid()));
-      }
-      return list;
-    } else {
-      List<ServiceArtifactVariableElement> artifactVariableElements = getArtifactVariableElements();
-      if (isEmpty(artifactVariableElements)) {
-        return workflowStandardParamsExtensionService.getArtifacts(workflowStandardParams);
-      }
-      List<Artifact> list = new ArrayList<>();
-      for (ServiceArtifactVariableElement artifactVariableElement : artifactVariableElements) {
-        list.add(artifactService.get(artifactVariableElement.getUuid()));
-      }
-      return list;
+    List<ServiceArtifactElement> artifactElements = getArtifactElements();
+    if (isEmpty(artifactElements)) {
+      return workflowStandardParamsExtensionService.getArtifacts(workflowStandardParams);
     }
+    List<Artifact> list = new ArrayList<>();
+    for (ServiceArtifactElement artifactElement : artifactElements) {
+      list.add(artifactService.get(artifactElement.getUuid()));
+    }
+    return list;
   }
 
   @Override
@@ -689,12 +676,7 @@ public class ExecutionContextImpl implements DeploymentExecutionContext {
 
   @Override
   public Artifact getDefaultArtifactForService(String serviceId) {
-    if (featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, getAccountId())) {
-      Map<String, Artifact> map = getArtifactsForService(serviceId);
-      return map.getOrDefault(ExpressionEvaluator.DEFAULT_ARTIFACT_VARIABLE_NAME, null);
-    } else {
-      return getArtifactForService(serviceId);
-    }
+    return getArtifactForService(serviceId);
   }
 
   @Override

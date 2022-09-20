@@ -92,6 +92,8 @@ import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionHandler;
 import io.harness.file.NGFileServiceModule;
 import io.harness.filestore.NgFileStoreModule;
 import io.harness.filestore.outbox.FileEventHandler;
+import io.harness.freeze.service.FreezeCRUDService;
+import io.harness.freeze.service.impl.FreezeCRUDServiceImpl;
 import io.harness.gitops.GitopsResourceClientModule;
 import io.harness.gitsync.GitSyncConfigClientModule;
 import io.harness.gitsync.GitSyncModule;
@@ -617,6 +619,7 @@ public class NextGenModule extends AbstractModule {
     install(new AgentNgManagerCgManagerClientModule(appConfig.getManagerClientConfig(),
         appConfig.getNextGenConfig().getManagerServiceSecret(), NG_MANAGER.getServiceId()));
     bind(NgGlobalKmsService.class).to(NgGlobalKmsServiceImpl.class);
+    bind(FreezeCRUDService.class).to(FreezeCRUDServiceImpl.class);
     install(new ProviderModule() {
       @Provides
       @Singleton

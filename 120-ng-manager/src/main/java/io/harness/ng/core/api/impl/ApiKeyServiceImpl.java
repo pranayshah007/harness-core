@@ -14,7 +14,7 @@ import static io.harness.ng.accesscontrol.PlatformPermissions.MANAGEAPIKEY_SERVI
 import static io.harness.ng.core.account.ServiceAccountConfig.DEFAULT_API_KEY_LIMIT;
 import static io.harness.ng.core.utils.NGUtils.validate;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
-import static io.harness.springdata.TransactionUtils.DEFAULT_TRANSACTION_RETRY_POLICY;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -87,7 +87,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
     try {
       ApiKey apiKey = ApiKeyDTOMapper.getApiKeyFromDTO(apiKeyDTO);
       validate(apiKey);
-      return Failsafe.with(DEFAULT_TRANSACTION_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
+      return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
         ApiKey savedApiKey = apiKeyRepository.save(apiKey);
         ApiKeyDTO savedDTO = ApiKeyDTOMapper.getDTOFromApiKey(savedApiKey);
         outboxService.save(new ApiKeyCreateEvent(savedDTO));
@@ -135,7 +135,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
     ApiKey newKey = ApiKeyDTOMapper.getApiKeyFromDTO(apiKeyDTO);
     newKey.setUuid(existingKey.getUuid());
     newKey.setCreatedAt(existingKey.getCreatedAt());
-    return Failsafe.with(DEFAULT_TRANSACTION_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
+    return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
       ApiKey savedApiKey = apiKeyRepository.save(newKey);
       ApiKeyDTO savedDTO = ApiKeyDTOMapper.getDTOFromApiKey(savedApiKey);
       outboxService.save(new ApiKeyUpdateEvent(existingDTO, savedDTO));
@@ -153,7 +153,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
                 accountIdentifier, orgIdentifier, projectIdentifier, apiKeyType, parentIdentifier, identifier);
     Preconditions.checkState(optionalApiKey.isPresent(), "Api key not present in scope for identifier: ", identifier);
     ApiKeyDTO existingDTO = ApiKeyDTOMapper.getDTOFromApiKey(optionalApiKey.get());
-    return Failsafe.with(DEFAULT_TRANSACTION_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
+    return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
       long deleted =
           apiKeyRepository
               .deleteByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndApiKeyTypeAndParentIdentifierAndIdentifier(

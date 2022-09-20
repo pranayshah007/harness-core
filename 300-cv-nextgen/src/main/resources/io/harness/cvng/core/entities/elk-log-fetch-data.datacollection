@@ -1,0 +1,51 @@
+Var logsSearchUrl = concat(Env:baseUrl, Env:index)
+logsSearchUrl = concat(Var:logsSearchUrl, "/_search")
+
+Var body = {}
+Var query = {}
+Var bool = {}
+Var filter = []
+
+Var:body.put("from","0")
+Var:body.put("size",Env:limit)
+
+Var userQuery = {}
+Var query_string = {}
+Var:query_string.put("query",Env:query)
+Var:userQuery.put("query_string",Var:query_string)
+
+Var timeRangeQuery = {}
+Var range = {}
+Var rangeLimit = {}
+Var:rangeLimit.put("gt",Env:startTimeMillis)
+Var:rangeLimit.put("lte",Env:endTimeMillis)
+Var:range.put(Env:timeStampIdentifier,Var:rangeLimit)
+Var:timeRangeQuery.put("range",Var:range)
+
+Var:filter.append(Var:userQuery)
+Var:filter.append(Var:timeRangeQuery)
+Var:bool.put("filter",Var:filter)
+Var:query.put("bool",Var:bool)
+Var:body.put("query",Var:query)
+
+Var logsResponse = sync-call(url=Var:logsSearchUrl, header=Env:commonHeaders,body=Var:body)
+Var logsData = extract(Var:logsResponse, $.hits)
+logsData = extract(Var:logsData, $.hits)
+
+print Var:logsData
+Var logs = []
+foreach logData in Var:logsData {
+    Var messagePath = concat("$._source.", Env:messageIdentifier)
+    Var message = extract(Var:logData, Var:messagePath)
+
+    Var hostPath = concat("$._source.", Env:serviceInstanceIdentifier)
+    Var host = extract(Var:logData, Var:hostPath)
+
+    Var timeStampPath = concat("$._source.", Env:timeStampIdentifier)
+    Var timeStamp = extract(Var:logData,Var:timeStampPath)
+
+    Var logToReturn = new LogDataRecord(log=Var:message, timestamp=Var:timeStamp, timestampFormat=Env:timeStampFormat, host=Var:host)
+    Var:logs.append(Var:logToReturn)
+}
+
+return Var:logs

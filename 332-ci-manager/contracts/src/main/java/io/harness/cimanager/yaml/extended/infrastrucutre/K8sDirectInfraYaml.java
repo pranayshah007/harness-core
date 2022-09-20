@@ -30,6 +30,7 @@ import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -62,7 +63,7 @@ public class K8sDirectInfraYaml implements Infrastructure {
     @ApiModelProperty(hidden = true)
     String uuid;
     @NotNull @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> connectorRef;
-    @NotNull @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> namespace;
+    @NotNull @Size(min = 1) @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> namespace;
     @YamlSchemaTypes(value = {string})
     @ApiModelProperty(dataType = STRING_MAP_CLASSPATH)
     private ParameterField<Map<String, String>> annotations;

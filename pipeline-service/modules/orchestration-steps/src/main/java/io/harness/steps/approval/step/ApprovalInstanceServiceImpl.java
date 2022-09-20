@@ -8,6 +8,7 @@
 package io.harness.steps.approval.step;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
@@ -32,26 +33,21 @@ import io.harness.steps.approval.step.harness.entities.HarnessApprovalInstance;
 import io.harness.steps.approval.step.jira.beans.JiraApprovalResponseData;
 import io.harness.steps.approval.step.servicenow.beans.ServiceNowApprovalResponseData;
 import io.harness.tasks.ResponseData;
-import io.harness.utils.RetryUtils;
 import io.harness.waiter.WaitNotifyEngine;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import com.mongodb.client.result.UpdateResult;
-import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
-import net.jodah.failsafe.RetryPolicy;
 import org.mongodb.morphia.mapping.Mapper;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
-import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -62,9 +58,6 @@ public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
   private final TransactionTemplate transactionTemplate;
   private final WaitNotifyEngine waitNotifyEngine;
   private final PlanExecutionService planExecutionService;
-
-  private final RetryPolicy<Object> transactionRetryPolicy = RetryUtils.getRetryPolicy("[Retrying] attempt: {}",
-      "[Failed] attempt: {}", ImmutableList.of(TransactionException.class), Duration.ofSeconds(1), 3, log);
 
   @Inject
   public ApprovalInstanceServiceImpl(ApprovalInstanceRepository approvalInstanceRepository,
@@ -247,6 +240,6 @@ public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
   }
 
   private <T> T doTransaction(TransactionCallback<T> callback) {
-    return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(callback));
+    return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(callback));
   }
 }

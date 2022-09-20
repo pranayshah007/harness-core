@@ -10,7 +10,7 @@ package io.harness.ldap.service.impl;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.NgSetupFields.NG;
 import static io.harness.delegate.beans.NgSetupFields.OWNER;
-import static io.harness.remote.client.RestClientUtils.getResponse;
+import static io.harness.remote.client.CGRestUtils.getResponse;
 
 import static software.wings.beans.TaskType.NG_LDAP_GROUPS_SYNC;
 import static software.wings.beans.TaskType.NG_LDAP_SEARCH_GROUPS;
