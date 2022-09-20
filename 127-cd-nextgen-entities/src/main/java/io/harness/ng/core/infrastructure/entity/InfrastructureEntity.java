@@ -9,6 +9,7 @@ package io.harness.ng.core.infrastructure.entity;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.ChangeDataCapture;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
@@ -47,6 +48,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Entity(value = "infrastructures", noClassnameStored = true)
 @Document("infrastructures")
 @TypeAlias("io.harness.ng.core.infrastructure.entity.InfrastructureEntity")
+@ChangeDataCapture(table = "infrastructures", dataStore = "ng-harness", fields = {}, handler = "Infrastructures")
 public class InfrastructureEntity implements PersistentEntity {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
