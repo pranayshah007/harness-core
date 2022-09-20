@@ -113,8 +113,10 @@ public class InstanceBillingDataTasklet implements Tasklet {
 
     Map<String, MutableInt> pvcClaimCount = getPvcClaimCount(accountId, startTime, endTime);
     List<InstanceData> instanceDataLists;
-    InstanceDataReader instanceDataReader =
-        new InstanceDataReader(instanceDataDao, accountId, ImmutableList.of(K8S_NODE), startTime, endTime, batchSize);
+    InstanceDataReader instanceDataReader = new InstanceDataReader(instanceDataDao, accountId,
+        ImmutableList.of(
+            ECS_TASK_FARGATE, ECS_TASK_EC2, ECS_CONTAINER_INSTANCE, K8S_POD, K8S_POD_FARGATE, K8S_NODE, K8S_PVC),
+        startTime, endTime, batchSize);
 
     do {
       instanceDataLists = instanceDataReader.getNext();
@@ -157,6 +159,16 @@ public class InstanceBillingDataTasklet implements Tasklet {
     List<InstanceData> instanceDataLists;
     InstanceDataReader instanceDataReader =
         new InstanceDataReader(instanceDataDao, accountId, ImmutableList.of(K8S_PV), startTime, endTime, batchSize);
+    do {
+      instanceDataLists = instanceDataReader.getNext();
+      try {
+        instanceBillingDataList.addAll(createBillingData(
+            accountId, startTime, endTime, batchJobType, instanceDataLists, ImmutableMap.of(), ImmutableMap.of()));
+      } catch (Exception ex) {
+        log.error("Exception in billing step", ex);
+        throw ex;
+      }
+    } while (instanceDataLists.size() == batchSize);
     return instanceBillingDataList;
   }
 
