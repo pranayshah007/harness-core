@@ -5444,6 +5444,9 @@
         "link": {
           "type": "string"
         },
+        "mergeSha": {
+          "type": "string"
+        },
         "message": {
           "type": "string"
         },

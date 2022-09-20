@@ -148,6 +148,7 @@ public class CodeBaseTaskStepTest extends CategoryTest {
                                            .setLink("http://github.com/octocat/hello-world/pull/1")
                                            .setClosed(false)
                                            .setMerged(false)
+                                           .setMergeSha("mergeSha")
                                            .build())
                                 .build()
                                 .toByteArray())
@@ -198,6 +199,7 @@ public class CodeBaseTaskStepTest extends CategoryTest {
                        .ownerId("firstLast")
                        .build());
     assertThat(codebaseSweepingOutput.getState()).isEqualTo("open");
+    assertThat(codebaseSweepingOutput.getMergeSha()).isEqualTo("mergeSha");
   }
 
   @Test
@@ -229,6 +231,7 @@ public class CodeBaseTaskStepTest extends CategoryTest {
                                                   .authorEmail("first.last@email.com")
                                                   .authorAvatar("http://...")
                                                   .authorLogin("firstLast")
+                                                  .mergeSha("mergeSha")
                                                   .build())
                               .repository(Repository.builder().link("http://github.com/octocat/hello-world").build())
                               .build())
@@ -249,6 +252,7 @@ public class CodeBaseTaskStepTest extends CategoryTest {
     assertThat(codebaseSweepingOutput.getGitUserAvatar()).isEqualTo("http://...");
     assertThat(codebaseSweepingOutput.getGitUserId()).isEqualTo("firstLast");
     assertThat(codebaseSweepingOutput.getPullRequestLink()).isEqualTo("http://github.com/octocat/hello-world/pull/1");
+    assertThat(codebaseSweepingOutput.getMergeSha()).isEqualTo("mergeSha");
   }
 
   @Test
