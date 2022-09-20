@@ -1121,6 +1121,7 @@
 9121:io.harness.cvng.beans.elk.ELKDataCollectionRequest
 9122:io.harness.cvng.beans.elk.ELKIndexCollectionRequest
 9123:io.harness.cvng.beans.elk.ELKSampleDataCollectionRequest
+9124:io.harness.cvng.beans.ELKDataCollectionInfo
 9701:io.harness.logging.UnitProgress
 9702:io.harness.logging.UnitStatus
 9709:io.harness.jira.JiraIssueTypeNG
