@@ -81,8 +81,8 @@ container_image(
     user = "65534",
     workdir = "/opt/harness",
     cmd = [
-        "java -jar rest-capsule.jar scan-classpath-metadata",
-        "./run.sh",
+        "/bin/bash", "-c",
+        "java -jar rest-capsule.jar scan-classpath-metadata; ./run.sh",
         ],
     tars = [
         ":files",
