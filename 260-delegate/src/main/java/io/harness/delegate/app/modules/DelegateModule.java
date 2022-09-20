@@ -303,10 +303,12 @@ import io.harness.delegate.task.shell.ssh.CommandHandler;
 import io.harness.delegate.task.shell.ssh.JenkinsArtifactCommandUnitHandler;
 import io.harness.delegate.task.shell.ssh.SshCleanupCommandHandler;
 import io.harness.delegate.task.shell.ssh.SshCopyCommandHandler;
+import io.harness.delegate.task.shell.ssh.SshDownloadArtifactCommandHandler;
 import io.harness.delegate.task.shell.ssh.SshInitCommandHandler;
 import io.harness.delegate.task.shell.ssh.SshScriptCommandHandler;
 import io.harness.delegate.task.shell.winrm.WinRmCleanupCommandHandler;
 import io.harness.delegate.task.shell.winrm.WinRmCopyCommandHandler;
+import io.harness.delegate.task.shell.winrm.WinRmDownloadArtifactCommandHandler;
 import io.harness.delegate.task.shell.winrm.WinRmInitCommandHandler;
 import io.harness.delegate.task.shell.winrm.WinRmScriptCommandHandler;
 import io.harness.delegate.task.ssh.NGCommandUnitType;
@@ -320,6 +322,9 @@ import io.harness.delegate.task.terraform.handlers.TerraformAbstractTaskHandler;
 import io.harness.delegate.task.terraform.handlers.TerraformApplyTaskHandler;
 import io.harness.delegate.task.terraform.handlers.TerraformDestroyTaskHandler;
 import io.harness.delegate.task.terraform.handlers.TerraformPlanTaskHandler;
+import io.harness.delegate.task.winrm.ArtifactDownloadHandler;
+import io.harness.delegate.task.winrm.ArtifactoryArtifactDownloadHandler;
+import io.harness.delegate.task.winrm.JenkinsArtifactDownloadHandler;
 import io.harness.delegate.utils.DecryptionHelperDelegate;
 import io.harness.delegatetasks.DeleteSecretTask;
 import io.harness.delegatetasks.EncryptSecretTask;
@@ -1433,6 +1438,8 @@ public class DelegateModule extends AbstractModule {
         .to(SshCopyCommandHandler.class);
     commandUnitHandlers.addBinding(Pair.of(NGCommandUnitType.CLEANUP, ScriptType.BASH.name()))
         .to(SshCleanupCommandHandler.class);
+    commandUnitHandlers.addBinding(Pair.of(NGCommandUnitType.DOWNLOAD_ARTIFACT, ScriptType.BASH.name()))
+        .to(SshDownloadArtifactCommandHandler.class);
     commandUnitHandlers.addBinding(Pair.of(NGCommandUnitType.INIT, ScriptType.POWERSHELL.name()))
         .to(WinRmInitCommandHandler.class);
     commandUnitHandlers.addBinding(Pair.of(NGCommandUnitType.SCRIPT, ScriptType.POWERSHELL.name()))
@@ -1441,6 +1448,14 @@ public class DelegateModule extends AbstractModule {
         .to(WinRmCopyCommandHandler.class);
     commandUnitHandlers.addBinding(Pair.of(NGCommandUnitType.CLEANUP, ScriptType.POWERSHELL.name()))
         .to(WinRmCleanupCommandHandler.class);
+    commandUnitHandlers.addBinding(Pair.of(NGCommandUnitType.DOWNLOAD_ARTIFACT, ScriptType.POWERSHELL.name()))
+        .to(WinRmDownloadArtifactCommandHandler.class);
+
+    // Artifact handlers
+    MapBinder<SshWinRmArtifactType, ArtifactDownloadHandler> artifactHandlers =
+        MapBinder.newMapBinder(binder(), SshWinRmArtifactType.class, ArtifactDownloadHandler.class);
+    artifactHandlers.addBinding(SshWinRmArtifactType.ARTIFACTORY).to(ArtifactoryArtifactDownloadHandler.class);
+    artifactHandlers.addBinding(SshWinRmArtifactType.JENKINS).to(JenkinsArtifactDownloadHandler.class);
 
     MapBinder<String, ArtifactCommandUnitHandler> artifactCommandHandlers =
         MapBinder.newMapBinder(binder(), String.class, ArtifactCommandUnitHandler.class);

@@ -11,32 +11,27 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.expression.Expression.ALLOW_SECRETS;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.task.shell.TailFilePatternDto;
 import io.harness.expression.Expression;
-import io.harness.shell.ScriptType;
+import io.harness.ssh.FileSourceType;
 
-import java.util.List;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Value;
 
-@Data
+@Value
 @Builder
 @OwnedBy(CDP)
-public class ScriptCommandUnit implements NgCommandUnit {
+public class NgDownloadArtifactCommandUnit implements NgCommandUnit {
   String name;
-  ScriptType scriptType;
-  @Expression(ALLOW_SECRETS) String script;
-  @Expression(ALLOW_SECRETS) String workingDirectory;
-  List<TailFilePatternDto> tailFilePatterns;
-  @Expression(ALLOW_SECRETS) String command;
+  @Expression(ALLOW_SECRETS) String destinationPath;
+  FileSourceType sourceType = FileSourceType.ARTIFACT;
 
   @Override
   public String getCommandUnitType() {
-    return NGCommandUnitType.SCRIPT;
+    return NGCommandUnitType.DOWNLOAD_ARTIFACT;
   }
 
   @Override
-  public String getDestinationPath() {
+  public String getWorkingDirectory() {
     return null;
   }
 }

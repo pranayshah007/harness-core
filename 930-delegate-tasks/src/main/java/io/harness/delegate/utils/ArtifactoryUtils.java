@@ -5,9 +5,10 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.delegate.task.shell;
+package io.harness.delegate.utils;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.data.encoding.EncodingUtils.encodeBase64;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.EMPTY_ARTIFACT_PATH;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.EMPTY_ARTIFACT_PATH_EXPLANATION;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.EMPTY_ARTIFACT_PATH_HINT;
@@ -53,5 +54,38 @@ public class ArtifactoryUtils {
         artifactoryConnectorDTO, artifactoryArtifactConfig.getEncryptedDataDetails());
 
     return artifactoryRequestMapper.toArtifactoryRequest(artifactoryConnectorDTO);
+  }
+
+  public static ArtifactoryConfigRequest getArtifactConfigRequest(
+      ArtifactoryArtifactDelegateConfig artifactoryArtifactConfig, SecretDecryptionService secretDecryptionService,
+      ArtifactoryRequestMapper artifactoryRequestMapper) {
+    return getArtifactConfigRequest(artifactoryArtifactConfig, null, secretDecryptionService, artifactoryRequestMapper);
+  }
+
+  public static String getArtifactFileName(String artifactPath) {
+    String artifactFileName = artifactPath;
+    int lastIndexOfSlash = artifactFileName.lastIndexOf('/');
+    if (lastIndexOfSlash > 0) {
+      artifactFileName = artifactFileName.substring(lastIndexOfSlash + 1);
+      log.info("Got filename: " + artifactFileName);
+    }
+    return artifactFileName;
+  }
+
+  public static String getAuthHeader(ArtifactoryConfigRequest artifactoryConfigRequest) {
+    String authHeader = null;
+    if (artifactoryConfigRequest.isHasCredentials()) {
+      String pair = artifactoryConfigRequest.getUsername() + ":" + new String(artifactoryConfigRequest.getPassword());
+      authHeader = "Basic " + encodeBase64(pair);
+    }
+    return authHeader;
+  }
+
+  public static String getArtifactoryUrl(ArtifactoryConfigRequest artifactoryConfigRequest, String artifactPath) {
+    String url = artifactoryConfigRequest.getArtifactoryUrl().trim();
+    if (!url.endsWith("/")) {
+      url += "/";
+    }
+    return url + artifactPath;
   }
 }

@@ -259,6 +259,7 @@ io.harness.cdng.ssh.TailFilePattern
 io.harness.cdng.ssh.CommandUnitWrapper
 io.harness.cdng.ssh.ScriptCommandUnitSpec
 io.harness.cdng.ssh.CopyCommandUnitSpec
+io.harness.cdng.ssh.DownloadArtifactCommandUnitSpec
 io.harness.cdng.ssh.CommandUnitSourceType
 io.harness.cdng.ssh.CommandStepOutcome
 io.harness.yaml.core.failurestrategy.abort.AbortFailureActionConfig

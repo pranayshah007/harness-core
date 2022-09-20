@@ -1733,7 +1733,7 @@
 55345:io.harness.delegate.task.azure.arm.AzureResourceCreationTaskNGResponse
 55346:io.harness.delegate.task.jira.JiraSearchUserParams
 55347:io.harness.delegate.task.jira.JiraSearchUserData
-
+55348:io.harness.delegate.task.ssh.NgDownloadArtifactCommandUnit
 
 55401:io.harness.delegate.beans.SerializedResponseData
 55402:software.wings.beans.SerializationFormat
