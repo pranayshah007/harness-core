@@ -855,6 +855,17 @@ public class DelegateModule extends AbstractModule {
 
   @Provides
   @Singleton
+  @Named("verificationDataCollectorCVNGCallExecutor")
+  public ExecutorService verificationDataCollectorCVNGCallExecutor() {
+    return ThreadPool.create(4, 20, 5, TimeUnit.SECONDS,
+        new ThreadFactoryBuilder()
+            .setNameFormat("verificationDataCollectorCVNGCaller-%d")
+            .setPriority(Thread.MIN_PRIORITY)
+            .build());
+  }
+
+  @Provides
+  @Singleton
   @Named("cvngParallelExecutor")
   public ExecutorService cvngParallelExecutor() {
     return ThreadPool.create(1, CVNextGenConstants.CVNG_MAX_PARALLEL_THREADS, 5, TimeUnit.SECONDS,
