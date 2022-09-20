@@ -21,7 +21,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.migration.NGMigration;
 import io.harness.ng.core.dto.AccountDTO;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.CGRestUtils;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.dto.ServicePrincipal;
 
@@ -72,7 +72,7 @@ public class UserRoleAssignmentRemovalMigration implements NGMigration {
   private void doMigration() {
     List<AccountDTO> accountDTOS = new ArrayList<>();
     try {
-      accountDTOS = RestClientUtils.getResponse(accountClient.getAllAccounts());
+      accountDTOS = CGRestUtils.getResponse(accountClient.getAllAccounts());
     } catch (Exception ex) {
       log.error(DEBUG_MESSAGE + "Failed to fetch all accounts");
     }
