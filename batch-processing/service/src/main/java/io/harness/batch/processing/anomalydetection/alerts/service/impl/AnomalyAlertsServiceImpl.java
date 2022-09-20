@@ -220,7 +220,7 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
       log.error("Failed to send email notification: {}",
           (response.errorBody() != null) ? response.errorBody().string() : response.code());
     } else {
-      for (AnomalyData anomalyData: perspectiveAnomalies) {
+      for (AnomalyData anomalyData : perspectiveAnomalies) {
         perspectiveAnomalyService.updateAnomalySentStatus(accountId, anomalyData.getId(), true);
       }
     }
@@ -245,7 +245,7 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
       log.error("Failed to send slack notification: {}",
           (response.errorBody() != null) ? response.errorBody().string() : response.code());
     } else {
-      for (AnomalyData anomalyData: perspectiveAnomalies) {
+      for (AnomalyData anomalyData : perspectiveAnomalies) {
         perspectiveAnomalyService.updateAnomalySentStatus(accountId, anomalyData.getId(), true);
       }
     }

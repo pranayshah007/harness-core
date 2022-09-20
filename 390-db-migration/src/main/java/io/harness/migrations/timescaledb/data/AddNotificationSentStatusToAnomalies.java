@@ -13,7 +13,8 @@ import io.harness.migrations.TimeScaleDBDataMigration;
 import io.harness.migrations.timescaledb.AbstractTimeScaleDBMigration;
 
 @OwnedBy(HarnessTeam.CE)
-public class AddNotificationSentStatusToAnomalies extends AbstractTimeScaleDBMigration implements TimeScaleDBDataMigration {
+public class AddNotificationSentStatusToAnomalies
+    extends AbstractTimeScaleDBMigration implements TimeScaleDBDataMigration {
   @Override
   public String getFileName() {
     return "timescaledb/add_anomaly_notification_sent_column.sql";

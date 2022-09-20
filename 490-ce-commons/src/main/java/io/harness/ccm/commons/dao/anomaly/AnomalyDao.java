@@ -83,15 +83,15 @@ public class AnomalyDao {
 
   @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)
   public List<Anomalies> fetchAnomaliesForNotification(@NonNull String accountId, @Nullable Condition condition,
-       @NonNull List<OrderField<?>> orderFields, @NonNull Integer offset, @NonNull Integer limit, Instant date) {
+      @NonNull List<OrderField<?>> orderFields, @NonNull Integer offset, @NonNull Integer limit, Instant date) {
     SelectFinalStep<AnomaliesRecord> finalStep = dslContext.selectFrom(ANOMALIES)
-        .where(ANOMALIES.ACCOUNTID.eq(accountId)
-            .and(ANOMALIES.ANOMALYTIME.eq(toOffsetDateTime(date)))
-            .and(ANOMALIES.NOTIFICATIONSENT.eq(false))
-            .and(firstNonNull(condition, DSL.noCondition())))
-        .orderBy(orderFields)
-        .offset(offset)
-        .limit(limit);
+                                                     .where(ANOMALIES.ACCOUNTID.eq(accountId)
+                                                                .and(ANOMALIES.ANOMALYTIME.eq(toOffsetDateTime(date)))
+                                                                .and(ANOMALIES.NOTIFICATIONSENT.eq(false))
+                                                                .and(firstNonNull(condition, DSL.noCondition())))
+                                                     .orderBy(orderFields)
+                                                     .offset(offset)
+                                                     .limit(limit);
     log.info("Anomaly Query: {}", finalStep.getQuery());
     return finalStep.fetchInto(Anomalies.class);
   }
@@ -120,7 +120,8 @@ public class AnomalyDao {
 
   @Nullable
   @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)
-  public void updateAnomalyNotificationSentStatus(@NonNull String accountId, String anomalyId, boolean notificationSentStatus) {
+  public void updateAnomalyNotificationSentStatus(
+      @NonNull String accountId, String anomalyId, boolean notificationSentStatus) {
     dslContext.update(ANOMALIES)
         .set(ANOMALIES.NOTIFICATIONSENT, notificationSentStatus)
         .where(ANOMALIES.ACCOUNTID.eq(accountId).and(ANOMALIES.ID.eq(anomalyId)))
