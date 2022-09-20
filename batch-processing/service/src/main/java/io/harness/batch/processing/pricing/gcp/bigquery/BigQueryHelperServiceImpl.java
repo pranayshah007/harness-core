@@ -183,34 +183,36 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
     for (VMInstanceServiceBillingData vmInstanceServiceBillingData : vmInstanceServiceBillingDataList) {
       String resourceId = vmInstanceServiceBillingData.getResourceId();
       log.info("GCP: Processing for resourceId: {}", resourceId);
+      double cpuCost = 0;
+      double ramCost = 0;
+      double networkCost = 0;
       VMInstanceBillingData vmInstanceBillingData = VMInstanceBillingData.builder().resourceId(resourceId).build();
       if (vmInstanceBillingDataMap.containsKey(resourceId)) {
         vmInstanceBillingData = vmInstanceBillingDataMap.get(resourceId);
+        cpuCost = vmInstanceBillingData.getCpuCost();
+        ramCost = vmInstanceBillingData.getMemoryCost();
+        networkCost = vmInstanceBillingData.getNetworkCost();
       }
 
       if (BQConst.gcpComputeService.equals(vmInstanceServiceBillingData.getServiceCode())
           || vmInstanceServiceBillingData.getProductFamily() == null) {
         double rate = vmInstanceServiceBillingData.getRate();
 
-        double cpuCost = 0;
-        double ramCost = 0;
-        double networkCost = 0;
         if (vmInstanceServiceBillingData.getProductFamily().equalsIgnoreCase("CPU Cost")) {
-          cpuCost = vmInstanceBillingData.getCpuCost();
-          log.info("Existing CPU cost: {} for resourceId: {}", cpuCost, resourceId);
+          log.info("Existing CPU cost: {} and CurrentCost: {} for resourceId: {}", cpuCost,
+              vmInstanceServiceBillingData.getCost(), resourceId);
           cpuCost += vmInstanceServiceBillingData.getCost();
         } else if (vmInstanceServiceBillingData.getProductFamily().equalsIgnoreCase("RAM Cost")) {
-          ramCost = vmInstanceBillingData.getMemoryCost();
-          log.info("Existing MemoryCost cost: {} for resourceId: {}", ramCost, resourceId);
+          log.info("Existing MemoryCost cost: {} and CurrentCost: {} for resourceId: {}", ramCost,
+              vmInstanceServiceBillingData.getCost(), resourceId);
           ramCost += vmInstanceServiceBillingData.getCost();
-        }
-        if (vmInstanceServiceBillingData.getProductFamily().equalsIgnoreCase("Network Cost")) {
-          networkCost = vmInstanceBillingData.getNetworkCost();
-          log.info("Existing network cost: {} for resourceId: {}", networkCost, resourceId);
+        } else if (vmInstanceServiceBillingData.getProductFamily().equalsIgnoreCase("Network Cost")) {
+          log.info("Existing network cost: {} and CurrentCost: {} for resourceId: {}", networkCost,
+              vmInstanceServiceBillingData.getCost(), resourceId);
           networkCost += vmInstanceServiceBillingData.getCost();
         }
 
-        double computeCost = cpuCost + ramCost + networkCost;
+        double computeCost = cpuCost + ramCost;
 
         vmInstanceBillingData = vmInstanceBillingData.toBuilder()
                                     .computeCost(computeCost)
