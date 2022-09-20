@@ -216,7 +216,7 @@ public class ScmServiceClientImpl implements ScmServiceClient {
     final GetFileRequest.Builder gitFileRequestBuilder =
         GetFileRequest.newBuilder().setPath(gitFilePathDetails.getFilePath()).setProvider(gitProvider).setSlug(slug);
     if (isNotEmpty(gitFilePathDetails.getBranch())) {
-      if (gitFilePathDetails.getBranch().contains("/")) {
+      if (checkIfBranchIsHavingSlashForBB(scmConnector, gitFilePathDetails.getBranch())) {
         GetLatestCommitOnFileResponse getLatestCommitOnFileResponse = getLatestCommitOnFile(
             scmConnector, scmBlockingStub, gitFilePathDetails.getBranch(), gitFilePathDetails.getFilePath());
         if (isNotEmpty(getLatestCommitOnFileResponse.getError())) {
@@ -230,6 +230,10 @@ public class ScmServiceClientImpl implements ScmServiceClient {
       gitFileRequestBuilder.setRef(gitFilePathDetails.getRef());
     }
     return ScmGrpcClientUtils.retryAndProcessException(scmBlockingStub::getFile, gitFileRequestBuilder.build());
+  }
+
+  private boolean checkIfBranchIsHavingSlashForBB(ScmConnector scmConnector, String branchName) {
+    return scmConnector.getConnectorType().equals(ConnectorType.BITBUCKET) && branchName.contains("/");
   }
 
   private FileBatchContentResponse getContentOfFiles(
