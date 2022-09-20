@@ -9,12 +9,16 @@ package io.harness.expression;
 
 import io.harness.exception.FunctorException;
 
+import software.wings.expression.SecretManagerMode;
+
 import lombok.Builder;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.jexl3.JexlContext;
 import org.apache.commons.jexl3.JexlException;
 import org.apache.commons.text.StrLookup;
 
 @Builder
+@Slf4j
 public class EvaluateVariableResolver extends StrLookup<Object> {
   private JexlContext context;
   private ExpressionEvaluator expressionEvaluator;
@@ -37,6 +41,9 @@ public class EvaluateVariableResolver extends StrLookup<Object> {
         FunctorException functorException = (FunctorException) exception.getCause();
         functorException.addParam(FunctorException.EXPRESSION_ARG, variable);
         throw functorException;
+      }
+      if (expressionEvaluator.getEvaluationMode() == SecretManagerMode.APPLY) {
+        log.error("Encountered error while evaluating secret in APPLY mode ", exception);
       }
       context.set(name, "${" + variable + "}");
     }
