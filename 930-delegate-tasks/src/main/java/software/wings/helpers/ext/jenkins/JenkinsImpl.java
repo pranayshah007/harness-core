@@ -71,6 +71,7 @@ import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -803,24 +804,32 @@ public class JenkinsImpl implements Jenkins {
     String parentJobUrl = null;
     String childJobName;
 
-    try {
-      String decodedJobName = URLDecoder.decode(jobname, "UTF-8");
-
-      String[] jobNameSplit = decodedJobName.split("/", 2);
-      int parts = jobNameSplit.length;
-      if (parts > 1) {
-        parentJobUrl = constructParentJobPath(jobNameSplit);
-        parentJobName = jobNameSplit[parts - 2];
-        childJobName = jobNameSplit[parts - 1];
-      } else {
-        childJobName = decodedJobName;
-      }
-
-      return new JobPathDetails(parentJobUrl, parentJobName, childJobName);
-
-    } catch (UnsupportedEncodingException e) {
-      throw new ArtifactServerException("Failure in decoding job name: " + ExceptionUtils.getMessage(e), e, USER);
+    if (jobname == null) {
+      throw new InvalidRequestException("Empty jobname");
     }
+
+    String[] jobNameSplit = jobname.split("/");
+    List<String> jobNameSplitDecoded =
+        Arrays.stream(jobNameSplit)
+            .map(name -> {
+              try {
+                return URLDecoder.decode(name, "UTF-8");
+              } catch (UnsupportedEncodingException e) {
+                throw new ArtifactServerException(
+                    "Failure in decoding job name: " + ExceptionUtils.getMessage(e), e, USER);
+              }
+            })
+            .collect(toList());
+    int parts = jobNameSplitDecoded.size();
+    if (parts > 1) {
+      parentJobUrl = constructParentJobPath(jobNameSplitDecoded);
+      parentJobName = jobNameSplitDecoded.get(parts - 2);
+      childJobName = jobNameSplitDecoded.get(parts - 1);
+    } else {
+      childJobName = jobNameSplitDecoded.get(0);
+    }
+
+    return new JobPathDetails(parentJobUrl, parentJobName, childJobName);
   }
 
   /**
