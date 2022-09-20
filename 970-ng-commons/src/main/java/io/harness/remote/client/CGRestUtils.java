@@ -7,19 +7,23 @@
 
 package io.harness.remote.client;
 
+import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import static java.lang.String.format;
 
-import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.eraro.ErrorCode;
+import io.harness.eraro.ResponseMessage;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
-import io.harness.ng.core.dto.ErrorDTO;
-import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.rest.RestResponse;
 import io.harness.serializer.JsonUtils;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import java.io.IOException;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.Optional;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
@@ -31,37 +35,37 @@ import org.apache.commons.lang3.StringUtils;
 import retrofit2.Call;
 import retrofit2.Response;
 
+@OwnedBy(PL)
 @UtilityClass
 @Slf4j
-@OwnedBy(HarnessTeam.PL)
-public class NGRestUtils {
+public class CGRestUtils {
   private static final int MAX_ATTEMPTS = 3;
 
   public static final String DEFAULT_ERROR_MESSAGE = "Error occurred while performing this operation.";
 
-  public static <T> T getResponse(Call<ResponseDTO<T>> request) {
-    RetryPolicy<Response<ResponseDTO<T>>> retryPolicy = getRetryPolicy("Request failed");
+  public static <T> T getResponse(Call<RestResponse<T>> request) {
+    RetryPolicy<Response<RestResponse<T>>> retryPolicy = getRetryPolicy("Request failed");
     try {
-      Response<ResponseDTO<T>> response = Failsafe.with(retryPolicy).get(() -> executeRequest(request));
-      return handleResponse(response, "");
+      Response<RestResponse<T>> response = Failsafe.with(retryPolicy).get(() -> executeRequest(request));
+      return handleResponse(response, DEFAULT_ERROR_MESSAGE);
     } catch (FailsafeException ex) {
       throw new UnexpectedException(DEFAULT_ERROR_MESSAGE, ex.getCause());
     }
   }
 
-  public static <T> T getResponse(Call<ResponseDTO<T>> request, String defaultErrorMessage) {
-    RetryPolicy<Response<ResponseDTO<T>>> retryPolicy = getRetryPolicy(format(defaultErrorMessage));
+  public static <T> T getResponse(Call<RestResponse<T>> request, String defaultErrorMessage) {
+    RetryPolicy<Response<RestResponse<T>>> retryPolicy = getRetryPolicy(format(defaultErrorMessage));
     try {
-      Response<ResponseDTO<T>> response = Failsafe.with(retryPolicy).get(() -> executeRequest(request));
+      Response<RestResponse<T>> response = Failsafe.with(retryPolicy).get(() -> executeRequest(request));
       return handleResponse(response, defaultErrorMessage);
     } catch (FailsafeException ex) {
       throw new UnexpectedException(defaultErrorMessage, ex.getCause());
     }
   }
 
-  private static <T> Response<ResponseDTO<T>> executeRequest(Call<ResponseDTO<T>> request) throws IOException {
+  private static <T> Response<RestResponse<T>> executeRequest(Call<RestResponse<T>> request) throws IOException {
     try {
-      Call<ResponseDTO<T>> cloneRequest = request.clone();
+      Call<RestResponse<T>> cloneRequest = request.clone();
       return cloneRequest == null ? request.execute() : cloneRequest.execute();
     } catch (IOException ioException) {
       String url = Optional.ofNullable(request.request()).map(x -> x.url().encodedPath()).orElse(null);
@@ -70,30 +74,30 @@ public class NGRestUtils {
     }
   }
 
-  private static <T> T handleResponse(Response<ResponseDTO<T>> response, String defaultErrorMessage) {
+  private static <T> T handleResponse(Response<RestResponse<T>> response, String defaultErrorMessage) {
     if (response.isSuccessful()) {
-      return response.body().getData();
-    }
-
-    log.error("Error response received: {}", response);
-    String errorMessage = "";
-    try {
-      ErrorDTO restResponse = JsonUtils.asObject(response.errorBody().string(), new TypeReference<ErrorDTO>() {});
-      errorMessage = restResponse.getMessage();
-      throw new InvalidRequestException(
-          StringUtils.isEmpty(errorMessage) ? defaultErrorMessage : errorMessage, restResponse.getMetadata());
-    } catch (Exception e) {
-      log.error("Error while converting rest response to ErrorDTO", e);
-      throw new InvalidRequestException(StringUtils.isEmpty(errorMessage) ? defaultErrorMessage : errorMessage);
-    } finally {
-      if (!response.isSuccessful() && response.errorBody() != null) {
-        response.errorBody().close();
+      return response.body().getResource();
+    } else {
+      String errorMessage = "";
+      try {
+        RestResponse<T> restResponse =
+            JsonUtils.asObject(response.errorBody().string(), new TypeReference<RestResponse<T>>() {});
+        if (restResponse != null && isNotEmpty(restResponse.getResponseMessages())) {
+          List<ResponseMessage> responseMessageList = restResponse.getResponseMessages();
+          errorMessage = responseMessageList.get(0).getMessage();
+          if (!StringUtils.isEmpty(errorMessage) && responseMessageList.get(0).getCode() == ErrorCode.INVALID_REQUEST) {
+            errorMessage = errorMessage.substring(17);
+          }
+        }
+      } catch (Exception e) {
+        log.debug("Error while converting error received from upstream systems", e);
       }
+      throw new InvalidRequestException(StringUtils.isEmpty(errorMessage) ? defaultErrorMessage : errorMessage);
     }
   }
 
-  private <T> RetryPolicy<Response<ResponseDTO<T>>> getRetryPolicy(String failureMessage) {
-    return new RetryPolicy<Response<ResponseDTO<T>>>()
+  private <T> RetryPolicy<Response<RestResponse<T>>> getRetryPolicy(String failureMessage) {
+    return new RetryPolicy<Response<RestResponse<T>>>()
         .withBackoff(1, 10, ChronoUnit.SECONDS)
         .handle(IOException.class)
         .handleResultIf(result -> !result.isSuccessful() && isRetryableHttpCode(result.code()))
@@ -102,7 +106,7 @@ public class NGRestUtils {
   }
 
   private static <T> void handleFailure(
-      ExecutionAttemptedEvent<Response<ResponseDTO<T>>> event, String failureMessage) {
+      ExecutionAttemptedEvent<Response<RestResponse<T>>> event, String failureMessage) {
     if (event.getLastResult() == null) {
       log.warn(String.format("%s. Attempt : %d.", failureMessage, event.getAttemptCount()), event.getLastFailure());
     } else {

@@ -10,7 +10,7 @@ package io.harness.ngsettings.services.impl;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
-import static io.harness.springdata.TransactionUtils.DEFAULT_TRANSACTION_RETRY_POLICY;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
@@ -276,7 +276,7 @@ public class SettingsServiceImpl implements SettingsService {
     }
     SettingUtils.validate(newSettingDTO);
     Setting setting = settingRepository.upsert(settingsMapper.toSetting(accountIdentifier, newSettingDTO));
-    return Failsafe.with(DEFAULT_TRANSACTION_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
+    return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
       outboxService.save(new SettingUpdateEvent(accountIdentifier, oldSettingDTO, newSettingDTO));
       Setting parentSetting = getSettingFromParentScope(Scope.of(accountIdentifier, orgIdentifier, projectIdentifier),
           settingRequestDTO.getIdentifier(), settingConfiguration);
@@ -317,7 +317,7 @@ public class SettingsServiceImpl implements SettingsService {
     }
     Setting parentSetting = getSettingFromParentScope(Scope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         settingRequestDTO.getIdentifier(), settingConfiguration);
-    return Failsafe.with(DEFAULT_TRANSACTION_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
+    return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
       setting.ifPresent(settingRepository::delete);
       outboxService.save(new SettingRestoreEvent(accountIdentifier, oldSettingDTO, settingDTO));
       return settingsMapper.writeSettingResponseDTO(parentSetting, settingConfiguration, true);
