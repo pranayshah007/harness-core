@@ -195,13 +195,14 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
         return "";
     }
   }
+
   public ShellExecutorConfig getShellExecutorConfig(NGGitOpsTaskParams taskParameters) {
     return ShellExecutorConfig.builder()
         .accountId(taskParameters.getAccountId())
         .executionId(taskParameters.getActivityId())
         .commandUnitName(COMMAND_UNIT)
-        .workingDirectory(COMMAND_PATH)
-        .environment(new HashMap<>())
+        .workingDirectory(COMMAND_PATH) // This option is not configurable with NG
+        .environment(new HashMap<>()) // This field is required by executor, but not necessary for GitOps
         .scriptType(ScriptType.BASH)
         .build();
   }

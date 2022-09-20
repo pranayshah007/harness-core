@@ -1384,6 +1384,9 @@
             },
             "stringMap": {
               "$ref": "#/definitions/ParameterFieldMapStringString"
+            },
+            "updateConfigScript": {
+              "type": "string"
             }
           }
         }
