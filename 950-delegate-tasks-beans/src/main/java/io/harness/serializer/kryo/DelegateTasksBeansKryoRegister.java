@@ -187,6 +187,7 @@ import io.harness.delegate.beans.connector.docker.DockerTestConnectionTaskRespon
 import io.harness.delegate.beans.connector.docker.DockerValidationParams;
 import io.harness.delegate.beans.connector.gcp.GcpValidationParams;
 import io.harness.delegate.beans.connector.gcpkmsconnector.GcpKmsValidationParams;
+import io.harness.delegate.beans.connector.gcpsmconnector.GcpSMValidationParams;
 import io.harness.delegate.beans.connector.helm.HttpHelmConnectivityTaskParams;
 import io.harness.delegate.beans.connector.helm.HttpHelmConnectivityTaskResponse;
 import io.harness.delegate.beans.connector.helm.HttpHelmValidationParams;
@@ -1774,6 +1775,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(CustomSecretManagerValidationParams.class, 19876);
     kryo.register(GarDelegateRequest.class, 55420);
     kryo.register(GarDelegateResponse.class, 55421);
+    kryo.register(GcpSMValidationParams.class, 19879);
     kryo.register(AzureFetchArmPreDeploymentDataTaskParameters.class, 55423);
     kryo.register(AzureFetchArmPreDeploymentDataTaskResponse.class, 55424);
   }
