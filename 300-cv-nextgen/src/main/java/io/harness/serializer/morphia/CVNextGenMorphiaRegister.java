@@ -46,6 +46,7 @@ import io.harness.cvng.core.entities.DatadogLogCVConfig;
 import io.harness.cvng.core.entities.DatadogMetricCVConfig;
 import io.harness.cvng.core.entities.DeploymentDataCollectionTask;
 import io.harness.cvng.core.entities.DynatraceCVConfig;
+import io.harness.cvng.core.entities.ELKCVConfig;
 import io.harness.cvng.core.entities.EntityDisableTime;
 import io.harness.cvng.core.entities.ErrorTrackingCVConfig;
 import io.harness.cvng.core.entities.HostRecord;
@@ -216,6 +217,7 @@ public class CVNextGenMorphiaRegister implements MorphiaRegistrar {
     set.add(AbstractServiceLevelObjective.class);
     set.add(SimpleServiceLevelObjective.class);
     set.add(CompositeServiceLevelObjective.class);
+    set.add(ELKCVConfig.class);
   }
 
   @Override

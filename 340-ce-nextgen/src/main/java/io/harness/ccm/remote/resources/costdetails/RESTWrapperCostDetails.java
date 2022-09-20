@@ -54,6 +54,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -271,7 +272,7 @@ public class RESTWrapperCostDetails {
     }
 
     PerspectiveTrendStats perspectiveTrendStats =
-        perspectivesQuery.perspectiveTrendStats(filters, aggregationList, false, env);
+        perspectivesQuery.perspectiveTrendStats(filters, Collections.emptyList(), aggregationList, false, env);
     return ResponseDTO.newResponse(perspectiveTrendStats.getCost());
   }
 

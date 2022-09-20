@@ -16,6 +16,7 @@ import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.entities.ViewFieldIdentifier;
 import io.harness.ccm.views.entities.ViewIdCondition;
 import io.harness.ccm.views.entities.ViewRule;
+import io.harness.ccm.views.entities.ViewType;
 import io.harness.migration.NGMigration;
 import io.harness.persistence.HPersistence;
 
@@ -45,10 +46,10 @@ public class CEViewDataSourcesMigration implements NGMigration {
           log.error("Migration Failed for Account {}, ViewId {}", ceView.getAccountId(), ceView.getUuid(), e);
         }
       }
+      log.info("CEViewDataSourcesMigration has been completed");
     } catch (final Exception e) {
       log.error("Failure occurred in CEViewDataSourcesMigration", e);
     }
-    log.info("CEViewDataSourcesMigration has completed");
   }
 
   private void migrateCEViewDataSources(final CEView ceView) {
@@ -57,6 +58,9 @@ public class CEViewDataSourcesMigration implements NGMigration {
   }
 
   private void modifyCEView(final CEView ceView) {
+    if (Objects.isNull(ceView.getViewType())) {
+      ceView.setViewType(ViewType.CUSTOMER);
+    }
     if (Objects.isNull(ceView.getViewRules())) {
       ceView.setViewRules(new ArrayList<>());
     }

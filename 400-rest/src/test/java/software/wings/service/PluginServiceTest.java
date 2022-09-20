@@ -7,7 +7,6 @@
 
 package software.wings.service;
 
-import static io.harness.beans.FeatureName.ARTIFACT_STREAM_REFACTOR;
 import static io.harness.rule.OwnerRule.ANUBHAW;
 import static io.harness.rule.OwnerRule.RAGHU;
 
@@ -25,7 +24,6 @@ import static software.wings.beans.PluginCategory.Verification;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.harness.CategoryTest;
@@ -39,7 +37,6 @@ import software.wings.beans.AwsConfig;
 import software.wings.beans.AzureConfig;
 import software.wings.beans.BambooConfig;
 import software.wings.beans.BugsnagConfig;
-import software.wings.beans.CustomArtifactServerConfig;
 import software.wings.beans.DatadogConfig;
 import software.wings.beans.DockerConfig;
 import software.wings.beans.DynaTraceConfig;
@@ -91,7 +88,6 @@ public class PluginServiceTest extends CategoryTest {
   private PluginService pluginService = new PluginServiceImpl();
 
   private String accountId = "ACCOUNT_ID";
-  private String multiArtifactEnabledAccountId = "MULTI_ARTIFACT_ENABLED_ACCOUNT_ID";
 
   //  @Inject private FeatureFlagService featureFlagService;
   @Mock private FeatureFlagService mockFeatureFlagService;
@@ -100,8 +96,6 @@ public class PluginServiceTest extends CategoryTest {
   public void setup() throws IOException, IllegalAccessException {
     initMocks(this);
     FieldUtils.writeField(pluginService, "featureFlagService", mockFeatureFlagService, true);
-    when(mockFeatureFlagService.isEnabled(ARTIFACT_STREAM_REFACTOR, accountId)).thenReturn(false);
-    when(mockFeatureFlagService.isEnabled(ARTIFACT_STREAM_REFACTOR, multiArtifactEnabledAccountId)).thenReturn(true);
   }
 
   @Test
@@ -414,17 +408,6 @@ public class PluginServiceTest extends CategoryTest {
                 .withType(SettingVariableTypes.AZURE_ARTIFACTS_PAT.name())
                 .withPluginCategories(asList(AzureArtifacts))
                 .build());
-
-    assertThat(pluginService.getInstalledPlugins(multiArtifactEnabledAccountId))
-        .hasSize(39)
-        .contains(anAccountPlugin()
-                      .withSettingClass(CustomArtifactServerConfig.class)
-                      .withAccountId(multiArtifactEnabledAccountId)
-                      .withIsEnabled(true)
-                      .withDisplayName(SettingVariableTypes.CUSTOM.getDisplayName())
-                      .withType(SettingVariableTypes.CUSTOM.name())
-                      .withPluginCategories(asList(Artifact))
-                      .build());
   }
 
   @Test
@@ -438,12 +421,5 @@ public class PluginServiceTest extends CategoryTest {
             "AZURE", "PHYSICAL_DATA_CENTER", "KUBERNETES_CLUSTER", "DOCKER", "HOST_CONNECTION_ATTRIBUTES", "ELB",
             "NEXUS", "ARTIFACTORY", "PCF", "GIT", "JIRA", "SMB", "SFTP", "HTTP_HELM_REPO", "OCI_HELM_REPO",
             "AMAZON_S3_HELM_REPO", "GCS_HELM_REPO", "SERVICENOW", "SPOT_INST", "AZURE_ARTIFACTS_PAT");
-    assertThat(pluginService.getPluginSettingSchema(multiArtifactEnabledAccountId))
-        .hasSize(39)
-        .containsOnlyKeys("APP_DYNAMICS", "NEW_RELIC", "DYNA_TRACE", "PROMETHEUS", "APM_VERIFICATION", "DATA_DOG",
-            "JENKINS", "BAMBOO", "SMTP", "BUG_SNAG", "SPLUNK", "ELK", "LOGZ", "SUMO", "INSTANA", "SCALYR", "AWS", "GCP",
-            "AZURE", "PHYSICAL_DATA_CENTER", "KUBERNETES_CLUSTER", "DOCKER", "HOST_CONNECTION_ATTRIBUTES", "ELB",
-            "NEXUS", "ARTIFACTORY", "PCF", "GIT", "JIRA", "SMB", "SFTP", "HTTP_HELM_REPO", "OCI_HELM_REPO",
-            "AMAZON_S3_HELM_REPO", "GCS_HELM_REPO", "SERVICENOW", "CUSTOM", "SPOT_INST", "AZURE_ARTIFACTS_PAT");
   }
 }

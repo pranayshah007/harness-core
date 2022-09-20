@@ -96,6 +96,7 @@ public class SecretApiImplTest extends CategoryTest {
 
     Response response = accountSecretApi.createAccountScopedSecret(secretRequest, account, privateSecret);
 
+    assertThat(response.getStatus()).isEqualTo(Response.Status.CREATED.getStatusCode());
     SecretResponse secretResponse = (SecretResponse) response.getEntity();
     assertThat(secretResponse.getSecret().getOrg()).isNull();
     assertThat(secretResponse.getSecret().getProject()).isNull();
@@ -129,6 +130,7 @@ public class SecretApiImplTest extends CategoryTest {
     when(ngSecretService.create(any(), any())).thenReturn(secretResponseWrapper);
 
     Response response = orgSecretApi.createOrgScopedSecret(secretRequest, org, account, privateSecret);
+    assertThat(response.getStatus()).isEqualTo(Response.Status.CREATED.getStatusCode());
 
     SecretResponse secretResponse = (SecretResponse) response.getEntity();
     assertThat(secretResponse.getSecret().getProject()).isNull();
@@ -163,6 +165,7 @@ public class SecretApiImplTest extends CategoryTest {
     when(ngSecretService.create(any(), any())).thenReturn(secretResponseWrapper);
 
     Response response = projectSecretApi.createProjectScopedSecret(secretRequest, org, project, account, privateSecret);
+    assertThat(response.getStatus()).isEqualTo(Response.Status.CREATED.getStatusCode());
 
     SecretResponse secretResponse = (SecretResponse) response.getEntity();
     assertThat(secretResponse.getSecret().getProject()).isEqualTo(project);
@@ -276,6 +279,9 @@ public class SecretApiImplTest extends CategoryTest {
     Response response =
         accountSecretApi.getAccountScopedSecrets(account, org, project, slugs, types, false, null, page, limit);
 
+    assertThat(response.getLinks()).isNotNull();
+    assertThat(response.getLinks().size()).isEqualTo(1);
+
     List<SecretResponse> secretResponse = (List<SecretResponse>) response.getEntity();
     assertThat(secretResponse.size()).isEqualTo(1);
     assertThat(secretResponse.get(0).getSecret().getProject()).isEqualTo(project);
@@ -304,6 +310,9 @@ public class SecretApiImplTest extends CategoryTest {
         .thenReturn(pages);
 
     Response response = orgSecretApi.getOrgScopedSecrets(org, account, project, slugs, types, false, null, page, limit);
+
+    assertThat(response.getLinks()).isNotNull();
+    assertThat(response.getLinks().size()).isEqualTo(1);
 
     List<SecretResponse> secretResponse = (List<SecretResponse>) response.getEntity();
     assertThat(secretResponse.size()).isEqualTo(1);
@@ -334,6 +343,9 @@ public class SecretApiImplTest extends CategoryTest {
 
     Response response =
         projectSecretApi.getProjectScopedSecrets(org, project, account, slugs, types, false, null, page, limit);
+
+    assertThat(response.getLinks()).isNotNull();
+    assertThat(response.getLinks().size()).isEqualTo(1);
 
     List<SecretResponse> secretResponse = (List<SecretResponse>) response.getEntity();
     assertThat(secretResponse.size()).isEqualTo(1);

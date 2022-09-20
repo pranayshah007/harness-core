@@ -238,17 +238,16 @@ public class StageExecutionHelper {
       InfrastructureOutcome infrastructureOutcome, List<String> hosts, String serviceType) {
     Optional<ArtifactDetails> artifactDetailsOptional = getArtifactDetails(ambiance);
 
-    if (artifactDetailsOptional.isPresent()) {
-      List<InstanceInfo> instanceInfoList =
-          hosts.stream()
-              .map(host
-                  -> getSshWinRmInstanceInfo(
-                      infrastructureOutcome.getKind(), serviceType, infrastructureOutcome.getInfrastructureKey(), host))
-              .collect(Collectors.toList());
+    ArtifactDetails artifactDetails = artifactDetailsOptional.orElse(null);
 
-      instanceDeploymentInfoService.createAndUpdate(
-          executionInfoKey, instanceInfoList, artifactDetailsOptional.get(), ambiance.getStageExecutionId());
-    }
+    List<InstanceInfo> instanceInfoList = hosts.stream()
+                                              .map(host
+                                                  -> getSshWinRmInstanceInfo(infrastructureOutcome.getKind(),
+                                                      serviceType, infrastructureOutcome.getInfrastructureKey(), host))
+                                              .collect(Collectors.toList());
+
+    instanceDeploymentInfoService.createAndUpdate(
+        executionInfoKey, instanceInfoList, artifactDetails, ambiance.getStageExecutionId());
   }
 
   private void saveStageExecutionInfo(

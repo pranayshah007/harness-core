@@ -10,8 +10,8 @@ package io.harness.cvng.beans;
 import io.harness.cvng.utils.CloudWatchUtils;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 
-import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.AccessLevel;
@@ -23,46 +23,40 @@ import lombok.experimental.FieldDefaults;
 @Data
 @Builder
 @EqualsAndHashCode(callSuper = true)
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class CloudWatchMetricDataCollectionInfo extends TimeSeriesDataCollectionInfo<AwsConnectorDTO> {
-  private static final String QUERIES_KEY = "queries";
-  private static final String METRIC_IDENTIFIERS_KEY = "metricIdentifiers";
-  private static final String JSON_PATH_KEY = "jsonPaths";
-  private static final String METRIC_JSON_PATH_KEY = "metricJsonPaths";
-  private static final String TIMESTAMP_JSON_PATH_KEY = "timestampJsonPaths";
-  private static final String HOST_JSON_PATH_KEY = "hostJsonPaths";
-  private static final String METRIC_NAMES_KEY = "metricNames";
-
-  private String region;
-  private List<CloudWatchMetricInfoDTO> metricInfoList;
-  private MetricPackDTO metricPack;
-
-  public List<CloudWatchMetricInfoDTO> getMetricInfoList() {
-    if (metricInfoList == null) {
-      return new ArrayList<>();
-    }
-    return metricInfoList;
-  }
-
-  boolean customQuery;
+  static final String SERVICE = "monitoring";
+  static final String GROUPING_CLAUSE = " GROUP BY ";
+  String region;
+  String groupName;
+  List<CloudWatchMetricInfoDTO> metricInfos;
+  MetricPackDTO metricPack;
 
   @Override
   public Map<String, Object> getDslEnvVariables(AwsConnectorDTO awsConnectorDTO) {
-    // Todo: All queries are custom queries for now.
-    return null;
+    if (isCollectHostData()) {
+      metricInfos.forEach(metric -> {
+        String finalExpression = String.format("%s%s%s", metric.getExpression(), GROUPING_CLAUSE,
+            metric.getResponseMapping().getServiceInstanceJsonPath());
+        metric.setFinalExpression(finalExpression);
+      });
+    }
+    return CloudWatchUtils.getDslEnvVariables(
+        region, groupName, SERVICE, awsConnectorDTO, metricInfos, isCollectHostData());
   }
 
   @Override
   public String getBaseUrl(AwsConnectorDTO awsConnectorDTO) {
-    return CloudWatchUtils.getBaseUrl(region, "monitoring");
+    return CloudWatchUtils.getBaseUrl(region, SERVICE);
   }
 
   @Override
   public Map<String, String> collectionHeaders(AwsConnectorDTO awsConnectorDTO) {
-    return Collections.emptyMap();
+    return new HashMap<>();
   }
 
   @Override
-  public Map<String, String> collectionParams(AwsConnectorDTO awsConnectorDTO) {
+  public Map<String, String> collectionParams(AwsConnectorDTO connectorConfigDTO) {
     return Collections.emptyMap();
   }
 
@@ -71,9 +65,9 @@ public class CloudWatchMetricDataCollectionInfo extends TimeSeriesDataCollection
   @FieldDefaults(level = AccessLevel.PRIVATE)
   public static class CloudWatchMetricInfoDTO {
     String expression;
+    String finalExpression;
     String metricName;
     String metricIdentifier;
-    private String groupName;
     MetricResponseMappingDTO responseMapping;
   }
 }

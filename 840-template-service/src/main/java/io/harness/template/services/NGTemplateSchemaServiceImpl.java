@@ -87,6 +87,8 @@ public class NGTemplateSchemaServiceImpl implements NGTemplateSchemaService {
       templateChildType = EntityTypeConstants.PIPELINES;
     } else if (TemplateEntityType.CUSTOM_DEPLOYMENT_TEMPLATE.equals(templateEntityType)) {
       templateChildType = EntityTypeConstants.TEMPLATE_CUSTOM_DEPLOYMENT;
+    } else if (TemplateEntityType.ARTIFACT_SOURCE_TEMPLATE.equals(templateEntityType)) {
+      templateChildType = EntityTypeConstants.ARTIFACT_SOURCE_TEMPLATE;
     }
 
     if (templateChildType == null || !schemaValidationSupported(templateEntityType)) {
@@ -99,7 +101,8 @@ public class NGTemplateSchemaServiceImpl implements NGTemplateSchemaService {
     // TODO: add a handler here to fetch for schemas that we can't get from pipeline as discussed. and refactor
     JsonNode specSchema;
 
-    if (TemplateEntityType.CUSTOM_DEPLOYMENT_TEMPLATE.equals(templateEntityType)) {
+    if (TemplateEntityType.CUSTOM_DEPLOYMENT_TEMPLATE.equals(templateEntityType)
+        || TemplateEntityType.ARTIFACT_SOURCE_TEMPLATE.equals(templateEntityType)) {
       specSchema = NGRestUtils.getResponse(yamlSchemaClientMapper.get("cd").getEntityYaml(
           accountIdentifier, orgIdentifier, projectIdentifier, entityType, scope));
     } else {
@@ -135,6 +138,7 @@ public class NGTemplateSchemaServiceImpl implements NGTemplateSchemaService {
       case STEP_TEMPLATE:
       case STAGE_TEMPLATE:
       case CUSTOM_DEPLOYMENT_TEMPLATE:
+      case ARTIFACT_SOURCE_TEMPLATE:
         return true;
       default:
         return false;

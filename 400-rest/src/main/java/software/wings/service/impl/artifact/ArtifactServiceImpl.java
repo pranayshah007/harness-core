@@ -258,15 +258,11 @@ public class ArtifactServiceImpl implements ArtifactService {
     artifact.setArtifactSourceName(artifactStream.getSourceName());
     setAccountId(artifact);
     setArtifactStatus(artifact, artifactStream);
-    boolean isMultiArtifact =
-        featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, artifact.getAccountId());
-    if (!isMultiArtifact) {
-      artifact.setServiceIds(artifactStreamServiceBindingService.listServiceIds(artifactStream.getUuid()));
-    }
+    artifact.setServiceIds(artifactStreamServiceBindingService.listServiceIds(artifactStream.getUuid()));
 
     if (!skipDuplicateCheck) {
       ArtifactStreamAttributes artifactStreamAttributes =
-          artifactCollectionUtils.getArtifactStreamAttributes(artifactStream, isMultiArtifact);
+          artifactCollectionUtils.getArtifactStreamAttributes(artifactStream, false);
       Artifact savedArtifact = getArtifactByUniqueKey(artifactStream, artifactStreamAttributes, artifact);
       if (savedArtifact != null) {
         log.info(

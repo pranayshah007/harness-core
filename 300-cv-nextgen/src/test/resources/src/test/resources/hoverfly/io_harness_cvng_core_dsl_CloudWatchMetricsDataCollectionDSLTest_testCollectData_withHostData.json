@@ -1,0 +1,87 @@
+{
+  "data" : {
+    "pairs" : [ {
+      "request" : {
+        "path" : [ {
+          "matcher" : "exact",
+          "value" : "/"
+        } ],
+        "method" : [ {
+          "matcher" : "exact",
+          "value" : "POST"
+        } ],
+        "destination" : [ {
+          "matcher" : "exact",
+          "value" : "monitoring.us-east-1.amazonaws.com"
+        } ],
+        "scheme" : [ {
+          "matcher" : "exact",
+          "value" : "https"
+        } ],
+        "body" : [ {
+          "matcher" : "exact",
+          "value" : "{\"EndTime\":1663333097,\"StartTime\":1663329497,\"MetricDataQueries\":[{\"Expression\":\"SELECT AVG(CPUUtilization) FROM SCHEMA(\\\"AWS/EC2\\\", InstanceId) GROUP BY InstanceId\",\"Label\":\"metric-1\",\"Period\":60,\"Id\":\"m1\"}]}"
+        } ]
+      },
+      "response" : {
+        "status" : 200,
+        "body" : "H4sIAAAAAAAAAN1WPW8dRwz8K8HVZ4Hk8FOtkyJA3CRBmkDFPb1TIECCjbynytB/D3inyPuMGLFbb8UZLHncnR3iPk7v1tNp+Ws9Tdd/3szTu/X89/3tj8t5+XU9PT2cm/44/XycrqdHnubpl+WwPjTY9r3hH+7fkNNtYCXmdVki6DDN02/n5fx0evv+uE7X09v3jx8e1vM6zdPv94/r6bw8fui6fOUOQFJ/qvlfYCOQAXCNwEeAEdAAKEagI+BPQCpH0B3czNMfy8PTdit0JZZwZs6UCi+ZmyKSiDQtq2Kx5rTGlZj31JclTuZN+aelovsmMZESEIpNL/OQnPKFUkapoRYuweSyNyGUzIBrwiLny/6T6iX1lUsz95vn+f90jrDjbRySDJJ0lG/VOXKQVkfAA+AcgY1ABkA1Ah8BRkA5SBsj6A4udU4iBEUKjEr7NqMCTojIFBf0ZSbBzE2hqZy8UwxNVxE1TfBGibFBOcpY+yUkNNyUlLOPVU05CqriIuX7HuvGOJKVeK/t5clm/WqYNjkTRKaumpShtFWCpFNFFXFKtMBZpkHo98oRiK8QeGED6C70Dr4sfPvdCQwigii7MpF7Gw3sqdSO4qisbM7aRLCsTGOV1tOUjUpaCMmyplRctTQ8yAuh2wioLJQJCcJVqUUFvfqWMzYrg0jIKdq4sPKNYhJm9opQpO9cihQjQlRVqb8AQVEwIUXdYzvCMHiM7SuEPi50d3dYOVKOB6z+rULXIK0PMYZ4kDWGeBzVPMg4SmpDLIOgNcT+ubaEy/HbF0j7tZOZQ8XaKaR+sXTj9jmbWWIltg3IF/J15G7JdsnFns3/UfGS462iXZJf/MpnLcp2krzYyF8zsFfcpdoxDwcr9YN9Z37GVbonl6a3bioy4yqNLDJdNSzNd4ZNUkgUYdsed4Yyc/9UtP1wlRyuqUKpXNWEUHGkhll7bWPKwDBuv71kaUGQ6T1TQvc0h8EbKstOFSINTOUBQlMIMEsRa/9QxNaAhFhYsMOL4+b55vkfRUBTqZ0JAAA=",
+        "encodedBody" : true,
+        "templated" : false,
+        "headers" : {
+          "Content-Encoding" : [ "gzip" ],
+          "Content-Length" : [ "779" ],
+          "Content-Type" : [ "application/x-amz-json-1.0" ],
+          "Date" : [ "Fri, 16 Sep 2022 14:51:35 GMT" ],
+          "Hoverfly" : [ "Was-Here" ],
+          "X-Amzn-Requestid" : [ "dccfce91-3073-4318-b8d5-d38038480713" ]
+        }
+      }
+    }, {
+      "request" : {
+        "path" : [ {
+          "matcher" : "exact",
+          "value" : "/"
+        } ],
+        "method" : [ {
+          "matcher" : "exact",
+          "value" : "POST"
+        } ],
+        "destination" : [ {
+          "matcher" : "exact",
+          "value" : "monitoring.us-east-1.amazonaws.com"
+        } ],
+        "scheme" : [ {
+          "matcher" : "exact",
+          "value" : "https"
+        } ],
+        "body" : [ {
+          "matcher" : "exact",
+          "value" : "{\"EndTime\":1663333097,\"StartTime\":1663329497,\"MetricDataQueries\":[{\"Expression\":\"SELECT AVG(CPUUtilization) FROM SCHEMA(\\\"AWS/EC2\\\", InstanceId) GROUP BY InstanceId\",\"Label\":\"metric-12\",\"Period\":60,\"Id\":\"m12\"}]}"
+        } ]
+      },
+      "response" : {
+        "status" : 200,
+        "body" : "H4sIAAAAAAAAAN1WPW8dRwz8K8HVZ4Hk8FOtkyJA3CRBmkDFPb1TIECCjbynytB/D3inyPuMGLFbb8UZLHncnR3iPk7v1tNp+Ws9Tdd/3szTu/X89/3tj8t5+XU9PT2cm/44/XycrqdHlmmeflkO60OjbeMblh/u35DTbWAl5nVZIugwzdNv5+X8dHr7/rhO19Pb948fHtbzOs3T7/eP6+m8PH7oynzlDkBSf6r5X2AjkAFwjcBHgBHQAChGoCPgT0AqR9Ad3MzTH8vD03YvdCWWcGbOlAovmZsikog0Latisea0xpWY99SXJU7mTfmnpaL7JjGREhCKTS/zkJzyhVJGqaEWLsHksjchlMyAa8Ii58v+k+ol9ZVLM/eb5/n/lY6w420ckgySdJRvVTpyEFdHwAPgHIGNQAZANQIfAUZAOYgbI+gOLpVOIgRFCoxK+z6jAk6IyBQX9HUmwcxNoamcvFMMTVcRNU3wRomxQTnKWPstJDTclJSzj1VNOQqq4iLl+x7rxjiSlXiv7eXJZv1umDZBE0SmrpqUobRVgqRTRRVxSrTEWaZB6BfLEYivknhhA+gu9A6+LHz73UkMIoIouzKRe5sN7KnUruKorGzO2kiwrExjlVbUlI1KWgrJsqZUXLU0PMgLodsYqCyUCQnCVallBb16lzM2O4NIyCnavLDyjWISZvaKUKTvXIoUI0JUVam/AEFRMCFF3WM7wjB8jO2rpD4udHd3WDlSjges/q1S1yCuDzGGeBA2hngc2DwIOYpqQyyDpDXE/rm6hMsh3FdI+8WTmUPF2i2kfrF04/Zpm1liJbaNyRfydfBuyXbJxZ7N/1HxkuOtol2SX/zKZy3KdpK82MhfN7ZX3KXaMQ8HK/WDfWeexlW6J5emt3IqMuMqjSwyXTUszXeGTVJIFGHbHneGMnP/XLQFcZUcrqlCqVzVhFBxpIZZ+21jysAwbs+9ZGlBkOk9V0L3NIfBGyrLThUiDUzlAUJTCDBLEWv/WMTWgIRYWLDDi+Pm+eb5HwqOtaOnCQAA",
+        "encodedBody" : true,
+        "templated" : false,
+        "headers" : {
+          "Content-Encoding" : [ "gzip" ],
+          "Content-Length" : [ "780" ],
+          "Content-Type" : [ "application/x-amz-json-1.0" ],
+          "Date" : [ "Fri, 16 Sep 2022 14:51:36 GMT" ],
+          "Hoverfly" : [ "Was-Here" ],
+          "X-Amzn-Requestid" : [ "6479e92e-4dfa-4ae5-aaa9-352250ec7103" ]
+        }
+      }
+    } ],
+    "globalActions" : {
+      "delays" : [ ]
+    }
+  },
+  "meta" : {
+    "schemaVersion" : "v5",
+    "hoverflyVersion" : "v1.1.5",
+    "timeExported" : "2022-09-16T14:52:07Z"
+  }
+}

@@ -141,8 +141,7 @@ public class ArtifactCollectionResponseHandler {
 
     log.info("Artifact cleanup started");
     ArtifactStreamAttributes artifactStreamAttributes =
-        artifactCollectionUtils.getArtifactStreamAttributes(artifactStream,
-            featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, artifactStream.getAccountId()));
+        artifactCollectionUtils.getArtifactStreamAttributes(artifactStream, false);
 
     Set<String> artifactKeys = buildSourceResponse.getToBeDeletedKeys();
     boolean deleted =

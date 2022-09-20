@@ -8,20 +8,40 @@
 package io.harness.cvng.core.services.impl;
 
 import io.harness.cvng.beans.CloudWatchMetricDataCollectionInfo;
+import io.harness.cvng.beans.CloudWatchMetricDataCollectionInfo.CloudWatchMetricInfoDTO;
 import io.harness.cvng.core.entities.CloudWatchMetricCVConfig;
+import io.harness.cvng.core.entities.CloudWatchMetricCVConfig.CloudWatchMetricInfo;
 import io.harness.cvng.core.services.api.MetricDataCollectionInfoMapper;
+
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class CloudWatchMetricDataCollectionInfoMapper
     extends MetricDataCollectionInfoMapper<CloudWatchMetricDataCollectionInfo, CloudWatchMetricCVConfig> {
   @Override
   protected CloudWatchMetricDataCollectionInfo toDataCollectionInfo(CloudWatchMetricCVConfig cvConfig) {
+    List<CloudWatchMetricInfoDTO> metricInfoDTOs =
+        cvConfig.getMetricInfos().stream().map(this::generateInfoDTO).collect(Collectors.toList());
     CloudWatchMetricDataCollectionInfo cloudWatchMetricDataCollectionInfo =
         CloudWatchMetricDataCollectionInfo.builder()
             .region(cvConfig.getRegion())
+            .groupName(cvConfig.getGroupName())
+            .metricInfos(metricInfoDTOs)
             .metricPack(cvConfig.getMetricPack().toDTO())
             .build();
     cloudWatchMetricDataCollectionInfo.setDataCollectionDsl(cvConfig.getDataCollectionDsl());
-    // TODO: Add mapper code
     return cloudWatchMetricDataCollectionInfo;
+  }
+
+  private CloudWatchMetricInfoDTO generateInfoDTO(CloudWatchMetricInfo metricInfo) {
+    return CloudWatchMetricInfoDTO.builder()
+        .metricName(metricInfo.getMetricName())
+        .metricIdentifier(metricInfo.getIdentifier())
+        .expression(metricInfo.getExpression())
+        .finalExpression(metricInfo.getExpression())
+        .responseMapping(
+            Objects.nonNull(metricInfo.getResponseMapping()) ? metricInfo.getResponseMapping().toDto() : null)
+        .build();
   }
 }

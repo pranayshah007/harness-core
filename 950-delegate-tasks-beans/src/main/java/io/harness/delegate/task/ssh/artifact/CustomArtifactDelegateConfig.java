@@ -28,4 +28,9 @@ public class CustomArtifactDelegateConfig implements SshWinRmArtifactDelegateCon
   public SshWinRmArtifactType getArtifactType() {
     return SshWinRmArtifactType.CUSTOM_ARTIFACT;
   }
+
+  @Override
+  public String getArtifactPath() {
+    return null;
+  }
 }

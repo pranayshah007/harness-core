@@ -219,6 +219,11 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
   }
 
   @Override
+  public List<ServiceLevelObjective> getAllSLOs(ProjectParams projectParams) {
+    return get(projectParams, Filter.builder().build());
+  }
+
+  @Override
   public List<ServiceLevelObjective> getByMonitoredServiceIdentifier(
       ProjectParams projectParams, String monitoredServiceIdentifier) {
     return get(projectParams, Filter.builder().monitoredServiceIdentifier(monitoredServiceIdentifier).build());

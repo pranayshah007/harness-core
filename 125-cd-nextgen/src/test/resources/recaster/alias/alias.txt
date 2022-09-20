@@ -259,6 +259,7 @@ io.harness.cdng.ssh.TailFilePattern
 io.harness.cdng.ssh.CommandUnitWrapper
 io.harness.cdng.ssh.ScriptCommandUnitSpec
 io.harness.cdng.ssh.CopyCommandUnitSpec
+io.harness.cdng.ssh.DownloadArtifactCommandUnitSpec
 io.harness.cdng.ssh.CommandUnitSourceType
 io.harness.cdng.ssh.CommandStepOutcome
 io.harness.yaml.core.failurestrategy.abort.AbortFailureActionConfig
@@ -470,7 +471,6 @@ io.harness.cdng.artifact.steps.ArtifactsStepV2SweepingOutput
 io.harness.ngpipeline.artifact.bean.GarArtifactOutcome
 io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig
 io.harness.cdng.provision.azure.AzureCreateARMResourceOutcome
-io.harness.cdng.provision.azure.beans.AzureARMTemplateDataOutput
 io.harness.cdng.infra.beans.host.HostFilter
 io.harness.cdng.infra.beans.host.AllHostsFilter
 io.harness.cdng.infra.beans.host.HostNamesFilter
@@ -478,3 +478,5 @@ io.harness.cdng.infra.beans.host.HostAttributesFilter
 io.harness.cdng.manifest.steps.NgManifestsMetadataSweepingOutput
 io.harness.cdng.configfile.steps.NgConfigFilesMetadataSweepingOutput
 io.harness.cdng.provision.azure.beans.AzureARMValidator
+io.harness.cdng.artifact.bean.yaml.ArtifactSourceConfig
+io.harness.yaml.core.failurestrategy.rollback.PipelineRollbackFailureActionConfig

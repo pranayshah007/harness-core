@@ -8,7 +8,6 @@
 package io.harness.cdng.creator.plan.environment;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -37,11 +36,11 @@ public class EnvironmentMapper {
   public EnvironmentStepParameters toEnvironmentStepParameters(
       EnvironmentPlanCreatorConfig environmentPlanCreatorConfig) {
     Map<String, Object> serviceOverrides = new HashMap<>();
-    if (environmentPlanCreatorConfig.getServiceOverrides() != null
-        && isNotEmpty(environmentPlanCreatorConfig.getServiceOverrides().getVariables())) {
-      serviceOverrides =
-          NGVariablesUtils.getMapOfVariables(environmentPlanCreatorConfig.getServiceOverrides().getVariables());
+    if (areSvcOverrideVariablesPresent(environmentPlanCreatorConfig)) {
+      serviceOverrides = NGVariablesUtils.getMapOfVariables(
+          environmentPlanCreatorConfig.getServiceOverrideConfig().getServiceOverrideInfoConfig().getVariables());
     }
+
     return EnvironmentStepParameters.builder()
         .environmentRef(environmentPlanCreatorConfig.getEnvironmentRef())
         .name(environmentPlanCreatorConfig.getName())
@@ -52,6 +51,13 @@ public class EnvironmentMapper {
         .serviceOverrides(serviceOverrides)
         .variables(NGVariablesUtils.getMapOfVariables(environmentPlanCreatorConfig.getVariables()))
         .build();
+  }
+
+  private boolean areSvcOverrideVariablesPresent(EnvironmentPlanCreatorConfig environmentPlanCreatorConfig) {
+    return environmentPlanCreatorConfig != null && environmentPlanCreatorConfig.getServiceOverrideConfig() != null
+        && environmentPlanCreatorConfig.getServiceOverrideConfig().getServiceOverrideInfoConfig() != null
+        && environmentPlanCreatorConfig.getServiceOverrideConfig().getServiceOverrideInfoConfig().getVariables()
+        != null;
   }
 
   public EnvironmentStepParameters toEnvironmentStepParameters(EnvGroupPlanCreatorConfig envGroupPlanCreatorConfig) {

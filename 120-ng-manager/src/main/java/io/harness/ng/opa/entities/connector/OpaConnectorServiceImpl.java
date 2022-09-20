@@ -19,7 +19,7 @@ import io.harness.ng.opa.OpaEvaluationContext;
 import io.harness.ng.opa.OpaService;
 import io.harness.opaclient.OpaUtils;
 import io.harness.opaclient.model.OpaConstants;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.CGRestUtils;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -43,7 +43,7 @@ public class OpaConnectorServiceImpl implements OpaConnectorService {
 
   public GovernanceMetadata evaluatePoliciesWithEntity(String accountId, ConnectorDTO connectorDTO,
       String orgIdentifier, String projectIdentifier, String action, String identifier) {
-    if (!RestClientUtils.getResponse(
+    if (!CGRestUtils.getResponse(
             accountClient.isFeatureFlagEnabled(FeatureName.OPA_CONNECTOR_GOVERNANCE.name(), accountId))) {
       return GovernanceMetadata.newBuilder()
           .setDeny(false)
@@ -84,7 +84,7 @@ public class OpaConnectorServiceImpl implements OpaConnectorService {
 
   public void evaluatePoliciesWithJson(String accountId, String expandedJson, String orgIdentifier,
       String projectIdentifier, String action, String identifier) {
-    if (!RestClientUtils.getResponse(
+    if (!CGRestUtils.getResponse(
             accountClient.isFeatureFlagEnabled(FeatureName.OPA_CONNECTOR_GOVERNANCE.name(), accountId))) {
       throw new InvalidRequestException("This feature is not allowed for this account");
     }

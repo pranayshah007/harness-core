@@ -8,6 +8,7 @@
 package io.harness.shell;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.INVALID_EXECUTION_ID;
 import static io.harness.eraro.ErrorCode.UNKNOWN_ERROR;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
@@ -244,6 +245,12 @@ public class ScriptSshExecutor extends AbstractScriptExecutor {
       ((ChannelExec) channel).setPty(true);
 
       String directoryPath = resolveEnvVarsInPath(this.config.getWorkingDirectory() + "/");
+
+      if (isNotEmpty(this.config.getEnvVariables())) {
+        String exportCommand = buildExportForEnvironmentVariables(this.config.getEnvVariables());
+        command = exportCommand + "\n" + command;
+      }
+
       String envVariablesFilename = null;
       command = "cd \"" + directoryPath + "\"\n" + command;
 
@@ -351,6 +358,14 @@ public class ScriptSshExecutor extends AbstractScriptExecutor {
         channel.disconnect();
       }
     }
+  }
+
+  protected String buildExportForEnvironmentVariables(Map<String, String> envVariables) {
+    StringBuilder sb = new StringBuilder();
+    for (Map.Entry<String, String> entry : envVariables.entrySet()) {
+      sb.append(String.format("export %s=\"%s\"\n", entry.getKey(), entry.getValue()));
+    }
+    return sb.toString();
   }
 
   private Channel getSftpConnectedChannel() throws JSchException {

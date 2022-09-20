@@ -27,7 +27,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @OwnedBy(CV)
 public class CloudWatchMetricFetchSampleDataRequest extends DataCollectionRequest<AwsConnectorDTO> {
-  private static final String service = "monitoring";
+  private static final String SERVICE = "monitoring";
   public static final String DSL = DataCollectionRequest.readDSL(
       "cloudwatch-metrics-sample-fetch.datacollection", CloudWatchMetricFetchSampleDataRequest.class);
 
@@ -44,7 +44,7 @@ public class CloudWatchMetricFetchSampleDataRequest extends DataCollectionReques
 
   @Override
   public String getBaseUrl() {
-    return CloudWatchUtils.getBaseUrl(region, service);
+    return CloudWatchUtils.getBaseUrl(region, SERVICE);
   }
 
   @Override
@@ -55,6 +55,6 @@ public class CloudWatchMetricFetchSampleDataRequest extends DataCollectionReques
   @Override
   public Map<String, Object> fetchDslEnvVariables() {
     return CloudWatchUtils.getDslEnvVariables(
-        region, group, expression, metricName, metricIdentifier, service, getConnectorConfigDTO());
+        region, group, expression, metricName, metricIdentifier, SERVICE, getConnectorConfigDTO(), false);
   }
 }

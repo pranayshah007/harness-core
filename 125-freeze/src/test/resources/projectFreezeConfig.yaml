@@ -1,0 +1,53 @@
+freeze:
+  identifier: "id"
+  name: "name"
+  description: "desc"
+  orgIdentifier: "oId"
+  projectIdentifier: "pId"
+  status: "ACTIVE"
+  windows:
+    - timezone:
+      startTime: (YYYY-MM-DDThh:mm format)
+      endTime: (YYYY-MM-DDThh:mm format)
+      recurrence:
+        spec:
+          until: "until"
+          count: 1
+          expression: "exp"
+          dayRange:
+            - "Sat-Sun"
+            - "Mon-Tues"
+        type: "DAILY"
+  entityConfigs:
+    - entity:
+      - tags:
+          - "tag1"
+          - "tag2"
+        expression: "exp"
+        filterType: "ALL"
+        type: "SERVICE"
+        entityRefs:
+          - "serv1"
+          - "serv2"
+      - expression: "exp"
+        filterType: "ALL"
+        type: "PIPELINE"
+        entityRefs:
+          - "pip1"
+          - "pip2"
+    - entity:
+        - tags:
+            - "tag1"
+            - "tag2"
+          expression: "exp"
+          filterType: "ALL"
+          type: "SERVICE"
+          entityRefs:
+            - "serv1"
+            - "serv2"
+        - expression: "exp"
+          filterType: "ALL"
+          type: "PIPELINE"
+          entityRefs:
+            - "pip1"
+            - "pip2"
