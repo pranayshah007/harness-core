@@ -38,7 +38,6 @@ import static software.wings.service.intfc.ServiceTemplateService.EncryptedField
 import static software.wings.sm.StateExecutionInstance.Builder.aStateExecutionInstance;
 import static software.wings.sm.StateType.HELM_DEPLOY;
 import static software.wings.sm.WorkflowStandardParams.Builder.aWorkflowStandardParams;
-import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.ACTIVITY_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;
 import static software.wings.utils.WingsTestConstants.APP_NAME;
@@ -457,7 +456,6 @@ public class HelmDeployStateTest extends CategoryTest {
     when(variableProcessor.getVariables(any(), any())).thenReturn(emptyMap());
     when(evaluator.substitute(anyString(), anyMap(), any(VariableResolverTracker.class), anyString()))
         .thenAnswer(i -> i.getArguments()[0]);
-    when(featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, ACCOUNT_ID)).thenReturn(false);
 
     WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService =
         new WorkflowStandardParamsExtensionService(appService, null, artifactService, environmentService,
@@ -483,7 +481,6 @@ public class HelmDeployStateTest extends CategoryTest {
     on(context).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
     on(context).set("contextElementParamMapperFactory", contextElementParamMapperFactory);
 
-    when(featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, ACCOUNT_ID)).thenReturn(false);
     when(subdomainUrlHelper.getPortalBaseUrl(any())).thenReturn("baseUrl");
   }
 

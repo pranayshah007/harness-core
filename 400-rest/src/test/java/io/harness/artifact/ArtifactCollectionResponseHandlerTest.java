@@ -119,7 +119,6 @@ public class ArtifactCollectionResponseHandlerTest extends CategoryTest {
     ARTIFACT_STREAM_UNSTABLE.setCollectionStatus(UNSTABLE.name());
     when(artifactStreamService.get(ARTIFACT_STREAM_ID)).thenReturn(ARTIFACT_STREAM);
     when(artifactStreamService.get(ARTIFACT_STREAM_ID_2)).thenReturn(ARTIFACT_STREAM_UNSTABLE);
-    when(featureFlagService.isEnabled(eq(FeatureName.ARTIFACT_STREAM_REFACTOR), any())).thenReturn(false);
     when(featureFlagService.isEnabled(eq(FeatureName.ARTIFACT_PERPETUAL_TASK), any())).thenReturn(true);
     when(featureFlagService.isEnabled(eq(FeatureName.ARTIFACT_COLLECTION_CONFIGURABLE), any())).thenReturn(true);
   }

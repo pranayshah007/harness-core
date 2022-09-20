@@ -519,16 +519,6 @@ public class ServiceResourceServiceImpl implements ServiceResourceService, DataP
     validateArtifactType(service);
 
     // TODO: ASR: IMP: update the block below for artifact variables as service variable
-    if (createdFromYaml) {
-      if (featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId)) {
-        List<String> artifactStreamIds = service.getArtifactStreamIds();
-        if (artifactStreamIds == null) {
-          artifactStreamIds = new ArrayList<>();
-        }
-        service.setArtifactStreamIds(artifactStreamIds);
-      }
-    }
-
     StaticLimitCheckerWithDecrement checker = (StaticLimitCheckerWithDecrement) limitCheckerFactory.getInstance(
         new Action(accountId, ActionType.CREATE_SERVICE));
 
@@ -984,14 +974,6 @@ public class ServiceResourceServiceImpl implements ServiceResourceService, DataP
         updateOperations.set("helmValueYaml", service.getHelmValueYaml());
       } else {
         updateOperations.unset("helmValueYaml");
-      }
-      if (featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, savedService.getAccountId())) {
-        // TODO: ASR: IMP: update the block below for artifact variables as service variable
-        List<String> artifactStreamIds = service.getArtifactStreamIds();
-        if (artifactStreamIds == null) {
-          artifactStreamIds = new ArrayList<>();
-        }
-        updateOperations.set("artifactStreamIds", artifactStreamIds);
       }
     }
 
