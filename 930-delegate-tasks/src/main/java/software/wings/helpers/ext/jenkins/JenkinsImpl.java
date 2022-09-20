@@ -40,7 +40,6 @@ import io.harness.exception.WingsException;
 import io.harness.network.Http;
 import io.harness.serializer.JsonUtils;
 
-import org.apache.commons.lang3.ArrayUtils;
 import software.wings.beans.JenkinsConfig;
 import software.wings.beans.command.JenkinsTaskParams;
 import software.wings.common.BuildDetailsComparator;
@@ -87,6 +86,7 @@ import java.util.stream.Collectors;
 import javax.net.ssl.HostnameVerifier;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;

@@ -42,11 +42,9 @@ import io.harness.exception.UnauthorizedException;
 import io.harness.exception.WingsException;
 import io.harness.serializer.JsonUtils;
 
-import org.apache.commons.lang3.ArrayUtils;
 import software.wings.common.BuildDetailsComparator;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.helpers.ext.jenkins.CustomJenkinsHttpClient;
-import software.wings.helpers.ext.jenkins.JenkinsImpl;
 import software.wings.helpers.ext.jenkins.JobDetails;
 import software.wings.helpers.ext.jenkins.SvnBuildDetails;
 import software.wings.helpers.ext.jenkins.SvnRevision;
@@ -91,6 +89,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.http.client.HttpResponseException;
 
 @Slf4j
