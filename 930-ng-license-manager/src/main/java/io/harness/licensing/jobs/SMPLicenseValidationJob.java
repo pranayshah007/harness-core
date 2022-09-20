@@ -9,5 +9,5 @@ package io.harness.licensing.jobs;
 
 public interface SMPLicenseValidationJob {
 
-    void scheduleValidation(String accountId, int frequencyInMinutes);
+    void scheduleValidation(String accountId, String licenseSign, int frequencyInMinutes);
 }

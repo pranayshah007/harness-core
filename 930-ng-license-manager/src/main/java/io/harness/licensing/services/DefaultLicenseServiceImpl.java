@@ -7,6 +7,7 @@
 
 package io.harness.licensing.services;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -32,6 +33,7 @@ import io.harness.licensing.entities.modules.ModuleLicense;
 import io.harness.licensing.helpers.ModuleLicenseHelper;
 import io.harness.licensing.helpers.ModuleLicenseSummaryHelper;
 import io.harness.licensing.interfaces.ModuleLicenseInterface;
+import io.harness.licensing.jobs.SMPLicenseValidationJob;
 import io.harness.licensing.mappers.LicenseObjectConverter;
 import io.harness.licensing.mappers.SMPLicenseMapper;
 import io.harness.ng.core.account.DefaultExperience;
@@ -55,6 +57,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import javax.cache.Cache;
 import javax.ws.rs.NotFoundException;
+import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -80,6 +83,7 @@ public class DefaultLicenseServiceImpl implements LicenseService {
   private final LicenseGenerator licenseGenerator;
   private final LicenseValidator licenseValidator;
   private final SMPLicenseMapper smpLicenseMapper;
+  private final SMPLicenseValidationJob licenseValidationJob;
 
   static final String FAILED_OPERATION = "START_TRIAL_ATTEMPT_FAILED";
   static final String SUCCEED_START_FREE_OPERATION = "FREE_PLAN";
@@ -94,7 +98,8 @@ public class DefaultLicenseServiceImpl implements LicenseService {
                                    LicenseObjectConverter licenseObjectConverter, ModuleLicenseInterface licenseInterface,
                                    AccountService accountService, TelemetryReporter telemetryReporter, CeLicenseClient ceLicenseClient,
                                    LicenseComplianceResolver licenseComplianceResolver, @Named(LICENSE_CACHE_NAMESPACE) Cache<String, List> cache,
-                                   LicenseGenerator licenseGenerator, LicenseValidator licenseValidator, SMPLicenseMapper smpLicenseMapper) {
+                                   LicenseGenerator licenseGenerator, LicenseValidator licenseValidator, SMPLicenseMapper smpLicenseMapper,
+                                   SMPLicenseValidationJob licenseValidationJob) {
     this.moduleLicenseRepository = moduleLicenseRepository;
     this.licenseObjectConverter = licenseObjectConverter;
     this.licenseInterface = licenseInterface;
@@ -106,6 +111,7 @@ public class DefaultLicenseServiceImpl implements LicenseService {
     this.licenseGenerator = licenseGenerator;
     this.licenseValidator = licenseValidator;
     this.smpLicenseMapper = smpLicenseMapper;
+    this.licenseValidationJob = licenseValidationJob;
   }
 
   @Override
@@ -446,7 +452,17 @@ public class DefaultLicenseServiceImpl implements LicenseService {
   @Override
   public SMPValidationResultDTO validateSMPLicense(SMPEncLicenseDTO licenseDTO) {
     SMPLicenseEnc smpLicenseEnc = smpLicenseMapper.toSMPLicenseEnc(licenseDTO);
-    SMPLicenseValidationResult validationResult = licenseValidator.validate(smpLicenseEnc, licenseDTO.isDecrypt());
+    SMPLicenseValidationResult validationResult = null;
+    try {
+      validationResult = licenseValidator.validate(smpLicenseEnc, licenseDTO.isDecrypt());
+    } catch (NoSuchAlgorithmException e) {
+      log.error("Invalid algorithm detected in license body");
+      validationResult = SMPLicenseValidationResult.builder()
+              .smpLicense(null)
+              .resultMessage("Invalid algorithm detected in license")
+              .isValid(false)
+              .build();
+    }
     return smpLicenseMapper.toSMPValidationResultDTO(validationResult);
   }
 
@@ -479,7 +495,47 @@ public class DefaultLicenseServiceImpl implements LicenseService {
 
   @Override
   public void applySMPLicense(SMPEncLicenseDTO licenseDTO) {
-
+    String license = System.getenv("SMP_LICENSE");
+    log.info("SMP License value: {}", license);
+    SMPValidationResultDTO validationResult = validateSMPLicense(SMPEncLicenseDTO.builder().encryptedLicense(license).decrypt(true).build());
+    if (validationResult.isValid()) {
+      log.info("License validation passed");
+      try {
+        log.info("Validation Result: {}", new ObjectMapper().writeValueAsString(validationResult));
+      } catch (Exception e) {
+        log.error("Unable to parse validation result: {}", validationResult, e);
+      }
+      // create account
+      AccountDTO accountDTO = AccountDTO.builder()
+              .companyName(validationResult.getLicenseDTO().getCompanyName())
+              .name(validationResult.getLicenseDTO().getAccountName())
+              .identifier(validationResult.getLicenseDTO().getAccountIdentifier())
+              .isProductLed(true)
+              .build();
+      try {
+        accountService.createAccount(accountDTO);
+      } catch (Exception e) {
+        log.error("Exception thrown during account creation", e);
+      }
+      // create module licenses
+      try{
+        for (ModuleLicenseDTO moduleLicenseDTO : validationResult.getLicenseDTO().getModuleLicenses()) {
+          createModuleLicense(moduleLicenseDTO);
+        }
+      } catch (Exception e) {
+        log.error("Exception during license creation ", e);
+      }
+      String licenseSign = null;
+      try {
+        licenseSign = licenseGenerator.sign(SMPLicense.builder()
+                .moduleLicenses(validationResult.getLicenseDTO().getModuleLicenses())
+                .build());
+      } catch (Exception e) {
+        log.error("Unable to generate sign of module licenses during license application", e);
+      }
+      // start validation job with 1 day interval
+      licenseValidationJob.scheduleValidation(accountDTO.getIdentifier(), licenseSign, 1440);
+    }
   }
 
   private EditionActionDTO toEditionActionDTO(EditionAction editionAction) {

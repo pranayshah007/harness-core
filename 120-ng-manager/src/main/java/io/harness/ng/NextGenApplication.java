@@ -88,6 +88,8 @@ import io.harness.govern.ProviderModule;
 import io.harness.governance.DefaultConnectorRefExpansionHandler;
 import io.harness.health.HealthService;
 import io.harness.licensing.beans.modules.ModuleLicenseDTO;
+import io.harness.licensing.beans.modules.SMPEncLicenseDTO;
+import io.harness.licensing.beans.modules.SMPValidationResultDTO;
 import io.harness.licensing.jobs.SMPLicenseValidationJob;
 import io.harness.licensing.migrations.LicenseManagerMigrationProvider;
 import io.harness.licensing.services.LicenseService;
@@ -457,45 +459,11 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     }
     log.info("Deploy mode: {}, enable smp license: {}", System.getenv(DeployMode.DEPLOY_MODE), System.getenv("ENABLE_SMP_LICENSING"));
     if (shouldCheckForSMPLicense()) {
+      LicenseService licenseService = injector.getInstance(LicenseService.class);
       String license = System.getenv("SMP_LICENSE");
       log.info("SMP License value: {}", license);
-      LicenseValidator licenseValidator = injector.getInstance(LicenseValidator.class);
-      SMPLicenseValidationResult validationResult = licenseValidator.validate(SMPLicenseEnc.builder().encryptedSMPLicense(license).build(), true);
-      if (validationResult.isValid()) {
-        log.info("License validation passed");
-        try {
-          log.info("Validation Result: {}", new ObjectMapper().writeValueAsString(validationResult));
-        } catch (Exception e) {
-          log.error("Unable to parse validation result: {}", validationResult, e);
-        }
-        // create account
-        AccountClient accountClient = injector.getInstance(AccountClient.class);
-        AccountDTO accountDTO = AccountDTO.builder()
-                .companyName(validationResult.getSmpLicense().getLicenseMeta().getAccountDTO().getCompanyName())
-                .name(validationResult.getSmpLicense().getLicenseMeta().getAccountDTO().getName())
-                .identifier(validationResult.getSmpLicense().getLicenseMeta().getAccountDTO().getIdentifier())
-                .isProductLed(true)
-                .build();
-        try {
-
-          accountClient.create(accountDTO);
-        } catch (Exception e ) {
-          log.error("Exception thrown during account creation", e);
-        }
-        // create module licenses
-        try{
-
-          LicenseService licenseService = injector.getInstance(LicenseService.class);
-          for (ModuleLicenseDTO licenseDTO : validationResult.getSmpLicense().getModuleLicenses()) {
-            licenseService.createModuleLicense(licenseDTO);
-          }
-        } catch (Exception e) {
-          log.error("Exception during license creation ", e);
-        }
-        // start validation job with 1 day interval
-        SMPLicenseValidationJob licenseValidationJob = injector.getInstance(SMPLicenseValidationJob.class);
-        licenseValidationJob.scheduleValidation(accountDTO.getIdentifier(), 1440);
-      }
+      SMPEncLicenseDTO encLicenseDTO = SMPEncLicenseDTO.builder().encryptedLicense(license).decrypt(true).build();
+      licenseService.applySMPLicense(encLicenseDTO);
     }
   }
 
