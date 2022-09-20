@@ -19,13 +19,11 @@ import io.harness.accesscontrol.scopes.core.ScopeService;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
-import io.harness.utils.RetryUtils;
+import io.harness.springdata.PersistenceUtils;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -36,7 +34,6 @@ import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
-import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @OwnedBy(PL)
@@ -50,15 +47,13 @@ public class PermissionServiceImpl implements PermissionService {
   private final RoleService roleService;
   private final TransactionTemplate transactionTemplate;
 
-  private static final RetryPolicy<Object> removePermissionTransactionRetryPolicy = RetryUtils.getRetryPolicy(
+  private static final RetryPolicy<Object> removePermissionTransactionRetryPolicy = PersistenceUtils.getRetryPolicy(
       "[Retrying]: Failed to remove permission from roles and remove the permission; attempt: {}",
-      "[Failed]: Failed to remove permission from roles and remove the permission; attempt: {}",
-      ImmutableList.of(TransactionException.class), Duration.ofSeconds(5), 3, log);
+      "[Failed]: Failed to remove permission from roles and remove the permission; attempt: {}");
 
   private static final RetryPolicy<Object> updatePermissionTransactionRetryPolicy =
-      RetryUtils.getRetryPolicy("[Retrying]: Failed to update permission with roles; attempt: {}",
-          "[Failed]: Failed to update permission with roles; attempt: {}", ImmutableList.of(TransactionException.class),
-          Duration.ofSeconds(5), 3, log);
+      PersistenceUtils.getRetryPolicy("[Retrying]: Failed to update permission with roles; attempt: {}",
+          "[Failed]: Failed to update permission with roles; attempt: {}");
 
   @Inject
   public PermissionServiceImpl(PermissionDao permissionDao, ResourceTypeService resourceTypeService,

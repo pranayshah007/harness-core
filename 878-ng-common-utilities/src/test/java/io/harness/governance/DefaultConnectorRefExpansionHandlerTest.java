@@ -71,7 +71,7 @@ public class DefaultConnectorRefExpansionHandlerTest extends CategoryTest {
         ExpansionRequestMetadata.newBuilder().setAccountId(acc).setOrgId(org).setProjectId(proj).build();
     Call<ResponseDTO<Optional<ConnectorDTO>>> requestToClient = mock(Call.class);
     doReturn(requestToClient).when(connectorResourceClient).get(connProj, acc, org, proj);
-    when(NGRestUtils.getResponseWithRetry(
+    when(NGRestUtils.getResponse(
              requestToClient, "Could not get connector response for account: " + acc + " after {} attempts."))
         .thenReturn(Optional.of(connectorDTOProj));
     ExpansionResponse expansionResponseProj = connectorRefExpansionHandler.expand(jsonNodeProj, metadataProject, null);
@@ -87,7 +87,7 @@ public class DefaultConnectorRefExpansionHandlerTest extends CategoryTest {
     ExpansionRequestMetadata metadataOrg =
         ExpansionRequestMetadata.newBuilder().setAccountId(acc).setOrgId(org).build();
     doReturn(requestToClient).when(connectorResourceClient).get("conn", acc, org, null);
-    when(NGRestUtils.getResponseWithRetry(
+    when(NGRestUtils.getResponse(
              requestToClient, "Could not get connector response for account: " + acc + " after {} attempts."))
         .thenReturn(Optional.of(connectorDTOOrg));
     ExpansionResponse expansionResponseOrg = connectorRefExpansionHandler.expand(jsonNodeOrg, metadataOrg, null);

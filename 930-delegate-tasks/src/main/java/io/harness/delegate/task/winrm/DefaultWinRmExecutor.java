@@ -334,4 +334,9 @@ public class DefaultWinRmExecutor implements WinRmExecutor {
         .logLevel(logLevel)
         .build();
   }
+
+  @Override
+  public LogCallback getLogCallback() {
+    return logCallback;
+  }
 }

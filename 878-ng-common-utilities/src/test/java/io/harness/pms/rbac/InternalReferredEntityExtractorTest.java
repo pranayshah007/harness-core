@@ -59,7 +59,7 @@ public class InternalReferredEntityExtractorTest extends CategoryTest {
     List<EntityDetail> entityDetailList = new ArrayList<>();
 
     Mockito.mockStatic(NGRestUtils.class);
-    Mockito.when(NGRestUtils.getResponseWithRetry(Mockito.any(), Mockito.any()))
+    Mockito.when(NGRestUtils.getResponse(Mockito.any(), Mockito.any()))
         .thenReturn(EntityReferencesDTO.builder().entitySetupUsageBatchList(new ArrayList<>()).build());
 
     for (int i = 0; i < 5; i++) {

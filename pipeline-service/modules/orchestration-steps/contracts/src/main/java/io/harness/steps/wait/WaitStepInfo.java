@@ -9,16 +9,23 @@ package io.harness.steps.wait;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.advisers.rollback.OnFailRollbackParameters;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
+import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.plancreator.steps.common.SpecParameters;
+import io.harness.plancreator.steps.common.StepElementParameters;
+import io.harness.plancreator.steps.common.StepElementParameters.StepElementParametersBuilder;
 import io.harness.plancreator.steps.internal.PMSStepInfo;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
+import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
+import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.steps.StepSpecTypeConstants;
+import io.harness.steps.StepUtils;
 import io.harness.validator.NGRegexValidatorConstants;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
@@ -73,5 +80,35 @@ public class WaitStepInfo implements PMSStepInfo, Visitable {
   @Override
   public SpecParameters getSpecParameters() {
     return WaitStepParameters.infoBuilder().duration(getDuration()).build();
+  }
+
+  public StepParameters getStepParameters(
+      AbstractStepNode stepElementConfig, OnFailRollbackParameters failRollbackParameters, PlanCreationContext ctx) {
+    StepElementParametersBuilder stepParametersBuilder = getStepParameters(stepElementConfig, failRollbackParameters);
+    StepUtils.appendDelegateSelectorsToSpecParameters(stepElementConfig.getStepSpecType(), ctx);
+    stepParametersBuilder.spec(getSpecParameters());
+    return stepParametersBuilder.build();
+  }
+
+  public StepElementParametersBuilder getStepParameters(
+      AbstractStepNode stepElementConfig, OnFailRollbackParameters failRollbackParameters) {
+    StepElementParametersBuilder stepBuilder = getStepParameters((WaitStepNode) stepElementConfig);
+    stepBuilder.rollbackParameters(failRollbackParameters);
+    return stepBuilder;
+  }
+
+  public StepElementParametersBuilder getStepParameters(WaitStepNode stepElementConfig) {
+    StepElementParametersBuilder stepBuilder = StepElementParameters.builder();
+    stepBuilder.name(stepElementConfig.getName());
+    stepBuilder.identifier(stepElementConfig.getIdentifier());
+    stepBuilder.delegateSelectors(stepElementConfig.getDelegateSelectors());
+    stepBuilder.description(stepElementConfig.getDescription());
+    stepBuilder.skipCondition(stepElementConfig.getSkipCondition());
+    stepBuilder.failureStrategies(stepElementConfig.getFailureStrategies());
+    stepBuilder.when(stepElementConfig.getWhen());
+    stepBuilder.type(stepElementConfig.getType());
+    stepBuilder.uuid(stepElementConfig.getUuid());
+
+    return stepBuilder;
   }
 }
