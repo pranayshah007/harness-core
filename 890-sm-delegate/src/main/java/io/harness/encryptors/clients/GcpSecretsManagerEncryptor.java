@@ -10,12 +10,14 @@ package io.harness.encryptors.clients;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.eraro.ErrorCode.GCP_SECRET_MANAGER_OPERATION_ERROR;
 import static io.harness.eraro.ErrorCode.GCP_SECRET_OPERATION_ERROR;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.exception.WingsException.USER_SRE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SecretText;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryptors.VaultEncryptor;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.SecretManagementException;
@@ -51,6 +53,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -263,12 +266,34 @@ public class GcpSecretsManagerEncryptor implements VaultEncryptor {
 
   @Override
   public boolean validateSecretManagerConfiguration(String accountId, EncryptionConfig encryptionConfig) {
+    GcpSecretsManagerConfig gcpSecretsManagerConfig = (GcpSecretsManagerConfig) encryptionConfig;
+    validateUserInput(gcpSecretsManagerConfig);
     try {
-      createSecret(accountId, HARNESS_TEST_CONNECTION_SECRET, Boolean.TRUE.toString(), encryptionConfig);
-    } catch (Exception exception) {
-      log.error("Validation for GCP Secrets Manager failed for " + encryptionConfig.getName(), exception);
-      throw exception;
+      GoogleCredentials credentials =
+          GoogleCredentials
+              .fromStream(new ByteArrayInputStream(String.valueOf(gcpSecretsManagerConfig.getCredentials()).getBytes()))
+              .createScoped(Lists.newArrayList("https://www.googleapis.com/auth/cloud-platform"));
+      FixedCredentialsProvider credentialsProvider = FixedCredentialsProvider.create(credentials);
+      SecretManagerServiceSettings settings =
+          SecretManagerServiceSettings.newBuilder().setCredentialsProvider(credentialsProvider).build();
+      String projectId = getProjectId(credentials);
+      try (SecretManagerServiceClient client = SecretManagerServiceClient.create(settings)) {
+        ProjectName projectName = ProjectName.of(projectId);
+        // Get all secrets.
+        SecretManagerServiceClient.ListSecretsPagedResponse pagedResponse = client.listSecrets(projectName);
+        // List all secrets.
+        pagedResponse.iterateAll().forEach(secret
+            -> {
+                // do nothing as we are just testing connectivity
+            });
+      }
+    } catch (IOException e) {
+      String message =
+          "Was not able to reach GCP Secrets Manager using given credentials. Please check your credentials and try again";
+      throw new SecretManagementException(
+          ErrorCode.GCP_SECRET_MANAGER_OPERATION_ERROR, message, e, WingsException.USER);
     }
+    log.info("Test connection to GCP Secrets Manager V2 Succeeded for {}", gcpSecretsManagerConfig.getName());
     return true;
   }
   private String getRegionInformation(SecretText secretText) {
@@ -334,6 +359,20 @@ public class GcpSecretsManagerEncryptor implements VaultEncryptor {
           "Not able to extract Project Id from provided "
               + "credentials",
           USER_SRE);
+    }
+  }
+
+  private void validateUserInput(GcpSecretsManagerConfig gcpSecretsManagerConfig) {
+    Pattern nameValidator = Pattern.compile("^[0-9a-zA-Z-' !]+$");
+    if (EmptyPredicate.isEmpty(gcpSecretsManagerConfig.getName())
+        || !nameValidator.matcher(gcpSecretsManagerConfig.getName()).find()) {
+      String message =
+          "Name cannot be empty and can only have alphanumeric, hyphen, single inverted comma, space and exclamation mark characters.";
+      throw new SecretManagementException(GCP_SECRET_MANAGER_OPERATION_ERROR, message, USER_SRE);
+    }
+    if (EmptyPredicate.isEmpty(gcpSecretsManagerConfig.getCredentials())) {
+      String message = "Credentials file is not uploaded.";
+      throw new SecretManagementException(GCP_SECRET_MANAGER_OPERATION_ERROR, message, USER_SRE);
     }
   }
 }
