@@ -200,7 +200,7 @@ public class SettingsServiceImpl implements SettingsService {
   }
 
   @Override
-  public void removeSettingFromConfiguration(String identifier) {
+  public void removeSetting(String identifier) {
     Optional<SettingConfiguration> exisingSettingConfig = settingConfigurationRepository.findByIdentifier(identifier);
     exisingSettingConfig.ifPresent(settingConfigurationRepository::delete);
     List<Setting> existingSettings = settingRepository.findByIdentifier(identifier);
@@ -211,6 +211,26 @@ public class SettingsServiceImpl implements SettingsService {
   public SettingConfiguration upsertSettingConfiguration(SettingConfiguration settingConfiguration) {
     SettingUtils.validate(settingConfiguration);
     return settingConfigurationRepository.save(settingConfiguration);
+  }
+
+  @Override
+  public void deleteByScopeLevel(ScopeLevel scopeLevel, String identifier) {
+    Criteria criteria = Criteria.where(SettingKeys.identifier).is(identifier);
+    switch (scopeLevel) {
+      case ACCOUNT:
+        criteria.and(SettingKeys.orgIdentifier).is(null).and(SettingKeys.projectIdentifier).is(null);
+        break;
+      case ORGANIZATION:
+        criteria.and(SettingKeys.orgIdentifier).ne(null).and(SettingKeys.projectIdentifier).is(null);
+        break;
+      case PROJECT:
+        criteria.and(SettingKeys.orgIdentifier).ne(null).and(SettingKeys.projectIdentifier).ne(null);
+        break;
+      default:
+        throw new InvalidRequestException(
+            String.format("Invalid scope- %s present in the settings.yml", scopeLevel.toString()));
+    }
+    settingRepository.delete(criteria);
   }
 
   private Map<Pair<String, Scope>, Setting> getSettings(String accountIdentifier, String orgIdentifier,
