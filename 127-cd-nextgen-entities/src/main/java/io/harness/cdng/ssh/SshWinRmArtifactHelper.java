@@ -17,6 +17,7 @@ import static java.util.Collections.emptyList;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
+import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
@@ -41,6 +42,7 @@ import io.harness.delegate.task.ssh.artifact.JenkinsArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.NexusDockerArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactDelegateConfig;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -51,7 +53,6 @@ import io.harness.utils.IdentifierRefHelper;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -62,6 +63,7 @@ import javax.annotation.Nonnull;
 public class SshWinRmArtifactHelper {
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
   @Named("PRIVILEGED") @Inject private SecretManagerClientService secretManagerClientService;
+  @Inject private FeatureFlagService featureFlagService;
 
   public SshWinRmArtifactDelegateConfig getArtifactDelegateConfigConfig(
       ArtifactOutcome artifactOutcome, Ambiance ambiance) {
@@ -130,12 +132,14 @@ public class SshWinRmArtifactHelper {
       S3FileDetailRequest request = S3FileDetailRequest.builder().fileKey(s3ArtifactOutcome.getFilePath()).bucketName(s3ArtifactOutcome.getBucketName()).build();
       List<S3FileDetailRequest> fileDetails = Collections.singletonList(request);
       return AwsS3FetchFileDelegateConfig.builder()
-              .identifier(s3ArtifactOutcome.getIdentifier())
-              .awsConnector(awsConnectorDTO)
-              .encryptionDetails(getArtifactEncryptionDataDetails(connectorDTO, ngAccess))
-              .fileDetails(fileDetails)
-              .region(s3ArtifactOutcome.getRegion())
-              .build();
+          .identifier(s3ArtifactOutcome.getIdentifier())
+          .awsConnector(awsConnectorDTO)
+          .encryptionDetails(getArtifactEncryptionDataDetails(connectorDTO, ngAccess))
+          .fileDetails(fileDetails)
+          .region(s3ArtifactOutcome.getRegion())
+          .certValidationRequired(
+              featureFlagService.isEnabled(FeatureName.ENABLE_CERT_VALIDATION, ngAccess.getAccountIdentifier()))
+          .build();
     } else {
       throw new UnsupportedOperationException(
           format("Unsupported Artifact type: [%s]", artifactOutcome.getArtifactType()));

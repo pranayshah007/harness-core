@@ -9,6 +9,7 @@ package io.harness.delegate.task.winrm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.encoding.EncodingUtils.encodeBase64;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.delegate.task.shell.ArtifactoryUtils.getArtifactConfigRequest;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.RUNNING;
@@ -370,31 +371,46 @@ public class FileBasedWinRmExecutorNG extends FileBasedAbstractWinRmExecutor {
         jenkinsBearerTokenDTO, jenkinsArtifactDelegateConfig.getEncryptedDataDetails());
   }
 
-  private CommandExecutionStatus handleS3Artifact(Object s3ArtifactDelegateConfig, CopyCommandUnit copyCommandUnit) {
-    CommandExecutionStatus commandExecutionStatus = FAILURE;
+  private CommandExecutionStatus handleS3Artifact(
+      AwsS3FetchFileDelegateConfig s3ArtifactDelegateConfig, CopyCommandUnit copyCommandUnit) {
+    if (isEmpty(s3ArtifactDelegateConfig.getFileDetails())) {
+      return FAILURE;
+    }
+    return downloadS3Artifact(s3ArtifactDelegateConfig, copyCommandUnit);
+  }
 
-    String artifactPathOnTarget = Paths.get(s3ArtifactDelegateConfig.toString()).toString();
+  private CommandExecutionStatus downloadS3Artifact(
+      AwsS3FetchFileDelegateConfig s3ArtifactDelegateConfig, CopyCommandUnit copyCommandUnit) {
+    CommandExecutionStatus commandExecutionStatus = FAILURE;
+    String artifactPathOnTarget = Paths.get(copyCommandUnit.getDestinationPath()).toString();
     saveExecutionLog(format("Begin execution of command: %s", copyCommandUnit.getName()), INFO);
     saveExecutionLog("Downloading artifact from S3 to " + copyCommandUnit.getDestinationPath() + "\\"
-                    + getArtifactFileName(artifactPathOnTarget),
-            INFO);
+            + Paths.get(s3ArtifactDelegateConfig.getFileDetails().get(0).getFileKey()).getFileName(),
+        INFO);
     try (WinRmSession session = new WinRmSession(config, this.logCallback);
          ExecutionLogWriter outputWriter = getExecutionLogWriter(INFO);
          ExecutionLogWriter errorWriter = getExecutionLogWriter(ERROR)) {
       saveExecutionLog(format("Connected to %s", config.getHostname()), INFO);
-      saveExecutionLog(format("Executing copy artifact command...\nArtifact filename: %s",
-                      getArtifactFileName(artifactPathOnTarget)),
-              INFO);
-      String command = winRmExecutorHelper.createPsCommandForS3ArtifactDownload(null, null, null, artifactPathOnTarget);
+      saveExecutionLog(format("Executing copy artifact command...%nArtifact filename: %s",
+                           s3ArtifactDelegateConfig.getFileDetails().get(0).getFileKey()),
+          INFO);
+
+      String command = winRmExecutorHelper.createPsCommandForS3ArtifactDownload(
+          s3ArtifactDelegateConfig, artifactPathOnTarget, config.getAccountId());
       commandExecutionStatus = executeRemoteCommand(session, outputWriter, errorWriter, command, true);
       if (FAILURE == commandExecutionStatus) {
-        saveExecutionLog(format("Failed to copy Jenkins artifact from %s", s3ArtifactDelegateConfig.toString()), ERROR,
-                commandExecutionStatus);
+        saveExecutionLog(
+            format("Failed to copy S3 artifact from %s",
+                winRmExecutorHelper.getAmazonS3Url(s3ArtifactDelegateConfig.getFileDetails().get(0).getBucketName(),
+                    s3ArtifactDelegateConfig.getRegion(),
+                    s3ArtifactDelegateConfig.getFileDetails().get(0).getFileKey())),
+            ERROR, commandExecutionStatus);
         return commandExecutionStatus;
       }
       saveExecutionLog(
-              format("File successfully transferred to %s\\%s", copyCommandUnit.getDestinationPath(), artifactPathOnTarget),
-              INFO);
+          format("File successfully transferred to %s\\%s", artifactPathOnTarget,
+              Paths.get(s3ArtifactDelegateConfig.getFileDetails().get(0).getFileKey()).getFileName().toString()),
+          INFO);
     } catch (Exception e) {
       log.error(ERROR_WHILE_EXECUTING_COMMAND, e);
       ResponseMessage details = buildErrorDetailsFromWinRmClientException(e);

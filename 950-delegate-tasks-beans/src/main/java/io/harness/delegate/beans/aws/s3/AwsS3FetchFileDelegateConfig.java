@@ -30,6 +30,7 @@ public class AwsS3FetchFileDelegateConfig implements SshWinRmArtifactDelegateCon
   String region;
   List<EncryptedDataDetail> encryptionDetails;
   List<S3FileDetailRequest> fileDetails;
+  boolean certValidationRequired;
 
   @Override
   public SshWinRmArtifactType getArtifactType() {

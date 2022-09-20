@@ -9,7 +9,8 @@ package io.harness.delegate.task.winrm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.exception.WingsException.USER;
+
+import static software.wings.beans.AwsConfig.AwsConfigBuilder;
 
 import static java.lang.String.format;
 import static org.apache.commons.codec.binary.Base64.encodeBase64String;
@@ -18,14 +19,19 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.beans.aws.s3.AwsS3FetchFileDelegateConfig;
+import io.harness.delegate.beans.connector.awsconnector.AwsConstants;
+import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsCredentialType;
+import io.harness.delegate.beans.connector.awsconnector.AwsInheritFromDelegateSpecDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
 import io.harness.exception.InvalidRequestException;
-import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.security.encryption.SecretDecryptionService;
 
 import software.wings.beans.AWSTemporaryCredentials;
 import software.wings.beans.AwsConfig;
+import software.wings.beans.AwsCrossAccountAttributes;
 import software.wings.beans.WinRmCommandParameter;
-import software.wings.beans.artifact.ArtifactMetadataKeys;
-import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.command.AWS4SignerForAuthorizationHeader;
 import software.wings.service.impl.AwsHelperService;
 import software.wings.service.intfc.security.EncryptionService;
@@ -37,6 +43,7 @@ import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -53,13 +60,14 @@ import lombok.extern.slf4j.Slf4j;
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 public class WinRmExecutorHelper {
   private static final int SPLITLISTOFCOMMANDSBY = 20;
-  private static Map<String, String> bucketRegions = new HashMap<>();
+  private static final Map<String, String> bucketRegions = new HashMap<>();
   private static final String ISO_8601_BASIC_FORMAT = "yyyyMMdd'T'HHmmss'Z'";
   private static final String EMPTY_BODY_SHA256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
   private static final String AWS_CREDENTIALS_URL = "http://169.254.169.254/";
 
   @Inject private EncryptionService encryptionService;
   @Inject private AwsHelperService awsHelperService;
+  @Inject private SecretDecryptionService secretDecryptionService;
 
   /**
    * To construct the powershell script for running on target windows host.
@@ -210,32 +218,33 @@ public class WinRmExecutorHelper {
   }
 
   @VisibleForTesting
-  public String createPsCommandForS3ArtifactDownload(AwsConfig awsConfig, List<EncryptedDataDetail> encryptionDetails,
-      Map<String, String> metadata, String targetPath) {
+  public String createPsCommandForS3ArtifactDownload(
+      AwsS3FetchFileDelegateConfig s3ArtifactDelegateConfig, String targetPath, String accountId) {
     if (isEmpty(bucketRegions)) {
       initBucketRegions();
     }
-    encryptionService.decrypt(awsConfig, encryptionDetails, false);
+    AwsConfig awsConfigDecrypted = (AwsConfig) encryptionService.decrypt(
+        composeAwsConfig(s3ArtifactDelegateConfig, accountId), s3ArtifactDelegateConfig.getEncryptionDetails(), false);
     String awsAccessKey;
     String awsSecretKey;
     String awsToken = null;
-    // https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html (Retrieving security
-    // credentials from instance metadata)
-    if (awsConfig.isUseEc2IamCredentials()) {
+    if (awsConfigDecrypted.isUseEc2IamCredentials()) {
       AWSTemporaryCredentials credentials =
-          awsHelperService.getCredentialsForIAMROleOnDelegate(AWS_CREDENTIALS_URL, awsConfig);
+          awsHelperService.getCredentialsForIAMROleOnDelegate(AWS_CREDENTIALS_URL, awsConfigDecrypted);
       awsAccessKey = credentials.getAccessKeyId();
       awsSecretKey = credentials.getSecretKey();
       awsToken = credentials.getToken();
     } else {
-      awsAccessKey = String.valueOf(awsConfig.getAccessKey());
-      awsSecretKey = String.valueOf(awsConfig.getSecretKey());
+      awsAccessKey = String.valueOf(awsConfigDecrypted.getAccessKey());
+      awsSecretKey = String.valueOf(awsConfigDecrypted.getSecretKey());
     }
-    String bucketName = metadata.get(ArtifactMetadataKeys.bucketName);
-    String region = awsHelperService.getBucketRegion(awsConfig, encryptionDetails, bucketName);
-    String artifactPath = metadata.get(ArtifactMetadataKeys.artifactPath);
-    String artifactFileName = metadata.get(ArtifactMetadataKeys.artifactFileName);
+    String bucketName = s3ArtifactDelegateConfig.getFileDetails().get(0).getBucketName();
+    String region = awsHelperService.getBucketRegion(
+        awsConfigDecrypted, s3ArtifactDelegateConfig.getEncryptionDetails(), bucketName);
+    String artifactFileName = s3ArtifactDelegateConfig.getFileDetails().get(0).getFileKey();
+
     URL endpointUrl;
+    String artifactPath = artifactFileName;
     String url = getAmazonS3Url(bucketName, region, artifactPath);
     try {
       endpointUrl = new URL(url);
@@ -257,11 +266,12 @@ public class WinRmExecutorHelper {
         + " $ProgressPreference = 'SilentlyContinue'\n"
         + " Invoke-WebRequest -Uri \""
         + AWS4SignerForAuthorizationHeader.getEndpointWithCanonicalizedResourcePath(endpointUrl, true)
-        + "\" -Headers $Headers -OutFile (New-Item -Path \"" + targetPath + "\\" + artifactFileName + "\""
+        + "\" -Headers $Headers -OutFile (New-Item -Path \"" + targetPath + "\\"
+        + Paths.get(artifactFileName).getFileName().toString() + "\""
         + " -Force)";
   }
 
-  private String getAmazonS3Url(String bucketName, String region, String artifactPath) {
+  public String getAmazonS3Url(String bucketName, String region, String artifactPath) {
     return "https://" + bucketName + ".s3" + bucketRegions.get(region) + ".amazonaws.com"
         + "/" + artifactPath;
   }
@@ -288,5 +298,63 @@ public class WinRmExecutorHelper {
     bucketRegions.put("eu-north-1", "-eu-north-1");
     bucketRegions.put("sa-east-1", "-sa-east-1");
     bucketRegions.put("me-south-1", "-me-south-1");
+  }
+
+  private AwsConfig composeAwsConfig(AwsS3FetchFileDelegateConfig s3ArtifactDelegateConfig, String accountId) {
+    if (s3ArtifactDelegateConfig == null || s3ArtifactDelegateConfig.getAwsConnector() == null) {
+      throw new InvalidRequestException("AWS S3 artifact Delegate config and AWS S3 connector need to be defined.");
+    }
+    final AwsConfigBuilder configBuilder = AwsConfig.builder().accountId(accountId);
+    AwsCredentialDTO awsCredentialDTO = s3ArtifactDelegateConfig.getAwsConnector().getCredential();
+    if (awsCredentialDTO != null && awsCredentialDTO.getAwsCredentialType() != null) {
+      AwsCredentialType credentialType = awsCredentialDTO.getAwsCredentialType();
+      switch (credentialType.getDisplayName()) {
+        case AwsConstants.INHERIT_FROM_DELEGATE: {
+          configBuilder.useEc2IamCredentials(true);
+          configBuilder.useIRSA(false);
+          configBuilder.tag(((AwsInheritFromDelegateSpecDTO) awsCredentialDTO.getConfig())
+                                .getDelegateSelectors()
+                                .stream()
+                                .findAny()
+                                .orElse(null));
+        } break;
+        case AwsConstants.MANUAL_CONFIG: {
+          configBuilder.useEc2IamCredentials(false);
+          configBuilder.useIRSA(false);
+
+          AwsManualConfigSpecDTO decryptedSpec = (AwsManualConfigSpecDTO) secretDecryptionService.decrypt(
+              awsCredentialDTO.getConfig(), s3ArtifactDelegateConfig.getEncryptionDetails());
+          configBuilder.accessKey(decryptedSpec.getAccessKey() != null
+                  ? decryptedSpec.getAccessKey().toCharArray()
+                  : decryptedSpec.getAccessKeyRef().getDecryptedValue());
+          configBuilder.secretKey(decryptedSpec.getSecretKeyRef().getDecryptedValue());
+          configBuilder.useEncryptedAccessKey(false);
+        } break;
+        case AwsConstants.IRSA: {
+          configBuilder.useEc2IamCredentials(false);
+          configBuilder.useEncryptedAccessKey(false);
+          configBuilder.useIRSA(true);
+        } break;
+        default:
+          throw new InvalidRequestException("Invalid credentials type");
+      }
+      if (s3ArtifactDelegateConfig.getAwsConnector().getCredential().getCrossAccountAccess() != null) {
+        AwsCrossAccountAttributes awsCrossAccountAttributes =
+            AwsCrossAccountAttributes.builder()
+                .crossAccountRoleArn(s3ArtifactDelegateConfig.getAwsConnector()
+                                         .getCredential()
+                                         .getCrossAccountAccess()
+                                         .getCrossAccountRoleArn())
+                .externalId(
+                    s3ArtifactDelegateConfig.getAwsConnector().getCredential().getCrossAccountAccess().getExternalId())
+                .build();
+        configBuilder.crossAccountAttributes(awsCrossAccountAttributes);
+      }
+    } else {
+      throw new InvalidRequestException("No credentialsType provided with the request.");
+    }
+    AwsConfig awsConfig = configBuilder.build();
+    awsConfig.setCertValidationRequired(s3ArtifactDelegateConfig.isCertValidationRequired());
+    return awsConfig;
   }
 }
