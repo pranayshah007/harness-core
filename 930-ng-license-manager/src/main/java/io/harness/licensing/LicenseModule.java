@@ -20,6 +20,8 @@ import io.harness.licensing.checks.impl.TeamChecker;
 import io.harness.licensing.interfaces.ModuleLicenseImpl;
 import io.harness.licensing.interfaces.ModuleLicenseInterface;
 import io.harness.licensing.interfaces.clients.ModuleLicenseClient;
+import io.harness.licensing.jobs.SMPLicenseValidationJob;
+import io.harness.licensing.jobs.SMPLicenseValidationJobImpl;
 import io.harness.licensing.mappers.LicenseObjectConverter;
 import io.harness.licensing.mappers.LicenseObjectMapper;
 import io.harness.licensing.services.DefaultLicenseServiceImpl;
@@ -72,6 +74,7 @@ public class LicenseModule extends AbstractModule {
     editionCheckerMapBinder.addBinding(Edition.ENTERPRISE).to(EnterpriseChecker.class);
 
     bind(LicenseObjectConverter.class);
+    bind(SMPLicenseValidationJob.class).to(SMPLicenseValidationJobImpl.class);
     bind(ModuleLicenseInterface.class).to(ModuleLicenseImpl.class);
     bind(LicenseService.class).to(DefaultLicenseServiceImpl.class);
     bind(LicenseComplianceResolver.class).to(DefaultLicenseComplianceResolver.class);
