@@ -66,8 +66,6 @@ public class HarnessToGitPushInfoGrpcService extends HarnessToGitPushInfoService
   @Inject KryoSerializer kryoSerializer;
   @Inject EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
   @Inject ExceptionManager exceptionManager;
-  private String errorFormat =
-      "Unexpected error occurred while performing %s git operation in %s. Please contact Harness Support.";
   private String GIT_SERVICE = "Git Service";
 
   @Override
@@ -121,7 +119,7 @@ public class HarnessToGitPushInfoGrpcService extends HarnessToGitPushInfoService
         getFileResponse = harnessToGitHelperService.getFileByBranch(request);
         log.info(String.format("%s getFile ops response : %s", GIT_SERVICE, getFileResponse));
       } catch (Exception ex) {
-        final String errorMessage = String.format(errorFormat, GitOperation.GET_FILE.name());
+        final String errorMessage = getErrorMessageForRuntimeExceptions(GitOperation.GET_FILE);
         log.error(errorMessage, ex);
         getFileResponse = GetFileResponse.newBuilder()
                               .setStatusCode(HTTP_500)
@@ -147,7 +145,7 @@ public class HarnessToGitPushInfoGrpcService extends HarnessToGitPushInfoService
         createFileResponse = harnessToGitHelperService.createFile(request);
         log.info(String.format("%s createFile ops response : %s", GIT_SERVICE, createFileResponse));
       } catch (Exception ex) {
-        final String errorMessage = String.format(errorFormat, GitOperation.CREATE_FILE.name());
+        final String errorMessage = getErrorMessageForRuntimeExceptions(GitOperation.CREATE_FILE);
         log.error(errorMessage, ex);
         createFileResponse = CreateFileResponse.newBuilder()
                                  .setStatusCode(HTTP_500)
@@ -173,7 +171,7 @@ public class HarnessToGitPushInfoGrpcService extends HarnessToGitPushInfoService
         updateFileResponse = harnessToGitHelperService.updateFile(request);
         log.info(String.format("%s updateFile ops response : %s", GIT_SERVICE, updateFileResponse));
       } catch (Exception ex) {
-        final String errorMessage = String.format(errorFormat, GitOperation.UPDATE_FILE.name());
+        final String errorMessage = getErrorMessageForRuntimeExceptions(GitOperation.UPDATE_FILE);
         log.error(errorMessage, ex);
         updateFileResponse = UpdateFileResponse.newBuilder()
                                  .setStatusCode(HTTP_500)
@@ -217,7 +215,7 @@ public class HarnessToGitPushInfoGrpcService extends HarnessToGitPushInfoService
         getRepoUrlResponse = harnessToGitHelperService.getRepoUrl(request);
         log.info(String.format("%s getRepoUrl ops response : %s", GIT_SERVICE, getRepoUrlResponse));
       } catch (Exception ex) {
-        final String errorMessage = String.format(errorFormat, GitOperation.GET_REPO_URL.name());
+        final String errorMessage = getErrorMessageForRuntimeExceptions(GitOperation.GET_REPO_URL);
         log.error(errorMessage, ex);
         getRepoUrlResponse = GetRepoUrlResponse.newBuilder()
                                  .setStatusCode(HTTP_500)
@@ -288,5 +286,10 @@ public class HarnessToGitPushInfoGrpcService extends HarnessToGitPushInfoService
         PrincipalProtoMapper.toPrincipalDTO(accountIdentifier, requestPrincipal);
     GlobalContextManager.upsertGlobalContextRecord(PrincipalContextData.builder().principal(principal).build());
     GlobalContextManager.upsertGlobalContextRecord(SourcePrincipalContextData.builder().principal(principal).build());
+  }
+
+  protected String getErrorMessageForRuntimeExceptions(GitOperation gitOperation) {
+    return String.format("Unexpected error occurred while performing %s git operation. Please contact Harness Support.",
+        gitOperation.getValue());
   }
 }

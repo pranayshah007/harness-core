@@ -15,6 +15,7 @@ import static io.harness.ccm.commons.constants.ViewFieldConstants.LAUNCH_TYPE_FI
 import static io.harness.ccm.commons.constants.ViewFieldConstants.NAMESPACE_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.TASK_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.WORKLOAD_NAME_FIELD_ID;
+import static io.harness.ccm.views.businessMapping.entities.UnallocatedCostStrategy.HIDE;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.CLUSTER;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.COMMON;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.LABEL;
@@ -146,7 +147,6 @@ import io.harness.ccm.views.graphql.QLCEViewTrendData;
 import io.harness.ccm.views.graphql.QLCEViewTrendInfo;
 import io.harness.ccm.views.graphql.ViewCostData;
 import io.harness.ccm.views.graphql.ViewCostData.ViewCostDataBuilder;
-import io.harness.ccm.views.graphql.ViewsMetaDataFields;
 import io.harness.ccm.views.graphql.ViewsQueryBuilder;
 import io.harness.ccm.views.graphql.ViewsQueryHelper;
 import io.harness.ccm.views.graphql.ViewsQueryMetadata;
@@ -176,7 +176,6 @@ import com.healthmarketscience.sqlbuilder.custom.postgresql.PgLimitClause;
 import com.healthmarketscience.sqlbuilder.custom.postgresql.PgOffsetClause;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -272,8 +271,9 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
           filters, null, null, queryParams.getAccountId(), cloudProviderTableName, isClusterQuery);
     }
 
-    ViewsQueryMetadata viewsQueryMetadata = viewsQueryBuilder.getFilterValuesQuery(viewRuleList, idFilters,
-        getTimeFilters(filters), cloudProviderTableName, limit, offset, !isDataFilteredByAwsAccount(idFilters));
+    ViewsQueryMetadata viewsQueryMetadata =
+        viewsQueryBuilder.getFilterValuesQuery(viewRuleList, idFilters, viewsQueryHelper.getTimeFilters(filters),
+            cloudProviderTableName, limit, offset, !isDataFilteredByAwsAccount(idFilters));
 
     QueryJobConfiguration queryConfig =
         QueryJobConfiguration.newBuilder(viewsQueryMetadata.getQuery().toString()).build();
@@ -488,30 +488,46 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
   @Override
   public QLCEViewTrendInfo getTrendStatsData(BigQuery bigQuery, List<QLCEViewFilterWrapper> filters,
       List<QLCEViewAggregation> aggregateFunction, String cloudProviderTableName) {
-    return getTrendStatsDataNg(
-        bigQuery, filters, aggregateFunction, cloudProviderTableName, viewsQueryHelper.buildQueryParams(null, false))
+    return getTrendStatsDataNg(bigQuery, filters, Collections.emptyList(), aggregateFunction, cloudProviderTableName,
+        viewsQueryHelper.buildQueryParams(null, false))
         .getTotalCost();
   }
 
   @Override
   public QLCEViewTrendData getTrendStatsDataNg(BigQuery bigQuery, List<QLCEViewFilterWrapper> filters,
-      List<QLCEViewAggregation> aggregateFunction, String cloudProviderTableName, ViewQueryParams queryParams) {
+      List<QLCEViewGroupBy> groupBy, List<QLCEViewAggregation> aggregateFunction, String cloudProviderTableName,
+      ViewQueryParams queryParams) {
     boolean isClusterTableQuery = isClusterTableQuery(filters, queryParams);
     List<ViewRule> viewRuleList = new ArrayList<>();
     List<QLCEViewFilter> idFilters = AwsAccountFieldHelper.removeAccountNameFromAWSAccountIdFilter(
         getModifiedIdFilters(getIdFilters(filters), isClusterTableQuery));
-    List<QLCEViewTimeFilter> timeFilters = getTimeFilters(filters);
+    List<QLCEViewTimeFilter> timeFilters = viewsQueryHelper.getTimeFilters(filters);
     SelectQuery query = getTrendStatsQuery(
-        filters, idFilters, timeFilters, aggregateFunction, viewRuleList, cloudProviderTableName, queryParams);
+        filters, idFilters, timeFilters, groupBy, aggregateFunction, viewRuleList, cloudProviderTableName, queryParams);
 
-    List<QLCEViewTimeFilter> trendTimeFilters = getTrendFilters(timeFilters);
-    SelectQuery prevTrendStatsQuery = getTrendStatsQuery(
-        filters, idFilters, trendTimeFilters, aggregateFunction, viewRuleList, cloudProviderTableName, queryParams);
+    List<QLCEViewTimeFilter> trendTimeFilters = viewsQueryHelper.getTrendFilters(timeFilters);
+    SelectQuery prevTrendStatsQuery = getTrendStatsQuery(filters, idFilters, trendTimeFilters, groupBy,
+        aggregateFunction, viewRuleList, cloudProviderTableName, queryParams);
 
-    Instant trendStartInstant = Instant.ofEpochMilli(getTimeFilter(trendTimeFilters, AFTER).getValue().longValue());
+    Instant trendStartInstant =
+        Instant.ofEpochMilli(viewsQueryHelper.getTimeFilter(trendTimeFilters, AFTER).getValue().longValue());
 
-    ViewCostData costData = getViewTrendStatsCostData(bigQuery, query, isClusterTableQuery);
-    ViewCostData prevCostData = getViewTrendStatsCostData(bigQuery, prevTrendStatsQuery, isClusterTableQuery);
+    String businessMappingId = viewsQueryHelper.getBusinessMappingIdFromGroupBy(groupBy);
+    List<String> businessMappingIdsFromRulesAndFilters = getBusinessMappingIdsFromRulesAndFilters(filters);
+    BusinessMapping businessMapping =
+        businessMappingId != null && !businessMappingIdsFromRulesAndFilters.contains(businessMappingId)
+        ? businessMappingService.get(businessMappingId)
+        : null;
+
+    double sharedCostFromRulesAndFilters = getTotalSharedCostFromFilters(bigQuery, filters, groupBy, aggregateFunction,
+        Collections.emptyList(), cloudProviderTableName, queryParams, MAX_LIMIT_VALUE, 0, false);
+    double prevSharedCostFromRulesAndFilters =
+        getTotalSharedCostFromFilters(bigQuery, viewsQueryHelper.getUpdatedFiltersForPrevPeriod(filters), groupBy,
+            aggregateFunction, Collections.emptyList(), cloudProviderTableName, queryParams, MAX_LIMIT_VALUE, 0, false);
+    ViewCostData costData =
+        getViewTrendStatsCostData(bigQuery, query, isClusterTableQuery, businessMapping, sharedCostFromRulesAndFilters);
+    ViewCostData prevCostData = getViewTrendStatsCostData(
+        bigQuery, prevTrendStatsQuery, isClusterTableQuery, businessMapping, prevSharedCostFromRulesAndFilters);
 
     EfficiencyScoreStats efficiencyScoreStats = null;
     if (isClusterTableQuery) {
@@ -530,9 +546,10 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
 
   @Override
   public QLCEViewTrendInfo getForecastCostData(BigQuery bigQuery, List<QLCEViewFilterWrapper> filters,
-      List<QLCEViewAggregation> aggregateFunction, String cloudProviderTableName, ViewQueryParams queryParams) {
+      List<QLCEViewGroupBy> groupBy, List<QLCEViewAggregation> aggregateFunction, String cloudProviderTableName,
+      ViewQueryParams queryParams) {
     Instant endInstantForForecastCost = viewsQueryHelper.getEndInstantForForecastCost(filters);
-    ViewCostData currentCostData = getCostData(bigQuery, viewsQueryHelper.getFiltersForForecastCost(filters),
+    ViewCostData currentCostData = getCostData(bigQuery, viewsQueryHelper.getFiltersForForecastCost(filters), groupBy,
         aggregateFunction, cloudProviderTableName, queryParams);
     Double forecastCost = getForecastCost(currentCostData, endInstantForForecastCost);
     return getForecastCostBillingStats(forecastCost, currentCostData.getCost(), getStartInstantForForecastCost(),
@@ -598,13 +615,39 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
   @Override
   public ViewCostData getCostData(BigQuery bigQuery, List<QLCEViewFilterWrapper> filters,
       List<QLCEViewAggregation> aggregateFunction, String cloudProviderTableName, ViewQueryParams queryParams) {
+    return getCostData(bigQuery, filters, null, aggregateFunction, cloudProviderTableName, queryParams);
+  }
+
+  @Override
+  public ViewCostData getCostData(BigQuery bigQuery, List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy,
+      List<QLCEViewAggregation> aggregateFunction, String cloudProviderTableName, ViewQueryParams queryParams) {
     boolean isClusterTableQuery = isClusterTableQuery(filters, queryParams);
     List<ViewRule> viewRuleList = new ArrayList<>();
     List<QLCEViewFilter> idFilters = getModifiedIdFilters(getIdFilters(filters), isClusterTableQuery);
-    List<QLCEViewTimeFilter> timeFilters = getTimeFilters(filters);
+    List<QLCEViewTimeFilter> timeFilters = viewsQueryHelper.getTimeFilters(filters);
+    if (groupBy.isEmpty()) {
+      Optional<QLCEViewFilterWrapper> viewMetadataFilter = getViewMetadataFilter(filters);
+      if (viewMetadataFilter.isPresent()) {
+        QLCEViewMetadataFilter metadataFilter = viewMetadataFilter.get().getViewMetadataFilter();
+        final String viewId = metadataFilter.getViewId();
+        if (!metadataFilter.isPreview()) {
+          CEView view = viewService.get(viewId);
+          groupBy = viewsQueryHelper.getDefaultViewGroupBy(view);
+        }
+      }
+    }
+    String businessMappingId = viewsQueryHelper.getBusinessMappingIdFromGroupBy(groupBy);
+    List<String> businessMappingIdsFromRulesAndFilters = getBusinessMappingIdsFromRulesAndFilters(filters);
+    BusinessMapping businessMapping =
+        businessMappingId != null && !businessMappingIdsFromRulesAndFilters.contains(businessMappingId)
+        ? businessMappingService.get(businessMappingId)
+        : null;
     SelectQuery query = getTrendStatsQuery(
-        filters, idFilters, timeFilters, aggregateFunction, viewRuleList, cloudProviderTableName, queryParams);
-    return getViewTrendStatsCostData(bigQuery, query, isClusterTableQuery);
+        filters, idFilters, timeFilters, groupBy, aggregateFunction, viewRuleList, cloudProviderTableName, queryParams);
+    double sharedCostFromFiltersAndRules = getTotalSharedCostFromFilters(bigQuery, filters, groupBy, aggregateFunction,
+        Collections.emptyList(), cloudProviderTableName, queryParams, MAX_LIMIT_VALUE, 0, false);
+    return getViewTrendStatsCostData(
+        bigQuery, query, isClusterTableQuery, businessMapping, sharedCostFromFiltersAndRules);
   }
 
   @Override
@@ -665,7 +708,8 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
                         .values(workloads.toArray(new String[0]))
                         .build());
     }
-    List<QLCEViewTimeFilter> timeFilters = filters != null ? getTimeFilters(filters) : new ArrayList<>();
+    List<QLCEViewTimeFilter> timeFilters =
+        filters != null ? viewsQueryHelper.getTimeFilters(filters) : new ArrayList<>();
     SelectQuery query = viewsQueryBuilder.getLabelsForWorkloadsQuery(cloudProviderTableName, idFilters, timeFilters);
     return getLabelsForWorkloadsData(bigQuery, query);
   }
@@ -876,6 +920,37 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     return workloadToLabelsMapping;
   }
 
+  private double getTotalSharedCostFromFilters(BigQuery bigQuery, List<QLCEViewFilterWrapper> filters,
+      List<QLCEViewGroupBy> groupBy, List<QLCEViewAggregation> aggregateFunction, List<QLCEViewSortCriteria> sort,
+      String cloudProviderTableName, ViewQueryParams queryParams, Integer limit, Integer offset, boolean skipRoundOff) {
+    double totalSharedCost = 0.0;
+    List<ViewRule> viewRules = getViewRules(filters);
+    Set<String> businessMappingIdsFromRules = viewsQueryHelper.getBusinessMappingIdsFromViewRules(viewRules);
+    List<String> businessMappingIdsFromRulesAndFilters = viewsQueryHelper.getBusinessMappingIdsFromFilters(filters);
+    businessMappingIdsFromRulesAndFilters.addAll(businessMappingIdsFromRules);
+    List<BusinessMapping> sharedCostBusinessMappings = new ArrayList<>();
+    Map<String, Double> sharedCostsFromRulesAndFilters = new HashMap<>();
+    if (!businessMappingIdsFromRulesAndFilters.isEmpty()) {
+      businessMappingIdsFromRulesAndFilters.forEach(businessMappingIdFromRulesAndFilters -> {
+        BusinessMapping businessMappingFromRulesAndFilters =
+            businessMappingService.get(businessMappingIdFromRulesAndFilters);
+        if (businessMappingFromRulesAndFilters != null && businessMappingFromRulesAndFilters.getSharedCosts() != null) {
+          sharedCostBusinessMappings.add(businessMappingFromRulesAndFilters);
+        }
+      });
+    }
+    if (!sharedCostBusinessMappings.isEmpty()) {
+      sharedCostsFromRulesAndFilters = getSharedCostFromFilters(bigQuery, filters, groupBy, aggregateFunction, sort,
+          cloudProviderTableName, queryParams, sharedCostBusinessMappings, limit, offset, skipRoundOff, viewRules);
+      if (sharedCostsFromRulesAndFilters != null) {
+        for (String entry : sharedCostsFromRulesAndFilters.keySet()) {
+          totalSharedCost += sharedCostsFromRulesAndFilters.get(entry);
+        }
+      }
+    }
+    return totalSharedCost;
+  }
+
   private Map<String, Double> getSharedCostFromFilters(BigQuery bigQuery, List<QLCEViewFilterWrapper> filters,
       List<QLCEViewGroupBy> groupBy, List<QLCEViewAggregation> aggregateFunction, List<QLCEViewSortCriteria> sort,
       String cloudProviderTableName, ViewQueryParams queryParams, List<BusinessMapping> sharedCostBusinessMappings,
@@ -1025,7 +1100,8 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     return columns;
   }
 
-  private ViewCostData getViewTrendStatsCostData(BigQuery bigQuery, SelectQuery query, boolean isClusterTableQuery) {
+  private ViewCostData getViewTrendStatsCostData(BigQuery bigQuery, SelectQuery query, boolean isClusterTableQuery,
+      BusinessMapping businessMappingFromGroupBy, double sharedCostFromFiltersAndRules) {
     QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query.toString()).build();
     TableResult result;
     try {
@@ -1035,17 +1111,37 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
       Thread.currentThread().interrupt();
       return null;
     }
-    return convertToTrendStatsData(result, isClusterTableQuery);
+    return convertToTrendStatsData(
+        result, isClusterTableQuery, businessMappingFromGroupBy, sharedCostFromFiltersAndRules);
   }
 
-  private ViewCostData convertToTrendStatsData(TableResult result, boolean isClusterTableQuery) {
+  private ViewCostData convertToTrendStatsData(TableResult result, boolean isClusterTableQuery,
+      BusinessMapping businessMappingFromGroupBy, double sharedCostFromFiltersAndRules) {
     Schema schema = result.getSchema();
     FieldList fields = schema.getFields();
     ViewCostDataBuilder viewCostDataBuilder = ViewCostData.builder();
-    Double totalCost = null;
+
+    List<String> sharedCostBucketNames = new ArrayList<>();
+    if (businessMappingFromGroupBy != null && businessMappingFromGroupBy.getSharedCosts() != null) {
+      List<SharedCost> sharedCostBuckets = businessMappingFromGroupBy.getSharedCosts();
+      sharedCostBucketNames =
+          sharedCostBuckets.stream()
+              .map(sharedCostBucket -> viewsQueryBuilder.modifyStringToComplyRegex(sharedCostBucket.getName()))
+              .collect(Collectors.toList());
+    }
+
+    boolean includeOthersCost = businessMappingFromGroupBy == null
+        || businessMappingFromGroupBy.getUnallocatedCost() == null
+        || businessMappingFromGroupBy.getUnallocatedCost().getStrategy() != HIDE;
+
+    double totalCost = 0.0;
     Double idleCost = null;
     Double unallocatedCost = null;
+    double sharedCost = 0.0;
+    String fieldName = getEntityGroupByFieldName(Collections.emptyList());
     for (FieldValueList row : result.iterateAll()) {
+      double cost = 0.0;
+      String entityName = null;
       for (Field field : fields) {
         switch (field.getName()) {
           case entityConstantMinStartTime:
@@ -1056,7 +1152,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
             break;
           case entityConstantCost:
           case entityConstantClusterCost:
-            totalCost = getNumericValue(row, field);
+            cost = getNumericValue(row, field);
             viewCostDataBuilder.cost(totalCost);
             break;
           case entityConstantIdleCost:
@@ -1071,12 +1167,25 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
             viewCostDataBuilder.systemCost(getNumericValue(row, field));
             break;
           default:
+            if (sharedCostBucketNames.contains(field.getName())) {
+              sharedCost += getNumericValue(row, field);
+            }
+            if (field.getType().getStandardType() == StandardSQLTypeName.STRING) {
+              entityName = fetchStringValue(row, field, fieldName);
+            }
             break;
         }
       }
+      if (entityName == null
+          || (includeOthersCost || !entityName.equals(ViewFieldUtils.getBusinessMappingUnallocatedCostDefaultName()))) {
+        totalCost += cost;
+      }
     }
-    if (totalCost != null && idleCost != null) {
-      Double utilizedCost = totalCost - idleCost;
+
+    totalCost = viewsQueryHelper.getRoundedDoubleValue(totalCost + sharedCost + sharedCostFromFiltersAndRules);
+    viewCostDataBuilder.cost(totalCost);
+    if (idleCost != null) {
+      double utilizedCost = totalCost - idleCost;
       if (unallocatedCost != null) {
         utilizedCost -= unallocatedCost;
       }
@@ -1124,11 +1233,11 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
 
   private QLCEViewTrendInfo getCostBillingStats(ViewCostData costData, ViewCostData prevCostData,
       List<QLCEViewTimeFilter> filters, Instant trendFilterStartTime, boolean isClusterTableQuery) {
-    Instant startInstant = Instant.ofEpochMilli(getTimeFilter(filters, AFTER).getValue().longValue());
+    Instant startInstant = Instant.ofEpochMilli(viewsQueryHelper.getTimeFilter(filters, AFTER).getValue().longValue());
     Instant endInstant = Instant.ofEpochMilli(costData.getMaxStartTime() / 1000);
     if (costData.getMaxStartTime() == 0) {
-      endInstant =
-          Instant.ofEpochMilli(getTimeFilter(filters, QLCEViewTimeFilterOperator.BEFORE).getValue().longValue());
+      endInstant = Instant.ofEpochMilli(
+          viewsQueryHelper.getTimeFilter(filters, QLCEViewTimeFilterOperator.BEFORE).getValue().longValue());
     }
 
     boolean isYearRequired = viewsQueryHelper.isYearRequired(startInstant, endInstant);
@@ -1143,7 +1252,8 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
                                                                .minStartTime(costData.getMinStartTime() / 1000)
                                                                .maxStartTime(costData.getMaxStartTime() / 1000)
                                                                .build(),
-        Instant.ofEpochMilli(getTimeFilter(filters, QLCEViewTimeFilterOperator.BEFORE).getValue().longValue()));
+        Instant.ofEpochMilli(
+            viewsQueryHelper.getTimeFilter(filters, QLCEViewTimeFilterOperator.BEFORE).getValue().longValue()));
 
     return QLCEViewTrendInfo.builder()
         .statsLabel(isClusterTableQuery ? TOTAL_CLUSTER_COST_LABEL : TOTAL_COST_LABEL)
@@ -1229,47 +1339,9 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
         .collect(Collectors.toList());
   }
 
-  protected List<QLCEViewTimeFilter> getTrendFilters(List<QLCEViewTimeFilter> timeFilters) {
-    Instant startInstant = Instant.ofEpochMilli(getTimeFilter(timeFilters, AFTER).getValue().longValue());
-    Instant endInstant =
-        Instant.ofEpochMilli(getTimeFilter(timeFilters, QLCEViewTimeFilterOperator.BEFORE).getValue().longValue());
-    long diffMillis = Duration.between(startInstant, endInstant).toMillis();
-    long trendEndTime = startInstant.toEpochMilli() - 1000;
-    long trendStartTime = trendEndTime - diffMillis;
-
-    List<QLCEViewTimeFilter> trendFilters = new ArrayList<>();
-    trendFilters.add(getTrendBillingFilter(trendStartTime, AFTER));
-    trendFilters.add(getTrendBillingFilter(trendEndTime, QLCEViewTimeFilterOperator.BEFORE));
-    return trendFilters;
-  }
-
-  protected QLCEViewTimeFilter getTrendBillingFilter(Long filterTime, QLCEViewTimeFilterOperator operator) {
-    return QLCEViewTimeFilter.builder()
-        .field(QLCEViewFieldInput.builder()
-                   .fieldId(ViewsMetaDataFields.START_TIME.getFieldName())
-                   .fieldName(ViewsMetaDataFields.START_TIME.getFieldName())
-                   .identifier(ViewFieldIdentifier.COMMON)
-                   .identifierName(ViewFieldIdentifier.COMMON.getDisplayName())
-                   .build())
-        .operator(operator)
-        .value(filterTime)
-        .build();
-  }
-
-  protected QLCEViewTimeFilter getTimeFilter(
-      List<QLCEViewTimeFilter> filters, QLCEViewTimeFilterOperator timeFilterOperator) {
-    Optional<QLCEViewTimeFilter> timeFilter =
-        filters.stream().filter(filter -> filter.getOperator() == timeFilterOperator).findFirst();
-    if (timeFilter.isPresent()) {
-      return timeFilter.get();
-    } else {
-      throw new InvalidRequestException("Time cannot be null");
-    }
-  }
-
   private SelectQuery getTrendStatsQuery(List<QLCEViewFilterWrapper> filters, List<QLCEViewFilter> idFilters,
-      List<QLCEViewTimeFilter> timeFilters, List<QLCEViewAggregation> aggregateFunction, List<ViewRule> viewRuleList,
-      String cloudProviderTableName, ViewQueryParams queryParams) {
+      List<QLCEViewTimeFilter> timeFilters, List<QLCEViewGroupBy> groupBy, List<QLCEViewAggregation> aggregateFunction,
+      List<ViewRule> viewRuleList, String cloudProviderTableName, ViewQueryParams queryParams) {
     Optional<QLCEViewFilterWrapper> viewMetadataFilter = getViewMetadataFilter(filters);
     if (viewMetadataFilter.isPresent()) {
       final String viewId = viewMetadataFilter.get().getViewMetadataFilter().getViewId();
@@ -1285,7 +1357,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
       cloudProviderTableName = getUpdatedCloudProviderTableName(
           filters, null, aggregateFunction, "", cloudProviderTableName, queryParams.isClusterQuery());
     }
-    return viewsQueryBuilder.getQuery(viewRuleList, idFilters, timeFilters, Collections.EMPTY_LIST, aggregateFunction,
+    return viewsQueryBuilder.getQuery(viewRuleList, idFilters, timeFilters, groupBy, aggregateFunction,
         Collections.EMPTY_LIST, cloudProviderTableName);
   }
 
@@ -1347,7 +1419,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     }
     List<QLCEViewFilter> idFilters =
         AwsAccountFieldHelper.removeAccountNameFromAWSAccountIdFilter(getIdFilters(filters));
-    List<QLCEViewTimeFilter> timeFilters = getTimeFilters(filters);
+    List<QLCEViewTimeFilter> timeFilters = viewsQueryHelper.getTimeFilters(filters);
 
     // account id is not passed in current gen queries
     if (queryParams.getAccountId() != null) {
@@ -1464,13 +1536,6 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
 
   private static Optional<QLCEViewFilterWrapper> getViewMetadataFilter(List<QLCEViewFilterWrapper> filters) {
     return filters.stream().filter(f -> f.getViewMetadataFilter() != null).findFirst();
-  }
-
-  private static List<QLCEViewTimeFilter> getTimeFilters(List<QLCEViewFilterWrapper> filters) {
-    return filters.stream()
-        .map(QLCEViewFilterWrapper::getTimeFilter)
-        .filter(Objects::nonNull)
-        .collect(Collectors.toList());
   }
 
   public static List<QLCEViewFilter> getIdFilters(List<QLCEViewFilterWrapper> filters) {
@@ -2127,8 +2192,8 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
   private List<QLCEViewFilterWrapper> getFiltersForEntityStatsCostTrend(List<QLCEViewFilterWrapper> filters) {
     List<QLCEViewFilterWrapper> trendFilters =
         filters.stream().filter(f -> f.getTimeFilter() == null).collect(Collectors.toList());
-    List<QLCEViewTimeFilter> timeFilters = getTimeFilters(filters);
-    List<QLCEViewTimeFilter> trendTimeFilters = getTrendFilters(timeFilters);
+    List<QLCEViewTimeFilter> timeFilters = viewsQueryHelper.getTimeFilters(filters);
+    List<QLCEViewTimeFilter> trendTimeFilters = viewsQueryHelper.getTrendFilters(timeFilters);
     trendTimeFilters.forEach(
         timeFilter -> trendFilters.add(QLCEViewFilterWrapper.builder().timeFilter(timeFilter).build()));
 
@@ -2143,8 +2208,8 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
   }
 
   private long getStartTimeForTrendFilters(List<QLCEViewFilterWrapper> filters) {
-    List<QLCEViewTimeFilter> timeFilters = getTimeFilters(filters);
-    List<QLCEViewTimeFilter> trendTimeFilters = getTrendFilters(timeFilters);
+    List<QLCEViewTimeFilter> timeFilters = viewsQueryHelper.getTimeFilters(filters);
+    List<QLCEViewTimeFilter> trendTimeFilters = viewsQueryHelper.getTrendFilters(timeFilters);
 
     Optional<QLCEViewTimeFilter> startTimeFilter =
         trendTimeFilters.stream().filter(filter -> filter.getOperator() == AFTER).findFirst();
@@ -2287,12 +2352,13 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
 
     if (!isPodQuery && areAggregationsValidForPreAggregation(aggregateFunction)
         && isValidGroupByForPreAggregation(entityGroupBy)) {
-      tableName = isGroupByHour(groupBy) || shouldUseHourlyData(getTimeFilters(filters))
+      tableName = isGroupByHour(groupBy) || shouldUseHourlyData(viewsQueryHelper.getTimeFilters(filters))
           ? CLUSTER_TABLE_HOURLY_AGGREGRATED
           : CLUSTER_TABLE_AGGREGRATED;
     } else {
-      tableName =
-          isGroupByHour(groupBy) || shouldUseHourlyData(getTimeFilters(filters)) ? CLUSTER_TABLE_HOURLY : CLUSTER_TABLE;
+      tableName = isGroupByHour(groupBy) || shouldUseHourlyData(viewsQueryHelper.getTimeFilters(filters))
+          ? CLUSTER_TABLE_HOURLY
+          : CLUSTER_TABLE;
     }
     return format("%s.%s.%s", tableNameSplit[0], tableNameSplit[1], tableName);
   }
@@ -2607,5 +2673,13 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
       updatedDataPoints.add(qlceViewEntityStatsDataPointBuilder.build());
     });
     return updatedDataPoints;
+  }
+
+  private List<String> getBusinessMappingIdsFromRulesAndFilters(List<QLCEViewFilterWrapper> filters) {
+    List<ViewRule> viewRules = getViewRules(filters);
+    Set<String> businessMappingIdsFromRules = viewsQueryHelper.getBusinessMappingIdsFromViewRules(viewRules);
+    List<String> businessMappingIdsFromRulesAndFilters = viewsQueryHelper.getBusinessMappingIdsFromFilters(filters);
+    businessMappingIdsFromRulesAndFilters.addAll(businessMappingIdsFromRules);
+    return businessMappingIdsFromRulesAndFilters;
   }
 }

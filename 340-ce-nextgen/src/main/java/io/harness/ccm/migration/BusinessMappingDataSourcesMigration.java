@@ -43,10 +43,10 @@ public class BusinessMappingDataSourcesMigration implements NGMigration {
               businessMapping.getUuid(), e);
         }
       }
+      log.info("BusinessMappingDataSourcesMigration has been completed");
     } catch (final Exception e) {
       log.error("Failure occurred in BusinessMappingDataSourcesMigration", e);
     }
-    log.info("BusinessMappingDataSourcesMigration has completed");
   }
 
   private void migrateBusinessMappingDataSources(final BusinessMapping businessMapping) {

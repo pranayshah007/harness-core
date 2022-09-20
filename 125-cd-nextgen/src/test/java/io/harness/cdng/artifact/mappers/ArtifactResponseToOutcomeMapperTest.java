@@ -35,12 +35,14 @@ import io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifact
 import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.response.ArtifactBuildDetailsNG;
 import io.harness.delegate.task.artifacts.response.ArtifactDelegateResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
 import software.wings.utils.RepositoryFormat;
 
+import java.util.Collections;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -135,8 +137,12 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
             .artifactDirectory(ParameterField.createValueField("IMAGE1"))
             .repositoryFormat(ParameterField.createValueField(RepositoryFormat.generic.name()))
             .build();
-    ArtifactDelegateResponse artifactDelegateResponse =
-        ArtifactoryGenericArtifactDelegateResponse.builder().artifactPath("IMAGE").build();
+    ArtifactBuildDetailsNG artifactBuildDetailsNG =
+        ArtifactBuildDetailsNG.builder().metadata(Collections.singletonMap("url", "url")).build();
+    ArtifactDelegateResponse artifactDelegateResponse = ArtifactoryGenericArtifactDelegateResponse.builder()
+                                                            .artifactPath("IMAGE")
+                                                            .buildDetails(artifactBuildDetailsNG)
+                                                            .build();
 
     ArtifactOutcome artifactOutcome =
         ArtifactResponseToOutcomeMapper.toArtifactOutcome(artifactConfig, artifactDelegateResponse, true);

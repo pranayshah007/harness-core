@@ -1,0 +1,7 @@
+name: CurrentGen Manager Mongo Metrics Group
+identifier: cgManagerMongoMetricsGroup
+labels:
+  - namespace
+  - containerName
+  - serverAddress
+  - clientDescription

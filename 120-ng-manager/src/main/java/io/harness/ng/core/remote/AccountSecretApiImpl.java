@@ -28,9 +28,11 @@ import io.harness.spec.server.ng.model.ValidateSecretSlugResponse;
 import com.google.inject.Inject;
 import java.io.InputStream;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
@@ -65,7 +67,9 @@ public class AccountSecretApiImpl implements AccountSecretApi {
 
     SecretResponseWrapper secretResponseWrapper = ngSecretService.createFile(account, secretDto, fileInputStream);
 
-    return Response.ok().entity(secretApiUtils.toSecretResponse(secretResponseWrapper)).build();
+    return Response.status(Response.Status.CREATED)
+        .entity(secretApiUtils.toSecretResponse(secretResponseWrapper))
+        .build();
   }
 
   @Override
@@ -86,12 +90,23 @@ public class AccountSecretApiImpl implements AccountSecretApi {
 
   @Override
   public Response updateAccountScopedSecret(SecretRequest secretRequest, String secret, String account) {
+    if (!Objects.equals(secretRequest.getSecret().getSlug(), secret)) {
+      throw new InvalidRequestException(
+          "Account scoped request is having different secret slug in payload and param", USER);
+    }
+    if (nonNull(secretRequest.getSecret().getOrg()) || nonNull(secretRequest.getSecret().getProject())) {
+      throw new InvalidRequestException("Account scoped request is having non null org or project", USER);
+    }
     return updateSecret(secretRequest, secret, account);
   }
 
   @Override
   public Response updateAccountScopedSecret(
       SecretRequest secretRequest, InputStream fileInputStream, String secret, String account) {
+    if (!Objects.equals(secretRequest.getSecret().getSlug(), secret)) {
+      throw new InvalidRequestException(
+          "Account scoped request is having different secret slug in payload and param", USER);
+    }
     if (nonNull(secretRequest.getSecret().getOrg()) || nonNull(secretRequest.getSecret().getProject())) {
       throw new InvalidRequestException("Account scoped request is having non null org or project", USER);
     }
@@ -165,7 +180,12 @@ public class AccountSecretApiImpl implements AccountSecretApi {
 
     List<SecretResponse> secretResponse =
         content.stream().map(secretApiUtils::toSecretResponse).collect(Collectors.toList());
-    return Response.ok().entity(secretResponse).build();
+
+    ResponseBuilder responseBuilder = Response.ok();
+    ResponseBuilder responseBuilderWithLinks =
+        secretApiUtils.addLinksHeader(responseBuilder, "/v1/secrets", secretResponse.size(), page, limit);
+
+    return responseBuilderWithLinks.entity(secretResponse).build();
   }
 
   private Response createSecret(String account, SecretRequest secretRequest, Boolean privateSecret) {
@@ -181,6 +201,6 @@ public class AccountSecretApiImpl implements AccountSecretApi {
     }
     SecretResponseWrapper entity = ngSecretService.create(account, secretDto);
 
-    return Response.ok().entity(secretApiUtils.toSecretResponse(entity)).build();
+    return Response.status(Response.Status.CREATED).entity(secretApiUtils.toSecretResponse(entity)).build();
   }
 }

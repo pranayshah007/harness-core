@@ -9,7 +9,7 @@ package io.harness.ng.core;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.remote.client.RestClientUtils.getResponse;
+import static io.harness.remote.client.CGRestUtils.getResponse;
 
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;

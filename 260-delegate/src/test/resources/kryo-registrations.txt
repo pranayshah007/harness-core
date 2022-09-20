@@ -1121,6 +1121,7 @@
 9121:io.harness.cvng.beans.elk.ELKDataCollectionRequest
 9122:io.harness.cvng.beans.elk.ELKIndexCollectionRequest
 9123:io.harness.cvng.beans.elk.ELKSampleDataCollectionRequest
+9124:io.harness.cvng.beans.ELKDataCollectionInfo
 9701:io.harness.logging.UnitProgress
 9702:io.harness.logging.UnitStatus
 9709:io.harness.jira.JiraIssueTypeNG
@@ -1730,7 +1731,7 @@
 55345:io.harness.delegate.task.azure.arm.AzureResourceCreationTaskNGResponse
 55346:io.harness.delegate.task.jira.JiraSearchUserParams
 55347:io.harness.delegate.task.jira.JiraSearchUserData
-
+55348:io.harness.delegate.task.ssh.NgDownloadArtifactCommandUnit
 
 55401:io.harness.delegate.beans.SerializedResponseData
 55402:software.wings.beans.SerializationFormat
@@ -1754,6 +1755,8 @@
 55420:io.harness.delegate.task.artifacts.gar.GarDelegateRequest
 55421:io.harness.delegate.task.artifacts.gar.GarDelegateResponse
 55422:io.harness.delegate.task.azure.artifact.AwsS3AzureArtifactRequestDetails
+55423:io.harness.delegate.task.azure.arm.AzureFetchArmPreDeploymentDataTaskParameters
+55424:io.harness.delegate.task.azure.arm.AzureFetchArmPreDeploymentDataTaskResponse
 55470:io.harness.delegate.task.ssh.artifact.CustomArtifactDelegateConfig
 55501:io.harness.delegate.beans.instancesync.info.PdcServerInstanceInfo
 55502:io.harness.delegate.beans.instancesync.info.AzureSshWinrmServerInstanceInfo

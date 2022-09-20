@@ -36,6 +36,7 @@ import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_TASK_V
 import static io.harness.persistence.HQuery.excludeAuthority;
 
 import static software.wings.app.ManagerCacheRegistrar.SECRET_CACHE;
+import static software.wings.expression.SecretManagerModule.EXPRESSION_EVALUATOR_EXECUTOR;
 import static software.wings.service.impl.AssignDelegateServiceImpl.PIPELINE;
 import static software.wings.service.impl.AssignDelegateServiceImpl.STAGE;
 import static software.wings.service.impl.AssignDelegateServiceImpl.STEP;
@@ -197,6 +198,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -276,6 +278,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   @Inject private DelegateMetricsService delegateMetricsService;
   @Inject private DelegateGlobalAccountController delegateGlobalAccountController;
   @Inject @Named(SECRET_CACHE) Cache<String, EncryptedDataDetails> secretsCache;
+  @Inject @Named(EXPRESSION_EVALUATOR_EXECUTOR) ExecutorService expressionEvaluatorExecutor;
   @Inject @Getter private Subject<DelegateObserver> subject = new Subject<>();
 
   private static final SecureRandom random = new SecureRandom();
@@ -887,7 +890,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
               artifactCollectionUtils, featureFlagService, managerDecryptionService, secretManager,
               delegateTask.getAccountId(), delegateTask.getWorkflowExecutionId(),
               delegateTask.getData().getExpressionFunctorToken(), ngSecretService, delegateTask.getSetupAbstractions(),
-              secretsCache, delegateMetricsService);
+              secretsCache, delegateMetricsService, expressionEvaluatorExecutor);
 
       List<ExecutionCapability> executionCapabilityList = emptyList();
       if (isNotEmpty(delegateTask.getExecutionCapabilities())) {

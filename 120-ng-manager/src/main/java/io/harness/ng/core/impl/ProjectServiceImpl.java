@@ -24,7 +24,7 @@ import static io.harness.ng.core.user.UserMembershipUpdateSource.SYSTEM;
 import static io.harness.ng.core.utils.NGUtils.validate;
 import static io.harness.ng.core.utils.NGUtils.verifyValuesNotChanged;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
-import static io.harness.springdata.TransactionUtils.DEFAULT_TRANSACTION_RETRY_POLICY;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 import static io.harness.utils.PageUtils.getNGPageResponse;
 
 import static java.lang.Boolean.FALSE;
@@ -170,12 +170,11 @@ public class ProjectServiceImpl implements ProjectService {
     project.setAccountIdentifier(accountIdentifier);
     try {
       validate(project);
-      Project createdProject =
-          Failsafe.with(DEFAULT_TRANSACTION_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
-            Project savedProject = projectRepository.save(project);
-            outboxService.save(new ProjectCreateEvent(project.getAccountIdentifier(), ProjectMapper.writeDTO(project)));
-            return savedProject;
-          }));
+      Project createdProject = Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
+        Project savedProject = projectRepository.save(project);
+        outboxService.save(new ProjectCreateEvent(project.getAccountIdentifier(), ProjectMapper.writeDTO(project)));
+        return savedProject;
+      }));
       setupProject(Scope.of(accountIdentifier, orgIdentifier, projectDTO.getIdentifier()));
       log.info(String.format("Project with identifier %s and orgIdentifier %s was successfully created",
           project.getIdentifier(), projectDTO.getOrgIdentifier()));
@@ -415,7 +414,7 @@ public class ProjectServiceImpl implements ProjectService {
       List<ModuleType> moduleTypeList = verifyModulesNotRemoved(existingProject.getModules(), project.getModules());
       project.setModules(moduleTypeList);
       validate(project);
-      return Failsafe.with(DEFAULT_TRANSACTION_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
+      return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
         Project updatedProject = projectRepository.save(project);
         log.info(String.format(
             "Project with identifier %s and orgIdentifier %s was successfully updated", identifier, orgIdentifier));
@@ -568,7 +567,7 @@ public class ProjectServiceImpl implements ProjectService {
   @DefaultOrganization
   public boolean delete(String accountIdentifier, @OrgIdentifier String orgIdentifier,
       @ProjectIdentifier String projectIdentifier, Long version) {
-    return Failsafe.with(DEFAULT_TRANSACTION_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
+    return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
       Project deletedProject = projectRepository.delete(accountIdentifier, orgIdentifier, projectIdentifier, version);
       boolean delete = deletedProject != null;
       if (delete && ngFeatureFlagHelperService.isEnabled(accountIdentifier, HARD_DELETE_ENTITIES)) {
@@ -593,7 +592,7 @@ public class ProjectServiceImpl implements ProjectService {
   @Override
   public boolean restore(String accountIdentifier, String orgIdentifier, String identifier) {
     validateParentOrgExists(accountIdentifier, orgIdentifier);
-    return Failsafe.with(DEFAULT_TRANSACTION_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
+    return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
       Project restoredProject = projectRepository.restore(accountIdentifier, orgIdentifier, identifier);
       boolean success = restoredProject != null;
       if (success) {

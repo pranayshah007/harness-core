@@ -158,7 +158,7 @@ public class AzureCreateBPStepTest extends CategoryTest {
     StepInputPackage inputPackage = StepInputPackage.builder().build();
     azureCreateBPStep.startChainLinkAfterRbac(azureHelperTest.getAmbiance(), step, inputPackage);
     verify(azureCommonHelper, times(1)).getGitStoreDelegateConfig(any(), any(), any());
-    verify(azureCommonHelper, times(1)).getGitFetchFileTaskChainResponse(any(), any(), any(), any());
+    verify(azureCommonHelper, times(1)).getGitFetchFileTaskChainResponse(any(), any(), any(), any(), any(), any());
   }
 
   @Test
@@ -220,7 +220,7 @@ public class AzureCreateBPStepTest extends CategoryTest {
         azureCreateBPStep.startChainLinkAfterRbac(azureHelperTest.getAmbiance(), step, inputPackage);
 
     verify(azureCommonHelper, times(0)).getGitStoreDelegateConfig(any(), any(), any());
-    verify(azureCommonHelper, times(0)).getGitFetchFileTaskChainResponse(any(), any(), any(), any());
+    verify(azureCommonHelper, times(0)).getGitFetchFileTaskChainResponse(any(), any(), any(), any(), any(), any());
     assertThat(taskChainResponse).isNotNull();
     verifyStatic(StepUtils.class, times(1));
     StepUtils.prepareCDTaskRequest(

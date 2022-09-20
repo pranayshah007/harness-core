@@ -15,7 +15,7 @@ import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.pms.yaml.YamlNode.PATH_SEP;
-import static io.harness.springdata.TransactionUtils.DEFAULT_TRANSACTION_RETRY_POLICY;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.String.format;
@@ -113,7 +113,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   private static final Integer QUERY_PAGE_SIZE = 10000;
   @Inject @Named(OUTBOX_TRANSACTION_TEMPLATE) private final TransactionTemplate transactionTemplate;
   private final OutboxService outboxService;
-  private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_TRANSACTION_RETRY_POLICY;
+  private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_RETRY_POLICY;
   private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
   private final ServiceOverrideService serviceOverrideService;
   private final ServiceEntitySetupUsageHelper entitySetupUsageHelper;
@@ -285,21 +285,20 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
         get(accountId, orgIdentifier, projectIdentifier, serviceIdentifier, false);
 
     if (serviceEntityOptional.isPresent()) {
-      boolean success =
-          Failsafe.with(DEFAULT_TRANSACTION_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
-            ServiceEntity serviceEntityRetrieved = serviceEntityOptional.get();
-            final boolean deleted =
-                shouldHardDelete ? serviceRepository.delete(criteria) : serviceRepository.softDelete(criteria);
-            if (!deleted) {
-              throw new InvalidRequestException(
-                  String.format("Service [%s] under Project[%s], Organization [%s] couldn't be deleted.",
-                      serviceEntity.getIdentifier(), projectIdentifier, orgIdentifier));
-            }
+      boolean success = Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
+        ServiceEntity serviceEntityRetrieved = serviceEntityOptional.get();
+        final boolean deleted =
+            shouldHardDelete ? serviceRepository.delete(criteria) : serviceRepository.softDelete(criteria);
+        if (!deleted) {
+          throw new InvalidRequestException(
+              String.format("Service [%s] under Project[%s], Organization [%s] couldn't be deleted.",
+                  serviceEntity.getIdentifier(), projectIdentifier, orgIdentifier));
+        }
 
-            outboxService.save(new ServiceDeleteEvent(accountId, serviceEntityRetrieved.getOrgIdentifier(),
-                serviceEntityRetrieved.getProjectIdentifier(), serviceEntityRetrieved));
-            return true;
-          }));
+        outboxService.save(new ServiceDeleteEvent(accountId, serviceEntityRetrieved.getOrgIdentifier(),
+            serviceEntityRetrieved.getProjectIdentifier(), serviceEntityRetrieved));
+        return true;
+      }));
       processQuietly(()
                          -> serviceOverrideService.deleteAllInProjectForAService(
                              accountId, orgIdentifier, projectIdentifier, serviceIdentifier));

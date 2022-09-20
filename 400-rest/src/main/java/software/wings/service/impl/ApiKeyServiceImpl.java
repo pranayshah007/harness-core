@@ -60,7 +60,6 @@ import software.wings.service.intfc.UserService;
 import software.wings.utils.CryptoUtils;
 
 import com.google.common.base.Charsets;
-import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
@@ -173,7 +172,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
       executorService.submit(() -> {
         if (apiKeyPresent) {
           // This call gets the permissions from cache, if present.
-          getApiKeyFromCacheOrDB(apiKey, accountId, true);
+          getApiKeyFromCacheOrDB(apiKey, accountId);
         }
 
         if (apiKeyPresentInPermissions || apiKeyPresentInRestrictions) {
@@ -214,13 +213,9 @@ public class ApiKeyServiceImpl implements ApiKeyService {
     });
   }
 
-  private List<UserGroup> getUserGroupsForApiKey(List<String> userGroupIds, String accountId, boolean details) {
+  private List<UserGroup> getUserGroupsForApiKey(List<String> userGroupIds, String accountId) {
     if (isEmpty(userGroupIds)) {
       return emptyList();
-    }
-
-    if (!details) {
-      return userGroupService.filter(accountId, userGroupIds, Lists.newArrayList("_id", "name"));
     }
 
     return userGroupService.filter(accountId, userGroupIds);
@@ -259,10 +254,10 @@ public class ApiKeyServiceImpl implements ApiKeyService {
                             .filter(ApiKeyEntryKeys.accountId, accountId)
                             .filter(ID_KEY, uuid)
                             .get();
-    return buildApiKeyEntry(uuid, entry, true);
+    return buildApiKeyEntry(uuid, entry);
   }
 
-  private ApiKeyEntry buildApiKeyEntry(String uuid, ApiKeyEntry entry, boolean details) {
+  private ApiKeyEntry buildApiKeyEntry(String uuid, ApiKeyEntry entry) {
     notNullCheck("apiKeyEntry is null for id: " + uuid, entry);
     String decryptedKey = new String(getSimpleEncryption(entry.getAccountId()).decryptChars(entry.getEncryptedKey()));
 
@@ -273,7 +268,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
         .accountId(entry.getAccountId())
         .decryptedKey(decryptedKey)
         .userGroups(getUserGroupsForApiKey(
-            entry.getUserGroupIds() != null ? entry.getUserGroupIds() : emptyList(), entry.getAccountId(), details))
+            entry.getUserGroupIds() != null ? entry.getUserGroupIds() : emptyList(), entry.getAccountId()))
         .build();
   }
 
@@ -301,7 +296,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
     if (isEmpty(apiKey) || isEmpty(accountId)) {
       return false;
     }
-    ApiKeyEntry apiKeyEntry = getApiKeyFromCacheOrDB(apiKey, accountId, true);
+    ApiKeyEntry apiKeyEntry = getApiKeyFromCacheOrDB(apiKey, accountId);
     if (apiKeyEntry == null) {
       throw new UnauthorizedException("Invalid Api Key", USER);
     }
@@ -309,11 +304,11 @@ public class ApiKeyServiceImpl implements ApiKeyService {
   }
 
   @Override
-  public ApiKeyEntry getByKey(String key, String accountId, boolean details) {
-    return getApiKeyFromCacheOrDB(key, accountId, details);
+  public ApiKeyEntry getByKey(String key, String accountId) {
+    return getApiKeyFromCacheOrDB(key, accountId);
   }
 
-  private ApiKeyEntry getByKeyFromDB(String key, String accountId, boolean details) {
+  private ApiKeyEntry getByKeyFromDB(String key, String accountId) {
     PageRequest<ApiKeyEntry> pageRequest = aPageRequest().addFilter(ApiKeyEntryKeys.accountId, EQ, accountId).build();
     String hashOfIncomingKey = HashUtils.calculateSha256(key);
     Optional<ApiKeyEntry> apiKeyEntryOptional =
@@ -326,19 +321,19 @@ public class ApiKeyServiceImpl implements ApiKeyService {
     if (apiKeyEntry == null) {
       return null;
     }
-    return buildApiKeyEntry(apiKeyEntry.getUuid(), apiKeyEntry, details);
+    return buildApiKeyEntry(apiKeyEntry.getUuid(), apiKeyEntry);
   }
 
-  private ApiKeyEntry getApiKeyFromCacheOrDB(String apiKey, String accountId, boolean details) {
+  private ApiKeyEntry getApiKeyFromCacheOrDB(String apiKey, String accountId) {
     if (apiKeyCache == null) {
       log.warn("apiKeyCache is null. Fetch from DB");
-      return getByKeyFromDB(apiKey, accountId, details);
+      return getByKeyFromDB(apiKey, accountId);
     } else {
       ApiKeyEntry apiKeyEntry;
       try {
         apiKeyEntry = apiKeyCache.get(getKeyForAPIKeyCache(accountId, apiKey));
         if (apiKeyEntry == null) {
-          apiKeyEntry = getByKeyFromDB(apiKey, accountId, details);
+          apiKeyEntry = getByKeyFromDB(apiKey, accountId);
           notNullCheck("Api-key does not exist", apiKeyEntry, USER);
           apiKeyCache.put(getKeyForAPIKeyCache(accountId, apiKeyEntry.getDecryptedKey()), apiKeyEntry);
         }
@@ -346,7 +341,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
         // If there was any exception, remove that entry from cache
         log.error("Exception while fetching the apiKeyEntry from cache", ex);
         apiKeyCache.remove(getKeyForAPIKeyCache(accountId, apiKey));
-        apiKeyEntry = getByKeyFromDB(apiKey, accountId, details);
+        apiKeyEntry = getByKeyFromDB(apiKey, accountId);
         if (apiKeyEntry != null) {
           apiKeyCache.put(getKeyForAPIKeyCache(accountId, apiKeyEntry.getDecryptedKey()), apiKeyEntry);
         }
@@ -482,7 +477,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
   }
 
   private void rebuildPermissionsAndRestrictions(String apiKey, String accountId) {
-    ApiKeyEntry apiKeyEntry = getByKey(apiKey, accountId, true);
+    ApiKeyEntry apiKeyEntry = getByKey(apiKey, accountId);
     if (apiKeyEntry != null) {
       rebuildPermissionsAndRestrictions(apiKeyEntry);
     }

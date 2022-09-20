@@ -48,12 +48,10 @@ import io.harness.logging.ExceptionLogger;
 import io.harness.logging.Misc;
 import io.harness.tasks.ResponseData;
 
-import software.wings.api.ArtifactCollectionExecutionData;
 import software.wings.api.EnvStateExecutionData;
 import software.wings.api.artifact.ServiceArtifactElement;
 import software.wings.api.artifact.ServiceArtifactElements;
 import software.wings.api.artifact.ServiceArtifactVariableElement;
-import software.wings.api.artifact.ServiceArtifactVariableElements;
 import software.wings.api.helm.ServiceHelmElement;
 import software.wings.api.helm.ServiceHelmElements;
 import software.wings.beans.Application;
@@ -86,7 +84,6 @@ import software.wings.sm.ExecutionInterrupt;
 import software.wings.sm.ExecutionResponse;
 import software.wings.sm.ExecutionResponse.ExecutionResponseBuilder;
 import software.wings.sm.State;
-import software.wings.sm.StateExecutionInstance;
 import software.wings.sm.StateType;
 import software.wings.sm.WorkflowStandardParams;
 
@@ -479,11 +476,7 @@ public class EnvState extends State implements WorkflowState {
 
     EnvStateExecutionData stateExecutionData = context.getStateExecutionData();
     if (stateExecutionData.getOrchestrationWorkflowType() == OrchestrationWorkflowType.BUILD) {
-      if (!featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, context.getAccountId())) {
-        saveArtifactAndManifestElements(context, stateExecutionData);
-      } else {
-        saveArtifactVariableElements(context, stateExecutionData);
-      }
+      saveArtifactAndManifestElements(context, stateExecutionData);
     }
 
     if (context.getWorkflowType() == WorkflowType.PIPELINE
@@ -552,39 +545,6 @@ public class EnvState extends State implements WorkflowState {
         context.prepareSweepingOutputBuilder(Scope.PIPELINE)
             .name(ServiceHelmElements.SWEEPING_OUTPUT_NAME + context.getStateExecutionInstanceId())
             .value(ServiceHelmElements.builder().helmElements(helmElements).build())
-            .build());
-  }
-
-  private void saveArtifactVariableElements(ExecutionContext context, EnvStateExecutionData stateExecutionData) {
-    List<StateExecutionInstance> allStateExecutionInstances =
-        executionService.getStateExecutionInstances(context.getAppId(), stateExecutionData.getWorkflowExecutionId());
-    if (isEmpty(allStateExecutionInstances)) {
-      return;
-    }
-
-    List<ServiceArtifactVariableElement> artifactVariableElements = new ArrayList<>();
-    allStateExecutionInstances.forEach(stateExecutionInstance -> {
-      if (!(stateExecutionInstance.fetchStateExecutionData() instanceof ArtifactCollectionExecutionData)) {
-        return;
-      }
-
-      ArtifactCollectionExecutionData artifactCollectionExecutionData =
-          (ArtifactCollectionExecutionData) stateExecutionInstance.fetchStateExecutionData();
-      Artifact artifact = artifactService.get(artifactCollectionExecutionData.getArtifactId());
-      artifactVariableElements.add(ServiceArtifactVariableElement.builder()
-                                       .uuid(artifact.getUuid())
-                                       .name(artifact.getDisplayName())
-                                       .entityType(artifactCollectionExecutionData.getEntityType())
-                                       .entityId(artifactCollectionExecutionData.getEntityId())
-                                       .serviceId(artifactCollectionExecutionData.getServiceId())
-                                       .artifactVariableName(artifactCollectionExecutionData.getArtifactVariableName())
-                                       .build());
-    });
-
-    sweepingOutputService.save(
-        context.prepareSweepingOutputBuilder(Scope.PIPELINE)
-            .name(ServiceArtifactVariableElements.SWEEPING_OUTPUT_NAME + context.getStateExecutionInstanceId())
-            .value(ServiceArtifactVariableElements.builder().artifactVariableElements(artifactVariableElements).build())
             .build());
   }
 
