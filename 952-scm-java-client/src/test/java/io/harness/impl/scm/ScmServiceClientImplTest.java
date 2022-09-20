@@ -344,7 +344,7 @@ public class ScmServiceClientImplTest extends CategoryTest {
   @Test
   @Owner(developers = BHAVYA)
   @Category(UnitTests.class)
-  public void testGetFileContent_ForBBHavingSlashInBranchName() {
+  public void testGetFileContent_ForBBHavingSlashInBranchName_WhenGetCommitFails() {
     when(scmGitProviderHelper.getSlug(any())).thenReturn(slug);
     when(scmGitProviderMapper.mapToSCMGitProvider(any())).thenReturn(getGitProviderDefault());
     when(scmGitProviderMapper.mapToSCMGitProvider(any(), eq(true))).thenReturn(getGitProviderDefault());
@@ -363,6 +363,32 @@ public class ScmServiceClientImplTest extends CategoryTest {
     FileContent fileContent1 = scmServiceClient.getFileContent(scmConnector, gitFilePathDetails, scmBlockingStub);
     assertThat(fileContent1.getStatus()).isEqualTo(400);
     assertThat(fileContent1.getError()).isEqualTo(error);
+  }
+
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void testGetFileContent_ForBBHavingSlashInBranchName() {
+    when(scmGitProviderHelper.getSlug(any())).thenReturn(slug);
+    when(scmGitProviderMapper.mapToSCMGitProvider(any())).thenReturn(getGitProviderDefault());
+    when(scmGitProviderMapper.mapToSCMGitProvider(any(), eq(true))).thenReturn(getGitProviderDefault());
+    when(scmBlockingStub.getLatestCommitOnFile(any()))
+        .thenReturn(GetLatestCommitOnFileResponse.newBuilder().setError("").setCommitId(commitId).build());
+    when(scmBlockingStub.getFile(any()))
+        .thenReturn(FileContent.newBuilder().setStatus(200).setPath(filepath).setContent(fileContent).build());
+
+    GitFilePathDetails gitFilePathDetails = GitFilePathDetails.builder().filePath(filepath).branch("abc/xyz").build();
+    BitbucketConnectorDTO bitbucketConnector = BitbucketConnectorDTO.builder()
+                                                   .apiAccess(BitbucketApiAccessDTO.builder().build())
+                                                   .url(repoUrl)
+                                                   .connectionType(GitConnectionType.REPO)
+                                                   .build();
+    ConnectorInfoDTO connectorInfo = ConnectorInfoDTO.builder().connectorConfig(bitbucketConnector).build();
+    scmConnector = (ScmConnector) connectorInfo.getConnectorConfig();
+
+    FileContent fileContent1 = scmServiceClient.getFileContent(scmConnector, gitFilePathDetails, scmBlockingStub);
+    assertThat(fileContent1.getStatus()).isEqualTo(200);
+    assertThat(fileContent1.getContent()).isEqualTo(fileContent);
   }
 
   private GitFileDetails getGitFileDetailsDefault() {
