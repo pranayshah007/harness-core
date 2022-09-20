@@ -1,0 +1,35 @@
+template:
+  projectIdentifier: projId
+  orgIdentifier: orgId
+  identifier: template1
+  versionLabel: version1
+  name: template1
+  type: Step
+  variables:
+    - name: var1
+      type: Number
+      value: 34
+    - name: var2
+      type: Number
+      value: <+input>
+    - name: var3
+      type: String
+      value: <+pipeline.name>
+    - name: secretVar
+      type: Secret
+      value: HARNESS_IMAGE_PASSWORD
+    - name: secretVar2
+      type: Secret
+      value: <+input>
+  spec:
+    type: ShellScript
+    spec:
+      shell: Bash
+      onDelegate: true
+      source:
+        type: Inline
+        spec:
+          script: hello
+      environmentVariables: []
+      outputVariables: []
+    timeout: 10s

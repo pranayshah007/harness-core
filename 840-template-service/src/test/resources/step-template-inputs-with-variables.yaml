@@ -1,0 +1,15 @@
+templateVariables:
+- name: "var2"
+  type: "String"
+  value: "<+input>"
+- name: "secretVar2"
+  type: "Secret"
+  value: "<+input>"
+templateInputs:
+  type: "ShellScript"
+  spec:
+    source:
+      type: "Inline"
+      spec:
+        script: "<+input>"
+  timeout: "<+input>"

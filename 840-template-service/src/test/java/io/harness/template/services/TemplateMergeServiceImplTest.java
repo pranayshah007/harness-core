@@ -7,10 +7,7 @@
 
 package io.harness.template.services;
 
-import static io.harness.rule.OwnerRule.ABHINAV_MITTAL;
-import static io.harness.rule.OwnerRule.INDER;
-import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
-
+import static io.harness.rule.OwnerRule.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
@@ -20,8 +17,10 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import io.harness.TemplateServiceTestBase;
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
@@ -30,6 +29,7 @@ import io.harness.ng.core.template.TemplateReferenceSummary;
 import io.harness.ng.core.template.TemplateRetainVariablesResponse;
 import io.harness.ng.core.template.exception.NGTemplateResolveException;
 import io.harness.rule.Owner;
+import io.harness.steps.StepUtils;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.helpers.TemplateMergeServiceHelper;
 
@@ -41,17 +41,31 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+
+import io.harness.template.helpers.TemplateYamlSchemaMergeHelper;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.stubbing.Answer;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
 
+@RunWith(MockitoJUnitRunner.class)
 @OwnedBy(HarnessTeam.CDC)
+@PrepareForTest({TemplateYamlSchemaMergeHelper.class})
 public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
   @InjectMocks private TemplateMergeServiceImpl templateMergeService;
 
   @Mock private NGTemplateServiceHelper templateServiceHelper;
+
+  @Mock
+  private AccountClient accountClient;
   @InjectMocks TemplateMergeServiceHelper templateMergeServiceHelper;
 
   private static final String ACCOUNT_ID = "accountId";
@@ -71,6 +85,9 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
   public void setup() throws IllegalAccessException {
     on(templateMergeServiceHelper).set("templateServiceHelper", templateServiceHelper);
     on(templateMergeService).set("templateMergeServiceHelper", templateMergeServiceHelper);
+    Mockito.mockStatic(TemplateYamlSchemaMergeHelper.class);
+    PowerMockito.when(TemplateYamlSchemaMergeHelper.isFeatureFlagEnabled(FeatureName.NG_TEMPLATE_VARIABLES, null, accountClient))
+            .thenReturn(false);
   }
 
   @Test
@@ -119,6 +136,38 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
     String yaml = readFile(filename);
     String templateYaml = templateMergeServiceHelper.createTemplateInputsFromTemplate(yaml, null);
     assertThat(templateYaml).isNullOrEmpty();
+  }
+
+  @Test
+  @Owner(developers = PRABU)
+  @Category(UnitTests.class)
+  public void testCreateTemplateInputsFromStepTemplateWithVariables() {
+    PowerMockito.when(TemplateYamlSchemaMergeHelper.isFeatureFlagEnabled(FeatureName.NG_TEMPLATE_VARIABLES, null, accountClient))
+            .thenReturn(true);
+    String filename = "step-template-with-variables.yaml";
+    String yaml = readFile(filename);
+    String templateYaml = templateMergeServiceHelper.createTemplateInputsFromTemplate(yaml, null);
+    assertThat(templateYaml).isNotNull();
+
+    String resFile = "step-template-inputs-with-variables.yaml";
+    String resTemplate = readFile(resFile);
+    assertThat(templateYaml).isEqualTo(resTemplate);
+  }
+
+  @Test
+  @Owner(developers = PRABU)
+  @Category(UnitTests.class)
+  public void testCreateTemplateInputsFromStepTemplateWithOnlyVariables() {
+    PowerMockito.when(TemplateYamlSchemaMergeHelper.isFeatureFlagEnabled(FeatureName.NG_TEMPLATE_VARIABLES, null, accountClient))
+            .thenReturn(true);
+    String filename = "step-template-with-variables-without-runtime-inputs.yaml";
+    String yaml = readFile(filename);
+    String templateYaml = templateMergeServiceHelper.createTemplateInputsFromTemplate(yaml, null);
+    assertThat(templateYaml).isNotNull();
+
+    String resFile = "step-template-inputs-with-only-variables.yaml";
+    String resTemplate = readFile(resFile);
+    assertThat(templateYaml).isEqualTo(resTemplate);
   }
 
   @Test

@@ -1,0 +1,7 @@
+templateVariables:
+- name: "var2"
+  type: "Number"
+  value: "<+input>"
+- name: "secretVar2"
+  type: "Secret"
+  value: "<+input>"
