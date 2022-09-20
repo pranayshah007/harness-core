@@ -48,6 +48,7 @@ import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
+import io.harness.delegate.beans.connector.scm.genericgitconnector.GitSSHAuthenticationDTO;
 import io.harness.delegate.beans.connector.scm.github.*;
 import io.harness.delegate.beans.connector.vaultconnector.VaultConnectorDTO;
 import io.harness.encryption.Scope;
@@ -73,9 +74,7 @@ import io.harness.ng.core.DecryptableEntityWithEncryptionConsumers;
 import io.harness.ng.core.activityhistory.NGActivityType;
 import io.harness.ng.core.api.NGSecretServiceV2;
 import io.harness.ng.core.dto.ErrorDetail;
-import io.harness.ng.core.dto.secrets.SSHConfigDTO;
-import io.harness.ng.core.dto.secrets.SSHKeyReferenceCredentialDTO;
-import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
+import io.harness.ng.core.dto.secrets.*;
 import io.harness.ng.core.models.Secret;
 import io.harness.ng.opa.entities.connector.OpaConnectorService;
 import io.harness.opaclient.model.OpaConstants;
@@ -880,8 +879,20 @@ public class ConnectorServiceImpl implements ConnectorService {
         if (secretOptional.isPresent()) {
           Secret secret = secretOptional.get();
           secretSpecDTO.set((SSHKeySpecDTO) secret.getSecretSpec().toDTO());
-          decryptableEntityWithEncryptionConsumers.setDecryptableEntity(
-              ((SSHKeyReferenceCredentialDTO) ((SSHConfigDTO) secretSpecDTO.get().getAuth().getSpec()).getSpec()));
+          SSHCredentialSpecDTO sshCredentialType = null;
+          if(((SSHConfigDTO) secretSpecDTO.get().getAuth().getSpec()).getCredentialType() == SSHCredentialType.Password) {
+            decryptableEntityWithEncryptionConsumers.setDecryptableEntity(
+                    (SSHPasswordCredentialDTO) ((SSHConfigDTO) secretSpecDTO.get().getAuth().getSpec()).getSpec()
+            );
+          } else if(((SSHConfigDTO) secretSpecDTO.get().getAuth().getSpec()).getCredentialType() == SSHCredentialType.KeyPath) {
+            decryptableEntityWithEncryptionConsumers.setDecryptableEntity(
+                    (SSHKeyPathCredentialDTO) ((SSHConfigDTO) secretSpecDTO.get().getAuth().getSpec()).getSpec()
+                    );
+          } else {
+            decryptableEntityWithEncryptionConsumers.setDecryptableEntity(
+                    (SSHKeyReferenceCredentialDTO) ((SSHConfigDTO) secretSpecDTO.get().getAuth().getSpec()).getSpec()
+            );
+          }
           sshEncryptedDataDetails = sshKeySpecDTOHelper.getSSHKeyEncryptionDetails(secretSpecDTO.get(),
               BaseNGAccess.builder()
                   .accountIdentifier(accountIdentifier)
@@ -950,8 +961,17 @@ public class ConnectorServiceImpl implements ConnectorService {
                                     .getAuthentication()
                                     .getCredentials())
                                    .getSecretReferenceFields();
-          fields.addAll(((SSHKeyReferenceCredentialDTO) ((SSHConfigDTO) secretSpecDTO.getAuth().getSpec()).getSpec())
-                            .getSecretReferenceFields());
+
+          if(((SSHConfigDTO) secretSpecDTO.getAuth().getSpec()).getCredentialType() == SSHCredentialType.Password) {
+            fields.addAll(((SSHPasswordCredentialDTO) ((SSHConfigDTO) secretSpecDTO.getAuth().getSpec()).getSpec())
+                                        .getSecretReferenceFields());
+          } else if(((SSHConfigDTO) secretSpecDTO.getAuth().getSpec()).getCredentialType() == SSHCredentialType.KeyPath) {
+            fields.addAll(((SSHKeyPathCredentialDTO) ((SSHConfigDTO) secretSpecDTO.getAuth().getSpec()).getSpec())
+                    .getSecretReferenceFields());
+          } else {
+            fields.addAll(((SSHKeyReferenceCredentialDTO) ((SSHConfigDTO) secretSpecDTO.getAuth().getSpec()).getSpec())
+                    .getSecretReferenceFields());
+          }
           return fields;
         }
       default:
