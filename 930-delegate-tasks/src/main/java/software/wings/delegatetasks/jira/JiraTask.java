@@ -986,7 +986,13 @@ public class JiraTask extends AbstractDelegateRunnableTask {
     }
     if (EmptyPredicate.isNotEmpty(parameters.getCustomFields())) {
       for (Map.Entry<String, JiraCustomFieldValue> field : parameters.getCustomFields().entrySet()) {
-        fields.put(field.getKey(), field.getValue().getFieldValue());
+        if (field.getKey().equals("TimeTracking:OriginalEstimate")) {
+          fields.put("Original Estimate", field.getValue().getFieldValue());
+        } else if (field.getKey().equals("TimeTracking:RemainingEstimate")) {
+          fields.put("Remaining Estimate", field.getValue().getFieldValue());
+        } else {
+          fields.put(field.getKey(), field.getValue().getFieldValue());
+        }
       }
     }
     if (EmptyPredicate.isNotEmpty(parameters.getComment())) {
