@@ -51,6 +51,7 @@ public class CodebaseSweepingOutput implements ExecutionSweepingOutput {
   String state;
   Build build;
   List<CodeBaseCommit> commits;
+  String mergeSha;
   @Id @NotNull(groups = {Update.class}) @SchemaIgnore String uuid;
 
   @Value

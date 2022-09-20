@@ -106,18 +106,10 @@ public class YamlChangeSetHelper {
   }
 
   private <T> void entityRenameYamlChange(String accountId, T oldEntity, T newEntity) {
-    if (!featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId)) {
-      if (yamlHandlerFactory.isNonLeafEntity(oldEntity)) {
-        nonLeafEntityRenameYamlChange(accountId, oldEntity, newEntity);
-      } else {
-        leafEntityRenameYamlChange(accountId, oldEntity, newEntity);
-      }
+    if (yamlHandlerFactory.isNonLeafEntity(oldEntity)) {
+      nonLeafEntityRenameYamlChange(accountId, oldEntity, newEntity);
     } else {
-      if (yamlHandlerFactory.isNonLeafEntityWithFeatureFlag(oldEntity)) {
-        nonLeafEntityRenameYamlChange(accountId, oldEntity, newEntity);
-      } else {
-        leafEntityRenameYamlChange(accountId, oldEntity, newEntity);
-      }
+      leafEntityRenameYamlChange(accountId, oldEntity, newEntity);
     }
   }
 

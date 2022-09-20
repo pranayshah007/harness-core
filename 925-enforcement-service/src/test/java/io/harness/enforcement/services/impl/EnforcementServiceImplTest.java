@@ -98,7 +98,7 @@ public class EnforcementServiceImplTest extends CategoryTest {
 
     enforcementSdkClient = mock(EnforcementSdkClient.class);
     Mockito.mockStatic(NGRestUtils.class);
-    when(NGRestUtils.getResponseWithRetry(any())).thenReturn(FeatureRestrictionUsageDTO.builder().count(10).build());
+    when(NGRestUtils.getResponse(any())).thenReturn(FeatureRestrictionUsageDTO.builder().count(10).build());
 
     enforcementService = new EnforcementServiceImpl(licenseService, restrictionHandlerFactory, accountClient,
         new ConversionHandlerFactory(new AllAvailableConversionHandlerImpl(restrictionHandlerFactory),

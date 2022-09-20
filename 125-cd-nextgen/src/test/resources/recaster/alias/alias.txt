@@ -479,3 +479,4 @@ io.harness.cdng.manifest.steps.NgManifestsMetadataSweepingOutput
 io.harness.cdng.configfile.steps.NgConfigFilesMetadataSweepingOutput
 io.harness.cdng.provision.azure.beans.AzureARMValidator
 io.harness.cdng.artifact.bean.yaml.ArtifactSourceConfig
+io.harness.yaml.core.failurestrategy.rollback.PipelineRollbackFailureActionConfig

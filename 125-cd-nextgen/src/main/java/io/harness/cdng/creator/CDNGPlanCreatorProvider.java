@@ -15,6 +15,7 @@ import io.harness.cdng.azure.webapp.variablecreator.AzureWebAppSlotDeploymentSte
 import io.harness.cdng.azure.webapp.variablecreator.AzureWebAppSwapSlotStepVariableCreator;
 import io.harness.cdng.azure.webapp.variablecreator.AzureWebAppTrafficShiftStepVariableCreator;
 import io.harness.cdng.creator.filters.DeploymentStageFilterJsonCreatorV2;
+import io.harness.cdng.creator.plan.CDStepGroupPmsPlanCreator;
 import io.harness.cdng.creator.plan.CDStepsPlanCreator;
 import io.harness.cdng.creator.plan.artifact.ArtifactsPlanCreator;
 import io.harness.cdng.creator.plan.artifact.PrimaryArtifactPlanCreator;
@@ -112,7 +113,6 @@ import io.harness.filters.ParallelGenericFilterJsonCreator;
 import io.harness.filters.StepGroupPmsFilterJsonCreator;
 import io.harness.plancreator.stages.parallel.ParallelPlanCreator;
 import io.harness.plancreator.steps.SpecNodePlanCreator;
-import io.harness.plancreator.steps.StepGroupPMSPlanCreator;
 import io.harness.plancreator.strategy.StrategyConfigPlanCreator;
 import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.contracts.steps.StepMetaData;
@@ -182,7 +182,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new ManifestsPlanCreator());
     planCreators.add(new IndividualManifestPlanCreator());
     planCreators.add(new CDStepsPlanCreator());
-    planCreators.add(new StepGroupPMSPlanCreator());
+    planCreators.add(new CDStepGroupPmsPlanCreator());
     planCreators.add(new ParallelPlanCreator());
     planCreators.add(new ServerlessAwsLambdaDeployStepPlanCreator());
     planCreators.add(new ServerlessAwsLambdaRollbackStepPlanCreator());
