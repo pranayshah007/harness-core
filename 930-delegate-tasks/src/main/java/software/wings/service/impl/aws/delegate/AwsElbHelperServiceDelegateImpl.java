@@ -566,7 +566,7 @@ public class AwsElbHelperServiceDelegateImpl
               awsConfig, encryptionDetails, region, asgName, false);
           boolean areTargetsRegistered = allTargetsRegistered(elbClient, instanceIds, targetGroupArn, logCallback);
           if (areTargetsRegistered) {
-            logCallback.saveExecutionLog(format("All targets registered for Asg: [%s]", asgName);
+            logCallback.saveExecutionLog(format("All targets registered for Asg: [%s]", asgName));
             shouldWait = false;
           } else {
             sleep(backoffDuration);
