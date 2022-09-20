@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.Future;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -120,9 +121,24 @@ public class ExpressionEvaluatorUtils {
         do {
           // Extract the current matched entry with pattern. After this step: name - ABCD1WXYZ
           String name = matcher.group(0);
+
           // Get the value from ctx map. After this step: value - example
-          String value = String.valueOf(ctx.get(name));
           // '\' and '$' are escaped in the value. The matched entry with pattern is replaced with value.
+          Object ctxValue = ctx.get(name);
+          String value = "";
+          if (ctxValue instanceof Future) {
+            // If we have future from context, means secret value is being evaulated asynchronously.
+            // Let's extract the value from end result of this future object.
+            try {
+              value = String.valueOf(((Future<?>) ctxValue).get());
+            } catch (Exception e) {
+              log.error("Encountered error while extracting secret value from future ", e);
+            }
+          } else {
+            // Cast the value from context to string.
+            value = String.valueOf(ctxValue);
+          }
+
           // This appends the string to sb till the replaced matched entry.
           // After this step: sb - echo "example
           matcher.appendReplacement(sb, value.replace("\\", "\\\\").replace("$", "\\$"));

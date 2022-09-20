@@ -13,7 +13,7 @@ import static io.harness.audit.Action.LOGIN2FA;
 import static io.harness.audit.Action.UNSUCCESSFUL_LOGIN;
 import static io.harness.audit.mapper.AuditEventMapper.fromDTO;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.springdata.TransactionUtils.DEFAULT_TRANSACTION_RETRY_POLICY;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 import static io.harness.utils.PageUtils.getPageRequest;
 
 import static java.lang.System.currentTimeMillis;
@@ -61,7 +61,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 public class AuditServiceImpl implements AuditService {
   private final TransactionTemplate transactionTemplate;
 
-  private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_TRANSACTION_RETRY_POLICY;
+  private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_RETRY_POLICY;
 
   private final AuditRepository auditRepository;
   private final AuditYamlService auditYamlService;
