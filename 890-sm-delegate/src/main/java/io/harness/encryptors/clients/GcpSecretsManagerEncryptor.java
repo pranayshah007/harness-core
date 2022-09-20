@@ -267,7 +267,7 @@ public class GcpSecretsManagerEncryptor implements VaultEncryptor {
       createSecret(accountId, HARNESS_TEST_CONNECTION_SECRET, Boolean.TRUE.toString(), encryptionConfig);
     } catch (Exception exception) {
       log.error("Validation for GCP Secrets Manager failed for " + encryptionConfig.getName(), exception);
-      return false;
+      throw exception;
     }
     return true;
   }
