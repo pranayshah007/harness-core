@@ -1778,5 +1778,6 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(GcpSMValidationParams.class, 19879);
     kryo.register(AzureFetchArmPreDeploymentDataTaskParameters.class, 55423);
     kryo.register(AzureFetchArmPreDeploymentDataTaskResponse.class, 55424);
+    kryo.register(GcpSMValidationParams.class, 19879);
   }
 }
