@@ -63,6 +63,7 @@ import org.threeten.bp.Duration;
 public class GcpSecretsManagerEncryptor implements VaultEncryptor {
   public static final int MAX_RETRY_ATTEMPTS = 3;
   public static final int TOTAL_TIMEOUT_IN_SECONDS = 30;
+  public static final String HARNESS_TEST_CONNECTION_SECRET = "harnessTestConnection";
   private final TimeLimiter timeLimiter;
 
   @Inject
@@ -260,6 +261,16 @@ public class GcpSecretsManagerEncryptor implements VaultEncryptor {
     return replication;
   }
 
+  @Override
+  public boolean validateSecretManagerConfiguration(String accountId, EncryptionConfig encryptionConfig) {
+    try {
+      createSecret(accountId, HARNESS_TEST_CONNECTION_SECRET, Boolean.TRUE.toString(), encryptionConfig);
+    } catch (Exception exception) {
+      log.error("Validation for GCP Secrets Manager failed for " + encryptionConfig.getName(), exception);
+      return false;
+    }
+    return true;
+  }
   private String getRegionInformation(SecretText secretText) {
     if (secretText.getAdditionalMetadata() != null) {
       return String.valueOf(secretText.getAdditionalMetadata().getValues().getOrDefault("regions", ""));
