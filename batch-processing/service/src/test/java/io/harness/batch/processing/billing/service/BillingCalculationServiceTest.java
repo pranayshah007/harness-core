@@ -109,6 +109,9 @@ public class BillingCalculationServiceTest extends CategoryTest {
   // Increase offset's absolute value in case test fails with minor difference.
   private static final Offset<BigDecimal> BIG_DECIMAL_OFFSET = Assertions.within(new BigDecimal("0.000000000001"));
 
+  VMInstanceBillingData vmInstanceBillingData =
+      VMInstanceBillingData.builder().resourceId("SOME_ID").cpuCost(12.0).memoryCost(14.0).computeCost(26.0).build();
+
   @Test
   @Owner(developers = OwnerRule.HITESH)
   @Category(UnitTests.class)
@@ -274,7 +277,7 @@ public class BillingCalculationServiceTest extends CategoryTest {
         INSTANCE_STOP_TIMESTAMP, InstanceType.ECS_TASK_EC2);
     BillingAmountBreakup billingAmountForResource =
         billingCalculationService.getBillingAmountBreakupForResource(instanceData, BigDecimal.valueOf(200),
-            instanceResource.getCpuUnits(), instanceResource.getMemoryMb(), 0, 0, pricingData);
+            instanceResource.getCpuUnits(), instanceResource.getMemoryMb(), 0, 0, pricingData, vmInstanceBillingData);
     Assertions.assertThat(billingAmountForResource.getBillingAmount()).isEqualTo(new BigDecimal("75.000"));
   }
 
@@ -293,7 +296,7 @@ public class BillingCalculationServiceTest extends CategoryTest {
 
     BillingAmountBreakup billingAmountForResource =
         billingCalculationService.getBillingAmountBreakupForResource(instanceData, BigDecimal.valueOf(200),
-            instanceResource.getCpuUnits(), instanceResource.getMemoryMb(), 0, 0, pricingData);
+            instanceResource.getCpuUnits(), instanceResource.getMemoryMb(), 0, 0, pricingData, vmInstanceBillingData);
 
     Assertions.assertThat(billingAmountForResource.getBillingAmount()).isEqualTo(new BigDecimal("0.0"));
   }
@@ -334,8 +337,8 @@ public class BillingCalculationServiceTest extends CategoryTest {
     InstanceData instanceData = getInstance(instanceResource, instanceResource, metaData, INSTANCE_START_TIMESTAMP,
         INSTANCE_STOP_TIMESTAMP, InstanceType.ECS_TASK_EC2);
     UtilizationData utilizationData = getUtilization(CPU_UTILIZATION, MEMORY_UTILIZATION);
-    BillingData billingAmount =
-        billingCalculationService.getBillingAmount(instanceData, utilizationData, pricingData, ONE_DAY_SECONDS);
+    BillingData billingAmount = billingCalculationService.getBillingAmount(
+        instanceData, utilizationData, pricingData, ONE_DAY_SECONDS, vmInstanceBillingData);
     Assertions.assertThat(billingAmount.getBillingAmountBreakup().getBillingAmount())
         .isEqualTo(new BigDecimal("90.0000"));
     Assertions.assertThat(billingAmount.getBillingAmountBreakup().getCpuBillingAmount())
@@ -362,8 +365,8 @@ public class BillingCalculationServiceTest extends CategoryTest {
     InstanceData instanceData = getInstance(instanceResource, instanceResource, metaData, INSTANCE_START_TIMESTAMP,
         INSTANCE_STOP_TIMESTAMP, InstanceType.K8S_POD);
     UtilizationData utilizationData = getUtilizationWithValues(CPU_UTILIZATION_HIGH, MEMORY_UTILIZATION_HIGH, 256, 512);
-    BillingData billingAmount =
-        billingCalculationService.getBillingAmount(instanceData, utilizationData, pricingData, ONE_DAY_SECONDS);
+    BillingData billingAmount = billingCalculationService.getBillingAmount(
+        instanceData, utilizationData, pricingData, ONE_DAY_SECONDS, vmInstanceBillingData);
     Assertions.assertThat(billingAmount.getBillingAmountBreakup().getBillingAmount())
         .isEqualTo(new BigDecimal("90.0000"));
     Assertions.assertThat(billingAmount.getBillingAmountBreakup().getCpuBillingAmount())
@@ -388,8 +391,8 @@ public class BillingCalculationServiceTest extends CategoryTest {
     InstanceData instanceData = getInstance(null, null, metaData, INSTANCE_START_TIMESTAMP,
         INSTANCE_STOP_TIMESTAMP.minus(12, ChronoUnit.HOURS), InstanceType.K8S_NODE);
     UtilizationData utilizationData = getUtilization(CPU_UTILIZATION, MEMORY_UTILIZATION);
-    BillingData billingAmount =
-        billingCalculationService.getBillingAmount(instanceData, utilizationData, pricingData, HALF_DAY_SECONDS);
+    BillingData billingAmount = billingCalculationService.getBillingAmount(
+        instanceData, utilizationData, pricingData, HALF_DAY_SECONDS, vmInstanceBillingData);
     Assertions.assertThat(billingAmount.getBillingAmountBreakup().getBillingAmount())
         .isEqualTo(new BigDecimal("120.0"));
     Assertions.assertThat(billingAmount.getBillingAmountBreakup().getCpuBillingAmount())

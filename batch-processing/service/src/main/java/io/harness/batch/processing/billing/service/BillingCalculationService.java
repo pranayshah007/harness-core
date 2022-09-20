@@ -14,6 +14,9 @@ import io.harness.batch.processing.pricing.InstancePricingStrategy;
 import io.harness.batch.processing.pricing.InstancePricingStrategyFactory;
 import io.harness.batch.processing.pricing.PricingData;
 import io.harness.batch.processing.pricing.PricingSource;
+import io.harness.batch.processing.pricing.service.intfc.GcpCustomBillingService;
+import io.harness.batch.processing.pricing.vmpricing.VMInstanceBillingData;
+import io.harness.batch.processing.tasklet.util.InstanceMetaDataUtils;
 import io.harness.ccm.commons.beans.CostAttribution;
 import io.harness.ccm.commons.beans.InstanceType;
 import io.harness.ccm.commons.beans.StorageResource;
@@ -37,12 +40,15 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class BillingCalculationService {
   private final InstancePricingStrategyFactory instancePricingStrategyFactory;
+  private final GcpCustomBillingService gcpCustomBillingService;
 
   private final AtomicInteger atomicTripper = new AtomicInteger(0);
 
   @Autowired
-  public BillingCalculationService(InstancePricingStrategyFactory instancePricingStrategyFactory) {
+  public BillingCalculationService(
+      InstancePricingStrategyFactory instancePricingStrategyFactory, GcpCustomBillingService gcpCustomBillingService) {
     this.instancePricingStrategyFactory = instancePricingStrategyFactory;
+    this.gcpCustomBillingService = gcpCustomBillingService;
   }
 
   public String getInstanceClusterIdKey(String instanceId, String clusterId) {
@@ -83,7 +89,16 @@ public class BillingCalculationService {
     io.harness.batch.processing.pricing.PricingData pricingData =
         getPricingData(instanceData, startTime, endTime, instanceActiveSeconds, parentInstanceActiveSecond);
 
-    return getBillingAmount(instanceData, utilizationData, pricingData, instanceActiveSeconds);
+    String cloudProvider = InstanceMetaDataUtils.getValueForKeyFromInstanceMetaData(
+        InstanceMetaDataConstants.CLOUD_PROVIDER, instanceData);
+
+    VMInstanceBillingData vmInstanceBillingData = null;
+    if ("GCP".equalsIgnoreCase(cloudProvider)) {
+      vmInstanceBillingData = gcpCustomBillingService.getComputeVMPricingInfo(instanceData, startTime, endTime);
+      log.info("For GCP Only: vmInstanceBillingData: {}", vmInstanceBillingData);
+    }
+
+    return getBillingAmount(instanceData, utilizationData, pricingData, instanceActiveSeconds, vmInstanceBillingData);
   }
 
   private io.harness.batch.processing.pricing.PricingData getPricingData(InstanceData instanceData, Instant startTime,
@@ -96,7 +111,8 @@ public class BillingCalculationService {
   }
 
   BillingData getBillingAmount(InstanceData instanceData, UtilizationData utilizationData,
-      io.harness.batch.processing.pricing.PricingData pricingData, double instanceActiveSeconds) {
+      io.harness.batch.processing.pricing.PricingData pricingData, double instanceActiveSeconds,
+      VMInstanceBillingData vmInstanceBillingData) {
     Double cpuUnit = 0D;
     Double memoryMb = 0D;
     Double storageMb = 0D;
@@ -134,8 +150,8 @@ public class BillingCalculationService {
       networkCost = pricingData.getNetworkCost();
     }
 
-    BillingAmountBreakup billingAmountForResource = getBillingAmountBreakupForResource(
-        instanceData, billingAmount, cpuUnit, memoryMb, storageMb, instanceActiveSeconds, pricingData);
+    BillingAmountBreakup billingAmountForResource = getBillingAmountBreakupForResource(instanceData, billingAmount,
+        cpuUnit, memoryMb, storageMb, instanceActiveSeconds, pricingData, vmInstanceBillingData);
     IdleCostData idleCostData = getIdleCostForResource(billingAmountForResource, utilizationData, instanceData);
     SystemCostData systemCostData = getSystemCostForResource(billingAmountForResource, instanceData);
 
@@ -146,7 +162,7 @@ public class BillingCalculationService {
 
   BillingAmountBreakup getBillingAmountBreakupForResource(InstanceData instanceData, BigDecimal billingAmount,
       double instanceCpu, double instanceMemory, double instanceStorage, double instanceActiveSeconds,
-      PricingData pricingData) {
+      PricingData pricingData, VMInstanceBillingData vmInstanceBillingData) {
     if (InstanceType.K8S_PV.equals(instanceData.getInstanceType())) {
       return BillingAmountBreakup.builder()
           .billingAmount(billingAmount)
@@ -172,11 +188,27 @@ public class BillingCalculationService {
           .build();
     }
 
-    BigDecimal cpuBillingAmount = billingAmount.multiply(BigDecimal.valueOf(0.5));
-    BigDecimal memoryBillingAmount = billingAmount.multiply(BigDecimal.valueOf(0.5));
-    if (pricingData.getCpuPricePerHour() > 0.0 && pricingData.getMemoryPricePerHour() > 0.0) {
-      cpuBillingAmount = BigDecimal.valueOf((pricingData.getCpuPricePerHour() * instanceActiveSeconds) / 3600);
-      memoryBillingAmount = BigDecimal.valueOf((pricingData.getMemoryPricePerHour() * instanceActiveSeconds) / 3600);
+    String cloudProvider = InstanceMetaDataUtils.getValueForKeyFromInstanceMetaData(
+        InstanceMetaDataConstants.CLOUD_PROVIDER, instanceData);
+
+    BigDecimal cpuBillingAmount = null;
+    BigDecimal memoryBillingAmount = null;
+
+    if (vmInstanceBillingData != null && "GCP".equalsIgnoreCase(cloudProvider)
+        && pricingData.getPricingSource().equals(PricingSource.CUR_REPORT)) {
+      cpuBillingAmount = new BigDecimal(vmInstanceBillingData.getCpuCost());
+      memoryBillingAmount = new BigDecimal(vmInstanceBillingData.getMemoryCost());
+      log.info("CHECK ADDED: inside GCP billing calculation. cpuBillingAmount: {}, memoryBillingAmount: {}",
+          cpuBillingAmount, memoryBillingAmount);
+    } else {
+      log.info("XXX CHECK ADDED: cloudProvider: {}, vmInstanceBillingData: {}, pricingSource: {} ", cloudProvider,
+          vmInstanceBillingData, pricingData.getPricingSource());
+      cpuBillingAmount = billingAmount.multiply(BigDecimal.valueOf(0.5));
+      memoryBillingAmount = billingAmount.multiply(BigDecimal.valueOf(0.5));
+      if (pricingData.getCpuPricePerHour() > 0.0 && pricingData.getMemoryPricePerHour() > 0.0) {
+        cpuBillingAmount = BigDecimal.valueOf((pricingData.getCpuPricePerHour() * instanceActiveSeconds) / 3600);
+        memoryBillingAmount = BigDecimal.valueOf((pricingData.getMemoryPricePerHour() * instanceActiveSeconds) / 3600);
+      }
     }
 
     return BillingAmountBreakup.builder()
