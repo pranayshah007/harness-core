@@ -832,7 +832,8 @@
           ]
         },
         "memory": {
-          "type": "string"
+          "type": "string",
+          "pattern": "^(([0-9]*[.])?[0-9]+)([GM]i?)|^$"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"

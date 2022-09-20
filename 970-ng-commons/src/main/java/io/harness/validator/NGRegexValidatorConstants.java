@@ -21,4 +21,5 @@ public interface NGRegexValidatorConstants {
   String RUNTIME_OR_FIXED_IDENTIFIER_PATTERN = "\\<\\+input\\>|^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$";
   // Use this pattern when want a string to have any value but not execution input.
   String STRING_BUT_NOT_EXECUTION_INPUT_PATTERN = "^(?!<\\+input>.*\\.executionInput\\(\\).*)(.*)";
+  String LIMIT_MEMORY_PATTERN = "^(([0-9]*[.])?[0-9]+)([GM]i?)|^$";
 }

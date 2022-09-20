@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
+import io.harness.validator.NGRegexValidatorConstants;
 import io.harness.yaml.YamlSchemaTypes;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -22,6 +23,7 @@ import io.swagger.annotations.ApiModelProperty;
 import java.util.Optional;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
@@ -50,7 +52,9 @@ public class ContainerResource {
     @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
     @ApiModelProperty(hidden = true)
     String uuid;
-    @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) private ParameterField<String> memory;
+    @Pattern(regexp = NGRegexValidatorConstants.LIMIT_MEMORY_PATTERN)
+    @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
+    private ParameterField<String> memory;
     @YamlSchemaTypes(value = {number})
     @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
     @Min(0)
