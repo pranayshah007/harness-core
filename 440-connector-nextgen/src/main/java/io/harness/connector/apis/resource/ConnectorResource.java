@@ -28,14 +28,8 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.connector.CombineCcmK8sConnectorResponseDTO;
-import io.harness.connector.ConnectorCatalogueResponseDTO;
-import io.harness.connector.ConnectorCategory;
-import io.harness.connector.ConnectorDTO;
-import io.harness.connector.ConnectorFilterPropertiesDTO;
-import io.harness.connector.ConnectorRegistryFactory;
-import io.harness.connector.ConnectorResponseDTO;
-import io.harness.connector.ConnectorValidationResult;
+import io.harness.beans.DecryptableEntity;
+import io.harness.connector.*;
 import io.harness.connector.accesscontrol.ResourceTypes;
 import io.harness.connector.helper.ConnectorRbacHelper;
 import io.harness.connector.services.ConnectorHeartbeatService;
@@ -62,6 +56,7 @@ import io.harness.remote.CEAwsSetupConfig;
 import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.NextGenManagerAuth;
 
+import com.google.common.collect.Multimap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import io.swagger.annotations.Api;
@@ -234,6 +229,31 @@ public class ConnectorResource {
         Resource.of(ResourceTypes.CONNECTOR, null), VIEW_CONNECTOR_PERMISSION);
     return ResponseDTO.newResponse(getNGPageResponse(connectorService.list(
         page, size, accountIdentifier, orgIdentifier, projectIdentifier, searchTerm, type, category, sourceCategory)));
+  }
+
+  @GET
+  @Path("decrypt/{identifier}")
+  @ApiOperation(value = "Get Decrypted Connector", nickname = "getDecryptedConnector")
+  @Operation(operationId = "getDecryptedConnector", summary = "Return Decrypted Connector details",
+      description = "Returns the Decrypted Connector's details for the given Account and Connector ID.",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
+            description =
+                "Returns the decrypted connector with the requested accountIdentifier and connectorIdentifier")
+      })
+  @NGAccessControlCheck(resourceType = ResourceTypes.CONNECTOR, permission = VIEW_CONNECTOR_PERMISSION)
+  public ResponseDTO<DecryptedConnectorResponseDTO>
+  getDecryptedConnector(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotBlank @QueryParam(
+                            NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @Parameter(description = ORG_PARAM_MESSAGE) @OrgIdentifier @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @io.harness.accesscontrol.OrgIdentifier String orgIdentifier,
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @ProjectIdentifier @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @io.harness.accesscontrol.ProjectIdentifier String projectIdentifier,
+      @Parameter(description = "Connector Identifier") @EntityIdentifier @PathParam(
+          NGCommonEntityConstants.IDENTIFIER_KEY) @ResourceIdentifier String connectorIdentifier) {
+    return ResponseDTO.newResponse(connectorService.getDecryptedConnector(
+        accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier));
   }
 
   @POST

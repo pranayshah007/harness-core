@@ -9,13 +9,16 @@ package io.harness.connector.services;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.DecryptableEntity;
 import io.harness.common.EntityReference;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
+import io.harness.connector.DecryptedConnectorResponseDTO;
 import io.harness.connector.stats.ConnectorStatistics;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 
+import com.google.common.collect.Multimap;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.tuple.Pair;
@@ -47,4 +50,7 @@ public interface ConnectorService extends ConnectorCrudService, ConnectorValidat
 
   List<Map<String, String>> getAttributes(
       String accountId, String orgIdentifier, String projectIdentifier, List<String> connectorIdentifiers);
+
+  DecryptedConnectorResponseDTO getDecryptedConnector(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorIdentifier);
 }

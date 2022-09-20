@@ -7,6 +7,11 @@
 
 package io.harness.ng.core;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+@JsonSubTypes({ @JsonSubTypes.Type(value = BaseNGAccess.class, name = "BaseNGAccess") })
 public interface NGAccess extends NGAccountAccess, NGProjectAccess, NGOrgAccess {
   String getIdentifier();
 }

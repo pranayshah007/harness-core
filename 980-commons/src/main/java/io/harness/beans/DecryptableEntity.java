@@ -7,6 +7,10 @@
 
 package io.harness.beans;
 
+// import com.fasterxml.jackson.annotation.JsonSubTypes;
+// import com.fasterxml.jackson.annotation.JsonTypeInfo;
+// import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
+// import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.encryption.SecretReference;
 import io.harness.reflection.ReflectionUtils;
 
@@ -15,6 +19,11 @@ import com.github.reinert.jjschema.SchemaIgnore;
 import java.lang.reflect.Field;
 import java.util.List;
 
+//@JsonTypeInfo(use= JsonTypeInfo.Id.NAME, property = "type")
+//@JsonSubTypes({
+//        @JsonSubTypes.Type(value = GithubConnectorDTO.class, name = "GithubConnectorDTO"),
+//        @JsonSubTypes.Type(value = GitConfigDTO.class, name = "GitConfigDTO"),
+//})
 public interface DecryptableEntity {
   @JsonIgnore
   @SchemaIgnore

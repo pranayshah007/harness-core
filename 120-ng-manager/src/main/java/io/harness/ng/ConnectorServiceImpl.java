@@ -14,6 +14,8 @@ import static io.harness.connector.ConnectivityStatus.SUCCESS;
 import static io.harness.connector.ConnectorCategory.SECRET_MANAGER;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.beans.connector.scm.GitAuthType.HTTP;
+import static io.harness.delegate.beans.connector.scm.GitAuthType.SSH;
 import static io.harness.errorhandling.NGErrorHelper.DEFAULT_ERROR_SUMMARY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACCOUNT_IDENTIFIER_METRICS_KEY;
 import static io.harness.exception.WingsException.USER;
@@ -26,20 +28,13 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import io.harness.NgAutoLogContext;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.DecryptableEntity;
 import io.harness.beans.FeatureName;
+import io.harness.beans.IdentifierRef;
+import io.harness.beans.ScopeLevel;
 import io.harness.common.EntityReference;
-import io.harness.connector.CombineCcmK8sConnectorResponseDTO;
-import io.harness.connector.ConnectorActivityDetails;
-import io.harness.connector.ConnectorCatalogueResponseDTO;
-import io.harness.connector.ConnectorCategory;
-import io.harness.connector.ConnectorConnectivityDetails;
+import io.harness.connector.*;
 import io.harness.connector.ConnectorConnectivityDetails.ConnectorConnectivityDetailsBuilder;
-import io.harness.connector.ConnectorDTO;
-import io.harness.connector.ConnectorFilterPropertiesDTO;
-import io.harness.connector.ConnectorInfoDTO;
-import io.harness.connector.ConnectorRegistryFactory;
-import io.harness.connector.ConnectorResponseDTO;
-import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.ConnectorValidationResult.ConnectorValidationResultBuilder;
 import io.harness.connector.entities.Connector;
 import io.harness.connector.helper.ConnectorLogContext;
@@ -49,8 +44,14 @@ import io.harness.connector.services.ConnectorActivityService;
 import io.harness.connector.services.ConnectorHeartbeatService;
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.stats.ConnectorStatistics;
+import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.scm.GitAuthType;
+import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
+import io.harness.delegate.beans.connector.scm.github.*;
 import io.harness.delegate.beans.connector.vaultconnector.VaultConnectorDTO;
+import io.harness.encryption.Scope;
+import io.harness.encryption.SecretRefData;
 import io.harness.errorhandling.NGErrorHelper;
 import io.harness.eventsframework.EventsFrameworkConstants;
 import io.harness.eventsframework.EventsFrameworkMetadataConstants;
@@ -67,14 +68,25 @@ import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.logging.AutoLogContext;
+import io.harness.ng.core.BaseNGAccess;
+import io.harness.ng.core.DecryptableEntityWithEncryptionConsumers;
 import io.harness.ng.core.activityhistory.NGActivityType;
+import io.harness.ng.core.api.NGSecretServiceV2;
 import io.harness.ng.core.dto.ErrorDetail;
+import io.harness.ng.core.dto.secrets.SSHConfigDTO;
+import io.harness.ng.core.dto.secrets.SSHKeyReferenceCredentialDTO;
+import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
+import io.harness.ng.core.models.Secret;
 import io.harness.ng.opa.entities.connector.OpaConnectorService;
 import io.harness.opaclient.model.OpaConstants;
 import io.harness.perpetualtask.PerpetualTaskId;
 import io.harness.repositories.ConnectorRepository;
+import io.harness.secretmanagerclient.services.SshKeySpecDTOHelper;
+import io.harness.secrets.remote.SecretNGManagerClient;
 import io.harness.security.encryption.AccessType;
+import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.telemetry.helpers.ConnectorInstrumentationHelper;
+import io.harness.utils.ConnectorUtils;
 import io.harness.utils.FullyQualifiedIdentifierHelper;
 import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
@@ -83,11 +95,10 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.google.protobuf.StringValue;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.lang.reflect.Field;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
@@ -111,6 +122,10 @@ public class ConnectorServiceImpl implements ConnectorService {
   private final ConnectorInstrumentationHelper instrumentationHelper;
   private final OpaConnectorService opaConnectorService;
   private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
+  private final SecretNGManagerClient secretNGManagerClient;
+  private final ConnectorUtils connectorUtils;
+  private final SshKeySpecDTOHelper sshKeySpecDTOHelper;
+  private final NGSecretServiceV2 ngSecretServiceV2;
 
   @Inject
   public ConnectorServiceImpl(@Named(DEFAULT_CONNECTOR_SERVICE) ConnectorService defaultConnectorService,
@@ -120,7 +135,9 @@ public class ConnectorServiceImpl implements ConnectorService {
       ExecutorService executorService, ConnectorErrorMessagesHelper connectorErrorMessagesHelper,
       HarnessManagedConnectorHelper harnessManagedConnectorHelper, NGErrorHelper ngErrorHelper,
       GitSyncSdkService gitSyncSdkService, ConnectorInstrumentationHelper instrumentationHelper,
-      OpaConnectorService opaConnectorService, NGFeatureFlagHelperService ngFeatureFlagHelperService) {
+      OpaConnectorService opaConnectorService, NGFeatureFlagHelperService ngFeatureFlagHelperService,
+      SecretNGManagerClient secretNGManagerClient, ConnectorUtils connectorUtils,
+      SshKeySpecDTOHelper sshKeySpecDTOHelper, NGSecretServiceV2 ngSecretServiceV2) {
     this.defaultConnectorService = defaultConnectorService;
     this.secretManagerConnectorService = secretManagerConnectorService;
     this.connectorActivityService = connectorActivityService;
@@ -135,6 +152,10 @@ public class ConnectorServiceImpl implements ConnectorService {
     this.instrumentationHelper = instrumentationHelper;
     this.opaConnectorService = opaConnectorService;
     this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;
+    this.secretNGManagerClient = secretNGManagerClient;
+    this.connectorUtils = connectorUtils;
+    this.sshKeySpecDTOHelper = sshKeySpecDTOHelper;
+    this.ngSecretServiceV2 = ngSecretServiceV2;
   }
 
   private ConnectorService getConnectorService(ConnectorType connectorType) {
@@ -722,9 +743,14 @@ public class ConnectorServiceImpl implements ConnectorService {
       ConnectorFilterPropertiesDTO filterProperties, String orgIdentifier, String projectIdentifier,
       String filterIdentifier, String searchTerm, Boolean includeAllConnectorsAccessibleAtScope,
       Boolean getDistinctFromBranches) {
-    return defaultConnectorService.list(page, size, accountIdentifier, filterProperties, orgIdentifier,
-        projectIdentifier, filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope,
-        getDistinctFromBranches);
+    getDecryptedConnector(accountIdentifier, orgIdentifier, projectIdentifier, "nb");
+    try {
+      return defaultConnectorService.list(page, size, accountIdentifier, filterProperties, orgIdentifier,
+          projectIdentifier, filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope,
+          getDistinctFromBranches);
+    } catch (Exception ex) {
+      throw new InvalidRequestException("Error");
+    }
   }
 
   @Override
@@ -805,5 +831,131 @@ public class ConnectorServiceImpl implements ConnectorService {
   public List<Map<String, String>> getAttributes(
       String accountId, String orgIdentifier, String projectIdentifier, List<String> connectorIdentifiers) {
     return defaultConnectorService.getAttributes(accountId, orgIdentifier, projectIdentifier, connectorIdentifiers);
+  }
+
+  @Override
+  public DecryptedConnectorResponseDTO getDecryptedConnector(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorIdentifier) {
+    Optional<ConnectorResponseDTO> connectorResponseDTOOptional =
+        get(accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier);
+    if (connectorResponseDTOOptional.isEmpty()) {
+      throw new InvalidRequestException("Error");
+    }
+
+    String scopeString = ScopeLevel.of(accountIdentifier, orgIdentifier, projectIdentifier).name();
+    IdentifierRef identifierRef = IdentifierRef.builder()
+                                      .scope(Scope.fromString(scopeString))
+                                      .accountIdentifier(accountIdentifier)
+                                      .orgIdentifier(orgIdentifier)
+                                      .projectIdentifier(projectIdentifier)
+                                      .identifier(connectorIdentifier)
+                                      .build();
+    ConnectorDetails connectorDetails =
+        connectorUtils.getConnectorDetails(identifierRef, scopeString + "." + connectorIdentifier);
+
+    return DecryptedConnectorResponseDTO.builder()
+        .connectorResponseDTO(connectorResponseDTOOptional.get())
+        .decryptedConnectorConfig(getDecryptedDetails(connectorDetails, accountIdentifier))
+        .build();
+  }
+
+  private Map<String, String> getDecryptedDetails(ConnectorDetails connectorDetails, String accountIdentifier) {
+    Map<String, String> mp = new HashMap<>();
+    AtomicReference<SSHKeySpecDTO> secretSpecDTO = new AtomicReference<>();
+    connectorDetails.getConnectorConfig().getDecryptableEntities().forEach(entity -> {
+      DecryptableEntityWithEncryptionConsumers decryptableEntityWithEncryptionConsumers =
+          DecryptableEntityWithEncryptionConsumers.builder()
+              .decryptableEntity(entity)
+              .encryptedDataDetailList(connectorDetails.getEncryptedDataDetails())
+              .build();
+      if (entity instanceof GithubSshCredentialsDTO) {
+        Optional<Secret> secretOptional = ngSecretServiceV2.get(accountIdentifier, connectorDetails.getOrgIdentifier(),
+            connectorDetails.getProjectIdentifier(),
+            ((GithubSshCredentialsDTO) ((GithubConnectorDTO) connectorDetails.getConnectorConfig())
+                    .getAuthentication()
+                    .getCredentials())
+                .getSshKeyRef()
+                .getIdentifier());
+        List<EncryptedDataDetail> sshEncryptedDataDetails = new ArrayList<>();
+        if (secretOptional.isPresent()) {
+          Secret secret = secretOptional.get();
+          secretSpecDTO.set((SSHKeySpecDTO) secret.getSecretSpec().toDTO());
+          decryptableEntityWithEncryptionConsumers.setDecryptableEntity(
+              ((SSHKeyReferenceCredentialDTO) ((SSHConfigDTO) secretSpecDTO.get().getAuth().getSpec()).getSpec()));
+          sshEncryptedDataDetails = sshKeySpecDTOHelper.getSSHKeyEncryptionDetails(secretSpecDTO.get(),
+              BaseNGAccess.builder()
+                  .accountIdentifier(accountIdentifier)
+                  .orgIdentifier(connectorDetails.getOrgIdentifier())
+                  .projectIdentifier(connectorDetails.getProjectIdentifier())
+                  .identifier(connectorDetails.getIdentifier())
+                  .build());
+        }
+        decryptableEntityWithEncryptionConsumers.getEncryptedDataDetailList().addAll(sshEncryptedDataDetails);
+      }
+      try {
+        DecryptableEntity decryptableEntity =
+            secretNGManagerClient.decryptEncryptedDetails(decryptableEntityWithEncryptionConsumers, accountIdentifier)
+                .execute()
+                .body()
+                .getData();
+        setDecryptedEntity(decryptableEntity, connectorDetails, secretSpecDTO.get())
+            .forEach((key, value) -> mp.put(key, value));
+      } catch (Exception ex) {
+        throw new InvalidRequestException(
+            String.format("Error while decrypting connector {%s}", connectorDetails.getIdentifier()), ex);
+      }
+    });
+    return mp;
+  }
+
+  private Map<String, String> setDecryptedEntity(
+      DecryptableEntity decryptableEntity, ConnectorDetails connectorDetails, SSHKeySpecDTO secretSpecDTO) {
+    Map<String, String> decryptedConfigMap = new HashMap<>();
+    List<Field> fields = getFieldsToBeDecrypted(connectorDetails, secretSpecDTO);
+
+    fields.forEach(field -> {
+      if (decryptableEntity.getSecretReferenceFields().contains(field)) {
+        try {
+          field.setAccessible(true);
+          if (field.get(decryptableEntity) != null) {
+            decryptedConfigMap.put(
+                field.getName(), String.valueOf(((SecretRefData) field.get(decryptableEntity)).getDecryptedValue()));
+          }
+        } catch (Exception ex) {
+          throw new InvalidRequestException(
+              String.format("Error while decrypting connector {%s}", connectorDetails.getIdentifier()), ex);
+        }
+      }
+    });
+
+    return decryptedConfigMap;
+  }
+
+  private List<Field> getFieldsToBeDecrypted(ConnectorDetails connectorDetails, SSHKeySpecDTO secretSpecDTO) {
+    ConnectorType connectorType = connectorDetails.getConnectorType();
+    switch (connectorType) {
+      case GIT:
+        return ((GitConfigDTO) connectorDetails.getConnectorConfig()).getGitAuth().getSecretReferenceFields();
+      case GITHUB:
+        GitAuthType gitAuthType =
+            ((GithubConnectorDTO) connectorDetails.getConnectorConfig()).getAuthentication().getAuthType();
+        if (gitAuthType == HTTP) {
+          return ((GithubHttpCredentialsDTO) ((GithubConnectorDTO) connectorDetails.getConnectorConfig())
+                      .getAuthentication()
+                      .getCredentials())
+              .getHttpCredentialsSpec()
+              .getSecretReferenceFields();
+        } else if (gitAuthType == SSH) {
+          List<Field> fields = ((GithubSshCredentialsDTO) ((GithubConnectorDTO) connectorDetails.getConnectorConfig())
+                                    .getAuthentication()
+                                    .getCredentials())
+                                   .getSecretReferenceFields();
+          fields.addAll(((SSHKeyReferenceCredentialDTO) ((SSHConfigDTO) secretSpecDTO.getAuth().getSpec()).getSpec())
+                            .getSecretReferenceFields());
+          return fields;
+        }
+      default:
+        return null;
+    }
   }
 }

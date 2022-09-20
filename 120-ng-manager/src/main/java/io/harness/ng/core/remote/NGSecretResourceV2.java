@@ -28,10 +28,12 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.ConnectorCategory;
 import io.harness.data.validator.EntityIdentifier;
+import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageResponse;
+import io.harness.ng.core.DecryptableEntityDTO;
 import io.harness.ng.core.DecryptableEntityWithEncryptionConsumers;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.NGAccessWithEncryptionConsumer;
@@ -597,6 +599,69 @@ public class NGSecretResourceV2 {
     }
     return ResponseDTO.newResponse(encryptedDataService.getEncryptionDetails(
         ngAccessWithEncryptionConsumer.getNgAccess(), ngAccessWithEncryptionConsumer.getDecryptableEntity()));
+  }
+
+  @POST
+  //  @Hidden
+  @Path("decrypt-decryptable-entity")
+  @Consumes("application/json")
+  @Produces("application/json")
+  @ApiOperation(hidden = true, value = "Decrypt Decryptable Entity", nickname = "postDecryptDecryptableEntity")
+  @Operation(operationId = "postDecryptDecryptableEntity", summary = "Decrypt the decryptable entity",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns decryptable entity")
+      })
+  //  @InternalApi
+  public ResponseDTO<DecryptableEntity>
+  decryptDecryptableEntity(@NotNull NGAccessWithEncryptionConsumer ngAccessWithEncryptionConsumer,
+      @Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotNull @AccountIdentifier @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier) {
+    List<EncryptedDataDetail> encryptedDataDetails =
+        getEncryptionDataDetailsInternal(ngAccessWithEncryptionConsumer, accountIdentifier);
+    DecryptableEntityWithEncryptionConsumers decryptableEntityWithEncryptionConsumers =
+        DecryptableEntityWithEncryptionConsumers.builder()
+            .decryptableEntity(ngAccessWithEncryptionConsumer.getDecryptableEntity())
+            .encryptedDataDetailList(encryptedDataDetails)
+            .build();
+    return ResponseDTO.newResponse(
+        ngEncryptorService.decryptEncryptedDetails(decryptableEntityWithEncryptionConsumers.getDecryptableEntity(),
+            decryptableEntityWithEncryptionConsumers.getEncryptedDataDetailList(), accountIdentifier));
+  }
+
+  private List<EncryptedDataDetail> getEncryptionDataDetailsInternal(
+      NGAccessWithEncryptionConsumer ngAccessWithEncryptionConsumer, String accountIdentifier) {
+    NGAccess ngAccess = ngAccessWithEncryptionConsumer.getNgAccess();
+    DecryptableEntity decryptableEntity = ngAccessWithEncryptionConsumer.getDecryptableEntity();
+    if (ngAccess == null || decryptableEntity == null) {
+      return new ArrayList<>();
+    }
+    for (Field field : decryptableEntity.getSecretReferenceFields()) {
+      try {
+        field.setAccessible(true);
+        SecretRefData secretRefData = (SecretRefData) field.get(decryptableEntity);
+        if (!Optional.ofNullable(secretRefData).isPresent() || secretRefData.isNull()) {
+          continue;
+        }
+        Scope secretScope = secretRefData.getScope();
+        SecretResponseWrapper secret =
+            ngSecretService
+                .get(accountIdentifier, getOrgIdentifier(ngAccess.getOrgIdentifier(), secretScope),
+                    getProjectIdentifier(ngAccess.getProjectIdentifier(), secretScope), secretRefData.getIdentifier())
+                .orElse(null);
+        secretPermissionValidator.checkForAccessOrThrow(
+            ResourceScope.of(accountIdentifier, getOrgIdentifier(ngAccess.getOrgIdentifier(), secretScope),
+                getProjectIdentifier(ngAccess.getProjectIdentifier(), secretScope)),
+            Resource.of(SECRET_RESOURCE_TYPE, secretRefData.getIdentifier()), SECRET_ACCESS_PERMISSION,
+            secret != null ? secret.getSecret().getOwner() : null);
+
+      } catch (IllegalAccessException illegalAccessException) {
+        log.error("Error while checking access permission for secret: {}", field, illegalAccessException);
+      }
+    }
+    return encryptedDataService.getEncryptionDetails(
+        ngAccessWithEncryptionConsumer.getNgAccess(), ngAccessWithEncryptionConsumer.getDecryptableEntity());
   }
 
   private String getOrgIdentifier(String parentOrgIdentifier, @NotNull Scope scope) {

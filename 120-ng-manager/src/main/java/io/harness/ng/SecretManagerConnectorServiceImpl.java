@@ -15,14 +15,7 @@ import static io.harness.git.model.ChangeType.NONE;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.common.EntityReference;
-import io.harness.connector.CombineCcmK8sConnectorResponseDTO;
-import io.harness.connector.ConnectorCatalogueResponseDTO;
-import io.harness.connector.ConnectorCategory;
-import io.harness.connector.ConnectorDTO;
-import io.harness.connector.ConnectorFilterPropertiesDTO;
-import io.harness.connector.ConnectorInfoDTO;
-import io.harness.connector.ConnectorResponseDTO;
-import io.harness.connector.ConnectorValidationResult;
+import io.harness.connector.*;
 import io.harness.connector.entities.Connector.ConnectorKeys;
 import io.harness.connector.entities.embedded.vaultconnector.VaultConnector.VaultConnectorKeys;
 import io.harness.connector.services.ConnectorService;
@@ -48,6 +41,7 @@ import io.harness.exception.WingsException;
 import io.harness.git.model.ChangeType;
 import io.harness.repositories.ConnectorRepository;
 
+import com.google.common.collect.Multimap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
@@ -395,5 +389,11 @@ public class SecretManagerConnectorServiceImpl implements ConnectorService {
   public List<Map<String, String>> getAttributes(
       String accountId, String orgIdentifier, String projectIdentifier, List<String> connectorIdentifiers) {
     return defaultConnectorService.getAttributes(accountId, orgIdentifier, projectIdentifier, connectorIdentifiers);
+  }
+
+  @Override
+  public DecryptedConnectorResponseDTO getDecryptedConnector(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorIdentifier) {
+    return null;
   }
 }

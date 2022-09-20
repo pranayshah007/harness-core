@@ -69,7 +69,8 @@ public class ConnectorServiceImplTest extends CategoryTest {
     connectorService = spy(new ConnectorServiceImpl(defaultConnectorService, secretManagerConnectorService,
         connectorActivityService, connectorHeartbeatService, connectorRepository, eventProducer, executorService,
         connectorErrorMessagesHelper, harnessManagedConnectorHelper, ngErrorHelper, gitSyncSdkService,
-        instrumentationHelper, opaConnectorService, ngFeatureFlagHelperService));
+        instrumentationHelper, opaConnectorService, ngFeatureFlagHelperService, secretNGManagerClient, connectorUtils,
+        sshKeySpecDTOHelper, ngSecretService, ngSecretServiceV2));
   }
 
   private ConnectorDTO getRequestDTO_vaultAppRole() {

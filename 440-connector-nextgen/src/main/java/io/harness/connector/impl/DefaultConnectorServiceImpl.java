@@ -36,17 +36,8 @@ import io.harness.beans.IdentifierRef;
 import io.harness.beans.SortOrder;
 import io.harness.beans.SortOrder.OrderType;
 import io.harness.common.EntityReference;
-import io.harness.connector.CombineCcmK8sConnectorResponseDTO;
-import io.harness.connector.ConnectorCatalogueResponseDTO;
-import io.harness.connector.ConnectorCategory;
-import io.harness.connector.ConnectorDTO;
-import io.harness.connector.ConnectorFilterPropertiesDTO;
-import io.harness.connector.ConnectorInfoDTO;
-import io.harness.connector.ConnectorRegistryFactory;
-import io.harness.connector.ConnectorResponseDTO;
-import io.harness.connector.ConnectorValidationResult;
+import io.harness.connector.*;
 import io.harness.connector.ConnectorValidationResult.ConnectorValidationResultBuilder;
-import io.harness.connector.ManagerExecutable;
 import io.harness.connector.entities.Connector;
 import io.harness.connector.entities.Connector.ConnectorKeys;
 import io.harness.connector.events.ConnectorCreateEvent;
@@ -118,6 +109,7 @@ import io.harness.utils.IdentifierRefHelper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Multimap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
@@ -664,6 +656,12 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
     }
 
     return attributes;
+  }
+
+  @Override
+  public DecryptedConnectorResponseDTO getDecryptedConnector(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorIdentifier) {
+    return null;
   }
 
   private void deleteTheExistingReferences(
