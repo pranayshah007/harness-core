@@ -233,7 +233,7 @@ public class ScmServiceClientImpl implements ScmServiceClient {
   }
 
   private boolean checkIfBranchIsHavingSlashForBB(ScmConnector scmConnector, String branchName) {
-    return scmConnector.getConnectorType().equals(ConnectorType.BITBUCKET) && branchName.contains("/");
+    return ConnectorType.BITBUCKET.equals(scmConnector.getConnectorType()) && branchName.contains("/");
   }
 
   private FileBatchContentResponse getContentOfFiles(
