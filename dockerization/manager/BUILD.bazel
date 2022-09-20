@@ -1,36 +1,24 @@
 load("@io_bazel_rules_docker//container:container.bzl", "container_image", "container_pull", "container_push")
-load("@io_bazel_rules_docker//docker/util:run.bzl", "container_run_and_commit_layer")
+load("//:tools/bazel/docker/docker-utils.bzl", "docker_layers")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 
-container_run_and_commit_layer(
+docker_layers(
     name = "manager-onprem-run",
-    image = "@ubi-java-base//image",
     commands = [
         "curl -L https://harness.jfrog.io/artifactory/BuildsTools/docker/inspectit-ocelot-agent/inspectit-ocelot-agent-1.16.0.jar --output inspectit-ocelot-agent-1.16.0.jar",
         "chmod 711 inspectit-ocelot-agent-1.16.0.jar",
     ],
-    tags = [
-            "manual",
-            "no-cache",
-            "no-ide",
-        ],
 )
 
-container_run_and_commit_layer(
+docker_layers(
     name = "manager-saas-run",
-    image = "@ubi-java-base//image",
     commands = [
-        "curl https://get.et.harness.io/releases/latest/nix/harness-et-agent.tar.gz --output harness-et-agent.tar.gz",
-        "tar -xzf harness-et-agent.tar.gz -C /opt/harness",
-        "rm /opt/harness/harness-et-agent.tar.gz",
-        "curl https://harness.jfrog.io/artifactory/BuildsTools/docker/apm/appd/AppServerAgent-1.8-21.11.2.33305.zip --output AppServerAgent-1.8-21.11.2.33305.zip",
-        "curl https://harness.jfrog.io/artifactory/BuildsTools/docker/apm/opentelemetry/opentelemetry-javaagent.jar --output opentelemetry-javaagent.jar",
-        "chmod 711 /opt/harness/harness AppServerAgent-1.8-21.11.2.33305.zip opentelemetry-javaagent.jar",
-    ],
-    tags = [
-            "manual",
-            "no-cache",
-            "no-ide",
+            "curl https://get.et.harness.io/releases/latest/nix/harness-et-agent.tar.gz --output harness-et-agent.tar.gz",
+            "tar -xzf harness-et-agent.tar.gz -C /opt/harness",
+            "rm /opt/harness/harness-et-agent.tar.gz",
+            "curl https://harness.jfrog.io/artifactory/BuildsTools/docker/apm/appd/AppServerAgent-1.8-21.11.2.33305.zip --output AppServerAgent-1.8-21.11.2.33305.zip",
+            "curl https://harness.jfrog.io/artifactory/BuildsTools/docker/apm/opentelemetry/opentelemetry-javaagent.jar --output opentelemetry-javaagent.jar",
+            "chmod 711 /opt/harness/harness AppServerAgent-1.8-21.11.2.33305.zip opentelemetry-javaagent.jar",
         ],
 )
 
@@ -97,13 +85,14 @@ container_image(
         ],
 )
 
+#Pass the TAG from the bazel run command by passing --define=TAG=TagValue
 container_push(
         name = "manager-saas-push",
         format = "Docker",
         image = "manager-saas-image",
         registry = "us.gcr.io",
         repository = "platform-205701/harness/harness-services-bazel/manager-saas-bazel-test",
-        tag = "latest-test",
+        tag = "$(TAG)",
         tags = [
                 "manual",
                 "no-cache",
@@ -135,13 +124,14 @@ container_image(
         ],
 )
 
+#Pass the TAG from the bazel run command by passing --define=TAG=TagValue
 container_push(
         name = "manager-onprem-push",
         format = "Docker",
         image = "manager-onprem-image",
         registry = "us.gcr.io",
         repository = "platform-205701/harness/harness-services-bazel/manager-onprem-bazel-test",
-        tag = "latest-test",
+        tag = "$(TAG)",
         tags = [
                 "manual",
                 "no-cache",
