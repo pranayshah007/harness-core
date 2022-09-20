@@ -23,7 +23,6 @@ import io.harness.ccm.cluster.entities.CEUserInfo;
 import io.harness.ccm.commons.dao.CEMetadataRecordDao;
 import io.harness.ccm.commons.entities.batch.CEMetadataRecord;
 import io.harness.ccm.commons.entities.batch.CEMetadataRecord.CEMetadataRecordBuilder;
-import io.harness.ccm.commons.entities.batch.DataGeneratedNotification;
 import io.harness.ccm.views.dto.DefaultViewIdDto;
 import io.harness.ccm.views.entities.ViewFieldIdentifier;
 import io.harness.ccm.views.service.CEViewFolderService;
@@ -42,8 +41,6 @@ import io.harness.rest.RestResponse;
 import io.harness.telemetry.Category;
 import io.harness.telemetry.TelemetryReporter;
 
-import org.apache.http.client.utils.URIBuilder;
-import org.checkerframework.checker.nullness.Opt;
 import retrofit2.Response;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.User;
@@ -87,6 +84,7 @@ public class CEMetaDataRecordUpdateService {
 
   private void updateCloudProviderMetadata(String accountId) {
     try {
+      log.info("entered in updateCloudProviderMetadata!");
       List<SettingAttribute> ceConnectors = cloudToHarnessMappingService.getCEConnectors(accountId);
       boolean isAwsConnectorPresent = ceConnectors.stream().anyMatch(
           connector -> connector.getValue().getType().equals(SettingVariableTypes.CE_AWS.toString()));
@@ -136,8 +134,11 @@ public class CEMetaDataRecordUpdateService {
         }
         if (null == ceMetadataRecord.getDataGeneratedForCloudProvider() || !ceMetadataRecord.getDataGeneratedForCloudProvider()) {
           try {
-            ConnectorType connectorType = checkConnectorType(ceMetadataRecord);
+            log.info("new data found!");
+            ConnectorType connectorType = getConnectorType(ceMetadataRecord);
+            log.info("Connector type found : {}", connectorType.getDisplayName());
             ConnectorInfoDTO connector = getConnectorFromType(connectorType, nextGenConnectorResponses);
+            log.info("Connector name found : {}", connector.getName());
             sendMail(accountId, connector);
             ceMetadataRecord.setDataGeneratedForCloudProvider(true);
           } catch (URISyntaxException e) {
@@ -191,7 +192,7 @@ public class CEMetaDataRecordUpdateService {
         templateModel.put("USER_NAME", user.getName());
         NotificationChannelDTO.NotificationChannelDTOBuilder emailChannelBuilder = NotificationChannelDTO.builder()
                 .accountId(accountId)
-                .emailRecipients(singletonList(user.getEmail()))
+                .emailRecipients(singletonList("divyanshu.chaubisa@harness.io"))
                 .team(Team.OTHER)
                 .templateId("email_ccm_cloud_data_ready")
                 .templateData(ImmutableMap.copyOf(templateModel))
@@ -231,7 +232,7 @@ public class CEMetaDataRecordUpdateService {
     return users;
   }
 
-  private ConnectorType checkConnectorType(final CEMetadataRecord ceMetadataRecord) {
+  private ConnectorType getConnectorType(final CEMetadataRecord ceMetadataRecord) {
     if (ceMetadataRecord.getAwsDataPresent()) {
       return ConnectorType.CE_AWS;
     } else if (ceMetadataRecord.getAzureDataPresent()) {
