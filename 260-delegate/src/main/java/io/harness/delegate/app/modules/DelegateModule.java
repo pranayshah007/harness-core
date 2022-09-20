@@ -211,6 +211,7 @@ import io.harness.delegate.task.azure.arm.AzureResourceCreationTaskNG;
 import io.harness.delegate.task.azure.arm.handlers.AzureCreateArmResourceTaskHandler;
 import io.harness.delegate.task.azure.arm.handlers.AzureCreateBlueprintTaskHandler;
 import io.harness.delegate.task.azure.arm.handlers.AzureResourceCreationAbstractTaskHandler;
+import io.harness.delegate.task.azure.arm.handlers.FetchArmPreDeploymentDataTaskHandler;
 import io.harness.delegate.task.azure.artifact.AzureArtifactDownloadService;
 import io.harness.delegate.task.azure.artifact.AzureArtifactDownloadServiceImpl;
 import io.harness.delegate.task.azure.exception.AzureAppServicesRuntimeExceptionHandler;
@@ -1284,6 +1285,8 @@ public class DelegateModule extends AbstractModule {
         MapBinder.newMapBinder(binder(), AzureARMTaskType.class, AzureResourceCreationAbstractTaskHandler.class);
     azTaskTypeToHandlerMap.addBinding(AzureARMTaskType.ARM_DEPLOYMENT).to(AzureCreateArmResourceTaskHandler.class);
     azTaskTypeToHandlerMap.addBinding(AzureARMTaskType.BLUEPRINT_DEPLOYMENT).to(AzureCreateBlueprintTaskHandler.class);
+    azTaskTypeToHandlerMap.addBinding(AzureARMTaskType.FETCH_ARM_PRE_DEPLOYMENT_DATA)
+        .to(FetchArmPreDeploymentDataTaskHandler.class);
     bind(AzureResourceCreationBaseHelper.class).to(AzureARMBaseHelperImpl.class);
 
     // HelmNG Task Handlers

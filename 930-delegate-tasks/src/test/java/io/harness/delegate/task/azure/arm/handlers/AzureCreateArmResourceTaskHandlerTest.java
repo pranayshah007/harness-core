@@ -59,7 +59,7 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
 @OwnedBy(HarnessTeam.CDP)
-public class AzureArmCreateTaskHandlerTest extends CategoryTest {
+public class AzureCreateArmResourceTaskHandlerTest extends CategoryTest {
   public static final String CLIENT_ID = "CLIENT_ID";
   public static final String TENANT_ID = "TENANT_ID";
   public static final String KEY = "KEY";

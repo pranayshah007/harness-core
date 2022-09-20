@@ -17,13 +17,14 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class AzureARMTaskNGResponse extends AzureResourceCreationTaskNGResponse {
-  private String outputs;
+public class AzureFetchArmPreDeploymentDataTaskResponse extends AzureResourceCreationTaskNGResponse {
+  private AzureARMPreDeploymentData azureARMPreDeploymentData;
 
   @Builder
-  public AzureARMTaskNGResponse(CommandExecutionStatus commandExecutionStatus, UnitProgressData unitProgressData,
-      DelegateMetaInfo delegateMetaInfo, String errorMsg, String outputs) {
+  public AzureFetchArmPreDeploymentDataTaskResponse(CommandExecutionStatus commandExecutionStatus,
+      UnitProgressData unitProgressData, DelegateMetaInfo delegateMetaInfo, String errorMsg,
+      AzureARMPreDeploymentData azureARMPreDeploymentData) {
     super(commandExecutionStatus, unitProgressData, delegateMetaInfo, errorMsg);
-    this.outputs = outputs;
+    this.azureARMPreDeploymentData = azureARMPreDeploymentData;
   }
 }

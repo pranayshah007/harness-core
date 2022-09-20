@@ -8,11 +8,14 @@
 package io.harness.cdng.provision.azure;
 
 import static io.harness.rule.OwnerRule.NGONZALEZ;
+import static io.harness.rule.OwnerRule.TMACARI;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 
@@ -25,18 +28,18 @@ import io.harness.beans.EnvironmentType;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.provision.azure.beans.AzureARMConfig;
-import io.harness.cdng.provision.azure.beans.AzureARMTemplateDataOutput;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
+import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.task.azure.appservice.settings.AppSettingsFile;
+import io.harness.delegate.task.azure.arm.AzureARMPreDeploymentData;
 import io.harness.delegate.task.azure.arm.AzureARMTaskNGParameters;
-import io.harness.exception.InvalidArgumentsException;
+import io.harness.delegate.task.azure.arm.AzureARMTaskNGResponse;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
-import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
-import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
@@ -56,37 +59,35 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 @OwnedBy(HarnessTeam.CDP)
-public class AzureRollbackStepTest extends CategoryTest {
-  AzureTestHelper azureHelperTest = new AzureTestHelper();
-  @Mock AzureCommonHelper azureCommonHelper;
-  @Mock ExecutionSweepingOutputService sweepingOutputService;
-
-  @Mock AzureARMConfigDAL azureARMConfigDAL;
-
-  @Mock CDStepHelper cdStepHelper;
-  @Mock StepHelper stepHelper;
-
+public class AzureARMRollbackStepTest extends CategoryTest {
+  private AzureTestHelper azureHelperTest = new AzureTestHelper();
+  @Mock private AzureCommonHelper azureCommonHelper;
+  @Mock private AzureARMConfigDAL azureARMConfigDAL;
+  @Mock private CDStepHelper cdStepHelper;
+  @Mock private StepHelper stepHelper;
   @InjectMocks private AzureARMRollbackStep azureARMRollbackStep;
 
   @Before
   public void setUpMocks() {
     MockitoAnnotations.initMocks(this);
   }
+
   @Test
   @Owner(developers = NGONZALEZ)
   @Category(UnitTests.class)
-  public void testObtainTaskWithNoProvisionerID() {
-    when(azureCommonHelper.generateIdentifier(any(), any())).thenReturn("foobar");
-    AzureARMTemplateDataOutput azureOutput = AzureARMTemplateDataOutput.builder()
-                                                 .resourceGroup("res")
-                                                 .resourceGroupTemplateJson("{foo}")
-                                                 .scopeType("ResourceGroup")
-                                                 .subscriptionId("123")
-                                                 .build();
-    OptionalSweepingOutput output = OptionalSweepingOutput.builder().found(true).output(azureOutput).build();
-    when(sweepingOutputService.resolveOptional(any(), any())).thenReturn(output);
-    AzureARMConfig config = AzureARMConfig.builder().connectorRef("abc").provisionerIdentifier("123").build();
-    when(azureARMConfigDAL.getRollbackAzureARMConfig(any(), any())).thenReturn(config);
+  public void testObtainTask() {
+    AzureARMPreDeploymentData azureARMPreDeploymentData = AzureARMPreDeploymentData.builder()
+                                                              .resourceGroup("res")
+                                                              .resourceGroupTemplateJson("{foo}")
+                                                              .subscriptionId("123")
+                                                              .build();
+    AzureARMConfig config = AzureARMConfig.builder()
+                                .connectorRef("abc")
+                                .provisionerIdentifier("123")
+                                .azureARMPreDeploymentData(azureARMPreDeploymentData)
+                                .scopeType(AzureScopeTypesNames.ResourceGroup)
+                                .build();
+    when(azureARMConfigDAL.getAzureARMConfig(any(), any())).thenReturn(config);
     AzureConnectorDTO azureConnectorDTO = AzureConnectorDTO.builder().build();
     when(cdStepHelper.getConnector(any(), any()))
         .thenReturn(ConnectorInfoDTO.builder().connectorConfig(azureConnectorDTO).build());
@@ -102,7 +103,10 @@ public class AzureRollbackStepTest extends CategoryTest {
     ArgumentCaptor<ArrayList<TaskSelector>> taskSelectorsArgumentCaptor = ArgumentCaptor.forClass(delegateSelectors);
     StepInputPackage inputPackage = StepInputPackage.builder().build();
     StepElementParameters steps = StepElementParameters.builder().spec(getParams()).build();
+
     azureARMRollbackStep.obtainTaskAfterRbac(azureHelperTest.getAmbiance(), steps, inputPackage);
+
+    verify(azureARMConfigDAL).getAzureARMConfig(any(), eq("abc"));
     verifyStatic(StepUtils.class, times(1));
     StepUtils.prepareCDTaskRequest(
         any(), taskDataArgumentCaptor.capture(), any(), any(), any(), taskSelectorsArgumentCaptor.capture(), any());
@@ -112,7 +116,6 @@ public class AzureRollbackStepTest extends CategoryTest {
         (AzureARMTaskNGParameters) taskDataArgumentCaptor.getValue().getParameters()[0];
     assertThat(taskNGParameters.getResourceGroupName()).isEqualTo("res");
     assertThat(taskNGParameters.getTemplateBody()).isEqualTo(AppSettingsFile.create("{foo}"));
-    assertThat(taskNGParameters.getParametersBody()).isEqualTo(AppSettingsFile.create("{}"));
     assertThat(taskNGParameters.getSubscriptionId()).isEqualTo("123");
     assertThat(taskNGParameters.getDeploymentScope()).isEqualTo(ARMScopeType.RESOURCE_GROUP);
     assertThat(taskNGParameters.getDeploymentMode()).isEqualTo(AzureDeploymentMode.COMPLETE);
@@ -122,69 +125,45 @@ public class AzureRollbackStepTest extends CategoryTest {
   @Owner(developers = NGONZALEZ)
   @Category(UnitTests.class)
   public void testValidateRollbackWithNoOutput() {
-    when(azureCommonHelper.generateIdentifier(any(), any())).thenReturn("foobar");
-    OptionalSweepingOutput output = OptionalSweepingOutput.builder().found(false).output(null).build();
-    when(sweepingOutputService.resolveOptional(any(), any())).thenReturn(output);
     StepInputPackage inputPackage = StepInputPackage.builder().build();
     StepElementParameters steps = StepElementParameters.builder().spec(getParams()).build();
-    assertThatThrownBy(
-        () -> azureARMRollbackStep.obtainTaskAfterRbac(azureHelperTest.getAmbiance(), steps, inputPackage))
-        .isInstanceOf(InvalidArgumentsException.class);
+    TaskRequest request = azureARMRollbackStep.obtainTaskAfterRbac(azureHelperTest.getAmbiance(), steps, inputPackage);
+    assertThat(request.getSkipTaskRequest().getMessage())
+        .isEqualTo("There is no rollback data saved for the provisioner identifier: abc");
   }
 
   @Test
   @Owner(developers = NGONZALEZ)
   @Category(UnitTests.class)
   public void testValidateRollbackWithNoResourceGroupScope() {
-    AzureARMTemplateDataOutput azureOutput = AzureARMTemplateDataOutput.builder()
-                                                 .resourceGroup("res")
-                                                 .resourceGroupTemplateJson("{foo}")
-                                                 .scopeType("foobar")
-                                                 .subscriptionId("123")
-                                                 .build();
-    OptionalSweepingOutput output = OptionalSweepingOutput.builder().found(true).output(azureOutput).build();
-    when(sweepingOutputService.resolveOptional(any(), any())).thenReturn(output);
+    doReturn(AzureARMConfig.builder().scopeType(AzureScopeTypesNames.Subscription).build())
+        .when(azureARMConfigDAL)
+        .getAzureARMConfig(any(), any());
     StepInputPackage inputPackage = StepInputPackage.builder().build();
     StepElementParameters steps = StepElementParameters.builder().spec(getParams()).build();
-    assertThatThrownBy(
-        () -> azureARMRollbackStep.obtainTaskAfterRbac(azureHelperTest.getAmbiance(), steps, inputPackage))
-        .isInstanceOf(InvalidArgumentsException.class);
+
+    TaskRequest request = azureARMRollbackStep.obtainTaskAfterRbac(azureHelperTest.getAmbiance(), steps, inputPackage);
+
+    verify(azureARMConfigDAL).getAzureARMConfig(any(), eq("abc"));
+    assertThat(request.getSkipTaskRequest().getMessage())
+        .isEqualTo("The only scope allowed to do rollback is ResourceGroup. Subscription is not supported");
   }
 
   @Test
-  @Owner(developers = NGONZALEZ)
+  @Owner(developers = TMACARI)
   @Category(UnitTests.class)
-  public void testValidateRollbackWithNoResourceGroupID() {
-    AzureARMTemplateDataOutput azureOutput = AzureARMTemplateDataOutput.builder()
-                                                 .resourceGroupTemplateJson("{foo}")
-                                                 .scopeType("ResourceGroup")
-                                                 .subscriptionId("123")
-                                                 .build();
-    OptionalSweepingOutput output = OptionalSweepingOutput.builder().found(true).output(azureOutput).build();
-    when(sweepingOutputService.resolveOptional(any(), any())).thenReturn(output);
-    StepInputPackage inputPackage = StepInputPackage.builder().build();
-    StepElementParameters steps = StepElementParameters.builder().spec(getParams()).build();
-    assertThatThrownBy(
-        () -> azureARMRollbackStep.obtainTaskAfterRbac(azureHelperTest.getAmbiance(), steps, inputPackage))
-        .isInstanceOf(InvalidArgumentsException.class);
-  }
+  public void testHandleTaskResultWithSecurityContext() throws Exception {
+    StepElementParameters stepElementParameters = StepElementParameters.builder().spec(getParams()).build();
+    AzureARMTaskNGResponse azureARMTaskNGResponse =
+        AzureARMTaskNGResponse.builder()
+            .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+            .unitProgressData(UnitProgressData.builder().unitProgresses(new ArrayList<>()).build())
+            .build();
 
-  @Test
-  @Owner(developers = NGONZALEZ)
-  @Category(UnitTests.class)
-  public void testValidateRollbackWithNoSubscriptionId() {
-    AzureARMTemplateDataOutput azureOutput = AzureARMTemplateDataOutput.builder()
-                                                 .resourceGroupTemplateJson("{foo}")
-                                                 .scopeType("ResourceGroup")
-                                                 .resourceGroup("123")
-                                                 .build();
-    OptionalSweepingOutput output = OptionalSweepingOutput.builder().found(true).output(azureOutput).build();
-    when(sweepingOutputService.resolveOptional(any(), any())).thenReturn(output);
-    StepInputPackage inputPackage = StepInputPackage.builder().build();
-    StepElementParameters steps = StepElementParameters.builder().spec(getParams()).build();
-    assertThatThrownBy(
-        () -> azureARMRollbackStep.obtainTaskAfterRbac(azureHelperTest.getAmbiance(), steps, inputPackage))
-        .isInstanceOf(InvalidArgumentsException.class);
+    azureARMRollbackStep.handleTaskResultWithSecurityContext(
+        azureHelperTest.getAmbiance(), stepElementParameters, () -> azureARMTaskNGResponse);
+
+    verify(azureARMConfigDAL).clearAzureARMConfig(any(), eq("abc"));
   }
 
   private AzureARMRollbackStepParameters getParams() {

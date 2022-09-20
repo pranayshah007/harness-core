@@ -402,6 +402,8 @@ import io.harness.delegate.task.azure.arm.AzureARMTaskResponse;
 import io.harness.delegate.task.azure.arm.AzureARMTaskType;
 import io.harness.delegate.task.azure.arm.AzureBlueprintTaskNGParameters;
 import io.harness.delegate.task.azure.arm.AzureBlueprintTaskNGResponse;
+import io.harness.delegate.task.azure.arm.AzureFetchArmPreDeploymentDataTaskParameters;
+import io.harness.delegate.task.azure.arm.AzureFetchArmPreDeploymentDataTaskResponse;
 import io.harness.delegate.task.azure.arm.AzureResourceCreationTaskNGParameters;
 import io.harness.delegate.task.azure.arm.AzureResourceCreationTaskNGResponse;
 import io.harness.delegate.task.azure.arm.request.AzureARMDeploymentParameters;
@@ -1774,5 +1776,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(GarDelegateRequest.class, 55420);
     kryo.register(GarDelegateResponse.class, 55421);
     kryo.register(GcpSMValidationParams.class, 19879);
+    kryo.register(AzureFetchArmPreDeploymentDataTaskParameters.class, 55423);
+    kryo.register(AzureFetchArmPreDeploymentDataTaskResponse.class, 55424);
   }
 }

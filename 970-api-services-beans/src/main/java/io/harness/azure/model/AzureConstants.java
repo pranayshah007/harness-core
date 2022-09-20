@@ -334,6 +334,7 @@ public interface AzureConstants {
   // ARM & Blueprint command units
   String EXECUTE_ARM_DEPLOYMENT = "Execute ARM Deployment";
   String ARM_DEPLOYMENT_STEADY_STATE = "ARM Deployment Steady state";
+  String FETCH_RESOURCE_GROUP_TEMPLATE = "Fetch Resource Group Template";
   String ARM_DEPLOYMENT_OUTPUTS = "ARM Deployment Outputs";
   String BLUEPRINT_DEPLOYMENT = "Execute Blueprint Deployment";
   String BLUEPRINT_DEPLOYMENT_STEADY_STATE = "Blueprint Deployment Steady state";
