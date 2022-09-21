@@ -7,10 +7,13 @@
 
 package io.harness.encryptors;
 
+import static io.harness.rule.OwnerRule.RAGHAV_MURALI;
 import static io.harness.rule.OwnerRule.UTKARSH;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -32,7 +35,9 @@ import io.harness.security.encryption.EncryptionType;
 
 import software.wings.beans.AzureVaultConfig;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.azure.keyvault.KeyVaultClient;
+import com.microsoft.azure.keyvault.models.KeyVaultError;
 import com.microsoft.azure.keyvault.models.KeyVaultErrorException;
 import com.microsoft.azure.keyvault.models.SecretBundle;
 import com.microsoft.azure.keyvault.requests.SetSecretRequest;
@@ -114,8 +119,34 @@ public class AzureVaultEncryptorTest extends CategoryTest {
     } catch (RestException e) {
       // this catch block is to satisfy the error handling framework
     } catch (SecretManagementDelegateException e) {
-      assertThat(e.getCause()).isOfAnyClassIn(SecretManagementDelegateException.class);
+      assertThat(e.getCause()).isOfAnyClassIn(KeyVaultErrorException.class);
     }
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_MURALI)
+  @Category(UnitTests.class)
+  public void testCreateSecretShouldThrowKeyVaultException() {
+    String plainText = UUIDGenerator.generateUuid();
+    String name = "My_Azure_Secret";
+    ObjectMapper objectMapper = new ObjectMapper();
+    String errorJson = "{\"error\" : {\"code\" : \"BadParameter\","
+        + " \"message\": \"The request URI contains an invalid name: My_Azure_Secret\"}}";
+    try {
+      KeyVaultError error = objectMapper.readValue(errorJson, KeyVaultError.class);
+      when(keyVaultClient.setSecret(any(SetSecretRequest.class)))
+          .thenThrow(
+              new KeyVaultErrorException("The request URI contains an invalid name: My_Azure_Secret", null, error));
+    } catch (Exception e) {
+      // unable to process json
+      fail("Json processing error");
+    }
+
+    assertThatThrownBy(
+        () -> azureVaultEncryptor.createSecret(azureVaultConfig.getAccountId(), name, plainText, azureVaultConfig))
+        .isInstanceOf(SecretManagementDelegateException.class)
+        .hasMessageContaining("The request URI contains an invalid name: My_Azure_Secret")
+        .hasMessageContaining("BadParameter");
   }
 
   @Test
@@ -165,8 +196,40 @@ public class AzureVaultEncryptorTest extends CategoryTest {
     } catch (RestException e) {
       // this catch block is to satisfy the error handling framework
     } catch (SecretManagementDelegateException e) {
-      assertThat(e.getCause()).isOfAnyClassIn(SecretManagementDelegateException.class);
+      assertThat(e.getCause()).isOfAnyClassIn(KeyVaultErrorException.class);
     }
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_MURALI)
+  @Category(UnitTests.class)
+  public void testUpdateSecretShouldThrowKeyVaultException() {
+    String plainText = UUIDGenerator.generateUuid();
+    String name = "My_Azure_Secret";
+    EncryptedRecord oldRecord = EncryptedRecordData.builder()
+                                    .name("MyAzureSecret")
+                                    .encryptionKey(UUIDGenerator.generateUuid())
+                                    .encryptedValue(UUIDGenerator.generateUuid().toCharArray())
+                                    .build();
+    ObjectMapper objectMapper = new ObjectMapper();
+    String errorJson = "{\"error\" : {\"code\" : \"BadParameter\","
+        + " \"message\": \"The request URI contains an invalid name: My_Azure_Secret\"}}";
+    try {
+      KeyVaultError error = objectMapper.readValue(errorJson, KeyVaultError.class);
+      when(keyVaultClient.setSecret(any(SetSecretRequest.class)))
+          .thenThrow(
+              new KeyVaultErrorException("The request URI contains an invalid name: My_Azure_Secret", null, error));
+    } catch (Exception e) {
+      // unable to process json
+      fail("Json processing error");
+    }
+
+    assertThatThrownBy(()
+                           -> azureVaultEncryptor.updateSecret(
+                               azureVaultConfig.getAccountId(), name, plainText, oldRecord, azureVaultConfig))
+        .isInstanceOf(SecretManagementDelegateException.class)
+        .hasMessageContaining("The request URI contains an invalid name: My_Azure_Secret")
+        .hasMessageContaining("BadParameter");
   }
 
   @Test
@@ -212,12 +275,44 @@ public class AzureVaultEncryptorTest extends CategoryTest {
                                     .build();
     when(keyVaultClient.getSecret(azureVaultConfig.getEncryptionServiceUrl(), oldRecord.getEncryptionKey(), ""))
         .thenThrow(new KeyVaultErrorException("error", null));
+    assertThatThrownBy(
+        () -> azureVaultEncryptor.renameSecret(azureVaultConfig.getAccountId(), name, oldRecord, azureVaultConfig))
+        .isInstanceOf(SecretManagementDelegateException.class);
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_MURALI)
+  @Category(UnitTests.class)
+  public void testRenameSecretShouldThrowKeyVaultException() {
+    String name = "My_Azure_Secret";
+    EncryptedRecord oldRecord = EncryptedRecordData.builder()
+                                    .name("MyAzureSecret")
+                                    .encryptionKey(UUIDGenerator.generateUuid())
+                                    .encryptedValue(UUIDGenerator.generateUuid().toCharArray())
+                                    .build();
+    ObjectMapper objectMapper = new ObjectMapper();
+    String errorJson = "{\"error\" : {\"code\" : \"BadParameter\","
+        + " \"message\": \"The request URI contains an invalid name: My_Azure_Secret\"}}";
     try {
-      azureVaultEncryptor.renameSecret(azureVaultConfig.getAccountId(), name, oldRecord, azureVaultConfig);
-      fail("Rename secret should have thrown an error");
-    } catch (SecretManagementDelegateException e) {
-      assertThat(e.getCause()).isOfAnyClassIn(SecretManagementDelegateException.class);
+      KeyVaultError error = objectMapper.readValue(errorJson, KeyVaultError.class);
+
+      when(keyVaultClient.getSecret(anyString(), anyString(), anyString()))
+          .thenThrow(
+              new KeyVaultErrorException("The request URI contains an invalid name: My_Azure_Secret", null, error));
+
+      when(keyVaultClient.setSecret(any(SetSecretRequest.class)))
+          .thenThrow(
+              new KeyVaultErrorException("The request URI contains an invalid name: My_Azure_Secret", null, error));
+    } catch (Exception e) {
+      // unable to process json
+      fail("Json processing error");
     }
+
+    assertThatThrownBy(
+        () -> azureVaultEncryptor.renameSecret(azureVaultConfig.getAccountId(), name, oldRecord, azureVaultConfig))
+        .isInstanceOf(SecretManagementDelegateException.class)
+        .hasMessageContaining("The request URI contains an invalid name: My_Azure_Secret")
+        .hasMessageContaining("BadParameter");
   }
 
   @Test
@@ -245,11 +340,39 @@ public class AzureVaultEncryptorTest extends CategoryTest {
                                     .build();
     when(keyVaultClient.getSecret(azureVaultConfig.getEncryptionServiceUrl(), oldRecord.getEncryptionKey(), ""))
         .thenThrow(new KeyVaultErrorException("error", null));
+
+    assertThatThrownBy(
+        () -> azureVaultEncryptor.fetchSecretValue(azureVaultConfig.getAccountId(), oldRecord, azureVaultConfig))
+        .isInstanceOf(SecretManagementDelegateException.class);
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_MURALI)
+  @Category(UnitTests.class)
+  public void testFetchSecretShouldThrowKeyVaultException() {
+    EncryptedRecord oldRecord = EncryptedRecordData.builder()
+                                    .name("MyAzureSecret")
+                                    .encryptionKey(UUIDGenerator.generateUuid())
+                                    .encryptedValue(UUIDGenerator.generateUuid().toCharArray())
+                                    .build();
+    ObjectMapper objectMapper = new ObjectMapper();
+    String errorJson = "{\"error\" : {\"code\" : \"BadParameter\","
+        + " \"message\": \"The request URI contains an invalid name: My_Azure_Secret\"}}";
     try {
-      azureVaultEncryptor.fetchSecretValue(azureVaultConfig.getAccountId(), oldRecord, azureVaultConfig);
-      fail("Fetch secret should have thrown an error");
-    } catch (SecretManagementDelegateException e) {
-      assertThat(e.getCause()).isOfAnyClassIn(SecretManagementDelegateException.class);
+      KeyVaultError error = objectMapper.readValue(errorJson, KeyVaultError.class);
+
+      when(keyVaultClient.getSecret(anyString(), anyString(), anyString()))
+          .thenThrow(
+              new KeyVaultErrorException("The request URI contains an invalid name: My_Azure_Secret", null, error));
+    } catch (Exception e) {
+      // unable to process json
+      fail("Json processing error");
     }
+
+    assertThatThrownBy(
+        () -> azureVaultEncryptor.fetchSecretValue(azureVaultConfig.getAccountId(), oldRecord, azureVaultConfig))
+        .isInstanceOf(SecretManagementDelegateException.class)
+        .hasMessageContaining("The request URI contains an invalid name: My_Azure_Secret")
+        .hasMessageContaining("BadParameter");
   }
 }

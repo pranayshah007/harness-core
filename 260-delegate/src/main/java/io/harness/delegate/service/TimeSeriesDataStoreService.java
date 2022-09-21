@@ -19,10 +19,11 @@ import io.harness.datacollection.entity.TimeSeriesRecord;
 import io.harness.verificationclient.CVNextGenServiceClient;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -98,9 +99,24 @@ public class TimeSeriesDataStoreService {
     }
     List<TimeSeriesDataCollectionRecord> dataCollectionRecords =
         convertToCollectionRecords(accountId, verificationTaskId, timeSeriesRecords);
+    // Sorting them so that DB Save can be optimised on CVNG Side
+    dataCollectionRecords.sort(
+        Comparator
+            .comparing((TimeSeriesDataCollectionRecord record)
+                           -> StringUtils.isNotEmpty(record.getHost()) ? record.getHost() : "host")
+            .thenComparing(record -> record.getTimeStamp()));
+    // Keeping partition size to be 5 so that most of the calls like for SLI will be single call.
+    List<List<TimeSeriesDataCollectionRecord>> partitionedDataCollectionRecordsForSave =
+        Lists.partition(dataCollectionRecords, 5);
+    return partitionedDataCollectionRecordsForSave.stream()
+        .map(timeSeriesDataCollectionRecords -> saveTimeSeriesToCVNG(accountId, timeSeriesDataCollectionRecords))
+        .noneMatch(result -> !result);
+  }
+
+  @VisibleForTesting
+  boolean saveTimeSeriesToCVNG(String accountId, List<TimeSeriesDataCollectionRecord> dataCollectionRecords) {
     return cvngRequestExecutor
-        .executeWithTimeout(
-            cvNextGenServiceClient.saveTimeSeriesMetrics(accountId, dataCollectionRecords), Duration.ofSeconds(30))
+        .executeWithRetry(cvNextGenServiceClient.saveTimeSeriesMetrics(accountId, dataCollectionRecords))
         .getResource();
   }
 }

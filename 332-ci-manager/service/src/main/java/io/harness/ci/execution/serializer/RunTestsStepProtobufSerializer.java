@@ -53,9 +53,12 @@ public class RunTestsStepProtobufSerializer implements ProtobufStepSerializer<Ru
     }
 
     RunTestsStep.Builder runTestsStepBuilder = RunTestsStep.newBuilder();
+    String gitSafeCMD =
+        SerializerUtils.getSafeGitDirectoryCmd(RunTimeInputHandler.resolveShellType(runTestsStepInfo.getShell()));
 
-    String preTestCommand = RunTimeInputHandler.resolveStringParameter(
-        "Command", "RunTests", identifier, runTestsStepInfo.getPreCommand(), false);
+    String preTestCommand = gitSafeCMD
+        + RunTimeInputHandler.resolveStringParameter(
+            "Command", "RunTests", identifier, runTestsStepInfo.getPreCommand(), false);
     if (StringUtils.isNotEmpty(preTestCommand)) {
       runTestsStepBuilder.setPreTestCommand(preTestCommand);
     }

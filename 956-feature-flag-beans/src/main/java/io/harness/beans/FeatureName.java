@@ -269,7 +269,6 @@ public enum FeatureName {
   STO_CI_PIPELINE_SECURITY("Enable the Security Tests execution results tab for CI on NG", HarnessTeam.STO),
   STO_CD_PIPELINE_SECURITY("Enable the Security Tests execution results tab for CD on NG", HarnessTeam.STO),
   STO_API_V2("Enable the new STO API version on NG", HarnessTeam.STO),
-  GIT_SYNC_WITH_BITBUCKET,
   REFACTOR_ARTIFACT_SELECTION,
   CCM_DEV_TEST("", HarnessTeam.CE),
   CV_FAIL_ON_EMPTY_NODES,
@@ -288,7 +287,6 @@ public enum FeatureName {
   AZURE_BLOB_SM,
   CONSIDER_ORIGINAL_STATE_VERSION,
   SINGLE_MANIFEST_SUPPORT,
-  GIT_SYNC_PROJECT_CLEANUP,
   ENV_GROUP,
   REDUCE_DELEGATE_MEMORY_SIZE("Reduce CG delegate memory to 4GB", HarnessTeam.DEL),
   PIPELINE_PER_ENV_DEPLOYMENT_PERMISSION,
@@ -326,7 +324,6 @@ public enum FeatureName {
   CVNG_TEMPLATE_VERIFY_STEP,
   CVNG_METRIC_THRESHOLD,
   WORKFLOW_EXECUTION_ZOMBIE_MONITOR,
-  PIPELINE_QUEUE_STEP,
   USE_PAGINATED_ENCRYPT_SERVICE, // To be only used by UI for safeguarding encrypt component changes in CG
   INFRA_MAPPING_BASED_ROLLBACK_ARTIFACT,
   DEPLOYMENT_SUBFORMIK_PIPELINE_DROPDOWN,

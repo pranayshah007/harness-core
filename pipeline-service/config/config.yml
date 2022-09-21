@@ -349,6 +349,8 @@ pipelineEventConsumersConfig:
     threads: 1
   initiateNode:
     threads: 2
+  pollingEvent:
+    threads: 5
 
 delegatePollingConfig:
   syncDelay: 2000

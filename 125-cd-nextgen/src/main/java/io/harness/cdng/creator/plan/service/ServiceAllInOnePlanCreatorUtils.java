@@ -71,13 +71,15 @@ public class ServiceAllInOnePlanCreatorUtils {
 
     // add nodes for artifacts/manifests/files
     final List<String> childrenNodeIds = addChildrenNodes(planCreationResponseMap, serviceType);
-    final ServiceStepV3Parameters stepParameters = ServiceStepV3Parameters.builder()
-                                                       .serviceRef(finalServiceYaml.getServiceRef())
-                                                       .inputs(finalServiceYaml.getServiceInputs())
-                                                       .envRef(environmentYamlV2.getEnvironmentRef())
-                                                       .envInputs(environmentYamlV2.getEnvironmentInputs())
-                                                       .childrenNodeIds(childrenNodeIds)
-                                                       .build();
+    final ServiceStepV3Parameters stepParameters =
+        ServiceStepV3Parameters.builder()
+            .serviceRef(finalServiceYaml.getServiceRef())
+            .inputs(finalServiceYaml.getServiceInputs())
+            .envRef(environmentYamlV2.getEnvironmentRef())
+            .envInputs(environmentYamlV2.getEnvironmentInputs())
+            .childrenNodeIds(childrenNodeIds)
+            .serviceOverrideInputs(environmentYamlV2.getServiceOverrideInputs())
+            .build();
 
     final PlanNode node =
         PlanNode.builder()
