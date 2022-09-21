@@ -866,10 +866,12 @@ public class NGTemplateResource {
       })
   @Hidden
   public ResponseDTO<TemplateImportSaveResponse>
-  importTemplateFromGit(@NotNull @AccountIdentifier String accountIdentifier,
-      @NotNull @OrgIdentifier String orgIdentifier, @NotNull @ProjectIdentifier String projectIdentifier,
-      @ResourceIdentifier String templateIdentifier, GitImportInfoDTO gitImportInfoDTO,
-      TemplateImportRequestDTO templateImportRequestDTO) {
+  importTemplateFromGit(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Parameter(description = TEMPLATE_PARAM_MESSAGE) @PathParam(
+          "templateIdentifier") @ResourceIdentifier String templateIdentifier,
+      @BeanParam GitImportInfoDTO gitImportInfoDTO, TemplateImportRequestDTO templateImportRequestDTO) {
     return ResponseDTO.newResponse(TemplateImportSaveResponse.builder().build());
   }
 }
