@@ -560,8 +560,10 @@ public class NGTemplateServiceHelper {
           -> variableValue.setYamlProperties(YamlProperties.newBuilder()
                                                  .setVariableName(variableValue.getYamlProperties().getVariableName())
                                                  .setFqn(variableValue.getYamlProperties().getVariableName())
+                .setLocalName(variableValue.getYamlProperties().getVariableName())
                                                  .setVisible(variableValue.getYamlProperties().getVisible())
                                                  .build()));
+      variableMergeServiceResponse.getMetadataMap().putAll(templateVariableResponse.getMetadataMap());
 
       return VariableMergeServiceResponse.builder()
           .yaml(YamlUtils.write(variablesObject))
