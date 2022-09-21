@@ -47,11 +47,11 @@ public class CreatePRStepInfo extends CreatePRBaseStepInfo implements CDStepInfo
 
   @Builder(builderMethodName = "infoBuilder")
   public CreatePRStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-      ParameterField<Map<String, String>> stringMap, CreatePRStepUpdateConfigScriptWrapper updateConfigScriptWrapper,
-      ShellType shellType, ParameterField<Boolean> overrideConfig, ParameterField<String> script,
-      List<String> outputVars, List<String> secretOutputVars, ScriptType scriptType) {
-    super(shellType, overrideConfig, stringMap, updateConfigScriptWrapper, delegateSelectors, script, outputVars,
-        secretOutputVars, scriptType);
+      CreatePRStepUpdateConfigScriptWrapper updateConfigScriptWrapper, ShellType shellType,
+      ParameterField<Boolean> overrideConfig, ParameterField<String> script, List<String> outputVars,
+      List<String> secretOutputVars, ScriptType scriptType) {
+    super(shellType, overrideConfig, updateConfigScriptWrapper, delegateSelectors, script, outputVars, secretOutputVars,
+        scriptType);
   }
 
   @Override
