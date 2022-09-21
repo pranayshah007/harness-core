@@ -57,7 +57,7 @@ public class TemplateUtils {
       }
 
       // Set Parent's ConnectorRef
-      if (EmptyPredicate.isNotEmpty(repoFromTemplate)) {
+      if (EmptyPredicate.isNotEmpty(connectorFromTemplate)) {
         gitEntityInfo.setParentEntityConnectorRef(connectorFromTemplate);
       } else if (!GitAwareContextHelper.isNullOrDefault(gitEntityInfo.getConnectorRef())) {
         gitEntityInfo.setParentEntityConnectorRef(gitEntityInfo.getConnectorRef());
