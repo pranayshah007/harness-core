@@ -20,6 +20,7 @@ import io.harness.exception.UnauthorizedException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.InternalApi;
+import io.harness.security.annotations.LearningEngineAuth;
 
 import software.wings.beans.User;
 import software.wings.security.UserThreadLocal;
@@ -77,16 +78,10 @@ public class FeatureFlagResource {
   }
 
   @GET
-  @Path("/feature-flag-enabled")
+  @Path("{featureFlagName}")
   @Timed
   @ExceptionMetered
-  public RestResponse<Boolean> isFeatureFlagEnabled(@QueryParam("featureName") String featureName) {
-    return new RestResponse<>(featureFlagService.isGlobalEnabled(FeatureName.valueOf(featureName)));
-  }
-
-  @GET
-  @Path("{featureFlagName}")
-  @InternalApi
+  @LearningEngineAuth
   public RestResponse<FeatureFlag> getFeatureFlag(@PathParam("featureFlagName") String featureFlagName) {
     return new RestResponse<>(featureFlagService.getFeatureFlag(FeatureName.valueOf(featureFlagName)).orElse(null));
   }

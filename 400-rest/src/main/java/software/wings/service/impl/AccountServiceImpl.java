@@ -1576,16 +1576,6 @@ public class AccountServiceImpl implements AccountService {
   }
 
   @Override
-  public boolean isFeatureFlagEnabled(String featureName) {
-    for (FeatureName feature : FeatureName.values()) {
-      if (feature.name().equals(featureName)) {
-        return featureFlagService.isGlobalEnabled(FeatureName.valueOf(featureName));
-      }
-    }
-    return false;
-  }
-
-  @Override
   public List<Service> getServicesBreadCrumb(String accountId, User user) {
     PageRequest<String> request = aPageRequest().withOffset("0").withLimit(UNLIMITED_PAGE_SIZE).build();
     PageResponse<CVEnabledService> response = getServices(accountId, user, request, null);

@@ -149,8 +149,6 @@ public interface AccountService {
 
   boolean isFeatureFlagEnabled(String featureName, String accountId);
 
-  boolean isFeatureFlagEnabled(String featureName);
-
   PageResponse<CVEnabledService> getServices(
       String accountId, User user, PageRequest<String> request, String serviceId);
 
