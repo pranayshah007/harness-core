@@ -17,6 +17,7 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 
 import java.net.URLDecoder;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -79,12 +80,12 @@ public class JenkinsJobPathBuilder {
     return sb.toString();
   }
 
-  public static String constructParentJobPath(String[] jobNameSplit) {
+  public static String constructParentJobPath(List<String> jobNameSplit) {
     if (isEmpty(jobNameSplit)) {
       return "/";
     }
 
-    int parts = jobNameSplit.length;
+    int parts = jobNameSplit.size();
     int currentIndex = 0;
     StringBuilder sb = new StringBuilder();
     for (String jobName : jobNameSplit) {
