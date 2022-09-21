@@ -60,6 +60,7 @@ import io.harness.connector.entities.embedded.gcpconnector.GcpConfig;
 import io.harness.connector.entities.embedded.gcpconnector.GcpDelegateDetails;
 import io.harness.connector.entities.embedded.gcpconnector.GcpServiceAccountKey;
 import io.harness.connector.entities.embedded.gcpkmsconnector.GcpKmsConnector;
+import io.harness.connector.entities.embedded.gcpsm.GcpSMConnector;
 import io.harness.connector.entities.embedded.gitconnector.GitConfig;
 import io.harness.connector.entities.embedded.gitconnector.GitSSHAuthentication;
 import io.harness.connector.entities.embedded.gitconnector.GitUserNamePasswordAuthentication;
@@ -152,6 +153,7 @@ public class ConnectorMorphiaClassesRegistrar implements MorphiaRegistrar {
     set.add(OciHelmConnector.class);
     set.add(CustomSecretManagerConnector.class);
     set.add(ELKConnector.class);
+    set.add(GcpSMConnector.class);
   }
 
   @Override
