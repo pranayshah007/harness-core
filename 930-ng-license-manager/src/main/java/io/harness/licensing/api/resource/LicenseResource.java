@@ -56,8 +56,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import retrofit2.http.Body;
 
-@Api("licenses")
-@Path("licenses")
+@Api("/licenses")
+@Path("/licenses")
 @Produces({"application/json"})
 @Consumes({"application/json"})
 @Tag(name = "Licenses", description = "This contains APIs related to licenses as defined in Harness")
@@ -79,6 +79,7 @@ import retrofit2.http.Body;
       , @ApiResponse(code = 500, response = ErrorDTO.class, message = "Internal server error")
     })
 @NextGenManagerAuth
+@Hidden
 public class LicenseResource {
   private static final String MODULE_TYPE_KEY = "moduleType";
   private final LicenseService licenseService;

@@ -8,6 +8,7 @@
 package io.harness.licensing.jobs;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import io.harness.licensing.beans.modules.ModuleLicenseDTO;
 import io.harness.licensing.entities.modules.ModuleLicense;
 import io.harness.licensing.mappers.LicenseObjectConverter;
@@ -34,7 +35,7 @@ public class SMPLicenseValidationJobImpl implements SMPLicenseValidationJob {
     @Inject
     public SMPLicenseValidationJobImpl(LicenseGenerator licenseGenerator,
                                        LicenseObjectConverter licenseObjectConverter,
-                                       ScheduledExecutorService executorService,
+                                       @Named("SMP_EXECUTOR_SERVICE") ScheduledExecutorService executorService,
                                        ModuleLicenseRepository moduleLicenseRepository) {
         this.licenseGenerator = licenseGenerator;
         this.licenseObjectConverter = licenseObjectConverter;

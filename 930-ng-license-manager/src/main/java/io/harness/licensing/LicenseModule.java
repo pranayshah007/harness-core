@@ -7,6 +7,12 @@
 
 package io.harness.licensing;
 
+import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
+import com.google.inject.Singleton;
+import com.google.inject.multibindings.MapBinder;
+import com.google.inject.name.Named;
+import com.google.inject.name.Names;
 import io.harness.ModuleType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -28,16 +34,14 @@ import io.harness.licensing.services.DefaultLicenseServiceImpl;
 import io.harness.licensing.services.LicenseService;
 import io.harness.smp.license.SMPLicenseModule;
 import io.harness.version.VersionInfoManager;
+import jodd.util.concurrent.ThreadFactoryBuilder;
 
-import com.google.inject.AbstractModule;
-import com.google.inject.Provides;
-import com.google.inject.Singleton;
-import com.google.inject.multibindings.MapBinder;
-import com.google.inject.name.Named;
-import java.util.List;
 import javax.cache.Cache;
 import javax.cache.expiry.AccessedExpiryPolicy;
 import javax.cache.expiry.Duration;
+import java.util.List;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 @OwnedBy(HarnessTeam.GTM)
 public class LicenseModule extends AbstractModule {
@@ -74,10 +78,14 @@ public class LicenseModule extends AbstractModule {
     editionCheckerMapBinder.addBinding(Edition.ENTERPRISE).to(EnterpriseChecker.class);
 
     bind(LicenseObjectConverter.class);
-    bind(SMPLicenseValidationJob.class).to(SMPLicenseValidationJobImpl.class);
     bind(ModuleLicenseInterface.class).to(ModuleLicenseImpl.class);
     bind(LicenseService.class).to(DefaultLicenseServiceImpl.class);
     bind(LicenseComplianceResolver.class).to(DefaultLicenseComplianceResolver.class);
+
+    bind(SMPLicenseValidationJob.class).to(SMPLicenseValidationJobImpl.class);
+    bind(ScheduledExecutorService.class)
+            .annotatedWith(Names.named("SMP_EXECUTOR_SERVICE"))
+            .toInstance(new ScheduledThreadPoolExecutor(1, new ThreadFactoryBuilder().setNameFormat("smp-validation-pool").get()));
   }
 
   @Provides
