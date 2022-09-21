@@ -74,7 +74,6 @@ public class CreatePRStepInfo extends CreatePRBaseStepInfo implements CDStepInfo
         .shellType(getShell())
         .overrideConfig(getOverrideConfig())
         .updateConfigScriptWrapper(this.getSource())
-        .stringMap(getStringMap())
         .delegateSelectors(getDelegateSelectors())
         .script(getScript())
         .outputVars(getOutputVars())
