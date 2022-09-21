@@ -564,11 +564,11 @@ public class NGTemplateServiceHelper {
                                                  .build()));
 
       return VariableMergeServiceResponse.builder()
-              .yaml(YamlUtils.write(variablesObject))
-              .errorResponses(variableMergeServiceResponse.getErrorResponses())
-              .metadataMap(variableMergeServiceResponse.getMetadataMap())
-              .serviceExpressionPropertiesList(variableMergeServiceResponse.getServiceExpressionPropertiesList())
-              .build();
+          .yaml(YamlUtils.write(variablesObject))
+          .errorResponses(variableMergeServiceResponse.getErrorResponses())
+          .metadataMap(variableMergeServiceResponse.getMetadataMap())
+          .serviceExpressionPropertiesList(variableMergeServiceResponse.getServiceExpressionPropertiesList())
+          .build();
     } catch (IOException e) {
       throw new InvalidRequestException("Couldn't convert templateYaml to JsonNode");
     }
