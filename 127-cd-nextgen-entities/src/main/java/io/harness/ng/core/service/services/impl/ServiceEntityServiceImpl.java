@@ -14,7 +14,6 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
-import static io.harness.pms.yaml.YamlNode.PATH_SEP;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -58,6 +57,7 @@ import io.harness.outbox.api.OutboxService;
 import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
+import io.harness.pms.yaml.YamlNodeUtils;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.repositories.UpsertOptions;
 import io.harness.repositories.service.spring.ServiceRepository;
@@ -630,10 +630,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
     }
 
     List<String> splitPaths = List.of(split).subList(index, split.length);
-    String fqnWithinServiceEntityYaml = String.join(PATH_SEP, splitPaths);
-
-    // convert sidecars[0]/sidecar to sidecars/[0]/
-    fqnWithinServiceEntityYaml = fqnWithinServiceEntityYaml.replace("[", "/[");
+    String fqnWithinServiceEntityYaml = String.join(".", splitPaths);
 
     YamlNode service;
     try {
@@ -646,7 +643,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       throw new InvalidRequestException("Service entity yaml must be rooted at \"service\"");
     }
 
-    YamlNode leafNode = service.gotoPath(fqnWithinServiceEntityYaml);
+    YamlNode leafNode = YamlNodeUtils.goToPathUsingFqn(service, fqnWithinServiceEntityYaml);
     if (leafNode == null) {
       throw new InvalidRequestException(
           format("Unable to locate path %s within service yaml", fqnWithinServiceEntityYaml));

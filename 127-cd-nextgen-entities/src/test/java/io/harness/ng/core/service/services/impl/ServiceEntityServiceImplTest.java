@@ -603,14 +603,49 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
         serviceEntityService.getYamlNodeForFqn(ACCOUNT_ID, ORG_ID, PROJECT_ID, "testGetYamlNodeForFqn",
             "pipeline.stages.s2.spec.service.serviceInputs.serviceDefinition.spec.artifacts.primary.spec.tag");
 
-    YamlNode sidecarNode = serviceEntityService.getYamlNodeForFqn(ACCOUNT_ID, ORG_ID, PROJECT_ID,
-        "testGetYamlNodeForFqn",
-        "pipeline.stages.s2.spec.service.serviceInputs.serviceDefinition.spec.artifacts.sidecars[0].sidecar.spec.tag");
+    YamlNode sidecarNode =
+        serviceEntityService.getYamlNodeForFqn(ACCOUNT_ID, ORG_ID, PROJECT_ID, "testGetYamlNodeForFqn",
+            "pipeline.stages.s2.spec.service.serviceInputs.serviceDefinition.spec.artifacts.sidecars.sc1.spec.tag");
 
     assertThat(primaryNode.getCurrJsonNode().asText()).isEqualTo("<+input>");
     assertThat(primaryNode.getParentNode().toString())
         .isEqualTo(
             "{\"connectorRef\":\"account.harnessImage\",\"imagePath\":\"harness/todolist\",\"tag\":\"<+input>\"}");
+
+    assertThat(sidecarNode.getCurrJsonNode().asText()).isEqualTo("<+input>");
+    assertThat(sidecarNode.getParentNode().toString())
+        .isEqualTo(
+            "{\"connectorRef\":\"account.harnessImage\",\"imagePath\":\"harness/todolist-sample\",\"region\":\"us-east-1\",\"tag\":\"<+input>\"}");
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void testGetYamlNodeForFqnWithPrimarySources() {
+    String yaml = readFile("ArtifactResourceUtils/serviceWithPrimarySourcesAndSidecars.yaml");
+    ServiceEntity createRequest = ServiceEntity.builder()
+                                      .accountId(ACCOUNT_ID)
+                                      .orgIdentifier(ORG_ID)
+                                      .projectIdentifier(PROJECT_ID)
+                                      .name("testGetYamlNodeForFqn")
+                                      .identifier("testGetYamlNodeForFqn")
+                                      .yaml(yaml)
+                                      .build();
+
+    serviceEntityService.create(createRequest);
+
+    YamlNode primaryNode = serviceEntityService.getYamlNodeForFqn(ACCOUNT_ID, ORG_ID, PROJECT_ID,
+        "testGetYamlNodeForFqn",
+        "pipeline.stages.s2.spec.service.serviceInputs.serviceDefinition.spec.artifacts.primary.sources.i1.spec.tag");
+
+    YamlNode sidecarNode =
+        serviceEntityService.getYamlNodeForFqn(ACCOUNT_ID, ORG_ID, PROJECT_ID, "testGetYamlNodeForFqn",
+            "pipeline.stages.s2.spec.service.serviceInputs.serviceDefinition.spec.artifacts.sidecars.sc1.spec.tag");
+
+    assertThat(primaryNode.getCurrJsonNode().asText()).isEqualTo("<+input>");
+    assertThat(primaryNode.getParentNode().toString())
+        .isEqualTo(
+            "{\"connectorRef\":\"account.harnessImage1\",\"imagePath\":\"harness/todolist\",\"tag\":\"<+input>\"}");
 
     assertThat(sidecarNode.getCurrJsonNode().asText()).isEqualTo("<+input>");
     assertThat(sidecarNode.getParentNode().toString())
