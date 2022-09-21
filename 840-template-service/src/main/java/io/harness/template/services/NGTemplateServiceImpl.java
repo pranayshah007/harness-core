@@ -75,7 +75,6 @@ import io.harness.template.utils.TemplateUtils;
 import io.harness.template.yaml.TemplateRefHelper;
 import io.harness.utils.PageUtils;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -755,17 +754,9 @@ public class NGTemplateServiceImpl implements NGTemplateService {
 
   @Override
   public String copyTemplateWithVariables(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String templateIdentifier, String versionLabel, Map<String, String> templateVariableValues) {
-    Optional<TemplateEntity> templateEntity =
-        get(accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, false);
-    if (!templateEntity.isPresent()) {
-      throw new InvalidRequestException(String.format(
-
-          "Template with the given Identifier: %s and %s does not exist or has been deleted", templateIdentifier,
-          EmptyPredicate.isEmpty(versionLabel) ? "stable versionLabel" : "versionLabel: " + versionLabel));
-    }
+                                          String templateYaml, Map<String, String> templateVariableValues) {
     return templateMergeServiceHelper.applyVariablesToCopiedTemplate(
-        templateVariableValues, templateEntity.get().getYaml());
+        templateVariableValues, templateYaml);
   }
 
   private void assureThatTheProjectAndOrgExists(String accountId, String orgId, String projectId) {

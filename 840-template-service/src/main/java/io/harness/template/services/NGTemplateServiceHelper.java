@@ -40,6 +40,7 @@ import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.common.beans.NGTag.NGTagKeys;
 import io.harness.ng.core.mapper.TagMapper;
+import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ng.core.template.TemplateListType;
 import io.harness.pms.contracts.plan.YamlProperties;
 import io.harness.pms.mappers.VariablesResponseDtoMapper;
@@ -55,6 +56,7 @@ import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
 import io.harness.template.events.TemplateUpdateEventType;
 import io.harness.template.gitsync.TemplateGitSyncBranchContextGuard;
+import io.harness.template.helpers.YamlVariablesUtils;
 import io.harness.template.utils.TemplateUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -546,39 +548,16 @@ public class NGTemplateServiceHelper {
           (ObjectNode) YamlUtils.readTree(variableMergeServiceResponse.getYaml()).getNode().getCurrJsonNode();
       ObjectNode templateJson =
           (ObjectNode) YamlUtils.readTree(appliedTemplateYaml).getNode().getCurrJsonNode().get(TEMPLATE);
-      variablesObject.set(YAMLFieldNameConstants.VARIABLES, templateJson.get(YAMLFieldNameConstants.VARIABLES));
-      if (templateJson.get(YAMLFieldNameConstants.VARIABLES) == null) {
+      if(templateJson.get(YAMLFieldNameConstants.VARIABLES)==null){
         return variableMergeServiceResponse;
       }
-      String templateVariableSpec = new ObjectNode(JsonNodeFactory.instance,
-          Collections.singletonMap(DUMMY_NODE, templateJson.retain(YAMLFieldNameConstants.VARIABLES)))
-                                        .toString();
-      String templateVariablesYamlWithDummy = RuntimeInputFormHelper.createTemplateFromYaml(templateVariableSpec);
-      JsonNode templateVariablesJson = templateVariablesYamlWithDummy == null
-          ? null
-          : YamlUtils.readTree(templateVariablesYamlWithDummy)
-                .getNode()
-                .getCurrJsonNode()
-                .get(DUMMY_NODE)
-                .get(YAMLFieldNameConstants.VARIABLES);
-      if (templateVariablesJson != null && templateVariablesJson.getNodeType() == JsonNodeType.ARRAY) {
-        ArrayNode templateVariableArray = (ArrayNode) templateVariablesJson;
-        for (JsonNode variable : templateVariableArray) {
-          String name = variable.get(YAMLFieldNameConstants.NAME).asText();
-          variableMergeServiceResponse.getMetadataMap().put(generateUuid(),
-              VariableMergeServiceResponse.VariableResponseMapValue.builder()
-                  .yamlProperties(
-                      YamlProperties.newBuilder().setLocalName(name).setFqn(name).setVariableName(name).build())
-                  .build());
-        }
-      }
-      return VariableMergeServiceResponse.builder()
-          .yaml(YamlUtils.write(variablesObject))
-          .errorResponses(variableMergeServiceResponse.getErrorResponses())
-          .metadataMap(variableMergeServiceResponse.getMetadataMap())
-          .serviceExpressionPropertiesList(variableMergeServiceResponse.getServiceExpressionPropertiesList())
-          .build();
+      JsonNode templateVariablesJson = templateJson.retain(YAMLFieldNameConstants.VARIABLES);
+      VariableMergeServiceResponse templateVariableResponse = YamlVariablesUtils.getTemplateVariablesFromYaml(templateVariablesJson.toString(),YAMLFieldNameConstants.VARIABLES );
+      variablesObject.set(YAMLFieldNameConstants.VARIABLES, YamlUtils.readTree(templateVariableResponse.getYaml()).getNode().getCurrJsonNode());
+      templateVariableResponse.getMetadataMap().values().forEach(variableValue -> variableValue.setYamlProperties(YamlProperties.newBuilder().setVariableName(variableValue.getYamlProperties().getVariableName()).setFqn(variableValue.getYamlProperties().getVariableName()).setVisible(variableValue.getYamlProperties().getVisible()).build()));
+      variableMergeServiceResponse.getMetadataMap().putAll(templateVariableResponse.getMetadataMap());
 
+      return variableMergeServiceResponse;
     } catch (IOException e) {
       throw new InvalidRequestException("Couldn't convert templateYaml to JsonNode");
     }

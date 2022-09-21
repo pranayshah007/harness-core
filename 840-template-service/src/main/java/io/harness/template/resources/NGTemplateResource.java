@@ -39,6 +39,7 @@ import io.harness.ng.core.customDeployment.CustomDeploymentYamlRequestDTO;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.template.CopyTemplateVariableRequestDTO;
 import io.harness.ng.core.template.TemplateApplyRequestDTO;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ng.core.template.TemplateListType;
@@ -870,17 +871,12 @@ public class NGTemplateResource {
   @Hidden
   public ResponseDTO<String>
   copyTemplateWithVariables(@NotBlank @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
-      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+                            @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
-      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+                            @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
-      @Parameter(description = TEMPLATE_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.IDENTIFIER_KEY) @ResourceIdentifier String templateIdentifier,
-      @Parameter(description = "Version Label") @QueryParam(
-          NGCommonEntityConstants.VERSION_LABEL_KEY) String versionLabel,
-      @RequestBody(required = true, description = "List of template variable values") @NotNull @ApiParam(
-          hidden = true) Map<String, String> templateVariableValues) {
+                             @NotNull CopyTemplateVariableRequestDTO copyTemplateVariableRequestDTO) {
     return ResponseDTO.newResponse(templateService.copyTemplateWithVariables(
-        accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, templateVariableValues));
+        accountIdentifier, orgIdentifier, projectIdentifier, copyTemplateVariableRequestDTO.getTemplateYaml(), copyTemplateVariableRequestDTO.getVariableValues()));
   }
 }
