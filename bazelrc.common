@@ -13,11 +13,6 @@ build --java_header_compilation=false
 build --javacopt='-XepDisableAllChecks'
 build --javacopt='-Xlint:none'
 build --javacopt='--release 11'
-:
-# resource_jars are deprecated and we need to clean those up. Meanwhile, we are unflipping this flag.
-# https://github.com/bazelbuild/bazel/issues/13221
-build --noincompatible_disallow_resource_jars
-build --experimental_builtins_injection_override=-java_library
 
 #CV-Nextgen
 build --action_env=VERIFICATION_SERVICE_SECRET=67d9b94d9856665afc21acd3aa745401

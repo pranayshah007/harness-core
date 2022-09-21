@@ -5,9 +5,6 @@ load("//:tools/bazel/harness.bzl", "java_library")
 java_library(
     name = "module",
     srcs = glob(["src/main/java/**/*.java"]),
-    resource_jars = [
-        "//pipeline-service/modules/pms-contracts/src/main/proto:pms_contracts_java_proto",
-    ],
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
