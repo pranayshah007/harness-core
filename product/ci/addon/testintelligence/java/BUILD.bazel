@@ -13,6 +13,7 @@ go_library(
     deps = [
         "//commons/go/lib/exec",
         "//commons/go/lib/filesystem",
+        "//commons/go/lib/utils",
         "//product/ci/common/external",
         "//product/ci/ti-service/types",
         "@com_github_mattn_go_zglob//:go-zglob",
