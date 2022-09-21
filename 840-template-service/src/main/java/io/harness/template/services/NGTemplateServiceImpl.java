@@ -131,7 +131,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
 
     if (TemplateRefHelper.hasTemplateRef(templateEntity.getYaml())) {
       TemplateUtils.setupGitParentEntityDetails(templateEntity.getAccountIdentifier(),
-          templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier());
+          templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier(), templateEntity.getRepo(),
+          templateEntity.getConnectorRef());
     }
 
     if (!validateIdentifierIsUnique(templateEntity.getAccountId(), templateEntity.getOrgIdentifier(),
@@ -285,7 +286,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
         FeatureRestrictionName.TEMPLATE_SERVICE, templateEntity.getAccountIdentifier());
 
     TemplateUtils.setupGitParentEntityDetails(templateEntity.getAccountIdentifier(), templateEntity.getOrgIdentifier(),
-        templateEntity.getProjectIdentifier());
+        templateEntity.getProjectIdentifier(), templateEntity.getRepo(), templateEntity.getConnectorRef());
 
     // apply templates to template yaml for validations and populating module info
     applyTemplatesToYamlAndValidateSchema(templateEntity);
@@ -1009,8 +1010,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
 
   private TemplateEntity getAndValidateOldTemplateEntity(
       TemplateEntity templateEntity, String oldOrgIdentifier, String oldProjectIdentifier) {
-    TemplateUtils.setupGitParentEntityDetails(
-        templateEntity.getAccountIdentifier(), oldOrgIdentifier, oldProjectIdentifier);
+    TemplateUtils.setupGitParentEntityDetails(templateEntity.getAccountIdentifier(), oldOrgIdentifier,
+        oldProjectIdentifier, templateEntity.getRepo(), templateEntity.getConnectorRef());
     Optional<TemplateEntity> optionalTemplate =
         templateServiceHelper.getTemplateWithVersionLabel(templateEntity.getAccountId(), oldOrgIdentifier,
             oldProjectIdentifier, templateEntity.getIdentifier(), templateEntity.getVersionLabel(), false, false);

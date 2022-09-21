@@ -66,7 +66,6 @@ public class TemplateRefreshServiceImplTest extends TemplateServiceTestBase {
   @InjectMocks TemplateRefreshServiceImpl templateRefreshService;
   @Mock NGTemplateService templateService;
   @Mock TemplateInputsRefreshHelper templateInputsRefreshHelper;
-  @Mock NGTemplateServiceHelper templateServiceHelper;
   @Mock TemplateInputsValidator templateInputsValidator;
   @Mock AccessControlClient accessControlClient;
 

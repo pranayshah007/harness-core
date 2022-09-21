@@ -27,6 +27,7 @@ import io.harness.template.entity.TemplateEntity;
 import io.harness.template.helpers.TemplateInputsRefreshHelper;
 import io.harness.template.helpers.TemplateInputsValidator;
 import io.harness.template.mappers.NGTemplateDtoMapper;
+import io.harness.template.utils.TemplateUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -43,7 +44,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(CDC)
 public class TemplateRefreshServiceImpl implements TemplateRefreshService {
-  private NGTemplateServiceHelper templateServiceHelper;
   private TemplateInputsRefreshHelper templateInputsRefreshHelper;
   private NGTemplateService templateService;
   private TemplateInputsValidator templateInputsValidator;
@@ -54,7 +54,7 @@ public class TemplateRefreshServiceImpl implements TemplateRefreshService {
   public void refreshAndUpdateTemplate(
       String accountId, String orgId, String projectId, String templateIdentifier, String versionLabel) {
     TemplateEntity template = getTemplate(accountId, orgId, projectId, templateIdentifier, versionLabel);
-    templateServiceHelper.setupGitParentEntityDetails(
+    TemplateUtils.setupGitParentEntityDetails(
         accountId, orgId, projectId, template.getRepo(), template.getConnectorRef());
     String yaml = template.getYaml();
     updateTemplate(accountId, orgId, projectId, templateIdentifier, versionLabel, yaml);
@@ -90,7 +90,7 @@ public class TemplateRefreshServiceImpl implements TemplateRefreshService {
   public ValidateTemplateInputsResponseDTO validateTemplateInputsInTemplate(
       String accountId, String orgId, String projectId, String templateIdentifier, String versionLabel) {
     TemplateEntity template = getTemplate(accountId, orgId, projectId, templateIdentifier, versionLabel);
-    templateServiceHelper.setupGitParentEntityDetails(
+    TemplateUtils.setupGitParentEntityDetails(
         accountId, orgId, projectId, template.getRepo(), template.getConnectorRef());
     return getValidateTemplateInputsResponseDTO(accountId, orgId, projectId, template);
   }
@@ -116,7 +116,7 @@ public class TemplateRefreshServiceImpl implements TemplateRefreshService {
   public YamlDiffResponseDTO getYamlDiffOnRefreshingTemplate(
       String accountId, String orgId, String projectId, String templateIdentifier, String versionLabel) {
     TemplateEntity template = getTemplate(accountId, orgId, projectId, templateIdentifier, versionLabel);
-    templateServiceHelper.setupGitParentEntityDetails(
+    TemplateUtils.setupGitParentEntityDetails(
         accountId, orgId, projectId, template.getRepo(), template.getConnectorRef());
     String templateYaml = template.getYaml();
     String refreshedYaml = refreshLinkedTemplateInputs(accountId, orgId, projectId, templateYaml);
@@ -128,7 +128,7 @@ public class TemplateRefreshServiceImpl implements TemplateRefreshService {
   public void recursivelyRefreshTemplates(
       String accountId, String orgId, String projectId, String templateIdentifier, String versionLabel) {
     TemplateEntity template = getTemplate(accountId, orgId, projectId, templateIdentifier, versionLabel);
-    templateServiceHelper.setupGitParentEntityDetails(
+    TemplateUtils.setupGitParentEntityDetails(
         accountId, orgId, projectId, template.getRepo(), template.getConnectorRef());
     ValidateTemplateInputsResponseDTO validateTemplateInputsResponse =
         getValidateTemplateInputsResponseDTO(accountId, orgId, projectId, template);
