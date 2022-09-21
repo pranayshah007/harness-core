@@ -742,7 +742,6 @@ public class ConnectorServiceImpl implements ConnectorService {
       ConnectorFilterPropertiesDTO filterProperties, String orgIdentifier, String projectIdentifier,
       String filterIdentifier, String searchTerm, Boolean includeAllConnectorsAccessibleAtScope,
       Boolean getDistinctFromBranches) {
-    getDecryptedConnector(accountIdentifier, orgIdentifier, projectIdentifier, "nb");
     try {
       return defaultConnectorService.list(page, size, accountIdentifier, filterProperties, orgIdentifier,
           projectIdentifier, filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope,
