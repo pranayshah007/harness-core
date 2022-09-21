@@ -43,7 +43,6 @@ import static io.harness.persistence.HQuery.excludeAuthority;
 import static software.wings.audit.AuditHeader.Builder.anAuditHeader;
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.beans.DelegateSequenceConfig.Builder.aDelegateSequenceBuilder;
-import static software.wings.beans.Event.Builder.anEvent;
 import static software.wings.beans.User.Builder.anUser;
 import static software.wings.utils.Utils.normalizeIdentifier;
 import static software.wings.utils.Utils.uuidToIdentifier;
@@ -208,7 +207,6 @@ import software.wings.helpers.ext.mail.EmailData;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
 import software.wings.jre.JreConfig;
 import software.wings.licensing.LicenseService;
-import software.wings.service.impl.EventEmitter.Channel;
 import software.wings.service.impl.TemplateParameters.TemplateParametersBuilder;
 import software.wings.service.impl.infra.InfraDownloadService;
 import software.wings.service.intfc.AccountService;
@@ -1253,8 +1251,6 @@ public class DelegateServiceImpl implements DelegateService {
     delegateTaskService.touchExecutingTasks(
         delegate.getAccountId(), delegate.getUuid(), delegate.getCurrentlyExecutingDelegateTasks());
 
-    eventEmitter.send(Channel.DELEGATES,
-        anEvent().withOrgId(delegate.getAccountId()).withUuid(delegate.getUuid()).withType(Type.UPDATE).build());
     return delegateCache.get(delegate.getAccountId(), delegate.getUuid(), true);
   }
 
@@ -2284,12 +2280,6 @@ public class DelegateServiceImpl implements DelegateService {
     }
 
     log.info("Delegate saved: {}", savedDelegate);
-
-    // When polling is enabled for delegate, do not perform these event publishing
-    if (isDelegateWithoutPollingEnabled(delegate)) {
-      eventEmitter.send(Channel.DELEGATES,
-          anEvent().withOrgId(delegate.getAccountId()).withUuid(delegate.getUuid()).withType(Type.CREATE).build());
-    }
 
     updateWithTokenAndSeqNumIfEcsDelegate(delegate, savedDelegate);
     eventPublishHelper.publishInstalledDelegateEvent(delegate.getAccountId(), delegate.getUuid());

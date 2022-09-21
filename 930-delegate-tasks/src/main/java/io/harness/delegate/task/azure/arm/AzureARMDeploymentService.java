@@ -94,8 +94,7 @@ public class AzureARMDeploymentService {
     }
   }
 
-  public String exportExistingResourceGroupTemplate(DeploymentResourceGroupContext context) {
-    LogCallback logCallback = getARMDeploymentLogCallback(context);
+  public String exportExistingResourceGroupTemplate(DeploymentResourceGroupContext context, LogCallback logCallback) {
     AzureClientContext azureClientContext = context.getAzureClientContext();
     logCallback.saveExecutionLog(String.format(
         "Saving existing template for resource group - [%s] ", azureClientContext.getResourceGroupName()));
@@ -295,7 +294,7 @@ public class AzureARMDeploymentService {
     return context.getLogStreamingTaskClient().obtainLogCallback(AzureConstants.ARM_DEPLOYMENT_OUTPUTS);
   }
 
-  private LogCallback getARMDeploymentLogCallback(DeploymentContext context) {
+  public LogCallback getARMDeploymentLogCallback(DeploymentContext context) {
     context.setRunningCommandUnit(AzureConstants.EXECUTE_ARM_DEPLOYMENT);
     return context.getLogStreamingTaskClient().obtainLogCallback(AzureConstants.EXECUTE_ARM_DEPLOYMENT);
   }

@@ -650,17 +650,27 @@ public class SecretCrudServiceImpl implements SecretCrudService {
   }
 
   @Override
-  public void validateSshWinRmPasswords(
+  public void validateSshWinRmSecretRef(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, SecretDTOV2 secretDTO) {
-    SecretRefData password = null;
+    SecretRefData secretRef = null;
 
     if (secretDTO.getSpec() instanceof SSHKeySpecDTO) {
       SSHKeySpecDTO sshKeySpecDTO = (SSHKeySpecDTO) secretDTO.getSpec();
-      if (sshKeySpecDTO.getAuth().getSpec() instanceof KerberosConfigDTO) {
+      if (sshKeySpecDTO.getAuth().getSpec() instanceof SSHConfigDTO) {
+        SSHConfigDTO sshConfigDTO = (SSHConfigDTO) sshKeySpecDTO.getAuth().getSpec();
+        if (sshConfigDTO.getSpec() instanceof SSHKeyReferenceCredentialDTO) {
+          SSHKeyReferenceCredentialDTO sshKeyReferenceCredentialDTO =
+              (SSHKeyReferenceCredentialDTO) sshConfigDTO.getSpec();
+          secretRef = sshKeyReferenceCredentialDTO.getKey();
+        } else if (sshConfigDTO.getSpec() instanceof SSHPasswordCredentialDTO) {
+          SSHPasswordCredentialDTO sshPasswordCredentialDTO = (SSHPasswordCredentialDTO) sshConfigDTO.getSpec();
+          secretRef = sshPasswordCredentialDTO.getPassword();
+        }
+      } else if (sshKeySpecDTO.getAuth().getSpec() instanceof KerberosConfigDTO) {
         KerberosConfigDTO kerberosConfigDTO = (KerberosConfigDTO) sshKeySpecDTO.getAuth().getSpec();
         if (kerberosConfigDTO.getSpec() instanceof TGTPasswordSpecDTO) {
           TGTPasswordSpecDTO tgtPasswordSpecDTO = (TGTPasswordSpecDTO) kerberosConfigDTO.getSpec();
-          password = tgtPasswordSpecDTO.getPassword();
+          secretRef = tgtPasswordSpecDTO.getPassword();
         }
       }
     } else if (secretDTO.getSpec() instanceof WinRmCredentialsSpecDTO) {
@@ -669,24 +679,25 @@ public class SecretCrudServiceImpl implements SecretCrudService {
         KerberosWinRmConfigDTO kerberosConfigDTO = (KerberosWinRmConfigDTO) winRmCredentialsSpecDTO.getAuth().getSpec();
         if (kerberosConfigDTO.getSpec() instanceof TGTPasswordSpecDTO) {
           TGTPasswordSpecDTO tgtPasswordSpecDTO = (TGTPasswordSpecDTO) kerberosConfigDTO.getSpec();
-          password = tgtPasswordSpecDTO.getPassword();
+          secretRef = tgtPasswordSpecDTO.getPassword();
         }
       } else if (winRmCredentialsSpecDTO.getAuth().getSpec() instanceof NTLMConfigDTO) {
         NTLMConfigDTO ntlmConfigDTO = (NTLMConfigDTO) winRmCredentialsSpecDTO.getAuth().getSpec();
-        password = ntlmConfigDTO.getPassword();
+        secretRef = ntlmConfigDTO.getPassword();
       }
     }
 
-    if (password == null) {
+    // in case of Kerberos no TGT, SSH key with optional password
+    if (secretRef == null) {
       return;
     }
 
     Optional<Secret> secretOptional =
-        ngSecretService.get(accountIdentifier, orgIdentifier, projectIdentifier, password.getIdentifier());
+        ngSecretService.get(accountIdentifier, orgIdentifier, projectIdentifier, secretRef.getIdentifier());
 
     if (!secretOptional.isPresent()) {
-      throw new InvalidRequestException(format(
-          "No such password found '%s', please check identifier/scope and try again.", password.getIdentifier()));
+      throw new InvalidRequestException(
+          format("No such secret found '%s', please check identifier/scope and try again.", secretRef.getIdentifier()));
     }
   }
 }

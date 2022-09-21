@@ -291,4 +291,12 @@ public abstract class FileBasedAbstractWinRmExecutor {
         + "  [IO.File]::Delete($decodedFile)\n"
         + "}";
   }
+
+  public LogCallback getLogCallback() {
+    return logCallback;
+  }
+
+  public WinRmSessionConfig getConfig() {
+    return config;
+  }
 }

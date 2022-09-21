@@ -59,7 +59,7 @@ public class ArtifactoryNgServiceImpl implements ArtifactoryNgService {
           "Both Artifact Path and Artifact Path Filter cannot be empty",
           new ArtifactoryRegistryException("Could not find an artifact"));
     } else if (EmptyPredicate.isEmpty(artifactPathFilter)) {
-      return BuildDetails.Builder.aBuildDetails().withArtifactPath(artifactPath).build();
+      artifactPathFilter = artifactPath;
     }
 
     String filePath = Paths.get(artifactDirectory, artifactPathFilter).toString();

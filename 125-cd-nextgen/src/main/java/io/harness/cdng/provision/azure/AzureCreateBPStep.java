@@ -54,6 +54,7 @@ import io.harness.filestore.dto.node.FolderNodeDTO;
 import io.harness.filestore.service.FileStoreService;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.git.model.GitFile;
+import io.harness.k8s.K8sCommandUnitConstants;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.NGAccess;
@@ -212,7 +213,7 @@ public class AzureCreateBPStep extends TaskChainExecutableWithRollbackAndRbac {
 
       AzureCreateBPPassThroughData passThroughData = AzureCreateBPPassThroughData.builder().build();
       return azureCommonHelper.getGitFetchFileTaskChainResponse(
-          ambiance, gitFetchFilesConfigs, stepParameters, passThroughData);
+          ambiance, gitFetchFilesConfigs, stepParameters, passThroughData, getCommandUnits(true), null);
     } else if (ManifestStoreType.HARNESS.equals(
                    azureCreateBPStepConfigurationParameters.getTemplateFile().getStore().getSpec().getKind())) {
       HarnessStore harnessStore =
@@ -251,8 +252,7 @@ public class AzureCreateBPStep extends TaskChainExecutableWithRollbackAndRbac {
             .parameters(new Object[] {parameters})
             .build();
     final TaskRequest taskRequest = StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-        Arrays.asList(AzureConstants.BLUEPRINT_DEPLOYMENT, AzureConstants.BLUEPRINT_DEPLOYMENT_STEADY_STATE),
-        TaskType.AZURE_NG_ARM.getDisplayName(),
+        getCommandUnits(false), TaskType.AZURE_NG_ARM.getDisplayName(),
         TaskSelectorYaml.toTaskSelector(
             ((AzureCreateBPStepParameters) stepParameters.getSpec()).getDelegateSelectors()),
         stepHelper.getEnvironmentType(ambiance));
@@ -418,5 +418,15 @@ public class AzureCreateBPStep extends TaskChainExecutableWithRollbackAndRbac {
       }
     });
     return fileMap;
+  }
+
+  private List<String> getCommandUnits(boolean shouldFetchFiles) {
+    List<String> commandUnits = new ArrayList<>();
+    if (shouldFetchFiles) {
+      commandUnits.add(K8sCommandUnitConstants.FetchFiles);
+    }
+    commandUnits.addAll(
+        Arrays.asList(AzureConstants.BLUEPRINT_DEPLOYMENT, AzureConstants.BLUEPRINT_DEPLOYMENT_STEADY_STATE));
+    return commandUnits;
   }
 }
