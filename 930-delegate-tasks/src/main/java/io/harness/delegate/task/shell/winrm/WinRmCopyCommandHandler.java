@@ -8,9 +8,7 @@
 package io.harness.delegate.task.shell.winrm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.delegate.task.shell.winrm.WinRmCommandConstants.SESSION_TIMEOUT;
-import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT;
-import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT_HINT;
+import static io.harness.delegate.task.shell.winrm.WinRmUtils.getWinRmSessionConfig;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_DESTINATION_PATH_SPECIFIED;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_DESTINATION_PATH_SPECIFIED_EXPLANATION;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_DESTINATION_PATH_SPECIFIED_HINT;
@@ -18,10 +16,7 @@ import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.UNDEC
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.UNDECRYPTABLE_CONFIG_FILE_PROVIDED_EXPLANATION;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.UNDECRYPTABLE_CONFIG_FILE_PROVIDED_HINT;
 import static io.harness.logging.CommandExecutionStatus.RUNNING;
-import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.INFO;
-
-import static software.wings.common.Constants.WINDOWS_HOME_DIR;
 
 import static java.lang.String.format;
 
@@ -36,15 +31,11 @@ import io.harness.delegate.task.shell.WinrmTaskParameters;
 import io.harness.delegate.task.shell.ssh.CommandHandler;
 import io.harness.delegate.task.ssh.CopyCommandUnit;
 import io.harness.delegate.task.ssh.NgCommandUnit;
-import io.harness.delegate.task.ssh.WinRmInfraDelegateConfig;
-import io.harness.delegate.task.ssh.artifact.CustomArtifactDelegateConfig;
-import io.harness.delegate.task.ssh.artifact.SkipCopyArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.config.ConfigFileParameters;
 import io.harness.delegate.task.ssh.config.SecretConfigFile;
 import io.harness.delegate.task.winrm.FileBasedWinRmExecutorNG;
 import io.harness.delegate.task.winrm.WinRmExecutorFactoryNG;
 import io.harness.delegate.task.winrm.WinRmSessionConfig;
-import io.harness.delegate.task.winrm.WinRmSessionConfig.WinRmSessionConfigBuilder;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.runtime.SshCommandExecutionException;
@@ -67,7 +58,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(CDP)
 @Singleton
-public class WinRmCopyCommandHandler implements CommandHandler {
+public class WinRmCopyCommandHandler extends WinRmDownloadArtifactCommandHandler implements CommandHandler {
   @Inject private WinRmExecutorFactoryNG winRmExecutorFactoryNG;
   @Inject private WinRmConfigAuthEnhancer winRmConfigAuthEnhancer;
   @Inject private SecretDecryptionService secretDecryptionService;
@@ -85,25 +76,6 @@ public class WinRmCopyCommandHandler implements CommandHandler {
     }
 
     CopyCommandUnit copyCommandUnit = (CopyCommandUnit) commandUnit;
-    WinRmSessionConfigBuilder configBuilder = WinRmSessionConfig.builder()
-                                                  .accountId(winRmCommandTaskParameters.getAccountId())
-                                                  .executionId(winRmCommandTaskParameters.getExecutionId())
-                                                  .workingDirectory(WINDOWS_HOME_DIR)
-                                                  .commandUnitName(copyCommandUnit.getName())
-                                                  .environment(winRmCommandTaskParameters.getEnvironmentVariables())
-                                                  .hostname(winRmCommandTaskParameters.getHost())
-                                                  .timeout(SESSION_TIMEOUT);
-
-    final WinRmInfraDelegateConfig winRmInfraDelegateConfig = winRmCommandTaskParameters.getWinRmInfraDelegateConfig();
-    if (winRmInfraDelegateConfig == null) {
-      throw new InvalidRequestException("Task parameters must include WinRm Infra Delegate config.");
-    }
-
-    WinRmSessionConfig config = winRmConfigAuthEnhancer.configureAuthentication(
-        winRmInfraDelegateConfig.getWinRmCredentials(), winRmInfraDelegateConfig.getEncryptionDataDetails(),
-        configBuilder, winRmCommandTaskParameters.isUseWinRMKerberosUniqueCacheFile());
-    FileBasedWinRmExecutorNG executor = winRmExecutorFactoryNG.getFiledBasedWinRmExecutor(config,
-        winRmCommandTaskParameters.isDisableWinRMCommandEncodingFFSet(), logStreamingTaskClient, commandUnitsProgress);
 
     if (EmptyPredicate.isEmpty(copyCommandUnit.getDestinationPath())) {
       log.info("Destination path no provided for copy command unit");
@@ -115,16 +87,22 @@ public class WinRmCopyCommandHandler implements CommandHandler {
 
     CommandExecutionStatus commandExecutionStatus = CommandExecutionStatus.SUCCESS;
     if (FileSourceType.ARTIFACT.equals(copyCommandUnit.getSourceType())) {
-      commandExecutionStatus = copyArtifact(winRmCommandTaskParameters, copyCommandUnit, executor);
+      return super.handle(parameters, commandUnit, logStreamingTaskClient, commandUnitsProgress, taskContext);
     } else if (FileSourceType.CONFIG.equals(copyCommandUnit.getSourceType())) {
-      commandExecutionStatus = copyConfigFiles(winRmCommandTaskParameters, copyCommandUnit, executor);
+      commandExecutionStatus =
+          copyConfigFiles(winRmCommandTaskParameters, copyCommandUnit, logStreamingTaskClient, commandUnitsProgress);
     }
 
     return ExecuteCommandResponse.builder().status(commandExecutionStatus).build();
   }
 
   private CommandExecutionStatus copyConfigFiles(WinrmTaskParameters winRmCommandTaskParameters,
-      CopyCommandUnit copyCommandUnit, FileBasedWinRmExecutorNG executor) {
+      CopyCommandUnit copyCommandUnit, ILogStreamingTaskClient logStreamingTaskClient,
+      CommandUnitsProgress commandUnitsProgress) {
+    WinRmSessionConfig config =
+        getWinRmSessionConfig(copyCommandUnit, winRmCommandTaskParameters, winRmConfigAuthEnhancer);
+    FileBasedWinRmExecutorNG executor = winRmExecutorFactoryNG.getFiledBasedWinRmExecutor(config,
+        winRmCommandTaskParameters.isDisableWinRMCommandEncodingFFSet(), logStreamingTaskClient, commandUnitsProgress);
     CommandExecutionStatus result = CommandExecutionStatus.SUCCESS;
     List<ConfigFileParameters> configFiles = getConfigFileParameters(winRmCommandTaskParameters);
     executor.saveExecutionLog(format("Begin execution of command: %s", copyCommandUnit.getName()), INFO, RUNNING);
@@ -154,32 +132,6 @@ public class WinRmCopyCommandHandler implements CommandHandler {
       }
     }
     executor.saveExecutionLog("Command execution finished with status " + result, LogLevel.INFO, result);
-    return result;
-  }
-
-  private CommandExecutionStatus copyArtifact(
-      WinrmTaskParameters taskParameters, CopyCommandUnit copyCommandUnit, FileBasedWinRmExecutorNG executor) {
-    log.info("About to copy artifact");
-    if (taskParameters.getArtifactDelegateConfig() instanceof SkipCopyArtifactDelegateConfig) {
-      log.info("Artifactory docker registry found, skipping copy artifact.");
-      executor.saveExecutionLog("Command execution finished with status " + SUCCESS, LogLevel.INFO, SUCCESS);
-      return SUCCESS;
-    }
-    if (taskParameters.getArtifactDelegateConfig() instanceof CustomArtifactDelegateConfig) {
-      throw NestedExceptionUtils.hintWithExplanationException(COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT_HINT,
-          COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT,
-          new WinRmCommandExecutionException(COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT));
-    }
-
-    CommandExecutionStatus result;
-    try {
-      result = executor.copyArtifacts(taskParameters, copyCommandUnit);
-    } catch (Exception e) {
-      result = CommandExecutionStatus.FAILURE;
-    }
-    if (CommandExecutionStatus.FAILURE.equals(result)) {
-      log.info("Failed to copy artifact with id: " + taskParameters.getArtifactDelegateConfig().getIdentifier());
-    }
     return result;
   }
 

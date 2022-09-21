@@ -84,9 +84,9 @@ public abstract class AbstractHttpClientFactory {
   private final boolean enableCircuitBreaker;
   private final ClientMode clientMode;
 
-  protected AbstractHttpClientFactory(ServiceHttpClientConfig secretManagerConfig, String serviceSecret,
+  protected AbstractHttpClientFactory(ServiceHttpClientConfig httpClientConfig, String serviceSecret,
       ServiceTokenGenerator tokenGenerator, KryoConverterFactory kryoConverterFactory, String clientId) {
-    this.serviceHttpClientConfig = secretManagerConfig;
+    this.serviceHttpClientConfig = httpClientConfig;
     this.serviceSecret = serviceSecret;
     this.tokenGenerator = tokenGenerator;
     this.kryoConverterFactory = kryoConverterFactory;
@@ -96,10 +96,10 @@ public abstract class AbstractHttpClientFactory {
     this.clientMode = ClientMode.NON_PRIVILEGED;
   }
 
-  protected AbstractHttpClientFactory(ServiceHttpClientConfig secretManagerConfig, String serviceSecret,
+  protected AbstractHttpClientFactory(ServiceHttpClientConfig httpClientConfig, String serviceSecret,
       ServiceTokenGenerator tokenGenerator, KryoConverterFactory kryoConverterFactory, String clientId,
       boolean enableCircuitBreaker, ClientMode clientMode) {
-    this.serviceHttpClientConfig = secretManagerConfig;
+    this.serviceHttpClientConfig = httpClientConfig;
     this.serviceSecret = serviceSecret;
     this.tokenGenerator = tokenGenerator;
     this.kryoConverterFactory = kryoConverterFactory;

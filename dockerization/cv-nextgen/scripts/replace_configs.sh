@@ -12,97 +12,97 @@ replace_key_value () {
   CONFIG_KEY="$1";
   CONFIG_VALUE="$2";
   if [[ "" != "$CONFIG_VALUE" ]]; then
-    yq write -i $CONFIG_FILE $CONFIG_KEY $CONFIG_VALUE
+    export CONFIG_VALUE; export CONFIG_KEY; export CONFIG_KEY=.$CONFIG_KEY; yq -i 'eval(strenv(CONFIG_KEY))=env(CONFIG_VALUE)' $CONFIG_FILE
   fi
 }
 
-yq delete -i /opt/harness/cv-nextgen-config.yml server.adminConnectors
-yq delete -i $CONFIG_FILE 'server.applicationConnectors.(type==https)'
-yq delete -i $CONFIG_FILE 'pmsSdkGrpcServerConfig.connectors.(secure==true)'
+yq -i 'del(.server.adminConnectors)' $CONFIG_FILE
+yq -i 'del(.server.applicationConnectors.[] | select(.type == "https"))' $CONFIG_FILE
+yq -i 'del(.pmsSdkGrpcServerConfig.connectors.[] | select(.secure == true))' $CONFIG_FILE
 
 if [[ "" != "$LOGGING_LEVEL" ]]; then
-  yq write -i /opt/harness/cv-nextgen-config.yml logging.level "$LOGGING_LEVEL"
+  export LOGGING_LEVEL; yq -i '.logging.level=env(LOGGING_LEVEL)' $CONFIG_FILE
 fi
 
 if [[ "" != "$VERIFICATION_PORT" ]]; then
-  yq write -i /opt/harness/cv-nextgen-config.yml server.applicationConnectors[0].port "$VERIFICATION_PORT"
+  export VERIFICATION_PORT; yq -i '.server.applicationConnectors[0].port=env(VERIFICATION_PORT)' $CONFIG_FILE
 else
-  yq write -i /opt/harness/cv-nextgen-config.yml server.applicationConnectors[0].port "6060"
+  yq -i '.server.applicationConnectors[0].port=6060' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_URI" ]]; then
-  yq write -i /opt/harness/cv-nextgen-config.yml mongo.uri "${MONGO_URI//\\&/&}"
+  export MONGO_URI=${MONGO_URI//\\&/&}; yq -i '.mongo.uri=env(MONGO_URI)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MANAGER_CLIENT_BASEURL" ]]; then
-  yq write -i $CONFIG_FILE managerClientConfig.baseUrl "$MANAGER_CLIENT_BASEURL"
+  export MANAGER_CLIENT_BASEURL; yq -i '.managerClientConfig.baseUrl=env(MANAGER_CLIENT_BASEURL)' $CONFIG_FILE
 fi
 
 if [[ "" != "$NG_MANAGER_URL" ]]; then
-  yq write -i $CONFIG_FILE nextGen.ngManagerUrl "$NG_MANAGER_URL"
+  export NG_MANAGER_URL; yq -i '.nextGen.ngManagerUrl=env(NG_MANAGER_URL)' $CONFIG_FILE
 fi
 
 if [[ "" != "$NG_MANAGER_CLIENT_BASEURL" ]]; then
-  yq write -i $CONFIG_FILE ngManagerClientConfig.baseUrl "$NG_MANAGER_CLIENT_BASEURL"
+  export NG_MANAGER_CLIENT_BASEURL; yq -i '.ngManagerClientConfig.baseUrl=env(NG_MANAGER_CLIENT_BASEURL)' $CONFIG_FILE
 fi
 
-  yq write -i /opt/harness/cv-nextgen-config.yml server.requestLog.appenders[0].type "console"
-  yq write -i /opt/harness/cv-nextgen-config.yml server.requestLog.appenders[0].threshold "TRACE"
-  yq write -i /opt/harness/cv-nextgen-config.yml server.requestLog.appenders[0].target "STDOUT"
+  yq -i '.server.requestLog.appenders[0].type="console"' $CONFIG_FILE
+  yq -i '.server.requestLog.appenders[0].threshold="TRACE"' $CONFIG_FILE
+  yq -i '.server.requestLog.appenders[0].target="STDOUT"' $CONFIG_FILE
 
 if [[ "$STACK_DRIVER_LOGGING_ENABLED" == "true" ]]; then
-  yq delete -i $CONFIG_FILE 'logging.appenders.(type==console)'
-  yq write -i $CONFIG_FILE 'logging.appenders.(type==gke-console).stackdriverLogEnabled' "true"
+  yq -i 'del(.logging.appenders.[] | select(.type == "console"))' $CONFIG_FILE
+  yq -i '(.logging.appenders.[] | select(.type == "gke-console") | .stackdriverLogEnabled) = true' $CONFIG_FILE
 else
-  yq delete -i $CONFIG_FILE 'logging.appenders.(type==gke-console)'
+  yq -i 'del(.logging.appenders.[] | select(.type == "gke-console"))' $CONFIG_FILE
 fi
 
 if [[ "" != "$DATA_STORE" ]]; then
-  yq write -i /opt/harness/cv-nextgen-config.yml dataStorageMode "$DATA_STORE"
+  export DATA_STORE; yq -i '.dataStorageMode=env(DATA_STORE)' $CONFIG_FILE
 fi
 
 if [[ "" != "$NEXT_GEN_MANAGER_SECRET" ]]; then
-  yq write -i /opt/harness/cv-nextgen-config.yml nextGen.managerServiceSecret "$NEXT_GEN_MANAGER_SECRET"
+  export NEXT_GEN_MANAGER_SECRET; yq -i '.nextGen.managerServiceSecret=env(NEXT_GEN_MANAGER_SECRET)' $CONFIG_FILE
 fi
 
 if [[ "" != "$NEXT_GEN_MANAGER_SECRET" ]]; then
-  yq write -i $CONFIG_FILE ngManagerServiceSecret "$NEXT_GEN_MANAGER_SECRET"
+  export NEXT_GEN_MANAGER_SECRET; yq -i '.ngManagerServiceSecret=env(NEXT_GEN_MANAGER_SECRET)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MANAGER_JWT_AUTH_SECRET" ]]; then
-  yq write -i /opt/harness/cv-nextgen-config.yml managerAuthConfig.jwtAuthSecret "$MANAGER_JWT_AUTH_SECRET"
+  export MANAGER_JWT_AUTH_SECRET; yq -i '.managerAuthConfig.jwtAuthSecret=env(MANAGER_JWT_AUTH_SECRET)' $CONFIG_FILE
 fi
 
 if [[ "" != "$JWT_IDENTITY_SERVICE_SECRET" ]]; then
-  yq write -i /opt/harness/cv-nextgen-config.yml managerAuthConfig.jwtIdentityServiceSecret "$JWT_IDENTITY_SERVICE_SECRET"
+  export JWT_IDENTITY_SERVICE_SECRET; yq -i '.managerAuthConfig.jwtIdentityServiceSecret=env(JWT_IDENTITY_SERVICE_SECRET)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_INDEX_MANAGER_MODE" ]]; then
-  yq write -i $CONFIG_FILE mongo.indexManagerMode $MONGO_INDEX_MANAGER_MODE
+  export MONGO_INDEX_MANAGER_MODE; yq -i '.mongo.indexManagerMode=env(MONGO_INDEX_MANAGER_MODE)' $CONFIG_FILE
 fi
 
 if [[ "" != "$NG_MANAGER_URL" ]]; then
-  yq write -i $CONFIG_FILE nextGen.ngManagerUrl "$NG_MANAGER_URL"
+  export NG_MANAGER_URL; yq -i '.nextGen.ngManagerUrl=env(NG_MANAGER_URL)' $CONFIG_FILE
 fi
 
 if [[ "" != "$PORTAL_URL" ]]; then
-  yq write -i $CONFIG_FILE portalUrl "$PORTAL_URL"
+  export PORTAL_URL; yq -i '.portalUrl=env(PORTAL_URL)' $CONFIG_FILE
 fi
 
 if [[ "" != "$AUDIT_CLIENT_BASEURL" ]]; then
-  yq write -i $CONFIG_FILE auditClientConfig.baseUrl "$AUDIT_CLIENT_BASEURL"
+  export AUDIT_CLIENT_BASEURL; yq -i '.auditClientConfig.baseUrl=env(AUDIT_CLIENT_BASEURL)' $CONFIG_FILE
 fi
 
 if [[ "" != "$AUDIT_CLIENT_CONNECT_TIMEOUT" ]]; then
-  yq write -i $CONFIG_FILE auditClientConfig.connectTimeOutSeconds "$AUDIT_CLIENT_CONNECT_TIMEOUT"
+  export AUDIT_CLIENT_CONNECT_TIMEOUT; yq -i '.auditClientConfig.connectTimeOutSeconds=env(AUDIT_CLIENT_CONNECT_TIMEOUT)' $CONFIG_FILE
 fi
 
 if [[ "" != "$AUDIT_CLIENT_READ_TIMEOUT" ]]; then
-  yq write -i $CONFIG_FILE auditClientConfig.readTimeOutSeconds "$AUDIT_CLIENT_READ_TIMEOUT"
+  export AUDIT_CLIENT_READ_TIMEOUT; yq -i '.auditClientConfig.readTimeOutSeconds=env(AUDIT_CLIENT_READ_TIMEOUT)' $CONFIG_FILE
 fi
 
 if [[ "" != "$ENABLE_AUDIT" ]]; then
-  yq write -i $CONFIG_FILE enableAudit "$ENABLE_AUDIT"
+  export ENABLE_AUDIT; yq -i '.enableAudit=env(ENABLE_AUDIT)' $CONFIG_FILE
 fi
 
 
@@ -122,101 +122,101 @@ if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then
   IFS=',' read -ra SENTINEL_URLS <<< "$EVENTS_FRAMEWORK_REDIS_SENTINELS"
   INDEX=0
   for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
-    yq write -i $CONFIG_FILE eventsFramework.redis.sentinelUrls.[$INDEX] "${REDIS_SENTINEL_URL}"
+    export REDIS_SENTINEL_URL; export INDEX; yq -i '.eventsFramework.redis.sentinelUrls.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
     INDEX=$(expr $INDEX + 1)
   done
 fi
 
 if [[ "" != "$PMS_TARGET" ]]; then
-  yq write -i $CONFIG_FILE pmsGrpcClientConfig.target $PMS_TARGET
+  export PMS_TARGET; yq -i '.pmsGrpcClientConfig.target=env(PMS_TARGET)' $CONFIG_FILE
 fi
 
 if [[ "" != "$PMS_AUTHORITY" ]]; then
-  yq write -i $CONFIG_FILE pmsGrpcClientConfig.authority $PMS_AUTHORITY
+  export PMS_AUTHORITY; yq -i '.pmsGrpcClientConfig.authority=env(PMS_AUTHORITY)' $CONFIG_FILE
 fi
 
 if [[ "" != "$SHOULD_CONFIGURE_WITH_PMS" ]]; then
-  yq write -i $CONFIG_FILE shouldConfigureWithPMS $SHOULD_CONFIGURE_WITH_PMS
+  export SHOULD_CONFIGURE_WITH_PMS; yq -i '.shouldConfigureWithPMS=env(SHOULD_CONFIGURE_WITH_PMS)' $CONFIG_FILE
 fi
 
 if [[ "" != "$GRPC_SERVER_PORT" ]]; then
-  yq write -i $CONFIG_FILE pmsSdkGrpcServerConfig.connectors[0].port "$GRPC_SERVER_PORT"
+  export GRPC_SERVER_PORT; yq -i '.pmsSdkGrpcServerConfig.connectors[0].port=env(GRPC_SERVER_PORT)' $CONFIG_FILE
 fi
 
-yq delete -i $REDISSON_CACHE_FILE codec
+yq -i 'del(.codec)' $REDISSON_CACHE_FILE
 
 if [[ "$REDIS_SCRIPT_CACHE" == "false" ]]; then
-  yq write -i $REDISSON_CACHE_FILE useScriptCache false
+  yq -i '.useScriptCache=false' $REDISSON_CACHE_FILE
 fi
 
 
 if [[ "" != "$CACHE_CONFIG_REDIS_URL" ]]; then
-  yq write -i $REDISSON_CACHE_FILE singleServerConfig.address "$CACHE_CONFIG_REDIS_URL"
+  export CACHE_CONFIG_REDIS_URL; yq -i '.singleServerConfig.address=env(CACHE_CONFIG_REDIS_URL)' $REDISSON_CACHE_FILE
 fi
 
 if [[ "$CACHE_CONFIG_USE_SENTINEL" == "true" ]]; then
-  yq delete -i $REDISSON_CACHE_FILE singleServerConfig
+  yq -i 'del(.singleServerConfig)' $REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$CACHE_CONFIG_SENTINEL_MASTER_NAME" ]]; then
-  yq write -i $REDISSON_CACHE_FILE sentinelServersConfig.masterName "$CACHE_CONFIG_SENTINEL_MASTER_NAME"
+  export CACHE_CONFIG_SENTINEL_MASTER_NAME; yq -i '.sentinelServersConfig.masterName=env(CACHE_CONFIG_SENTINEL_MASTER_NAME)' $REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$CACHE_CONFIG_REDIS_SENTINELS" ]]; then
   IFS=',' read -ra SENTINEL_URLS <<< "$CACHE_CONFIG_REDIS_SENTINELS"
   INDEX=0
   for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
-    yq write -i $REDISSON_CACHE_FILE sentinelServersConfig.sentinelAddresses.[$INDEX] "${REDIS_SENTINEL_URL}"
+    export REDIS_SENTINEL_URL; export INDEX; yq -i '.sentinelServersConfig.sentinelAddresses.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $REDISSON_CACHE_FILE
     INDEX=$(expr $INDEX + 1)
   done
 fi
 
 if [[ "" != "$REDIS_NETTY_THREADS" ]]; then
-  yq write -i $REDISSON_CACHE_FILE nettyThreads "$REDIS_NETTY_THREADS"
+  export REDIS_NETTY_THREADS; yq -i '.nettyThreads=env(REDIS_NETTY_THREADS)' $REDISSON_CACHE_FILE
 fi
 
-yq delete -i $ENTERPRISE_REDISSON_CACHE_FILE codec
+yq -i 'del(.codec)' $ENTERPRISE_REDISSON_CACHE_FILE
 
 if [[ "$REDIS_SCRIPT_CACHE" == "false" ]]; then
-  yq write -i $ENTERPRISE_REDISSON_CACHE_FILE useScriptCache false
+  yq -i '.useScriptCache=false' $ENTERPRISE_REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$EVENTS_FRAMEWORK_NETTY_THREADS" ]]; then
-  yq write -i $ENTERPRISE_REDISSON_CACHE_FILE nettyThreads "$EVENTS_FRAMEWORK_NETTY_THREADS"
+  export EVENTS_FRAMEWORK_NETTY_THREADS; yq -i '.nettyThreads=env(EVENTS_FRAMEWORK_NETTY_THREADS)' $ENTERPRISE_REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$EVENTS_FRAMEWORK_REDIS_URL" ]]; then
-  yq write -i $ENTERPRISE_REDISSON_CACHE_FILE singleServerConfig.address "$EVENTS_FRAMEWORK_REDIS_URL"
+  export EVENTS_FRAMEWORK_REDIS_URL; yq -i '.singleServerConfig.address=env(EVENTS_FRAMEWORK_REDIS_URL)' $ENTERPRISE_REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$EVENTS_FRAMEWORK_REDIS_USERNAME" ]]; then
-  yq write -i $ENTERPRISE_REDISSON_CACHE_FILE singleServerConfig.username "$EVENTS_FRAMEWORK_REDIS_USERNAME"
+  export EVENTS_FRAMEWORK_REDIS_USERNAME; yq -i '.singleServerConfig.username=env(EVENTS_FRAMEWORK_REDIS_USERNAME)' $ENTERPRISE_REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$EVENTS_FRAMEWORK_REDIS_PASSWORD" ]]; then
-  yq write -i $ENTERPRISE_REDISSON_CACHE_FILE singleServerConfig.password "$EVENTS_FRAMEWORK_REDIS_PASSWORD"
+  export EVENTS_FRAMEWORK_REDIS_PASSWORD; yq -i '.singleServerConfig.password=env(EVENTS_FRAMEWORK_REDIS_PASSWORD)' $ENTERPRISE_REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PATH" ]]; then
-  yq write -i $ENTERPRISE_REDISSON_CACHE_FILE singleServerConfig.sslTruststore file:"$EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PATH"
+  export FILE_VAR="file:$EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PATH"; yq -i '.singleServerConfig.sslTruststore=env(FILE_VAR)' $ENTERPRISE_REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD" ]]; then
-  yq write -i $ENTERPRISE_REDISSON_CACHE_FILE singleServerConfig.sslTruststorePassword "$EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD"
+  export EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD; yq -i '.singleServerConfig.sslTruststorePassword=env(EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD)' $ENTERPRISE_REDISSON_CACHE_FILE
 fi
 
 if [[ "$EVENTS_FRAMEWORK_USE_SENTINEL" == "true" ]]; then
-  yq delete -i $ENTERPRISE_REDISSON_CACHE_FILE singleServerConfig
+  yq -i 'del(.singleServerConfig)' $ENTERPRISE_REDISSON_CACHE_FILE
 
   if [[ "" != "$EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME" ]]; then
-    yq write -i $ENTERPRISE_REDISSON_CACHE_FILE sentinelServersConfig.masterName "$EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME"
+    export EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME; yq -i '.sentinelServersConfig.masterName=env(EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME)' $ENTERPRISE_REDISSON_CACHE_FILE
   fi
 
   if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then
     IFS=',' read -ra SENTINEL_URLS <<< "$EVENTS_FRAMEWORK_REDIS_SENTINELS"
     INDEX=0
     for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
-      yq write -i $ENTERPRISE_REDISSON_CACHE_FILE sentinelServersConfig.sentinelAddresses.[$INDEX] "${REDIS_SENTINEL_URL}"
+      export REDIS_SENTINEL_URL; export INDEX; yq -i '.sentinelServersConfig.sentinelAddresses.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $ENTERPRISE_REDISSON_CACHE_FILE
       INDEX=$(expr $INDEX + 1)
     done
   fi

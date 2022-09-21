@@ -75,7 +75,10 @@ import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.time.temporal.IsoFields;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -610,7 +613,7 @@ public class SignupServiceImpl implements SignupService {
     groupProperties.put("group_id", accountId);
     groupProperties.put("group_type", "Account");
     groupProperties.put("group_name", accountName);
-    groupProperties.put("created_by_user_id", email);
+    addCreatedInfoInGroupCall(groupProperties, email);
 
     if (referer != null) {
       groupProperties.put("refererURL", referer);
@@ -656,6 +659,25 @@ public class SignupServiceImpl implements SignupService {
                 ImmutableMap.<Destination, Boolean>builder().put(Destination.MARKETO, true).build(), Category.SIGN_UP),
         20, TimeUnit.SECONDS);
     log.info("Signup telemetry sent");
+  }
+
+  private void addCreatedInfoInGroupCall(HashMap<String, Object> groupProperties, String email) {
+    ZonedDateTime now = ZonedDateTime.now();
+
+    DateTimeFormatter monthDateFormatter = DateTimeFormatter.ofPattern("yyyyMMdd");
+    String createdAt = now.format(monthDateFormatter);
+
+    int year = now.getYear();
+    int isoWeek = now.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR);
+    String createdAtWeek = year + "W" + isoWeek;
+
+    DateTimeFormatter monthFormatter = DateTimeFormatter.ofPattern("yyyyMM");
+    String createdAtMonth = now.format(monthFormatter);
+
+    groupProperties.put("created_at", createdAt);
+    groupProperties.put("created_at_week", createdAtWeek);
+    groupProperties.put("created_at_month", createdAtMonth);
+    groupProperties.put("created_by_user_id", email);
   }
 
   private void sendCommunitySucceedTelemetry(String email, String accountId, UserInfo userInfo, String source) {

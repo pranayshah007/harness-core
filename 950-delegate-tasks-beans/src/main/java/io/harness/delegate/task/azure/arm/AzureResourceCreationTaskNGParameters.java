@@ -38,6 +38,7 @@ public class AzureResourceCreationTaskNGParameters
   @NonNull List<EncryptedDataDetail> encryptedDataDetails;
   long timeoutInMs;
   CommandUnitsProgress commandUnitsProgress;
+
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
     return AzureCapabilityHelper.fetchRequiredExecutionCapabilities(azureConnectorDTO, maskingEvaluator);
