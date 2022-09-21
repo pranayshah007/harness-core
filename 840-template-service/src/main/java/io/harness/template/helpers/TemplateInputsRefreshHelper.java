@@ -195,10 +195,10 @@ public class TemplateInputsRefreshHelper {
 
     if (refreshedTemplateVariablesNode == null) {
       // CASE -> When Template does not contain any runtime inputs
-      updatedValue.remove(TEMPLATE_VARIABLES);
+      updatedValue.remove(YAMLFieldNameConstants.VARIABLES);
     } else {
       // Inserting the Updated Value of TemplateInputs corresponding to the TemplateInputs field
-      updatedValue.set(TEMPLATE_VARIABLES, refreshedTemplateVariablesNode);
+      updatedValue.set(YAMLFieldNameConstants.VARIABLES, refreshedTemplateVariablesNode);
     }
 
     // Returning the Refreshed Template Inputs Value

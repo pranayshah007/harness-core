@@ -7,11 +7,11 @@ template:
   type: Step
   variables:
     - name: var1
-      type: Number
-      value: 34
+      type: String
+      value: fixVal
     - name: var2
-      type: Number
-      value: <+input>
+      type: String
+      value: fixVal2
     - name: var3
       type: String
       value: <+pipeline.name>
@@ -29,7 +29,7 @@ template:
       source:
         type: Inline
         spec:
-          script: echo hii
+          script: <+input>
       environmentVariables: []
       outputVariables: []
-    timeout: 1234
+    timeout: <+input>

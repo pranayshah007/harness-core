@@ -1,0 +1,29 @@
+pipeline:
+  name: "p12"
+  identifier: "p12"
+  allowStageExecutions: false
+  projectIdentifier: "VT"
+  orgIdentifier: "default"
+  tags: {}
+  stages:
+    - stage:
+        name: "s1"
+        identifier: "s1"
+        template:
+          templateRef: "t4"
+          versionLabel: "v1"
+          templateInputs:
+            type: "ShellScript"
+            spec:
+              source:
+                type: "Inline"
+                spec:
+                  script: "<+input>"
+            timeout: "<+input>"
+          variables:
+            - name: "var2"
+              type: "String"
+              value: "<+input>"
+            - name: "secretVar2"
+              type: "Secret"
+              value: "<+input>"
