@@ -871,12 +871,13 @@ public class NGTemplateResource {
   @Hidden
   public ResponseDTO<String>
   copyTemplateWithVariables(@NotBlank @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
-                            @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
-                            @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
-                             @NotNull CopyTemplateVariableRequestDTO copyTemplateVariableRequestDTO) {
-    return ResponseDTO.newResponse(templateService.copyTemplateWithVariables(
-        accountIdentifier, orgIdentifier, projectIdentifier, copyTemplateVariableRequestDTO.getTemplateYaml(), copyTemplateVariableRequestDTO.getVariableValues()));
+      @NotNull CopyTemplateVariableRequestDTO copyTemplateVariableRequestDTO) {
+    return ResponseDTO.newResponse(
+        templateService.copyTemplateWithVariables(accountIdentifier, orgIdentifier, projectIdentifier,
+            copyTemplateVariableRequestDTO.getTemplateYaml(), copyTemplateVariableRequestDTO.getVariableValues()));
   }
 }

@@ -79,5 +79,5 @@ public interface NGTemplateService {
   boolean deleteAllOrgLevelTemplates(String accountId, String orgId);
 
   String copyTemplateWithVariables(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-                                   String templateYaml, Map<String, String> templateVariableValues);
+      String templateYaml, Map<String, String> templateVariableValues);
 }

@@ -754,9 +754,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
 
   @Override
   public String copyTemplateWithVariables(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-                                          String templateYaml, Map<String, String> templateVariableValues) {
-    return templateMergeServiceHelper.applyVariablesToCopiedTemplate(
-        templateVariableValues, templateYaml);
+      String templateYaml, Map<String, String> templateVariableValues) {
+    return templateMergeServiceHelper.applyVariablesToCopiedTemplate(templateVariableValues, templateYaml);
   }
 
   private void assureThatTheProjectAndOrgExists(String accountId, String orgId, String projectId) {

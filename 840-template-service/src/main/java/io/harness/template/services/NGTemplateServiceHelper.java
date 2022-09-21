@@ -548,13 +548,20 @@ public class NGTemplateServiceHelper {
           (ObjectNode) YamlUtils.readTree(variableMergeServiceResponse.getYaml()).getNode().getCurrJsonNode();
       ObjectNode templateJson =
           (ObjectNode) YamlUtils.readTree(appliedTemplateYaml).getNode().getCurrJsonNode().get(TEMPLATE);
-      if(templateJson.get(YAMLFieldNameConstants.VARIABLES)==null){
+      if (templateJson.get(YAMLFieldNameConstants.VARIABLES) == null) {
         return variableMergeServiceResponse;
       }
       JsonNode templateVariablesJson = templateJson.retain(YAMLFieldNameConstants.VARIABLES);
-      VariableMergeServiceResponse templateVariableResponse = YamlVariablesUtils.getTemplateVariablesFromYaml(templateVariablesJson.toString(),YAMLFieldNameConstants.VARIABLES );
-      variablesObject.set(YAMLFieldNameConstants.VARIABLES, YamlUtils.readTree(templateVariableResponse.getYaml()).getNode().getCurrJsonNode());
-      templateVariableResponse.getMetadataMap().values().forEach(variableValue -> variableValue.setYamlProperties(YamlProperties.newBuilder().setVariableName(variableValue.getYamlProperties().getVariableName()).setFqn(variableValue.getYamlProperties().getVariableName()).setVisible(variableValue.getYamlProperties().getVisible()).build()));
+      VariableMergeServiceResponse templateVariableResponse = YamlVariablesUtils.getTemplateVariablesFromYaml(
+          templateVariablesJson.toString(), YAMLFieldNameConstants.VARIABLES);
+      variablesObject.set(YAMLFieldNameConstants.VARIABLES,
+          YamlUtils.readTree(templateVariableResponse.getYaml()).getNode().getCurrJsonNode());
+      templateVariableResponse.getMetadataMap().values().forEach(variableValue
+          -> variableValue.setYamlProperties(YamlProperties.newBuilder()
+                                                 .setVariableName(variableValue.getYamlProperties().getVariableName())
+                                                 .setFqn(variableValue.getYamlProperties().getVariableName())
+                                                 .setVisible(variableValue.getYamlProperties().getVisible())
+                                                 .build()));
       variableMergeServiceResponse.getMetadataMap().putAll(templateVariableResponse.getMetadataMap());
 
       return variableMergeServiceResponse;
