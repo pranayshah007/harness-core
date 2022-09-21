@@ -22,6 +22,7 @@ import io.harness.connector.heartbeat.ConnectorValidationParamsProvider;
 import io.harness.connector.heartbeat.CustomSecretManagerValidationParamProvider;
 import io.harness.connector.heartbeat.DockerConnectorValidationParamsProvider;
 import io.harness.connector.heartbeat.GcpKmsConnectorValidationParamsProvider;
+import io.harness.connector.heartbeat.GcpSMValidationParamProvider;
 import io.harness.connector.heartbeat.GcpValidationParamsProvider;
 import io.harness.connector.heartbeat.HttpHelmConnectorValidationParamsProvider;
 import io.harness.connector.heartbeat.JiraValidationParamsProvider;
@@ -107,6 +108,8 @@ import io.harness.connector.mappers.secretmanagermapper.CustomSecretManagerDTOTo
 import io.harness.connector.mappers.secretmanagermapper.CustomSecretManagerEntityToDTO;
 import io.harness.connector.mappers.secretmanagermapper.GcpKmsDTOToEntity;
 import io.harness.connector.mappers.secretmanagermapper.GcpKmsEntityToDTO;
+import io.harness.connector.mappers.secretmanagermapper.GcpSMDTOToEntity;
+import io.harness.connector.mappers.secretmanagermapper.GcpSMEntityToDTO;
 import io.harness.connector.mappers.secretmanagermapper.LocalDTOToEntity;
 import io.harness.connector.mappers.secretmanagermapper.LocalEntityToDTO;
 import io.harness.connector.mappers.secretmanagermapper.VaultDTOToEntity;
@@ -324,6 +327,10 @@ public class ConnectorRegistryFactory {
         new ConnectorRegistrar(ConnectorCategory.SECRET_MANAGER, SecretManagerConnectorValidator.class,
             CustomSecretManagerValidationParamProvider.class, CustomSecretManagerDTOToEntity.class,
             CustomSecretManagerEntityToDTO.class, NotSupportedValidationHandler.class));
+    registrar.put(ConnectorType.GCP_SM,
+        new ConnectorRegistrar(ConnectorCategory.SECRET_MANAGER, SecretManagerConnectorValidator.class,
+            GcpSMValidationParamProvider.class, GcpSMDTOToEntity.class, GcpSMEntityToDTO.class,
+            NotSupportedValidationHandler.class));
   }
 
   public static Class<? extends ConnectionValidator> getConnectorValidator(ConnectorType connectorType) {
