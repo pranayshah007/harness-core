@@ -8,7 +8,6 @@
 package io.harness.cdng.infra.yaml;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 import io.harness.annotation.RecasterAlias;
@@ -27,6 +26,7 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
 import io.harness.yaml.YamlSchemaTypes;
+import io.harness.yaml.infra.HostConnectionTypeKind;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -84,10 +84,12 @@ public class SshWinRmAzureInfrastructure
   @Wither
   ParameterField<Map<String, String>> tags;
 
-  @YamlSchemaTypes({runtime})
-  @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
+  @NotNull
+  @NotEmpty
+  @ApiModelProperty(
+      dataType = SwaggerConstants.STRING_CLASSPATH, allowableValues = HostConnectionTypeKind.AZURE_ALLOWABLE_VALUES)
   @Wither
-  ParameterField<Boolean> usePublicDns;
+  ParameterField<String> hostConnectionType;
 
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
@@ -99,7 +101,7 @@ public class SshWinRmAzureInfrastructure
                                                    .subscriptionId(subscriptionId.getValue())
                                                    .resourceGroup(resourceGroup.getValue())
                                                    .credentialsRef(credentialsRef.getValue())
-                                                   .usePublicDns(usePublicDns.getValue());
+                                                   .hostConnectionType(hostConnectionType.getValue());
 
     if (tags != null) {
       builder.tags(tags.getValue());
@@ -143,8 +145,8 @@ public class SshWinRmAzureInfrastructure
     if (!ParameterField.isNull(config.getTags())) {
       resultantInfra = resultantInfra.withTags(config.getTags());
     }
-    if (!ParameterField.isNull(config.getUsePublicDns())) {
-      resultantInfra = resultantInfra.withUsePublicDns(config.getUsePublicDns());
+    if (!ParameterField.isNull(config.getHostConnectionType())) {
+      resultantInfra = resultantInfra.withHostConnectionType(config.getHostConnectionType());
     }
 
     return resultantInfra;

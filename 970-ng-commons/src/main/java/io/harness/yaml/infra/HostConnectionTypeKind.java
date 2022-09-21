@@ -5,27 +5,17 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.delegate.beans.azure.response;
+package io.harness.yaml.infra;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
-
-@Data
-@SuperBuilder
-@NoArgsConstructor
 @OwnedBy(HarnessTeam.CDP)
-public class AzureHostResponse extends AzureDelegateTaskResponse {
-  private String hostName;
-  private String address;
 
-  public String getAddress() {
-    if (address == null) {
-      return hostName;
-    }
-    return address;
-  }
+public interface HostConnectionTypeKind {
+  String HOSTNAME = "Hostname";
+  String PRIVATE_IP = "PrivateIP";
+  String PUBLIC_IP = "PublicIP";
+  String AZURE_ALLOWABLE_VALUES = HOSTNAME + ", " + PRIVATE_IP + ", " + PUBLIC_IP;
+  String AWS_ALLOWABLE_VALUES = PUBLIC_IP + ", " + PRIVATE_IP;
 }
