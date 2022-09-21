@@ -6756,45 +6756,6 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "ParameterFieldMapStringString": {
-      "type": "object",
-      "properties": {
-        "defaultValue": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          }
-        },
-        "executionInput": {
-          "type": "boolean"
-        },
-        "expression": {
-          "type": "boolean"
-        },
-        "expressionValue": {
-          "type": "string"
-        },
-        "inputSetValidator": {
-          "$ref": "#/definitions/InputSetValidator"
-        },
-        "jsonResponseField": {
-          "type": "boolean"
-        },
-        "responseField": {
-          "type": "string"
-        },
-        "typeString": {
-          "type": "boolean"
-        },
-        "value": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          }
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
     "ParameterFieldString": {
       "type": "object",
       "properties": {
