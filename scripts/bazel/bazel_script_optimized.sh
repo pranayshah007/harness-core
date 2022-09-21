@@ -280,13 +280,13 @@ build_bazel_modules=(100-migrator 323-sto-utilities 325-sto-beans 380-cg-graphql
 
 build_bazel_tests=(400-rest 960-persistence)
 
-for module in @{build_bazel_modules[@]}
+for module in ${build_bazel_modules[@]}
   do
     echo "INFO: build_bazel_module ${module}"
     build_bazel_module ${module}
   done
 
-for module in @{build_bazel_tests[@]}
+for module in ${build_bazel_tests[@]}
   do
     echo "INFO: build_bazel_tests ${module}"
     build_bazel_tests ${module}
