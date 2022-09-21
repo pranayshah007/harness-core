@@ -880,8 +880,8 @@ public class NGTemplateResource {
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
       @NotNull CopyTemplateVariableRequestDTO copyTemplateVariableRequestDTO) {
     return ResponseDTO.newResponse(
-            templateService.copyTemplateWithVariables(accountIdentifier, orgIdentifier, projectIdentifier,
-                    copyTemplateVariableRequestDTO.getTemplateYaml(), copyTemplateVariableRequestDTO.getVariableValues()));
+        templateService.copyTemplateWithVariables(accountIdentifier, orgIdentifier, projectIdentifier,
+            copyTemplateVariableRequestDTO.getTemplateYaml(), copyTemplateVariableRequestDTO.getVariableValues()));
   }
 
   @POST

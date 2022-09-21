@@ -562,9 +562,13 @@ public class NGTemplateServiceHelper {
                                                  .setFqn(variableValue.getYamlProperties().getVariableName())
                                                  .setVisible(variableValue.getYamlProperties().getVisible())
                                                  .build()));
-      variableMergeServiceResponse.getMetadataMap().putAll(templateVariableResponse.getMetadataMap());
 
-      return variableMergeServiceResponse;
+      return VariableMergeServiceResponse.builder()
+              .yaml(YamlUtils.write(variablesObject))
+              .errorResponses(variableMergeServiceResponse.getErrorResponses())
+              .metadataMap(variableMergeServiceResponse.getMetadataMap())
+              .serviceExpressionPropertiesList(variableMergeServiceResponse.getServiceExpressionPropertiesList())
+              .build();
     } catch (IOException e) {
       throw new InvalidRequestException("Couldn't convert templateYaml to JsonNode");
     }

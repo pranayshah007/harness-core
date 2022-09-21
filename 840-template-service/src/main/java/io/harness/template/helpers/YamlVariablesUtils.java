@@ -41,7 +41,7 @@ public class YamlVariablesUtils {
   public static VariableMergeServiceResponse getTemplateVariablesFromYaml(String yaml, String rootNode) {
     YamlField uuidInjectedYaml = YamlUtils.injectUuidWithLeafUuid(yaml);
     Map<String, YamlProperties> uuIdToFQNMap =
-        getUuidToFQNMapForLeafNodes(uuidInjectedYaml.getNode().getField("variables"));
+        getUuidToFQNMapForLeafNodes(uuidInjectedYaml.getNode().getField(rootNode));
     return VariableMergeServiceResponse.builder()
         .yaml(YamlUtils.writeYamlString(uuidInjectedYaml))
         .metadataMap(uuIdToFQNMap.entrySet().stream().collect(Collectors.toMap(entry
