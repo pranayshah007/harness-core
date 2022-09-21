@@ -536,14 +536,11 @@ public class ViewsQueryBuilder {
   }
 
   public ViewsQueryMetadata getFilterValuesQuery(List<ViewRule> rules, List<QLCEViewFilter> filters,
-      List<QLCEViewTimeFilter> timeFilters, String cloudProviderTableName, Integer limit, Integer offset,
-      boolean isLimitRequired) {
+      List<QLCEViewTimeFilter> timeFilters, String cloudProviderTableName, Integer limit, Integer offset) {
     List<QLCEViewFieldInput> fields = new ArrayList<>();
     SelectQuery query = new SelectQuery();
-    if (isLimitRequired) {
-      query.addCustomization(new PgLimitClause(limit));
-      query.addCustomization(new PgOffsetClause(offset));
-    }
+    query.addCustomization(new PgLimitClause(limit));
+    query.addCustomization(new PgOffsetClause(offset));
     query.addCustomFromTable(cloudProviderTableName);
 
     boolean isClusterTable = isClusterTable(cloudProviderTableName);
@@ -657,7 +654,6 @@ public class ViewsQueryBuilder {
           throw new InvalidRequestException("Invalid View Field Identifier " + viewFieldInput.getIdentifier());
       }
       fields.add(filter.getField());
-      query.addCustomOrdering(viewFieldInput.getFieldId(), OrderObject.Dir.ASCENDING);
     }
     log.info("Query for view filter {}", query);
 
