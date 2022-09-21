@@ -14,7 +14,6 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.shell.ScriptType;
 
 import java.util.List;
-import java.util.Map;
 import lombok.Builder;
 
 @OwnedBy(HarnessTeam.GITOPS)
