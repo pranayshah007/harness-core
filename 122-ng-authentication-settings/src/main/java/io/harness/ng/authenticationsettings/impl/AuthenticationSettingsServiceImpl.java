@@ -40,7 +40,6 @@ import software.wings.beans.sso.SAMLProviderType;
 import software.wings.beans.sso.SSOSettings;
 import software.wings.beans.sso.SSOType;
 import software.wings.beans.sso.SamlSettings;
-import software.wings.helpers.ext.ldap.LdapResponse;
 import software.wings.security.authentication.LoginTypeResponse;
 import software.wings.security.authentication.SSOConfig;
 
@@ -310,14 +309,6 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
           "Deleting Ldap provider with linked user groups is not allowed. Unlink the user groups first");
     }
     getResponse(managerClient.deleteLdapSettings(accountIdentifier));
-  }
-
-  @Override
-  public LdapResponse testLDAPLogin(
-      @NotNull @AccountIdentifier String accountIdentifier, String email, String password) {
-    log.info("NGLDAP: Test ldap authentication in accountId {}", accountIdentifier);
-    return getResponse(managerClient.testLdapAuthentication(
-        accountIdentifier, createPartFromString(email), createPartFromString(password)));
   }
 
   private LDAPSettings fromCGLdapSettings(LdapSettings ldapSettings) {
