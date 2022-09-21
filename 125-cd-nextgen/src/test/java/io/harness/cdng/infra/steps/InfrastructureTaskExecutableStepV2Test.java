@@ -92,6 +92,7 @@ import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.steps.shellscript.HostsOutput;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.utils.YamlPipelineUtils;
+import io.harness.yaml.infra.HostConnectionTypeKind;
 
 import software.wings.service.impl.aws.model.AwsEC2Instance;
 
@@ -367,11 +368,12 @@ public class InfrastructureTaskExecutableStepV2Test {
                                               .connectorRef(spec.getConnectorRef().getValue())
                                               .credentialsRef(spec.getCredentialsRef().getValue())
                                               .region(spec.getRegion().getValue())
+                                              .hostConnectionType(HostConnectionTypeKind.PUBLIC_IP)
                                               .build());
 
     doReturn(AwsListEC2InstancesTaskResponse.builder()
                  .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-                 .instances(List.of(mockAwsInstance("i1"), mockAwsInstance("i2")))
+                 .instances(List.of(mockAwsInstance("1"), mockAwsInstance("2")))
                  .build())
         .when(throwingSupplier)
         .get();
@@ -394,6 +396,7 @@ public class InfrastructureTaskExecutableStepV2Test {
                        .region("us-east-2")
                        .connectorRef("awsconnector")
                        .credentialsRef("sshkey")
+                       .hostConnectionType(HostConnectionTypeKind.PUBLIC_IP)
                        .build());
 
     ArgumentCaptor<String> stringCaptor = ArgumentCaptor.forClass(String.class);
@@ -404,7 +407,7 @@ public class InfrastructureTaskExecutableStepV2Test {
     List<ExecutionSweepingOutput> allOutputs = outputCaptor.getAllValues();
     List<String> outputNames = stringCaptor.getAllValues();
 
-    assertThat(allOutputs).containsExactly(HostsOutput.builder().hosts(Set.of("public-i1", "public-i2")).build());
+    assertThat(allOutputs).containsExactly(HostsOutput.builder().hosts(Set.of("1.1.1.1", "1.1.1.2")).build());
     assertThat(outputNames).containsExactly("output");
 
     // verify some more method calls
@@ -515,7 +518,7 @@ public class InfrastructureTaskExecutableStepV2Test {
   }
 
   private AwsEC2Instance mockAwsInstance(String id) {
-    return AwsEC2Instance.builder().instanceId(id).publicDnsName("public-" + id).build();
+    return AwsEC2Instance.builder().instanceId(id).privateIp("10.0.0." + id).publicIp("1.1.1." + id).build();
   }
 
   private void verifyTaskRequest(SubmitTaskRequest request) {
@@ -616,6 +619,7 @@ public class InfrastructureTaskExecutableStepV2Test {
                           .credentialsRef(ParameterField.createValueField("sshkey"))
                           .region(ParameterField.createValueField("us-east-2"))
                           .awsInstanceFilter(AwsInstanceFilter.builder().vpcs(List.of("vpc1")).build())
+                          .hostConnectionType(ParameterField.createValueField(HostConnectionTypeKind.PRIVATE_IP))
                           .build())
                 .build())
         .build();

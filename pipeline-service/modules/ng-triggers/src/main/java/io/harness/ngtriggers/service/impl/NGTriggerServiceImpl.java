@@ -638,10 +638,12 @@ public class NGTriggerServiceImpl implements NGTriggerService {
         }
         return;
       case MANIFEST:
-        validateStageIdentifierAndBuildRef((BuildAware) spec, "manifestRef");
+        validateStageIdentifierAndBuildRef(
+            (BuildAware) spec, "manifestRef", triggerDetails.getNgTriggerEntity().getWithServiceV2());
         return;
       case ARTIFACT:
-        validateStageIdentifierAndBuildRef((BuildAware) spec, "artifactRef");
+        validateStageIdentifierAndBuildRef(
+            (BuildAware) spec, "artifactRef", triggerDetails.getNgTriggerEntity().getWithServiceV2());
         return;
       default:
         return; // not implemented
@@ -778,14 +780,14 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     return (new YamlConfig(templateMap, yamlConfig.getYamlMap())).getYaml();
   }
 
-  private void validateStageIdentifierAndBuildRef(BuildAware buildAware, String fieldName) {
+  private void validateStageIdentifierAndBuildRef(BuildAware buildAware, String fieldName, boolean serviceV2) {
     StringBuilder msg = new StringBuilder(128);
     boolean validationFailed = false;
-    if (isBlank(buildAware.fetchStageRef())) {
+    if (serviceV2 == false && isBlank(buildAware.fetchStageRef())) {
       msg.append("stageIdentifier can not be blank/missing. ");
       validationFailed = true;
     }
-    if (isBlank(buildAware.fetchbuildRef())) {
+    if (serviceV2 == false && isBlank(buildAware.fetchbuildRef())) {
       msg.append(fieldName).append(" can not be blank/missing. ");
       validationFailed = true;
     }
@@ -846,7 +848,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     try {
       ValidationResult validationResult = triggerValidationHandler.applyValidations(
           ngTriggerElementMapper.toTriggerDetails(ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
-              ngTriggerEntity.getProjectIdentifier(), ngTriggerEntity.getYaml()));
+              ngTriggerEntity.getProjectIdentifier(), ngTriggerEntity.getYaml(), ngTriggerEntity.getWithServiceV2()));
       if (!validationResult.isSuccess()) {
         ngTriggerEntity.setEnabled(false);
       }
@@ -911,11 +913,12 @@ public class NGTriggerServiceImpl implements NGTriggerService {
   }
 
   @Override
-  public TriggerDetails fetchTriggerEntity(
-      String accountId, String orgId, String projectId, String pipelineId, String triggerId, String newYaml) {
+  public TriggerDetails fetchTriggerEntity(String accountId, String orgId, String projectId, String pipelineId,
+      String triggerId, String newYaml, boolean withServiceV2) {
     NGTriggerConfigV2 config = ngTriggerElementMapper.toTriggerConfigV2(newYaml);
     Optional<NGTriggerEntity> existingEntity = get(accountId, orgId, projectId, pipelineId, triggerId, false);
-    NGTriggerEntity entity = ngTriggerElementMapper.toTriggerEntity(accountId, orgId, projectId, triggerId, newYaml);
+    NGTriggerEntity entity =
+        ngTriggerElementMapper.toTriggerEntity(accountId, orgId, projectId, triggerId, newYaml, withServiceV2);
     if (existingEntity.isPresent()) {
       ngTriggerElementMapper.copyEntityFieldsOutsideOfYml(existingEntity.get(), entity);
     }

@@ -8387,6 +8387,7 @@
             "awsInstanceFilter",
             "connectorRef",
             "credentialsRef",
+            "hostConnectionType",
             "region"
           ],
           "properties": {
@@ -8399,6 +8400,14 @@
             },
             "credentialsRef": {
               "type": "string",
+              "minLength": 1
+            },
+            "hostConnectionType": {
+              "type": "string",
+              "enum": [
+                "PublicIP",
+                "PrivateIP"
+              ],
               "minLength": 1
             },
             "region": {
@@ -8420,6 +8429,7 @@
           "required": [
             "connectorRef",
             "credentialsRef",
+            "hostConnectionType",
             "resourceGroup",
             "subscriptionId"
           ],
@@ -8430,6 +8440,15 @@
             },
             "credentialsRef": {
               "type": "string",
+              "minLength": 1
+            },
+            "hostConnectionType": {
+              "type": "string",
+              "enum": [
+                "Hostname",
+                "PrivateIP",
+                "PublicIP"
+              ],
               "minLength": 1
             },
             "resourceGroup": {
@@ -8450,18 +8469,6 @@
                 },
                 {
                   "type": "string"
-                }
-              ]
-            },
-            "usePublicDns": {
-              "oneOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
                 }
               ]
             }
