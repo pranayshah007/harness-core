@@ -260,7 +260,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
       validateTemplateInputsResponse.getErrorNodeSummary().setTemplateResponse(
           NGTemplateDtoMapper.writeTemplateResponseDto(templateEntity));
       throw new NGTemplateResolveExceptionV2(
-          "Exception in resolving template refs in given yaml.", USER, validateTemplateInputsResponse);
+          "Exception in resolving template refs in given yaml.", USER, validateTemplateInputsResponse, null);
     }
   }
 
