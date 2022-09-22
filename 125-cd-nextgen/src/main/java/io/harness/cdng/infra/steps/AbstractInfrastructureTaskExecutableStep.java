@@ -30,6 +30,7 @@ import io.harness.cdng.execution.helper.ExecutionInfoKeyMapper;
 import io.harness.cdng.execution.helper.StageExecutionHelper;
 import io.harness.cdng.infra.InfrastructureMapper;
 import io.harness.cdng.infra.InfrastructureValidator;
+import io.harness.cdng.infra.InfrastructureProvisionerMapper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.yaml.AsgInfrastructure;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
@@ -143,6 +144,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
   @Inject CustomDeploymentInfrastructureHelper customDeploymentInfrastructureHelper;
   @Inject private InfrastructureValidator infrastructureValidator;
   @Inject protected InstanceOutcomeHelper instanceOutcomeHelper;
+  @Inject protected InfrastructureProvisionerMapper infrastructureProvisionerMapper;
 
   @Data
   @AllArgsConstructor
