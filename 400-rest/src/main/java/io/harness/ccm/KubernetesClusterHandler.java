@@ -54,6 +54,7 @@ public class KubernetesClusterHandler implements DelegateObserver {
   @Override
   public void onAdded(Delegate delegate) {
     if (delegate.isNg()) {
+      log.info("NG K8s delegate has CE enabled. Creating CD and CCM K8s connectors in NG (K8sQuickCreate)");
       // create NextGen CD-K8s connector
       connectorResourceClient.createConnector(delegate.getAccountId(),
           ConnectorDTO.builder()
@@ -86,6 +87,7 @@ public class KubernetesClusterHandler implements DelegateObserver {
                                  .build())
               .build());
     } else {
+      log.info("CG K8s delegate has CE enabled. Creating CG K8s connector.");
       createKubernetes(delegate);
     }
     segmentHelper.enqueue(TrackMessage.builder("Delegate Connected")
