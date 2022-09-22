@@ -647,4 +647,91 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
         templateMergeService.mergeTemplateInputs(originalTemplateYaml, yamlToBeUpdated);
     assertThat(updatedYaml).isEqualTo(templateRetainVariablesResponse.getMergedTemplateInputs());
   }
+
+  @Test
+  @Owner(developers = PRABU)
+  @Category(UnitTests.class)
+  public void testMergeTemplateSpecToPipelineYaml_StepTemplateAtDiffScopeWithVariables() {
+    String filename = "step-template-with-variables";
+    String shellScriptTemplateStepYaml = readFile(filename);
+    TemplateEntity templateEntity = TemplateEntity.builder()
+            .accountId(ACCOUNT_ID)
+            .orgIdentifier(ORG_ID)
+            .projectIdentifier(PROJECT_ID)
+            .yaml(shellScriptTemplateStepYaml)
+            .deleted(false)
+            .versionLabel("1")
+            .identifier("template1")
+            .templateScope(Scope.ORG)
+            .build();
+
+    TemplateEntity templateEntity2 = TemplateEntity.builder()
+            .accountId(ACCOUNT_ID)
+            .orgIdentifier(ORG_ID)
+            .projectIdentifier(PROJECT_ID)
+            .yaml(shellScriptTemplateStepYaml)
+            .deleted(false)
+            .versionLabel("1")
+            .identifier("template1")
+            .templateScope(Scope.PROJECT)
+            .build();
+
+    when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_ID, null, "template1", "1", false))
+            .thenReturn(Optional.of(templateEntity));
+    when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
+            ACCOUNT_ID, ORG_ID, PROJECT_ID, "template1", "", false))
+            .thenReturn(Optional.of(templateEntity2));
+
+    String approvalTemplateStepYaml = readFile("approval-step-template.yaml");
+    TemplateEntity approvalTemplateEntity = TemplateEntity.builder()
+            .accountId(ACCOUNT_ID)
+            .orgIdentifier(ORG_ID)
+            .projectIdentifier(PROJECT_ID)
+            .yaml(approvalTemplateStepYaml)
+            .deleted(false)
+            .identifier("template2")
+            .templateScope(Scope.ACCOUNT)
+            .build();
+    when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(ACCOUNT_ID, null, null, "template2", "1", false))
+            .thenReturn(Optional.of(approvalTemplateEntity));
+
+    String pipelineYamlFile = "pipeline-with-template-step-diff-scope.yaml";
+    String pipelineYaml = readFile(pipelineYamlFile);
+    TemplateMergeResponseDTO pipelineMergeResponse =
+            templateMergeService.applyTemplatesToYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false);
+    String finalPipelineYaml = pipelineMergeResponse.getMergedPipelineYaml();
+    assertThat(finalPipelineYaml).isNotNull();
+    assertThat(pipelineMergeResponse.getTemplateReferenceSummaries()).isNotNull();
+    List<TemplateReferenceSummary> templateReferenceSummaryList = new ArrayList<>();
+    templateReferenceSummaryList.add(TemplateReferenceSummary.builder()
+            .templateIdentifier("template1")
+            .versionLabel("1")
+            .scope(Scope.ORG)
+            .moduleInfo(new HashSet<>())
+            .fqn("pipeline.stages.qaStage.spec.execution.steps.shellScriptStep11")
+            .stableTemplate(false)
+            .build());
+    templateReferenceSummaryList.add(TemplateReferenceSummary.builder()
+            .templateIdentifier("template1")
+            .versionLabel("1")
+            .scope(Scope.PROJECT)
+            .moduleInfo(new HashSet<>())
+            .fqn("pipeline.stages.qaStage.spec.execution.steps.shellScriptStep12")
+            .stableTemplate(true)
+            .build());
+    templateReferenceSummaryList.add(TemplateReferenceSummary.builder()
+            .templateIdentifier("template2")
+            .versionLabel("1")
+            .scope(Scope.ACCOUNT)
+            .moduleInfo(new HashSet<>())
+            .fqn("pipeline.stages.qaStage.spec.execution.steps.approval")
+            .stableTemplate(false)
+            .build());
+    assertThat(pipelineMergeResponse.getTemplateReferenceSummaries()).hasSize(3);
+    assertThat(pipelineMergeResponse.getTemplateReferenceSummaries()).containsAll(templateReferenceSummaryList);
+
+    String resFile = "pipeline-with-template-step-replaced.yaml";
+    String resPipeline = readFile(resFile);
+    assertThat(finalPipelineYaml).isEqualTo(resPipeline);
+  }
 }
