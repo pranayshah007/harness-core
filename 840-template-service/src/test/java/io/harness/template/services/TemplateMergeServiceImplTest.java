@@ -77,7 +77,6 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
     on(templateMergeService).set("templateMergeServiceHelper", templateMergeServiceHelper);
     MockedStatic<TemplateYamlSchemaMergeHelper> templateYamlSchemaMergeHelperMockedStatic =
         Mockito.mockStatic(TemplateYamlSchemaMergeHelper.class);
-    when(TemplateYamlSchemaMergeHelper.).thenReturn(false);
     templateYamlSchemaMergeHelperMockedStatic
         .when(() -> TemplateYamlSchemaMergeHelper.isFeatureFlagEnabled(any(), anyString(), any()))
         .thenAnswer((Answer<Boolean>) invocation -> false);

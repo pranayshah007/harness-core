@@ -31,6 +31,7 @@ import io.harness.TemplateServiceTestBase;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.context.GlobalContext;
@@ -119,6 +120,9 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
   @Mock AccessControlClient accessControlClient;
   @Inject TemplateMergeServiceImpl templateMergeService;
   @Mock TemplateMergeServiceHelper templateMergeServiceHelper;
+
+  @Mock
+  AccountClient accountClient;
 
   private final String ACCOUNT_ID = RandomStringUtils.randomAlphanumeric(6);
   private final String ORG_IDENTIFIER = "orgId";
