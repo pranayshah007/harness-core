@@ -242,6 +242,9 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
     if (savedEntity == null) {
       return Optional.empty();
     }
+    if (isInvalidParentChildScope(savedEntity)) {
+      throw new InvalidRequestException("");
+    }
     if (getMetadataOnly) {
       return Optional.of(savedEntity);
     }
@@ -499,5 +502,20 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
         new TemplateUpdateEvent(templateToUpdate.getAccountIdentifier(), templateToUpdate.getOrgIdentifier(),
             templateToUpdate.getProjectIdentifier(), templateToUpdate, oldTemplateEntity, comments,
             templateUpdateEventType != null ? templateUpdateEventType : TemplateUpdateEventType.OTHERS_EVENT));
+  }
+
+  private boolean isInvalidParentChildScope(TemplateEntity savedEntity) {
+    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    if (gitEntityInfo != null) {
+      if (savedEntity.getProjectIdentifier() != null && gitEntityInfo.getParentEntityProjectIdentifier() != null
+          && gitEntityInfo.getParentEntityProjectIdentifier().isEmpty()) {
+        return true;
+      }
+      if (savedEntity.getOrgIdentifier() != null && gitEntityInfo.getParentEntityOrgIdentifier() != null
+          && gitEntityInfo.getParentEntityOrgIdentifier().isEmpty()) {
+        return true;
+      }
+    }
+    return false;
   }
 }
