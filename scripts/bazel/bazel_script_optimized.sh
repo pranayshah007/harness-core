@@ -253,21 +253,6 @@ BAZEL_MODULES="\
   //product/ci/scm/proto:all \
 "
 
-if [ "${PLATFORM}" == "jenkins" ] && [ ! -z "${DISTRIBUTE_TESTING_WORKER}" ]; then
-    bash scripts/bazel/testDistribute.sh
-fi
-
-# Enable caching by default. Turn it off by exporting CACHE_TEST_RESULTS=no
-# to generate full call-graph for Test Intelligence
-if [[ ! -z "${CACHE_TEST_RESULTS}" ]]; then
-  export CACHE_TEST_RESULTS_ARG=--cache_test_results=${CACHE_TEST_RESULTS}
-fi
-
-bazel ${bazelrc} build ${BAZEL_ARGUMENTS} --remote_download_outputs=all -- //:resource $BAZEL_MODULES `bazel query "//...:*" | grep "module_deploy.jar"`
-
-cat ${BAZEL_DIRS}/out/stable-status.txt
-cat ${BAZEL_DIRS}/out/volatile-status.txt
-
 build_bazel_modules=(100-migrator 323-sto-utilities 325-sto-beans 380-cg-graphql 400-rest 410-cg-rest 420-delegate-agent 420-delegate-service \
 425-verification-commons 430-cv-nextgen-commons 440-connector-nextgen 440-secret-management-service 445-cg-connectors 450-ce-views 460-capability 490-ce-commons 815-cg-triggers \
 865-cg-events 867-polling-contracts 870-cg-orchestration 874-orchestration-delay 878-ng-common-utilities 880-pipeline-cd-commons 884-pms-commons 890-sm-core \
@@ -279,6 +264,22 @@ build_bazel_modules=(100-migrator 323-sto-utilities 325-sto-beans 380-cg-graphql
 960-yaml-sdk 967-walktree-visitor 970-api-services-beans 970-grpc 970-ng-commons 970-rbac-core 970-watcher-beans 979-recaster 980-commons 990-commons-test 999-annotations)
 
 build_bazel_tests=(400-rest 960-persistence)
+
+if [ "${PLATFORM}" == "jenkins" ] && [ ! -z "${DISTRIBUTE_TESTING_WORKER}" ]; then
+    bash scripts/bazel/testDistribute.sh
+fi
+
+# Enable caching by default. Turn it off by exporting CACHE_TEST_RESULTS=no
+# to generate full call-graph for Test Intelligence
+if [[ ! -z "${CACHE_TEST_RESULTS}" ]]; then
+  export CACHE_TEST_RESULTS_ARG=--cache_test_results=${CACHE_TEST_RESULTS}
+fi
+
+echo "INFO: BAZEL_ARGUMENTS: ${BAZEL_ARGUMENTS}"
+bazel ${bazelrc} build ${BAZEL_ARGUMENTS} --remote_download_outputs=all -- //:resource $BAZEL_MODULES `bazel query "//...:*" | grep "module_deploy.jar"`
+
+cat ${BAZEL_DIRS}/out/stable-status.txt
+cat ${BAZEL_DIRS}/out/volatile-status.txt
 
 for module in ${build_bazel_modules[@]}
   do
