@@ -841,6 +841,7 @@ public class ConnectorServiceImpl implements ConnectorService {
     }
 
     String scopeString = ScopeLevel.of(accountIdentifier, orgIdentifier, projectIdentifier).name();
+    scopeString = scopeString == ScopeLevel.ORGANIZATION.toString() ? Scope.ORG.toString() : scopeString;
     IdentifierRef identifierRef = IdentifierRef.builder()
                                       .scope(Scope.fromString(scopeString))
                                       .accountIdentifier(accountIdentifier)
