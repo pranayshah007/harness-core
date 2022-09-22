@@ -62,6 +62,10 @@ spec:
       - image: harness/delegate:latest
         imagePullPolicy: Always
         name: delegate
+        #uncomment below lines to run delegate as root.
+        #securityContext:
+        #  allowPrivilegeEscalation: false
+        #  runAsUser: 0
         resources:
           limits:
             cpu: "1.0"
