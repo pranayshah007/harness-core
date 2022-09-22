@@ -5,13 +5,9 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.wait;
+package io.harness.steps.wait;
 
-import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-
+import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
-@OwnedBy(PIPELINE)
-public interface WaitStepService {
-  WaitStepInstance save(WaitStepInstance waitStepInstance);
-}
+@OwnedBy(HarnessTeam.PIPELINE) public enum WaitStepAction { MARK_AS_SUCCESS, MARK_AS_FAIL }
