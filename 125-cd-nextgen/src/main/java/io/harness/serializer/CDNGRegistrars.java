@@ -17,6 +17,9 @@ import io.harness.cdng.azure.webapp.AzureWebAppSwapSlotStepNode;
 import io.harness.cdng.azure.webapp.AzureWebAppTrafficShiftStepNode;
 import io.harness.cdng.creator.plan.customDeployment.CustomDeploymentConfig;
 import io.harness.cdng.creator.plan.stage.DeploymentStageNode;
+import io.harness.cdng.ecs.EcsBlueGreenCreateServiceStepNode;
+import io.harness.cdng.ecs.EcsBlueGreenRollbackStepNode;
+import io.harness.cdng.ecs.EcsBlueGreenSwapTargetGroupsStepNode;
 import io.harness.cdng.ecs.EcsCanaryDeleteStepNode;
 import io.harness.cdng.ecs.EcsCanaryDeployStepNode;
 import io.harness.cdng.ecs.EcsRollingDeployStepNode;
@@ -549,6 +552,42 @@ public class CDNGRegistrars {
                    .availableAtOrgLevel(false)
                    .availableAtAccountLevel(false)
                    .clazz(EcsCanaryDeleteStepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .modulesSupported(Collections.singletonList(ModuleType.CD))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.ECS_BLUE_GREEN_CREATE_SERVICE_STEP)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(EcsBlueGreenCreateServiceStepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .modulesSupported(Collections.singletonList(ModuleType.CD))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS_STEP)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(EcsBlueGreenSwapTargetGroupsStepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .modulesSupported(Collections.singletonList(ModuleType.CD))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.ECS_BLUE_GREEN_ROLLBACK_STEP)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(EcsBlueGreenRollbackStepNode.class)
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
                                            .namespace(SchemaNamespaceConstants.CD)
                                            .modulesSupported(Collections.singletonList(ModuleType.CD))
