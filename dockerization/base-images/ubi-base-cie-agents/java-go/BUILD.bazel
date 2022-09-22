@@ -16,6 +16,8 @@ container_run_and_commit_layer(
         "microdnf install yum python3",
         "ln -s /usr/bin/python3 /usr/bin/python",
         "mkdir -p /deployments",
+        "curl -Lo /etc/yum.repos.d/mongodb-org-4.4.repo https://harness.jfrog.io/artifactory/BuildsTools/yum-repos/mongodb-org-4.4.repo",
+        "curl -Lo /etc/yum.repos.d/google-cloud-sdk.repo https://harness.jfrog.io/artifactory/BuildsTools/yum-repos/google-cloud-sdk.repo",
         "yum install -y mongodb-org-shell google-cloud-cli autoconf binutils gdb glibc-devel redhat-rpm-config rpm-build wget git gcc gcc-c++ jq bc zlib-devel yum-utils --nodocs --skip-broken",
         "yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo",
         "yum install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin",
