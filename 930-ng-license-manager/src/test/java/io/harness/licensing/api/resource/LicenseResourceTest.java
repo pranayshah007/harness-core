@@ -39,7 +39,8 @@ import org.mockito.Mockito;
 
 public class LicenseResourceTest extends CategoryTest {
   @Mock LicenseService licenseService;
-  @InjectMocks LicenseResource licenseResource;
+  @InjectMocks
+  LicenseResource licenseResource;
   private ModuleLicenseDTO defaultModueLicenseDTO;
   private AccountLicenseDTO defaultAccountLicensesDTO;
   private static final String ACCOUNT_IDENTIFIER = "account";

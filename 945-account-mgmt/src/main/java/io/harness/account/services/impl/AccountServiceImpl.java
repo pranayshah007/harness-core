@@ -41,6 +41,11 @@ public class AccountServiceImpl implements AccountService {
   }
 
   @Override
+  public AccountDTO createAccount(AccountDTO accountDTO) {
+    return RestClientUtils.getResponse(accountClient.create(accountDTO));
+  }
+
+  @Override
   public Boolean updateDefaultExperienceIfApplicable(String accountId, DefaultExperience defaultExperience) {
     return CGRestUtils.getResponse(accountClient.updateDefaultExperienceIfApplicable(accountId, defaultExperience));
   }

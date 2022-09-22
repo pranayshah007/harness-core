@@ -24,6 +24,7 @@ import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCH
 
 import static com.google.common.collect.ImmutableMap.of;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.harness.EntityType;
 import io.harness.Microservice;
 import io.harness.ModuleType;
@@ -33,6 +34,7 @@ import io.harness.SCMGrpcClientModule;
 import io.harness.accesscontrol.NGAccessDeniedExceptionMapper;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.accesscontrol.filter.NGScopeAccessCheckFilter;
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cache.CacheModule;
 import io.harness.cdng.creator.CDNGModuleInfoProvider;
@@ -50,6 +52,7 @@ import io.harness.cdng.visitor.YamlTypes;
 import io.harness.cf.AbstractCfModule;
 import io.harness.cf.CfClientConfig;
 import io.harness.cf.CfMigrationConfig;
+import io.harness.configuration.DeployMode;
 import io.harness.configuration.DeployVariant;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.entities.Connector;
@@ -84,7 +87,12 @@ import io.harness.gitsync.server.GitSyncServiceConfiguration;
 import io.harness.govern.ProviderModule;
 import io.harness.governance.DefaultConnectorRefExpansionHandler;
 import io.harness.health.HealthService;
+import io.harness.licensing.beans.modules.ModuleLicenseDTO;
+import io.harness.licensing.beans.modules.SMPEncLicenseDTO;
+import io.harness.licensing.beans.modules.SMPValidationResultDTO;
+import io.harness.licensing.jobs.SMPLicenseValidationJob;
 import io.harness.licensing.migrations.LicenseManagerMigrationProvider;
+import io.harness.licensing.services.LicenseService;
 import io.harness.logstreaming.LogStreamingModule;
 import io.harness.maintenance.MaintenanceController;
 import io.harness.metrics.MetricRegistryModule;
@@ -98,6 +106,7 @@ import io.harness.migrations.InstanceMigrationProvider;
 import io.harness.ng.core.CorrelationFilter;
 import io.harness.ng.core.DefaultUserGroupsCreationJob;
 import io.harness.ng.core.EtagFilter;
+import io.harness.ng.core.dto.AccountDTO;
 import io.harness.ng.core.event.NGEventConsumerService;
 import io.harness.ng.core.exceptionmappers.GenericExceptionMapperV2;
 import io.harness.ng.core.exceptionmappers.JerseyViolationExceptionMapperV2;
@@ -175,6 +184,9 @@ import io.harness.service.impl.DelegateAsyncServiceImpl;
 import io.harness.service.impl.DelegateProgressServiceImpl;
 import io.harness.service.impl.DelegateSyncServiceImpl;
 import io.harness.service.stats.statscollector.InstanceStatsIteratorHandler;
+import io.harness.smp.license.models.SMPLicenseEnc;
+import io.harness.smp.license.models.SMPLicenseValidationResult;
+import io.harness.smp.license.v1.LicenseValidator;
 import io.harness.springdata.HMongoTemplate;
 import io.harness.telemetry.NGTelemetryRecordsJob;
 import io.harness.telemetry.TelemetryReporter;
@@ -250,6 +262,7 @@ import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.glassfish.jersey.server.ServerProperties;
 import org.glassfish.jersey.server.model.Resource;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import software.wings.service.intfc.AccountService;
 
 @OwnedBy(PL)
 @Slf4j
@@ -444,6 +457,20 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     } else {
       log.info("NextGenApplication DEPLOY_VERSION is not COMMUNITY");
     }
+    log.info("Deploy mode: {}, enable smp license: {}", System.getenv(DeployMode.DEPLOY_MODE), System.getenv("ENABLE_SMP_LICENSING"));
+    if (shouldCheckForSMPLicense()) {
+      LicenseService licenseService = injector.getInstance(LicenseService.class);
+      String license = System.getenv("SMP_LICENSE");
+      log.info("SMP License value: {}", license);
+      SMPEncLicenseDTO encLicenseDTO = SMPEncLicenseDTO.builder().encryptedLicense(license).decrypt(true).build();
+      licenseService.applySMPLicense(encLicenseDTO);
+    }
+  }
+
+  // ToDo-SMP: enable for future releases only for now (add condition on release tag)
+  private boolean shouldCheckForSMPLicense() {
+    return DeployMode.isOnPrem(System.getenv(DeployMode.DEPLOY_MODE)) &&
+            Boolean.parseBoolean(System.getenv("ENABLE_SMP_LICENSING"));
   }
 
   private void initializeNGMonitoring(NextGenConfiguration appConfig, Injector injector) {
