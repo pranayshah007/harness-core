@@ -261,6 +261,7 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
     assertThat(delegateGroupListing.getDelegateGroupDetails())
         .extracting(DelegateGroupDetails::getGroupName)
         .containsOnly("grp1", "grp2", "grp4");
+    assertThat(delegateGroupListing.getDelegateGroupDetails().get(0).getGroupVersion()).isEqualTo("22.09.76614");
   }
 
   @Test(expected = InvalidRequestException.class)
@@ -1294,6 +1295,7 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
                              .delegateGroupName("grp1")
                              .description("description1")
                              .hostName("kube-0")
+                             .version("22.09.76614")
                              .delegateGroupId(TEST_DELEGATE_GROUP_ID_1)
                              .delegateProfileId("delegateProfileId1")
                              .build();
@@ -1308,6 +1310,7 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
                              .delegateGroupName("grp1")
                              .description("description")
                              .hostName("kube-1")
+                             .version("22.11.76800")
                              .delegateGroupId(TEST_DELEGATE_GROUP_ID_1)
                              .delegateProfileId("delegateProfileId1")
                              .lastHeartBeat(System.currentTimeMillis() - 60000)
