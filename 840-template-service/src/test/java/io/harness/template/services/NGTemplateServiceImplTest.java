@@ -121,8 +121,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
   @Inject TemplateMergeServiceImpl templateMergeService;
   @Mock TemplateMergeServiceHelper templateMergeServiceHelper;
 
-  @Mock
-  AccountClient accountClient;
+  @Mock AccountClient accountClient;
 
   private final String ACCOUNT_ID = RandomStringUtils.randomAlphanumeric(6);
   private final String ORG_IDENTIFIER = "orgId";
