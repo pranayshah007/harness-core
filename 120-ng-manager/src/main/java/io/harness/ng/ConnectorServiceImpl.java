@@ -848,8 +848,9 @@ public class ConnectorServiceImpl implements ConnectorService {
                                       .projectIdentifier(projectIdentifier)
                                       .identifier(connectorIdentifier)
                                       .build();
-    ConnectorDetails connectorDetails =
-        connectorUtils.getConnectorDetails(identifierRef, scopeString + "." + connectorIdentifier);
+    String scopedConnectorIdentifier =
+        scopeString == Scope.PROJECT.toString() ? connectorIdentifier : scopeString + "." + connectorIdentifier;
+    ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(identifierRef, scopedConnectorIdentifier);
 
     return DecryptedConnectorResponseDTO.builder()
         .connectorResponseDTO(connectorResponseDTOOptional.get())
