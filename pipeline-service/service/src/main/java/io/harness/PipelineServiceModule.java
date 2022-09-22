@@ -145,6 +145,8 @@ import io.harness.pms.triggers.webhook.service.TriggerWebhookExecutionService;
 import io.harness.pms.triggers.webhook.service.TriggerWebhookExecutionServiceV2;
 import io.harness.pms.triggers.webhook.service.impl.TriggerWebhookExecutionServiceImpl;
 import io.harness.pms.triggers.webhook.service.impl.TriggerWebhookExecutionServiceImplV2;
+import io.harness.pms.wait.WaitStepResource;
+import io.harness.pms.wait.WaitStepResourceImpl;
 import io.harness.polling.client.PollResourceClientModule;
 import io.harness.project.ProjectClientModule;
 import io.harness.redis.RedisConfig;
@@ -164,6 +166,8 @@ import io.harness.steps.jira.JiraStepHelperService;
 import io.harness.steps.servicenow.ServiceNowStepHelperService;
 import io.harness.steps.shellscript.ShellScriptHelperService;
 import io.harness.steps.shellscript.ShellScriptHelperServiceImpl;
+import io.harness.steps.wait.WaitStepService;
+import io.harness.steps.wait.WaitStepServiceImpl;
 import io.harness.telemetry.AbstractTelemetryModule;
 import io.harness.telemetry.TelemetryConfiguration;
 import io.harness.template.TemplateResourceClientModule;
@@ -399,6 +403,8 @@ public class PipelineServiceModule extends AbstractModule {
     bind(PMSLandingDashboardService.class).to(PMSLandingDashboardServiceImpl.class);
     bind(InputSetResourcePMS.class).to(InputSetResourcePMSImpl.class);
     bind(PlanExecutionResource.class).to(PlanExecutionResourceImpl.class);
+    bind(WaitStepResource.class).to(WaitStepResourceImpl.class);
+    bind(WaitStepService.class).to(WaitStepServiceImpl.class);
     bind(PmsYamlSchemaResource.class).to(PmsYamlSchemaResourceImpl.class);
     bind(PMSResourceConstraintResource.class).to(PMSResourceConstraintResourceImpl.class);
     bind(LogStreamingServiceRestClient.class)

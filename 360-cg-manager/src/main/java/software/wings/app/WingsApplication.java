@@ -89,7 +89,6 @@ import io.harness.grpc.GrpcServiceConfigurationModule;
 import io.harness.grpc.server.GrpcServerConfig;
 import io.harness.health.HealthMonitor;
 import io.harness.health.HealthService;
-import io.harness.insights.DelegateInsightsSummaryJob;
 import io.harness.iterator.DelegateTaskExpiryCheckIterator;
 import io.harness.iterator.FailDelegateTaskIterator;
 import io.harness.lock.AcquiredLock;
@@ -152,7 +151,6 @@ import io.harness.serializer.AnnotationAwareJsonSubtypeResolver;
 import io.harness.serializer.CurrentGenRegistrars;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.service.DelegateServiceModule;
-import io.harness.service.impl.DelegateInsightsServiceImpl;
 import io.harness.service.impl.DelegateNgTokenServiceImpl;
 import io.harness.service.impl.DelegateSyncServiceImpl;
 import io.harness.service.impl.DelegateTaskServiceImpl;
@@ -160,7 +158,6 @@ import io.harness.service.impl.DelegateTokenServiceImpl;
 import io.harness.service.intfc.DelegateProfileObserver;
 import io.harness.service.intfc.DelegateTaskService;
 import io.harness.service.intfc.DelegateTokenService;
-import io.harness.service.intfc.PerpetualTaskStateObserver;
 import io.harness.springdata.SpringPersistenceModule;
 import io.harness.state.inspection.StateInspectionListener;
 import io.harness.state.inspection.StateInspectionServiceImpl;
@@ -248,7 +245,6 @@ import software.wings.service.impl.DelegateDisconnectedDetector;
 import software.wings.service.impl.DelegateObserver;
 import software.wings.service.impl.DelegateProfileServiceImpl;
 import software.wings.service.impl.DelegateServiceImpl;
-import software.wings.service.impl.DelegateTaskStatusObserver;
 import software.wings.service.impl.ExecutionEventListener;
 import software.wings.service.impl.InfrastructureMappingServiceImpl;
 import software.wings.service.impl.SettingAttributeObserver;
@@ -594,16 +590,6 @@ public class WingsApplication extends Application<MainConfiguration> {
           if (isDms()) {
             remoteObservers.add(RemoteObserver.builder()
                                     .subjectCLass(DelegateServiceImpl.class)
-                                    .observerClass(DelegateTaskStatusObserver.class)
-                                    .observer(DelegateInsightsServiceImpl.class)
-                                    .build());
-            remoteObservers.add(RemoteObserver.builder()
-                                    .subjectCLass(DelegateTaskServiceImpl.class)
-                                    .observerClass(DelegateTaskStatusObserver.class)
-                                    .observer(DelegateInsightsServiceImpl.class)
-                                    .build());
-            remoteObservers.add(RemoteObserver.builder()
-                                    .subjectCLass(DelegateServiceImpl.class)
                                     .observerClass(DelegateProfileObserver.class)
                                     .observer(DelegateProfileEventHandler.class)
                                     .build());
@@ -616,16 +602,6 @@ public class WingsApplication extends Application<MainConfiguration> {
                                     .subjectCLass(PerpetualTaskServiceImpl.class)
                                     .observerClass(PerpetualTaskCrudObserver.class)
                                     .observer(PerpetualTaskRecordHandler.class)
-                                    .build());
-            remoteObservers.add(RemoteObserver.builder()
-                                    .subjectCLass(PerpetualTaskServiceImpl.class)
-                                    .observerClass(PerpetualTaskStateObserver.class)
-                                    .observer(DelegateInsightsServiceImpl.class)
-                                    .build());
-            remoteObservers.add(RemoteObserver.builder()
-                                    .subjectCLass(PerpetualTaskServiceImpl.class)
-                                    .observerClass(PerpetualTaskStateObserver.class)
-                                    .observer(DelegateInsightsServiceImpl.class)
                                     .build());
             remoteObservers.add(
                 RemoteObserver.builder()
@@ -1300,10 +1276,6 @@ public class WingsApplication extends Application<MainConfiguration> {
                                                 injector.getInstance(DelegateSyncServiceImpl.class)),
         0L, 2L, TimeUnit.SECONDS);
 
-    delegateExecutor.scheduleWithFixedDelay(new Schedulable("Failed while calculating delegate insights summaries",
-                                                injector.getInstance(DelegateInsightsSummaryJob.class)),
-        0L, 10L, TimeUnit.MINUTES);
-
     delegateExecutor.scheduleWithFixedDelay(
         new Schedulable("Failed while broadcasting perpetual tasks",
             () -> injector.getInstance(PerpetualTaskServiceImpl.class).broadcastToDelegate()),
@@ -1343,14 +1315,8 @@ public class WingsApplication extends Application<MainConfiguration> {
    * @param delegateServiceImpl
    */
   private void registerDelegateServiceObservers(Injector injector, DelegateServiceImpl delegateServiceImpl) {
-    delegateServiceImpl.getDelegateTaskStatusObserverSubject().register(
-        injector.getInstance(Key.get(DelegateInsightsServiceImpl.class)));
-
     DelegateTaskServiceImpl delegateTaskService =
         (DelegateTaskServiceImpl) injector.getInstance(Key.get(DelegateTaskService.class));
-    delegateTaskService.getDelegateTaskStatusObserverSubject().register(
-        injector.getInstance(Key.get(DelegateInsightsServiceImpl.class)));
-
     DelegateProfileServiceImpl delegateProfileService =
         (DelegateProfileServiceImpl) injector.getInstance(Key.get(DelegateProfileService.class));
     DelegateProfileEventHandler delegateProfileEventHandler =
@@ -1363,8 +1329,6 @@ public class WingsApplication extends Application<MainConfiguration> {
         (PerpetualTaskServiceImpl) injector.getInstance(Key.get(PerpetualTaskService.class));
     perpetualTaskService.getPerpetualTaskCrudSubject().register(
         injector.getInstance(Key.get(PerpetualTaskRecordHandler.class)));
-    perpetualTaskService.getPerpetualTaskStateObserverSubject().register(
-        injector.getInstance(Key.get(DelegateInsightsServiceImpl.class)));
     delegateServiceImpl.getSubject().register(perpetualTaskService);
 
     ClusterRecordHandler clusterRecordHandler = injector.getInstance(Key.get(ClusterRecordHandler.class));
