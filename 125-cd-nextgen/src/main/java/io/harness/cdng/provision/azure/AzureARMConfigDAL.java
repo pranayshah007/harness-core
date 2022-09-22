@@ -11,14 +11,13 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.provision.azure.beans.AzureARMConfig;
 import io.harness.cdng.provision.azure.beans.AzureARMConfig.AzureARMConfigKeys;
-import io.harness.expression.EngineExpressionSecretUtils;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import lombok.NonNull;
+import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.Sort;
@@ -29,12 +28,11 @@ import org.mongodb.morphia.query.Sort;
 public class AzureARMConfigDAL {
   @Inject private HPersistence persistence;
 
-  public void saveAzureARMConfig(@NonNull AzureARMConfig config) {
-    AzureARMConfig secretsRevertedConfig = (AzureARMConfig) EngineExpressionSecretUtils.revertSecrets(config);
-    persistence.save(secretsRevertedConfig);
+  public void saveAzureARMConfig(@Nonnull AzureARMConfig azureARMConfig) {
+    persistence.save(azureARMConfig);
   }
 
-  public AzureARMConfig getRollbackAzureARMConfig(Ambiance ambiance, String provisionerIdentifier) {
+  public AzureARMConfig getAzureARMConfig(@Nonnull Ambiance ambiance, String provisionerIdentifier) {
     Query<AzureARMConfig> query =
         persistence.createQuery(AzureARMConfig.class)
             .filter(AzureARMConfigKeys.accountId, AmbianceUtils.getAccountId(ambiance))
@@ -46,15 +44,12 @@ public class AzureARMConfigDAL {
     return query.get();
   }
 
-  public void clearStoredAzureARMConfig(Ambiance ambiance, String provisionerIdentifier) {
-    Query<AzureARMConfig> query =
-        persistence.createQuery(AzureARMConfig.class)
-            .filter(AzureARMConfigKeys.accountId, AmbianceUtils.getAccountId(ambiance))
-            .filter(AzureARMConfigKeys.orgId, AmbianceUtils.getOrgIdentifier(ambiance))
-            .filter(AzureARMConfigKeys.projectId, AmbianceUtils.getProjectIdentifier(ambiance))
-            .filter(AzureARMConfigKeys.provisionerIdentifier, provisionerIdentifier)
-            .filter(AzureARMConfigKeys.stageExecutionId, ambiance.getStageExecutionId());
-
-    persistence.delete(query);
+  public void clearAzureARMConfig(@Nonnull Ambiance ambiance, @Nonnull String provisionerIdentifier) {
+    persistence.delete(persistence.createQuery(AzureARMConfig.class)
+                           .filter(AzureARMConfigKeys.accountId, AmbianceUtils.getAccountId(ambiance))
+                           .filter(AzureARMConfigKeys.orgId, AmbianceUtils.getOrgIdentifier(ambiance))
+                           .filter(AzureARMConfigKeys.projectId, AmbianceUtils.getProjectIdentifier(ambiance))
+                           .filter(AzureARMConfigKeys.provisionerIdentifier, provisionerIdentifier)
+                           .filter(AzureARMConfigKeys.stageExecutionId, ambiance.getStageExecutionId()));
   }
 }

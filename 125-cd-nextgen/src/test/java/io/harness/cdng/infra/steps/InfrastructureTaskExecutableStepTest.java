@@ -93,6 +93,7 @@ import io.harness.steps.shellscript.SshInfraDelegateConfigOutput;
 import io.harness.steps.shellscript.WinRmInfraDelegateConfigOutput;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
+import io.harness.yaml.infra.HostConnectionTypeKind;
 
 import software.wings.beans.TaskType;
 import software.wings.service.impl.aws.model.AwsEC2Instance;
@@ -170,6 +171,7 @@ public class InfrastructureTaskExecutableStepTest {
                                  .vpcs(Arrays.asList("vpc1"))
                                  .tags(ParameterField.createValueField(Collections.singletonMap("testTag", "test")))
                                  .build())
+          .hostConnectionType(ParameterField.createValueField(HostConnectionTypeKind.HOSTNAME))
           .build();
 
   AutoCloseable mocks;
@@ -374,7 +376,9 @@ public class InfrastructureTaskExecutableStepTest {
     doReturn(OptionalSweepingOutput.builder()
                  .found(true)
                  .output(InfrastructureTaskExecutableStepSweepingOutput.builder()
-                             .infrastructureOutcome(SshWinRmAwsInfrastructureOutcome.builder().build())
+                             .infrastructureOutcome(SshWinRmAwsInfrastructureOutcome.builder()
+                                                        .hostConnectionType(HostConnectionTypeKind.PRIVATE_IP)
+                                                        .build())
                              .skipInstances(true)
                              .build())
                  .build())
@@ -383,7 +387,7 @@ public class InfrastructureTaskExecutableStepTest {
     AwsListEC2InstancesTaskResponse awsListEC2InstancesTaskResponse =
         AwsListEC2InstancesTaskResponse.builder()
             .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-            .instances(Arrays.asList(AwsEC2Instance.builder().publicDnsName("host1").build()))
+            .instances(Arrays.asList(AwsEC2Instance.builder().privateIp("10.0.0.1").publicIp("1.1.1.1").build()))
             .build();
     Map<String, ResponseData> responseDataMap = ImmutableMap.of("aws-hosts-response", awsListEC2InstancesTaskResponse);
     ThrowingSupplier responseDataSupplier = StrategyHelper.buildResponseDataSupplier(responseDataMap);
@@ -559,7 +563,7 @@ public class InfrastructureTaskExecutableStepTest {
 
     doThrow(new InvalidRequestException("Unresolved Expression : [expression1]"))
         .when(infrastructureStepHelper)
-        .validateExpression(any(), eq(credentialsRef), any());
+        .validateExpression(any(), eq(credentialsRef), any(), any());
 
     assertThatThrownBy(() -> infrastructureStep.validateInfrastructure(builder.build()))
         .isInstanceOf(InvalidRequestException.class)
@@ -571,7 +575,7 @@ public class InfrastructureTaskExecutableStepTest {
         .build();
     doThrow(new InvalidRequestException("Unresolved Expression : [expression2]"))
         .when(infrastructureStepHelper)
-        .validateExpression(eq(connectorRef2), any(), any());
+        .validateExpression(eq(connectorRef2), any(), any(), any());
 
     assertThatThrownBy(() -> infrastructureStep.validateInfrastructure(builder.build()))
         .isInstanceOf(InvalidRequestException.class)

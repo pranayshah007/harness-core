@@ -15,10 +15,14 @@ import io.harness.serializer.morphia.NGSettingMorphiaRegistrar;
 
 import com.google.common.collect.ImmutableSet;
 import lombok.experimental.UtilityClass;
+import org.mongodb.morphia.converters.TypeConverter;
 
 @OwnedBy(PL)
 @UtilityClass
 public class NGSettingRegistrar {
   public static final ImmutableSet<Class<? extends MorphiaRegistrar>> morphiaRegistrars =
       ImmutableSet.<Class<? extends MorphiaRegistrar>>builder().add(NGSettingMorphiaRegistrar.class).build();
+
+  public static final ImmutableSet<Class<? extends TypeConverter>> morphiaConverters =
+      ImmutableSet.<Class<? extends TypeConverter>>builder().build();
 }

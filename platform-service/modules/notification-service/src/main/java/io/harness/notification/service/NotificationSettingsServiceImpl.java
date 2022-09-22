@@ -31,7 +31,7 @@ import io.harness.notification.remote.SmtpConfigClient;
 import io.harness.notification.remote.SmtpConfigResponse;
 import io.harness.notification.repositories.NotificationSettingRepository;
 import io.harness.notification.service.api.NotificationSettingsService;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.CGRestUtils;
 import io.harness.user.remote.UserClient;
 import io.harness.user.remote.UserFilterNG;
 import io.harness.usergroups.UserGroupClient;
@@ -125,8 +125,7 @@ public class NotificationSettingsServiceImpl implements NotificationSettingsServ
     }
     List<UserInfo> users = new ArrayList<>();
     try {
-      users =
-          RestClientUtils.getResponse(userClient.listUsers(accountId, UserFilterNG.builder().userIds(userIds).build()));
+      users = CGRestUtils.getResponse(userClient.listUsers(accountId, UserFilterNG.builder().userIds(userIds).build()));
     } catch (Exception exception) {
       log.error("Failure while fetching emails of users from userIds", exception);
     }
@@ -212,7 +211,7 @@ public class NotificationSettingsServiceImpl implements NotificationSettingsServ
   public SmtpConfigResponse getSmtpConfigResponse(String accountId) {
     SmtpConfigResponse smtpConfigResponse = null;
     try {
-      smtpConfigResponse = RestClientUtils.getResponse(smtpConfigClient.getSmtpConfig(accountId));
+      smtpConfigResponse = CGRestUtils.getResponse(smtpConfigClient.getSmtpConfig(accountId));
     } catch (Exception ex) {
       log.error("Rest call for getting smtp config failed: ", ex);
     }

@@ -318,6 +318,7 @@ public class ArtifactResponseToOutcomeMapper {
         .identifier(artifactConfig.getIdentifier())
         .type(ArtifactSourceType.ARTIFACTORY_REGISTRY.getDisplayName())
         .primaryArtifact(artifactConfig.isPrimaryArtifact())
+        .metadata(artifactDelegateResponse.getBuildDetails().getMetadata())
         .build();
   }
 
@@ -366,6 +367,7 @@ public class ArtifactResponseToOutcomeMapper {
         .type(ArtifactSourceType.JENKINS.getDisplayName())
         .identifier(jenkinsArtifactConfig.getIdentifier())
         .primaryArtifact(jenkinsArtifactConfig.isPrimaryArtifact())
+        .metadata(jenkinsArtifactDelegateResponse.getBuildDetails().getMetadata())
         .build();
   }
 

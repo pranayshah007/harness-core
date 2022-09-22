@@ -14,12 +14,10 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig.GitStoreDelegateConfigBuilder;
 import static io.harness.steps.StepUtils.prepareCDTaskRequest;
 
-import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.azure.model.ARMScopeType;
-import io.harness.azure.model.AzureConstants;
 import io.harness.azure.model.AzureDeploymentMode;
 import io.harness.beans.DecryptableEntity;
 import io.harness.cdng.CDStepHelper;
@@ -28,7 +26,6 @@ import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.provision.azure.beans.AzureCreateARMResourcePassThroughData;
-import io.harness.cdng.provision.azure.beans.AzureCreateBPPassThroughData;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.validator.scmValidators.GitConfigAuthenticationInfoHelper;
@@ -38,11 +35,10 @@ import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
+import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.git.GitFetchRequest;
-import io.harness.exception.InvalidRequestException;
-import io.harness.k8s.K8sCommandUnitConstants;
 import io.harness.logging.UnitProgress;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
@@ -61,7 +57,6 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
-import io.harness.validator.NGRegexValidatorConstants;
 
 import software.wings.beans.TaskType;
 
@@ -71,13 +66,11 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 
@@ -158,11 +151,12 @@ public class AzureCommonHelper {
 
   public TaskChainResponse getGitFetchFileTaskChainResponse(Ambiance ambiance,
       List<GitFetchFilesConfig> gitFetchFilesConfigs, StepElementParameters stepElementParameters,
-      PassThroughData passThroughData) {
+      PassThroughData passThroughData, List<String> commandUnits, CommandUnitsProgress commandUnitsProgress) {
     GitFetchRequest gitFetchRequest = GitFetchRequest.builder()
                                           .gitFetchFilesConfigs(gitFetchFilesConfigs)
                                           .accountId(AmbianceUtils.getAccountId(ambiance))
                                           .closeLogStream(true)
+                                          .commandUnitsProgress(commandUnitsProgress)
                                           .build();
 
     final TaskData taskData = TaskData.builder()
@@ -172,8 +166,8 @@ public class AzureCommonHelper {
                                   .parameters(new Object[] {gitFetchRequest})
                                   .build();
 
-    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-        getCommandUnits(passThroughData), TaskType.GIT_FETCH_NEXT_GEN_TASK.getDisplayName(),
+    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer, commandUnits,
+        TaskType.GIT_FETCH_NEXT_GEN_TASK.getDisplayName(),
         StepUtils.getTaskSelectors(stepElementParameters.getDelegateSelectors()),
         stepHelper.getEnvironmentType(ambiance));
 
@@ -229,16 +223,6 @@ public class AzureCommonHelper {
         .build();
   }
 
-  protected String generateIdentifier(String provisionerIdentifier, Ambiance ambiance) {
-    if (Pattern.matches(NGRegexValidatorConstants.IDENTIFIER_PATTERN, provisionerIdentifier)) {
-      return format("%s/%s/%s/%s", AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
-          AmbianceUtils.getProjectIdentifier(ambiance), provisionerIdentifier);
-    } else {
-      throw new InvalidRequestException(
-          format("Provisioner Identifier cannot contain special characters or spaces: [%s]", provisionerIdentifier));
-    }
-  }
-
   protected Map<String, Object> getARMOutputs(String outputs) {
     Map<String, Object> outputMap = new LinkedHashMap<>();
     if (isEmpty(outputs)) {
@@ -254,17 +238,5 @@ public class AzureCommonHelper {
       return new LinkedHashMap<>();
     }
     return outputMap;
-  }
-
-  private List<String> getCommandUnits(PassThroughData passThroughData) {
-    if (passThroughData instanceof AzureCreateBPPassThroughData) {
-      return Arrays.asList(K8sCommandUnitConstants.FetchFiles, AzureConstants.BLUEPRINT_DEPLOYMENT,
-          AzureConstants.BLUEPRINT_DEPLOYMENT_STEADY_STATE);
-    } else if (passThroughData instanceof AzureCreateARMResourcePassThroughData) {
-      return Arrays.asList(K8sCommandUnitConstants.FetchFiles, AzureConstants.EXECUTE_ARM_DEPLOYMENT,
-          AzureConstants.ARM_DEPLOYMENT_STEADY_STATE, AzureConstants.ARM_DEPLOYMENT_OUTPUTS);
-    } else {
-      return emptyList();
-    }
   }
 }
