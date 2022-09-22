@@ -13,6 +13,7 @@ import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
 import io.harness.beans.Scope.ScopeBuilder;
 import io.harness.gitaware.helper.GitAwareContextHelper;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.scm.SCMGitSyncHelper;
@@ -100,6 +101,6 @@ public class TemplateGitXServiceImpl implements TemplateGitXService {
   private boolean isGitSimplificationEnabledForAProject(TemplateEntity templateToSave, GitEntityInfo gitEntityInfo) {
     return gitSyncSdkService.isGitSimplificationEnabled(templateToSave.getAccountIdentifier(),
                templateToSave.getOrgIdentifier(), templateToSave.getProjectIdentifier())
-        && TemplateUtils.isRemoteEntity(gitEntityInfo);
+        && (TemplateUtils.isRemoteEntity(gitEntityInfo) || StoreType.REMOTE.equals(templateToSave.getStoreType()));
   }
 }
