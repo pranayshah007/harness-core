@@ -7,6 +7,7 @@ go_library(
         "gradle.go",
         "helper.go",
         "maven.go",
+        "sbt.go",
     ],
     importpath = "github.com/harness/harness-core/product/ci/addon/testintelligence/java",
     visibility = ["//visibility:public"],
