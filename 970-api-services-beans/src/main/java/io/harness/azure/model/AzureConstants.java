@@ -223,7 +223,7 @@ public interface AzureConstants {
   String SLOT_SWAP_JOB_PROCESSOR_STR = "SlotSwapJobProcessor";
   String SUCCESS_REQUEST = "Request sent successfully";
   String DEPLOYMENT_SLOT_FULL_NAME_PATTERN = "%s-%s";
-  String DEPLOYMENT_SLOT_NAME_PREFIX_PATTERN = "%s-";
+  String DEPLOYMENT_SLOT_NAME_PREFIX_PATTERN = "(?i)^%s-";
   String DEPLOYMENT_SLOT_NON_PRODUCTION_TYPE = "non-production";
   String DEPLOYMENT_SLOT_PRODUCTION_TYPE = "production";
   String UPDATING_SLOT_CONFIGURATIONS = "Start updating configurations settings for  slot - [%s]";

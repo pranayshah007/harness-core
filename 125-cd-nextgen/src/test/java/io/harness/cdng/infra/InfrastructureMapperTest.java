@@ -308,7 +308,7 @@ public class InfrastructureMapperTest extends CategoryTest {
             .resourceGroup(ParameterField.createValueField("res-group"))
             .subscriptionId(ParameterField.createValueField("sub-id"))
             .tags(ParameterField.createValueField(Collections.singletonMap("tag", "val")))
-            .usePublicDns(ParameterField.createValueField(true))
+            .hostConnectionType(ParameterField.createValueField("Hostname"))
             .build();
 
     InfrastructureOutcome infrastructureOutcome =
@@ -321,7 +321,7 @@ public class InfrastructureMapperTest extends CategoryTest {
                                           .resourceGroup("res-group")
                                           .subscriptionId("sub-id")
                                           .tags(Collections.singletonMap("tag", "val"))
-                                          .usePublicDns(true)
+                                          .hostConnectionType("Hostname")
                                           .environment(environment)
                                           .build(),
             "infrastructureKey");

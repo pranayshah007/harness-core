@@ -59,12 +59,18 @@ import software.amazon.awssdk.services.ecs.model.DescribeServicesResponse;
 import software.amazon.awssdk.services.ecs.model.DescribeTasksRequest;
 import software.amazon.awssdk.services.ecs.model.DescribeTasksResponse;
 import software.amazon.awssdk.services.ecs.model.EcsException;
+import software.amazon.awssdk.services.ecs.model.ListServicesRequest;
+import software.amazon.awssdk.services.ecs.model.ListServicesResponse;
 import software.amazon.awssdk.services.ecs.model.ListTasksRequest;
 import software.amazon.awssdk.services.ecs.model.ListTasksResponse;
 import software.amazon.awssdk.services.ecs.model.RegisterTaskDefinitionRequest;
 import software.amazon.awssdk.services.ecs.model.RegisterTaskDefinitionResponse;
 import software.amazon.awssdk.services.ecs.model.ServiceNotActiveException;
 import software.amazon.awssdk.services.ecs.model.ServiceNotFoundException;
+import software.amazon.awssdk.services.ecs.model.TagResourceRequest;
+import software.amazon.awssdk.services.ecs.model.TagResourceResponse;
+import software.amazon.awssdk.services.ecs.model.UntagResourceRequest;
+import software.amazon.awssdk.services.ecs.model.UntagResourceResponse;
 import software.amazon.awssdk.services.ecs.model.UpdateServiceRequest;
 import software.amazon.awssdk.services.ecs.model.UpdateServiceResponse;
 import software.amazon.awssdk.services.ecs.waiters.EcsWaiter;
@@ -336,5 +342,58 @@ public class EcsV2ClientImpl extends AwsClientHelper implements EcsV2Client {
       throw new InvalidRequestException(awsServiceException.getMessage(), AWS_ECS_ERROR, USER);
     }
     throw new InvalidRequestException(awsServiceException.getMessage(), awsServiceException, USER);
+  }
+
+  @Override
+  public ListServicesResponse listServices(
+      AwsInternalConfig awsConfig, ListServicesRequest listServicesRequest, String region) {
+    try (EcsClient ecsClient = (EcsClient) getClient(awsConfig, region)) {
+      super.logCall(client(), Thread.currentThread().getStackTrace()[1].getMethodName());
+      return ecsClient.listServices(listServicesRequest);
+    } catch (Exception exception) {
+      super.logError(client(), Thread.currentThread().getStackTrace()[1].getMethodName(), exception.getMessage());
+      super.handleException(exception);
+    }
+    return ListServicesResponse.builder().build();
+  }
+
+  @Override
+  public DescribeServicesResponse describeServices(
+      AwsInternalConfig awsConfig, DescribeServicesRequest describeServicesRequest, String region) {
+    try (EcsClient ecsClient = (EcsClient) getClient(awsConfig, region)) {
+      super.logCall(client(), Thread.currentThread().getStackTrace()[1].getMethodName());
+      return ecsClient.describeServices(describeServicesRequest);
+    } catch (Exception exception) {
+      super.logError(client(), Thread.currentThread().getStackTrace()[1].getMethodName(), exception.getMessage());
+      super.handleException(exception);
+    }
+    return DescribeServicesResponse.builder().build();
+  }
+  // todo: refactor it
+
+  @Override
+  public UntagResourceResponse untagService(
+      AwsInternalConfig awsInternalConfig, UntagResourceRequest untagResourceRequest, String region) {
+    try (EcsClient ecsClient = (EcsClient) getClient(awsInternalConfig, region)) {
+      super.logCall(client(), Thread.currentThread().getStackTrace()[1].getMethodName());
+      return ecsClient.untagResource(untagResourceRequest);
+    } catch (Exception exception) {
+      super.logError(client(), Thread.currentThread().getStackTrace()[1].getMethodName(), exception.getMessage());
+      super.handleException(exception);
+    }
+    return UntagResourceResponse.builder().build();
+  }
+
+  @Override
+  public TagResourceResponse tagService(
+      AwsInternalConfig awsInternalConfig, TagResourceRequest tagResourceRequest, String region) {
+    try (EcsClient ecsClient = (EcsClient) getClient(awsInternalConfig, region)) {
+      super.logCall(client(), Thread.currentThread().getStackTrace()[1].getMethodName());
+      return ecsClient.tagResource(tagResourceRequest);
+    } catch (Exception exception) {
+      super.logError(client(), Thread.currentThread().getStackTrace()[1].getMethodName(), exception.getMessage());
+      super.handleException(exception);
+    }
+    return TagResourceResponse.builder().build();
   }
 }

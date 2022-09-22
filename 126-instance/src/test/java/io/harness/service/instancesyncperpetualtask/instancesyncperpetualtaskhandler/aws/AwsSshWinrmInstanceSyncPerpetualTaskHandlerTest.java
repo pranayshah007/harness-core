@@ -43,6 +43,7 @@ import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
 import io.harness.perpetualtask.instancesync.AwsSshInstanceSyncPerpetualTaskParamsNg;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
+import io.harness.yaml.infra.HostConnectionTypeKind;
 
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
@@ -97,6 +98,7 @@ public class AwsSshWinrmInstanceSyncPerpetualTaskHandlerTest extends InstancesTe
     SshWinRmAwsInfrastructureOutcome outcome = SshWinRmAwsInfrastructureOutcome.builder()
                                                    .infrastructureKey(INFRASTRUCTURE_KEY)
                                                    .credentialsRef(CRED_REF)
+                                                   .hostConnectionType(HostConnectionTypeKind.PRIVATE_IP)
                                                    .tags(new HashMap<>())
                                                    .build();
     SecretSpec secretSpec = Mockito.mock(SecretSpec.class);
@@ -118,6 +120,7 @@ public class AwsSshWinrmInstanceSyncPerpetualTaskHandlerTest extends InstancesTe
                                                          .setServiceType(SSH_SERVICE)
                                                          .setInfrastructureKey(INFRASTRUCTURE_KEY)
                                                          .setInfraDelegateConfig(ByteString.copyFrom(bytes))
+                                                         .setHostConnectionType(HostConnectionTypeKind.PRIVATE_IP)
                                                          .build();
 
     List<ExecutionCapability> expectedExecutionCapabilityList =

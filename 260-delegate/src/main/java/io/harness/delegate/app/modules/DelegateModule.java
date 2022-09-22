@@ -36,6 +36,8 @@ import io.harness.aws.AwsClient;
 import io.harness.aws.AwsClientImpl;
 import io.harness.aws.v2.ecs.EcsV2Client;
 import io.harness.aws.v2.ecs.EcsV2ClientImpl;
+import io.harness.aws.v2.ecs.ElbV2Client;
+import io.harness.aws.v2.ecs.ElbV2ClientImpl;
 import io.harness.awscli.AwsCliClient;
 import io.harness.awscli.AwsCliClientImpl;
 import io.harness.azure.client.AzureAuthorizationClient;
@@ -102,6 +104,10 @@ import io.harness.delegate.cf.PcfRouteUpdateCommandTaskHandler;
 import io.harness.delegate.cf.PcfRunPluginCommandTaskHandler;
 import io.harness.delegate.cf.PcfValidationCommandTaskHandler;
 import io.harness.delegate.configuration.DelegateConfiguration;
+import io.harness.delegate.ecs.EcsBlueGreenCreateServiceCommandTaskHandler;
+import io.harness.delegate.ecs.EcsBlueGreenPrepareRollbackCommandTaskHandler;
+import io.harness.delegate.ecs.EcsBlueGreenRollbackCommandTaskHandler;
+import io.harness.delegate.ecs.EcsBlueGreenSwapTargetGroupsCommandTaskHandler;
 import io.harness.delegate.ecs.EcsCanaryDeleteCommandTaskHandler;
 import io.harness.delegate.ecs.EcsCanaryDeployCommandTaskHandler;
 import io.harness.delegate.ecs.EcsCommandTaskNGHandler;
@@ -1656,6 +1662,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.LOGZ_GET_LOG_SAMPLE).toInstance(ServiceImplDelegateTask.class);
     mapBinder.addBinding(TaskType.LOGZ_GET_HOST_RECORDS).toInstance(ServiceImplDelegateTask.class);
     mapBinder.addBinding(TaskType.ARTIFACTORY_GET_BUILDS).toInstance(ServiceImplDelegateTask.class);
+    mapBinder.addBinding(TaskType.ARTIFACTORY_GET_LABELS).toInstance(ServiceImplDelegateTask.class);
     mapBinder.addBinding(TaskType.ARTIFACTORY_GET_JOBS).toInstance(ServiceImplDelegateTask.class);
     mapBinder.addBinding(TaskType.ARTIFACTORY_GET_PLANS).toInstance(ServiceImplDelegateTask.class);
     mapBinder.addBinding(TaskType.ARTIFACTORY_GET_ARTIFACTORY_PATHS).toInstance(ServiceImplDelegateTask.class);
@@ -1860,11 +1867,20 @@ public class DelegateModule extends AbstractModule {
         .to(EcsCanaryDeleteCommandTaskHandler.class);
     ecsTaskTypeToTaskHandlerMap.addBinding(EcsCommandTypeNG.ECS_CANARY_DEPLOY.name())
         .to(EcsCanaryDeployCommandTaskHandler.class);
+    ecsTaskTypeToTaskHandlerMap.addBinding(EcsCommandTypeNG.ECS_BLUE_GREEN_CREATE_SERVICE.name())
+        .to(EcsBlueGreenCreateServiceCommandTaskHandler.class);
+    ecsTaskTypeToTaskHandlerMap.addBinding(EcsCommandTypeNG.ECS_BLUE_GREEN_PREPARE_ROLLBACK_DATA.name())
+        .to(EcsBlueGreenPrepareRollbackCommandTaskHandler.class);
+    ecsTaskTypeToTaskHandlerMap.addBinding(EcsCommandTypeNG.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS.name())
+        .to(EcsBlueGreenSwapTargetGroupsCommandTaskHandler.class);
+    ecsTaskTypeToTaskHandlerMap.addBinding(EcsCommandTypeNG.ECS_BLUE_GREEN_ROLLBACK.name())
+        .to(EcsBlueGreenRollbackCommandTaskHandler.class);
 
     mapBinder.addBinding(TaskType.ECS_GIT_FETCH_TASK_NG).toInstance(EcsGitFetchTask.class);
     mapBinder.addBinding(TaskType.ECS_COMMAND_TASK_NG).toInstance(EcsCommandTaskNG.class);
 
     bind(EcsV2Client.class).to(EcsV2ClientImpl.class);
+    bind(ElbV2Client.class).to(ElbV2ClientImpl.class);
     mapBinder.addBinding(TaskType.AZURE_NG_ARM).toInstance(AzureResourceCreationTaskNG.class);
   }
 

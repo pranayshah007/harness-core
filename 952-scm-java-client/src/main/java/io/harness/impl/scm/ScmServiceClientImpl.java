@@ -216,11 +216,24 @@ public class ScmServiceClientImpl implements ScmServiceClient {
     final GetFileRequest.Builder gitFileRequestBuilder =
         GetFileRequest.newBuilder().setPath(gitFilePathDetails.getFilePath()).setProvider(gitProvider).setSlug(slug);
     if (isNotEmpty(gitFilePathDetails.getBranch())) {
-      gitFileRequestBuilder.setBranch(gitFilePathDetails.getBranch());
+      if (checkIfBranchIsHavingSlashForBB(scmConnector, gitFilePathDetails.getBranch())) {
+        GetLatestCommitOnFileResponse getLatestCommitOnFileResponse = getLatestCommitOnFile(
+            scmConnector, scmBlockingStub, gitFilePathDetails.getBranch(), gitFilePathDetails.getFilePath());
+        if (isNotEmpty(getLatestCommitOnFileResponse.getError())) {
+          return FileContent.newBuilder().setStatus(400).setError(getLatestCommitOnFileResponse.getError()).build();
+        }
+        gitFileRequestBuilder.setRef(getLatestCommitOnFileResponse.getCommitId());
+      } else {
+        gitFileRequestBuilder.setBranch(gitFilePathDetails.getBranch());
+      }
     } else if (isNotEmpty(gitFilePathDetails.getRef())) {
       gitFileRequestBuilder.setRef(gitFilePathDetails.getRef());
     }
     return ScmGrpcClientUtils.retryAndProcessException(scmBlockingStub::getFile, gitFileRequestBuilder.build());
+  }
+
+  private boolean checkIfBranchIsHavingSlashForBB(ScmConnector scmConnector, String branchName) {
+    return ConnectorType.BITBUCKET.equals(scmConnector.getConnectorType()) && branchName.contains("/");
   }
 
   private FileBatchContentResponse getContentOfFiles(

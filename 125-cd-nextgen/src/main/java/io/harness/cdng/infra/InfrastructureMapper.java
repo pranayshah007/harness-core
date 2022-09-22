@@ -8,6 +8,7 @@
 package io.harness.cdng.infra;
 
 import static io.harness.cdng.infra.beans.host.dto.HostFilterSpecDTO.HOSTS_SEPARATOR;
+import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static java.lang.String.format;
@@ -119,15 +120,15 @@ public class InfrastructureMapper {
         validateK8sAzureInfrastructure(k8sAzureInfrastructure);
         K8sAzureInfrastructureOutcome k8sAzureInfrastructureOutcome =
             K8sAzureInfrastructureOutcome.builder()
-                .connectorRef(ParameterFieldHelper.getParameterFieldValue(k8sAzureInfrastructure.getConnectorRef()))
-                .namespace(ParameterFieldHelper.getParameterFieldValue(k8sAzureInfrastructure.getNamespace()))
-                .cluster(ParameterFieldHelper.getParameterFieldValue(k8sAzureInfrastructure.getCluster()))
+                .connectorRef(getParameterFieldValue(k8sAzureInfrastructure.getConnectorRef()))
+                .namespace(getParameterFieldValue(k8sAzureInfrastructure.getNamespace()))
+                .cluster(getParameterFieldValue(k8sAzureInfrastructure.getCluster()))
                 .releaseName(getValueOrExpression(k8sAzureInfrastructure.getReleaseName()))
                 .environment(environmentOutcome)
                 .infrastructureKey(InfrastructureKey.generate(
                     service, environmentOutcome, k8sAzureInfrastructure.getInfrastructureKeyValues()))
-                .subscription(ParameterFieldHelper.getParameterFieldValue(k8sAzureInfrastructure.getSubscriptionId()))
-                .resourceGroup(ParameterFieldHelper.getParameterFieldValue(k8sAzureInfrastructure.getResourceGroup()))
+                .subscription(getParameterFieldValue(k8sAzureInfrastructure.getSubscriptionId()))
+                .resourceGroup(getParameterFieldValue(k8sAzureInfrastructure.getResourceGroup()))
                 .useClusterAdminCredentials(ParameterFieldHelper.getBooleanParameterFieldValue(
                     k8sAzureInfrastructure.getUseClusterAdminCredentials()))
                 .build();
@@ -141,9 +142,9 @@ public class InfrastructureMapper {
         validatePdcInfrastructure(pdcInfrastructure);
         PdcInfrastructureOutcome pdcInfrastructureOutcome =
             PdcInfrastructureOutcome.builder()
-                .credentialsRef(ParameterFieldHelper.getParameterFieldValue(pdcInfrastructure.getCredentialsRef()))
-                .hosts(ParameterFieldHelper.getParameterFieldValue(pdcInfrastructure.getHosts()))
-                .connectorRef(ParameterFieldHelper.getParameterFieldValue(pdcInfrastructure.getConnectorRef()))
+                .credentialsRef(getParameterFieldValue(pdcInfrastructure.getCredentialsRef()))
+                .hosts(getParameterFieldValue(pdcInfrastructure.getHosts()))
+                .connectorRef(getParameterFieldValue(pdcInfrastructure.getConnectorRef()))
                 .hostFilter(toHostFilterDTO(pdcInfrastructure.getHostFilter()))
                 .environment(environmentOutcome)
                 .infrastructureKey(InfrastructureKey.generate(
@@ -159,15 +160,14 @@ public class InfrastructureMapper {
 
         SshWinRmAwsInfrastructureOutcome sshWinRmAwsInfrastructureOutcome =
             SshWinRmAwsInfrastructureOutcome.builder()
-                .connectorRef(ParameterFieldHelper.getParameterFieldValue(sshWinRmAwsInfrastructure.getConnectorRef()))
-                .credentialsRef(
-                    ParameterFieldHelper.getParameterFieldValue(sshWinRmAwsInfrastructure.getCredentialsRef()))
-                .region(ParameterFieldHelper.getParameterFieldValue(sshWinRmAwsInfrastructure.getRegion()))
+                .connectorRef(getParameterFieldValue(sshWinRmAwsInfrastructure.getConnectorRef()))
+                .credentialsRef(getParameterFieldValue(sshWinRmAwsInfrastructure.getCredentialsRef()))
+                .region(getParameterFieldValue(sshWinRmAwsInfrastructure.getRegion()))
                 .environment(environmentOutcome)
                 .infrastructureKey(InfrastructureKey.generate(
                     service, environmentOutcome, infrastructure.getInfrastructureKeyValues()))
-                .tags(ParameterFieldHelper.getParameterFieldValue(
-                    sshWinRmAwsInfrastructure.getAwsInstanceFilter().getTags()))
+                .tags(getParameterFieldValue(sshWinRmAwsInfrastructure.getAwsInstanceFilter().getTags()))
+                .hostConnectionType(getParameterFieldValue(sshWinRmAwsInfrastructure.getHostConnectionType()))
                 .build();
 
         setInfraIdentifierAndName(sshWinRmAwsInfrastructureOutcome, sshWinRmAwsInfrastructure.getInfraIdentifier(),
@@ -179,17 +179,12 @@ public class InfrastructureMapper {
         validateSshWinRmAzureInfrastructure(sshWinRmAzureInfrastructure);
         SshWinRmAzureInfrastructureOutcome sshWinRmAzureInfrastructureOutcome =
             SshWinRmAzureInfrastructureOutcome.builder()
-                .connectorRef(
-                    ParameterFieldHelper.getParameterFieldValue(sshWinRmAzureInfrastructure.getConnectorRef()))
-                .subscriptionId(
-                    ParameterFieldHelper.getParameterFieldValue(sshWinRmAzureInfrastructure.getSubscriptionId()))
-                .resourceGroup(
-                    ParameterFieldHelper.getParameterFieldValue(sshWinRmAzureInfrastructure.getResourceGroup()))
-                .credentialsRef(
-                    ParameterFieldHelper.getParameterFieldValue(sshWinRmAzureInfrastructure.getCredentialsRef()))
-                .tags(ParameterFieldHelper.getParameterFieldValue(sshWinRmAzureInfrastructure.getTags()))
-                .usePublicDns(
-                    ParameterFieldHelper.getParameterFieldValue(sshWinRmAzureInfrastructure.getUsePublicDns()))
+                .connectorRef(getParameterFieldValue(sshWinRmAzureInfrastructure.getConnectorRef()))
+                .subscriptionId(getParameterFieldValue(sshWinRmAzureInfrastructure.getSubscriptionId()))
+                .resourceGroup(getParameterFieldValue(sshWinRmAzureInfrastructure.getResourceGroup()))
+                .credentialsRef(getParameterFieldValue(sshWinRmAzureInfrastructure.getCredentialsRef()))
+                .tags(getParameterFieldValue(sshWinRmAzureInfrastructure.getTags()))
+                .hostConnectionType(getParameterFieldValue(sshWinRmAzureInfrastructure.getHostConnectionType()))
                 .environment(environmentOutcome)
                 .infrastructureKey(InfrastructureKey.generate(
                     service, environmentOutcome, sshWinRmAzureInfrastructure.getInfrastructureKeyValues()))
@@ -276,7 +271,7 @@ public class InfrastructureMapper {
 
   private void validateK8sDirectInfrastructure(K8SDirectInfrastructure infrastructure) {
     if (ParameterField.isNull(infrastructure.getNamespace())
-        || isEmpty(ParameterFieldHelper.getParameterFieldValue(infrastructure.getNamespace()))) {
+        || isEmpty(getParameterFieldValue(infrastructure.getNamespace()))) {
       throw new InvalidArgumentsException(Pair.of("namespace", "cannot be empty"));
     }
 
@@ -287,7 +282,7 @@ public class InfrastructureMapper {
 
   private void validateK8sGcpInfrastructure(K8sGcpInfrastructure infrastructure) {
     if (ParameterField.isNull(infrastructure.getNamespace())
-        || isEmpty(ParameterFieldHelper.getParameterFieldValue(infrastructure.getNamespace()))) {
+        || isEmpty(getParameterFieldValue(infrastructure.getNamespace()))) {
       throw new InvalidArgumentsException(Pair.of("namespace", "cannot be empty"));
     }
 
@@ -296,14 +291,14 @@ public class InfrastructureMapper {
     }
 
     if (ParameterField.isNull(infrastructure.getCluster())
-        || isEmpty(ParameterFieldHelper.getParameterFieldValue(infrastructure.getCluster()))) {
+        || isEmpty(getParameterFieldValue(infrastructure.getCluster()))) {
       throw new InvalidArgumentsException(Pair.of("cluster", "cannot be empty"));
     }
   }
 
   private void validateK8sAzureInfrastructure(K8sAzureInfrastructure infrastructure) {
     if (ParameterField.isNull(infrastructure.getNamespace())
-        || isEmpty(ParameterFieldHelper.getParameterFieldValue(infrastructure.getNamespace()))) {
+        || isEmpty(getParameterFieldValue(infrastructure.getNamespace()))) {
       throw new InvalidArgumentsException(Pair.of("namespace", "cannot be empty"));
     }
 
@@ -312,34 +307,34 @@ public class InfrastructureMapper {
     }
 
     if (ParameterField.isNull(infrastructure.getCluster())
-        || isEmpty(ParameterFieldHelper.getParameterFieldValue(infrastructure.getCluster()))) {
+        || isEmpty(getParameterFieldValue(infrastructure.getCluster()))) {
       throw new InvalidArgumentsException(Pair.of("cluster", "cannot be empty"));
     }
 
     if (ParameterField.isNull(infrastructure.getSubscriptionId())
-        || isEmpty(ParameterFieldHelper.getParameterFieldValue(infrastructure.getSubscriptionId()))) {
+        || isEmpty(getParameterFieldValue(infrastructure.getSubscriptionId()))) {
       throw new InvalidArgumentsException(Pair.of("subscription", "cannot be empty"));
     }
 
     if (ParameterField.isNull(infrastructure.getResourceGroup())
-        || isEmpty(ParameterFieldHelper.getParameterFieldValue(infrastructure.getResourceGroup()))) {
+        || isEmpty(getParameterFieldValue(infrastructure.getResourceGroup()))) {
       throw new InvalidArgumentsException(Pair.of("resourceGroup", "cannot be empty"));
     }
   }
 
   private void validateAzureWebAppInfrastructure(AzureWebAppInfrastructure infrastructure) {
     if (ParameterField.isNull(infrastructure.getConnectorRef())
-        || isEmpty(ParameterFieldHelper.getParameterFieldValue(infrastructure.getConnectorRef()))) {
+        || isEmpty(getParameterFieldValue(infrastructure.getConnectorRef()))) {
       throw new InvalidArgumentsException(Pair.of("connectorRef", "cannot be empty"));
     }
 
     if (ParameterField.isNull(infrastructure.getSubscriptionId())
-        || isEmpty(ParameterFieldHelper.getParameterFieldValue(infrastructure.getSubscriptionId()))) {
+        || isEmpty(getParameterFieldValue(infrastructure.getSubscriptionId()))) {
       throw new InvalidArgumentsException(Pair.of("subscription", "cannot be empty"));
     }
 
     if (ParameterField.isNull(infrastructure.getResourceGroup())
-        || isEmpty(ParameterFieldHelper.getParameterFieldValue(infrastructure.getResourceGroup()))) {
+        || isEmpty(getParameterFieldValue(infrastructure.getResourceGroup()))) {
       throw new InvalidArgumentsException(Pair.of("resourceGroup", "cannot be empty"));
     }
   }
@@ -359,7 +354,7 @@ public class InfrastructureMapper {
 
   private void validateServerlessAwsInfrastructure(ServerlessAwsLambdaInfrastructure infrastructure) {
     if (ParameterField.isNull(infrastructure.getRegion())
-        || isEmpty(ParameterFieldHelper.getParameterFieldValue(infrastructure.getRegion()))) {
+        || isEmpty(getParameterFieldValue(infrastructure.getRegion()))) {
       throw new InvalidArgumentsException(Pair.of("region", "cannot be empty"));
     }
     if (!hasValueOrExpression(infrastructure.getStage())) {
@@ -392,6 +387,9 @@ public class InfrastructureMapper {
     if (!hasValueOrExpression(infrastructure.getRegion())) {
       throw new InvalidArgumentsException(Pair.of("region", "cannot be empty"));
     }
+    if (!hasValueOrExpression(infrastructure.getHostConnectionType())) {
+      throw new InvalidArgumentsException(Pair.of("hostConnectionType", "cannot be empty"));
+    }
 
     if (infrastructure.getAwsInstanceFilter() == null) {
       throw new InvalidArgumentsException(Pair.of("awsInstanceFilter", "cannot be null"));
@@ -415,7 +413,7 @@ public class InfrastructureMapper {
       return false;
     }
 
-    return parameterField.isExpression() || !isEmpty(ParameterFieldHelper.getParameterFieldValue(parameterField));
+    return parameterField.isExpression() || !isEmpty(getParameterFieldValue(parameterField));
   }
 
   private <T> boolean hasValueListOrExpression(ParameterField<List<T>> parameterField) {
@@ -423,7 +421,7 @@ public class InfrastructureMapper {
       return false;
     }
 
-    return parameterField.isExpression() || !isEmpty(ParameterFieldHelper.getParameterFieldValue(parameterField));
+    return parameterField.isExpression() || !isEmpty(getParameterFieldValue(parameterField));
   }
 
   private String getValueOrExpression(ParameterField<String> parameterField) {

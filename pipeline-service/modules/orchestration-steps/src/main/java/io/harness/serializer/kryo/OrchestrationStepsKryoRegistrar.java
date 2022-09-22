@@ -21,6 +21,8 @@ import io.harness.steps.barriers.beans.BarrierResponseData;
 import io.harness.steps.barriers.beans.BarrierResponseData.BarrierError;
 import io.harness.steps.resourcerestraint.beans.ResourceRestraintInstance;
 import io.harness.steps.resourcerestraint.beans.ResourceRestraintResponseData;
+import io.harness.steps.wait.WaitStepAction;
+import io.harness.steps.wait.WaitStepResponseData;
 
 import com.esotericsoftware.kryo.Kryo;
 
@@ -39,5 +41,7 @@ public class OrchestrationStepsKryoRegistrar implements KryoRegistrar {
     kryo.register(ServiceNowApprovalResponseData.class, 3228);
     kryo.register(CustomApprovalResponseData.class, 3230);
     kryo.register(CustomApprovalTicketNG.class, 3232);
+    kryo.register(WaitStepResponseData.class, 3233);
+    kryo.register(WaitStepAction.class, 3234);
   }
 }

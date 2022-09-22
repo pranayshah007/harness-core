@@ -24,9 +24,11 @@ import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.utils.NGVariablesUtils;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import lombok.NonNull;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.StringUtils;
 
@@ -108,11 +110,13 @@ public class EnvironmentMapper {
         .build();
   }
 
-  public EnvironmentOutcome toEnvironmentOutcome(
-      Environment environment, NGEnvironmentConfig ngEnvironmentConfig, NGServiceOverrideConfig ngServiceOverrides) {
+  public EnvironmentOutcome toEnvironmentOutcome(Environment environment,
+      @NonNull NGEnvironmentConfig ngEnvironmentConfig, @NonNull NGServiceOverrideConfig ngServiceOverrides) {
+    List<NGVariable> svcOverrideVariables = ngServiceOverrides.getServiceOverrideInfoConfig() == null
+        ? new ArrayList<>()
+        : ngServiceOverrides.getServiceOverrideInfoConfig().getVariables();
     final Map<String, Object> variables =
-        overrideVariables(ngEnvironmentConfig.getNgEnvironmentInfoConfig().getVariables(),
-            ngServiceOverrides.getServiceOverrideInfoConfig().getVariables());
+        overrideVariables(ngEnvironmentConfig.getNgEnvironmentInfoConfig().getVariables(), svcOverrideVariables);
     return EnvironmentOutcome.builder()
         .identifier(environment.getIdentifier())
         .name(StringUtils.defaultIfBlank(environment.getName(), ""))

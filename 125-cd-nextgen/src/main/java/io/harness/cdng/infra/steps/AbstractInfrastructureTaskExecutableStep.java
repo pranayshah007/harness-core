@@ -29,6 +29,7 @@ import io.harness.cdng.execution.helper.ExecutionInfoKeyMapper;
 import io.harness.cdng.execution.helper.StageExecutionHelper;
 import io.harness.cdng.infra.InfrastructureMapper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.infra.beans.SshWinRmAwsInfrastructureOutcome;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
@@ -42,6 +43,7 @@ import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.HarnessStringUtils;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.TaskData;
@@ -100,6 +102,7 @@ import io.harness.steps.shellscript.HostsOutput;
 import io.harness.steps.shellscript.SshInfraDelegateConfigOutput;
 import io.harness.steps.shellscript.WinRmInfraDelegateConfigOutput;
 import io.harness.supplier.ThrowingSupplier;
+import io.harness.yaml.infra.HostConnectionTypeKind;
 
 import software.wings.beans.TaskType;
 import software.wings.service.impl.aws.model.AwsEC2Instance;
@@ -270,7 +273,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
       NGLogCallback logCallback, InfrastructureOutcome infrastructureOutcome, ExecutionInfoKey executionInfoKey,
       long startTime) {
     Set<String> hostNames =
-        azureHostsResponse.getHosts().stream().map(AzureHostResponse::getPublicAddress).collect(Collectors.toSet());
+        azureHostsResponse.getHosts().stream().map(AzureHostResponse::getAddress).collect(Collectors.toSet());
     if (isEmpty(hostNames)) {
       saveExecutionLogSafely(logCallback,
           color("No host(s) found for specified infrastructure or filter did not match any instance(s)", Red));
@@ -293,7 +296,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
       ExecutionInfoKey executionInfoKey, long startTime) {
     Set<String> hostNames = awsListEC2InstancesTaskResponse.getInstances()
                                 .stream()
-                                .map(AwsEC2Instance::getPublicDnsName)
+                                .map(awsEC2Instance -> mapToAddress(awsEC2Instance, infrastructureOutcome))
                                 .collect(Collectors.toSet());
     if (isEmpty(hostNames)) {
       saveExecutionLogSafely(logCallback,
@@ -310,6 +313,25 @@ abstract class AbstractInfrastructureTaskExecutableStep {
         HostsOutput.builder().hosts(filteredHosts).build(), StepCategory.STAGE.name());
 
     return buildSuccessStepResponse(ambiance, infrastructureOutcome, logCallback, executionInfoKey, startTime);
+  }
+
+  private String mapToAddress(AwsEC2Instance awsEC2Instance, InfrastructureOutcome infrastructureOutcome) {
+    if (!(infrastructureOutcome instanceof SshWinRmAwsInfrastructureOutcome)) {
+      throw new InvalidRequestException(
+          format("Not supported infrastructure kind : [%s]", infrastructureOutcome.getKind()));
+    }
+    final String hostConnectionType =
+        ((SshWinRmAwsInfrastructureOutcome) infrastructureOutcome).getHostConnectionType();
+
+    if (HostConnectionTypeKind.PUBLIC_IP.equals(hostConnectionType)
+        && EmptyPredicate.isNotEmpty(awsEC2Instance.getPublicIp())) {
+      return awsEC2Instance.getPublicIp();
+    } else if (HostConnectionTypeKind.PRIVATE_IP.equals(hostConnectionType)
+        && EmptyPredicate.isNotEmpty(awsEC2Instance.getPrivateIp())) {
+      return awsEC2Instance.getPrivateIp();
+    } else {
+      return awsEC2Instance.getHostname(); // default
+    }
   }
 
   StepResponse handleTaskException(long startTime, Exception e, NGLogCallback logCallback) throws Exception {
@@ -429,8 +451,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
     additionalParams.put(AzureAdditionalParams.SUBSCRIPTION_ID, azureInfraDelegateConfig.getSubscriptionId());
     additionalParams.put(AzureAdditionalParams.RESOURCE_GROUP, azureInfraDelegateConfig.getResourceGroup());
     additionalParams.put(AzureAdditionalParams.OS_TYPE, azureInfraDelegateConfig.getOsType());
-    additionalParams.put(
-        AzureAdditionalParams.USE_PUBLIC_DNS, Boolean.toString(azureInfraDelegateConfig.isUsePublicDns()));
+    additionalParams.put(AzureAdditionalParams.HOST_CONNECTION_TYPE, azureInfraDelegateConfig.getHostConnectionType());
 
     Map<String, Object> params = new HashMap<>();
     params.put("tags", azureInfraDelegateConfig.getTags());
@@ -545,7 +566,8 @@ abstract class AbstractInfrastructureTaskExecutableStep {
       case SSH_WINRM_AWS:
         SshWinRmAwsInfrastructure sshWinRmAwsInfrastructure = (SshWinRmAwsInfrastructure) infrastructure;
         infrastructureStepHelper.validateExpression(sshWinRmAwsInfrastructure.getConnectorRef(),
-            sshWinRmAwsInfrastructure.getCredentialsRef(), sshWinRmAwsInfrastructure.getRegion());
+            sshWinRmAwsInfrastructure.getCredentialsRef(), sshWinRmAwsInfrastructure.getRegion(),
+            sshWinRmAwsInfrastructure.getHostConnectionType());
         break;
       default:
         throw new UnsupportedOperationException(
@@ -675,7 +697,8 @@ abstract class AbstractInfrastructureTaskExecutableStep {
       case InfrastructureKind.SSH_WINRM_AWS:
         SshWinRmAwsInfrastructure sshWinRmAwsInfrastructure = (SshWinRmAwsInfrastructure) infrastructure;
         infrastructureStepHelper.validateExpression(sshWinRmAwsInfrastructure.getConnectorRef(),
-            sshWinRmAwsInfrastructure.getCredentialsRef(), sshWinRmAwsInfrastructure.getRegion());
+            sshWinRmAwsInfrastructure.getCredentialsRef(), sshWinRmAwsInfrastructure.getRegion(),
+            sshWinRmAwsInfrastructure.getHostConnectionType());
         break;
 
       case InfrastructureKind.AZURE_WEB_APP:
