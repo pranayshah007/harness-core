@@ -338,7 +338,7 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
             format("Command completed with ExitCode (%d)", processResult.getExitValue()), INFO, commandExecutionStatus);
       } else {
         saveExecutionLog(
-            format("Command completed with ExitCode (%d)", processResult.getExitValue()), INFO, commandExecutionStatus);
+            format("Command completed with ExitCode (%d)", processResult.getExitValue()), INFO);
       }
 
     } catch (InterruptedException e) {
