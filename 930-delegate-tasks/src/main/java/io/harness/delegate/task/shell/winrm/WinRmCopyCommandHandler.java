@@ -11,6 +11,9 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.delegate.task.shell.winrm.WinRmCommandConstants.SESSION_TIMEOUT;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT_HINT;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_CONFIG_FILE_PROVIDED;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_CONFIG_FILE_PROVIDED_EXPLANATION;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_CONFIG_FILE_PROVIDED_HINT;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_DESTINATION_PATH_SPECIFIED;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_DESTINATION_PATH_SPECIFIED_EXPLANATION;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_DESTINATION_PATH_SPECIFIED_HINT;
@@ -58,7 +61,6 @@ import io.harness.ssh.FileSourceType;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -185,7 +187,8 @@ public class WinRmCopyCommandHandler implements CommandHandler {
 
   private List<ConfigFileParameters> getConfigFileParameters(WinrmTaskParameters winrmTaskParameters) {
     if (winrmTaskParameters.getFileDelegateConfig() == null) {
-      return Collections.emptyList();
+      throw NestedExceptionUtils.hintWithExplanationException(NO_CONFIG_FILE_PROVIDED_HINT,
+          NO_CONFIG_FILE_PROVIDED_EXPLANATION, new WinRmCommandExecutionException(NO_CONFIG_FILE_PROVIDED));
     }
 
     return winrmTaskParameters.getFileDelegateConfig()
