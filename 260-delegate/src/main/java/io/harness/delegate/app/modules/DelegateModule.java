@@ -1662,6 +1662,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.LOGZ_GET_LOG_SAMPLE).toInstance(ServiceImplDelegateTask.class);
     mapBinder.addBinding(TaskType.LOGZ_GET_HOST_RECORDS).toInstance(ServiceImplDelegateTask.class);
     mapBinder.addBinding(TaskType.ARTIFACTORY_GET_BUILDS).toInstance(ServiceImplDelegateTask.class);
+    mapBinder.addBinding(TaskType.ARTIFACTORY_GET_LABELS).toInstance(ServiceImplDelegateTask.class);
     mapBinder.addBinding(TaskType.ARTIFACTORY_GET_JOBS).toInstance(ServiceImplDelegateTask.class);
     mapBinder.addBinding(TaskType.ARTIFACTORY_GET_PLANS).toInstance(ServiceImplDelegateTask.class);
     mapBinder.addBinding(TaskType.ARTIFACTORY_GET_ARTIFACTORY_PATHS).toInstance(ServiceImplDelegateTask.class);
