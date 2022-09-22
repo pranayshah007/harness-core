@@ -7,6 +7,9 @@ load("@io_bazel_rules_docker//docker/util:run.bzl", "container_run_and_commit")
 load("@rules_spring//springboot:springboot.bzl", "springboot")
 #load("//:tools/bazel/harness.bzl", "java_binary", "java_library")
 
+load("@dagger//:workspace_defs.bzl", "dagger_rules")
+dagger_rules()
+
 HarnessTeam = "DEL"
 
 java_library(
@@ -22,6 +25,10 @@ java_library(
         "//420-delegate-agent:module",
         "//867-polling-contracts:module",
         "//platform-service/modules/notification-service/delegate-tasks:module",
+        "@maven//:com_google_dagger_dagger",
+        "@maven//:com_google_dagger_dagger_spi",
+        "@maven//:com_google_dagger_dagger_compiler",
+        "@maven//:com_google_dagger_dagger_producers",
         "@maven//:org_apache_commons_commons_math3",
         "@maven//:org_apache_logging_log4j_log4j_api",
         "@maven//:org_apache_logging_log4j_log4j_to_slf4j",
