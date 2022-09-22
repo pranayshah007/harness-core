@@ -8,6 +8,7 @@
 package io.harness.cdng.infra.yaml;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
@@ -23,6 +24,7 @@ import io.harness.filters.WithConnectorRef;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.SkipAutoEvaluation;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.validation.OneOfSet;
@@ -48,7 +50,8 @@ import org.springframework.data.annotation.TypeAlias;
 @Value
 @Builder
 @JsonTypeName(InfrastructureKind.PDC)
-@OneOfSet(fields = {"hosts", "connectorRef"}, requiredFieldNames = {"hosts", "connectorRef"})
+@OneOfSet(fields = {"hosts", "connectorRef", "hostObjectArrayPath"},
+    requiredFieldNames = {"hosts", "connectorRef", "hostObjectArrayPath"})
 @SimpleVisitorHelper(helperClass = ConnectorRefExtractorHelper.class)
 @TypeAlias("PdcInfrastructure")
 @RecasterAlias("io.harness.cdng.infra.yaml.PdcInfrastructure")
@@ -68,7 +71,22 @@ public class PdcInfrastructure
   @YamlSchemaTypes({string})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   @Wither
+  @SkipAutoEvaluation
   ParameterField<List<String>> hosts;
+
+  @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
+  @YamlSchemaTypes({string})
+  ParameterField<Boolean> isDynamicallyProvisioned;
+
+  @YamlSchemaTypes({expression})
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
+  @Wither
+  ParameterField<String> hostObjectArrayPath;
+
+  @YamlSchemaTypes({string})
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_MAP_CLASSPATH)
+  @Wither
+  ParameterField<Map<String, String>> hostAttributes;
 
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> connectorRef;
 
@@ -120,6 +138,11 @@ public class PdcInfrastructure
     } else {
       return new String[] {credentialsRef.getValue(), connectorRef.getValue()};
     }
+  }
+
+  @Override
+  public boolean isDynamicallyProvisioned() {
+    return isDynamicallyProvisioned.getValue();
   }
 
   @Override

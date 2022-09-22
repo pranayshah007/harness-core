@@ -31,6 +31,10 @@ public abstract class InfrastructureDetailsAbstract {
     this.infraName = infraName;
   }
 
+  public boolean isDynamicallyProvisioned() {
+    return false;
+  }
+
   public Boolean getSkipInstances() {
     return skipInstances;
   }
