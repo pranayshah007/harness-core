@@ -10,13 +10,13 @@ replace_key_value () {
   CONFIG_KEY="$1";
   CONFIG_VALUE="$2";
   if [[ "" != "$CONFIG_VALUE" ]]; then
-    yq write -i $CONFIG_FILE $CONFIG_KEY $CONFIG_VALUE
+    export CONFIG_VALUE; export CONFIG_KEY; export CONFIG_KEY=.$CONFIG_KEY; yq -i 'eval(strenv(CONFIG_KEY))=env(CONFIG_VALUE)' $CONFIG_FILE
   fi
 }
 
 #
-yq delete -i $CONFIG_FILE server.adminConnectors
-yq delete -i $CONFIG_FILE server.applicationConnectors[0]
+yq -i 'del(.server.adminConnectors)' $CONFIG_FILE
+yq -i 'del(.server.applicationConnectors[0])' $CONFIG_FILE
 
 replace_key_value logging.level $LOGGING_LEVEL
 
@@ -89,40 +89,40 @@ if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then
   IFS=',' read -ra SENTINEL_URLS <<< "$EVENTS_FRAMEWORK_REDIS_SENTINELS"
   INDEX=0
   for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
-    yq write -i $CONFIG_FILE eventsFramework.redis.sentinelUrls.[$INDEX] "${REDIS_SENTINEL_URL}"
+    export REDIS_SENTINEL_URL; export INDEX; yq -i '.eventsFramework.redis.sentinelUrls.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
     INDEX=$(expr $INDEX + 1)
   done
 fi
 
 if [[ "$STACK_DRIVER_LOGGING_ENABLED" == "true" ]]; then
-  yq delete -i $CONFIG_FILE logging.appenders[0]
-  yq write -i $CONFIG_FILE logging.appenders[0].stackdriverLogEnabled "true"
+  yq -i 'del(.logging.appenders[0])' $CONFIG_FILE
+  yq -i '.logging.appenders[0].stackdriverLogEnabled=true' $CONFIG_FILE
 else
-  yq delete -i $CONFIG_FILE logging.appenders[1]
+  yq -i 'del(.logging.appenders[1])' $CONFIG_FILE
 fi
 
 if [[ "" != "$SEGMENT_ENABLED" ]]; then
-  yq write -i $CONFIG_FILE segmentConfiguration.enabled "$SEGMENT_ENABLED"
+  export SEGMENT_ENABLED; yq -i '.segmentConfiguration.enabled=env(SEGMENT_ENABLED)' $CONFIG_FILE
 fi
 
 if [[ "" != "$SEGMENT_APIKEY" ]]; then
-  yq write -i $CONFIG_FILE segmentConfiguration.apiKey "$SEGMENT_APIKEY"
+  export SEGMENT_APIKEY; yq -i '.segmentConfiguration.apiKey=env(SEGMENT_APIKEY)' $CONFIG_FILE
 fi
 
 if [[ "" != "$AUDIT_CLIENT_BASEURL" ]]; then
-  yq write -i $CONFIG_FILE auditClientConfig.baseUrl "$AUDIT_CLIENT_BASEURL"
+  export AUDIT_CLIENT_BASEURL; yq -i '.auditClientConfig.baseUrl=env(AUDIT_CLIENT_BASEURL)' $CONFIG_FILE
 fi
 
 if [[ "" != "$AUDIT_ENABLED" ]]; then
-  yq write -i $CONFIG_FILE enableAudit "$AUDIT_ENABLED"
+  export AUDIT_ENABLED; yq -i '.enableAudit=env(AUDIT_ENABLED)' $CONFIG_FILE
 fi
 
 if [[ "" != "$NOTIFICATION_BASE_URL" ]]; then
-  yq write -i $CONFIG_FILE notificationClient.httpClient.baseUrl "$NOTIFICATION_BASE_URL"
+  export NOTIFICATION_BASE_URL; yq -i '.notificationClient.httpClient.baseUrl=env(NOTIFICATION_BASE_URL)' $CONFIG_FILE
 fi
 
 if [[ "" != "$NOTIFICATION_MONGO_URI" ]]; then
-  yq write -i $CONFIG_FILE notificationClient.messageBroker.uri "${NOTIFICATION_MONGO_URI//\\&/&}"
+  export NOTIFICATION_MONGO_URI=${NOTIFICATION_MONGO_URI//\\&/&}; yq -i '.notificationClient.messageBroker.uri=env(NOTIFICATION_MONGO_URI)' $CONFIG_FILE
 fi
 
 replace_key_value outboxPollConfig.initialDelayInSeconds "$OUTBOX_POLL_INITIAL_DELAY"

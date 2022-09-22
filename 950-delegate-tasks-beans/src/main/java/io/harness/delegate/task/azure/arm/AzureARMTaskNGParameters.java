@@ -46,7 +46,7 @@ public class AzureARMTaskNGParameters extends AzureResourceCreationTaskNGParamet
 
   String deploymentName;
 
-  private boolean rollback; // TODO
+  private boolean rollback;
 
   @Builder
   public AzureARMTaskNGParameters(String accountId, AzureARMTaskType taskType, AzureConnectorDTO connectorDTO,

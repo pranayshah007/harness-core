@@ -7,8 +7,6 @@
 
 package software.wings.service.impl.yaml;
 
-import io.harness.beans.FeatureName;
-import io.harness.ff.FeatureFlagService;
 import io.harness.git.model.ChangeType;
 import io.harness.yaml.BaseYaml;
 
@@ -47,7 +45,6 @@ public class YamlChangeSetHelper {
   @Inject private EntityUpdateService entityUpdateService;
   @Inject private YamlGitService yamlGitService;
   @Inject private YamlHandlerFactory yamlHandlerFactory;
-  @Inject private FeatureFlagService featureFlagService;
   @Inject private YamlHelper yamlHelper;
   @Inject private YamlHandlerFromBeanFactory yamlHandlerFromBeanFactory;
 
@@ -81,8 +78,7 @@ public class YamlChangeSetHelper {
     if (isRename) {
       entityRenameYamlChange(accountId, oldEntity, newEntity);
     } else {
-      if (compareYaml(oldEntity, newEntity)
-          && featureFlagService.isEnabled(FeatureName.COMPARE_YAML_IN_GIT_SYNC, accountId)) {
+      if (compareYaml(oldEntity, newEntity)) {
         return;
       }
       entityYamlChangeSet(accountId, newEntity, ChangeType.MODIFY);
@@ -106,18 +102,10 @@ public class YamlChangeSetHelper {
   }
 
   private <T> void entityRenameYamlChange(String accountId, T oldEntity, T newEntity) {
-    if (!featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId)) {
-      if (yamlHandlerFactory.isNonLeafEntity(oldEntity)) {
-        nonLeafEntityRenameYamlChange(accountId, oldEntity, newEntity);
-      } else {
-        leafEntityRenameYamlChange(accountId, oldEntity, newEntity);
-      }
+    if (yamlHandlerFactory.isNonLeafEntity(oldEntity)) {
+      nonLeafEntityRenameYamlChange(accountId, oldEntity, newEntity);
     } else {
-      if (yamlHandlerFactory.isNonLeafEntityWithFeatureFlag(oldEntity)) {
-        nonLeafEntityRenameYamlChange(accountId, oldEntity, newEntity);
-      } else {
-        leafEntityRenameYamlChange(accountId, oldEntity, newEntity);
-      }
+      leafEntityRenameYamlChange(accountId, oldEntity, newEntity);
     }
   }
 

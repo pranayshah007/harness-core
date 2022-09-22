@@ -13,6 +13,7 @@ import static io.harness.rule.OwnerRule.VIKAS_M;
 import static java.util.Collections.singletonList;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertFalse;
+import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertTrue;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.mockito.Matchers.any;
@@ -28,7 +29,6 @@ import io.harness.ng.core.entities.Organization;
 import io.harness.ng.core.entities.Organization.OrganizationKeys;
 import io.harness.rule.Owner;
 
-import com.mongodb.client.result.DeleteResult;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -110,11 +110,11 @@ public class OrganizationRepositoryCustomImplTest extends CategoryTest {
     Long version = 0L;
     ArgumentCaptor<Query> queryArgumentCaptor = ArgumentCaptor.forClass(Query.class);
 
-    when(mongoTemplate.remove(any(), eq(Organization.class))).thenReturn(DeleteResult.acknowledged(1));
-    boolean deleted = organizationRepository.hardDelete(accountIdentifier, identifier, version);
-    verify(mongoTemplate, times(1)).remove(queryArgumentCaptor.capture(), eq(Organization.class));
+    when(mongoTemplate.findAndRemove(any(), eq(Organization.class))).thenReturn(Organization.builder().build());
+    Organization organization = organizationRepository.hardDelete(accountIdentifier, identifier, version);
+    verify(mongoTemplate, times(1)).findAndRemove(queryArgumentCaptor.capture(), eq(Organization.class));
     Query query = queryArgumentCaptor.getValue();
-    assertTrue(deleted);
+    assertNotNull(organization);
     assertEquals(3, query.getQueryObject().size());
     assertTrue(query.getQueryObject().containsKey(OrganizationKeys.accountIdentifier));
     assertEquals(accountIdentifier, query.getQueryObject().get(OrganizationKeys.accountIdentifier));

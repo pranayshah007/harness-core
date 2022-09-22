@@ -413,7 +413,8 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
       case InfrastructureKind.SSH_WINRM_AWS:
         SshWinRmAwsInfrastructure sshWinRmAwsInfrastructure = (SshWinRmAwsInfrastructure) infrastructure;
         infrastructureStepHelper.validateExpression(sshWinRmAwsInfrastructure.getConnectorRef(),
-            sshWinRmAwsInfrastructure.getCredentialsRef(), sshWinRmAwsInfrastructure.getRegion());
+            sshWinRmAwsInfrastructure.getCredentialsRef(), sshWinRmAwsInfrastructure.getRegion(),
+            sshWinRmAwsInfrastructure.getHostConnectionType());
         break;
 
       case InfrastructureKind.AZURE_WEB_APP:

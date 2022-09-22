@@ -25,6 +25,7 @@ import io.harness.beans.environment.pod.container.ContainerImageDetails;
 import io.harness.beans.quantity.unit.DecimalQuantityUnit;
 import io.harness.beans.quantity.unit.StorageQuantityUnit;
 import io.harness.beans.serializer.RunTimeInputHandler;
+import io.harness.beans.stages.IntegrationStageNode;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.ci.buildstate.ServiceContainerUtils;
 import io.harness.ci.config.CIExecutionServiceConfig;
@@ -34,7 +35,6 @@ import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.delegate.beans.ci.pod.CIContainerType;
 import io.harness.delegate.beans.ci.pod.ContainerResourceParams;
 import io.harness.exception.ngexception.CIStageExecutionException;
-import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.yaml.extended.ci.container.ContainerResource;
 
 import java.util.ArrayList;
@@ -46,10 +46,10 @@ import java.util.Map;
 @OwnedBy(HarnessTeam.CI)
 public class CIServiceBuilder {
   private static final String SEPARATOR = ",";
-  public static List<ContainerDefinitionInfo> createServicesContainerDefinition(StageElementConfig stageElementConfig,
+  public static List<ContainerDefinitionInfo> createServicesContainerDefinition(IntegrationStageNode stageNode,
       PortFinder portFinder, CIExecutionServiceConfig ciExecutionServiceConfig, OSType os) {
     List<ContainerDefinitionInfo> containerDefinitionInfos = new ArrayList<>();
-    IntegrationStageConfig integrationStage = IntegrationStageUtils.getIntegrationStageConfig(stageElementConfig);
+    IntegrationStageConfig integrationStage = IntegrationStageUtils.getIntegrationStageConfig(stageNode);
     if (integrationStage.getServiceDependencies() == null
         || isEmpty(integrationStage.getServiceDependencies().getValue())) {
       return containerDefinitionInfos;
@@ -64,7 +64,7 @@ public class CIServiceBuilder {
       if (dependencyElement.getDependencySpecType() instanceof CIServiceInfo) {
         ContainerDefinitionInfo containerDefinitionInfo =
             createServiceContainerDefinition((CIServiceInfo) dependencyElement.getDependencySpecType(), portFinder,
-                serviceIdx, ciExecutionServiceConfig, stageElementConfig.getIdentifier(), os);
+                serviceIdx, ciExecutionServiceConfig, stageNode.getIdentifier(), os);
         if (containerDefinitionInfo != null) {
           containerDefinitionInfos.add(containerDefinitionInfo);
         }
@@ -163,9 +163,9 @@ public class CIServiceBuilder {
         .build();
   }
 
-  public static List<String> getServiceIdList(StageElementConfig stageElementConfig) {
+  public static List<String> getServiceIdList(IntegrationStageNode stageNode) {
     List<String> serviceIdList = new ArrayList<>();
-    IntegrationStageConfig integrationStage = IntegrationStageUtils.getIntegrationStageConfig(stageElementConfig);
+    IntegrationStageConfig integrationStage = IntegrationStageUtils.getIntegrationStageConfig(stageNode);
 
     if (isEmpty(integrationStage.getServiceDependencies().getValue())) {
       return serviceIdList;
@@ -183,9 +183,9 @@ public class CIServiceBuilder {
     return serviceIdList;
   }
 
-  public static List<Integer> getServiceGrpcPortList(StageElementConfig stageElementConfig) {
+  public static List<Integer> getServiceGrpcPortList(IntegrationStageNode stageNode) {
     List<Integer> grpcPortList = new ArrayList<>();
-    IntegrationStageConfig integrationStage = IntegrationStageUtils.getIntegrationStageConfig(stageElementConfig);
+    IntegrationStageConfig integrationStage = IntegrationStageUtils.getIntegrationStageConfig(stageNode);
 
     if (isEmpty(integrationStage.getServiceDependencies().getValue())) {
       return grpcPortList;

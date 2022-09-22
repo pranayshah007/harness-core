@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.beans.environment.K8BuildJobEnvInfo;
 import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
 import io.harness.beans.executionargs.CIExecutionArgs;
+import io.harness.beans.stages.IntegrationStageNode;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.category.element.UnitTests;
@@ -30,7 +31,6 @@ import io.harness.cimanager.stages.IntegrationStageConfigImpl;
 import io.harness.delegate.beans.ci.pod.ContainerResourceParams;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
-import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.rule.Owner;
 import io.harness.steps.matrix.StrategyExpansionData;
@@ -59,7 +59,7 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
   @Category(UnitTests.class)
   public void createStepContainerDefinitions() {
     List<ExecutionWrapperConfig> steps = K8InitializeStepUtilsHelper.getExecutionWrapperConfigList();
-    StageElementConfig integrationStageConfig = K8InitializeStepUtilsHelper.getIntegrationStageElementConfig();
+    IntegrationStageNode stageNode = K8InitializeStepUtilsHelper.getIntegrationStageNode();
     PortFinder portFinder = PortFinder.builder().startingPort(PORT_STARTING_RANGE).usedPorts(new HashSet<>()).build();
     CIExecutionArgs ciExecutionArgs = K8InitializeStepUtilsHelper.getCIExecutionArgs();
 
@@ -70,7 +70,7 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
             .build();
     Ambiance ambiance = Ambiance.newBuilder().build();
     List<ContainerDefinitionInfo> stepContainers = k8InitializeStepUtils.createStepContainerDefinitions(
-        initializeStepInfo, integrationStageConfig, ciExecutionArgs, portFinder, "test", OSType.Linux, ambiance, 0);
+        initializeStepInfo, stageNode, ciExecutionArgs, portFinder, "test", OSType.Linux, ambiance, 0);
 
     assertThat(stepContainers).isEqualTo(expected);
   }
@@ -83,9 +83,8 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
         Collections.singletonList(ExecutionWrapperConfig.builder()
                                       .step(K8InitializeStepUtilsHelper.getBackgroundStepElementConfigAsJsonNode())
                                       .build());
-    StageElementConfig integrationStageConfig = K8InitializeStepUtilsHelper.getIntegrationStageElementConfig();
-    IntegrationStageConfigImpl integrationStageConfigImpl =
-        (IntegrationStageConfigImpl) integrationStageConfig.getStageType();
+    IntegrationStageNode stageNode = K8InitializeStepUtilsHelper.getIntegrationStageNode();
+    IntegrationStageConfigImpl integrationStageConfigImpl = stageNode.getIntegrationStageConfig();
     integrationStageConfigImpl.setExecution(ExecutionElementConfig.builder().steps(steps).build());
     PortFinder portFinder = PortFinder.builder().startingPort(PORT_STARTING_RANGE).usedPorts(new HashSet<>()).build();
     CIExecutionArgs ciExecutionArgs = K8InitializeStepUtilsHelper.getCIExecutionArgs();
@@ -105,7 +104,7 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
             .build();
     Ambiance ambiance = Ambiance.newBuilder().build();
     List<ContainerDefinitionInfo> stepContainers = k8InitializeStepUtils.createStepContainerDefinitions(
-        initializeStepInfo, integrationStageConfig, ciExecutionArgs, portFinder, "test", OSType.Linux, ambiance, 0);
+        initializeStepInfo, stageNode, ciExecutionArgs, portFinder, "test", OSType.Linux, ambiance, 0);
 
     assertThat(stepContainers).isEqualTo(expected);
   }
@@ -115,8 +114,7 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
   @Category(UnitTests.class)
   public void testStepGroupWithParallelSteps() throws Exception {
     List<ExecutionWrapperConfig> steps = K8InitializeStepUtilsHelper.getExecutionWrapperConfigListWithStepGroup();
-    StageElementConfig integrationStageConfig =
-        K8InitializeStepUtilsHelper.getIntegrationStageElementConfigWithStepGroup();
+    IntegrationStageNode stageNode = K8InitializeStepUtilsHelper.getIntegrationStageNodeWithStepGroup();
     PortFinder portFinder = PortFinder.builder().startingPort(PORT_STARTING_RANGE).usedPorts(new HashSet<>()).build();
     CIExecutionArgs ciExecutionArgs = K8InitializeStepUtilsHelper.getCIExecutionArgs();
     InitializeStepInfo initializeStepInfo =
@@ -126,7 +124,7 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
     Ambiance ambiance = Ambiance.newBuilder().build();
 
     List<ContainerDefinitionInfo> stepContainers = k8InitializeStepUtils.createStepContainerDefinitions(
-        initializeStepInfo, integrationStageConfig, ciExecutionArgs, portFinder, "test", OSType.Linux, ambiance, 0);
+        initializeStepInfo, stageNode, ciExecutionArgs, portFinder, "test", OSType.Linux, ambiance, 0);
 
     HashMap<String, ContainerResourceParams> map = populateMap(stepContainers);
 
@@ -153,8 +151,7 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
   @Category(UnitTests.class)
   public void testStepGroup() throws Exception {
     List<ExecutionWrapperConfig> steps = K8InitializeStepUtilsHelper.getExecutionWrapperConfigListWithStepGroup2();
-    StageElementConfig integrationStageConfig =
-        K8InitializeStepUtilsHelper.getIntegrationStageElementConfigWithStepGroup1();
+    IntegrationStageNode stageNode = K8InitializeStepUtilsHelper.getIntegrationStageNodeWithStepGroup1();
     PortFinder portFinder = PortFinder.builder().startingPort(PORT_STARTING_RANGE).usedPorts(new HashSet<>()).build();
     CIExecutionArgs ciExecutionArgs = K8InitializeStepUtilsHelper.getCIExecutionArgs();
     InitializeStepInfo initializeStepInfo =
@@ -164,7 +161,7 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
     Ambiance ambiance = Ambiance.newBuilder().build();
 
     List<ContainerDefinitionInfo> stepContainers = k8InitializeStepUtils.createStepContainerDefinitions(
-        initializeStepInfo, integrationStageConfig, ciExecutionArgs, portFinder, "test", OSType.Linux, ambiance, 0);
+        initializeStepInfo, stageNode, ciExecutionArgs, portFinder, "test", OSType.Linux, ambiance, 0);
 
     HashMap<String, ContainerResourceParams> map = populateMap(stepContainers);
 
@@ -183,8 +180,7 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
   @Category(UnitTests.class)
   public void testParallelStepGroups() throws Exception {
     List<ExecutionWrapperConfig> steps = K8InitializeStepUtilsHelper.getExecutionWrapperConfigListWithStepGroup1();
-    StageElementConfig integrationStageConfig =
-        K8InitializeStepUtilsHelper.getIntegrationStageElementConfigWithStepGroup1();
+    IntegrationStageNode stageNode = K8InitializeStepUtilsHelper.getIntegrationStageNodeWithStepGroup1();
     PortFinder portFinder = PortFinder.builder().startingPort(PORT_STARTING_RANGE).usedPorts(new HashSet<>()).build();
     CIExecutionArgs ciExecutionArgs = K8InitializeStepUtilsHelper.getCIExecutionArgs();
     InitializeStepInfo initializeStepInfo =
@@ -194,7 +190,7 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
     Ambiance ambiance = Ambiance.newBuilder().build();
 
     List<ContainerDefinitionInfo> stepContainers = k8InitializeStepUtils.createStepContainerDefinitions(
-        initializeStepInfo, integrationStageConfig, ciExecutionArgs, portFinder, "test", OSType.Linux, ambiance, 0);
+        initializeStepInfo, stageNode, ciExecutionArgs, portFinder, "test", OSType.Linux, ambiance, 0);
 
     HashMap<String, ContainerResourceParams> map = populateMap(stepContainers);
 
@@ -223,8 +219,7 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
   @Category(UnitTests.class)
   public void testStepsWithStrategy() throws Exception {
     List<ExecutionWrapperConfig> steps = K8InitializeStepUtilsHelper.getExecutionWrapperConfigListWithStrategy();
-    StageElementConfig integrationStageConfig =
-        K8InitializeStepUtilsHelper.getIntegrationStageElementConfigWithStepGroup1();
+    IntegrationStageNode stageNode = K8InitializeStepUtilsHelper.getIntegrationStageNodeWithStepGroup1();
     Map<String, StrategyExpansionData> strategyExpansionMap = new HashMap<>();
     strategyExpansionMap.put("MAB-xgo2QTyxGP5ER1ZHdg", StrategyExpansionData.builder().maxConcurrency(2).build());
     strategyExpansionMap.put("lBUdHaJlRMufGBG4u3uydA", StrategyExpansionData.builder().maxConcurrency(3).build());
@@ -239,7 +234,7 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
             .build();
     Ambiance ambiance = Ambiance.newBuilder().build();
     List<ContainerDefinitionInfo> stepContainers = k8InitializeStepUtils.createStepContainerDefinitions(
-        initializeStepInfo, integrationStageConfig, ciExecutionArgs, portFinder, "test", OSType.Linux, ambiance, 0);
+        initializeStepInfo, stageNode, ciExecutionArgs, portFinder, "test", OSType.Linux, ambiance, 0);
     assertThat(stepContainers.size()).isEqualTo(15);
     Pair<Integer, Integer> wrapperRequest = k8InitializeStepUtils.getStageRequest(initializeStepInfo, "test");
     assertThat(wrapperRequest.getLeft()).isEqualTo(1600);
@@ -251,7 +246,7 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
   @Category(UnitTests.class)
   public void createWinStepContainerDefinitions() {
     List<ExecutionWrapperConfig> steps = K8InitializeStepUtilsHelper.getExecutionWrapperConfigList();
-    StageElementConfig integrationStageConfig = K8InitializeStepUtilsHelper.getIntegrationStageElementConfig();
+    IntegrationStageNode stageNode = K8InitializeStepUtilsHelper.getIntegrationStageNode();
     PortFinder portFinder = PortFinder.builder().startingPort(PORT_STARTING_RANGE).usedPorts(new HashSet<>()).build();
     CIExecutionArgs ciExecutionArgs = K8InitializeStepUtilsHelper.getCIExecutionArgs();
 
@@ -262,7 +257,7 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
             .build();
     Ambiance ambiance = Ambiance.newBuilder().build();
     List<ContainerDefinitionInfo> stepContainers = k8InitializeStepUtils.createStepContainerDefinitions(
-        initializeStepInfo, integrationStageConfig, ciExecutionArgs, portFinder, "test", OSType.Windows, ambiance, 0);
+        initializeStepInfo, stageNode, ciExecutionArgs, portFinder, "test", OSType.Windows, ambiance, 0);
 
     assertThat(stepContainers).isEqualTo(expected);
   }

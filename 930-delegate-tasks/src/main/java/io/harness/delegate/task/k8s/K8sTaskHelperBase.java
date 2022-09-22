@@ -16,6 +16,7 @@ import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.OCI_
 import static io.harness.delegate.clienttools.ClientTool.OC;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.filesystem.FileIo.createDirectoryIfDoesNotExist;
+import static io.harness.filesystem.FileIo.deleteDirectoryAndItsContentIfExists;
 import static io.harness.filesystem.FileIo.getFilesUnderPath;
 import static io.harness.filesystem.FileIo.getFilesUnderPathMatchesFirstLine;
 import static io.harness.helm.HelmConstants.HELM_PATH_PLACEHOLDER;
@@ -245,6 +246,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -346,7 +348,8 @@ public class K8sTaskHelperBase {
   public static ProcessResult executeCommandSilent(AbstractExecutable command, String workingDirectory)
       throws Exception {
     try (LogOutputStream emptyLogOutputStream = getEmptyLogOutputStream()) {
-      return command.execute(workingDirectory, emptyLogOutputStream, emptyLogOutputStream, false);
+      return command.execute(
+          workingDirectory, emptyLogOutputStream, emptyLogOutputStream, false, Collections.emptyMap());
     }
   }
 
@@ -357,8 +360,8 @@ public class K8sTaskHelperBase {
         ByteArrayOutputStream errorCaptureStream = new ByteArrayOutputStream(1024);
         LogOutputStream logErrorStream = getExecutionLogOutputStream(executionLogCallback, ERROR, errorCaptureStream)) {
       return ProcessResponse.builder()
-          .processResult(
-              command.execute(k8sDelegateTaskParams.getWorkingDirectory(), logOutputStream, logErrorStream, true))
+          .processResult(command.execute(k8sDelegateTaskParams.getWorkingDirectory(), logOutputStream, logErrorStream,
+              true, Collections.emptyMap()))
           .errorMessage(ExceptionMessageSanitizer.sanitizeMessage(errorCaptureStream.toString()))
           .kubectlPath(k8sDelegateTaskParams.getKubectlPath())
           .printableCommand(getPrintableCommand(command.command()))
@@ -997,6 +1000,7 @@ public class K8sTaskHelperBase {
   public void delete(Kubectl client, K8sDelegateTaskParams k8sDelegateTaskParams,
       List<KubernetesResourceId> kubernetesResourceIds, LogCallback executionLogCallback, boolean denoteOverallSuccess)
       throws Exception {
+    boolean deleteFailed = false;
     for (KubernetesResourceId resourceId : kubernetesResourceIds) {
       ProcessResult result = executeDeleteCommand(client, k8sDelegateTaskParams, executionLogCallback, resourceId);
       if (result.getExitValue() != 0) {
@@ -1004,12 +1008,13 @@ public class K8sTaskHelperBase {
         String resultOutput = result.outputUTF8().toLowerCase();
         // if result contains "not found" then we don't fail else we fail the step
         if (!resultOutput.contains(NOT_FOUND)) {
-          executionLogCallback.saveExecutionLog(resultOutput, ERROR, FAILURE);
-          throw new KubernetesCliTaskRuntimeException(resultOutput, KubernetesCliCommandType.DELETE);
+          deleteFailed = true;
         }
       }
     }
-    if (denoteOverallSuccess) {
+    if (deleteFailed) {
+      executionLogCallback.saveExecutionLog("Failed", ERROR, FAILURE);
+    } else if (denoteOverallSuccess) {
       executionLogCallback.saveExecutionLog("Done", INFO, SUCCESS);
     }
   }
@@ -1064,15 +1069,16 @@ public class K8sTaskHelperBase {
   public ProcessResult executeCommandUsingUtils(K8sDelegateTaskParams k8sDelegateTaskParams,
       LogOutputStream statusInfoStream, LogOutputStream statusErrorStream, String command,
       Map<String, String> environment) throws Exception {
-    addGcpCredentialsToEnvironmentIfExist(k8sDelegateTaskParams.getWorkingDirectory(), environment);
+    if (isNotEmpty(k8sDelegateTaskParams.getGcpKeyFilePath())) {
+      addGcpCredentialsToEnvironmentIfExist(k8sDelegateTaskParams.getGcpKeyFilePath(), environment);
+    }
     return executeCommandUsingUtils(
         k8sDelegateTaskParams.getWorkingDirectory(), statusInfoStream, statusErrorStream, command, environment);
   }
 
-  private void addGcpCredentialsToEnvironmentIfExist(String directory, Map<String, String> environment) {
-    Path googleApplicationCredentialsPath = Paths.get(directory).resolve(K8sConstants.GCP_JSON_KEY_FILE_NAME);
-    if (Files.exists(googleApplicationCredentialsPath)) {
-      environment.put("GOOGLE_APPLICATION_CREDENTIALS", googleApplicationCredentialsPath.toAbsolutePath().toString());
+  private void addGcpCredentialsToEnvironmentIfExist(String filePath, Map<String, String> environment) {
+    if (Files.exists(Paths.get(filePath))) {
+      environment.put("GOOGLE_APPLICATION_CREDENTIALS", filePath);
     }
   }
 
@@ -1275,7 +1281,8 @@ public class K8sTaskHelperBase {
 
         executionLogCallback.saveExecutionLog(printableExecutedCommand + "\n");
 
-        result = rolloutStatusCommand.execute(workingDirectory, statusInfoStream, statusErrorStream, false);
+        result = rolloutStatusCommand.execute(
+            workingDirectory, statusInfoStream, statusErrorStream, false, Collections.emptyMap());
       }
       success = result.getExitValue() == 0;
 
@@ -1337,9 +1344,11 @@ public class K8sTaskHelperBase {
       GetJobCommand jobStatusCommand, GetJobCommand jobCompletionTimeCommand, boolean isErrorFrameworkEnabled)
       throws Exception {
     while (true) {
-      jobStatusCommand.execute(k8sDelegateTaskParams.getWorkingDirectory(), statusInfoStream, statusErrorStream, false);
+      jobStatusCommand.execute(k8sDelegateTaskParams.getWorkingDirectory(), statusInfoStream, statusErrorStream, false,
+          Collections.emptyMap());
 
-      ProcessResult result = jobCompleteCommand.execute(k8sDelegateTaskParams.getWorkingDirectory(), null, null, false);
+      ProcessResult result = jobCompleteCommand.execute(
+          k8sDelegateTaskParams.getWorkingDirectory(), null, null, false, Collections.emptyMap());
 
       boolean success = 0 == result.getExitValue();
       if (!success) {
@@ -1361,7 +1370,8 @@ public class K8sTaskHelperBase {
       // cli command outputs with single quotes
       String jobStatus = result.outputUTF8().replace("'", "");
       if ("True".equals(jobStatus)) {
-        result = jobCompletionTimeCommand.execute(k8sDelegateTaskParams.getWorkingDirectory(), null, null, false);
+        result = jobCompletionTimeCommand.execute(
+            k8sDelegateTaskParams.getWorkingDirectory(), null, null, false, Collections.emptyMap());
         success = 0 == result.getExitValue();
         if (!success) {
           log.warn(result.outputUTF8());
@@ -1385,7 +1395,8 @@ public class K8sTaskHelperBase {
         }
       }
 
-      result = jobFailedCommand.execute(k8sDelegateTaskParams.getWorkingDirectory(), null, null, false);
+      result = jobFailedCommand.execute(
+          k8sDelegateTaskParams.getWorkingDirectory(), null, null, false, Collections.emptyMap());
 
       success = 0 == result.getExitValue();
       if (!success) {
@@ -1499,8 +1510,13 @@ public class K8sTaskHelperBase {
         printableExecutedCommand = getPrintableCommand(rolloutStatusCommand.command());
         executionLogCallback.saveExecutionLog(printableExecutedCommand + "\n");
 
+        Map<String, String> env = new HashMap<>();
+        if (isNotEmpty(k8sDelegateTaskParams.getGcpKeyFilePath())) {
+          env.put("GOOGLE_APPLICATION_CREDENTIALS", k8sDelegateTaskParams.getGcpKeyFilePath());
+        }
+
         result = rolloutStatusCommand.execute(
-            k8sDelegateTaskParams.getWorkingDirectory(), statusInfoStream, statusErrorStream, false);
+            k8sDelegateTaskParams.getWorkingDirectory(), statusInfoStream, statusErrorStream, false, env);
       }
 
       boolean success = 0 == result.getExitValue();
@@ -2238,8 +2254,10 @@ public class K8sTaskHelperBase {
     Retry retry = buildRetryAndRegisterListeners(retryCondition);
 
     while (true) {
-      Callable<ProcessResult> callable = Retry.decorateCallable(
-          retry, () -> crdStatusCommand.execute(k8sDelegateTaskParams.getWorkingDirectory(), null, null, false));
+      Callable<ProcessResult> callable = Retry.decorateCallable(retry,
+          ()
+              -> crdStatusCommand.execute(
+                  k8sDelegateTaskParams.getWorkingDirectory(), null, null, false, Collections.emptyMap()));
       ProcessResult result = callable.call();
       boolean success = 0 == result.getExitValue();
       if (!success) {
@@ -2622,6 +2640,14 @@ public class K8sTaskHelperBase {
     executionLogCallback.saveExecutionLog(sb.toString());
   }
 
+  public void copyHelmChartFolderToWorkingDir(String localChartDirectory, String workingDirectory) throws IOException {
+    File src = new File(localChartDirectory);
+    File dest = new File(workingDirectory);
+    deleteDirectoryAndItsContentIfExists(dest.getAbsolutePath());
+    FileUtils.copyDirectory(src, dest);
+    FileIo.waitForDirectoryToBeAccessibleOutOfProcess(dest.getPath(), 10);
+  }
+
   public boolean downloadFilesFromChartRepo(ManifestDelegateConfig manifestDelegateConfig, String destinationDirectory,
       LogCallback logCallback, long timeoutInMillis) {
     if (!(manifestDelegateConfig instanceof HelmChartManifestDelegateConfig)) {
@@ -2630,13 +2656,35 @@ public class K8sTaskHelperBase {
     }
 
     try {
+      boolean isEnvVarSet = helmTaskHelperBase.isHelmLocalRepoSet();
+      String chartName = ((HelmChartManifestDelegateConfig) manifestDelegateConfig).getChartName();
+      String chartVersion = ((HelmChartManifestDelegateConfig) manifestDelegateConfig).getChartVersion();
+      String repoName = helmTaskHelperBase.getRepoNameNG(manifestDelegateConfig.getStoreDelegateConfig());
+      if (isEnvVarSet) {
+        String localChartDirectory;
+        if (helmTaskHelperBase.doesChartExistInLocalRepo(repoName, chartName, chartVersion)) {
+          localChartDirectory = HelmTaskHelperBase.getChartDirectory(
+              helmTaskHelperBase.getHelmLocalRepositoryCompletePath(repoName, chartName, chartVersion), chartName);
+        } else {
+          throw new InvalidRequestException(
+              "Env Variable HELM_LOCAL_REPOSITORY set, expecting chart directory to exist locally after helm fetch but did not find it. Check if delegate has changed \n");
+        }
+        String workingDirectory =
+            helmTaskHelperBase.createDirectoryIfNotExist(Paths.get(destinationDirectory, chartName).toString());
+        log.info("Copying locally present chart from directory: {} to current working directory: {} \n",
+            localChartDirectory, workingDirectory);
+        copyHelmChartFolderToWorkingDir(localChartDirectory, workingDirectory);
+        logCallback.saveExecutionLog(color("Successfully fetched following files:", White, Bold));
+        logCallback.saveExecutionLog(getManifestFileNamesInLogFormat(destinationDirectory));
+        logCallback.saveExecutionLog("Done.", INFO, SUCCESS);
+        return true;
+      }
       HelmChartManifestDelegateConfig helmChartManifestConfig =
           (HelmChartManifestDelegateConfig) manifestDelegateConfig;
       logCallback.saveExecutionLog(color(format("%nFetching files from helm chart repo"), White, Bold));
       helmTaskHelperBase.printHelmChartInfoInExecutionLogs(helmChartManifestConfig, logCallback);
 
       helmTaskHelperBase.initHelm(destinationDirectory, helmChartManifestConfig.getHelmVersion(), timeoutInMillis);
-
       if (HTTP_HELM == manifestDelegateConfig.getStoreDelegateConfig().getType()) {
         helmTaskHelperBase.downloadChartFilesFromHttpRepo(
             helmChartManifestConfig, destinationDirectory, timeoutInMillis);
@@ -3007,13 +3055,14 @@ public class K8sTaskHelperBase {
   }
 
   public boolean doStatusCheckAllResourcesForHelm(Kubectl client, List<KubernetesResourceId> resourceIds, String ocPath,
-      String workingDir, String namespace, String kubeconfigPath, ExecutionLogCallback executionLogCallback)
-      throws Exception {
+      String workingDir, String namespace, String kubeconfigPath, ExecutionLogCallback executionLogCallback,
+      String gcpKeyFilePath) throws Exception {
     return doStatusCheckForAllResources(client, resourceIds,
         K8sDelegateTaskParams.builder()
             .ocPath(ocPath)
             .workingDirectory(workingDir)
             .kubeconfigPath(kubeconfigPath)
+            .gcpKeyFilePath(gcpKeyFilePath)
             .build(),
         namespace, executionLogCallback, false);
   }

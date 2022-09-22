@@ -43,7 +43,6 @@ import static io.harness.persistence.HQuery.excludeAuthority;
 import static software.wings.audit.AuditHeader.Builder.anAuditHeader;
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.beans.DelegateSequenceConfig.Builder.aDelegateSequenceBuilder;
-import static software.wings.beans.Event.Builder.anEvent;
 import static software.wings.beans.User.Builder.anUser;
 import static software.wings.utils.Utils.normalizeIdentifier;
 import static software.wings.utils.Utils.uuidToIdentifier;
@@ -171,7 +170,6 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.service.intfc.AgentMtlsEndpointService;
 import io.harness.service.intfc.DelegateCache;
 import io.harness.service.intfc.DelegateCallbackRegistry;
-import io.harness.service.intfc.DelegateInsightsService;
 import io.harness.service.intfc.DelegateProfileObserver;
 import io.harness.service.intfc.DelegateSetupService;
 import io.harness.service.intfc.DelegateSyncService;
@@ -179,7 +177,6 @@ import io.harness.service.intfc.DelegateTaskSelectorMapService;
 import io.harness.service.intfc.DelegateTaskService;
 import io.harness.service.intfc.DelegateTokenService;
 import io.harness.stream.BoundedInputStream;
-import io.harness.validation.SuppressValidation;
 import io.harness.version.VersionInfoManager;
 import io.harness.waiter.WaitNotifyEngine;
 
@@ -208,7 +205,6 @@ import software.wings.helpers.ext.mail.EmailData;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
 import software.wings.jre.JreConfig;
 import software.wings.licensing.LicenseService;
-import software.wings.service.impl.EventEmitter.Channel;
 import software.wings.service.impl.TemplateParameters.TemplateParametersBuilder;
 import software.wings.service.impl.infra.InfraDownloadService;
 import software.wings.service.intfc.AccountService;
@@ -287,7 +283,6 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.Request.Builder;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.io.IOUtils;
@@ -400,7 +395,6 @@ public class DelegateServiceImpl implements DelegateService {
   @Inject private SettingsService settingsService;
   @Inject private DelegateCache delegateCache;
   @Inject private CapabilityService capabilityService;
-  @Inject private DelegateInsightsService delegateInsightsService;
   @Inject private DelegateSetupService delegateSetupService;
   @Inject private AuditHelper auditHelper;
   @Inject private DelegateTokenService delegateTokenService;
@@ -411,9 +405,6 @@ public class DelegateServiceImpl implements DelegateService {
   @Inject @Named(DelegatesFeature.FEATURE_NAME) private UsageLimitedFeature delegatesFeature;
   @Inject @Getter private Subject<DelegateObserver> subject = new Subject<>();
   @Getter private final Subject<DelegateProfileObserver> delegateProfileSubject = new Subject<>();
-  @Inject
-  @Getter(onMethod = @__(@SuppressValidation))
-  private Subject<DelegateTaskStatusObserver> delegateTaskStatusObserverSubject;
   @Inject private OutboxService outboxService;
   @Inject private DelegateServiceClassicGrpcClient delegateServiceClassicGrpcClient;
   @Inject private DelegateNgTokenService delegateNgTokenService;
@@ -872,7 +863,7 @@ public class DelegateServiceImpl implements DelegateService {
 
   private long setDelegateScalingGroupExpiration(List<Delegate> delegates) {
     return isNotEmpty(delegates)
-        ? delegates.stream().max(Comparator.comparing(Delegate::getExpirationTime)).get().getExpirationTime()
+        ? delegates.stream().min(Comparator.comparing(Delegate::getExpirationTime)).get().getExpirationTime()
         : 0;
   }
 
@@ -1158,6 +1149,10 @@ public class DelegateServiceImpl implements DelegateService {
     if (existingDelegate == null) {
       register(delegate);
       existingDelegate = delegateCache.get(delegate.getAccountId(), delegate.getUuid(), true);
+    } else if (existingDelegate.isImmutable() && existingDelegate.getExpirationTime() == 0) {
+      existingDelegate.setExpirationTime(
+          setDelegateExpirationTime(existingDelegate.getVersion(), existingDelegate.getUuid()));
+      updateDelegateExpirationTime(existingDelegate);
     }
 
     if (licenseService.isAccountDeleted(existingDelegate.getAccountId())) {
@@ -1167,6 +1162,14 @@ public class DelegateServiceImpl implements DelegateService {
     existingDelegate.setUseCdn(mainConfiguration.useCdnForDelegateStorage());
     existingDelegate.setUseJreVersion(getTargetJreVersion(delegate.getAccountId()));
     return existingDelegate;
+  }
+
+  private void updateDelegateExpirationTime(Delegate delegate) {
+    persistence.update(persistence.createQuery(Delegate.class)
+                           .filter(DelegateKeys.accountId, delegate.getAccountId())
+                           .filter(DelegateKeys.uuid, delegate.getUuid()),
+        persistence.createUpdateOperations(Delegate.class)
+            .set(DelegateKeys.expirationTime, delegate.getExpirationTime()));
   }
 
   @Override
@@ -1241,8 +1244,6 @@ public class DelegateServiceImpl implements DelegateService {
     delegateTaskService.touchExecutingTasks(
         delegate.getAccountId(), delegate.getUuid(), delegate.getCurrentlyExecutingDelegateTasks());
 
-    eventEmitter.send(Channel.DELEGATES,
-        anEvent().withOrgId(delegate.getAccountId()).withUuid(delegate.getUuid()).withType(Type.UPDATE).build());
     return delegateCache.get(delegate.getAccountId(), delegate.getUuid(), true);
   }
 
@@ -2275,12 +2276,6 @@ public class DelegateServiceImpl implements DelegateService {
 
     log.info("Delegate saved: {}", savedDelegate);
 
-    // When polling is enabled for delegate, do not perform these event publishing
-    if (isDelegateWithoutPollingEnabled(delegate)) {
-      eventEmitter.send(Channel.DELEGATES,
-          anEvent().withOrgId(delegate.getAccountId()).withUuid(delegate.getUuid()).withType(Type.CREATE).build());
-    }
-
     updateWithTokenAndSeqNumIfEcsDelegate(delegate, savedDelegate);
     eventPublishHelper.publishInstalledDelegateEvent(delegate.getAccountId(), delegate.getUuid());
 
@@ -2559,6 +2554,10 @@ public class DelegateServiceImpl implements DelegateService {
           delegate.getHostName(), delegate.getIp());
     } else {
       log.info("Registering delegate for Hostname: {} IP: {}", delegate.getHostName(), delegate.getIp());
+    }
+
+    if (delegate.isImmutable() && delegate.getExpirationTime() == 0) {
+      delegate.setExpirationTime(setDelegateExpirationTime(delegate.getVersion(), delegate.getUuid()));
     }
 
     if (ECS.equals(delegate.getDelegateType())) {

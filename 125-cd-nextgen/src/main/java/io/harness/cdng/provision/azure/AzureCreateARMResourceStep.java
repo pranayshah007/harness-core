@@ -12,6 +12,7 @@ import static io.harness.azure.model.ARMScopeType.MANAGEMENT_GROUP;
 import static io.harness.azure.model.ARMScopeType.RESOURCE_GROUP;
 import static io.harness.azure.model.ARMScopeType.SUBSCRIPTION;
 import static io.harness.azure.model.ARMScopeType.TENANT;
+import static io.harness.azure.model.AzureConstants.FETCH_RESOURCE_GROUP_TEMPLATE;
 import static io.harness.cdng.provision.azure.AzureCommonHelper.AZURE_TEMPLATE_TYPE;
 import static io.harness.cdng.provision.azure.AzureCommonHelper.DEFAULT_TIMEOUT;
 import static io.harness.cdng.provision.azure.AzureCommonHelper.PARAMETERS_FILE_IDENTIFIER;
@@ -21,8 +22,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.task.azure.arm.AzureARMTaskNGParameters.AzureARMTaskNGParametersBuilder;
 import static io.harness.delegate.task.azure.arm.AzureARMTaskType.ARM_DEPLOYMENT;
-
-import static java.lang.String.format;
+import static io.harness.delegate.task.azure.arm.AzureARMTaskType.FETCH_ARM_PRE_DEPLOYMENT_DATA;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
@@ -38,7 +38,7 @@ import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
-import io.harness.cdng.provision.azure.beans.AzureARMTemplateDataOutput;
+import io.harness.cdng.provision.azure.beans.AzureARMConfig;
 import io.harness.cdng.provision.azure.beans.AzureCreateARMResourcePassThroughData;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.common.ParameterFieldHelper;
@@ -53,6 +53,8 @@ import io.harness.delegate.task.azure.appservice.settings.AppSettingsFile;
 import io.harness.delegate.task.azure.arm.AzureARMPreDeploymentData;
 import io.harness.delegate.task.azure.arm.AzureARMTaskNGParameters;
 import io.harness.delegate.task.azure.arm.AzureARMTaskNGResponse;
+import io.harness.delegate.task.azure.arm.AzureFetchArmPreDeploymentDataTaskParameters;
+import io.harness.delegate.task.azure.arm.AzureFetchArmPreDeploymentDataTaskResponse;
 import io.harness.delegate.task.azure.arm.AzureResourceCreationTaskNGParameters;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.git.GitFetchResponse;
@@ -63,6 +65,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.git.model.FetchFilesResult;
+import io.harness.k8s.K8sCommandUnitConstants;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.ng.core.EntityDetail;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -75,8 +78,6 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.rbac.PipelineRbacHelper;
-import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
-import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
@@ -91,25 +92,18 @@ import io.harness.utils.IdentifierRefHelper;
 
 import software.wings.beans.TaskType;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.IOUtils;
 
 @OwnedBy(CDP)
 @Slf4j
 public class AzureCreateARMResourceStep extends TaskChainExecutableWithRollbackAndRbac {
   private static final String AZURE_TEMPLATE_SELECTOR = "Azure ARM Template File";
   private static final String AZURE_PARAMETER_SELECTOR = "Azure ARM Parameter File";
-  private static final String AZURE_TEMPLATE_DATA_FORMAT = "azureARMTemplateDataOutput_%s";
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.AZURE_CREATE_ARM_RESOURCE.getYamlType())
                                                .setStepCategory(StepCategory.STEP)
@@ -119,13 +113,10 @@ public class AzureCreateARMResourceStep extends TaskChainExecutableWithRollbackA
   @Inject private KryoSerializer kryoSerializer;
   @Inject private CDExpressionResolver cdExpressionResolver;
   @Inject private AzureWebAppStepHelper azureWebAppStepHelper;
-
   @Inject private StepHelper stepHelper;
-
   @Inject private AzureCommonHelper azureCommonHelper;
   @Inject private CDStepHelper cdStepHelper;
-
-  @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
+  @Inject private AzureARMConfigDAL azureARMConfigDAL;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -139,9 +130,15 @@ public class AzureCreateARMResourceStep extends TaskChainExecutableWithRollbackA
     String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
     String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
 
+    AzureCreateARMResourceStepParameters azureCreateARMResourceStepParameters =
+        (AzureCreateARMResourceStepParameters) stepParameters.getSpec();
+    if (isEmpty(getParameterFieldValue(azureCreateARMResourceStepParameters.getProvisionerIdentifier()))) {
+      throw new InvalidRequestException("Provisioner Identifier can't be null or empty");
+    }
     // Template file connector
     AzureCreateARMResourceStepConfigurationParameters spec =
-        ((AzureCreateARMResourceStepParameters) stepParameters.getSpec()).getConfigurationParameters();
+        azureCreateARMResourceStepParameters.getConfigurationParameters();
+
     AzureTemplateFile azureTemplateFile = spec.getTemplateFile();
 
     if (ManifestStoreType.isInGitSubset(azureTemplateFile.getStore().getSpec().getKind())) {
@@ -196,6 +193,59 @@ public class AzureCreateARMResourceStep extends TaskChainExecutableWithRollbackA
       throw new InvalidRequestException("Invalid connector selected in Azure step. Select Azure connector");
     }
 
+    AzureConnectorDTO connectorConfig = (AzureConnectorDTO) connectorDTO.getConnectorConfig();
+    if (RESOURCE_GROUP.equals(fromYamlScopeToInternalScope(stepConfigurationParameters.getScope().getType()))) {
+      AzureResourceGroupSpec resourceGroupSpec =
+          (AzureResourceGroupSpec) stepConfigurationParameters.getScope().getSpec();
+      return executeFetchPreDeploymentDataTask(ambiance, stepParameters, connectorConfig, resourceGroupSpec);
+    } else {
+      return executeWithPreDeploymentData(ambiance, stepParameters, connectorConfig, null, null);
+    }
+  }
+
+  @Override
+  public TaskChainResponse executeNextLinkWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
+      StepInputPackage inputPackage, PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseSupplier)
+      throws Exception {
+    ResponseData responseData = responseSupplier.get();
+    if (responseData instanceof AzureFetchArmPreDeploymentDataTaskResponse) {
+      AzureFetchArmPreDeploymentDataTaskResponse response = (AzureFetchArmPreDeploymentDataTaskResponse) responseData;
+      AzureCreateARMResourceStepConfigurationParameters stepConfigurationParameters =
+          ((AzureCreateARMResourceStepParameters) stepParameters.getSpec()).getConfigurationParameters();
+
+      ConnectorInfoDTO connectorDTO =
+          cdStepHelper.getConnector(stepConfigurationParameters.getConnectorRef().getValue(), ambiance);
+      AzureConnectorDTO connectorConfig = (AzureConnectorDTO) connectorDTO.getConnectorConfig();
+      CommandUnitsProgress commandUnitsProgress =
+          UnitProgressDataMapper.toCommandUnitsProgress(response.getUnitProgressData());
+      return executeWithPreDeploymentData(
+          ambiance, stepParameters, connectorConfig, commandUnitsProgress, response.getAzureARMPreDeploymentData());
+    } else if (responseData instanceof GitFetchResponse) {
+      return handleGitFetchResponse(ambiance, stepParameters, passThroughData, (GitFetchResponse) responseData);
+    } else {
+      String errorMessage = "Unknown Error";
+      return TaskChainResponse.builder()
+          .chainEnd(true)
+          .passThroughData(StepExceptionPassThroughData.builder()
+                               .unitProgressData(UnitProgressData.builder().unitProgresses(new ArrayList<>()).build())
+                               .errorMessage(errorMessage)
+                               .build())
+          .build();
+    }
+  }
+
+  private TaskChainResponse executeWithPreDeploymentData(Ambiance ambiance, StepElementParameters stepParameters,
+      AzureConnectorDTO connectorConfig, CommandUnitsProgress commandUnitsProgress,
+      AzureARMPreDeploymentData preDeploymentData) {
+    AzureCreateARMResourceStepParameters azureCreateARMResourceStepParameters =
+        (AzureCreateARMResourceStepParameters) stepParameters.getSpec();
+    AzureCreateARMResourceStepConfigurationParameters stepConfigurationParameters =
+        azureCreateARMResourceStepParameters.getConfigurationParameters();
+    String connectorRef = getParameterFieldValue(stepConfigurationParameters.getConnectorRef());
+    String scopeType = stepConfigurationParameters.getScope().getType();
+    saveAzureARMConfig(preDeploymentData,
+        getParameterFieldValue(azureCreateARMResourceStepParameters.getProvisionerIdentifier()), ambiance, connectorRef,
+        scopeType);
     List<GitFetchFilesConfig> gitFetchFilesConfigs =
         azureCommonHelper.getParametersGitFetchFileConfigs(ambiance, stepConfigurationParameters);
     AzureTemplateFile azureTemplateFile = stepConfigurationParameters.getTemplateFile();
@@ -207,11 +257,11 @@ public class AzureCreateARMResourceStep extends TaskChainExecutableWithRollbackA
         azureCommonHelper.getAzureCreatePassThroughData(stepConfigurationParameters);
     if (isNotEmpty(gitFetchFilesConfigs)) {
       return azureCommonHelper.getGitFetchFileTaskChainResponse(
-          ambiance, gitFetchFilesConfigs, stepParameters, passThroughData);
+          ambiance, gitFetchFilesConfigs, stepParameters, passThroughData, getCommandUnits(true), commandUnitsProgress);
     }
+
     AppSettingsFile templateBody = null;
     AppSettingsFile parametersBody = null;
-
     if (ManifestStoreType.HARNESS.equals(azureTemplateFile.getStore().getSpec().getKind())) {
       HarnessStore harnessStore = (HarnessStore) azureTemplateFile.getStore().getSpec();
       templateBody =
@@ -227,27 +277,9 @@ public class AzureCreateARMResourceStep extends TaskChainExecutableWithRollbackA
     }
 
     populatePassThroughData(passThroughData, templateBody, parametersBody);
-    AzureResourceCreationTaskNGParameters azureARMTaskNGParameters = getAzureTaskNGParams(
-        ambiance, stepParameters, (AzureConnectorDTO) connectorDTO.getConnectorConfig(), passThroughData, null);
+    AzureResourceCreationTaskNGParameters azureARMTaskNGParameters =
+        getAzureTaskNGParams(ambiance, stepParameters, connectorConfig, passThroughData, commandUnitsProgress);
     return executeCreateTask(ambiance, stepParameters, azureARMTaskNGParameters, passThroughData);
-  }
-  @Override
-  public TaskChainResponse executeNextLinkWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      StepInputPackage inputPackage, PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseSupplier)
-      throws Exception {
-    ResponseData responseData = responseSupplier.get();
-    if (responseData instanceof GitFetchResponse) {
-      return handleGitFetchResponse(ambiance, stepParameters, passThroughData, (GitFetchResponse) responseData);
-    } else {
-      String errorMessage = "Unknown Error";
-      return TaskChainResponse.builder()
-          .chainEnd(true)
-          .passThroughData(StepExceptionPassThroughData.builder()
-                               .unitProgressData(UnitProgressData.builder().unitProgresses(new ArrayList<>()).build())
-                               .errorMessage(errorMessage)
-                               .build())
-          .build();
-    }
   }
 
   @Override
@@ -257,10 +289,6 @@ public class AzureCreateARMResourceStep extends TaskChainExecutableWithRollbackA
       StepExceptionPassThroughData stepExceptionPassThroughData = (StepExceptionPassThroughData) passThroughData;
       return cdStepHelper.handleStepExceptionFailure(stepExceptionPassThroughData);
     }
-    AzureCreateARMResourceStepParameters azureCreateARMResourceStepParameters =
-        (AzureCreateARMResourceStepParameters) stepParameters.getSpec();
-    AzureCreateARMResourceStepConfigurationParameters stepConfigurationParameters =
-        azureCreateARMResourceStepParameters.getConfigurationParameters();
     AzureARMTaskNGResponse azureARMTaskNGResponse;
     try {
       azureARMTaskNGResponse = (AzureARMTaskNGResponse) responseDataSupplier.get();
@@ -268,17 +296,14 @@ public class AzureCreateARMResourceStep extends TaskChainExecutableWithRollbackA
         return azureCommonHelper.getFailureResponse(
             azureARMTaskNGResponse.getUnitProgressData().getUnitProgresses(), azureARMTaskNGResponse.getErrorMsg());
       }
-      saveAzurePredeploymentData(azureARMTaskNGResponse.getPreDeploymentData(),
-          getParameterFieldValue(azureCreateARMResourceStepParameters.getProvisionerIdentifier()), ambiance,
-          stepConfigurationParameters.getScope().getSpec().toString());
 
       return StepResponse.builder()
           .unitProgressList(azureARMTaskNGResponse.getUnitProgressData().getUnitProgresses())
-          .stepOutcome(
-              StepResponse.StepOutcome.builder()
-                  .name(OutcomeExpressionConstants.OUTPUT)
-                  .outcome(new AzureCreateARMResourceOutcome(getARMOutputs(azureARMTaskNGResponse.getOutputs())))
-                  .build())
+          .stepOutcome(StepResponse.StepOutcome.builder()
+                           .name(OutcomeExpressionConstants.OUTPUT)
+                           .outcome(new AzureCreateARMResourceOutcome(
+                               azureCommonHelper.getARMOutputs(azureARMTaskNGResponse.getOutputs())))
+                           .build())
           .status(Status.SUCCEEDED)
           .build();
     } catch (TaskNGDataException ex) {
@@ -289,39 +314,19 @@ public class AzureCreateARMResourceStep extends TaskChainExecutableWithRollbackA
     }
   }
 
-  private void saveAzurePredeploymentData(
-      AzureARMPreDeploymentData data, String provisionerIdentifier, Ambiance ambiance, String scope) {
-    if (data == null || isEmpty(data.getResourceGroupTemplateJson())) {
-      return;
-    }
-    AzureARMTemplateDataOutput azureARMTemplateDataOutput =
-        AzureARMTemplateDataOutput.builder()
-            .resourceGroup(data.getResourceGroup())
-            .resourceGroupTemplateJson(data.getResourceGroupTemplateJson())
-            .subscriptionId(data.getSubscriptionId())
-            .scopeType(scope)
-            .build();
-    String identifier = azureCommonHelper.generateIdentifier(provisionerIdentifier, ambiance);
-    String sweepingOutputKey = format(AZURE_TEMPLATE_DATA_FORMAT, identifier);
-    executionSweepingOutputService.consume(
-        ambiance, sweepingOutputKey, azureARMTemplateDataOutput, StepOutcomeGroup.STAGE.name());
-  }
-
-  private Map<String, Object> getARMOutputs(String outputs) {
-    Map<String, Object> outputMap = new LinkedHashMap<>();
-    if (isEmpty(outputs)) {
-      return outputMap;
-    }
-    try {
-      TypeReference<HashMap<String, Object>> typeRef = new TypeReference<HashMap<String, Object>>() {};
-      Map<String, Object> json = new ObjectMapper().readValue(IOUtils.toInputStream(outputs), typeRef);
-
-      json.forEach((key, object) -> outputMap.put(key, ((Map<String, Object>) object).get("value")));
-    } catch (IOException exception) {
-      log.warn("Exception while parsing ARM outputs", exception);
-      return new LinkedHashMap<>();
-    }
-    return outputMap;
+  private void saveAzureARMConfig(AzureARMPreDeploymentData data, String provisionerIdentifier, Ambiance ambiance,
+      String connectorRef, String scopeType) {
+    AzureARMConfig azureARMConfig = AzureARMConfig.builder()
+                                        .accountId(AmbianceUtils.getAccountId(ambiance))
+                                        .orgId(AmbianceUtils.getOrgIdentifier(ambiance))
+                                        .projectId(AmbianceUtils.getProjectIdentifier(ambiance))
+                                        .provisionerIdentifier(provisionerIdentifier)
+                                        .stageExecutionId(ambiance.getStageExecutionId())
+                                        .azureARMPreDeploymentData(data)
+                                        .connectorRef(connectorRef)
+                                        .scopeType(scopeType)
+                                        .build();
+    azureARMConfigDAL.saveAzureARMConfig(azureARMConfig);
   }
 
   @Override
@@ -338,14 +343,54 @@ public class AzureCreateARMResourceStep extends TaskChainExecutableWithRollbackA
                             .parameters(new Object[] {parameters})
                             .build();
     final TaskRequest taskRequest = StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-        Arrays.asList(AzureConstants.EXECUTE_ARM_DEPLOYMENT, AzureConstants.ARM_DEPLOYMENT_STEADY_STATE,
-            AzureConstants.ARM_DEPLOYMENT_OUTPUTS),
-        TaskType.AZURE_NG_ARM.getDisplayName(),
+        getCommandUnits(false), TaskType.AZURE_NG_ARM.getDisplayName(),
         TaskSelectorYaml.toTaskSelector(
             ((AzureCreateARMResourceStepParameters) stepParameters.getSpec()).getDelegateSelectors()),
         stepHelper.getEnvironmentType(ambiance));
 
     return TaskChainResponse.builder().taskRequest(taskRequest).passThroughData(passThroughData).chainEnd(true).build();
+  }
+
+  private TaskChainResponse executeFetchPreDeploymentDataTask(Ambiance ambiance, StepElementParameters stepParameters,
+      AzureConnectorDTO connectorConfig, AzureResourceGroupSpec azureResourceGroupSpec) {
+    AzureCreateARMResourceStepConfigurationParameters stepConfigurationParameters =
+        ((AzureCreateARMResourceStepParameters) stepParameters.getSpec()).getConfigurationParameters();
+    AzureCreateARMResourcePassThroughData passThroughData =
+        azureCommonHelper.getAzureCreatePassThroughData(stepConfigurationParameters);
+
+    AzureFetchArmPreDeploymentDataTaskParameters parameters =
+        AzureFetchArmPreDeploymentDataTaskParameters.builder()
+            .accountId(AmbianceUtils.getAccountId(ambiance))
+            .connectorDTO(connectorConfig)
+            .taskType(FETCH_ARM_PRE_DEPLOYMENT_DATA)
+            .resourceGroupName(azureResourceGroupSpec.getResourceGroup().getValue())
+            .subscriptionId(azureResourceGroupSpec.getSubscription().getValue())
+            .encryptedDataDetails(azureCommonHelper.getAzureEncryptionDetails(ambiance, connectorConfig))
+            .timeoutInMs(StepUtils.getTimeoutMillis(stepParameters.getTimeout(), DEFAULT_TIMEOUT))
+            .build();
+
+    TaskData taskData = TaskData.builder()
+                            .async(true)
+                            .taskType(TaskType.AZURE_NG_ARM.name())
+                            .timeout(StepUtils.getTimeoutMillis(stepParameters.getTimeout(), DEFAULT_TIMEOUT))
+                            .parameters(new Object[] {parameters})
+                            .build();
+
+    List<String> commandUnits = new ArrayList<>();
+    commandUnits.add(FETCH_RESOURCE_GROUP_TEMPLATE);
+    commandUnits.addAll(getCommandUnits(passThroughData.hasGitFiles()));
+
+    final TaskRequest taskRequest = StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer, commandUnits,
+        TaskType.AZURE_NG_ARM.getDisplayName(),
+        TaskSelectorYaml.toTaskSelector(
+            ((AzureCreateARMResourceStepParameters) stepParameters.getSpec()).getDelegateSelectors()),
+        stepHelper.getEnvironmentType(ambiance));
+
+    return TaskChainResponse.builder()
+        .taskRequest(taskRequest)
+        .passThroughData(passThroughData)
+        .chainEnd(false)
+        .build();
   }
 
   private void populatePassThroughData(AzureCreateARMResourcePassThroughData passThroughData,
@@ -461,6 +506,7 @@ public class AzureCreateARMResourceStep extends TaskChainExecutableWithRollbackA
             UnitProgressDataMapper.toCommandUnitsProgress(responseData.getUnitProgressData()));
     return executeCreateTask(ambiance, stepElementParameters, azureTaskNGParameters, passThroughData);
   }
+
   private static ARMScopeType fromYamlScopeToInternalScope(final String value) {
     switch (value) {
       case AzureScopeTypesNames.ResourceGroup:
@@ -485,5 +531,16 @@ public class AzureCreateARMResourceStep extends TaskChainExecutableWithRollbackA
         .gitStoreDelegateConfig(
             azureCommonHelper.getGitStoreDelegateConfig(azureTemplateFile.getStore().getSpec(), ambiance, paths))
         .build();
+  }
+
+  private List<String> getCommandUnits(boolean shouldFetchFiles) {
+    List<String> commandUnits = new ArrayList<>();
+    if (shouldFetchFiles) {
+      commandUnits.add(K8sCommandUnitConstants.FetchFiles);
+    }
+    commandUnits.addAll(Arrays.asList(AzureConstants.EXECUTE_ARM_DEPLOYMENT, AzureConstants.ARM_DEPLOYMENT_STEADY_STATE,
+        AzureConstants.ARM_DEPLOYMENT_OUTPUTS));
+
+    return commandUnits;
   }
 }

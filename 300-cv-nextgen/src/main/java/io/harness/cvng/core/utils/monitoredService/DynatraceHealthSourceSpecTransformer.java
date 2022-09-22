@@ -7,6 +7,7 @@
 
 package io.harness.cvng.core.utils.monitoredService;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition;
@@ -73,13 +74,15 @@ public class DynatraceHealthSourceSpecTransformer
             }))
             .collect(Collectors.toList());
     cvConfigs.forEach(dynatraceCVConfig -> {
-      String identifier = MonitoredServiceConstants.CUSTOM_METRIC_PACK;
+      String identifier = dynatraceCVConfig.getMetricPack().getIdentifier();
       List<TimeSeriesMetricPackDTO.MetricThreshold> metricThresholds = dynatraceCVConfig.getMetricThresholdDTOs();
       if (isNotEmpty(metricThresholds)) {
         metricThresholds.forEach(metricThreshold -> metricThreshold.setMetricType(identifier));
       }
-      metricPacks.add(
-          TimeSeriesMetricPackDTO.builder().identifier(identifier).metricThresholds(metricThresholds).build());
+      if (!(MonitoredServiceConstants.CUSTOM_METRIC_PACK.equals(identifier) && isEmpty(metricThresholds))) {
+        metricPacks.add(
+            TimeSeriesMetricPackDTO.builder().identifier(identifier).metricThresholds(metricThresholds).build());
+      }
     });
     return DynatraceHealthSourceSpec.builder()
         .connectorRef(cvConfigs.get(0).getConnectorIdentifier())

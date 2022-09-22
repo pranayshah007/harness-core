@@ -42,6 +42,7 @@ public class EntityYamlRootNames {
   public static final String DELEGATE_CONFIGURATION = "delegateConfigurations";
   public static final String CV_VERIFICATION_JOB = "cvVerificationJob";
   public static final String INTEGRATION_STAGE = "integrationStage";
+
   public static final String INTEGRATION_STEP = "integrationSteps";
   public static final String CV_KUBERNETES_ACTIVITY_SOURCE = "cvKubernetesActivitySource";
   public static final String DEPLOYMENT_STEP = "deploymentSteps";
@@ -125,5 +126,8 @@ public class EntityYamlRootNames {
   public static final String AZURE_CREATE_ARM_RESOURCE_STEP = "AzureCreateARMResource";
   public static final String AZURE_CREATE_BP_RESOURCE_STEP = "AzureCreateBPResource";
   public static final String AZURE_ROLLBACK_ARM_RESOURCE_STEP = "AzureARMRollback";
+  public static final String ECS_BLUE_GREEN_CREATE_SERVICE = "EcsBlueGreenCreateService";
+  public static final String ECS_BLUE_GREEN_SWAP_TARGET_GROUPS = "EcsBlueGreenSwapTargetGroups";
+  public static final String ECS_BLUE_GREEN_ROLLBACK = "EcsBlueGreenRollback";
   public static final String WAIT_STEP = "Wait";
 }

@@ -54,9 +54,12 @@ public class RunStepProtobufSerializer implements ProtobufStepSerializer<RunStep
       throw new CIStageExecutionException("Port can not be null");
     }
 
+    String gitSafeCMD =
+        SerializerUtils.getSafeGitDirectoryCmd(RunTimeInputHandler.resolveShellType(runStepInfo.getShell()));
+
     RunStep.Builder runStepBuilder = RunStep.newBuilder();
-    runStepBuilder.setCommand(
-        RunTimeInputHandler.resolveStringParameter("Command", "Run", identifier, runStepInfo.getCommand(), true));
+    runStepBuilder.setCommand(gitSafeCMD
+        + RunTimeInputHandler.resolveStringParameter("Command", "Run", identifier, runStepInfo.getCommand(), true));
 
     runStepBuilder.setContainerPort(port);
     Map<String, String> envvars =

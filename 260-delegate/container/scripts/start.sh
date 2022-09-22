@@ -139,6 +139,8 @@ if [ -e init.sh ]; then
     echo "Starting initialization script for delegate"
     CURRENT_WORKING_DIRECTORY=$(pwd)
     source ./init.sh
+    #if user does set -e, then revert that
+    set +e
     cd "$CURRENT_WORKING_DIRECTORY"
     if [ $? -eq 0 ];
     then

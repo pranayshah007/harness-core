@@ -51,7 +51,6 @@ import static org.mockito.Mockito.when;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.ArtifactMetadata;
 import io.harness.beans.EmbeddedUser;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
@@ -72,7 +71,6 @@ import software.wings.beans.Service;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.artifact.AcrArtifactStream;
 import software.wings.beans.artifact.AmazonS3ArtifactStream;
-import software.wings.beans.artifact.AmiArtifactStream;
 import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
@@ -908,9 +906,6 @@ public class ArtifactCollectionServiceTest extends WingsBaseTest {
     assertThat(buildSourceParameters.getLimit()).isEqualTo(-1);
     assertThat(buildSourceParameters.getSavedBuildDetailsKeys()).contains("10");
 
-    // multi-artifact flag on
-    when(featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, settingAttribute.getAccountId()))
-        .thenReturn(true);
     when(artifactService.prepareArtifactWithMetadataQuery(any())).thenReturn(query);
     when(query.fetch()).thenReturn(artifactIterator);
     when(artifactIterator.hasNext()).thenReturn(true).thenReturn(false);
@@ -918,41 +913,10 @@ public class ArtifactCollectionServiceTest extends WingsBaseTest {
     buildSourceParameters =
         artifactCollectionUtils.getBuildSourceParameters(jenkinsArtifactStream, settingAttribute, true, true);
     assertThat(buildSourceParameters).isNotNull();
-    assertThat(buildSourceParameters.getBuildSourceRequestType()).isEqualTo(BuildSourceRequestType.GET_BUILDS);
+    assertThat(buildSourceParameters.getBuildSourceRequestType())
+        .isEqualTo(BuildSourceRequestType.GET_LAST_SUCCESSFUL_BUILD);
     assertThat(buildSourceParameters.getLimit()).isEqualTo(-1);
     assertThat(buildSourceParameters.getSavedBuildDetailsKeys()).contains("10");
-  }
-
-  @Test
-  @Owner(developers = AADITI)
-  @Category(UnitTests.class)
-  public void testGetBuildSourceParametersForAmiWithMultiArtifact() {
-    AmiArtifactStream amiArtifactStream = AmiArtifactStream.builder()
-                                              .uuid(ARTIFACT_STREAM_ID)
-                                              .appId(APP_ID)
-                                              .sourceName("ARTIFACT_SOURCE")
-                                              .serviceId(SERVICE_ID)
-                                              .settingId(SETTING_ID)
-                                              .build();
-    SettingAttribute settingAttribute =
-        SettingAttribute.Builder.aSettingAttribute()
-            .withValue(AwsConfig.builder().secretKey(SECRET_KEY).accessKey(ACCESS_KEY.toCharArray()).build())
-            .withAccountId(ACCOUNT_ID)
-            .build();
-    when(secretManager.getEncryptionDetails(any(), anyString(), anyString())).thenReturn(null);
-    when(artifactService.prepareArtifactWithMetadataQuery(any())).thenReturn(query);
-    when(query.fetch()).thenReturn(artifactIterator);
-    when(artifactIterator.hasNext()).thenReturn(true).thenReturn(false);
-    when(artifactIterator.next()).thenReturn(anArtifact().withRevision("1.0").build());
-    when(featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, settingAttribute.getAccountId()))
-        .thenReturn(true);
-    BuildSourceParameters buildSourceParameters =
-        artifactCollectionUtils.getBuildSourceParameters(amiArtifactStream, settingAttribute, true, true);
-    assertThat(buildSourceParameters).isNotNull();
-    assertThat(buildSourceParameters.getBuildSourceRequestType()).isEqualTo(BuildSourceRequestType.GET_BUILDS);
-    assertThat(buildSourceParameters.getLimit()).isEqualTo(-1);
-    assertThat(buildSourceParameters.getSavedBuildDetailsKeys()).contains("1.0");
-    assertThat(buildSourceParameters).isNotNull();
   }
 
   @Test

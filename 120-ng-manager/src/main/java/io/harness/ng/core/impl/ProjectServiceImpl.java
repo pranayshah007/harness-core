@@ -12,7 +12,6 @@ import static io.harness.NGConstants.DEFAULT_ORG_IDENTIFIER;
 import static io.harness.NGConstants.DEFAULT_PROJECT_IDENTIFIER;
 import static io.harness.NGConstants.DEFAULT_PROJECT_LEVEL_RESOURCE_GROUP_IDENTIFIER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.beans.FeatureName.HARD_DELETE_ENTITIES;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.enforcement.constants.FeatureRestrictionName.MULTIPLE_PROJECTS;
@@ -24,7 +23,7 @@ import static io.harness.ng.core.user.UserMembershipUpdateSource.SYSTEM;
 import static io.harness.ng.core.utils.NGUtils.validate;
 import static io.harness.ng.core.utils.NGUtils.verifyValuesNotChanged;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
-import static io.harness.springdata.TransactionUtils.DEFAULT_TRANSACTION_RETRY_POLICY;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 import static io.harness.utils.PageUtils.getNGPageResponse;
 
 import static java.lang.Boolean.FALSE;
@@ -84,7 +83,6 @@ import io.harness.security.dto.PrincipalType;
 import io.harness.telemetry.helpers.ProjectInstrumentationHelper;
 import io.harness.utils.PageUtils;
 import io.harness.utils.ScopeUtils;
-import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -133,7 +131,6 @@ public class ProjectServiceImpl implements ProjectService {
   private final ScopeAccessHelper scopeAccessHelper;
   private final ProjectInstrumentationHelper instrumentationHelper;
   private final YamlGitConfigService yamlGitConfigService;
-  private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
   private final FeatureFlagService featureFlagService;
   private final DefaultUserGroupService defaultUserGroupService;
 
@@ -142,8 +139,7 @@ public class ProjectServiceImpl implements ProjectService {
       @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate, OutboxService outboxService,
       NgUserService ngUserService, AccessControlClient accessControlClient, ScopeAccessHelper scopeAccessHelper,
       ProjectInstrumentationHelper instrumentationHelper, YamlGitConfigService yamlGitConfigService,
-      NGFeatureFlagHelperService ngFeatureFlagHelperService, FeatureFlagService featureFlagService,
-      DefaultUserGroupService defaultUserGroupService) {
+      FeatureFlagService featureFlagService, DefaultUserGroupService defaultUserGroupService) {
     this.projectRepository = projectRepository;
     this.organizationService = organizationService;
     this.transactionTemplate = transactionTemplate;
@@ -153,7 +149,6 @@ public class ProjectServiceImpl implements ProjectService {
     this.scopeAccessHelper = scopeAccessHelper;
     this.instrumentationHelper = instrumentationHelper;
     this.yamlGitConfigService = yamlGitConfigService;
-    this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;
     this.featureFlagService = featureFlagService;
     this.defaultUserGroupService = defaultUserGroupService;
   }
@@ -170,12 +165,11 @@ public class ProjectServiceImpl implements ProjectService {
     project.setAccountIdentifier(accountIdentifier);
     try {
       validate(project);
-      Project createdProject =
-          Failsafe.with(DEFAULT_TRANSACTION_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
-            Project savedProject = projectRepository.save(project);
-            outboxService.save(new ProjectCreateEvent(project.getAccountIdentifier(), ProjectMapper.writeDTO(project)));
-            return savedProject;
-          }));
+      Project createdProject = Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
+        Project savedProject = projectRepository.save(project);
+        outboxService.save(new ProjectCreateEvent(project.getAccountIdentifier(), ProjectMapper.writeDTO(project)));
+        return savedProject;
+      }));
       setupProject(Scope.of(accountIdentifier, orgIdentifier, projectDTO.getIdentifier()));
       log.info(String.format("Project with identifier %s and orgIdentifier %s was successfully created",
           project.getIdentifier(), projectDTO.getOrgIdentifier()));
@@ -415,7 +409,7 @@ public class ProjectServiceImpl implements ProjectService {
       List<ModuleType> moduleTypeList = verifyModulesNotRemoved(existingProject.getModules(), project.getModules());
       project.setModules(moduleTypeList);
       validate(project);
-      return Failsafe.with(DEFAULT_TRANSACTION_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
+      return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
         Project updatedProject = projectRepository.save(project);
         log.info(String.format(
             "Project with identifier %s and orgIdentifier %s was successfully updated", identifier, orgIdentifier));
@@ -568,12 +562,10 @@ public class ProjectServiceImpl implements ProjectService {
   @DefaultOrganization
   public boolean delete(String accountIdentifier, @OrgIdentifier String orgIdentifier,
       @ProjectIdentifier String projectIdentifier, Long version) {
-    return Failsafe.with(DEFAULT_TRANSACTION_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
-      Project deletedProject = projectRepository.delete(accountIdentifier, orgIdentifier, projectIdentifier, version);
+    return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
+      Project deletedProject =
+          projectRepository.hardDelete(accountIdentifier, orgIdentifier, projectIdentifier, version);
       boolean delete = deletedProject != null;
-      if (delete && ngFeatureFlagHelperService.isEnabled(accountIdentifier, HARD_DELETE_ENTITIES)) {
-        projectRepository.hardDelete(accountIdentifier, orgIdentifier, projectIdentifier, version);
-      }
 
       if (delete) {
         log.info(String.format("Project with identifier %s and orgIdentifier %s was successfully deleted",
@@ -593,7 +585,7 @@ public class ProjectServiceImpl implements ProjectService {
   @Override
   public boolean restore(String accountIdentifier, String orgIdentifier, String identifier) {
     validateParentOrgExists(accountIdentifier, orgIdentifier);
-    return Failsafe.with(DEFAULT_TRANSACTION_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
+    return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
       Project restoredProject = projectRepository.restore(accountIdentifier, orgIdentifier, identifier);
       boolean success = restoredProject != null;
       if (success) {

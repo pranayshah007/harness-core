@@ -13,6 +13,7 @@ import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingService;
 import io.harness.ccm.views.entities.ViewField;
 import io.harness.ccm.views.entities.ViewFieldIdentifier;
 import io.harness.ccm.views.helper.AwsAccountFieldHelper;
+import io.harness.ccm.views.helper.BusinessMappingDataSourceHelper;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
@@ -23,6 +24,7 @@ import java.util.Objects;
 public class BusinessMappingServiceImpl implements BusinessMappingService {
   @Inject private BusinessMappingDao businessMappingDao;
   @Inject private AwsAccountFieldHelper awsAccountFieldHelper;
+  @Inject private BusinessMappingDataSourceHelper businessMappingDataSourceHelper;
 
   @Override
   public BusinessMapping save(BusinessMapping businessMapping) {
@@ -90,6 +92,8 @@ public class BusinessMappingServiceImpl implements BusinessMappingService {
       businessMapping.getSharedCosts().forEach(
           sharedCost -> awsAccountFieldHelper.removeAwsAccountNameFromAccountRules(sharedCost.getRules()));
     }
+    businessMapping.setDataSources(
+        new ArrayList<>(businessMappingDataSourceHelper.getBusinessMappingViewFieldIdentifiers(businessMapping)));
   }
 
   private void modifyBusinessMapping(final BusinessMapping businessMapping) {

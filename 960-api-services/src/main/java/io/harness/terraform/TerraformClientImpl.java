@@ -188,9 +188,10 @@ public class TerraformClientImpl implements TerraformClient {
       String message = format(messageFormat, version.getMajor(), version.getMinor(), version.getPatch());
       executionLogCallback.saveExecutionLog(
           color("\n" + message + "\n", Yellow, Bold), WARN, CommandExecutionStatus.SKIPPED);
+      planJsonLogOutputStream.setTfPlanShowJsonStatus(CommandExecutionStatus.SKIPPED);
       return CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SKIPPED).build();
     }
-
+    planJsonLogOutputStream.setTfPlanShowJsonStatus(CommandExecutionStatus.SUCCESS);
     String command = "terraform show -json " + planName;
     return executeTerraformCLICommand(command, timeoutInMillis, envVariables, scriptDirectory, executionLogCallback,
         command, planJsonLogOutputStream);

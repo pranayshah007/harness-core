@@ -23,7 +23,8 @@ public enum ArtifactType {
   @JsonProperty("Acr") ACR("Acr"),
   @JsonProperty("AmazonS3") AMAZON_S3("AmazonS3"),
   @JsonProperty("Jenkins") JENKINS("Jenkins"),
-  @JsonProperty("GoogleArtifactRegistry") GoogleArtifactRegistry("GoogleArtifactRegistry");
+  @JsonProperty("GoogleArtifactRegistry") GoogleArtifactRegistry("GoogleArtifactRegistry"),
+  @JsonProperty("GithubPackageRegistry") GITHUB_PACKAGES("GithubPackageRegistry");
   private String value;
 
   ArtifactType(String value) {

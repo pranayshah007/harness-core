@@ -405,7 +405,7 @@ public class InfrastructureStepTest extends CategoryTest {
     String credentialsRef = "some-credentials-ref";
     String subscriptionId = "some-sub-id";
     String resourceGroup = "some-resource-group";
-    Boolean usePublicDns = true;
+    String connectionType = "Hostname";
     Map<String, String> tags = new HashMap<>();
     tags.put("some-tag", "some-value");
     tags.put("another-tag", "another-value");
@@ -416,7 +416,7 @@ public class InfrastructureStepTest extends CategoryTest {
                                             .subscriptionId(ParameterField.createValueField(subscriptionId))
                                             .resourceGroup(ParameterField.createValueField(resourceGroup))
                                             .tags(ParameterField.createValueField(tags))
-                                            .usePublicDns(ParameterField.createValueField(usePublicDns))
+                                            .hostConnectionType(ParameterField.createValueField(connectionType))
                                             .build();
 
     InfraMapping expectedInfraMapping = SshWinRmAzureInfraMapping.builder()
@@ -425,7 +425,7 @@ public class InfrastructureStepTest extends CategoryTest {
                                             .subscriptionId(subscriptionId)
                                             .resourceGroup(resourceGroup)
                                             .tags(tags)
-                                            .usePublicDns(usePublicDns)
+                                            .hostConnectionType(connectionType)
                                             .build();
 
     InfraMapping infraMapping = infrastructureStep.createInfraMappingObject(infrastructureSpec);
@@ -764,7 +764,7 @@ public class InfrastructureStepTest extends CategoryTest {
 
     doThrow(new InvalidRequestException("Unresolved Expression : [expression1]"))
         .when(infrastructureStepHelper)
-        .validateExpression(any(), eq(credentialsRef), any());
+        .validateExpression(any(), eq(credentialsRef), any(), any());
 
     assertThatThrownBy(() -> infrastructureStep.validateInfrastructure(builder.build(), null))
         .isInstanceOf(InvalidRequestException.class)
@@ -776,7 +776,7 @@ public class InfrastructureStepTest extends CategoryTest {
         .build();
     doThrow(new InvalidRequestException("Unresolved Expression : [expression2]"))
         .when(infrastructureStepHelper)
-        .validateExpression(eq(connectorRef2), any(), any());
+        .validateExpression(eq(connectorRef2), any(), any(), any());
 
     assertThatThrownBy(() -> infrastructureStep.validateInfrastructure(builder.build(), null))
         .isInstanceOf(InvalidRequestException.class)

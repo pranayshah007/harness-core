@@ -24,6 +24,12 @@
     "description": {
       "type": "string"
     },
+    "failureStrategies": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/FailureStrategyConfig"
+      }
+    },
     "identifier": {
       "type": "string",
       "pattern": "^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$"
@@ -1319,6 +1325,7 @@
             "Abort",
             "StageRollback",
             "StepGroupRollback",
+            "PipelineRollback",
             "ManualIntervention",
             "ProceedWithDefaultValue"
           ]
@@ -1543,7 +1550,7 @@
             },
             {
               "type": "string",
-              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+              "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
               "minLength": 1
             }
           ]
@@ -1558,7 +1565,7 @@
             },
             {
               "type": "string",
-              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+              "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
               "minLength": 1
             }
           ]
@@ -1572,7 +1579,7 @@
             },
             {
               "type": "string",
-              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+              "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
               "minLength": 1
             }
           ]
@@ -1586,7 +1593,7 @@
             },
             {
               "type": "string",
-              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+              "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
               "minLength": 1
             }
           ]
@@ -1600,7 +1607,7 @@
             },
             {
               "type": "string",
-              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+              "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
               "minLength": 1
             }
           ]
@@ -1614,7 +1621,7 @@
             },
             {
               "type": "string",
-              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+              "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
               "minLength": 1
             }
           ]
@@ -2086,7 +2093,9 @@
           ]
         },
         "namespace": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2147483647
         },
         "nodeSelector": {
           "oneOf": [
@@ -2352,7 +2361,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+                  "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
                   "minLength": 1
                 }
               ]
@@ -2427,7 +2436,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "(^[+-]?[0-9]+\\.?[0-9]*$|(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*))"
+                  "pattern": "(^[+-]?[0-9]+\\.?[0-9]*$|(.*<\\+.+>.*|^<\\+input>.*))"
                 }
               ]
             }
@@ -2456,6 +2465,9 @@
             },
             {
               "$ref": "#/definitions/MarkAsSuccessFailureActionConfig"
+            },
+            {
+              "$ref": "#/definitions/PipelineRollbackFailureActionConfig"
             },
             {
               "$ref": "#/definitions/ProceedWithDefaultValuesFailureActionConfig"
@@ -2510,6 +2522,9 @@
               "$ref": "#/definitions/MarkAsSuccessFailureActionConfig"
             },
             {
+              "$ref": "#/definitions/PipelineRollbackFailureActionConfig"
+            },
+            {
               "$ref": "#/definitions/ProceedWithDefaultValuesFailureActionConfig"
             },
             {
@@ -2542,6 +2557,9 @@
             },
             {
               "$ref": "#/definitions/MarkAsSuccessFailureActionConfig"
+            },
+            {
+              "$ref": "#/definitions/PipelineRollbackFailureActionConfig"
             },
             {
               "$ref": "#/definitions/ProceedWithDefaultValuesFailureActionConfig"
@@ -3009,6 +3027,28 @@
           "type": "boolean"
         }
       },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "PipelineRollbackFailureActionConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/FailureStrategyActionConfig"
+        },
+        {
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "PipelineRollback"
+              ]
+            }
+          }
+        }
+      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "Platform": {
@@ -4284,6 +4324,12 @@
         "description": {
           "type": "string"
         },
+        "failureStrategies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FailureStrategyConfig"
+          }
+        },
         "identifier": {
           "type": "string",
           "pattern": "^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$"
@@ -4908,7 +4954,7 @@
             },
             {
               "type": "string",
-              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+              "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
               "minLength": 1
             }
           ]
@@ -5399,6 +5445,9 @@
           "type": "string"
         },
         "link": {
+          "type": "string"
+        },
+        "mergeSha": {
           "type": "string"
         },
         "message": {

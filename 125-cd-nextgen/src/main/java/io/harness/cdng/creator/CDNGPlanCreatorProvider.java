@@ -15,6 +15,7 @@ import io.harness.cdng.azure.webapp.variablecreator.AzureWebAppSlotDeploymentSte
 import io.harness.cdng.azure.webapp.variablecreator.AzureWebAppSwapSlotStepVariableCreator;
 import io.harness.cdng.azure.webapp.variablecreator.AzureWebAppTrafficShiftStepVariableCreator;
 import io.harness.cdng.creator.filters.DeploymentStageFilterJsonCreatorV2;
+import io.harness.cdng.creator.plan.CDStepGroupPmsPlanCreator;
 import io.harness.cdng.creator.plan.CDStepsPlanCreator;
 import io.harness.cdng.creator.plan.artifact.ArtifactsPlanCreator;
 import io.harness.cdng.creator.plan.artifact.PrimaryArtifactPlanCreator;
@@ -38,6 +39,7 @@ import io.harness.cdng.creator.plan.stage.DeploymentStagePMSPlanCreatorV2;
 import io.harness.cdng.creator.plan.steps.AzureARMRollbackResourceStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.AzureCreateARMResourceStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.AzureCreateBPResourceStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.CDPMSCommandStepFilterJsonCreator;
 import io.harness.cdng.creator.plan.steps.CDPMSStepFilterJsonCreator;
 import io.harness.cdng.creator.plan.steps.CDPMSStepFilterJsonCreatorV2;
 import io.harness.cdng.creator.plan.steps.CloudformationCreateStackStepPlanCreator;
@@ -65,6 +67,9 @@ import io.harness.cdng.creator.plan.steps.azure.webapp.AzureWebAppRollbackStepPl
 import io.harness.cdng.creator.plan.steps.azure.webapp.AzureWebAppSlotDeploymentStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.azure.webapp.AzureWebAppSlotSwapSlotPlanCreator;
 import io.harness.cdng.creator.plan.steps.azure.webapp.AzureWebAppTrafficShiftStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.ecs.EcsBlueGreenCreateServiceStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.ecs.EcsBlueGreenRollbackStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.ecs.EcsBlueGreenSwapTargetGroupsStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.ecs.EcsCanaryDeleteStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.ecs.EcsCanaryDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.ecs.EcsRollingDeployStepPlanCreator;
@@ -73,6 +78,9 @@ import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaDeploySt
 import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaRollbackStepPlanCreator;
 import io.harness.cdng.creator.variables.CommandStepVariableCreator;
 import io.harness.cdng.creator.variables.DeploymentStageVariableCreator;
+import io.harness.cdng.creator.variables.EcsBlueGreenCreateServiceStepVariableCreator;
+import io.harness.cdng.creator.variables.EcsBlueGreenRollbackStepVariableCreator;
+import io.harness.cdng.creator.variables.EcsBlueGreenSwapTargetGroupsStepVariableCreator;
 import io.harness.cdng.creator.variables.EcsCanaryDeleteStepVariableCreator;
 import io.harness.cdng.creator.variables.EcsCanaryDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.EcsRollingDeployStepVariableCreator;
@@ -111,7 +119,6 @@ import io.harness.filters.ParallelGenericFilterJsonCreator;
 import io.harness.filters.StepGroupPmsFilterJsonCreator;
 import io.harness.plancreator.stages.parallel.ParallelPlanCreator;
 import io.harness.plancreator.steps.SpecNodePlanCreator;
-import io.harness.plancreator.steps.StepGroupPMSPlanCreator;
 import io.harness.plancreator.strategy.StrategyConfigPlanCreator;
 import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.contracts.steps.StepMetaData;
@@ -181,7 +188,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new ManifestsPlanCreator());
     planCreators.add(new IndividualManifestPlanCreator());
     planCreators.add(new CDStepsPlanCreator());
-    planCreators.add(new StepGroupPMSPlanCreator());
+    planCreators.add(new CDStepGroupPmsPlanCreator());
     planCreators.add(new ParallelPlanCreator());
     planCreators.add(new ServerlessAwsLambdaDeployStepPlanCreator());
     planCreators.add(new ServerlessAwsLambdaRollbackStepPlanCreator());
@@ -206,6 +213,9 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new EcsRollingRollbackStepPlanCreator());
     planCreators.add(new EcsCanaryDeployStepPlanCreator());
     planCreators.add(new EcsCanaryDeleteStepPlanCreator());
+    planCreators.add(new EcsBlueGreenCreateServiceStepPlanCreator());
+    planCreators.add(new EcsBlueGreenSwapTargetGroupsStepPlanCreator());
+    planCreators.add(new EcsBlueGreenRollbackStepPlanCreator());
 
     planCreators.add(new AzureCreateARMResourceStepPlanCreator());
     planCreators.add(new AzureCreateBPResourceStepPlanCreator());
@@ -224,6 +234,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     filterJsonCreators.add(new ExecutionPMSFilterJsonCreator());
     filterJsonCreators.add(new ParallelGenericFilterJsonCreator());
     filterJsonCreators.add(new StepGroupPmsFilterJsonCreator());
+    filterJsonCreators.add(new CDPMSCommandStepFilterJsonCreator());
     injectorUtils.injectMembers(filterJsonCreators);
 
     return filterJsonCreators;
@@ -268,6 +279,9 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new EcsRollingRollbackStepVariableCreator());
     variableCreators.add(new EcsCanaryDeployStepVariableCreator());
     variableCreators.add(new EcsCanaryDeleteStepVariableCreator());
+    variableCreators.add(new EcsBlueGreenCreateServiceStepVariableCreator());
+    variableCreators.add(new EcsBlueGreenSwapTargetGroupsStepVariableCreator());
+    variableCreators.add(new EcsBlueGreenRollbackStepVariableCreator());
 
     variableCreators.add(new AzureCreateARMResourceStepVariableCreator());
     variableCreators.add(new AzureCreateBPStepVariableCreator());
@@ -478,6 +492,30 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setFeatureFlag(FeatureName.ECS_NG.name())
             .build();
 
+    StepInfo ecsBlueGreenCreateService =
+        StepInfo.newBuilder()
+            .setName("Ecs Blue Green Create Service")
+            .setType(StepSpecTypeConstants.ECS_BLUE_GREEN_CREATE_SERVICE)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory("ECS").setFolderPath("ECS").build())
+            .setFeatureFlag(FeatureName.ECS_NG.name())
+            .build();
+
+    StepInfo ecsBlueGreenSwapTargetGroups =
+        StepInfo.newBuilder()
+            .setName("Ecs Blue Green Swap Target Groups")
+            .setType(StepSpecTypeConstants.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory("ECS").setFolderPath("ECS").build())
+            .setFeatureFlag(FeatureName.ECS_NG.name())
+            .build();
+
+    StepInfo ecsBlueGreenRollback =
+        StepInfo.newBuilder()
+            .setName("Ecs Blue Green Rollback")
+            .setType(StepSpecTypeConstants.ECS_BLUE_GREEN_ROLLBACK)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory("ECS").setFolderPath("ECS").build())
+            .setFeatureFlag(FeatureName.ECS_NG.name())
+            .build();
+
     StepInfo createStack = StepInfo.newBuilder()
                                .setName("CloudFormation Create Stack")
                                .setType(StepSpecTypeConstants.CLOUDFORMATION_CREATE_STACK)
@@ -626,6 +664,9 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(azureCreateARMResources);
     stepInfos.add(azureCreateBPResources);
     stepInfos.add(azureARMRollback);
+    stepInfos.add(ecsBlueGreenCreateService);
+    stepInfos.add(ecsBlueGreenSwapTargetGroups);
+    stepInfos.add(ecsBlueGreenRollback);
     return stepInfos;
   }
 }

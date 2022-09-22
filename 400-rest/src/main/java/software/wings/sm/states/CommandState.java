@@ -492,11 +492,7 @@ public class CommandState extends State {
         if (service == null) {
           throw new ShellScriptException("Linked command needs artifact but service is not found", null, null, USER);
         }
-        if (!featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId)) {
-          artifact = findArtifact(service.getUuid(), context);
-        } else {
-          multiArtifacts = findArtifacts(service.getUuid(), context);
-        }
+        artifact = findArtifact(service.getUuid(), context);
       }
 
       Map<String, String> serviceVariables = context.getServiceVariables().entrySet().stream().collect(
@@ -590,21 +586,11 @@ public class CommandState extends State {
   private void fetchArtifactDetails(ExecutionContext context, CommandStateExecutionData.Builder executionDataBuilder,
       Service service, String accountId, Artifact artifact, Map<String, Artifact> multiArtifacts, Command command,
       CommandParametersBuilder commandParametersBuilder) {
-    if (!featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId)) {
-      if (artifact != null) {
-        getArtifactDetails(context, executionDataBuilder, service, accountId, artifact, commandParametersBuilder);
-      } else if (command.isArtifactNeeded()) {
-        throw new ShellScriptException(
-            format("Unable to find artifact for service %s", service.getName()), null, null, WingsException.USER);
-      }
-    } else {
-      if (isNotEmpty(multiArtifacts)) {
-        getMultiArtifactDetails(
-            context, executionDataBuilder, service, accountId, multiArtifacts, commandParametersBuilder);
-      } else if (command.isArtifactNeeded()) {
-        throw new ShellScriptException(
-            format("Unable to find artifact for service %s", service.getName()), null, null, WingsException.USER);
-      }
+    if (artifact != null) {
+      getArtifactDetails(context, executionDataBuilder, service, accountId, artifact, commandParametersBuilder);
+    } else if (command.isArtifactNeeded()) {
+      throw new ShellScriptException(
+          format("Unable to find artifact for service %s", service.getName()), null, null, WingsException.USER);
     }
   }
 
@@ -949,8 +935,7 @@ public class CommandState extends State {
       commandParametersBuilder.disableWinRMCommandEncodingFFSet(true);
     }
 
-    commandParametersBuilder.multiArtifact(
-        featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId));
+    commandParametersBuilder.multiArtifact(false);
 
     commandParametersBuilder.useWinRMKerberosUniqueCacheFile(
         featureFlagService.isEnabled(FeatureName.WINRM_KERBEROS_CACHE_UNIQUE_FILE, accountId));

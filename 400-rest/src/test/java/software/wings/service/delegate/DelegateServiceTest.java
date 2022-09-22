@@ -46,7 +46,6 @@ import static io.harness.rule.OwnerRule.VUK;
 import static io.harness.rule.OwnerRule.XIN;
 
 import static software.wings.beans.Account.Builder.anAccount;
-import static software.wings.beans.Event.Builder.anEvent;
 import static software.wings.beans.ServiceVariableType.ENCRYPTED_TEXT;
 import static software.wings.service.impl.DelegateServiceImpl.DELEGATE_DIR;
 import static software.wings.service.impl.DelegateServiceImpl.DOCKER_DELEGATE;
@@ -189,9 +188,7 @@ import software.wings.service.impl.DelegateConnectionDao;
 import software.wings.service.impl.DelegateObserver;
 import software.wings.service.impl.DelegateServiceImpl;
 import software.wings.service.impl.DelegateTaskServiceClassicImpl;
-import software.wings.service.impl.DelegateTaskStatusObserver;
 import software.wings.service.impl.EventEmitter;
-import software.wings.service.impl.EventEmitter.Channel;
 import software.wings.service.impl.infra.InfraDownloadService;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.DelegateProfileService;
@@ -321,7 +318,6 @@ public class DelegateServiceTest extends WingsBaseTest {
 
   @Mock private Subject<DelegateProfileObserver> delegateProfileSubject;
   @Mock private Subject<DelegateTaskRetryObserver> retryObserverSubject;
-  @Mock private Subject<DelegateTaskStatusObserver> delegateTaskStatusObserverSubject;
   @Mock private Subject<DelegateObserver> subject;
 
   private final Account account =
@@ -399,8 +395,6 @@ public class DelegateServiceTest extends WingsBaseTest {
     FieldUtils.writeField(delegateService, "delegateProfileSubject", delegateProfileSubject, true);
     FieldUtils.writeField(delegateService, "subject", subject, true);
     FieldUtils.writeField(delegateTaskService, "retryObserverSubject", retryObserverSubject, true);
-    FieldUtils.writeField(
-        delegateTaskService, "delegateTaskStatusObserverSubject", delegateTaskStatusObserverSubject, true);
   }
 
   @Test
@@ -664,9 +658,6 @@ public class DelegateServiceTest extends WingsBaseTest {
     delegateService.update(delegate);
     Delegate updatedDelegate = persistence.get(Delegate.class, delegate.getUuid());
     assertThat(updatedDelegate).isEqualToIgnoringGivenFields(delegate, DelegateKeys.validUntil);
-    verify(eventEmitter)
-        .send(Channel.DELEGATES,
-            anEvent().withOrgId(accountId).withUuid(delegate.getUuid()).withType(Type.UPDATE).build());
     verify(auditServiceHelper).reportForAuditingUsingAccountId(eq(accountId), any(), any(), eq(Type.UPDATE));
     verify(auditServiceHelper).reportForAuditingUsingAccountId(eq(accountId), any(), any(), eq(Type.APPLY));
   }
@@ -728,9 +719,6 @@ public class DelegateServiceTest extends WingsBaseTest {
     delegateService.update(delegate);
     Delegate updatedDelegate = persistence.get(Delegate.class, delegate.getUuid());
     assertThat(updatedDelegate).isEqualToIgnoringGivenFields(delegate, DelegateKeys.validUntil);
-    verify(eventEmitter)
-        .send(Channel.DELEGATES,
-            anEvent().withOrgId(accountId).withUuid(delegate.getUuid()).withType(Type.UPDATE).build());
   }
 
   @Test
@@ -753,9 +741,6 @@ public class DelegateServiceTest extends WingsBaseTest {
     delegate = delegateService.add(delegate);
 
     assertThat(persistence.get(Delegate.class, delegate.getUuid())).isEqualTo(delegate);
-    verify(eventEmitter)
-        .send(Channel.DELEGATES,
-            anEvent().withOrgId(accountId).withUuid(delegate.getUuid()).withType(Type.CREATE).build());
     verify(capabilityService, never()).getAllCapabilityRequirements(accountId);
   }
 
@@ -783,9 +768,6 @@ public class DelegateServiceTest extends WingsBaseTest {
 
     assertThat(delegate).isEqualToIgnoringGivenFields(delegate, DelegateKeys.status);
     assertThat(delegate.getStatus()).isEqualTo(DelegateInstanceStatus.WAITING_FOR_APPROVAL);
-    verify(eventEmitter)
-        .send(Channel.DELEGATES,
-            anEvent().withOrgId(accountId).withUuid(delegate.getUuid()).withType(Type.CREATE).build());
   }
 
   @Test
@@ -809,10 +791,6 @@ public class DelegateServiceTest extends WingsBaseTest {
     Delegate savedDelegate = persistence.get(Delegate.class, delegateWithoutProfile.getUuid());
     assertThat(savedDelegate).isEqualToIgnoringGivenFields(delegateWithoutProfile, DelegateKeys.delegateProfileId);
     assertThat(savedDelegate.getDelegateProfileId()).isEqualTo(primaryDelegateProfile.getUuid());
-    verify(eventEmitter)
-        .send(Channel.DELEGATES,
-            anEvent().withOrgId(accountId).withUuid(delegateWithoutProfile.getUuid()).withType(Type.CREATE).build());
-
     Delegate delegateWithNonExistingProfile = createDelegateBuilder().build();
     delegateWithNonExistingProfile.setAccountId(accountId);
     delegateWithNonExistingProfile.setUuid(generateUuid());

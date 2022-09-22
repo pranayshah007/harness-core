@@ -39,7 +39,14 @@
       "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
     },
     "skipInstances": {
-      "type": "boolean"
+      "oneOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "string"
+        }
+      ]
     },
     "strategy": {
       "$ref": "#/definitions/StrategyConfig"
@@ -917,8 +924,7 @@
         {
           "type": "object",
           "required": [
-            "configuration",
-            "provisionerIdentifier"
+            "configuration"
           ],
           "properties": {
             "configuration": {
@@ -940,9 +946,6 @@
               ]
             },
             "metadata": {
-              "type": "string"
-            },
-            "provisionerIdentifier": {
               "type": "string"
             }
           }
@@ -1984,6 +1987,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "DownloadArtifact"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/DownloadArtifactCommandUnitSpec"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "Script"
               }
             }
@@ -2733,7 +2752,14 @@
           "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
         },
         "skipInstances": {
-          "type": "boolean"
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string"
+            }
+          ]
         },
         "strategy": {
           "$ref": "#/definitions/StrategyConfig"
@@ -2833,6 +2859,25 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "DownloadArtifactCommandUnitSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CommandUnitBaseSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "destinationPath"
+          ],
+          "properties": {
+            "destinationPath": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "EcrArtifactConfig": {
       "allOf": [
         {
@@ -2879,6 +2924,112 @@
               ]
             }
           ]
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "EcsBlueGreenCreateServiceStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "loadBalancer",
+            "prodListener",
+            "prodListenerRuleArn",
+            "stageListener",
+            "stageListenerRuleArn"
+          ],
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "loadBalancer": {
+              "type": "string"
+            },
+            "prodListener": {
+              "type": "string"
+            },
+            "prodListenerRuleArn": {
+              "type": "string"
+            },
+            "stageListener": {
+              "type": "string"
+            },
+            "stageListenerRuleArn": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "EcsBlueGreenRollbackStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "EcsBlueGreenSwapTargetGroupsStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -3246,7 +3397,7 @@
             },
             {
               "type": "string",
-              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+              "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
               "minLength": 1
             }
           ]
@@ -3307,7 +3458,7 @@
             },
             {
               "type": "string",
-              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+              "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
               "minLength": 1
             }
           ]
@@ -3381,6 +3532,7 @@
             "Abort",
             "StageRollback",
             "StepGroupRollback",
+            "PipelineRollback",
             "ManualIntervention",
             "ProceedWithDefaultValue"
           ]
@@ -3916,7 +4068,7 @@
             },
             {
               "type": "string",
-              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+              "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
               "minLength": 1
             }
           ]
@@ -3931,7 +4083,7 @@
             },
             {
               "type": "string",
-              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+              "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
               "minLength": 1
             }
           ]
@@ -3945,7 +4097,7 @@
             },
             {
               "type": "string",
-              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+              "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
               "minLength": 1
             }
           ]
@@ -3959,7 +4111,7 @@
             },
             {
               "type": "string",
-              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+              "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
               "minLength": 1
             }
           ]
@@ -3973,7 +4125,7 @@
             },
             {
               "type": "string",
-              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+              "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
               "minLength": 1
             }
           ]
@@ -3987,7 +4139,7 @@
             },
             {
               "type": "string",
-              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+              "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
               "minLength": 1
             }
           ]
@@ -4226,7 +4378,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+                  "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
                   "minLength": 1
                 }
               ]
@@ -4336,7 +4488,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+                  "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
                   "minLength": 1
                 }
               ]
@@ -4415,7 +4567,7 @@
             },
             {
               "type": "string",
-              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+              "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
               "minLength": 1
             }
           ]
@@ -6000,7 +6152,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+                  "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
                   "minLength": 1
                 }
               ]
@@ -6268,7 +6420,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "(^[+-]?[0-9]+\\.?[0-9]*$|(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*))"
+                  "pattern": "(^[+-]?[0-9]+\\.?[0-9]*$|(.*<\\+.+>.*|^<\\+input>.*))"
                 }
               ]
             }
@@ -6389,6 +6541,9 @@
               "$ref": "#/definitions/MarkAsSuccessFailureActionConfig"
             },
             {
+              "$ref": "#/definitions/PipelineRollbackFailureActionConfig"
+            },
+            {
               "$ref": "#/definitions/ProceedWithDefaultValuesFailureActionConfig"
             },
             {
@@ -6441,6 +6596,9 @@
               "$ref": "#/definitions/MarkAsSuccessFailureActionConfig"
             },
             {
+              "$ref": "#/definitions/PipelineRollbackFailureActionConfig"
+            },
+            {
               "$ref": "#/definitions/ProceedWithDefaultValuesFailureActionConfig"
             },
             {
@@ -6473,6 +6631,9 @@
             },
             {
               "$ref": "#/definitions/MarkAsSuccessFailureActionConfig"
+            },
+            {
+              "$ref": "#/definitions/PipelineRollbackFailureActionConfig"
             },
             {
               "$ref": "#/definitions/ProceedWithDefaultValuesFailureActionConfig"
@@ -6938,6 +7099,28 @@
           ]
         }
       ]
+    },
+    "PipelineRollbackFailureActionConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/FailureStrategyActionConfig"
+        },
+        {
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "PipelineRollback"
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "PrimaryArtifact": {
       "type": "object",
@@ -7916,7 +8099,7 @@
             },
             {
               "type": "string",
-              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+              "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
               "minLength": 1
             }
           ]
@@ -7972,7 +8155,7 @@
             },
             {
               "type": "string",
-              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+              "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
               "minLength": 1
             }
           ]
@@ -8310,6 +8493,7 @@
             "awsInstanceFilter",
             "connectorRef",
             "credentialsRef",
+            "hostConnectionType",
             "region"
           ],
           "properties": {
@@ -8322,6 +8506,14 @@
             },
             "credentialsRef": {
               "type": "string",
+              "minLength": 1
+            },
+            "hostConnectionType": {
+              "type": "string",
+              "enum": [
+                "PublicIP",
+                "PrivateIP"
+              ],
               "minLength": 1
             },
             "region": {
@@ -8343,6 +8535,7 @@
           "required": [
             "connectorRef",
             "credentialsRef",
+            "hostConnectionType",
             "resourceGroup",
             "subscriptionId"
           ],
@@ -8353,6 +8546,15 @@
             },
             "credentialsRef": {
               "type": "string",
+              "minLength": 1
+            },
+            "hostConnectionType": {
+              "type": "string",
+              "enum": [
+                "Hostname",
+                "PrivateIP",
+                "PublicIP"
+              ],
               "minLength": 1
             },
             "resourceGroup": {
@@ -8373,18 +8575,6 @@
                 },
                 {
                   "type": "string"
-                }
-              ]
-            },
-            "usePublicDns": {
-              "oneOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
                 }
               ]
             }
@@ -8700,6 +8890,54 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/CloudformationDeleteStackStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "EcsBlueGreenCreateService"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/EcsBlueGreenCreateServiceStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "EcsBlueGreenRollback"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/EcsBlueGreenRollbackStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "EcsBlueGreenSwapTargetGroups"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/EcsBlueGreenSwapTargetGroupsStepInfo"
               }
             }
           }
@@ -9502,7 +9740,7 @@
             },
             {
               "type": "string",
-              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+              "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
               "minLength": 1
             }
           ]

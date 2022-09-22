@@ -282,7 +282,8 @@ public class TriggerExecutionHelper {
         pipelineEnforcementService.validateExecutionEnforcementsBasedOnStage(pipelineEntity);
 
         String expandedJson = pmsPipelineServiceHelper.fetchExpandedPipelineJSONFromYaml(pipelineEntity.getAccountId(),
-            pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineYamlWithTemplateRef);
+            pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineYamlWithTemplateRef,
+            true);
 
         planExecutionMetadataBuilder.yaml(pipelineYaml);
         planExecutionMetadataBuilder.processedYaml(YamlUtils.injectUuid(pipelineYaml));
@@ -473,7 +474,7 @@ public class TriggerExecutionHelper {
     NGTriggerConfigV2 triggerConfigV2 = triggerDetails.getNgTriggerConfigV2();
     String pipelineBranch = triggerConfigV2.getPipelineBranchName();
     if (isEmpty(triggerConfigV2.getInputSetRefs())) {
-      return null;
+      return triggerConfigV2.getInputYaml();
     }
 
     String branch = null;
