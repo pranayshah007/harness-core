@@ -33,10 +33,16 @@ public class SshExceptionConstants {
       + " Please retry the operation either check artifact details.";
 
   public final String NO_DESTINATION_PATH_SPECIFIED = "destination path not specified in copy command unit";
+  public final String NO_DESTINATION_DOWNLOAD_ARTIFACT_PATH_SPECIFIED =
+      "destination path not specified in download artifact command unit";
   public final String NO_DESTINATION_PATH_SPECIFIED_HINT =
       "Please provide the destination path of the step copy command unit: %s";
+  public final String NO_DESTINATION_DOWNLOAD_PATH_SPECIFIED_HINT =
+      "Please provide the destination path of the step download artifact command unit: %s";
   public final String NO_DESTINATION_PATH_SPECIFIED_EXPLANATION =
       "destination path is missing from step copy command unit: %s";
+  public final String NO_DESTINATION_DOWNLOAD_ARTIFACT_PATH_SPECIFIED_EXPLANATION =
+      "destination path is missing from step download artifact command unit: %s";
 
   public final String NO_CONFIG_FILE_PROVIDED = "Config file not provided for copy config command unit";
   public final String NO_CONFIG_FILE_PROVIDED_HINT = "Please provide the config file with the service definition";
@@ -66,8 +72,12 @@ public class SshExceptionConstants {
       "Selected workingDir path should exist and accessible on the host in order to use it with the script command unit";
   public final String COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT =
       "Copy Artifact is not supported for Custom Repository artifacts";
+  public final String DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT =
+      "Download Artifact is not supported for Custom Repository artifacts";
   public final String COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT_HINT =
       "Please make sure there is no copy artifact command unit specified";
+  public final String DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT_HINT =
+      "Please make sure there is no download artifact command unit specified";
   public final String UNDECRYPTABLE_CONFIG_FILE_PROVIDED = "Could not decrypt the encrypted secret config file %s";
   public final String UNDECRYPTABLE_CONFIG_FILE_PROVIDED_HINT =
       "Please provide a valid encrypted config file instead of %s";

@@ -390,7 +390,9 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
                         .thresholdType(timeSeriesThreshold.getCriteria().getThresholdType())
                         .value(timeSeriesThreshold.getCriteria().getValue())
                         .thresholdConfigType(timeSeriesThreshold.getThresholdConfigType())
-                        .deviationType(timeSeriesThreshold.getDeviationType())
+                        .deviationType(timeSeriesThreshold.getDeviationType() == null
+                                ? metricDefinition.getType().getDeviationType()
+                                : timeSeriesThreshold.getDeviationType())
                         .build());
               }
             });

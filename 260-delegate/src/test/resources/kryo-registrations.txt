@@ -1731,7 +1731,7 @@
 55345:io.harness.delegate.task.azure.arm.AzureResourceCreationTaskNGResponse
 55346:io.harness.delegate.task.jira.JiraSearchUserParams
 55347:io.harness.delegate.task.jira.JiraSearchUserData
-
+55348:io.harness.delegate.task.ssh.NgDownloadArtifactCommandUnit
 
 55401:io.harness.delegate.beans.SerializedResponseData
 55402:software.wings.beans.SerializationFormat
@@ -1755,6 +1755,8 @@
 55420:io.harness.delegate.task.artifacts.gar.GarDelegateRequest
 55421:io.harness.delegate.task.artifacts.gar.GarDelegateResponse
 55422:io.harness.delegate.task.azure.artifact.AwsS3AzureArtifactRequestDetails
+55423:io.harness.delegate.task.azure.arm.AzureFetchArmPreDeploymentDataTaskParameters
+55424:io.harness.delegate.task.azure.arm.AzureFetchArmPreDeploymentDataTaskResponse
 55470:io.harness.delegate.task.ssh.artifact.CustomArtifactDelegateConfig
 55501:io.harness.delegate.beans.instancesync.info.PdcServerInstanceInfo
 55502:io.harness.delegate.beans.instancesync.info.AzureSshWinrmServerInstanceInfo
@@ -2222,6 +2224,19 @@
 573523:io.harness.delegate.task.ecs.request.EcsCanaryDeleteRequest
 573524:io.harness.delegate.task.ecs.response.EcsCanaryDeleteResponse
 573525:io.harness.delegate.beans.ecs.EcsCanaryDeleteResult
+573526:io.harness.delegate.task.ecs.request.EcsBlueGreenCreateServiceRequest
+573527:io.harness.delegate.beans.ecs.EcsBlueGreenCreateServiceResult
+573528:io.harness.delegate.task.ecs.response.EcsBlueGreenCreateServiceResponse
+573529:io.harness.delegate.beans.ecs.EcsBlueGreenPrepareRollbackDataResult
+573530:io.harness.delegate.task.ecs.response.EcsBlueGreenPrepareRollbackDataResponse
+573531:io.harness.delegate.task.ecs.request.EcsBlueGreenPrepareRollbackRequest
+573532:io.harness.delegate.beans.ecs.EcsBlueGreenSwapTargetGroupsResult
+573533:io.harness.delegate.task.ecs.request.EcsBlueGreenSwapTargetGroupsRequest
+573534:io.harness.delegate.task.ecs.response.EcsBlueGreenSwapTargetGroupsResponse
+573535:io.harness.delegate.task.ecs.request.EcsBlueGreenRollbackRequest
+573536:io.harness.delegate.task.ecs.response.EcsBlueGreenRollbackResponse
+573537:io.harness.delegate.beans.ecs.EcsBlueGreenRollbackResult
+573538:io.harness.delegate.task.ecs.EcsLoadBalancerConfig
 600001:io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO
 600002:io.harness.secretmanagerclient.WinRmAuthScheme
 600003:io.harness.ng.core.dto.secrets.NTLMConfigDTO

@@ -90,12 +90,12 @@ public class SerializerUtils {
     String safeDirScript;
     if (shellType == CIShellType.SH || shellType == CIShellType.BASH) {
       safeDirScript = "set +x\n"
-          + "git config --global --add safe.directory /harness &>/dev/null | true\n"
+          + "git config --global --add safe.directory '*' &>/dev/null | true\n"
           + "set -x\n";
     } else {
       safeDirScript = "try\n"
           + "{\n"
-          + "    git config --global --add safe.directory /harness | Out-Null\n"
+          + "    git config --global --add safe.directory '*' | Out-Null\n"
           + "}\n"
           + "catch [System.Management.Automation.CommandNotFoundException]\n"
           + "{\n }";
