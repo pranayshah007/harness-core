@@ -20,8 +20,6 @@ import static io.harness.rule.OwnerRule.VUK;
 import static java.time.Duration.ofMinutes;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
@@ -54,7 +52,6 @@ import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 import io.harness.service.impl.DelegateSetupServiceImpl;
 import io.harness.service.intfc.DelegateCache;
-import io.harness.service.intfc.DelegateInsightsService;
 
 import software.wings.beans.DelegateConnection;
 import software.wings.beans.SelectorType;
@@ -91,7 +88,6 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
   public static final Duration HEARTBEAT_EXPIRY_TIME = ofMinutes(5);
 
   @Mock private DelegateCache delegateCache;
-  @Mock private DelegateInsightsService delegateInsightsService;
 
   @InjectMocks @Inject private DelegateSetupServiceImpl delegateSetupService;
   @Inject private HPersistence persistence;
@@ -143,10 +139,6 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
             .insights(ImmutableList.of(
                 DelegateInsightsBarDetails.builder().build(), DelegateInsightsBarDetails.builder().build()))
             .build();
-    when(
-        delegateInsightsService.retrieveDelegateInsightsDetails(eq(accountId), eq(delegateGroup1.getUuid()), anyLong()))
-        .thenReturn(delegateInsightsDetails);
-
     // these three delegates should be returned for group 1
     Delegate delegate1 = createDelegateBuilder()
                              .accountId(accountId)
@@ -496,10 +488,6 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
             .insights(ImmutableList.of(
                 DelegateInsightsBarDetails.builder().build(), DelegateInsightsBarDetails.builder().build()))
             .build();
-    when(
-        delegateInsightsService.retrieveDelegateInsightsDetails(eq(accountId), eq(delegateGroup1.getUuid()), anyLong()))
-        .thenReturn(delegateInsightsDetails);
-
     Delegate delegate1 = createDelegateBuilder()
                              .accountId(accountId)
                              .ng(true)
@@ -598,10 +586,6 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
             .insights(ImmutableList.of(
                 DelegateInsightsBarDetails.builder().build(), DelegateInsightsBarDetails.builder().build()))
             .build();
-    when(
-        delegateInsightsService.retrieveDelegateInsightsDetails(eq(accountId), eq(delegateGroup1.getUuid()), anyLong()))
-        .thenReturn(delegateInsightsDetails);
-
     Delegate delegate1 = createDelegateBuilder()
                              .accountId(accountId)
                              .owner(owner)
