@@ -71,6 +71,7 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
   private static final String ACCOUNT_ID = "accountId";
   private static final String NAME = "name";
   private static final String CLUSTER_NAME = "clusterName";
+  private static final String WORKLOAD_NAME = "workloadName";
   private static final Double MONTHLY_COST = 100D;
   private static final Double MONTHLY_SAVING = 40D;
   private static final String NAMESPACE = "namespace";
@@ -207,7 +208,7 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
     when(recommendationService.listAll(eq(ACCOUNT_ID), conditionCaptor.capture(), any(), any()))
         .thenReturn(ImmutableList.of(createRecommendationItem("id0"), createRecommendationItem("id1")));
 
-    when(viewService.get(eq(PERSPECTIVE_ID))).thenReturn(createCEView(NAME, ViewIdOperator.NOT_IN));
+    when(viewService.get(eq(PERSPECTIVE_ID))).thenReturn(createCEView(CLUSTER_NAME, ViewIdOperator.NOT_IN));
 
     final RecommendationsDTO recommendationsDTO = overviewQuery.recommendations(filter, null);
 
@@ -217,7 +218,7 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
 
     final Condition condition = conditionCaptor.getValue();
 
-    final String expectedCondition = "\"public\".\"ce_recommendations\".\"name\" not in ('name')";
+    final String expectedCondition = "\"public\".\"ce_recommendations\".\"clustername\" not in ('name')";
 
     assertThat(condition).isNotNull();
     assertThat(condition.toString()).contains(expectedCondition);
@@ -232,7 +233,7 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
     when(recommendationService.listAll(eq(ACCOUNT_ID), conditionCaptor.capture(), any(), any()))
         .thenReturn(ImmutableList.of(createRecommendationItem("id0"), createRecommendationItem("id1")));
 
-    when(viewService.get(eq(PERSPECTIVE_ID))).thenReturn(createCEView(NAME, ViewIdOperator.NOT_NULL));
+    when(viewService.get(eq(PERSPECTIVE_ID))).thenReturn(createCEView(WORKLOAD_NAME, ViewIdOperator.NOT_NULL));
 
     final RecommendationsDTO recommendationsDTO = overviewQuery.recommendations(filter, null);
 
@@ -242,18 +243,22 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
 
     final Condition condition = conditionCaptor.getValue();
 
-    final String expectedConditon = "  and (\n"
+    final String expectedCondition = "and (\n"
         + "    (\n"
         + "      \"public\".\"ce_recommendations\".\"clustername\" in ('clusterName')\n"
         + "      and \"public\".\"ce_recommendations\".\"namespace\" in ('namespace')\n"
         + "      and \"public\".\"ce_recommendations\".\"name\" not in ('name')\n"
+        + "      and \"public\".\"ce_recommendations\".\"resourcetype\" in ('WORKLOAD')\n"
         + "    )\n"
-        + "    or \"public\".\"ce_recommendations\".\"name\" is not null\n"
+        + "    or (\n"
+        + "      \"public\".\"ce_recommendations\".\"name\" is not null\n"
+        + "      and \"public\".\"ce_recommendations\".\"resourcetype\" in ('WORKLOAD')\n"
+        + "    )\n"
         + "  )\n"
         + "  and \"public\".\"ce_recommendations\".\"clustername\" in ('clusterName')";
 
     assertThat(condition).isNotNull();
-    assertThat(condition.toString()).contains(expectedConditon);
+    assertThat(condition.toString()).contains(expectedCondition);
   }
 
   @Test
@@ -284,22 +289,6 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
     assertRecommendationOverviewListResponse(recommendationsDTO);
     recommendationsDTO.getItems().forEach(
         item -> assertThat(item.getRecommendationDetails()).isEqualTo(createRecommendationDetails()));
-  }
-
-  @Test
-  @Owner(developers = UTSAV)
-  @Category(UnitTests.class)
-  public void testGetRecommendationsOverviewListQueryWithPerspectiveFiltersThrowsError() {
-    final QLCEViewFilter viewFilter = createViewFilter("randomField", QLCEViewFilterOperator.IN, NAME);
-
-    final K8sRecommendationFilterDTO filter = createPerspectiveViewFilter(viewFilter);
-
-    when(recommendationService.listAll(any(), any(), any(), any()))
-        .thenReturn(ImmutableList.of(createRecommendationItem("id0"), createRecommendationItem("id1")));
-
-    assertThatThrownBy(() -> overviewQuery.recommendations(filter, null))
-        .isExactlyInstanceOf(InvalidRequestException.class)
-        .hasMessageContaining("doesnt exist");
   }
 
   private static K8sRecommendationFilterDTO createPerspectiveViewFilter(QLCEViewFilter viewFilter) {
