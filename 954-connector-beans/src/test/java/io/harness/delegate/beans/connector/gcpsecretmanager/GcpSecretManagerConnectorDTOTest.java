@@ -38,19 +38,12 @@ public class GcpSecretManagerConnectorDTOTest extends CategoryTest {
   @Owner(developers = SHREYAS)
   @Category(UnitTests.class)
   public void testNonDefaultFieldsAreNull() throws IllegalAccessException {
-    // Create connector dto.
     GcpSecretManagerConnectorDTO connectorDTO = GcpSecretManagerConnectorDTO.builder().build();
-    // Get all the fields in it
     Field[] fields = GcpSecretManagerConnectorDTO.class.getDeclaredFields();
-    // Loop over all fields
     for (Field field : fields) {
-      // Filter out non default fields
       if (!defaultFieldNamesToValue.containsKey(field.getName())) {
-        // Set their accessibility as true
         field.setAccessible(true);
-        // Get its value in the connector dto
         Object value = field.get(connectorDTO);
-        // asset that the fields are null.
         assertThat(value).isNull();
       }
     }
@@ -60,19 +53,12 @@ public class GcpSecretManagerConnectorDTOTest extends CategoryTest {
   @Owner(developers = SHREYAS)
   @Category(UnitTests.class)
   public void testDefaultFieldsAreNotNull() throws IllegalAccessException {
-    // Create connector dto.
     GcpSecretManagerConnectorDTO connectorDTO = GcpSecretManagerConnectorDTO.builder().build();
-    // Get all the fields in it
     Field[] fields = GcpSecretManagerConnectorDTO.class.getDeclaredFields();
-    // Loop over all fields
     for (Field field : fields) {
-      // Filter out default fields
       if (defaultFieldNamesToValue.containsKey(field.getName())) {
-        // Set their accessibility as true
         field.setAccessible(true);
-        // Get its value in the connector dto
         Object value = field.get(connectorDTO);
-        // asset that the fields are not null.
         assertThat(value).isNotNull();
       }
     }
@@ -82,19 +68,12 @@ public class GcpSecretManagerConnectorDTOTest extends CategoryTest {
   @Owner(developers = SHREYAS)
   @Category(UnitTests.class)
   public void testDefaultFieldsHaveCorrectValue() throws IllegalAccessException {
-    // Create connector dto.
     GcpSecretManagerConnectorDTO connectorDTO = GcpSecretManagerConnectorDTO.builder().build();
-    // Get all the fields in it
     Field[] fields = GcpSecretManagerConnectorDTO.class.getDeclaredFields();
-    // Loop over all fields
     for (Field field : fields) {
-      // Filter out default fields
       if (defaultFieldNamesToValue.containsKey(field.getName())) {
-        // Set their accessibility as true
         field.setAccessible(true);
-        // Get its value in the connector dto
         Object value = field.get(connectorDTO);
-        // asset that default value is same as that defined in map created at test setup.
         assertThat(value).isEqualTo(defaultFieldNamesToValue.get(field.getName()));
       }
     }
@@ -104,15 +83,14 @@ public class GcpSecretManagerConnectorDTOTest extends CategoryTest {
   @Owner(developers = SHREYAS)
   @Category(UnitTests.class)
   public void testInputFieldsHaveCorrectValue() throws IllegalAccessException {
-    SecretRefData secretRefData = SecretRefHelper.createSecretRef("some-secret");
-    // Create connector dto.
+    String secretRef = "some-secret";
+    SecretRefData secretRefData = SecretRefHelper.createSecretRef(secretRef);
     GcpSecretManagerConnectorDTO connectorDTO =
         GcpSecretManagerConnectorDTO.builder().credentialsRef(secretRefData).isDefault(false).build();
-    // Get all the fields in it
     Field[] fields = GcpSecretManagerConnectorDTO.class.getDeclaredFields();
     assertThat(fields.length).isEqualTo(3);
     assertThat(connectorDTO).isNotNull();
-    assertThat(SecretRefHelper.getSecretConfigString(connectorDTO.getCredentialsRef())).isEqualTo("some-secret");
+    assertThat(SecretRefHelper.getSecretConfigString(connectorDTO.getCredentialsRef())).isEqualTo(secretRef);
     assertThat(connectorDTO.getDelegateSelectors()).isNull();
     assertThat(connectorDTO.isDefault()).isFalse();
   }
