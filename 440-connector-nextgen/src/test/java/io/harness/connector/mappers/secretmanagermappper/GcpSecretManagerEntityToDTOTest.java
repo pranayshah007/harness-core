@@ -9,16 +9,17 @@ package io.harness.connector.mappers.secretmanagermappper;
 
 import static io.harness.rule.OwnerRule.SHREYAS;
 
-import static junit.framework.TestCase.assertNotNull;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.connector.entities.embedded.gcpsm.GcpSMConnector;
-import io.harness.connector.mappers.secretmanagermapper.GcpSMDTOToEntity;
-import io.harness.delegate.beans.connector.gcpsecretmanager.GcpSMConnectorDTO;
+import io.harness.connector.entities.embedded.gcpsecretmanager.GcpSecretManagerConnector;
+import io.harness.connector.mappers.secretmanagermapper.GcpSecretManagerEntityToDTO;
+import io.harness.delegate.beans.connector.gcpsecretmanager.GcpSecretManagerConnectorDTO;
+import io.harness.encryption.SecretRefData;
+import io.harness.encryption.SecretRefHelper;
 import io.harness.rule.Owner;
 
 import java.lang.reflect.Field;
@@ -30,66 +31,35 @@ import org.mockito.InjectMocks;
 import org.mockito.MockitoAnnotations;
 
 @OwnedBy(HarnessTeam.PL)
-public class GcpSMDTOToEntityTest extends CategoryTest {
+public class GcpSecretManagerEntityToDTOTest extends CategoryTest {
   HashMap<String, Object> defaultFieldNamesToValue;
-
-  @InjectMocks GcpSMDTOToEntity gcpSMDTOToEntity;
+  @InjectMocks GcpSecretManagerEntityToDTO gcpSecretManagerEntityToDTO;
 
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
     defaultFieldNamesToValue = new HashMap<>();
     defaultFieldNamesToValue.put("isDefault", false);
-  }
-
-  @Test
-  @Owner(developers = SHREYAS)
-  @Category(UnitTests.class)
-  // Test isDefault default value. Function name needs change here.
-  public void testIsDefaultDefaultValue() {
-    // Create Connector DTO
-    GcpSMConnectorDTO connectorDTO = GcpSMConnectorDTO.builder().build();
-    // Map it to corresponding connector
-    GcpSMConnector connector = gcpSMDTOToEntity.toConnectorEntity(connectorDTO);
-    // Check connector is not null
-    assertNotNull(connector);
-    // Check default value of isDefault is false
-    assertThat(connector.getIsDefault()).isEqualTo(false);
-  }
-
-  @Test
-  @Owner(developers = SHREYAS)
-  @Category(UnitTests.class)
-  public void testIsDefaultValue() {
-    // Create Connector DTO
-    GcpSMConnectorDTO connectorDTO = GcpSMConnectorDTO.builder().build();
-    // Set execute on delegate as false
-    connectorDTO.setDefault(true);
-    // Map it to corresponding connector
-    GcpSMConnector connector = gcpSMDTOToEntity.toConnectorEntity(connectorDTO);
-    // Check connector is not null
-    assertNotNull(connector);
-    // Check default value of execute on delegate is false
-    assertThat(connector.getIsDefault()).isEqualTo(true);
+    defaultFieldNamesToValue.put("credentials", SecretRefData.builder().build());
   }
 
   @Test
   @Owner(developers = SHREYAS)
   @Category(UnitTests.class)
   public void testNonDefaultFieldsAreNull() throws IllegalAccessException {
-    // Create connector dto.
-    GcpSMConnectorDTO connectorDTO = GcpSMConnectorDTO.builder().build();
-    GcpSMConnector connector = gcpSMDTOToEntity.toConnectorEntity(connectorDTO);
+    // Create connector entity.
+    GcpSecretManagerConnector connector = GcpSecretManagerConnector.builder().build();
+    GcpSecretManagerConnectorDTO connectorDTO = gcpSecretManagerEntityToDTO.createConnectorDTO(connector);
     // Get all the fields in it
-    Field[] fields = GcpSMConnector.class.getDeclaredFields();
+    Field[] fields = GcpSecretManagerConnectorDTO.class.getDeclaredFields();
     // Loop over all fields
     for (Field field : fields) {
       // Filter out non default fields
       if (!defaultFieldNamesToValue.containsKey(field.getName())) {
         // Set their accessibility as true
         field.setAccessible(true);
-        // Get its value in the connector entity
-        Object value = field.get(connector);
+        // Get its value in the connector dto
+        Object value = field.get(connectorDTO);
         // asset that the fields are null.
         assertThat(value).isNull();
       }
@@ -100,19 +70,19 @@ public class GcpSMDTOToEntityTest extends CategoryTest {
   @Owner(developers = SHREYAS)
   @Category(UnitTests.class)
   public void testDefaultFieldsAreNotNull() throws IllegalAccessException {
-    // Create connector dto.
-    GcpSMConnectorDTO connectorDTO = GcpSMConnectorDTO.builder().build();
-    GcpSMConnector connector = gcpSMDTOToEntity.toConnectorEntity(connectorDTO);
+    // Create connector entity.
+    GcpSecretManagerConnector connector = GcpSecretManagerConnector.builder().build();
+    GcpSecretManagerConnectorDTO connectorDTO = gcpSecretManagerEntityToDTO.createConnectorDTO(connector);
     // Get all the fields in it
-    Field[] fields = GcpSMConnector.class.getDeclaredFields();
+    Field[] fields = GcpSecretManagerConnectorDTO.class.getDeclaredFields();
     // Loop over all fields
     for (Field field : fields) {
       // Filter out default fields
       if (defaultFieldNamesToValue.containsKey(field.getName())) {
         // Set their accessibility as true
         field.setAccessible(true);
-        // Get its value in the connector entity
-        Object value = field.get(connector);
+        // Get its value in the connector dto
+        Object value = field.get(connectorDTO);
         // asset that the fields are not null.
         assertThat(value).isNotNull();
       }
@@ -123,22 +93,40 @@ public class GcpSMDTOToEntityTest extends CategoryTest {
   @Owner(developers = SHREYAS)
   @Category(UnitTests.class)
   public void testDefaultFieldsHaveCorrectValue() throws IllegalAccessException {
-    // Create connector dto.
-    GcpSMConnectorDTO connectorDTO = GcpSMConnectorDTO.builder().build();
-    GcpSMConnector connector = gcpSMDTOToEntity.toConnectorEntity(connectorDTO);
+    // Create connector entity.
+    GcpSecretManagerConnector connector = GcpSecretManagerConnector.builder().build();
+    GcpSecretManagerConnectorDTO connectorDTO = gcpSecretManagerEntityToDTO.createConnectorDTO(connector);
     // Get all the fields in it
-    Field[] fields = GcpSMConnector.class.getDeclaredFields();
+    Field[] fields = GcpSecretManagerConnectorDTO.class.getDeclaredFields();
     // Loop over all fields
     for (Field field : fields) {
       // Filter out default fields
       if (defaultFieldNamesToValue.containsKey(field.getName())) {
         // Set their accessibility as true
         field.setAccessible(true);
-        // Get its value in the connector entity
-        Object value = field.get(connector);
+        // Get its value in the connector dto
+        Object value = field.get(connectorDTO);
         // asset that default value is same as that defined in map created at test setup.
         assertThat(value).isEqualTo(defaultFieldNamesToValue.get(field.getName()));
       }
     }
+  }
+
+  @Test
+  @Owner(developers = SHREYAS)
+  @Category(UnitTests.class)
+  public void testEntityToDTOWithValues() throws IllegalAccessException {
+    // Create connector entity.
+    GcpSecretManagerConnector connector =
+        GcpSecretManagerConnector.builder().credentialsRef("credential-ref").isDefault(false).build();
+    GcpSecretManagerConnectorDTO connectorDTO = gcpSecretManagerEntityToDTO.createConnectorDTO(connector);
+    // Get all the fields in it
+    Field[] fields = GcpSecretManagerConnectorDTO.class.getDeclaredFields();
+    // Loop over all fields
+    assertThat(fields.length).isEqualTo(3);
+    assertThat(connectorDTO).isNotNull();
+    assertThat(connectorDTO.getDelegateSelectors()).isNull();
+    assertThat(connectorDTO.getCredentialsRef()).isEqualTo(SecretRefHelper.createSecretRef("credential-ref"));
+    assertThat(connectorDTO.isDefault()).isFalse();
   }
 }

@@ -41,17 +41,19 @@ import lombok.experimental.FieldDefaults;
 @EqualsAndHashCode(callSuper = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@ApiModel("GcpSM")
+@ApiModel("GcpSecretManager")
 @OwnedBy(HarnessTeam.PL)
-@Schema(name = "GcpSM", description = "This contains details of GCP Secret Manager")
-public class GcpSMConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable {
+@Schema(name = "GcpSecretManager", description = "This contains details of GCP Secret Manager")
+public class GcpSecretManagerConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable {
   @Schema(description = SecretManagerDescriptionConstants.DEFAULT) private boolean isDefault;
 
-  // Credentials
-  @ApiModelProperty(dataType = "string") @NotNull @SecretReference SecretRefData credentials;
+  @ApiModelProperty(dataType = "string")
+  @Schema(description = SecretManagerDescriptionConstants.GOOGLE_SECRET_MANAGER_CREDENTIALS)
+  @NotNull
+  @SecretReference
+  SecretRefData credentialsRef;
 
-  // Delegates
-  Set<String> delegateSelectors;
+  @Schema(description = SecretManagerDescriptionConstants.DELEGATE_SELECTORS) Set<String> delegateSelectors;
 
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {

@@ -13,19 +13,19 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorValidationParams;
-import io.harness.delegate.beans.connector.gcpsecretmanager.GcpSMConnectorDTO;
-import io.harness.delegate.beans.connector.gcpsmconnector.GcpSMValidationParams;
+import io.harness.delegate.beans.connector.gcpsecretmanager.GcpSecretManagerConnectorDTO;
+import io.harness.delegate.beans.connector.gcpsecretmanagerconnector.GcpSecretManagerValidationParams;
 
 @OwnedBy(PL)
-public class GcpSMValidationParamProvider
+public class GcpSecretManagerValidationParamProvider
     extends SecretManagerConnectorValidationParamsProvider implements ConnectorValidationParamsProvider {
   @Override
   public ConnectorValidationParams getConnectorValidationParams(ConnectorInfoDTO connectorConfigDTO,
       String connectorName, String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     ConnectorConfigDTO connectorConfig =
         getDecryptedConnectorConfigDTO(connectorConfigDTO, accountIdentifier, orgIdentifier, projectIdentifier);
-    return GcpSMValidationParams.builder()
-        .gcpSMConnectorDTO((GcpSMConnectorDTO) connectorConfig)
+    return GcpSecretManagerValidationParams.builder()
+        .gcpSecretManagerConnectorDTO((GcpSecretManagerConnectorDTO) connectorConfig)
         .connectorName(connectorName)
         .build();
   }
