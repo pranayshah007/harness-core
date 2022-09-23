@@ -453,7 +453,7 @@ public class DelegateServiceTest extends WingsBaseTest {
   @Owner(developers = SANJA)
   @Category(UnitTests.class)
   public void shouldGetDelegateStatus2WithoutScalingGroups() {
-    String accountId = generateUuid();
+    String accountId = generateUuid(); 
     when(accountService.getDelegateConfiguration(anyString()))
         .thenReturn(DelegateConfiguration.builder().delegateVersions(singletonList(VERSION)).build());
     when(delegateVersionService.getImmutableDelegateImageTag(accountId)).thenReturn(IMMUTABLE_DELEGATE_IMAGE_TAG);
