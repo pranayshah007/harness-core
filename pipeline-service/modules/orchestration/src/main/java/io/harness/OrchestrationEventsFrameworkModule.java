@@ -23,7 +23,6 @@ import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_SDK_R
 import static io.harness.eventsframework.EventsFrameworkConstants.SDK_RESPONSE_EVENT_BATCH_SIZE;
 import static io.harness.pms.events.PmsEventFrameworkConstants.MAX_PROCESSING_TIME_SECONDS;
 
-import io.harness.events.PmsRedissonClientFactory;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.eventsframework.EventsFrameworkConstants;
 import io.harness.eventsframework.api.Consumer;
@@ -33,6 +32,7 @@ import io.harness.eventsframework.impl.noop.NoOpProducer;
 import io.harness.eventsframework.impl.redis.RedisConsumer;
 import io.harness.eventsframework.impl.redis.RedisProducer;
 import io.harness.redis.RedisConfig;
+import io.harness.redis.RedissonClientFactory;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.name.Names;
@@ -69,7 +69,7 @@ public class OrchestrationEventsFrameworkModule extends AbstractModule {
           .annotatedWith(Names.named(ORCHESTRATION_LOG))
           .toInstance(NoOpProducer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME));
     } else {
-      RedissonClient redissonClient = PmsRedissonClientFactory.getRedisClient(redisConfig);
+      RedissonClient redissonClient = RedissonClientFactory.getClient(redisConfig);
 
       bind(Consumer.class)
           .annotatedWith(Names.named(SDK_RESPONSE_EVENT_CONSUMER))
