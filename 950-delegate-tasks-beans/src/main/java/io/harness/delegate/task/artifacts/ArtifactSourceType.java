@@ -10,6 +10,7 @@ package io.harness.delegate.task.artifacts;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.ACR_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.AMAZON_S3_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.AZURE_ARTIFACTS_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.AZURE_MACHINE_IMAGE_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.CUSTOM_ARTIFACT_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.DOCKER_REGISTRY_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.ECR_NAME;
@@ -37,8 +38,8 @@ public enum ArtifactSourceType {
   @JsonProperty(AMAZON_S3_NAME) AMAZONS3(AMAZON_S3_NAME),
   @JsonProperty(GOOGLE_ARTIFACT_REGISTRY_NAME) GOOGLE_ARTIFACT_REGISTRY(GOOGLE_ARTIFACT_REGISTRY_NAME),
   @JsonProperty(GITHUB_PACKAGES_NAME) GITHUB_PACKAGES(GITHUB_PACKAGES_NAME),
-  @JsonProperty(AZURE_ARTIFACTS_NAME) AZURE_ARTIFACTS(AZURE_ARTIFACTS_NAME);
-
+  @JsonProperty(AZURE_ARTIFACTS_NAME) AZURE_ARTIFACTS(AZURE_ARTIFACTS_NAME),
+  @JsonProperty(AZURE_MACHINE_IMAGE_NAME) AZURE_MACHINE_IMAGE(AZURE_MACHINE_IMAGE_NAME);
   private final String displayName;
 
   ArtifactSourceType(String displayName) {

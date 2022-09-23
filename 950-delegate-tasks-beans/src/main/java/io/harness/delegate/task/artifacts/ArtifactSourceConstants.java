@@ -21,4 +21,5 @@ public interface ArtifactSourceConstants {
   String GITHUB_PACKAGES_NAME = "GithubPackageRegistry";
   String GOOGLE_ARTIFACT_REGISTRY_NAME = "GoogleArtifactRegistry";
   String AZURE_ARTIFACTS_NAME = "AzureArtifactsRegistry";
+  String AZURE_MACHINE_IMAGE_NAME = "AzureMachineImage";
 }
