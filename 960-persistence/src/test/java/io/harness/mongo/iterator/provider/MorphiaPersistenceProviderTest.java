@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.iterator.provider;
+package io.harness.mongo.iterator.provider;
 
 import static io.harness.rule.OwnerRule.GEORGE;
 
@@ -16,7 +16,6 @@ import io.harness.category.element.UnitTests;
 import io.harness.iterator.TestIterableEntity;
 import io.harness.iterator.TestIterableEntity.TestIterableEntityKeys;
 import io.harness.mongo.iterator.filter.MorphiaFilterExpander;
-import io.harness.mongo.iterator.provider.MorphiaPersistenceProvider;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
@@ -33,12 +32,13 @@ public class MorphiaPersistenceProviderTest extends PersistenceTestBase {
   @Category(UnitTests.class)
   public void testCreateQueryWithNoFilter() {
     final Query<TestIterableEntity> query =
-        persistenceProvider.createQuery(TestIterableEntity.class, TestIterableEntityKeys.nextIterations, null);
+        persistenceProvider.createQuery(TestIterableEntity.class, TestIterableEntityKeys.nextIterations, null, false);
 
     assertThat(query.toString().replace(" ", "")).isEqualTo("{query:{}}");
-    assertThat(persistenceProvider.createQuery(5, TestIterableEntity.class, TestIterableEntityKeys.nextIterations, null)
-                   .toString()
-                   .replace(" ", ""))
+    assertThat(
+        persistenceProvider.createQuery(5, TestIterableEntity.class, TestIterableEntityKeys.nextIterations, null, false)
+            .toString()
+            .replace(" ", ""))
         .isEqualTo(
             "{query:{\"$or\":[{\"nextIterations\":{\"$lt\":{\"$numberLong\":\"5\"}}},{\"nextIterations\":{\"$exists\":false}}]}}");
   }
@@ -51,13 +51,14 @@ public class MorphiaPersistenceProviderTest extends PersistenceTestBase {
         query -> query.filter(TestIterableEntityKeys.name, "foo");
 
     final Query<TestIterableEntity> query = persistenceProvider.createQuery(
-        TestIterableEntity.class, TestIterableEntityKeys.nextIterations, filterExpander);
+        TestIterableEntity.class, TestIterableEntityKeys.nextIterations, filterExpander, false);
 
     assertThat(query.toString().replace(" ", "")).isEqualTo("{query:{\"name\":\"foo\"}}");
-    assertThat(persistenceProvider
-                   .createQuery(5, TestIterableEntity.class, TestIterableEntityKeys.nextIterations, filterExpander)
-                   .toString()
-                   .replace(" ", ""))
+    assertThat(
+        persistenceProvider
+            .createQuery(5, TestIterableEntity.class, TestIterableEntityKeys.nextIterations, filterExpander, false)
+            .toString()
+            .replace(" ", ""))
         .isEqualTo(
             "{query:{\"name\":\"foo\",\"$or\":[{\"nextIterations\":{\"$lt\":{\"$numberLong\":\"5\"}}},{\"nextIterations\":{\"$exists\":false}}]}}");
   }
@@ -71,14 +72,15 @@ public class MorphiaPersistenceProviderTest extends PersistenceTestBase {
             query.criteria(TestIterableEntityKeys.name).equal("foo"));
 
     final Query<TestIterableEntity> query = persistenceProvider.createQuery(
-        TestIterableEntity.class, TestIterableEntityKeys.nextIterations, filterExpander);
+        TestIterableEntity.class, TestIterableEntityKeys.nextIterations, filterExpander, false);
 
     assertThat(query.toString().replace(" ", ""))
         .isEqualTo("{query:{\"$and\":[{\"name\":{\"$exists\":true}},{\"name\":\"foo\"}]}}");
-    assertThat(persistenceProvider
-                   .createQuery(5, TestIterableEntity.class, TestIterableEntityKeys.nextIterations, filterExpander)
-                   .toString()
-                   .replace(" ", ""))
+    assertThat(
+        persistenceProvider
+            .createQuery(5, TestIterableEntity.class, TestIterableEntityKeys.nextIterations, filterExpander, false)
+            .toString()
+            .replace(" ", ""))
         .isEqualTo(
             "{query:{\"$and\":[{\"$and\":[{\"name\":{\"$exists\":true}},{\"name\":\"foo\"}]},{\"$or\":[{\"nextIterations\":{\"$lt\":{\"$numberLong\":\"5\"}}},{\"nextIterations\":{\"$exists\":false}}]}]}}");
   }

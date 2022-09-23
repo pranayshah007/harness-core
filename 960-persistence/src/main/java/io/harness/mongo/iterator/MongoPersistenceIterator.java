@@ -83,6 +83,7 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
   private EntityProcessController<T> entityProcessController;
   @Getter private SchedulingType schedulingType;
   private String iteratorName;
+  private boolean unsorted;
 
   private long movingAvg(long current, long sample) {
     return (15 * current + sample) / 16;
@@ -137,7 +138,7 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
         T entity = null;
         try {
           entity = persistenceProvider.obtainNextInstance(
-              base, throttled, clazz, fieldName, schedulingType, targetInterval, filterExpander);
+              base, throttled, clazz, fieldName, schedulingType, targetInterval, filterExpander, unsorted);
         } finally {
           semaphore.release();
         }
