@@ -19,7 +19,6 @@ import io.harness.eventsframework.impl.noop.NoOpConsumer;
 import io.harness.eventsframework.impl.redis.RedisConsumer;
 import io.harness.ng.core.event.MessageListener;
 import io.harness.redis.RedisConfig;
-import io.harness.redis.RedissonClientFactory;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.name.Names;
@@ -42,8 +41,8 @@ public class EventsFrameworkModule extends AbstractModule {
       bind(Consumer.class)
           .annotatedWith(Names.named(EventsFrameworkConstants.QUERY_ANALYSIS_TOPIC))
           .toInstance(RedisConsumer.of(EventsFrameworkConstants.QUERY_ANALYSIS_TOPIC, ANALYZER_SERVICE.getServiceId(),
-              RedissonClientFactory.getClient(redisConfig), EventsFrameworkConstants.ENTITY_CRUD_MAX_PROCESSING_TIME,
-              EventsFrameworkConstants.ENTITY_CRUD_READ_BATCH_SIZE, redisConfig.getEnvNamespace()));
+              redisConfig, EventsFrameworkConstants.ENTITY_CRUD_MAX_PROCESSING_TIME,
+              EventsFrameworkConstants.ENTITY_CRUD_READ_BATCH_SIZE));
     }
     bind(MessageListener.class)
         .annotatedWith(Names.named(EventsFrameworkConstants.QUERY_ANALYSIS_TOPIC))

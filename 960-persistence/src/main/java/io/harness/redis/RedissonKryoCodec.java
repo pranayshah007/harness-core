@@ -35,7 +35,7 @@ public class RedissonKryoCodec extends KryoCodec {
   private boolean useFieldSerializer;
 
   public RedissonKryoCodec() {
-    this.useFieldSerializer = false;
+    this.useFieldSerializer = true;
   }
 
   public RedissonKryoCodec(boolean useFieldSerializer) {

@@ -721,7 +721,7 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
         .deployMode(GitSyncSdkConfiguration.DeployMode.REMOTE)
         .microservice(Microservice.PMS)
         .scmConnectionConfig(gitSdkConfiguration.getScmConnectionConfig())
-        .eventsFrameworkConfiguration(config.getEventsFrameworkConfiguration())
+        .eventsRedisConfig(config.getEventsFrameworkConfiguration().getRedisConfig())
         .serviceHeader(PIPELINE_SERVICE)
         .gitSyncEntitiesConfiguration(gitSyncEntitiesConfigurations)
         .gitSyncEntitySortComparator(PMSGitEntityOrderComparator.class)

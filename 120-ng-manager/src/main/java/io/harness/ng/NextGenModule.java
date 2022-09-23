@@ -86,7 +86,6 @@ import io.harness.encryptors.clients.LocalEncryptor;
 import io.harness.enforcement.EnforcementModule;
 import io.harness.enforcement.client.EnforcementClientModule;
 import io.harness.entitysetupusageclient.EntitySetupUsageClientModule;
-import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.eventsframework.EventsFrameworkConstants;
 import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.exception.exceptionmanager.ExceptionModule;
@@ -476,8 +475,8 @@ public class NextGenModule extends AbstractModule {
     install(new NGSettingModule(appConfig));
     install(new AbstractPersistenceTracerModule() {
       @Override
-      protected EventsFrameworkConfiguration eventsFrameworkConfiguration() {
-        return appConfig.getEventsFrameworkConfiguration();
+      protected RedisConfig redisConfigProvider() {
+        return appConfig.getEventsFrameworkConfiguration().getRedisConfig();
       }
 
       @Override

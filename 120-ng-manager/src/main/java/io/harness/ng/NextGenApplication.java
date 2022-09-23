@@ -68,7 +68,6 @@ import io.harness.enforcement.executions.DeploymentRestrictionUsageImpl;
 import io.harness.enforcement.executions.DeploymentsPerMonthRestrictionUsageImpl;
 import io.harness.enforcement.executions.InitialDeploymentRestrictionUsageImpl;
 import io.harness.enforcement.services.FeatureRestrictionLoader;
-import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.ff.FeatureFlagConfig;
 import io.harness.gitsync.AbstractGitSyncModule;
 import io.harness.gitsync.AbstractGitSyncSdkModule;
@@ -161,6 +160,7 @@ import io.harness.polling.service.impl.PollingServiceImpl;
 import io.harness.polling.service.intfc.PollingService;
 import io.harness.queue.QueueListenerController;
 import io.harness.queue.QueuePublisher;
+import io.harness.redis.RedisConfig;
 import io.harness.registrars.CDServiceAdviserRegistrar;
 import io.harness.request.RequestContextFilter;
 import io.harness.resource.VersionInfoResource;
@@ -366,8 +366,8 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
       });
       modules.add(new AbstractGitSyncModule() {
         @Override
-        public EventsFrameworkConfiguration getEventsFrameworkConfiguration() {
-          return appConfig.getEventsFrameworkConfiguration();
+        public RedisConfig getRedisConfig() {
+          return appConfig.getEventsFrameworkConfiguration().getRedisConfig();
         }
       });
     } else {
@@ -536,7 +536,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
         .deployMode(GitSyncSdkConfiguration.DeployMode.IN_PROCESS)
         .microservice(Microservice.CORE)
         .scmConnectionConfig(gitSdkConfiguration.getScmConnectionConfig())
-        .eventsFrameworkConfiguration(config.getEventsFrameworkConfiguration())
+        .eventsRedisConfig(config.getEventsFrameworkConfiguration().getRedisConfig())
         .serviceHeader(NG_MANAGER)
         .gitSyncEntitiesConfiguration(gitSyncEntitiesConfigurations)
         .gitSyncEntitySortComparator(CoreGitEntityOrderComparator.class)

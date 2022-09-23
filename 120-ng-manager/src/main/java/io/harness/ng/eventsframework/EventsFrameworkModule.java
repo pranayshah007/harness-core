@@ -33,9 +33,9 @@ import io.harness.eventsframework.impl.noop.NoOpProducer;
 import io.harness.eventsframework.impl.redis.GitAwareRedisProducer;
 import io.harness.eventsframework.impl.redis.RedisConsumer;
 import io.harness.eventsframework.impl.redis.RedisProducer;
+import io.harness.eventsframework.impl.redis.RedisUtils;
 import io.harness.pms.redisConsumer.DebeziumConsumerConfig;
 import io.harness.redis.RedisConfig;
-import io.harness.redis.RedissonClientFactory;
 import io.harness.version.VersionInfoManager;
 
 import com.google.inject.AbstractModule;
@@ -129,7 +129,7 @@ public class EventsFrameworkModule extends AbstractModule {
           .toInstance(
               NoOpConsumer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME, EventsFrameworkConstants.DUMMY_GROUP_NAME));
     } else {
-      RedissonClient redissonClient = RedissonClientFactory.getClient(redisConfig);
+      RedissonClient redissonClient = RedisUtils.getClient(redisConfig);
       bind(Producer.class)
           .annotatedWith(Names.named(EventsFrameworkConstants.ENTITY_CRUD))
           .toInstance(RedisProducer.of(EventsFrameworkConstants.ENTITY_CRUD, redissonClient,

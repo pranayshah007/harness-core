@@ -18,7 +18,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.redisson.client.codec.Codec;
 
 @OwnedBy(PL)
 @Data
@@ -34,7 +33,6 @@ public class RedisConfig {
   private int connectionMinimumIdleSize;
   private String envNamespace;
   private RedisReadMode readMode;
-  private Class<? extends Codec> codec;
   private int nettyThreads;
   private boolean useScriptCache;
   @ConfigSecret private String password;

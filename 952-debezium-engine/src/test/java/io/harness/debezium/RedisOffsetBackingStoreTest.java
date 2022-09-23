@@ -20,8 +20,8 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.eventsframework.impl.redis.RedisUtils;
 import io.harness.redis.RedisConfig;
-import io.harness.redis.RedissonClientFactory;
 import io.harness.rule.Owner;
 import io.harness.serializer.JsonUtils;
 
@@ -48,8 +48,8 @@ public class RedisOffsetBackingStoreTest extends CategoryTest {
   public void setUp() {
     doReturn("topic").when(workerConfig).getString("offset.storage.topic");
     doReturn("redisLockConfig").when(workerConfig).getString("offset.storage.file.filename");
-    MockedStatic<RedissonClientFactory> utilities = Mockito.mockStatic(RedissonClientFactory.class);
-    utilities.when(() -> RedissonClientFactory.getClient(any(RedisConfig.class))).thenReturn(redissonClient);
+    MockedStatic<RedisUtils> utilities = Mockito.mockStatic(RedisUtils.class);
+    utilities.when(() -> RedisUtils.getClient(any(RedisConfig.class))).thenReturn(redissonClient);
     MockedStatic<JsonUtils> jsonUtilities = Mockito.mockStatic(JsonUtils.class);
     jsonUtilities.when(() -> JsonUtils.asObject("redisLockConfig", RedisConfig.class)).thenReturn(redisConfig);
   }

@@ -33,8 +33,8 @@ import io.harness.delegate.beans.DelegateSyncTaskResponse;
 import io.harness.delegate.beans.DelegateTaskProgressResponse;
 import io.harness.enforcement.client.EnforcementClientModule;
 import io.harness.entitysetupusageclient.EntitySetupUsageClientModule;
-import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.eventsframework.EventsFrameworkConstants;
+import io.harness.eventsframework.impl.redis.RedisUtils;
 import io.harness.filter.FilterType;
 import io.harness.filter.FiltersModule;
 import io.harness.filter.mapper.FilterPropertiesMapper;
@@ -150,7 +150,6 @@ import io.harness.pms.wait.WaitStepResourceImpl;
 import io.harness.polling.client.PollResourceClientModule;
 import io.harness.project.ProjectClientModule;
 import io.harness.redis.RedisConfig;
-import io.harness.redis.RedissonClientFactory;
 import io.harness.reflection.HarnessReflections;
 import io.harness.remote.client.ClientMode;
 import io.harness.secrets.SecretNGManagerClientModule;
@@ -253,8 +252,8 @@ public class PipelineServiceModule extends AbstractModule {
     });
     install(new AbstractPersistenceTracerModule() {
       @Override
-      protected EventsFrameworkConfiguration eventsFrameworkConfiguration() {
-        return configuration.getEventsFrameworkConfiguration();
+      protected RedisConfig redisConfigProvider() {
+        return configuration.getEventsFrameworkConfiguration().getRedisConfig();
       }
 
       @Override
@@ -510,7 +509,7 @@ public class PipelineServiceModule extends AbstractModule {
   @Singleton
   @Named("cacheRedissonClient")
   RedissonClient cacheRedissonClient() {
-    return RedissonClientFactory.getClient(configuration.getRedisLockConfig());
+    return RedisUtils.getClient(configuration.getRedisLockConfig());
   }
 
   @Provides

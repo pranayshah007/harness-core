@@ -17,7 +17,6 @@ import io.harness.eventsframework.api.Consumer;
 import io.harness.eventsframework.impl.noop.NoOpConsumer;
 import io.harness.eventsframework.impl.redis.RedisConsumer;
 import io.harness.redis.RedisConfig;
-import io.harness.redis.RedissonClientFactory;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.name.Names;
@@ -39,9 +38,9 @@ public class EventsFrameworkModule extends AbstractModule {
     } else {
       bind(Consumer.class)
           .annotatedWith(Names.named(EventsFrameworkConstants.ENTITY_CRUD))
-          .toInstance(RedisConsumer.of(EventsFrameworkConstants.ENTITY_CRUD, CE_NEXT_GEN.getServiceId(),
-              RedissonClientFactory.getClient(redisConfig), EventsFrameworkConstants.ENTITY_CRUD_MAX_PROCESSING_TIME,
-              EventsFrameworkConstants.ENTITY_CRUD_READ_BATCH_SIZE, redisConfig.getEnvNamespace()));
+          .toInstance(RedisConsumer.of(EventsFrameworkConstants.ENTITY_CRUD, CE_NEXT_GEN.getServiceId(), redisConfig,
+              EventsFrameworkConstants.ENTITY_CRUD_MAX_PROCESSING_TIME,
+              EventsFrameworkConstants.ENTITY_CRUD_READ_BATCH_SIZE));
     }
   }
 }

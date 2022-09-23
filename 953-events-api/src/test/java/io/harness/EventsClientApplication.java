@@ -15,7 +15,6 @@ import io.harness.maintenance.MaintenanceController;
 import io.harness.metrics.MetricRegistryModule;
 import io.harness.queue.QueueListenerController;
 import io.harness.redis.RedisConfig;
-import io.harness.redis.RedissonClientFactory;
 
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -31,7 +30,6 @@ import io.serializer.HObjectMapper;
 import java.io.UnsupportedEncodingException;
 import lombok.extern.slf4j.Slf4j;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
-import org.redisson.api.RedissonClient;
 
 @Slf4j
 public class EventsClientApplication extends Application<EventsClientApplicationConfiguration> {
@@ -81,13 +79,11 @@ public class EventsClientApplication extends Application<EventsClientApplication
     RedisPersistentLocker redisLocker = injector.getInstance(RedisPersistentLocker.class);
     /* ----------------- Perform operations ----------------- */
     RedisConfig redisConfig = appConfig.getEventsFrameworkConfiguration().getRedisConfig();
-    RedissonClient redissonClient = RedissonClientFactory.getClient(redisConfig);
 
     /* Push messages to redis channel */
-    RedisProducer redisProducer =
-        RedisProducer.of(channel, redissonClient, 10000, "dummyMessageProducer", redisConfig.getEnvNamespace());
-    GitAwareRedisProducer gitAwareRedisProducer = GitAwareRedisProducer.of(
-        channel, redissonClient, 10000, "dummyGitAwareMessageProducer", redisConfig.getEnvNamespace());
+    RedisProducer redisProducer = RedisProducer.of(channel, redisConfig, 10000, "dummyMessageProducer");
+    GitAwareRedisProducer gitAwareRedisProducer =
+        GitAwareRedisProducer.of(channel, redisConfig, 10000, "dummyGitAwareMessageProducer");
     new Thread(new MessageProducer(redisProducer, ColorConstants.TEXT_YELLOW, false)).start();
     new Thread(new MessageProducer(gitAwareRedisProducer, ColorConstants.TEXT_GREEN, true)).start();
 
@@ -105,11 +101,9 @@ public class EventsClientApplication extends Application<EventsClientApplication
     //        .start();
 
     /* Read via Consumer groups - order is not important - Load balancing usecase */
-    new Thread(new MessageConsumer("consumerGroups", redissonClient, channel, "group2", 1000, ColorConstants.TEXT_BLUE,
-                   redisConfig.getEnvNamespace()))
+    new Thread(new MessageConsumer("consumerGroups", redisConfig, channel, "group2", 1000, ColorConstants.TEXT_BLUE))
         .start();
-    new Thread(new MessageConsumer("consumerGroups", redissonClient, channel, "group2", 4000,
-                   ColorConstants.TEXT_PURPLE, redisConfig.getEnvNamespace()))
+    new Thread(new MessageConsumer("consumerGroups", redisConfig, channel, "group2", 4000, ColorConstants.TEXT_PURPLE))
         .start();
 
     while (true) {

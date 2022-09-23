@@ -78,7 +78,6 @@ import io.harness.eventframework.dms.DmsEventConsumerService;
 import io.harness.eventframework.dms.DmsObserverEventProducer;
 import io.harness.eventframework.manager.ManagerEventConsumerService;
 import io.harness.eventframework.manager.ManagerObserverEventProducer;
-import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.exception.ConstraintViolationExceptionMapper;
 import io.harness.exception.WingsException;
 import io.harness.execution.export.background.ExportExecutionsRequestCleanupHandler;
@@ -142,6 +141,7 @@ import io.harness.queue.QueueListener;
 import io.harness.queue.QueueListenerController;
 import io.harness.queue.QueuePublisher;
 import io.harness.queue.TimerScheduledExecutorService;
+import io.harness.redis.RedisConfig;
 import io.harness.reflection.HarnessReflections;
 import io.harness.request.RequestContextFilter;
 import io.harness.scheduler.PersistentScheduler;
@@ -952,8 +952,8 @@ public class WingsApplication extends Application<MainConfiguration> {
 
     modules.add(new AbstractPersistenceTracerModule() {
       @Override
-      protected EventsFrameworkConfiguration eventsFrameworkConfiguration() {
-        return configuration.getEventsFrameworkConfiguration();
+      protected RedisConfig redisConfigProvider() {
+        return configuration.getEventsFrameworkConfiguration().getRedisConfig();
       }
 
       @Override
