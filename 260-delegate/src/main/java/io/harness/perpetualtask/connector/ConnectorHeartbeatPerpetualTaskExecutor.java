@@ -73,13 +73,15 @@ public class ConnectorHeartbeatPerpetualTaskExecutor implements PerpetualTaskExe
     log.info("Connector validation params {} {} {}", taskId, connectorValidationParams.getConnectorType(),
         connectorValidationParams.getConnectorName());
     ConnectorValidationResult connectorValidationResult;
-    log.info("obj {} {}", taskId, connectorValidationParameterResponse);
+    log.info("obj {} {}", taskId, connectorValidationParameterResponse.isInvalid());
     if (!connectorValidationParameterResponse.isInvalid()) {
       ConnectorValidationHandler connectorValidationHandler;
       if (connectorValidationParams instanceof NoOpConnectorValidationParams) {
         log.info("NoOpConnectorValidationParams {} {}", taskId);
         connectorValidationHandler = new NoOpConnectorValidationHandler();
       } else {
+        log.info("connector validator map {}", connectorTypeToConnectorValidationHandlerMap.toString());
+        log.info("connector validator dn {}", connectorValidationParams.getConnectorType().getDisplayName());
         connectorValidationHandler = connectorTypeToConnectorValidationHandlerMap.get(
             connectorValidationParams.getConnectorType().getDisplayName());
       }
@@ -87,6 +89,8 @@ public class ConnectorHeartbeatPerpetualTaskExecutor implements PerpetualTaskExe
         log.info("The connector validation handler is not registered for the connector.");
         return getPerpetualTaskResponse(null);
       }
+      log.info("connector validator handler {}", connectorValidationHandler);
+      log.info("connector validator handler class {}", connectorValidationHandler.getClass());
       connectorValidationResult = connectorValidationHandler.validate(connectorValidationParams, accountId);
       connectorValidationResult.setTestedAt(System.currentTimeMillis());
     } else {
@@ -110,6 +114,7 @@ public class ConnectorHeartbeatPerpetualTaskExecutor implements PerpetualTaskExe
           CONNECTOR_HEARTBEAT_LOG_PREFIX, connectorMessage, ex);
     }
     log.info("Completed validation task for {}", connectorMessage);
+    log.info("connector validation result {}", connectorValidationResult.toString());
     return getPerpetualTaskResponse(connectorValidationResult);
   }
 
