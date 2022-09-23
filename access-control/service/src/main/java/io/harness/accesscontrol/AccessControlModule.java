@@ -101,7 +101,6 @@ import io.harness.environment.EnvironmentResourceClientModule;
 import io.harness.eventsframework.api.Consumer;
 import io.harness.eventsframework.impl.noop.NoOpConsumer;
 import io.harness.eventsframework.impl.redis.RedisConsumer;
-import io.harness.eventsframework.impl.redis.RedisUtils;
 import io.harness.eventsframework.impl.redis.monitoring.publisher.RedisEventMetricPublisher;
 import io.harness.ff.FeatureFlagClientModule;
 import io.harness.lock.DistributedLockImplementation;
@@ -113,6 +112,7 @@ import io.harness.outbox.TransactionOutboxModule;
 import io.harness.outbox.api.OutboxEventHandler;
 import io.harness.project.ProjectClientModule;
 import io.harness.redis.RedisConfig;
+import io.harness.redis.RedissonClientFactory;
 import io.harness.remote.client.ClientMode;
 import io.harness.resourcegroupclient.ResourceGroupClientModule;
 import io.harness.serviceaccount.ServiceAccountClientModule;
@@ -194,7 +194,7 @@ public class AccessControlModule extends AbstractModule {
   public RedissonClient getRedissonClient() {
     RedisConfig redisConfig = config.getEventsConfig().getRedisConfig();
     if (config.getEventsConfig().isEnabled()) {
-      return RedisUtils.getClient(redisConfig);
+      return RedissonClientFactory.getClient(redisConfig);
     }
     return null;
   }

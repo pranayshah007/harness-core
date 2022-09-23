@@ -7,6 +7,8 @@
 
 package io.harness.delegate.task.shell.winrm;
 
+import static io.harness.delegate.task.shell.winrm.WinRmUtils.getShellExecutorConfig;
+import static io.harness.delegate.task.shell.winrm.WinRmUtils.getStatus;
 import static io.harness.delegate.task.shell.winrm.WinRmUtils.getWinRmSessionConfig;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -14,6 +16,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.shell.CommandTaskParameters;
+import io.harness.delegate.task.shell.ShellExecutorFactoryNG;
 import io.harness.delegate.task.shell.WinrmTaskParameters;
 import io.harness.delegate.task.shell.ssh.CommandHandler;
 import io.harness.delegate.task.ssh.NgCommandUnit;
@@ -21,7 +24,11 @@ import io.harness.delegate.task.ssh.ScriptCommandUnit;
 import io.harness.delegate.task.winrm.WinRmExecutorFactoryNG;
 import io.harness.delegate.task.winrm.WinRmSessionConfig;
 import io.harness.exception.InvalidRequestException;
+import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.LogLevel;
+import io.harness.shell.AbstractScriptExecutor;
 import io.harness.shell.ExecuteCommandResponse;
+import io.harness.shell.ShellExecutorConfig;
 
 import software.wings.core.winrm.executors.WinRmExecutor;
 
@@ -34,12 +41,14 @@ import java.util.Map;
 public class WinRmScriptCommandHandler implements CommandHandler {
   private final WinRmExecutorFactoryNG winRmExecutorFactoryNG;
   private final WinRmConfigAuthEnhancer winRmConfigAuthEnhancer;
+  private final ShellExecutorFactoryNG shellExecutorFactory;
 
   @Inject
-  public WinRmScriptCommandHandler(
-      WinRmExecutorFactoryNG winRmExecutorFactoryNG, WinRmConfigAuthEnhancer winRmConfigAuthEnhancer) {
+  public WinRmScriptCommandHandler(WinRmExecutorFactoryNG winRmExecutorFactoryNG,
+      WinRmConfigAuthEnhancer winRmConfigAuthEnhancer, ShellExecutorFactoryNG shellExecutorFactory) {
     this.winRmExecutorFactoryNG = winRmExecutorFactoryNG;
     this.winRmConfigAuthEnhancer = winRmConfigAuthEnhancer;
+    this.shellExecutorFactory = shellExecutorFactory;
   }
 
   @Override
@@ -54,11 +63,53 @@ public class WinRmScriptCommandHandler implements CommandHandler {
       throw new InvalidRequestException("Invalid command unit specified for command task.");
     }
 
+    return executeCommand(
+        logStreamingTaskClient, commandUnitsProgress, winRmCommandTaskParameters, (ScriptCommandUnit) commandUnit);
+  }
+
+  private ExecuteCommandResponse executeCommand(ILogStreamingTaskClient logStreamingTaskClient,
+      CommandUnitsProgress commandUnitsProgress, WinrmTaskParameters winRmCommandTaskParameters,
+      ScriptCommandUnit scriptCommandUnit) {
+    if (winRmCommandTaskParameters.isExecuteOnDelegate()) {
+      return executeOnDelegate(
+          logStreamingTaskClient, commandUnitsProgress, winRmCommandTaskParameters, scriptCommandUnit);
+    } else {
+      return executeOnRemote(
+          logStreamingTaskClient, commandUnitsProgress, winRmCommandTaskParameters, scriptCommandUnit);
+    }
+  }
+
+  private ExecuteCommandResponse executeOnDelegate(ILogStreamingTaskClient logStreamingTaskClient,
+      CommandUnitsProgress commandUnitsProgress, WinrmTaskParameters taskParameters,
+      ScriptCommandUnit scriptCommandUnit) {
+    ShellExecutorConfig config = getShellExecutorConfig(taskParameters, scriptCommandUnit);
+
+    AbstractScriptExecutor executor =
+        shellExecutorFactory.getExecutor(config, logStreamingTaskClient, commandUnitsProgress, true);
+
+    try {
+      final ExecuteCommandResponse executeCommandResponse =
+          executor.executeCommandString(scriptCommandUnit.getCommand(), taskParameters.getOutputVariables());
+
+      executor.getLogCallback().saveExecutionLog("Command finished with status " + getStatus(executeCommandResponse),
+          LogLevel.INFO, getStatus(executeCommandResponse));
+
+      return executeCommandResponse;
+
+    } catch (Exception e) {
+      executor.getLogCallback().saveExecutionLog("Command finished with status " + CommandExecutionStatus.FAILURE,
+          LogLevel.ERROR, CommandExecutionStatus.FAILURE);
+      throw e;
+    }
+  }
+
+  private ExecuteCommandResponse executeOnRemote(ILogStreamingTaskClient logStreamingTaskClient,
+      CommandUnitsProgress commandUnitsProgress, WinrmTaskParameters winRmCommandTaskParameters,
+      ScriptCommandUnit commandUnit) {
     WinRmSessionConfig config = getWinRmSessionConfig(commandUnit, winRmCommandTaskParameters, winRmConfigAuthEnhancer);
     WinRmExecutor executor = winRmExecutorFactoryNG.getExecutor(config,
         winRmCommandTaskParameters.isDisableWinRMCommandEncodingFFSet(), logStreamingTaskClient, commandUnitsProgress);
 
-    return executor.executeCommandString(
-        ((ScriptCommandUnit) commandUnit).getCommand(), winRmCommandTaskParameters.getOutputVariables());
+    return executor.executeCommandString(commandUnit.getCommand(), winRmCommandTaskParameters.getOutputVariables());
   }
 }

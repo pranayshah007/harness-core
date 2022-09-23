@@ -9,9 +9,11 @@ package io.harness.delegate.task.shell;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.BOJAN;
+import static io.harness.rule.OwnerRule.VLAD;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -24,20 +26,31 @@ import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryAuthT
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryAuthenticationDTO;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryUsernamePasswordAuthDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsCredentialType;
+import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsAuthType;
 import io.harness.delegate.beans.connector.jenkins.JenkinsAuthenticationDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsUserNamePasswordDTO;
 import io.harness.delegate.task.artifactory.ArtifactoryRequestMapper;
 import io.harness.delegate.task.ssh.artifact.ArtifactoryArtifactDelegateConfig;
+import io.harness.delegate.task.ssh.artifact.AwsS3ArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.JenkinsArtifactDelegateConfig;
 import io.harness.delegate.task.winrm.ArtifactoryArtifactDownloadHandler;
+import io.harness.delegate.task.winrm.AwsS3ArtifactDownloadHandler;
 import io.harness.delegate.task.winrm.JenkinsArtifactDownloadHandler;
 import io.harness.encryption.SecretRefData;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.shell.ScriptType;
 
+import software.wings.beans.AwsConfig;
+import software.wings.service.impl.AwsHelperService;
+import software.wings.service.intfc.security.EncryptionService;
+
+import java.util.Collections;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import org.junit.Before;
@@ -56,9 +69,12 @@ public class ArtifactDownloadHandlerTest extends CategoryTest {
   private static final char[] DECRYPTED_PASSWORD_VALUE = new char[] {'t', 'e', 's', 't'};
   @InjectMocks private ArtifactoryArtifactDownloadHandler artifactoryArtifactDownloadHandler;
   @InjectMocks private JenkinsArtifactDownloadHandler jenkinsArtifactDownloadHandler;
+  @InjectMocks private AwsS3ArtifactDownloadHandler s3ArtifactDownloadHandler;
   @Mock private ArtifactoryRequestMapper artifactoryRequestMapper;
   @Mock private SecretDecryptionService secretDecryptionService;
   @Mock private ArtifactoryNgService artifactoryNgService;
+  @Mock private EncryptionService encryptionService;
+  @Mock private AwsHelperService awsHelperService;
   private SecretRefData passwordRef;
 
   @Before
@@ -72,6 +88,14 @@ public class ArtifactDownloadHandlerTest extends CategoryTest {
         ArtifactoryUsernamePasswordAuthDTO.builder().username("username").passwordRef(passwordRef).build();
     when(secretDecryptionService.decrypt(any(ArtifactoryUsernamePasswordAuthDTO.class), any()))
         .thenReturn(artifactoryUsernamePasswordAuthDTO);
+    AwsManualConfigSpecDTO awsManualConfigSpecDTO =
+        AwsManualConfigSpecDTO.builder()
+            .accessKey("key")
+            .secretKeyRef(SecretRefData.builder().identifier("secret").build())
+            .build();
+    when(secretDecryptionService.decrypt(any(AwsManualConfigSpecDTO.class), any())).thenReturn(awsManualConfigSpecDTO);
+    when(encryptionService.decrypt(any(AwsConfig.class), any(), anyBoolean()))
+        .thenReturn(AwsConfig.builder().accessKey("accessKey".toCharArray()).secretKey("secret".toCharArray()).build());
   }
 
   @Test
@@ -253,6 +277,57 @@ public class ArtifactDownloadHandlerTest extends CategoryTest {
             + "$webClient.DownloadFile($url, $localfilename)");
   }
 
+  @Test
+  @Owner(developers = VLAD)
+  @Category(UnitTests.class)
+  public void testS3GetCommandString_POWERSHELL() {
+    when(awsHelperService.getBucketRegion(any(), any(), any())).thenReturn("us-east-2");
+    AwsConnectorDTO connectorDTO = getS3ConnectorInfoDTO();
+    AwsS3ArtifactDelegateConfig s3DelegateConfig = AwsS3ArtifactDelegateConfig.builder()
+                                                       .bucketName("bucket")
+                                                       .artifactPath("artifact/name")
+                                                       .identifier("S3delegateConfig")
+                                                       .accountId("accountId")
+                                                       .region("us-east-2")
+                                                       .certValidationRequired(false)
+                                                       .encryptionDetails(Collections.emptyList())
+                                                       .awsConnector(connectorDTO)
+                                                       .build();
+    String commandString =
+        s3ArtifactDownloadHandler.getCommandString(s3DelegateConfig, "testdestination", ScriptType.POWERSHELL);
+
+    assertThat(commandString)
+        .startsWith("$Headers = @{\n"
+            + "    Authorization = \"AWS4-HMAC-SHA256 Credential=accessKey");
+    assertThat(commandString)
+        .endsWith(
+            " Invoke-WebRequest -Uri \"https://bucket.s3-us-east-2.amazonaws.com/artifact/name\" -Headers $Headers -OutFile (New-Item -Path \"testdestination\\name\" -Force)");
+  }
+
+  @Test
+  @Owner(developers = VLAD)
+  @Category(UnitTests.class)
+  public void testS3GetCommandString_BASH() {
+    when(awsHelperService.getBucketRegion(any(), any(), any())).thenReturn("us-east-2");
+    AwsConnectorDTO connectorDTO = getS3ConnectorInfoDTO();
+    AwsS3ArtifactDelegateConfig s3DelegateConfig = AwsS3ArtifactDelegateConfig.builder()
+                                                       .bucketName("bucket")
+                                                       .artifactPath("artifact/name")
+                                                       .identifier("S3delegateConfig")
+                                                       .accountId("accountId")
+                                                       .region("us-east-2")
+                                                       .certValidationRequired(false)
+                                                       .encryptionDetails(Collections.emptyList())
+                                                       .awsConnector(connectorDTO)
+                                                       .build();
+    String commandString =
+        s3ArtifactDownloadHandler.getCommandString(s3DelegateConfig, "testdestination", ScriptType.BASH);
+
+    assertThat(commandString).contains("curl --fail \"https://bucket.s3-us-east-2.amazonaws.com/artifact/name\" \\\n");
+    assertThat(commandString).contains("-H \"Authorization: AWS4-HMAC-SHA256 Credential=accessKey/");
+    assertThat(commandString).contains(" -o \"testdestination/name\"");
+  }
+
   private ConnectorInfoDTO getArtifactoryConnectorInfoDTOWithSecret() {
     SecretRefData passwordRef = SecretRefData.builder().identifier("secret_ident").build();
     ArtifactoryUsernamePasswordAuthDTO credentials =
@@ -313,5 +388,17 @@ public class ArtifactDownloadHandlerTest extends CategoryTest {
         .hasCredentials(false)
         .username("username")
         .build();
+  }
+
+  private AwsConnectorDTO getS3ConnectorInfoDTO() {
+    AwsManualConfigSpecDTO awsCredentialSpec = AwsManualConfigSpecDTO.builder()
+                                                   .accessKey("accessKey")
+                                                   .secretKeyRef(SecretRefData.builder().identifier("secredt").build())
+                                                   .build();
+    AwsCredentialDTO awsCredentialDTO = AwsCredentialDTO.builder()
+                                            .awsCredentialType(AwsCredentialType.MANUAL_CREDENTIALS)
+                                            .config(awsCredentialSpec)
+                                            .build();
+    return AwsConnectorDTO.builder().credential(awsCredentialDTO).executeOnDelegate(false).build();
   }
 }

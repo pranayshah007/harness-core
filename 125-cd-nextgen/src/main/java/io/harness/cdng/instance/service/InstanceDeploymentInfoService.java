@@ -26,7 +26,7 @@ public interface InstanceDeploymentInfoService {
   void updateStatus(Scope executionInfoKey, String stageExecutionId, InstanceDeploymentInfoStatus status);
 
   List<InstanceDeploymentInfo> getByHostsAndArtifact(ExecutionInfoKey executionInfoKey, List<String> hosts,
-      ArtifactDetails artifactDetails, InstanceDeploymentInfoStatus status);
+      ArtifactDetails artifactDetails, InstanceDeploymentInfoStatus... statuses);
 
   void createAndUpdate(ExecutionInfoKey executionInfoKey, List<InstanceInfo> instanceInfos,
       ArtifactDetails artifactDetails, String stageExecutionId);

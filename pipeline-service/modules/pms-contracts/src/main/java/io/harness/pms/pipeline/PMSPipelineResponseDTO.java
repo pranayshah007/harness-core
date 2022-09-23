@@ -14,6 +14,7 @@ import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperD
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.gitsync.sdk.EntityValidityDetails;
 import io.harness.governance.GovernanceMetadata;
+import io.harness.template.beans.refresh.ValidateTemplateInputsResponseDTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -38,4 +39,5 @@ public class PMSPipelineResponseDTO {
   Set<String> modules;
   GovernanceMetadata governanceMetadata;
   YamlSchemaErrorWrapperDTO yamlSchemaErrorWrapper;
+  ValidateTemplateInputsResponseDTO validateTemplateInputsResponse;
 }

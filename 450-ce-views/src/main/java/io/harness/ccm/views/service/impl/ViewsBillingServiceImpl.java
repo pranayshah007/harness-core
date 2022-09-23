@@ -174,6 +174,7 @@ import com.google.inject.Singleton;
 import com.healthmarketscience.sqlbuilder.SelectQuery;
 import com.healthmarketscience.sqlbuilder.custom.postgresql.PgLimitClause;
 import com.healthmarketscience.sqlbuilder.custom.postgresql.PgOffsetClause;
+import io.fabric8.utils.Lists;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
@@ -625,7 +626,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     List<ViewRule> viewRuleList = new ArrayList<>();
     List<QLCEViewFilter> idFilters = getModifiedIdFilters(getIdFilters(filters), isClusterTableQuery);
     List<QLCEViewTimeFilter> timeFilters = viewsQueryHelper.getTimeFilters(filters);
-    if (groupBy.isEmpty()) {
+    if (Lists.isNullOrEmpty(groupBy)) {
       Optional<QLCEViewFilterWrapper> viewMetadataFilter = getViewMetadataFilter(filters);
       if (viewMetadataFilter.isPresent()) {
         QLCEViewMetadataFilter metadataFilter = viewMetadataFilter.get().getViewMetadataFilter();

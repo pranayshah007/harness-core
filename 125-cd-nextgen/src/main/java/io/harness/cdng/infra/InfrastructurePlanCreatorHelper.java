@@ -12,6 +12,7 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
+import io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure;
 import io.harness.cdng.infra.yaml.EcsInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
@@ -71,6 +72,12 @@ public class InfrastructurePlanCreatorHelper {
         K8SDirectInfrastructure k8SDirectInfrastructure = (K8SDirectInfrastructure) infrastructure;
         k8SDirectInfrastructure.setInfraIdentifier(infraIdentifier);
         k8SDirectInfrastructure.setInfraName(infraName);
+        return;
+
+      case InfrastructureKind.CUSTOM_DEPLOYMENT:
+        CustomDeploymentInfrastructure customDeploymentInfrastructure = (CustomDeploymentInfrastructure) infrastructure;
+        customDeploymentInfrastructure.setInfraIdentifier(infraIdentifier);
+        customDeploymentInfrastructure.setInfraName(infraName);
         return;
 
       case InfrastructureKind.KUBERNETES_GCP:

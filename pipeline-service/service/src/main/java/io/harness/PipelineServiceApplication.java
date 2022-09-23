@@ -94,6 +94,7 @@ import io.harness.pms.async.plan.PlanNotifyEventConsumer;
 import io.harness.pms.async.plan.PlanNotifyEventPublisher;
 import io.harness.pms.contracts.plan.JsonExpansionInfo;
 import io.harness.pms.event.PMSEventConsumerService;
+import io.harness.pms.event.pollingevent.PollingEventStreamConsumer;
 import io.harness.pms.event.webhookevent.WebhookEventStreamConsumer;
 import io.harness.pms.events.base.PipelineEventConsumerController;
 import io.harness.pms.inputset.gitsync.InputSetEntityGitSyncHelper;
@@ -681,6 +682,8 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
         pipelineServiceConsumersConfig.getPmsNotify().getThreads());
     pipelineEventConsumerController.register(injector.getInstance(InitiateNodeEventRedisConsumer.class),
         pipelineServiceConsumersConfig.getInitiateNode().getThreads());
+    pipelineEventConsumerController.register(injector.getInstance(PollingEventStreamConsumer.class),
+        pipelineServiceConsumersConfig.getPollingEvent().getThreads());
   }
 
   /**-----------------------------Git sync --------------------------------------*/
@@ -718,7 +721,7 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
         .deployMode(GitSyncSdkConfiguration.DeployMode.REMOTE)
         .microservice(Microservice.PMS)
         .scmConnectionConfig(gitSdkConfiguration.getScmConnectionConfig())
-        .eventsRedisConfig(config.getEventsFrameworkConfiguration().getRedisConfig())
+        .eventsFrameworkConfiguration(config.getEventsFrameworkConfiguration())
         .serviceHeader(PIPELINE_SERVICE)
         .gitSyncEntitiesConfiguration(gitSyncEntitiesConfigurations)
         .gitSyncEntitySortComparator(PMSGitEntityOrderComparator.class)

@@ -117,7 +117,6 @@ import io.harness.network.SafeHttpCall;
 import io.harness.observer.RemoteObserverInformer;
 import io.harness.observer.Subject;
 import io.harness.persistence.HPersistence;
-import io.harness.reflection.ReflectionUtils;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptionConfig;
@@ -126,7 +125,6 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.service.intfc.DelegateCache;
 import io.harness.service.intfc.DelegateCallbackRegistry;
 import io.harness.service.intfc.DelegateCallbackService;
-import io.harness.service.intfc.DelegateInsightsService;
 import io.harness.service.intfc.DelegateSetupService;
 import io.harness.service.intfc.DelegateSyncService;
 import io.harness.service.intfc.DelegateTaskResultsProvider;
@@ -272,7 +270,6 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   @Inject @Named("PRIVILEGED") private SecretManagerClientService ngSecretService;
   @Inject private DelegateCache delegateCache;
   @Inject private CapabilityService capabilityService;
-  @Inject private DelegateInsightsService delegateInsightsService;
   @Inject private DelegateSetupService delegateSetupService;
   @Inject private AuditHelper auditHelper;
   @Inject private DelegateMetricsService delegateMetricsService;
@@ -284,8 +281,6 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   private static final SecureRandom random = new SecureRandom();
   private HarnessCacheManager harnessCacheManager;
   private Supplier<Long> taskCountCache = Suppliers.memoizeWithExpiration(this::fetchTaskCount, 1, TimeUnit.MINUTES);
-  @Inject @Getter private Subject<DelegateTaskStatusObserver> delegateTaskStatusObserverSubject;
-  @Inject @Getter private Subject<DelegateTaskObserver> delegateTaskObserverSubject;
   @Inject private RemoteObserverInformer remoteObserverInformer;
   @Inject private ManagerObserverEventProducer managerObserverEventProducer;
 
@@ -1084,17 +1079,6 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
       }
       task.getData().setParameters(delegateTask.getData().getParameters());
       delegateSelectionLogsService.logTaskAssigned(delegateId, task);
-
-      if (delegateTask.isEmitEvent()) {
-        Map<String, String> eventData = new HashMap<>();
-        String taskType = task.getData().getTaskType();
-
-        managerObserverEventProducer.sendEvent(
-            ReflectionUtils.getMethod(DelegateTaskObserver.class, "onTaskAssigned", String.class, String.class,
-                String.class, String.class, String.class),
-            DelegateTaskServiceClassicImpl.class, delegateTask.getAccountId(), taskId, delegateId,
-            delegateTask.getStageId(), taskType);
-      }
 
       delegateMetricsService.recordDelegateTaskMetrics(delegateTask, DELEGATE_TASK_ACQUIRE);
 

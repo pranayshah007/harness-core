@@ -7,6 +7,7 @@
 
 package io.harness.delegate.beans.connector.scm.azurerepo;
 
+import io.harness.annotation.RecasterFieldName;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
@@ -34,6 +35,7 @@ import lombok.experimental.FieldDefaults;
 public class AzureRepoHttpCredentialsDTO implements AzureRepoCredentialsDTO {
   @NotNull AzureRepoHttpAuthenticationType type;
 
+  @RecasterFieldName(name = "spec")
   @JsonProperty("spec")
   @JsonTypeInfo(
       use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXTERNAL_PROPERTY, visible = true)
