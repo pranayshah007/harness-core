@@ -9,19 +9,23 @@ package io.harness.cdng.infra.yaml;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import static java.util.Objects.isNull;
+
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.customdeployment.CustomDeploymentNGVariable;
+import io.harness.cdng.customdeployment.CustomDeploymentNGVariableType;
 import io.harness.cdng.infra.beans.CustomDeploymentInfraMapping;
 import io.harness.cdng.infra.beans.InfraMapping;
 import io.harness.cdng.infra.beans.InfrastructureDetailsAbstract;
 import io.harness.filters.ConnectorRefExtractorHelper;
 import io.harness.filters.WithConnectorRef;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
+import io.harness.plancreator.customDeployment.StepTemplateRef;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
-import io.harness.yaml.core.variables.NGVariable;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.ArrayList;
@@ -44,13 +48,15 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure")
 public class CustomDeploymentInfrastructure
     extends InfrastructureDetailsAbstract implements Infrastructure, Visitable, WithConnectorRef {
-  @NotNull @NotEmpty @Wither List<NGVariable> variables;
-
+  @Wither List<CustomDeploymentNGVariable> variables;
+  @NotNull @NotEmpty @Wither StepTemplateRef customDeploymentRef;
   @Override
   public InfraMapping getInfraMapping() {
     Map<String, String> infraVars = new HashMap<>();
-    for (NGVariable variable : variables) {
-      infraVars.put(variable.getName(), variable.getCurrentValue().toString());
+    if (!isNull(variables)) {
+      for (CustomDeploymentNGVariable variable : variables) {
+        infraVars.put(variable.getName(), variable.getCurrentValue().toString());
+      }
     }
     return CustomDeploymentInfraMapping.builder().variables(infraVars).build();
   }
@@ -62,10 +68,25 @@ public class CustomDeploymentInfrastructure
   }
 
   @Override
+  public List<ParameterField<String>> getConnectorReferences() {
+    List<ParameterField<String>> connectorRefs = new ArrayList<>();
+    if (!isNull(variables)) {
+      for (CustomDeploymentNGVariable variable : variables) {
+        if (variable.getType() == CustomDeploymentNGVariableType.CONNECTOR) {
+          connectorRefs.add((ParameterField<String>) variable.getCurrentValue());
+        }
+      }
+    }
+    return connectorRefs;
+  }
+
+  @Override
   public String[] getInfrastructureKeyValues() {
     List<String> infraKeys = new ArrayList<>();
-    for (NGVariable variable : variables) {
-      infraKeys.add(variable.getName());
+    if (!isNull(variables)) {
+      for (CustomDeploymentNGVariable variable : variables) {
+        infraKeys.add(variable.getName());
+      }
     }
     return infraKeys.toArray(new String[0]);
   }

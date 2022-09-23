@@ -29,6 +29,7 @@ import io.harness.cdng.infra.beans.SshWinRmAzureInfraMapping;
 import io.harness.cdng.infra.steps.InfraStepParameters;
 import io.harness.cdng.instance.InstanceDeploymentInfo;
 import io.harness.cdng.pipeline.executions.CDAccountExecutionMetadata;
+import io.harness.cdng.provision.azure.beans.AzureARMConfig;
 import io.harness.cdng.provision.cloudformation.beans.CloudformationConfig;
 import io.harness.cdng.provision.terraform.TerraformConfig;
 import io.harness.cdng.service.steps.ServiceStepParameters;
@@ -64,6 +65,7 @@ public class NGMorphiaRegistrar implements MorphiaRegistrar {
     set.add(CdTelemetrySentStatus.class);
     set.add(StageExecutionInfo.class);
     set.add(InstanceDeploymentInfo.class);
+    set.add(AzureARMConfig.class);
   }
 
   @Override

@@ -21,6 +21,8 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.beans.yaml.extended.TILanguage")
 public enum TILanguage {
   @JsonProperty("Java") JAVA("Java"),
+  @JsonProperty("Kotlin") KOTLIN("Kotlin"),
+  @JsonProperty("Scala") SCALA("Scala"),
   @JsonProperty("Csharp") CSHARP("Csharp");
 
   private final String yamlName;

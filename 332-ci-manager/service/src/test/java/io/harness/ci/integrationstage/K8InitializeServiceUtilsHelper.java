@@ -24,11 +24,11 @@ import io.harness.beans.dependencies.DependencyElement;
 import io.harness.beans.environment.ServiceDefinitionInfo;
 import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
 import io.harness.beans.environment.pod.container.ContainerImageDetails;
+import io.harness.beans.stages.IntegrationStageNode;
 import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.cimanager.stages.IntegrationStageConfigImpl;
 import io.harness.delegate.beans.ci.pod.ContainerResourceParams;
 import io.harness.k8s.model.ImageDetails;
-import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.extended.ci.container.ContainerResource;
 
@@ -112,8 +112,12 @@ public class K8InitializeServiceUtilsHelper {
         .build();
   }
 
-  public static StageElementConfig getStageElementConfig() {
-    return StageElementConfig.builder().identifier("ciStage").type("CI").stageType(getIntegrationStageConfig()).build();
+  public static IntegrationStageNode getStageNode() {
+    return IntegrationStageNode.builder()
+        .identifier("ciStage")
+        .type(IntegrationStageNode.StepType.CI)
+        .integrationStageConfig((IntegrationStageConfigImpl) getIntegrationStageConfig())
+        .build();
   }
 
   public static IntegrationStageConfig getIntegrationStageConfig() {

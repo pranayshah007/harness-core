@@ -64,7 +64,7 @@ public class LicenseStaticLimitRestrictionHandlerTest extends CategoryTest {
     client = mock(EnforcementSdkClient.class);
     restriction = new LicenseStaticLimitRestriction(RestrictionType.LICENSE_STATIC_LIMIT, "totalWorkload", client);
     Mockito.mockStatic(NGRestUtils.class);
-    when(NGRestUtils.getResponseWithRetry(any())).thenReturn(FeatureRestrictionUsageDTO.builder().count(10).build());
+    when(NGRestUtils.getResponse(any())).thenReturn(FeatureRestrictionUsageDTO.builder().count(10).build());
   }
 
   @Test

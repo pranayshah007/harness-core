@@ -1,4 +1,5 @@
 io.harness.steps.jira.update.JiraUpdateSpecParameters
+io.harness.plancreator.customDeployment.StepTemplateRef
 io.harness.steps.approval.step.jira.JiraApprovalSpecParameters
 io.harness.yaml.core.properties.NGProperties
 io.harness.steps.approval.step.jira.JiraApprovalOutcome
@@ -144,3 +145,4 @@ io.harness.logging.CommandExecutionStatus
 io.harness.steps.approval.step.harness.beans.HarnessApprovalAction
 io.harness.plancreator.strategy.ExpressionAxisConfig
 io.harness.yaml.core.failurestrategy.ProceedWithDefaultValuesFailureActionConfig
+io.harness.yaml.core.failurestrategy.rollback.PipelineRollbackFailureActionConfig

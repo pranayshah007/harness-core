@@ -23,11 +23,10 @@ import com.google.common.collect.ImmutableList;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.Value;
@@ -56,14 +55,14 @@ public class InstanceStatsSnapshot extends Base implements AccountAccess {
         .build();
   }
 
-  private static final List<EntityType> ENTITY_TYPES_TO_AGGREGATE_ON = Arrays.asList(EntityType.APPLICATION);
+  private static final List<EntityType> ENTITY_TYPES_TO_AGGREGATE_ON =
+      Collections.singletonList(EntityType.APPLICATION);
 
-  @NonFinal @FdIndex private Instant timestamp;
-  @NonFinal private String accountId;
-  @NonFinal private List<AggregateCount> aggregateCounts = new ArrayList<>();
-  @NonFinal private int total;
+  @NonFinal @FdIndex Instant timestamp;
+  @NonFinal String accountId;
+  @NonFinal List<AggregateCount> aggregateCounts = new ArrayList<>();
+  @NonFinal int total;
   @FdTtlIndex Date validUntil = Date.from(OffsetDateTime.now().plusMonths(TTL_MONTHS).toInstant());
-
   public InstanceStatsSnapshot(Instant timestamp, String accountId, List<AggregateCount> aggregateCounts) {
     validate(aggregateCounts);
 
@@ -99,12 +98,11 @@ public class InstanceStatsSnapshot extends Base implements AccountAccess {
   }
 
   @Value
-  @AllArgsConstructor
   public static class AggregateCount {
-    private EntityType entityType;
-    private String name;
-    private String id;
-    @NonFinal private int count;
+    EntityType entityType;
+    String name;
+    String id;
+    @NonFinal int count;
 
     public void incrementCount(int diff) {
       this.count = count + diff;

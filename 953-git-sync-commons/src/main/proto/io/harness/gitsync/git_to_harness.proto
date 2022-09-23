@@ -20,6 +20,8 @@ service GitToHarnessService {
   rpc process(GitToHarnessProcessRequest) returns (ProcessingResponse);
 
   rpc markEntitiesInvalid(MarkEntityInvalidRequest) returns (MarkEntityInvalidResponse);
+
+  rpc resetGitSyncSDKCache(ResetGitSyncSDKCacheRequest) returns (ResetGitSyncSDKCacheResponse);
 }
 
 message MarkEntityInvalidRequest {
@@ -109,4 +111,14 @@ message YamlGitConfigInfo {
   google.protobuf.StringValue yaml_git_config_project_identifier = 2;
   string yaml_git_config_id = 3;
   string account_id = 4;
+}
+
+message ResetGitSyncSDKCacheResponse {
+  string error = 1;
+}
+
+message ResetGitSyncSDKCacheRequest {
+  string accountIdentifier = 1;
+  string orgIdentifier = 2;
+  string projectIdentifier = 3;
 }

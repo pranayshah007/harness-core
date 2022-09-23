@@ -30,9 +30,9 @@ public class AzureSshInfraDelegateConfig extends AzureInfraDelegateConfig implem
   public AzureSshInfraDelegateConfig(AzureConnectorDTO azureConnectorDTO,
       List<EncryptedDataDetail> connectorEncryptionDataDetails, String subscriptionId, String resourceGroup,
       Map<String, String> tags, List<EncryptedDataDetail> encryptionDataDetails, SSHKeySpecDTO sshKeySpecDto,
-      boolean usePublicDns) {
-    super(
-        azureConnectorDTO, connectorEncryptionDataDetails, subscriptionId, resourceGroup, tags, "LINUX", usePublicDns);
+      String hostConnectionType) {
+    super(azureConnectorDTO, connectorEncryptionDataDetails, subscriptionId, resourceGroup, tags, "LINUX",
+        hostConnectionType);
     this.encryptionDataDetails = encryptionDataDetails;
     this.sshKeySpecDto = sshKeySpecDto;
   }

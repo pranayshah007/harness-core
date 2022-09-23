@@ -167,7 +167,7 @@ public class K8sBGBaseHandler {
         for (int resourceIndex = release.getResources().size() - 1; resourceIndex >= 0; resourceIndex--) {
           KubernetesResourceId resourceId = release.getResources().get(resourceIndex);
           if (resourceId.isVersioned()) {
-            k8sTaskHelperBase.delete(client, k8sDelegateTaskParams, asList(resourceId), executionLogCallback, true);
+            k8sTaskHelperBase.delete(client, k8sDelegateTaskParams, asList(resourceId), executionLogCallback, false);
             resourceDeleted.add(resourceId);
           }
         }

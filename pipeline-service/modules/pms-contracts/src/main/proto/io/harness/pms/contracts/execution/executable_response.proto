@@ -33,6 +33,7 @@ message AsyncExecutableResponse {
   repeated string callbackIds = 1;
   repeated string logKeys = 2;
   repeated string units = 3;
+  int32 timeout = 5;
 }
 
 message ChildExecutableResponse {
@@ -69,6 +70,7 @@ message ForMetadata {
 message MatrixMetadata {
   map<string, string> matrixValues = 1;
   repeated int32 matrixCombination = 2;
+  string subType = 3;
 }
 
 message ChildChainExecutableResponse {

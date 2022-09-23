@@ -18,6 +18,7 @@ import io.harness.beans.common.VariablesSweepingOutput;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
 import io.harness.cdng.creator.plan.environment.EnvironmentMapper;
+import io.harness.cdng.creator.plan.environment.EnvironmentPlanCreatorHelper;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.manifest.steps.ManifestsOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
@@ -38,7 +39,7 @@ import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
-import io.harness.ng.core.serviceoverride.mapper.NGServiceOverrideEntityConfigMapper;
+import io.harness.ng.core.serviceoverride.mapper.ServiceOverridesMapper;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -167,14 +168,23 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
         throw new InvalidRequestException("Environment " + envRef.getValue() + " not found");
       }
 
-      final NGEnvironmentConfig ngEnvironmentConfig = mergeEnvironmentInputs(environment.get().getYaml(), envInputs);
+      NGEnvironmentConfig ngEnvironmentConfig;
+      try {
+        ngEnvironmentConfig = mergeEnvironmentInputs(environment.get().getYaml(), envInputs);
+      } catch (IOException ex) {
+        throw new InvalidRequestException(
+            "Unable to read yaml for environment: " + environment.get().getIdentifier(), ex);
+      }
 
       final Optional<NGServiceOverridesEntity> ngServiceOverridesEntity =
           serviceOverrideService.get(AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
               AmbianceUtils.getProjectIdentifier(ambiance), envRef.getValue(), parameters.getServiceRef().getValue());
+      NGServiceOverrideConfig ngServiceOverrides = NGServiceOverrideConfig.builder().build();
+      if (ngServiceOverridesEntity.isPresent()) {
+        ngServiceOverrides =
+            mergeSvcOverrideInputs(ngServiceOverridesEntity.get().getYaml(), parameters.getServiceOverrideInputs());
+      }
 
-      final NGServiceOverrideConfig ngServiceOverrides = NGServiceOverrideEntityConfigMapper.toNGServiceOverrideConfig(
-          ngServiceOverridesEntity.orElse(NGServiceOverridesEntity.builder().build()));
       final EnvironmentOutcome environmentOutcome =
           EnvironmentMapper.toEnvironmentOutcome(environment.get(), ngEnvironmentConfig, ngServiceOverrides);
 
@@ -191,6 +201,21 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
           servicePartResponse.getNgServiceConfig(), ngServiceOverrides, ngEnvironmentConfig, ambiance,
           SERVICE_CONFIG_FILES_SWEEPING_OUTPUT);
     }
+  }
+
+  private NGServiceOverrideConfig mergeSvcOverrideInputs(
+      String originalOverridesYaml, ParameterField<Map<String, Object>> serviceOverrideInputs) {
+    NGServiceOverrideConfig serviceOverrideConfig = NGServiceOverrideConfig.builder().build();
+
+    if (ParameterField.isNull(serviceOverrideInputs) || isEmpty(serviceOverrideInputs.getValue())) {
+      return ServiceOverridesMapper.toNGServiceOverrideConfig(originalOverridesYaml);
+    }
+    final String mergedYaml = EnvironmentPlanCreatorHelper.resolveServiceOverrideInputs(
+        originalOverridesYaml, serviceOverrideInputs.getValue());
+    if (isNotEmpty(mergedYaml)) {
+      serviceOverrideConfig = ServiceOverridesMapper.toNGServiceOverrideConfig(mergedYaml);
+    }
+    return serviceOverrideConfig;
   }
 
   private void processServiceVariables(Ambiance ambiance, ServicePartResponse servicePartResponse,
@@ -214,7 +239,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
   @Override
   public StepResponse handleChildrenResponse(
       Ambiance ambiance, ServiceStepV3Parameters stepParameters, Map<String, ResponseData> responseDataMap) {
-    ServiceSweepingOutput serviceSweepingOutput = (ServiceSweepingOutput) sweepingOutputService.resolve(
+    final ServiceSweepingOutput serviceSweepingOutput = (ServiceSweepingOutput) sweepingOutputService.resolve(
         ambiance, RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_SWEEPING_OUTPUT));
 
     NGServiceConfig ngServiceConfig = null;
@@ -234,7 +259,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
 
     StepResponse stepResponse = SdkCoreStepUtils.createStepResponseFromChildResponse(responseDataMap);
 
-    NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
+    final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
     if (StatusUtils.brokeStatuses().contains(stepResponse.getStatus())) {
       saveExecutionLog(logCallback, LogHelper.color("Failed to complete service step", LogColor.Red), LogLevel.INFO,
           CommandExecutionStatus.FAILURE);
@@ -291,8 +316,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
         serviceEntityService.get(AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
             AmbianceUtils.getProjectIdentifier(ambiance), stepParameters.getServiceRef().getValue(), false);
     if (serviceOpt.isEmpty()) {
-      throw new InvalidRequestException(
-          format("serviceOpt with identifier %s not found", stepParameters.getServiceRef()));
+      throw new InvalidRequestException(format("service with identifier %s not found", stepParameters.getServiceRef()));
     }
 
     final ServiceEntity serviceEntity = serviceOpt.get();

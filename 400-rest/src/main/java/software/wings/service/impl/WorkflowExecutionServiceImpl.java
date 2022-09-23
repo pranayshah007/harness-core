@@ -68,8 +68,6 @@ import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.beans.ElementExecutionSummary.ElementExecutionSummaryBuilder.anElementExecutionSummary;
 import static software.wings.beans.EntityType.DEPLOYMENT;
 import static software.wings.beans.PipelineExecution.Builder.aPipelineExecution;
-import static software.wings.beans.config.ArtifactSourceable.ARTIFACT_SOURCE_DOCKER_CONFIG_NAME_KEY;
-import static software.wings.beans.config.ArtifactSourceable.ARTIFACT_SOURCE_DOCKER_CONFIG_PLACEHOLDER;
 import static software.wings.beans.deployment.DeploymentMetadata.Include;
 import static software.wings.beans.deployment.DeploymentMetadata.Include.ARTIFACT_SERVICE;
 import static software.wings.beans.deployment.DeploymentMetadata.Include.DEPLOYMENT_TYPE;
@@ -2254,7 +2252,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
       ExecutionEventAdvisor workflowExecutionAdvisor, WorkflowExecutionUpdate workflowExecutionUpdate,
       WorkflowStandardParams stdParams, Application app, Workflow workflow, Pipeline pipeline,
       ExecutionArgs executionArgs, ContextElement... contextElements) {
-    updateWorkflowElement(workflowExecution, stdParams, workflow, app.getAccountId());
+    updateWorkflowElement(workflowExecution, stdParams, workflow);
 
     LinkedList<ContextElement> elements = new LinkedList<>();
     elements.push(stdParams);
@@ -2489,7 +2487,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
   }
 
   private void updateWorkflowElement(
-      WorkflowExecution workflowExecution, WorkflowStandardParams stdParams, Workflow workflow, String accountId) {
+      WorkflowExecution workflowExecution, WorkflowStandardParams stdParams, Workflow workflow) {
     stdParams.setErrorStrategy(workflowExecution.getErrorStrategy());
     String workflowUrl = mainConfiguration.getPortal().getUrl() + "/"
         + format(mainConfiguration.getPortal().getExecutionUrlPattern(), workflowExecution.getAppId(),
@@ -2502,9 +2500,6 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
                                                           .url(workflowUrl)
                                                           .displayName(workflowExecution.displayName())
                                                           .releaseNo(workflowExecution.getReleaseNo());
-      if (featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId)) {
-        workflowElementBuilder.artifactVariables(workflowExecution.getExecutionArgs().getArtifactVariables());
-      }
       stdParams.setWorkflowElement(workflowElementBuilder.build());
     } else {
       stdParams.getWorkflowElement().setName(workflowExecution.normalizedName());
@@ -2512,10 +2507,6 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
       stdParams.getWorkflowElement().setUrl(workflowUrl);
       stdParams.getWorkflowElement().setDisplayName(workflowExecution.displayName());
       stdParams.getWorkflowElement().setReleaseNo(workflowExecution.getReleaseNo());
-      if (featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId)) {
-        stdParams.getWorkflowElement().setArtifactVariables(
-            workflowExecution.getExecutionArgs().getArtifactVariables());
-      }
     }
     // set pipeline variables
     if (workflowExecution.getWorkflowType() == PIPELINE) {
@@ -2666,11 +2657,6 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
       populateHelmChartsInWorkflowExecution(workflowExecution, keywords, executionArgs, accountId);
     }
 
-    if (featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId)) {
-      populateArtifacts(workflowExecution, stdParams, keywords, executionArgs, accountId);
-      return;
-    }
-
     if (isEmpty(executionArgs.getArtifacts())) {
       return;
     }
@@ -2799,69 +2785,6 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
     executionArgs.setHelmCharts(helmCharts);
     workflowExecution.setHelmCharts(filteredHelmCharts);
-  }
-
-  private void populateArtifacts(WorkflowExecution workflowExecution, WorkflowStandardParams stdParams,
-      Set<String> keywords, ExecutionArgs executionArgs, String accountId) {
-    List<ArtifactVariable> artifactVariables = executionArgs.getArtifactVariables();
-    List<Artifact> filteredArtifacts = multiArtifactWorkflowExecutionServiceHelper.filterArtifactsForExecution(
-        artifactVariables, workflowExecution, accountId);
-
-    removeDuplicates(filteredArtifacts);
-    executionArgs.setArtifacts(filteredArtifacts);
-    workflowExecution.setArtifacts(filteredArtifacts);
-    stdParams.setArtifactIds(filteredArtifacts.stream().map(Artifact::getUuid).collect(toList()));
-
-    List<String> serviceIds =
-        isEmpty(workflowExecution.getServiceIds()) ? new ArrayList<>() : workflowExecution.getServiceIds();
-    if (isNotEmpty(filteredArtifacts)) {
-      executionArgs.setArtifactIdNames(
-          filteredArtifacts.stream().collect(toMap(Artifact::getUuid, Artifact::getDisplayName)));
-      filteredArtifacts.forEach(artifact -> {
-        artifact.setArtifactFiles(null);
-        artifact.setCreatedBy(null);
-        artifact.setLastUpdatedBy(null);
-        artifact.setServiceIds(artifactStreamServiceBindingService.listServiceIds(artifact.getArtifactStreamId()));
-
-        Map<String, String> source =
-            artifactStreamService.fetchArtifactSourceProperties(accountId, artifact.getArtifactStreamId());
-        if (!source.containsKey(ARTIFACT_SOURCE_DOCKER_CONFIG_NAME_KEY)
-            || ARTIFACT_SOURCE_DOCKER_CONFIG_PLACEHOLDER.equals(source.get(ARTIFACT_SOURCE_DOCKER_CONFIG_NAME_KEY))) {
-          try {
-            String dockerConfig = artifactCollectionUtils.getDockerConfig(artifact.getArtifactStreamId());
-            source.put(ARTIFACT_SOURCE_DOCKER_CONFIG_NAME_KEY, dockerConfig);
-          } catch (InvalidRequestException e) {
-            // Artifact stream type doesn't have docker credentials. Ex. Jenkins
-            // Ignore exception.
-          }
-        }
-        artifact.setSource(source);
-
-        keywords.add(artifact.getArtifactSourceName());
-        keywords.add(artifact.getDescription());
-        keywords.add(artifact.getRevision());
-        keywords.add(artifact.getBuildNo());
-      });
-    }
-
-    Set<String> serviceIdsSet = new HashSet<>();
-    List<ServiceElement> services = new ArrayList<>();
-    if (isNotEmpty(serviceIds)) {
-      for (String serviceId : serviceIds) {
-        if (serviceIdsSet.contains(serviceId)) {
-          continue;
-        }
-        serviceIdsSet.add(serviceId);
-        Service service = serviceResourceService.get(serviceId);
-        ServiceElement se = ServiceElement.builder().build();
-        MapperUtils.mapObject(service, se);
-        services.add(se);
-        keywords.add(se.getName());
-      }
-    }
-
-    // Set the services in the context.
-    stdParams.setServices(services);
   }
 
   private static void removeDuplicates(List<Artifact> artifacts) {

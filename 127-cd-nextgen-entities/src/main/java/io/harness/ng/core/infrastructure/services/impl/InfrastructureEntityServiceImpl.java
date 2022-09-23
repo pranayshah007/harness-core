@@ -13,11 +13,12 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.IDENTIFIER;
-import static io.harness.springdata.TransactionUtils.DEFAULT_TRANSACTION_RETRY_POLICY;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.customdeployment.helper.CustomDeploymentEntitySetupHelper;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.DuplicateFieldException;
@@ -25,6 +26,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
 import io.harness.ng.DuplicateKeyExceptionParser;
 import io.harness.ng.core.events.EnvironmentUpdatedEvent;
+import io.harness.ng.core.infrastructure.InfrastructureType;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity.InfrastructureEntityKeys;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
@@ -32,6 +34,7 @@ import io.harness.outbox.api.OutboxService;
 import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.repositories.UpsertOptions;
 import io.harness.repositories.infrastructure.spring.InfrastructureRepository;
 import io.harness.utils.YamlPipelineUtils;
 
@@ -43,6 +46,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.mongodb.client.result.DeleteResult;
+import com.mongodb.client.result.UpdateResult;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -63,6 +67,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @OwnedBy(PIPELINE)
@@ -72,8 +77,9 @@ import org.springframework.transaction.support.TransactionTemplate;
 public class InfrastructureEntityServiceImpl implements InfrastructureEntityService {
   private final InfrastructureRepository infrastructureRepository;
   @Inject @Named(OUTBOX_TRANSACTION_TEMPLATE) private final TransactionTemplate transactionTemplate;
-  private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_TRANSACTION_RETRY_POLICY;
+  private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_RETRY_POLICY;
   private final OutboxService outboxService;
+  @Inject CustomDeploymentEntitySetupHelper customDeploymentEntitySetupHelper;
 
   private static final String DUP_KEY_EXP_FORMAT_STRING_FOR_PROJECT =
       "Infrastructure [%s] under Environment [%s] Project[%s], Organization [%s] in Account [%s] already exists";
@@ -89,10 +95,14 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
   @Override
   public InfrastructureEntity create(@NotNull @Valid InfrastructureEntity infraEntity) {
     try {
+      setObsoleteAsFalse(infraEntity);
       validatePresenceOfRequiredFields(
           infraEntity.getAccountId(), infraEntity.getIdentifier(), infraEntity.getEnvIdentifier());
       setNameIfNotPresent(infraEntity);
       modifyInfraRequest(infraEntity);
+      if (infraEntity.getType() == InfrastructureType.CUSTOM_DEPLOYMENT) {
+        customDeploymentEntitySetupHelper.addReferencesInEntitySetupUsage(infraEntity);
+      }
       return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
         InfrastructureEntity infrastructureEntity = infrastructureRepository.save(infraEntity);
         outboxService.save(EnvironmentUpdatedEvent.builder()
@@ -124,8 +134,12 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
   @Override
   public InfrastructureEntity update(@Valid InfrastructureEntity requestInfra) {
     validatePresenceOfRequiredFields(requestInfra.getAccountId(), requestInfra.getIdentifier());
+    setObsoleteAsFalse(requestInfra);
     setNameIfNotPresent(requestInfra);
     modifyInfraRequest(requestInfra);
+    if (requestInfra.getType() == InfrastructureType.CUSTOM_DEPLOYMENT) {
+      customDeploymentEntitySetupHelper.addReferencesInEntitySetupUsage(requestInfra);
+    }
     Criteria criteria = getInfrastructureEqualityCriteria(requestInfra);
     Optional<InfrastructureEntity> infraEntityOptional =
         get(requestInfra.getAccountId(), requestInfra.getOrgIdentifier(), requestInfra.getProjectIdentifier(),
@@ -159,7 +173,7 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
   }
 
   @Override
-  public InfrastructureEntity upsert(@Valid InfrastructureEntity requestInfra) {
+  public InfrastructureEntity upsert(@Valid InfrastructureEntity requestInfra, UpsertOptions upsertOptions) {
     validatePresenceOfRequiredFields(requestInfra.getAccountId(), requestInfra.getIdentifier());
     setNameIfNotPresent(requestInfra);
     modifyInfraRequest(requestInfra);
@@ -205,6 +219,9 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
     Optional<InfrastructureEntity> infraEntityOptional =
         get(accountId, orgIdentifier, projectIdentifier, envIdentifier, infraIdentifier);
     if (infraEntityOptional.isPresent()) {
+      if (infraEntityOptional.get().getType() == InfrastructureType.CUSTOM_DEPLOYMENT) {
+        customDeploymentEntitySetupHelper.deleteReferencesInEntitySetupUsage(infraEntityOptional.get());
+      }
       return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
         DeleteResult deleteResult = infrastructureRepository.delete(criteria);
         if (!deleteResult.wasAcknowledged() || deleteResult.getDeletedCount() != 1) {
@@ -255,12 +272,14 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
     return deleteResult.wasAcknowledged() && deleteResult.getDeletedCount() > 0;
   }
 
+  private void setObsoleteAsFalse(InfrastructureEntity requestInfra) {
+    requestInfra.setObsolete(false);
+  }
   private void setNameIfNotPresent(InfrastructureEntity requestInfra) {
     if (isEmpty(requestInfra.getName())) {
       requestInfra.setName(requestInfra.getIdentifier());
     }
   }
-
   private Criteria getInfrastructureEqualityCriteria(@Valid InfrastructureEntity requestInfra) {
     return Criteria.where(InfrastructureEntityKeys.accountId)
         .is(requestInfra.getAccountId())
@@ -327,7 +346,6 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
     return infrastructureRepository.findAllFromEnvIdentifier(
         accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier);
   }
-
   @Override
   public String createInfrastructureInputsFromYaml(String accountId, String projectIdentifier, String orgIdentifier,
       String environmentIdentifier, List<String> infraIdentifiers, boolean deployToAll) {
@@ -338,6 +356,12 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
       return null;
     }
     return YamlPipelineUtils.writeYamlString(yamlInputs);
+  }
+  @Override
+  public UpdateResult batchUpdateInfrastructure(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String envIdentifier, List<String> infraIdentifier, Update update) {
+    return infrastructureRepository.batchUpdateInfrastructure(
+        accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, infraIdentifier, update);
   }
 
   public Map<String, Object> createInfrastructureInputsYamlInternal(String accountId, String orgIdentifier,

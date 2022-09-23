@@ -19,14 +19,13 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.api.UserGroupService;
 import io.harness.ng.core.invites.InviteType;
 import io.harness.ng.core.invites.api.InviteService;
-import io.harness.ng.core.invites.dto.RoleBinding;
 import io.harness.ng.core.invites.entities.Invite;
 import io.harness.ng.core.user.UserInfo;
 import io.harness.ng.core.user.UserMembershipUpdateSource;
 import io.harness.ng.core.user.entities.UserGroup;
 import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
 import io.harness.ng.core.user.service.NgUserService;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.CGRestUtils;
 import io.harness.scim.PatchOperation;
 import io.harness.scim.PatchRequest;
 import io.harness.scim.ScimListResponse;
@@ -35,7 +34,6 @@ import io.harness.scim.ScimUser;
 import io.harness.scim.ScimUserValuedObject;
 import io.harness.scim.service.ScimUserService;
 import io.harness.serializer.JsonUtils;
-import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.inject.Inject;
@@ -55,7 +53,6 @@ import org.apache.commons.lang3.StringUtils;
 @Slf4j
 @OwnedBy(PL)
 public class NGScimUserServiceImpl implements ScimUserService {
-  private static final String ACCOUNT_VIEWER_ROLE = "_account_viewer";
   private static final String GIVEN_NAME = "givenName";
   private static final String FAMILY_NAME = "familyName";
   private static final String VALUE = "value";
@@ -63,7 +60,6 @@ public class NGScimUserServiceImpl implements ScimUserService {
   private final NgUserService ngUserService;
   private final InviteService inviteService;
   private final UserGroupService userGroupService;
-  private final NGFeatureFlagHelperService nGFeatureFlagHelperService;
   private final AccountClient accountClient;
 
   @Override
@@ -108,12 +104,7 @@ public class NGScimUserServiceImpl implements ScimUserService {
                           .inviteType(InviteType.SCIM_INITIATED_INVITE)
                           .build();
 
-      if (nGFeatureFlagHelperService.isEnabled(accountId, FeatureName.ACCOUNT_BASIC_ROLE_ONLY)) {
-        invite.setRoleBindings(emptyList());
-      } else {
-        invite.setRoleBindings(
-            Collections.singletonList(RoleBinding.builder().roleIdentifier(ACCOUNT_VIEWER_ROLE).build()));
-      }
+      invite.setRoleBindings(emptyList());
       inviteService.create(invite, true, false);
 
       userOptional = ngUserService.getUserByEmail(primaryEmail, true);
@@ -285,7 +276,7 @@ public class NGScimUserServiceImpl implements ScimUserService {
       changeScimUserDisabled(accountId, userId, !patchOperation.getValue(Boolean.class));
     }
 
-    if (RestClientUtils.getResponse(
+    if (CGRestUtils.getResponse(
             accountClient.isFeatureFlagEnabled(FeatureName.UPDATE_EMAILS_VIA_SCIM.name(), accountId))
         && "userName".equals(patchOperation.getPath()) && patchOperation.getValue(String.class) != null
         && !userMetadataDTO.getEmail().equals(patchOperation.getValue(String.class))) {

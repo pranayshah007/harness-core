@@ -18,6 +18,7 @@ import io.harness.exception.GeneralException;
 import io.harness.exception.UnexpectedException;
 import io.harness.logging.MorphiaLoggerFactory;
 import io.harness.mongo.index.migrator.Migrator;
+import io.harness.mongo.metrics.HarnessConnectionPoolListener;
 import io.harness.mongo.tracing.TracerModule;
 import io.harness.morphia.MorphiaModule;
 import io.harness.persistence.Store;
@@ -64,6 +65,12 @@ public class MongoModule extends AbstractModule {
   }
 
   @Provides
+  @Singleton
+  public HarnessConnectionPoolListener harnessConnectionPoolListener() {
+    return new HarnessConnectionPoolListener();
+  }
+
+  @Provides
   @Named("defaultMongoClientOptions")
   @Singleton
   public static MongoClientOptions getDefaultMongoClientOptions(MongoConfig mongoConfig) {
@@ -83,11 +90,15 @@ public class MongoModule extends AbstractModule {
     return defaultMongoClientOptions;
   }
 
-  public static AdvancedDatastore createDatastore(Morphia morphia, String uri) {
+  public static AdvancedDatastore createDatastore(
+      Morphia morphia, String uri, String name, HarnessConnectionPoolListener harnessConnectionPoolListener) {
     MongoConfig mongoConfig = MongoConfig.builder().build();
 
-    MongoClientURI clientUri =
-        new MongoClientURI(uri, MongoClientOptions.builder(getDefaultMongoClientOptions(mongoConfig)));
+    MongoClientURI clientUri = new MongoClientURI(uri,
+        MongoClientOptions.builder(getDefaultMongoClientOptions(mongoConfig))
+            .addConnectionPoolListener(harnessConnectionPoolListener)
+            .applicationName("current_gen_" + name)
+            .description("current_gen_" + name));
     MongoClient mongoClient = new MongoClient(clientUri);
 
     AdvancedDatastore datastore = (AdvancedDatastore) morphia.createDatastore(mongoClient, clientUri.getDatabase());
@@ -150,7 +161,8 @@ public class MongoModule extends AbstractModule {
   @Singleton
   public AdvancedDatastore primaryDatastore(MongoConfig mongoConfig, @Named("morphiaClasses") Set<Class> classes,
       @Named("morphiaInterfaceImplementersClasses") Map<String, Class> morphiaInterfaceImplementers, Morphia morphia,
-      ObjectFactory objectFactory, IndexManager indexManager) {
+      ObjectFactory objectFactory, IndexManager indexManager,
+      HarnessConnectionPoolListener harnessConnectionPoolListener) {
     for (Class clazz : classes) {
       if (morphia.getMapper().getMCMap().get(clazz.getName()).getCollectionName().startsWith("!!!custom_")) {
         throw new UnexpectedException(format("The custom collection name for %s is not provided", clazz.getName()));
@@ -172,10 +184,13 @@ public class MongoModule extends AbstractModule {
                                       .build();
     }
 
-    MongoClientURI uri =
-        new MongoClientURI(mongoConfig.getUri(), MongoClientOptions.builder(primaryMongoClientOptions));
+    MongoClientURI uri = new MongoClientURI(mongoConfig.getUri(),
+        MongoClientOptions.builder(primaryMongoClientOptions)
+            .readPreference(mongoConfig.getReadPreference())
+            .addConnectionPoolListener(harnessConnectionPoolListener)
+            .applicationName("current_gen_primary_datastore")
+            .description("current_gen_primary_datastore"));
     MongoClient mongoClient = new MongoClient(uri);
-
     AdvancedDatastore primaryDatastore = (AdvancedDatastore) morphia.createDatastore(mongoClient, uri.getDatabase());
     primaryDatastore.setQueryFactory(new QueryFactory(mongoConfig.getTraceMode()));
 

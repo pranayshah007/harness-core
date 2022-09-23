@@ -48,6 +48,7 @@ import io.harness.logging.LogLevel;
 import io.harness.logging.UnitProgress;
 import io.harness.logging.UnitStatus;
 import io.harness.logstreaming.NGLogCallback;
+import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
@@ -61,7 +62,6 @@ import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.merger.helpers.MergeHelper;
 import io.harness.pms.rbac.PipelineRbacHelper;
-import io.harness.pms.sdk.core.steps.executables.TaskExecutable;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
@@ -69,6 +69,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.EntityReferenceExtractorUtils;
 import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.environment.EnvironmentOutcome;
+import io.harness.steps.executable.TaskExecutableWithRbac;
 import io.harness.steps.shellscript.HostsOutput;
 import io.harness.steps.shellscript.K8sInfraDelegateConfigOutput;
 import io.harness.steps.shellscript.SshInfraDelegateConfigOutput;
@@ -88,7 +89,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(CDP)
 public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTaskExecutableStep
-    implements TaskExecutable<InfrastructureTaskExecutableStepV2Params, DelegateResponseData> {
+    implements TaskExecutableWithRbac<InfrastructureTaskExecutableStepV2Params, DelegateResponseData> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.INFRASTRUCTURE_TASKSTEP_V2.getName())
                                                .setStepCategory(StepCategory.STEP)
@@ -100,6 +101,7 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
   @Inject private StageExecutionHelper stageExecutionHelper;
   @Inject private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
   @Inject private PipelineRbacHelper pipelineRbacHelper;
+  @Inject InfrastructureMapper infrastructureMapper;
 
   @Override
   public Class<InfrastructureTaskExecutableStepV2Params> getStepParametersClass() {
@@ -107,7 +109,7 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
   }
 
   @Override
-  public TaskRequest obtainTask(
+  public TaskRequest obtainTaskAfterRbac(
       Ambiance ambiance, InfrastructureTaskExecutableStepV2Params stepParameters, StepInputPackage inputPackage) {
     validateStepParameters(stepParameters);
 
@@ -129,7 +131,14 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
   }
 
   @Override
-  public StepResponse handleTaskResult(Ambiance ambiance, InfrastructureTaskExecutableStepV2Params stepParameters,
+  public void validateResources(Ambiance ambiance, InfrastructureTaskExecutableStepV2Params stepParameters) {
+    // Not validating here. Instead, validation is done in obtainTaskWithRBAC method to avoid unnecessary db calls of
+    // fetching infrastructure/sweeping outputs
+  }
+
+  @Override
+  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance,
+      InfrastructureTaskExecutableStepV2Params stepParameters,
       ThrowingSupplier<DelegateResponseData> responseDataSupplier) throws Exception {
     final InfrastructureTaskExecutableStepSweepingOutput infraOutput = fetchInfraStepOutputOrThrow(ambiance);
 
@@ -210,8 +219,9 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     final OutcomeSet outcomeSet = fetchRequiredOutcomes(ambiance);
     final EnvironmentOutcome environmentOutcome = outcomeSet.getEnvironmentOutcome();
     final ServiceStepOutcome serviceOutcome = outcomeSet.getServiceStepOutcome();
-    final InfrastructureOutcome infrastructureOutcome =
-        InfrastructureMapper.toOutcome(spec, environmentOutcome, serviceOutcome);
+    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+    final InfrastructureOutcome infrastructureOutcome = infrastructureMapper.toOutcome(spec, environmentOutcome,
+        serviceOutcome, ngAccess.getAccountIdentifier(), ngAccess.getProjectIdentifier(), ngAccess.getOrgIdentifier());
 
     // save spec sweeping output for further use within the step
     boolean skipInstances = infrastructureStepHelper.getSkipInstances(spec);

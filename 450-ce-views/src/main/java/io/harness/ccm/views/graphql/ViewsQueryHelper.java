@@ -12,15 +12,20 @@ import static io.harness.ccm.views.graphql.QLCEViewTimeFilterOperator.AFTER;
 import static io.harness.ccm.views.graphql.QLCEViewTimeFilterOperator.BEFORE;
 
 import io.harness.ccm.views.businessMapping.entities.BusinessMapping;
+import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.entities.ViewCondition;
+import io.harness.ccm.views.entities.ViewField;
 import io.harness.ccm.views.entities.ViewFieldIdentifier;
 import io.harness.ccm.views.entities.ViewIdCondition;
 import io.harness.ccm.views.entities.ViewQueryParams;
 import io.harness.ccm.views.entities.ViewRule;
+import io.harness.ccm.views.entities.ViewVisualization;
+import io.harness.exception.InvalidRequestException;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.NumberFormat;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -343,6 +348,9 @@ public class ViewsQueryHelper {
   }
 
   public String getBusinessMappingIdFromGroupBy(List<QLCEViewGroupBy> groupByList) {
+    if (groupByList == null) {
+      return null;
+    }
     Optional<QLCEViewGroupBy> businessMappingGroupBy =
         groupByList.stream()
             .filter(groupBy
@@ -499,5 +507,77 @@ public class ViewsQueryHelper {
       }
     }
     return list;
+  }
+
+  public List<QLCEViewGroupBy> getDefaultViewGroupBy(CEView view) {
+    List<QLCEViewGroupBy> defaultViewGroupBy = new ArrayList<>();
+    if (view.getViewVisualization() != null) {
+      ViewVisualization viewVisualization = view.getViewVisualization();
+      ViewField defaultGroupByField = viewVisualization.getGroupBy();
+      defaultViewGroupBy.add(QLCEViewGroupBy.builder().entityGroupBy(getViewFieldInput(defaultGroupByField)).build());
+    }
+    return defaultViewGroupBy;
+  }
+
+  public QLCEViewFieldInput getViewFieldInput(ViewField field) {
+    return QLCEViewFieldInput.builder()
+        .fieldId(field.getFieldId())
+        .fieldName(field.getFieldName())
+        .identifier(field.getIdentifier())
+        .identifierName(field.getIdentifier().getDisplayName())
+        .build();
+  }
+
+  public List<QLCEViewFilterWrapper> getUpdatedFiltersForPrevPeriod(List<QLCEViewFilterWrapper> filters) {
+    List<QLCEViewTimeFilter> trendTimeFilters = getTrendFilters(getTimeFilters(filters));
+    List<QLCEViewFilterWrapper> updatedFilters = new ArrayList<>();
+
+    filters.forEach(filter -> {
+      if (filter.getTimeFilter() == null) {
+        updatedFilters.add(filter);
+      }
+    });
+
+    trendTimeFilters.forEach(
+        timeFilter -> updatedFilters.add(QLCEViewFilterWrapper.builder().timeFilter(timeFilter).build()));
+    return updatedFilters;
+  }
+
+  public List<QLCEViewTimeFilter> getTrendFilters(List<QLCEViewTimeFilter> timeFilters) {
+    Instant startInstant = Instant.ofEpochMilli(getTimeFilter(timeFilters, AFTER).getValue().longValue());
+    Instant endInstant =
+        Instant.ofEpochMilli(getTimeFilter(timeFilters, QLCEViewTimeFilterOperator.BEFORE).getValue().longValue());
+    long diffMillis = Duration.between(startInstant, endInstant).toMillis();
+    long trendEndTime = startInstant.toEpochMilli() - 1000;
+    long trendStartTime = trendEndTime - diffMillis;
+
+    List<QLCEViewTimeFilter> trendFilters = new ArrayList<>();
+    trendFilters.add(getTrendBillingFilter(trendStartTime, AFTER));
+    trendFilters.add(getTrendBillingFilter(trendEndTime, QLCEViewTimeFilterOperator.BEFORE));
+    return trendFilters;
+  }
+
+  public QLCEViewTimeFilter getTimeFilter(
+      List<QLCEViewTimeFilter> filters, QLCEViewTimeFilterOperator timeFilterOperator) {
+    Optional<QLCEViewTimeFilter> timeFilter =
+        filters.stream().filter(filter -> filter.getOperator() == timeFilterOperator).findFirst();
+    if (timeFilter.isPresent()) {
+      return timeFilter.get();
+    } else {
+      throw new InvalidRequestException("Time cannot be null");
+    }
+  }
+
+  public QLCEViewTimeFilter getTrendBillingFilter(Long filterTime, QLCEViewTimeFilterOperator operator) {
+    return QLCEViewTimeFilter.builder()
+        .field(QLCEViewFieldInput.builder()
+                   .fieldId(ViewsMetaDataFields.START_TIME.getFieldName())
+                   .fieldName(ViewsMetaDataFields.START_TIME.getFieldName())
+                   .identifier(ViewFieldIdentifier.COMMON)
+                   .identifierName(ViewFieldIdentifier.COMMON.getDisplayName())
+                   .build())
+        .operator(operator)
+        .value(filterTime)
+        .build();
   }
 }

@@ -26,6 +26,8 @@ import io.harness.gitsync.MarkEntityInvalidRequest;
 import io.harness.gitsync.MarkEntityInvalidResponse;
 import io.harness.gitsync.ProcessingFailureStage;
 import io.harness.gitsync.ProcessingResponse;
+import io.harness.gitsync.ResetGitSyncSDKCacheRequest;
+import io.harness.gitsync.ResetGitSyncSDKCacheResponse;
 import io.harness.gitsync.beans.GitProcessRequest;
 import io.harness.gitsync.common.YamlProcessingLogContext;
 import io.harness.gitsync.common.utils.GitEntityFilePath;
@@ -35,6 +37,7 @@ import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.interceptor.GitSyncThreadDecorator;
 import io.harness.gitsync.logger.GitProcessingLogContext;
+import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
 import io.harness.logging.AutoLogContext;
@@ -69,18 +72,20 @@ public class GitToHarnessSdkProcessorImpl implements GitToHarnessSdkProcessor {
   GitSyncThreadDecorator gitSyncThreadDecorator;
   GitProcessingRequestService gitProcessingRequestDao;
   PersistentLocker persistentLocker;
+  GitSyncSdkService gitSyncSdkService;
 
   @Inject
   public GitToHarnessSdkProcessorImpl(ChangeSetInterceptorService changeSetInterceptorService,
       GitSdkInterface changeSetHelperService, @Named("GitSyncSortOrder") Supplier<List<EntityType>> sortOrder,
       GitSyncThreadDecorator gitSyncThreadDecorator, GitProcessingRequestService gitProcessingRequestDao,
-      PersistentLocker persistentLocker) {
+      PersistentLocker persistentLocker, GitSyncSdkService gitSyncSdkService) {
     this.changeSetInterceptorService = changeSetInterceptorService;
     this.changeSetHelperService = changeSetHelperService;
     this.sortOrder = sortOrder;
     this.gitSyncThreadDecorator = gitSyncThreadDecorator;
     this.gitProcessingRequestDao = gitProcessingRequestDao;
     this.persistentLocker = persistentLocker;
+    this.gitSyncSdkService = gitSyncSdkService;
   }
 
   /**
@@ -150,6 +155,17 @@ public class GitToHarnessSdkProcessorImpl implements GitToHarnessSdkProcessor {
     return MarkEntityInvalidResponse.newBuilder()
         .setEntityInfos(EntityInfos.newBuilder().addAllEntityInfoList(successfullyMarkedInvalid).build())
         .build();
+  }
+
+  @Override
+  public ResetGitSyncSDKCacheResponse resetGitSyncSDKCache(ResetGitSyncSDKCacheRequest request) {
+    try {
+      gitSyncSdkService.resetGitSyncSDKCache(
+          request.getAccountIdentifier(), request.getOrgIdentifier(), request.getProjectIdentifier());
+      return ResetGitSyncSDKCacheResponse.newBuilder().build();
+    } catch (Exception ex) {
+      return ResetGitSyncSDKCacheResponse.newBuilder().setError(ex.getMessage()).build();
+    }
   }
 
   private boolean postProcessStage(ChangeSets changeSets, Map<String, FileProcessingResponse> processingResponseMap,

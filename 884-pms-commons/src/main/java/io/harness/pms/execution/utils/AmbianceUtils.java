@@ -257,7 +257,10 @@ public class AmbianceUtils {
       return "_" + level.getStrategyMetadata().getCurrentIteration();
     }
     if (level.getStrategyMetadata().getMatrixMetadata().getMatrixCombinationList().isEmpty()) {
-      return StringUtils.EMPTY;
+      if (level.getStrategyMetadata().getTotalIterations() <= 0) {
+        return StringUtils.EMPTY;
+      }
+      return "_" + level.getStrategyMetadata().getCurrentIteration();
     }
     return "_"
         + level.getStrategyMetadata()

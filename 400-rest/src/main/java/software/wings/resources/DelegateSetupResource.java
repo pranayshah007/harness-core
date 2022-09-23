@@ -139,6 +139,7 @@ public class DelegateSetupResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = LOGGED_IN)
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<PageResponse<Delegate>>
   list(@BeanParam PageRequest<Delegate> pageRequest) {
     return new RestResponse<>(delegateService.list(pageRequest));
@@ -165,6 +166,7 @@ public class DelegateSetupResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = LOGGED_IN)
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<DelegateStatus> listDelegateStatusWithScalingGroups(
       @QueryParam("accountId") @NotEmpty String accountId) {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {

@@ -241,4 +241,19 @@ public interface RoleAssignmentResource {
   delete(@BeanParam HarnessScopeParams harnessScopeParams,
       @Parameter(description = "Identifier for role assignment") @NotEmpty @PathParam(
           IDENTIFIER_KEY) String identifier);
+
+  @GET
+  @Path("{identifier}")
+  @ApiOperation(value = "Get Role Assignment", nickname = "getRoleAssignment")
+  @Operation(operationId = "getRoleAssignment", summary = "Get Role Assignment",
+      description = "Get an existing role assignment by identifier",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "Get an existing role assignment by identifier in the given scope")
+      })
+  ResponseDTO<RoleAssignmentResponseDTO>
+  get(@BeanParam HarnessScopeParams harnessScopeParams,
+      @Parameter(description = "Identifier for role assignment") @NotEmpty @PathParam(
+          IDENTIFIER_KEY) String identifier);
 }

@@ -65,6 +65,7 @@ public class TimeSeriesThresholdServiceImpl implements TimeSeriesThresholdServic
                                           .metricName(metricDefinition.getName())
                                           .metricIdentifier(metricDefinition.getIdentifier())
                                           .action(TimeSeriesThresholdActionType.IGNORE)
+                                          .deviationType(threshold.getDeviationType())
                                           .criteria(threshold)
                                           .build()));
     });

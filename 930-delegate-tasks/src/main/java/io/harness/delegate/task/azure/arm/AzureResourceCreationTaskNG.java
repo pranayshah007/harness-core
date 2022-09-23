@@ -8,8 +8,6 @@
 package io.harness.delegate.task.azure.arm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.logging.LogLevel.ERROR;
-import static io.harness.logging.LogLevel.INFO;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
@@ -27,14 +25,12 @@ import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
 import io.harness.delegate.task.azure.common.AzureLogCallbackProviderFactory;
 import io.harness.exception.UnexpectedTypeException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
-import io.harness.logging.CommandExecutionStatus;
 import io.harness.secret.SecretSanitizerThreadLocal;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
 
 import com.google.inject.Inject;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BooleanSupplier;
@@ -71,38 +67,33 @@ public class AzureResourceCreationTaskNG extends AbstractDelegateRunnableTask {
   public DelegateResponseData run(TaskParameters parameters) throws IOException, JoseException {
     log.info("Started executing the Azure ARM/BP NG task");
     AzureResourceCreationTaskNGParameters taskNGParameters = (AzureResourceCreationTaskNGParameters) parameters;
-    decryptSecrets(taskNGParameters);
-    CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
+    CommandUnitsProgress commandUnitsProgress = taskNGParameters.getCommandUnitsProgress() != null
+        ? taskNGParameters.getCommandUnitsProgress()
+        : CommandUnitsProgress.builder().build();
     AzureLogCallbackProvider logCallback = getLogCallback(commandUnitsProgress);
     if (!handlerMap.containsKey(taskNGParameters.getAzureARMTaskType())) {
       throw new UnexpectedTypeException(
           String.format("No handler found for task type %s", taskNGParameters.getAzureARMTaskType()));
     }
+    decryptSecrets(taskNGParameters);
     AzureResourceCreationAbstractTaskHandler handler = handlerMap.get(taskNGParameters.getAzureARMTaskType());
     try {
       AzureResourceCreationTaskNGResponse response =
           handler.executeTask(taskNGParameters, getDelegateId(), getTaskId(), logCallback);
-      if (response.getCommandExecutionStatus().equals(CommandExecutionStatus.SUCCESS)) {
-        logCallback.obtainLogCallback("Create").saveExecutionLog("Sucess", INFO, CommandExecutionStatus.SUCCESS);
-      } else {
-        logCallback.obtainLogCallback("Create").saveExecutionLog("Failure", ERROR, CommandExecutionStatus.FAILURE);
-      }
       response.setUnitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress));
       return response;
     } catch (Exception e) {
       throw new TaskNGDataException(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress), e);
     }
   }
-  // TODO: check if this is how is been suppose to work
+
   public AzureLogCallbackProvider getLogCallback(CommandUnitsProgress commandUnitsProgress) {
     return logCallbackProviderFactory.createNg(getLogStreamingTaskClient(), commandUnitsProgress);
   }
 
   private void decryptSecrets(AzureResourceCreationTaskNGParameters taskNGParameters) {
-    List<DecryptableEntity> decryptableEntities = taskNGParameters.azureConnectorDTO.getDecryptableEntities();
-    List<Pair<DecryptableEntity, List<EncryptedDataDetail>>> decryptionDetails = new ArrayList<>();
-    decryptableEntities.forEach(decryptableEntity
-        -> decryptionDetails.add(Pair.of(decryptableEntity, taskNGParameters.getEncryptedDataDetails())));
+    List<Pair<DecryptableEntity, List<EncryptedDataDetail>>> decryptionDetails =
+        taskNGParameters.fetchDecryptionDetails();
     decryptionDetails.forEach(decryptableEntityListPair -> {
       secretDecryptionService.decrypt(decryptableEntityListPair.getKey(), decryptableEntityListPair.getValue());
       ExceptionMessageSanitizer.storeAllSecretsForSanitizing(

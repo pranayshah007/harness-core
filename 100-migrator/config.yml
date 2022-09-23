@@ -268,7 +268,6 @@ cg:
     socketTimeout: 30
     logUnclosedConnections: false
     loggerLevel: OFF
-    instanceDataRetentionDays: 210
     instanceStatsMigrationEventsLimit: 150
     instanceStatsMigrationQueryBatchSize: 100
     deploymentDataMigrationRowLimit: 1000
@@ -347,7 +346,7 @@ cg:
   envPath: ""
 
   kubectlVersion: v1.13.2
-  scmVersion: 140a857a
+  scmVersion: 519da179
 
   ngAuthUIEnabled: false
 

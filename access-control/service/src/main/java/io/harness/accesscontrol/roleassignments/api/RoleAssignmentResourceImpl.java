@@ -29,7 +29,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.USER_NOT_AUTHORIZED;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
-import static io.harness.springdata.TransactionUtils.DEFAULT_TRANSACTION_RETRY_POLICY;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import static java.util.stream.Collectors.toList;
 import static lombok.AccessLevel.PRIVATE;
@@ -135,7 +135,7 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
   OutboxService outboxService;
   AccessControlClient accessControlClient;
 
-  RetryPolicy<Object> transactionRetryPolicy = DEFAULT_TRANSACTION_RETRY_POLICY;
+  RetryPolicy<Object> transactionRetryPolicy = DEFAULT_RETRY_POLICY;
 
   @Inject
   public RoleAssignmentResourceImpl(RoleAssignmentService roleAssignmentService,
@@ -524,6 +524,23 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
           response.getScope().getAccountIdentifier(), response.getRoleAssignment(), response.getScope()));
       return ResponseDTO.newResponse(response);
     }));
+  }
+
+  @Override
+  public ResponseDTO<RoleAssignmentResponseDTO> get(HarnessScopeParams harnessScopeParams, String identifier) {
+    Scope scope = fromParams(harnessScopeParams);
+    RoleAssignment roleAssignment =
+        roleAssignmentService.get(identifier, scope.toString()).<NotFoundException>orElseThrow(() -> {
+          throw new NotFoundException("Role Assignment with given identifier doesn't exists");
+        });
+    if (!checkViewPermission(harnessScopeParams, roleAssignment.getPrincipalType())) {
+      throw new UnauthorizedException(
+          String.format("Current principal is not authorized to the view the role assignments for Principal Type %s",
+              roleAssignment.getPrincipalType().name()),
+          USER_NOT_AUTHORIZED, WingsException.USER);
+    }
+    RoleAssignmentResponseDTO response = roleAssignmentDTOMapper.toResponseDTO(roleAssignment);
+    return ResponseDTO.newResponse(response);
   }
 
   private List<RoleAssignmentResponseDTO> createRoleAssignments(

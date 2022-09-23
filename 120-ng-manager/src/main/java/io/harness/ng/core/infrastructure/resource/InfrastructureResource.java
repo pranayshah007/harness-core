@@ -36,9 +36,11 @@ import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.EnvironmentValidationHelper;
 import io.harness.ng.core.OrgAndProjectValidationHelper;
 import io.harness.ng.core.beans.NGEntityTemplateResponseDTO;
+import io.harness.ng.core.customDeployment.helper.CustomDeploymentYamlHelper;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.infrastructure.InfrastructureType;
 import io.harness.ng.core.infrastructure.dto.InfrastructureRequestDTO;
 import io.harness.ng.core.infrastructure.dto.InfrastructureResponse;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
@@ -46,6 +48,7 @@ import io.harness.ng.core.infrastructure.entity.InfrastructureEntity.Infrastruct
 import io.harness.ng.core.infrastructure.mappers.InfrastructureFilterHelper;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.pms.rbac.NGResourceType;
+import io.harness.repositories.UpsertOptions;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.utils.PageUtils;
 
@@ -125,6 +128,7 @@ public class InfrastructureResource {
   @Inject private final OrgAndProjectValidationHelper orgAndProjectValidationHelper;
   @Inject private final EnvironmentValidationHelper environmentValidationHelper;
   @Inject private final AccessControlClient accessControlClient;
+  @Inject CustomDeploymentYamlHelper customDeploymentYamlHelper;
 
   public static final String INFRA_PARAM_MESSAGE = "Infrastructure Identifier for the entity";
 
@@ -195,7 +199,10 @@ public class InfrastructureResource {
 
     InfrastructureEntity infrastructureEntity =
         InfrastructureMapper.toInfrastructureEntity(accountId, infrastructureRequestDTO);
-
+    if (infrastructureEntity.getDeploymentType() == ServiceDefinitionType.CUSTOM_DEPLOYMENT
+        && infrastructureEntity.getType() == InfrastructureType.CUSTOM_DEPLOYMENT) {
+      customDeploymentYamlHelper.validateInfrastructureYaml(infrastructureEntity);
+    }
     InfrastructureEntity createdInfrastructure = infrastructureEntityService.create(infrastructureEntity);
     return ResponseDTO.newResponse(InfrastructureMapper.toResponseWrapper(createdInfrastructure));
   }
@@ -314,7 +321,7 @@ public class InfrastructureResource {
 
     InfrastructureEntity requestInfra =
         InfrastructureMapper.toInfrastructureEntity(accountId, infrastructureRequestDTO);
-    InfrastructureEntity upsertInfra = infrastructureEntityService.upsert(requestInfra);
+    InfrastructureEntity upsertInfra = infrastructureEntityService.upsert(requestInfra, UpsertOptions.DEFAULT);
     return ResponseDTO.newResponse(InfrastructureMapper.toResponseWrapper(upsertInfra));
   }
 
