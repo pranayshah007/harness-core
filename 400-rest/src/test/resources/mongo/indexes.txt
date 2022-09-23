@@ -551,8 +551,8 @@ permits {"name": "createdAt_1", "background": true} {"createdAt": 1}
 permits {"name": "expireAt_1", "background": true, "expireAfterSeconds": 0} {"expireAt": 1}
 permits {"name": "key_1", "unique": true} {"key": 1}
 perpetualTask {"name": "accountId_1", "background": true} {"accountId": 1}
-perpetualTask {"name": "assignerIterator", "background": true} {"state": 1, "assignAfterMs": 1, "assignerIterations": 1}
-perpetualTask {"name": "assignerIterator_1", "background": true} {"state": 1, "assignerIterations": 1}
+perpetualTask {"name": "assignIterator", "background": true} {"state": 1, "assignAfterMs": 1, "assignIteration": 1}
+perpetualTask {"name": "assignIterator_1", "background": true} {"state": 1, "assignIteration": 1}
 perpetualTask {"name": "delegateId_1", "background": true} {"delegateId": 1}
 perpetualTask {"name": "rebalanceIterator", "background": true} {"state": 1, "rebalanceIteration": 1}
 perpetualTaskScheduleConfig {"name": "unique_perpetualTaskScheduleConfig_index1", "unique": true} {"accountId": 1, "perpetualTaskType": 1}
