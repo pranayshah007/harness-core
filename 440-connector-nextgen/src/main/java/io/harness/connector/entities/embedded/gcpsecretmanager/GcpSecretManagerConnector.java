@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.connector.entities.embedded.gcpsm;
+package io.harness.connector.entities.embedded.gcpsecretmanager;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
@@ -30,14 +30,14 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @ToString
 @EqualsAndHashCode(callSuper = true)
-@FieldNameConstants(innerTypeName = "GcpSMConnectorKeys")
+@FieldNameConstants(innerTypeName = "GcpSecretManagerConnectorKeys")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "connectors", noClassnameStored = true)
 @Persistent
-@TypeAlias("io.harness.connector.entities.embedded.gcpsm.GcpSMConnector")
+@TypeAlias("io.harness.connector.entities.embedded.gcpsecretmanager.GcpSecretManagerConnector")
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class GcpSMConnector extends Connector {
+public class GcpSecretManagerConnector extends Connector {
   @Builder.Default private Boolean isDefault = false;
   String credentialsRef;
 }
