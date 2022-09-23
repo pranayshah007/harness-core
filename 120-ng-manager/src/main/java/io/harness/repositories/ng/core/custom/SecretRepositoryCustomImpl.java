@@ -32,6 +32,7 @@ public class SecretRepositoryCustomImpl implements SecretRepositoryCustom {
   @Override
   public Page<Secret> findAll(Criteria criteria, Pageable pageable) {
     Query query = new Query(criteria).with(pageable);
+
     List<Secret> projects = mongoTemplate.find(query, Secret.class);
     return PageableExecutionUtils.getPage(
         projects, pageable, () -> mongoTemplate.count(Query.of(query).limit(-1).skip(-1), Secret.class));

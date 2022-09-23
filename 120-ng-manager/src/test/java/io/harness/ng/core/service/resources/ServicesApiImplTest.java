@@ -34,12 +34,11 @@ import io.harness.ng.core.service.services.ServiceEntityManagementService;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.pms.rbac.NGResourceType;
 import io.harness.rule.Owner;
+import io.harness.spec.server.ng.model.Service;
 import io.harness.spec.server.ng.model.ServiceRequest;
 import io.harness.spec.server.ng.model.ServiceResponse;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 import javax.ws.rs.core.Response;
 import org.junit.Before;
@@ -48,15 +47,15 @@ import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.data.domain.PageImpl;
 
 @OwnedBy(CDC)
-public class ServiceResourceV3Test extends CategoryTest {
-  @InjectMocks ServicesResourceV3 serviceResourceV3;
+public class ServicesApiImplTest extends CategoryTest {
+  @InjectMocks ServicesApiImpl servicesApiImpl;
   @Mock ServiceEntityService serviceEntityService;
   @Mock OrgAndProjectValidationHelper orgAndProjectValidationHelper;
   @Mock AccessControlClient accessControlClient;
   @Mock ServiceEntityManagementService serviceEntityManagementService;
+  @Mock ServiceResourceApiUtils serviceResourceApiUtils;
 
   String slug = randomAlphabetic(10);
   String name = randomAlphabetic(10);
@@ -65,7 +64,6 @@ public class ServiceResourceV3Test extends CategoryTest {
   String project = randomAlphabetic(10);
   String description = "sample description";
   ServiceEntity entity;
-  ServiceEntity entityWithMongoVersion;
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
@@ -77,14 +75,6 @@ public class ServiceResourceV3Test extends CategoryTest {
                  .version(1L)
                  .description("")
                  .build();
-    entityWithMongoVersion = ServiceEntity.builder()
-                                 .accountId(account)
-                                 .orgIdentifier(org)
-                                 .projectIdentifier(project)
-                                 .identifier(slug)
-                                 .description("")
-                                 .version(1L)
-                                 .build();
   }
   @Test
   @Owner(developers = TARUN_UBA)
@@ -93,38 +83,12 @@ public class ServiceResourceV3Test extends CategoryTest {
     when(orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(org, project, account))
         .thenReturn(true);
     when(serviceEntityService.create(any())).thenReturn(entity);
-    io.harness.spec.server.ng.model.ServiceRequest serviceRequest =
-        new io.harness.spec.server.ng.model.ServiceRequest();
+    when(serviceResourceApiUtils.getServiceEntity(any(), any(), any(), any())).thenReturn(entity);
+    ServiceRequest serviceRequest = new ServiceRequest();
     serviceRequest.setSlug(slug);
     serviceRequest.setName(name);
     serviceRequest.setDescription(description);
-    serviceResourceV3.createService(serviceRequest, org, project, account);
-    verify(accessControlClient, times(1))
-        .checkForAccessOrThrow(ResourceScope.of(account, org, project), Resource.of(NGResourceType.SERVICE, null),
-            SERVICE_CREATE_PERMISSION);
-    verify(orgAndProjectValidationHelper, times(1)).checkThatTheOrganizationAndProjectExists(org, project, account);
-  }
-
-  @Test
-  @Owner(developers = TARUN_UBA)
-  @Category(UnitTests.class)
-  public void testCreateServices() throws IOException {
-    List<ServiceRequest> serviceRequestList = new ArrayList<>();
-    List<ServiceEntity> serviceEntityList = new ArrayList<>();
-    List<ServiceEntity> outputServiceEntitiesList = new ArrayList<>();
-    outputServiceEntitiesList.add(entity);
-
-    serviceEntityList.add(entity);
-    io.harness.spec.server.ng.model.ServiceRequest serviceRequest =
-        new io.harness.spec.server.ng.model.ServiceRequest();
-    serviceRequest.setSlug(slug);
-    serviceRequest.setName(name);
-    serviceRequest.setDescription(description);
-    serviceRequestList.add(serviceRequest);
-    when(orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(org, project, account))
-        .thenReturn(true);
-    when(serviceEntityService.bulkCreate(eq(account), any())).thenReturn(new PageImpl<>(outputServiceEntitiesList));
-    serviceResourceV3.createServicesBatch(serviceRequestList, org, project, account, 0, 30);
+    servicesApiImpl.createService(serviceRequest, org, project, account);
     verify(accessControlClient, times(1))
         .checkForAccessOrThrow(ResourceScope.of(account, org, project), Resource.of(NGResourceType.SERVICE, null),
             SERVICE_CREATE_PERMISSION);
@@ -136,7 +100,7 @@ public class ServiceResourceV3Test extends CategoryTest {
   @Category(UnitTests.class)
   public void testListTemplate() {
     when(serviceEntityService.get(any(), any(), any(), any(), eq(false))).thenReturn(Optional.of(entity));
-    serviceResourceV3.getService(org, project, slug, account);
+    servicesApiImpl.getService(org, project, slug, account);
   }
 
   @Test
@@ -144,7 +108,7 @@ public class ServiceResourceV3Test extends CategoryTest {
   @Category(UnitTests.class)
   public void testListTemplateForNotFoundException() {
     when(serviceEntityService.get(any(), any(), any(), any(), eq(false))).thenReturn(Optional.empty());
-    assertThatThrownBy(() -> serviceResourceV3.getService(org, project, slug, account))
+    assertThatThrownBy(() -> servicesApiImpl.getService(org, project, slug, account))
         .hasMessage(format("Service with identifier [%s] in project [%s], org [%s] not found", slug, project, org));
   }
 
@@ -155,12 +119,13 @@ public class ServiceResourceV3Test extends CategoryTest {
     when(orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(org, project, account))
         .thenReturn(true);
     when(serviceEntityService.update(any())).thenReturn(entity);
+    when(serviceResourceApiUtils.getServiceEntity(any(), any(), any(), any())).thenReturn(entity);
     io.harness.spec.server.ng.model.ServiceRequest serviceRequest =
         new io.harness.spec.server.ng.model.ServiceRequest();
     serviceRequest.setSlug(slug);
     serviceRequest.setName(name);
     serviceRequest.setDescription(description);
-    serviceResourceV3.updateService(serviceRequest, org, project, slug, account);
+    servicesApiImpl.updateService(serviceRequest, org, project, slug, account);
     verify(accessControlClient, times(1))
         .checkForAccessOrThrow(ResourceScope.of(account, org, project),
             Resource.of(NGResourceType.SERVICE, serviceRequest.getSlug()), SERVICE_UPDATE_PERMISSION);
@@ -173,22 +138,35 @@ public class ServiceResourceV3Test extends CategoryTest {
     when(orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(org, project, account))
         .thenReturn(true);
     when(serviceEntityService.create(any())).thenReturn(entity);
+    when(serviceResourceApiUtils.getServiceEntity(any(), any(), any(), any())).thenReturn(entity);
     io.harness.spec.server.ng.model.ServiceRequest serviceRequest =
         new io.harness.spec.server.ng.model.ServiceRequest();
     serviceRequest.setSlug(slug);
     serviceRequest.setName(name);
     serviceRequest.setDescription(description);
-    serviceResourceV3.createService(serviceRequest, org, project, account);
+    servicesApiImpl.createService(serviceRequest, org, project, account);
+    Service service = new Service();
+    service.setAccount(account);
+    service.setSlug(slug);
+    service.setOrg(org);
+    service.setProject(project);
+    service.setName(name);
+    service.setDescription(description);
+    ServiceResponse serviceResponse = new ServiceResponse();
+    serviceResponse.setCreated(987654321L);
+    serviceResponse.setUpdated(123456789L);
+    serviceResponse.setService(service);
     when(orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(org, project, account))
         .thenReturn(true);
     when(serviceEntityService.get(any(), any(), any(), any(), eq(false))).thenReturn(Optional.of(entity));
     when(serviceEntityManagementService.deleteService(any(), any(), any(), any(), any())).thenReturn(true);
+    when(serviceResourceApiUtils.getServiceResponse(any())).thenReturn(serviceResponse);
 
-    Response response = serviceResourceV3.deleteService(org, project, slug, account);
+    Response response = servicesApiImpl.deleteService(org, project, slug, account);
 
-    ServiceResponse serviceResponse = (ServiceResponse) response.getEntity();
+    ServiceResponse serviceResponseFinal = (ServiceResponse) response.getEntity();
 
     assertEquals(slug, entity.getIdentifier());
-    assertEquals(account, serviceResponse.getService().getAccount());
+    assertEquals(account, serviceResponseFinal.getService().getAccount());
   }
 }

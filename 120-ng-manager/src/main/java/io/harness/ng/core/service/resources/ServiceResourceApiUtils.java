@@ -21,6 +21,7 @@ import static javax.ws.rs.core.UriBuilder.fromPath;
 import io.harness.accesscontrol.acl.api.PermissionCheckDTO;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.ng.core.service.entity.ServiceEntity;
+import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
 import io.harness.ng.core.service.mappers.NGServiceEntityMapper;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
@@ -30,38 +31,27 @@ import io.harness.spec.server.ng.model.Service;
 import io.harness.spec.server.ng.model.ServiceRequest;
 import io.harness.spec.server.ng.model.ServiceResponse;
 
+import com.google.inject.Inject;
+import io.dropwizard.jersey.validation.JerseyViolationException;
 import java.util.ArrayList;
+import java.util.Set;
+import javax.validation.ConstraintViolation;
+import javax.validation.Validator;
 import javax.ws.rs.core.Link;
 import javax.ws.rs.core.Response.ResponseBuilder;
-import lombok.experimental.UtilityClass;
 
-@UtilityClass
 public class ServiceResourceApiUtils {
   public static final int FIRST_PAGE = 1;
+  private final Validator validator;
 
-  public ServiceResponse toResponseWrapper(ServiceEntity serviceEntity) {
-    ServiceResponse serviceResponsefinal = new ServiceResponse();
-    serviceResponsefinal.setService(writeDTO(serviceEntity));
-    serviceResponsefinal.setCreated(serviceEntity.getCreatedAt());
-    serviceResponsefinal.setUpdated(serviceEntity.getLastModifiedAt());
-    return serviceResponsefinal;
+  @Inject
+  public ServiceResourceApiUtils(Validator validator) {
+    this.validator = validator;
   }
 
-  public Service writeDTO(ServiceEntity serviceEntity) {
-    Service service = new Service();
-    service.setAccount(serviceEntity.getAccountId());
-    service.setOrg(serviceEntity.getOrgIdentifier());
-    service.setProject(serviceEntity.getProjectIdentifier());
-    service.setSlug(serviceEntity.getIdentifier());
-    service.setName(serviceEntity.getName());
-    service.setDescription(serviceEntity.getDescription());
-    service.setTags(convertToMap(serviceEntity.getTags()));
-    service.setYaml(serviceEntity.getYaml());
-    return service;
-  }
-  public static ServiceResponse getServiceResponse(ServiceEntity serviceEntity) {
+  public ServiceResponse getServiceResponse(ServiceEntity serviceEntity) {
     ServiceResponse serviceResponse = new ServiceResponse();
-    io.harness.spec.server.ng.model.Service service = new io.harness.spec.server.ng.model.Service();
+    Service service = new Service();
     service.setAccount(serviceEntity.getAccountId());
     service.setSlug(serviceEntity.getIdentifier());
     service.setOrg(serviceEntity.getOrgIdentifier());
@@ -73,16 +63,14 @@ public class ServiceResourceApiUtils {
     serviceResponse.setService(service);
     serviceResponse.setCreated(serviceEntity.getCreatedAt());
     serviceResponse.setUpdated(serviceEntity.getLastModifiedAt());
+    Set<ConstraintViolation<ServiceResponse>> violations = validator.validate(serviceResponse);
+    if (!violations.isEmpty()) {
+      throw new JerseyViolationException(violations, null);
+    }
     return serviceResponse;
   }
-  public ServiceResponse toAccessListResponseWrapper(ServiceEntity serviceEntity) {
-    ServiceResponse serviceResponsefinal = new ServiceResponse();
-    serviceResponsefinal.setService(writeAccessListDTO(serviceEntity));
-    serviceResponsefinal.setCreated(serviceEntity.getCreatedAt());
-    serviceResponsefinal.setUpdated(serviceEntity.getLastModifiedAt());
-    return serviceResponsefinal;
-  }
-  public Service writeAccessListDTO(ServiceEntity serviceEntity) {
+  public ServiceResponse getAccessListResponse(ServiceEntity serviceEntity) {
+    ServiceResponse serviceResponse = new ServiceResponse();
     Service service = new Service();
     service.setAccount(serviceEntity.getAccountId());
     service.setOrg(serviceEntity.getOrgIdentifier());
@@ -91,11 +79,17 @@ public class ServiceResourceApiUtils {
     service.setName(serviceEntity.getName());
     service.setDescription(serviceEntity.getDescription());
     service.setTags(convertToMap(serviceEntity.getTags()));
-    return service;
+    serviceResponse.setService(service);
+    serviceResponse.setCreated(serviceEntity.getCreatedAt());
+    serviceResponse.setUpdated(serviceEntity.getLastModifiedAt());
+    Set<ConstraintViolation<ServiceResponse>> violations = validator.validate(serviceResponse);
+    if (!violations.isEmpty()) {
+      throw new JerseyViolationException(violations, null);
+    }
+    return serviceResponse;
   }
 
-  public static ServiceEntity getServiceEntity(
-      ServiceRequest sharedRequestBody, String org, String project, String account) {
+  public ServiceEntity getServiceEntity(ServiceRequest sharedRequestBody, String org, String project, String account) {
     ServiceEntity serviceEntity = ServiceEntity.builder()
                                       .identifier(sharedRequestBody.getSlug())
                                       .accountId(account)
@@ -116,10 +110,15 @@ public class ServiceResourceApiUtils {
     if (ngServiceV2InfoConfig.getServiceDefinition() != null) {
       serviceEntity.setType(ngServiceV2InfoConfig.getServiceDefinition().getType());
     }
+    Set<ConstraintViolation<ServiceEntity>> violations = validator.validate(serviceEntity);
+    if (!violations.isEmpty()) {
+      throw new JerseyViolationException(violations, null);
+    }
+
     return serviceEntity;
   }
 
-  public static ResponseBuilder addLinksHeader(
+  public ResponseBuilder addLinksHeader(
       ResponseBuilder responseBuilder, String path, int currentResultCount, int page, int limit) {
     ArrayList<Link> links = new ArrayList<>();
 
@@ -149,5 +148,32 @@ public class ServiceResourceApiUtils {
                            .build())
         .resourceType(NGResourceType.SERVICE)
         .build();
+  }
+
+  public String mapSort(String sort, String order) {
+    String property;
+    switch (sort) {
+      case "slug":
+        property = ServiceEntityKeys.identifier;
+        break;
+      case "harness_account":
+        property = ServiceEntityKeys.accountId;
+        break;
+      case "org":
+        property = ServiceEntityKeys.orgIdentifier;
+        break;
+      case "project":
+        property = ServiceEntityKeys.projectIdentifier;
+        break;
+      case "created":
+        property = ServiceEntityKeys.createdAt;
+        break;
+      case "updated":
+        property = ServiceEntityKeys.lastModifiedAt;
+        break;
+      default:
+        property = sort;
+    }
+    return property + ',' + order;
   }
 }

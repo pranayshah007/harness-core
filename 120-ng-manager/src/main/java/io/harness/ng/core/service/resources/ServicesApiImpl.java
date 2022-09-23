@@ -9,9 +9,6 @@ package io.harness.ng.core.service.resources;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.ng.core.service.resources.ServiceResourceApiUtils.addLinksHeader;
-import static io.harness.ng.core.service.resources.ServiceResourceApiUtils.getServiceEntity;
-import static io.harness.ng.core.service.resources.ServiceResourceApiUtils.getServiceResponse;
 import static io.harness.rbac.CDNGRbacPermissions.SERVICE_CREATE_PERMISSION;
 import static io.harness.rbac.CDNGRbacPermissions.SERVICE_UPDATE_PERMISSION;
 import static io.harness.rbac.CDNGRbacPermissions.SERVICE_VIEW_PERMISSION;
@@ -52,6 +49,7 @@ import io.harness.utils.PageUtils;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -69,14 +67,12 @@ import org.springframework.data.mongodb.core.query.Criteria;
 @OwnedBy(PL)
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @NextGenManagerAuth
-public class ServicesResourceV3 implements ServicesApi {
+public class ServicesApiImpl implements ServicesApi {
   private final ServiceEntityService serviceEntityService;
   private final AccessControlClient accessControlClient;
   private final ServiceEntityManagementService serviceEntityManagementService;
   private final OrgAndProjectValidationHelper orgAndProjectValidationHelper;
-
-  public static final String SERVICE_PARAM_MESSAGE = "Service Identifier for the entity";
-  public static final String SERVICE_YAML_METADATA_INPUT_PARAM_MESSAGE = "List of Service Identifiers for the entities";
+  private final ServiceResourceApiUtils serviceResourceApiUtils;
 
   @Override
   public Response createService(ServiceRequest serviceRequest, @OrgIdentifier String org,
@@ -84,38 +80,12 @@ public class ServicesResourceV3 implements ServicesApi {
     throwExceptionForNoRequestDTO(serviceRequest);
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(account, org, project), Resource.of(NGResourceType.SERVICE, null), SERVICE_CREATE_PERMISSION);
-    ServiceEntity serviceEntity = getServiceEntity(serviceRequest, org, project, account);
+    ServiceEntity serviceEntity = serviceResourceApiUtils.getServiceEntity(serviceRequest, org, project, account);
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
         serviceEntity.getOrgIdentifier(), serviceEntity.getProjectIdentifier(), serviceEntity.getAccountId());
     ServiceEntity createdService = serviceEntityService.create(serviceEntity);
-    ServiceResponse serviceResponse = getServiceResponse(createdService);
-    return Response.ok().entity(serviceResponse).tag(createdService.getVersion().toString()).build();
-  }
-
-  @Override
-  public Response createServicesBatch(List<ServiceRequest> arrayBody, @OrgIdentifier String org,
-      @ProjectIdentifier String project, @AccountIdentifier String account, Integer page, Integer limit) {
-    throwExceptionForNoRequestDTO(arrayBody);
-    accessControlClient.checkForAccessOrThrow(
-        ResourceScope.of(account, org, project), Resource.of(NGResourceType.SERVICE, null), SERVICE_CREATE_PERMISSION);
-
-    List<ServiceEntity> serviceEntities =
-        arrayBody.stream()
-            .map(arrayElement -> getServiceEntity(arrayElement, org, project, account))
-            .collect(Collectors.toList());
-    serviceEntities.forEach(serviceEntity
-        -> orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
-            serviceEntity.getOrgIdentifier(), serviceEntity.getProjectIdentifier(), serviceEntity.getAccountId()));
-    Page<ServiceEntity> createdServices = serviceEntityService.bulkCreate(account, serviceEntities);
-    Page<ServiceResponse> serviceResponsePage = createdServices.map(ServiceResourceApiUtils::toResponseWrapper);
-    List<ServiceResponse> serviceList = serviceResponsePage.getContent();
-    ResponseBuilder responseBuilder = Response.ok();
-    ResponseBuilder responseBuilderWithLinks =
-        addLinksHeader(responseBuilder, "/v1/services/batch", serviceList.size(), page, limit);
-    ServiceListResponse serviceListResponse = new ServiceListResponse();
-    serviceListResponse.setContent(serviceList);
-    serviceListResponse.setEmpty(isEmpty(serviceList));
-    return responseBuilderWithLinks.entity(serviceListResponse).build();
+    ServiceResponse serviceResponse = serviceResourceApiUtils.getServiceResponse(createdService);
+    return Response.status(201).entity(serviceResponse).tag(createdService.getVersion().toString()).build();
   }
 
   @NGAccessControlCheck(resourceType = NGResourceType.SERVICE, permission = "core_service_delete")
@@ -131,7 +101,7 @@ public class ServicesResourceV3 implements ServicesApi {
       throw new InvalidRequestException(String.format("Service with identifier [%s] could not be deleted", service));
     }
     return Response.ok()
-        .entity(getServiceResponse(serviceEntityOptional.get()))
+        .entity(serviceResourceApiUtils.getServiceResponse(serviceEntityOptional.get()))
         .tag(serviceEntityOptional.get().getVersion().toString())
         .build();
   }
@@ -141,31 +111,28 @@ public class ServicesResourceV3 implements ServicesApi {
   public Response getService(@OrgIdentifier String org, @ProjectIdentifier String project,
       @ResourceIdentifier String service, @AccountIdentifier String account) {
     Optional<ServiceEntity> serviceEntity = serviceEntityService.get(account, org, project, service, false);
-    String version;
-    ServiceEntity serviceEntity1;
-    if (serviceEntity.isPresent()) {
-      version = serviceEntity.get().getVersion().toString();
-      serviceEntity1 = serviceEntity.get();
-      if (EmptyPredicate.isEmpty(serviceEntity.get().getYaml())) {
-        NGServiceConfig ngServiceConfig = NGServiceEntityMapper.toNGServiceConfig(serviceEntity1);
-        serviceEntity.get().setYaml(NGServiceEntityMapper.toYaml(ngServiceConfig));
-      }
-    } else {
+    if (!serviceEntity.isPresent()) {
       throw new NotFoundException(
           format("Service with identifier [%s] in project [%s], org [%s] not found", service, project, org));
     }
-    return Response.ok().entity(getServiceResponse(serviceEntity1)).tag(version).build();
+    String version = serviceEntity.get().getVersion().toString();
+    ServiceEntity optionalServiceEntity = serviceEntity.get();
+    if (EmptyPredicate.isEmpty(serviceEntity.get().getYaml())) {
+      NGServiceConfig ngServiceConfig = NGServiceEntityMapper.toNGServiceConfig(optionalServiceEntity);
+      serviceEntity.get().setYaml(NGServiceEntityMapper.toYaml(ngServiceConfig));
+    }
+    return Response.ok().entity(serviceResourceApiUtils.getServiceResponse(optionalServiceEntity)).tag(version).build();
   }
 
   @Override
   public Response getServices(@OrgIdentifier String org, @ProjectIdentifier String project, Integer page, Integer limit,
-      String search_term, List<String> services, List sort, Boolean is_access_list, String type,
-      Boolean git_ops_enabled, @AccountIdentifier String account) {
+      String searchTerm, List<String> services, String sort, Boolean isAccessList, String type, Boolean gitOpsEnabled,
+      @AccountIdentifier String account, String order) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(account, org, project),
         Resource.of(NGResourceType.SERVICE, null), SERVICE_VIEW_PERMISSION, "Unauthorized to list services");
-    ServiceDefinitionType type1 = ServiceDefinitionType.getServiceDefinitionType(type);
-    Criteria criteria =
-        ServiceFilterHelper.createCriteriaForGetList(account, org, project, false, search_term, type1, git_ops_enabled);
+    ServiceDefinitionType optionalType = ServiceDefinitionType.getServiceDefinitionType(type);
+    Criteria criteria = ServiceFilterHelper.createCriteriaForGetList(
+        account, org, project, false, searchTerm, optionalType, gitOpsEnabled);
     Pageable pageRequest;
     if (isNotEmpty(services)) {
       criteria.and(ServiceEntityKeys.identifier).in(services);
@@ -173,23 +140,24 @@ public class ServicesResourceV3 implements ServicesApi {
     if (isEmpty(sort)) {
       pageRequest = PageRequest.of(page, limit, Sort.by(Sort.Direction.DESC, ServiceKeys.createdAt));
     } else {
-      pageRequest = PageUtils.getPageRequest(page, limit, sort);
+      String sortQuery = serviceResourceApiUtils.mapSort(sort, order);
+      pageRequest = PageUtils.getPageRequest(page, limit, Collections.singletonList(sortQuery));
     }
-    if (is_access_list == true) {
+    if (isAccessList) {
       List<ServiceResponse> serviceList = serviceEntityService.listRunTimePermission(criteria)
                                               .stream()
-                                              .map(ServiceResourceApiUtils::toAccessListResponseWrapper)
+                                              .map(serviceResourceApiUtils::getAccessListResponse)
                                               .collect(Collectors.toList());
       List<PermissionCheckDTO> permissionCheckDTOS =
           serviceList.stream()
-              .map(ServiceResourceApiUtils::serviceResponseToPermissionCheckDTO)
+              .map(serviceResourceApiUtils::serviceResponseToPermissionCheckDTO)
               .collect(Collectors.toList());
       List<AccessControlDTO> accessControlList =
           accessControlClient.checkForAccess(permissionCheckDTOS).getAccessControlList();
       List<ServiceResponse> filterserviceList = filterByPermissionAndId(accessControlList, serviceList);
       ResponseBuilder responseBuilder = Response.ok();
 
-      ResponseBuilder responseBuilderWithLinks = addLinksHeader(responseBuilder,
+      ResponseBuilder responseBuilderWithLinks = serviceResourceApiUtils.addLinksHeader(responseBuilder,
           format("/v1/orgs/%s/projects/%s/services)", org, project), accessControlList.size(), page, limit);
       ServiceListResponse serviceListResponse = new ServiceListResponse();
       serviceListResponse.setContent(filterserviceList);
@@ -203,12 +171,12 @@ public class ServicesResourceV3 implements ServicesApi {
           serviceEntity.setYaml(NGServiceEntityMapper.toYaml(ngServiceConfig));
         }
       });
-      Page<ServiceResponse> serviceResponsePage = serviceEntities.map(ServiceResourceApiUtils::toResponseWrapper);
+      Page<ServiceResponse> serviceResponsePage = serviceEntities.map(serviceResourceApiUtils::getServiceResponse);
       List<ServiceResponse> serviceList = serviceResponsePage.getContent();
 
       ResponseBuilder responseBuilder = Response.ok();
 
-      ResponseBuilder responseBuilderWithLinks = addLinksHeader(
+      ResponseBuilder responseBuilderWithLinks = serviceResourceApiUtils.addLinksHeader(
           responseBuilder, format("/v1/orgs/%s/projects/%s/services)", org, project), serviceList.size(), page, limit);
 
       ServiceListResponse serviceListResponse = new ServiceListResponse();
@@ -224,12 +192,15 @@ public class ServicesResourceV3 implements ServicesApi {
     throwExceptionForNoRequestDTO(serviceRequest);
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(account, org, project),
         Resource.of(NGResourceType.SERVICE, serviceRequest.getSlug()), SERVICE_UPDATE_PERMISSION);
-    ServiceEntity requestService = getServiceEntity(serviceRequest, org, project, account);
+    ServiceEntity requestService = serviceResourceApiUtils.getServiceEntity(serviceRequest, org, project, account);
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
         requestService.getOrgIdentifier(), requestService.getProjectIdentifier(), requestService.getAccountId());
     ServiceEntity updateService = serviceEntityService.update(requestService);
 
-    return Response.ok().entity(getServiceResponse(updateService)).tag(updateService.getVersion().toString()).build();
+    return Response.ok()
+        .entity(serviceResourceApiUtils.getServiceResponse(updateService))
+        .tag(updateService.getVersion().toString())
+        .build();
   }
 
   private void throwExceptionForNoRequestDTO(List<ServiceRequest> dto) {
