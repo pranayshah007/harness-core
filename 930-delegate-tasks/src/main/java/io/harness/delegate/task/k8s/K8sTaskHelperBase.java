@@ -2741,6 +2741,7 @@ public class K8sTaskHelperBase {
 
   public ConnectorValidationResult validateCEKubernetesCluster(ConnectorConfigDTO connector, String accountIdentifier,
       List<EncryptedDataDetail> encryptionDetailList, List<CEFeatures> featuresEnabled) {
+    log.info("Inside k8s connetcor validation");
     ConnectivityStatus connectivityStatus = ConnectivityStatus.SUCCESS;
     KubernetesConfig kubernetesConfig = getKubernetesConfig(connector, encryptionDetailList);
     List<ErrorDetail> errorDetails = new ArrayList<>();
@@ -2773,6 +2774,7 @@ public class K8sTaskHelperBase {
       }
 
       if (!errorDetails.isEmpty()) {
+        log.info("Inside k8s errors validation cs {}", errorDetails);
         return ConnectorValidationResult.builder()
             .errorSummary(errorSummary)
             .errors(errorDetails)
@@ -2783,6 +2785,7 @@ public class K8sTaskHelperBase {
       log.info("Exception while validating kubernetes credentials", ExceptionMessageSanitizer.sanitizeException(ex));
       return createConnectivityFailureValidationResult(ExceptionMessageSanitizer.sanitizeException(ex));
     }
+    log.info("Inside k8s connetcor validation cs {}", connectivityStatus);
     return ConnectorValidationResult.builder().status(connectivityStatus).build();
   }
 

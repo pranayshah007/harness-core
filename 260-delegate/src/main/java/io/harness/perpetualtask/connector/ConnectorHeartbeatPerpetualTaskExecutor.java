@@ -58,6 +58,7 @@ public class ConnectorHeartbeatPerpetualTaskExecutor implements PerpetualTaskExe
   @Override
   public PerpetualTaskResponse runOnce(
       PerpetualTaskId taskId, PerpetualTaskExecutionParams params, Instant heartbeatTime) {
+    log.info("Running task ConnectorHeartbeatPerpetualTaskExecutor {}", taskId);
     final ConnectorHeartbeatTaskParams taskParams =
         AnyUtils.unpack(params.getCustomizedParams(), ConnectorHeartbeatTaskParams.class);
     String accountId = taskParams.getAccountIdentifier();
@@ -69,10 +70,14 @@ public class ConnectorHeartbeatPerpetualTaskExecutor implements PerpetualTaskExe
             taskParams.getConnectorValidationParameterResponse().toByteArray());
     final ConnectorValidationParams connectorValidationParams =
         connectorValidationParameterResponse.getConnectorValidationParams();
+    log.info("Connector validation params {} {} {}", taskId, connectorValidationParams.getConnectorType(),
+        connectorValidationParams.getConnectorName());
     ConnectorValidationResult connectorValidationResult;
+    log.info("obj {} {}", taskId, connectorValidationParameterResponse);
     if (!connectorValidationParameterResponse.isInvalid()) {
       ConnectorValidationHandler connectorValidationHandler;
       if (connectorValidationParams instanceof NoOpConnectorValidationParams) {
+        log.info("NoOpConnectorValidationParams {} {}", taskId);
         connectorValidationHandler = new NoOpConnectorValidationHandler();
       } else {
         connectorValidationHandler = connectorTypeToConnectorValidationHandlerMap.get(
