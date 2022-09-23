@@ -30,6 +30,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EnvironmentType;
 import io.harness.category.element.UnitTests;
@@ -117,8 +118,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 @OwnedBy(CDP)
-public class InfrastructureTaskExecutableStepTest {
-  //  @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+public class InfrastructureTaskExecutableStepTest extends CategoryTest {
   @Mock private InfrastructureStepHelper infrastructureStepHelper;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
   @Mock private OutcomeService outcomeService;

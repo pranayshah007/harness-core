@@ -21,7 +21,9 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.harness.CategoryTest;
 import io.harness.azure.AzureEnvironmentType;
+import io.harness.beans.DelegateTaskRequest;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.execution.ExecutionInfoKey;
@@ -37,13 +39,10 @@ import io.harness.cdng.infra.yaml.InfrastructureDefinitionConfig;
 import io.harness.cdng.infra.yaml.PdcInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
-import io.harness.cdng.manifest.steps.ManifestsStepV2;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.data.structure.UUIDGenerator;
-import io.harness.delegate.SubmitTaskRequest;
-import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.azure.response.AzureHostResponse;
 import io.harness.delegate.beans.azure.response.AzureHostsResponse;
 import io.harness.delegate.beans.connector.ConnectorType;
@@ -69,10 +68,8 @@ import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
+import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
-import io.harness.pms.contracts.execution.tasks.DelegateTaskRequest;
-import io.harness.pms.contracts.execution.tasks.TaskCategory;
-import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
 import io.harness.pms.contracts.plan.PrincipalType;
@@ -88,22 +85,24 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.serializer.KryoSerializer;
+import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.steps.EntityReferenceExtractorUtils;
 import io.harness.steps.StepHelper;
 import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.steps.shellscript.HostsOutput;
-import io.harness.supplier.ThrowingSupplier;
 import io.harness.utils.YamlPipelineUtils;
 import io.harness.yaml.infra.HostConnectionTypeKind;
 
 import software.wings.service.impl.aws.model.AwsEC2Instance;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -111,9 +110,10 @@ import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
-public class InfrastructureTaskExecutableStepV2Test {
+public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
   @Mock private InfrastructureEntityService infrastructureEntityService;
   @Mock private InfrastructureMapper infrastructureMapper;
   @Mock private InfrastructureStepHelper infrastructureStepHelper;
@@ -126,7 +126,8 @@ public class InfrastructureTaskExecutableStepV2Test {
   @Mock private ExecutionSweepingOutputService sweepingOutputService;
   @Mock private KryoSerializer kryoSerializer;
   @Mock private NGLogCallback logCallback;
-  @Mock private ThrowingSupplier<DelegateResponseData> throwingSupplier;
+
+  @Mock private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @InjectMocks private InfrastructureTaskExecutableStepV2 step = new InfrastructureTaskExecutableStepV2();
   private AutoCloseable mocks;
 
@@ -138,6 +139,7 @@ public class InfrastructureTaskExecutableStepV2Test {
   @Before
   public void setUp() throws Exception {
     this.mocks = MockitoAnnotations.openMocks(this);
+
     doReturn(ServiceStepOutcome.builder().type("ssh").build())
         .when(outcomeService)
         .resolve(any(), eq(RefObjectUtils.getOutcomeRefObject("service")));
@@ -156,6 +158,8 @@ public class InfrastructureTaskExecutableStepV2Test {
     when(stageExecutionHelper.saveAndExcludeHostsWithSameArtifactDeployedIfNeeded(
              any(Ambiance.class), any(ExecutionInfoKey.class), any(), any(Set.class), anyString(), anyBoolean(), any()))
         .thenAnswer(invocationOnMock -> invocationOnMock.getArgument(3, Set.class));
+
+    Mockito.doReturn("taskId").when(delegateGrpcClientWrapper).submitAsyncTask(any(), any());
   }
 
   @After
@@ -175,7 +179,7 @@ public class InfrastructureTaskExecutableStepV2Test {
 
     assertThatExceptionOfType(InvalidRequestException.class)
         .isThrownBy(()
-                        -> step.obtainTask(ambiance,
+                        -> step.executeAsyncAfterRbac(ambiance,
                             InfrastructureTaskExecutableStepV2Params.builder()
                                 .envRef(ParameterField.createValueField("env-id"))
                                 .infraRef(ParameterField.createValueField("infra-id"))
@@ -189,10 +193,10 @@ public class InfrastructureTaskExecutableStepV2Test {
   @Test
   @Owner(developers = OwnerRule.YOGESH)
   @Category({UnitTests.class})
-  public void obtainTaskForInvalidStepParams_0() {
+  public void executeAsyncInvalidStepParams_0() {
     assertThatExceptionOfType(InvalidRequestException.class)
         .isThrownBy(()
-                        -> step.obtainTask(ambiance,
+                        -> step.executeAsyncAfterRbac(ambiance,
                             InfrastructureTaskExecutableStepV2Params.builder()
                                 .envRef(null)
                                 .infraRef(ParameterField.createValueField("infra-id"))
@@ -204,10 +208,10 @@ public class InfrastructureTaskExecutableStepV2Test {
   @Test
   @Owner(developers = OwnerRule.YOGESH)
   @Category({UnitTests.class})
-  public void obtainTaskForInvalidStepParams_1() {
+  public void executeAsyncInvalidStepParams_1() {
     assertThatExceptionOfType(InvalidRequestException.class)
         .isThrownBy(()
-                        -> step.obtainTask(ambiance,
+                        -> step.executeAsyncAfterRbac(ambiance,
                             InfrastructureTaskExecutableStepV2Params.builder()
                                 .envRef(ParameterField.createValueField("env-id"))
                                 .infraRef(null)
@@ -219,11 +223,11 @@ public class InfrastructureTaskExecutableStepV2Test {
   @Test
   @Owner(developers = OwnerRule.YOGESH)
   @Category({UnitTests.class})
-  public void obtainTaskForInvalidStepParams_2() {
+  public void executeAsyncInvalidStepParams_2() {
     assertThatExceptionOfType(InvalidRequestException.class)
         .isThrownBy(
             ()
-                -> step.obtainTask(ambiance,
+                -> step.executeAsyncAfterRbac(ambiance,
                     InfrastructureTaskExecutableStepV2Params.builder()
                         .envRef(ParameterField.<String>builder().expression(true).expressionValue("<+foo>").build())
                         .infraRef(ParameterField.createValueField("infra-id"))
@@ -237,11 +241,11 @@ public class InfrastructureTaskExecutableStepV2Test {
   @Test
   @Owner(developers = OwnerRule.YOGESH)
   @Category({UnitTests.class})
-  public void obtainTaskForInvalidStepParams_3() {
+  public void executeAsyncInvalidStepParams_3() {
     assertThatExceptionOfType(InvalidRequestException.class)
         .isThrownBy(
             ()
-                -> step.obtainTask(ambiance,
+                -> step.executeAsyncAfterRbac(ambiance,
                     InfrastructureTaskExecutableStepV2Params.builder()
                         .envRef(ParameterField.createValueField("env-id"))
                         .infraRef(ParameterField.<String>builder().expression(true).expressionValue("<+foo>").build())
@@ -263,7 +267,7 @@ public class InfrastructureTaskExecutableStepV2Test {
         .checkRuntimePermissions(any(Ambiance.class), any(Set.class));
     assertThatExceptionOfType(AccessDeniedException.class)
         .isThrownBy(()
-                        -> step.obtainTask(ambiance,
+                        -> step.executeAsyncAfterRbac(ambiance,
                             InfrastructureTaskExecutableStepV2Params.builder()
                                 .envRef(ParameterField.createValueField("env-id"))
                                 .infraRef(ParameterField.createValueField("infra-id"))
@@ -274,21 +278,24 @@ public class InfrastructureTaskExecutableStepV2Test {
   @Test
   @Owner(developers = OwnerRule.YOGESH)
   @Category({UnitTests.class})
-  public void obtainTaskForNonTaskTypeInfra() {
+  public void executeAsyncNonTaskTypeInfra() {
     mockInfra(pdcInfra);
-    TaskRequest taskRequest = step.obtainTask(ambiance,
+    AsyncExecutableResponse asyncExecutableResponse = step.executeAsyncAfterRbac(ambiance,
         InfrastructureTaskExecutableStepV2Params.builder()
             .envRef(ParameterField.createValueField("env-id"))
             .infraRef(ParameterField.createValueField("infra-id"))
             .build(),
         null);
-    assertThat(taskRequest).isNull();
+    assertThat(asyncExecutableResponse.getLogKeysCount()).isEqualTo(1);
+    assertThat(asyncExecutableResponse.getLogKeys(0))
+        .isEqualTo(
+            "accountId:ACCOUNT_ID/orgId:ORG_ID/projectId:PROJECT_ID/pipelineId:/runSequence:0/level0:infrastructure-commandUnit:Execute");
   }
 
   @Test
   @Owner(developers = OwnerRule.YOGESH)
   @Category({UnitTests.class})
-  public void obtainTaskForTaskInfra_AwsSsh() {
+  public void executeAsyncTaskInfra_AwsSsh() {
     doReturn(
         AwsSshInfraDelegateConfig.sshAwsBuilder()
             .awsConnectorDTO(
@@ -314,27 +321,27 @@ public class InfrastructureTaskExecutableStepV2Test {
                         .infrastructureKey("7d998370da30e12c5384378d730ccf14676ce6f9")
                         .build());
     mockInfra(awsInfra);
-    TaskRequest taskRequest = step.obtainTask(ambiance,
+    AsyncExecutableResponse asyncExecutableResponse = step.executeAsyncAfterRbac(ambiance,
         InfrastructureTaskExecutableStepV2Params.builder()
             .envRef(ParameterField.createValueField("env-id"))
             .infraRef(ParameterField.createValueField("infra-id"))
             .build(),
         null);
 
-    assertThat(taskRequest.getTaskCategory()).isEqualTo(TaskCategory.DELEGATE_TASK_V2);
-    DelegateTaskRequest delegateTaskRequest = taskRequest.getDelegateTaskRequest();
+    ArgumentCaptor<DelegateTaskRequest> captor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
+    verify(delegateGrpcClientWrapper, times(1)).submitAsyncTask(captor.capture(), eq(Duration.ZERO));
 
-    assertThat(delegateTaskRequest.getUnitsCount()).isEqualTo(1);
-    assertThat(delegateTaskRequest.getUnits(0)).isEqualTo("Execute");
-    assertThat(delegateTaskRequest.getTaskName()).isEqualTo("NG_AWS_TASK");
+    DelegateTaskRequest delegateTaskRequest = captor.getValue();
 
-    verifyTaskRequest(delegateTaskRequest.getRequest());
+    assertThat(delegateTaskRequest.getTaskType()).isEqualTo("NG_AWS_TASK");
+
+    verifyTaskRequest(delegateTaskRequest);
   }
 
   @Test
   @Owner(developers = OwnerRule.YOGESH)
   @Category({UnitTests.class})
-  public void obtainTaskForTaskInfra_SshAzure() {
+  public void executeAsyncTaskInfra_SshAzure() {
     AzureConnectorDTO connectorDTO = AzureConnectorDTO.builder()
                                          .azureEnvironmentType(AzureEnvironmentType.AZURE)
                                          .credential(AzureCredentialDTO.builder()
@@ -359,29 +366,32 @@ public class InfrastructureTaskExecutableStepV2Test {
     doReturn(Arrays.asList(
                  ConnectorInfoDTO.builder().connectorType(ConnectorType.AZURE).connectorConfig(connectorDTO).build()))
         .when(infrastructureStepHelper)
-        .validateAndGetConnectors(eq(Arrays.asList(ParameterField.createValueField("azureconnector"))),
-            any(Ambiance.class), any(NGLogCallback.class));
-    TaskRequest taskRequest = step.obtainTask(ambiance,
+        .validateAndGetConnectors(eq(List.of(ParameterField.createValueField("azureconnector"))), any(Ambiance.class),
+            any(NGLogCallback.class));
+
+    AsyncExecutableResponse asyncExecutableResponse = step.executeAsyncAfterRbac(ambiance,
         InfrastructureTaskExecutableStepV2Params.builder()
             .envRef(ParameterField.createValueField("env-id"))
             .infraRef(ParameterField.createValueField("infra-id"))
             .build(),
         null);
 
-    assertThat(taskRequest.getTaskCategory()).isEqualTo(TaskCategory.DELEGATE_TASK_V2);
-    DelegateTaskRequest delegateTaskRequest = taskRequest.getDelegateTaskRequest();
+    ArgumentCaptor<DelegateTaskRequest> captor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
+    verify(delegateGrpcClientWrapper, times(1)).submitAsyncTask(captor.capture(), eq(Duration.ZERO));
 
-    assertThat(delegateTaskRequest.getUnitsCount()).isEqualTo(1);
-    assertThat(delegateTaskRequest.getUnits(0)).isEqualTo("Execute");
-    assertThat(delegateTaskRequest.getTaskName()).isEqualTo("NG_AZURE_TASK");
+    DelegateTaskRequest delegateTaskRequest = captor.getValue();
 
-    verifyTaskRequest(delegateTaskRequest.getRequest());
+    //    assertThat(delegateTaskRequest.getUnitsCount()).isEqualTo(1);
+    //    assertThat(delegateTaskRequest.getUnits(0)).isEqualTo("Execute");
+    assertThat(delegateTaskRequest.getTaskType()).isEqualTo("NG_AZURE_TASK");
+
+    verifyTaskRequest(delegateTaskRequest);
   }
 
   @Test
   @Owner(developers = OwnerRule.YOGESH)
   @Category(UnitTests.class)
-  public void testHandleResponseForTaskInfra_AwsSSH() throws Exception {
+  public void testHandleResponseForTaskInfra_AwsSSH() {
     SshWinRmAwsInfrastructure spec = (SshWinRmAwsInfrastructure) awsInfra.getInfrastructureDefinitionConfig().getSpec();
     mockInfra(awsInfra);
     mockInfraTaskExecutableSweepingOutput(SshWinRmAwsInfrastructureOutcome.builder()
@@ -391,19 +401,16 @@ public class InfrastructureTaskExecutableStepV2Test {
                                               .hostConnectionType(HostConnectionTypeKind.PUBLIC_IP)
                                               .build());
 
-    doReturn(AwsListEC2InstancesTaskResponse.builder()
-                 .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-                 .instances(List.of(mockAwsInstance("1"), mockAwsInstance("2")))
-                 .build())
-        .when(throwingSupplier)
-        .get();
-
-    StepResponse stepResponse = step.handleTaskResult(ambiance,
+    StepResponse stepResponse = step.handleAsyncResponse(ambiance,
         InfrastructureTaskExecutableStepV2Params.builder()
             .envRef(ParameterField.createValueField("env-id"))
             .infraRef(ParameterField.createValueField("infra-id"))
             .build(),
-        throwingSupplier);
+        Map.of("taskId",
+            AwsListEC2InstancesTaskResponse.builder()
+                .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                .instances(List.of(mockAwsInstance("1"), mockAwsInstance("2")))
+                .build()));
 
     // verify unit progress data
     assertThat(stepResponse.getUnitProgressList().get(0).getUnitName()).isEqualTo("Execute");
@@ -453,19 +460,16 @@ public class InfrastructureTaskExecutableStepV2Test {
                                               .subscriptionId(spec.getSubscriptionId().getValue())
                                               .build());
 
-    doReturn(AzureHostsResponse.builder()
-                 .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-                 .hosts(List.of(AzureHostResponse.builder().hostName("h1").build()))
-                 .build())
-        .when(throwingSupplier)
-        .get();
-
-    StepResponse stepResponse = step.handleTaskResult(ambiance,
+    StepResponse stepResponse = step.handleAsyncResponse(ambiance,
         InfrastructureTaskExecutableStepV2Params.builder()
             .envRef(ParameterField.createValueField("env-id"))
             .infraRef(ParameterField.createValueField("infra-id"))
             .build(),
-        throwingSupplier);
+        Map.of("taskId",
+            AzureHostsResponse.builder()
+                .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                .hosts(List.of(AzureHostResponse.builder().hostName("h1").build()))
+                .build()));
 
     // verify unit progress data
     assertThat(stepResponse.getUnitProgressList().get(0).getUnitName()).isEqualTo("Execute");
@@ -516,12 +520,8 @@ public class InfrastructureTaskExecutableStepV2Test {
         .when(cdStepHelper)
         .getSshInfraDelegateConfig(any(InfrastructureOutcome.class), any(Ambiance.class));
 
-    StepResponse stepResponse = step.handleTaskResult(ambiance,
-        InfrastructureTaskExecutableStepV2Params.builder()
-            .envRef(ParameterField.createValueField("env-id"))
-            .infraRef(ParameterField.createValueField("infra-id"))
-            .build(),
-        throwingSupplier);
+    StepResponse stepResponse =
+        step.handleAsyncResponse(ambiance, InfrastructureTaskExecutableStepV2Params.builder().build(), null);
 
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
     assertThat(stepResponse.getStepOutcomes()).hasSize(1);
@@ -541,13 +541,22 @@ public class InfrastructureTaskExecutableStepV2Test {
     return AwsEC2Instance.builder().instanceId(id).privateIp("10.0.0." + id).publicIp("1.1.1." + id).build();
   }
 
-  private void verifyTaskRequest(SubmitTaskRequest request) {
-    assertThat(request.getAccountId().getId()).isEqualTo("ACCOUNT_ID");
-    assertThat(request.getSelectionTrackingLogEnabled()).isTrue();
-    assertThat(request.getLogAbstractions().getValuesMap().keySet())
-        .containsExactly("accountId", "orgId", "projectId", "pipelineId", "runSequence", "level0");
-    assertThat(request.getLogAbstractions().getValuesMap().values())
-        .containsExactly("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", "", "0", "");
+  private void verifyTaskRequest(DelegateTaskRequest request) {
+    assertThat(request.getAccountId()).isEqualTo("ACCOUNT_ID");
+    assertThat(request.getLogStreamingAbstractions()
+                   .entrySet()
+                   .stream()
+                   .map(e -> e.getKey() + ":" + e.getValue())
+                   .collect(Collectors.toSet()))
+        .containsExactlyInAnyOrder("orgId:ORG_ID", "pipelineId:", "runSequence:0", "level0:infrastructure",
+            "accountId:ACCOUNT_ID", "projectId:PROJECT_ID");
+    assertThat(request.getTaskSetupAbstractions()
+                   .entrySet()
+                   .stream()
+                   .map(e -> e.getKey() + ":" + e.getValue())
+                   .collect(Collectors.toSet()))
+        .containsExactlyInAnyOrder("orgIdentifier:ORG_ID", "owner:ORG_ID/PROJECT_ID", "envType:NON_PROD", "ng:true",
+            "accountId:ACCOUNT_ID", "projectIdentifier:PROJECT_ID");
   }
 
   private Ambiance buildAmbiance() {
@@ -555,7 +564,8 @@ public class InfrastructureTaskExecutableStepV2Test {
     levels.add(Level.newBuilder()
                    .setRuntimeId(UUIDGenerator.generateUuid())
                    .setSetupId(UUIDGenerator.generateUuid())
-                   .setStepType(ManifestsStepV2.STEP_TYPE)
+                   .setStepType(InfrastructureTaskExecutableStepV2.STEP_TYPE)
+                   .setIdentifier("infrastructure")
                    .build());
     return Ambiance.newBuilder()
         .setPlanExecutionId(UUIDGenerator.generateUuid())
