@@ -5551,6 +5551,16 @@
                 }
               ]
             },
+            "pruningEnabled": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
             "skipDryRun": {
               "oneOf": [
                 {
@@ -5560,7 +5570,7 @@
                   "type": "string"
                 }
               ]
-            }
+              }
           }
         }
       ],
@@ -5784,6 +5794,16 @@
                 }
               ]
             },
+            "pruningEnabled": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
             "skipDryRun": {
               "oneOf": [
                 {
@@ -5819,6 +5839,16 @@
                   "type": "string",
                   "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
+                }
+              ]
+            },
+            "pruningEnabled": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
                 }
               ]
             },
