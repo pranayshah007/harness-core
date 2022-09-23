@@ -83,6 +83,12 @@ public class InspectCommand<T extends io.dropwizard.Configuration> extends Confi
       Set<Class<? extends TypeConverter>> morphiaConverters() {
         return ImmutableSet.<Class<? extends TypeConverter>>builder().build();
       }
+      @Provides
+      @Singleton
+      @Named("dbAliases")
+      public List<String> getDbAliases() {
+        return appConfig.getDbAliases();
+      }
     });
     MongoClientURI uri = new MongoClientURI(appConfig.getNotificationServiceConfig().getMongoConfig().getUri());
     log.info("Database {}", uri.getDatabase());
