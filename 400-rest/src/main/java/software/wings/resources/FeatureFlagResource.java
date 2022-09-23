@@ -19,7 +19,6 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.UnauthorizedException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.rest.RestResponse;
-import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.LearningEngineAuth;
 
 import software.wings.beans.User;
