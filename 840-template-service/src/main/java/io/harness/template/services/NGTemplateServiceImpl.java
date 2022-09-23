@@ -40,6 +40,7 @@ import io.harness.exception.ScmException;
 import io.harness.exception.UnexpectedException;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.helper.GitAwareContextHelper;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.common.utils.GitEntityFilePath;
 import io.harness.gitsync.common.utils.GitSyncFilePathUtils;
 import io.harness.gitsync.helpers.GitContextHelper;
@@ -115,6 +116,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   @Inject private TemplateMergeService templateMergeService;
   @Inject private AccessControlClient accessControlClient;
   @Inject private TemplateMergeServiceHelper templateMergeServiceHelper;
+
+  @Inject private TemplateGitXService templateGitXService;
 
   private static final String DUP_KEY_EXP_FORMAT_STRING =
       "Template [%s] of versionLabel [%s] under Project[%s], Organization [%s] already exists";
@@ -551,6 +554,9 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   public Page<TemplateEntity> list(Criteria criteria, Pageable pageable, String accountId, String orgIdentifier,
       String projectIdentifier, Boolean getDistinctFromBranches) {
     enforcementClientService.checkAvailability(FeatureRestrictionName.TEMPLATE_SERVICE, accountId);
+    if (templateGitXService.isNewGitXEnabled(accountId, orgIdentifier, projectIdentifier)) {
+      criteria.and("storeType").in(StoreType.INLINE.name(), null);
+    }
     if (Boolean.TRUE.equals(getDistinctFromBranches)
         && gitSyncSdkService.isGitSyncEnabled(accountId, orgIdentifier, projectIdentifier)) {
       return templateRepository.findAll(criteria, pageable, accountId, orgIdentifier, projectIdentifier, true);
