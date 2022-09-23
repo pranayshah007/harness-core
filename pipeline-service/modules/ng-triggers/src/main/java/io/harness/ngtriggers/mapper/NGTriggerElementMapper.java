@@ -215,17 +215,25 @@ public class NGTriggerElementMapper {
   public void copyEntityFieldsOutsideOfYml(NGTriggerEntity existingEntity, NGTriggerEntity newEntity) {
     boolean isWebhookPollingEnabled = isWebhookPollingEnabled(
         existingEntity.getType(), existingEntity.getAccountId(), existingEntity.getPollInterval());
-    if (newEntity.getType() == ARTIFACT || newEntity.getType() == MANIFEST || isWebhookPollingEnabled) {
-      PollingConfig existingPollingConfig = existingEntity.getMetadata().getBuildMetadata().getPollingConfig();
+    if (newEntity.getType() == ARTIFACT || newEntity.getType() == MANIFEST) {
+      copyFields(existingEntity, newEntity);
+    } else if (isWebhookPollingEnabled) {
+      if (newEntity.getPollInterval() == null) {
+        throw new InvalidRequestException("Polling Interval cannot be null");
+      }
+      copyFields(existingEntity, newEntity);
+    }
+  }
 
-      if (existingPollingConfig != null && isNotEmpty(existingPollingConfig.getSignature())) {
-        newEntity.getMetadata().getBuildMetadata().getPollingConfig().setSignature(
-            existingPollingConfig.getSignature());
-      }
-      if (existingPollingConfig != null && isNotEmpty(existingPollingConfig.getPollingDocId())) {
-        newEntity.getMetadata().getBuildMetadata().getPollingConfig().setPollingDocId(
-            existingPollingConfig.getPollingDocId());
-      }
+  private void copyFields(NGTriggerEntity existingEntity, NGTriggerEntity newEntity) {
+    PollingConfig existingPollingConfig = existingEntity.getMetadata().getBuildMetadata().getPollingConfig();
+
+    if (existingPollingConfig != null && isNotEmpty(existingPollingConfig.getSignature())) {
+      newEntity.getMetadata().getBuildMetadata().getPollingConfig().setSignature(existingPollingConfig.getSignature());
+    }
+    if (existingPollingConfig != null && isNotEmpty(existingPollingConfig.getPollingDocId())) {
+      newEntity.getMetadata().getBuildMetadata().getPollingConfig().setPollingDocId(
+          existingPollingConfig.getPollingDocId());
     }
   }
 

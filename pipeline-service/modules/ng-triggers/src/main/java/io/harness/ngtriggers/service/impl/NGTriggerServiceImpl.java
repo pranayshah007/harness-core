@@ -128,6 +128,8 @@ import org.springframework.data.mongodb.core.query.Criteria;
 public class NGTriggerServiceImpl implements NGTriggerService {
   public static final long TRIGGER_CURRENT_YML_VERSION = 3l;
   public static final int WEBHOOK_POLLING_UNSUBSCRIBE = 0;
+  public static final int WEBHOOOk_POLLING_MIN_INTERVAL = 2;
+  public static final int WEBHOOOk_POLLING_MAX_INTERVAL = 60;
   private final NGTriggerRepository ngTriggerRepository;
   private final TriggerWebhookEventRepository webhookEventQueueRepository;
   private final TriggerEventHistoryRepository triggerEventHistoryRepository;
@@ -617,7 +619,22 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     NGTriggerSpecV2 spec = triggerSource.getSpec();
     switch (triggerSource.getType()) {
       case WEBHOOK:
-        return; // TODO(adwait): define trigger source validation
+        // Validate webhook polling trigger
+        if (pmsFeatureFlagService.isEnabled(
+                triggerDetails.getNgTriggerEntity().getAccountId(), FeatureName.GIT_WEBHOOK_POLLING)) {
+          String pollInterval = triggerDetails.getNgTriggerEntity().getPollInterval();
+          if (pollInterval == null) {
+            throw new InvalidArgumentsException("Poll Interval cannot be empty");
+          }
+          int pollInt = NGTimeConversionHelper.convertTimeStringToMinutesZeroAllowed(
+              triggerDetails.getNgTriggerEntity().getPollInterval());
+          if (pollInt != WEBHOOK_POLLING_UNSUBSCRIBE
+              && (pollInt < WEBHOOOk_POLLING_MIN_INTERVAL || pollInt > WEBHOOOk_POLLING_MAX_INTERVAL)) {
+            throw new InvalidArgumentsException("Poll Interval should be between " + WEBHOOOk_POLLING_MIN_INTERVAL
+                + " and " + WEBHOOOk_POLLING_MAX_INTERVAL + " minutes");
+          }
+        }
+        return; // TODO define other trigger source validation
       case SCHEDULED:
         ScheduledTriggerConfig scheduledTriggerConfig = (ScheduledTriggerConfig) triggerSource.getSpec();
         CronTriggerSpec cronTriggerSpec = (CronTriggerSpec) scheduledTriggerConfig.getSpec();
