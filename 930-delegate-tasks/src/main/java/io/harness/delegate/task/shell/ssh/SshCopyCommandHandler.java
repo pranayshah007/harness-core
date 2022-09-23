@@ -12,6 +12,9 @@ import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.ARTIF
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.ARTIFACT_CONFIGURATION_NOT_FOUND_HINT;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT_HINT;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_CONFIG_FILE_PROVIDED;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_CONFIG_FILE_PROVIDED_EXPLANATION;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_CONFIG_FILE_PROVIDED_HINT;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_DESTINATION_PATH_SPECIFIED;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_DESTINATION_PATH_SPECIFIED_EXPLANATION;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_DESTINATION_PATH_SPECIFIED_HINT;
@@ -51,7 +54,6 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
@@ -169,7 +171,8 @@ public class SshCopyCommandHandler implements CommandHandler {
   private List<ConfigFileParameters> getConfigFileParameters(
       SshCommandTaskParameters sshCommandTaskParameters, CopyCommandUnit copyCommandUnit) {
     if (sshCommandTaskParameters.getFileDelegateConfig() == null) {
-      return Collections.emptyList();
+      throw NestedExceptionUtils.hintWithExplanationException(NO_CONFIG_FILE_PROVIDED_HINT,
+          NO_CONFIG_FILE_PROVIDED_EXPLANATION, new SshCommandExecutionException(NO_CONFIG_FILE_PROVIDED));
     }
 
     List<ConfigFileParameters> configFiles = new ArrayList<>();
