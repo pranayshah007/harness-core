@@ -47,20 +47,13 @@ public class GcpSecretManagerEntityToDTOTest extends CategoryTest {
   @Owner(developers = SHREYAS)
   @Category(UnitTests.class)
   public void testNonDefaultFieldsAreNull() throws IllegalAccessException {
-    // Create connector entity.
     GcpSecretManagerConnector connector = GcpSecretManagerConnector.builder().build();
     GcpSecretManagerConnectorDTO connectorDTO = gcpSecretManagerEntityToDTO.createConnectorDTO(connector);
-    // Get all the fields in it
     Field[] fields = GcpSecretManagerConnectorDTO.class.getDeclaredFields();
-    // Loop over all fields
     for (Field field : fields) {
-      // Filter out non default fields
       if (!defaultFieldNamesToValue.containsKey(field.getName())) {
-        // Set their accessibility as true
         field.setAccessible(true);
-        // Get its value in the connector dto
         Object value = field.get(connectorDTO);
-        // asset that the fields are null.
         assertThat(value).isNull();
       }
     }
@@ -70,20 +63,13 @@ public class GcpSecretManagerEntityToDTOTest extends CategoryTest {
   @Owner(developers = SHREYAS)
   @Category(UnitTests.class)
   public void testDefaultFieldsAreNotNull() throws IllegalAccessException {
-    // Create connector entity.
     GcpSecretManagerConnector connector = GcpSecretManagerConnector.builder().build();
     GcpSecretManagerConnectorDTO connectorDTO = gcpSecretManagerEntityToDTO.createConnectorDTO(connector);
-    // Get all the fields in it
     Field[] fields = GcpSecretManagerConnectorDTO.class.getDeclaredFields();
-    // Loop over all fields
     for (Field field : fields) {
-      // Filter out default fields
       if (defaultFieldNamesToValue.containsKey(field.getName())) {
-        // Set their accessibility as true
         field.setAccessible(true);
-        // Get its value in the connector dto
         Object value = field.get(connectorDTO);
-        // asset that the fields are not null.
         assertThat(value).isNotNull();
       }
     }
@@ -93,20 +79,13 @@ public class GcpSecretManagerEntityToDTOTest extends CategoryTest {
   @Owner(developers = SHREYAS)
   @Category(UnitTests.class)
   public void testDefaultFieldsHaveCorrectValue() throws IllegalAccessException {
-    // Create connector entity.
     GcpSecretManagerConnector connector = GcpSecretManagerConnector.builder().build();
     GcpSecretManagerConnectorDTO connectorDTO = gcpSecretManagerEntityToDTO.createConnectorDTO(connector);
-    // Get all the fields in it
     Field[] fields = GcpSecretManagerConnectorDTO.class.getDeclaredFields();
-    // Loop over all fields
     for (Field field : fields) {
-      // Filter out default fields
       if (defaultFieldNamesToValue.containsKey(field.getName())) {
-        // Set their accessibility as true
         field.setAccessible(true);
-        // Get its value in the connector dto
         Object value = field.get(connectorDTO);
-        // asset that default value is same as that defined in map created at test setup.
         assertThat(value).isEqualTo(defaultFieldNamesToValue.get(field.getName()));
       }
     }
@@ -116,17 +95,15 @@ public class GcpSecretManagerEntityToDTOTest extends CategoryTest {
   @Owner(developers = SHREYAS)
   @Category(UnitTests.class)
   public void testEntityToDTOWithValues() throws IllegalAccessException {
-    // Create connector entity.
+    String credentialsRef = "credential-ref";
     GcpSecretManagerConnector connector =
-        GcpSecretManagerConnector.builder().credentialsRef("credential-ref").isDefault(false).build();
+        GcpSecretManagerConnector.builder().credentialsRef(credentialsRef).isDefault(false).build();
     GcpSecretManagerConnectorDTO connectorDTO = gcpSecretManagerEntityToDTO.createConnectorDTO(connector);
-    // Get all the fields in it
     Field[] fields = GcpSecretManagerConnectorDTO.class.getDeclaredFields();
-    // Loop over all fields
     assertThat(fields.length).isEqualTo(3);
     assertThat(connectorDTO).isNotNull();
     assertThat(connectorDTO.getDelegateSelectors()).isNull();
-    assertThat(connectorDTO.getCredentialsRef()).isEqualTo(SecretRefHelper.createSecretRef("credential-ref"));
+    assertThat(connectorDTO.getCredentialsRef()).isEqualTo(SecretRefHelper.createSecretRef(credentialsRef));
     assertThat(connectorDTO.isDefault()).isFalse();
   }
 }
