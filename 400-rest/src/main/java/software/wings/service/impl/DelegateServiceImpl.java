@@ -277,6 +277,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPOutputStream;
 import javax.validation.ConstraintViolation;
+import javax.validation.constraints.NotBlank;
 import javax.validation.executable.ValidateOnExecution;
 import javax.ws.rs.core.MediaType;
 import lombok.AllArgsConstructor;
@@ -812,7 +813,13 @@ public class DelegateServiceImpl implements DelegateService {
                 : delegateVersionListWithoutPatch(delegateConfiguration.getDelegateVersions()))
         .scalingGroups(scalingGroups)
         .delegates(buildInnerDelegates(accountId, delegatesWithoutScalingGroup, activeDelegateConnections, false))
+        .publishedImmutableDelegateVersion(
+            FetchDelegateVersionFromImage(delegateVersionService.getImmutableDelegateImageTag(accountId)))
         .build();
+  }
+
+  private String FetchDelegateVersionFromImage(@NotBlank final String immutableDelegateImageTag) {
+    return substringAfter(immutableDelegateImageTag, ":");
   }
 
   private List<String> delegateVersionListWithoutPatch(List<String> delegateVersions) {
