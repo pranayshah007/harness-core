@@ -7,9 +7,11 @@
 
 package io.harness.ng;
 
+import io.harness.ngsettings.SettingIdentifier;
 import io.harness.ngsettings.services.SettingValidator;
 import io.harness.ngsettings.services.SettingsService;
 import io.harness.ngsettings.services.impl.SettingsServiceImpl;
+import io.harness.ngsettings.services.impl.validators.DisableBuiltInSMValidator;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.multibindings.MapBinder;
@@ -30,5 +32,6 @@ public class NGSettingModule extends AbstractModule {
   public void registerSettingValidators() {
     MapBinder<String, SettingValidator> settingValidatorMapBinder =
         MapBinder.newMapBinder(binder(), String.class, SettingValidator.class);
+    settingValidatorMapBinder.addBinding(SettingIdentifier.DISABLE_BUILT_IN_SM).to(DisableBuiltInSMValidator.class);
   }
 }

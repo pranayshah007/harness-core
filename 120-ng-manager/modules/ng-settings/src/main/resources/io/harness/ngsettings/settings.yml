@@ -1,6 +1,6 @@
 #Any edit in this file should accompany an increment in version.
 name : settingsConfiguration
-version : 2
+version : 1
 settings :
   - identifier: test_setting_CI_1
     name: Test CI setting
@@ -112,3 +112,11 @@ settings :
       - ACCOUNT
       - ORGANIZATION
       - PROJECT
+  - identifier: test_setting_disable_built_in_sm
+    name: Test CORE setting
+    category: CORE
+    defaultValue: false
+    valueType: BOOLEAN
+    allowOverrides: false
+    allowedScopes:
+      - ACCOUNT
