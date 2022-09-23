@@ -228,9 +228,10 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
 
         PipelineInfrastructure pipelineInfrastructure = stageNode.getDeploymentStageConfig().getInfrastructure();
         String serviceSpecNodeUuid = servicePlanCreatorHelper.fetchServiceSpecUuid(serviceField);
+        final String serviceRefFromServiceField = servicePlanCreatorHelper.getServiceRef(serviceField);
         final OverridesFromEnvironment overridesFromEnvironment =
             addEnvAndInfraDependency(ctx, stageNode, planCreationResponseMap, specField, pipelineInfrastructure,
-                postServiceStepUuid, environmentUuid, serviceSpecNodeUuid, environmentUuid);
+                postServiceStepUuid, environmentUuid, serviceSpecNodeUuid, environmentUuid, serviceRefFromServiceField);
         addServiceDependency(planCreationResponseMap, specField, stageNode, environmentUuid, postServiceStepUuid,
             serviceField, overridesFromEnvironment);
       }
@@ -322,7 +323,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   private OverridesFromEnvironment addEnvAndInfraDependency(PlanCreationContext ctx, DeploymentStageNode stageNode,
       LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, YamlField specField,
       PipelineInfrastructure pipelineInfrastructure, String postServiceStepUuid, String environmentUuid,
-      String serviceSpecNodeUuid, String envGroupUuid) throws IOException {
+      String serviceSpecNodeUuid, String envGroupUuid, String serviceRefFromServiceField) throws IOException {
     final OverridesFromEnvironmentBuilder overridesBuilder = OverridesFromEnvironment.builder();
     YamlField infraField = specField.getNode().getField(YamlTypes.PIPELINE_INFRASTRUCTURE);
     EnvironmentYamlV2 environmentV2 = stageNode.getDeploymentStageConfig().getEnvironment();
@@ -380,7 +381,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       if (stageNode.getDeploymentStageConfig().getServices() != null) {
         serviceRef = SERVICE_REF_EXPRESSION;
       } else {
-        serviceRef = stageNode.getDeploymentStageConfig().getService().getServiceRef().getValue();
+        serviceRef = serviceRefFromServiceField;
       }
       EnvironmentPlanCreatorConfig environmentPlanCreatorConfig =
           EnvironmentPlanCreatorHelper.getResolvedEnvRefs(ctx.getMetadata(), environmentV2, gitOpsEnabled, serviceRef,
