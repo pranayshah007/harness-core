@@ -558,7 +558,7 @@ public class CustomDashboardResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = LOGGED_IN)
-  public RestResponse addToToMigrateAccountIds(@QueryParam("accountIds") @NotEmpty List<String> accountIds) {
+  public RestResponse addToToMigrateAccountIds( @NotEmpty List<String> accountIds) {
     User authUser = UserThreadLocal.get();
 
     if (harnessUserGroupService.isHarnessSupportUser(authUser.getUuid())) {
