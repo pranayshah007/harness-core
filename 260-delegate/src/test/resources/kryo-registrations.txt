@@ -1757,6 +1757,7 @@
 55422:io.harness.delegate.task.azure.artifact.AwsS3AzureArtifactRequestDetails
 55423:io.harness.delegate.task.azure.arm.AzureFetchArmPreDeploymentDataTaskParameters
 55424:io.harness.delegate.task.azure.arm.AzureFetchArmPreDeploymentDataTaskResponse
+55425:io.harness.delegate.beans.executioncapability.WinrmConnectivityExecutionCapability
 55470:io.harness.delegate.task.ssh.artifact.CustomArtifactDelegateConfig
 55501:io.harness.delegate.beans.instancesync.info.PdcServerInstanceInfo
 55502:io.harness.delegate.beans.instancesync.info.AzureSshWinrmServerInstanceInfo
