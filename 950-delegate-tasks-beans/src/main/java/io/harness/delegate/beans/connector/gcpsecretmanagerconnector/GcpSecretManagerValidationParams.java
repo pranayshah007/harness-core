@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.delegate.beans.connector.gcpsmconnector;
+package io.harness.delegate.beans.connector.gcpsecretmanagerconnector;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.delegate.beans.connector.ConnectorCapabilityBaseHelper.populateDelegateSelectorCapability;
@@ -13,7 +13,7 @@ import static io.harness.delegate.beans.connector.ConnectorCapabilityBaseHelper.
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.ConnectorValidationParams;
-import io.harness.delegate.beans.connector.gcpsecretmanager.GcpSMConnectorDTO;
+import io.harness.delegate.beans.connector.gcpsecretmanager.GcpSecretManagerConnectorDTO;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.task.mixin.HttpConnectionExecutionCapabilityGenerator;
@@ -28,13 +28,13 @@ import lombok.Value;
 @OwnedBy(PL)
 @Value
 @Builder
-public class GcpSMValidationParams implements ConnectorValidationParams, ExecutionCapabilityDemander {
-  GcpSMConnectorDTO gcpSMConnectorDTO;
-  String connectorName;
+public class GcpSecretManagerValidationParams implements ConnectorValidationParams, ExecutionCapabilityDemander {
+  private GcpSecretManagerConnectorDTO gcpSecretManagerConnectorDTO;
+  private String connectorName;
   public static final String ENCRYPTION_SERVICE_URL = "https://secretmanager.googleapis.com/v1/";
   @Override
   public ConnectorType getConnectorType() {
-    return ConnectorType.GCP_SM;
+    return ConnectorType.GCP_SECRET_MANAGER;
   }
 
   @Override
@@ -42,7 +42,7 @@ public class GcpSMValidationParams implements ConnectorValidationParams, Executi
     List<ExecutionCapability> executionCapabilities =
         new ArrayList<>(Arrays.asList(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
             ENCRYPTION_SERVICE_URL, maskingEvaluator)));
-    populateDelegateSelectorCapability(executionCapabilities, gcpSMConnectorDTO.getDelegateSelectors());
+    populateDelegateSelectorCapability(executionCapabilities, gcpSecretManagerConnectorDTO.getDelegateSelectors());
     return executionCapabilities;
   }
 }

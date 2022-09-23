@@ -61,4 +61,6 @@ public class SecretManagerDescriptionConstants {
   public static final String GCP_CRED_FILE = "File Secret which is Service Account Key.";
   public static final String CUSTOM_AUTH_TOKEN =
       "This is the authentication token used to connect underlying secret manager.";
+  public static final String GOOGLE_SECRET_MANAGER_CREDENTIALS =
+      "Reference to the secret containing credentials of IAM service account for Google Secret Manager";
 }

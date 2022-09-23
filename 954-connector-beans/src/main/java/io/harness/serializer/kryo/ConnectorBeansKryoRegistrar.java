@@ -92,7 +92,7 @@ import io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType;
 import io.harness.delegate.beans.connector.gcpconnector.GcpDelegateDetailsDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO;
 import io.harness.delegate.beans.connector.gcpkmsconnector.GcpKmsConnectorDTO;
-import io.harness.delegate.beans.connector.gcpsecretmanager.GcpSMConnectorDTO;
+import io.harness.delegate.beans.connector.gcpsecretmanager.GcpSecretManagerConnectorDTO;
 import io.harness.delegate.beans.connector.helm.HttpHelmAuthCredentialsDTO;
 import io.harness.delegate.beans.connector.helm.HttpHelmAuthType;
 import io.harness.delegate.beans.connector.helm.HttpHelmAuthenticationDTO;
@@ -413,7 +413,7 @@ public class ConnectorBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(AzureRepoConnectionTypeDTO.class, 19854);
     kryo.register(CustomSecretManagerConnectorDTO.class, 19875);
     kryo.register(TemplateLinkConfigForCustomSecretManager.class, 19877);
-    kryo.register(GcpSMConnectorDTO.class, 19878);
+    kryo.register(GcpSecretManagerConnectorDTO.class, 19878);
     kryo.register(ELKConnectorDTO.class, 10000001);
     kryo.register(ELKAuthType.class, 10000002);
   }

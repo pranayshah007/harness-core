@@ -10,18 +10,19 @@ package io.harness.connector.mappers.secretmanagermapper;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.connector.entities.embedded.gcpsm.GcpSMConnector;
+import io.harness.connector.entities.embedded.gcpsecretmanager.GcpSecretManagerConnector;
 import io.harness.connector.mappers.ConnectorDTOToEntityMapper;
-import io.harness.delegate.beans.connector.gcpsecretmanager.GcpSMConnectorDTO;
+import io.harness.delegate.beans.connector.gcpsecretmanager.GcpSecretManagerConnectorDTO;
 import io.harness.encryption.SecretRefHelper;
 
 @OwnedBy(PL)
-public class GcpSMDTOToEntity implements ConnectorDTOToEntityMapper<GcpSMConnectorDTO, GcpSMConnector> {
+public class GcpSecretManagerDTOToEntity
+    implements ConnectorDTOToEntityMapper<GcpSecretManagerConnectorDTO, GcpSecretManagerConnector> {
   @Override
-  public GcpSMConnector toConnectorEntity(GcpSMConnectorDTO connectorDTO) {
-    return GcpSMConnector.builder()
+  public GcpSecretManagerConnector toConnectorEntity(GcpSecretManagerConnectorDTO connectorDTO) {
+    return GcpSecretManagerConnector.builder()
         .isDefault(connectorDTO.isDefault())
-        .credentialsRef(SecretRefHelper.getSecretConfigString(connectorDTO.getCredentials()))
+        .credentialsRef(SecretRefHelper.getSecretConfigString(connectorDTO.getCredentialsRef()))
         .build();
   }
 }
