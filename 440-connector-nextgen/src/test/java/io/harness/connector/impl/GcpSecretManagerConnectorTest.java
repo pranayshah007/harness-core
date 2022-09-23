@@ -8,8 +8,9 @@
 package io.harness.connector.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.delegate.beans.connector.ConnectorType.GCP_SM;
+import static io.harness.delegate.beans.connector.ConnectorType.GCP_SECRET_MANAGER;
 
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
@@ -21,7 +22,7 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.ConnectorsTestBase;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
-import io.harness.delegate.beans.connector.gcpsecretmanager.GcpSMConnectorDTO;
+import io.harness.delegate.beans.connector.gcpsecretmanager.GcpSecretManagerConnectorDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.encryption.SecretRefHelper;
 import io.harness.rule.Owner;
@@ -36,19 +37,20 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 @OwnedBy(PL)
-public class GcpSMConnectorTest extends ConnectorsTestBase {
+public class GcpSecretManagerConnectorTest extends ConnectorsTestBase {
   @Mock SecretRefInputValidationHelper secretRefInputValidationHelper;
 
   @Inject @InjectMocks DefaultConnectorServiceImpl connectorService;
 
-  private static final String CREDENTIALS_REF = "account.credentials-ref";
-  private static final String IDENTIFIER = "identifier";
-  private static final String NAME = "name";
-  private static final String DESCRIPTION = "description";
-  private static final String ACCOUNT_IDENTIFIER = "accountIdentifier";
+  private static String credentialsRef = "account.credentials-ref";
+  private static String identifier;
+  private static String name;
+  private static String description;
+  private static String accountIdentifier;
 
   @Before
   public void setUp() throws Exception {
+    setupVariableValues();
     MockitoAnnotations.initMocks(this);
     doNothing().when(secretRefInputValidationHelper).validateTheSecretInput(any(), any());
   }
@@ -57,8 +59,8 @@ public class GcpSMConnectorTest extends ConnectorsTestBase {
   @Owner(developers = OwnerRule.SHREYAS)
   @Category(UnitTests.class)
   public void testConnectorCreationForDefaultConnector() {
-    GcpSMConnectorDTO gcpSMConnectorDTO = createDefaultGcpConnector(CREDENTIALS_REF);
-    ConnectorDTO connectorDTO = createConnectorDTO(gcpSMConnectorDTO);
+    GcpSecretManagerConnectorDTO gcpSecretManagerConnectorDTO = createDefaultGcpConnector(credentialsRef);
+    ConnectorDTO connectorDTO = createConnectorDTO(gcpSecretManagerConnectorDTO);
     ConnectorResponseDTO connectorResponseDTO = createConnector(connectorDTO);
     ensureConnectorFieldsAreCorrect(connectorResponseDTO);
     ensureConnectorConfigDTOFieldsAreCorrect(connectorResponseDTO.getConnector().getConnectorConfig(), true);
@@ -68,38 +70,38 @@ public class GcpSMConnectorTest extends ConnectorsTestBase {
   @Owner(developers = OwnerRule.SHREYAS)
   @Category(UnitTests.class)
   public void testConnectorCreationForNonDefaultConnector() {
-    GcpSMConnectorDTO gcpSMConnectorDTO = createNotDefaultGcpConnector(CREDENTIALS_REF);
-    ConnectorDTO connectorDTO = createConnectorDTO(gcpSMConnectorDTO);
+    GcpSecretManagerConnectorDTO gcpSecretManagerConnectorDTO = createNotDefaultGcpConnector(credentialsRef);
+    ConnectorDTO connectorDTO = createConnectorDTO(gcpSecretManagerConnectorDTO);
     ConnectorResponseDTO connectorResponseDTO = createConnector(connectorDTO);
     ensureConnectorFieldsAreCorrect(connectorResponseDTO);
     ensureConnectorConfigDTOFieldsAreCorrect(connectorResponseDTO.getConnector().getConnectorConfig(), false);
   }
 
   private ConnectorResponseDTO createConnector(ConnectorDTO connectorRequest) {
-    return connectorService.create(connectorRequest, ACCOUNT_IDENTIFIER);
+    return connectorService.create(connectorRequest, accountIdentifier);
   }
 
-  private GcpSMConnectorDTO createDefaultGcpConnector(String credentialsRef) {
-    return createGcpSMConnector(true, credentialsRef);
+  private GcpSecretManagerConnectorDTO createDefaultGcpConnector(String credentialsRef) {
+    return createGcpSecretManagerConnector(true, credentialsRef);
   }
 
-  private GcpSMConnectorDTO createNotDefaultGcpConnector(String credentialsRef) {
-    return createGcpSMConnector(false, credentialsRef);
+  private GcpSecretManagerConnectorDTO createNotDefaultGcpConnector(String credentialsRef) {
+    return createGcpSecretManagerConnector(false, credentialsRef);
   }
 
-  private GcpSMConnectorDTO createGcpSMConnector(boolean isDefault, String credentialsRef) {
+  private GcpSecretManagerConnectorDTO createGcpSecretManagerConnector(boolean isDefault, String credentialsRef) {
     SecretRefData secretRefData = SecretRefHelper.createSecretRef(credentialsRef);
-    return GcpSMConnectorDTO.builder().credentials(secretRefData).isDefault(isDefault).build();
+    return GcpSecretManagerConnectorDTO.builder().credentialsRef(secretRefData).isDefault(isDefault).build();
   }
 
-  private ConnectorDTO createConnectorDTO(GcpSMConnectorDTO gcpSMConnectorDTO) {
+  private ConnectorDTO createConnectorDTO(GcpSecretManagerConnectorDTO gcpSecretManagerConnectorDTO) {
     return ConnectorDTO.builder()
         .connectorInfo(ConnectorInfoDTO.builder()
-                           .name(NAME)
-                           .identifier(IDENTIFIER)
-                           .description(DESCRIPTION)
-                           .connectorType(GCP_SM)
-                           .connectorConfig(gcpSMConnectorDTO)
+                           .name(name)
+                           .identifier(identifier)
+                           .description(description)
+                           .connectorType(GCP_SECRET_MANAGER)
+                           .connectorConfig(gcpSecretManagerConnectorDTO)
                            .build())
         .build();
   }
@@ -107,17 +109,26 @@ public class GcpSMConnectorTest extends ConnectorsTestBase {
   private void ensureConnectorFieldsAreCorrect(ConnectorResponseDTO connectorResponseDTO) {
     ConnectorInfoDTO connector = connectorResponseDTO.getConnector();
     assertThat(connector).isNotNull();
-    assertThat(connector.getName()).isEqualTo(NAME);
-    assertThat(connector.getIdentifier()).isEqualTo(IDENTIFIER);
-    assertThat(connector.getConnectorType()).isEqualTo(GCP_SM);
+    assertThat(connector.getName()).isEqualTo(name);
+    assertThat(connector.getIdentifier()).isEqualTo(identifier);
+    assertThat(connector.getConnectorType()).isEqualTo(GCP_SECRET_MANAGER);
   }
 
   private void ensureConnectorConfigDTOFieldsAreCorrect(
       ConnectorConfigDTO connectorConfigDTO, boolean expectedIsDefaultValue) {
-    GcpSMConnectorDTO gcpSMConnectorDTO = (GcpSMConnectorDTO) connectorConfigDTO;
-    assertThat(gcpSMConnectorDTO).isNotNull();
-    assertThat(SecretRefHelper.getSecretConfigString(gcpSMConnectorDTO.getCredentials())).isEqualTo(CREDENTIALS_REF);
-    assertThat(gcpSMConnectorDTO.getDelegateSelectors()).isNullOrEmpty();
-    assertThat(gcpSMConnectorDTO.isDefault()).isEqualTo(expectedIsDefaultValue);
+    GcpSecretManagerConnectorDTO gcpSecretManagerConnectorDTO = (GcpSecretManagerConnectorDTO) connectorConfigDTO;
+    assertThat(gcpSecretManagerConnectorDTO).isNotNull();
+    assertThat(SecretRefHelper.getSecretConfigString(gcpSecretManagerConnectorDTO.getCredentialsRef()))
+        .isEqualTo(credentialsRef);
+    assertThat(gcpSecretManagerConnectorDTO.getDelegateSelectors()).isNullOrEmpty();
+    assertThat(gcpSecretManagerConnectorDTO.isDefault()).isEqualTo(expectedIsDefaultValue);
+  }
+
+  private void setupVariableValues() {
+    credentialsRef = randomAlphabetic(10);
+    identifier = randomAlphabetic(10);
+    name = randomAlphabetic(10);
+    description = randomAlphabetic(10);
+    accountIdentifier = randomAlphabetic(10);
   }
 }

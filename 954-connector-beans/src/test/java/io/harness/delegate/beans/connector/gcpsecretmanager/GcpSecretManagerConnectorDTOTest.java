@@ -5,19 +5,14 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.connector.mappers.secretmanagermappper;
+package io.harness.delegate.beans.connector.gcpsecretmanager;
 
 import static io.harness.rule.OwnerRule.SHREYAS;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
-import io.harness.annotations.dev.HarnessTeam;
-import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.connector.entities.embedded.gcpsm.GcpSMConnector;
-import io.harness.connector.mappers.secretmanagermapper.GcpSMEntityToDTO;
-import io.harness.delegate.beans.connector.gcpsecretmanager.GcpSMConnectorDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.encryption.SecretRefHelper;
 import io.harness.rule.Owner;
@@ -27,31 +22,26 @@ import java.util.HashMap;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mockito.InjectMocks;
 import org.mockito.MockitoAnnotations;
 
-@OwnedBy(HarnessTeam.PL)
-public class GcpSMEntityToDTOTest extends CategoryTest {
+public class GcpSecretManagerConnectorDTOTest extends CategoryTest {
   HashMap<String, Object> defaultFieldNamesToValue;
-  @InjectMocks GcpSMEntityToDTO gcpSMEntityToDTO;
 
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
     defaultFieldNamesToValue = new HashMap<>();
     defaultFieldNamesToValue.put("isDefault", false);
-    defaultFieldNamesToValue.put("credentials", SecretRefData.builder().build());
   }
 
   @Test
   @Owner(developers = SHREYAS)
   @Category(UnitTests.class)
   public void testNonDefaultFieldsAreNull() throws IllegalAccessException {
-    // Create connector entity.
-    GcpSMConnector connector = GcpSMConnector.builder().build();
-    GcpSMConnectorDTO connectorDTO = gcpSMEntityToDTO.createConnectorDTO(connector);
+    // Create connector dto.
+    GcpSecretManagerConnectorDTO connectorDTO = GcpSecretManagerConnectorDTO.builder().build();
     // Get all the fields in it
-    Field[] fields = GcpSMConnectorDTO.class.getDeclaredFields();
+    Field[] fields = GcpSecretManagerConnectorDTO.class.getDeclaredFields();
     // Loop over all fields
     for (Field field : fields) {
       // Filter out non default fields
@@ -70,11 +60,10 @@ public class GcpSMEntityToDTOTest extends CategoryTest {
   @Owner(developers = SHREYAS)
   @Category(UnitTests.class)
   public void testDefaultFieldsAreNotNull() throws IllegalAccessException {
-    // Create connector entity.
-    GcpSMConnector connector = GcpSMConnector.builder().build();
-    GcpSMConnectorDTO connectorDTO = gcpSMEntityToDTO.createConnectorDTO(connector);
+    // Create connector dto.
+    GcpSecretManagerConnectorDTO connectorDTO = GcpSecretManagerConnectorDTO.builder().build();
     // Get all the fields in it
-    Field[] fields = GcpSMConnectorDTO.class.getDeclaredFields();
+    Field[] fields = GcpSecretManagerConnectorDTO.class.getDeclaredFields();
     // Loop over all fields
     for (Field field : fields) {
       // Filter out default fields
@@ -93,11 +82,10 @@ public class GcpSMEntityToDTOTest extends CategoryTest {
   @Owner(developers = SHREYAS)
   @Category(UnitTests.class)
   public void testDefaultFieldsHaveCorrectValue() throws IllegalAccessException {
-    // Create connector entity.
-    GcpSMConnector connector = GcpSMConnector.builder().build();
-    GcpSMConnectorDTO connectorDTO = gcpSMEntityToDTO.createConnectorDTO(connector);
+    // Create connector dto.
+    GcpSecretManagerConnectorDTO connectorDTO = GcpSecretManagerConnectorDTO.builder().build();
     // Get all the fields in it
-    Field[] fields = GcpSMConnectorDTO.class.getDeclaredFields();
+    Field[] fields = GcpSecretManagerConnectorDTO.class.getDeclaredFields();
     // Loop over all fields
     for (Field field : fields) {
       // Filter out default fields
@@ -115,17 +103,17 @@ public class GcpSMEntityToDTOTest extends CategoryTest {
   @Test
   @Owner(developers = SHREYAS)
   @Category(UnitTests.class)
-  public void testEntityToDTOWithValues() throws IllegalAccessException {
-    // Create connector entity.
-    GcpSMConnector connector = GcpSMConnector.builder().credentialsRef("credential-ref").isDefault(false).build();
-    GcpSMConnectorDTO connectorDTO = gcpSMEntityToDTO.createConnectorDTO(connector);
+  public void testInputFieldsHaveCorrectValue() throws IllegalAccessException {
+    SecretRefData secretRefData = SecretRefHelper.createSecretRef("some-secret");
+    // Create connector dto.
+    GcpSecretManagerConnectorDTO connectorDTO =
+        GcpSecretManagerConnectorDTO.builder().credentialsRef(secretRefData).isDefault(false).build();
     // Get all the fields in it
-    Field[] fields = GcpSMConnectorDTO.class.getDeclaredFields();
-    // Loop over all fields
+    Field[] fields = GcpSecretManagerConnectorDTO.class.getDeclaredFields();
     assertThat(fields.length).isEqualTo(3);
     assertThat(connectorDTO).isNotNull();
+    assertThat(SecretRefHelper.getSecretConfigString(connectorDTO.getCredentialsRef())).isEqualTo("some-secret");
     assertThat(connectorDTO.getDelegateSelectors()).isNull();
-    assertThat(connectorDTO.getCredentials()).isEqualTo(SecretRefHelper.createSecretRef("credential-ref"));
     assertThat(connectorDTO.isDefault()).isFalse();
   }
 }
