@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.yaml.core.variables;
+package io.harness.cdng.customdeployment;
 
 public interface CustomDeploymentNGVariableConstants {
   String STRING_TYPE = "String";

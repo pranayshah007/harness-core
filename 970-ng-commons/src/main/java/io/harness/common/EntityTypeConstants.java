@@ -41,6 +41,7 @@ public interface EntityTypeConstants {
   String TEMPLATE = "Template";
   String TEMPLATE_STAGE = "TemplateStage";
   String TEMPLATE_CUSTOM_DEPLOYMENT = "CustomDeployment";
+  String FETCH_INSTANCE_SCRIPT = "FetchInstanceScript";
   String GIT_REPOSITORIES = "GitRepositories";
   String FEATURE_FLAGS = "FeatureFlags";
   String HTTP = "Http";

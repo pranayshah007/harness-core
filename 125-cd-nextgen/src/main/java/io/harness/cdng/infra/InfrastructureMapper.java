@@ -15,7 +15,9 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.customdeploymentng.CustomDeploymentInfrastructureHelper;
 import io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome;
+import io.harness.cdng.infra.beans.CustomDeploymentInfrastructureOutcome;
 import io.harness.cdng.infra.beans.EcsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureDetailsAbstract;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
@@ -35,6 +37,7 @@ import io.harness.cdng.infra.beans.host.dto.HostAttributesFilterDTO;
 import io.harness.cdng.infra.beans.host.dto.HostFilterDTO;
 import io.harness.cdng.infra.beans.host.dto.HostNamesFilterDTO;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
+import io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure;
 import io.harness.cdng.infra.yaml.EcsInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
@@ -52,18 +55,20 @@ import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.environment.EnvironmentOutcome;
 
+import com.google.inject.Inject;
 import java.util.List;
 import javax.annotation.Nonnull;
 import javax.validation.constraints.NotNull;
-import lombok.experimental.UtilityClass;
+import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.tuple.Pair;
 
-@UtilityClass
+@AllArgsConstructor(onConstructor = @__({ @Inject }))
 @OwnedBy(HarnessTeam.CDP)
 public class InfrastructureMapper {
+  @Inject CustomDeploymentInfrastructureHelper customDeploymentInfrastructureHelper;
   @NotNull
-  public InfrastructureOutcome toOutcome(
-      @Nonnull Infrastructure infrastructure, EnvironmentOutcome environmentOutcome, ServiceStepOutcome service) {
+  public InfrastructureOutcome toOutcome(@Nonnull Infrastructure infrastructure, EnvironmentOutcome environmentOutcome,
+      ServiceStepOutcome service, String accountIdentifier, String projectIdentifier, String orgIdentifier) {
     switch (infrastructure.getKind()) {
       case InfrastructureKind.KUBERNETES_DIRECT:
         K8SDirectInfrastructure k8SDirectInfrastructure = (K8SDirectInfrastructure) infrastructure;
@@ -224,6 +229,29 @@ public class InfrastructureMapper {
         setInfraIdentifierAndName(
             ecsInfrastructureOutcome, ecsInfrastructure.getInfraIdentifier(), ecsInfrastructure.getInfraName());
         return ecsInfrastructureOutcome;
+
+      case InfrastructureKind.CUSTOM_DEPLOYMENT:
+        CustomDeploymentInfrastructure customDeploymentInfrastructure = (CustomDeploymentInfrastructure) infrastructure;
+        String templateYaml = customDeploymentInfrastructureHelper.getTemplateYaml(accountIdentifier, orgIdentifier,
+            projectIdentifier, customDeploymentInfrastructure.getCustomDeploymentRef().getTemplateRef(),
+            customDeploymentInfrastructure.getCustomDeploymentRef().getVersionLabel());
+        CustomDeploymentInfrastructureOutcome customDeploymentInfrastructureOutcome =
+            CustomDeploymentInfrastructureOutcome.builder()
+                .variables(customDeploymentInfrastructureHelper.convertListVariablesToMap(
+                    customDeploymentInfrastructure.getVariables(), accountIdentifier, orgIdentifier, projectIdentifier))
+                .instanceAttributes(
+                    customDeploymentInfrastructureHelper.getInstanceAttributes(templateYaml, accountIdentifier))
+                .instanceFetchScript(customDeploymentInfrastructureHelper.getScript(
+                    templateYaml, accountIdentifier, orgIdentifier, projectIdentifier))
+                .instancesListPath(
+                    customDeploymentInfrastructureHelper.getInstancePath(templateYaml, accountIdentifier))
+                .environment(environmentOutcome)
+                .infrastructureKey(InfrastructureKey.generate(
+                    service, environmentOutcome, customDeploymentInfrastructure.getInfrastructureKeyValues()))
+                .build();
+        setInfraIdentifierAndName(customDeploymentInfrastructureOutcome,
+            customDeploymentInfrastructure.getInfraIdentifier(), customDeploymentInfrastructure.getInfraName());
+        return customDeploymentInfrastructureOutcome;
 
       default:
         throw new InvalidArgumentsException(format("Unknown Infrastructure Kind : [%s]", infrastructure.getKind()));
@@ -408,7 +436,7 @@ public class InfrastructureMapper {
     }
   }
 
-  private boolean hasValueOrExpression(ParameterField<String> parameterField) {
+  private static boolean hasValueOrExpression(ParameterField<String> parameterField) {
     if (ParameterField.isNull(parameterField)) {
       return false;
     }

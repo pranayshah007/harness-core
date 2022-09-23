@@ -53,6 +53,7 @@ public class EntityYamlRootNames {
   public static final String TRIGGERS = "trigger";
   public static final String MONITORED_SERVICE = "monitoredService";
   public static final String TEMPLATE = "template";
+  public static final String FETCH_INSTANCE_SCRIPT = "fetchInstanceScript";
   public static final String GIT_REPOSITORY = "gitRepository";
   public static final String FEATURE_FLAGS = "featureFlags";
   public static final String HTTP = "Http";

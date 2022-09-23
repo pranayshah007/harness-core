@@ -36,7 +36,7 @@ import org.mongodb.morphia.annotations.Entity;
       @JsonSubTypes.Type(value = ServerlessAwsLambdaInfrastructure.class, name = "serverless-aws-lambda"),
       @JsonSubTypes.Type(value = AzureWebAppInfrastructure.class, name = "azure-webapp"),
       @JsonSubTypes.Type(value = EcsInfrastructure.class, name = "ECS"),
-      @JsonSubTypes.Type(value = CustomDeploymentInfrastructure.class, name = "ECS")
+      @JsonSubTypes.Type(value = CustomDeploymentInfrastructure.class, name = "custom-deployment")
 })
 @StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "infrastructureMapping")

@@ -85,6 +85,7 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
   @Inject private EnvironmentService environmentService;
   @Inject private ServiceOverrideService serviceOverrideService;
   @Inject private InfrastructureEntityService infrastructureEntityService;
+  @Inject private InfrastructureMapper infrastructureMapper;
 
   @Override
   public LinkedHashMap<String, VariableCreationResponse> createVariablesForChildrenNodes(
@@ -275,12 +276,12 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
     YamlField infraDefinitionField = envField.getNode().getField(YamlTypes.INFRASTRUCTURE_DEFS);
     Map<String, YamlExtraProperties> yamlPropertiesMap = new LinkedHashMap<>();
     List<YamlProperties> outputProperties = new LinkedList<>();
-
     InfrastructureConfig infrastructureConfig =
         InfrastructureEntityConfigMapper.toInfrastructureConfig(infrastructureEntity);
-    InfrastructureOutcome infrastructureOutcome =
-        InfrastructureMapper.toOutcome(infrastructureConfig.getInfrastructureDefinitionConfig().getSpec(),
-            EnvironmentOutcome.builder().build(), ServiceStepOutcome.builder().build());
+    InfrastructureOutcome infrastructureOutcome = infrastructureMapper.toOutcome(
+        infrastructureConfig.getInfrastructureDefinitionConfig().getSpec(), EnvironmentOutcome.builder().build(),
+        ServiceStepOutcome.builder().build(), infrastructureEntity.getAccountId(),
+        infrastructureEntity.getProjectIdentifier(), infrastructureEntity.getOrgIdentifier());
 
     List<String> infraStepOutputExpressions =
         VariableCreatorHelper.getExpressionsInObject(infrastructureOutcome, OutputExpressionConstants.INFRA);

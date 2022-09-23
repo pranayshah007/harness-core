@@ -5,18 +5,21 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.yaml.core.variables;
+package io.harness.cdng.customdeployment;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.yaml.core.VariableExpression.IteratePolicy.REGULAR_WITH_CUSTOM_FIELD;
+import static io.harness.yaml.core.VariableExpression.IteratePolicy.REGULAR;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.numberString;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
-import io.harness.encryption.SecretRefData;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.validator.NGRegexValidatorConstants;
 import io.harness.validator.NGVariableName;
+import io.harness.yaml.YamlSchemaTypes;
 import io.harness.yaml.core.VariableExpression;
+import io.harness.yaml.core.variables.NGVariableConstants;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
@@ -33,21 +36,23 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@JsonTypeName(CustomDeploymentNGVariableConstants.SECRET_TYPE)
-@TypeAlias("io.harness.yaml.core.variables.CustomDeploymentSecretNGVariable")
+@JsonTypeName(CustomDeploymentNGVariableConstants.NUMBER_TYPE)
+@TypeAlias("customDeploymentNumberNGVariable")
+@RecasterAlias("io.harness.cdng.customdeployment.CustomDeploymentNumberNGVariable")
 @OwnedBy(CDP)
-public class CustomDeploymentSecretNGVariable implements CustomDeploymentNGVariable {
+public class CustomDeploymentNumberNGVariable implements CustomDeploymentNGVariable {
   @NGVariableName
   @Pattern(regexp = NGRegexValidatorConstants.IDENTIFIER_PATTERN)
   @VariableExpression(skipVariableExpression = true)
   String name;
-  @ApiModelProperty(allowableValues = CustomDeploymentNGVariableConstants.SECRET_TYPE)
+  @ApiModelProperty(allowableValues = NGVariableConstants.NUMBER_TYPE)
   @VariableExpression(skipVariableExpression = true)
-  CustomDeploymentNGVariableType type = CustomDeploymentNGVariableType.SECRET;
+  CustomDeploymentNGVariableType type = CustomDeploymentNGVariableType.NUMBER;
   @NotNull
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  @VariableExpression(policy = REGULAR_WITH_CUSTOM_FIELD, skipInnerObjectTraversal = true)
-  ParameterField<SecretRefData> value;
+  @YamlSchemaTypes({numberString})
+  @ApiModelProperty(dataType = SwaggerConstants.DOUBLE_CLASSPATH)
+  @VariableExpression(policy = REGULAR, skipInnerObjectTraversal = true)
+  ParameterField<Double> value;
   @VariableExpression(skipVariableExpression = true) String description;
   @VariableExpression(skipVariableExpression = true) boolean required;
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;

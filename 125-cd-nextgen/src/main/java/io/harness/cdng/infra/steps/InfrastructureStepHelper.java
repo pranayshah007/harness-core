@@ -40,7 +40,9 @@ import io.harness.utils.IdentifierRefHelper;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @OwnedBy(HarnessTeam.CDC)
 @Singleton
@@ -63,6 +65,12 @@ public class InfrastructureStepHelper {
 
   public NGLogCallback getInfrastructureLogCallback(Ambiance ambiance, boolean shouldOpenStream, String logSuffix) {
     return new NGLogCallback(logStreamingStepClientFactory, ambiance, logSuffix, shouldOpenStream);
+  }
+  public List<ConnectorInfoDTO> validateAndGetConnectors(
+      List<ParameterField<String>> connectorRefs, Ambiance ambiance, NGLogCallback logCallback) {
+    return connectorRefs.stream()
+        .map(connectorRef -> validateAndGetConnector(connectorRef, ambiance, logCallback))
+        .collect(Collectors.toList());
   }
 
   public ConnectorInfoDTO validateAndGetConnector(

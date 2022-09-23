@@ -99,6 +99,12 @@ public class ServiceVariableCreator {
             addVariablesForSshServiceSpec(sshSpecNode, yamlPropertiesMap);
           }
           break;
+        case ServiceSpecType.CUSTOM_DEPLOYMENT:
+          YamlField customDeploymentSpecNode = serviceDefNode.getNode().getField(YamlTypes.SERVICE_SPEC);
+          if (customDeploymentSpecNode != null) {
+            addVariablesForCustomDeploymentServiceSpec(customDeploymentSpecNode, yamlPropertiesMap);
+          }
+          break;
         default:
           throw new InvalidRequestException("Invalid service type");
       }
@@ -123,6 +129,19 @@ public class ServiceVariableCreator {
   }
 
   private void addVariablesForSshServiceSpec(YamlField serviceSpecNode, Map<String, YamlProperties> yamlPropertiesMap) {
+    YamlField artifactsNode = serviceSpecNode.getNode().getField(YamlTypes.ARTIFACT_LIST_CONFIG);
+    if (VariableCreatorHelper.isNotYamlFieldEmpty(artifactsNode)) {
+      addVariablesForArtifacts(artifactsNode, yamlPropertiesMap);
+    }
+
+    YamlField variablesField = serviceSpecNode.getNode().getField(YAMLFieldNameConstants.VARIABLES);
+    if (variablesField != null) {
+      VariableCreatorHelper.addVariablesForVariables(variablesField, yamlPropertiesMap, YamlTypes.SERVICE_CONFIG);
+    }
+  }
+
+  private void addVariablesForCustomDeploymentServiceSpec(
+      YamlField serviceSpecNode, Map<String, YamlProperties> yamlPropertiesMap) {
     YamlField artifactsNode = serviceSpecNode.getNode().getField(YamlTypes.ARTIFACT_LIST_CONFIG);
     if (VariableCreatorHelper.isNotYamlFieldEmpty(artifactsNode)) {
       addVariablesForArtifacts(artifactsNode, yamlPropertiesMap);

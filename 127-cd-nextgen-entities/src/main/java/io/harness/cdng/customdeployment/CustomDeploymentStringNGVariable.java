@@ -5,19 +5,21 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.yaml.core.variables;
+package io.harness.cdng.customdeployment;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.yaml.core.VariableExpression.IteratePolicy.REGULAR_WITH_CUSTOM_FIELD;
+import static io.harness.yaml.core.VariableExpression.IteratePolicy.REGULAR;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
-import io.harness.connector.ConnectorInfoDTO;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YamlNode;
 import io.harness.validator.NGRegexValidatorConstants;
 import io.harness.validator.NGVariableName;
 import io.harness.yaml.core.VariableExpression;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
 import javax.validation.constraints.NotNull;
@@ -33,26 +35,33 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@JsonTypeName(CustomDeploymentNGVariableConstants.CONNECTOR_TYPE)
-@TypeAlias("io.harness.yaml.core.variables.CustomDeploymentSecretNGVariable")
+@JsonTypeName(CustomDeploymentNGVariableConstants.STRING_TYPE)
+@TypeAlias("customDeploymentStringNGVariable")
+@RecasterAlias("io.harness.cdng.customdeployment.CustomDeploymentStringNGVariable")
 @OwnedBy(CDP)
-public class CustomDeploymentConnectorNGVariable implements CustomDeploymentNGVariable {
+public class CustomDeploymentStringNGVariable implements CustomDeploymentNGVariable {
   @NGVariableName
   @Pattern(regexp = NGRegexValidatorConstants.IDENTIFIER_PATTERN)
   @VariableExpression(skipVariableExpression = true)
   String name;
-  @ApiModelProperty(allowableValues = CustomDeploymentNGVariableConstants.CONNECTOR_TYPE)
+  @ApiModelProperty(allowableValues = CustomDeploymentNGVariableConstants.STRING_TYPE)
   @VariableExpression(skipVariableExpression = true)
-  CustomDeploymentNGVariableType type = CustomDeploymentNGVariableType.CONNECTOR;
+  CustomDeploymentNGVariableType type = CustomDeploymentNGVariableType.STRING;
   @NotNull
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  @VariableExpression(policy = REGULAR_WITH_CUSTOM_FIELD, skipInnerObjectTraversal = true)
-  ParameterField<ConnectorInfoDTO> value;
+  @VariableExpression(policy = REGULAR, skipInnerObjectTraversal = true)
+  ParameterField<String> value;
+  //  String value;
   @VariableExpression(skipVariableExpression = true) String description;
   @VariableExpression(skipVariableExpression = true) boolean required;
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
+  @JsonProperty(YamlNode.UUID_FIELD_NAME)
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
+  @ApiModelProperty(hidden = true)
+  String uuid;
   @Override
   public ParameterField<?> getCurrentValue() {
     return value;
+    //    return ParameterField.createValueField(value);
   }
 }

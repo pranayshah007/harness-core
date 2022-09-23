@@ -175,7 +175,6 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.TEMPLATE_STAGE)
   TEMPLATE_STAGE(ModuleType.TEMPLATESERVICE, EntityTypeConstants.TEMPLATE_STAGE, NGTemplateReference.class,
       EntityYamlRootNames.TEMPLATE),
-
   @JsonProperty(EntityTypeConstants.TEMPLATE_CUSTOM_DEPLOYMENT)
   TEMPLATE_CUSTOM_DEPLOYMENT(ModuleType.TEMPLATESERVICE, EntityTypeConstants.TEMPLATE_CUSTOM_DEPLOYMENT,
       NGTemplateReference.class, EntityYamlRootNames.TEMPLATE),
@@ -270,6 +269,9 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.AZURE_TRAFFIC_SHIFT)
   AZURE_TRAFFIC_SHIFT_STEP(ModuleType.CD, EntityTypeConstants.AZURE_TRAFFIC_SHIFT, IdentifierRef.class,
       EntityYamlRootNames.AZURE_TRAFFIC_SHIFT_STEP),
+  @JsonProperty(EntityTypeConstants.FETCH_INSTANCE_SCRIPT)
+  FETCH_INSTANCE_SCRIPT_STEP(ModuleType.CD, EntityTypeConstants.FETCH_INSTANCE_SCRIPT, IdentifierRef.class,
+      EntityYamlRootNames.FETCH_INSTANCE_SCRIPT),
   @JsonProperty(EntityTypeConstants.AZURE_SWAP_SLOT)
   AZURE_SWAP_SLOT_STEP(ModuleType.CD, EntityTypeConstants.AZURE_SWAP_SLOT, IdentifierRef.class,
       EntityYamlRootNames.AZURE_SWAP_SLOT_STEP),

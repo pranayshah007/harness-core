@@ -7,6 +7,8 @@
 
 package io.harness.cdng.infra.steps;
 
+import static io.harness.ng.core.environment.beans.EnvironmentType.PreProduction;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.ArgumentMatchers.any;
@@ -24,6 +26,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.execution.helper.StageExecutionHelper;
+import io.harness.cdng.infra.InfrastructureMapper;
 import io.harness.cdng.infra.beans.AwsInstanceFilter;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.PdcInfrastructureOutcome;
@@ -61,7 +64,6 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.UnitStatus;
 import io.harness.logstreaming.NGLogCallback;
-import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.core.infrastructure.InfrastructureType;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
@@ -113,6 +115,7 @@ import org.mockito.MockitoAnnotations;
 
 public class InfrastructureTaskExecutableStepV2Test {
   @Mock private InfrastructureEntityService infrastructureEntityService;
+  @Mock private InfrastructureMapper infrastructureMapper;
   @Mock private InfrastructureStepHelper infrastructureStepHelper;
   @Mock private CDStepHelper cdStepHelper;
   @Mock private StepHelper stepHelper;
@@ -139,7 +142,7 @@ public class InfrastructureTaskExecutableStepV2Test {
         .when(outcomeService)
         .resolve(any(), eq(RefObjectUtils.getOutcomeRefObject("service")));
 
-    doReturn(EnvironmentOutcome.builder().type(EnvironmentType.PreProduction).build())
+    doReturn(EnvironmentOutcome.builder().type(PreProduction).build())
         .when(sweepingOutputService)
         .resolve(any(), eq(RefObjectUtils.getSweepingOutputRefObject("env")));
 
@@ -301,7 +304,15 @@ public class InfrastructureTaskExecutableStepV2Test {
             .build())
         .when(cdStepHelper)
         .getSshInfraDelegateConfig(any(InfrastructureOutcome.class), any(Ambiance.class));
-
+    when(infrastructureMapper.toOutcome(any(), any(), any(), any(), any(), any()))
+        .thenReturn(SshWinRmAwsInfrastructureOutcome.builder()
+                        .connectorRef("awsconnector")
+                        .hostConnectionType("PrivateIP")
+                        .region("us-east-2")
+                        .credentialsRef("sshkey")
+                        .environment(EnvironmentOutcome.builder().build())
+                        .infrastructureKey("7d998370da30e12c5384378d730ccf14676ce6f9")
+                        .build());
     mockInfra(awsInfra);
     TaskRequest taskRequest = step.obtainTask(ambiance,
         InfrastructureTaskExecutableStepV2Params.builder()
@@ -336,11 +347,20 @@ public class InfrastructureTaskExecutableStepV2Test {
         .getSshInfraDelegateConfig(any(InfrastructureOutcome.class), any(Ambiance.class));
 
     mockInfra(azureInfra);
-
-    doReturn(ConnectorInfoDTO.builder().connectorType(ConnectorType.AZURE).connectorConfig(connectorDTO).build())
+    when(infrastructureMapper.toOutcome(any(), any(), any(), any(), any(), any()))
+        .thenReturn(SshWinRmAzureInfrastructureOutcome.builder()
+                        .connectorRef("azureconnector")
+                        .subscriptionId("dev-subscription")
+                        .resourceGroup("harnessdev")
+                        .credentialsRef("sshkey")
+                        .environment(EnvironmentOutcome.builder().build())
+                        .infrastructureKey("ce1748ef0412b8f89d44b1297a633af41bfbd4a6")
+                        .build());
+    doReturn(Arrays.asList(
+                 ConnectorInfoDTO.builder().connectorType(ConnectorType.AZURE).connectorConfig(connectorDTO).build()))
         .when(infrastructureStepHelper)
-        .validateAndGetConnector(
-            eq(ParameterField.createValueField("azureconnector")), any(Ambiance.class), any(NGLogCallback.class));
+        .validateAndGetConnectors(eq(Arrays.asList(ParameterField.createValueField("azureconnector"))),
+            any(Ambiance.class), any(NGLogCallback.class));
     TaskRequest taskRequest = step.obtainTask(ambiance,
         InfrastructureTaskExecutableStepV2Params.builder()
             .envRef(ParameterField.createValueField("env-id"))
