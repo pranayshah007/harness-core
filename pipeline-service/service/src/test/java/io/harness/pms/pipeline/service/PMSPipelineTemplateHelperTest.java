@@ -120,7 +120,7 @@ public class PMSPipelineTemplateHelperTest extends CategoryTest {
         ValidateTemplateInputsResponseDTO.builder().build();
     when(callRequest.execute())
         .thenThrow(new NGTemplateResolveExceptionV2(
-            "Exception in resolving template refs in given yaml.", USER, validateTemplateInputsResponseDTO));
+            "Exception in resolving template refs in given yaml.", USER, validateTemplateInputsResponseDTO, null));
     assertThatThrownBy(
         () -> pipelineTemplateHelper.resolveTemplateRefsInPipeline(ACCOUNT_ID, ORG_ID, PROJECT_ID, givenYaml))
         .isInstanceOf(NGTemplateResolveExceptionV2.class)

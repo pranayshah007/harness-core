@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
 import software.wings.beans.DockerConfig;
+import software.wings.beans.GcpConfig;
 import software.wings.beans.GitConfig;
 import software.wings.beans.KubernetesClusterConfig;
 import software.wings.beans.SettingAttribute;
@@ -20,6 +21,7 @@ public class ConnectorFactory {
   private static final BaseConnector dockerConnector = new DockerConnectorImpl();
   private static final BaseConnector kubernetesConnector = new KubernetesConnectorImpl();
   private static final BaseConnector gitConnector = new GitConnectorImpl();
+  private static final BaseConnector gcpConnector = new GcpConnectorImpl();
   private static final BaseConnector unsupportedConnector = new UnsupportedConnectorImpl();
 
   public static BaseConnector getConnector(SettingAttribute settingAttribute) {
@@ -31,6 +33,9 @@ public class ConnectorFactory {
     }
     if (settingAttribute.getValue() instanceof GitConfig) {
       return gitConnector;
+    }
+    if (settingAttribute.getValue() instanceof GcpConfig) {
+      return gcpConnector;
     }
     return unsupportedConnector;
   }

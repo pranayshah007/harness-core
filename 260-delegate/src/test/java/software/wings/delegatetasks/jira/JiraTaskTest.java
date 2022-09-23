@@ -9,6 +9,7 @@ package software.wings.delegatetasks.jira;
 
 import static io.harness.rule.OwnerRule.AGORODETKI;
 import static io.harness.rule.OwnerRule.LUCAS_SALES;
+import static io.harness.rule.OwnerRule.RAFAEL;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
 import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 
@@ -46,6 +47,7 @@ import io.harness.jira.JiraCustomFieldValue;
 import io.harness.jira.JiraField;
 import io.harness.jira.JiraInstanceData;
 import io.harness.jira.JiraIssueNG;
+import io.harness.jira.JiraRestClient;
 import io.harness.jira.JiraUserData;
 import io.harness.rule.Owner;
 
@@ -126,6 +128,7 @@ public class JiraTaskTest extends CategoryTest {
   @Mock private Issue issue;
   @Mock private JiraIssueNG issueNG;
   @Mock private JiraClient jiraClient;
+  @Mock private JiraRestClient jiraRestClient;
   @Mock private io.harness.jira.JiraClient jiraNGClient;
   @Mock private Project project;
   @Mock private FluentUpdate update;
@@ -325,6 +328,25 @@ public class JiraTaskTest extends CategoryTest {
     verify(jiraNGClient).getUsers(taskParameters.getUserQuery(), null, null);
     assertThat(delegateResponseData).isEqualToComparingFieldByField(jiraExecutionData);
   }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void shouldExtractTimeTrackingSuccessfully() {
+    JiraTaskParameters taskParameters = getTaskParams(JiraAction.CREATE_TICKET_NG);
+    Map<String, JiraCustomFieldValue> customFields = new HashMap<>();
+    Map<String, String> userTypeFields = null;
+    customFields.put("TimeTracking:OriginalEstimate", new JiraCustomFieldValue("timetracking", "1d 2h"));
+    customFields.put("TimeTracking:RemainingEstimate", new JiraCustomFieldValue("timetracking", "4h"));
+    taskParameters.setCustomFields(customFields);
+
+    jiraTask.setCustomFieldsOnCreate(taskParameters, create);
+    Map<String, String> extracted = jiraTask.extractFieldsFromCGParameters(taskParameters, userTypeFields);
+
+    assertThat(extracted.get("Original Estimate")).isEqualTo("1d 2h");
+    assertThat(extracted.get("Remaining Estimate")).isEqualTo("4h");
+  }
+
   @Test
   @Owner(developers = AGORODETKI)
   @Category(UnitTests.class)
@@ -932,6 +954,7 @@ public class JiraTaskTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldReturnSuccessfulExecutionForCheckJiraApproval() throws JiraException {
     JiraTaskParameters taskParameters = getTaskParams(JiraAction.CHECK_APPROVAL);
+
     doReturn(jiraClient).when(spyJiraTask).getJiraClient(taskParameters);
     when(jiraClient.getIssue(JIRA_ISSUE_ID)).thenReturn(issue);
     when(issue.getField(STATUS)).thenReturn(singletonMap("name", "To Do"));

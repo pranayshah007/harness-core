@@ -170,7 +170,6 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.service.intfc.AgentMtlsEndpointService;
 import io.harness.service.intfc.DelegateCache;
 import io.harness.service.intfc.DelegateCallbackRegistry;
-import io.harness.service.intfc.DelegateInsightsService;
 import io.harness.service.intfc.DelegateProfileObserver;
 import io.harness.service.intfc.DelegateSetupService;
 import io.harness.service.intfc.DelegateSyncService;
@@ -178,7 +177,6 @@ import io.harness.service.intfc.DelegateTaskSelectorMapService;
 import io.harness.service.intfc.DelegateTaskService;
 import io.harness.service.intfc.DelegateTokenService;
 import io.harness.stream.BoundedInputStream;
-import io.harness.validation.SuppressValidation;
 import io.harness.version.VersionInfoManager;
 import io.harness.waiter.WaitNotifyEngine;
 
@@ -279,13 +277,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPOutputStream;
 import javax.validation.ConstraintViolation;
+import javax.validation.constraints.NotBlank;
 import javax.validation.executable.ValidateOnExecution;
 import javax.ws.rs.core.MediaType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.Request.Builder;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.io.IOUtils;
@@ -398,7 +396,6 @@ public class DelegateServiceImpl implements DelegateService {
   @Inject private SettingsService settingsService;
   @Inject private DelegateCache delegateCache;
   @Inject private CapabilityService capabilityService;
-  @Inject private DelegateInsightsService delegateInsightsService;
   @Inject private DelegateSetupService delegateSetupService;
   @Inject private AuditHelper auditHelper;
   @Inject private DelegateTokenService delegateTokenService;
@@ -409,9 +406,6 @@ public class DelegateServiceImpl implements DelegateService {
   @Inject @Named(DelegatesFeature.FEATURE_NAME) private UsageLimitedFeature delegatesFeature;
   @Inject @Getter private Subject<DelegateObserver> subject = new Subject<>();
   @Getter private final Subject<DelegateProfileObserver> delegateProfileSubject = new Subject<>();
-  @Inject
-  @Getter(onMethod = @__(@SuppressValidation))
-  private Subject<DelegateTaskStatusObserver> delegateTaskStatusObserverSubject;
   @Inject private OutboxService outboxService;
   @Inject private DelegateServiceClassicGrpcClient delegateServiceClassicGrpcClient;
   @Inject private DelegateNgTokenService delegateNgTokenService;
@@ -819,7 +813,13 @@ public class DelegateServiceImpl implements DelegateService {
                 : delegateVersionListWithoutPatch(delegateConfiguration.getDelegateVersions()))
         .scalingGroups(scalingGroups)
         .delegates(buildInnerDelegates(accountId, delegatesWithoutScalingGroup, activeDelegateConnections, false))
+        .publishedImmutableDelegateVersion(
+            FetchDelegateVersionFromImage(delegateVersionService.getImmutableDelegateImageTag(accountId)))
         .build();
+  }
+
+  private String FetchDelegateVersionFromImage(@NotBlank final String immutableDelegateImageTag) {
+    return substringAfter(immutableDelegateImageTag, ":");
   }
 
   private List<String> delegateVersionListWithoutPatch(List<String> delegateVersions) {
@@ -870,7 +870,7 @@ public class DelegateServiceImpl implements DelegateService {
 
   private long setDelegateScalingGroupExpiration(List<Delegate> delegates) {
     return isNotEmpty(delegates)
-        ? delegates.stream().max(Comparator.comparing(Delegate::getExpirationTime)).get().getExpirationTime()
+        ? delegates.stream().min(Comparator.comparing(Delegate::getExpirationTime)).get().getExpirationTime()
         : 0;
   }
 

@@ -12,7 +12,6 @@ import static io.harness.NGConstants.DEFAULT_ORG_IDENTIFIER;
 import static io.harness.NGConstants.DEFAULT_PROJECT_IDENTIFIER;
 import static io.harness.NGConstants.DEFAULT_PROJECT_LEVEL_RESOURCE_GROUP_IDENTIFIER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.beans.FeatureName.HARD_DELETE_ENTITIES;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.enforcement.constants.FeatureRestrictionName.MULTIPLE_PROJECTS;
@@ -84,7 +83,6 @@ import io.harness.security.dto.PrincipalType;
 import io.harness.telemetry.helpers.ProjectInstrumentationHelper;
 import io.harness.utils.PageUtils;
 import io.harness.utils.ScopeUtils;
-import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -133,7 +131,6 @@ public class ProjectServiceImpl implements ProjectService {
   private final ScopeAccessHelper scopeAccessHelper;
   private final ProjectInstrumentationHelper instrumentationHelper;
   private final YamlGitConfigService yamlGitConfigService;
-  private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
   private final FeatureFlagService featureFlagService;
   private final DefaultUserGroupService defaultUserGroupService;
 
@@ -142,8 +139,7 @@ public class ProjectServiceImpl implements ProjectService {
       @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate, OutboxService outboxService,
       NgUserService ngUserService, AccessControlClient accessControlClient, ScopeAccessHelper scopeAccessHelper,
       ProjectInstrumentationHelper instrumentationHelper, YamlGitConfigService yamlGitConfigService,
-      NGFeatureFlagHelperService ngFeatureFlagHelperService, FeatureFlagService featureFlagService,
-      DefaultUserGroupService defaultUserGroupService) {
+      FeatureFlagService featureFlagService, DefaultUserGroupService defaultUserGroupService) {
     this.projectRepository = projectRepository;
     this.organizationService = organizationService;
     this.transactionTemplate = transactionTemplate;
@@ -153,7 +149,6 @@ public class ProjectServiceImpl implements ProjectService {
     this.scopeAccessHelper = scopeAccessHelper;
     this.instrumentationHelper = instrumentationHelper;
     this.yamlGitConfigService = yamlGitConfigService;
-    this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;
     this.featureFlagService = featureFlagService;
     this.defaultUserGroupService = defaultUserGroupService;
   }
@@ -568,11 +563,9 @@ public class ProjectServiceImpl implements ProjectService {
   public boolean delete(String accountIdentifier, @OrgIdentifier String orgIdentifier,
       @ProjectIdentifier String projectIdentifier, Long version) {
     return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
-      Project deletedProject = projectRepository.delete(accountIdentifier, orgIdentifier, projectIdentifier, version);
+      Project deletedProject =
+          projectRepository.hardDelete(accountIdentifier, orgIdentifier, projectIdentifier, version);
       boolean delete = deletedProject != null;
-      if (delete && ngFeatureFlagHelperService.isEnabled(accountIdentifier, HARD_DELETE_ENTITIES)) {
-        projectRepository.hardDelete(accountIdentifier, orgIdentifier, projectIdentifier, version);
-      }
 
       if (delete) {
         log.info(String.format("Project with identifier %s and orgIdentifier %s was successfully deleted",

@@ -22,7 +22,7 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 public class CustomDeploymentInstanceInfoDTO extends InstanceInfoDTO {
   @NotNull private String hostname;
-  @NotNull private String instanceFetchScript;
+  @NotNull private int instanceFetchScriptHash;
   private Map<String, Object> properties;
 
   @Override
@@ -32,7 +32,7 @@ public class CustomDeploymentInstanceInfoDTO extends InstanceInfoDTO {
 
   @Override
   public String prepareInstanceSyncHandlerKey() {
-    return InstanceSyncKey.builder().part(instanceFetchScript).build().toString();
+    return InstanceSyncKey.builder().part(instanceFetchScriptHash).build().toString();
   }
 
   @Override
