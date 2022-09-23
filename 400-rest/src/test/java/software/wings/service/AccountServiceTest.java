@@ -14,6 +14,7 @@ import static io.harness.rule.OwnerRule.ANKIT;
 import static io.harness.rule.OwnerRule.BRETT;
 import static io.harness.rule.OwnerRule.DEEPAK;
 import static io.harness.rule.OwnerRule.HANTANG;
+import static io.harness.rule.OwnerRule.JOHANNES;
 import static io.harness.rule.OwnerRule.LAZAR;
 import static io.harness.rule.OwnerRule.MEHUL;
 import static io.harness.rule.OwnerRule.MOHIT;
@@ -114,7 +115,6 @@ import software.wings.security.UserThreadLocal;
 import software.wings.service.impl.AccountServiceImpl;
 import software.wings.service.impl.analysis.CVEnabledService;
 import software.wings.service.impl.security.auth.AuthHandler;
-import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.AuthService;
 import software.wings.service.intfc.DelegateProfileService;
@@ -177,7 +177,7 @@ public class AccountServiceTest extends WingsBaseTest {
   @Mock(answer = Answers.RETURNS_DEEP_STUBS) private MainConfiguration configuration;
 
   @InjectMocks @Inject private LicenseService licenseService;
-  @InjectMocks @Inject private AccountService accountService;
+  @InjectMocks @Inject private AccountServiceImpl accountService;
   @InjectMocks @Inject private UserResource userResource;
   @InjectMocks @Inject private AccountResource accountResource;
   @Mock private AuthHandler authHandler;
@@ -1207,6 +1207,60 @@ public class AccountServiceTest extends WingsBaseTest {
   }
 
   @Test
+  @Owner(developers = JOHANNES)
+  @Category(UnitTests.class)
+  public void testCheckReservedSubdomainUrl() {
+    // no host
+    assertThatExceptionOfType(InvalidArgumentsException.class)
+        .isThrownBy(() -> accountService.checkReservedSubdomainUrl(new SubdomainUrl("https://:abc/somepath")));
+
+    // empty or no first segment
+    assertThatExceptionOfType(InvalidArgumentsException.class)
+        .isThrownBy(() -> accountService.checkReservedSubdomainUrl(new SubdomainUrl("https://whatisthis")));
+    assertThatExceptionOfType(InvalidArgumentsException.class)
+        .isThrownBy(() -> accountService.checkReservedSubdomainUrl(new SubdomainUrl("https://.harness.io")));
+
+    // valid smoke test
+    assertThat(accountService.checkReservedSubdomainUrl(new SubdomainUrl("https://customer.harness.io"))).isFalse();
+
+    // ensure casing doesn't matter
+    assertThat(accountService.checkReservedSubdomainUrl(new SubdomainUrl("https://AgeNT.harness.io"))).isTrue();
+
+    // Go through list and ensure only exact match returns true
+    assertThat(accountService.checkReservedSubdomainUrl(new SubdomainUrl("https://agent.harness.io"))).isTrue();
+    assertThat(accountService.checkReservedSubdomainUrl(new SubdomainUrl("https://aagent.harness.io"))).isFalse();
+    assertThat(accountService.checkReservedSubdomainUrl(new SubdomainUrl("https://agenta.harness.io"))).isFalse();
+
+    assertThat(accountService.checkReservedSubdomainUrl(new SubdomainUrl("https://app.harness.io"))).isTrue();
+    assertThat(accountService.checkReservedSubdomainUrl(new SubdomainUrl("https://app0.harness.io"))).isTrue();
+    assertThat(accountService.checkReservedSubdomainUrl(new SubdomainUrl("https://app1234.harness.io"))).isTrue();
+    assertThat(accountService.checkReservedSubdomainUrl(new SubdomainUrl("https://app-1234.harness.io"))).isTrue();
+    assertThat(accountService.checkReservedSubdomainUrl(new SubdomainUrl("https://aapp.harness.io"))).isFalse();
+    assertThat(accountService.checkReservedSubdomainUrl(new SubdomainUrl("https://appa.harness.io"))).isFalse();
+    assertThat(accountService.checkReservedSubdomainUrl(new SubdomainUrl("https://app-lication.harness.io"))).isFalse();
+
+    assertThat(accountService.checkReservedSubdomainUrl(new SubdomainUrl("https://qa.harness.io"))).isTrue();
+    assertThat(accountService.checkReservedSubdomainUrl(new SubdomainUrl("https://aqa.harness.io"))).isFalse();
+    assertThat(accountService.checkReservedSubdomainUrl(new SubdomainUrl("https://qaa.harness.io"))).isFalse();
+
+    assertThat(accountService.checkReservedSubdomainUrl(new SubdomainUrl("https://pr.harness.io"))).isTrue();
+    assertThat(accountService.checkReservedSubdomainUrl(new SubdomainUrl("https://apr.harness.io"))).isFalse();
+    assertThat(accountService.checkReservedSubdomainUrl(new SubdomainUrl("https://pra.harness.io"))).isFalse();
+
+    assertThat(accountService.checkReservedSubdomainUrl(new SubdomainUrl("https://stress.harness.io"))).isTrue();
+    assertThat(accountService.checkReservedSubdomainUrl(new SubdomainUrl("https://astress.harness.io"))).isFalse();
+    assertThat(accountService.checkReservedSubdomainUrl(new SubdomainUrl("https://stressa.harness.io"))).isFalse();
+
+    assertThat(accountService.checkReservedSubdomainUrl(new SubdomainUrl("https://prod.harness.io"))).isTrue();
+    assertThat(accountService.checkReservedSubdomainUrl(new SubdomainUrl("https://prod0.harness.io"))).isTrue();
+    assertThat(accountService.checkReservedSubdomainUrl(new SubdomainUrl("https://prod1234.harness.io"))).isTrue();
+    assertThat(accountService.checkReservedSubdomainUrl(new SubdomainUrl("https://prod-1234.harness.io"))).isTrue();
+    assertThat(accountService.checkReservedSubdomainUrl(new SubdomainUrl("https://aprod.harness.io"))).isFalse();
+    assertThat(accountService.checkReservedSubdomainUrl(new SubdomainUrl("https://proda.harness.io"))).isFalse();
+    assertThat(accountService.checkReservedSubdomainUrl(new SubdomainUrl("https://prod-uction.harness.io"))).isFalse();
+  }
+
+  @Test
   @Owner(developers = MEHUL)
   @Category(UnitTests.class)
   public void testSetSubdomainUrl() {
@@ -1243,6 +1297,7 @@ public class AccountServiceTest extends WingsBaseTest {
     SubdomainUrl validUrl = new SubdomainUrl("https://domain.io");
     SubdomainUrl invalidUrl = new SubdomainUrl("domain.com");
     SubdomainUrl duplicateUrl = new SubdomainUrl("https://initialDomain.com");
+    SubdomainUrl reservedUrl = new SubdomainUrl("https://agent.harness.io");
     User user1 = User.Builder.anUser().uuid("userId1").name("name1").email("user1@harness.io").build();
     User user2 = User.Builder.anUser().uuid("userId2").name("name2").email("user2@harness.io").build();
     when(harnessUserGroupService.isHarnessSupportUser("userId1")).thenReturn(Boolean.FALSE);
@@ -1256,6 +1311,8 @@ public class AccountServiceTest extends WingsBaseTest {
         .isThrownBy(() -> accountService.addSubdomainUrl(user2.getUuid(), account2.getUuid(), invalidUrl));
     assertThatExceptionOfType(InvalidArgumentsException.class)
         .isThrownBy(() -> accountService.addSubdomainUrl(user2.getUuid(), account2.getUuid(), duplicateUrl));
+    assertThatExceptionOfType(InvalidArgumentsException.class)
+        .isThrownBy(() -> accountService.addSubdomainUrl(user2.getUuid(), account2.getUuid(), reservedUrl));
 
     Boolean result1 = accountService.addSubdomainUrl(user2.getUuid(), account2.getUuid(), validUrl);
     assertThat(wingsPersistence.get(Account.class, account2.getUuid()).getSubdomainUrl()).isEqualTo(validUrl.getUrl());
