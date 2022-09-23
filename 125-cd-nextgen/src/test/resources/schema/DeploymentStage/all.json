@@ -311,6 +311,7 @@
             "Gcr",
             "Ecr",
             "Nexus3Registry",
+            "Nexus2Registry",
             "ArtifactoryRegistry",
             "CustomArtifact",
             "Acr",
@@ -496,6 +497,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/JenkinsArtifactConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Nexus2Registry"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/Nexus2RegistryArtifactConfig"
               }
             }
           }
@@ -5570,7 +5587,7 @@
                   "type": "string"
                 }
               ]
-              }
+            }
           }
         }
       ],
@@ -6538,6 +6555,125 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "Nexus2RegistryArtifactConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ArtifactConfig"
+        },
+        {
+          "type": "object",
+          "required": [
+            "connectorRef",
+            "repository",
+            "repositoryFormat"
+          ],
+          "properties": {
+            "connectorRef": {
+              "type": "string"
+            },
+            "metadata": {
+              "type": "string"
+            },
+            "repository": {
+              "type": "string"
+            },
+            "repositoryFormat": {
+              "type": "string",
+              "enum": [
+                "maven",
+                "npm",
+                "nuget"
+              ]
+            },
+            "tag": {
+              "type": "string"
+            },
+            "tagRegex": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "repositoryFormat": {
+                "const": "docker"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/NexusRegistryDockerConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "repositoryFormat": {
+                "const": "maven"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/NexusRegistryMavenConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "repositoryFormat": {
+                "const": "npm"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/NexusRegistryNpmConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "repositoryFormat": {
+                "const": "nuget"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/NexusRegistryNugetConfig"
+              }
+            }
+          }
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "tagRegex"
+              ]
+            },
+            {
+              "required": [
+                "tag"
+              ]
+            }
+          ]
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "NexusRegistryArtifactConfig": {
       "allOf": [
         {
@@ -6567,7 +6703,10 @@
             "repositoryFormat": {
               "type": "string",
               "enum": [
-                "docker"
+                "docker",
+                "maven",
+                "npm",
+                "nuget"
               ]
             },
             "repositoryPort": {
@@ -6592,18 +6731,68 @@
           }
         },
         {
-          "oneOf": [
-            {
-              "required": [
-                "repositoryPort"
-              ]
-            },
-            {
-              "required": [
-                "repositoryUrl"
-              ]
+          "if": {
+            "properties": {
+              "repositoryFormat": {
+                "const": "docker"
+              }
             }
-          ]
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/NexusRegistryDockerConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "repositoryFormat": {
+                "const": "maven"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/NexusRegistryMavenConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "repositoryFormat": {
+                "const": "npm"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/NexusRegistryNpmConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "repositoryFormat": {
+                "const": "nuget"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/NexusRegistryNugetConfig"
+              }
+            }
+          }
         },
         {
           "oneOf": [
@@ -6618,6 +6807,123 @@
               ]
             }
           ]
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "NexusRegistryConfigSpec": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "NexusRegistryDockerConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/NexusRegistryConfigSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "artifactPath"
+          ],
+          "properties": {
+            "artifactPath": {
+              "type": "string"
+            },
+            "repositoryPort": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "repositoryUrl": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "repositoryPort"
+              ]
+            },
+            {
+              "required": [
+                "repositoryUrl"
+              ]
+            }
+          ]
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "NexusRegistryMavenConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/NexusRegistryConfigSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "artifactId",
+            "groupId"
+          ],
+          "properties": {
+            "artifactId": {
+              "type": "string"
+            },
+            "classifier": {
+              "type": "string"
+            },
+            "extension": {
+              "type": "string"
+            },
+            "groupId": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "NexusRegistryNpmConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/NexusRegistryConfigSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "packageName"
+          ],
+          "properties": {
+            "packageName": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "NexusRegistryNugetConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/NexusRegistryConfigSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "packageName"
+          ],
+          "properties": {
+            "packageName": {
+              "type": "string"
+            }
+          }
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -7376,6 +7682,7 @@
             "Gcr",
             "Ecr",
             "Nexus3Registry",
+            "Nexus2Registry",
             "ArtifactoryRegistry",
             "CustomArtifact",
             "Acr",
@@ -7561,6 +7868,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/JenkinsArtifactConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Nexus2Registry"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/Nexus2RegistryArtifactConfig"
               }
             }
           }
@@ -8489,6 +8812,7 @@
             "Gcr",
             "Ecr",
             "Nexus3Registry",
+            "Nexus2Registry",
             "ArtifactoryRegistry",
             "CustomArtifact",
             "Acr",
@@ -8674,6 +8998,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/JenkinsArtifactConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Nexus2Registry"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/Nexus2RegistryArtifactConfig"
               }
             }
           }

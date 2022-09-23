@@ -23,6 +23,11 @@ import io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig;
 import io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.customartifact.CustomScriptInlineSource;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.Nexus2RegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryDockerConfig;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryMavenConfig;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryNpmConfig;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryNugetConfig;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
@@ -185,14 +190,84 @@ public class ArtifactConfigToDelegateReqMapper {
     if (EmptyPredicate.isEmpty(tag) && EmptyPredicate.isEmpty(tagRegex)) {
       tagRegex = ACCEPT_ALL_REGEX;
     }
-    String port = artifactConfig.getRepositoryPort() != null ? artifactConfig.getRepositoryPort().getValue() : null;
-    String artifactRepositoryUrl =
-        artifactConfig.getRepositoryUrl() != null ? artifactConfig.getRepositoryUrl().getValue() : null;
+
+    String packageName = null;
+    String groupId = null;
+    String artifactId = null;
+    String extension = null;
+    String classifier = null;
+    String port = null;
+    String artifactRepositoryUrl = null;
+    if (artifactConfig.getRepositoryFormat().getValue().equalsIgnoreCase("npm")) {
+      NexusRegistryNpmConfig nexusRegistryNpmConfig =
+          (NexusRegistryNpmConfig) artifactConfig.getNexusRegistryConfigSpec();
+      packageName = nexusRegistryNpmConfig.getPackageName().getValue();
+    } else if (artifactConfig.getRepositoryFormat().getValue().equalsIgnoreCase("nuget")) {
+      NexusRegistryNugetConfig nexusRegistryNugetConfig =
+          (NexusRegistryNugetConfig) artifactConfig.getNexusRegistryConfigSpec();
+      packageName = nexusRegistryNugetConfig.getPackageName().getValue();
+    } else if (artifactConfig.getRepositoryFormat().getValue().equalsIgnoreCase("docker")) {
+      NexusRegistryDockerConfig nexusRegistryDockerConfig =
+          (NexusRegistryDockerConfig) artifactConfig.getNexusRegistryConfigSpec();
+      port = nexusRegistryDockerConfig.getRepositoryPort() != null
+          ? nexusRegistryDockerConfig.getRepositoryPort().getValue()
+          : null;
+      artifactRepositoryUrl = nexusRegistryDockerConfig.getRepositoryUrl() != null
+          ? nexusRegistryDockerConfig.getRepositoryUrl().getValue()
+          : null;
+      artifactId = nexusRegistryDockerConfig.getArtifactPath() != null
+          ? nexusRegistryDockerConfig.getArtifactPath().getValue()
+          : null;
+    } else {
+      NexusRegistryMavenConfig nexusRegistryMavenConfig =
+          (NexusRegistryMavenConfig) artifactConfig.getNexusRegistryConfigSpec();
+      groupId = nexusRegistryMavenConfig.getGroupId().getValue();
+      artifactId = nexusRegistryMavenConfig.getArtifactId().getValue();
+      extension = nexusRegistryMavenConfig.getExtension().getValue();
+      classifier = nexusRegistryMavenConfig.getClassifier().getValue();
+    }
 
     return ArtifactDelegateRequestUtils.getNexusArtifactDelegateRequest(artifactConfig.getRepository().getValue(), port,
-        artifactConfig.getArtifactPath().getValue(), artifactConfig.getRepositoryFormat().getValue(),
-        artifactRepositoryUrl, tag, tagRegex, connectorRef, nexusConnectorDTO, encryptedDataDetails,
-        ArtifactSourceType.NEXUS3_REGISTRY);
+        artifactId, artifactConfig.getRepositoryFormat().getValue(), artifactRepositoryUrl, tag, tagRegex, connectorRef,
+        nexusConnectorDTO, encryptedDataDetails, ArtifactSourceType.NEXUS3_REGISTRY, groupId, artifactId, extension,
+        classifier, packageName);
+  }
+
+  public NexusArtifactDelegateRequest getNexus2ArtifactDelegateRequest(Nexus2RegistryArtifactConfig artifactConfig,
+      NexusConnectorDTO nexusConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef) {
+    // If both are empty, regex is latest among all docker artifacts.
+    String tagRegex = artifactConfig.getTagRegex() != null ? artifactConfig.getTagRegex().getValue() : "";
+    String tag = artifactConfig.getTag() != null ? artifactConfig.getTag().getValue() : "";
+    if (EmptyPredicate.isEmpty(tag) && EmptyPredicate.isEmpty(tagRegex)) {
+      tagRegex = ACCEPT_ALL_REGEX;
+    }
+
+    String packageName = null;
+    String groupId = null;
+    String artifactId = null;
+    String extension = null;
+    String classifier = null;
+    if (artifactConfig.getRepositoryFormat().getValue().equalsIgnoreCase("npm")) {
+      NexusRegistryNpmConfig nexusRegistryNpmConfig =
+          (NexusRegistryNpmConfig) artifactConfig.getNexusRegistryConfigSpec();
+      packageName = nexusRegistryNpmConfig.getPackageName().getValue();
+    } else if (artifactConfig.getRepositoryFormat().getValue().equalsIgnoreCase("nuget")) {
+      NexusRegistryNugetConfig nexusRegistryNugetConfig =
+          (NexusRegistryNugetConfig) artifactConfig.getNexusRegistryConfigSpec();
+      packageName = nexusRegistryNugetConfig.getPackageName().getValue();
+    } else {
+      NexusRegistryMavenConfig nexusRegistryMavenConfig =
+          (NexusRegistryMavenConfig) artifactConfig.getNexusRegistryConfigSpec();
+      groupId = nexusRegistryMavenConfig.getGroupId().getValue();
+      artifactId = nexusRegistryMavenConfig.getArtifactId().getValue();
+      extension = nexusRegistryMavenConfig.getExtension().getValue();
+      classifier = nexusRegistryMavenConfig.getClassifier().getValue();
+    }
+
+    return ArtifactDelegateRequestUtils.getNexusArtifactDelegateRequest(artifactConfig.getRepository().getValue(), null,
+        null, artifactConfig.getRepositoryFormat().getValue(), null, tag, tagRegex, connectorRef, nexusConnectorDTO,
+        encryptedDataDetails, ArtifactSourceType.NEXUS2_REGISTRY, groupId, artifactId, extension, classifier,
+        packageName);
   }
 
   public ArtifactSourceDelegateRequest getArtifactoryArtifactDelegateRequest(

@@ -23,6 +23,7 @@ import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryDockerConfig;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
@@ -99,26 +100,32 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
   @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
   public void testGetNexusDelegateRequest() {
+    NexusRegistryDockerConfig nexusRegistryDockerConfig =
+        NexusRegistryDockerConfig.builder()
+            .artifactPath(ParameterField.createValueField("IMAGE"))
+            .repositoryPort(ParameterField.createValueField("TEST_REPO"))
+            .build();
+
     NexusRegistryArtifactConfig artifactConfig =
         NexusRegistryArtifactConfig.builder()
             .repository(ParameterField.createValueField("TEST_REPO"))
             .repositoryFormat(ParameterField.createValueField(RepositoryFormat.docker.name()))
-            .repositoryPort(ParameterField.createValueField("8181"))
-            .artifactPath(ParameterField.createValueField("IMAGE"))
+            .nexusRegistryConfigSpec(nexusRegistryDockerConfig)
             .build();
     NexusConnectorDTO connectorDTO = NexusConnectorDTO.builder().build();
     List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
 
     NexusArtifactDelegateRequest delegateRequest = ArtifactConfigToDelegateReqMapper.getNexusArtifactDelegateRequest(
         artifactConfig, connectorDTO, encryptedDataDetailList, "");
+    nexusRegistryDockerConfig = (NexusRegistryDockerConfig) artifactConfig.getNexusRegistryConfigSpec();
 
     assertThat(delegateRequest.getNexusConnectorDTO()).isEqualTo(connectorDTO);
     assertThat(delegateRequest.getRepositoryName()).isEqualTo(artifactConfig.getRepository().getValue());
     assertThat(delegateRequest.getRepositoryFormat()).isEqualTo(RepositoryFormat.docker.name());
-    assertThat(delegateRequest.getRepositoryPort()).isEqualTo(artifactConfig.getRepositoryPort().getValue());
+    assertThat(delegateRequest.getRepositoryPort()).isEqualTo(nexusRegistryDockerConfig.getRepositoryPort().getValue());
     assertThat(delegateRequest.getArtifactRepositoryUrl()).isNull();
     assertThat(delegateRequest.getEncryptedDataDetails()).isEqualTo(encryptedDataDetailList);
-    assertThat(delegateRequest.getArtifactPath()).isEqualTo(artifactConfig.getArtifactPath().getValue());
+    assertThat(delegateRequest.getArtifactPath()).isEqualTo(nexusRegistryDockerConfig.getArtifactPath().getValue());
     assertThat(delegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.NEXUS3_REGISTRY);
     assertThat(delegateRequest.getTag()).isEqualTo("");
     assertThat(delegateRequest.getConnectorRef()).isEqualTo("");
@@ -129,11 +136,13 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
   @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
   public void testGetNexusDelegateRequestWithoutPort() {
+    NexusRegistryDockerConfig nexusRegistryDockerConfig =
+        NexusRegistryDockerConfig.builder().artifactPath(ParameterField.createValueField("IMAGE")).build();
     NexusRegistryArtifactConfig artifactConfig =
         NexusRegistryArtifactConfig.builder()
             .repository(ParameterField.createValueField("TEST_REPO"))
             .repositoryFormat(ParameterField.createValueField(RepositoryFormat.docker.name()))
-            .artifactPath(ParameterField.createValueField("IMAGE"))
+            .nexusRegistryConfigSpec(nexusRegistryDockerConfig)
             .build();
     NexusConnectorDTO connectorDTO = NexusConnectorDTO.builder().build();
     List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
@@ -147,7 +156,8 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     assertThat(delegateRequest.getRepositoryPort()).isNull();
     assertThat(delegateRequest.getArtifactRepositoryUrl()).isNull();
     assertThat(delegateRequest.getEncryptedDataDetails()).isEqualTo(encryptedDataDetailList);
-    assertThat(delegateRequest.getArtifactPath()).isEqualTo(artifactConfig.getArtifactPath().getValue());
+    nexusRegistryDockerConfig = (NexusRegistryDockerConfig) artifactConfig.getNexusRegistryConfigSpec();
+    assertThat(delegateRequest.getArtifactPath()).isEqualTo(nexusRegistryDockerConfig.getArtifactPath().getValue());
     assertThat(delegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.NEXUS3_REGISTRY);
     assertThat(delegateRequest.getTag()).isEqualTo("");
     assertThat(delegateRequest.getConnectorRef()).isEqualTo("");

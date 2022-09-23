@@ -503,4 +503,5 @@ io.harness.cdng.ecs.EcsBlueGreenRollbackStepParameters
 io.harness.cdng.ecs.EcsBlueGreenRollbackOutcome
 io.harness.cdng.ecs.EcsBlueGreenSwapTargetGroupsOutcome
 io.harness.cdng.ecs.EcsBlueGreenRollbackStepNode
+io.harness.cdng.artifact.bean.yaml.Nexus2RegistryArtifactConfig
 
