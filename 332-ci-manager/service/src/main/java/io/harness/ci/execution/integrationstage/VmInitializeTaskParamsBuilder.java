@@ -191,6 +191,13 @@ public class VmInitializeTaskParamsBuilder {
     envVars.putAll(codebaseEnvVars);
     envVars.putAll(gitEnvVars);
 
+    Map<String, String> stoEnvVars = vmInitializeUtils.getSTOServiceEnvVariables(stoServiceUtils, accountID);
+    Map<String, String> commonEnvVars =
+        vmInitializeUtils.getCommonStepEnvVariables(stageDetails.getStageID(), ambiance);
+
+    envVars.putAll(stoEnvVars);
+    envVars.putAll(commonEnvVars);
+
     Map<String, String> stageVars = getEnvironmentVariables(
         NGVariablesUtils.getMapOfVariables(initializeStepInfo.getVariables(), ambiance.getExpressionFunctorToken()));
     CIVmSecretEvaluator ciVmSecretEvaluator = CIVmSecretEvaluator.builder().build();
