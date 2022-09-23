@@ -62,11 +62,10 @@ spec:
       - image: harness/delegate:latest
         imagePullPolicy: Always
         name: delegate
-        securityContext:
-          allowPrivilegeEscalation: false
-          runAsUser: 0
-        ports:
-          - containerPort: 8080
+        #uncomment below lines to run delegate as root.
+        #securityContext:
+        #  allowPrivilegeEscalation: false
+        #  runAsUser: 0
         resources:
           limits:
             cpu: "1.0"
@@ -118,19 +117,6 @@ spec:
         - name: LOG_STREAMING_SERVICE_URL
           value: "http://localhost:8079"
 
----
-
-apiVersion: v1
-kind: Service
-metadata:
-  name: delegate-service
-  namespace: harness-delegate
-spec:
-  type: ClusterIP
-  selector:
-    harness.io/name: harness-delegate
-  ports:
-    - port: 8080
 
 ---
 
