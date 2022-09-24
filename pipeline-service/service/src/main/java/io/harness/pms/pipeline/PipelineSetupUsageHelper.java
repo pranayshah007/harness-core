@@ -8,7 +8,6 @@
 package io.harness.pms.pipeline;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.CONNECTORS;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.ENVIRONMENT;
@@ -222,13 +221,6 @@ public class PipelineSetupUsageHelper implements PipelineActionObserver {
   }
 
   private EntityReferredByPipelineDetailProtoDTO getSetupDetailProtoDTO(String fqn, String pipelineIdentifier) {
-    if (isEmpty(fqn)) {
-      return EntityReferredByPipelineDetailProtoDTO.newBuilder()
-          .setIdentifier(pipelineIdentifier)
-          .setType(PipelineDetailType.PIPELINE_IDENTIFIER)
-          .build();
-    }
-
     String stageIdentifier = YamlUtils.getStageIdentifierFromFqn(fqn);
     if (stageIdentifier != null) {
       return EntityReferredByPipelineDetailProtoDTO.newBuilder()

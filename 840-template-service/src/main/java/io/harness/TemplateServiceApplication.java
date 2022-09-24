@@ -344,7 +344,7 @@ public class TemplateServiceApplication extends Application<TemplateServiceConfi
         .deployMode(DeployMode.REMOTE)
         .microservice(Microservice.TEMPLATESERVICE)
         .scmConnectionConfig(gitSdkConfiguration.getScmConnectionConfig())
-        .eventsFrameworkConfiguration(config.getEventsFrameworkConfiguration())
+        .eventsRedisConfig(config.getEventsFrameworkConfiguration().getRedisConfig())
         .serviceHeader(TEMPLATE_SERVICE)
         .gitSyncEntitiesConfiguration(gitSyncEntitiesConfigurations)
         .gitSyncEntitySortComparator(TemplateGitEntityOrderComparator.class)

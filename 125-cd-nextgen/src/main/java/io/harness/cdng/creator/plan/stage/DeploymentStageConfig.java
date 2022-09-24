@@ -18,7 +18,6 @@ import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.beans.ServiceYamlV2;
 import io.harness.cdng.service.beans.ServicesYaml;
 import io.harness.cdng.visitor.helpers.deploymentstage.DeploymentStageVisitorHelper;
-import io.harness.plancreator.customDeployment.StepTemplateRef;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.stages.stage.StageInfoConfig;
 import io.harness.pms.yaml.YamlNode;
@@ -69,7 +68,6 @@ public class DeploymentStageConfig implements StageInfoConfig, Visitable {
   ServiceDefinitionType deploymentType;
   Boolean gitOpsEnabled;
 
-  @VariableExpression(skipVariableExpression = true) StepTemplateRef customDeploymentRef;
   // New Environment Yaml
   // skipping variable creation from framework since these are supported through outcomes
   @VariableExpression(skipVariableExpression = true) EnvironmentYamlV2 environment;

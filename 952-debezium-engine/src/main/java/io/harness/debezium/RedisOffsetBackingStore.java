@@ -7,8 +7,8 @@
 
 package io.harness.debezium;
 
+import io.harness.eventsframework.impl.redis.RedisUtils;
 import io.harness.redis.RedisConfig;
-import io.harness.redis.RedissonClientFactory;
 import io.harness.serializer.JsonUtils;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -36,7 +36,7 @@ public class RedisOffsetBackingStore extends MemoryOffsetBackingStore {
     this.redisKey = config.getString("offset.storage.topic");
     String redisLockConfigJson = config.getString("offset.storage.file.filename");
     RedisConfig redisConfig = JsonUtils.asObject(redisLockConfigJson, RedisConfig.class);
-    redisson = RedissonClientFactory.getClient(redisConfig);
+    redisson = RedisUtils.getClient(redisConfig);
     // TODO: ping or throw Exception
   }
 

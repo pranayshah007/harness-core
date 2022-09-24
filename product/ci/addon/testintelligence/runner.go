@@ -14,7 +14,7 @@ import (
 
 //go:generate mockgen -source runner.go -package=testintelligence -destination mocks/runner_mock.go TestRunner
 type TestRunner interface {
-	// GetCmd gets the command which needs to be executed to run only the specified tests.
+	// Get the command which needs to be executed to run only the specified tests.
 	// tests: list of selected tests which need to be executed
 	// agentConfigPath: path to the java agent config. This needs to be added to the
 	// command if instrumentation is required.
@@ -22,11 +22,7 @@ type TestRunner interface {
 	// runAll: if there was any issue in figuring out which tests to run, this parameter is set as true
 	GetCmd(ctx context.Context, tests []types.RunnableTest, userArgs, agentConfigPath string, ignoreInstr, runAll bool) (string, error)
 
-	// AutoDetectPackages detects the list of packages to be instrumented.
+	// Auto detect the list of packages to be instrumented.
 	// Return an error if we could not detect or if it's unimplemented.
 	AutoDetectPackages() ([]string, error)
-
-	// AutoDetectTests detects the list of tests in the workspace
-	// Return an error if we could not detect or if it's unimplemented
-	AutoDetectTests(ctx context.Context) ([]types.RunnableTest, error)
 }

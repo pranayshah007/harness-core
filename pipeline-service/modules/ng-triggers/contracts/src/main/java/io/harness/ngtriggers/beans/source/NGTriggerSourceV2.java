@@ -16,7 +16,6 @@ import io.harness.annotations.dev.OwnedBy;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
-import javax.validation.constraints.Pattern;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
@@ -29,10 +28,9 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(PIPELINE)
 public class NGTriggerSourceV2 {
-  private static final String POLLING_INTERVAL_PATTERN = "(((([1-9])+\\d*[mh])+(\\s/?\\d+[mh])*)|(^$)|(0))$";
   NGTriggerType type;
 
-  @Pattern(regexp = POLLING_INTERVAL_PATTERN) String pollInterval;
+  String pollInterval;
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true) NGTriggerSpecV2 spec;
 
   @Builder

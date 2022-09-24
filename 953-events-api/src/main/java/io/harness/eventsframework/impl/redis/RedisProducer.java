@@ -16,6 +16,7 @@ import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.impl.redis.monitoring.dto.RedisEventMetricDTOMapper;
 import io.harness.eventsframework.impl.redis.monitoring.publisher.RedisEventMetricPublisher;
 import io.harness.eventsframework.producer.Message;
+import io.harness.redis.RedisConfig;
 
 import com.google.inject.Inject;
 import io.github.resilience4j.core.IntervalFunction;
@@ -25,6 +26,7 @@ import io.vavr.control.Try;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
@@ -47,6 +49,20 @@ public class RedisProducer extends AbstractProducer {
   private int maxTopicSize;
 
   private Retry retry;
+
+  public RedisProducer(String topicName, @NotNull RedisConfig redisConfig, int maxTopicSize, String producerName,
+      RedisEventMetricPublisher redisEventMetricPublisher) {
+    super(topicName, producerName);
+    RedissonClient redissonClient = RedisUtils.getClient(redisConfig);
+    initProducer(topicName, redissonClient, maxTopicSize, redisConfig.getEnvNamespace());
+    this.redisEventMetricPublisher = redisEventMetricPublisher;
+  }
+
+  public RedisProducer(String topicName, @NotNull RedisConfig redisConfig, int maxTopicSize, String producerName) {
+    super(topicName, producerName);
+    RedissonClient redissonClient = RedisUtils.getClient(redisConfig);
+    initProducer(topicName, redissonClient, maxTopicSize, redisConfig.getEnvNamespace());
+  }
 
   public RedisProducer(String topicName, @NotNull RedissonClient redissonClient, int maxTopicSize, String producerName,
       String envNamespace, RedisEventMetricPublisher redisEventMetricPublisher) {
@@ -112,9 +128,23 @@ public class RedisProducer extends AbstractProducer {
     redissonClient.shutdown();
   }
 
+  public static RedisProducer of(
+      String topicName, @NotNull RedisConfig redisConfig, int maxTopicLength, String producerName) {
+    return new RedisProducer(topicName, redisConfig, maxTopicLength, producerName);
+  }
+
   public static RedisProducer of(String topicName, @NotNull RedissonClient redissonClient, int maxTopicSize,
       String producerName, String envNamespace) {
     return new RedisProducer(topicName, redissonClient, maxTopicSize, producerName, envNamespace);
+  }
+
+  private void waitForRedisToComeUp() {
+    try {
+      TimeUnit.MILLISECONDS.sleep(500);
+    } catch (InterruptedException e) {
+      log.error("Polling to redis was interrupted, shutting down producer", e);
+      shutdown();
+    }
   }
 
   private void addMonitoring(Message message) {

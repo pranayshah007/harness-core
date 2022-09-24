@@ -32,7 +32,7 @@ public class CdngSshWinRmAzureInfrastructureYamlTest extends CategoryTest {
           .subscriptionId(ParameterField.createValueField("sub-id"))
           .resourceGroup(ParameterField.createValueField("res-group"))
           .tags(ParameterField.createValueField(Collections.singletonMap("key", "val")))
-          .hostConnectionType(ParameterField.createValueField("Hostname"))
+          .usePublicDns(ParameterField.createValueField(true))
           .build();
 
   @Test
@@ -50,10 +50,10 @@ public class CdngSshWinRmAzureInfrastructureYamlTest extends CategoryTest {
     assertThat(infrastructure.applyOverrides(infrastructureNew))
         .extracting(SshWinRmAzureInfrastructure::getCredentialsRef, SshWinRmAzureInfrastructure::getConnectorRef,
             SshWinRmAzureInfrastructure::getSubscriptionId, SshWinRmAzureInfrastructure::getResourceGroup,
-            SshWinRmAzureInfrastructure::getTags, SshWinRmAzureInfrastructure::getHostConnectionType)
+            SshWinRmAzureInfrastructure::getTags, SshWinRmAzureInfrastructure::getUsePublicDns)
         .containsExactly(infrastructureNew.getCredentialsRef(), infrastructureNew.getConnectorRef(),
             infrastructureNew.getSubscriptionId(), infrastructureNew.getResourceGroup(), infrastructure.getTags(),
-            infrastructure.getHostConnectionType());
+            infrastructure.getUsePublicDns());
   }
 
   @Test

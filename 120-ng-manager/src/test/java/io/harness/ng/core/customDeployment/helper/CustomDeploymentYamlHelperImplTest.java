@@ -39,7 +39,7 @@ import org.mockito.MockitoAnnotations;
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 public class CustomDeploymentYamlHelperImplTest extends CategoryTest {
-  @InjectMocks private CustomDeploymentYamlHelper customDeploymentYamlHelper;
+  @InjectMocks private CustomDeploymentYamlHelperImpl customDeploymentYamlHelper;
   private static final String RESOURCE_PATH_PREFIX = "customDeployment/";
 
   @Before
@@ -81,7 +81,7 @@ public class CustomDeploymentYamlHelperImplTest extends CategoryTest {
 
     String clusterUrlUUID = variablesNode.get(0).getField("value").getNode().asText();
     assertThat(customDeploymentVariableResponseDTO.getMetadataMap().get(clusterUrlUUID).getFqn())
-        .isEqualTo("stage.spec.infrastructure.output.variables.clusterUrl");
+        .isEqualTo("customDeployment.infrastructure.variables.clusterUrl");
     assertThat(customDeploymentVariableResponseDTO.getMetadataMap().get(clusterUrlUUID).getLocalName())
         .isEqualTo("infra.variables.clusterUrl");
     assertThat(customDeploymentVariableResponseDTO.getMetadataMap().get(clusterUrlUUID).getVariableName())
@@ -89,7 +89,7 @@ public class CustomDeploymentYamlHelperImplTest extends CategoryTest {
 
     String imageUUID = variablesNode.get(1).getField("value").getNode().asText();
     assertThat(customDeploymentVariableResponseDTO.getMetadataMap().get(imageUUID).getFqn())
-        .isEqualTo("stage.spec.infrastructure.output.variables.image");
+        .isEqualTo("customDeployment.infrastructure.variables.image");
     assertThat(customDeploymentVariableResponseDTO.getMetadataMap().get(imageUUID).getLocalName())
         .isEqualTo("infra.variables.image");
     assertThat(customDeploymentVariableResponseDTO.getMetadataMap().get(imageUUID).getVariableName())
@@ -104,7 +104,7 @@ public class CustomDeploymentYamlHelperImplTest extends CategoryTest {
                                        .getNode()
                                        .asText();
     assertThat(customDeploymentVariableResponseDTO.getMetadataMap().get(instancesListPathUUID).getFqn())
-        .isEqualTo("stage.spec.infrastructure.output.instancesListPath");
+        .isEqualTo("customDeployment.infrastructure.instancesListPath");
     assertThat(customDeploymentVariableResponseDTO.getMetadataMap().get(instancesListPathUUID).getLocalName())
         .isEqualTo("infra.instancesListPath");
     assertThat(customDeploymentVariableResponseDTO.getMetadataMap().get(instancesListPathUUID).getVariableName())

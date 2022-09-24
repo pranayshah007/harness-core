@@ -395,7 +395,7 @@ public class SshEntityHelperTest extends CategoryTest {
                                                                  .subscriptionId("subscriptionId")
                                                                  .resourceGroup("resourceGroup")
                                                                  .tags(ImmutableMap.of("ENV", "Dev"))
-                                                                 .hostConnectionType("Hostname")
+                                                                 .usePublicDns(false)
                                                                  .build();
 
     Call<ResponseDTO<SecretResponseWrapper>> getSecretCall = mock(Call.class);
@@ -433,7 +433,6 @@ public class SshEntityHelperTest extends CategoryTest {
                                                              .connectorRef("awsConnector")
                                                              .credentialsRef("sshKeyRef")
                                                              .region("regionId")
-                                                             .hostConnectionType("PrivateIP")
                                                              .tags(Collections.singletonMap("testTag", "test"))
                                                              .build();
 
@@ -548,7 +547,7 @@ public class SshEntityHelperTest extends CategoryTest {
                                                                  .subscriptionId("subscriptionId")
                                                                  .resourceGroup("resourceGroup")
                                                                  .tags(ImmutableMap.of("ENV", "Dev"))
-                                                                 .hostConnectionType("PublicIP")
+                                                                 .usePublicDns(true)
                                                                  .build();
 
     Call<ResponseDTO<SecretResponseWrapper>> getSecretCall = mock(Call.class);
@@ -586,7 +585,6 @@ public class SshEntityHelperTest extends CategoryTest {
                                                              .connectorRef("awsConnector")
                                                              .credentialsRef("winrmCredentialsRef")
                                                              .region("regionId")
-                                                             .hostConnectionType("PublicIP")
                                                              .tags(Collections.singletonMap("testTag", "test"))
                                                              .build();
 

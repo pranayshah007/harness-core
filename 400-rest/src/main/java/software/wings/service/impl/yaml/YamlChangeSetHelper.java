@@ -7,6 +7,8 @@
 
 package software.wings.service.impl.yaml;
 
+import io.harness.beans.FeatureName;
+import io.harness.ff.FeatureFlagService;
 import io.harness.git.model.ChangeType;
 import io.harness.yaml.BaseYaml;
 
@@ -45,6 +47,7 @@ public class YamlChangeSetHelper {
   @Inject private EntityUpdateService entityUpdateService;
   @Inject private YamlGitService yamlGitService;
   @Inject private YamlHandlerFactory yamlHandlerFactory;
+  @Inject private FeatureFlagService featureFlagService;
   @Inject private YamlHelper yamlHelper;
   @Inject private YamlHandlerFromBeanFactory yamlHandlerFromBeanFactory;
 
@@ -78,7 +81,8 @@ public class YamlChangeSetHelper {
     if (isRename) {
       entityRenameYamlChange(accountId, oldEntity, newEntity);
     } else {
-      if (compareYaml(oldEntity, newEntity)) {
+      if (compareYaml(oldEntity, newEntity)
+          && featureFlagService.isEnabled(FeatureName.COMPARE_YAML_IN_GIT_SYNC, accountId)) {
         return;
       }
       entityYamlChangeSet(accountId, newEntity, ChangeType.MODIFY);

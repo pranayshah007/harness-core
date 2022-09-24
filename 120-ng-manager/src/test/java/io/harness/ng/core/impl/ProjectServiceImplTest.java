@@ -69,6 +69,7 @@ import io.harness.security.dto.Principal;
 import io.harness.security.dto.PrincipalType;
 import io.harness.security.dto.UserPrincipal;
 import io.harness.telemetry.helpers.ProjectInstrumentationHelper;
+import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import io.dropwizard.jersey.validation.JerseyViolationException;
 import java.lang.reflect.Field;
@@ -114,6 +115,7 @@ public class ProjectServiceImplTest extends CategoryTest {
   @Mock private YamlGitConfigService yamlGitConfigService;
   @InjectMocks ProjectInstrumentationHelper instrumentationHelper;
   private ProjectServiceImpl projectService;
+  @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Mock private FeatureFlagService featureFlagService;
   @Mock private DefaultUserGroupService defaultUserGroupService;
 
@@ -122,7 +124,7 @@ public class ProjectServiceImplTest extends CategoryTest {
     MockitoAnnotations.initMocks(this);
     projectService = spy(new ProjectServiceImpl(projectRepository, organizationService, transactionTemplate,
         outboxService, ngUserService, accessControlClient, scopeAccessHelper, instrumentationHelper,
-        yamlGitConfigService, featureFlagService, defaultUserGroupService));
+        yamlGitConfigService, ngFeatureFlagHelperService, featureFlagService, defaultUserGroupService));
     when(scopeAccessHelper.getPermittedScopes(any())).then(returnsFirstArg());
   }
 
@@ -380,6 +382,37 @@ public class ProjectServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = VIKAS_M)
   @Category(UnitTests.class)
+  public void testDelete() {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    Long version = 0L;
+    Project project = Project.builder()
+                          .name("name")
+                          .accountIdentifier(accountIdentifier)
+                          .orgIdentifier(orgIdentifier)
+                          .identifier(projectIdentifier)
+                          .build();
+    ArgumentCaptor<String> argumentCaptor = ArgumentCaptor.forClass(String.class);
+
+    when(projectRepository.delete(any(), any(), any(), any())).thenReturn(project);
+    when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(false);
+    when(yamlGitConfigService.deleteAll(any(), any(), any())).thenReturn(true);
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
+
+    projectService.delete(accountIdentifier, orgIdentifier, projectIdentifier, version);
+    verify(projectRepository, times(1)).delete(any(), any(), argumentCaptor.capture(), any());
+    assertEquals(projectIdentifier, argumentCaptor.getValue());
+    verify(transactionTemplate, times(1)).execute(any());
+    verify(outboxService, times(1)).save(any());
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
   public void testHardDelete() {
     String accountIdentifier = randomAlphabetic(10);
     String orgIdentifier = randomAlphabetic(10);
@@ -393,15 +426,19 @@ public class ProjectServiceImplTest extends CategoryTest {
                           .build();
     ArgumentCaptor<String> argumentCaptor = ArgumentCaptor.forClass(String.class);
 
+    when(projectRepository.delete(any(), any(), any(), any())).thenReturn(project);
+    when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(true);
     when(yamlGitConfigService.deleteAll(any(), any(), any())).thenReturn(true);
     when(transactionTemplate.execute(any()))
         .thenAnswer(invocationOnMock
             -> invocationOnMock.getArgument(0, TransactionCallback.class)
                    .doInTransaction(new SimpleTransactionStatus()));
-    when(projectRepository.hardDelete(any(), any(), any(), any())).thenReturn(project);
+    when(projectRepository.hardDelete(any(), any(), any(), any())).thenReturn(true);
 
     projectService.delete(accountIdentifier, orgIdentifier, projectIdentifier, version);
     verify(projectRepository, times(1)).hardDelete(any(), any(), argumentCaptor.capture(), any());
+    assertEquals(projectIdentifier, argumentCaptor.getValue());
+    verify(projectRepository, times(1)).delete(any(), any(), argumentCaptor.capture(), any());
     assertEquals(projectIdentifier, argumentCaptor.getValue());
     verify(transactionTemplate, times(1)).execute(any());
     verify(outboxService, times(1)).save(any());

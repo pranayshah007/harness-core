@@ -14,51 +14,35 @@ import io.harness.data.structure.UUIDGenerator;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
-import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.steps.executables.AsyncExecutable;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.tasks.ResponseData;
-import io.harness.wait.WaitStepInstance;
 
-import com.google.inject.Inject;
 import java.util.Map;
 
+// TODO(Shalini): Adding basic skeleton. Implement the methods later.
 @OwnedBy(PIPELINE)
 public class WaitStep implements AsyncExecutable<StepElementParameters> {
-  public static final StepType STEP_TYPE = StepSpecTypeConstants.WAIT_STEP_TYPE;
-  @Inject WaitStepService waitStepService;
+  public static final StepType STEP_TYPE = StepSpecTypeConstants.HARNESS_APPROVAL_STEP_TYPE;
 
   @Override
   public AsyncExecutableResponse executeAsync(Ambiance ambiance, StepElementParameters stepParameters,
       StepInputPackage inputPackage, PassThroughData passThroughData) {
     String correlationId = UUIDGenerator.generateUuid();
-    WaitStepParameters waitStepParameters = (WaitStepParameters) stepParameters.getSpec();
-    int duration = (int) waitStepParameters.duration.getValue().getTimeoutInMillis();
-    waitStepService.save(WaitStepInstance.builder()
-                             .waitStepInstanceId(correlationId)
-                             .duration(duration)
-                             .createdAt(System.currentTimeMillis())
-                             .nodeExecutionId(AmbianceUtils.obtainCurrentRuntimeId(ambiance))
-                             .build());
-    return AsyncExecutableResponse.newBuilder().addCallbackIds(correlationId).setTimeout(duration).build();
+    // Store correlationId and NodeExecutionId together in DB collection to retrieve correlationId from nodeExecutionId.
+    // get the duration from stepParameters.
+    return AsyncExecutableResponse.newBuilder().addCallbackIds(correlationId).setTimeout(3600).build();
   }
 
   @Override
   public StepResponse handleAsyncResponse(
       Ambiance ambiance, StepElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {
-    String nodeExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
-    String correlationId = waitStepService.findByNodeExecutionId(nodeExecutionId).get().getWaitStepInstanceId();
-    if (responseDataMap.get(correlationId) instanceof WaitStepResponseData
-        && ((WaitStepResponseData) responseDataMap.get(correlationId)).action == WaitStepAction.MARK_AS_FAIL) {
-      return StepResponse.builder().status(Status.FAILED).build();
-    } else {
-      return StepResponse.builder().status(Status.SUCCEEDED).build();
-    }
+    // Get status of wait from responseDataMap and create stepResponse based on that.
+    return null;
   }
 
   @Override

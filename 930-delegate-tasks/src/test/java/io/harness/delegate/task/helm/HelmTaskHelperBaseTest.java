@@ -144,22 +144,9 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
             .status("failed")
             .description("failed due to Forbidden: spec.persistentvolumesource is immutable after creation")
             .build();
-    assertThatThrownBy(() -> helmTaskHelperBase.processHelmReleaseHistOutput(releaseInfo, false))
+    assertThatThrownBy(() -> helmTaskHelperBase.processHelmReleaseHistOutput(releaseInfo))
         .isInstanceOf(HelmClientException.class)
         .hasMessageContaining("immutable after creation");
-  }
-
-  @Test
-  @Owner(developers = ACHYUTH)
-  @Category(UnitTests.class)
-  public void testProcessHelmReleaseHistOutputIgnoreHelmHistFail() {
-    ReleaseInfo releaseInfo =
-        ReleaseInfo.builder()
-            .chart("nginx-0.1.0")
-            .status("failed")
-            .description("failed due to Forbidden: spec.persistentvolumesource is immutable after creation")
-            .build();
-    assertThatCode(() -> helmTaskHelperBase.processHelmReleaseHistOutput(releaseInfo, true)).doesNotThrowAnyException();
   }
 
   @Test

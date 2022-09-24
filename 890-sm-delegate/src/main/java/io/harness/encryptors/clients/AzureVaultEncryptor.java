@@ -10,7 +10,6 @@ package io.harness.encryptors.clients;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.eraro.ErrorCode.AZURE_AUTHENTICATION_ERROR;
 import static io.harness.eraro.ErrorCode.AZURE_KEY_VAULT_OPERATION_ERROR;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.exception.WingsException.USER_SRE;
@@ -35,9 +34,7 @@ import software.wings.beans.AzureVaultConfig;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.microsoft.aad.adal4j.AuthenticationException;
 import com.microsoft.azure.keyvault.KeyVaultClient;
-import com.microsoft.azure.keyvault.models.KeyVaultErrorException;
 import com.microsoft.azure.keyvault.models.SecretBundle;
 import com.microsoft.azure.keyvault.requests.SetSecretRequest;
 import com.microsoft.rest.RestException;
@@ -68,12 +65,6 @@ public class AzureVaultEncryptor implements VaultEncryptor {
       try {
         return HTimeLimiter.callInterruptible21(
             timeLimiter, Duration.ofSeconds(15), () -> upsertInternal(accountId, name, plaintext, null, azureConfig));
-      } catch (KeyVaultErrorException e) {
-        // Key Vault Error Exception is non-retryable
-        throw new SecretManagementDelegateException(
-            AZURE_KEY_VAULT_OPERATION_ERROR, prepareKeyVaultErrorMessage(e, accountId, name), e, USER);
-      } catch (AuthenticationException e) {
-        throw new SecretManagementDelegateException(AZURE_AUTHENTICATION_ERROR, e.toString(), e, USER);
       } catch (Exception e) {
         failedAttempts++;
         log.warn("encryption failed. trial num: {}", failedAttempts, e);
@@ -99,12 +90,6 @@ public class AzureVaultEncryptor implements VaultEncryptor {
       try {
         return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofSeconds(15),
             () -> upsertInternal(accountId, name, plaintext, existingRecord, azureConfig));
-      } catch (KeyVaultErrorException e) {
-        // Key Vault Error Exception is non-retryable
-        throw new SecretManagementDelegateException(
-            AZURE_KEY_VAULT_OPERATION_ERROR, prepareKeyVaultErrorMessage(e, accountId, name), e, USER);
-      } catch (AuthenticationException e) {
-        throw new SecretManagementDelegateException(AZURE_AUTHENTICATION_ERROR, e.toString(), e, USER);
       } catch (Exception e) {
         failedAttempts++;
         log.warn("encryption failed. trial num: {}", failedAttempts, e);
@@ -126,17 +111,10 @@ public class AzureVaultEncryptor implements VaultEncryptor {
       String accountId, String name, EncryptedRecord existingRecord, EncryptionConfig encryptionConfig) {
     AzureVaultConfig azureConfig = (AzureVaultConfig) encryptionConfig;
     int failedAttempts = 0;
-
     while (true) {
       try {
         return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofSeconds(15),
             () -> renameSecretInternal(accountId, name, existingRecord, azureConfig));
-      } catch (KeyVaultErrorException e) {
-        // Key Vault Error Exception is non-retryable
-        throw new SecretManagementDelegateException(
-            AZURE_KEY_VAULT_OPERATION_ERROR, prepareKeyVaultErrorMessage(e, accountId, name), e, USER);
-      } catch (AuthenticationException e) {
-        throw new SecretManagementDelegateException(AZURE_AUTHENTICATION_ERROR, e.toString(), e, USER);
       } catch (Exception e) {
         failedAttempts++;
         log.warn("encryption failed. trial num: {}", failedAttempts, e);
@@ -168,8 +146,6 @@ public class AzureVaultEncryptor implements VaultEncryptor {
     SecretBundle secretBundle;
     try {
       secretBundle = azureVaultClient.setSecret(setSecretRequest);
-    } catch (KeyVaultErrorException | AuthenticationException ex) {
-      throw ex;
     } catch (Exception ex) {
       String message =
           format("The Secret could not be saved in Azure Vault. accountId: %s, Secret name: %s, Vault name: %s",
@@ -188,29 +164,15 @@ public class AzureVaultEncryptor implements VaultEncryptor {
     return newRecord;
   }
 
-  private String prepareKeyVaultErrorMessage(Exception e, String accountId, String fullSecretName) {
-    KeyVaultErrorException keyVaultEx = (KeyVaultErrorException) e;
-    String message = "Azure Key Vault exception received.";
-    log.error(message + " accountId: %s, Secret name: %s, error: %s ", accountId, fullSecretName, e.toString());
-    if (keyVaultEx.body() == null) {
-      return format(message);
-    }
-    String errorMsg = keyVaultEx.body().error().message();
-    String errorCode = keyVaultEx.body().error().code();
-    return format(message + " error code: %s, error message: %s ", errorCode, errorMsg);
-  }
-
   @Override
   public boolean deleteSecret(String accountId, EncryptedRecord existingRecord, EncryptionConfig encryptionConfig) {
     AzureVaultConfig azureConfig = (AzureVaultConfig) encryptionConfig;
+    KeyVaultClient azureVaultClient = getAzureVaultClient(azureConfig);
     try {
-      KeyVaultClient azureVaultClient = getAzureVaultClient(azureConfig);
       azureVaultClient.deleteSecret(azureConfig.getEncryptionServiceUrl(), existingRecord.getEncryptionKey());
       log.info("deletion of key {} in azure vault {} was successful.", existingRecord.getEncryptionKey(),
           azureConfig.getVaultName());
       return true;
-    } catch (AuthenticationException e) {
-      throw new SecretManagementDelegateException(AZURE_AUTHENTICATION_ERROR, e.toString(), e, USER);
     } catch (Exception ex) {
       log.error("Failed to delete key {} from azure vault: {}", existingRecord.getEncryptionKey(),
           azureConfig.getVaultName(), ex);
@@ -235,11 +197,6 @@ public class AzureVaultEncryptor implements VaultEncryptor {
         log.info("Trying to decrypt record {} by {}", encryptedRecord.getEncryptionKey(), azureConfig.getVaultName());
         return HTimeLimiter.callInterruptible21(
             timeLimiter, Duration.ofSeconds(15), () -> fetchSecretValueInternal(encryptedRecord, azureConfig));
-      } catch (KeyVaultErrorException e) {
-        throw new SecretManagementDelegateException(
-            AZURE_KEY_VAULT_OPERATION_ERROR, prepareKeyVaultErrorMessage(e, accountId, azureConfig.getName()), e, USER);
-      } catch (AuthenticationException e) {
-        throw new SecretManagementDelegateException(AZURE_AUTHENTICATION_ERROR, e.toString(), e, USER);
       } catch (Exception e) {
         failedAttempts++;
         log.warn("decryption failed. trial num: {}", failedAttempts, e);
@@ -289,8 +246,6 @@ public class AzureVaultEncryptor implements VaultEncryptor {
             AZURE_KEY_VAULT_OPERATION_ERROR, USER_SRE);
       }
       return secret.value().toCharArray();
-    } catch (KeyVaultErrorException | AuthenticationException ex) {
-      throw ex;
     } catch (Exception ex) {
       log.error("Failed to decrypt azure secret in vault due to exception", ex);
       String message = format("Failed to decrypt Azure secret %s in vault %s in account %s due to error %s",

@@ -15,7 +15,6 @@ import static io.harness.ccm.views.graphql.QLCEViewAggregateOperation.SUM;
 import static io.harness.ccm.views.graphql.QLCEViewTimeGroupType.DAY;
 import static io.harness.ccm.views.graphql.ViewsMetaDataFields.LABEL_KEY;
 import static io.harness.ccm.views.graphql.ViewsMetaDataFields.LABEL_KEY_UN_NESTED;
-import static io.harness.ccm.views.graphql.ViewsMetaDataFields.LABEL_VALUE;
 import static io.harness.ccm.views.graphql.ViewsMetaDataFields.LABEL_VALUE_UN_NESTED;
 import static io.harness.ccm.views.utils.ClusterTableKeys.CLOUD_SERVICE_NAME;
 import static io.harness.ccm.views.utils.ClusterTableKeys.CLUSTER_TABLE;
@@ -585,7 +584,6 @@ public class ViewsQueryBuilder {
     for (QLCEViewFilter filter : filters) {
       QLCEViewFieldInput viewFieldInput = getModifiedQLCEViewFieldInput(filter.getField(), isClusterTable);
       String searchString = "";
-      String sortKey = "";
       if (filter.getValues().length != 0) {
         searchString = filter.getValues()[0];
       }
@@ -607,7 +605,6 @@ public class ViewsQueryBuilder {
             query.addCondition(
                 new CustomCondition(String.format(searchFilter, viewFieldInput.getFieldId(), searchString)));
           }
-          sortKey = viewFieldInput.getFieldId();
           break;
         case LABEL:
           if (viewFieldInput.getFieldId().equals(LABEL_KEY.getFieldName())) {
@@ -616,7 +613,6 @@ public class ViewsQueryBuilder {
                 LABEL_KEY_UN_NESTED.getAlias());
             query.addCondition(
                 new CustomCondition(String.format(searchFilter, LABEL_KEY_UN_NESTED.getFieldName(), searchString)));
-            sortKey = LABEL_KEY.getAlias();
           } else {
             query.addCustomGroupings(LABEL_VALUE_UN_NESTED.getAlias());
             query.addCondition(getCondition(getLabelKeyFilter(new String[] {viewFieldInput.getFieldName()})));
@@ -624,7 +620,6 @@ public class ViewsQueryBuilder {
                 LABEL_VALUE_UN_NESTED.getAlias());
             query.addCondition(
                 new CustomCondition(String.format(searchFilter, LABEL_VALUE_UN_NESTED.getFieldName(), searchString)));
-            sortKey = LABEL_VALUE.getAlias();
           }
           break;
         case CUSTOM:
@@ -638,7 +633,6 @@ public class ViewsQueryBuilder {
           ViewCustomField customField = viewCustomFieldDao.getById(viewFieldInput.getFieldId());
           query.addAliasedColumn(new CustomSql(String.format(distinct, customField.getSqlFormula())),
               modifyStringToComplyRegex(customField.getName()));
-          sortKey = modifyStringToComplyRegex(customField.getName());
           query.addCondition(
               new CustomCondition(String.format(searchFilter, customField.getSqlFormula(), searchString)));
           break;
@@ -658,13 +652,12 @@ public class ViewsQueryBuilder {
           query.addCondition(new CustomCondition(String.format(searchFilter,
               getSQLCaseStatementBusinessMapping(businessMappingService.get(viewFieldInput.getFieldId())),
               searchString)));
-          sortKey = modifyStringToComplyRegex(businessMapping.getName());
           break;
         default:
           throw new InvalidRequestException("Invalid View Field Identifier " + viewFieldInput.getIdentifier());
       }
       fields.add(filter.getField());
-      query.addCustomOrdering(sortKey, OrderObject.Dir.ASCENDING);
+      query.addCustomOrdering(viewFieldInput.getFieldId(), OrderObject.Dir.ASCENDING);
     }
     log.info("Query for view filter {}", query);
 

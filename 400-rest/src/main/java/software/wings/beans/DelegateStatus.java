@@ -33,7 +33,6 @@ public class DelegateStatus {
   List<String> publishedVersions;
   List<DelegateInner> delegates;
   List<DelegateScalingGroup> scalingGroups;
-  String publishedImmutableDelegateVersion;
 
   @JsonInclude(Include.NON_NULL)
   @JsonIgnoreProperties(ignoreUnknown = true)

@@ -806,7 +806,7 @@ public class JenkinsImpl implements Jenkins {
     try {
       String decodedJobName = URLDecoder.decode(jobname, "UTF-8");
 
-      String[] jobNameSplit = decodedJobName.split("/");
+      String[] jobNameSplit = decodedJobName.split("/", 2);
       int parts = jobNameSplit.length;
       if (parts > 1) {
         parentJobUrl = constructParentJobPath(jobNameSplit);

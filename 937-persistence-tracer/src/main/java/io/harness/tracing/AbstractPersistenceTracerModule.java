@@ -10,8 +10,8 @@ package io.harness.tracing;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cache.HarnessCacheManager;
-import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.mongo.tracing.TracerConstants;
+import io.harness.redis.RedisConfig;
 import io.harness.version.VersionInfoManager;
 
 import com.google.inject.AbstractModule;
@@ -30,8 +30,8 @@ public abstract class AbstractPersistenceTracerModule extends AbstractModule {
 
   @Provides
   @Singleton
-  EventsFrameworkConfiguration redisConfig() {
-    return eventsFrameworkConfiguration();
+  RedisConfig redisConfig() {
+    return redisConfigProvider();
   }
 
   @Provides
@@ -40,7 +40,7 @@ public abstract class AbstractPersistenceTracerModule extends AbstractModule {
     return serviceIdProvider();
   }
 
-  protected abstract EventsFrameworkConfiguration eventsFrameworkConfiguration();
+  protected abstract RedisConfig redisConfigProvider();
 
   protected abstract String serviceIdProvider();
 }

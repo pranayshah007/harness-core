@@ -9,7 +9,7 @@ package io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskha
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.infra.beans.CustomDeploymentInfrastructureOutcome;
+import io.harness.cdng.expressionEvaluator.ShellScriptSecretExpressionEvaluator;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.SelectorCapability;
@@ -24,10 +24,11 @@ import io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskhan
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.protobuf.Any;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 
 @Singleton
@@ -36,6 +37,7 @@ import lombok.AllArgsConstructor;
 public class CustomDeploymentInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualTaskHandler {
   public static final String OUTPUT_PATH_KEY = "INSTANCE_OUTPUT_PATH";
   @Inject private SecretManagerClientService secretManagerClientService;
+
   @Override
   public PerpetualTaskExecutionBundle getExecutionBundle(InfrastructureMappingDTO infrastructureMappingDTO,
       List<DeploymentInfoDTO> deploymentInfoDTOList, InfrastructureOutcome infrastructureOutcome) {
@@ -56,37 +58,33 @@ public class CustomDeploymentInstanceSyncPerpetualTaskHandler extends InstanceSy
         infrastructureMappingDTO, infrastructureOutcome, customDeploymentNGDeploymentInfoDTO));
   }
   private CustomDeploymentNGInstanceSyncPerpetualTaskParams createCustomDeploymentInstanceSyncPerpetualTaskParams(
-      InfrastructureMappingDTO infrastructureMappingDTO, InfrastructureOutcome infraOutcome,
+      InfrastructureMappingDTO infrastructureMappingDTO, InfrastructureOutcome infrastructureOutcome,
       CustomDeploymentNGDeploymentInfoDTO customDeploymentNGDeploymentInfoDTO) {
+    ShellScriptSecretExpressionEvaluator shellScriptSecretExpressionEvaluator =
+        new ShellScriptSecretExpressionEvaluator(infrastructureMappingDTO.getAccountIdentifier(),
+            infrastructureMappingDTO.getProjectIdentifier(), infrastructureMappingDTO.getOrgIdentifier(), null, null,
+            secretManagerClientService, null);
+    Object resolvedScript = shellScriptSecretExpressionEvaluator.evaluateExpression(
+        customDeploymentNGDeploymentInfoDTO.getInstanceFetchScript());
+
     return CustomDeploymentNGInstanceSyncPerpetualTaskParams.newBuilder()
-        .setScript(customDeploymentNGDeploymentInfoDTO.getInstanceFetchScript())
-        .setInstancesListPath(((CustomDeploymentInfrastructureOutcome) infraOutcome).getInstancesListPath())
-        .putAllInstanceAttributes(((CustomDeploymentInfrastructureOutcome) infraOutcome).getInstanceAttributes())
+        .setScript((String) resolvedScript)
         .setAccountId(infrastructureMappingDTO.getAccountIdentifier())
         .setOutputPathKey(OUTPUT_PATH_KEY)
         .build();
   }
 
-  private List<ExecutionCapability> getExecutionCapability(List<DeploymentInfoDTO> deploymentInfoDTOList) {
-    List<ExecutionCapability> executionCapabilities = new ArrayList<>();
-    for (DeploymentInfoDTO deploymentInfoDTO : deploymentInfoDTOList) {
-      CustomDeploymentNGDeploymentInfoDTO deploymentPackageInfo =
-          (CustomDeploymentNGDeploymentInfoDTO) deploymentInfoDTO;
-      SelectorCapability selectorCapability = getSelectorCapability(deploymentPackageInfo);
-      if (selectorCapability != null) {
-        executionCapabilities.add(selectorCapability);
-      }
-    }
-    return executionCapabilities;
+  List<ExecutionCapability> getExecutionCapability(List<DeploymentInfoDTO> deploymentInfoDTOList) {
+    return deploymentInfoDTOList.stream()
+        .filter(Objects::nonNull)
+        .map(CustomDeploymentNGDeploymentInfoDTO.class ::cast)
+        .map(this::getSelectorCapability)
+        .collect(Collectors.toList());
   }
 
-  private SelectorCapability getSelectorCapability(CustomDeploymentNGDeploymentInfoDTO deploymentPackageInfo) {
-    if (deploymentPackageInfo.getTags() == null) {
-      return null;
-    }
+  SelectorCapability getSelectorCapability(CustomDeploymentNGDeploymentInfoDTO deploymentPackageInfo) {
     List<String> tagsInDeploymentInfo = deploymentPackageInfo.getTags();
     Set<String> tags = new HashSet<>(tagsInDeploymentInfo);
-
     return SelectorCapability.builder().selectors(tags).build();
   }
 }

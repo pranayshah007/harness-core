@@ -32,7 +32,7 @@ public class SshWinRmAzureInfrastructureOutcome extends InfrastructureDetailsAbs
   String resourceGroup;
   String credentialsRef;
   Map<String, String> tags;
-  String hostConnectionType;
+  Boolean usePublicDns;
 
   @VariableExpression(skipVariableExpression = true) EnvironmentOutcome environment;
   String infrastructureKey;

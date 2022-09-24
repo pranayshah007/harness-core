@@ -27,6 +27,7 @@ import io.harness.eventsframework.impl.noop.NoOpConsumer;
 import io.harness.eventsframework.impl.noop.NoOpProducer;
 import io.harness.eventsframework.impl.redis.RedisConsumer;
 import io.harness.eventsframework.impl.redis.RedisProducer;
+import io.harness.eventsframework.impl.redis.RedisUtils;
 import io.harness.eventsframework.impl.redis.monitoring.publisher.RedisEventMetricPublisher;
 import io.harness.govern.ProviderModule;
 import io.harness.lock.DistributedLockImplementation;
@@ -42,7 +43,6 @@ import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
 import io.harness.platform.PlatformConfiguration;
 import io.harness.redis.RedisConfig;
-import io.harness.redis.RedissonClientFactory;
 import io.harness.resourcegroup.ResourceGroupModule;
 import io.harness.resourcegroup.framework.v2.service.ResourceGroupValidator;
 import io.harness.resourcegroup.framework.v2.service.impl.ResourceGroupValidatorImpl;
@@ -193,7 +193,7 @@ public class ResourceGroupServiceModule extends AbstractModule {
     if (redisConfig.getRedisUrl().equals("dummyRedisUrl")) {
       return null;
     }
-    return RedissonClientFactory.getClient(redisConfig);
+    return RedisUtils.getClient(redisConfig);
   }
 
   @Provides

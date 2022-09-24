@@ -12,7 +12,6 @@ import static io.harness.ngtriggers.Constants.HELM_CHART;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ngtriggers.beans.source.artifact.store.BuildStore;
-import io.harness.ngtriggers.beans.source.artifact.version.HelmVersion;
 import io.harness.ngtriggers.beans.source.webhook.v2.TriggerEventDataCondition;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -28,7 +27,6 @@ public class HelmManifestSpec implements ManifestTypeSpec {
   List<TriggerEventDataCondition> eventConditions;
   String chartName;
   String chartVersion;
-  HelmVersion helmVersion;
   BuildStore store;
 
   @Override

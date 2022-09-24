@@ -58,6 +58,7 @@ import io.harness.eventsframework.EventsFrameworkConstants;
 import io.harness.eventsframework.api.Consumer;
 import io.harness.eventsframework.impl.noop.NoOpConsumer;
 import io.harness.eventsframework.impl.redis.RedisConsumer;
+import io.harness.eventsframework.impl.redis.RedisUtils;
 import io.harness.grpc.DelegateServiceDriverGrpcClientModule;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.grpc.client.AbstractManagerGrpcClientModule;
@@ -72,7 +73,6 @@ import io.harness.ng.core.event.MessageListener;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.sdk.core.waiter.AsyncWaitEngine;
 import io.harness.redis.RedisConfig;
-import io.harness.redis.RedissonClientFactory;
 import io.harness.reflection.HarnessReflections;
 import io.harness.remote.client.ClientMode;
 import io.harness.secrets.SecretDecryptor;
@@ -335,7 +335,7 @@ public class CIManagerServiceModule extends AbstractModule {
               NoOpConsumer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME, EventsFrameworkConstants.DUMMY_GROUP_NAME));
 
     } else {
-      RedissonClient redissonClient = RedissonClientFactory.getClient(redisConfig);
+      RedissonClient redissonClient = RedisUtils.getClient(redisConfig);
       bind(Consumer.class)
           .annotatedWith(Names.named(OBSERVER_EVENT_CHANNEL))
           .toInstance(RedisConsumer.of(OBSERVER_EVENT_CHANNEL, authorizationServiceHeader, redissonClient,

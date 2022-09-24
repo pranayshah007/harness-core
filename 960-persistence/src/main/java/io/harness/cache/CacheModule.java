@@ -137,7 +137,7 @@ public class CacheModule extends AbstractModule implements ServersModule {
     if (file.exists()) {
       uri = file.toURI();
       Config config = Config.fromYAML(uri.toURL());
-      config.setCodec(new RedissonKryoCodec(true));
+      config.setCodec(new RedissonKryoCodec());
       Files.write(config.toYAML().getBytes(StandardCharsets.UTF_8), file);
       log.info("Found the redisson config in the working directory {}", uri);
     }
@@ -202,7 +202,7 @@ public class CacheModule extends AbstractModule implements ServersModule {
   @Override
   protected void configure() {
     if (cacheConfig.getCacheBackend() == REDIS) {
-      bind(RedissonKryoCodec.class).toInstance(new RedissonKryoCodec(true));
+      bind(RedissonKryoCodec.class).toInstance(new RedissonKryoCodec());
     }
     MapBinder.newMapBinder(binder(), TypeLiteral.get(String.class), new TypeLiteral<Cache<?, ?>>() {});
 
