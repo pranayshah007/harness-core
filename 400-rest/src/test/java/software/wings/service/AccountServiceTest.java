@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessModule._955_ACCOUNT_MGMT;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ANKIT;
+import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.BRETT;
 import static io.harness.rule.OwnerRule.DEEPAK;
 import static io.harness.rule.OwnerRule.HANTANG;
@@ -870,6 +871,17 @@ public class AccountServiceTest extends WingsBaseTest {
 
     accountService.updateWhitelistedDomains(
         account.getUuid(), Sets.newHashSet(" harness.io", "harness.io ", " harness.io \t\t\t \t \t"));
+    account = accountService.get(account.getUuid());
+    assertThat(account.getWhitelistedDomains()).isEqualTo(Sets.newHashSet("harness.io"));
+  }
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void testUpdateWhitelistedDomainsShouldRemovePrefixes() {
+    String companyName = "CompanyName 1";
+    Account account = saveAccount(companyName);
+
+    accountService.updateWhitelistedDomains(account.getUuid(), Sets.newHashSet(" www.harness.io"));
     account = accountService.get(account.getUuid());
     assertThat(account.getWhitelistedDomains()).isEqualTo(Sets.newHashSet("harness.io"));
   }
