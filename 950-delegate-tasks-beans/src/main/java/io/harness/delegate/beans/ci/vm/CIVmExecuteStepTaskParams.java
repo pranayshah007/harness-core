@@ -30,7 +30,8 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CIVmExecuteStepTaskParams implements CIExecuteStepTaskParams, ExecutionCapabilityDemander {
-  @NotNull private String ipAddress;
+  private String ipAddress;
+  private String instanceID;
   @NotNull private String poolId;
   @NotNull private String stageRuntimeId;
   @NotNull private String stepRuntimeId;

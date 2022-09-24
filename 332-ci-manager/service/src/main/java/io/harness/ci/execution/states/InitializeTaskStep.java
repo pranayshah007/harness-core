@@ -286,7 +286,7 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
   }
 
   private VmDetailsOutcome getVmDetailsOutcome(VmTaskExecutionResponse vmTaskExecutionResponse) {
-    VmDetailsOutcomeBuilder builder = VmDetailsOutcome.builder().ipAddress(vmTaskExecutionResponse.getIpAddress());
+    VmDetailsOutcomeBuilder builder = VmDetailsOutcome.builder().ipAddress(vmTaskExecutionResponse.getIpAddress()).instanceID(vmTaskExecutionResponse.getInstanceID());
     if (vmTaskExecutionResponse.getDelegateMetaInfo() == null
         || isEmpty(vmTaskExecutionResponse.getDelegateMetaInfo().getId())) {
       return builder.build();

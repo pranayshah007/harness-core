@@ -324,6 +324,7 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
 
     CIVmExecuteStepTaskParams ciVmExecuteStepTaskParams = CIVmExecuteStepTaskParams.builder()
                                                               .ipAddress(vmDetailsOutcome.getIpAddress())
+            .instanceID(vmDetailsOutcome.getInstanceID())
                                                               .poolId(poolId)
                                                               .volToMountPath(volToMountPath)
                                                               .stageRuntimeId(stageDetails.getStageRuntimeID())

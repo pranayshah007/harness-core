@@ -11,6 +11,7 @@ import static io.harness.data.encoding.EncodingUtils.decodeBase64;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.vm.CIVMConstants.JUNIT_REPORT_KIND;
+import static io.harness.vm.CIVMConstants.NETWORK_ID;
 import static io.harness.vm.CIVMConstants.RUNTEST_STEP_KIND;
 import static io.harness.vm.CIVMConstants.RUN_STEP_KIND;
 
@@ -61,7 +62,8 @@ public class VmExecuteStepUtils {
                                       .name(params.getStepId())
                                       .logKey(params.getLogKey())
                                       .workingDir(params.getWorkingDir())
-                                      .volumeMounts(getVolumeMounts(params.getVolToMountPath()));
+                                      .volumeMounts(getVolumeMounts(params.getVolToMountPath()))
+            .network(NETWORK_ID);
 
     List<String> secrets = new ArrayList<>();
     if (params.getStepInfo().getType() == VmStepInfo.Type.RUN) {
@@ -102,7 +104,8 @@ public class VmExecuteStepUtils {
                                       .user(params.getRunAsUser())
                                       .envs(params.getEnvVariables())
                                       .detach(true)
-                                      .kind(RUN_STEP_KIND);
+                                      .kind(RUN_STEP_KIND)
+            .network(NETWORK_ID);
     ImageAuth imageAuth = getImageAuth(params.getImage(), params.getImageConnector());
 
     List<String> secrets = new ArrayList<>();

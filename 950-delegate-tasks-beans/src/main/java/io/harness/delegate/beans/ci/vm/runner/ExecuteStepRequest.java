@@ -21,6 +21,7 @@ import lombok.Value;
 public class ExecuteStepRequest {
   @JsonProperty("correlation_id") String correlationID;
   @JsonProperty("ip_address") String ipAddress;
+  @JsonProperty("instance_id") String instanceID;
   @JsonProperty("pool_id") String poolId;
   @JsonProperty("stage_runtime_id") String stageRuntimeID;
   @JsonProperty("start_step_request") Config config;
@@ -49,6 +50,7 @@ public class ExecuteStepRequest {
     @JsonProperty("user") String user;
     @JsonProperty("volumes") List<VolumeMount> volumeMounts;
     @JsonProperty("auth") ImageAuth imageAuth;
+    @JsonProperty("network") String network;
   }
 
   @Data

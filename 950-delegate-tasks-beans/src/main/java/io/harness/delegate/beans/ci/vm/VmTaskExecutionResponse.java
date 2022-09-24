@@ -23,6 +23,7 @@ public class VmTaskExecutionResponse implements CITaskExecutionResponse {
   @JsonProperty("delegate_meta_info") private DelegateMetaInfo delegateMetaInfo;
   @JsonProperty("error_message") private String errorMessage;
   @JsonProperty("ip_address") private String ipAddress;
+  @JsonProperty("instance_id") private String instanceID;
   @JsonProperty("output_vars") private Map<String, String> outputVars;
   @JsonProperty("command_execution_status") private CommandExecutionStatus commandExecutionStatus;
   @JsonProperty("service_statuses") private List<VmServiceStatus> serviceStatuses;
