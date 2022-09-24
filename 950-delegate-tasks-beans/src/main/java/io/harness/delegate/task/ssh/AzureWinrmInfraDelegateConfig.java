@@ -30,9 +30,9 @@ public class AzureWinrmInfraDelegateConfig extends AzureInfraDelegateConfig impl
   public AzureWinrmInfraDelegateConfig(AzureConnectorDTO azureConnectorDTO,
       List<EncryptedDataDetail> connectorEncryptionDataDetails, String subscriptionId, String resourceGroup,
       Map<String, String> tags, List<EncryptedDataDetail> encryptionDataDetails,
-      WinRmCredentialsSpecDTO winRmCredentials, String hostConnectionType) {
+      WinRmCredentialsSpecDTO winRmCredentials, boolean usePublicDns) {
     super(azureConnectorDTO, connectorEncryptionDataDetails, subscriptionId, resourceGroup, tags, "WINDOWS",
-        hostConnectionType);
+        usePublicDns);
     this.encryptionDataDetails = encryptionDataDetails;
     this.winRmCredentials = winRmCredentials;
   }

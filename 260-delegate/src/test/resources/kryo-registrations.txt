@@ -2221,19 +2221,6 @@
 573523:io.harness.delegate.task.ecs.request.EcsCanaryDeleteRequest
 573524:io.harness.delegate.task.ecs.response.EcsCanaryDeleteResponse
 573525:io.harness.delegate.beans.ecs.EcsCanaryDeleteResult
-573526:io.harness.delegate.task.ecs.request.EcsBlueGreenCreateServiceRequest
-573527:io.harness.delegate.beans.ecs.EcsBlueGreenCreateServiceResult
-573528:io.harness.delegate.task.ecs.response.EcsBlueGreenCreateServiceResponse
-573529:io.harness.delegate.beans.ecs.EcsBlueGreenPrepareRollbackDataResult
-573530:io.harness.delegate.task.ecs.response.EcsBlueGreenPrepareRollbackDataResponse
-573531:io.harness.delegate.task.ecs.request.EcsBlueGreenPrepareRollbackRequest
-573532:io.harness.delegate.beans.ecs.EcsBlueGreenSwapTargetGroupsResult
-573533:io.harness.delegate.task.ecs.request.EcsBlueGreenSwapTargetGroupsRequest
-573534:io.harness.delegate.task.ecs.response.EcsBlueGreenSwapTargetGroupsResponse
-573535:io.harness.delegate.task.ecs.request.EcsBlueGreenRollbackRequest
-573536:io.harness.delegate.task.ecs.response.EcsBlueGreenRollbackResponse
-573537:io.harness.delegate.beans.ecs.EcsBlueGreenRollbackResult
-573538:io.harness.delegate.task.ecs.EcsLoadBalancerConfig
 600001:io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO
 600002:io.harness.secretmanagerclient.WinRmAuthScheme
 600003:io.harness.ng.core.dto.secrets.NTLMConfigDTO
@@ -2337,6 +2324,5 @@
 9800004:io.harness.delegate.task.ssh.artifact.SkipCopyArtifactDelegateConfig
 9800005:io.harness.delegate.task.ssh.artifact.ArtifactoryDockerArtifactDelegateConfig
 9800006:io.harness.delegate.task.ssh.artifact.NexusDockerArtifactDelegateConfig
-9800007:io.harness.delegate.task.ssh.artifact.AwsS3ArtifactDelegateConfig
 10000001:io.harness.delegate.beans.connector.elkconnector.ELKConnectorDTO
 10000002:io.harness.delegate.beans.connector.elkconnector.ELKAuthType

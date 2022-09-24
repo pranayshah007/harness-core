@@ -34,7 +34,6 @@ import io.harness.gitsync.sdk.EntityValidityDetails;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
-import io.harness.ng.core.template.exception.NGTemplateResolveExceptionV2;
 import io.harness.notification.bean.NotificationRules;
 import io.harness.plancreator.steps.internal.PmsAbstractStepNode;
 import io.harness.pms.annotations.PipelineServiceAuth;
@@ -55,7 +54,6 @@ import io.harness.pms.variables.VariableCreatorMergeService;
 import io.harness.pms.variables.VariableMergeServiceResponse;
 import io.harness.steps.template.TemplateStepNode;
 import io.harness.steps.template.stage.TemplateStageNode;
-import io.harness.template.beans.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.utils.PageUtils;
 import io.harness.yaml.core.StepSpecType;
 import io.harness.yaml.schema.YamlSchemaResource;
@@ -203,17 +201,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
               .gitDetails(GitAwareContextHelper.getEntityGitDetailsFromScmGitMetadata())
               .yamlSchemaErrorWrapper((YamlSchemaErrorWrapperDTO) e.getMetadata())
               .build());
-    } catch (NGTemplateResolveExceptionV2 ne) {
-      return ResponseDTO.newResponse(
-          PMSPipelineResponseDTO.builder()
-              .yamlPipeline(ne.getReferredByYaml())
-              .entityValidityDetails(
-                  EntityValidityDetails.builder().valid(false).invalidYaml(ne.getReferredByYaml()).build())
-              .gitDetails(GitAwareContextHelper.getEntityGitDetailsFromScmGitMetadata())
-              .validateTemplateInputsResponse((ValidateTemplateInputsResponseDTO) ne.getMetadata())
-              .build());
     }
-
     String version = "0";
     if (pipelineEntity.isPresent()) {
       version = pipelineEntity.get().getVersion().toString();

@@ -21,9 +21,6 @@ import io.harness.yaml.core.intfc.OverridesApplier;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 @OwnedBy(CDC)
 @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
@@ -31,8 +28,5 @@ public interface Infrastructure extends StepParameters, PassThroughData, Overrid
   @JsonIgnore InfraMapping getInfraMapping();
   @JsonIgnore String getKind();
   @JsonIgnore ParameterField<String> getConnectorReference();
-  default @JsonIgnore List<ParameterField<String>> getConnectorReferences() {
-    return new ArrayList<>(Collections.singletonList(getConnectorReference()));
-  }
   @JsonIgnore String[] getInfrastructureKeyValues();
 }

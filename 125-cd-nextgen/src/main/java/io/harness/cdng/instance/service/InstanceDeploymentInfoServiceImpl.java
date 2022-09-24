@@ -97,12 +97,12 @@ public class InstanceDeploymentInfoServiceImpl implements InstanceDeploymentInfo
 
   @Override
   public List<InstanceDeploymentInfo> getByHostsAndArtifact(@NotNull ExecutionInfoKey executionInfoKey,
-      List<String> hosts, @NotNull ArtifactDetails artifactDetails, InstanceDeploymentInfoStatus... statuses) {
+      List<String> hosts, @NotNull ArtifactDetails artifactDetails, InstanceDeploymentInfoStatus status) {
     if (isEmpty(hosts)) {
       return Collections.emptyList();
     }
 
-    return instanceDeploymentInfoRepository.listByHostsAndArtifact(executionInfoKey, hosts, artifactDetails, statuses);
+    return instanceDeploymentInfoRepository.listByHostsAndArtifact(executionInfoKey, hosts, artifactDetails, status);
   }
 
   @Override

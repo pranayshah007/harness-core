@@ -187,8 +187,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
           helmTaskHelperBase.parseHelmReleaseCommandOutput(helmCliResponse.getOutput(), RELEASE_HISTORY);
 
       if (!isEmpty(releaseInfoList)) {
-        helmTaskHelperBase.processHelmReleaseHistOutput(
-            releaseInfoList.get(releaseInfoList.size() - 1), commandRequest.isIgnoreReleaseHistFailStatus());
+        helmTaskHelperBase.processHelmReleaseHistOutput(releaseInfoList.get(releaseInfoList.size() - 1));
       }
 
       logCallback.saveExecutionLog(helmCliResponse.getOutputWithErrorStream());

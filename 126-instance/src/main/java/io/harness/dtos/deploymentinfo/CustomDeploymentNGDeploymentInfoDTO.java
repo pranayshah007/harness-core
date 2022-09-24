@@ -26,7 +26,7 @@ import org.codehaus.commons.nullanalysis.NotNull;
 @EqualsAndHashCode(callSuper = true)
 @OwnedBy(CDP)
 public class CustomDeploymentNGDeploymentInfoDTO extends DeploymentInfoDTO {
-  @NotNull private int instanceFetchScriptHash;
+  @NotNull private String instanceFetchScriptHash;
   private String instanceFetchScript;
   private String scriptOutput;
   private List<String> tags;

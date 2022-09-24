@@ -88,5 +88,4 @@ public class InfrastructureEntity implements PersistentEntity {
   @NotNull InfrastructureType type;
   @Wither ServiceDefinitionType deploymentType;
   @Wither String yaml;
-  @Builder.Default Boolean obsolete = Boolean.FALSE;
 }

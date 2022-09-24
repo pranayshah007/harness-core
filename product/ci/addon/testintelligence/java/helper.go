@@ -9,9 +9,7 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/harness/harness-core/commons/go/lib/filesystem"
-	"github.com/harness/harness-core/commons/go/lib/utils"
 	"github.com/harness/harness-core/product/ci/common/external"
-	"github.com/harness/harness-core/product/ci/ti-service/types"
 	"github.com/mattn/go-zglob"
 	"go.uber.org/zap"
 	"io"
@@ -34,35 +32,7 @@ func getFiles(path string) ([]string, error) {
 	return matches, err
 }
 
-// GetJavaTests returns list of RunnableTests in the workspace
-// In case of errors, return empty list
-func GetJavaTests(log *zap.SugaredLogger, fs filesystem.FileSystem) ([]types.RunnableTest, error) {
-	tests := make([]types.RunnableTest, 0)
-	//excludeList := []string{} // exclude any instances of these packages from the package list
-	wp, err := getWorkspace()
-	if err != nil {
-		return tests, err
-	}
-
-	files, _ := getFiles(fmt.Sprintf("%s/**/*.java", wp))
-	for _, path := range files {
-		if len(path) == 0 {
-			continue
-		}
-		node, _ := utils.ParseJavaNode(path)
-		if node.Type != utils.NodeType_TEST {
-			continue
-		}
-		test := types.RunnableTest{
-			Pkg:   node.Pkg,
-			Class: node.Class,
-		}
-		tests = append(tests, test)
-	}
-	return tests, nil
-}
-
-// DetectPkgs detects java packages by reading all the files and parsing their package names
+// detect java packages by reading all the files and parsing their package names
 func DetectPkgs(log *zap.SugaredLogger, fs filesystem.FileSystem) ([]string, error) {
 	plist := []string{}
 	excludeList := []string{"com.google"} // exclude any instances of these packages from the package list

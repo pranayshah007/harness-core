@@ -37,7 +37,6 @@ import io.harness.steps.resourcerestraint.ResourceRestraintStep;
 import io.harness.steps.servicenow.create.ServiceNowCreateStep;
 import io.harness.steps.servicenow.update.ServiceNowUpdateStep;
 import io.harness.steps.shellscript.ShellScriptStep;
-import io.harness.steps.wait.WaitStep;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -81,7 +80,6 @@ public class OrchestrationStepsModuleStepRegistrar {
     engineSteps.put(IdentityStrategyInternalStep.STEP_TYPE, IdentityStrategyInternalStep.class);
 
     engineSteps.putAll(NGCommonUtilStepsRegistrar.getEngineSteps());
-    engineSteps.put(WaitStep.STEP_TYPE, WaitStep.class);
 
     return engineSteps;
   }

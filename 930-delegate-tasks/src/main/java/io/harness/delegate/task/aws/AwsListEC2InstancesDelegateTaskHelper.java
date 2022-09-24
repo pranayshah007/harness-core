@@ -118,9 +118,6 @@ public class AwsListEC2InstancesDelegateTaskHelper {
     return AwsEC2Instance.builder()
         .instanceId(instance.getInstanceId())
         .publicDnsName(instance.getPublicDnsName())
-        .publicIp(instance.getPublicIpAddress())
-        .privateIp(instance.getPrivateIpAddress())
-        .hostname(awsUtils.getHostnameFromPrivateDnsName(instance.getPrivateDnsName()))
         .build();
   }
 

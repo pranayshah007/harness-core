@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -27,6 +28,7 @@ import static org.mockito.internal.verification.VerificationModeFactory.times;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGEntitiesTestBase;
 import io.harness.data.structure.UUIDGenerator;
@@ -45,6 +47,7 @@ import io.harness.outbox.api.OutboxService;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.repositories.UpsertOptions;
 import io.harness.rule.Owner;
+import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.PageUtils;
 
 import com.google.common.io.Resources;
@@ -71,6 +74,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 @OwnedBy(HarnessTeam.CDC)
 public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
   @Mock private OutboxService outboxService;
+  @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Mock private EntitySetupUsageServiceImpl entitySetupUsageService;
   @Mock private ServiceOverrideService serviceOverrideService;
   @Mock private ServiceEntitySetupUsageHelper entitySetupUsageHelper;
@@ -84,6 +88,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
   public void setup() {
     entitySetupUsageService = mock(EntitySetupUsageServiceImpl.class);
     Reflect.on(serviceEntityService).set("entitySetupUsageService", entitySetupUsageService);
+    Reflect.on(serviceEntityService).set("ngFeatureFlagHelperService", ngFeatureFlagHelperService);
     Reflect.on(serviceEntityService).set("outboxService", outboxService);
     Reflect.on(serviceEntityService).set("serviceOverrideService", serviceOverrideService);
     Reflect.on(serviceEntityService).set("entitySetupUsageHelper", entitySetupUsageHelper);
@@ -376,6 +381,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
   @Owner(developers = HINGER)
   @Category(UnitTests.class)
   public void testDeleteAllServicesInProject() {
+    doReturn(true).when(ngFeatureFlagHelperService).isEnabled("ACCOUNT_ID", FeatureName.HARD_DELETE_ENTITIES);
     ServiceEntity serviceEntity1 = ServiceEntity.builder()
                                        .accountId("ACCOUNT_ID")
                                        .identifier("IDENTIFIER_1")
@@ -412,6 +418,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
   @Owner(developers = HINGER)
   @Category(UnitTests.class)
   public void testHardDeleteService() {
+    doReturn(true).when(ngFeatureFlagHelperService).isEnabled("ACCOUNT_ID", FeatureName.HARD_DELETE_ENTITIES);
     final String id = UUIDGenerator.generateUuid();
     ServiceEntity serviceEntity = ServiceEntity.builder()
                                       .accountId("ACCOUNT_ID")
@@ -596,49 +603,14 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
         serviceEntityService.getYamlNodeForFqn(ACCOUNT_ID, ORG_ID, PROJECT_ID, "testGetYamlNodeForFqn",
             "pipeline.stages.s2.spec.service.serviceInputs.serviceDefinition.spec.artifacts.primary.spec.tag");
 
-    YamlNode sidecarNode =
-        serviceEntityService.getYamlNodeForFqn(ACCOUNT_ID, ORG_ID, PROJECT_ID, "testGetYamlNodeForFqn",
-            "pipeline.stages.s2.spec.service.serviceInputs.serviceDefinition.spec.artifacts.sidecars.sc1.spec.tag");
+    YamlNode sidecarNode = serviceEntityService.getYamlNodeForFqn(ACCOUNT_ID, ORG_ID, PROJECT_ID,
+        "testGetYamlNodeForFqn",
+        "pipeline.stages.s2.spec.service.serviceInputs.serviceDefinition.spec.artifacts.sidecars[0].sidecar.spec.tag");
 
     assertThat(primaryNode.getCurrJsonNode().asText()).isEqualTo("<+input>");
     assertThat(primaryNode.getParentNode().toString())
         .isEqualTo(
             "{\"connectorRef\":\"account.harnessImage\",\"imagePath\":\"harness/todolist\",\"tag\":\"<+input>\"}");
-
-    assertThat(sidecarNode.getCurrJsonNode().asText()).isEqualTo("<+input>");
-    assertThat(sidecarNode.getParentNode().toString())
-        .isEqualTo(
-            "{\"connectorRef\":\"account.harnessImage\",\"imagePath\":\"harness/todolist-sample\",\"region\":\"us-east-1\",\"tag\":\"<+input>\"}");
-  }
-
-  @Test
-  @Owner(developers = INDER)
-  @Category(UnitTests.class)
-  public void testGetYamlNodeForFqnWithPrimarySources() {
-    String yaml = readFile("ArtifactResourceUtils/serviceWithPrimarySourcesAndSidecars.yaml");
-    ServiceEntity createRequest = ServiceEntity.builder()
-                                      .accountId(ACCOUNT_ID)
-                                      .orgIdentifier(ORG_ID)
-                                      .projectIdentifier(PROJECT_ID)
-                                      .name("testGetYamlNodeForFqn")
-                                      .identifier("testGetYamlNodeForFqn")
-                                      .yaml(yaml)
-                                      .build();
-
-    serviceEntityService.create(createRequest);
-
-    YamlNode primaryNode = serviceEntityService.getYamlNodeForFqn(ACCOUNT_ID, ORG_ID, PROJECT_ID,
-        "testGetYamlNodeForFqn",
-        "pipeline.stages.s2.spec.service.serviceInputs.serviceDefinition.spec.artifacts.primary.sources.i1.spec.tag");
-
-    YamlNode sidecarNode =
-        serviceEntityService.getYamlNodeForFqn(ACCOUNT_ID, ORG_ID, PROJECT_ID, "testGetYamlNodeForFqn",
-            "pipeline.stages.s2.spec.service.serviceInputs.serviceDefinition.spec.artifacts.sidecars.sc1.spec.tag");
-
-    assertThat(primaryNode.getCurrJsonNode().asText()).isEqualTo("<+input>");
-    assertThat(primaryNode.getParentNode().toString())
-        .isEqualTo(
-            "{\"connectorRef\":\"account.harnessImage1\",\"imagePath\":\"harness/todolist\",\"tag\":\"<+input>\"}");
 
     assertThat(sidecarNode.getCurrJsonNode().asText()).isEqualTo("<+input>");
     assertThat(sidecarNode.getParentNode().toString())

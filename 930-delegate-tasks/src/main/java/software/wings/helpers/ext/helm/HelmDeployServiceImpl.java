@@ -180,8 +180,7 @@ public class HelmDeployServiceImpl implements HelmDeployService {
           helmTaskHelperBase.parseHelmReleaseCommandOutput(helmCliResponse.getOutput(), RELEASE_HISTORY);
 
       if (!isEmpty(releaseInfoList)) {
-        helmTaskHelperBase.processHelmReleaseHistOutput(
-            releaseInfoList.get(releaseInfoList.size() - 1), commandRequest.isIgnoreReleaseHistFailStatus());
+        helmTaskHelperBase.processHelmReleaseHistOutput(releaseInfoList.get(releaseInfoList.size() - 1));
       }
 
       executionLogCallback.saveExecutionLog(

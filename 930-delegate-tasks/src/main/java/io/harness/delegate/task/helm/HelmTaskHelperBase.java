@@ -254,15 +254,12 @@ public class HelmTaskHelperBase {
         .build();
   }
 
-  public void processHelmReleaseHistOutput(ReleaseInfo releaseInfo, boolean ignoreHelmHistFailure) {
-    String msg = "Release History command passed but there is an issue with latest release, details: \n"
-        + releaseInfo.getDescription();
+  public void processHelmReleaseHistOutput(ReleaseInfo releaseInfo) {
     if (checkIfFailed(releaseInfo.getDescription()) || checkIfFailed(releaseInfo.getStatus())) {
-      if (!ignoreHelmHistFailure) {
-        throw new HelmClientException(msg, USER, HelmCliCommandType.RELEASE_HISTORY);
-      }
-      log.error(msg);
-      log.info("Deliberately ignoring this error and proceeding with install/upgrade \n");
+      throw new HelmClientException(
+          "Release History command passed but there is an issue with latest release, details: \n"
+              + releaseInfo.getDescription(),
+          USER, HelmCliCommandType.RELEASE_HISTORY);
     }
   }
 

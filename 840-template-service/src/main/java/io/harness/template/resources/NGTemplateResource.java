@@ -30,7 +30,6 @@ import io.harness.encryption.Scope;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.ChangeType;
-import io.harness.gitaware.helper.GitImportInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityCreateInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityDeleteInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
@@ -64,8 +63,6 @@ import io.harness.template.beans.PageParamsDTO;
 import io.harness.template.beans.PermissionTypes;
 import io.harness.template.beans.TemplateDeleteListRequestDTO;
 import io.harness.template.beans.TemplateFilterProperties;
-import io.harness.template.beans.TemplateImportRequestDTO;
-import io.harness.template.beans.TemplateImportSaveResponse;
 import io.harness.template.beans.TemplateResponseDTO;
 import io.harness.template.beans.TemplateWrapperResponseDTO;
 import io.harness.template.beans.yaml.NGTemplateConfig;
@@ -853,25 +850,5 @@ public class NGTemplateResource {
       @NotNull TemplateReferenceRequestDTO templateReferenceRequestDTO) {
     return ResponseDTO.newResponse(templateReferenceHelper.getNestedTemplateReferences(
         accountId, orgId, projectId, templateReferenceRequestDTO.getYaml(), false));
-  }
-
-  @POST
-  @Path("/import/{templateIdentifier}")
-  @ApiOperation(value = "import template from git", nickname = "importTemplate")
-  @Operation(operationId = "importTemplate", summary = "import template from git",
-      responses =
-      {
-        @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "import template from git")
-      })
-  @Hidden
-  public ResponseDTO<TemplateImportSaveResponse>
-  importTemplateFromGit(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
-      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @Parameter(description = TEMPLATE_PARAM_MESSAGE) @PathParam(
-          "templateIdentifier") @ResourceIdentifier String templateIdentifier,
-      @BeanParam GitImportInfoDTO gitImportInfoDTO, TemplateImportRequestDTO templateImportRequestDTO) {
-    return ResponseDTO.newResponse(TemplateImportSaveResponse.builder().build());
   }
 }

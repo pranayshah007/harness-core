@@ -100,7 +100,7 @@ public class InstanceDeploymentInfoRepositoryCustomImpl implements InstanceDeplo
 
   @Override
   public List<InstanceDeploymentInfo> listByHostsAndArtifact(ExecutionInfoKey executionInfoKey, List<String> hosts,
-      ArtifactDetails artifactDetails, InstanceDeploymentInfoStatus... statuses) {
+      ArtifactDetails artifactDetails, InstanceDeploymentInfoStatus status) {
     Criteria criteria = createExecutionCriteria(executionInfoKey);
     criteria.and(InstanceDeploymentInfoKeys.instanceInfo + ".host").in(hosts);
 
@@ -111,7 +111,7 @@ public class InstanceDeploymentInfoRepositoryCustomImpl implements InstanceDeplo
     criteria.and(format("%s.%s", InstanceDeploymentInfoKeys.artifactDetails, ArtifactDetailsKeys.tag))
         .is(artifactDetails.getTag());
 
-    criteria.and(InstanceDeploymentInfoKeys.status).in(statuses);
+    criteria.and(InstanceDeploymentInfoKeys.status).is(status);
 
     Query query = new Query();
     query.addCriteria(criteria);

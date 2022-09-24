@@ -25,7 +25,6 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
-import io.harness.yaml.infra.HostConnectionTypeKind;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -74,13 +73,6 @@ public class SshWinRmAwsInfrastructure
 
   @NotNull @Wither AwsInstanceFilter awsInstanceFilter;
 
-  @NotNull
-  @NotEmpty
-  @ApiModelProperty(
-      dataType = SwaggerConstants.STRING_CLASSPATH, allowableValues = HostConnectionTypeKind.AWS_ALLOWABLE_VALUES)
-  @Wither
-  ParameterField<String> hostConnectionType;
-
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
@@ -128,9 +120,6 @@ public class SshWinRmAwsInfrastructure
     }
     if (config.getAwsInstanceFilter() != null) {
       resultantInfra = resultantInfra.withAwsInstanceFilter(config.getAwsInstanceFilter());
-    }
-    if (!ParameterField.isNull(config.getHostConnectionType())) {
-      resultantInfra = resultantInfra.withHostConnectionType(config.getHostConnectionType());
     }
 
     return resultantInfra;

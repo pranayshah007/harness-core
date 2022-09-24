@@ -34,7 +34,6 @@ import java.util.concurrent.ExecutorService;
 import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.util.CollectionUtils;
 
 @Data
 @OwnedBy(PIPELINE)
@@ -73,12 +72,6 @@ public class WaitForExecutionInputCallback implements OldNotifyCallback {
                                                       .setMessage("ExecutionInputExpired")
                                                       .build())
                                   .build();
-    if (CollectionUtils.isEmpty(node.getAdviserObtainments())) {
-      nodeExecutionService.updateStatusWithOps(nodeExecutionId, Status.EXPIRED, null, EnumSet.noneOf(Status.class));
-      engine.endNodeExecution(nodeExecution.getAmbiance());
-      return;
-    }
-    // End nodeExecution if advisers are empty.
     adviseHelper.queueAdvisingEvent(nodeExecution, failureInfo, node, Status.INPUT_WAITING);
     log.warn("Execution input timed out for nodeExecutionId {}", nodeExecutionId);
   }

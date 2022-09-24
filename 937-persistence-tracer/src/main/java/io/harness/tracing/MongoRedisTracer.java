@@ -137,15 +137,7 @@ public class MongoRedisTracer implements Tracer, NgTracer {
 
   private String getMajorVersionFromFullVersion() {
     String buildNo = versionInfoManager.getVersionInfo().getBuildNo();
-    String replaceBuildNumber;
-    try {
-      replaceBuildNumber = buildNo.substring(0, buildNo.length() - 2) + "xx";
-    } catch (Exception e) {
-      // Handling for semantic versioning. Returning MAJOR_MINOR
-      String version = versionInfoManager.getVersionInfo().getVersion();
-      replaceBuildNumber = version.substring(0, version.length() - 2).replace('.', '_');
-      return replaceBuildNumber;
-    }
+    String replaceBuildNumber = buildNo.substring(0, buildNo.length() - 2) + "xx";
     return versionInfoManager.getVersionInfo().getVersion().replace(buildNo, replaceBuildNumber);
   }
 

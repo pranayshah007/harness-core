@@ -31,7 +31,6 @@ import com.google.inject.Key;
 import com.google.inject.Module;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
-import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import io.dropwizard.Application;
 import io.dropwizard.cli.ConfiguredCommand;
@@ -110,12 +109,6 @@ public class InspectCommand<T extends io.dropwizard.Configuration> extends Confi
         return ImmutableList.<Class<? extends Converter<?, ?>>>builder()
             .addAll(TemplateServiceModuleRegistrars.springConverters)
             .build();
-      }
-      @Provides
-      @Singleton
-      @Named("dbAliases")
-      public List<String> getDbAliases() {
-        return appConfig.getDbAliases();
       }
     });
 

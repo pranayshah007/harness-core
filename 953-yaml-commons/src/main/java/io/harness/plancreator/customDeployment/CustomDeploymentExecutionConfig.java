@@ -15,6 +15,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -36,5 +38,5 @@ public class CustomDeploymentExecutionConfig {
   @ApiModelProperty(hidden = true)
   String uuid;
 
-  List<StepTemplateRef> stepTemplateRefs;
+  @NotNull @Size(min = 1) List<StepTemplateRef> stepTemplateRefs;
 }

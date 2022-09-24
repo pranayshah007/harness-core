@@ -60,7 +60,6 @@ import com.google.inject.Singleton;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -409,7 +408,7 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
     String delegateGroupIdentifier = delegateGroup != null ? delegateGroup.getIdentifier() : null;
     Set<String> groupCustomSelectors = delegateGroup != null ? delegateGroup.getTags() : null;
     long upgraderLastUpdated = delegateGroup != null ? delegateGroup.getUpgraderLastUpdated() : 0;
-    long groupExpirationTime = groupDelegates.stream().mapToLong(Delegate::getExpirationTime).min().orElse(0);
+    long groupExpirationTime = groupDelegates.stream().mapToLong(Delegate::getExpirationTime).max().orElse(0);
     boolean immutableDelegate = isNotEmpty(groupDelegates) && groupDelegates.get(0).isImmutable();
 
     // pick any connected delegateId to check whether grpc is active or not
@@ -456,9 +455,6 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
       connectivityStatus = GROUP_STATUS_CONNECTED;
     }
 
-    String groupVersion =
-        groupDelegates.stream().min(Comparator.comparing(Delegate::getVersion)).map(Delegate::getVersion).orElse(null);
-
     return DelegateGroupDetails.builder()
         .groupId(delegateGroupId)
         .delegateGroupIdentifier(delegateGroupIdentifier)
@@ -478,7 +474,7 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
         .activelyConnected(!connectivityStatus.equals(GROUP_STATUS_DISCONNECTED))
         .tokenActive(isDelegateTokenActiveAtGroupLevel.get())
         .immutable(immutableDelegate)
-        .groupVersion(groupVersion)
+        .versions(groupDelegates.stream().map(Delegate::getVersion).collect(toList()))
         .build();
   }
 

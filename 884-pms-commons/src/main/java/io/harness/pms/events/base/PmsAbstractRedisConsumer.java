@@ -56,7 +56,6 @@ public abstract class PmsAbstractRedisConsumer<T extends PmsAbstractMessageListe
     Thread.currentThread().setName(threadName);
 
     try {
-      preThreadHandler();
       do {
         while (getMaintenanceFlag()) {
           sleep(ofSeconds(1));
@@ -71,14 +70,8 @@ public abstract class PmsAbstractRedisConsumer<T extends PmsAbstractMessageListe
       } while (!Thread.currentThread().isInterrupted() && !shouldStop.get());
     } catch (Exception ex) {
       log.error("Consumer {} unexpectedly stopped", this.getClass().getSimpleName(), ex);
-    } finally {
-      postThreadCompletion();
     }
   }
-
-  public void preThreadHandler() {}
-
-  public void postThreadCompletion() {}
 
   protected void readEventsFrameworkMessages() throws InterruptedException {
     try {

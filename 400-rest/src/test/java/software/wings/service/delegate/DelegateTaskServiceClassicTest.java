@@ -133,6 +133,7 @@ import software.wings.service.impl.DelegateObserver;
 import software.wings.service.impl.DelegateServiceImpl;
 import software.wings.service.impl.DelegateTaskBroadcastHelper;
 import software.wings.service.impl.DelegateTaskServiceClassicImpl;
+import software.wings.service.impl.DelegateTaskStatusObserver;
 import software.wings.service.impl.infra.InfraDownloadService;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.AlertService;
@@ -214,6 +215,7 @@ public class DelegateTaskServiceClassicTest extends WingsBaseTest {
 
   private final Subject<DelegateProfileObserver> delegateProfileSubject = mock(Subject.class);
   private final Subject<DelegateTaskRetryObserver> retryObserverSubject = mock(Subject.class);
+  private final Subject<DelegateTaskStatusObserver> delegateTaskStatusObserverSubject = mock(Subject.class);
   private final Subject<DelegateObserver> subject = mock(Subject.class);
   public static final String GLOBAL_DELEGATE_ACCOUNT_ID = "__GLOBAL_DELEGATE_ACCOUNT_ID__";
 
@@ -277,6 +279,8 @@ public class DelegateTaskServiceClassicTest extends WingsBaseTest {
     FieldUtils.writeField(delegateService, "delegateProfileSubject", delegateProfileSubject, true);
     FieldUtils.writeField(delegateService, "subject", subject, true);
     FieldUtils.writeField(delegateTaskService, "retryObserverSubject", retryObserverSubject, true);
+    FieldUtils.writeField(
+        delegateTaskService, "delegateTaskStatusObserverSubject", delegateTaskStatusObserverSubject, true);
   }
 
   @Test
@@ -420,6 +424,7 @@ public class DelegateTaskServiceClassicTest extends WingsBaseTest {
     verify(waitNotifyEngine)
         .doneWith(
             delegateTask.getWaitId(), ExecutionStatusData.builder().executionStatus(ExecutionStatus.SUCCESS).build());
+    verify(delegateTaskStatusObserverSubject).fireInform(any(), any(), any(), any(), any());
   }
 
   @Test

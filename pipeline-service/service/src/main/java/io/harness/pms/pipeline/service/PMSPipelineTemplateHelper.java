@@ -96,17 +96,17 @@ public class PMSPipelineTemplateHelper {
       } catch (InvalidRequestException e) {
         if (e.getMetadata() instanceof TemplateInputsErrorMetadataDTO) {
           throw new NGTemplateResolveException(
-              TEMPLATE_RESOLVE_EXCEPTION_MSG, USER, (TemplateInputsErrorMetadataDTO) e.getMetadata(), yaml);
+              TEMPLATE_RESOLVE_EXCEPTION_MSG, USER, (TemplateInputsErrorMetadataDTO) e.getMetadata());
         } else if (e.getMetadata() instanceof ValidateTemplateInputsResponseDTO) {
           throw new NGTemplateResolveExceptionV2(
-              TEMPLATE_RESOLVE_EXCEPTION_MSG, USER, (ValidateTemplateInputsResponseDTO) e.getMetadata(), yaml);
+              TEMPLATE_RESOLVE_EXCEPTION_MSG, USER, (ValidateTemplateInputsResponseDTO) e.getMetadata());
         } else {
           throw new NGTemplateException(e.getMessage(), e);
         }
       } catch (NGTemplateResolveException e) {
-        throw new NGTemplateResolveException(e.getMessage(), USER, e.getErrorResponseDTO(), null);
+        throw new NGTemplateResolveException(e.getMessage(), USER, e.getErrorResponseDTO());
       } catch (NGTemplateResolveExceptionV2 e) {
-        throw new NGTemplateResolveExceptionV2(e.getMessage(), USER, e.getValidateTemplateInputsResponseDTO(), null);
+        throw new NGTemplateResolveExceptionV2(e.getMessage(), USER, e.getValidateTemplateInputsResponseDTO());
       } catch (UnexpectedException e) {
         log.error("Error connecting to Template Service", e);
         throw new NGTemplateException(TEMPLATE_RESOLVE_EXCEPTION_MSG, e);

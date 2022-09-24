@@ -35,12 +35,11 @@ public class DatadogMetricHealthSourceSpecTransformer
     List<DatadogMetricHealthDefinition> metricDefinitions = new ArrayList<>();
     Set<TimeSeriesMetricPackDTO> metricPacks = new HashSet<>();
     cvConfigs.forEach(cvConfig -> cvConfig.getMetricInfoList().forEach(metricInfo -> {
-      RiskProfile riskProfile =
-          RiskProfile.builder()
-              .category(cvConfig.getMetricPack().getCategory())
-              .metricType(metricInfo.getMetricType())
-              .thresholdTypes(cvConfig.getThresholdTypeOfMetric(metricInfo.getMetricName(), cvConfig))
-              .build();
+      RiskProfile riskProfile = RiskProfile.builder()
+                                    .category(cvConfig.getMetricPack().getCategory())
+                                    .metricType(metricInfo.getMetricType())
+                                    .thresholdTypes(cvConfig.getThresholdTypeOfMetric(metricInfo.getMetric(), cvConfig))
+                                    .build();
       DatadogMetricHealthDefinition metricDefinition =
           DatadogMetricHealthDefinition.builder()
               .dashboardId(cvConfig.getDashboardId())

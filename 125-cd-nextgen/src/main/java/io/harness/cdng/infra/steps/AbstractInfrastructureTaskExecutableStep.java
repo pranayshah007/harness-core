@@ -29,7 +29,6 @@ import io.harness.cdng.execution.helper.ExecutionInfoKeyMapper;
 import io.harness.cdng.execution.helper.StageExecutionHelper;
 import io.harness.cdng.infra.InfrastructureMapper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
-import io.harness.cdng.infra.beans.SshWinRmAwsInfrastructureOutcome;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
@@ -43,7 +42,6 @@ import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.HarnessStringUtils;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.TaskData;
@@ -76,7 +74,6 @@ import io.harness.logging.LogLevel;
 import io.harness.logging.UnitProgress;
 import io.harness.logging.UnitStatus;
 import io.harness.logstreaming.NGLogCallback;
-import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -87,7 +84,6 @@ import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
-import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
@@ -104,7 +100,6 @@ import io.harness.steps.shellscript.HostsOutput;
 import io.harness.steps.shellscript.SshInfraDelegateConfigOutput;
 import io.harness.steps.shellscript.WinRmInfraDelegateConfigOutput;
 import io.harness.supplier.ThrowingSupplier;
-import io.harness.yaml.infra.HostConnectionTypeKind;
 
 import software.wings.beans.TaskType;
 import software.wings.service.impl.aws.model.AwsEC2Instance;
@@ -133,7 +128,6 @@ abstract class AbstractInfrastructureTaskExecutableStep {
   @Inject protected KryoSerializer kryoSerializer;
   @Inject protected StepHelper stepHelper;
   @Inject protected StageExecutionHelper stageExecutionHelper;
-  @Inject protected InfrastructureMapper infrastructureMapper;
 
   @Data
   @AllArgsConstructor
@@ -161,10 +155,8 @@ abstract class AbstractInfrastructureTaskExecutableStep {
     final OutcomeSet outcomeSet = fetchRequiredOutcomes(ambiance);
     final EnvironmentOutcome environmentOutcome = outcomeSet.getEnvironmentOutcome();
     final ServiceStepOutcome serviceOutcome = outcomeSet.getServiceStepOutcome();
-    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     final InfrastructureOutcome infrastructureOutcome =
-        infrastructureMapper.toOutcome(infrastructure, environmentOutcome, serviceOutcome,
-            ngAccess.getAccountIdentifier(), ngAccess.getProjectIdentifier(), ngAccess.getOrgIdentifier());
+        InfrastructureMapper.toOutcome(infrastructure, environmentOutcome, serviceOutcome);
 
     // save infrastructure sweeping output for further use within the step
     boolean skipInstances = infrastructureStepHelper.getSkipInstances(infrastructure);
@@ -278,7 +270,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
       NGLogCallback logCallback, InfrastructureOutcome infrastructureOutcome, ExecutionInfoKey executionInfoKey,
       long startTime) {
     Set<String> hostNames =
-        azureHostsResponse.getHosts().stream().map(AzureHostResponse::getAddress).collect(Collectors.toSet());
+        azureHostsResponse.getHosts().stream().map(AzureHostResponse::getPublicAddress).collect(Collectors.toSet());
     if (isEmpty(hostNames)) {
       saveExecutionLogSafely(logCallback,
           color("No host(s) found for specified infrastructure or filter did not match any instance(s)", Red));
@@ -301,7 +293,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
       ExecutionInfoKey executionInfoKey, long startTime) {
     Set<String> hostNames = awsListEC2InstancesTaskResponse.getInstances()
                                 .stream()
-                                .map(awsEC2Instance -> mapToAddress(awsEC2Instance, infrastructureOutcome))
+                                .map(AwsEC2Instance::getPublicDnsName)
                                 .collect(Collectors.toSet());
     if (isEmpty(hostNames)) {
       saveExecutionLogSafely(logCallback,
@@ -318,25 +310,6 @@ abstract class AbstractInfrastructureTaskExecutableStep {
         HostsOutput.builder().hosts(filteredHosts).build(), StepCategory.STAGE.name());
 
     return buildSuccessStepResponse(ambiance, infrastructureOutcome, logCallback, executionInfoKey, startTime);
-  }
-
-  private String mapToAddress(AwsEC2Instance awsEC2Instance, InfrastructureOutcome infrastructureOutcome) {
-    if (!(infrastructureOutcome instanceof SshWinRmAwsInfrastructureOutcome)) {
-      throw new InvalidRequestException(
-          format("Not supported infrastructure kind : [%s]", infrastructureOutcome.getKind()));
-    }
-    final String hostConnectionType =
-        ((SshWinRmAwsInfrastructureOutcome) infrastructureOutcome).getHostConnectionType();
-
-    if (HostConnectionTypeKind.PUBLIC_IP.equals(hostConnectionType)
-        && EmptyPredicate.isNotEmpty(awsEC2Instance.getPublicIp())) {
-      return awsEC2Instance.getPublicIp();
-    } else if (HostConnectionTypeKind.PRIVATE_IP.equals(hostConnectionType)
-        && EmptyPredicate.isNotEmpty(awsEC2Instance.getPrivateIp())) {
-      return awsEC2Instance.getPrivateIp();
-    } else {
-      return awsEC2Instance.getHostname(); // default
-    }
   }
 
   StepResponse handleTaskException(long startTime, Exception e, NGLogCallback logCallback) throws Exception {
@@ -456,7 +429,8 @@ abstract class AbstractInfrastructureTaskExecutableStep {
     additionalParams.put(AzureAdditionalParams.SUBSCRIPTION_ID, azureInfraDelegateConfig.getSubscriptionId());
     additionalParams.put(AzureAdditionalParams.RESOURCE_GROUP, azureInfraDelegateConfig.getResourceGroup());
     additionalParams.put(AzureAdditionalParams.OS_TYPE, azureInfraDelegateConfig.getOsType());
-    additionalParams.put(AzureAdditionalParams.HOST_CONNECTION_TYPE, azureInfraDelegateConfig.getHostConnectionType());
+    additionalParams.put(
+        AzureAdditionalParams.USE_PUBLIC_DNS, Boolean.toString(azureInfraDelegateConfig.isUsePublicDns()));
 
     Map<String, Object> params = new HashMap<>();
     params.put("tags", azureInfraDelegateConfig.getTags());
@@ -571,8 +545,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
       case SSH_WINRM_AWS:
         SshWinRmAwsInfrastructure sshWinRmAwsInfrastructure = (SshWinRmAwsInfrastructure) infrastructure;
         infrastructureStepHelper.validateExpression(sshWinRmAwsInfrastructure.getConnectorRef(),
-            sshWinRmAwsInfrastructure.getCredentialsRef(), sshWinRmAwsInfrastructure.getRegion(),
-            sshWinRmAwsInfrastructure.getHostConnectionType());
+            sshWinRmAwsInfrastructure.getCredentialsRef(), sshWinRmAwsInfrastructure.getRegion());
         break;
       default:
         throw new UnsupportedOperationException(
@@ -593,43 +566,43 @@ abstract class AbstractInfrastructureTaskExecutableStep {
       return;
     }
 
-    List<ConnectorInfoDTO> connectorInfo = infrastructureStepHelper.validateAndGetConnectors(
-        infrastructure.getConnectorReferences(), ambiance, logCallback);
+    ConnectorInfoDTO connectorInfo =
+        infrastructureStepHelper.validateAndGetConnector(infrastructure.getConnectorReference(), ambiance, logCallback);
 
     if (InfrastructureKind.KUBERNETES_GCP.equals(infrastructure.getKind())) {
-      if (!(connectorInfo.get(0).getConnectorConfig() instanceof GcpConnectorDTO)) {
+      if (!(connectorInfo.getConnectorConfig() instanceof GcpConnectorDTO)) {
         throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
-            connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
+            connectorInfo.getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
             ConnectorType.GCP.name()));
       }
     }
 
     if (InfrastructureKind.SERVERLESS_AWS_LAMBDA.equals(infrastructure.getKind())) {
-      if (!(connectorInfo.get(0).getConnectorConfig() instanceof AwsConnectorDTO)) {
+      if (!(connectorInfo.getConnectorConfig() instanceof AwsConnectorDTO)) {
         throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
-            connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
+            connectorInfo.getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
             ConnectorType.AWS.name()));
       }
     }
 
     if (InfrastructureKind.KUBERNETES_AZURE.equals(infrastructure.getKind())
-        && !(connectorInfo.get(0).getConnectorConfig() instanceof AzureConnectorDTO)) {
+        && !(connectorInfo.getConnectorConfig() instanceof AzureConnectorDTO)) {
       throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
-          connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
+          connectorInfo.getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
           ConnectorType.AZURE.name()));
     }
 
     if (InfrastructureKind.SSH_WINRM_AZURE.equals(infrastructure.getKind())
-        && !(connectorInfo.get(0).getConnectorConfig() instanceof AzureConnectorDTO)) {
+        && !(connectorInfo.getConnectorConfig() instanceof AzureConnectorDTO)) {
       throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
-          connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
+          connectorInfo.getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
           ConnectorType.AZURE.name()));
     }
 
     if (InfrastructureKind.AZURE_WEB_APP.equals(infrastructure.getKind())
-        && !(connectorInfo.get(0).getConnectorConfig() instanceof AzureConnectorDTO)) {
+        && !(connectorInfo.getConnectorConfig() instanceof AzureConnectorDTO)) {
       throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
-          connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
+          connectorInfo.getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
           ConnectorType.AZURE.name()));
     }
 
@@ -702,8 +675,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
       case InfrastructureKind.SSH_WINRM_AWS:
         SshWinRmAwsInfrastructure sshWinRmAwsInfrastructure = (SshWinRmAwsInfrastructure) infrastructure;
         infrastructureStepHelper.validateExpression(sshWinRmAwsInfrastructure.getConnectorRef(),
-            sshWinRmAwsInfrastructure.getCredentialsRef(), sshWinRmAwsInfrastructure.getRegion(),
-            sshWinRmAwsInfrastructure.getHostConnectionType());
+            sshWinRmAwsInfrastructure.getCredentialsRef(), sshWinRmAwsInfrastructure.getRegion());
         break;
 
       case InfrastructureKind.AZURE_WEB_APP:

@@ -971,8 +971,7 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
   @Category(UnitTests.class)
   public void testTriggerEntityCronHasNextIterations() {
     NGTriggerEntity ngTriggerEntity =
-        ngTriggerElementMapper.toTriggerDetails("accId", "orgId", "projId", ngTriggerYaml_cron, false)
-            .getNgTriggerEntity();
+        ngTriggerElementMapper.toTriggerDetails("accId", "orgId", "projId", ngTriggerYaml_cron).getNgTriggerEntity();
     assertThat(ngTriggerEntity.getNextIterations()).isNotEmpty();
     // all elements snap to the nearest minute -- in other words,  now is not an element.
     for (long nextIteration : ngTriggerEntity.getNextIterations()) {
@@ -986,7 +985,7 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
   public void testToTriggerEntityWithWrongIdentifier() {
     assertThatThrownBy(()
                            -> ngTriggerElementMapper.toTriggerEntity(
-                               "accId", "orgId", "projId", "not_first_trigger", ngTriggerYaml_gitlab_pr, false))
+                               "accId", "orgId", "projId", "not_first_trigger", ngTriggerYaml_gitlab_pr))
         .isInstanceOf(InvalidRequestException.class);
   }
 
@@ -1042,8 +1041,7 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
   public void testToResponseDTO() {
     when(pmsFeatureFlagService.isEnabled(any(), eq(FeatureName.GIT_WEBHOOK_POLLING))).thenReturn(Boolean.FALSE);
     NGTriggerEntity ngTriggerEntity =
-        ngTriggerElementMapper.toTriggerDetails("accId", "org", "proj", ngTriggerYaml_gitlab_pr, false)
-            .getNgTriggerEntity();
+        ngTriggerElementMapper.toTriggerDetails("accId", "org", "proj", ngTriggerYaml_gitlab_pr).getNgTriggerEntity();
     NGTriggerResponseDTO responseDTO = ngTriggerElementMapper.toResponseDTO(ngTriggerEntity);
     assertThat(responseDTO.getAccountIdentifier()).isEqualTo(ngTriggerEntity.getAccountId());
     assertThat(responseDTO.getTargetIdentifier()).isEqualTo(ngTriggerEntity.getTargetIdentifier());
@@ -1063,8 +1061,7 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
   public void testToResponseDTOGitPolling() {
     when(pmsFeatureFlagService.isEnabled(any(), eq(FeatureName.GIT_WEBHOOK_POLLING))).thenReturn(Boolean.TRUE);
     NGTriggerEntity ngTriggerEntity =
-        ngTriggerElementMapper.toTriggerDetails("accId", "org", "proj", ngTriggerYaml_gitpolling, false)
-            .getNgTriggerEntity();
+        ngTriggerElementMapper.toTriggerDetails("accId", "org", "proj", ngTriggerYaml_gitpolling).getNgTriggerEntity();
     NGTriggerResponseDTO responseDTO = ngTriggerElementMapper.toResponseDTO(ngTriggerEntity);
     assertThat(responseDTO.getAccountIdentifier()).isEqualTo(ngTriggerEntity.getAccountId());
     assertThat(responseDTO.getTargetIdentifier()).isEqualTo(ngTriggerEntity.getTargetIdentifier());
@@ -1086,8 +1083,7 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetWebhookUrl() {
     NGTriggerEntity ngTriggerEntity =
-        ngTriggerElementMapper.toTriggerDetails("accId", "org", "proj", ngTriggerYaml_gitlab_pr, false)
-            .getNgTriggerEntity();
+        ngTriggerElementMapper.toTriggerDetails("accId", "org", "proj", ngTriggerYaml_gitlab_pr).getNgTriggerEntity();
     NGTriggerDetailsResponseDTO ngTriggerDetailsResponseDTO =
         ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity, false, true);
     // baseUrl: "https://app.harness.io/pipeline/api"
@@ -1095,9 +1091,8 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
         .isEqualTo("https://app.harness.io/ng/api/webhook?accountIdentifier=accId");
 
     // baseUrl: "https://app.harness.io/pipeline/api/"
-    ngTriggerEntity =
-        ngTriggerElementMapper.toTriggerDetails("accId", "orgId", "projId", ngTriggerYaml_gitlab_pr, false)
-            .getNgTriggerEntity();
+    ngTriggerEntity = ngTriggerElementMapper.toTriggerDetails("accId", "orgId", "projId", ngTriggerYaml_gitlab_pr)
+                          .getNgTriggerEntity();
     ngTriggerDetailsResponseDTO = ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity, false, true);
     assertThat(ngTriggerDetailsResponseDTO.getWebhookUrl())
         .isEqualTo("https://app.harness.io/ng/api/webhook?accountIdentifier=accId");
@@ -1107,8 +1102,8 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
     assertThat(ngTriggerDetailsResponseDTO.getWebhookUrl())
         .isEqualTo("https://app.harness.io/ng/api/webhook?accountIdentifier=accId");
 
-    ngTriggerEntity = ngTriggerElementMapper.toTriggerDetails("accId", "org", "proj", ngTriggerYaml_custom, false)
-                          .getNgTriggerEntity();
+    ngTriggerEntity =
+        ngTriggerElementMapper.toTriggerDetails("accId", "org", "proj", ngTriggerYaml_custom).getNgTriggerEntity();
     ngTriggerDetailsResponseDTO = ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity, false, true);
     // baseUrl: "https://app.harness.io/pipeline/api"
     assertThat(ngTriggerDetailsResponseDTO.getWebhookUrl())
@@ -1125,7 +1120,7 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
   @Category(UnitTests.class)
   public void testArtifactTriggerToResponseDTO() {
     NGTriggerEntity ngTriggerEntity =
-        ngTriggerElementMapper.toTriggerDetails("accId", "org", "proj", ngTriggerYaml_artifact_gcr, false)
+        ngTriggerElementMapper.toTriggerDetails("accId", "org", "proj", ngTriggerYaml_artifact_gcr)
             .getNgTriggerEntity();
     NGTriggerResponseDTO responseDTO = ngTriggerElementMapper.toResponseDTO(ngTriggerEntity);
     assertThat(responseDTO.getYaml()).isEqualTo(ngTriggerEntity.getYaml());
@@ -1137,8 +1132,7 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
   @Category(UnitTests.class)
   public void testManifestTriggerToResponseDTO() {
     NGTriggerEntity ngTriggerEntity =
-        ngTriggerElementMapper.toTriggerDetails("accId", "org", "proj", ngTriggerYaml_manifest, false)
-            .getNgTriggerEntity();
+        ngTriggerElementMapper.toTriggerDetails("accId", "org", "proj", ngTriggerYaml_manifest).getNgTriggerEntity();
     NGTriggerResponseDTO responseDTO = ngTriggerElementMapper.toResponseDTO(ngTriggerEntity);
     assertThat(responseDTO.getYaml()).isEqualTo(ngTriggerEntity.getYaml());
     assertThat(responseDTO.getType()).isEqualTo(ngTriggerEntity.getType());

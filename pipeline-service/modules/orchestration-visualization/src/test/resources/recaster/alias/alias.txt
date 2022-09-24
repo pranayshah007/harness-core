@@ -1,5 +1,4 @@
 io.harness.plancreator.execution.ExecutionElementConfig
-io.harness.plancreator.customDeployment.StepTemplateRef
 io.harness.pms.sdk.core.data.StringOutcome
 io.harness.pms.sdk.core.plan.MapStepParameters
 io.harness.pms.timeout.AbsoluteSdkTimeoutTrackerParameters

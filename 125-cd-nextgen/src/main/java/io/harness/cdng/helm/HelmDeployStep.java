@@ -13,7 +13,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
-import io.harness.cdng.helm.HelmDeployBaseStepInfo.HelmDeployBaseStepInfoKeys;
 import io.harness.cdng.helm.NativeHelmDeployOutcome.NativeHelmDeployOutcomeBuilder;
 import io.harness.cdng.helm.beans.NativeHelmExecutionPassThroughData;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
@@ -192,10 +191,6 @@ public class HelmDeployStep extends TaskChainExecutableWithRollbackAndRbac imple
         nativeHelmStepHelper.renderValues(manifestOutcome, ambiance, valuesFileContents);
     HelmChartManifestOutcome helmChartManifestOutcome = (HelmChartManifestOutcome) manifestOutcome;
 
-    boolean ignoreHelmHistFailure = CDStepHelper.getParameterFieldBooleanValue(
-        ((HelmDeployStepParams) stepParameters.getSpec()).getIgnoreReleaseHistFailStatus(),
-        HelmDeployBaseStepInfoKeys.ignoreReleaseHistFailStatus, stepParameters);
-
     HelmInstallCommandRequestNG helmCommandRequest =
         HelmInstallCommandRequestNG.builder()
             .accountId(AmbianceUtils.getAccountId(ambiance))
@@ -215,7 +210,6 @@ public class HelmDeployStep extends TaskChainExecutableWithRollbackAndRbac imple
             .useLatestKubectlVersion(
                 cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.NEW_KUBECTL_VERSION))
             .shouldOpenFetchFilesLogStream(true)
-            .ignoreReleaseHistFailStatus(ignoreHelmHistFailure)
             .build();
 
     if (!ParameterField.isNull(stepParameters.getTimeout())) {

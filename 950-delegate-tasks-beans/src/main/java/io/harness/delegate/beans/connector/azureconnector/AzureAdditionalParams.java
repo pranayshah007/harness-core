@@ -17,7 +17,7 @@ public enum AzureAdditionalParams {
   RESOURCE_GROUP("Resource group name"),
   WEB_APP_NAME("Web App name"),
   OS_TYPE("OS type"),
-  HOST_CONNECTION_TYPE("Host connection type");
+  USE_PUBLIC_DNS("Use public DNS");
 
   private final String resourceName;
 

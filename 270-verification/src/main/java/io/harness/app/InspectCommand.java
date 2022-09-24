@@ -114,12 +114,6 @@ public class InspectCommand<T extends io.dropwizard.Configuration> extends Confi
             .addAll(ManagerRegistrars.morphiaConverters)
             .build();
       }
-      @Provides
-      @Singleton
-      @Named("dbAliases")
-      public List<String> getDbAliases() {
-        return verificationServiceConfiguration.getDbAliases();
-      }
     });
 
     Injector injector = Guice.createInjector(modules);

@@ -181,7 +181,6 @@ import software.wings.stencils.DefaultValue;
 import software.wings.utils.ApplicationManifestUtils;
 import software.wings.utils.HelmChartSpecificationMapper;
 
-import com.github.reinert.jjschema.Attributes;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import java.util.ArrayList;
@@ -246,7 +245,6 @@ public class HelmDeployState extends State {
   @Getter @Setter private String helmReleaseNamePrefix;
   @Getter @Setter private GitFileConfig gitFileConfig;
   @Getter @Setter private String commandFlags;
-  @Getter @Setter @Attributes(title = "Ignore release hist failure") private boolean ignoreReleaseHistFailure;
 
   public static final String HELM_COMMAND_NAME = "Helm Deploy";
   private static final String DOCKER_IMAGE_TAG_PLACEHOLDER_REGEX = "\\$\\{DOCKER_IMAGE_TAG}";
@@ -496,8 +494,8 @@ public class HelmDeployState extends State {
             .isGitHostConnectivityCheck(
                 featureFlagService.isEnabled(FeatureName.GIT_HOST_CONNECTIVITY, context.getAccountId()))
             .optimizedFilesFetch(featureFlagService.isEnabled(OPTIMIZED_GIT_FETCH_FILES, context.getAccountId()))
-            .useNewKubectlVersion(featureFlagService.isEnabled(FeatureName.NEW_KUBECTL_VERSION, context.getAccountId()))
-            .ignoreReleaseHistFailStatus(this.ignoreReleaseHistFailure);
+            .useNewKubectlVersion(
+                featureFlagService.isEnabled(FeatureName.NEW_KUBECTL_VERSION, context.getAccountId()));
 
     if (gitFileConfig != null) {
       helmInstallCommandRequestBuilder.gitFileConfig(gitFileConfig);
