@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ARVIND;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
@@ -82,7 +83,6 @@ public class AzureSshWinrmInstanceSyncPerpetualTaskExecutorTest extends Delegate
                  .subscriptionId("S")
                  .resourceGroup("R")
                  .tags(new HashMap<>())
-                 .hostConnectionType("PublicIP")
                  .build())
         .when(kryoSerializer)
         .asObject(any(byte[].class));
@@ -95,7 +95,7 @@ public class AzureSshWinrmInstanceSyncPerpetualTaskExecutorTest extends Delegate
     doReturn(
         AzureHostsResponse.builder().hosts(Arrays.asList(AzureHostResponse.builder().hostName(HOST1).build())).build())
         .when(azureAsyncTaskHelper)
-        .listHosts(any(), any(), anyString(), anyString(), any(), any(), any());
+        .listHosts(any(), any(), anyString(), anyString(), any(), any(), anyBoolean());
 
     PerpetualTaskExecutionParams perpetualTaskExecutionParams = getPerpetualTaskExecutionParams();
     PerpetualTaskResponse perpetualTaskResponse = executor.runOnce(

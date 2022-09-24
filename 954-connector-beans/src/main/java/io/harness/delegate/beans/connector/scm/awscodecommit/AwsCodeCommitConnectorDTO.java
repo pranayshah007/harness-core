@@ -7,7 +7,6 @@
 
 package io.harness.delegate.beans.connector.scm.awscodecommit;
 
-import io.harness.annotation.RecasterFieldName;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
@@ -42,7 +41,7 @@ import org.hibernate.validator.constraints.NotBlank;
 @ApiModel("AwsCodeCommitConnectorDTO")
 @Schema(name = "AwsCodeCommitConnector", description = "This contains details of the AWS Code Commit connector")
 public class AwsCodeCommitConnectorDTO extends ConnectorConfigDTO implements ScmConnector, DelegateSelectable {
-  @NotNull @RecasterFieldName(name = "type") @JsonProperty("type") AwsCodeCommitUrlType urlType;
+  @NotNull @JsonProperty("type") AwsCodeCommitUrlType urlType;
   @NotNull @NotBlank String url;
   @Valid @NotNull AwsCodeCommitAuthenticationDTO authentication;
   Set<String> delegateSelectors;

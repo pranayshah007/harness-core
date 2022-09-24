@@ -1,4 +1,3 @@
-io.harness.plancreator.customDeployment.StepTemplateRef
 io.harness.utils.DummyOrchestrationOutcome
 io.harness.yaml.core.failurestrategy.OnFailureConfig
 parameterField

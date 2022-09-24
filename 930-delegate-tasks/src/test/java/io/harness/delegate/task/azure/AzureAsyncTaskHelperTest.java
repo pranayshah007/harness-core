@@ -37,7 +37,6 @@ import io.harness.azure.client.AzureKubernetesClient;
 import io.harness.azure.client.AzureManagementClient;
 import io.harness.azure.model.AzureAuthenticationType;
 import io.harness.azure.model.AzureConfig;
-import io.harness.azure.model.AzureHostConnectionType;
 import io.harness.azure.model.AzureOSType;
 import io.harness.azure.model.VirtualMachineData;
 import io.harness.azure.model.tag.TagDetails;
@@ -527,14 +526,14 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testListHosts() {
     // Given
-    when(azureComputeClient.listHosts(any(), eq("subscriptionId"), eq("resourceGroup"), eq(AzureOSType.LINUX), any(),
-             eq(AzureHostConnectionType.HOSTNAME)))
+    when(azureComputeClient.listHosts(
+             any(), eq("subscriptionId"), eq("resourceGroup"), eq(AzureOSType.LINUX), any(), eq(true)))
         .thenReturn(Collections.singletonList(VirtualMachineData.builder().hostName("vm-hostname").build()));
 
     // When
     AzureHostsResponse response = azureAsyncTaskHelper.listHosts(Collections.emptyList(),
         getAzureConnectorDTOWithSecretType(AzureSecretType.SECRET_KEY), "subscriptionId", "resourceGroup",
-        AzureOSType.LINUX, Collections.emptyMap(), AzureHostConnectionType.HOSTNAME);
+        AzureOSType.LINUX, Collections.emptyMap(), true);
 
     // Then
     assertThat(response).isNotNull();

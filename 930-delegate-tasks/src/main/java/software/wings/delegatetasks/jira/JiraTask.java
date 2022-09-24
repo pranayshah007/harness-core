@@ -968,8 +968,8 @@ public class JiraTask extends AbstractDelegateRunnableTask {
     }
   }
 
-  @VisibleForTesting
-  Map<String, String> extractFieldsFromCGParameters(JiraTaskParameters parameters, Map<String, String> userTypeFields) {
+  private Map<String, String> extractFieldsFromCGParameters(
+      JiraTaskParameters parameters, Map<String, String> userTypeFields) {
     Map<String, String> fields = new HashMap<>();
     if (EmptyPredicate.isNotEmpty(parameters.getSummary())) {
       fields.put("Summary", parameters.getSummary());
@@ -986,13 +986,7 @@ public class JiraTask extends AbstractDelegateRunnableTask {
     }
     if (EmptyPredicate.isNotEmpty(parameters.getCustomFields())) {
       for (Map.Entry<String, JiraCustomFieldValue> field : parameters.getCustomFields().entrySet()) {
-        if ("TimeTracking:OriginalEstimate".equals(field.getKey())) {
-          fields.put("Original Estimate", field.getValue().getFieldValue());
-        } else if ("TimeTracking:RemainingEstimate".equals(field.getKey())) {
-          fields.put("Remaining Estimate", field.getValue().getFieldValue());
-        } else {
-          fields.put(field.getKey(), field.getValue().getFieldValue());
-        }
+        fields.put(field.getKey(), field.getValue().getFieldValue());
       }
     }
     if (EmptyPredicate.isNotEmpty(parameters.getComment())) {

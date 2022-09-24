@@ -8,7 +8,6 @@
 package io.harness.azure.client;
 
 import io.harness.azure.model.AzureConfig;
-import io.harness.azure.model.AzureHostConnectionType;
 import io.harness.azure.model.AzureMachineImageArtifact;
 import io.harness.azure.model.AzureOSType;
 import io.harness.azure.model.AzureUserAuthVMInstanceData;
@@ -316,9 +315,9 @@ public interface AzureComputeClient {
    * @param resourceGroup
    * @param osType
    * @param tags
-   * @param hostConnectionType
+   * @param usePublicDns
    * @return
    */
   List<VirtualMachineData> listHosts(AzureConfig azureConfig, String subscriptionId, String resourceGroup,
-      AzureOSType osType, Map<String, String> tags, AzureHostConnectionType hostConnectionType);
+      AzureOSType osType, Map<String, String> tags, boolean usePublicDns);
 }

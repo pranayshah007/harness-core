@@ -41,7 +41,6 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import io.harness.azure.AzureClient;
 import io.harness.azure.client.AzureComputeClient;
 import io.harness.azure.model.AzureConfig;
-import io.harness.azure.model.AzureHostConnectionType;
 import io.harness.azure.model.AzureMachineImageArtifact;
 import io.harness.azure.model.AzureOSType;
 import io.harness.azure.model.AzureUserAuthVMInstanceData;
@@ -613,7 +612,7 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
 
   @Override
   public List<VirtualMachineData> listHosts(AzureConfig azureConfig, String subscriptionId, String resourceGroup,
-      AzureOSType osType, Map<String, String> tags, AzureHostConnectionType hostConnectionType) {
+      AzureOSType osType, Map<String, String> tags, boolean usePublicDns) {
     if (isBlank(resourceGroup)) {
       throw new IllegalArgumentException(RESOURCE_GROUP_NAME_NULL_VALIDATION_MSG);
     }
@@ -633,7 +632,7 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
         .filter(this::isVmRunning)
         .filter(virtualMachine -> filterOsType(virtualMachine, osType))
         .filter(virtualMachine -> filterTags(virtualMachine, tags))
-        .map(virtualMachine -> toVirtualMachineData(virtualMachine, hostConnectionType))
+        .map(virtualMachine -> toVirtualMachineData(virtualMachine, usePublicDns))
         .collect(Collectors.toList());
   }
 
@@ -661,18 +660,11 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
         && virtualMachine.tags().values().containsAll(tags.values());
   }
 
-  private VirtualMachineData toVirtualMachineData(
-      VirtualMachine virtualMachine, AzureHostConnectionType hostConnectionType) {
+  private VirtualMachineData toVirtualMachineData(VirtualMachine virtualMachine, boolean usePublicDns) {
     VirtualMachineDataBuilder builder = VirtualMachineData.builder().hostName(virtualMachine.name());
 
-    if (AzureHostConnectionType.PUBLIC_IP.equals(hostConnectionType)
-        && virtualMachine.getPrimaryPublicIPAddress() != null) {
-      builder.address(virtualMachine.getPrimaryPublicIPAddress().ipAddress());
-    } else if (AzureHostConnectionType.PRIVATE_IP.equals(hostConnectionType)
-        && virtualMachine.getPrimaryNetworkInterface() != null) {
-      builder.address(virtualMachine.getPrimaryNetworkInterface().primaryPrivateIP());
-    } else if (AzureHostConnectionType.HOSTNAME.equals(hostConnectionType)) {
-      builder.address(virtualMachine.name());
+    if (usePublicDns && virtualMachine.getPrimaryPublicIPAddress() != null) {
+      builder.publicAddress(virtualMachine.getPrimaryPublicIPAddress().fqdn());
     }
 
     return builder.build();

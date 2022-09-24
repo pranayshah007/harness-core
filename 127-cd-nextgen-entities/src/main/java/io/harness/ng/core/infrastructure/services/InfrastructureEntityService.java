@@ -12,7 +12,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.repositories.UpsertOptions;
 
-import com.mongodb.client.result.UpdateResult;
 import java.util.List;
 import java.util.Optional;
 import javax.validation.constraints.NotNull;
@@ -20,7 +19,6 @@ import org.hibernate.validator.constraints.NotEmpty;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(HarnessTeam.CDC)
 public interface InfrastructureEntityService {
@@ -58,7 +56,4 @@ public interface InfrastructureEntityService {
 
   String createInfrastructureInputsFromYaml(String accountId, String projectIdentifier, String orgIdentifier,
       String environmentIdentifier, List<String> infraIdentifiers, boolean deployToAll);
-
-  UpdateResult batchUpdateInfrastructure(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String envIdentifier, List<String> infraIdentifier, Update update);
 }

@@ -7,7 +7,6 @@
 
 package io.harness.pms.pipeline.filters;
 
-import static io.harness.rule.OwnerRule.BHAVYA;
 import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.SAHIL;
 
@@ -28,15 +27,7 @@ import io.harness.PipelineServiceTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.context.GlobalContext;
-import io.harness.eventsframework.protohelper.IdentifierRefProtoDTOHelper;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
-import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
-import io.harness.gitsync.beans.StoreType;
-import io.harness.gitsync.interceptor.GitEntityInfo;
-import io.harness.gitsync.interceptor.GitSyncBranchContext;
-import io.harness.gitsync.persistance.GitSyncSdkService;
-import io.harness.manage.GlobalContextManager;
 import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.FilterCreationBlobResponse;
 import io.harness.pms.contracts.plan.PlanCreationServiceGrpc;
@@ -54,14 +45,12 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 
-import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import org.junit.After;
 import org.junit.Before;
@@ -76,7 +65,6 @@ public class FilterCreatorMergeServiceTest extends PipelineServiceTestBase {
   private static String PROJECT_ID = "projectId";
   private static String ORG_ID = "orgId";
   private static String IDENTIFIER = "pipeline";
-  private static String gitConnectorRef = "gitConnector";
 
   private static final String pipelineYaml = "pipeline:\n"
       + "  identifier: p1\n"
@@ -132,14 +120,12 @@ public class FilterCreatorMergeServiceTest extends PipelineServiceTestBase {
   @Mock PipelineSetupUsageHelper pipelineSetupUsageHelper;
   @Mock PmsGitSyncHelper pmsGitSyncHelper;
   @Mock PMSPipelineTemplateHelper pmsPipelineTemplateHelper;
-  @Inject IdentifierRefProtoDTOHelper identifierRefProtoDTOHelper;
-  @Mock GitSyncSdkService gitSyncSdkService;
   FilterCreatorMergeService filterCreatorMergeService;
 
   @Before
   public void init() {
-    filterCreatorMergeService = spy(new FilterCreatorMergeService(pmsSdkHelper, pipelineSetupUsageHelper,
-        pmsGitSyncHelper, pmsPipelineTemplateHelper, identifierRefProtoDTOHelper, gitSyncSdkService));
+    filterCreatorMergeService = spy(new FilterCreatorMergeService(
+        pmsSdkHelper, pipelineSetupUsageHelper, pmsGitSyncHelper, pmsPipelineTemplateHelper));
     when(
         pmsPipelineTemplateHelper.getTemplateReferencesForGivenYaml(anyString(), anyString(), anyString(), anyString()))
         .thenReturn(new ArrayList<>());
@@ -298,25 +284,5 @@ public class FilterCreatorMergeServiceTest extends PipelineServiceTestBase {
     assertThat(response.getDeps()).isNotNull();
     assertThat(response.getDeps().getDependenciesMap()).isEmpty();
     verify(filterCreatorMergeService, never()).obtainFiltersPerIteration(any(), any(), any(), any());
-  }
-
-  @Test
-  @Owner(developers = BHAVYA)
-  @Category(UnitTests.class)
-  public void testGetGitConnectorReference() {
-    GitSyncBranchContext gitSyncBranchContext =
-        GitSyncBranchContext.builder()
-            .gitBranchInfo(GitEntityInfo.builder().connectorRef(gitConnectorRef).storeType(StoreType.REMOTE).build())
-            .build();
-    GlobalContext context = new GlobalContext();
-    context.setGlobalContextRecord(gitSyncBranchContext);
-    GlobalContextManager.set(context);
-    when(gitSyncSdkService.isGitSimplificationEnabled(anyString(), anyString(), anyString())).thenReturn(true);
-    PipelineEntity pipelineEntity =
-        PipelineEntity.builder().accountId(ACCOUNT_ID).orgIdentifier(ORG_ID).projectIdentifier(PROJECT_ID).build();
-    Optional<EntityDetailProtoDTO> entityDetailProtoDTO =
-        filterCreatorMergeService.getGitConnectorReference(pipelineEntity);
-    assertThat(entityDetailProtoDTO.isPresent()).isEqualTo(true);
-    assertThat(entityDetailProtoDTO.get().getType()).isEqualTo(EntityTypeProtoEnum.CONNECTORS);
   }
 }

@@ -20,12 +20,12 @@ import lombok.experimental.SuperBuilder;
 @OwnedBy(HarnessTeam.CDP)
 public class AzureHostResponse extends AzureDelegateTaskResponse {
   private String hostName;
-  private String address;
+  private String publicAddress;
 
-  public String getAddress() {
-    if (address == null) {
+  public String getPublicAddress() {
+    if (publicAddress == null) {
       return hostName;
     }
-    return address;
+    return publicAddress;
   }
 }

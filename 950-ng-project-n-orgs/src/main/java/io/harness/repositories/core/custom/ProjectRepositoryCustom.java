@@ -30,9 +30,9 @@ public interface ProjectRepositoryCustom {
 
   Project update(Query query, Update update);
 
-  Project hardDelete(String accountIdentifier, String orgIdentifier, String identifier, Long version);
+  boolean hardDelete(String accountIdentifier, String orgIdentifier, String identifier, Long version);
 
-  @Deprecated Project delete(String accountIdentifier, String orgIdentifier, String identifier, Long version);
+  Project delete(String accountIdentifier, String orgIdentifier, String identifier, Long version);
 
   List<Project> findAll(Criteria criteria);
 

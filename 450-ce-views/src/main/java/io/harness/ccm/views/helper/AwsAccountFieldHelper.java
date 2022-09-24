@@ -180,9 +180,9 @@ public class AwsAccountFieldHelper {
     List<String> accountIdsWithoutNames = new ArrayList<>();
     for (String value : values) {
       if (value.contains("(")) {
-        accountIdsWithNames.add(value);
-      } else {
         accountIdsWithoutNames.add(value);
+      } else {
+        accountIdsWithNames.add(value);
       }
     }
     Collections.sort(accountIdsWithNames);

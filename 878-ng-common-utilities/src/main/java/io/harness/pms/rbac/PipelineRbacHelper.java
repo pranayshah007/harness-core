@@ -10,7 +10,6 @@ package io.harness.pms.rbac;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
-import io.harness.EntityType;
 import io.harness.accesscontrol.acl.api.AccessCheckResponseDTO;
 import io.harness.accesscontrol.acl.api.AccessControlDTO;
 import io.harness.accesscontrol.acl.api.PermissionCheckDTO;
@@ -21,7 +20,6 @@ import io.harness.accesscontrol.principals.PrincipalType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
-import io.harness.beans.NGTemplateReference;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eraro.ErrorCode;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
@@ -153,36 +151,12 @@ public class PipelineRbacHelper {
   }
 
   public PermissionCheckDTO convertToPermissionCheckDTO(EntityDetail entityDetail) {
-    if (entityDetail.getType().equals(EntityType.TEMPLATE)) {
-      NGTemplateReference templateReference = (NGTemplateReference) entityDetail.getEntityRef();
+    IdentifierRef identifierRef = (IdentifierRef) entityDetail.getEntityRef();
+    if (identifierRef.getMetadata() != null
+        && identifierRef.getMetadata().getOrDefault("new", "false").equals("true")) {
       return PermissionCheckDTO.builder()
-          .permission(PipelineReferredEntityPermissionHelper.getPermissionForGivenType(entityDetail.getType(), false))
-          .resourceIdentifier(templateReference.getIdentifier())
-          .resourceScope(ResourceScope.builder()
-                             .accountIdentifier(templateReference.getAccountIdentifier())
-                             .orgIdentifier(templateReference.getOrgIdentifier())
-                             .projectIdentifier(templateReference.getProjectIdentifier())
-                             .build())
-          .resourceType(PipelineReferredEntityPermissionHelper.getEntityName(entityDetail.getType()))
-          .build();
-    } else {
-      IdentifierRef identifierRef = (IdentifierRef) entityDetail.getEntityRef();
-      if (identifierRef.getMetadata() != null
-          && identifierRef.getMetadata().getOrDefault("new", "false").equals("true")) {
-        return PermissionCheckDTO.builder()
-            .permission(PipelineReferredEntityPermissionHelper.getPermissionForGivenType(entityDetail.getType(), true))
-            .resourceIdentifier(null)
-            .resourceScope(ResourceScope.builder()
-                               .accountIdentifier(identifierRef.getAccountIdentifier())
-                               .orgIdentifier(identifierRef.getOrgIdentifier())
-                               .projectIdentifier(identifierRef.getProjectIdentifier())
-                               .build())
-            .resourceType(PipelineReferredEntityPermissionHelper.getEntityName(entityDetail.getType()))
-            .build();
-      }
-      return PermissionCheckDTO.builder()
-          .permission(PipelineReferredEntityPermissionHelper.getPermissionForGivenType(entityDetail.getType(), false))
-          .resourceIdentifier(identifierRef.getIdentifier())
+          .permission(PipelineReferredEntityPermissionHelper.getPermissionForGivenType(entityDetail.getType(), true))
+          .resourceIdentifier(null)
           .resourceScope(ResourceScope.builder()
                              .accountIdentifier(identifierRef.getAccountIdentifier())
                              .orgIdentifier(identifierRef.getOrgIdentifier())
@@ -191,5 +165,15 @@ public class PipelineRbacHelper {
           .resourceType(PipelineReferredEntityPermissionHelper.getEntityName(entityDetail.getType()))
           .build();
     }
+    return PermissionCheckDTO.builder()
+        .permission(PipelineReferredEntityPermissionHelper.getPermissionForGivenType(entityDetail.getType(), false))
+        .resourceIdentifier(identifierRef.getIdentifier())
+        .resourceScope(ResourceScope.builder()
+                           .accountIdentifier(identifierRef.getAccountIdentifier())
+                           .orgIdentifier(identifierRef.getOrgIdentifier())
+                           .projectIdentifier(identifierRef.getProjectIdentifier())
+                           .build())
+        .resourceType(PipelineReferredEntityPermissionHelper.getEntityName(entityDetail.getType()))
+        .build();
   }
 }

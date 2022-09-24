@@ -1,5 +1,4 @@
 io.harness.steps.jira.update.JiraUpdateSpecParameters
-io.harness.plancreator.customDeployment.StepTemplateRef
 io.harness.steps.approval.step.jira.JiraApprovalSpecParameters
 io.harness.yaml.core.properties.NGProperties
 io.harness.steps.approval.step.jira.JiraApprovalOutcome

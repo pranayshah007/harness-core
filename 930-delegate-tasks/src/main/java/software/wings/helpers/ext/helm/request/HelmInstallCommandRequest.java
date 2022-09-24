@@ -44,7 +44,6 @@ public class HelmInstallCommandRequest extends HelmCommandRequest {
   private long timeoutInMillis;
   private Map<String, String> valueOverrides;
   private boolean optimizedFilesFetch;
-  private boolean ignoreReleaseHistFailStatus;
 
   public HelmInstallCommandRequest(boolean mergeCapabilities) {
     super(HelmCommandType.INSTALL, mergeCapabilities);
@@ -59,8 +58,8 @@ public class HelmInstallCommandRequest extends HelmCommandRequest {
       LogCallback executionLogCallback, String commandFlags, HelmCommandFlag helmCommandFlag,
       K8sDelegateManifestConfig sourceRepoConfig, HelmVersion helmVersion, String ocPath, String workingDir,
       boolean k8SteadyStateCheckEnabled, boolean mergeCapabilities, boolean isGitHostConnectivityCheck,
-      boolean useLatestChartMuseumVersion, boolean optimizedFilesFetch, boolean useNewKubectlVersion, String gcpKeyPath,
-      boolean ignoreReleaseHistFailStatus) {
+      boolean useLatestChartMuseumVersion, boolean optimizedFilesFetch, boolean useNewKubectlVersion,
+      String gcpKeyPath) {
     super(HelmCommandType.INSTALL, accountId, appId, kubeConfigLocation, commandName, activityId,
         containerServiceParams, releaseName, chartSpecification, repoName, gitConfig, encryptedDataDetails,
         executionLogCallback, commandFlags, helmCommandFlag, sourceRepoConfig, helmVersion, ocPath, workingDir,
@@ -72,6 +71,5 @@ public class HelmInstallCommandRequest extends HelmCommandRequest {
     this.timeoutInMillis = timeoutInMillis;
     this.valueOverrides = valueOverrides;
     this.optimizedFilesFetch = optimizedFilesFetch;
-    this.ignoreReleaseHistFailStatus = ignoreReleaseHistFailStatus;
   }
 }

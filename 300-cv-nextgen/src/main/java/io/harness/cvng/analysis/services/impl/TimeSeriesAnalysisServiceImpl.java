@@ -386,6 +386,7 @@ public class TimeSeriesAnalysisServiceImpl implements TimeSeriesAnalysisService 
   public void saveAnalysis(String taskId, DeploymentTimeSeriesAnalysisDTO analysis) {
     LearningEngineTask learningEngineTask = learningEngineTaskService.get(taskId);
     Preconditions.checkNotNull(learningEngineTask, "Needs to be a valid LE task.");
+    learningEngineTaskService.markCompleted(taskId);
 
     DeploymentTimeSeriesAnalysis deploymentTimeSeriesAnalysis =
         DeploymentTimeSeriesAnalysis.builder()
@@ -399,7 +400,6 @@ public class TimeSeriesAnalysisServiceImpl implements TimeSeriesAnalysisService 
             .failFast(analysis.isFailFast())
             .build();
     deploymentTimeSeriesAnalysisService.save(deploymentTimeSeriesAnalysis);
-    learningEngineTaskService.markCompleted(taskId);
   }
 
   @Override

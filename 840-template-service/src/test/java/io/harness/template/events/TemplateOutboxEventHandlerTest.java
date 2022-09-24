@@ -374,8 +374,7 @@ public class TemplateOutboxEventHandlerTest extends CategoryTest {
                                   .build();
 
     ArgumentCaptor<EntityChangeDTO> entityChangeDTOArgumentCaptor = ArgumentCaptor.forClass(EntityChangeDTO.class);
-    templateOutboxEventHandler.publishEvent(
-        outboxEvent, EventsFrameworkMetadataConstants.UPDATE_ACTION, templateVersionLabel, null);
+    templateOutboxEventHandler.publishEvent(outboxEvent, EventsFrameworkMetadataConstants.UPDATE_ACTION);
     verify(templateOutboxEventHandler)
         .publishEvent(anyString(), anyString(), anyString(), entityChangeDTOArgumentCaptor.capture());
     assertEquals(entityChangeDTOArgumentCaptor.getValue().getIdentifier().getValue(), identifier);

@@ -1404,8 +1404,7 @@
                     "Bazel",
                     "Gradle",
                     "Dotnet",
-                    "Nunitconsole",
-                    "SBT"
+                    "Nunitconsole"
                   ]
                 },
                 {
@@ -1473,8 +1472,6 @@
                   "type": "string",
                   "enum": [
                     "Java",
-                    "Kotlin",
-                    "Scala",
                     "Csharp"
                   ]
                 },

@@ -169,7 +169,7 @@ public class EnvironmentPlanCreatorHelper {
     return serviceOverrideConfig;
   }
 
-  public String resolveServiceOverrideInputs(
+  private String resolveServiceOverrideInputs(
       String originalServiceOverrideYaml, Map<String, Object> serviceOverrideInputs) {
     Map<String, Object> serviceOverrideInputYaml = new HashMap<>();
     serviceOverrideInputYaml.put(YamlTypes.SERVICE_OVERRIDE, serviceOverrideInputs);
