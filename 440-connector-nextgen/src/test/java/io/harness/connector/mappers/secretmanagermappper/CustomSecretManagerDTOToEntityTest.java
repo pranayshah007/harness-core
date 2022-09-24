@@ -43,7 +43,7 @@ public class CustomSecretManagerDTOToEntityTest extends CategoryTest {
   @Owner(developers = SHREYAS)
   @Category(UnitTests.class)
   // Test isDefault default value. Function name needs change here.
-  public void testDefaultValueForIsDefaultAsFalse() {
+  public void testIsDefaultDefaultValue() {
     // Create Connector DTO
     CustomSecretManagerConnectorDTO connectorDTO = CustomSecretManagerConnectorDTO.builder().build();
     // Map it to corresponding connector
