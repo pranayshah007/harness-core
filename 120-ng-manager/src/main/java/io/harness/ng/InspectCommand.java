@@ -108,6 +108,13 @@ public class InspectCommand<T extends io.dropwizard.Configuration> extends Confi
             .addAll(NgUserCoreRegistrars.morphiaConverters)
             .build();
       }
+
+      @Provides
+      @Singleton
+      @Named("dbAliases")
+      public List<String> getDbAliases() {
+        return mainConfiguration.getDbAliases();
+      }
     });
     modules.add(new AbstractMongoModule() {
       @Override

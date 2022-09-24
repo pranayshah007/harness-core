@@ -18,6 +18,8 @@ import io.harness.CategoryTest;
 import io.harness.NGCommonEntityConstants;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.creator.plan.stage.DeploymentStageNode;
+import io.harness.cdng.infra.InfrastructureMapper;
+import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.EnvironmentType;
@@ -60,6 +62,7 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
   @Mock EnvironmentService environmentService;
   @Mock ServiceOverrideService serviceOverrideService;
   @Mock InfrastructureEntityService infrastructureEntityService;
+  @Mock InfrastructureMapper infrastructureMapper;
   @InjectMocks private DeploymentStageVariableCreator deploymentStageVariableCreator;
 
   private final String ACCOUNT_ID = "account_id";
@@ -199,7 +202,13 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
     when(infrastructureEntityService.get(any(), any(), any(), any(), any()))
         .thenReturn(Optional.of(infrastructureEntity));
     when(serviceOverrideService.get(any(), any(), any(), any(), any())).thenReturn(Optional.empty());
-
+    when(infrastructureMapper.toOutcome(any(), any(), any(), any(), any(), any()))
+        .thenReturn(K8sDirectInfrastructureOutcome.builder()
+                        .connectorRef("k8s_cluster")
+                        .namespace("def")
+                        .releaseName("release-<+INFRA_KEY>")
+                        .infrastructureKey("d4f194a54314d4a84247ab43fbd8d4b17b57a091")
+                        .build());
     YamlField fullYamlField = YamlUtils.readTree(pipelineJson);
 
     // Pipeline Node

@@ -8,6 +8,7 @@
 package io.harness.delegate.beans.connector.customsecretmanager;
 
 import io.harness.SecretManagerDescriptionConstants;
+import io.harness.annotation.RecasterFieldName;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
@@ -48,7 +49,7 @@ import lombok.experimental.FieldDefaults;
 @Schema(name = "CustomSecretManager", description = "This contains details of Custom Secret Manager connectors")
 public class CustomSecretManagerConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable {
   Set<String> delegateSelectors;
-  @NotNull @JsonProperty("onDelegate") Boolean executeOnDelegate;
+  @NotNull @RecasterFieldName(name = "onDelegate") @JsonProperty("onDelegate") Boolean executeOnDelegate;
   @Schema(description = SecretManagerDescriptionConstants.DEFAULT) private boolean isDefault;
   @Schema @JsonIgnore private boolean harnessManaged;
 

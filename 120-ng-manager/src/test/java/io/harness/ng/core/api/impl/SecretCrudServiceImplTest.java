@@ -8,6 +8,7 @@
 package io.harness.ng.core.api.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.ng.core.models.Secret.SecretKeys;
 import static io.harness.rule.OwnerRule.MEENAKSHI;
 import static io.harness.rule.OwnerRule.NISHANT;
 import static io.harness.rule.OwnerRule.PHOENIKX;
@@ -15,6 +16,7 @@ import static io.harness.rule.OwnerRule.UJJAWAL;
 import static io.harness.rule.OwnerRule.VIKAS_M;
 
 import static io.github.benas.randombeans.api.EnhancedRandom.random;
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
@@ -83,6 +85,8 @@ import org.junit.experimental.categories.Category;
 import org.mockito.Answers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 
 @OwnedBy(PL)
 public class SecretCrudServiceImplTest extends CategoryTest {
@@ -98,6 +102,10 @@ public class SecretCrudServiceImplTest extends CategoryTest {
   @Mock private NGConnectorSecretManagerService connectorService;
   @Mock private AccessControlClient accessControlClient;
   @Mock private OpaSecretService opaSecretService;
+
+  private String ORG_ID = randomAlphabetic(10);
+  private String PROJECT_ID = randomAlphabetic(10);
+  private String EMPTY_ID = "";
 
   @Before
   public void setup() {
@@ -603,5 +611,111 @@ public class SecretCrudServiceImplTest extends CategoryTest {
     SSHPasswordCredentialDTO finalSSHPasswordCredentialDTO =
         (SSHPasswordCredentialDTO) ((SSHConfigDTO) ((SSHKeySpecDTO) response.getSpec()).getAuth().getSpec()).getSpec();
     assertThat(finalSSHPasswordCredentialDTO.getPassword()).isNull();
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testAddCriteriaForRequestedScopes_currentScope_Account() {
+    verifyCurrentScopeCriteria(EMPTY_ID, EMPTY_ID);
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testAddCriteriaForRequestedScopes_currentScope_Org() {
+    verifyCurrentScopeCriteria(ORG_ID, EMPTY_ID);
+  }
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testAddCriteriaForRequestedScopes_currentScope_Project() {
+    verifyCurrentScopeCriteria(ORG_ID, PROJECT_ID);
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testAddCriteriaForRequestedScopes_subScopesForAccount() {
+    Criteria expectedCriteria = new Criteria();
+    Criteria resultCriteria = new Criteria();
+    expectedCriteria.andOperator(new Criteria());
+    verifyForSuperSubScope(expectedCriteria, resultCriteria, EMPTY_ID, EMPTY_ID, false, true);
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testAddCriteriaForRequestedScopes_subScopesForOrg() {
+    Criteria expectedCriteria = new Criteria();
+    Criteria resultCriteria = new Criteria();
+    expectedCriteria.andOperator(Criteria.where(SecretKeys.orgIdentifier).is(ORG_ID));
+    verifyForSuperSubScope(expectedCriteria, resultCriteria, ORG_ID, EMPTY_ID, false, true);
+  }
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testAddCriteriaForRequestedScopes_subScopesForProject() {
+    Criteria expectedCriteria = new Criteria();
+    Criteria resultCriteria = new Criteria();
+    expectedCriteria.andOperator(
+        Criteria.where(SecretKeys.orgIdentifier).is(ORG_ID).and(SecretKeys.projectIdentifier).is(PROJECT_ID));
+    verifyForSuperSubScope(expectedCriteria, resultCriteria, ORG_ID, PROJECT_ID, false, true);
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testAddCriteriaForRequestedScopes_superScopesForAccount() {
+    Criteria expectedCriteria = new Criteria();
+    Criteria resultCriteria = new Criteria();
+    expectedCriteria.andOperator(new Criteria().orOperator(
+        Criteria.where(SecretKeys.orgIdentifier).is(null).and(SecretKeys.projectIdentifier).is(null)));
+    verifyForSuperSubScope(expectedCriteria, resultCriteria, EMPTY_ID, EMPTY_ID, true, false);
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testAddCriteriaForRequestedScopes_superScopesForOrg() {
+    Criteria expectedCriteria = new Criteria();
+    Criteria resultCriteria = new Criteria();
+    expectedCriteria.andOperator(new Criteria().orOperator(
+        Criteria.where(SecretKeys.orgIdentifier).is(ORG_ID).and(SecretKeys.projectIdentifier).is(null),
+        Criteria.where(SecretKeys.orgIdentifier).is(null).and(SecretKeys.projectIdentifier).is(null)));
+    verifyForSuperSubScope(expectedCriteria, resultCriteria, ORG_ID, EMPTY_ID, true, false);
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testAddCriteriaForRequestedScopes_superScopesForProject() {
+    Criteria expectedCriteria = new Criteria();
+    Criteria resultCriteria = new Criteria();
+    expectedCriteria.andOperator(new Criteria().orOperator(
+        Criteria.where(SecretKeys.orgIdentifier).is(ORG_ID).and(SecretKeys.projectIdentifier).is(PROJECT_ID),
+        Criteria.where(SecretKeys.orgIdentifier).is(ORG_ID).and(SecretKeys.projectIdentifier).is(null),
+        Criteria.where(SecretKeys.orgIdentifier).is(null).and(SecretKeys.projectIdentifier).is(null)));
+    verifyForSuperSubScope(expectedCriteria, resultCriteria, ORG_ID, PROJECT_ID, true, false);
+  }
+
+  private void verifyForSuperSubScope(Criteria expectedCriteria, Criteria resultCriteria, String orgId,
+      String projectId, boolean includeAllSecretsAccessibleAtScope, boolean includeSecretsFromEverySubScope) {
+    secretCrudService.addCriteriaForRequestedScopes(
+        resultCriteria, orgId, projectId, includeAllSecretsAccessibleAtScope, includeSecretsFromEverySubScope);
+    assertThat(resultCriteria).isNotNull();
+    assertThat(criteriaToStringQuery(resultCriteria)).isEqualTo(criteriaToStringQuery(expectedCriteria));
+  }
+
+  private void verifyCurrentScopeCriteria(String orgId, String projectId) {
+    Criteria expectedCriteria = new Criteria();
+    Criteria resultCriteria = new Criteria();
+    expectedCriteria.and(SecretKeys.orgIdentifier).is(orgId).and(SecretKeys.projectIdentifier).is(projectId);
+    secretCrudService.addCriteriaForRequestedScopes(resultCriteria, orgId, projectId, false, false);
+    assertThat(resultCriteria).isNotNull();
+    assertThat(resultCriteria).isEqualTo(expectedCriteria);
+  }
+  private String criteriaToStringQuery(Criteria criteria) {
+    return new Query(criteria).toString();
   }
 }

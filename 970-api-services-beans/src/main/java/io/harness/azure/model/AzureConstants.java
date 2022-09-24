@@ -104,7 +104,7 @@ public interface AzureConstants {
   String NO_VMSS_FOR_UPSCALE_DURING_ROLLBACK = "There is no old Virtual machine for up scaling during rollback";
 
   // Validation messages
-  String RESOURCE_GROUP_NAME_NULL_VALIDATION_MSG = "Parameter resourceGroupName is required and cannot be null";
+  String RESOURCE_GROUP_NAME_NULL_VALIDATION_MSG = "Parametermeter resourceGroupName is required and cannot be null";
   String RESOURCE_ID_NAME_NULL_VALIDATION_MSG = "Parameter resourceId is required and cannot be null";
   String LOAD_BALANCER_NAME_NULL_VALIDATION_MSG = "Parameter loadBalancerName is required and cannot be null";
   String BACKEND_POOL_NAME_NULL_VALIDATION_MSG = "Parameter backendPoolName is required and cannot be null";
@@ -384,4 +384,9 @@ public interface AzureConstants {
   String KUBECFG_TENANT_ID = "tenant-id";
   String ACR_DEFAULT_DOCKER_USERNAME = "00000000-0000-0000-0000-000000000000";
   String AZURE_ARM_ROLLBACK_PATTERN = "rollback_";
+  String ERROR_CODE_LOCATION_NOT_FOUND = "LocationNotAvailableForDeployment";
+  String ERROR_LOCATION_NOT_FOUND = "The location %s is not a valid region.";
+  String ERROR_INVALID_MANAGEMENT_GROUP_ID = "Invalid credentials for Management Group ID";
+  String ERROR_INVALID_TENANT_CREDENTIALS = "Invalid credentials at Tenant Level";
+  String AUTHORIZATION_ERROR = "does not have authorization";
 }

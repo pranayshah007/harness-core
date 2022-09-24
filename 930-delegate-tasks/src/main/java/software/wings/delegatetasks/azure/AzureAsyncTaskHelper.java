@@ -29,6 +29,7 @@ import io.harness.azure.client.AzureKubernetesClient;
 import io.harness.azure.client.AzureManagementClient;
 import io.harness.azure.model.AzureAuthenticationType;
 import io.harness.azure.model.AzureConfig;
+import io.harness.azure.model.AzureHostConnectionType;
 import io.harness.azure.model.AzureOSType;
 import io.harness.azure.model.VirtualMachineData;
 import io.harness.azure.model.kube.AzureKubeConfig;
@@ -303,16 +304,18 @@ public class AzureAsyncTaskHelper {
   }
 
   public AzureHostsResponse listHosts(List<EncryptedDataDetail> encryptionDetails, AzureConnectorDTO azureConnector,
-      String subscriptionId, String resourceGroup, AzureOSType osType, Map<String, String> tags, boolean usePublicDns) {
+      String subscriptionId, String resourceGroup, AzureOSType osType, Map<String, String> tags,
+      AzureHostConnectionType hostConnectionType) {
     AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(azureConnector.getCredential(),
         encryptionDetails, azureConnector.getCredential().getAzureCredentialType(),
         azureConnector.getAzureEnvironmentType(), secretDecryptionService);
 
     return AzureHostsResponse.builder()
-        .hosts(azureComputeClient.listHosts(azureConfig, subscriptionId, resourceGroup, osType, tags, usePublicDns)
-                   .stream()
-                   .map(this::toAzureHost)
-                   .collect(Collectors.toList()))
+        .hosts(
+            azureComputeClient.listHosts(azureConfig, subscriptionId, resourceGroup, osType, tags, hostConnectionType)
+                .stream()
+                .map(this::toAzureHost)
+                .collect(Collectors.toList()))
         .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
         .build();
   }
@@ -321,7 +324,7 @@ public class AzureAsyncTaskHelper {
   private AzureHostResponse toAzureHost(VirtualMachineData virtualMachineData) {
     return AzureHostResponse.builder()
         .hostName(virtualMachineData.getHostName())
-        .publicAddress(virtualMachineData.getPublicAddress())
+        .address(virtualMachineData.getAddress())
         .build();
   }
 

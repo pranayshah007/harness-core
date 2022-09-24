@@ -38,7 +38,7 @@ import org.mongodb.morphia.query.UpdateResults;
 @Slf4j
 public class PerpetualTaskRecordDao {
   private final HPersistence persistence;
-  private static final int MAX_FIBONACCI_INDEX_FOR_TASK_ASSIGNMENT = 8;
+  private static final int MAX_FIBONACCI_INDEX_FOR_TASK_ASSIGNMENT = 10;
   private static final int BATCH_SIZE_FOR_PERPETUAL_TASK_TO_REBALANCE = 20;
 
   @Inject

@@ -19,10 +19,12 @@ import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCH
 import static java.util.Collections.singletonList;
 
 import io.harness.AuthorizationServiceHeader;
+import io.harness.Microservice;
 import io.harness.ModuleType;
 import io.harness.PipelineServiceUtilityModule;
 import io.harness.SCMGrpcClientModule;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.app.migration.CIManagerMigrationProvider;
 import io.harness.cache.CacheModule;
 import io.harness.ci.app.InspectCommand;
 import io.harness.ci.enforcement.BuildRestrictionUsageImpl;
@@ -51,6 +53,10 @@ import io.harness.govern.ProviderModule;
 import io.harness.governance.DefaultConnectorRefExpansionHandler;
 import io.harness.health.HealthService;
 import io.harness.maintenance.MaintenanceController;
+import io.harness.migration.MigrationProvider;
+import io.harness.migration.NGMigrationSdkInitHelper;
+import io.harness.migration.NGMigrationSdkModule;
+import io.harness.migration.beans.NGMigrationConfiguration;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.MongoConfig;
 import io.harness.morphia.MorphiaRegistrar;
@@ -188,6 +194,7 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
     log.info("Leaving startup maintenance mode");
     List<Module> modules = new ArrayList<>();
     modules.add(KryoModule.getInstance());
+    modules.add(NGMigrationSdkModule.getInstance());
     modules.add(new SCMGrpcClientModule(configuration.getScmConnectionConfig()));
     modules.add(new ProviderModule() {
       @Provides
@@ -278,6 +285,7 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
 
     Injector injector = Guice.createInjector(modules);
     registerPMSSDK(configuration, injector);
+    registerMigrations(injector);
     registerResources(environment, injector);
     registerWaitEnginePublishers(injector);
     registerManagedBeans(environment, injector);
@@ -496,6 +504,20 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
                                                     .requireValidatorInit(false)
                                                     .build();
     YamlSdkInitHelper.initialize(injector, yamlSdkConfiguration);
+  }
+
+  private void registerMigrations(Injector injector) {
+    NGMigrationConfiguration config = getMigrationSdkConfiguration();
+    NGMigrationSdkInitHelper.initialize(injector, config);
+  }
+
+  private NGMigrationConfiguration getMigrationSdkConfiguration() {
+    return NGMigrationConfiguration.builder()
+        .microservice(Microservice.CI)
+        .migrationProviderList(new ArrayList<Class<? extends MigrationProvider>>() {
+          { add(CIManagerMigrationProvider.class); }
+        })
+        .build();
   }
 
   private void initializeEnforcementFramework(Injector injector) {

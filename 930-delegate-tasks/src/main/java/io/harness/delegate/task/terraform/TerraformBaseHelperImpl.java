@@ -646,13 +646,21 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
   }
 
   public String fetchConfigFileAndPrepareScriptDir(GitBaseRequest gitBaseRequestForConfigFile, String accountId,
-      String workspace, String currentStateFileId, GitStoreDelegateConfig confileFileGitStore, LogCallback logCallback,
-      String scriptPath, String baseDir) {
-    fetchConfigFileAndCloneLocally(gitBaseRequestForConfigFile, logCallback);
-
+      String workspace, String currentStateFileId, GitStoreDelegateConfig gitStoreDelegateConfig,
+      LogCallback logCallback, String scriptPath, String baseDir) throws IOException {
     String workingDir = getWorkingDir(baseDir);
-
-    copyConfigFilestoWorkingDirectory(logCallback, gitBaseRequestForConfigFile, baseDir, workingDir);
+    gitClient.downloadFiles(DownloadFilesRequest.builder()
+                                .branch(gitStoreDelegateConfig.getBranch())
+                                .commitId(gitStoreDelegateConfig.getCommitId())
+                                .filePaths(Collections.singletonList(""))
+                                .connectorId(gitStoreDelegateConfig.getConnectorName())
+                                .repoUrl(gitBaseRequestForConfigFile.getRepoUrl())
+                                .accountId(accountId)
+                                .recursive(true)
+                                .authRequest(gitBaseRequestForConfigFile.getAuthRequest())
+                                .repoType(GitRepositoryType.TERRAFORM)
+                                .destinationDirectory(workingDir)
+                                .build());
 
     String scriptDirectory = resolveScriptDirectory(workingDir, scriptPath);
     log.info("Script Directory: " + scriptDirectory);

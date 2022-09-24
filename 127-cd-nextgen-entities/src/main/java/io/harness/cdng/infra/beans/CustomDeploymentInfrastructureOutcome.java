@@ -7,4 +7,39 @@
 
 package io.harness.cdng.infra.beans;
 
-public class CustomDeploymentInfrastructureOutcome {}
+import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
+import io.harness.ng.core.infrastructure.InfrastructureKind;
+import io.harness.steps.environment.EnvironmentOutcome;
+import io.harness.yaml.core.VariableExpression;
+
+import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.Map;
+import lombok.Builder;
+import lombok.Value;
+import org.springframework.data.annotation.TypeAlias;
+
+@OwnedBy(HarnessTeam.CDP)
+@Value
+@Builder
+@JsonTypeName(InfrastructureKind.CUSTOM_DEPLOYMENT)
+@TypeAlias("cdng.infra.beans.CustomDeploymentInfrastructureOutcome")
+@RecasterAlias("io.harness.cdng.infra.beans.CustomDeploymentInfrastructureOutcome")
+public class CustomDeploymentInfrastructureOutcome
+    extends InfrastructureDetailsAbstract implements InfrastructureOutcome {
+  String instancesListPath;
+  Map<String, String> instanceAttributes;
+  String instanceFetchScript;
+  Map<String, Object> variables;
+  @VariableExpression(skipVariableExpression = true) EnvironmentOutcome environment;
+  String infrastructureKey;
+  @Override
+  public String getKind() {
+    return InfrastructureKind.CUSTOM_DEPLOYMENT;
+  }
+  @Override
+  public String getConnectorRef() {
+    return null;
+  }
+}

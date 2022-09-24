@@ -134,7 +134,7 @@ public class InfrastructurePmsPlanCreatorTest extends CDNGTestBase {
     assertThat(node.getStepType()).isEqualTo(InfrastructureTaskExecutableStepV2.STEP_TYPE);
     assertThat(node.getGroup()).isEqualTo("infrastructureGroup");
     assertThat(node.getAdviserObtainments()).hasSize(1);
-    assertThat(node.getFacilitatorObtainments().get(0).getType().getType()).isEqualTo("TASK");
+    assertThat(node.getFacilitatorObtainments().get(0).getType().getType()).isEqualTo("ASYNC");
 
     InfrastructureTaskExecutableStepV2Params stepParameters =
         (InfrastructureTaskExecutableStepV2Params) node.getStepParameters();

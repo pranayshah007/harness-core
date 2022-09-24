@@ -80,6 +80,30 @@ public class NexusResourceServiceImpl implements NexusResourceService {
   @Override
   public NexusResponseDTO getBuildDetails(IdentifierRef nexusConnectorRef, String repositoryName, String repositoryPort,
       String artifactPath, String repositoryFormat, String artifactRepositoryUrl, String orgIdentifier,
+      String projectIdentifier, String groupId, String artifactId, String extension, String classifier,
+      String packageName) {
+    NexusConnectorDTO connector = getConnector(nexusConnectorRef);
+    BaseNGAccess baseNGAccess =
+        getBaseNGAccess(nexusConnectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
+    List<EncryptedDataDetail> encryptionDetails = getEncryptionDetails(connector, baseNGAccess);
+    NexusArtifactDelegateRequest nexusRequest =
+        ArtifactDelegateRequestUtils.getNexusArtifactDelegateRequest(repositoryName, repositoryPort, artifactPath,
+            repositoryFormat, artifactRepositoryUrl, null, null, null, connector, encryptionDetails,
+            ArtifactSourceType.NEXUS3_REGISTRY, groupId, artifactId, extension, classifier, packageName);
+    try {
+      ArtifactTaskExecutionResponse artifactTaskExecutionResponse = executeSyncTask(nexusRequest,
+          ArtifactTaskType.GET_BUILDS, baseNGAccess, "Nexus Artifact Get Builds task failure due to error");
+      return getNexusResponseDTO(artifactTaskExecutionResponse);
+    } catch (DelegateServiceDriverException ex) {
+      throw new HintException(
+          String.format(HintException.DELEGATE_NOT_AVAILABLE, DocumentLinksConstants.DELEGATE_INSTALLATION_LINK),
+          new DelegateNotAvailableException(ex.getCause().getMessage(), WingsException.USER));
+    }
+  }
+
+  @Override
+  public NexusResponseDTO getBuildDetails(IdentifierRef nexusConnectorRef, String repositoryName, String repositoryPort,
+      String artifactPath, String repositoryFormat, String artifactRepositoryUrl, String orgIdentifier,
       String projectIdentifier) {
     NexusConnectorDTO connector = getConnector(nexusConnectorRef);
     BaseNGAccess baseNGAccess =

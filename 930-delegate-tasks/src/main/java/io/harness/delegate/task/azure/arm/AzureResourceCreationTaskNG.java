@@ -72,8 +72,9 @@ public class AzureResourceCreationTaskNG extends AbstractDelegateRunnableTask {
         : CommandUnitsProgress.builder().build();
     AzureLogCallbackProvider logCallback = getLogCallback(commandUnitsProgress);
     if (!handlerMap.containsKey(taskNGParameters.getAzureARMTaskType())) {
-      throw new UnexpectedTypeException(
-          String.format("No handler found for task type %s", taskNGParameters.getAzureARMTaskType()));
+      throw new TaskNGDataException(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress),
+          new UnexpectedTypeException(
+              String.format("No handler found for task type %s", taskNGParameters.getAzureARMTaskType())));
     }
     decryptSecrets(taskNGParameters);
     AzureResourceCreationAbstractTaskHandler handler = handlerMap.get(taskNGParameters.getAzureARMTaskType());

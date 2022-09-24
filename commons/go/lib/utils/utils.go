@@ -133,7 +133,20 @@ func ParseJavaNode(filename string) (*Node, error) {
 		parts := strings.Split(filename, "/")
 		node.File = parts[len(parts)-1]
 		node.Lang = LangType_JAVA
-	} else {
+	} else if strings.HasSuffix(filename, ".scala") {
+		// Cannot make any assumption from scala/kotlin file path, return generic source node for now
+		node.Lang = LangType_JAVA
+		node.Type = NodeType_SOURCE
+		f := strings.TrimSuffix(filename, ".scala")
+		parts := strings.Split(f, "/")
+		node.Class = parts[len(parts)-1]
+	} else if strings.HasSuffix(filename, ".kt") {
+		node.Lang = LangType_JAVA
+		node.Type = NodeType_SOURCE
+		f := strings.TrimSuffix(filename, ".kt")
+		parts := strings.Split(f, "/")
+		node.Class = parts[len(parts)-1]
+	}else {
 		return &node, nil
 	}
 

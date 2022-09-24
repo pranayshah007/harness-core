@@ -7,6 +7,7 @@
 
 package io.harness.plancreator.customDeployment;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.yaml.YamlNode;
@@ -14,13 +15,12 @@ import io.harness.pms.yaml.YamlNode;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
-import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
-import lombok.experimental.FieldDefaults;
 import org.springframework.data.annotation.TypeAlias;
 
 @OwnedBy(HarnessTeam.CDP)
@@ -28,14 +28,14 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-@FieldDefaults(level = AccessLevel.PRIVATE)
 @TypeAlias("StepTemplateRef")
+@RecasterAlias("io.harness.plancreator.customDeployment.StepTemplateRef")
 public class StepTemplateRef {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
   String uuid;
 
-  @NotNull String templateRef;
-  @NotNull String versionLabel;
+  @NotNull @NotEmpty String templateRef;
+  @NotNull @NotEmpty String versionLabel;
 }

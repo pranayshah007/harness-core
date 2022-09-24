@@ -79,7 +79,7 @@ public class WaitStepInfo implements PMSStepInfo, Visitable {
 
   @Override
   public SpecParameters getSpecParameters() {
-    return WaitStepParameters.infoBuilder().duration(getDuration()).build();
+    return WaitStepParameters.infoBuilder().duration(getDuration()).uuid(getUuid()).build();
   }
 
   public StepParameters getStepParameters(
