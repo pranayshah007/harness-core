@@ -32,6 +32,8 @@ import io.harness.cdng.execution.helper.StageExecutionHelper;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.InfrastructureMapper;
 import io.harness.cdng.infra.InfrastructureValidator;
+import io.harness.cdng.infra.InfrastructureProvisionerMapper;
+import io.harness.cdng.infra.Provisionable;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
@@ -133,6 +135,7 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
   @Inject private PipelineRbacHelper pipelineRbacHelper;
   @Inject private InfrastructureMapper infrastructureMapper;
   @Inject private InfrastructureValidator infrastructureValidator;
+  @Inject private InfrastructureProvisionerMapper infrastructureProvisionerMapper;
 
   @Inject private CDExpressionResolver resolver;
 
@@ -317,7 +320,10 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
 
     infrastructureValidator.validate(spec);
 
-    final InfrastructureOutcome infrastructureOutcome = infrastructureMapper.toOutcome(spec, environmentOutcome,
+    final InfrastructureOutcome infrastructureOutcome =
+        (spec instanceof Provisionable && ((Provisionable) spec).isDynamicallyProvisioned())
+        ? infrastructureProvisionerMapper.toOutcome(spec, environmentOutcome, serviceOutcome)
+        : infrastructureMapper.toOutcome(spec, environmentOutcome,
         serviceOutcome, ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
 
     // save spec sweeping output for further use within the step

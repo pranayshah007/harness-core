@@ -35,5 +35,4 @@ public interface Infrastructure extends StepParameters, PassThroughData, Overrid
     return new ArrayList<>(Collections.singletonList(getConnectorReference()));
   }
   @JsonIgnore String[] getInfrastructureKeyValues();
-  @JsonIgnore boolean isDynamicallyProvisioned();
 }

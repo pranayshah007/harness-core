@@ -15,10 +15,12 @@ import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
+import io.harness.cdng.infra.Provisionable;
 import io.harness.cdng.infra.beans.InfraMapping;
 import io.harness.cdng.infra.beans.PdcInfraMapping;
 import io.harness.cdng.infra.beans.PdcInfraMapping.PdcInfraMappingBuilder;
 import io.harness.cdng.infra.beans.host.HostFilter;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.filters.ConnectorRefExtractorHelper;
 import io.harness.filters.WithConnectorRef;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
@@ -56,7 +58,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("PdcInfrastructure")
 @RecasterAlias("io.harness.cdng.infra.yaml.PdcInfrastructure")
 public class PdcInfrastructure
-    extends InfrastructureDetailsAbstract implements Infrastructure, Visitable, WithConnectorRef {
+    extends InfrastructureDetailsAbstract implements Infrastructure, Visitable, WithConnectorRef, Provisionable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -74,14 +76,15 @@ public class PdcInfrastructure
   @SkipAutoEvaluation
   ParameterField<List<String>> hosts;
 
-  @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
   @YamlSchemaTypes({string})
-  ParameterField<Boolean> isDynamicallyProvisioned;
+  @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
+  @Wither
+  ParameterField<Boolean> dynamicallyProvisioned;
 
   @YamlSchemaTypes({expression})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   @Wither
-  ParameterField<String> hostObjectArrayPath;
+  ParameterField<String> hostObjectArray;
 
   @YamlSchemaTypes({string})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_MAP_CLASSPATH)
@@ -117,6 +120,15 @@ public class PdcInfrastructure
     if (hostFilter != null) {
       builder.hostFilter(hostFilter);
     }
+    if (dynamicallyProvisioned != null) {
+      builder.dynamicallyProvisioned(dynamicallyProvisioned.getValue());
+    }
+    if (hostObjectArray != null) {
+      builder.hostObjectArray(hostObjectArray.getValue());
+    }
+    if (hostAttributes != null) {
+      builder.hostAttributes(hostAttributes.getValue());
+    }
 
     return builder.build();
   }
@@ -142,7 +154,7 @@ public class PdcInfrastructure
 
   @Override
   public boolean isDynamicallyProvisioned() {
-    return isDynamicallyProvisioned.getValue();
+    return ParameterFieldHelper.getBooleanParameterFieldValue(dynamicallyProvisioned);
   }
 
   @Override
@@ -164,6 +176,16 @@ public class PdcInfrastructure
     if (!ParameterField.isNull(config.getDelegateSelectors())) {
       resultantInfra = resultantInfra.withDelegateSelectors(config.getDelegateSelectors());
     }
+    if (!ParameterField.isNull(config.getDynamicallyProvisioned())) {
+      resultantInfra = resultantInfra.withDynamicallyProvisioned(config.getDynamicallyProvisioned());
+    }
+    if (!ParameterField.isNull(config.getHostObjectArray())) {
+      resultantInfra = resultantInfra.withHostObjectArray(config.getHostObjectArray());
+    }
+    if (!ParameterField.isNull(config.getHostAttributes())) {
+      resultantInfra = resultantInfra.withHostAttributes(config.getHostAttributes());
+    }
+
     return resultantInfra;
   }
 
