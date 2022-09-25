@@ -22,7 +22,9 @@ import io.harness.rule.Owner;
 
 import com.google.common.collect.Lists;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -106,5 +108,23 @@ public class ParameterFieldHelperTest extends CategoryTest {
     assertThat(ParameterFieldHelper.getParameterFieldListValue(listWithInputs, true)).contains("<+input>");
 
     assertThat(ParameterFieldHelper.getParameterFieldListValue(listWithInputs, false)).isEmpty();
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testHasValueOrExpression() {
+    Map<String, String> mapValue = new HashMap<>();
+    mapValue.put("key", "value");
+    assertThat(ParameterFieldHelper.hasValueOrExpression(ParameterField.createValueField("strValue"), false)).isTrue();
+    assertThat(ParameterFieldHelper.hasValueOrExpression(ParameterField.createValueField(mapValue), false)).isTrue();
+
+    // allow expressions
+    assertThat(ParameterFieldHelper.hasValueOrExpression(ParameterField.createValueField("<+expression>"), true))
+        .isTrue();
+    assertThat(
+        ParameterFieldHelper.hasValueOrExpression(
+            ParameterField.createFieldWithDefaultValue(true, false, "<+expression>", mapValue, null, false), true))
+        .isTrue();
   }
 }

@@ -15,6 +15,7 @@ import io.harness.cdng.infra.beans.host.HostFilter;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import org.mongodb.morphia.annotations.Id;
@@ -33,4 +34,7 @@ public class PdcInfraMapping implements InfraMapping {
   private List<String> hosts;
   private String connectorRef;
   private HostFilter hostFilter;
+  private Boolean dynamicallyProvisioned;
+  private String hostObjectArray;
+  private Map<String, String> hostAttributes;
 }
