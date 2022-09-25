@@ -31,7 +31,7 @@ public class CDEngineExpressionEvaluator extends EngineExpressionEvaluator {
   }
 
   /**
-   * Evaluate the properties value and return the map with the name and evaluated values.
+   * Evaluate the properties value and return the map with the names and evaluated values.
    * If the property value is unresolved the expressions will be put in the map.
    *
    * @param properties the map of properties where property value is expression
