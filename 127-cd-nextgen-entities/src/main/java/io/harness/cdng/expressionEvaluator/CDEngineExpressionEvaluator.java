@@ -21,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * The purpose of CDEngineExpressionEvaluator is to dynamically evaluate expressions based on the context that is
  * supplied to methods. This evaluator cannot evaluate PMS expressions because it doesn't make calls to PMS service. If
- * you need to evaluate PMS expressions use @see io.harness.cdng.expressions.CDExpressionResolver
+ * you need to evaluate PMS expressions use {@link io.harness.cdng.expressions.CDExpressionResolver}
  */
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
