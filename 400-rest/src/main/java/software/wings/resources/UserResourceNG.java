@@ -247,9 +247,10 @@ public class UserResourceNG {
 
   @GET
   @Path("/{userId}")
-  public RestResponse<Optional<UserInfo>> getUser(@PathParam("userId") String userId) {
+  public RestResponse<Optional<UserInfo>> getUser(@PathParam("userId") String userId,
+      @QueryParam("includeSupportAccounts") @DefaultValue("true") Boolean includeSupportAccounts) {
     try {
-      User user = userService.get(userId);
+      User user = userService.get(userId, includeSupportAccounts);
       return new RestResponse<>(Optional.ofNullable(convertUserToNgUser(user)));
     } catch (UnauthorizedException ex) {
       log.warn("User is not found in database {}", userId);
