@@ -1,0 +1,12 @@
+name: Websocket Metrics
+identifier: websocket_metrics
+metricGroup: delegate_account
+metrics:
+  - metricName: websocket_connections_count
+    metricDefinition: Websocket Connections Count
+    type: LastValue
+    unit: count
+  - metricName: active_delegate_process_count
+    metricDefinition: Number of active delegate processes
+    type: LastValue
+    unit: count

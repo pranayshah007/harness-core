@@ -52,14 +52,16 @@ public class StrategyHelper {
   }
 
   public StepResponse handleException(Exception ex) {
+    String DEBUG_NESTED_EXCEPTION = "DEBUG_NESTED_EXCEPTION";
     List<ResponseMessage> responseMessages = exceptionManager.buildResponseFromException(ex);
     StepResponseBuilder stepResponseBuilder = StepResponse.builder().status(Status.FAILED);
     FailureInfo failureInfo = EngineExceptionUtils.transformResponseMessagesToFailureInfo(responseMessages);
     TaskNGDataException taskFailureData = ExceptionUtils.cause(TaskNGDataException.class, ex);
+    log.info("{} , Exception messages : {}, Exception failure info  : {}, Exception task failure data  : {}",
+        DEBUG_NESTED_EXCEPTION, responseMessages, failureInfo, taskFailureData);
     if (taskFailureData != null && taskFailureData.getCommandUnitsProgress() != null) {
       stepResponseBuilder.unitProgressList(taskFailureData.getCommandUnitsProgress().getUnitProgresses());
     }
-
     return stepResponseBuilder.failureInfo(failureInfo).build();
   }
 }

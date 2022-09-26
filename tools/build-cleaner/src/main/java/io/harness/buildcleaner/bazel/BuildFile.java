@@ -16,6 +16,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
@@ -24,20 +25,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class BuildFile {
+  private static final Pattern JAVA_BINARY_DEPS_PATTERN =
+      Pattern.compile("java_binary\\([\\s\\S]*?(deps = \\[[\\s\\S]*?\\]),?", Pattern.MULTILINE);
+  private static final Pattern JAVA_BINARY_RUNTIME_DEPS_PATTERN =
+      Pattern.compile("java_binary\\([\\s\\S]*?(runtime_deps = \\[[\\s\\S]*?\\]),?", Pattern.MULTILINE);
+  private static final Pattern JAVA_LIBRARY_DEPS_PATTERN =
+      Pattern.compile("java_library\\([\\s\\S]*?(deps = \\[[\\s\\S]*?\\]),?", Pattern.MULTILINE);
+  private static final Pattern JAVA_LIBRARY_RUNTIME_DEPS_PATTERN =
+      Pattern.compile("java_library\\([\\s\\S]*?(runtime_deps = \\[[\\s\\S]*?\\]),?", Pattern.MULTILINE);
+
+  private static final Logger logger = LoggerFactory.getLogger(BuildFile.class);
+
   private final SortedSet<LoadStatement> loadStatements = new TreeSet<>();
   private final List<JavaLibrary> javaLibraries = new ArrayList<>();
   private final List<JavaBinary> javaBinaries = new ArrayList<>();
   private boolean runAnalysisPerModule = false;
-  private static final Logger logger = LoggerFactory.getLogger(BuildFile.class);
-  private static final Pattern default_pattern = Pattern.compile("HelloWorld!");
-  private static final Pattern java_library_deps_pattern =
-      Pattern.compile("java_library\\([\\s\\S]*?(deps = \\[[\\s\\S]*?\\]),?", Pattern.MULTILINE);
-  private static final Pattern java_library_runtime_deps_pattern =
-      Pattern.compile("java_library\\([\\s\\S]*?(runtime_deps = \\[[\\s\\S]*?\\]),?", Pattern.MULTILINE);
-  private static final Pattern java_binary_deps_pattern =
-      Pattern.compile("java_binary\\([\\s\\S]*?(deps = \\[[\\s\\S]*?\\]),?", Pattern.MULTILINE);
-  private static final Pattern java_binary_runtime_deps_pattern =
-      Pattern.compile("java_binary\\([\\s\\S]*?(runtime_deps = \\[[\\s\\S]*?\\]),?", Pattern.MULTILINE);
 
   public void addJavaLibrary(JavaLibrary javaLibrary) {
     loadStatements.add(new LoadStatement("@rules_java//java:defs.bzl", "java_library"));
@@ -108,7 +110,7 @@ public class BuildFile {
   private String getNewLibraryDeps(String updateField) {
     String newDeps = String.format("%s = []", updateField);
     for (JavaLibrary javaLibrary : getJavaLibraryList()) {
-      logger.info("Library Name: {}", javaLibrary.getName());
+      logger.debug("Library Name: {}", javaLibrary.getName());
       switch (updateField) {
         case "deps":
           newDeps = javaLibrary.getDepsSection();
@@ -118,14 +120,14 @@ public class BuildFile {
           break;
       }
     }
-    logger.info("New {} for java_library: {}", updateField, newDeps);
+    logger.debug("New {} for java_library: {}", updateField, newDeps);
     return newDeps;
   }
 
   private String getNewBinaryDeps(String updateField) {
     String newDeps = String.format("%s = []", updateField);
     for (JavaBinary javaBinary : getJavaBinaryList()) {
-      logger.info("Binary Name: {}", javaBinary.getName());
+      logger.debug("Binary Name: {}", javaBinary.getName());
       switch (updateField) {
         case "deps":
           newDeps = javaBinary.getDepsSection();
@@ -135,7 +137,7 @@ public class BuildFile {
           break;
       }
     }
-    logger.info("New {} for java_binary: {}", updateField, newDeps);
+    logger.debug("New {} for java_binary: {}", updateField, newDeps);
     return newDeps;
   }
 
@@ -145,27 +147,31 @@ public class BuildFile {
   private void updateDepsHelper(Path buildFilePath, String buildRule, String updateField) throws IOException {
     // This will contain the latest values which should be updated in the file.
     String newDeps = "";
-    Pattern pattern = default_pattern;
+    Pattern pattern = null;
     switch (buildRule) {
       case "java_library":
         newDeps = getNewLibraryDeps(updateField);
         if (updateField.equalsIgnoreCase("deps")) {
-          pattern = java_library_deps_pattern;
+          pattern = JAVA_LIBRARY_DEPS_PATTERN;
         } else if (updateField.equalsIgnoreCase("runtime_deps")) {
-          pattern = java_library_runtime_deps_pattern;
+          pattern = JAVA_LIBRARY_RUNTIME_DEPS_PATTERN;
         }
         break;
       case "java_binary":
         newDeps = getNewBinaryDeps(updateField);
         if (updateField.equalsIgnoreCase("deps")) {
-          pattern = java_binary_deps_pattern;
+          pattern = JAVA_BINARY_DEPS_PATTERN;
         } else if (updateField.equalsIgnoreCase("runtime_deps")) {
-          pattern = java_binary_runtime_deps_pattern;
+          pattern = JAVA_BINARY_RUNTIME_DEPS_PATTERN;
         }
         break;
       default:
-        logger.info("Unsupported buildRule: {}", buildRule);
+        logger.warn("Unsupported buildRule: {}", buildRule);
         return;
+    }
+
+    if (pattern == null) {
+      return;
     }
 
     String currContent = Files.readString(buildFilePath);

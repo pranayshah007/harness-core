@@ -7,11 +7,16 @@
 
 package io.harness.cdng.creator.plan.service;
 
+import static io.harness.cdng.creator.plan.service.ServiceDefinitionPlanCreator.ENVIRONMENT_CONFIG;
+import static io.harness.cdng.creator.plan.service.ServiceDefinitionPlanCreator.ENVIRONMENT_ID;
+import static io.harness.cdng.creator.plan.service.ServiceDefinitionPlanCreator.SVC_OVERRIDE_CONFIG;
+import static io.harness.cdng.creator.plan.service.ServiceDefinitionPlanCreator.SVC_PLAN_CREATOR_ENVIRONMENT_DEPS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.cdng.creator.plan.infrastructure.InfrastructurePmsPlanCreator;
 import io.harness.cdng.creator.plan.stage.DeploymentStageConfig;
 import io.harness.cdng.creator.plan.stage.DeploymentStageNode;
+import io.harness.cdng.creator.plan.stage.OverridesFromEnvironment;
 import io.harness.cdng.pipeline.PipelineInfrastructure;
 import io.harness.cdng.service.beans.ServiceConfig;
 import io.harness.cdng.service.beans.ServiceUseFromStageV2;
@@ -56,6 +61,8 @@ public class ServicePlanCreatorHelper {
   @Inject private ServiceEntityService serviceEntityService;
   @Inject private ServicePlanCreator servicePlanCreator;
 
+  public static String SERVICE_IDENTIFIER_FIELD_IN_SPEC = "identifier";
+
   public YamlField getResolvedServiceField(
       YamlField parentSpecField, DeploymentStageNode stageNode, PlanCreationContext ctx) {
     YamlField serviceField = parentSpecField.getNode().getField(YamlTypes.SERVICE_CONFIG);
@@ -67,8 +74,8 @@ public class ServicePlanCreatorHelper {
     }
   }
 
-  public Dependencies getDependenciesForService(
-      YamlField serviceField, DeploymentStageNode stageNode, String environmentUuid, String infraSectionUuid) {
+  public Dependencies getDependenciesForService(YamlField serviceField, DeploymentStageNode stageNode,
+      String environmentUuid, String infraSectionUuid, OverridesFromEnvironment overridesFromEnvironment) {
     Map<String, YamlField> serviceYamlFieldMap = new HashMap<>();
     String serviceNodeUuid = serviceField.getNode().getUuid();
     serviceYamlFieldMap.put(serviceNodeUuid, serviceField);
@@ -92,6 +99,15 @@ public class ServicePlanCreatorHelper {
       serviceDependencyMap.put(YamlTypes.ENVIRONMENT_REF,
           ByteString.copyFrom(kryoSerializer.asDeflatedBytes(
               stageNode.getDeploymentStageConfig().getEnvironment().getEnvironmentRef())));
+
+      if (overridesFromEnvironment != null) {
+        final Map<String, Object> overridesDependencyMap = new HashMap<>();
+        overridesDependencyMap.put(ENVIRONMENT_CONFIG, overridesFromEnvironment.getEnvironmentGlobalOverride());
+        overridesDependencyMap.put(SVC_OVERRIDE_CONFIG, overridesFromEnvironment.getServiceOverrideConfig());
+        overridesDependencyMap.put(ENVIRONMENT_ID, overridesFromEnvironment.getEnvIdentifier());
+        serviceDependencyMap.put(SVC_PLAN_CREATOR_ENVIRONMENT_DEPS,
+            ByteString.copyFrom(kryoSerializer.asDeflatedBytes(overridesDependencyMap)));
+      }
     }
 
     Dependency serviceDependency = Dependency.newBuilder().putAllMetadata(serviceDependencyMap).build();
@@ -254,6 +270,10 @@ public class ServicePlanCreatorHelper {
         .getField(YamlTypes.SERVICE_SPEC)
         .getNode()
         .getUuid();
+  }
+
+  public String getServiceRef(YamlField serviceField) {
+    return serviceField.getNode().getField(SERVICE_IDENTIFIER_FIELD_IN_SPEC).getNode().getCurrJsonNode().asText();
   }
 
   private ServiceYamlV2 useServiceYamlFromStage(@NotNull ServiceUseFromStageV2 useFromStage, YamlField serviceField) {

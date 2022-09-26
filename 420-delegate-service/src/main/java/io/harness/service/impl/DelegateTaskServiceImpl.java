@@ -39,9 +39,7 @@ import io.harness.service.intfc.DelegateTaskService;
 import io.harness.version.VersionInfoManager;
 import io.harness.waiter.WaitNotifyEngine;
 
-import software.wings.beans.DelegateTaskUsageInsightsEventType;
 import software.wings.beans.TaskType;
-import software.wings.service.impl.DelegateTaskStatusObserver;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -65,7 +63,6 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
   @Inject private KryoSerializer kryoSerializer;
 
   @Getter private Subject<DelegateTaskRetryObserver> retryObserverSubject = new Subject<>();
-  @Inject @Getter private Subject<DelegateTaskStatusObserver> delegateTaskStatusObserverSubject;
   @Inject private RemoteObserverInformer remoteObserverInformer;
 
   @Inject private DelegateMetricsService delegateMetricsService;
@@ -128,8 +125,6 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
         }
         log.info("Response received for task: {} from Delegate: {}", taskId, delegateId);
         handleResponse(delegateTask, taskQuery, response);
-
-        updateDelegateTaskInsightsEvent(accountId, delegateId, taskId, response.getResponseCode());
 
         retryObserverSubject.fireInform(DelegateTaskRetryObserver::onTaskResponseProcessed, delegateTask, delegateId);
         remoteObserverInformer.sendEvent(ReflectionUtils.getMethod(DelegateTaskRetryObserver.class,
@@ -223,33 +218,6 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
                            .uuid(delegateTask.getUuid())
                            .responseData(kryoSerializer.asDeflatedBytes(response.getResponse()))
                            .build());
-    }
-  }
-
-  private void updateDelegateTaskInsightsEvent(
-      String accountId, String delegateId, String taskId, ResponseCode responseCode) {
-    DelegateTaskUsageInsightsEventType eventType = obtainDelegateTaskUsageInsightsEventType(responseCode);
-
-    delegateTaskStatusObserverSubject.fireInform(
-        DelegateTaskStatusObserver::onTaskCompleted, accountId, taskId, delegateId, eventType);
-    remoteObserverInformer.sendEvent(
-        ReflectionUtils.getMethod(DelegateTaskStatusObserver.class, "onTaskCompleted", String.class, String.class,
-            String.class, DelegateTaskUsageInsightsEventType.class),
-        DelegateTaskServiceImpl.class, accountId, taskId, delegateId, eventType);
-  }
-
-  private DelegateTaskUsageInsightsEventType obtainDelegateTaskUsageInsightsEventType(ResponseCode taskResponseCode) {
-    if (taskResponseCode == null) {
-      return DelegateTaskUsageInsightsEventType.UNKNOWN;
-    }
-
-    switch (taskResponseCode) {
-      case OK:
-        return DelegateTaskUsageInsightsEventType.SUCCEEDED;
-      case FAILED:
-        return DelegateTaskUsageInsightsEventType.FAILED;
-      default:
-        return DelegateTaskUsageInsightsEventType.UNKNOWN;
     }
   }
 }

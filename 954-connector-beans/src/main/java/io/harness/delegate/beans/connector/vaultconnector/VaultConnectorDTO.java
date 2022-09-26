@@ -28,6 +28,7 @@ import static com.fasterxml.jackson.annotation.JsonInclude.Include;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.SecretManagerDescriptionConstants;
+import io.harness.annotation.RecasterFieldName;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
@@ -69,7 +70,10 @@ public class VaultConnectorDTO extends ConnectorConfigDTO implements DelegateSel
   @Schema(description = SecretManagerDescriptionConstants.AUTH_TOKEN)
   private SecretRefData authToken;
   @Schema(description = SecretManagerDescriptionConstants.BASE_PATH) private String basePath;
-  @NotNull @Schema(description = SecretManagerDescriptionConstants.VAULT_URL) private String vaultUrl;
+  @org.hibernate.validator.constraints.URL
+  @NotNull
+  @Schema(description = SecretManagerDescriptionConstants.VAULT_URL)
+  private String vaultUrl;
   @Schema(description = SecretManagerDescriptionConstants.READ_ONLY) private boolean isReadOnly;
   @NotNull
   @Schema(description = SecretManagerDescriptionConstants.RENEWAL_INTERVAL_MINUTES)
@@ -94,6 +98,7 @@ public class VaultConnectorDTO extends ConnectorConfigDTO implements DelegateSel
   @SecretReference
   @ApiModelProperty(dataType = "string")
   @Schema(description = VAULT_AWS_IAM_HEADER)
+  @RecasterFieldName(name = "xvaultAwsIamServerId")
   @JsonProperty(value = "xvaultAwsIamServerId")
   private SecretRefData headerAwsIam;
   @Schema(description = USE_K8s_AUTH) private boolean useK8sAuth;

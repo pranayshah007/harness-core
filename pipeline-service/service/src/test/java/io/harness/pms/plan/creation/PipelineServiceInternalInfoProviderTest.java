@@ -75,6 +75,7 @@ import io.harness.steps.servicenow.ServiceNowUpdateStepVariableCreator;
 import io.harness.steps.servicenow.create.ServiceNowCreateStepPlanCreator;
 import io.harness.steps.servicenow.update.ServiceNowUpdateStepPlanCreator;
 import io.harness.steps.shellscript.ShellScriptStepVariableCreator;
+import io.harness.steps.wait.WaitStepPlanCreator;
 import io.harness.variables.ExecutionVariableCreator;
 
 import java.util.List;
@@ -107,7 +108,7 @@ public class PipelineServiceInternalInfoProviderTest extends CategoryTest {
             .stream()
             .map(e -> e.getClass())
             .collect(Collectors.toSet());
-    assertThat(planCreatorClasses).hasSize(29);
+    assertThat(planCreatorClasses).hasSize(30);
     assertThat(planCreatorClasses.contains(CustomApprovalStepPlanCreator.class)).isTrue();
     assertThat(planCreatorClasses.contains(NGPipelinePlanCreator.class)).isTrue();
     assertThat(planCreatorClasses.contains(StagesPlanCreator.class)).isTrue();
@@ -134,6 +135,7 @@ public class PipelineServiceInternalInfoProviderTest extends CategoryTest {
     assertThat(planCreatorClasses.contains(CustomStagePlanCreator.class)).isTrue();
     assertThat(planCreatorClasses.contains(QueueStepPlanCreator.class)).isTrue();
     assertThat(planCreatorClasses.contains(SpecNodePlanCreator.class)).isTrue();
+    assertThat(planCreatorClasses.contains(WaitStepPlanCreator.class)).isTrue();
   }
 
   @Test

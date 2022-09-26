@@ -73,6 +73,9 @@ import io.harness.accesscontrol.roleassignments.privileged.PrivilegedRoleAssignm
 import io.harness.accesscontrol.roleassignments.privileged.persistence.PrivilegedRoleAssignmentDao;
 import io.harness.accesscontrol.roleassignments.privileged.persistence.PrivilegedRoleAssignmentDaoImpl;
 import io.harness.accesscontrol.roleassignments.validation.RoleAssignmentActionValidator;
+import io.harness.accesscontrol.roles.api.AccountRolesApiImpl;
+import io.harness.accesscontrol.roles.api.OrgRolesApiImpl;
+import io.harness.accesscontrol.roles.api.ProjectRolesApiImpl;
 import io.harness.accesscontrol.roles.api.RoleResource;
 import io.harness.accesscontrol.roles.api.RoleResourceImpl;
 import io.harness.accesscontrol.scopes.core.ScopeLevel;
@@ -98,7 +101,6 @@ import io.harness.environment.EnvironmentResourceClientModule;
 import io.harness.eventsframework.api.Consumer;
 import io.harness.eventsframework.impl.noop.NoOpConsumer;
 import io.harness.eventsframework.impl.redis.RedisConsumer;
-import io.harness.eventsframework.impl.redis.RedisUtils;
 import io.harness.eventsframework.impl.redis.monitoring.publisher.RedisEventMetricPublisher;
 import io.harness.ff.FeatureFlagClientModule;
 import io.harness.lock.DistributedLockImplementation;
@@ -110,9 +112,13 @@ import io.harness.outbox.TransactionOutboxModule;
 import io.harness.outbox.api.OutboxEventHandler;
 import io.harness.project.ProjectClientModule;
 import io.harness.redis.RedisConfig;
+import io.harness.redis.RedissonClientFactory;
 import io.harness.remote.client.ClientMode;
 import io.harness.resourcegroupclient.ResourceGroupClientModule;
 import io.harness.serviceaccount.ServiceAccountClientModule;
+import io.harness.spec.server.accesscontrol.AccountRolesApi;
+import io.harness.spec.server.accesscontrol.OrganizationRolesApi;
+import io.harness.spec.server.accesscontrol.ProjectRolesApi;
 import io.harness.telemetry.AbstractTelemetryModule;
 import io.harness.telemetry.TelemetryConfiguration;
 import io.harness.threading.ExecutorModule;
@@ -188,7 +194,7 @@ public class AccessControlModule extends AbstractModule {
   public RedissonClient getRedissonClient() {
     RedisConfig redisConfig = config.getEventsConfig().getRedisConfig();
     if (config.getEventsConfig().isEnabled()) {
-      return RedisUtils.getClient(redisConfig);
+      return RedissonClientFactory.getClient(redisConfig);
     }
     return null;
   }
@@ -381,5 +387,8 @@ public class AccessControlModule extends AbstractModule {
     bind(AccessControlPreferenceResource.class).to(AccessControlPreferenceResourceImpl.class);
     bind(RoleAssignmentResource.class).to(RoleAssignmentResourceImpl.class);
     bind(RoleResource.class).to(RoleResourceImpl.class);
+    bind(AccountRolesApi.class).to(AccountRolesApiImpl.class);
+    bind(OrganizationRolesApi.class).to(OrgRolesApiImpl.class);
+    bind(ProjectRolesApi.class).to(ProjectRolesApiImpl.class);
   }
 }

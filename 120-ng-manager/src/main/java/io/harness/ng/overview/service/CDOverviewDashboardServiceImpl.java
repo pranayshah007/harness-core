@@ -2095,6 +2095,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     Map<String, Map<String, List<InstanceGroupedByArtifactList.InstanceGroupedByInfrastructure>>> buildEnvInfraMap =
         new HashMap<>();
     Map<String, String> envIdToEnvNameMap = new HashMap<>();
+    Set<String> envIdsWithInfra = new HashSet<>();
     Map<String, String> buildIdToArtifactPathMap = new HashMap<>();
 
     String query = queryActiveServiceDeploymentsInfo(accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
@@ -2102,8 +2103,12 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
 
     List<String> pipelineExecutionIdList = new ArrayList<>();
 
-    deploymentsInfo.forEach(
-        deploymentInfo -> { pipelineExecutionIdList.add(deploymentInfo.getPipelineExecutionId()); });
+    deploymentsInfo.forEach(deploymentInfo -> {
+      pipelineExecutionIdList.add(deploymentInfo.getPipelineExecutionId());
+      if (deploymentInfo.getInfrastructureIdentifier() != null) {
+        envIdsWithInfra.add(deploymentInfo.getEnvId());
+      }
+    });
 
     Map<String, ServicePipelineInfo> pipelineExecutionDetailsMap = getPipelineExecutionDetails(pipelineExecutionIdList);
 
@@ -2134,12 +2139,15 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
               .infraIdentifier(infrastructureIdentifier)
               .infraName(infrastructureName)
               .build();
-      buildEnvInfraMap.putIfAbsent(artifact, new HashMap<>());
-      buildEnvInfraMap.get(artifact).putIfAbsent(envId, new ArrayList<>());
 
-      buildEnvInfraMap.get(artifact).get(envId).add(deploymentPipelineInfo);
-      envIdToEnvNameMap.putIfAbsent(envId, envName);
-      buildIdToArtifactPathMap.putIfAbsent(artifact, artifactPath);
+      if (infrastructureIdentifier != null || !envIdsWithInfra.contains(envId)) {
+        buildEnvInfraMap.putIfAbsent(artifact, new HashMap<>());
+        buildEnvInfraMap.get(artifact).putIfAbsent(envId, new ArrayList<>());
+
+        buildEnvInfraMap.get(artifact).get(envId).add(deploymentPipelineInfo);
+        envIdToEnvNameMap.putIfAbsent(envId, envName);
+        buildIdToArtifactPathMap.putIfAbsent(artifact, artifactPath);
+      }
     });
 
     List<InstanceGroupedByArtifactList.InstanceGroupedByArtifact> instanceGroupedByArtifactList =
@@ -2162,7 +2170,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
         + " from " + tableNameServiceAndInfra + " where " + String.format("accountid='%s' and ", accountId)
         + String.format("orgidentifier='%s' and ", orgId) + String.format("projectidentifier='%s' and ", projectId)
         + String.format("service_id='%s'", serviceId)
-        + " and service_status = 'SUCCESS' AND tag is not null AND infrastructureIdentifier is not null order by env_id , infrastructureIdentifier, service_endts DESC;";
+        + " and service_status = 'SUCCESS' AND tag is not null order by env_id , infrastructureIdentifier, service_endts DESC;";
   }
 
   public List<EnvironmentInfoByServiceId> getEnvironmentWithArtifactDetails(String queryStatus) {

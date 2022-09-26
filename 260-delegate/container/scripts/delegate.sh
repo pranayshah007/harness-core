@@ -176,7 +176,7 @@ else
   sed -i.bak "s|^watcherCheckLocation: .*$|watcherCheckLocation: $WATCHER_STORAGE_URL/$WATCHER_CHECK_LOCATION|" config-delegate.yml
 fi
 if ! `grep heartbeatIntervalMs config-delegate.yml > /dev/null`; then
-  echo "heartbeatIntervalMs: 60000" >> config-delegate.yml
+  echo "heartbeatIntervalMs: 50000" >> config-delegate.yml
 fi
 if ! `grep doUpgrade config-delegate.yml > /dev/null`; then
   echo "doUpgrade: true" >> config-delegate.yml

@@ -200,11 +200,6 @@ public interface AccountService {
   boolean isSSOEnabled(Account account);
 
   /**
-   * Validates subdomain URL
-   */
-  boolean validateSubdomainUrl(SubdomainUrl subdomainUrl);
-
-  /**
    * Set subdomainUrl of Account
    */
   void setSubdomainUrl(Account account, SubdomainUrl subdomainUrl);

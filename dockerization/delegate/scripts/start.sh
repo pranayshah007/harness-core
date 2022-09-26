@@ -129,6 +129,8 @@ if [ -e init.sh ]; then
     echo "Starting initialization script for delegate"
     CURRENT_WORKING_DIRECTORY=$(pwd)
     source ./init.sh
+    #if user does set -e, then revert that
+    set +e
     cd "$CURRENT_WORKING_DIRECTORY"
     if [ $? -eq 0 ];
     then
@@ -270,7 +272,7 @@ else
   sed -i.bak "s|^watcherCheckLocation:.*$|watcherCheckLocation: $WATCHER_STORAGE_URL/$WATCHER_CHECK_LOCATION|" config-delegate.yml
 fi
 if ! `grep heartbeatIntervalMs config-delegate.yml > /dev/null`; then
-  echo "heartbeatIntervalMs: 60000" >> config-delegate.yml
+  echo "heartbeatIntervalMs: 50000" >> config-delegate.yml
 fi
 if ! `grep doUpgrade config-delegate.yml > /dev/null`; then
   echo "doUpgrade: true" >> config-delegate.yml

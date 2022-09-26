@@ -47,11 +47,11 @@ cdc-mongo:
 
 pms-harness:
   uri: mongodb://localhost:27017/pms-harness
-  aliasDbName: pms-harness
+  aliasDBName: pms-harness
 
 ng-harness:
   uri: mongodb://localhost:27017/ng-harness
-  aliasDbName: ng-harness
+  aliasDBName: ng-harness
 
 timescaledb:
   timescaledbUrl: "jdbc:postgresql://34.83.25.129:5432/harnessdev"

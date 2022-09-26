@@ -68,6 +68,7 @@ import io.harness.enforcement.executions.DeploymentRestrictionUsageImpl;
 import io.harness.enforcement.executions.DeploymentsPerMonthRestrictionUsageImpl;
 import io.harness.enforcement.executions.InitialDeploymentRestrictionUsageImpl;
 import io.harness.enforcement.services.FeatureRestrictionLoader;
+import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.ff.FeatureFlagConfig;
 import io.harness.gitsync.AbstractGitSyncModule;
 import io.harness.gitsync.AbstractGitSyncSdkModule;
@@ -96,7 +97,6 @@ import io.harness.migration.NGMigrationSdkModule;
 import io.harness.migration.beans.NGMigrationConfiguration;
 import io.harness.migrations.InstanceMigrationProvider;
 import io.harness.ng.core.CorrelationFilter;
-import io.harness.ng.core.DefaultUserGroupsCreationJob;
 import io.harness.ng.core.EtagFilter;
 import io.harness.ng.core.event.NGEventConsumerService;
 import io.harness.ng.core.exceptionmappers.GenericExceptionMapperV2;
@@ -160,7 +160,6 @@ import io.harness.polling.service.impl.PollingServiceImpl;
 import io.harness.polling.service.intfc.PollingService;
 import io.harness.queue.QueueListenerController;
 import io.harness.queue.QueuePublisher;
-import io.harness.redis.RedisConfig;
 import io.harness.registrars.CDServiceAdviserRegistrar;
 import io.harness.request.RequestContextFilter;
 import io.harness.resource.VersionInfoResource;
@@ -184,6 +183,7 @@ import io.harness.telemetry.filter.APIErrorsTelemetrySenderFilter;
 import io.harness.telemetry.service.CdTelemetryRecordsJob;
 import io.harness.threading.ExecutorModule;
 import io.harness.threading.ThreadPool;
+import io.harness.timescale.CDRetentionHandlerNG;
 import io.harness.token.remote.TokenClient;
 import io.harness.tracing.MongoRedisTracer;
 import io.harness.waiter.NotifierScheduledExecutorService;
@@ -365,8 +365,8 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
       });
       modules.add(new AbstractGitSyncModule() {
         @Override
-        public RedisConfig getRedisConfig() {
-          return appConfig.getEventsFrameworkConfiguration().getRedisConfig();
+        public EventsFrameworkConfiguration getEventsFrameworkConfiguration() {
+          return appConfig.getEventsFrameworkConfiguration();
         }
       });
     } else {
@@ -435,6 +435,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
       GitSyncSdkInitHelper.initGitSyncSdk(injector, environment, getGitSyncConfiguration(appConfig));
     }
     registerMigrations(injector);
+    injector.getInstance(CDRetentionHandlerNG.class).configureRetentionPolicy();
 
     log.info("NextGenApplication DEPLOY_VERSION = " + System.getenv().get(DEPLOY_VERSION));
     if (DeployVariant.isCommunity(System.getenv().get(DEPLOY_VERSION))) {
@@ -534,7 +535,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
         .deployMode(GitSyncSdkConfiguration.DeployMode.IN_PROCESS)
         .microservice(Microservice.CORE)
         .scmConnectionConfig(gitSdkConfiguration.getScmConnectionConfig())
-        .eventsRedisConfig(config.getEventsFrameworkConfiguration().getRedisConfig())
+        .eventsFrameworkConfiguration(config.getEventsFrameworkConfiguration())
         .serviceHeader(NG_MANAGER)
         .gitSyncEntitiesConfiguration(gitSyncEntitiesConfigurations)
         .gitSyncEntitySortComparator(CoreGitEntityOrderComparator.class)
@@ -652,7 +653,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     Map<String, String> aliases = new HashMap<>();
     aliases.put("serviceConfig", "stage.spec.serviceConfig");
     aliases.put("serviceDefinition", "stage.spec.serviceConfig.serviceDefinition");
-    aliases.put("artifact", "stage.spec.serviceConfig.serviceDefinition.spec.artifacts.primary.output");
+    aliases.put("artifact", "artifacts.primary");
     aliases.put("infra", "stage.spec.infrastructure.output");
     aliases.put("INFRA_KEY", "stage.spec.infrastructure.output.infrastructureKey");
     return aliases;
@@ -723,7 +724,6 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     environment.lifecycle().manage(injector.getInstance(QueueListenerController.class));
     environment.lifecycle().manage(injector.getInstance(NotifierScheduledExecutorService.class));
     environment.lifecycle().manage(injector.getInstance(OutboxEventPollService.class));
-    environment.lifecycle().manage(injector.getInstance(DefaultUserGroupsCreationJob.class));
     createConsumerThreadsToListenToEvents(environment, injector);
   }
 

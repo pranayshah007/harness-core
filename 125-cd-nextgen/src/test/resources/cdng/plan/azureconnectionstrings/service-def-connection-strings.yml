@@ -1,0 +1,13 @@
+serviceDefinition:
+  spec:
+    connectionStrings:
+      store:
+        type: Github
+        spec:
+          connectorRef: gitConnector
+          gitFetchType: Branch
+          paths:
+            - azure_webapp/connection-strings-1.json
+          branch: main
+  type: AzureWebApp
+  gitOpsEnabled: false

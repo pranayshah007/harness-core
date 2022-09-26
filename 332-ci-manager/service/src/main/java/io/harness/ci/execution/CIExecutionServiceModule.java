@@ -19,6 +19,7 @@ import io.harness.beans.steps.nodes.BuildAndPushECRNode;
 import io.harness.beans.steps.nodes.BuildAndPushGCRNode;
 import io.harness.beans.steps.nodes.GCSUploadNode;
 import io.harness.beans.steps.nodes.GitCloneStepNode;
+import io.harness.beans.steps.nodes.InitializeStepNode;
 import io.harness.beans.steps.nodes.PluginStepNode;
 import io.harness.beans.steps.nodes.RestoreCacheGCSNode;
 import io.harness.beans.steps.nodes.RestoreCacheS3Node;
@@ -37,6 +38,8 @@ import io.harness.ci.serializer.PluginStepProtobufSerializer;
 import io.harness.ci.serializer.ProtobufStepSerializer;
 import io.harness.ci.serializer.RunStepProtobufSerializer;
 import io.harness.ci.serializer.RunTestsStepProtobufSerializer;
+import io.harness.exception.exceptionmanager.exceptionhandler.CILiteEngineExceptionHandler;
+import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionHandler;
 import io.harness.threading.ThreadPool;
 import io.harness.waiter.AbstractWaiterModule;
 import io.harness.waiter.WaiterConfiguration;
@@ -45,6 +48,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.TypeLiteral;
+import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Names;
 import java.util.HashSet;
 import java.util.Set;
@@ -75,6 +79,7 @@ public class CIExecutionServiceModule extends AbstractModule {
       add(SecurityNode.class);
       add(ArtifactoryUploadNode.class);
       add(GitCloneStepNode.class);
+      add(InitializeStepNode.class);
     }
   };
   @Inject
@@ -97,6 +102,10 @@ public class CIExecutionServiceModule extends AbstractModule {
     }).toInstance(new RunTestsStepProtobufSerializer());
     bind(new TypeLiteral<ProtobufStepSerializer<PluginCompatibleStep>>() {
     }).toInstance(new PluginCompatibleStepSerializer());
+    MapBinder<Class<? extends Exception>, ExceptionHandler> exceptionHandlerMapBinder = MapBinder.newMapBinder(
+        binder(), new TypeLiteral<Class<? extends Exception>>() {}, new TypeLiteral<ExceptionHandler>() {});
+    CILiteEngineExceptionHandler.exceptions().forEach(
+        exception -> exceptionHandlerMapBinder.addBinding(exception).to(CILiteEngineExceptionHandler.class));
     install(new AbstractWaiterModule() {
       @Override
       public WaiterConfiguration waiterConfiguration() {

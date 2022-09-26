@@ -7,7 +7,7 @@
 
 package io.harness.batch.processing.mail;
 
-import static io.harness.ccm.commons.constants.Constants.HARNESS_NAME;
+import static io.harness.ccm.CcmConstants.HARNESS_NAME;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static freemarker.template.Configuration.VERSION_2_3_23;

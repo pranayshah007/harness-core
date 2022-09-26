@@ -331,8 +331,8 @@ public class CloudFormationStateTest extends WingsBaseTest {
         .thenReturn(serviceCommand);
 
     WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService =
-        new WorkflowStandardParamsExtensionService(
-            appService, accountService, artifactService, environmentService, artifactStreamServiceBindingService, null);
+        new WorkflowStandardParamsExtensionService(appService, accountService, artifactService, environmentService,
+            artifactStreamServiceBindingService, null, featureFlagService);
 
     on(cloudFormationCreateStackState)
         .set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
@@ -392,7 +392,6 @@ public class CloudFormationStateTest extends WingsBaseTest {
     portalConfig.setUrl(BASE_URL);
     when(configuration.getPortal()).thenReturn(portalConfig);
     doNothing().when(serviceHelper).addPlaceholderTexts(any());
-    when(featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, ACCOUNT_ID)).thenReturn(false);
     when(featureFlagService.isEnabled(FeatureName.SKIP_BASED_ON_STACK_STATUSES, ACCOUNT_ID)).thenReturn(true);
     when(subdomainUrlHelper.getPortalBaseUrl(any())).thenReturn("baseUrl");
     doNothing().when(stateExecutionService).appendDelegateTaskDetails(nullable(String.class), any());

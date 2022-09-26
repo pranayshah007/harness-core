@@ -45,10 +45,4 @@ public class K8sCanaryDeleteStepParameters extends K8sCanaryDeleteStepInfo imple
   public List<String> getCommandUnits() {
     return Arrays.asList(K8sCommandUnitConstants.Init, K8sCommandUnitConstants.Delete);
   }
-
-  @NotNull
-  @Override
-  public List<String> getCommandUnits(boolean isPruningEnabled) {
-    return getCommandUnits();
-  }
 }

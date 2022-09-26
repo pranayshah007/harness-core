@@ -9,6 +9,7 @@ package io.harness.delegate.beans.connector.docker;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotation.RecasterFieldName;
 import io.harness.annotations.dev.OwnedBy;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -31,14 +32,14 @@ import lombok.NoArgsConstructor;
 @JsonDeserialize(using = DockerAuthenticationDTODeserializer.class)
 @Schema(name = "DockerAuthentication", description = "This entity contains the details for Docker Authentication")
 public class DockerAuthenticationDTO {
-  @NotNull @JsonProperty("type") DockerAuthType authType;
+  @NotNull @RecasterFieldName(name = "type") @JsonProperty("type") DockerAuthType authType;
 
   @Builder
   public DockerAuthenticationDTO(DockerAuthType authType, DockerAuthCredentialsDTO credentials) {
     this.authType = authType;
     this.credentials = credentials;
   }
-
+  @RecasterFieldName(name = "spec")
   @JsonProperty("spec")
   @JsonTypeInfo(
       use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXTERNAL_PROPERTY, visible = true)

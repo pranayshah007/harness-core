@@ -183,13 +183,20 @@ public class VmInitializeTaskParamsBuilder {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     ConnectorDetails gitConnector = codebaseUtils.getGitConnector(
         ngAccess, initializeStepInfo.getCiCodebase(), initializeStepInfo.isSkipGitClone());
-    Map<String, String> codebaseEnvVars = codebaseUtils.getCodebaseVars(ambiance, ciExecutionArgs);
+    Map<String, String> codebaseEnvVars = codebaseUtils.getCodebaseVars(ambiance, ciExecutionArgs, gitConnector);
     Map<String, String> gitEnvVars = codebaseUtils.getGitEnvVariables(
         gitConnector, initializeStepInfo.getCiCodebase(), initializeStepInfo.isSkipGitClone());
 
     Map<String, String> envVars = new HashMap<>();
     envVars.putAll(codebaseEnvVars);
     envVars.putAll(gitEnvVars);
+
+    Map<String, String> stoEnvVars = vmInitializeUtils.getSTOServiceEnvVariables(stoServiceUtils, accountID);
+    Map<String, String> commonEnvVars =
+        vmInitializeUtils.getCommonStepEnvVariables(stageDetails.getStageID(), ambiance);
+
+    envVars.putAll(stoEnvVars);
+    envVars.putAll(commonEnvVars);
 
     Map<String, String> stageVars = getEnvironmentVariables(
         NGVariablesUtils.getMapOfVariables(initializeStepInfo.getVariables(), ambiance.getExpressionFunctorToken()));

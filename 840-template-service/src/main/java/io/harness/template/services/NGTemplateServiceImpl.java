@@ -40,6 +40,7 @@ import io.harness.exception.ScmException;
 import io.harness.exception.UnexpectedException;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.helper.GitAwareContextHelper;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.common.utils.GitEntityFilePath;
 import io.harness.gitsync.common.utils.GitSyncFilePathUtils;
 import io.harness.gitsync.helpers.GitContextHelper;
@@ -116,6 +117,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   @Inject private AccessControlClient accessControlClient;
   @Inject private TemplateMergeServiceHelper templateMergeServiceHelper;
 
+  @Inject private TemplateGitXService templateGitXService;
+
   private static final String DUP_KEY_EXP_FORMAT_STRING =
       "Template [%s] of versionLabel [%s] under Project[%s], Organization [%s] already exists";
 
@@ -129,12 +132,35 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     assureThatTheProjectAndOrgExists(
         templateEntity.getAccountId(), templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier());
 
+    if (TemplateRefHelper.hasTemplateRef(templateEntity.getYaml())) {
+      TemplateUtils.setupGitParentEntityDetails(templateEntity.getAccountIdentifier(),
+          templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier());
+    }
+
     if (!validateIdentifierIsUnique(templateEntity.getAccountId(), templateEntity.getOrgIdentifier(),
             templateEntity.getProjectIdentifier(), templateEntity.getIdentifier(), templateEntity.getVersionLabel())) {
       throw new InvalidRequestException(String.format(
           "The template with identifier %s and version label %s already exists in the account %s, org %s, project %s",
           templateEntity.getIdentifier(), templateEntity.getVersionLabel(), templateEntity.getAccountId(),
           templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier()));
+    }
+
+    if (!isRemoteTemplateAndGitEntity(templateEntity)) {
+      if (null != templateEntity.getOrgIdentifier() && null != templateEntity.getProjectIdentifier()) {
+        throw new InvalidRequestException(format(
+            "Remote template entity cannot be created for template type [%s] on git simplification enabled for Project [%s] in Organisation [%s] in Account [%s]",
+            templateEntity.getTemplateEntityType(), templateEntity.getProjectIdentifier(),
+            templateEntity.getOrgIdentifier(), templateEntity.getAccountIdentifier()));
+      } else if (null != templateEntity.getOrgIdentifier()) {
+        throw new InvalidRequestException(format(
+            "Remote template entity cannot be created for template type [%s] on git simplification enabled in Organisation [%s] in Account [%s]",
+            templateEntity.getTemplateEntityType(), templateEntity.getOrgIdentifier(),
+            templateEntity.getAccountIdentifier()));
+      } else {
+        throw new InvalidRequestException(format(
+            "Remote template entity cannot be created for template type [%s] on git simplification enabled in Account [%s]",
+            templateEntity.getTemplateEntityType(), templateEntity.getAccountIdentifier()));
+      }
     }
 
     // apply templates to template yaml for validation and populating module info
@@ -221,8 +247,6 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     try {
       TemplateMergeResponseDTO templateMergeResponseDTO = null;
       if (TemplateRefHelper.hasTemplateRef(templateEntity.getYaml())) {
-        setupGitParentEntityDetails(templateEntity.getAccountIdentifier(), templateEntity.getOrgIdentifier(),
-            templateEntity.getProjectIdentifier());
         templateMergeResponseDTO = templateMergeService.applyTemplatesToYamlV2(templateEntity.getAccountId(),
             templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier(), templateEntity.getYaml(), false);
         populateLinkedTemplatesModules(templateEntity, templateMergeResponseDTO);
@@ -239,7 +263,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
       validateTemplateInputsResponse.getErrorNodeSummary().setTemplateResponse(
           NGTemplateDtoMapper.writeTemplateResponseDto(templateEntity));
       throw new NGTemplateResolveExceptionV2(
-          "Exception in resolving template refs in given yaml.", USER, validateTemplateInputsResponse);
+          "Exception in resolving template refs in given yaml.", USER, validateTemplateInputsResponse, null);
     }
   }
 
@@ -262,6 +286,10 @@ public class NGTemplateServiceImpl implements NGTemplateService {
       TemplateEntity templateEntity, ChangeType changeType, boolean setDefaultTemplate, String comments) {
     enforcementClientService.checkAvailability(
         FeatureRestrictionName.TEMPLATE_SERVICE, templateEntity.getAccountIdentifier());
+
+    TemplateUtils.setupGitParentEntityDetails(templateEntity.getAccountIdentifier(), templateEntity.getOrgIdentifier(),
+        templateEntity.getProjectIdentifier());
+
     // apply templates to template yaml for validations and populating module info
     applyTemplatesToYamlAndValidateSchema(templateEntity);
     // update template references
@@ -526,6 +554,9 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   public Page<TemplateEntity> list(Criteria criteria, Pageable pageable, String accountId, String orgIdentifier,
       String projectIdentifier, Boolean getDistinctFromBranches) {
     enforcementClientService.checkAvailability(FeatureRestrictionName.TEMPLATE_SERVICE, accountId);
+    if (templateGitXService.isNewGitXEnabled(accountId, orgIdentifier, projectIdentifier)) {
+      criteria.and("storeType").in(StoreType.INLINE.name(), null);
+    }
     if (Boolean.TRUE.equals(getDistinctFromBranches)
         && gitSyncSdkService.isGitSyncEnabled(accountId, orgIdentifier, projectIdentifier)) {
       return templateRepository.findAll(criteria, pageable, accountId, orgIdentifier, projectIdentifier, true);
@@ -984,7 +1015,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
 
   private TemplateEntity getAndValidateOldTemplateEntity(
       TemplateEntity templateEntity, String oldOrgIdentifier, String oldProjectIdentifier) {
-    setupGitParentEntityDetails(templateEntity.getAccountIdentifier(), oldOrgIdentifier, oldProjectIdentifier);
+    TemplateUtils.setupGitParentEntityDetails(
+        templateEntity.getAccountIdentifier(), oldOrgIdentifier, oldProjectIdentifier);
     Optional<TemplateEntity> optionalTemplate =
         templateServiceHelper.getTemplateWithVersionLabel(templateEntity.getAccountId(), oldOrgIdentifier,
             oldProjectIdentifier, templateEntity.getIdentifier(), templateEntity.getVersionLabel(), false, false);
@@ -1039,23 +1071,13 @@ public class NGTemplateServiceImpl implements NGTemplateService {
         .build();
   }
 
-  private void setupGitParentEntityDetails(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
-    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
-    if (null != gitEntityInfo) {
-      if (!GitAwareContextHelper.isNullOrDefault(gitEntityInfo.getRepoName())) {
-        gitEntityInfo.setParentEntityRepoName(gitEntityInfo.getRepoName());
-      }
-      if (!GitAwareContextHelper.isNullOrDefault(gitEntityInfo.getConnectorRef())) {
-        gitEntityInfo.setParentEntityConnectorRef(gitEntityInfo.getConnectorRef());
-      }
-      if (!GitAwareContextHelper.isNullOrDefault(orgIdentifier)) {
-        gitEntityInfo.setParentEntityOrgIdentifier(orgIdentifier);
-      }
-      if (!GitAwareContextHelper.isNullOrDefault(projectIdentifier)) {
-        gitEntityInfo.setParentEntityProjectIdentifier(projectIdentifier);
-      }
-      gitEntityInfo.setParentEntityAccountIdentifier(accountIdentifier);
-      GitAwareContextHelper.updateGitEntityContext(gitEntityInfo);
+  private boolean isRemoteTemplateAndGitEntity(TemplateEntity templateEntity) {
+    GitAwareContextHelper.initDefaultScmGitMetaData();
+    GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
+    if (gitEntityInfo != null && TemplateUtils.isRemoteEntity(gitEntityInfo)) {
+      return templateEntity.getTemplateEntityType().isGitEntity();
+    } else {
+      return true;
     }
   }
 }

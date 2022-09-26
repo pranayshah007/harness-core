@@ -139,6 +139,7 @@ public class DelegateSetupResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = LOGGED_IN)
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<PageResponse<Delegate>>
   list(@BeanParam PageRequest<Delegate> pageRequest) {
     return new RestResponse<>(delegateService.list(pageRequest));
@@ -165,6 +166,7 @@ public class DelegateSetupResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = LOGGED_IN)
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<DelegateStatus> listDelegateStatusWithScalingGroups(
       @QueryParam("accountId") @NotEmpty String accountId) {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
@@ -712,8 +714,8 @@ public class DelegateSetupResource {
   public Response downloadKubernetes(@Context HttpServletRequest request,
       @QueryParam("accountId") @NotEmpty String accountId, @QueryParam("delegateName") @NotEmpty String delegateName,
       @QueryParam("delegateProfileId") String delegateProfileId, @QueryParam("token") @NotEmpty String token,
-      @QueryParam("isCeEnabled") @DefaultValue("false") boolean isCeEnabled, @QueryParam("tokenName") String tokenName)
-      throws IOException {
+      @QueryParam("isCeEnabled") @DefaultValue("false") boolean isCeEnabled, @QueryParam("tokenName") String tokenName,
+      @QueryParam("runAsRoot") @DefaultValue("true") boolean runAsRoot) throws IOException {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
       downloadTokenService.validateDownloadToken(DELEGATE + accountId, token);
 
@@ -726,7 +728,7 @@ public class DelegateSetupResource {
             .build();
       } else {
         File delegateFile = delegateService.downloadKubernetes(subdomainUrlHelper.getManagerUrl(request, accountId),
-            getVerificationUrl(request), accountId, delegateName, delegateProfileId, tokenName);
+            getVerificationUrl(request), accountId, delegateName, delegateProfileId, tokenName, runAsRoot);
         return Response.ok(delegateFile)
             .header(CONTENT_TRANSFER_ENCODING, BINARY)
             .type(APPLICATION_ZIP_CHARSET_BINARY)

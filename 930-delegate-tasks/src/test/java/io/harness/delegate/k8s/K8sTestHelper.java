@@ -14,7 +14,7 @@ import static java.util.Arrays.asList;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.k8s.model.KubernetesResource;
-import io.harness.k8s.model.Release;
+import io.harness.k8s.releasehistory.K8sLegacyRelease;
 
 import com.google.common.io.Resources;
 import java.io.IOException;
@@ -75,8 +75,8 @@ public class K8sTestHelper {
         Objects.requireNonNull(classLoader.getResource(BASE_PATH + "/" + resourceFilePath)), StandardCharsets.UTF_8);
   }
 
-  public static Release buildRelease(Release.Status status, int number) throws IOException {
-    return Release.builder()
+  public static K8sLegacyRelease buildRelease(K8sLegacyRelease.Status status, int number) throws IOException {
+    return K8sLegacyRelease.builder()
         .number(number)
         .resources(asList(deployment().getResourceId(), configMap().getResourceId()))
         .managedWorkload(deployment().getResourceId())
@@ -84,14 +84,15 @@ public class K8sTestHelper {
         .build();
   }
 
-  public static Release buildReleaseMultipleManagedWorkloads(Release.Status status) throws IOException {
-    return Release.builder()
+  public static K8sLegacyRelease buildReleaseMultipleManagedWorkloads(K8sLegacyRelease.Status status)
+      throws IOException {
+    return K8sLegacyRelease.builder()
         .resources(asList(deployment().getResourceId(), configMap().getResourceId()))
-        .managedWorkloads(asList(Release.KubernetesResourceIdRevision.builder()
+        .managedWorkloads(asList(K8sLegacyRelease.KubernetesResourceIdRevision.builder()
                                      .workload(deploymentConfig().getResourceId())
                                      .revision("2")
                                      .build(),
-            Release.KubernetesResourceIdRevision.builder()
+            K8sLegacyRelease.KubernetesResourceIdRevision.builder()
                 .workload(deployment().getResourceId())
                 .revision("2")
                 .build()))

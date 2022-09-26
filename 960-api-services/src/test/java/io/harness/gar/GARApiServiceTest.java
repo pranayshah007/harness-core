@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.gar;
 
 import static io.harness.rule.OwnerRule.vivekveman;
@@ -91,6 +98,12 @@ public class GARApiServiceTest extends CategoryTest {
                 + "    \"name\": \"projects/cd-play/locations/us-south1/repositories/vivek-repo/packages/mongo/tags/latest10\",\n"
                 + "    \"version\": \"projects/cd-play/locations/us-south1/repositories/vivek-repo/packages/mongo/versions/sha256:38cd16441be083f00bf2c3e0e307292531b6d98eb77c09271cf43f2b58ce9f9e\"\n"
                 + "}")));
+    wireMockRule.stubFor(
+        WireMock
+            .get(WireMock.urlPathEqualTo(
+                "/v1/projects/cd-play1/locations/us/repositories/vivek-repo/packages/package/tags/package"))
+            .withHeader("Authorization", equalTo("bearerToken"))
+            .willReturn(aResponse().withStatus(403).withBody("Response 403")));
 
     when(garApiServiceImpl.getUrl()).thenReturn("http://" + url);
   }
@@ -144,6 +157,17 @@ public class GARApiServiceTest extends CategoryTest {
     modiifedInternalConfig.setPkg("wrongpackage");
     assertThatThrownBy(() -> garApiServiceImpl.getBuilds(modiifedInternalConfig, "", 100))
         .extracting(ex -> ((WingsException) ex).getParams().get("message"))
-        .isEqualTo("Please check project, repository name, package, region fields"); // 404
+        .isEqualTo("Please check region, repository name, package fields"); // 404
+    GarInternalConfig modiifedInternalConfig1 = GarInternalConfig.builder()
+                                                    .region("us")
+                                                    .project("cd-play1")
+                                                    .pkg("package")
+                                                    .bearerToken("bearerToken")
+                                                    .repositoryName("vivek-repo")
+                                                    .maxBuilds(10000)
+                                                    .build();
+    assertThatThrownBy(() -> garApiServiceImpl.verifyBuildNumber(modiifedInternalConfig1, "package"))
+        .extracting(ex -> ((WingsException) ex).getParams().get("message"))
+        .isEqualTo("Connector provided does not have access to project provided"); // 403
   }
 }

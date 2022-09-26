@@ -39,6 +39,7 @@ import io.harness.pms.data.OrchestrationMap;
 import io.harness.pms.data.stepparameters.PmsStepParameters;
 import io.harness.pms.events.base.PmsEventCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.utils.OrchestrationMapBackwardCompatibilityUtils;
 import io.harness.serializer.KryoSerializer;
 import io.harness.springdata.TransactionHelper;
@@ -80,9 +81,14 @@ public class NodeStartHelper {
     PlanNode node = planService.fetchNode(ambiance.getPlanId(), AmbianceUtils.obtainCurrentSetupId(ambiance));
     NodeExecution nodeExecution = prepareNodeExecutionForInvocation(ambiance, targetStatus, node);
     if (nodeExecution == null) {
+      nodeExecution = nodeExecutionService.get(nodeExecutionId);
+      // We can mark the nodeExecution as either discontinuing, aborted or expired if nodeExecution is in queued state.
+      // If the nodeExecution is in that state then we should do no-op
+      if (StatusUtils.abortInProgressStatuses().contains(nodeExecution.getStatus())) {
+        return;
+      }
       // This is just for debugging if this is happening then the node status has changed from QUEUED
       // This should never happen
-      nodeExecution = nodeExecutionService.get(nodeExecutionId);
       log.warn("Not Starting node execution. Cannot transition from {} to {}", nodeExecution.getStatus(), targetStatus);
       throw new NodeExecutionUpdateFailedException("Cannot Start node Execution");
     }

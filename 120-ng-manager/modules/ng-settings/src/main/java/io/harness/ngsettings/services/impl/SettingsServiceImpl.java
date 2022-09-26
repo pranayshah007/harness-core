@@ -10,7 +10,7 @@ package io.harness.ngsettings.services.impl;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
-import static io.harness.springdata.TransactionUtils.DEFAULT_TRANSACTION_RETRY_POLICY;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
@@ -29,6 +29,7 @@ import io.harness.ngsettings.entities.SettingConfiguration;
 import io.harness.ngsettings.events.SettingRestoreEvent;
 import io.harness.ngsettings.events.SettingUpdateEvent;
 import io.harness.ngsettings.mapper.SettingsMapper;
+import io.harness.ngsettings.services.SettingValidator;
 import io.harness.ngsettings.services.SettingsService;
 import io.harness.ngsettings.utils.SettingUtils;
 import io.harness.outbox.api.OutboxService;
@@ -60,16 +61,19 @@ public class SettingsServiceImpl implements SettingsService {
   private final SettingsMapper settingsMapper;
   private final TransactionTemplate transactionTemplate;
   private final OutboxService outboxService;
+  private final Map<String, SettingValidator> settingValidatorMap;
 
   @Inject
   public SettingsServiceImpl(SettingConfigurationRepository settingConfigurationRepository,
       SettingRepository settingRepository, SettingsMapper settingsMapper,
-      @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate, OutboxService outboxService) {
+      @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate, OutboxService outboxService,
+      Map<String, SettingValidator> settingValidatorMap) {
     this.settingConfigurationRepository = settingConfigurationRepository;
     this.settingRepository = settingRepository;
     this.settingsMapper = settingsMapper;
     this.transactionTemplate = transactionTemplate;
     this.outboxService = outboxService;
+    this.settingValidatorMap = settingValidatorMap;
   }
 
   @Override
@@ -200,7 +204,7 @@ public class SettingsServiceImpl implements SettingsService {
   }
 
   @Override
-  public void removeSettingFromConfiguration(String identifier) {
+  public void removeSetting(String identifier) {
     Optional<SettingConfiguration> exisingSettingConfig = settingConfigurationRepository.findByIdentifier(identifier);
     exisingSettingConfig.ifPresent(settingConfigurationRepository::delete);
     List<Setting> existingSettings = settingRepository.findByIdentifier(identifier);
@@ -211,6 +215,26 @@ public class SettingsServiceImpl implements SettingsService {
   public SettingConfiguration upsertSettingConfiguration(SettingConfiguration settingConfiguration) {
     SettingUtils.validate(settingConfiguration);
     return settingConfigurationRepository.save(settingConfiguration);
+  }
+
+  @Override
+  public void deleteByScopeLevel(ScopeLevel scopeLevel, String identifier) {
+    Criteria criteria = Criteria.where(SettingKeys.identifier).is(identifier);
+    switch (scopeLevel) {
+      case ACCOUNT:
+        criteria.and(SettingKeys.orgIdentifier).is(null).and(SettingKeys.projectIdentifier).is(null);
+        break;
+      case ORGANIZATION:
+        criteria.and(SettingKeys.orgIdentifier).ne(null).and(SettingKeys.projectIdentifier).is(null);
+        break;
+      case PROJECT:
+        criteria.and(SettingKeys.orgIdentifier).ne(null).and(SettingKeys.projectIdentifier).ne(null);
+        break;
+      default:
+        throw new InvalidRequestException(
+            String.format("Invalid scope- %s present in the settings.yml", scopeLevel.toString()));
+    }
+    settingRepository.delete(criteria);
   }
 
   private Map<Pair<String, Scope>, Setting> getSettings(String accountIdentifier, String orgIdentifier,
@@ -275,11 +299,13 @@ public class SettingsServiceImpl implements SettingsService {
       deleteSettingInSubScopes(Scope.of(accountIdentifier, orgIdentifier, projectIdentifier), settingRequestDTO);
     }
     SettingUtils.validate(newSettingDTO);
-    Setting setting = settingRepository.upsert(settingsMapper.toSetting(accountIdentifier, newSettingDTO));
-    return Failsafe.with(DEFAULT_TRANSACTION_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
-      outboxService.save(new SettingUpdateEvent(accountIdentifier, oldSettingDTO, newSettingDTO));
+    customValidation(accountIdentifier, oldSettingDTO, newSettingDTO);
+
+    return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
+      Setting setting = settingRepository.upsert(settingsMapper.toSetting(accountIdentifier, newSettingDTO));
       Setting parentSetting = getSettingFromParentScope(Scope.of(accountIdentifier, orgIdentifier, projectIdentifier),
           settingRequestDTO.getIdentifier(), settingConfiguration);
+      outboxService.save(new SettingUpdateEvent(accountIdentifier, oldSettingDTO, newSettingDTO));
       return settingsMapper.writeSettingResponseDTO(setting, settingConfiguration, true, parentSetting.getValue());
     }));
   }
@@ -315,13 +341,21 @@ public class SettingsServiceImpl implements SettingsService {
       settingDTO =
           settingsMapper.writeNewDTO(orgIdentifier, projectIdentifier, settingRequestDTO, settingConfiguration, true);
     }
-    Setting parentSetting = getSettingFromParentScope(Scope.of(accountIdentifier, orgIdentifier, projectIdentifier),
-        settingRequestDTO.getIdentifier(), settingConfiguration);
-    return Failsafe.with(DEFAULT_TRANSACTION_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
+    customValidation(accountIdentifier, oldSettingDTO, settingDTO);
+    return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
       setting.ifPresent(settingRepository::delete);
+      Setting parentSetting = getSettingFromParentScope(Scope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+          settingRequestDTO.getIdentifier(), settingConfiguration);
       outboxService.save(new SettingRestoreEvent(accountIdentifier, oldSettingDTO, settingDTO));
       return settingsMapper.writeSettingResponseDTO(parentSetting, settingConfiguration, true);
     }));
+  }
+
+  private void customValidation(String accountIdentifier, SettingDTO oldSettingDTO, SettingDTO newSettingDTO) {
+    SettingValidator settingValidator = settingValidatorMap.get(oldSettingDTO.getIdentifier());
+    if (settingValidator != null) {
+      settingValidator.validate(accountIdentifier, oldSettingDTO, newSettingDTO);
+    }
   }
 
   private void deleteSettingInSubScopes(Scope currentScope, SettingRequestDTO settingRequestDTO) {

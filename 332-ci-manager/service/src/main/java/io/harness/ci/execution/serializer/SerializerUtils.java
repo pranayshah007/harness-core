@@ -84,4 +84,33 @@ public class SerializerUtils {
     }
     return true;
   }
+
+  public static String getSafeGitDirectoryCmd(CIShellType shellType) {
+    // This adds the safe directory to the end of .gitconfig file
+    String safeDirScript;
+    if (shellType == CIShellType.SH || shellType == CIShellType.BASH) {
+      safeDirScript = "set +x\n"
+          + "git config --global --add safe.directory '*' &>/dev/null | true\n"
+          + "set -x\n";
+    } else {
+      safeDirScript = "try\n"
+          + "{\n"
+          + "    git config --global --add safe.directory '*' | Out-Null\n"
+          + "}\n"
+          + "catch [System.Management.Automation.CommandNotFoundException]\n"
+          + "{\n }";
+    }
+    return safeDirScript;
+  }
+
+  public static String getTestSplitStrategy(String splitStrategy) {
+    switch (splitStrategy) {
+      case "TestCount":
+        return "test_count";
+      case "ClassTiming":
+        return "class_timing";
+      default:
+        return "";
+    }
+  }
 }

@@ -21,9 +21,11 @@ rules:
   - apiGroups:
       - networking.k8s.io
       - admissionregistration.k8s.io
+      - networking.istio.io
     resources:
       - ingresses
       - validatingwebhookconfigurations
+      - virtualservices
     verbs:
       - get
       - list
@@ -305,7 +307,7 @@ spec:
     spec:
       containers:
       - name: autostopping-controller
-        image: harness/autostopping-controller:1.0.4
+        image: harness/autostopping-controller:1.0.8
         imagePullPolicy: IfNotPresent
         volumeMounts:
         - mountPath: /tmp/k8s-webhook-server/serving-certs

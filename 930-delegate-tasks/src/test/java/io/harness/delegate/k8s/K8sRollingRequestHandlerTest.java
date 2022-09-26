@@ -54,7 +54,7 @@ import io.harness.k8s.model.K8sSteadyStateDTO;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
-import io.harness.k8s.model.Release;
+import io.harness.k8s.releasehistory.K8sLegacyRelease;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 
@@ -193,15 +193,15 @@ public class K8sRollingRequestHandlerTest extends CategoryTest {
   @Owner(developers = ABHINAV2)
   @Category(UnitTests.class)
   public void testPruningWithNoResourceToPrune() throws Exception {
-    on(rollingRequestHandler).set("release", Release.builder().resourcesWithSpec(emptyList()).build());
+    on(rollingRequestHandler).set("release", K8sLegacyRelease.builder().resourcesWithSpec(emptyList()).build());
     assertThat(rollingRequestHandler.prune(null, null, logCallback)).isEmpty();
 
-    Release releaseWithEmptySpecs = Release.builder().resourcesWithSpec(emptyList()).build();
+    K8sLegacyRelease releaseWithEmptySpecs = K8sLegacyRelease.builder().resourcesWithSpec(emptyList()).build();
     assertThat(rollingRequestHandler.prune(null, releaseWithEmptySpecs, logCallback)).isEmpty();
 
     doReturn(emptyList()).when(taskHelperBase).getResourcesToBePrunedInOrder(any(), any());
-    Release releaseWithDummySpec =
-        Release.builder().resourcesWithSpec(singletonList(KubernetesResource.builder().build())).build();
+    K8sLegacyRelease releaseWithDummySpec =
+        K8sLegacyRelease.builder().resourcesWithSpec(singletonList(KubernetesResource.builder().build())).build();
     assertThat(rollingRequestHandler.prune(null, releaseWithDummySpec, logCallback)).isEmpty();
   }
 
@@ -209,9 +209,9 @@ public class K8sRollingRequestHandlerTest extends CategoryTest {
   @Owner(developers = ABHINAV2)
   @Category(UnitTests.class)
   public void testPruning() throws Exception {
-    on(rollingRequestHandler).set("release", Release.builder().resourcesWithSpec(emptyList()).build());
-    Release releaseWithDummySpec =
-        Release.builder().resourcesWithSpec(singletonList(KubernetesResource.builder().build())).build();
+    on(rollingRequestHandler).set("release", K8sLegacyRelease.builder().resourcesWithSpec(emptyList()).build());
+    K8sLegacyRelease releaseWithDummySpec =
+        K8sLegacyRelease.builder().resourcesWithSpec(singletonList(KubernetesResource.builder().build())).build();
     List<KubernetesResourceId> toBePruned = singletonList(
         KubernetesResourceId.builder().kind("Deployment").name("test-deployment").versioned(false).build());
     doReturn(toBePruned)

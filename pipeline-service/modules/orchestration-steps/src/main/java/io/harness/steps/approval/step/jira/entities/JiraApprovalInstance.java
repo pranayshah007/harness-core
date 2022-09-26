@@ -48,6 +48,7 @@ public class JiraApprovalInstance extends ApprovalInstance {
   @NotEmpty String connectorRef;
   @NotEmpty String issueKey;
   String issueType;
+  String projectKey;
   @NotNull CriteriaSpecWrapperDTO approvalCriteria;
   CriteriaSpecWrapperDTO rejectionCriteria;
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
@@ -70,6 +71,8 @@ public class JiraApprovalInstance extends ApprovalInstance {
 
     String issueType = specParameters.getIssueType();
 
+    String projectKey = specParameters.getProjectKey();
+
     JiraApprovalInstance instance =
         JiraApprovalInstance.builder()
             .connectorRef(connectorRef)
@@ -80,6 +83,7 @@ public class JiraApprovalInstance extends ApprovalInstance {
                 CriteriaSpecWrapperDTO.fromCriteriaSpecWrapper(specParameters.getRejectionCriteria(), true))
             .delegateSelectors(specParameters.getDelegateSelectors())
             .issueType(issueType)
+            .projectKey(projectKey)
             .build();
     instance.updateFromStepParameters(ambiance, stepParameters);
     return instance;

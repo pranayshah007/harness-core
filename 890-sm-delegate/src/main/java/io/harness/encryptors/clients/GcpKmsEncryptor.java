@@ -40,6 +40,7 @@ import software.wings.beans.GcpKmsConfig;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.api.gax.core.FixedCredentialsProvider;
+import com.google.api.gax.rpc.ApiException;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.kms.v1.CryptoKeyName;
 import com.google.cloud.kms.v1.DecryptResponse;
@@ -95,6 +96,15 @@ public class GcpKmsEncryptor implements KmsEncryptor {
       try {
         return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofSeconds(DEFAULT_GCP_KMS_TIMEOUT),
             () -> encryptInternal(accountId, value, gcpKmsConfig));
+      } catch (ApiException e) {
+        if (!e.isRetryable() || failedAttempts == NUM_OF_RETRIES) {
+          log.error(e.toString());
+          throw hintWithExplanationException(HintException.HINT_GCP_ACCESS_DENIED,
+              ExplanationException.INVALID_PARAMETER,
+              new InvalidRequestException(e.toString(), GCP_KMS_OPERATION_ERROR, USER));
+        } else {
+          failedAttempts++;
+        }
       } catch (Exception e) {
         failedAttempts++;
         log.warn("Encryption failed. Trial Number {}", failedAttempts, e);
@@ -165,6 +175,15 @@ public class GcpKmsEncryptor implements KmsEncryptor {
           // Use HTimeLimiter.callInterruptible only if the KMS plain text key is not cached.
           return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofSeconds(DEFAULT_GCP_KMS_TIMEOUT),
               () -> decryptInternal(encryptedData, gcpKmsConfig));
+        }
+      } catch (ApiException e) {
+        if (!e.isRetryable() || failedAttempts == NUM_OF_RETRIES) {
+          log.error(e.toString());
+          throw hintWithExplanationException(HintException.HINT_GCP_ACCESS_DENIED,
+              ExplanationException.INVALID_PARAMETER,
+              new InvalidRequestException(e.toString(), GCP_KMS_OPERATION_ERROR, USER));
+        } else {
+          failedAttempts++;
         }
       } catch (Exception e) {
         failedAttempts++;

@@ -128,21 +128,23 @@ public class SSHConfigValidationDelegateTask extends AbstractDelegateRunnableTas
                                                .principal(kerberosConfigDTO.getPrincipal())
                                                .realm(kerberosConfigDTO.getRealm())
                                                .generateTGT(kerberosConfigDTO.getTgtGenerationMethod() != null);
-    switch (kerberosConfigDTO.getTgtGenerationMethod()) {
-      case Password:
-        TGTPasswordSpecDTO tgtPasswordSpecDTO = (TGTPasswordSpecDTO) kerberosConfigDTO.getSpec();
-        TGTPasswordSpecDTO passwordSpecDTO =
-            (TGTPasswordSpecDTO) secretDecryptionService.decrypt(tgtPasswordSpecDTO, encryptionDetails);
-        builder.withPassword(passwordSpecDTO.getPassword().getDecryptedValue());
-        break;
-      case KeyTabFilePath:
-        TGTKeyTabFilePathSpecDTO tgtKeyTabFilePathSpecDTO = (TGTKeyTabFilePathSpecDTO) kerberosConfigDTO.getSpec();
-        TGTKeyTabFilePathSpecDTO keyTabFilePathSpecDTO =
-            (TGTKeyTabFilePathSpecDTO) secretDecryptionService.decrypt(tgtKeyTabFilePathSpecDTO, encryptionDetails);
-        kerberosConfig.keyTabFilePath(keyTabFilePathSpecDTO.getKeyPath());
-        break;
-      default:
-        break;
+    if (kerberosConfigDTO.getTgtGenerationMethod() != null) { // skip no TGT
+      switch (kerberosConfigDTO.getTgtGenerationMethod()) {
+        case Password:
+          TGTPasswordSpecDTO tgtPasswordSpecDTO = (TGTPasswordSpecDTO) kerberosConfigDTO.getSpec();
+          TGTPasswordSpecDTO passwordSpecDTO =
+              (TGTPasswordSpecDTO) secretDecryptionService.decrypt(tgtPasswordSpecDTO, encryptionDetails);
+          builder.withPassword(passwordSpecDTO.getPassword().getDecryptedValue());
+          break;
+        case KeyTabFilePath:
+          TGTKeyTabFilePathSpecDTO tgtKeyTabFilePathSpecDTO = (TGTKeyTabFilePathSpecDTO) kerberosConfigDTO.getSpec();
+          TGTKeyTabFilePathSpecDTO keyTabFilePathSpecDTO =
+              (TGTKeyTabFilePathSpecDTO) secretDecryptionService.decrypt(tgtKeyTabFilePathSpecDTO, encryptionDetails);
+          kerberosConfig.keyTabFilePath(keyTabFilePathSpecDTO.getKeyPath());
+          break;
+        default:
+          break;
+      }
     }
     builder.withAuthenticationScheme(KERBEROS)
         .withAccessType(AccessType.KERBEROS)

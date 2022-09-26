@@ -100,24 +100,27 @@ public class WinRmConfigValidationDelegateTask extends AbstractDelegateRunnableT
     String password = StringUtils.EMPTY;
     String keyTabFilePath = StringUtils.EMPTY;
 
-    switch (kerberosWinRmConfigDTO.getTgtGenerationMethod()) {
-      case Password:
-        TGTPasswordSpecDTO tgtPasswordSpecDTO = (TGTPasswordSpecDTO) kerberosWinRmConfigDTO.getSpec();
-        TGTPasswordSpecDTO passwordSpecDTO =
-            (TGTPasswordSpecDTO) secretDecryptionService.decrypt(tgtPasswordSpecDTO, encryptionDetails);
+    if (kerberosWinRmConfigDTO.getTgtGenerationMethod() != null) { // skip No TGT
+      switch (kerberosWinRmConfigDTO.getTgtGenerationMethod()) {
+        case Password:
+          TGTPasswordSpecDTO tgtPasswordSpecDTO = (TGTPasswordSpecDTO) kerberosWinRmConfigDTO.getSpec();
+          TGTPasswordSpecDTO passwordSpecDTO =
+              (TGTPasswordSpecDTO) secretDecryptionService.decrypt(tgtPasswordSpecDTO, encryptionDetails);
 
-        password = String.valueOf(passwordSpecDTO.getPassword().getDecryptedValue());
-        break;
+          password = String.valueOf(passwordSpecDTO.getPassword().getDecryptedValue());
+          break;
 
-      case KeyTabFilePath:
-        TGTKeyTabFilePathSpecDTO tgtKeyTabFilePathSpecDTO = (TGTKeyTabFilePathSpecDTO) kerberosWinRmConfigDTO.getSpec();
-        isUseKeyTab = true;
-        keyTabFilePath = tgtKeyTabFilePathSpecDTO.getKeyPath();
-        break;
+        case KeyTabFilePath:
+          TGTKeyTabFilePathSpecDTO tgtKeyTabFilePathSpecDTO =
+              (TGTKeyTabFilePathSpecDTO) kerberosWinRmConfigDTO.getSpec();
+          isUseKeyTab = true;
+          keyTabFilePath = tgtKeyTabFilePathSpecDTO.getKeyPath();
+          break;
 
-      default:
-        throw new IllegalArgumentException(
-            "Invalid TgtGenerationMethod provided:" + kerberosWinRmConfigDTO.getTgtGenerationMethod());
+        default:
+          throw new IllegalArgumentException(
+              "Invalid TgtGenerationMethod provided:" + kerberosWinRmConfigDTO.getTgtGenerationMethod());
+      }
     }
 
     builder.authenticationScheme(AuthenticationScheme.KERBEROS)

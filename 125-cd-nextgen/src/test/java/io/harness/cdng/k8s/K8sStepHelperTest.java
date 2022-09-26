@@ -309,11 +309,11 @@ public class K8sStepHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetPrunedResourcesIds() {
     doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), any());
-    List<KubernetesResourceId> prunedResourceIds = k8sStepHelper.getPrunedResourcesIds("accountId", null);
+    List<KubernetesResourceId> prunedResourceIds = k8sStepHelper.getPrunedResourcesIds(true, null);
     assertThat(prunedResourceIds).isEmpty();
     List<KubernetesResourceId> kubernetesResourceIds =
         Collections.singletonList(KubernetesResourceId.builder().kind("Deployment").build());
-    prunedResourceIds = k8sStepHelper.getPrunedResourcesIds("accountId", kubernetesResourceIds);
+    prunedResourceIds = k8sStepHelper.getPrunedResourcesIds(true, kubernetesResourceIds);
     assertThat(prunedResourceIds.get(0).getKind()).isEqualTo("Deployment");
   }
 
@@ -2461,6 +2461,80 @@ public class K8sStepHelperTest extends CategoryTest {
     List<String> valuesFilesContent = valuesFilesContentCaptor.getValue();
     assertThat(valuesFilesContent).isNotEmpty();
     assertThat(valuesFilesContent).isEqualTo(valuesYamlList.getValuesFileContents());
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void shouldHandleHelmValueFetchResponseWithNativeHelmStepExecutor() throws Exception {
+    StepElementParameters rollingStepElementParams =
+        StepElementParameters.builder().spec(K8sRollingStepParameters.infoBuilder().build()).build();
+
+    List<String> manifestIdentifiers = asList("manifest-identifier", "manifest-identifier2", "manifest-identifier3");
+    List<ManifestOutcome> manifestOutcomeList = new ArrayList<>();
+    HelmFetchFileResult valuesYamlList =
+        HelmFetchFileResult.builder().valuesFileContents(new ArrayList<>(asList("values yaml payload"))).build();
+    Map<String, HelmFetchFileResult> helmChartValuesFileMapContent = new HashMap<>();
+    helmChartValuesFileMapContent.put(manifestIdentifiers.get(0), valuesYamlList);
+    manifestOutcomeList.add(ValuesManifestOutcome.builder()
+                                .identifier(manifestIdentifiers.get(1))
+                                .store(HarnessStore.builder().build())
+                                .build());
+    Collection<CustomSourceFile> valuesYamlList2 =
+        asList(CustomSourceFile.builder().filePath("/path").fileContent("values yaml payload").build());
+    Map<String, Collection<CustomSourceFile>> customFetchContent = new HashMap<>();
+    customFetchContent.put(manifestIdentifiers.get(1), valuesYamlList2);
+    LocalStoreFetchFilesResult valuesYamlList3 =
+        LocalStoreFetchFilesResult.builder()
+            .LocalStoreFileContents(new ArrayList<>(asList("values yaml payload")))
+            .build();
+    manifestOutcomeList.add(ValuesManifestOutcome.builder()
+                                .identifier(manifestIdentifiers.get(2))
+                                .store(CustomRemoteStoreConfig.builder().build())
+                                .build());
+    Map<String, LocalStoreFetchFilesResult> localStoreFetchFilesResultMap = new HashMap<>();
+    localStoreFetchFilesResultMap.put(manifestIdentifiers.get(2), valuesYamlList3);
+    List<ManifestFiles> manifestFilesList = asList(ManifestFiles.builder().build());
+    K8sStepPassThroughData passThroughData = K8sStepPassThroughData.builder()
+                                                 .manifestOutcome(HelmChartManifestOutcome.builder()
+                                                                      .identifier(manifestIdentifiers.get(0))
+                                                                      .store(HttpStoreConfig.builder().build())
+                                                                      .build())
+                                                 .infrastructure(K8sDirectInfrastructureOutcome.builder().build())
+                                                 .manifestFiles(manifestFilesList)
+                                                 .customFetchContent(customFetchContent)
+                                                 .localStoreFileMapContents(localStoreFetchFilesResultMap)
+                                                 .manifestOutcomeList(manifestOutcomeList)
+                                                 .build();
+
+    UnitProgressData unitProgressData = UnitProgressData.builder().build();
+    HelmValuesFetchResponse helmValuesFetchResponse = HelmValuesFetchResponse.builder()
+                                                          .helmChartValuesFileMapContent(helmChartValuesFileMapContent)
+                                                          .commandExecutionStatus(SUCCESS)
+                                                          .unitProgressData(unitProgressData)
+                                                          .build();
+    Map<String, ResponseData> responseDataMap = ImmutableMap.of("helm-value-fetch-response", helmValuesFetchResponse);
+    ThrowingSupplier responseDataSuplier = StrategyHelper.buildResponseDataSupplier(responseDataMap);
+
+    k8sStepHelper.executeNextLink(
+        k8sStepExecutor, ambiance, rollingStepElementParams, passThroughData, responseDataSuplier);
+
+    ArgumentCaptor<List> valuesFilesContentCaptor = ArgumentCaptor.forClass(List.class);
+    verify(k8sStepExecutor, times(1))
+        .executeK8sTask(eq(passThroughData.getManifestOutcome()), eq(ambiance), eq(rollingStepElementParams),
+            valuesFilesContentCaptor.capture(),
+            eq(K8sExecutionPassThroughData.builder()
+                    .zippedManifestId(passThroughData.getZippedManifestFileId())
+                    .infrastructure(passThroughData.getInfrastructure())
+                    .lastActiveUnitProgressData(unitProgressData)
+                    .manifestFiles(manifestFilesList)
+                    .build()),
+            eq(false), eq(unitProgressData));
+
+    List<String> valuesFilesContent = valuesFilesContentCaptor.getValue();
+    assertThat(valuesFilesContent).isNotEmpty();
+    assertThat(valuesFilesContent)
+        .isEqualTo(asList("values yaml payload", "values yaml payload", "values yaml payload"));
   }
 
   @Test

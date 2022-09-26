@@ -76,6 +76,8 @@ public class LdapSettings extends SSOSettings implements ExecutionCapabilityDema
 
   private String cronExpression;
 
+  boolean disabled;
+
   @JsonIgnore @Transient private String defaultCronExpression;
 
   public String getCronExpression() {

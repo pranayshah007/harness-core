@@ -1022,8 +1022,8 @@ go_repository(
 go_repository(
     name = "com_github_drone_go_scm",
     importpath = "github.com/drone/go-scm",
-    sum = "h1:Fk0PoJGQ2xjJEnXej3uYpuAzroaUsGN6Bpt8k+l/atM=",
-    version = "v1.27.1-0.20220908090541-7ee0aa5806a5",
+    sum = "h1:H2nUtly+xsrVMlbmI2a+C9okAjgEYThL9wb4FgIXglg=",
+    version = "v1.27.1-0.20220914214843-b1a365cc57af",
 )
 
 go_repository(
@@ -4337,9 +4337,27 @@ plain_artifacts = [
     "ch.qos.logback:logback-core:1.2.11",
     "com.auth0:java-jwt:3.1.0",
     "com.azure:azure-core:1.29.1",
-    "com.azure:azure-identity:1.4.4",
+    "com.azure:azure-identity:1.5.0",
+    "com.azure:azure-core-http-netty:1.11.9",
+    "com.azure:azure-containers-containerregistry:1.0.3",
+    "com.azure:azure-core-management:1.6.2",
+    "com.azure.resourcemanager:azure-resourcemanager:2.14.0",
+    "com.azure.resourcemanager:azure-resourcemanager-appservice:2.14.0",
+    "com.azure.resourcemanager:azure-resourcemanager-authorization:2.14.0",
+    "com.azure.resourcemanager:azure-resourcemanager-compute:2.14.0",
+    "com.azure.resourcemanager:azure-resourcemanager-containerinstance:2.14.0",
+    "com.azure.resourcemanager:azure-resourcemanager-containerregistry:2.14.0",
+    "com.azure.resourcemanager:azure-resourcemanager-containerservice:2.14.0",
+    "com.azure.resourcemanager:azure-resourcemanager-keyvault:2.14.0",
+    "com.azure.resourcemanager:azure-resourcemanager-msi:2.14.0",
+    "com.azure.resourcemanager:azure-resourcemanager-monitor:2.14.0",
+    "com.azure.resourcemanager:azure-resourcemanager-network:2.14.0",
+    "com.azure.resourcemanager:azure-resourcemanager-resources:2.14.0",
+    "com.azure.resourcemanager:azure-resourcemanager-storage:2.14.0",
+    "com.azure:azure-security-keyvault-keys:4.4.1",
+    "com.azure:azure-security-keyvault-secrets:4.4.1",
     "com.azure:azure-storage-blob:12.16.0",
-    "com.azure:azure-storage-common:12.9.0",
+    "com.azure:azure-storage-common:12.15.1",
     "com.bertramlabs.plugins:hcl4j:0.1.7",
     "com.bettercloud:vault-java-driver:4.0.0",
     "com.rabbitmq:amqp-client:jar:4.8.0",
@@ -4663,9 +4681,11 @@ plain_artifacts = [
     "io.grpc:grpc-services:1.48.0",
     "io.grpc:grpc-stub:1.48.0",
     "io.gsonfire:gson-fire:1.8.3",
-    "io.harness.cv:data-collection-dsl:0.39-RELEASE",
+    "io.harness.cv:data-collection-dsl:0.41-RELEASE",
     "io.harness:ff-java-server-sdk:1.0.5.1",
-    "io.harness:ng-manager-server-spec:1.0.10",
+    "io.harness:access-control-server-spec:1.0.7",
+    "io.harness:ng-manager-server-spec:1.0.16",
+    "io.harness:platform-server-spec:1.0.9",
     "io.jsonwebtoken:jjwt:0.9.1",
     "io.kubernetes:client-java-api:16.0.0",
     "io.kubernetes:client-java-extended:16.0.0",
@@ -4690,8 +4710,10 @@ plain_artifacts = [
     "io.opencensus:opencensus-exporter-stats-prometheus:0.28.0",
     "io.opencensus:opencensus-impl:0.28.0",
     "io.perfmark:perfmark-api:0.19.0",
-    "io.projectreactor.netty:reactor-netty:0.9.10.RELEASE",
-    "io.projectreactor:reactor-core:3.3.8.RELEASE",
+    "io.projectreactor.netty:reactor-netty:1.0.19",
+    "io.projectreactor.netty:reactor-netty-core:1.0.19",
+    "io.projectreactor.netty:reactor-netty-http:1.0.19",
+    "io.projectreactor:reactor-core:3.4.18",
     "io.prometheus:simpleclient:0.5.0",
     "io.prometheus:simpleclient_common:0.5.0",
     "io.prometheus:simpleclient_dropwizard:0.5.0",
@@ -4827,10 +4849,10 @@ plain_artifacts = [
     "org.bouncycastle:bcprov-jdk15on:1.70",
     "org.checkerframework:checker-compat-qual:2.5.5",
     "org.checkerframework:checker-qual:3.4.0",
-    "org.cloudfoundry:cloudfoundry-client-reactor:4.15.0.RELEASE",
-    "org.cloudfoundry:cloudfoundry-client:4.15.0.RELEASE",
-    "org.cloudfoundry:cloudfoundry-operations:4.15.0.RELEASE",
-    "org.cloudfoundry:cloudfoundry-util:4.15.0.RELEASE",
+    "org.cloudfoundry:cloudfoundry-client-reactor:5.9.0.RELEASE",
+    "org.cloudfoundry:cloudfoundry-client:5.9.0.RELEASE",
+    "org.cloudfoundry:cloudfoundry-operations:5.9.0.RELEASE",
+    "org.cloudfoundry:cloudfoundry-util:5.9.0.RELEASE",
     "org.codehaus.groovy:groovy:3.0.7",
     "org.codehaus.jackson:jackson-core-asl:1.9.11",
     "org.codehaus.janino:commons-compiler:3.0.6",
@@ -5027,12 +5049,12 @@ plain_artifacts = [
 
 amazon_artifacts = [
     maven.artifact(
-        group = "com.amazonaws",
         artifact = x,
-        version = "1.12.261",
         exclusions = [
             "commons-logging:commons-logging",
         ],
+        group = "com.amazonaws",
+        version = "1.12.261",
     )
     for x in [
         "aws-java-sdk-applicationautoscaling",
@@ -5067,12 +5089,12 @@ amazon_artifacts = [
 
 amazon_v2_artifacts = [
     maven.artifact(
-        group = "software.amazon.awssdk",
         artifact = x,
-        version = "2.17.220",
         exclusions = [
             "commons-logging:commons-logging",
         ],
+        group = "software.amazon.awssdk",
+        version = "2.17.220",
     )
     for x in [
         "ecs",
@@ -5083,15 +5105,16 @@ amazon_v2_artifacts = [
         "sts",
         "sdk-core",
         "health",
+        "elasticloadbalancingv2",
     ]
 ]
 
 powermock_artifacts = [
     maven.artifact(
-        group = "org.powermock",
-        artifact = x,
-        version = "2.0.2",
         testonly = True,
+        artifact = x,
+        group = "org.powermock",
+        version = "2.0.2",
     )
     for x in [
         "powermock-api-mockito2",
@@ -5107,94 +5130,94 @@ maven_install(
     name = "maven",
     artifacts = plain_artifacts + amazon_artifacts + amazon_v2_artifacts + powermock_artifacts + [
         maven.artifact(
-            group = "io.netty",
             artifact = "netty-transport-native-kqueue",
-            version = "4.1.77.Final",
             classifier = "osx-x86_64",
+            group = "io.netty",
+            version = "4.1.77.Final",
         ),
         maven.artifact(
-            group = "com.github.reinert",
             artifact = "jjschema",
-            version = "1.0",
             exclusions = [
                 "javax.ws.rs:jsr311-api",
             ],
+            group = "com.github.reinert",
+            version = "1.0",
         ),
         maven.artifact(
-            group = "com.google.apis",
             artifact = "google-api-services-container",
-            version = "v1-rev48-1.23.0",
             exclusions = [
                 "com.google.guava:guava-jdk5",
             ],
+            group = "com.google.apis",
+            version = "v1-rev48-1.23.0",
         ),
         maven.artifact(
-            group = "com.microsoft.azure",
             artifact = "azure",
-            version = "1.31.1",
             exclusions = [
                 "org.slf4j:slf4j-simple",
             ],
+            group = "com.microsoft.azure",
+            version = "1.31.1",
         ),
         maven.artifact(
-            group = "org.clojure",
             artifact = "clojure",
+            exclusions = [
+                "org.clojure:clojure",
+            ],
+            group = "org.clojure",
             version = "1.9.0",
-            exclusions = [
-                "org.clojure:clojure",
-            ],
         ),
         maven.artifact(
-            group = "org.clojure",
             artifact = "core.specs.alpha",
-            version = "0.1.24",
             exclusions = [
                 "org.clojure:clojure",
             ],
-        ),
-        maven.artifact(
             group = "org.clojure",
+            version = "0.1.24",
+        ),
+        maven.artifact(
             artifact = "spec.alpha",
-            version = "0.1.143",
             exclusions = [
                 "org.clojure:clojure",
             ],
+            group = "org.clojure",
+            version = "0.1.143",
         ),
         maven.artifact(
-            group = "io.debezium",
             artifact = "debezium-embedded",
+            exclusions = [
+                "log4j:log4j",
+                "org.slf4j:slf4j-log4j12",
+            ],
+            group = "io.debezium",
             version = "1.7.2.Final",
-            exclusions = [
-                "log4j:log4j",
-                "org.slf4j:slf4j-log4j12",
-            ],
         ),
         maven.artifact(
-            group = "org.apache.kafka",
             artifact = "connect-runtime",
-            version = "2.8.1",
             exclusions = [
                 "log4j:log4j",
                 "org.slf4j:slf4j-log4j12",
             ],
+            group = "org.apache.kafka",
+            version = "2.8.1",
         ),
         maven.artifact(
-            group = "org.opensaml",
             artifact = "opensaml-saml-impl",
-            version = "3.4.3",
             exclusions = [
                 "org.apache.velocity:velocity-engine-core",
                 "org.apache.velocity:velocity",
             ],
+            group = "org.opensaml",
+            version = "3.4.3",
         ),
         maven.artifact(
-            group = "com.coveo",
             artifact = "saml-client",
-            version = "3.0.2",
             exclusions = [
                 "org.apache.velocity:velocity-engine-core",
                 "org.apache.velocity:velocity",
             ],
+            group = "com.coveo",
+            version = "3.0.2",
         ),
         maven_test_artifact("com.github.tomakehurst:wiremock-jre8-standalone:2.27.2"),
         maven_test_artifact("com.icegreen:greenmail:1.5.0"),
@@ -5256,10 +5279,10 @@ maven_install(
     name = "batch",
     artifacts = [
         "com.fasterxml.jackson.core:jackson-databind:2.13.3",
-        "com.azure:azure-core:1.25.0",
-        "com.azure:azure-identity:1.4.4",
-        "com.azure:azure-storage-blob:12.14.4",
-        "com.azure:azure-storage-common:12.14.3",
+        "com.azure:azure-core:1.29.1",
+        "com.azure:azure-identity:1.5.0",
+        "com.azure:azure-storage-blob:12.16.0",
+        "com.azure:azure-storage-common:12.15.1",
     ],
     repositories = [
         "http://jfrogdev.dev.harness.io:80/artifactory/portal-maven",
@@ -5271,14 +5294,14 @@ maven_install(
 maven_install(
     name = "ce-nextgen",
     artifacts = [
-        "com.azure:azure-core:1.25.0",
-        "com.azure:azure-core-management:1.5.2",
-        "com.azure:azure-identity:1.4.4",
-        "com.azure:azure-storage-blob:12.14.4",
-        "com.azure:azure-storage-common:12.14.3",
-        "com.azure.resourcemanager:azure-resourcemanager:2.12.0",
-        "com.azure.resourcemanager:azure-resourcemanager-authorization:2.12.0",
-        "com.azure.resourcemanager:azure-resourcemanager-resources:2.12.0",
+        "com.azure:azure-core:1.29.1",
+        "com.azure:azure-core-management:1.6.2",
+        "com.azure:azure-identity:1.5.0",
+        "com.azure:azure-storage-blob:12.16.0",
+        "com.azure:azure-storage-common:12.15.1",
+        "com.azure.resourcemanager:azure-resourcemanager:2.14.0",
+        "com.azure.resourcemanager:azure-resourcemanager-authorization:2.14.0",
+        "com.azure.resourcemanager:azure-resourcemanager-resources:2.14.0",
     ],
     repositories = [
         "http://jfrogdev.dev.harness.io:80/artifactory/portal-maven",
@@ -5317,13 +5340,13 @@ maven_install(
         "io.debezium:debezium-connector-mongodb:1.8.0.Final",
         "io.debezium:debezium-core:1.8.0.Final",
         maven.artifact(
-            group = "io.debezium",
             artifact = "debezium-embedded",
-            version = "1.8.0.Final",
             exclusions = [
                 "log4j:log4j",
                 "org.slf4j:slf4j-log4j12",
             ],
+            group = "io.debezium",
+            version = "1.8.0.Final",
         ),
     ],
     repositories = [
@@ -5531,3 +5554,29 @@ go_repository(
     sum = "h1:1jLE2y0VpSrOn/QR9G4f2RmrCtkM3AuATcWradjHUvM=",
     version = "v1.3.0",
 )
+
+# Contrib rules jvm for build cleaner.
+http_archive(
+    name = "contrib_rules_jvm",
+    sha256 = "a939cd04da2deee16131898d91d8e23559dcd1a30a5128beac30a2b01b33c94f",
+    strip_prefix = "rules_jvm-0.4.0",
+    url = "https://github.com/bazel-contrib/rules_jvm/archive/v0.4.0.tar.gz",
+)
+
+# Fetches the contrib_rules_jvm dependencies.
+# If you want to have a different version of some dependency,
+# you should fetch it *before* calling this.
+load("@contrib_rules_jvm//:repositories.bzl", "contrib_rules_jvm_deps", "contrib_rules_jvm_gazelle_deps")
+
+contrib_rules_jvm_deps()
+
+contrib_rules_jvm_gazelle_deps()
+
+# Now ensure that the downloaded deps are properly configured
+load("@contrib_rules_jvm//:setup.bzl", "contrib_rules_jvm_setup")
+
+contrib_rules_jvm_setup()
+
+load("@contrib_rules_jvm//:gazelle_setup.bzl", "contib_rules_jvm_gazelle_setup")
+
+contib_rules_jvm_gazelle_setup()

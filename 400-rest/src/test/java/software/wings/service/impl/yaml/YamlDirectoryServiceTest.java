@@ -90,7 +90,6 @@ import software.wings.beans.ConfigFile;
 import software.wings.beans.DockerConfig;
 import software.wings.beans.EntityType;
 import software.wings.beans.Environment;
-import software.wings.beans.GcpConfig;
 import software.wings.beans.GitConfig;
 import software.wings.beans.HelmChartConfig;
 import software.wings.beans.InfrastructureMapping;
@@ -109,7 +108,6 @@ import software.wings.beans.appmanifest.AppManifestKind;
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.appmanifest.ManifestFile;
 import software.wings.beans.appmanifest.StoreType;
-import software.wings.beans.artifact.AmazonS3ArtifactStream;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.DockerArtifactStream;
 import software.wings.beans.command.Command;
@@ -456,51 +454,6 @@ public class YamlDirectoryServiceTest extends WingsBaseTest {
     assertThat(((FolderNode) configFileFolder.get(1)).getChildren()).hasSize(1);
     assertThat(((FolderNode) configFileFolder.get(1)).getChildren().get(0).getName())
         .isEqualTo(relativeFilePathForYaml + YAML_EXTENSION);
-  }
-
-  @Test
-  @Owner(developers = YOGESH)
-  @Category(UnitTests.class)
-  public void testDoCloudProviders() {
-    SettingAttribute awsCp =
-        aSettingAttribute()
-            .withName("aws-cp")
-            .withUuid("aws-cp-id")
-            .withAccountId(ACCOUNT_ID)
-            .withCategory(SettingCategory.CLOUD_PROVIDER)
-            .withValue(
-                AwsConfig.builder().accessKey("access-key".toCharArray()).secretKey("secret-key".toCharArray()).build())
-            .build();
-    SettingAttribute gcpCp =
-        aSettingAttribute()
-            .withName("gcp-cp")
-            .withUuid("gcp-cp-id")
-            .withAccountId(ACCOUNT_ID)
-            .withCategory(SettingCategory.CLOUD_PROVIDER)
-            .withValue(
-                GcpConfig.builder().accountId(ACCOUNT_ID).serviceAccountKeyFileContent("key".toCharArray()).build())
-            .build();
-
-    // set up mocks
-    when(settingsService.listAllSettingAttributesByType(ACCOUNT_ID, SettingVariableTypes.AWS.name()))
-        .thenReturn(Arrays.asList(awsCp, gcpCp));
-    final FolderNode cloudProviderFolderNode = yamlDirectoryService.doCloudProviders(ACCOUNT_ID, directoryPath);
-    List<DirectoryNode> cloudProviderDirectoryNode = getNodesOfClass(cloudProviderFolderNode, SettingAttribute.class);
-
-    // check if feature flag ARTIFACT_STREAM_REFACTOR
-    final AmazonS3ArtifactStream artifactStream = AmazonS3ArtifactStream.builder()
-                                                      .appId(GLOBAL_APP_ID)
-                                                      .settingId("artifact_stream_id")
-                                                      .name("s3-artifact-stream")
-                                                      .build();
-    when(featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, ACCOUNT_ID)).thenReturn(true);
-    when(artifactStreamService.listBySettingId(GLOBAL_APP_ID, awsCp.getUuid()))
-        .thenReturn(Arrays.asList(artifactStream));
-    final FolderNode cloudProviderFolderNode_ff = yamlDirectoryService.doCloudProviders(ACCOUNT_ID, directoryPath);
-    List<DirectoryNode> cloudProviderDirectoryNode_ff =
-        getNodesOfClass(cloudProviderFolderNode_ff, ArtifactStream.class);
-    assertThat(cloudProviderDirectoryNode_ff).hasSize(1);
-    assertThat(cloudProviderDirectoryNode_ff.get(0).getName()).isEqualTo(artifactStream.getName() + YAML_EXTENSION);
   }
 
   @Test

@@ -39,18 +39,20 @@ public class SpringPersistenceProvider<T extends PersistentIterable>
     this.persistence = persistence;
   }
 
-  private Query createQuery(String fieldName, SpringFilterExpander filterExpander) {
+  private Query createQuery(String fieldName, SpringFilterExpander filterExpander, boolean unsorted) {
     Query query = new Query();
-    query.with(Sort.by(new Order(Sort.Direction.ASC, fieldName)));
+    if (!unsorted) {
+      query.with(Sort.by(new Order(Sort.Direction.ASC, fieldName)));
+    }
     if (filterExpander != null) {
       filterExpander.filter(query);
     }
     return query;
   }
 
-  private Query createQuery(long now, String fieldName, SpringFilterExpander filterExpander) {
+  private Query createQuery(long now, String fieldName, SpringFilterExpander filterExpander, boolean unsorted) {
     Criteria criteria = new Criteria();
-    Query query = createQuery(fieldName, filterExpander);
+    Query query = createQuery(fieldName, filterExpander, unsorted);
     if (filterExpander == null) {
       query.addCriteria(
           criteria.orOperator(Criteria.where(fieldName).lt(now), Criteria.where(fieldName).exists(false)));
@@ -70,9 +72,9 @@ public class SpringPersistenceProvider<T extends PersistentIterable>
 
   @Override
   public T obtainNextInstance(long base, long throttled, Class<T> clazz, String fieldName,
-      SchedulingType schedulingType, Duration targetInterval, SpringFilterExpander filterExpander) {
+      SchedulingType schedulingType, Duration targetInterval, SpringFilterExpander filterExpander, boolean unsorted) {
     long now = currentTimeMillis();
-    Query query = createQuery(now, fieldName, filterExpander);
+    Query query = createQuery(now, fieldName, filterExpander, unsorted);
     Update update = new Update();
     switch (schedulingType) {
       case REGULAR:
@@ -93,7 +95,7 @@ public class SpringPersistenceProvider<T extends PersistentIterable>
 
   @Override
   public T findInstance(Class<T> clazz, String fieldName, SpringFilterExpander filterExpander) {
-    return persistence.findOne(createQuery(fieldName, filterExpander), clazz);
+    return persistence.findOne(createQuery(fieldName, filterExpander, false), clazz);
   }
 
   @Override

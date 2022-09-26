@@ -31,6 +31,7 @@ public class SshWinRmAwsInfrastructureOutcome extends InfrastructureDetailsAbstr
   private String credentialsRef;
   private String region;
   Map<String, String> tags;
+  private String hostConnectionType;
 
   @VariableExpression(skipVariableExpression = true) private EnvironmentOutcome environment;
   private String infrastructureKey;

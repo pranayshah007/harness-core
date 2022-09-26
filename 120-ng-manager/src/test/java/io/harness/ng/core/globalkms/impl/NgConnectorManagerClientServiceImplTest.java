@@ -17,8 +17,8 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.client.NgConnectorManagerClient;
 import io.harness.data.structure.UUIDGenerator;
-import io.harness.ng.core.globalkms.client.NgConnectorManagerClient;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 

@@ -8,14 +8,13 @@
 package io.harness.ccm.commons.dao.recommendation;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.ccm.RecommenderUtils.newCpuHistogramV2;
+import static io.harness.ccm.RecommenderUtils.newMemoryHistogramV2;
 import static io.harness.ccm.commons.utils.TimeUtils.offsetDateTimeNow;
 import static io.harness.ccm.commons.utils.TimeUtils.toOffsetDateTime;
 import static io.harness.persistence.HPersistence.upsertReturnNewOptions;
 import static io.harness.persistence.HQuery.excludeValidate;
 import static io.harness.timescaledb.Tables.CE_RECOMMENDATIONS;
-
-import static software.wings.graphql.datafetcher.ce.recommendation.entity.RecommenderUtils.newCpuHistogramV2;
-import static software.wings.graphql.datafetcher.ce.recommendation.entity.RecommenderUtils.newMemoryHistogramV2;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.retry.RetryOnException;
@@ -164,6 +163,10 @@ public class ECSRecommendationDAO {
             .set(ECSServiceRecommendationKeys.validRecommendation, ecsServiceRecommendation.isValidRecommendation())
             .set(ECSServiceRecommendationKeys.lastDayCostAvailable, ecsServiceRecommendation.isLastDayCostAvailable())
             .set(ECSServiceRecommendationKeys.numDays, ecsServiceRecommendation.getNumDays());
+    if (ecsServiceRecommendation.getLaunchType() != null) {
+      updateOperations =
+          updateOperations.set(ECSServiceRecommendationKeys.launchType, ecsServiceRecommendation.getLaunchType());
+    }
     if (ecsServiceRecommendation.shouldShowRecommendation()) {
       updateOperations =
           updateOperations.set(ECSServiceRecommendationKeys.lastDayCost, ecsServiceRecommendation.getLastDayCost())

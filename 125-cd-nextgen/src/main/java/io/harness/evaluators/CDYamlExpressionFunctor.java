@@ -142,6 +142,15 @@ public class CDYamlExpressionFunctor {
       if (EmptyPredicate.isEmpty(arrayElement.getIdentifier())
           && EmptyPredicate.isNotEmpty(arrayElement.getArrayUniqueIdentifier())) {
         contextMap.put(arrayElement.getArrayUniqueIdentifier(), arrayElement.getField("value").getNode().asText());
+      } else if (EmptyPredicate.isNotEmpty(arrayElement.getIdentifier())) {
+        // Nodes having identifier to refer uniquely from the array.
+        fqnList.add(arrayElement.getIdentifier());
+        Map<String, Object> valueFromObject = getValueFromObject(arrayElement, fqnToValueMap, fqnList);
+        fqnToValueMap.put(String.join(".", fqnList), valueFromObject);
+        contextMap.put(arrayElement.getIdentifier(), valueFromObject);
+
+        fqnList.remove(fqnList.size() - 1);
+
       } else if (arrayElement.isObject()) {
         for (YamlField field : arrayElement.fields()) {
           // Nodes having identifier to refer uniquely from the array.

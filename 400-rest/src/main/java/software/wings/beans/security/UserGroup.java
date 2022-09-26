@@ -233,7 +233,7 @@ public class UserGroup extends Base implements NotificationReceiverInfo, Account
         .ssoGroupId(ssoGroupId)
         .ssoGroupName(ssoGroupName)
         .importedByScim(importedByScim)
-        .parents(parents)
+        .parents(Collections.emptySet())
         .build();
   }
 

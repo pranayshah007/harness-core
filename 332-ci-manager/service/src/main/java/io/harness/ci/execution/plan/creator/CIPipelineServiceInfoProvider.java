@@ -30,8 +30,8 @@ import io.harness.ci.creator.variables.S3UploadStepVariableCreator;
 import io.harness.ci.creator.variables.SaveCacheGCSStepVariableCreator;
 import io.harness.ci.creator.variables.SaveCacheS3StepVariableCreator;
 import io.harness.ci.creator.variables.SecurityStepVariableCreator;
-import io.harness.ci.plan.creator.filter.CIStageFilterJsonCreator;
-import io.harness.ci.plan.creator.stage.IntegrationStagePMSPlanCreator;
+import io.harness.ci.plan.creator.filter.CIStageFilterJsonCreatorV2;
+import io.harness.ci.plan.creator.stage.IntegrationStagePMSPlanCreatorV2;
 import io.harness.ci.plan.creator.step.CIPMSStepFilterJsonCreator;
 import io.harness.ci.plan.creator.step.CIPMSStepPlanCreator;
 import io.harness.ci.plan.creator.step.CIStepFilterJsonCreatorV2;
@@ -43,6 +43,7 @@ import io.harness.ci.plancreator.BuildAndPushGCRStepPlanCreator;
 import io.harness.ci.plancreator.DockerStepPlanCreator;
 import io.harness.ci.plancreator.GCSUploadStepPlanCreator;
 import io.harness.ci.plancreator.GitCloneStepPlanCreator;
+import io.harness.ci.plancreator.InitializeStepPlanCreator;
 import io.harness.ci.plancreator.PluginStepPlanCreator;
 import io.harness.ci.plancreator.RestoreCacheGCSStepPlanCreator;
 import io.harness.ci.plancreator.RestoreCacheS3StepPlanCreator;
@@ -83,7 +84,7 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
   @Override
   public List<PartialPlanCreator<?>> getPlanCreators() {
     List<PartialPlanCreator<?>> planCreators = new LinkedList<>();
-    planCreators.add(new IntegrationStagePMSPlanCreator());
+    planCreators.add(new IntegrationStagePMSPlanCreatorV2());
     planCreators.add(new CIPMSStepPlanCreator());
     planCreators.add(new RunStepPlanCreator());
     planCreators.add(new BackgroundStepPlanCreator());
@@ -106,6 +107,7 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     planCreators.add(new ParallelPlanCreator());
     planCreators.add(new StrategyConfigPlanCreator());
     planCreators.add(new GitCloneStepPlanCreator());
+    planCreators.add(new InitializeStepPlanCreator());
     injectorUtils.injectMembers(planCreators);
     return planCreators;
   }
@@ -113,9 +115,9 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
   @Override
   public List<FilterJsonCreator> getFilterJsonCreators() {
     List<FilterJsonCreator> filterJsonCreators = new ArrayList<>();
-    filterJsonCreators.add(new CIStageFilterJsonCreator());
     filterJsonCreators.add(new CIPMSStepFilterJsonCreator());
     filterJsonCreators.add(new CIStepFilterJsonCreatorV2());
+    filterJsonCreators.add(new CIStageFilterJsonCreatorV2());
     filterJsonCreators.add(new ExecutionPMSFilterJsonCreator());
     filterJsonCreators.add(new ParallelGenericFilterJsonCreator());
     injectorUtils.injectMembers(filterJsonCreators);

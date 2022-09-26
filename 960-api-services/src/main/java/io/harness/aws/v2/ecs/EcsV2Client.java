@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.aws.v2.ecs;
 
 import io.harness.aws.beans.AwsInternalConfig;
@@ -23,10 +30,16 @@ import software.amazon.awssdk.services.ecs.model.DeleteServiceResponse;
 import software.amazon.awssdk.services.ecs.model.DescribeServicesRequest;
 import software.amazon.awssdk.services.ecs.model.DescribeServicesResponse;
 import software.amazon.awssdk.services.ecs.model.DescribeTasksResponse;
+import software.amazon.awssdk.services.ecs.model.ListServicesRequest;
+import software.amazon.awssdk.services.ecs.model.ListServicesResponse;
 import software.amazon.awssdk.services.ecs.model.ListTasksRequest;
 import software.amazon.awssdk.services.ecs.model.ListTasksResponse;
 import software.amazon.awssdk.services.ecs.model.RegisterTaskDefinitionRequest;
 import software.amazon.awssdk.services.ecs.model.RegisterTaskDefinitionResponse;
+import software.amazon.awssdk.services.ecs.model.TagResourceRequest;
+import software.amazon.awssdk.services.ecs.model.TagResourceResponse;
+import software.amazon.awssdk.services.ecs.model.UntagResourceRequest;
+import software.amazon.awssdk.services.ecs.model.UntagResourceResponse;
 import software.amazon.awssdk.services.ecs.model.UpdateServiceRequest;
 import software.amazon.awssdk.services.ecs.model.UpdateServiceResponse;
 
@@ -44,7 +57,7 @@ public interface EcsV2Client {
       AwsInternalConfig awsConfig, RegisterTaskDefinitionRequest registerTaskDefinitionRequest, String region);
 
   WaiterResponse<DescribeServicesResponse> ecsServiceSteadyStateCheck(AwsInternalConfig awsConfig,
-      DescribeServicesRequest describeServicesRequest, String region, int serviceSteadyStateTimeout);
+      DescribeServicesRequest describeServicesRequest, String region, long serviceSteadyStateTimeout);
 
   WaiterResponse<DescribeServicesResponse> ecsServiceInactiveStateCheck(AwsInternalConfig awsConfig,
       DescribeServicesRequest describeServicesRequest, String region, int serviceInactiveStateTimeout);
@@ -73,4 +86,16 @@ public interface EcsV2Client {
   ListTasksResponse listTaskArns(AwsInternalConfig awsConfig, ListTasksRequest listTasksRequest, String region);
 
   DescribeTasksResponse getTasks(AwsInternalConfig awsConfig, String clusterName, List<String> taskArns, String region);
+
+  ListServicesResponse listServices(
+      AwsInternalConfig awsConfig, ListServicesRequest listServicesRequest, String region);
+
+  DescribeServicesResponse describeServices(
+      AwsInternalConfig awsConfig, DescribeServicesRequest describeServicesRequest, String region);
+
+  UntagResourceResponse untagService(
+      AwsInternalConfig awsInternalConfig, UntagResourceRequest untagResourceRequest, String region);
+
+  TagResourceResponse tagService(
+      AwsInternalConfig awsInternalConfig, TagResourceRequest tagResourceRequest, String region);
 }

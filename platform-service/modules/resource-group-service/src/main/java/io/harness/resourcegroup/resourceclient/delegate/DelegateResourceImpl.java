@@ -22,7 +22,7 @@ import io.harness.delegate.DelegateServiceResourceClient;
 import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.CGRestUtils;
 import io.harness.resourcegroup.beans.ValidatorType;
 import io.harness.resourcegroup.framework.v1.service.Resource;
 import io.harness.resourcegroup.framework.v1.service.ResourceInfo;
@@ -59,7 +59,7 @@ public class DelegateResourceImpl implements Resource {
     log.info("Calling manager to validate {} delegates for scope {}", resourceIds.size(), scope.toString());
 
     List<Boolean> delegateValidityData =
-        RestClientUtils
+        CGRestUtils
             .getResponse(delegateServiceResourceClient.validateDelegates(
                 scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), resourceIds))
             .getDelegateValidityData();

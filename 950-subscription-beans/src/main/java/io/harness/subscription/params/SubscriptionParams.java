@@ -16,6 +16,7 @@ import lombok.Data;
 public class SubscriptionParams {
   private String accountIdentifier;
   private String subscriptionId;
+  private String customerEmail;
   private String customerId;
   private String paymentMethodId;
   private String moduleType;

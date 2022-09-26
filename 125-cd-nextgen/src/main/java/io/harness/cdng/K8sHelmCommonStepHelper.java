@@ -414,7 +414,7 @@ public class K8sHelmCommonStepHelper {
 
   protected TaskChainResponse prepareHelmFetchValuesTaskChainResponse(Ambiance ambiance,
       StepElementParameters stepElementParameters, List<ValuesManifestOutcome> aggregatedValuesManifests,
-      K8sStepPassThroughData k8sStepPassThroughData) {
+      K8sStepPassThroughData k8sStepPassThroughData, boolean shouldOpenLogStream) {
     String accountId = AmbianceUtils.getAccountId(ambiance);
     HelmChartManifestOutcome helmChartManifestOutcome =
         (HelmChartManifestOutcome) k8sStepPassThroughData.getManifestOutcome();
@@ -432,7 +432,7 @@ public class K8sHelmCommonStepHelper {
             .helmChartManifestDelegateConfig(helmManifest)
             .timeout(CDStepHelper.getTimeoutInMillis(stepElementParameters))
             .helmFetchFileConfigList(helmFetchFileConfigList)
-            .openNewLogStream(isEmpty(k8sStepPassThroughData.getCustomFetchContent()))
+            .openNewLogStream(shouldOpenLogStream)
             .closeLogStream(!shouldExecuteGitFetchTask(aggregatedValuesManifests))
             .build();
 

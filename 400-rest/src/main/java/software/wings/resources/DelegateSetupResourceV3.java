@@ -58,6 +58,7 @@ import io.harness.service.intfc.DelegateSetupService;
 import software.wings.beans.CEDelegateStatus;
 import software.wings.beans.DelegateStatus;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
+import software.wings.security.annotations.ApiKeyAuthorized;
 import software.wings.security.annotations.AuthRule;
 import software.wings.security.annotations.Scope;
 import software.wings.service.intfc.DelegateScopeService;
@@ -669,6 +670,7 @@ public class DelegateSetupResourceV3 {
   @ExceptionMetered
   @AuthRule(permissionType = ACCOUNT_MANAGEMENT)
   @AuthRule(permissionType = MANAGE_DELEGATES)
+  @ApiKeyAuthorized(permissionType = MANAGE_DELEGATES)
   @Operation(operationId = "getDownloadUrl", summary = "Retrieves Delegate download url for the account",
       responses =
       {
@@ -781,7 +783,9 @@ public class DelegateSetupResourceV3 {
       @Parameter(description = "Delegate Configuration UUID") @QueryParam("delegateProfileId") String delegateProfileId,
       @Parameter(description = "Token value") @QueryParam("token") @NotEmpty String token,
       @Parameter(description = "Is Ce enabled") @QueryParam("isCeEnabled") @DefaultValue("false") boolean isCeEnabled,
-      @Parameter(description = "Token name") @QueryParam("tokenName") String tokenName) throws IOException {
+      @Parameter(description = "Token name") @QueryParam("tokenName") String tokenName,
+      @Parameter(description = "root access fot delegate") @QueryParam("runAsRoot") @DefaultValue(
+          "true") boolean runAsRoot) throws IOException {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
       downloadTokenService.validateDownloadToken(DELEGATE + accountId, token);
 
@@ -794,7 +798,7 @@ public class DelegateSetupResourceV3 {
             .build();
       } else {
         File delegateFile = delegateService.downloadKubernetes(subdomainUrlHelper.getManagerUrl(request, accountId),
-            getVerificationUrl(request), accountId, delegateName, delegateProfileId, tokenName);
+            getVerificationUrl(request), accountId, delegateName, delegateProfileId, tokenName, runAsRoot);
         return Response.ok(delegateFile)
             .header(CONTENT_TRANSFER_ENCODING, BINARY)
             .type(APPLICATION_ZIP_CHARSET_BINARY)

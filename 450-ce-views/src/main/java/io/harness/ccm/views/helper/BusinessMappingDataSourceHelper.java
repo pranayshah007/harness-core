@@ -37,35 +37,45 @@ public class BusinessMappingDataSourceHelper {
     final Set<ViewFieldIdentifier> viewFieldIdentifiers = new HashSet<>();
     for (final String businessMappingId : getBusinessMappingIds(viewRules)) {
       final BusinessMapping businessMapping = businessMappingService.get(businessMappingId, accountId);
-      if (Objects.nonNull(businessMapping)) {
-        if (!Lists.isNullOrEmpty(businessMapping.getCostTargets())) {
-          viewFieldIdentifiers.addAll(getCostTargetViewFieldIdentifiers(businessMapping.getCostTargets()));
-        }
-        if (!Lists.isNullOrEmpty(businessMapping.getSharedCosts())) {
-          viewFieldIdentifiers.addAll(getSharedCostViewFieldIdentifiers(businessMapping.getSharedCosts()));
-        }
+      viewFieldIdentifiers.addAll(getBusinessMappingViewFieldIdentifiers(businessMapping));
+    }
+    return viewFieldIdentifiers;
+  }
+
+  public Set<ViewFieldIdentifier> getBusinessMappingViewFieldIdentifiers(final BusinessMapping businessMapping) {
+    final Set<ViewFieldIdentifier> viewFieldIdentifiers = new HashSet<>();
+    if (Objects.nonNull(businessMapping)) {
+      if (!Lists.isNullOrEmpty(businessMapping.getCostTargets())) {
+        viewFieldIdentifiers.addAll(getCostTargetViewFieldIdentifiers(businessMapping.getCostTargets()));
+      }
+      if (!Lists.isNullOrEmpty(businessMapping.getSharedCosts())) {
+        viewFieldIdentifiers.addAll(getSharedCostViewFieldIdentifiers(businessMapping.getSharedCosts()));
       }
     }
     return viewFieldIdentifiers;
   }
 
-  private Set<ViewFieldIdentifier> getCostTargetViewFieldIdentifiers(final List<CostTarget> costTargets) {
+  public Set<ViewFieldIdentifier> getCostTargetViewFieldIdentifiers(final List<CostTarget> costTargets) {
     final Set<ViewFieldIdentifier> viewFieldIdentifiers = new HashSet<>();
-    costTargets.forEach(costTarget -> {
-      if (Objects.nonNull(costTarget) && !Lists.isNullOrEmpty(costTarget.getRules())) {
-        viewFieldIdentifiers.addAll(getViewRulesViewFieldIdentifiers(costTarget.getRules()));
-      }
-    });
+    if (Objects.nonNull(costTargets)) {
+      costTargets.forEach(costTarget -> {
+        if (Objects.nonNull(costTarget) && !Lists.isNullOrEmpty(costTarget.getRules())) {
+          viewFieldIdentifiers.addAll(getViewRulesViewFieldIdentifiers(costTarget.getRules()));
+        }
+      });
+    }
     return viewFieldIdentifiers;
   }
 
-  private Set<ViewFieldIdentifier> getSharedCostViewFieldIdentifiers(final List<SharedCost> sharedCosts) {
+  public Set<ViewFieldIdentifier> getSharedCostViewFieldIdentifiers(final List<SharedCost> sharedCosts) {
     final Set<ViewFieldIdentifier> viewFieldIdentifiers = new HashSet<>();
-    sharedCosts.forEach(sharedCost -> {
-      if (Objects.nonNull(sharedCost) && !Lists.isNullOrEmpty(sharedCost.getRules())) {
-        viewFieldIdentifiers.addAll(getViewRulesViewFieldIdentifiers(sharedCost.getRules()));
-      }
-    });
+    if (Objects.nonNull(sharedCosts)) {
+      sharedCosts.forEach(sharedCost -> {
+        if (Objects.nonNull(sharedCost) && !Lists.isNullOrEmpty(sharedCost.getRules())) {
+          viewFieldIdentifiers.addAll(getViewRulesViewFieldIdentifiers(sharedCost.getRules()));
+        }
+      });
+    }
     return viewFieldIdentifiers;
   }
 
@@ -75,7 +85,10 @@ public class BusinessMappingDataSourceHelper {
       if (Objects.nonNull(viewRule) && Objects.nonNull(viewRule.getViewConditions())) {
         viewRule.getViewConditions().forEach(viewCondition -> {
           final ViewIdCondition viewIdCondition = (ViewIdCondition) viewCondition;
-          viewFieldIdentifiers.add(viewIdCondition.getViewField().getIdentifier());
+          final ViewFieldIdentifier viewFieldIdentifier = viewIdCondition.getViewField().getIdentifier();
+          if (viewFieldIdentifier != ViewFieldIdentifier.COMMON && viewFieldIdentifier != ViewFieldIdentifier.LABEL) {
+            viewFieldIdentifiers.add(viewIdCondition.getViewField().getIdentifier());
+          }
         });
       }
     });

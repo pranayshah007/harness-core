@@ -12,8 +12,11 @@ import static io.harness.beans.SearchFilter.Operator.EQ;
 import static software.wings.security.PermissionAttribute.PermissionType.MANAGE_APPLICATIONS;
 import static software.wings.security.PermissionAttribute.ResourceType.APPLICATION;
 
+import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
+import io.harness.data.parser.Parser;
+import io.harness.ff.FeatureFlagService;
 import io.harness.limits.LimitCheckerFactory;
 import io.harness.rest.RestResponse;
 
@@ -52,6 +55,10 @@ import org.hibernate.validator.constraints.NotEmpty;
 public class AppResource {
   private AppService appService;
   private LimitCheckerFactory limitCheckerFactory;
+  @Inject private FeatureFlagService featureFlagService;
+
+  private static final String CUSTOM_MAX_LIMIT = "1200";
+  private static final String LARGE_PAGE_SIZE_LIMIT = "3000";
 
   @Inject
   public AppResource(AppService appService, LimitCheckerFactory limitCheckerFactory) {
@@ -75,6 +82,17 @@ public class AppResource {
       @QueryParam("withTags") @DefaultValue("false") boolean withTags) {
     if (accountId != null) {
       pageRequest.addFilter("accountId", EQ, accountId);
+    }
+    if (featureFlagService.isEnabled(FeatureName.CUSTOM_MAX_PAGE_SIZE, accountId)) {
+      String baseLimit = CUSTOM_MAX_LIMIT;
+      if (featureFlagService.isEnabled(FeatureName.EXTRA_LARGE_PAGE_SIZE, accountId)) {
+        baseLimit = LARGE_PAGE_SIZE_LIMIT;
+      }
+
+      String limit = PageRequest.UNLIMITED.equals(pageRequest.getLimit())
+          ? baseLimit
+          : Integer.toString(Parser.asInt(pageRequest.getLimit(), Integer.parseInt(baseLimit)));
+      pageRequest.setLimit(limit);
     }
     return new RestResponse<>(appService.list(pageRequest, details, withTags, tagFilter));
   }

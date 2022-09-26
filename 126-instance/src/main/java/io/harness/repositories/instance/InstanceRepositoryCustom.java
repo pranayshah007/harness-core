@@ -15,7 +15,6 @@ import io.harness.models.CountByServiceIdAndEnvType;
 import io.harness.models.EnvBuildInstanceCount;
 import io.harness.models.InstancesByBuildId;
 
-import com.mongodb.client.result.UpdateResult;
 import java.util.List;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -67,5 +66,5 @@ public interface InstanceRepositoryCustom {
 
   Instance findFirstInstance(Criteria criteria);
 
-  UpdateResult updateInfrastructureMapping(List<String> instanceIds, String infrastructureMappingId);
+  void updateInfrastructureMapping(String instanceId, String infrastructureMappingId);
 }

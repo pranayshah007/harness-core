@@ -9,6 +9,7 @@ package software.wings.delegatetasks.azure;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.azure.model.AzureHostConnectionType;
 import io.harness.azure.model.AzureOSType;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.task.azure.AzureValidationHandler;
@@ -147,7 +148,8 @@ public class AzureTask extends AbstractDelegateRunnableTask {
             azureTaskParams.getAdditionalParams().get(AzureAdditionalParams.RESOURCE_GROUP),
             AzureOSType.fromString(azureTaskParams.getAdditionalParams().get(AzureAdditionalParams.OS_TYPE)),
             (Map<String, String>) azureTaskParams.getParams().get("tags"),
-            Boolean.parseBoolean(azureTaskParams.getAdditionalParams().get(AzureAdditionalParams.USE_PUBLIC_DNS)));
+            AzureHostConnectionType.fromString(
+                azureTaskParams.getAdditionalParams().get(AzureAdditionalParams.HOST_CONNECTION_TYPE)));
       default:
         throw new InvalidRequestException("Task type not identified");
     }

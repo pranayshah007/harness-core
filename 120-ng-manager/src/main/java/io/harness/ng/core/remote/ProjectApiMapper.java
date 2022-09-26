@@ -26,38 +26,82 @@ import io.harness.spec.server.ng.model.UpdateProjectRequest;
 import io.harness.utils.PageUtils;
 
 import com.google.common.collect.ImmutableList;
+import com.google.inject.Inject;
+import io.dropwizard.jersey.validation.JerseyViolationException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
+import javax.validation.ConstraintViolation;
+import javax.validation.Validator;
 import javax.ws.rs.core.Link;
 import javax.ws.rs.core.Response.ResponseBuilder;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.data.domain.Pageable;
 
 public class ProjectApiMapper {
   public static final int PAGE = 1;
 
-  public static ProjectDTO getProjectDto(String org, CreateProjectRequest createProjectRequest) {
-    return new ProjectDTO(org, createProjectRequest.getProject().getSlug(), createProjectRequest.getProject().getName(),
-        createProjectRequest.getProject().getColor(), toModules(createProjectRequest.getProject().getModules()),
-        createProjectRequest.getProject().getDescription(), createProjectRequest.getProject().getTags());
+  private final Validator validator;
+
+  @Inject
+  public ProjectApiMapper(Validator validator) {
+    this.validator = validator;
   }
 
-  public static ProjectDTO getProjectDto(String org, String slug, UpdateProjectRequest updateProjectRequest) {
-    return new ProjectDTO(org, slug, updateProjectRequest.getProject().getName(),
-        updateProjectRequest.getProject().getColor(), toModules(updateProjectRequest.getProject().getModules()),
-        updateProjectRequest.getProject().getDescription(), updateProjectRequest.getProject().getTags());
+  public ProjectDTO getProjectDto(CreateProjectRequest createProjectRequest) {
+    ProjectDTO projectDTO = ProjectDTO.builder()
+                                .name(createProjectRequest.getProject().getName())
+                                .identifier(createProjectRequest.getProject().getSlug())
+                                .orgIdentifier(createProjectRequest.getProject().getOrg())
+                                .color(createProjectRequest.getProject().getColor())
+                                .modules(toModules(createProjectRequest.getProject().getModules()))
+                                .description(createProjectRequest.getProject().getDescription())
+                                .tags(createProjectRequest.getProject().getTags())
+                                .build();
+    validate(projectDTO);
+
+    return projectDTO;
   }
 
-  public static List<io.harness.ModuleType> toModules(List<ModuleType> modules) {
+  private void validate(ProjectDTO projectDTO) {
+    Set<ConstraintViolation<ProjectDTO>> violations = validator.validate(projectDTO);
+    if (!violations.isEmpty()) {
+      throw new JerseyViolationException(violations, null);
+    }
+  }
+
+  public ProjectDTO getProjectDto(UpdateProjectRequest updateProjectRequest) {
+    ProjectDTO projectDTO = ProjectDTO.builder()
+                                .name(updateProjectRequest.getProject().getName())
+                                .identifier(updateProjectRequest.getProject().getSlug())
+                                .orgIdentifier(updateProjectRequest.getProject().getOrg())
+                                .color(updateProjectRequest.getProject().getColor())
+                                .modules(toModules(updateProjectRequest.getProject().getModules()))
+                                .description(updateProjectRequest.getProject().getDescription())
+                                .tags(updateProjectRequest.getProject().getTags())
+                                .build();
+    validate(projectDTO);
+    return projectDTO;
+  }
+
+  public List<io.harness.ModuleType> toModules(List<ModuleType> modules) {
+    if (CollectionUtils.isEmpty(modules)) {
+      return Collections.emptyList();
+    }
     return modules.stream().map(module -> io.harness.ModuleType.fromString(module.name())).collect(Collectors.toList());
   }
 
-  public static List<ModuleType> toApiModules(List<io.harness.ModuleType> modules) {
+  public List<ModuleType> toApiModules(List<io.harness.ModuleType> modules) {
+    if (CollectionUtils.isEmpty(modules)) {
+      return Collections.emptyList();
+    }
     return modules.stream().map(module -> ModuleType.fromValue(module.name())).collect(Collectors.toList());
   }
 
-  public static ProjectResponse getProjectResponse(Project project) {
+  public ProjectResponse getProjectResponse(Project project) {
     ProjectResponse projectResponse = new ProjectResponse();
     io.harness.spec.server.ng.model.Project proj = new io.harness.spec.server.ng.model.Project();
     proj.setOrg(project.getOrgIdentifier());
@@ -75,16 +119,19 @@ public class ProjectApiMapper {
     return projectResponse;
   }
 
-  private static Map<String, String> getTags(List<NGTag> tags) {
+  private Map<String, String> getTags(List<NGTag> tags) {
+    if (CollectionUtils.isEmpty(tags)) {
+      return Collections.emptyMap();
+    }
     return tags.stream().collect(Collectors.toMap(NGTag::getKey, NGTag::getValue));
   }
 
-  public static Pageable getPageRequest(int page, int limit) {
+  public Pageable getPageRequest(int page, int limit) {
     SortOrder order = aSortOrder().withField(ProjectKeys.lastModifiedAt, DESC).build();
     return PageUtils.getPageRequest(new PageRequest(page, limit, ImmutableList.of(order)));
   }
 
-  public static ResponseBuilder addLinksHeader(
+  public ResponseBuilder addLinksHeader(
       ResponseBuilder responseBuilder, String path, int currentResultCount, int page, int limit) {
     ArrayList<Link> links = new ArrayList<>();
 

@@ -19,6 +19,7 @@ import io.harness.ci.utils.HarnessImageUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.pod.EnvVariableEnum;
 import io.harness.delegate.beans.ci.vm.steps.VmPluginStep;
+import io.harness.delegate.beans.ci.vm.steps.VmPluginStep.VmPluginStepBuilder;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -45,22 +46,27 @@ public class VmPluginCompatibleStepSerializer {
         pluginCompatibleStep, identifier, timeout, ambiance, Type.VM);
     String image = CIStepInfoUtils.getPluginCustomStepImage(
         pluginCompatibleStep, ciExecutionConfigService, Type.VM, AmbianceUtils.getAccountId(ambiance));
-    String connectorRef = PluginSettingUtils.getConnectorRef(pluginCompatibleStep);
-
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
-    Map<EnvVariableEnum, String> connectorSecretEnvMap =
-        PluginSettingUtils.getConnectorSecretEnvMap(pluginCompatibleStep.getNonYamlInfo().getStepInfoType());
-    ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(ngAccess, connectorRef);
-    connectorDetails.setEnvToSecretsMap(connectorSecretEnvMap);
 
     ConnectorDetails harnessInternalImageConnector =
         harnessImageUtils.getHarnessImageConnectorDetailsForVM(ngAccess, stageInfraDetails);
-    return VmPluginStep.builder()
-        .image(IntegrationStageUtils.getFullyQualifiedImageName(image, harnessInternalImageConnector))
-        .connector(connectorDetails)
-        .envVariables(envVars)
-        .timeoutSecs(timeout)
-        .imageConnector(harnessInternalImageConnector)
-        .build();
+
+    VmPluginStepBuilder vmPluginStepBuilder =
+        VmPluginStep.builder()
+            .image(IntegrationStageUtils.getFullyQualifiedImageName(image, harnessInternalImageConnector))
+            .envVariables(envVars)
+            .timeoutSecs(timeout)
+            .imageConnector(harnessInternalImageConnector);
+
+    String connectorRef = PluginSettingUtils.getConnectorRef(pluginCompatibleStep);
+    if (connectorRef != null) {
+      Map<EnvVariableEnum, String> connectorSecretEnvMap =
+          PluginSettingUtils.getConnectorSecretEnvMap(pluginCompatibleStep.getNonYamlInfo().getStepInfoType());
+      ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(ngAccess, connectorRef);
+      connectorDetails.setEnvToSecretsMap(connectorSecretEnvMap);
+      vmPluginStepBuilder.connector(connectorDetails);
+    }
+
+    return vmPluginStepBuilder.build();
   }
 }

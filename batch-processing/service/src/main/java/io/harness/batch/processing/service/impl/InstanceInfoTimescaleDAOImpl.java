@@ -8,7 +8,7 @@
 package io.harness.batch.processing.service.impl;
 
 import static io.harness.batch.processing.tasklet.util.InstanceMetaDataUtils.getValueForKeyFromInstanceMetaData;
-import static io.harness.ccm.commons.constants.Constants.ZONE_OFFSET;
+import static io.harness.ccm.CcmConstants.ZONE_OFFSET;
 import static io.harness.ccm.commons.utils.TimeUtils.offsetDateTimeNow;
 import static io.harness.ccm.commons.utils.TimeUtils.toOffsetDateTime;
 import static io.harness.ccm.commons.utils.TimescaleUtils.isAliveAtInstant;

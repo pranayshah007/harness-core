@@ -33,10 +33,10 @@ import io.harness.delegate.beans.connector.azureconnector.AzureInheritFromDelega
 import io.harness.delegate.beans.connector.azureconnector.AzureMSIAuthUADTO;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.exception.TaskNGDataException;
+import io.harness.delegate.task.azure.appservice.settings.AppSettingsFile;
 import io.harness.delegate.task.azure.arm.handlers.AzureResourceCreationAbstractTaskHandler;
 import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
 import io.harness.delegate.task.azure.common.AzureLogCallbackProviderFactory;
-import io.harness.exception.UnexpectedTypeException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
@@ -99,8 +99,8 @@ public class AzureArmTaskNGTest extends CategoryTest {
     taskNGParameters = AzureARMTaskNGParameters.builder()
                            .accountId("accountId")
                            .taskType(AzureARMTaskType.ARM_DEPLOYMENT)
-                           .templateBody("templateBody")
-                           .parametersBody("parameters")
+                           .templateBody(AppSettingsFile.builder().fileContent("templateBody").build())
+                           .parametersBody(AppSettingsFile.builder().fileContent("parameters").build())
                            .connectorDTO(connectorDTO)
                            .scopeType(ARMScopeType.RESOURCE_GROUP)
                            .subscriptionId("subscriptionId")
@@ -142,11 +142,11 @@ public class AzureArmTaskNGTest extends CategoryTest {
     assertThatThrownBy(() -> azureARMTaskNG.run(taskNGParameters)).isInstanceOf(TaskNGDataException.class);
   }
 
-  @Test(expected = UnexpectedTypeException.class)
+  @Test
   @Owner(developers = NGONZALEZ)
   @Category(UnitTests.class)
-  public void testAzureTaskNGWithParamsAndNoTaskType() throws Exception {
+  public void testAzureTaskNGWithParamsAndNoTaskType() {
     handlerMap.remove(AzureARMTaskType.ARM_DEPLOYMENT);
-    azureARMTaskNG.run(taskNGParameters);
+    assertThatThrownBy(() -> azureARMTaskNG.run(taskNGParameters)).isInstanceOf(TaskNGDataException.class);
   }
 }

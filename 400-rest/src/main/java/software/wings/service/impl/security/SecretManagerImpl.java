@@ -436,7 +436,7 @@ public class SecretManagerImpl implements SecretManager, EncryptedSettingAttribu
                                       .in(secretIds);
 
     AggregationPipeline aggregationPipeline =
-        wingsPersistence.getDatastore(SecretUsageLog.class)
+        wingsPersistence.getDefaultAnalyticsDatastore(SecretUsageLog.class)
             .createAggregation(SecretUsageLog.class)
             .match(query)
             .group(SecretChangeLogKeys.encryptedDataId, grouping("count", new Accumulator("$sum", 1)))
@@ -495,7 +495,7 @@ public class SecretManagerImpl implements SecretManager, EncryptedSettingAttribu
                                        .in(secretIds);
 
     AggregationPipeline aggregationPipeline =
-        wingsPersistence.getDatastore(SecretChangeLog.class)
+        wingsPersistence.getDefaultAnalyticsDatastore(SecretChangeLog.class)
             .createAggregation(SecretChangeLog.class)
             .match(query)
             .group(SecretChangeLogKeys.encryptedDataId, grouping("count", new Accumulator("$sum", 1)))

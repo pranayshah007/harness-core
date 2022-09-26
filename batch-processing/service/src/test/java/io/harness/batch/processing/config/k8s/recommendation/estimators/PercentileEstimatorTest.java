@@ -11,10 +11,9 @@ import static io.harness.batch.processing.config.k8s.recommendation.estimators.R
 import static io.harness.batch.processing.config.k8s.recommendation.estimators.ResourceAmountUtils.coresFromCpuAmount;
 import static io.harness.batch.processing.config.k8s.recommendation.estimators.ResourceAmountUtils.cpu;
 import static io.harness.batch.processing.config.k8s.recommendation.estimators.ResourceAmountUtils.memory;
+import static io.harness.ccm.RecommenderUtils.newCpuHistogram;
+import static io.harness.ccm.RecommenderUtils.newMemoryHistogram;
 import static io.harness.rule.OwnerRule.AVMOHAN;
-
-import static software.wings.graphql.datafetcher.ce.recommendation.entity.RecommenderUtils.newCpuHistogram;
-import static software.wings.graphql.datafetcher.ce.recommendation.entity.RecommenderUtils.newMemoryHistogram;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.withinPercentage;

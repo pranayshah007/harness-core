@@ -35,6 +35,7 @@ import io.harness.ngsettings.entities.SettingConfiguration;
 import io.harness.ngsettings.events.SettingRestoreEvent;
 import io.harness.ngsettings.events.SettingUpdateEvent;
 import io.harness.ngsettings.mapper.SettingsMapper;
+import io.harness.ngsettings.services.SettingValidator;
 import io.harness.ngsettings.utils.SettingUtils;
 import io.harness.outbox.api.OutboxService;
 import io.harness.repositories.ngsettings.spring.SettingConfigurationRepository;
@@ -68,15 +69,15 @@ public class SettingsServiceImplTest extends CategoryTest {
   @Mock private OutboxService outboxService;
   @Mock private SettingUtils settingUtils;
   private SettingsServiceImpl settingsService;
-
+  @Mock private Map<String, SettingValidator> settingValidatorMap;
   @Rule public ExpectedException exceptionRule = ExpectedException.none();
   private String defaultValue = "defaultValue";
 
   @Before
   public void setUp() {
     MockitoAnnotations.openMocks(this);
-    settingsService = new SettingsServiceImpl(
-        settingConfigurationRepository, settingRepository, settingsMapper, transactionTemplate, outboxService);
+    settingsService = new SettingsServiceImpl(settingConfigurationRepository, settingRepository, settingsMapper,
+        transactionTemplate, outboxService, settingValidatorMap);
   }
 
   @Test
@@ -168,8 +169,10 @@ public class SettingsServiceImplTest extends CategoryTest {
     when(settingsMapper.writeBatchResponseDTO(settingResponseDTO)).thenReturn(settingBatchResponseDTO);
     SettingDTO settingDTO = SettingDTO.builder().identifier(identifier).build();
     when(settingsMapper.writeNewDTO(setting, settingRequestDTO, settingConfiguration, true)).thenReturn(settingDTO);
-    when(settingsMapper.toSetting(accountIdentifier, settingDTO)).thenReturn(updatedSetting);
+    when(settingsMapper.writeSettingDTO(setting, settingConfiguration, true, settingConfiguration.getDefaultValue()))
+        .thenReturn(settingDTO);
     when(settingsMapper.writeSettingDTO(settingConfiguration, true)).thenReturn(settingDTO);
+    when(settingsMapper.toSetting(accountIdentifier, settingDTO)).thenReturn(updatedSetting);
     when(settingsMapper.toSetting(null, settingDTO)).thenReturn(setting);
     when(settingsMapper.writeSettingResponseDTO(setting, settingConfiguration, true)).thenReturn(settingResponseDTO);
     when(transactionTemplate.execute(any()))
@@ -223,6 +226,8 @@ public class SettingsServiceImplTest extends CategoryTest {
     when(settingRepository.upsert(newSetting)).thenReturn(newSetting);
     when(settingsMapper.toSetting(accountIdentifier, settingDTO)).thenReturn(newSetting);
     when(settingsMapper.toSetting(null, settingDTO)).thenReturn(setting);
+    when(settingsMapper.writeSettingDTO(setting, settingConfiguration, true, settingConfiguration.getDefaultValue()))
+        .thenReturn(settingDTO);
     when(settingsMapper.writeSettingResponseDTO(newSetting, settingConfiguration, true, value))
         .thenReturn(settingResponseDTO);
     when(settingsMapper.writeBatchResponseDTO(settingResponseDTO)).thenReturn(settingBatchResponseDTO);
@@ -379,7 +384,7 @@ public class SettingsServiceImplTest extends CategoryTest {
     doNothing().when(settingConfigurationRepository).delete(settingConfiguration);
     when(settingRepository.findByIdentifier(identifier)).thenReturn(List.of(setting));
     doNothing().when(settingRepository).deleteAll(List.of(setting));
-    settingsService.removeSettingFromConfiguration(identifier);
+    settingsService.removeSetting(identifier);
     verify(settingConfigurationRepository, times(1)).findByIdentifier(identifier);
     verify(settingConfigurationRepository, times(1)).delete(settingConfiguration);
     verify(settingRepository, times(1)).findByIdentifier(identifier);

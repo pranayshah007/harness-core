@@ -25,7 +25,6 @@ import static java.util.Collections.emptyMap;
 
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.K8sHelmCommonStepHelper;
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
@@ -150,9 +149,7 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
     String taskName = TaskType.K8S_COMMAND_TASK_NG.getDisplayName() + " : " + k8sDeployRequest.getCommandName();
     K8sSpecParameters k8SSpecParameters = (K8sSpecParameters) stepElementParameters.getSpec();
     final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-        k8SSpecParameters.getCommandUnits(cdFeatureFlagHelper.isEnabled(
-            AmbianceUtils.getAccountId(ambiance), FeatureName.PRUNE_KUBERNETES_RESOURCES_NG)),
-        taskName,
+        k8SSpecParameters.getCommandUnits(), taskName,
         TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(k8SSpecParameters.getDelegateSelectors()))),
         stepHelper.getEnvironmentType(ambiance));
     return TaskChainResponse.builder()
@@ -334,19 +331,19 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
     K8sStepPassThroughData deepCopyOfK8sPassThroughData =
         k8sStepPassThroughData.toBuilder().customFetchContent(emptyMap()).zippedManifestFileId("").build();
 
+    boolean shouldOpenLogStream = isEmpty(k8sStepPassThroughData.getLocalStoreFileMapContents())
+        && isEmpty(k8sStepPassThroughData.getManifestFiles());
     if (ManifestType.HelmChart.equals(k8sManifestOutcome.getType())
         && !ManifestStoreType.isInGitSubset(storeConfig.getKind())
         && !ManifestStoreType.HARNESS.equals(storeConfig.getKind())) {
-      return prepareHelmFetchValuesTaskChainResponse(
-          ambiance, stepElementParameters, aggregatedValuesManifests, deepCopyOfK8sPassThroughData);
+      return prepareHelmFetchValuesTaskChainResponse(ambiance, stepElementParameters, aggregatedValuesManifests,
+          deepCopyOfK8sPassThroughData, shouldOpenLogStream);
     }
 
     ValuesManifestOutcome valuesManifestOutcome =
         ValuesManifestOutcome.builder().identifier(k8sManifestOutcome.getIdentifier()).store(storeConfig).build();
     if (ManifestStoreType.isInGitSubset(storeConfig.getKind())
         || shouldExecuteGitFetchTask(aggregatedValuesManifests)) {
-      boolean shouldOpenLogStream = isEmpty(k8sStepPassThroughData.getLocalStoreFileMapContents())
-          && isEmpty(k8sStepPassThroughData.getManifestFiles());
       return prepareGitFetchValuesTaskChainResponse(ambiance, stepElementParameters, valuesManifestOutcome,
           aggregatedValuesManifests, deepCopyOfK8sPassThroughData, storeConfig, shouldOpenLogStream, false);
     }
@@ -761,8 +758,9 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
     }
 
     if (ManifestType.HelmChart.equals(k8sManifest.getType())) {
+      boolean shouldOpenLogStream = isEmpty(k8sStepPassThroughData.getCustomFetchContent());
       return prepareHelmFetchValuesTaskChainResponse(ambiance, stepElementParameters,
-          k8sStepPassThroughData.getValuesManifestOutcomes(), updatedK8sStepPassThroughData);
+          k8sStepPassThroughData.getValuesManifestOutcomes(), updatedK8sStepPassThroughData, shouldOpenLogStream);
     }
 
     StoreConfig storeConfig = extractStoreConfigFromManifestOutcome(k8sManifest);
@@ -805,12 +803,20 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
         aggregatedValuesManifest.add((ValuesManifestOutcome) manifestOutcome);
       }
     }
-    if (isNotEmpty(aggregatedValuesManifest)) {
+    if (shouldExecuteGitFetchTask(aggregatedValuesManifest)) {
       return executeValuesFetchTask(ambiance, stepElementParameters, aggregatedValuesManifest,
           helmValuesFetchResponse.getHelmChartValuesFileMapContent(), k8sStepPassThroughData, false);
     } else {
       List<String> valuesFileContents = new ArrayList<>();
       addValuesFileFromHelmChartManifest(helmValuesFetchFilesResultMap, valuesFileContents, k8sManifestIdentifier);
+      List<ManifestOutcome> manifestOutcomeList = new ArrayList<>();
+      manifestOutcomeList.addAll(aggregatedValuesManifest);
+      if (isNotEmpty(manifestOutcomeList)
+          && (isNotEmpty(helmValuesFetchFilesResultMap) || isNotEmpty(k8sStepPassThroughData.getCustomFetchContent())
+              || isNotEmpty(k8sStepPassThroughData.getLocalStoreFileMapContents()))) {
+        valuesFileContents.addAll(getManifestFilesContents(null, manifestOutcomeList, helmValuesFetchFilesResultMap,
+            k8sStepPassThroughData.getCustomFetchContent(), k8sStepPassThroughData.getLocalStoreFileMapContents()));
+      }
       return k8sStepExecutor.executeK8sTask(k8sManifest, ambiance, stepElementParameters, valuesFileContents,
           K8sExecutionPassThroughData.builder()
               .zippedManifestId(k8sStepPassThroughData.getZippedManifestFileId())
@@ -935,8 +941,8 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
   }
 
   public List<KubernetesResourceId> getPrunedResourcesIds(
-      String accountId, List<KubernetesResourceId> prunedResourceIds) {
-    if (cdStepHelper.isPruningEnabled(accountId)) {
+      boolean pruningEnabled, List<KubernetesResourceId> prunedResourceIds) {
+    if (pruningEnabled) {
       return prunedResourceIds == null ? Collections.emptyList() : prunedResourceIds;
     }
     return Collections.emptyList();

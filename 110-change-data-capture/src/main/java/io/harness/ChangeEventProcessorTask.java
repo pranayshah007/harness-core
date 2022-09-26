@@ -110,8 +110,6 @@ public class ChangeEventProcessorTask implements Runnable {
           if (changeHandler != null) {
             changeHandler.handleChange(
                 changeEvent, Strings.toLowerCase(changeDataCapture.table()), changeDataCapture.fields());
-          } else {
-            log.info("ChangeHandler for {} is null.", changeDataCapture.handler());
           }
         }
       }

@@ -65,6 +65,16 @@ spec:
       - image: ${delegateDockerImage}
         imagePullPolicy: Always
         name: delegate
+        <#if runAsRoot == "true">
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsUser: 0
+        <#else>
+        #uncomment below lines to run delegate as root.
+        #securityContext:
+        #  allowPrivilegeEscalation: false
+        #  runAsUser: 0
+        </#if>
         <#if ciEnabled == "true">
         ports:
           - containerPort: ${delegateGrpcServicePort}
