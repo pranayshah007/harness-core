@@ -493,7 +493,14 @@ func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile stri
 	// Runner selection
 	var runner testintelligence.TestRunner
 	switch r.language {
+	case "scala":
+		if r.buildTool == "sbt" {
+			runner = java.NewSBTRunner(r.log, r.fs, r.cmdContextFactory)
+		}
+		fallthrough
 	case "java":
+		fallthrough
+	case "kotlin":
 		switch r.buildTool {
 		case "maven":
 			runner = java.NewMavenRunner(r.log, r.fs, r.cmdContextFactory)

@@ -98,7 +98,9 @@ public class LdapGroupScheduledHandler implements Handler<LdapSettings> {
   @Override
   public void handle(LdapSettings settings) {
     ldapGroupSyncJobHelper.syncJob(settings);
-    processForNG(settings);
+    if (!settings.isDisabled()) {
+      processForNG(settings);
+    }
   }
 
   private void processForNG(LdapSettings settings) {

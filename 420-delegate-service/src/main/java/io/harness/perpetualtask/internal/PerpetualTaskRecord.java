@@ -8,15 +8,10 @@
 package io.harness.perpetualtask.internal;
 
 import static io.harness.annotations.dev.HarnessTeam.DEL;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-
-import static java.time.Duration.ofMinutes;
-import static java.time.Duration.ofSeconds;
 
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.iterator.PersistentFibonacciIterable;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
@@ -32,8 +27,8 @@ import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UuidAware;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.ImmutableList;
-import java.util.ArrayList;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -57,15 +52,16 @@ import org.mongodb.morphia.annotations.Id;
 @HarnessEntity(exportable = false)
 @Slf4j
 @OwnedBy(DEL)
-public class PerpetualTaskRecord implements PersistentEntity, UuidAware, PersistentRegularIterable,
-                                            PersistentFibonacciIterable, CreatedAtAware, UpdatedAtAware, AccountAccess {
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class PerpetualTaskRecord
+    implements PersistentEntity, UuidAware, PersistentRegularIterable, CreatedAtAware, UpdatedAtAware, AccountAccess {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("assignerIterator")
+                 .name("assignIterator")
                  .field(PerpetualTaskRecordKeys.state)
                  .field(PerpetualTaskRecordKeys.assignAfterMs)
-                 .field(PerpetualTaskRecordKeys.assignerIterations)
+                 .field(PerpetualTaskRecordKeys.assignIteration)
                  .build())
         .add(CompoundMongoIndex.builder()
                  .name("rebalanceIterator")
@@ -73,9 +69,9 @@ public class PerpetualTaskRecord implements PersistentEntity, UuidAware, Persist
                  .field(PerpetualTaskRecordKeys.rebalanceIteration)
                  .build())
         .add(CompoundMongoIndex.builder()
-                 .name("assignerIterator_1")
+                 .name("assignIterator_1")
                  .field(PerpetualTaskRecordKeys.state)
-                 .field(PerpetualTaskRecordKeys.assignerIterations)
+                 .field(PerpetualTaskRecordKeys.assignIteration)
                  .build())
         .build();
   }
@@ -92,7 +88,8 @@ public class PerpetualTaskRecord implements PersistentEntity, UuidAware, Persist
   PerpetualTaskUnassignedReason unassignedReason;
   long lastHeartbeat;
 
-  List<Long> assignerIterations;
+  @Deprecated List<Long> assignerIterations;
+  long assignIteration;
   long rebalanceIteration;
 
   int assignTryCount;
@@ -104,8 +101,8 @@ public class PerpetualTaskRecord implements PersistentEntity, UuidAware, Persist
 
   @Override
   public Long obtainNextIteration(String fieldName) {
-    if (PerpetualTaskRecordKeys.assignerIterations.equals(fieldName)) {
-      return isEmpty(assignerIterations) ? null : assignerIterations.get(0);
+    if (PerpetualTaskRecordKeys.assignIteration.equals(fieldName)) {
+      return assignIteration;
     }
     if (PerpetualTaskRecordKeys.rebalanceIteration.equals(fieldName)) {
       return rebalanceIteration;
@@ -114,20 +111,12 @@ public class PerpetualTaskRecord implements PersistentEntity, UuidAware, Persist
   }
 
   @Override
-  public List<Long> recalculateNextIterations(String fieldName, boolean skipMissed, long throttled) {
-    if (PerpetualTaskRecordKeys.assignerIterations.equals(fieldName)) {
-      if (assignerIterations == null) {
-        assignerIterations = new ArrayList<>();
-      }
-      if (recalculateTimestamps(assignerIterations, skipMissed, throttled, ofSeconds(30), ofMinutes(30))) {
-        return assignerIterations;
-      }
-    }
-    throw new IllegalArgumentException("Invalid fieldName " + fieldName);
-  }
-
-  @Override
   public void updateNextIteration(String fieldName, long nextIteration) {
+    if (PerpetualTaskRecordKeys.assignIteration.equals(fieldName)) {
+      this.assignIteration = nextIteration;
+      return;
+    }
+
     if (PerpetualTaskRecordKeys.rebalanceIteration.equals(fieldName)) {
       this.rebalanceIteration = nextIteration;
       return;

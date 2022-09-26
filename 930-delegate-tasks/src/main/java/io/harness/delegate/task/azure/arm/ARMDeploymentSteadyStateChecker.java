@@ -31,7 +31,11 @@ import io.harness.azure.model.blueprint.assignment.operation.AssignmentOperation
 import io.harness.azure.model.blueprint.assignment.operation.AzureResourceManagerError;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.delegate.task.azure.arm.deployment.context.DeploymentBlueprintSteadyStateContext;
+import io.harness.exception.FailureType;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.ngexception.AzureARMTaskException;
+import io.harness.exception.runtime.azure.AzureARMDeploymentException;
+import io.harness.exception.runtime.azure.AzureARMRuntimeException;
 import io.harness.logging.LogCallback;
 
 import com.google.common.util.concurrent.TimeLimiter;
@@ -42,6 +46,7 @@ import com.microsoft.azure.PagedList;
 import com.microsoft.azure.management.resources.DeploymentOperationProperties;
 import com.microsoft.azure.management.resources.implementation.DeploymentOperationInner;
 import java.time.Duration;
+import java.util.EnumSet;
 import java.util.StringJoiner;
 import java.util.concurrent.Callable;
 import java.util.stream.Stream;
@@ -74,7 +79,7 @@ public class ARMDeploymentSteadyStateChecker {
               String message = format(
                   "%nARM Deployment failed for deployment - [%s]%n[%s]", context.getDeploymentName(), errorMessage);
               logCallback.saveExecutionLog(message, ERROR, FAILURE);
-              throw new InvalidRequestException(message);
+              throw new AzureARMDeploymentException(message);
             }
           }
           sleep(ofSeconds(context.getStatusCheckIntervalInSeconds()));
@@ -87,12 +92,14 @@ public class ARMDeploymentSteadyStateChecker {
       String message = format("Timed out waiting for executing operation deployment - [%s], %n %s",
           context.getDeploymentName(), e.getMessage());
       logCallback.saveExecutionLog(message, ERROR, FAILURE);
-      throw new InvalidRequestException(message, e);
+      throw new AzureARMTaskException(message, EnumSet.of(FailureType.TIMEOUT_ERROR));
+    } catch (AzureARMRuntimeException ex) {
+      throw ex;
     } catch (Exception e) {
       String message = format(
           "Error while waiting for executing operation [%s], %n %s", context.getDeploymentName(), e.getMessage());
       logCallback.saveExecutionLog(message, ERROR, FAILURE);
-      throw new InvalidRequestException(message, e);
+      throw new AzureARMDeploymentException(message, e);
     }
   }
 

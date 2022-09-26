@@ -276,7 +276,7 @@ public class MetricServiceImpl implements MetricService {
       MetricGroup group = metricGroupMap.get(metricConfiguration.getMetricGroup());
       List<String> labelNames =
           group == null || group.getLabels() == null ? Arrays.asList(ENV_LABEL) : group.getLabels();
-      Map<String, String> labelVals = group == null ? new HashMap<>() : getLabelValues(labelNames);
+      Map<String, String> labelVals = getLabelValues(labelNames);
       Map<TagKey, String> tagsMap = new HashMap<>();
       for (String labelName : labelNames) {
         if (labelVals.containsKey(labelName)) {

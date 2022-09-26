@@ -135,7 +135,8 @@ public abstract class AbstractDownloadArtifactCommandHandler implements CommandH
       ArtifactDownloadHandler artifactHandler = artifactHandlers.get(artifactDelegateConfig.getArtifactType());
       if (artifactHandler == null) {
         log.warn("Wrong artifact delegate config submitted: {}", artifactDelegateConfig.getArtifactType());
-        throw new InvalidRequestException("Expecting artifactory or jenkins delegate config");
+        throw new InvalidRequestException(
+            format("%s artifact type not supported.", artifactDelegateConfig.getArtifactType()));
       }
       command =
           artifactHandler.getCommandString(artifactDelegateConfig, commandUnit.getDestinationPath(), getScriptType());

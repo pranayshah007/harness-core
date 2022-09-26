@@ -9,6 +9,7 @@ package io.harness.delegate.ecs;
 
 import static io.harness.rule.OwnerRule.ALLU_VAMSI;
 
+import static com.google.common.collect.Lists.newArrayList;
 import static java.lang.String.format;
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -40,10 +41,6 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
-import software.amazon.awssdk.services.applicationautoscaling.model.DescribeScalableTargetsResponse;
-import software.amazon.awssdk.services.applicationautoscaling.model.DescribeScalingPoliciesResponse;
-import software.amazon.awssdk.services.applicationautoscaling.model.ScalableTarget;
-import software.amazon.awssdk.services.applicationautoscaling.model.ScalingPolicy;
 import software.amazon.awssdk.services.ecs.model.CreateServiceRequest;
 import software.amazon.awssdk.services.ecs.model.Service;
 
@@ -58,46 +55,6 @@ public class EcsPrepareRollbackCommandTaskHandlerTest extends CategoryTest {
   @Mock LogCallback prepareRollbackLogCallback;
 
   @Spy @InjectMocks private EcsPrepareRollbackCommandTaskHandler ecsPrepareRollbackCommandTaskHandler;
-
-  @Test
-  @Owner(developers = ALLU_VAMSI)
-  @Category(UnitTests.class)
-  public void executeTaskInternalNoScalableTargetAndScalingPolicyTest() throws Exception {
-    CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
-
-    EcsInfraConfig ecsInfraConfig = EcsInfraConfig.builder().build();
-    EcsPrepareRollbackDataRequest ecsPrepareRollbackDataRequest = EcsPrepareRollbackDataRequest.builder()
-                                                                      .accountId("accountId")
-                                                                      .timeoutIntervalInMin(10)
-                                                                      .ecsInfraConfig(ecsInfraConfig)
-                                                                      .ecsServiceDefinitionManifestContent("service")
-                                                                      .build();
-
-    doReturn(prepareRollbackLogCallback)
-        .when(ecsTaskHelperBase)
-        .getLogCallback(iLogStreamingTaskClient, EcsCommandUnitConstants.prepareRollbackData.toString(), true,
-            commandUnitsProgress);
-    CreateServiceRequest.Builder createServiceRequestBuilder =
-        CreateServiceRequest.builder().serviceName(serviceName).cluster("cluster");
-    doReturn(createServiceRequestBuilder)
-        .when(ecsCommandTaskHelper)
-        .parseYamlAsObject("service", CreateServiceRequest.serializableBuilderClass());
-
-    Optional<Service> optionalService = Optional.of(Service.builder().serviceName(serviceName).build());
-    doReturn(true).when(ecsCommandTaskHelper).isServiceActive(optionalService.get());
-    doReturn(optionalService).when(ecsCommandTaskHelper).describeService(any(), any(), any(), any());
-    EcsPrepareRollbackDataResponse ecsPrepareRollbackDataResponse =
-        (EcsPrepareRollbackDataResponse) ecsPrepareRollbackCommandTaskHandler.executeTaskInternal(
-            ecsPrepareRollbackDataRequest, iLogStreamingTaskClient, commandUnitsProgress);
-
-    assertThat(ecsPrepareRollbackDataResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
-    assertThat(ecsPrepareRollbackDataResponse.getEcsPrepareRollbackDataResult().getServiceName())
-        .isEqualTo(serviceName);
-    verify(prepareRollbackLogCallback)
-        .saveExecutionLog(format("Didn't find Scalable Target Details for Service %s", serviceName), LogLevel.INFO);
-    verify(prepareRollbackLogCallback)
-        .saveExecutionLog(format("Didn't find Scaling Policy Details for Service %s", serviceName), LogLevel.INFO);
-  }
 
   @Test
   @Owner(developers = ALLU_VAMSI)
@@ -126,19 +83,14 @@ public class EcsPrepareRollbackCommandTaskHandlerTest extends CategoryTest {
     Optional<Service> optionalService = Optional.of(Service.builder().serviceName(serviceName).build());
     doReturn(true).when(ecsCommandTaskHelper).isServiceActive(optionalService.get());
     doReturn(optionalService).when(ecsCommandTaskHelper).describeService(any(), any(), any(), any());
-    DescribeScalableTargetsResponse describeScalableTargetsResponse =
-        DescribeScalableTargetsResponse.builder().scalableTargets(ScalableTarget.builder().build()).build();
-    doReturn(describeScalableTargetsResponse)
+    doReturn(newArrayList())
         .when(ecsCommandTaskHelper)
-        .listScalableTargets(
-            ecsInfraConfig.getAwsConnectorDTO(), ecsInfraConfig.getCluster(), serviceName, ecsInfraConfig.getRegion());
-
-    DescribeScalingPoliciesResponse describeScalingPoliciesResponse =
-        DescribeScalingPoliciesResponse.builder().scalingPolicies(ScalingPolicy.builder().build()).build();
-    doReturn(describeScalingPoliciesResponse)
+        .getScalableTargetsAsString(
+            prepareRollbackLogCallback, optionalService.get().serviceName(), optionalService.get(), ecsInfraConfig);
+    doReturn(newArrayList())
         .when(ecsCommandTaskHelper)
-        .listScalingPolicies(
-            ecsInfraConfig.getAwsConnectorDTO(), ecsInfraConfig.getCluster(), serviceName, ecsInfraConfig.getRegion());
+        .getScalingPoliciesAsString(
+            prepareRollbackLogCallback, optionalService.get().serviceName(), optionalService.get(), ecsInfraConfig);
 
     EcsPrepareRollbackDataResponse ecsPrepareRollbackDataResponse =
         (EcsPrepareRollbackDataResponse) ecsPrepareRollbackCommandTaskHandler.executeTaskInternal(
@@ -146,10 +98,6 @@ public class EcsPrepareRollbackCommandTaskHandlerTest extends CategoryTest {
     assertThat(ecsPrepareRollbackDataResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
     assertThat(ecsPrepareRollbackDataResponse.getEcsPrepareRollbackDataResult().getServiceName())
         .isEqualTo(serviceName);
-    verify(prepareRollbackLogCallback)
-        .saveExecutionLog(format("Fetched Scalable Target Details for Service %s", serviceName), LogLevel.INFO);
-    verify(prepareRollbackLogCallback)
-        .saveExecutionLog(format("Fetched Scaling Policy Details for Service %s", serviceName), LogLevel.INFO);
   }
 
   @Test

@@ -16,6 +16,7 @@ import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ngsettings.NgSettingsPersistenceTestModule;
+import io.harness.ngsettings.services.SettingValidator;
 import io.harness.ngsettings.services.SettingsService;
 import io.harness.ngsettings.services.impl.SettingsServiceImpl;
 import io.harness.outbox.api.OutboxService;
@@ -35,6 +36,7 @@ import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
+import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Names;
 import java.io.Closeable;
 import java.lang.annotation.Annotation;
@@ -74,6 +76,8 @@ public class NgSettingRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
         bind(TransactionTemplate.class)
             .annotatedWith(Names.named("OUTBOX_TRANSACTION_TEMPLATE"))
             .toInstance(mock(TransactionTemplate.class));
+        MapBinder<String, SettingValidator> settingValidatorMapBinder =
+            MapBinder.newMapBinder(binder(), String.class, SettingValidator.class);
       }
     });
 

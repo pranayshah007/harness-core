@@ -13,6 +13,7 @@ import static io.harness.packages.HarnessPackages.IO_HARNESS;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SampleBean;
+import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.gitsync.AbstractGitSyncSdkModule;
 import io.harness.gitsync.GitSyncEntitiesConfiguration;
 import io.harness.gitsync.GitSyncSdkConfiguration;
@@ -97,7 +98,8 @@ public class GitSyncTestApplication extends Application<GitSyncTestConfiguration
             .deployMode(DeployMode.REMOTE)
             .microservice(Microservice.PMS)
             .scmConnectionConfig(config.getScmConnectionConfig())
-            .eventsRedisConfig(config.getRedisConfig())
+            .eventsFrameworkConfiguration(
+                EventsFrameworkConfiguration.builder().redisConfig(config.getRedisConfig()).build())
             .serviceHeader(AuthorizationServiceHeader.PIPELINE_SERVICE)
             .gitSyncEntitiesConfiguration(gitSyncEntitiesConfigurations)
             .build();

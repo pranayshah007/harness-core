@@ -421,6 +421,7 @@ public class SSOSettingServiceImpl implements SSOSettingService {
     oldSettings.setConnectionSettings(settings.getConnectionSettings());
     oldSettings.setUserSettingsList(settings.getUserSettingsList());
     oldSettings.setGroupSettingsList(settings.getGroupSettingsList());
+    oldSettings.setDisabled(settings.isDisabled());
     if (featureFlagService.isEnabled(FeatureName.LDAP_SECRET_AUTH, settings.getAccountId())) {
       ssoServiceHelper.encryptLdapSecret(oldSettings.getConnectionSettings(), secretManager, settings.getAccountId());
     }

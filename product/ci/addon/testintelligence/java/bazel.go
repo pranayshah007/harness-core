@@ -18,7 +18,8 @@ import (
 )
 
 var (
-	bazelCmd = "bazel"
+	bazelCmd         = "bazel"
+	bazelRuleSepList = []string{".", "/"}
 )
 
 type bazelRunner struct {
@@ -40,7 +41,42 @@ func (b *bazelRunner) AutoDetectPackages() ([]string, error) {
 }
 
 func (b *bazelRunner) AutoDetectTests(ctx context.Context) ([]types.RunnableTest, error) {
-	return []types.RunnableTest{}, nil
+	tests := make([]types.RunnableTest, 0)
+
+	// bazel query 'kind(java.*, tests(//...))'
+	c := fmt.Sprintf("%s query 'kind(java.*, tests(//...))'", bazelCmd)
+	cmdArgs := []string{"-c", c}
+	resp, err := b.cmdContextFactory.CmdContextWithSleep(ctx, time.Duration(0), "sh", cmdArgs...).Output()
+	if err != nil {
+		b.log.Errorw("Got an error while querying bazel", err)
+		return tests, err
+	}
+	// Convert rules to RunnableTest list
+	var test types.RunnableTest
+	for _, r := range strings.Split(string(resp), "\n") {
+		if r == "" {
+			continue
+		}
+		if !strings.Contains(r, ":") || len(strings.Split(r, ":")) < 2 {
+			b.log.Errorw(fmt.Sprintf("Rule does not follow the default format: %s", r))
+			continue
+		}
+		fullPkg := strings.Split(r, ":")[1]
+		for _, s := range bazelRuleSepList {
+			fullPkg = strings.Replace(fullPkg, s, ".", -1)
+		}
+		pkgList := strings.Split(fullPkg, ".")
+		if len(pkgList) < 2 {
+			b.log.Errorw(fmt.Sprintf("Rule does not follow the default format: %s", r))
+			continue
+		}
+		cls := pkgList[len(pkgList)-1]
+		pkg := strings.TrimSuffix(fullPkg, "."+cls)
+		test = types.RunnableTest{Pkg: pkg, Class: cls}
+		test.Autodetect.Rule = r
+		tests = append(tests, test)
+	}
+	return tests, nil
 }
 
 func (b *bazelRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, userArgs, agentConfigPath string, ignoreInstr, runAll bool) (string, error) {
@@ -63,21 +99,22 @@ func (b *bazelRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, us
 	// Use only unique classes
 	pkgs := []string{}
 	clss := []string{}
-	set := make(map[string]interface{})
 	ut := []string{}
+	rls := []string{}
 	for _, t := range tests {
-		if _, ok := set[t.Class]; ok {
-			// The class has already been added
-			continue
-		}
-		set[t.Class] = struct{}{}
 		ut = append(ut, t.Class)
 		pkgs = append(pkgs, t.Pkg)
 		clss = append(clss, t.Class)
+		rls = append(rls, t.Autodetect.Rule)
 	}
 	rulesM := make(map[string]struct{})
 	rules := []string{} // List of unique bazel rules to be executed
 	for i := 0; i < len(pkgs); i++ {
+		// If the rule is present in the test, use it and skip querying bazel to get the rule
+		if rls[i] != "" {
+			rules = append(rules, rls[i])
+			continue
+		}
 		c := fmt.Sprintf("%s query 'attr(name, %s.%s, //...)'", bazelCmd, pkgs[i], clss[i])
 		cmdArgs := []string{"-c", c}
 		resp, err := b.cmdContextFactory.CmdContextWithSleep(ctx, time.Duration(0), "sh", cmdArgs...).Output()

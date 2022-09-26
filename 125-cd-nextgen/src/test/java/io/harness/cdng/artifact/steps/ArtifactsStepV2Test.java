@@ -25,7 +25,9 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
+import io.harness.cdng.artifact.bean.yaml.ArtifactSource;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.PrimaryArtifact;
 import io.harness.cdng.artifact.bean.yaml.SidecarArtifact;
 import io.harness.cdng.artifact.bean.yaml.SidecarArtifactWrapper;
@@ -174,6 +176,78 @@ public class ArtifactsStepV2Test {
         output.getArtifactConfigMap().values().stream().map(ArtifactConfig::getIdentifier).collect(Collectors.toSet()))
         .containsExactly("primary");
     assertThat(response.getCallbackIdsCount()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.YOGESH)
+  @Category(UnitTests.class)
+  public void executeAsyncWithArtifactSources() {
+    ArgumentCaptor<ArtifactsStepV2SweepingOutput> captor = ArgumentCaptor.forClass(ArtifactsStepV2SweepingOutput.class);
+
+    // Prepare test data
+    ArtifactSource source1 = ArtifactSource.builder()
+                                 .identifier("source1-id")
+                                 .sourceType(ArtifactSourceType.DOCKER_REGISTRY)
+                                 .spec(DockerHubArtifactConfig.builder()
+                                           .connectorRef(ParameterField.createValueField("connector"))
+                                           .tag(ParameterField.createValueField("latest"))
+                                           .imagePath(ParameterField.createValueField("nginx"))
+                                           .build())
+                                 .build();
+    ArtifactSource source2 = ArtifactSource.builder()
+                                 .identifier("source2-id")
+                                 .sourceType(ArtifactSourceType.GCR)
+                                 .spec(GcrArtifactConfig.builder()
+                                           .connectorRef(ParameterField.createValueField("connector"))
+                                           .tag(ParameterField.createValueField("latest"))
+                                           .imagePath(ParameterField.createValueField("nginx"))
+                                           .build())
+                                 .build();
+    doReturn(getServiceConfig(
+                 ArtifactListConfig.builder()
+                     .primary(PrimaryArtifact.builder()
+                                  .sources(List.of(source1, source2))
+                                  .primaryArtifactRef(ParameterField.createValueField(source1.getIdentifier()))
+                                  .build())
+                     .sidecar(SidecarArtifactWrapper.builder()
+                                  .sidecar(SidecarArtifact.builder()
+                                               .identifier("s1")
+                                               .sourceType(ArtifactSourceType.DOCKER_REGISTRY)
+                                               .spec(DockerHubArtifactConfig.builder()
+                                                         .connectorRef(ParameterField.createValueField("connector"))
+                                                         .tag(ParameterField.createValueField("latest"))
+                                                         .imagePath(ParameterField.createValueField("nginx"))
+                                                         .build())
+                                               .build())
+                                  .build())
+                     .sidecar(SidecarArtifactWrapper.builder()
+                                  .sidecar(SidecarArtifact.builder()
+                                               .identifier("s2")
+                                               .sourceType(ArtifactSourceType.DOCKER_REGISTRY)
+                                               .spec(DockerHubArtifactConfig.builder()
+                                                         .connectorRef(ParameterField.createValueField("connector"))
+                                                         .tag(ParameterField.createValueField("latest"))
+                                                         .imagePath(ParameterField.createValueField("nginx"))
+                                                         .build())
+                                               .build())
+                                  .build())
+                     .build()))
+        .when(cdStepHelper)
+        .fetchServiceConfigFromSweepingOutput(Mockito.any(Ambiance.class));
+
+    AsyncExecutableResponse response = step.executeAsync(ambiance, stepParameters, inputPackage, null);
+
+    verify(mockSweepingOutputService).consume(any(Ambiance.class), anyString(), captor.capture(), eq(""));
+    verify(expressionResolver, times(1)).updateExpressions(any(Ambiance.class), any());
+
+    ArtifactsStepV2SweepingOutput output = captor.getValue();
+
+    assertThat(output.getArtifactConfigMap()).hasSize(3);
+    assertThat(output.getPrimaryArtifactTaskId()).isNotEmpty();
+    assertThat(
+        output.getArtifactConfigMap().values().stream().map(ArtifactConfig::getIdentifier).collect(Collectors.toSet()))
+        .containsExactly("source1-id", "s1", "s2");
+    assertThat(response.getCallbackIdsCount()).isEqualTo(3);
   }
 
   @Test
