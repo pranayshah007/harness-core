@@ -530,6 +530,8 @@ public class JenkinsRegistryUtils {
     } else {
       childJobName = decodedJobName;
     }
+    //TODO: REMOVE THIS
+    log.info(format("parentJobUrl: [%s]\nparentJobName: [%s]\nchildJobName: [%s] - new delegate", parentJobUrl, parentJobName, childJobName));
 
     return new JobPathDetails(parentJobUrl, parentJobName, childJobName);
   }
