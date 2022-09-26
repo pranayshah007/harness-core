@@ -88,7 +88,7 @@ public class ServiceResourceApiUtilsTest extends CategoryTest {
                                       .createdAt(123456789L)
                                       .lastModifiedAt(987654321L)
                                       .build();
-    ServiceResponse serviceResponse = serviceResourceApiUtils.getServiceResponse(serviceEntity);
+    ServiceResponse serviceResponse = serviceResourceApiUtils.mapToServiceResponse(serviceEntity);
     Set<ConstraintViolation<Object>> violations = validator.validate(serviceResponse);
     assertThat(violations.isEmpty()).as(violations.toString()).isTrue();
 
@@ -116,7 +116,7 @@ public class ServiceResourceApiUtilsTest extends CategoryTest {
                                       .createdAt(123456789L)
                                       .lastModifiedAt(987654321L)
                                       .build();
-    ServiceResponse serviceResponse = serviceResourceApiUtils.getAccessListResponse(serviceEntity);
+    ServiceResponse serviceResponse = serviceResourceApiUtils.mapToAccessListResponse(serviceEntity);
     Set<ConstraintViolation<Object>> violations = validator.validate(serviceResponse);
     assertThat(violations.isEmpty()).as(violations.toString()).isTrue();
 

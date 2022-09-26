@@ -32,6 +32,7 @@ import io.harness.spec.server.ng.model.ServiceRequest;
 import io.harness.spec.server.ng.model.ServiceResponse;
 
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import io.dropwizard.jersey.validation.JerseyViolationException;
 import java.util.ArrayList;
 import java.util.Set;
@@ -40,6 +41,7 @@ import javax.validation.Validator;
 import javax.ws.rs.core.Link;
 import javax.ws.rs.core.Response.ResponseBuilder;
 
+@Singleton
 public class ServiceResourceApiUtils {
   public static final int FIRST_PAGE = 1;
   private final Validator validator;
@@ -49,7 +51,7 @@ public class ServiceResourceApiUtils {
     this.validator = validator;
   }
 
-  public ServiceResponse getServiceResponse(ServiceEntity serviceEntity) {
+  public ServiceResponse mapToServiceResponse(ServiceEntity serviceEntity) {
     ServiceResponse serviceResponse = new ServiceResponse();
     Service service = new Service();
     service.setAccount(serviceEntity.getAccountId());
@@ -69,7 +71,7 @@ public class ServiceResourceApiUtils {
     }
     return serviceResponse;
   }
-  public ServiceResponse getAccessListResponse(ServiceEntity serviceEntity) {
+  public ServiceResponse mapToAccessListResponse(ServiceEntity serviceEntity) {
     ServiceResponse serviceResponse = new ServiceResponse();
     Service service = new Service();
     service.setAccount(serviceEntity.getAccountId());

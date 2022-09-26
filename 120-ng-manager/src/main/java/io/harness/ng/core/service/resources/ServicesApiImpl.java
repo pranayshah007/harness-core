@@ -6,7 +6,7 @@
  */
 
 package io.harness.ng.core.service.resources;
-import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.rbac.CDNGRbacPermissions.SERVICE_CREATE_PERMISSION;
@@ -64,7 +64,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
 
-@OwnedBy(PL)
+@OwnedBy(CDC)
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @NextGenManagerAuth
 public class ServicesApiImpl implements ServicesApi {
@@ -84,7 +84,7 @@ public class ServicesApiImpl implements ServicesApi {
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
         serviceEntity.getOrgIdentifier(), serviceEntity.getProjectIdentifier(), serviceEntity.getAccountId());
     ServiceEntity createdService = serviceEntityService.create(serviceEntity);
-    ServiceResponse serviceResponse = serviceResourceApiUtils.getServiceResponse(createdService);
+    ServiceResponse serviceResponse = serviceResourceApiUtils.mapToServiceResponse(createdService);
     return Response.status(201).entity(serviceResponse).tag(createdService.getVersion().toString()).build();
   }
 
@@ -101,7 +101,7 @@ public class ServicesApiImpl implements ServicesApi {
       throw new InvalidRequestException(String.format("Service with identifier [%s] could not be deleted", service));
     }
     return Response.ok()
-        .entity(serviceResourceApiUtils.getServiceResponse(serviceEntityOptional.get()))
+        .entity(serviceResourceApiUtils.mapToServiceResponse(serviceEntityOptional.get()))
         .tag(serviceEntityOptional.get().getVersion().toString())
         .build();
   }
@@ -121,7 +121,10 @@ public class ServicesApiImpl implements ServicesApi {
       NGServiceConfig ngServiceConfig = NGServiceEntityMapper.toNGServiceConfig(optionalServiceEntity);
       serviceEntity.get().setYaml(NGServiceEntityMapper.toYaml(ngServiceConfig));
     }
-    return Response.ok().entity(serviceResourceApiUtils.getServiceResponse(optionalServiceEntity)).tag(version).build();
+    return Response.ok()
+        .entity(serviceResourceApiUtils.mapToServiceResponse(optionalServiceEntity))
+        .tag(version)
+        .build();
   }
 
   @Override
@@ -146,7 +149,7 @@ public class ServicesApiImpl implements ServicesApi {
     if (isAccessList) {
       List<ServiceResponse> serviceList = serviceEntityService.listRunTimePermission(criteria)
                                               .stream()
-                                              .map(serviceResourceApiUtils::getAccessListResponse)
+                                              .map(serviceResourceApiUtils::mapToAccessListResponse)
                                               .collect(Collectors.toList());
       List<PermissionCheckDTO> permissionCheckDTOS =
           serviceList.stream()
@@ -171,7 +174,7 @@ public class ServicesApiImpl implements ServicesApi {
           serviceEntity.setYaml(NGServiceEntityMapper.toYaml(ngServiceConfig));
         }
       });
-      Page<ServiceResponse> serviceResponsePage = serviceEntities.map(serviceResourceApiUtils::getServiceResponse);
+      Page<ServiceResponse> serviceResponsePage = serviceEntities.map(serviceResourceApiUtils::mapToServiceResponse);
       List<ServiceResponse> serviceList = serviceResponsePage.getContent();
 
       ResponseBuilder responseBuilder = Response.ok();
@@ -198,7 +201,7 @@ public class ServicesApiImpl implements ServicesApi {
     ServiceEntity updateService = serviceEntityService.update(requestService);
 
     return Response.ok()
-        .entity(serviceResourceApiUtils.getServiceResponse(updateService))
+        .entity(serviceResourceApiUtils.mapToServiceResponse(updateService))
         .tag(updateService.getVersion().toString())
         .build();
   }

@@ -160,7 +160,7 @@ public class ServicesApiImplTest extends CategoryTest {
         .thenReturn(true);
     when(serviceEntityService.get(any(), any(), any(), any(), eq(false))).thenReturn(Optional.of(entity));
     when(serviceEntityManagementService.deleteService(any(), any(), any(), any(), any())).thenReturn(true);
-    when(serviceResourceApiUtils.getServiceResponse(any())).thenReturn(serviceResponse);
+    when(serviceResourceApiUtils.mapToServiceResponse(any())).thenReturn(serviceResponse);
 
     Response response = servicesApiImpl.deleteService(org, project, slug, account);
 
