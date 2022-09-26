@@ -1599,6 +1599,10 @@
 22010:io.harness.request.HttpRequestInfo
 22011:io.harness.request.RequestMetadata
 22012:io.harness.ModuleType
+25001:io.harness.delegate.beans.ci.InfraInfo.Type
+25002:io.harness.delegate.beans.ci.DockerInfraInfo
+25003:io.harness.delegate.beans.ci.VmInfraInfo
+25004:io.harness.delegate.beans.ci.DliteVmInfraInfo
 26001:io.harness.connector.ConnectorDTO
 26002:io.harness.connector.ConnectorInfoDTO
 29112:io.harness.delegate.beans.connector.jenkins.JenkinsAuthCredentialsDTO

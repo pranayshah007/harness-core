@@ -42,6 +42,7 @@ public class VmPluginCompatibleStepSerializer {
       StageInfraDetails stageInfraDetails, String identifier, ParameterField<Timeout> parameterFieldTimeout,
       String stepName) {
     long timeout = TimeoutUtils.getTimeoutInSeconds(parameterFieldTimeout, pluginCompatibleStep.getDefaultTimeout());
+    StageInfraDetails.Type type = stageInfraDetails.getType();
     Map<String, String> envVars = pluginSettingUtils.getPluginCompatibleEnvVariables(
         pluginCompatibleStep, identifier, timeout, ambiance, Type.VM);
     String image = CIStepInfoUtils.getPluginCustomStepImage(

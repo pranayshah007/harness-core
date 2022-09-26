@@ -153,9 +153,11 @@ io.harness.beans.environment.K8BuildJobEnvInfo
 io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml
 io.harness.beans.yaml.extended.infrastrucutre.K8sHostedInfraYaml
 io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml
+io.harness.beans.yaml.extended.infrastrucutre.DockerInfraYaml
 io.harness.beans.yaml.extended.platform.Platform
 io.harness.beans.yaml.extended.platform.ArchType
 io.harness.beans.yaml.extended.runtime.CloudRuntime
+io.harness.beans.yaml.extended.runtime.DockerRuntime
 io.harness.ci.beans.entities.LogServiceConfig
 io.harness.beans.execution.ManualExecutionSource
 io.harness.beans.yaml.extended.infrastrucutre.OSType

@@ -5,19 +5,16 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.beans.yaml.extended.platform;
+package io.harness.beans.yaml.extended.runtime;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.yaml.extended.infrastrucutre.OSType;
-import io.harness.pms.yaml.ParameterField;
-import io.harness.yaml.YamlSchemaTypes;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
+import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -28,15 +25,16 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@JsonTypeName("platform")
-@TypeAlias("CIPlatform")
-@RecasterAlias("io.harness.beans.yaml.extended.platform.Platform")
+@JsonTypeName("Docker")
+@TypeAlias("DockerRuntime")
 @OwnedBy(CI)
-public class Platform {
-  @YamlSchemaTypes({runtime})
-  @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.infrastrucutre.OSType")
-  private ParameterField<OSType> os;
-  @YamlSchemaTypes({runtime})
-  @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.platform.ArchType")
-  private ParameterField<ArchType> arch;
+@RecasterAlias("io.harness.beans.yaml.extended.runtime.DockerRuntime")
+public class DockerRuntime implements Runtime {
+  @Builder.Default @NotNull @ApiModelProperty(allowableValues = "Docker") private Type type = Type.DOCKER;
+  @NotNull private DockerRuntimeSpec spec;
+
+  @Data
+  @Builder
+  @NoArgsConstructor
+  public static class DockerRuntimeSpec {}
 }

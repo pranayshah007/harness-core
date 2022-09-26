@@ -46,6 +46,7 @@ import io.harness.beans.yaml.extended.platform.ArchType;
 import io.harness.beans.yaml.extended.platform.Platform;
 import io.harness.ci.buildstate.CodebaseUtils;
 import io.harness.ci.buildstate.ConnectorUtils;
+import io.harness.ci.buildstate.InfraInfoUtils;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.logserviceclient.CILogServiceUtils;
 import io.harness.ci.tiserviceclient.TIServiceUtils;
@@ -55,6 +56,8 @@ import io.harness.ci.utils.InfrastructureUtils;
 import io.harness.ci.utils.ValidationUtils;
 import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.connector.SecretSpecBuilder;
+import io.harness.delegate.beans.ci.InfraInfo;
+import io.harness.delegate.beans.ci.VmInfraInfo;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.pod.SecretParams;
 import io.harness.delegate.beans.ci.vm.CIVmInitializeTaskParams;
@@ -149,17 +152,20 @@ public class VmInitializeTaskParamsBuilder {
     return getVmInitializeParams(initializeStepInfo, ambiance, poolId);
   }
 
-  private CIVmInitializeTaskParams getVmInitializeParams(
+  public CIVmInitializeTaskParams getVmInitializeParams(
       InitializeStepInfo initializeStepInfo, Ambiance ambiance, String poolId) {
     Infrastructure infrastructure = initializeStepInfo.getInfrastructure();
+    if (infrastructure == null) {
+      throw new CIStageExecutionException("Input infrastructure can not be empty");
+    }
+
+    InfraInfo infraInfo = InfraInfoUtils.validateInfrastructureAndGetInfraInfo(infrastructure);
+
     String accountID = AmbianceUtils.getAccountId(ambiance);
-
-    validateInfrastructure(infrastructure);
-
     IntegrationStageConfig integrationStageConfig = initializeStepInfo.getStageElementConfig();
     vmInitializeUtils.validateStageConfig(integrationStageConfig, accountID);
 
-    OSType os = VmInitializeUtils.getOS(infrastructure);
+    OSType os = InfraInfoUtils.getInfraOS(infrastructure);
     Map<String, String> volToMountPath =
         vmInitializeUtils.getVolumeToMountPath(integrationStageConfig.getSharedPaths(), os);
     String workDir = vmInitializeUtils.getWorkDir(os);
@@ -171,8 +177,7 @@ public class VmInitializeTaskParamsBuilder {
       harnessImageConnectorRef = optionalHarnessImageConnectorRef.get().getValue();
     }
 
-    saveStageInfraDetails(ambiance, poolId, workDir, harnessImageConnectorRef, volToMountPath,
-        initializeStepInfo.getInfrastructure().getType());
+    saveStageInfraDetails(ambiance, poolId, workDir, harnessImageConnectorRef, volToMountPath, infraInfo);
     StageDetails stageDetails = getStageDetails(ambiance);
 
     CIExecutionArgs ciExecutionArgs = CIExecutionArgs.builder()
@@ -228,20 +233,17 @@ public class VmInitializeTaskParamsBuilder {
         .volToMountPath(volToMountPath)
         .serviceDependencies(getServiceDependencies(ambiance, integrationStageConfig))
         .tags(vmInitializeUtils.getBuildTags(ambiance, stageDetails))
+        .infraInfo(infraInfo)
         .build();
   }
 
-  public void validateInfrastructure(Infrastructure infrastructure) {
+  public static void validateInfrastructure(Infrastructure infrastructure) {
     if (infrastructure == null) {
-      throw new CIStageExecutionException("Input infrastructure can not be empty");
-    }
-
-    if (infrastructure.getType() == Infrastructure.Type.HOSTED_VM) {
-      return;
+      throw new CIStageExecutionException("Input infrastructure for vm can not be empty");
     }
 
     if (((VmInfraYaml) infrastructure).getSpec() == null) {
-      throw new CIStageExecutionException("Input infrastructure can not be empty");
+      throw new CIStageExecutionException("VM input infrastructure can not be empty");
     }
 
     VmInfraYaml vmInfraYaml = (VmInfraYaml) infrastructure;
@@ -251,7 +253,16 @@ public class VmInitializeTaskParamsBuilder {
     }
   }
 
-  private String getPoolName(VmPoolYaml vmPoolYaml) {
+  public static InfraInfo validateInfrastructureAndGetInfraInfo(Infrastructure infrastructure) {
+    validateInfrastructure(infrastructure);
+
+    VmPoolYaml vmPoolYaml = (VmPoolYaml) ((VmInfraYaml) infrastructure).getSpec();
+    String poolId = VmInitializeTaskParamsBuilder.getPoolName(vmPoolYaml);
+
+    return VmInfraInfo.builder().poolId(poolId).build();
+  }
+
+  public static String getPoolName(VmPoolYaml vmPoolYaml) {
     String poolName = vmPoolYaml.getSpec().getPoolName().getValue();
     if (isNotEmpty(poolName)) {
       return poolName;
@@ -265,29 +276,32 @@ public class VmInitializeTaskParamsBuilder {
   }
 
   private void saveStageInfraDetails(Ambiance ambiance, String poolId, String workDir, String harnessImageConnectorRef,
-      Map<String, String> volToMountPath, Infrastructure.Type infraType) {
-    if (infraType == Infrastructure.Type.VM) {
+      Map<String, String> volToMountPath, InfraInfo infraInfo) {
+    InfraInfo.Type type = infraInfo.getType();
+    if (type == InfraInfo.Type.VM || type == InfraInfo.Type.DOCKER) {
       consumeSweepingOutput(ambiance,
           VmStageInfraDetails.builder()
               .poolId(poolId)
               .workDir(workDir)
               .volToMountPathMap(volToMountPath)
               .harnessImageConnectorRef(harnessImageConnectorRef)
+              .infraInfo(infraInfo)
               .build(),
           STAGE_INFRA_DETAILS);
-    } else if (infraType == Infrastructure.Type.HOSTED_VM) {
+    } else if (type == InfraInfo.Type.DLITE_VM) {
       consumeSweepingOutput(ambiance,
           DliteVmStageInfraDetails.builder()
               .poolId(poolId)
               .workDir(workDir)
               .volToMountPathMap(volToMountPath)
               .harnessImageConnectorRef(harnessImageConnectorRef)
+              .infraInfo(infraInfo)
               .build(),
           STAGE_INFRA_DETAILS);
     }
   }
 
-  private StageDetails getStageDetails(Ambiance ambiance) {
+  public StageDetails getStageDetails(Ambiance ambiance) {
     OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputResolver.resolveOptional(
         ambiance, RefObjectUtils.getSweepingOutputRefObject(ContextElement.stageDetails));
     if (!optionalSweepingOutput.isFound()) {
@@ -489,6 +503,7 @@ public class VmInitializeTaskParamsBuilder {
         .poolID(params.getPoolID())
         .config(config)
         .logKey(params.getLogKey())
+        .infraType(Infrastructure.Type.HOSTED_VM.toString())
         .build();
   }
 

@@ -238,13 +238,13 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
       throws Exception {
     ResponseData responseData = serializedResponseDataHelper.deserialize(responseSupplier.get());
     CITaskExecutionResponse ciTaskExecutionResponse = (CITaskExecutionResponse) responseData;
-    if (ciTaskExecutionResponse.getType() == CITaskExecutionResponse.Type.K8) {
+    CITaskExecutionResponse.Type type = ciTaskExecutionResponse.getType();
+    if (type == CITaskExecutionResponse.Type.K8) {
       return handleK8TaskResponse(ambiance, stepElementParameters, ciTaskExecutionResponse);
-    } else if (ciTaskExecutionResponse.getType() == CITaskExecutionResponse.Type.VM) {
+    } else if (type == CITaskExecutionResponse.Type.VM || type == CITaskExecutionResponse.Type.DOCKER) {
       return handleVmTaskResponse(ciTaskExecutionResponse);
     } else {
-      throw new CIStageExecutionException(
-          format("Invalid infra type for task response: %s", ciTaskExecutionResponse.getType()));
+      throw new CIStageExecutionException(format("Invalid infra type for task response: %s", type));
     }
   }
 
@@ -460,7 +460,7 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
 
     List<String> connectorRefs =
         IntegrationStageUtils.getStageConnectorRefs(initializeStepInfo.getStageElementConfig());
-    if (infrastructure.getType() == Infrastructure.Type.VM
+    if (infrastructure.getType() == Infrastructure.Type.VM || infrastructure.getType() == Infrastructure.Type.DOCKER
         || infrastructure.getType() == Infrastructure.Type.HOSTED_VM) {
       if (!isEmpty(connectorRefs)) {
         entityDetails.addAll(
