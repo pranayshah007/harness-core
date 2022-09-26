@@ -40,6 +40,7 @@ import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.ArtifactSummary;
+import io.harness.cdng.artifact.bean.yaml.ArtifactSourceConfig;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
@@ -391,7 +392,9 @@ public class ServiceResourceV2 {
           description =
               "Specifies the sorting criteria of the list. Like sorting based on the last updated entity, alphabetical sorting in an ascending or descending order")
       @QueryParam("sort") List<String> sort,
-      @QueryParam("type") ServiceDefinitionType type, @QueryParam("gitOpsEnabled") Boolean gitOpsEnabled) {
+      @QueryParam("type") ServiceDefinitionType type, @QueryParam("gitOpsEnabled") Boolean gitOpsEnabled,
+      @QueryParam("deploymentTemplateIdentifier") String deploymentTemplateIdentifier,
+      @QueryParam("versionLabel") String versionLabel) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
         Resource.of(PROJECT, projectIdentifier), VIEW_PROJECT_PERMISSION, "Unauthorized to list services");
 
@@ -400,10 +403,20 @@ public class ServiceResourceV2 {
     if (isNotEmpty(serviceIdentifiers)) {
       criteria.and(ServiceEntityKeys.identifier).in(serviceIdentifiers);
     }
-    List<ServiceResponse> serviceList = serviceEntityService.listRunTimePermission(criteria)
-                                            .stream()
-                                            .map(ServiceElementMapper::toAccessListResponseWrapper)
-                                            .collect(Collectors.toList());
+    List<ServiceResponse> serviceList;
+    if (type == ServiceDefinitionType.CUSTOM_DEPLOYMENT && !isEmpty(deploymentTemplateIdentifier)
+        && !isEmpty(versionLabel)) {
+      serviceList = serviceEntityService.listRunTimePermission(criteria)
+                        .stream()
+                        .filter(serviceEntity -> isDTService(deploymentTemplateIdentifier, versionLabel, serviceEntity))
+                        .map(ServiceElementMapper::toAccessListResponseWrapper)
+                        .collect(Collectors.toList());
+    } else {
+      serviceList = serviceEntityService.listRunTimePermission(criteria)
+                        .stream()
+                        .map(ServiceElementMapper::toAccessListResponseWrapper)
+                        .collect(Collectors.toList());
+    }
     List<PermissionCheckDTO> permissionCheckDTOS =
         serviceList.stream().map(CDNGRbacUtility::serviceResponseToPermissionCheckDTO).collect(Collectors.toList());
     List<AccessControlDTO> accessControlList =
@@ -539,6 +552,15 @@ public class ServiceResourceV2 {
     }
   }
 
+  @GET
+  @Path("/dummy-artifactSourceConfig-api")
+  @ApiOperation(value = "This is dummy api to expose ArtifactSourceConfig", nickname = "dummyArtifactSourceConfigApi")
+  @Hidden
+  // do not delete this.
+  public ResponseDTO<ArtifactSourceConfig> getArtifactSourceConfig() {
+    return ResponseDTO.newResponse(ArtifactSourceConfig.builder().build());
+  }
+
   private List<ServiceResponse> filterByPermissionAndId(
       List<AccessControlDTO> accessControlList, List<ServiceResponse> serviceList) {
     List<ServiceResponse> filteredAccessControlDtoList = new ArrayList<>();
@@ -578,7 +600,7 @@ public class ServiceResourceV2 {
         if (!isNull(serviceSpec)) {
           JsonNode customDeploymentRef = serviceSpec.get("customDeploymentRef");
           if (!isNull(customDeploymentRef)) {
-            JsonNode ref = customDeploymentRef.get("ref");
+            JsonNode ref = customDeploymentRef.get("templateRef");
             JsonNode versionLabelNode = customDeploymentRef.get("versionLabel");
             return ref.asText().equals(deploymentTemplateIdentifier) && versionLabelNode.asText().equals(versionLabel);
           }

@@ -26,7 +26,6 @@ import com.google.inject.Provider;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
-import okhttp3.ConnectionPool;
 import okhttp3.OkHttpClient;
 import org.apache.commons.lang3.StringUtils;
 import retrofit2.Retrofit;
@@ -84,7 +83,7 @@ public class VerificationServiceClientFactory implements Provider<VerificationSe
       SSLContext sslContext = sslContextBuilder.build();
 
       return Http.getOkHttpClientWithProxyAuthSetup()
-          .connectionPool(new ConnectionPool())
+          .connectionPool(Http.connectionPool)
           .retryOnConnectionFailure(true)
           .addInterceptor(new DelegateAuthInterceptor(this.tokenGenerator))
           .sslSocketFactory(sslContext.getSocketFactory(), trustManager)

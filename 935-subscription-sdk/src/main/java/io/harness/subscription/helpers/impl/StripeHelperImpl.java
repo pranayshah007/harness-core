@@ -66,6 +66,7 @@ public class StripeHelperImpl implements StripeHelper {
   private List<String> subscriptionExpandList = Arrays.asList("latest_invoice.payment_intent");
   private static final String ACCOUNT_IDENTIFIER_KEY = "accountIdentifier";
   private static final String MODULE_TYPE_KEY = "moduleType";
+  private static final String CUSTOMER_EMAIL_KEY = "customer_email";
   private static final String SEARCH_MODULE_TYPE_EDITION_BILLED_MAX =
       "metadata['module']:'%s' AND metadata['type']:'%s' AND metadata['edition']:'%s' AND metadata['billed']:'%s' AND metadata['max']:'%s'";
   private static final String SEARCH_MODULE_TYPE_EDITION_BILLED =
@@ -250,6 +251,7 @@ public class StripeHelperImpl implements StripeHelper {
     Map<String, String> metadata = new HashMap<>();
     metadata.put(ACCOUNT_IDENTIFIER_KEY, subscriptionParams.getAccountIdentifier());
     metadata.put(MODULE_TYPE_KEY, subscriptionParams.getModuleType());
+    metadata.put(CUSTOMER_EMAIL_KEY, subscriptionParams.getCustomerEmail());
     creationParamsBuilder.setMetadata(metadata);
 
     // Set payment method

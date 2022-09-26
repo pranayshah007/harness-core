@@ -10,7 +10,7 @@ package io.harness.filestore.service.impl;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
-import static io.harness.springdata.TransactionUtils.DEFAULT_TRANSACTION_RETRY_POLICY;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.DuplicateFieldException;
@@ -40,7 +40,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 @Singleton
 @Slf4j
 public class FileFailsafeServiceImpl implements FileFailsafeService {
-  private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_TRANSACTION_RETRY_POLICY;
+  private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_RETRY_POLICY;
 
   private final OutboxService outboxService;
   private final TransactionTemplate transactionTemplate;

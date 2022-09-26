@@ -26,6 +26,7 @@ message PollingPayloadData {
     JenkinsPayload jenkinsPayload = 13;
     GitPollingPayload gitPollPayload = 14;
     GARPayload garPayload = 15;
+    GithubPackagesPollingPayload githubPackagesPollingPayload = 16;
   }
 }
 
@@ -44,6 +45,7 @@ enum Type {
   JENKINS = 11;
   GIT_POLL = 12;
   GOOGLE_ARTIFACT_REGISTRY = 13;
+  GITHUB_PACKAGES = 14;
 }
 
 message HttpHelmPayload {
@@ -122,10 +124,15 @@ message GitPollingPayload {
   string webhookId = 2;
   int32 pollInterval = 3;
 }
-
 message GARPayload {
   string region = 1;
   string project = 2;
   string repositoryName = 3;
   string pkg = 4;
+}
+
+message GithubPackagesPollingPayload {
+  string org = 1;
+  string packageName = 2;
+  string packageType = 3;
 }

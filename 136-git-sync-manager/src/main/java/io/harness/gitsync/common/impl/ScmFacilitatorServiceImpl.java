@@ -204,7 +204,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
 
     ApiResponseDTO response = getGetFileAPIResponse(scmConnector, fileContent, getLatestCommitOnFileResponse);
 
-    if (ScmApiErrorHandlingHelper.isFailureResponse(fileContent.getStatus(), scmConnector.getConnectorType())) {
+    if (ScmApiErrorHandlingHelper.isFailureResponse(response.getStatusCode(), scmConnector.getConnectorType())) {
       ScmApiErrorHandlingHelper.processAndThrowError(ScmApis.GET_FILE, scmConnector.getConnectorType(),
           scmConnector.getUrl(), response.getStatusCode(), response.getError(),
           ErrorMetadata.builder()

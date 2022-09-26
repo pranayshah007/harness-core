@@ -192,6 +192,7 @@ import io.harness.persistence.HPersistence;
 import io.harness.polling.client.PollResourceClientModule;
 import io.harness.project.ProjectClientModule;
 import io.harness.queue.QueueController;
+import io.harness.redis.CompatibleFieldSerializerCodec;
 import io.harness.redis.RedisConfig;
 import io.harness.remote.client.ClientMode;
 import io.harness.scheduler.PersistentScheduler;
@@ -241,6 +242,8 @@ import io.harness.time.TimeModule;
 import io.harness.timescaledb.TimeScaleDBConfig;
 import io.harness.timescaledb.TimeScaleDBService;
 import io.harness.timescaledb.TimeScaleDBServiceImpl;
+import io.harness.timescaledb.retention.RetentionManager;
+import io.harness.timescaledb.retention.RetentionManagerImpl;
 import io.harness.usermembership.UserMembershipClientModule;
 import io.harness.version.VersionModule;
 
@@ -284,6 +287,7 @@ import software.wings.core.outbox.WingsOutboxEventHandler;
 import software.wings.dl.WingsMongoPersistence;
 import software.wings.dl.WingsPersistence;
 import software.wings.dl.exportimport.WingsMongoExportImport;
+import software.wings.expression.SecretManagerModule;
 import software.wings.features.ApiKeysFeature;
 import software.wings.features.ApprovalFlowFeature;
 import software.wings.features.AuditTrailFeature;
@@ -825,6 +829,7 @@ import org.jetbrains.annotations.NotNull;
 @TargetModule(_360_CG_MANAGER)
 public class WingsModule extends AbstractModule implements ServersModule {
   private static final int OPEN_CENSUS_EXPORT_INTERVAL_MINUTES = 5;
+  private static final String RETENTION_PERIOD_FORMAT = "%s months";
   private final String hashicorpvault = "hashicorpvault";
   private final MainConfiguration configuration;
   private final StartupMode startupMode;
@@ -864,6 +869,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
   @Named("atmosphere")
   @Singleton
   RedisConfig redisAtmoshphereConfig() {
+    configuration.getRedisAtmosphereConfig().setCodec(CompatibleFieldSerializerCodec.class);
     return configuration.getRedisAtmosphereConfig();
   }
 
@@ -1306,6 +1312,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     }
 
     install(new FileServiceModule(configuration.getFileStorageMode(), configuration.getClusterName()));
+
     bind(AlertNotificationRuleChecker.class).to(AlertNotificationRuleCheckerImpl.class);
 
     bind(new TypeLiteral<NotificationDispatcher<UserGroup>>() {})
@@ -1359,6 +1366,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     try {
       bind(TimeScaleDBService.class)
           .toConstructor(TimeScaleDBServiceImpl.class.getConstructor(TimeScaleDBConfig.class));
+      bind(RetentionManager.class).to(RetentionManagerImpl.class);
     } catch (NoSuchMethodException e) {
       log.error("TimeScaleDbServiceImpl Initialization Failed in due to missing constructor", e);
     }
@@ -1405,6 +1413,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
 
     install(new PerpetualTaskServiceModule());
     install(CESetupServiceModule.getInstance());
+    install(new SecretManagerModule());
     install(new CVNextGenCommonsServiceModule());
     try {
       install(new ConnectorResourceClientModule(configuration.getNgManagerServiceHttpClientConfig(),
@@ -1766,5 +1775,12 @@ public class WingsModule extends AbstractModule implements ServersModule {
   @Singleton
   public ObjectMapper getYamlSchemaObjectMapperWithoutNamed() {
     return Jackson.newObjectMapper();
+  }
+
+  @Provides
+  @Singleton
+  @Named("cdTsDbRetentionPeriodMonths")
+  public String cdTsDbRetentionPeriodMonths() {
+    return String.format(RETENTION_PERIOD_FORMAT, configuration.getCdTsDbRetentionPeriodMonths());
   }
 }

@@ -7,6 +7,9 @@
 
 package io.harness.cvng.core.beans.params;
 
+import io.harness.NGCommonEntityConstants;
+
+import io.swagger.v3.oas.annotations.Parameter;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.QueryParam;
 import lombok.AccessLevel;
@@ -21,6 +24,14 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @NoArgsConstructor
 public class PageParams {
-  @QueryParam("pageNumber") @DefaultValue("0") @NonNull int page;
-  @QueryParam("pageSize") @DefaultValue("10") @NonNull int size;
+  @Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE)
+  @QueryParam("pageNumber")
+  @DefaultValue("0")
+  @NonNull
+  int page;
+  @Parameter(description = NGCommonEntityConstants.SIZE_PARAM_MESSAGE)
+  @QueryParam("pageSize")
+  @DefaultValue("10")
+  @NonNull
+  int size;
 }

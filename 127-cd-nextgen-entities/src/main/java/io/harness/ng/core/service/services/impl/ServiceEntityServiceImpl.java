@@ -8,14 +8,12 @@
 package io.harness.ng.core.service.services.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.beans.FeatureName.HARD_DELETE_ENTITIES;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
-import static io.harness.pms.yaml.YamlNode.PATH_SEP;
-import static io.harness.springdata.TransactionUtils.DEFAULT_TRANSACTION_RETRY_POLICY;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.String.format;
@@ -58,10 +56,10 @@ import io.harness.outbox.api.OutboxService;
 import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
+import io.harness.pms.yaml.YamlNodeUtils;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.repositories.UpsertOptions;
 import io.harness.repositories.service.spring.ServiceRepository;
-import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.PageUtils;
 import io.harness.utils.YamlPipelineUtils;
 
@@ -113,8 +111,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   private static final Integer QUERY_PAGE_SIZE = 10000;
   @Inject @Named(OUTBOX_TRANSACTION_TEMPLATE) private final TransactionTemplate transactionTemplate;
   private final OutboxService outboxService;
-  private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_TRANSACTION_RETRY_POLICY;
-  private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
+  private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_RETRY_POLICY;
   private final ServiceOverrideService serviceOverrideService;
   private final ServiceEntitySetupUsageHelper entitySetupUsageHelper;
 
@@ -127,14 +124,12 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   @Inject
   public ServiceEntityServiceImpl(ServiceRepository serviceRepository, EntitySetupUsageService entitySetupUsageService,
       @Named(ENTITY_CRUD) Producer eventProducer, OutboxService outboxService, TransactionTemplate transactionTemplate,
-      NGFeatureFlagHelperService ngFeatureFlagHelperService, ServiceOverrideService serviceOverrideService,
-      ServiceEntitySetupUsageHelper entitySetupUsageHelper) {
+      ServiceOverrideService serviceOverrideService, ServiceEntitySetupUsageHelper entitySetupUsageHelper) {
     this.serviceRepository = serviceRepository;
     this.entitySetupUsageService = entitySetupUsageService;
     this.eventProducer = eventProducer;
     this.outboxService = outboxService;
     this.transactionTemplate = transactionTemplate;
-    this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;
     this.serviceOverrideService = serviceOverrideService;
     this.entitySetupUsageHelper = entitySetupUsageHelper;
   }
@@ -270,8 +265,6 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
     checkArgument(isNotEmpty(accountId), "accountId must be present");
     checkArgument(isNotEmpty(serviceIdentifier), "serviceIdentifier must be present");
 
-    final boolean shouldHardDelete = ngFeatureFlagHelperService.isEnabled(accountId, HARD_DELETE_ENTITIES);
-
     ServiceEntity serviceEntity = ServiceEntity.builder()
                                       .accountId(accountId)
                                       .orgIdentifier(orgIdentifier)
@@ -285,21 +278,19 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
         get(accountId, orgIdentifier, projectIdentifier, serviceIdentifier, false);
 
     if (serviceEntityOptional.isPresent()) {
-      boolean success =
-          Failsafe.with(DEFAULT_TRANSACTION_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
-            ServiceEntity serviceEntityRetrieved = serviceEntityOptional.get();
-            final boolean deleted =
-                shouldHardDelete ? serviceRepository.delete(criteria) : serviceRepository.softDelete(criteria);
-            if (!deleted) {
-              throw new InvalidRequestException(
-                  String.format("Service [%s] under Project[%s], Organization [%s] couldn't be deleted.",
-                      serviceEntity.getIdentifier(), projectIdentifier, orgIdentifier));
-            }
+      boolean success = Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
+        ServiceEntity serviceEntityRetrieved = serviceEntityOptional.get();
+        final boolean deleted = serviceRepository.delete(criteria);
+        if (!deleted) {
+          throw new InvalidRequestException(
+              String.format("Service [%s] under Project[%s], Organization [%s] couldn't be deleted.",
+                  serviceEntity.getIdentifier(), projectIdentifier, orgIdentifier));
+        }
 
-            outboxService.save(new ServiceDeleteEvent(accountId, serviceEntityRetrieved.getOrgIdentifier(),
-                serviceEntityRetrieved.getProjectIdentifier(), serviceEntityRetrieved));
-            return true;
-          }));
+        outboxService.save(new ServiceDeleteEvent(accountId, serviceEntityRetrieved.getOrgIdentifier(),
+            serviceEntityRetrieved.getProjectIdentifier(), serviceEntityRetrieved));
+        return true;
+      }));
       processQuietly(()
                          -> serviceOverrideService.deleteAllInProjectForAService(
                              accountId, orgIdentifier, projectIdentifier, serviceIdentifier));
@@ -593,10 +584,6 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
 
   @Override
   public boolean forceDeleteAllInProject(String accountId, String orgIdentifier, String projectIdentifier) {
-    final boolean shouldHardDelete = ngFeatureFlagHelperService.isEnabled(accountId, HARD_DELETE_ENTITIES);
-    if (!shouldHardDelete) {
-      return false;
-    }
     Criteria criteria = CoreCriteriaUtils.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier);
     return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
       DeleteResult deleteResult = serviceRepository.deleteMany(criteria);
@@ -631,10 +618,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
     }
 
     List<String> splitPaths = List.of(split).subList(index, split.length);
-    String fqnWithinServiceEntityYaml = String.join(PATH_SEP, splitPaths);
-
-    // convert sidecars[0]/sidecar to sidecars/[0]/
-    fqnWithinServiceEntityYaml = fqnWithinServiceEntityYaml.replace("[", "/[");
+    String fqnWithinServiceEntityYaml = String.join(".", splitPaths);
 
     YamlNode service;
     try {
@@ -647,7 +631,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       throw new InvalidRequestException("Service entity yaml must be rooted at \"service\"");
     }
 
-    YamlNode leafNode = service.gotoPath(fqnWithinServiceEntityYaml);
+    YamlNode leafNode = YamlNodeUtils.goToPathUsingFqn(service, fqnWithinServiceEntityYaml);
     if (leafNode == null) {
       throw new InvalidRequestException(
           format("Unable to locate path %s within service yaml", fqnWithinServiceEntityYaml));

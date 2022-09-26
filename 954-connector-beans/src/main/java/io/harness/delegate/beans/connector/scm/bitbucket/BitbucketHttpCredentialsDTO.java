@@ -7,6 +7,8 @@
 
 package io.harness.delegate.beans.connector.scm.bitbucket;
 
+import io.harness.annotation.RecasterFieldName;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -29,6 +31,7 @@ import lombok.experimental.FieldDefaults;
     description = "This contains details of the Bitbucket credentials used via HTTP connections")
 public class BitbucketHttpCredentialsDTO implements BitbucketCredentialsDTO {
   @NotNull BitbucketHttpAuthenticationType type;
+  @RecasterFieldName(name = "spec")
   @JsonProperty("spec")
   @JsonTypeInfo(
       use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXTERNAL_PROPERTY, visible = true)

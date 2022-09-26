@@ -1,166 +1,120 @@
 {
   "pipeline": {
-    "name": "ARM_RG",
-    "identifier": "ARM_RG",
+    "name": "aaa",
+    "identifier": "aaa",
+    "projectIdentifier": "NGPipeAutoDemoProUsF9qDyXU8",
+    "orgIdentifier": "CF_PipelineOrg",
     "tags": {
-      "__uuid": "jQQAVQ16SV2qsjk2oMh3jw"
+      "__uuid": "aMUsMxaGQQi6Hh0iwj0NYw"
     },
     "stages": [
       {
         "stage": {
-          "name": "cf-stage-test",
-          "identifier": "cfstagetest",
+          "name": "aaa",
+          "identifier": "aaa",
           "description": "",
           "type": "Deployment",
           "spec": {
-            "serviceConfig": {
-              "service": {
-                "name": "service-test",
-                "identifier": "service-test",
-                "__uuid": "_fev-cbNSjGC07GocRZopA"
-              },
-              "serviceDefinition": {
-                "type": "Kubernetes",
-                "spec": {
-                  "variables": [
-                    {
-                      "name": "Email",
-                      "type": "String",
-                      "value": "envVariableEmailTo@harness.io",
-                      "__uuid": "APzZbYDeSZG03s1iZdVvOA"
-                    }
-                  ],
-                  "manifest": [],
-                  "__uuid": "PCfCf0OyRyKmHcqexYIvMQ"
-                },
-                "__uuid": "vnagxBuTRZKALsN5GEoJMA"
-              },
-              "__uuid": "vT5e9vm_RpuPCLskIr9Fww"
+            "deploymentType": "Kubernetes",
+            "service": {
+              "serviceRef": "dfgh",
+              "__uuid": "rsBvwsqRSROlc-u4qy3iFg"
             },
-            "infrastructure": {
-              "environment": {
-                "name": "environment-test",
-                "identifier": "environment-test",
-                "description": "",
-                "type": "PreProduction",
-                "__uuid": "jIGEnj6fRsOrjgzOVbqThw"
-              },
-              "infrastructureDefinition": {
-                "type": "KubernetesDirect",
-                "spec": {
-                  "connectorRef": "org.KubernetesConnectorForAutomationTest",
-                  "namespace": "cdp-k8s-qa-sanity",
-                  "releaseName": "releasename-933006",
-                  "__uuid": "Kcjs-8LyRdmkm1VhrWPoxQ"
-                },
-                "provisioner": {
-                  "steps": [
-                    {
-                      "step": {
-                        "type": "AzureCreateARMResource",
-                        "name": "Create AzureResources",
-                        "identifier": "asdf",
-                        "timeout": "10m",
-                        "spec": {
-                          "provisionerIdentifier": "foobar",
-                          "configuration": {
-                            "connectorRef": "foobar",
-                            "template": {
-                              "store": {
-                                "type": "Github",
-                                "spec": {
-                                  "gitFetchType": "Branch",
-                                  "connectorRef": "bp2",
-                                  "branch": "main",
-                                  "paths": [
-                                    "infra/azuredeploy.parameters.json"
-                                  ],
-                                  "__uuid": "RLQhBoZWQNiNW8r8IsBJiQ"
-                                },
-                                "__uuid": "FpFtPfrCTIiztMmYYBhfIw"
-                              },
-                              "__uuid": "p1zc5cm5SSKkbEoaFqo0zA"
-                            },
-                            "parameters": {
-                              "store": {
-                                "type": "Github",
-                                "spec": {
-                                  "gitFetchType": "Branch",
-                                  "connectorRef": "bp2",
-                                  "branch": "main",
-                                  "paths": [
-                                    "infra/azuredeploy.parameters.json"
-                                  ],
-                                  "__uuid": "IYTuYYiGSC-iGqRCxxb0AQ"
-                                },
-                                "__uuid": "L6Nr8FQMRpeEmdUzHSNbiQ"
-                              },
-                              "__uuid": "tff3W1w5S8e-wnxzcIe3dg"
-                            },
-                            "scope": {
-                              "type": "ResourceGroup",
-                              "spec": {
-                                "subscription": "0adb6dd5-9212-432b-ab19-c49e3aa75953",
-                                "resourceGroup": "nasserTest2",
-                                "mode": "Complete",
-                                "__uuid": "Ej0GjSV-RVqA2VxzfsLuTw"
-                              },
-                              "__uuid": "t-xCaNdYQqOohcf_9ZfI7A"
-                            },
-                            "__uuid": "1n6lJuB9T2qnAcBViYljLQ"
-                          },
-                          "__uuid": "jTDDn2X3RTSyygykfQV_qA"
-                        },
-                        "__uuid": "rlWr9OEGQB6a1IiWLyUqjA"
-                      },
-                      "__uuid": "Uyuaw8w0S361aHtPVRwDwQ"
-                    }
-                  ],
-                  "__uuid": "VSJcLcF5TVqSqJZPD9O0gg"
-                },
-                "__uuid": "nEd4GKj_SiK3CMPHPNHfDw"
-              },
-              "allowSimultaneousDeployments": true,
-              "__uuid": "nDuI9D_rSXGex79XdvcrDA"
+            "environment": {
+              "environmentRef": "foobar",
+              "deployToAll": false,
+              "infrastructureDefinitions": [
+                {
+                  "identifier": "asdf",
+                  "__uuid": "74aQZso6TNelTWWZLrw6wQ"
+                }
+              ],
+              "__uuid": "ZiyWxfs-R4uYgEA5r05PNg"
             },
             "execution": {
               "steps": [
                 {
                   "step": {
-                    "type": "ShellScript",
-                    "name": "echo",
-                    "identifier": "echo",
+                    "type": "AzureCreateARMResource",
+                    "name": "aaa",
+                    "identifier": "aaa",
                     "spec": {
-                      "shell": "Bash",
-                      "onDelegate": true,
-                      "source": {
-                        "type": "Inline",
-                        "spec": {
-                          "script": "echo test",
-                          "__uuid": "6Vta5k5uSdShsy1feaS6Ww"
+                      "provisionerIdentifier": "aaa",
+                      "configuration": {
+                        "connectorRef": "foobar",
+                        "template": {
+                          "store": {
+                            "type": "Github",
+                            "spec": {
+                              "connectorRef": "bp2",
+                              "gitFetchType": "Branch",
+                              "branch": "main",
+                              "paths": [
+                                "infra/template"
+                              ],
+                              "__uuid": "FAO-VcQmSJauoX1YGFNnrg"
+                            },
+                            "__uuid": "gcBgXOZ3TKaxNrVVqN5cww"
+                          },
+                          "__uuid": "jPEXI_poQtWAWcxy906sKQ"
                         },
-                        "__uuid": "pzE09EFqSkuuDtixn5Gqtw"
+                        "scope": {
+                          "type": "ResourceGroup",
+                          "spec": {
+                            "subscription": "0adb6dd5-9212-432b-ab19-c49e3aa75953",
+                            "resourceGroup": "nasserTest",
+                            "mode": "Complete",
+                            "__uuid": "mQ6mHf20QaeKibA9q72yCQ"
+                          },
+                          "__uuid": "0AkKGLlTR12OyeiIWJWnLg"
+                        },
+                        "parameters": {
+                          "store": {
+                            "type": "Github",
+                            "spec": {
+                              "connectorRef": "bp2",
+                              "gitFetchType": "Branch",
+                              "branch": "main",
+                              "paths": [
+                                "infra/parameters"
+                              ],
+                              "__uuid": "shwgOvHPTJiSlDRteLhBWQ"
+                            },
+                            "__uuid": "7Iu16MUITp2mOYz2M0_pWw"
+                          },
+                          "__uuid": "M9IOkjvHQPqW9-nIF8fQ3A"
+                        },
+                        "__uuid": "2NHcDJoaQ8umbrplqY0S2w"
                       },
-                      "environmentVariables": [],
-                      "outputVariables": [],
-                      "executionTarget": {
-                        "__uuid": "d2eKen4kRgSyS7VR-5001g"
-                      },
-                      "__uuid": "pK9IqtWLRSWflMT07xUm6g"
+                      "__uuid": "Pijqjc_NTeeE3s4AyfUJOg"
                     },
                     "timeout": "10m",
-                    "__uuid": "Ebts5PfwSe-WZIfP7d3Wig"
+                    "__uuid": "GsvaXKTXS4S6uXCKQ6MsRg"
                   },
-                  "__uuid": "p8obc8DwTvO77j7dPz-Gcw"
+                  "__uuid": "T0kd1Vj-QSiYPrivkqj6WQ"
                 }
               ],
-              "rollbackSteps": [],
-              "__uuid": "nxjz0wROS_m44nL7qJULZw"
+              "rollbackSteps": [
+                {
+                  "step": {
+                    "name": "Rollback Rollout Deployment",
+                    "identifier": "rollbackRolloutDeployment",
+                    "type": "K8sRollingRollback",
+                    "timeout": "10m",
+                    "spec": {
+                      "__uuid": "ZhxkxweKSRi5W3LHXt0ZYg"
+                    },
+                    "__uuid": "3pQGjzo8QCmFpGA7V-SgVQ"
+                  },
+                  "__uuid": "U2GFjEuUStmKn6Nyem3nSw"
+                }
+              ],
+              "__uuid": "HLY4dLxcTaG91nhc8yEPVg"
             },
-            "__uuid": "SvdPA17PRBeOPtzPdojZ_Q"
+            "__uuid": "ukkB_ovjQ3yrgVf65M9AFg"
           },
           "tags": {
-            "__uuid": "8lji4uSSQsWFf4FtVIe8nQ"
+            "__uuid": "_IiSdd4HRDuJqgNrMqvlMA"
           },
           "failureStrategies": [
             {
@@ -170,20 +124,18 @@
                 ],
                 "action": {
                   "type": "StageRollback",
-                  "__uuid": "kZcMKId5Q3Oeea6X7sSvGA"
+                  "__uuid": "5-hu2fLBQgKwKxXh6eBVDg"
                 },
-                "__uuid": "7OnQvBr5SYmXuymidXTixA"
+                "__uuid": "KSZynNu5T7m4SB5ZtL6aag"
               },
-              "__uuid": "rjKQTHqsRzyOXIduQjvI9w"
+              "__uuid": "dPowrTMdQEqLZkWIH51HlA"
             }
           ],
-          "__uuid": "oNMxqJasTxKWHIF1nhe9OA"
+          "__uuid": "spYJJaHXRRyUL7HHEkpulA"
         },
-        "__uuid": "GwfMyI17Rz-K2B6BU7H1Tg"
+        "__uuid": "bqW0I7-tSxCl2QfCrXN8Yw"
       }
     ],
-    "projectIdentifier": "NGPipeAutoDemoProUsF9qDyXU8",
-    "orgIdentifier": "CF_PipelineOrg",
-    "__uuid": "Nog_UrgAQrGda_6KSB7Q2w"
+    "__uuid": "LF2mUsChTkOey4FNxQCfFw"
   }
 }

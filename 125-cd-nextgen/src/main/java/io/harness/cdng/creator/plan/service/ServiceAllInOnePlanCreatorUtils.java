@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.cdng.creator.plan.service;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -64,13 +71,15 @@ public class ServiceAllInOnePlanCreatorUtils {
 
     // add nodes for artifacts/manifests/files
     final List<String> childrenNodeIds = addChildrenNodes(planCreationResponseMap, serviceType);
-    final ServiceStepV3Parameters stepParameters = ServiceStepV3Parameters.builder()
-                                                       .serviceRef(finalServiceYaml.getServiceRef())
-                                                       .inputs(finalServiceYaml.getServiceInputs())
-                                                       .envRef(environmentYamlV2.getEnvironmentRef())
-                                                       .envInputs(environmentYamlV2.getEnvironmentInputs())
-                                                       .childrenNodeIds(childrenNodeIds)
-                                                       .build();
+    final ServiceStepV3Parameters stepParameters =
+        ServiceStepV3Parameters.builder()
+            .serviceRef(finalServiceYaml.getServiceRef())
+            .inputs(finalServiceYaml.getServiceInputs())
+            .envRef(environmentYamlV2.getEnvironmentRef())
+            .envInputs(environmentYamlV2.getEnvironmentInputs())
+            .childrenNodeIds(childrenNodeIds)
+            .serviceOverrideInputs(environmentYamlV2.getServiceOverrideInputs())
+            .build();
 
     final PlanNode node =
         PlanNode.builder()

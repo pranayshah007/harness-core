@@ -28,7 +28,6 @@ import retrofit2.http.Query;
 @OwnedBy(HarnessTeam.PL)
 public interface AccessControlAdminClient {
   String ROLE_ASSIGNMENTS_API = "roleassignments";
-  String ROLE_API = "roles";
   String ACL_PREFERENCES_API = "aclPreferences";
 
   @POST(ROLE_ASSIGNMENTS_API + "/filter")

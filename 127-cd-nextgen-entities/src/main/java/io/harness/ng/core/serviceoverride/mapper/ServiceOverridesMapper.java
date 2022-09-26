@@ -62,4 +62,12 @@ public class ServiceOverridesMapper {
       throw new InvalidRequestException(String.format("Cannot read serviceOverride yaml %s ", entityYaml));
     }
   }
+
+  public NGServiceOverrideConfig toNGServiceOverrideConfig(String entityYaml) {
+    try {
+      return YamlPipelineUtils.read(entityYaml, NGServiceOverrideConfig.class);
+    } catch (IOException e) {
+      throw new InvalidRequestException(String.format("Cannot read serviceOverride yaml %s ", entityYaml));
+    }
+  }
 }

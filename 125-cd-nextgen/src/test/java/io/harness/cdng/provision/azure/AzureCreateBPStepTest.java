@@ -64,7 +64,6 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.rbac.PipelineRbacHelper;
-import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
@@ -110,7 +109,6 @@ public class AzureCreateBPStepTest extends CategoryTest {
   @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   @Mock private AzureCommonHelper azureCommonHelper;
-  @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
   @Captor ArgumentCaptor<List<EntityDetail>> captor;
 
   @InjectMocks private AzureCreateBPStep azureCreateBPStep;
@@ -160,7 +158,7 @@ public class AzureCreateBPStepTest extends CategoryTest {
     StepInputPackage inputPackage = StepInputPackage.builder().build();
     azureCreateBPStep.startChainLinkAfterRbac(azureHelperTest.getAmbiance(), step, inputPackage);
     verify(azureCommonHelper, times(1)).getGitStoreDelegateConfig(any(), any(), any());
-    verify(azureCommonHelper, times(1)).getGitFetchFileTaskChainResponse(any(), any(), any(), any());
+    verify(azureCommonHelper, times(1)).getGitFetchFileTaskChainResponse(any(), any(), any(), any(), any(), any());
   }
 
   @Test
@@ -222,7 +220,7 @@ public class AzureCreateBPStepTest extends CategoryTest {
         azureCreateBPStep.startChainLinkAfterRbac(azureHelperTest.getAmbiance(), step, inputPackage);
 
     verify(azureCommonHelper, times(0)).getGitStoreDelegateConfig(any(), any(), any());
-    verify(azureCommonHelper, times(0)).getGitFetchFileTaskChainResponse(any(), any(), any(), any());
+    verify(azureCommonHelper, times(0)).getGitFetchFileTaskChainResponse(any(), any(), any(), any(), any(), any());
     assertThat(taskChainResponse).isNotNull();
     verifyStatic(StepUtils.class, times(1));
     StepUtils.prepareCDTaskRequest(

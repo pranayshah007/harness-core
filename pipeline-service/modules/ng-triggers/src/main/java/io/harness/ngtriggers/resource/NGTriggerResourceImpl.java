@@ -65,11 +65,12 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
   public ResponseDTO<NGTriggerResponseDTO> create(@NotNull @AccountIdentifier String accountIdentifier,
       @NotNull @OrgIdentifier String orgIdentifier, @NotNull @ProjectIdentifier String projectIdentifier,
-      @NotNull @ResourceIdentifier String targetIdentifier, @NotNull String yaml, boolean ignoreError) {
+      @NotNull @ResourceIdentifier String targetIdentifier, @NotNull String yaml, boolean ignoreError,
+      boolean withServiceV2) {
     NGTriggerEntity createdEntity = null;
     try {
-      TriggerDetails triggerDetails =
-          ngTriggerElementMapper.toTriggerDetails(accountIdentifier, orgIdentifier, projectIdentifier, yaml);
+      TriggerDetails triggerDetails = ngTriggerElementMapper.toTriggerDetails(
+          accountIdentifier, orgIdentifier, projectIdentifier, yaml, withServiceV2);
       ngTriggerService.validateTriggerConfig(triggerDetails);
 
       if (ignoreError) {
@@ -114,8 +115,8 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
     }
 
     try {
-      TriggerDetails triggerDetails = ngTriggerService.fetchTriggerEntity(
-          accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier, triggerIdentifier, yaml);
+      TriggerDetails triggerDetails = ngTriggerService.fetchTriggerEntity(accountIdentifier, orgIdentifier,
+          projectIdentifier, targetIdentifier, triggerIdentifier, yaml, ngTriggerEntity.get().getWithServiceV2());
 
       ngTriggerService.validateTriggerConfig(triggerDetails);
       triggerDetails.getNgTriggerEntity().setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);

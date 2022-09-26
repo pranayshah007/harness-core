@@ -437,7 +437,7 @@ public class AuthRuleFilterTest extends WingsBaseTest {
     ApiKeyEntry apiKeyEntry = ApiKeyEntry.builder().build();
     UserPermissionInfo userPermissionInfo = mockUserPermissionInfo();
     UserRestrictionInfo userRestrictionInfo = UserRestrictionInfo.builder().build();
-    when(apiKeyService.getByKey(API_KEY, ACCOUNT_ID, true)).thenReturn(apiKeyEntry);
+    when(apiKeyService.getByKey(API_KEY, ACCOUNT_ID)).thenReturn(apiKeyEntry);
     when(apiKeyService.getApiKeyPermissions(apiKeyEntry, ACCOUNT_ID)).thenReturn(userPermissionInfo);
     when(apiKeyService.getApiKeyRestrictions(apiKeyEntry, userPermissionInfo, ACCOUNT_ID))
         .thenReturn(userRestrictionInfo);
@@ -524,7 +524,7 @@ public class AuthRuleFilterTest extends WingsBaseTest {
   private Method getNgMockResourceMethod() {
     Class mockClass = UserResourceNG.class;
     try {
-      return mockClass.getMethod("getUser", String.class);
+      return mockClass.getMethod("getUser", String.class, Boolean.class);
     } catch (NoSuchMethodException e) {
       return null;
     }

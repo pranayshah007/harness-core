@@ -78,6 +78,7 @@ public class PerspectivesQuery {
   @GraphQLQuery(name = "perspectiveTrendStats", description = "Trend stats for perspective")
   public PerspectiveTrendStats perspectiveTrendStats(
       @GraphQLArgument(name = "filters") List<QLCEViewFilterWrapper> filters,
+      @GraphQLArgument(name = "groupBy") List<QLCEViewGroupBy> groupBy,
       @GraphQLArgument(name = "aggregateFunction") List<QLCEViewAggregation> aggregateFunction,
       @GraphQLArgument(name = "isClusterQuery") Boolean isClusterQuery,
       @GraphQLEnvironment final ResolutionEnvironment env) {
@@ -85,9 +86,10 @@ public class PerspectivesQuery {
     String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(accountId, UNIFIED_TABLE);
     BigQuery bigQuery = bigQueryService.get();
     isClusterQuery = isClusterQuery != null && isClusterQuery;
+    groupBy = groupBy != null ? groupBy : Collections.emptyList();
 
-    QLCEViewTrendData trendStatsData = viewsBillingService.getTrendStatsDataNg(bigQuery, filters, aggregateFunction,
-        cloudProviderTableName, viewsQueryHelper.buildQueryParams(accountId, isClusterQuery));
+    QLCEViewTrendData trendStatsData = viewsBillingService.getTrendStatsDataNg(bigQuery, filters, groupBy,
+        aggregateFunction, cloudProviderTableName, viewsQueryHelper.buildQueryParams(accountId, isClusterQuery));
     return PerspectiveTrendStats.builder()
         .cost(getStats(trendStatsData.getTotalCost()))
         .idleCost(getStats(trendStatsData.getIdleCost()))
@@ -101,6 +103,7 @@ public class PerspectivesQuery {
   @GraphQLQuery(name = "perspectiveForecastCost", description = "Forecast cost for perspective")
   public PerspectiveTrendStats perspectiveForecastCost(
       @GraphQLArgument(name = "filters") List<QLCEViewFilterWrapper> filters,
+      @GraphQLArgument(name = "groupBy") List<QLCEViewGroupBy> groupBy,
       @GraphQLArgument(name = "aggregateFunction") List<QLCEViewAggregation> aggregateFunction,
       @GraphQLArgument(name = "isClusterQuery") Boolean isClusterQuery,
       @GraphQLEnvironment final ResolutionEnvironment env) {
@@ -108,9 +111,10 @@ public class PerspectivesQuery {
     String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(accountId, UNIFIED_TABLE);
     BigQuery bigQuery = bigQueryService.get();
     isClusterQuery = isClusterQuery != null && isClusterQuery;
+    groupBy = groupBy != null ? groupBy : Collections.emptyList();
 
-    QLCEViewTrendInfo forecastCostData = viewsBillingService.getForecastCostData(bigQuery, filters, aggregateFunction,
-        cloudProviderTableName, viewsQueryHelper.buildQueryParams(accountId, isClusterQuery));
+    QLCEViewTrendInfo forecastCostData = viewsBillingService.getForecastCostData(bigQuery, filters, groupBy,
+        aggregateFunction, cloudProviderTableName, viewsQueryHelper.buildQueryParams(accountId, isClusterQuery));
     return PerspectiveTrendStats.builder()
         .cost(StatsInfo.builder()
                   .statsTrend(forecastCostData.getStatsTrend())

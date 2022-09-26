@@ -19,9 +19,9 @@ import lombok.Value;
 @Builder
 public class EcsStepExecutorParams {
   boolean shouldOpenFetchFilesLogStream;
-
   String ecsTaskDefinitionManifestContent;
   String ecsServiceDefinitionManifestContent;
   List<String> ecsScalableTargetManifestContentList;
   List<String> ecsScalingPolicyManifestContentList;
+  String targetGroupArnKey;
 }

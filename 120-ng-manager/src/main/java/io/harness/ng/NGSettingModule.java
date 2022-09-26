@@ -7,10 +7,12 @@
 
 package io.harness.ng;
 
+import io.harness.ngsettings.services.SettingValidator;
 import io.harness.ngsettings.services.SettingsService;
 import io.harness.ngsettings.services.impl.SettingsServiceImpl;
 
 import com.google.inject.AbstractModule;
+import com.google.inject.multibindings.MapBinder;
 
 public class NGSettingModule extends AbstractModule {
   NextGenConfiguration appConfig;
@@ -23,5 +25,10 @@ public class NGSettingModule extends AbstractModule {
   protected void configure() {
     bind(NextGenConfiguration.class).toInstance(appConfig);
     bind(SettingsService.class).to(SettingsServiceImpl.class);
+    registerSettingValidators();
+  }
+  public void registerSettingValidators() {
+    MapBinder<String, SettingValidator> settingValidatorMapBinder =
+        MapBinder.newMapBinder(binder(), String.class, SettingValidator.class);
   }
 }

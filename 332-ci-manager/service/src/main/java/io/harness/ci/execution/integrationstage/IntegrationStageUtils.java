@@ -45,6 +45,8 @@ import io.harness.beans.execution.PRWebhookEvent;
 import io.harness.beans.execution.WebhookExecutionSource;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.serializer.RunTimeInputHandler;
+import io.harness.beans.stages.IntegrationStageNode;
+import io.harness.beans.steps.CIAbstractStepNode;
 import io.harness.beans.steps.CIStepInfo;
 import io.harness.beans.steps.stepinfo.BackgroundStepInfo;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
@@ -87,9 +89,7 @@ import io.harness.licensing.Edition;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
-import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
-import io.harness.plancreator.steps.StepElementConfig;
 import io.harness.plancreator.steps.StepGroupElementConfig;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.PlanCreationContextValue;
@@ -131,8 +131,8 @@ public class IntegrationStageUtils {
   private static final String HARNESS_HOSTED = "Harness Hosted";
   private static final String SELF_HOSTED = "Self Hosted";
 
-  public static IntegrationStageConfig getIntegrationStageConfig(StageElementConfig stageElementConfig) {
-    return (IntegrationStageConfig) stageElementConfig.getStageType();
+  public static IntegrationStageConfig getIntegrationStageConfig(IntegrationStageNode stageNode) {
+    return stageNode.getIntegrationStageConfig();
   }
 
   public static ParallelStepElementConfig getParallelStepElementConfig(ExecutionWrapperConfig executionWrapperConfig) {
@@ -143,9 +143,9 @@ public class IntegrationStageUtils {
     }
   }
 
-  public static StepElementConfig getStepElementConfig(ExecutionWrapperConfig executionWrapperConfig) {
+  public static CIAbstractStepNode getStepNode(ExecutionWrapperConfig executionWrapperConfig) {
     try {
-      return YamlUtils.read(executionWrapperConfig.getStep().toString(), StepElementConfig.class);
+      return YamlUtils.read(executionWrapperConfig.getStep().toString(), CIAbstractStepNode.class);
     } catch (Exception ex) {
       throw new CIStageExecutionException("Failed to deserialize ExecutionWrapperConfig step node", ex);
     }
@@ -406,11 +406,11 @@ public class IntegrationStageUtils {
     return ManualExecutionSource.builder().build();
   }
 
-  public static List<StepElementConfig> getAllSteps(List<ExecutionWrapperConfig> executionWrapperConfigs) {
-    List<StepElementConfig> stepElementConfigs = new ArrayList<>();
+  public static List<CIAbstractStepNode> getAllSteps(List<ExecutionWrapperConfig> executionWrapperConfigs) {
+    List<CIAbstractStepNode> stepNodes = new ArrayList<>();
 
     if (executionWrapperConfigs == null) {
-      return stepElementConfigs;
+      return stepNodes;
     }
 
     for (ExecutionWrapperConfig executionWrapper : executionWrapperConfigs) {
@@ -419,18 +419,18 @@ public class IntegrationStageUtils {
       }
 
       if (executionWrapper.getStep() != null && !executionWrapper.getStep().isNull()) {
-        stepElementConfigs.add(getStepElementConfig(executionWrapper));
+        stepNodes.add(getStepNode(executionWrapper));
       } else if (executionWrapper.getParallel() != null && !executionWrapper.getParallel().isNull()) {
         ParallelStepElementConfig parallelStepElementConfig = getParallelStepElementConfig(executionWrapper);
-        List<StepElementConfig> fromParallel = getAllSteps(parallelStepElementConfig.getSections());
-        stepElementConfigs.addAll(fromParallel);
+        List<CIAbstractStepNode> fromParallel = getAllSteps(parallelStepElementConfig.getSections());
+        stepNodes.addAll(fromParallel);
       } else if (executionWrapper.getStepGroup() != null && !executionWrapper.getStepGroup().isNull()) {
         StepGroupElementConfig stepGroupElementConfig = getStepGroupElementConfig(executionWrapper);
-        List<StepElementConfig> fromStepGroup = getAllSteps(stepGroupElementConfig.getSteps());
-        stepElementConfigs.addAll(fromStepGroup);
+        List<CIAbstractStepNode> fromStepGroup = getAllSteps(stepGroupElementConfig.getSteps());
+        stepNodes.addAll(fromStepGroup);
       }
     }
-    return stepElementConfigs;
+    return stepNodes;
   }
 
   public static void injectLoopEnvVariables(ExecutionWrapperConfig config) {
@@ -483,13 +483,13 @@ public class IntegrationStageUtils {
 
   public static List<TIBuildDetails> getTiBuildDetails(InitializeStepInfo initializeStepInfo) {
     List<TIBuildDetails> tiBuildDetailsList = new ArrayList<>();
-    List<StepElementConfig> stepElementConfigs = getAllSteps(initializeStepInfo.getExecutionElementConfig().getSteps());
+    List<CIAbstractStepNode> stepNodes = getAllSteps(initializeStepInfo.getExecutionElementConfig().getSteps());
 
-    for (StepElementConfig stepElementConfig : stepElementConfigs) {
-      if (!(stepElementConfig.getStepSpecType() instanceof CIStepInfo)) {
+    for (CIAbstractStepNode stepNode : stepNodes) {
+      if (!(stepNode.getStepSpecType() instanceof CIStepInfo)) {
         continue;
       }
-      CIStepInfo ciStepInfo = (CIStepInfo) stepElementConfig.getStepSpecType();
+      CIStepInfo ciStepInfo = (CIStepInfo) stepNode.getStepSpecType();
       if (ciStepInfo.getStepType() == RunTestsStep.STEP_TYPE) {
         RunTestsStepInfo runTestsStepInfo = (RunTestsStepInfo) ciStepInfo;
         TIBuildDetails tiBuildDetails = TIBuildDetails.builder()
@@ -504,14 +504,14 @@ public class IntegrationStageUtils {
 
   public static List<CIImageDetails> getCiImageDetails(InitializeStepInfo initializeStepInfo) {
     List<CIImageDetails> imageDetailsList = new ArrayList<>();
-    List<StepElementConfig> stepElementConfigs = getAllSteps(initializeStepInfo.getExecutionElementConfig().getSteps());
+    List<CIAbstractStepNode> stepNodes = getAllSteps(initializeStepInfo.getExecutionElementConfig().getSteps());
     CIImageDetails imageDetails;
 
-    for (StepElementConfig stepElementConfig : stepElementConfigs) {
-      if (!(stepElementConfig.getStepSpecType() instanceof CIStepInfo)) {
+    for (CIAbstractStepNode stepNode : stepNodes) {
+      if (!(stepNode.getStepSpecType() instanceof CIStepInfo)) {
         continue;
       }
-      CIStepInfo ciStepInfo = (CIStepInfo) stepElementConfig.getStepSpecType();
+      CIStepInfo ciStepInfo = (CIStepInfo) stepNode.getStepSpecType();
       if (ciStepInfo.getStepType() == RunStep.STEP_TYPE) {
         imageDetails = getCiImageInfo(((RunStepInfo) ciStepInfo).getImage().getValue());
       } else if (ciStepInfo.getStepType() == RunTestsStep.STEP_TYPE) {
@@ -643,8 +643,8 @@ public class IntegrationStageUtils {
     ArrayList<String> connectorIdentifiers = new ArrayList<>();
     for (ExecutionWrapperConfig executionWrapper : wrappers) {
       if (executionWrapper.getStep() != null && !executionWrapper.getStep().isNull()) {
-        StepElementConfig stepElementConfig = IntegrationStageUtils.getStepElementConfig(executionWrapper);
-        String identifier = getConnectorIdentifier(stepElementConfig);
+        CIAbstractStepNode stepNode = IntegrationStageUtils.getStepNode(executionWrapper);
+        String identifier = getConnectorIdentifier(stepNode);
         if (identifier != null) {
           connectorIdentifiers.add(identifier);
         }
@@ -698,7 +698,7 @@ public class IntegrationStageUtils {
     return connectorIdentifiers;
   }
 
-  private static String getConnectorIdentifier(StepElementConfig stepElementConfig) {
+  private static String getConnectorIdentifier(CIAbstractStepNode stepElementConfig) {
     if (stepElementConfig.getStepSpecType() instanceof CIStepInfo) {
       CIStepInfo ciStepInfo = (CIStepInfo) stepElementConfig.getStepSpecType();
       switch (ciStepInfo.getNonYamlInfo().getStepInfoType()) {

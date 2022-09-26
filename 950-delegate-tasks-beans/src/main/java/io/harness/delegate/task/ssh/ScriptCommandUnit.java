@@ -34,4 +34,9 @@ public class ScriptCommandUnit implements NgCommandUnit {
   public String getCommandUnitType() {
     return NGCommandUnitType.SCRIPT;
   }
+
+  @Override
+  public String getDestinationPath() {
+    return null;
+  }
 }
