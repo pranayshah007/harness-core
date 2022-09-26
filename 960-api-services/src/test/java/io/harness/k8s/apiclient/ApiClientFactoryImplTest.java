@@ -7,9 +7,12 @@
 
 package io.harness.k8s.apiclient;
 
+import static io.harness.k8s.apiclient.ApiClientFactoryImpl.fromKubernetesConfig;
+import static io.harness.k8s.apiclient.ApiClientFactoryImpl.fromKubernetesConfigWithReadTimeout;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.AVMOHAN;
 import static io.harness.rule.OwnerRule.BOGDAN;
+import static io.harness.rule.OwnerRule.PRATYUSH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -101,9 +104,27 @@ public class ApiClientFactoryImplTest extends CategoryTest {
   @Test
   @Owner(developers = AVMOHAN)
   @Category(UnitTests.class)
-  public void testNoReadTimeout() throws Exception {
+  public void testReadTimeout() throws Exception {
     assertThat(apiClientFactory.getClient(KubernetesConfig.builder().build()).getHttpClient().readTimeoutMillis())
         .isEqualTo(0);
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testReadTimeoutAndConnectTimeout() throws Exception {
+    assertThat(fromKubernetesConfig(KubernetesConfig.builder().build(), null).getHttpClient().readTimeoutMillis())
+        .isEqualTo(0);
+    assertThat(fromKubernetesConfigWithReadTimeout(KubernetesConfig.builder().build(), null)
+                   .getHttpClient()
+                   .readTimeoutMillis())
+        .isEqualTo(120000);
+    assertThat(fromKubernetesConfig(KubernetesConfig.builder().build(), null).getHttpClient().connectTimeoutMillis())
+        .isEqualTo(60000);
+    assertThat(fromKubernetesConfigWithReadTimeout(KubernetesConfig.builder().build(), null)
+                   .getHttpClient()
+                   .connectTimeoutMillis())
+        .isEqualTo(60000);
   }
 
   @Test

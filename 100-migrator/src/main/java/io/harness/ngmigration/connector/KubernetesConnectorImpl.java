@@ -24,7 +24,7 @@ import io.harness.delegate.beans.connector.k8Connector.KubernetesServiceAccountD
 import io.harness.delegate.beans.connector.k8Connector.KubernetesUserNamePasswordDTO;
 import io.harness.exception.UnsupportedOperationException;
 import io.harness.k8s.model.KubernetesClusterAuthType;
-import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.NGYamlFile;
 
 import software.wings.beans.KubernetesClusterConfig;
 import software.wings.beans.SettingAttribute;
@@ -45,8 +45,8 @@ public class KubernetesConnectorImpl implements BaseConnector {
   }
 
   @Override
-  public ConnectorConfigDTO getConfigDTO(SettingAttribute settingAttribute, Set<CgEntityId> childEntities,
-      Map<CgEntityId, NgEntityDetail> migratedEntities) {
+  public ConnectorConfigDTO getConfigDTO(
+      SettingAttribute settingAttribute, Set<CgEntityId> childEntities, Map<CgEntityId, NGYamlFile> migratedEntities) {
     KubernetesClusterConfig clusterConfig = (KubernetesClusterConfig) settingAttribute.getValue();
     KubernetesClusterAuthType authType = clusterConfig.getAuthType() == null ? NONE : clusterConfig.getAuthType();
     KubernetesClusterConfigDTOBuilder builder = builder().delegateSelectors(clusterConfig.getDelegateSelectors());

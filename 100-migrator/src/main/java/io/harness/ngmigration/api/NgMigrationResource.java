@@ -20,8 +20,10 @@ import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.MigrationInputResult;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.summary.BaseSummary;
+import io.harness.ngmigration.dto.BaseImportDTO;
 import io.harness.ngmigration.service.AsyncDiscoveryHandler;
 import io.harness.ngmigration.service.DiscoveryService;
+import io.harness.ngmigration.service.MigrationResourceService;
 import io.harness.ngmigration.utils.NGMigrationConstants;
 import io.harness.rest.RestResponse;
 
@@ -59,6 +61,7 @@ import org.apache.http.entity.ContentType;
 public class NgMigrationResource {
   @Inject DiscoveryService discoveryService;
   @Inject AsyncDiscoveryHandler asyncDiscoveryHandler;
+  @Inject MigrationResourceService migrationResourceService;
 
   @POST
   @Path("/discover-multi")
@@ -147,6 +150,16 @@ public class NgMigrationResource {
   }
 
   @POST
+  @Path("/save/v2")
+  @Timed
+  @ExceptionMetered
+  public RestResponse<List<NGYamlFile>> saveEntitiesV2(
+      @HeaderParam("Authorization") String auth, @QueryParam("accountId") String accountId, BaseImportDTO importDTO) {
+    importDTO.setAccountIdentifier(accountId);
+    return new RestResponse<>(migrationResourceService.migrateCgEntityToNG(auth, importDTO));
+  }
+
+  @POST
   @Path("/export-yaml")
   @Timed
   @ExceptionMetered
@@ -161,6 +174,7 @@ public class NgMigrationResource {
     } else {
       result = discoveryService.discover(accountId, appId, entityId, entityType, null);
     }
+    inputDTO.setMigrateReferencedEntities(true);
     return Response.ok(discoveryService.exportYamlFilesAsZip(inputDTO, result), MediaType.APPLICATION_OCTET_STREAM)
         .header("content-disposition", format("attachment; filename = %s_%s_%s.zip", accountId, entityId, entityType))
         .build();

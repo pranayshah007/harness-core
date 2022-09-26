@@ -7,6 +7,8 @@
 
 package io.harness.pms.expressions.functors;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
@@ -44,9 +46,15 @@ public class ImagePullSecretFunctor implements SdkFunctor {
       artifactsOutcome.getSidecars().forEach(
           (k, v) -> { sidecarsImagePullSecrets.put(k, imagePullSecretUtils.getImagePullSecret(v, ambiance)); });
       return sidecarsImagePullSecrets;
-    } else {
-      return null;
+
+    } else if (isNotEmpty(artifactIdentifier)) {
+      // Artifact Sources
+      if (artifactsOutcome.getPrimary() != null
+          && artifactIdentifier.equals(artifactsOutcome.getPrimary().getIdentifier())) {
+        return imagePullSecretUtils.getImagePullSecret(artifactsOutcome.getPrimary(), ambiance);
+      }
     }
+    return null;
   }
 
   private ArtifactsOutcome fetchArtifactsOutcome(Ambiance ambiance) {

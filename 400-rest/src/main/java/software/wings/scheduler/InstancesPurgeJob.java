@@ -74,10 +74,10 @@ public class InstancesPurgeJob implements Job {
     log.info("Starting execution of instances and instance stats purge job");
     Stopwatch sw = Stopwatch.createStarted();
 
+    // TODO: purging stats can be removed in Jan 2023 as we started adding 6 months TTL index in July
     purgeOldStats();
     purgeOldServerlessInstanceStats();
     purgeOldDeletedInstances();
-    purgeOldInstancesFromTimeScaleDB();
 
     log.info("Execution of instances and instance stats purge job completed. Time taken: {} millis",
         sw.elapsed(TimeUnit.MILLISECONDS));
@@ -122,12 +122,6 @@ public class InstancesPurgeJob implements Job {
     } else {
       log.info("Purge of instances failed. Time taken: {} millis", sw.elapsed(TimeUnit.MILLISECONDS));
     }
-  }
-
-  private void purgeOldInstancesFromTimeScaleDB() {
-    log.info("Starting purge of instances from timescaledb");
-    instanceTimeSeriesDataHelper.purgeOldInstances();
-    log.info("Completed purge of instances from timescaledb");
   }
 
   public Instant getRetentionStartTime(int monthsToSubtract) {

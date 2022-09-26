@@ -21,8 +21,6 @@ import io.harness.ccm.utils.LogAccountIdentifier;
 import io.harness.ccm.views.dto.CcmK8sMetaDTO;
 import io.harness.ccm.views.dto.CcmK8sMetaInfo;
 import io.harness.ccm.views.dto.CcmK8sMetaInfoResponseDTO;
-import io.harness.enforcement.client.annotation.FeatureRestrictionCheck;
-import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -86,7 +84,6 @@ public class CCMK8sMetaResource {
   @Timed
   @ExceptionMetered
   @Consumes(MediaType.APPLICATION_JSON)
-  @FeatureRestrictionCheck(FeatureRestrictionName.CCM_K8S_CLUSTERS)
   @LogAccountIdentifier
   @ApiOperation(value = "CCM K8S Metadata", nickname = "CCM K8S Metadata")
   @Operation(operationId = "ccmK8sMeta", description = "Get CCM K8S Metadata ", summary = "Get CCM K8S Metadata",

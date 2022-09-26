@@ -9,6 +9,7 @@ package io.harness.ngmigration.service;
 
 import io.harness.ngmigration.beans.DiscoverEntityInput;
 import io.harness.ngmigration.beans.DiscoveryInput;
+import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.dto.ImportConnectorDTO;
 
@@ -26,7 +27,8 @@ public class ConnectorImportService {
   @Inject private SettingsService settingsService;
   @Inject DiscoveryService discoveryService;
 
-  public List<NGYamlFile> importConnectors(String authToken, String accountId, ImportConnectorDTO importConnectorDTO) {
+  public List<NGYamlFile> importConnectors(String authToken, ImportConnectorDTO importConnectorDTO) {
+    String accountId = importConnectorDTO.getAccountIdentifier();
     List<String> settingIds;
     switch (importConnectorDTO.getMechanism()) {
       case ALL:
@@ -57,6 +59,13 @@ public class ConnectorImportService {
                           .collect(Collectors.toList()))
             .exportImage(false)
             .build());
-    return discoveryService.migrateEntity(authToken, importConnectorDTO, discoveryResult, false);
+    MigrationInputDTO migrationInputDTO =
+        MigrationInputDTO.builder()
+            .accountIdentifier(accountId)
+            .orgIdentifier(importConnectorDTO.getOrgIdentifier())
+            .projectIdentifier(importConnectorDTO.getProjectIdentifier())
+            .migrateReferencedEntities(importConnectorDTO.isMigrateReferencedEntities())
+            .build();
+    return discoveryService.migrateEntity(authToken, migrationInputDTO, discoveryResult, false);
   }
 }

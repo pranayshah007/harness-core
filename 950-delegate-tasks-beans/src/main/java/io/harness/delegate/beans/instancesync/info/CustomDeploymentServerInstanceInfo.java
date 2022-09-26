@@ -16,7 +16,7 @@ import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-@JsonTypeName("K8sServerInstanceInfo")
+@JsonTypeName("CustomDeploymentServerInstanceInfo")
 @Data
 @Builder
 @EqualsAndHashCode(callSuper = true)

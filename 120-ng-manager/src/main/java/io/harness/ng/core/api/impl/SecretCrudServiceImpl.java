@@ -340,18 +340,11 @@ public class SecretCrudServiceImpl implements SecretCrudService {
   @Override
   public Page<SecretResponseWrapper> list(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       List<String> identifiers, List<SecretType> secretTypes, boolean includeSecretsFromEverySubScope,
-      String searchTerm, int page, int size, ConnectorCategory sourceCategory) {
+      String searchTerm, int page, int size, ConnectorCategory sourceCategory,
+      boolean includeAllSecretsAccessibleAtScope) {
     Criteria criteria = Criteria.where(SecretKeys.accountIdentifier).is(accountIdentifier);
-    if (!includeSecretsFromEverySubScope) {
-      criteria.and(SecretKeys.orgIdentifier).is(orgIdentifier).and(SecretKeys.projectIdentifier).is(projectIdentifier);
-    } else {
-      if (isNotBlank(orgIdentifier)) {
-        criteria.and(SecretKeys.orgIdentifier).is(orgIdentifier);
-        if (isNotBlank(projectIdentifier)) {
-          criteria.and(SecretKeys.projectIdentifier).is(projectIdentifier);
-        }
-      }
-    }
+    addCriteriaForRequestedScopes(criteria, orgIdentifier, projectIdentifier, includeAllSecretsAccessibleAtScope,
+        includeSecretsFromEverySubScope);
 
     if (isNotEmpty(secretTypes)) {
       criteria = criteria.and(SecretKeys.type).in(secretTypes);
@@ -381,6 +374,57 @@ public class SecretCrudServiceImpl implements SecretCrudService {
     return ngSecretService.list(allMatchingSecrets, page, size).map(this::getResponseWrapper);
   }
 
+  @VisibleForTesting
+  protected void addCriteriaForRequestedScopes(Criteria criteria, String orgIdentifier, String projectIdentifier,
+      boolean includeAllSecretsAccessibleAtScope, boolean includeSecretsFromEverySubScope) {
+    if (!includeAllSecretsAccessibleAtScope && !includeSecretsFromEverySubScope) {
+      criteria.and(SecretKeys.orgIdentifier).is(orgIdentifier).and(SecretKeys.projectIdentifier).is(projectIdentifier);
+    } else {
+      Criteria superScopeCriteriaOrSubScopeCriteria = new Criteria();
+      Criteria subScopeCriteria = new Criteria();
+      Criteria superScopeCriteria = new Criteria();
+      addCriteriaForIncludeAllSecretsAccessibleAtScope(superScopeCriteria, orgIdentifier, projectIdentifier);
+      addCriteriaForIncludeSecretsFromSubScope(subScopeCriteria, orgIdentifier, projectIdentifier);
+      if (includeAllSecretsAccessibleAtScope && includeSecretsFromEverySubScope) {
+        superScopeCriteriaOrSubScopeCriteria.orOperator(superScopeCriteria, subScopeCriteria);
+        criteria.andOperator(superScopeCriteriaOrSubScopeCriteria);
+      } else if (includeSecretsFromEverySubScope) {
+        criteria.andOperator(subScopeCriteria);
+      } else {
+        criteria.andOperator(superScopeCriteria);
+      }
+    }
+  }
+
+  private void addCriteriaForIncludeSecretsFromSubScope(
+      Criteria subScopeCriteria, String orgIdentifier, String projectIdentifier) {
+    if (isNotBlank(orgIdentifier)) {
+      subScopeCriteria.and(SecretKeys.orgIdentifier).is(orgIdentifier);
+      if (isNotBlank(projectIdentifier)) {
+        subScopeCriteria.and(SecretKeys.projectIdentifier).is(projectIdentifier);
+      }
+    }
+  }
+
+  private void addCriteriaForIncludeAllSecretsAccessibleAtScope(
+      Criteria criteria, String orgIdentifier, String projectIdentifier) {
+    Criteria accountCriteria =
+        Criteria.where(SecretKeys.orgIdentifier).is(null).and(SecretKeys.projectIdentifier).is(null);
+    Criteria orgCriteria =
+        Criteria.where(SecretKeys.orgIdentifier).is(orgIdentifier).and(SecretKeys.projectIdentifier).is(null);
+    Criteria projectCriteria = Criteria.where(SecretKeys.orgIdentifier)
+                                   .is(orgIdentifier)
+                                   .and(SecretKeys.projectIdentifier)
+                                   .is(projectIdentifier);
+
+    if (isNotBlank(projectIdentifier)) {
+      criteria.orOperator(projectCriteria, orgCriteria, accountCriteria);
+    } else if (isNotBlank(orgIdentifier)) {
+      criteria.orOperator(orgCriteria, accountCriteria);
+    } else {
+      criteria.orOperator(accountCriteria);
+    }
+  }
   @Override
   public boolean delete(String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
     Optional<SecretResponseWrapper> optionalSecret =

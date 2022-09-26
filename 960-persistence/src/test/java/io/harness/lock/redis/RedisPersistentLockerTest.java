@@ -27,6 +27,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.lock.AcquiredLock;
 import io.harness.redis.RedisConfig;
+import io.harness.redis.RedissonClientFactory;
 import io.harness.rule.Owner;
 
 import java.time.Duration;
@@ -34,7 +35,6 @@ import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.redisson.Redisson;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 
@@ -49,12 +49,12 @@ public class RedisPersistentLockerTest extends PersistenceTestBase {
   @Before
   public void setup() {
     initMocks(this);
-    mockStatic(Redisson.class);
+    mockStatic(RedissonClientFactory.class);
     RedisConfig config = mock(RedisConfig.class);
     when(config.isSentinel()).thenReturn(true);
     when(config.getReadMode()).thenReturn(SLAVE);
     client = mock(RedissonClient.class);
-    when(Redisson.create(any())).thenReturn(client);
+    when(RedissonClientFactory.getClient(any())).thenReturn(client);
     redisPersistentLocker = new RedisPersistentLocker(config);
   }
 

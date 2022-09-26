@@ -14,7 +14,7 @@ import io.harness.delegate.beans.connector.vaultconnector.VaultConnectorDTO;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
 import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
-import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.secretmanagerclient.ValueType;
 
 import software.wings.beans.VaultConfig;
@@ -44,7 +44,7 @@ public class VaultSecretMigrator implements SecretMigrator {
 
   @Override
   public ConnectorConfigDTO getConfigDTO(
-      SecretManagerConfig secretManagerConfig, Map<CgEntityId, NgEntityDetail> migratedEntities) {
+      SecretManagerConfig secretManagerConfig, Map<CgEntityId, NGYamlFile> migratedEntities) {
     VaultConfig vaultConfig = (VaultConfig) secretManagerConfig;
     // TODO: Handle all cases
     return VaultConnectorDTO.builder()

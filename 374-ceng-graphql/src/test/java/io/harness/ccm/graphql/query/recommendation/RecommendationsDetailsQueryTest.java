@@ -92,7 +92,7 @@ public class RecommendationsDetailsQueryTest extends CategoryTest {
         .thenReturn(createWorkloadRecommendation());
 
     final RecommendationDetailsDTO recommendationDetails =
-        detailsQuery.recommendationDetails(createRecommendationItem(ID), null, null, null);
+        detailsQuery.recommendationDetails(createRecommendationItem(ID), null, null, 0L, null);
 
     assertWorkloadRecommendationDetails(recommendationDetails);
   }
@@ -105,7 +105,7 @@ public class RecommendationsDetailsQueryTest extends CategoryTest {
         .thenReturn(WorkloadRecommendationDTO.builder().items(Collections.emptyList()).build());
 
     final RecommendationDetailsDTO recommendationDetails =
-        detailsQuery.recommendationDetails(ID, ResourceType.WORKLOAD, null, null, null);
+        detailsQuery.recommendationDetails(ID, ResourceType.WORKLOAD, null, null, 0L, null);
 
     assertWorkloadRecommendationByIdNotFound(recommendationDetails);
   }
@@ -118,7 +118,7 @@ public class RecommendationsDetailsQueryTest extends CategoryTest {
         .thenReturn(createWorkloadRecommendation());
 
     final RecommendationDetailsDTO recommendationDetails =
-        detailsQuery.recommendationDetails(ID, ResourceType.WORKLOAD, null, null, null);
+        detailsQuery.recommendationDetails(ID, ResourceType.WORKLOAD, null, null, 0L, null);
 
     assertWorkloadRecommendationDetails(recommendationDetails);
   }
@@ -131,7 +131,7 @@ public class RecommendationsDetailsQueryTest extends CategoryTest {
         .thenReturn(WorkloadRecommendationDTO.builder().items(Collections.emptyList()).build());
 
     final RecommendationDetailsDTO recommendationDetails =
-        detailsQuery.recommendationDetails(createRecommendationItem(ID), null, null, null);
+        detailsQuery.recommendationDetails(createRecommendationItem(ID), null, null, 0L, null);
 
     assertWorkloadRecommendationByIdNotFound(recommendationDetails);
   }
@@ -215,7 +215,7 @@ public class RecommendationsDetailsQueryTest extends CategoryTest {
     when(nodeRecommendationService.getRecommendation(eq(ACCOUNT_ID), eq(ID))).thenReturn(createNodeRecommendation());
 
     RecommendationDetailsDTO recommendationDetails =
-        detailsQuery.recommendationDetails(createRecommendationItem(ID, ResourceType.NODE_POOL), null, null, null);
+        detailsQuery.recommendationDetails(createRecommendationItem(ID, ResourceType.NODE_POOL), null, null, 0L, null);
 
     assertNodeRecommendationDetails(recommendationDetails);
   }
@@ -227,7 +227,7 @@ public class RecommendationsDetailsQueryTest extends CategoryTest {
     when(nodeRecommendationService.getRecommendation(eq(ACCOUNT_ID), eq(ID))).thenReturn(createNodeRecommendation());
 
     RecommendationDetailsDTO recommendationDetails =
-        detailsQuery.recommendationDetails(ID, ResourceType.NODE_POOL, null, null, null);
+        detailsQuery.recommendationDetails(ID, ResourceType.NODE_POOL, null, null, 0L, null);
 
     assertNodeRecommendationDetails(recommendationDetails);
   }
@@ -293,11 +293,11 @@ public class RecommendationsDetailsQueryTest extends CategoryTest {
   @Owner(developers = TRUNAPUSHPA)
   @Category(UnitTests.class)
   public void testGetECSRecommendationDetailsByIdAsParentQueryNotFound() {
-    when(ecsRecommendationService.getECSRecommendationById(eq(ACCOUNT_ID), eq(ID), any(), any()))
+    when(ecsRecommendationService.getECSRecommendationById(eq(ACCOUNT_ID), eq(ID), any(), any(), any()))
         .thenReturn(ECSRecommendationDTO.builder().build());
 
     final RecommendationDetailsDTO recommendationDetails =
-        detailsQuery.recommendationDetails(ID, ResourceType.ECS_SERVICE, null, null, null);
+        detailsQuery.recommendationDetails(ID, ResourceType.ECS_SERVICE, null, null, 0L, null);
 
     assertECSRecommendationByIdNotFound(recommendationDetails);
   }
@@ -306,21 +306,21 @@ public class RecommendationsDetailsQueryTest extends CategoryTest {
   @Owner(developers = TRUNAPUSHPA)
   @Category(UnitTests.class)
   public void testGetECSRecommendationDetailsByIdAsParentQuery() {
-    when(ecsRecommendationService.getECSRecommendationById(eq(ACCOUNT_ID), eq(ID), any(), any()))
+    when(ecsRecommendationService.getECSRecommendationById(eq(ACCOUNT_ID), eq(ID), any(), any(), any()))
         .thenReturn(createECSRecommendation());
 
     final RecommendationDetailsDTO recommendationDetails =
-        detailsQuery.recommendationDetails(ID, ResourceType.ECS_SERVICE, null, null, null);
+        detailsQuery.recommendationDetails(ID, ResourceType.ECS_SERVICE, null, null, 0L, null);
 
     assertECSRecommendationDetails(recommendationDetails);
   }
 
   public void testGetECSRecommendationDetailsByIdInRecommendationItemContextNotFound() {
-    when(ecsRecommendationService.getECSRecommendationById(eq(ACCOUNT_ID), eq(ID), any(), any()))
+    when(ecsRecommendationService.getECSRecommendationById(eq(ACCOUNT_ID), eq(ID), any(), any(), any()))
         .thenReturn(ECSRecommendationDTO.builder().build());
 
-    final RecommendationDetailsDTO recommendationDetails =
-        detailsQuery.recommendationDetails(createRecommendationItem(ID, ResourceType.ECS_SERVICE), null, null, null);
+    final RecommendationDetailsDTO recommendationDetails = detailsQuery.recommendationDetails(
+        createRecommendationItem(ID, ResourceType.ECS_SERVICE), null, null, 0L, null);
 
     assertECSRecommendationByIdNotFound(recommendationDetails);
   }

@@ -7,6 +7,8 @@
 
 package io.harness.delegate.beans.connector.k8Connector;
 
+import io.harness.annotation.RecasterFieldName;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -24,7 +26,8 @@ import lombok.NoArgsConstructor;
 @JsonDeserialize(using = KubernetesCredentialDTODeserializer.class)
 @Schema(name = "KubernetesCredential", description = "This contains kubernetes credentials details")
 public class KubernetesCredentialDTO {
-  @NotNull @JsonProperty("type") KubernetesCredentialType kubernetesCredentialType;
+  @NotNull @RecasterFieldName(name = "type") @JsonProperty("type") KubernetesCredentialType kubernetesCredentialType;
+  @RecasterFieldName(name = "spec")
   @JsonProperty("spec")
   @JsonTypeInfo(
       use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXTERNAL_PROPERTY, visible = true)

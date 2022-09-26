@@ -10,6 +10,7 @@ package io.harness.serializer;
 import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.artifact.bean.yaml.ArtifactSourceConfig;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupWrapperConfig;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
 import io.harness.morphia.MorphiaRegistrar;
@@ -127,6 +128,13 @@ public class NextGenRegistrars {
                    .availableAtAccountLevel(true)
                    .availableAtOrgLevel(true)
                    .clazz(InfrastructureConfig.class)
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.ARTIFACT_SOURCE_TEMPLATE)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(true)
+                   .availableAtAccountLevel(true)
+                   .clazz(ArtifactSourceConfig.class)
                    .build())
           .build();
 

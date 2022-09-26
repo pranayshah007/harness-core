@@ -24,6 +24,7 @@ import io.harness.health.HealthMonitor;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
 import io.harness.redis.RedisConfig;
+import io.harness.redis.RedissonClientFactory;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -32,11 +33,8 @@ import io.dropwizard.lifecycle.Managed;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
-import org.redisson.Redisson;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
-import org.redisson.config.Config;
-import org.redisson.config.ReadMode;
 
 @OwnedBy(PL)
 @Singleton
@@ -49,21 +47,7 @@ public class RedisPersistentLocker implements PersistentLocker, HealthMonitor, M
 
   @Inject
   RedisPersistentLocker(@Named("lock") RedisConfig redisLockConfig) {
-    Config config = new Config();
-    if (!redisLockConfig.isSentinel()) {
-      config.useSingleServer().setAddress(redisLockConfig.getRedisUrl());
-    } else {
-      config.useSentinelServers().setMasterName(redisLockConfig.getMasterName());
-      for (String sentinelUrl : redisLockConfig.getSentinelUrls()) {
-        config.useSentinelServers().addSentinelAddress(sentinelUrl);
-      }
-      config.useSentinelServers().setReadMode(ReadMode.valueOf(redisLockConfig.getReadMode().name()));
-    }
-    config.setNettyThreads(redisLockConfig.getNettyThreads());
-    config.setUseScriptCache(redisLockConfig.isUseScriptCache());
-    log.info("Starting redis client");
-    this.client = Redisson.create(config);
-    log.info("Started redis client");
+    this.client = RedissonClientFactory.getClient(redisLockConfig);
     String envNamespace = redisLockConfig.getEnvNamespace();
     this.lockNamespace = EmptyPredicate.isEmpty(envNamespace) ? LOCK_PREFIX.concat(":")
                                                               : String.format("%s:%s:", envNamespace, LOCK_PREFIX);

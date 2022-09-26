@@ -465,7 +465,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
   @Override
   public void validateCredentials(KubernetesConfig kubernetesConfig) {
     final Supplier<Void> versionApiCall = () -> {
-      ApiClient apiClient = kubernetesHelperService.getApiClient(kubernetesConfig);
+      ApiClient apiClient = kubernetesHelperService.getApiClientWithReadTimeout(kubernetesConfig);
       KubernetesApiCall.call(apiClient, () -> new VersionApi(apiClient).getCodeCall(null));
       return null;
     };

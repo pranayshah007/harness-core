@@ -140,6 +140,11 @@ public class RunTestsStepProtobufSerializer implements ProtobufStepSerializer<Ru
     }
     long timeout = TimeoutUtils.getTimeoutInSeconds(parameterFieldTimeout, runTestsStepInfo.getDefaultTimeout());
 
+    runTestsStepBuilder.setParallelizeTests(resolveBooleanParameter(runTestsStepInfo.getEnableTestSplitting(), false));
+    String testSplitStrategy = RunTimeInputHandler.resolveSplitStrategy(runTestsStepInfo.getTestSplitStrategy());
+    if (StringUtils.isNotEmpty(testSplitStrategy)) {
+      runTestsStepBuilder.setTestSplitStrategy(SerializerUtils.getTestSplitStrategy(testSplitStrategy));
+    }
     runTestsStepBuilder.setContext(StepContext.newBuilder().setExecutionTimeoutSecs(timeout).build());
 
     return UnitStep.newBuilder()

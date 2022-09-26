@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 
+import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
@@ -23,5 +24,9 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("ecsGitFetchPassThroughData")
 @RecasterAlias("io.harness.cdng.ecs.beans.EcsGitFetchPassThroughData")
 public class EcsGitFetchPassThroughData implements PassThroughData {
+  String taskDefinitionHarnessFileContent;
+  String serviceDefinitionHarnessFileContent;
+  List<String> scalableTargetHarnessFileContentList;
+  List<String> scalingPolicyHarnessFileContentList;
   InfrastructureOutcome infrastructureOutcome;
 }

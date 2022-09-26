@@ -133,7 +133,7 @@ public class AlertCheckJob implements Job {
   @VisibleForTesting
   void checkForInvalidValidSMTP(String accountId) {
     if (!emailHelperUtils.isSmtpConfigValid(mainConfiguration.getSmtpConfig())
-        && !emailHelperUtils.isSmtpConfigValid(emailHelperUtils.getSmtpConfig(accountId))) {
+        && !emailHelperUtils.isSmtpConfigValid(emailHelperUtils.getSmtpConfig(accountId, false))) {
       alertService.openAlert(accountId, GLOBAL_APP_ID, AlertType.INVALID_SMTP_CONFIGURATION,
           InvalidSMTPConfigAlert.builder().accountId(accountId).build());
     } else {

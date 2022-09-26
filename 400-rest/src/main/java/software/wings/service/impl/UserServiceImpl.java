@@ -3020,12 +3020,19 @@ public class UserServiceImpl implements UserService {
    */
   @Override
   public User get(String userId) {
+    return get(userId, true);
+  }
+
+  @Override
+  public User get(String userId, boolean includeSupportAccounts) {
     User user = wingsPersistence.get(User.class, userId);
     if (user == null) {
       throw new UnauthorizedException(EXC_MSG_USER_DOESNT_EXIST, USER);
     }
 
-    loadSupportAccounts(user);
+    if (includeSupportAccounts) {
+      loadSupportAccounts(user);
+    }
 
     List<Account> accounts = user.getAccounts();
     if (isNotEmpty(accounts)) {
