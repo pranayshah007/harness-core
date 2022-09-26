@@ -42,7 +42,7 @@ docker_pkg(
         "//270-delegate-service-app/src/main/resources:redisson-jcache.yaml",
     ],
     files = {
-        "//270-delegate-service-app/module_deploy.jar": "delegate-service-capsule.jar"
+        "//270-delegate-service-app:module_deploy.jar": "delegate-service-capsule.jar"
         },
 )
 
