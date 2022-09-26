@@ -19,17 +19,25 @@ import io.harness.observer.Subject;
 
 import com.mongodb.MongoSocketOpenException;
 import com.mongodb.MongoSocketReadException;
+import com.mongodb.client.model.CountOptions;
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.bson.Document;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.mongodb.MongoDbFactory;
+import org.springframework.data.mongodb.core.DocumentCallbackHandler;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
+import org.springframework.data.mongodb.core.FindAndReplaceOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.convert.MongoConverter;
+import org.springframework.data.mongodb.core.mapreduce.MapReduceOptions;
+import org.springframework.data.mongodb.core.mapreduce.MapReduceResults;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.data.util.CloseableIterator;
 import org.springframework.lang.Nullable;
 
 @SuppressWarnings("NullableProblems")
@@ -37,6 +45,7 @@ import org.springframework.lang.Nullable;
 @OwnedBy(HarnessTeam.PL)
 public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
   private static final int RETRIES = 3;
+  private static final int MAX_TIME_IN_MILLIS_FOR_MONGO_OPERATIONS = 1;
 
   public static final FindAndModifyOptions upsertReturnNewOptions =
       new FindAndModifyOptions().upsert(true).returnNew(true);
@@ -72,6 +81,13 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
   }
 
   @Override
+  public <T> T findAndModify(
+      Query query, Update update, FindAndModifyOptions options, Class<T> entityClass, String collectionName) {
+    query.maxTime(Duration.ofMillis(MAX_TIME_IN_MILLIS_FOR_MONGO_OPERATIONS));
+    return super.findAndModify(query, update, options, entityClass, collectionName);
+  }
+
+  @Override
   public Duration healthExpectedResponseTimeout() {
     return ofSeconds(5);
   }
@@ -89,13 +105,66 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
   @Override
   public <T> List<T> find(Query query, Class<T> entityClass, String collectionName) {
     traceQuery(query, entityClass);
+    query.maxTime(Duration.ofMillis(MAX_TIME_IN_MILLIS_FOR_MONGO_OPERATIONS));
     return super.find(query, entityClass, collectionName);
   }
 
   @Override
   public <T> T findOne(Query query, Class<T> entityClass, String collectionName) {
     traceQuery(query, entityClass);
+    query.maxTime(Duration.ofMillis(MAX_TIME_IN_MILLIS_FOR_MONGO_OPERATIONS));
     return super.findOne(query, entityClass, collectionName);
+  }
+
+  @Override
+  public <T> List<T> findDistinct(
+      Query query, String field, String collectionName, Class<?> entityClass, Class<T> resultClass) {
+    query.maxTime(Duration.ofMillis(MAX_TIME_IN_MILLIS_FOR_MONGO_OPERATIONS));
+    return super.findDistinct(query, field, collectionName, entityClass, resultClass);
+  }
+
+  @Override
+  public <S, T> T findAndReplace(Query query, S replacement, FindAndReplaceOptions options, Class<S> entityType,
+      String collectionName, Class<T> resultType) {
+    query.maxTime(Duration.ofMillis(MAX_TIME_IN_MILLIS_FOR_MONGO_OPERATIONS));
+    return super.findAndReplace(query, replacement, options, entityType, collectionName, resultType);
+  }
+
+  @Override
+  public <T> T findAndRemove(Query query, Class<T> entityClass, String collectionName) {
+    query.maxTime(Duration.ofMillis(MAX_TIME_IN_MILLIS_FOR_MONGO_OPERATIONS));
+    return super.findAndRemove(query, entityClass, collectionName);
+  }
+
+  @Override
+  public <T> List<T> findAllAndRemove(Query query, Class<T> entityClass, String collectionName) {
+    query.maxTime(Duration.ofMillis(MAX_TIME_IN_MILLIS_FOR_MONGO_OPERATIONS));
+    return super.findAllAndRemove(query, entityClass, collectionName);
+  }
+
+  @Override
+  public <T> MapReduceResults<T> mapReduce(Query query, String inputCollectionName, String mapFunction,
+      String reduceFunction, @Nullable MapReduceOptions mapReduceOptions, Class<T> entityClass) {
+    query.maxTime(Duration.ofMillis(MAX_TIME_IN_MILLIS_FOR_MONGO_OPERATIONS));
+    return super.mapReduce(query, inputCollectionName, mapFunction, reduceFunction, mapReduceOptions, entityClass);
+  }
+
+  @Override
+  protected long doCount(String collectionName, Document filter, CountOptions options) {
+    options.maxTime(MAX_TIME_IN_MILLIS_FOR_MONGO_OPERATIONS, TimeUnit.MILLISECONDS);
+    return super.doCount(collectionName, filter, options);
+  }
+
+  @Override
+  public <T> CloseableIterator<T> stream(Query query, Class<T> entityType, String collectionName) {
+    query.maxTime(Duration.ofMillis(MAX_TIME_IN_MILLIS_FOR_MONGO_OPERATIONS));
+    return super.stream(query, entityType, collectionName);
+  }
+
+  @Override
+  public void executeQuery(Query query, String collectionName, DocumentCallbackHandler dch) {
+    query.maxTime(Duration.ofMillis(MAX_TIME_IN_MILLIS_FOR_MONGO_OPERATIONS));
+    super.executeQuery(query, collectionName, dch);
   }
 
   private <T> void traceQuery(Query query, Class<T> entityClass) {

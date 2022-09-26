@@ -289,7 +289,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
         accountId, orgId, projectId, filterIdentifier, filterProperties, false, module, searchTerm);
 
     Pageable pageRequest =
-        PageUtils.getPageRequest(page, size, sort, Sort.by(Sort.Direction.DESC, PipelineEntityKeys.lastUpdatedAt));
+        PageUtils.getPageRequest(page, 10000, sort, Sort.by(Sort.Direction.DESC, PipelineEntityKeys.lastUpdatedAt));
 
     Page<PipelineEntity> pipelineEntities =
         pmsPipelineService.list(criteria, pageRequest, accountId, orgId, projectId, getDistinctFromBranches);

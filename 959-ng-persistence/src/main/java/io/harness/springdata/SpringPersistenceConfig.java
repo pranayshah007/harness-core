@@ -24,6 +24,7 @@ import com.mongodb.MongoClient;
 import com.mongodb.MongoClientOptions;
 import com.mongodb.MongoClientURI;
 import com.mongodb.ReadPreference;
+import java.lang.reflect.Proxy;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -92,7 +93,10 @@ public class SpringPersistenceConfig extends AbstractMongoConfiguration {
   public MongoTemplate mongoTemplate() throws Exception {
     MappingMongoConverter mappingMongoConverter = mappingMongoConverter();
     mappingMongoConverter.setMapKeyDotReplacement(DOT_REPLACEMENT);
-    return new HMongoTemplate(mongoDbFactory(), mappingMongoConverter, mongoConfig.getTraceMode());
+    MongoTemplate mongoTemplate = new MongoTemplate(mongoDbFactory(), mappingMongoConverter);
+    Handler handler = new Handler(mongoTemplate);
+    return (MongoTemplate) Proxy.newProxyInstance(
+        MongoTemplate.class.getClassLoader(), new Class[] {MongoTemplate.class}, handler);
   }
 
   @Bean
