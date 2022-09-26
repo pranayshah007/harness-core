@@ -227,10 +227,10 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
         final YamlField serviceField = servicePlanCreatorHelper.getResolvedServiceField(specField, stageNode, ctx);
 
         PipelineInfrastructure pipelineInfrastructure = stageNode.getDeploymentStageConfig().getInfrastructure();
-        String serviceSpecNodeUuid = servicePlanCreatorHelper.fetchServiceSpecUuid(serviceField);
+
         final OverridesFromEnvironment overridesFromEnvironment =
             addEnvAndInfraDependency(ctx, stageNode, planCreationResponseMap, specField, pipelineInfrastructure,
-                postServiceStepUuid, environmentUuid, serviceSpecNodeUuid, environmentUuid);
+                postServiceStepUuid, environmentUuid, environmentUuid, serviceField);
         addServiceDependency(planCreationResponseMap, specField, stageNode, environmentUuid, postServiceStepUuid,
             serviceField, overridesFromEnvironment);
       }
@@ -322,7 +322,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   private OverridesFromEnvironment addEnvAndInfraDependency(PlanCreationContext ctx, DeploymentStageNode stageNode,
       LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, YamlField specField,
       PipelineInfrastructure pipelineInfrastructure, String postServiceStepUuid, String environmentUuid,
-      String serviceSpecNodeUuid, String envGroupUuid) throws IOException {
+      String envGroupUuid, YamlField serviceField) throws IOException {
     final OverridesFromEnvironmentBuilder overridesBuilder = OverridesFromEnvironment.builder();
     YamlField infraField = specField.getNode().getField(YamlTypes.PIPELINE_INFRASTRUCTURE);
     EnvironmentYamlV2 environmentV2 = stageNode.getDeploymentStageConfig().getEnvironment();
@@ -341,6 +341,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     if (environmentV2 != null && environmentV2.getDeployToAll().isExpression()) {
       throw new InvalidRequestException("Value for deploy to all must be provided");
     }
+
+    String serviceSpecNodeUuid = servicePlanCreatorHelper.fetchServiceSpecUuid(serviceField);
 
     if (infraField != null) {
       // Adding infrastructure node
@@ -380,7 +382,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       if (stageNode.getDeploymentStageConfig().getServices() != null) {
         serviceRef = SERVICE_REF_EXPRESSION;
       } else {
-        serviceRef = stageNode.getDeploymentStageConfig().getService().getServiceRef().getValue();
+        serviceRef = servicePlanCreatorHelper.getServiceRef(serviceField);
       }
       EnvironmentPlanCreatorConfig environmentPlanCreatorConfig =
           EnvironmentPlanCreatorHelper.getResolvedEnvRefs(ctx.getMetadata(), environmentV2, gitOpsEnabled, serviceRef,

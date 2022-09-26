@@ -105,8 +105,6 @@ public enum FeatureName {
   OPA_FF_GOVERNANCE,
   OPA_GIT_GOVERNANCE,
   OPA_PIPELINE_GOVERNANCE,
-  OPA_CONNECTOR_GOVERNANCE,
-  OPA_SECRET_GOVERNANCE,
   PCF_OLD_APP_RESIZE,
   LOCAL_DELEGATE_CONFIG_OVERRIDE,
   LOGS_V2_247,
@@ -131,7 +129,6 @@ public enum FeatureName {
   ROLLBACK_NONE_ARTIFACT,
   SEARCH_REQUEST,
   SEND_LOG_ANALYSIS_COMPRESSED,
-  SEND_SLACK_NOTIFICATION_FROM_DELEGATE,
   SIDE_NAVIGATION,
   SKIP_SWITCH_ACCOUNT_REAUTHENTICATION,
   SLACK_APPROVALS,
@@ -192,7 +189,6 @@ public enum FeatureName {
   SKIP_BASED_ON_STACK_STATUSES,
   WF_VAR_MULTI_SELECT_ALLOWED_VALUES,
   LDAP_GROUP_SYNC_JOB_ITERATOR,
-  PIPELINE_MONITORING,
   CF_CLI7,
   CF_APP_NON_VERSIONING_INACTIVE_ROLLBACK,
   CF_ALLOW_SPECIAL_CHARACTERS,
@@ -237,7 +233,6 @@ public enum FeatureName {
   ACTIVE_MIGRATION_FROM_LOCAL_TO_GCP_KMS,
   TERRAFORM_AWS_CP_AUTHENTICATION,
   CI_VM_INFRASTRUCTURE,
-  SERVICENOW_NG_INTEGRATION,
   OPTIMIZED_TF_PLAN,
   SELF_SERVICE_ENABLED,
   CHI_CUSTOM_HEALTH,
@@ -310,7 +305,6 @@ public enum FeatureName {
   DEPLOYMENT_SUBFORMIK_APPLICATION_DROPDOWN,
   USAGE_SCOPE_RBAC,
   ALLOW_USER_TYPE_FIELDS_JIRA("used to hide jira userfields input in ui in both cg and ng", HarnessTeam.SPG),
-  HARD_DELETE_ENTITIES,
   ACTIVITY_ID_BASED_TF_BASE_DIR,
   INHERITED_USER_GROUP,
   JDK11_UPGRADE_BANNER,
@@ -355,7 +349,6 @@ public enum FeatureName {
   QUEUED_COUNT_FOR_QUEUEKEY("Used to display the count of the queue in CG git sync", HarnessTeam.SPG),
   NG_EMAIL_STEP,
   NG_GOOGLE_ARTIFACT_REGISTRY,
-  PRUNE_KUBERNETES_RESOURCES_NG,
   USE_OLD_GIT_SYNC("Used for enabling old Git Experience on projects", HarnessTeam.PL),
   DISABLE_PIPELINE_SCHEMA_VALIDATION(
       "Used to disable pipeline yaml schema as We saw some intermittent issue in Schema Validation due to invalid schema generation. Will keep this FF until root cause is found and fixed.",
@@ -370,8 +363,6 @@ public enum FeatureName {
       "Used for disabling the resource optimization, AXA had asked this flag", HarnessTeam.CI),
   ENABLE_EXPERIMENTAL_STEP_FAILURE_STRATEGIES(
       "Used to enable rollback workflow strategy on step failure", HarnessTeam.SPG),
-  COMPARE_YAML_IN_GIT_SYNC(
-      "Compare Yaml of two entities while git-sync (as of now only for application access)", HarnessTeam.SPG),
   REMOVE_USERGROUP_CHECK(
       "Customers started facing NPE due to migration of usergroup reference, removed null check behind FF - ticket ID - CDS-39770, CG",
       HarnessTeam.SPG),
@@ -444,7 +435,8 @@ public enum FeatureName {
   SRM_ENABLE_VERIFY_STEP_LONG_DURATION("Enable longer duration for verify step", HarnessTeam.CV),
   SETTING_ATTRIBUTES_SERVICE_ACCOUNT_TOKEN_MIGRATION("Migrate erroneous service account tokens", HarnessTeam.PL),
   ARTIFACT_SOURCE_TEMPLATE("Flag to add support for artifact source templates", HarnessTeam.CDC),
-  NG_DEPLOYMENT_FREEZE("Enables Deployment freeze for NG", HarnessTeam.CDC);
+  NG_DEPLOYMENT_FREEZE("Enables Deployment freeze for NG", HarnessTeam.CDC),
+  PL_ENABLE_SWITCH_ACCOUNT_PAGINATION("Enables new API for Switch Account which is paginated", HarnessTeam.PL);
   @Deprecated
   FeatureName() {
     scope = Scope.PER_ACCOUNT;

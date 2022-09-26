@@ -67,7 +67,7 @@ public class AwsSshWinrmPerpetualTaskExecutorNgTest extends DelegateTestBase {
   private static final String SUCCESS = "success";
   private static final String PERPETUAL_TASK_ID = "perpetualTaskId";
   private static final String ACCOUNT_ID = "ACCOUNT_ID";
-  private static final String HOST1 = "HOST1";
+  private static final String HOST1 = "1.2.3.4";
   private static final String SERVICE = ServiceSpecType.SSH;
   byte[] bytes = {70};
 
@@ -91,7 +91,7 @@ public class AwsSshWinrmPerpetualTaskExecutorNgTest extends DelegateTestBase {
   @Owner(developers = ARVIND)
   @Category(UnitTests.class)
   public void testRunOnce() {
-    doReturn(Arrays.asList(AwsEC2Instance.builder().publicDnsName(HOST1).build()))
+    doReturn(Arrays.asList(AwsEC2Instance.builder().publicIp(HOST1).privateIp(HOST1).build()))
         .when(awsListEC2InstancesDelegateTaskHelper)
         .getInstances(any(), any(), anyString(), any(), any(), anyBoolean());
 
@@ -119,6 +119,7 @@ public class AwsSshWinrmPerpetualTaskExecutorNgTest extends DelegateTestBase {
                                                           .setAccountId(ACCOUNT_ID)
                                                           .setServiceType(SERVICE)
                                                           .setInfraDelegateConfig(ByteString.copyFrom(bytes))
+                                                          .setHostConnectionType("PublicIP")
                                                           .build();
 
     return PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(message)).build();

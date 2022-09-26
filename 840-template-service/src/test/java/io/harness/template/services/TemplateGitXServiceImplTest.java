@@ -136,7 +136,7 @@ public class TemplateGitXServiceImplTest {
                                    .filePath(ENTITY_REPO_URL)
                                    .build();
     when(gitSyncSdkService.isGitSimplificationEnabled(any(), any(), any())).thenReturn(true);
-    boolean isNewGitXEnabled = templateGitXService.isNewGitXEnabled(templateToSave, branchInfo);
+    boolean isNewGitXEnabled = templateGitXService.isNewGitXEnabledAndIsRemoteEntity(templateToSave, branchInfo);
     assertTrue(isNewGitXEnabled);
   }
 
@@ -164,7 +164,7 @@ public class TemplateGitXServiceImplTest {
             ngTemplateFeatureFlagHelperService.isEnabled(ACCOUNT_IDENTIFIER, FeatureName.NG_TEMPLATE_GITX_ACCOUNT_ORG))
         .thenReturn(true);
 
-    boolean isNewGitXEnabled = templateGitXService.isNewGitXEnabled(templateToSave, branchInfo);
+    boolean isNewGitXEnabled = templateGitXService.isNewGitXEnabledAndIsRemoteEntity(templateToSave, branchInfo);
     assertTrue(isNewGitXEnabled);
   }
 }

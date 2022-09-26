@@ -14,6 +14,7 @@ import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
+import io.harness.exception.ExceptionUtils;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -61,15 +62,23 @@ public class InfrastructureTaskExecutableStep extends AbstractInfrastructureTask
   public TaskRequest obtainTaskAfterRbac(
       Ambiance ambiance, Infrastructure infrastructureSpec, StepInputPackage inputPackage) {
     final NGLogCallback logCallback = infrastructureStepHelper.getInfrastructureLogCallback(ambiance, true, "Execute");
-    return obtainTaskInternal(ambiance, infrastructureSpec, logCallback, null);
+    return obtainTaskInternal(ambiance, infrastructureSpec, logCallback, null).getTaskRequest();
   }
 
   @Override
   public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, Infrastructure stepParameters,
       ThrowingSupplier<DelegateResponseData> responseDataSupplier) throws Exception {
+    final long startTime = System.currentTimeMillis() - DEFAULT_START_TIME_INTERVAL;
+
     final NGLogCallback logCallback = infrastructureStepHelper.getInfrastructureLogCallback(ambiance, "Execute");
     final InfrastructureTaskExecutableStepSweepingOutput infrastructureOutput = fetchInfraStepOutputOrThrow(ambiance);
-    return super.handleTaskResult(ambiance, infrastructureOutput, responseDataSupplier, logCallback);
+    final DelegateResponseData response;
+    try {
+      response = responseDataSupplier.get();
+    } catch (Exception ex) {
+      return buildFailureStepResponse(startTime, ExceptionUtils.getMessage(ex), logCallback);
+    }
+    return super.handleTaskResult(ambiance, infrastructureOutput, response, logCallback);
   }
 
   @Override

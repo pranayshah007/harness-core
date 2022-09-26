@@ -365,7 +365,7 @@ segmentConfiguration:
 enforcementClientConfiguration:
   enforcementCheckEnabled: false
 
-shouldUseInstanceCache: ${SHOULD_USE_INSTANCE_CACHE:-true}
+shouldUseInstanceCache: ${SHOULD_USE_INSTANCE_CACHE:-false}
 
 pmsPlanCreatorServicePoolConfig:
   corePoolSize: ${PLAN_CREATOR_SERVICE_EXECUTOR_POOL_CORE_SIZE:-2}

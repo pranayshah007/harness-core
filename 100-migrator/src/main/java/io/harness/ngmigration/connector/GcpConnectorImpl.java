@@ -12,8 +12,6 @@ import static io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO.b
 import static io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType.INHERIT_FROM_DELEGATE;
 import static io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType.MANUAL_CREDENTIALS;
 
-import static org.apache.commons.lang3.StringUtils.isBlank;
-
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorCredentialDTO;
@@ -22,6 +20,7 @@ import io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.UnsupportedOperationException;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.service.MigratorUtility;
 
 import software.wings.beans.GcpConfig;
 import software.wings.beans.SettingAttribute;
@@ -33,13 +32,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.StringUtils;
 
 public class GcpConnectorImpl implements BaseConnector {
-  private static final String ACCOUNT_SCOPE_PREFIX = "account.";
-  private static final String ORG_SCOPE_PREFIX = "org.";
-  private static final String PROJECT_SCOPE_PREFIX = StringUtils.EMPTY;
-
   @Override
   public String getSecretId(SettingAttribute settingAttribute) {
     return ((GcpConfig) settingAttribute.getValue()).getEncryptedServiceAccountKeyFileContent();
@@ -70,8 +64,8 @@ public class GcpConnectorImpl implements BaseConnector {
       if (isEmpty(cgEntityIdList)) {
         throw new UnsupportedOperationException("Unsupported Operation: Secret not found in migration entities");
       }
-      SecretRefData secretRefData =
-          new SecretRefData(getScope(cgEntityIdList.get(0), migratedEntities) + this.getSecretId(settingAttribute));
+      SecretRefData secretRefData = new SecretRefData(
+          MigratorUtility.getScope(migratedEntities.get(cgEntityIdList.get(0))) + this.getSecretId(settingAttribute));
       credentialDTO = GcpConnectorCredentialDTO.builder()
                           .gcpCredentialType(MANUAL_CREDENTIALS)
                           .config(GcpManualDetailsDTO.builder().secretKeyRef(secretRefData).build())
@@ -79,14 +73,5 @@ public class GcpConnectorImpl implements BaseConnector {
     }
 
     return builder.credential(credentialDTO).build();
-  }
-
-  String getScope(CgEntityId cgEntityId, Map<CgEntityId, NgEntityDetail> migratedEntities) {
-    if (isBlank(migratedEntities.get(cgEntityId).getOrgIdentifier())) {
-      return ACCOUNT_SCOPE_PREFIX;
-    } else if (isBlank(migratedEntities.get(cgEntityId).getProjectIdentifier())) {
-      return ORG_SCOPE_PREFIX;
-    }
-    return PROJECT_SCOPE_PREFIX;
   }
 }

@@ -87,12 +87,18 @@ public class StatusUtils {
   private final EnumSet<Status> ADVISING_STATUSES = EnumSet.of(INPUT_WAITING);
   private final EnumSet<Status> ABORTING_STATUSES = EnumSet.of(QUEUED);
 
+  private final EnumSet<Status> ABORT_IN_PROGRESS_STATUSES = EnumSet.of(DISCONTINUING, EXPIRED, ABORTED);
+
   public EnumSet<Status> finalizableStatuses() {
     return FINALIZABLE_STATUSES;
   }
 
   public EnumSet<Status> abortingStatuses() {
     return ABORTING_STATUSES;
+  }
+
+  public EnumSet<Status> abortInProgressStatuses() {
+    return ABORT_IN_PROGRESS_STATUSES;
   }
 
   public EnumSet<Status> getRetryableFailedStatuses() {

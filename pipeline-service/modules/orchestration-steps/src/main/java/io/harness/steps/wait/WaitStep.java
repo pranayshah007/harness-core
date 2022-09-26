@@ -24,7 +24,6 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.tasks.ResponseData;
 import io.harness.wait.WaitStepInstance;
-import io.harness.wait.WaitStepService;
 
 import com.google.inject.Inject;
 import java.util.Map;
@@ -52,7 +51,14 @@ public class WaitStep implements AsyncExecutable<StepElementParameters> {
   @Override
   public StepResponse handleAsyncResponse(
       Ambiance ambiance, StepElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {
-    return StepResponse.builder().status(Status.SUCCEEDED).build();
+    String nodeExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
+    String correlationId = waitStepService.findByNodeExecutionId(nodeExecutionId).get().getWaitStepInstanceId();
+    if (responseDataMap.get(correlationId) instanceof WaitStepResponseData
+        && ((WaitStepResponseData) responseDataMap.get(correlationId)).action == WaitStepAction.MARK_AS_FAIL) {
+      return StepResponse.builder().status(Status.FAILED).build();
+    } else {
+      return StepResponse.builder().status(Status.SUCCEEDED).build();
+    }
   }
 
   @Override

@@ -17,7 +17,12 @@ public class NoOpTemplateGitXServiceImpl implements TemplateGitXService {
   }
 
   @Override
-  public boolean isNewGitXEnabled(TemplateEntity templateToSave, GitEntityInfo gitEntityInfo) {
+  public boolean isNewGitXEnabledAndIsRemoteEntity(TemplateEntity templateToSave, GitEntityInfo gitEntityInfo) {
+    return false;
+  }
+
+  @Override
+  public boolean isNewGitXEnabled(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     return false;
   }
 }

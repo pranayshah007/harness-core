@@ -192,6 +192,7 @@ import io.harness.persistence.HPersistence;
 import io.harness.polling.client.PollResourceClientModule;
 import io.harness.project.ProjectClientModule;
 import io.harness.queue.QueueController;
+import io.harness.redis.CompatibleFieldSerializerCodec;
 import io.harness.redis.RedisConfig;
 import io.harness.remote.client.ClientMode;
 import io.harness.scheduler.PersistentScheduler;
@@ -868,6 +869,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
   @Named("atmosphere")
   @Singleton
   RedisConfig redisAtmoshphereConfig() {
+    configuration.getRedisAtmosphereConfig().setCodec(CompatibleFieldSerializerCodec.class);
     return configuration.getRedisAtmosphereConfig();
   }
 

@@ -16,6 +16,7 @@ import io.harness.springdata.PersistenceUtils;
 
 import com.google.inject.Inject;
 import com.mongodb.client.result.DeleteResult;
+import com.mongodb.client.result.UpdateResult;
 import java.time.Duration;
 import java.util.List;
 import lombok.AccessLevel;
@@ -133,6 +134,22 @@ public class InfrastructureRepositoryCustomImpl implements InfrastructureReposit
     return mongoTemplate.find(query, InfrastructureEntity.class);
   }
 
+  @Override
+  public UpdateResult batchUpdateInfrastructure(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String envIdentifier, List<String> infraIdentifierList, Update update) {
+    Criteria baseCriteria = Criteria.where(InfrastructureEntityKeys.accountId)
+                                .is(accountIdentifier)
+                                .and(InfrastructureEntityKeys.orgIdentifier)
+                                .is(orgIdentifier)
+                                .and(InfrastructureEntityKeys.projectIdentifier)
+                                .is(projectIdentifier)
+                                .and(InfrastructureEntityKeys.envIdentifier)
+                                .is(envIdentifier)
+                                .and(InfrastructureEntityKeys.identifier)
+                                .in(infraIdentifierList);
+    Query query = new Query(baseCriteria);
+    return mongoTemplate.updateMulti(query, update, InfrastructureEntity.class);
+  }
   private RetryPolicy<Object> getRetryPolicy(String failedAttemptMessage, String failureMessage) {
     return PersistenceUtils.getRetryPolicy(failedAttemptMessage, failureMessage);
   }

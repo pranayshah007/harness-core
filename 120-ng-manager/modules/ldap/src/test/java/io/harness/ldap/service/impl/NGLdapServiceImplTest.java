@@ -392,6 +392,27 @@ public class NGLdapServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = PRATEEK)
   @Category(UnitTests.class)
+  public void testSyncLdapGroupsDisabledLDAP() throws IOException {
+    // Arrange
+    Call<RestResponse<LdapSettingsWithEncryptedDataDetail>> request = mock(Call.class);
+    ldapSettingsWithEncryptedDataDetail.getLdapSettings().setDisabled(true);
+    RestResponse<LdapSettingsWithEncryptedDataDetail> mockResponse =
+        new RestResponse<>(ldapSettingsWithEncryptedDataDetail);
+    doReturn(request).when(managerClient).getLdapSettingsUsingAccountId(ACCOUNT_ID);
+    doReturn(Response.success(mockResponse)).when(request).execute();
+
+    // Act
+    ngLdapService.syncUserGroupsJob(ACCOUNT_ID, ORG_ID, PROJECT_ID);
+
+    // Assert
+    verify(managerClient, times(1)).getLdapSettingsUsingAccountId(ACCOUNT_ID);
+    verify(groupSyncHelper, times(0)).reconcileAllUserGroups(any(), anyString(), anyString());
+    verify(delegateGrpcClientWrapper, times(0)).executeSyncTask(any());
+  }
+
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
   public void testLDAPAuthentication() throws IOException {
     // Arrange
     final EncryptedRecordData encryptedRecord = EncryptedRecordData.builder()

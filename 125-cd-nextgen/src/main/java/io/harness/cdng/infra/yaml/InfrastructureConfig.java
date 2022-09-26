@@ -12,14 +12,17 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitsync.beans.YamlDTO;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import javax.validation.Valid;
 import lombok.Builder;
 import lombok.Data;
+import lombok.experimental.FieldNameConstants;
 import org.springframework.data.annotation.TypeAlias;
 
 @OwnedBy(CDC)
 @Data
 @Builder
 @TypeAlias("infrastructureConfig")
+@FieldNameConstants(innerTypeName = "InfrastructureConfigKeys")
 public class InfrastructureConfig implements YamlDTO {
-  @JsonProperty("infrastructureDefinition") InfrastructureDefinitionConfig infrastructureDefinitionConfig;
+  @JsonProperty("infrastructureDefinition") @Valid InfrastructureDefinitionConfig infrastructureDefinitionConfig;
 }

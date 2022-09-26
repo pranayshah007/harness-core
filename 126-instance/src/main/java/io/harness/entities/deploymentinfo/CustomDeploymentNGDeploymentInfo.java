@@ -21,7 +21,7 @@ import org.codehaus.commons.nullanalysis.NotNull;
 @EqualsAndHashCode(callSuper = true)
 @OwnedBy(HarnessTeam.DX)
 public class CustomDeploymentNGDeploymentInfo extends DeploymentInfo {
-  @NotNull private String instanceFetchScriptHash;
+  @NotNull private int instanceFetchScriptHash;
   private String instanceFetchScript;
   private String scriptOutput;
   private List<String> tags;

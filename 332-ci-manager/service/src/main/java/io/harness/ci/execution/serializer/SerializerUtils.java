@@ -102,4 +102,15 @@ public class SerializerUtils {
     }
     return safeDirScript;
   }
+
+  public static String getTestSplitStrategy(String splitStrategy) {
+    switch (splitStrategy) {
+      case "TestCount":
+        return "test_count";
+      case "ClassTiming":
+        return "class_timing";
+      default:
+        return "";
+    }
+  }
 }

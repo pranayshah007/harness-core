@@ -12,6 +12,7 @@ public interface ArtifactSourceConstants {
   String GCR_NAME = "Gcr";
   String ECR_NAME = "Ecr";
   String NEXUS3_REGISTRY_NAME = "Nexus3Registry";
+  String NEXUS2_REGISTRY_NAME = "Nexus2Registry";
   String ARTIFACTORY_REGISTRY_NAME = "ArtifactoryRegistry";
   String ACR_NAME = "Acr";
   String CUSTOM_ARTIFACT_NAME = "CustomArtifact";

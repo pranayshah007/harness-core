@@ -1066,7 +1066,7 @@
             },
             {
               "type": "string",
-              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+              "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
               "minLength": 1
             }
           ]
@@ -1081,7 +1081,7 @@
             },
             {
               "type": "string",
-              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+              "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
               "minLength": 1
             }
           ]
@@ -1095,7 +1095,7 @@
             },
             {
               "type": "string",
-              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+              "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
               "minLength": 1
             }
           ]
@@ -1109,7 +1109,7 @@
             },
             {
               "type": "string",
-              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+              "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
               "minLength": 1
             }
           ]
@@ -1123,7 +1123,7 @@
             },
             {
               "type": "string",
-              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+              "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
               "minLength": 1
             }
           ]
@@ -1137,7 +1137,7 @@
             },
             {
               "type": "string",
-              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+              "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
               "minLength": 1
             }
           ]
@@ -1617,7 +1617,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+                  "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
                   "minLength": 1
                 }
               ]
@@ -1797,7 +1797,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "(^[+-]?[0-9]+\\.?[0-9]*$|(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*))"
+                  "pattern": "(^[+-]?[0-9]+\\.?[0-9]*$|(.*<\\+.+>.*|^<\\+input>.*))"
                 }
               ]
             }
@@ -3907,7 +3907,7 @@
             },
             {
               "type": "string",
-              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+              "pattern": "(.*<\\+.+>.*|^<\\+input>.*)",
               "minLength": 1
             }
           ]
