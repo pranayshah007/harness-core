@@ -17,6 +17,7 @@ import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.event.MessageListener;
+import io.harness.ng.core.template.TemplateEntityType;
 
 import com.google.inject.Inject;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -66,7 +67,8 @@ public class CustomDeploymentEntityCRUDStreamEventListener implements MessageLis
   }
 
   private boolean processRestoreEvent(EntityChangeDTO entityChangeDTO) {
-    if (Objects.equals(entityChangeDTO.getMetadataMap().get("DeploymentTemplate"), "true")) {
+    if (Objects.equals(entityChangeDTO.getMetadataMap().get("templateType"),
+            TemplateEntityType.CUSTOM_DEPLOYMENT_TEMPLATE.toString())) {
       return deploymentTemplateEntityCRUDEventHandler.updateInfraAsObsolete(
           entityChangeDTO.getAccountIdentifier().getValue(), entityChangeDTO.getOrgIdentifier().getValue(),
           entityChangeDTO.getProjectIdentifier().getValue(), entityChangeDTO.getIdentifier().getValue(),

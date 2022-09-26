@@ -37,6 +37,7 @@ import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.eventsframework.producer.Message;
+import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.outbox.OutboxEvent;
 import io.harness.rule.Owner;
 import io.harness.security.SourcePrincipalContextData;
@@ -90,6 +91,7 @@ public class TemplateOutboxEventHandlerTest extends CategoryTest {
                                         .versionLabel(templateVersionLabel)
                                         .templateScope(Scope.PROJECT)
                                         .yaml(newYaml)
+                                        .templateEntityType(TemplateEntityType.STAGE_TEMPLATE)
                                         .build();
     TemplateCreateEvent createEvent =
         new TemplateCreateEvent(accountIdentifier, orgIdentifier, projectIdentifier, templateEntity, "");
@@ -146,12 +148,14 @@ public class TemplateOutboxEventHandlerTest extends CategoryTest {
                                            .versionLabel(templateVersionLabel)
                                            .templateScope(Scope.PROJECT)
                                            .yaml(oldYaml)
+                                           .templateEntityType(TemplateEntityType.STAGE_TEMPLATE)
                                            .build();
     TemplateEntity newTemplateEntity = TemplateEntity.builder()
                                            .name(randomAlphabetic(10))
                                            .identifier(identifier)
                                            .versionLabel(templateVersionLabel)
                                            .templateScope(Scope.PROJECT)
+                                           .templateEntityType(TemplateEntityType.STAGE_TEMPLATE)
                                            .yaml(newYaml)
                                            .build();
     TemplateUpdateEvent updateEvent = new TemplateUpdateEvent(accountIdentifier, orgIdentifier, projectIdentifier,
@@ -208,6 +212,7 @@ public class TemplateOutboxEventHandlerTest extends CategoryTest {
                                         .identifier(identifier)
                                         .versionLabel(templateVersionLabel)
                                         .templateScope(Scope.PROJECT)
+                                        .templateEntityType(TemplateEntityType.STAGE_TEMPLATE)
                                         .yaml(oldYaml)
                                         .build();
     TemplateDeleteEvent deleteEvent =
@@ -279,6 +284,7 @@ public class TemplateOutboxEventHandlerTest extends CategoryTest {
                                            .accountId(accountIdentifier)
                                            .orgIdentifier(orgIdentifier)
                                            .templateScope(Scope.PROJECT)
+                                           .templateEntityType(TemplateEntityType.STAGE_TEMPLATE)
                                            .yaml(oldYaml)
                                            .build();
     TemplateEntity newTemplateEntity = TemplateEntity.builder()
@@ -288,6 +294,7 @@ public class TemplateOutboxEventHandlerTest extends CategoryTest {
                                            .accountId(accountIdentifier)
                                            .orgIdentifier(orgIdentifier)
                                            .templateScope(Scope.ORG)
+                                           .templateEntityType(TemplateEntityType.STAGE_TEMPLATE)
                                            .yaml(newYaml)
                                            .build();
 
@@ -355,6 +362,7 @@ public class TemplateOutboxEventHandlerTest extends CategoryTest {
                                         .accountId(accountIdentifier)
                                         .orgIdentifier(orgIdentifier)
                                         .templateScope(Scope.PROJECT)
+                                        .templateEntityType(TemplateEntityType.STAGE_TEMPLATE)
                                         .yaml(oldYaml)
                                         .build();
 
@@ -374,8 +382,8 @@ public class TemplateOutboxEventHandlerTest extends CategoryTest {
                                   .build();
 
     ArgumentCaptor<EntityChangeDTO> entityChangeDTOArgumentCaptor = ArgumentCaptor.forClass(EntityChangeDTO.class);
-    templateOutboxEventHandler.publishEvent(
-        outboxEvent, EventsFrameworkMetadataConstants.UPDATE_ACTION, templateVersionLabel, null);
+    templateOutboxEventHandler.publishEvent(outboxEvent, EventsFrameworkMetadataConstants.UPDATE_ACTION,
+        templateVersionLabel, TemplateEntityType.STAGE_TEMPLATE);
     verify(templateOutboxEventHandler)
         .publishEvent(anyString(), anyString(), anyString(), entityChangeDTOArgumentCaptor.capture());
     assertEquals(entityChangeDTOArgumentCaptor.getValue().getIdentifier().getValue(), identifier);

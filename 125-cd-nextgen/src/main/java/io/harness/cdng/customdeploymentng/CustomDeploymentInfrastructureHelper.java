@@ -15,6 +15,7 @@ import static java.util.Objects.isNull;
 import io.harness.beans.FileReference;
 import io.harness.cdng.customdeployment.CustomDeploymentConnectorNGVariable;
 import io.harness.cdng.customdeployment.CustomDeploymentNGVariable;
+import io.harness.cdng.customdeployment.CustomDeploymentSecretNGVariable;
 import io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorModule;
@@ -34,6 +35,7 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.template.beans.TemplateResponseDTO;
 import io.harness.template.remote.TemplateResourceClient;
+import io.harness.yaml.utils.NGVariablesUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -72,9 +74,12 @@ public class CustomDeploymentInfrastructureHelper {
             connectorNGVariable.setConnector(
                 ParameterField.<ConnectorInfoDTO>builder().value(connectorInfoDTO).build());
             mapOfVariables.put(connectorNGVariable.getName(), connectorInfoDTO);
-          } else {
-            mapOfVariables.put(variable.getName(), variable.getCurrentValue().getValue());
           }
+
+        } else if (variable instanceof CustomDeploymentSecretNGVariable) {
+          CustomDeploymentSecretNGVariable secretNGVariable = (CustomDeploymentSecretNGVariable) variable;
+          String secretIdentifier = secretNGVariable.getValue().getValue().getIdentifier();
+          mapOfVariables.put(secretNGVariable.getName(), NGVariablesUtils.fetchSecretExpression(secretIdentifier));
         } else {
           mapOfVariables.put(variable.getName(), variable.getCurrentValue().getValue());
         }

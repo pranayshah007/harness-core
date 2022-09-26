@@ -200,11 +200,9 @@ public class TemplateOutboxEventHandler implements OutboxEventHandler {
       entityBuilder.setOrgIdentifier(StringValue.of(resourceScope.getOrgIdentifier()));
       entityBuilder.setProjectIdentifier(StringValue.of(resourceScope.getProjectIdentifier()));
     }
-    if (templateType == TemplateEntityType.CUSTOM_DEPLOYMENT_TEMPLATE) {
-      log.info("Changing infra of Deployment template to null for account identifier :{}", accountIdentifier);
-      entityBuilder.putMetadata("versionLabel", versionLabel);
-      entityBuilder.putMetadata("DeploymentTemplate", "true");
-    }
+
+    entityBuilder.putMetadata("versionLabel", versionLabel);
+    entityBuilder.putMetadata("templateType", templateType.toString());
     return publishEvent(action, accountIdentifier, outboxEvent.getResource().getIdentifier(), entityBuilder.build());
   }
 
