@@ -5,16 +5,17 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ng.core.template;
+package io.harness.template.beans;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.yaml.core.variables.NGVariable;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.annotations.ApiModel;
-import java.util.Map;
+import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
@@ -27,5 +28,5 @@ import lombok.Data;
 @ApiModel("CopyTemplateVariableRequest")
 public class CopyTemplateVariableRequestDTO {
   @NotNull String templateYaml;
-  Map<String, String> variableValues;
+  List<NGVariable> variables;
 }

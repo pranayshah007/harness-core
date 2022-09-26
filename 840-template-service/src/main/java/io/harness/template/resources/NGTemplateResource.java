@@ -40,7 +40,6 @@ import io.harness.ng.core.customDeployment.CustomDeploymentYamlRequestDTO;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
-import io.harness.ng.core.template.CopyTemplateVariableRequestDTO;
 import io.harness.ng.core.template.TemplateApplyRequestDTO;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ng.core.template.TemplateListType;
@@ -60,6 +59,7 @@ import io.harness.pms.variables.VariableMergeServiceResponse;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.template.TemplateFilterPropertiesDTO;
+import io.harness.template.beans.CopyTemplateVariableRequestDTO;
 import io.harness.template.beans.FilterParamsDTO;
 import io.harness.template.beans.PageParamsDTO;
 import io.harness.template.beans.PermissionTypes;
@@ -81,7 +81,7 @@ import io.harness.template.services.NGTemplateService;
 import io.harness.template.services.NGTemplateServiceHelper;
 import io.harness.template.services.TemplateMergeService;
 import io.harness.utils.PageUtils;
-import io.harness.yaml.core.variables.NGVariable;
+import io.harness.yaml.utils.NGVariablesUtils;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
@@ -100,7 +100,6 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
@@ -879,9 +878,9 @@ public class NGTemplateResource {
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
       @NotNull CopyTemplateVariableRequestDTO copyTemplateVariableRequestDTO) {
-    return ResponseDTO.newResponse(
-        templateService.copyTemplateWithVariables(accountIdentifier, orgIdentifier, projectIdentifier,
-            copyTemplateVariableRequestDTO.getTemplateYaml(), copyTemplateVariableRequestDTO.getVariableValues()));
+    return ResponseDTO.newResponse(templateService.copyTemplateWithVariables(accountIdentifier, orgIdentifier,
+        projectIdentifier, copyTemplateVariableRequestDTO.getTemplateYaml(),
+        NGVariablesUtils.getStringMapVariables(copyTemplateVariableRequestDTO.getVariables(), 0L)));
   }
 
   @POST
