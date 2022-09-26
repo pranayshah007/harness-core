@@ -11,6 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.WalkTreeModule;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.artifacts.azuremachineimage.service.AzureMachineImageRegistryService;
+import io.harness.artifacts.azuremachineimage.service.AzureMachineImageRegistryServiceImpl;
 import io.harness.cdng.artifact.resources.AzureMachineImage.service.AzureMachineImageResourceService;
 import io.harness.cdng.artifact.resources.AzureMachineImage.service.AzureMachineImageResourceServiceImpl;
 import io.harness.cdng.artifact.resources.acr.service.AcrResourceService;
@@ -128,6 +130,7 @@ public class NGModule extends AbstractModule {
     bind(AzureResourceService.class).to(AzureResourceServiceImpl.class);
     bind(JenkinsResourceService.class).to(JenkinsResourceServiceImpl.class);
     bind(GithubPackagesResourceService.class).to(GithubPackagesResourceServiceImpl.class);
+    bind(AzureMachineImageRegistryService.class).to(AzureMachineImageRegistryServiceImpl.class);
     bind(FilterService.class).to(FilterServiceImpl.class);
     bind(ClusterService.class).to(ClusterServiceImpl.class);
     bind(InfrastructureEntityService.class).to(InfrastructureEntityServiceImpl.class);

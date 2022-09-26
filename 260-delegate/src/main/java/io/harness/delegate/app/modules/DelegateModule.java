@@ -18,6 +18,8 @@ import io.harness.artifactory.ArtifactoryNgService;
 import io.harness.artifactory.ArtifactoryNgServiceImpl;
 import io.harness.artifactory.service.ArtifactoryRegistryService;
 import io.harness.artifactory.service.ArtifactoryRegistryServiceImpl;
+import io.harness.artifacts.azuremachineimage.service.AzureMachineImageRegistryService;
+import io.harness.artifacts.azuremachineimage.service.AzureMachineImageRegistryServiceImpl;
 import io.harness.artifacts.docker.client.DockerRestClientFactory;
 import io.harness.artifacts.docker.client.DockerRestClientFactoryImpl;
 import io.harness.artifacts.docker.service.DockerRegistryService;
@@ -1082,6 +1084,7 @@ public class DelegateModule extends AbstractModule {
     bind(EcrClassicService.class).to(EcrClassicServiceImpl.class);
     bind(GcrApiService.class).to(GcrApiServiceImpl.class);
     bind(GarApiService.class).to(GARApiServiceImpl.class);
+    bind(AzureMachineImageRegistryService.class).to(AzureMachineImageRegistryServiceImpl.class);
     bind(GcrBuildService.class).to(GcrBuildServiceImpl.class);
     bind(AcrService.class).to(AcrServiceImpl.class);
     bind(AcrBuildService.class).to(AcrBuildServiceImpl.class);

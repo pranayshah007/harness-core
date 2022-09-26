@@ -12,6 +12,8 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static org.mockito.Mockito.mock;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.artifacts.azuremachineimage.service.AzureMachineImageRegistryService;
+import io.harness.artifacts.azuremachineimage.service.AzureMachineImageRegistryServiceImpl;
 import io.harness.artifacts.docker.client.DockerRestClientFactory;
 import io.harness.artifacts.docker.client.DockerRestClientFactoryImpl;
 import io.harness.artifacts.docker.service.DockerRegistryService;
@@ -215,6 +217,7 @@ public class WingsTestModule extends AbstractModule {
     bind(GcrApiService.class).to(GcrApiServiceImpl.class);
     bind(GithubPackagesRestClientFactory.class).to(GithubPackagesRestClientFactoryImpl.class);
     bind(GarApiService.class).to(GARApiServiceImpl.class);
+    bind(AzureMachineImageRegistryService.class).to(AzureMachineImageRegistryServiceImpl.class);
     bind(EcrBuildService.class).to(EcrBuildServiceImpl.class);
     bind(ContainerService.class).to(ContainerServiceImpl.class);
     bind(AwsAppAutoScalingHelperServiceDelegate.class).to(AwsAppAutoScalingHelperServiceDelegateImpl.class);

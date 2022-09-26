@@ -42,7 +42,6 @@ public class AzureMachineImageTaskNG extends AbstractDelegateRunnableTask {
   public ArtifactTaskResponse run(TaskParameters parameters) {
     //    return null;
     ArtifactTaskParameters taskParameters = (ArtifactTaskParameters) parameters;
-    //            return azureMachineImageTaskHelper.getArtifactCollectResponse(taskParameters);
-    return null;
+    return azureMachineImageTaskHelper.getArtifactCollectResponse(taskParameters);
   }
 }

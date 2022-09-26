@@ -100,6 +100,7 @@ public class ArtifactDelegateRequestUtils {
       ArtifactSourceType sourceType) {
     return AzureMachineImageDelegateRequest.builder()
         .azureConnectorDTO(connector)
+        .subscriptionId(subscriptionId)
         .encryptedDataDetails(encryptedDataDetails)
         .build();
   }

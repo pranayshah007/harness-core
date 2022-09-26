@@ -11,6 +11,8 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.artifactory.service.ArtifactoryRegistryService;
 import io.harness.artifactory.service.ArtifactoryRegistryServiceImpl;
+import io.harness.artifacts.azuremachineimage.service.AzureMachineImageRegistryService;
+import io.harness.artifacts.azuremachineimage.service.AzureMachineImageRegistryServiceImpl;
 import io.harness.artifacts.docker.service.DockerRegistryService;
 import io.harness.artifacts.docker.service.DockerRegistryServiceImpl;
 import io.harness.artifacts.gar.service.GARApiServiceImpl;
@@ -42,6 +44,7 @@ public class NGDelegateModule extends AbstractModule {
     bind(NexusRegistryService.class).to(NexusRegistryServiceImpl.class);
     bind(ArtifactoryRegistryService.class).to(ArtifactoryRegistryServiceImpl.class);
     bind(GcrApiService.class).to(GcrApiServiceImpl.class);
+    bind(AzureMachineImageRegistryService.class).to(AzureMachineImageRegistryServiceImpl.class);
     bind(GithubPackagesRestClientFactory.class).to(GithubPackagesRestClientFactoryImpl.class);
     bind(GithubPackagesRegistryService.class).to(GithubPackagesRegistryServiceImpl.class);
     bind(GarApiService.class).to(GARApiServiceImpl.class);
