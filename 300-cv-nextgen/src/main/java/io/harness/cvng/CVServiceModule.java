@@ -292,6 +292,7 @@ import io.harness.cvng.outbox.MonitoredServiceOutboxEventHandler;
 import io.harness.cvng.outbox.ServiceLevelObjectiveOutboxEventHandler;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetType;
+import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 import io.harness.cvng.servicelevelobjective.entities.RatioServiceLevelIndicator.RatioServiceLevelIndicatorUpdatableEntity;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator.ServiceLevelIndicatorUpdatableEntity;
 import io.harness.cvng.servicelevelobjective.entities.ThresholdServiceLevelIndicator.ThresholdServiceLevelIndicatorUpdatableEntity;
@@ -303,6 +304,7 @@ import io.harness.cvng.servicelevelobjective.services.api.SLOErrorBudgetResetSer
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveService;
+import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.cvng.servicelevelobjective.services.api.UserJourneyService;
 import io.harness.cvng.servicelevelobjective.services.impl.RatioAnalyserServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.SLIDataProcessorServiceImpl;
@@ -312,6 +314,7 @@ import io.harness.cvng.servicelevelobjective.services.impl.SLOErrorBudgetResetSe
 import io.harness.cvng.servicelevelobjective.services.impl.SLOHealthIndicatorServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.ServiceLevelIndicatorServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.ServiceLevelObjectiveServiceImpl;
+import io.harness.cvng.servicelevelobjective.services.impl.ServiceLevelObjectiveV2ServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.ThresholdAnalyserServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.UserJourneyServiceImpl;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.CalenderSLOTargetTransformer;
@@ -321,6 +324,9 @@ import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.S
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.ServiceLevelIndicatorEntityAndDTOTransformer;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.ServiceLevelIndicatorTransformer;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.ThresholdServiceLevelIndicatorTransformer;
+import io.harness.cvng.servicelevelobjective.transformer.servicelevelobjectivev2.CompositeSLOTransformer;
+import io.harness.cvng.servicelevelobjective.transformer.servicelevelobjectivev2.SLOV2Transformer;
+import io.harness.cvng.servicelevelobjective.transformer.servicelevelobjectivev2.SimpleSLOTransformer;
 import io.harness.cvng.statemachine.beans.AnalysisState.StateType;
 import io.harness.cvng.statemachine.services.api.AnalysisStateExecutor;
 import io.harness.cvng.statemachine.services.api.AnalysisStateMachineService;
@@ -810,7 +816,17 @@ public class CVServiceModule extends AbstractModule {
     bind(ChangeEventService.class).to(ChangeEventServiceImpl.class).in(Scopes.SINGLETON);
     bind(ChangeEventEntityAndDTOTransformer.class);
 
+    MapBinder<ServiceLevelObjectiveType, SLOV2Transformer> serviceLevelObjectiveTypeSLOV2TransformerMapBinder =
+        MapBinder.newMapBinder(binder(), ServiceLevelObjectiveType.class, SLOV2Transformer.class);
+    serviceLevelObjectiveTypeSLOV2TransformerMapBinder.addBinding(ServiceLevelObjectiveType.SIMPLE)
+        .to(SimpleSLOTransformer.class)
+        .in(Scopes.SINGLETON);
+    serviceLevelObjectiveTypeSLOV2TransformerMapBinder.addBinding(ServiceLevelObjectiveType.COMPOSITE)
+        .to(CompositeSLOTransformer.class)
+        .in(Scopes.SINGLETON);
+
     bind(ServiceLevelObjectiveService.class).to(ServiceLevelObjectiveServiceImpl.class).in(Singleton.class);
+    bind(ServiceLevelObjectiveV2Service.class).to(ServiceLevelObjectiveV2ServiceImpl.class).in(Singleton.class);
     bind(SLOErrorBudgetResetService.class).to(SLOErrorBudgetResetServiceImpl.class).in(Singleton.class);
     bind(UserJourneyService.class).to(UserJourneyServiceImpl.class);
     bind(ServiceLevelIndicatorService.class).to(ServiceLevelIndicatorServiceImpl.class).in(Singleton.class);

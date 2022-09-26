@@ -7,22 +7,25 @@
 package io.harness.cvng.servicelevelobjective.entities;
 
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorType;
+import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
 
 @JsonTypeName("Simple")
 @Data
 @SuperBuilder
-@NoArgsConstructor
 @FieldNameConstants(innerTypeName = "SimpleServiceLevelObjectiveKeys")
 @EqualsAndHashCode(callSuper = true)
+
 public class SimpleServiceLevelObjective extends AbstractServiceLevelObjective {
+  public SimpleServiceLevelObjective() {
+    super.setServiceLevelObjectiveType(ServiceLevelObjectiveType.SIMPLE);
+  }
   String healthSourceIdentifier;
   String monitoredServiceIdentifier;
   List<String> serviceLevelIndicators;

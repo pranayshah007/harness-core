@@ -103,6 +103,7 @@ import io.harness.cvng.notification.services.api.NotificationRuleTemplateDataGen
 import io.harness.cvng.notification.services.api.NotificationRuleTemplateDataGenerator.NotificationData;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveService;
@@ -1607,7 +1608,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
 
     for (ServiceLevelObjective serviceLevelObjective : serviceLevelObjectiveList) {
       LocalDateTime currentLocalDate = LocalDateTime.ofInstant(clock.instant(), serviceLevelObjective.getZoneOffset());
-      ServiceLevelObjective.TimePeriod timePeriod = serviceLevelObjective.getCurrentTimeRange(currentLocalDate);
+      TimePeriod timePeriod = serviceLevelObjective.getCurrentTimeRange(currentLocalDate);
       Boolean outOfRange = false;
       if (!Objects.isNull(startTime) && !Objects.isNull(endTime)) {
         if ((startTime > timePeriod.getEndTime(serviceLevelObjective.getZoneOffset()).toEpochMilli())

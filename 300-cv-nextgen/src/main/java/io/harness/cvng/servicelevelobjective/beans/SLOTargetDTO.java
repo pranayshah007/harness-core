@@ -24,7 +24,7 @@ import lombok.experimental.FieldNameConstants;
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "SLOTargetKeys")
-public class SLOTarget {
+public class SLOTargetDTO {
   @JsonProperty(SLO_TARGET_TYPE) SLOTargetType type;
   @NotNull Double sloTargetPercentage;
   @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = SLO_TARGET_TYPE, include = JsonTypeInfo.As.EXTERNAL_PROPERTY,

@@ -7,8 +7,6 @@
 
 package io.harness.cvng.servicelevelobjective.entities;
 
-import static java.time.temporal.ChronoUnit.DAYS;
-
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
@@ -35,8 +33,6 @@ import io.harness.persistence.UuidAware;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.ImmutableList;
-import java.time.Duration;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -162,48 +158,6 @@ public class ServiceLevelObjective
       return;
     }
     throw new IllegalArgumentException("Invalid fieldName " + fieldName);
-  }
-
-  @Value
-  public static class TimePeriod {
-    LocalDateTime startTime;
-    LocalDateTime endTime;
-    @Builder
-    public TimePeriod(LocalDate startDate, LocalDate endDate) {
-      this(startDate.atStartOfDay(), endDate.atStartOfDay());
-    }
-    public static TimePeriod createWithLocalTime(LocalDateTime startTime, LocalDateTime endTime) {
-      return new TimePeriod(startTime, endTime);
-    }
-
-    private TimePeriod(LocalDateTime startTime, LocalDateTime endTime) {
-      this.startTime = startTime;
-      this.endTime = endTime;
-    }
-
-    public int getRemainingDays(LocalDateTime currentDateTime) {
-      return (int) ChronoUnit.DAYS.between(currentDateTime.toLocalDate(), endTime.toLocalDate());
-    }
-    public int getTotalDays() {
-      return (int) DAYS.between(getStartTime(), getEndTime());
-    }
-    public int totalMinutes() {
-      return (int) Duration.between(getStartTime(), getEndTime()).toMinutes();
-    }
-
-    /**
-     * Start time is inclusive.
-     */
-    public Instant getStartTime(ZoneOffset zoneId) {
-      return getStartTime().toInstant(zoneId);
-    }
-
-    /**
-     * End time is exclusive.
-     */
-    public Instant getEndTime(ZoneOffset zoneId) {
-      return getEndTime().toInstant(zoneId);
-    }
   }
 
   @Data

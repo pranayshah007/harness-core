@@ -6,24 +6,31 @@
  */
 package io.harness.cvng.servicelevelobjective.entities;
 
+import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
+
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.List;
 import javax.validation.constraints.Size;
+import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
 
 @JsonTypeName("Composite")
 @Data
 @SuperBuilder
-@NoArgsConstructor
 @FieldNameConstants(innerTypeName = "CompositeServiceLevelObjectiveKeys")
 @EqualsAndHashCode(callSuper = true)
 public class CompositeServiceLevelObjective extends AbstractServiceLevelObjective {
+  public CompositeServiceLevelObjective() {
+    super.setServiceLevelObjectiveType(ServiceLevelObjectiveType.COMPOSITE);
+  }
+
   @Size(max = 20) List<ServiceLevelObjectivesDetail> serviceLevelObjectivesDetails;
 
+  @Data
+  @Builder
   public static class ServiceLevelObjectivesDetail {
     String serviceLevelObjectiveRef;
     Double weightagePercentage;
