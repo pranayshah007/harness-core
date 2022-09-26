@@ -38,7 +38,7 @@ public class DelegatePlatformModule extends AbstractModule {
 
     install(new DelegateTokensModule(configuration));
     install(new DelegateHealthModule());
-    install(KryoModule.getInstance());
+//    install(KryoModule.getInstance());
     install(new DelegatePlatformKryoModule());
     install(new MetricRegistryModule(new MetricRegistry()));
 

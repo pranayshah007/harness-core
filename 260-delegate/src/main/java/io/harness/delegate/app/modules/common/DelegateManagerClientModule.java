@@ -7,9 +7,10 @@
 
 package io.harness.delegate.app.modules.common;
 
-import com.google.inject.AbstractModule;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.managerclient.DelegateAgentManagerClientFactory;
+
+import com.google.inject.AbstractModule;
 
 public class DelegateManagerClientModule extends AbstractModule {
   @Override
