@@ -38,7 +38,7 @@ docker_pkg(
     srcs = [
         "//:protocol.info",
         "//270-delegate-service-app:keystore.jks",
-        "//270-delegate-service-app:config.yml",
+        "//270-delegate-service-app:delegate-service-config.yml",
         "//270-delegate-service-app/src/main/resources:redisson-jcache.yaml",
     ],
     files = {
