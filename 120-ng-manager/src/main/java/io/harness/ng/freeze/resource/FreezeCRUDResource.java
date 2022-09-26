@@ -14,12 +14,14 @@ import static io.harness.utils.PageUtils.getNGPageResponse;
 import io.harness.NGCommonEntityConstants;
 import io.harness.NGResourceFilterConstants;
 import io.harness.accesscontrol.AccountIdentifier;
+import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ProjectIdentifier;
 import io.harness.accesscontrol.ResourceIdentifier;
 import io.harness.freeze.beans.FreezeResponse;
 import io.harness.freeze.beans.FreezeStatus;
 import io.harness.freeze.beans.FreezeType;
+import io.harness.freeze.beans.PermissionTypes;
 import io.harness.freeze.entity.FreezeConfigEntity.FreezeConfigEntityKeys;
 import io.harness.freeze.helpers.FreezeFilterHelper;
 import io.harness.freeze.service.FreezeCRUDService;
@@ -42,6 +44,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
+import java.util.Optional;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -97,9 +100,12 @@ import org.springframework.data.mongodb.core.query.Criteria;
 @Slf4j
 public class FreezeCRUDResource {
   private final FreezeCRUDService freezeCRUDService;
+  // private static final String DEPLOYMENTFREEZE = "DEPLOYMENTFREEZE";
 
   @POST
   @ApiOperation(value = "Creates a Freeze", nickname = "createFreeze")
+  //@NGAccessControlCheck(resourceType = DEPLOYMENTFREEZE, permission =
+  //PermissionTypes.DEPLOYMENT_FREEZE_CREATE_PERMISSION)
   @Operation(operationId = "createFreeze", summary = "Create a Freeze",
       responses =
       {
@@ -116,6 +122,29 @@ public class FreezeCRUDResource {
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @Parameter(description = "Freeze YAML") @NotNull String freezeYaml) {
     return ResponseDTO.newResponse(freezeCRUDService.createFreezeConfig(freezeYaml, accountId, orgId, projectId));
+  }
+
+  @POST
+  @Path("/manageGlobalFreeze")
+  @ApiOperation(value = "Manage Global Freeze", nickname = "GlobalFreeze")
+  //@NGAccessControlCheck(resourceType = DEPLOYMENTFREEZE, permission =
+  //PermissionTypes.DEPLOYMENT_FREEZE_GLOBAL_PERMISSION)
+  @Operation(operationId = "createGlobalFreeze", summary = "Create Global Freeze",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns the created Global Freeze Config")
+      })
+  @Hidden
+  public ResponseDTO<FreezeResponse>
+  manageGlobalFreeze(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+                         NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
+      @Parameter(description = "Freeze YAML") @NotNull String freezeYaml) {
+    return ResponseDTO.newResponse(freezeCRUDService.manageGlobalFreezeConfig(freezeYaml, accountId, orgId, projectId));
   }
 
   @PUT
@@ -230,6 +259,26 @@ public class FreezeCRUDResource {
       @Parameter(description = "Freeze Identifier.") @PathParam(
           "freezeIdentifier") @ProjectIdentifier String freezeIdentifier) {
     return ResponseDTO.newResponse(freezeCRUDService.getFreezeConfig(freezeIdentifier, accountId, orgId, projectId));
+  }
+
+  @GET
+  @Path("/isGlobalDeploymentFreezeActive")
+  @ApiOperation(value = "Get status of Global Freeze", nickname = "getGlobalFreezeStatus")
+  @Operation(operationId = "getGlobalFreezeStatus", summary = "Get status of Global Freeze",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Get status of Global Freeze")
+      })
+  @Hidden
+  public Optional<Boolean>
+  isGlobalDeploymentFreezeActive(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull
+                                 @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId) {
+    return freezeCRUDService.isGlobalDeploymentFreezeActive(accountId, orgId, projectId);
   }
 
   @GET

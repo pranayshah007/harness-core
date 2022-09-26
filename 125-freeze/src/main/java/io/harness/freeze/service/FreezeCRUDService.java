@@ -11,12 +11,18 @@ import io.harness.freeze.beans.FreezeResponse;
 import io.harness.freeze.beans.FreezeStatus;
 
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 
 public interface FreezeCRUDService {
   FreezeResponse createFreezeConfig(String deploymentFreezeYaml, String accountId, String orgId, String projectId);
+
+  FreezeResponse manageGlobalFreezeConfig(
+      String deploymentFreezeYaml, String accountId, String orgId, String projectId);
+
+  Optional<Boolean> isGlobalDeploymentFreezeActive(String accountId, String orgId, String projectId);
 
   FreezeResponse updateFreezeConfig(
       String deploymentFreezeYaml, String accountId, String orgId, String projectId, String freezeIdentifier);

@@ -24,13 +24,23 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class NGFreezeDtoMapper {
   public FreezeConfigEntity toFreezeConfigEntity(
-      String accountId, String orgId, String projectId, String freezeConfigYaml) {
+      String accountId, String orgId, String projectId, String freezeConfigYaml, FreezeType type) {
     try {
       FreezeConfig templateConfig = YamlPipelineUtils.read(freezeConfigYaml, FreezeConfig.class);
-      return toFreezeConfigEntityResponse(accountId, templateConfig, freezeConfigYaml);
+      return toFreezeConfigEntityResponse(accountId, templateConfig, freezeConfigYaml, type);
     } catch (IOException e) {
       throw new InvalidRequestException("Cannot create template entity due to " + e.getMessage());
     }
+  }
+
+  public FreezeConfigEntity toFreezeConfigEntityGlobal(
+      String accountId, String orgId, String projectId, String freezeConfigYaml) {
+    return toFreezeConfigEntity(accountId, orgId, projectId, freezeConfigYaml, FreezeType.GLOBAL);
+  }
+
+  public FreezeConfigEntity toFreezeConfigEntityManual(
+      String accountId, String orgId, String projectId, String freezeConfigYaml) {
+    return toFreezeConfigEntity(accountId, orgId, projectId, freezeConfigYaml, FreezeType.MANUAL);
   }
 
   public FreezeConfig toFreezeConfig(String freezeConfigYaml) {
@@ -67,7 +77,7 @@ public class NGFreezeDtoMapper {
   }
 
   private FreezeConfigEntity toFreezeConfigEntityResponse(
-      String accountId, FreezeConfig freezeConfig, String freezeConfigYaml) {
+      String accountId, FreezeConfig freezeConfig, String freezeConfigYaml, FreezeType type) {
     //    validateFreezeYaml(freezeConfig, orgId, projectId);
     String description = (String) freezeConfig.getFreezeInfoConfig().getDescription().fetchFinalValue();
     description = description == null ? "" : description;
@@ -81,7 +91,7 @@ public class NGFreezeDtoMapper {
         .status(freezeConfig.getFreezeInfoConfig().getActive())
         .description(description)
         .tags(TagMapper.convertToList(freezeConfig.getFreezeInfoConfig().getTags()))
-        .type(FreezeType.MANUAL)
+        .type(type)
         .freezeScope(getScopeFromTemplateDto(freezeConfig.getFreezeInfoConfig()))
         .build();
   }

@@ -79,7 +79,7 @@ public class NGFreezeDtoMapperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testToTemplateDto() {
     FreezeConfigEntity entity =
-        NGFreezeDtoMapper.toFreezeConfigEntity(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml);
+        NGFreezeDtoMapper.toFreezeConfigEntityManual(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml);
     assertThat(entity).isNotNull();
   }
 
