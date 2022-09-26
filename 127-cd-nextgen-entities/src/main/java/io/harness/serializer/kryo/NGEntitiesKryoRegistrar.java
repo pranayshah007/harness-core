@@ -14,6 +14,7 @@ import io.harness.cdng.artifact.bean.yaml.ArtifactOverrideSetWrapper;
 import io.harness.cdng.artifact.bean.yaml.ArtifactOverrideSets;
 import io.harness.cdng.artifact.bean.yaml.ArtifactSource;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.AzureMachineImageConfig;
 import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
@@ -274,5 +275,6 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(NGEnvironmentConfig.class, 130027);
     kryo.register(NGServiceOverrideInfoConfig.class, 130030);
     kryo.register(NGEnvironmentGlobalOverride.class, 130031);
+    kryo.register(AzureMachineImageConfig.class, 130032);
   }
 }

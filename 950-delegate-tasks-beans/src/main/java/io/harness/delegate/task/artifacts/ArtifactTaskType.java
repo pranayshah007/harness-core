@@ -30,7 +30,8 @@ public enum ArtifactTaskType {
   GET_JOB_PARAMETERS("Get the Job Parameters"),
   JENKINS_BUILD("Trigger Jenkins Build"),
   JENKINS_POLL_TASK("Jenkins Poll TAsk"),
-  GET_GITHUB_PACKAGES("Get Github Packages");
+  GET_GITHUB_PACKAGES("Get Github Packages"),
+  GET_RESOURCE_GROUPS("Get Azure Machine Image Resource Groups");
 
   @Getter private final String displayName;
 

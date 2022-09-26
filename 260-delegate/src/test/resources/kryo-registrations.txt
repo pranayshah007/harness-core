@@ -1754,6 +1754,8 @@
 55419:io.harness.delegate.task.azure.appservice.webapp.ng.exception.AzureWebAppRollbackExceptionData
 55420:io.harness.delegate.task.artifacts.gar.GarDelegateRequest
 55421:io.harness.delegate.task.artifacts.gar.GarDelegateResponse
+55426:io.harness.delegate.task.artifacts.azuremachineimage.AzureMachineImageDelegateRequest
+55427:io.harness.delegate.task.artifacts.azuremachineimage.AzureMachineImageDelegateResponse
 55422:io.harness.delegate.task.azure.artifact.AwsS3AzureArtifactRequestDetails
 55423:io.harness.delegate.task.azure.arm.AzureFetchArmPreDeploymentDataTaskParameters
 55424:io.harness.delegate.task.azure.arm.AzureFetchArmPreDeploymentDataTaskResponse

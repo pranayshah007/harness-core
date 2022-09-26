@@ -169,6 +169,7 @@ import io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifact
 import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.azure.AcrArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.azure.AcrArtifactTaskNG;
+import io.harness.delegate.task.artifacts.azuremachineimage.AzureMachineImageTaskNG;
 import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.custom.CustomArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.custom.CustomArtifactTaskNG;
@@ -1764,6 +1765,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.JENKINS_ARTIFACT_TASK_NG).toInstance(JenkinsArtifactTaskNG.class);
     mapBinder.addBinding(TaskType.GITHUB_PACKAGES_TASK_NG).toInstance(GithubPackagesArtifactTaskNG.class);
     mapBinder.addBinding(TaskType.GOOGLE_ARTIFACT_REGISTRY_TASK_NG).toInstance(GARArtifactTaskNG.class);
+    mapBinder.addBinding(TaskType.AZURE_MACHINE_IMAGE_TASK_NG).toInstance(AzureMachineImageTaskNG.class);
     mapBinder.addBinding(TaskType.GCR_ARTIFACT_TASK_NG).toInstance(GcrArtifactTaskNG.class);
     mapBinder.addBinding(TaskType.ECR_ARTIFACT_TASK_NG).toInstance(EcrArtifactTaskNG.class);
     mapBinder.addBinding(TaskType.ACR_ARTIFACT_TASK_NG).toInstance(AcrArtifactTaskNG.class);

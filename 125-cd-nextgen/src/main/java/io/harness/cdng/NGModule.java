@@ -11,6 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.WalkTreeModule;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.artifact.resources.AzureMachineImage.service.AzureMachineImageResourceService;
+import io.harness.cdng.artifact.resources.AzureMachineImage.service.AzureMachineImageResourceServiceImpl;
 import io.harness.cdng.artifact.resources.acr.service.AcrResourceService;
 import io.harness.cdng.artifact.resources.acr.service.AcrResourceServiceImpl;
 import io.harness.cdng.artifact.resources.artifactory.service.ArtifactoryResourceService;
@@ -140,6 +142,7 @@ public class NGModule extends AbstractModule {
     bind(StageExecutionInfoService.class).to(StageExecutionInfoServiceImpl.class);
     bind(InstanceDeploymentInfoService.class).to(InstanceDeploymentInfoServiceImpl.class);
     bind(GARResourceService.class).to(GARResourceServiceImpl.class);
+    bind(AzureMachineImageResourceService.class).to(AzureMachineImageResourceServiceImpl.class);
     MapBinder<String, FilterPropertiesMapper> filterPropertiesMapper =
         MapBinder.newMapBinder(binder(), String.class, FilterPropertiesMapper.class);
     filterPropertiesMapper.addBinding(FilterType.ENVIRONMENTGROUP.toString())
