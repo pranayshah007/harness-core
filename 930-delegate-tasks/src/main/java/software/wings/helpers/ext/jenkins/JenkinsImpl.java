@@ -181,6 +181,7 @@ public class JenkinsImpl implements Jenkins {
               sleep(ofSeconds(1L));
               continue;
             } else {
+              log.warn("Error occurred while retrieving job with details {}. Retrying ", jobname, e);
               throw e;
             }
           }
