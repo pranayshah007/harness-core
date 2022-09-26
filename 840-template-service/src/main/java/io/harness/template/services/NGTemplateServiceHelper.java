@@ -554,8 +554,8 @@ public class NGTemplateServiceHelper {
       JsonNode templateVariablesJson = templateJson.retain(YAMLFieldNameConstants.VARIABLES);
       VariableMergeServiceResponse templateVariableResponse = YamlVariablesUtils.getTemplateVariablesFromYaml(
           templateVariablesJson.toString(), YAMLFieldNameConstants.VARIABLES);
-      variablesObject.set(YAMLFieldNameConstants.VARIABLES,
-          YamlUtils.readTree(templateVariableResponse.getYaml()).getNode().getCurrJsonNode());
+      variablesObject.setAll(
+          (ObjectNode) YamlUtils.readTree(templateVariableResponse.getYaml()).getNode().getCurrJsonNode());
       templateVariableResponse.getMetadataMap().values().forEach(variableValue
           -> variableValue.setYamlProperties(YamlProperties.newBuilder()
                                                  .setVariableName(variableValue.getYamlProperties().getVariableName())
