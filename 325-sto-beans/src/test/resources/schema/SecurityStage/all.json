@@ -3730,6 +3730,9 @@
             "connectorRef": {
               "type": "string"
             },
+            "enableTestSplitting": {
+              "type": "boolean"
+            },
             "envVariables": {
               "oneOf": [
                 {
@@ -3892,6 +3895,22 @@
             },
             "testAnnotations": {
               "type": "string"
+            },
+            "testSplitStrategy": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ClassTiming",
+                    "TestCount"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
             }
           }
         }
