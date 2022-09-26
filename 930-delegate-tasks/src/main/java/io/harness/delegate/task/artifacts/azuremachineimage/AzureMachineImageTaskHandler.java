@@ -2,6 +2,7 @@ package io.harness.delegate.task.artifacts.azuremachineimage;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.artifacts.azuremachineimage.service.AzureMachineImageRegistryService;
 import io.harness.azure.model.AzureConfig;
 import io.harness.delegate.beans.connector.azureconnector.AzureManualDetailsDTO;
 import io.harness.delegate.task.artifacts.DelegateArtifactTaskHandler;
@@ -19,11 +20,13 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 public class AzureMachineImageTaskHandler extends DelegateArtifactTaskHandler<AzureMachineImageDelegateRequest> {
   private final SecretDecryptionService secretDecryptionService;
-  private final AzureMachineImageTaskHelper azureMachineImageTaskHelper;
-
+  private final AzureMachineImageRegistryService azureMachineImageRegistryService;
   public ArtifactTaskExecutionResponse getResourceGroups(AzureMachineImageDelegateRequest attributesRequest) {
     AzureConfig azureConfig =
         AzureMachineImageResponseMapper.toAzureInternalConfig(attributesRequest, secretDecryptionService);
+
+    azureMachineImageRegistryService.getResourceGroups(azureConfig, attributesRequest.getSubscriptionId());
+
     return null;
   }
   public void decryptRequestDTOs(AzureMachineImageDelegateRequest azureMachineImageDelegateRequest) {

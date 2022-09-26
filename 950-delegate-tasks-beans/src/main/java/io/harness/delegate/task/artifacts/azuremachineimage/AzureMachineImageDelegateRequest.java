@@ -26,6 +26,7 @@ import lombok.Value;
 public class AzureMachineImageDelegateRequest implements ArtifactSourceDelegateRequest {
   AzureConnectorDTO azureConnectorDTO;
   List<EncryptedDataDetail> encryptedDataDetails;
+  String subscriptionId;
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
     List<ExecutionCapability> capabilities =

@@ -28,6 +28,7 @@ public class AzureMachineImageResponseMapper {
     AzureCredentialType azureCredentialType = credential.getAzureCredentialType();
     AzureEnvironmentType azureEnvironmentType =
         azureMachineImageDelegateRequest.getAzureConnectorDTO().getAzureEnvironmentType();
+
     return toAzureInternalConfig(
         credential, encryptedDataDetails, azureCredentialType, azureEnvironmentType, secretDecryptionService);
   }
