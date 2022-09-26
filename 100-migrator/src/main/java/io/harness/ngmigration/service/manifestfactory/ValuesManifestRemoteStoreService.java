@@ -5,15 +5,16 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ngmigration.service.ngManifestFactory;
+package io.harness.ngmigration.service.manifestfactory;
 
 import io.harness.cdng.manifest.ManifestConfigType;
 import io.harness.cdng.manifest.yaml.ManifestConfig;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
-import io.harness.cdng.manifest.yaml.kinds.K8sManifest;
+import io.harness.cdng.manifest.yaml.kinds.ValuesManifest;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.ngmigration.beans.ManifestProvidedEntitySpec;
+import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.entity.ManifestMigrationService;
@@ -27,24 +28,21 @@ import software.wings.ngmigration.NGMigrationEntityType;
 import com.google.inject.Inject;
 import java.util.Map;
 
-public class K8sManifestRemoteStoreService implements NgManifestService {
+public class ValuesManifestRemoteStoreService implements NgManifestService {
   @Inject ManifestMigrationService manifestMigrationService;
 
   @Override
   public ManifestConfigWrapper getManifestConfigWrapper(ApplicationManifest applicationManifest,
-      Map<CgEntityId, NgEntityDetail> migratedEntities, ManifestProvidedEntitySpec entitySpec) {
-    // TODO: get store from migrated connector entity
+      Map<CgEntityId, NGYamlFile> migratedEntities, ManifestProvidedEntitySpec entitySpec) {
     GitFileConfig gitFileConfig = applicationManifest.getGitFileConfig();
-    NgEntityDetail connector = migratedEntities.get(
-        CgEntityId.builder().id(gitFileConfig.getConnectorId()).type(NGMigrationEntityType.CONNECTOR).build());
+    NgEntityDetail connector =
+        migratedEntities
+            .get(CgEntityId.builder().id(gitFileConfig.getConnectorId()).type(NGMigrationEntityType.CONNECTOR).build())
+            .getNgEntityDetail();
 
-    K8sManifest k8sManifest =
-        K8sManifest
-            .builder()
-            // TODO: There needs to be a logic to build identifier of the manifest
+    ValuesManifest valuesManifest =
+        ValuesManifest.builder()
             .identifier(MigratorUtility.generateIdentifier(applicationManifest.getUuid()))
-            .skipResourceVersioning(
-                ParameterField.createValueField(applicationManifest.getSkipVersioningForAllK8sObjects()))
             .store(ParameterField.createValueField(
                 StoreConfigWrapper.builder()
                     .type(StoreConfigType.GIT)
@@ -54,8 +52,8 @@ public class K8sManifestRemoteStoreService implements NgManifestService {
     return ManifestConfigWrapper.builder()
         .manifest(ManifestConfig.builder()
                       .identifier(MigratorUtility.generateIdentifier(applicationManifest.getUuid()))
-                      .type(ManifestConfigType.K8_MANIFEST)
-                      .spec(k8sManifest)
+                      .type(ManifestConfigType.VALUES)
+                      .spec(valuesManifest)
                       .build())
         .build();
   }

@@ -172,7 +172,7 @@ public class PipelineMigrationService extends NgMigrationService {
 
   @Override
   public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NgEntityDetail> migratedEntities,
+      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities,
       NgEntityDetail ngEntityDetail) {
     Pipeline pipeline = (Pipeline) entities.get(entityId).getEntity();
     migratorExpressionUtils.render(pipeline);
@@ -220,24 +220,25 @@ public class PipelineMigrationService extends NgMigrationService {
                                                                 .build())
                                         .build();
 
-    allFiles.add(NGYamlFile.builder()
-                     .type(NGMigrationEntityType.PIPELINE)
-                     .filename("pipelines/" + identifier + ".yaml")
-                     .yaml(pipelineConfig)
-                     .cgBasicInfo(CgBasicInfo.builder()
-                                      .id(pipeline.getUuid())
-                                      .accountId(pipeline.getAccountId())
-                                      .appId(pipeline.getAppId())
-                                      .type(NGMigrationEntityType.PIPELINE)
-                                      .build())
-                     .build());
+    NGYamlFile yamlFile = NGYamlFile.builder()
+                              .type(NGMigrationEntityType.PIPELINE)
+                              .filename("pipelines/" + identifier + ".yaml")
+                              .yaml(pipelineConfig)
+                              .ngEntityDetail(NgEntityDetail.builder()
+                                                  .identifier(identifier)
+                                                  .orgIdentifier(orgIdentifier)
+                                                  .projectIdentifier(projectIdentifier)
+                                                  .build())
+                              .cgBasicInfo(CgBasicInfo.builder()
+                                               .id(pipeline.getUuid())
+                                               .accountId(pipeline.getAccountId())
+                                               .appId(pipeline.getAppId())
+                                               .type(NGMigrationEntityType.PIPELINE)
+                                               .build())
+                              .build();
+    allFiles.add(yamlFile);
 
-    migratedEntities.putIfAbsent(entityId,
-        NgEntityDetail.builder()
-            .identifier(identifier)
-            .orgIdentifier(orgIdentifier)
-            .projectIdentifier(projectIdentifier)
-            .build());
+    migratedEntities.putIfAbsent(entityId, yamlFile);
 
     return allFiles;
   }

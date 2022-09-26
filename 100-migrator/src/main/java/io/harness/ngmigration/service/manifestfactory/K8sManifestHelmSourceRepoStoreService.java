@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ngmigration.service.ngManifestFactory;
+package io.harness.ngmigration.service.manifestfactory;
 
 import io.harness.cdng.manifest.ManifestConfigType;
 import io.harness.cdng.manifest.yaml.ManifestConfig;
@@ -14,6 +14,7 @@ import io.harness.cdng.manifest.yaml.kinds.HelmChartManifest;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.ngmigration.beans.ManifestProvidedEntitySpec;
+import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.entity.ManifestMigrationService;
@@ -32,10 +33,12 @@ public class K8sManifestHelmSourceRepoStoreService implements NgManifestService 
 
   @Override
   public ManifestConfigWrapper getManifestConfigWrapper(ApplicationManifest applicationManifest,
-      Map<CgEntityId, NgEntityDetail> migratedEntities, ManifestProvidedEntitySpec entitySpec) {
+      Map<CgEntityId, NGYamlFile> migratedEntities, ManifestProvidedEntitySpec entitySpec) {
     GitFileConfig gitFileConfig = applicationManifest.getGitFileConfig();
-    NgEntityDetail connector = migratedEntities.get(
-        CgEntityId.builder().id(gitFileConfig.getConnectorId()).type(NGMigrationEntityType.CONNECTOR).build());
+    NgEntityDetail connector =
+        migratedEntities
+            .get(CgEntityId.builder().id(gitFileConfig.getConnectorId()).type(NGMigrationEntityType.CONNECTOR).build())
+            .getNgEntityDetail();
 
     HelmChartManifest helmChartManifest =
         HelmChartManifest.builder()

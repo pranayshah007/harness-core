@@ -5,11 +5,11 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ngmigration.service.ngManifestFactory;
+package io.harness.ngmigration.service.manifestfactory;
 
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.ngmigration.beans.ManifestProvidedEntitySpec;
-import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.NGYamlFile;
 
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.ngmigration.CgEntityId;
@@ -18,5 +18,5 @@ import java.util.Map;
 
 public interface NgManifestService {
   ManifestConfigWrapper getManifestConfigWrapper(ApplicationManifest applicationManifest,
-      Map<CgEntityId, NgEntityDetail> migratedEntities, ManifestProvidedEntitySpec entitySpec);
+      Map<CgEntityId, NGYamlFile> migratedEntities, ManifestProvidedEntitySpec entitySpec);
 }

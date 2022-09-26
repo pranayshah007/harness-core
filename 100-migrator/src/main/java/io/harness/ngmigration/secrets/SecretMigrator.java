@@ -11,7 +11,7 @@ import io.harness.beans.EncryptedData;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
-import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.NGYamlFile;
 
 import software.wings.ngmigration.CgEntityId;
 
@@ -22,5 +22,5 @@ public interface SecretMigrator {
       EncryptedData encryptedData, SecretManagerConfig vaultConfig, String secretManagerIdentifier);
 
   ConnectorConfigDTO getConfigDTO(
-      SecretManagerConfig secretManagerConfig, Map<CgEntityId, NgEntityDetail> migratedEntities);
+      SecretManagerConfig secretManagerConfig, Map<CgEntityId, NGYamlFile> migratedEntities);
 }

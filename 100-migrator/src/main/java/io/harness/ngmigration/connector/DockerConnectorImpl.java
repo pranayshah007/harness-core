@@ -23,7 +23,7 @@ import io.harness.delegate.beans.connector.docker.DockerRegistryProviderType;
 import io.harness.delegate.beans.connector.docker.DockerUserNamePasswordDTO;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
-import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.NGYamlFile;
 
 import software.wings.beans.DockerConfig;
 import software.wings.beans.SettingAttribute;
@@ -48,8 +48,8 @@ public class DockerConnectorImpl implements BaseConnector {
   }
 
   @Override
-  public ConnectorConfigDTO getConfigDTO(SettingAttribute settingAttribute, Set<CgEntityId> childEntities,
-      Map<CgEntityId, NgEntityDetail> migratedEntities) {
+  public ConnectorConfigDTO getConfigDTO(
+      SettingAttribute settingAttribute, Set<CgEntityId> childEntities, Map<CgEntityId, NGYamlFile> migratedEntities) {
     DockerConfig dockerConfig = (DockerConfig) settingAttribute.getValue();
     DockerAuthType dockerAuthType = StringUtils.isBlank(dockerConfig.getUsername()) ? ANONYMOUS : USER_PASSWORD;
     DockerAuthCredentialsDTO credentialsDTO = null;

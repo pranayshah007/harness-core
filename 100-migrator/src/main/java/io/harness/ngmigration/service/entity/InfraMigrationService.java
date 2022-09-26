@@ -135,7 +135,7 @@ public class InfraMigrationService extends NgMigrationService {
 
   @Override
   public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NgEntityDetail> migratedEntities,
+      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities,
       NgEntityDetail ngEntityDetail) {
     return new ArrayList<>();
   }
@@ -163,7 +163,7 @@ public class InfraMigrationService extends NgMigrationService {
   }
 
   public InfrastructureDef getInfraDef(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NgEntityDetail> migratedEntities) {
+      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
     InfrastructureDefinition infrastructureDefinition = (InfrastructureDefinition) entities.get(entityId).getEntity();
     migratorExpressionUtils.render(infrastructureDefinition);
 
@@ -176,11 +176,12 @@ public class InfraMigrationService extends NgMigrationService {
     DirectKubernetesInfrastructure k8sInfra =
         (DirectKubernetesInfrastructure) infrastructureDefinition.getInfrastructure();
 
-    NgEntityDetail connector =
-        migratedEntities.get(CgEntityId.builder()
-                                 .type(CONNECTOR)
-                                 .id(infrastructureDefinition.getInfrastructure().getCloudProviderId())
-                                 .build());
+    NgEntityDetail connector = migratedEntities
+                                   .get(CgEntityId.builder()
+                                            .type(CONNECTOR)
+                                            .id(infrastructureDefinition.getInfrastructure().getCloudProviderId())
+                                            .build())
+                                   .getNgEntityDetail();
     // TODO: Fix Release Name. release-${infra.kubernetes.infraId} -> release-<+INFRA_KEY>
     return InfrastructureDef.builder()
         .type(InfrastructureType.KUBERNETES_DIRECT)
@@ -190,5 +191,10 @@ public class InfraMigrationService extends NgMigrationService {
                   .releaseName(ParameterField.createValueField(k8sInfra.getReleaseName()))
                   .build())
         .build();
+  }
+
+  @Override
+  public boolean canMigrate(CgEntityId id, CgEntityId root, boolean migrateAll) {
+    return migrateAll || root.getType().equals(NGMigrationEntityType.ENVIRONMENT);
   }
 }

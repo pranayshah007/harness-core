@@ -7,6 +7,8 @@
 
 package io.harness.ngmigration.connector;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EncryptedData;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
@@ -14,7 +16,7 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.SecretSpecDTO;
 import io.harness.ngmigration.beans.MigrationInputDTO;
-import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.secrets.HarnessSecretMigrator;
 import io.harness.ngmigration.secrets.SecretMigrator;
 import io.harness.ngmigration.secrets.VaultSecretMigrator;
@@ -28,11 +30,14 @@ import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.NGMigrationEntityType;
 
+import com.google.inject.Inject;
 import java.util.Map;
+import java.util.Objects;
 
+@OwnedBy(HarnessTeam.CDC)
 public class SecretFactory {
-  private static final VaultSecretMigrator VAULT_SECRET_MIGRATOR = new VaultSecretMigrator();
-  private static final HarnessSecretMigrator HARNESS_SECRET_MIGRATOR = new HarnessSecretMigrator();
+  @Inject private VaultSecretMigrator vaultSecretMigrator;
+  @Inject private HarnessSecretMigrator harnessSecretMigrator;
 
   public static ConnectorType getConnectorType(SecretManagerConfig secretManagerConfig) {
     if (secretManagerConfig instanceof GcpKmsConfig) {
@@ -47,18 +52,23 @@ public class SecretFactory {
     throw new UnsupportedOperationException("Unsupported secret manager");
   }
 
-  public static SecretMigrator getSecretMigrator(SecretManagerConfig secretManagerConfig) {
+  public SecretMigrator getSecretMigrator(SecretManagerConfig secretManagerConfig) {
     if (secretManagerConfig instanceof VaultConfig) {
-      return VAULT_SECRET_MIGRATOR;
+      return vaultSecretMigrator;
     }
     if (secretManagerConfig instanceof LocalEncryptionConfig) {
-      return HARNESS_SECRET_MIGRATOR;
+      return harnessSecretMigrator;
+    }
+    // Handle special case for Harness Secret managers
+    if (secretManagerConfig instanceof GcpKmsConfig
+        && Objects.equals(secretManagerConfig.getIdentifier(), "harnessSecretManager")) {
+      return harnessSecretMigrator;
     }
     throw new UnsupportedOperationException("Unsupported secret manager");
   }
 
-  public static SecretDTOV2 getSecret(MigrationInputDTO inputDTO, String identifier, EncryptedData encryptedData,
-      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NgEntityDetail> migratedEntities) {
+  public SecretDTOV2 getSecret(MigrationInputDTO inputDTO, String identifier, EncryptedData encryptedData,
+      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities) {
     return SecretDTOV2.builder()
         .type(SecretType.SecretText)
         .name(encryptedData.getName())
@@ -70,19 +80,19 @@ public class SecretFactory {
         .build();
   }
 
-  private static SecretSpecDTO getSecretSpec(EncryptedData encryptedData, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, NgEntityDetail> migratedEntities) {
+  private SecretSpecDTO getSecretSpec(EncryptedData encryptedData, Map<CgEntityId, CgEntityNode> entities,
+      Map<CgEntityId, NGYamlFile> migratedEntities) {
     CgEntityId secretManagerId =
         CgEntityId.builder().type(NGMigrationEntityType.SECRET_MANAGER).id(encryptedData.getKmsId()).build();
     SecretManagerConfig secretManagerConfig = (SecretManagerConfig) entities.get(secretManagerId).getEntity();
 
     return getSecretMigrator(secretManagerConfig)
         .getSecretSpec(encryptedData, secretManagerConfig,
-            MigratorUtility.getIdentifierWithScope(migratedEntities.get(secretManagerId)));
+            MigratorUtility.getIdentifierWithScope(migratedEntities.get(secretManagerId).getNgEntityDetail()));
   }
 
-  public static ConnectorConfigDTO getConfigDTO(
-      SecretManagerConfig secretManagerConfig, Map<CgEntityId, NgEntityDetail> migratedEntities) {
+  public ConnectorConfigDTO getConfigDTO(
+      SecretManagerConfig secretManagerConfig, Map<CgEntityId, NGYamlFile> migratedEntities) {
     return getSecretMigrator(secretManagerConfig).getConfigDTO(secretManagerConfig, migratedEntities);
   }
 }
