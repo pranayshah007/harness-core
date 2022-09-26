@@ -528,10 +528,17 @@ public class SshCommandStepHelper extends CDStepHelper {
       String script = sshWinRmConfigFileHelper.fetchFileContent(
           FileReference.of(spec.getFile().getValue(), AmbianceUtils.getAccountId(ambiance),
               AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance)));
-      return cdExpressionResolver.renderExpression(ambiance, script);
+      return cdExpressionResolver.renderExpression(ambiance, sanitize(script));
     } else {
       throw new InvalidRequestException("Unsupported source type: " + shellScriptSourceWrapper.getType());
     }
+  }
+
+  private String sanitize(String script) {
+    if (isEmpty(script)) {
+      return script;
+    }
+    return script.replace("\r", "");
   }
 
   public Map<String, String> prepareOutputVariables(
