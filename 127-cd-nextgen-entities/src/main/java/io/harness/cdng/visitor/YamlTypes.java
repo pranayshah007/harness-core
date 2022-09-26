@@ -112,6 +112,14 @@ public interface YamlTypes {
   String CREDENTIALS_REF = "credentialsRef";
   String HOSTS = "hosts";
   String HOST_FILTER = "hostFilter";
+  String SIDECARS = "sidecars";
+  String SIDECAR = "sidecar";
+  String ARTIFACTS = "artifacts";
+  String ROLLBACK_STEPS = "rollbackSteps";
+  String STEPS = "steps";
+  String STRATEGY = "strategy";
+  String STEP_GROUP = "stepGroup";
+  String PRIMARY = "primary";
 
   String SUBSCRIPTION = "subscription";
   String RESOURCE_GROUP = "resourceGroup";
@@ -141,4 +149,7 @@ public interface YamlTypes {
   String APPLICATION_SETTINGS = "applicationSettings";
   String CONNECTION_STRINGS = "connectionStrings";
   String DEPLOYMENT_TYPE = "deploymentType";
+
+  String ENV_PRODUCTION = "Production";
+  String ENV_PRE_PRODUCTION = "PreProduction";
 }

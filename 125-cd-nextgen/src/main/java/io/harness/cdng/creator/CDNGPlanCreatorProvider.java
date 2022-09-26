@@ -7,6 +7,44 @@
 
 package io.harness.cdng.creator;
 
+import static io.harness.cdng.manifest.ManifestType.EcsScalingPolicyDefinition;
+import static io.harness.cdng.manifest.ManifestType.EcsTaskDefinition;
+import static io.harness.cdng.manifest.ManifestType.ServerlessAwsLambda;
+import static io.harness.cdng.visitor.YamlTypes.APPLICATION_SETTINGS;
+import static io.harness.cdng.visitor.YamlTypes.ARTIFACTS;
+import static io.harness.cdng.visitor.YamlTypes.CONFIG_FILE;
+import static io.harness.cdng.visitor.YamlTypes.CONFIG_FILES;
+import static io.harness.cdng.visitor.YamlTypes.CONNECTION_STRINGS;
+import static io.harness.cdng.visitor.YamlTypes.ENVIRONMENT_GROUP_YAML;
+import static io.harness.cdng.visitor.YamlTypes.ENVIRONMENT_YAML;
+import static io.harness.cdng.visitor.YamlTypes.K8S_MANIFEST;
+import static io.harness.cdng.visitor.YamlTypes.MANIFEST_CONFIG;
+import static io.harness.cdng.visitor.YamlTypes.MANIFEST_LIST_CONFIG;
+import static io.harness.cdng.visitor.YamlTypes.PRIMARY;
+import static io.harness.cdng.visitor.YamlTypes.ROLLBACK_STEPS;
+import static io.harness.cdng.visitor.YamlTypes.SERVICE_CONFIG;
+import static io.harness.cdng.visitor.YamlTypes.SERVICE_DEFINITION;
+import static io.harness.cdng.visitor.YamlTypes.SERVICE_ENTITY;
+import static io.harness.cdng.visitor.YamlTypes.SIDECAR;
+import static io.harness.cdng.visitor.YamlTypes.SIDECARS;
+import static io.harness.cdng.visitor.YamlTypes.SPEC;
+import static io.harness.cdng.visitor.YamlTypes.STARTUP_COMMAND;
+import static io.harness.cdng.visitor.YamlTypes.STEPS;
+import static io.harness.cdng.visitor.YamlTypes.STEP_GROUP;
+import static io.harness.cdng.visitor.YamlTypes.STRATEGY;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.ACR_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.AMAZON_S3_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.ARTIFACTORY_REGISTRY_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.CUSTOM_ARTIFACT_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.DOCKER_REGISTRY_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.ECR_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.GCR_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.GOOGLE_ARTIFACT_REGISTRY_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.JENKINS_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.NEXUS3_REGISTRY_NAME;
+import static io.harness.ng.core.k8s.ServiceSpecType.AZURE_WEBAPP;
+import static io.harness.ng.core.k8s.ServiceSpecType.KUBERNETES;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
@@ -104,6 +142,7 @@ import io.harness.cdng.creator.variables.ServerlessAwsLambdaRollbackStepVariable
 import io.harness.cdng.customDeployment.variablecreator.FetchInstanceScriptStepVariableCreator;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepVariableCreator;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsCreateStepPlanCreator;
+import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.provision.azure.variablecreator.AzureARMRollbackStepVariableCreator;
 import io.harness.cdng.provision.azure.variablecreator.AzureCreateARMResourceStepVariableCreator;
 import io.harness.cdng.provision.azure.variablecreator.AzureCreateBPStepVariableCreator;
@@ -114,11 +153,16 @@ import io.harness.cdng.provision.terraform.variablecreator.TerraformApplyStepVar
 import io.harness.cdng.provision.terraform.variablecreator.TerraformDestroyStepVariableCreator;
 import io.harness.cdng.provision.terraform.variablecreator.TerraformPlanStepVariableCreator;
 import io.harness.cdng.provision.terraform.variablecreator.TerraformRollbackStepVariableCreator;
+import io.harness.cdng.visitor.YamlTypes;
+import io.harness.delegate.beans.DelegateType;
 import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.filters.EmptyAnyFilterJsonCreator;
+import io.harness.filters.EmptyFilterJsonCreator;
 import io.harness.filters.ExecutionPMSFilterJsonCreator;
 import io.harness.filters.ParallelGenericFilterJsonCreator;
 import io.harness.filters.StepGroupPmsFilterJsonCreator;
+import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.plancreator.stages.parallel.ParallelPlanCreator;
 import io.harness.plancreator.steps.SpecNodePlanCreator;
 import io.harness.plancreator.strategy.StrategyConfigPlanCreator;
@@ -127,31 +171,61 @@ import io.harness.pms.contracts.steps.StepMetaData;
 import io.harness.pms.sdk.core.pipeline.filters.FilterJsonCreator;
 import io.harness.pms.sdk.core.plan.creation.creators.PartialPlanCreator;
 import io.harness.pms.sdk.core.plan.creation.creators.PipelineServiceInfoProvider;
+import io.harness.pms.sdk.core.variables.EmptyAnyVariableCreator;
+import io.harness.pms.sdk.core.variables.EmptyVariableCreator;
 import io.harness.pms.sdk.core.variables.StrategyVariableCreator;
 import io.harness.pms.sdk.core.variables.VariableCreator;
 import io.harness.pms.utils.InjectorUtils;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.variables.ExecutionVariableCreator;
 
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDC)
 @Singleton
 public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
   private static final String TERRAFORM_STEP_METADATA = "Terraform";
-  private static final List<String> CLOUDFORMATION_CATEGORY =
-      Arrays.asList("Kubernetes", "Provisioner", "Cloudformation", "Helm");
   private static final String CLOUDFORMATION_STEP_METADATA = "Cloudformation";
-  private static final List<String> TERRAFORM_CATEGORY = Arrays.asList("Kubernetes", "Provisioner", "Helm");
+  private static final String AZURE = "Azure";
+  private static final String HELM = "Helm";
+  private static final String PROVISIONER = "Provisioner";
+
+  private static final List<String> CLOUDFORMATION_CATEGORY =
+      Arrays.asList(KUBERNETES, PROVISIONER, CLOUDFORMATION_STEP_METADATA, HELM);
+  private static final List<String> TERRAFORM_CATEGORY = Arrays.asList(KUBERNETES, PROVISIONER, HELM);
   private static final String BUILD_STEP = "Builds";
 
   private static final List<String> AZURE_RESOURCE_CATEGORY =
-      Arrays.asList("Kubernetes", "Provisioner", "Azure", "Helm", "AzureWebApp");
+      Arrays.asList(KUBERNETES, PROVISIONER, AZURE, HELM, AZURE_WEBAPP);
   private static final String AZURE_RESOURCE_STEP_METADATA = "AzureProvisioner";
+
+  private static final Set<String> EMPTY_FILTER_IDENTIFIERS = Sets.newHashSet(SIDECARS, SPEC, SERVICE_CONFIG,
+      CONFIG_FILE, STARTUP_COMMAND, APPLICATION_SETTINGS, ARTIFACTS, ROLLBACK_STEPS, CONNECTION_STRINGS, STEPS,
+      CONFIG_FILES, ENVIRONMENT_GROUP_YAML, SERVICE_ENTITY, MANIFEST_LIST_CONFIG, STRATEGY, STEP_GROUP);
+  private static final Set<String> EMPTY_SIDECAR_TYPES =
+      Sets.newHashSet(CUSTOM_ARTIFACT_NAME, JENKINS_NAME, DOCKER_REGISTRY_NAME, ACR_NAME, AMAZON_S3_NAME,
+          ARTIFACTORY_REGISTRY_NAME, ECR_NAME, GOOGLE_ARTIFACT_REGISTRY_NAME, GCR_NAME, NEXUS3_REGISTRY_NAME);
+  private static final Set<String> EMPTY_MANIFEST_TYPES = Sets.newHashSet(EcsTaskDefinition, ServerlessAwsLambda,
+      EcsScalingPolicyDefinition, K8S_MANIFEST, ManifestType.VALUES, ManifestType.KustomizePatches,
+      ManifestType.EcsScalableTargetDefinition, ManifestType.Kustomize, ManifestType.EcsServiceDefinition, CONFIG_FILES,
+      ManifestType.HelmChart, ManifestType.ReleaseRepo, ManifestType.OpenshiftTemplate, ManifestType.OpenshiftParam);
+  private static final Set<String> EMPTY_ENVIRONMENT_TYPES =
+      Sets.newHashSet(YamlTypes.ENV_PRODUCTION, YamlTypes.ENV_PRE_PRODUCTION);
+  private static final Set<String> EMPTY_PRIMARY_TYPES =
+      Sets.newHashSet(CUSTOM_ARTIFACT_NAME, JENKINS_NAME, DOCKER_REGISTRY_NAME, ACR_NAME, AMAZON_S3_NAME,
+          ARTIFACTORY_REGISTRY_NAME, ECR_NAME, GOOGLE_ARTIFACT_REGISTRY_NAME, GCR_NAME, NEXUS3_REGISTRY_NAME);
+  private static final Set<String> EMPTY_SERVICE_DEFINITION_TYPES =
+      Sets.newHashSet(ManifestType.ServerlessAwsLambda, DelegateType.ECS, ServiceSpecType.NATIVE_HELM,
+          ServiceSpecType.SSH, AZURE_WEBAPP, ServiceSpecType.WINRM, KUBERNETES);
+
   @Inject InjectorUtils injectorUtils;
   @Inject DeploymentStageVariableCreator deploymentStageVariableCreator;
 
@@ -238,6 +312,12 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     filterJsonCreators.add(new ParallelGenericFilterJsonCreator());
     filterJsonCreators.add(new StepGroupPmsFilterJsonCreator());
     filterJsonCreators.add(new CDPMSCommandStepFilterJsonCreator());
+    filterJsonCreators.add(new EmptyAnyFilterJsonCreator(EMPTY_FILTER_IDENTIFIERS));
+    filterJsonCreators.add(new EmptyFilterJsonCreator(SIDECAR, EMPTY_SIDECAR_TYPES));
+    filterJsonCreators.add(new EmptyFilterJsonCreator(MANIFEST_CONFIG, EMPTY_MANIFEST_TYPES));
+    filterJsonCreators.add(new EmptyFilterJsonCreator(ENVIRONMENT_YAML, EMPTY_ENVIRONMENT_TYPES));
+    filterJsonCreators.add(new EmptyFilterJsonCreator(PRIMARY, EMPTY_PRIMARY_TYPES));
+    filterJsonCreators.add(new EmptyFilterJsonCreator(SERVICE_DEFINITION, EMPTY_SERVICE_DEFINITION_TYPES));
     injectorUtils.injectMembers(filterJsonCreators);
 
     return filterJsonCreators;
@@ -245,7 +325,16 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
   @Override
   public List<VariableCreator> getVariableCreators() {
+    Set<String> emptyVariableIdentifiers = new HashSet<>(EMPTY_FILTER_IDENTIFIERS);
+    emptyVariableIdentifiers.add(YAMLFieldNameConstants.PARALLEL);
+
     List<VariableCreator> variableCreators = new ArrayList<>();
+    variableCreators.add(new EmptyAnyVariableCreator(emptyVariableIdentifiers));
+    variableCreators.add(new EmptyVariableCreator(SIDECAR, EMPTY_SIDECAR_TYPES));
+    variableCreators.add(new EmptyVariableCreator(MANIFEST_CONFIG, EMPTY_MANIFEST_TYPES));
+    variableCreators.add(new EmptyVariableCreator(ENVIRONMENT_YAML, EMPTY_ENVIRONMENT_TYPES));
+    variableCreators.add(new EmptyVariableCreator(PRIMARY, EMPTY_PRIMARY_TYPES));
+    variableCreators.add(new EmptyVariableCreator(SERVICE_DEFINITION, EMPTY_SERVICE_DEFINITION_TYPES));
     variableCreators.add(new GitOpsCreatePRStepVariableCreator());
     variableCreators.add(new GitOpsMergePRStepVariableCreator());
     variableCreators.add(deploymentStageVariableCreator);
