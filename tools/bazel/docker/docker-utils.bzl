@@ -1,3 +1,11 @@
+# Copyright 2022 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
+#This util file contains some pre-defined values for some variables which are only applicable to services developed internally by Harness.
+#This util file cannot be used for CIE agents docker images.
+
 load("@io_bazel_rules_docker//container:container.bzl", "container_image", "container_pull", "container_push")
 load("@io_bazel_rules_docker//docker/util:run.bzl", "container_run_and_commit_layer")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
