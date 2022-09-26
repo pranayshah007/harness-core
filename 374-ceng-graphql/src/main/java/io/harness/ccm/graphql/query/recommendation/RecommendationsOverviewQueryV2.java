@@ -443,7 +443,7 @@ public class RecommendationsOverviewQueryV2 {
   private RecommendationDetailsDTO getRecommendationDetails(
       RecommendationItemDTO item, final ResolutionEnvironment env) {
     try {
-      return detailsQuery.recommendationDetails(item, OffsetDateTime.now().minusDays(7), OffsetDateTime.now(), env);
+      return detailsQuery.recommendationDetails(item, OffsetDateTime.now().minusDays(7), OffsetDateTime.now(), 0L, env);
     } catch (Exception e) {
       log.error("Exception while fetching data for item: {}", item, e);
     }
