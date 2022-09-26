@@ -163,6 +163,10 @@ public class ECSRecommendationDAO {
             .set(ECSServiceRecommendationKeys.validRecommendation, ecsServiceRecommendation.isValidRecommendation())
             .set(ECSServiceRecommendationKeys.lastDayCostAvailable, ecsServiceRecommendation.isLastDayCostAvailable())
             .set(ECSServiceRecommendationKeys.numDays, ecsServiceRecommendation.getNumDays());
+    if (ecsServiceRecommendation.getLaunchType() != null) {
+      updateOperations =
+          updateOperations.set(ECSServiceRecommendationKeys.launchType, ecsServiceRecommendation.getLaunchType());
+    }
     if (ecsServiceRecommendation.shouldShowRecommendation()) {
       updateOperations =
           updateOperations.set(ECSServiceRecommendationKeys.lastDayCost, ecsServiceRecommendation.getLastDayCost())

@@ -94,7 +94,7 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
   public void setUp() throws Exception {
     when(graphQLUtils.getAccountIdentifier(any())).thenReturn(ACCOUNT_ID);
     when(detailsQuery.recommendationDetails(any(RecommendationItemDTO.class), any(OffsetDateTime.class),
-             any(OffsetDateTime.class), any(ResolutionEnvironment.class)))
+             any(OffsetDateTime.class), any(Long.class), any(ResolutionEnvironment.class)))
         .thenReturn(null);
 
     conditionCaptor = ArgumentCaptor.forClass(Condition.class);
@@ -280,8 +280,8 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
   public void testIfRecommendationDetailsExistsInListQueryResponse() {
     when(recommendationService.listAll(eq(ACCOUNT_ID), any(Condition.class), any(), any()))
         .thenReturn(ImmutableList.of(createRecommendationItem("id0"), createRecommendationItem("id1")));
-    when(detailsQuery.recommendationDetails(
-             any(RecommendationItemDTO.class), any(OffsetDateTime.class), any(OffsetDateTime.class), eq(null)))
+    when(detailsQuery.recommendationDetails(any(RecommendationItemDTO.class), any(OffsetDateTime.class),
+             any(OffsetDateTime.class), any(Long.class), eq(null)))
         .thenReturn(createRecommendationDetails());
 
     final RecommendationsDTO recommendationsDTO = overviewQuery.recommendations(defaultFilter, null);
