@@ -67,15 +67,18 @@ public class MigratorUtility {
   }
 
   public static String getIdentifierWithScope(NgEntityDetail entityDetail) {
+    return getScope(entityDetail) + entityDetail.getIdentifier();
+  }
+
+  public static String getScope(NgEntityDetail entityDetail) {
     String orgId = entityDetail.getOrgIdentifier();
     String projectId = entityDetail.getProjectIdentifier();
-    String identifier = entityDetail.getIdentifier();
     if (StringUtils.isAllBlank(orgId, projectId)) {
-      return "account." + identifier;
+      return "account.";
     }
     if (StringUtils.isNotBlank(projectId)) {
-      return identifier;
+      return StringUtils.EMPTY;
     }
-    return "org." + identifier;
+    return "org.";
   }
 }

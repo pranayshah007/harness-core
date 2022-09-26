@@ -26,7 +26,6 @@ import io.harness.cdng.ecs.beans.EcsExecutionPassThroughData;
 import io.harness.cdng.ecs.beans.EcsGitFetchFailurePassThroughData;
 import io.harness.cdng.ecs.beans.EcsGitFetchPassThroughData;
 import io.harness.cdng.ecs.beans.EcsPrepareRollbackDataPassThroughData;
-import io.harness.cdng.ecs.beans.EcsStepExceptionPassThroughData;
 import io.harness.cdng.infra.beans.EcsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.manifest.ManifestType;
@@ -58,11 +57,13 @@ import io.harness.delegate.task.ecs.response.EcsPrepareRollbackDataResponse;
 import io.harness.delegate.task.ecs.response.EcsRollingDeployResponse;
 import io.harness.delegate.task.ecs.response.EcsRollingRollbackResponse;
 import io.harness.delegate.task.git.TaskStatus;
+import io.harness.ecs.EcsCommandUnitConstants;
 import io.harness.exception.GeneralException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.git.model.GitFile;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.LogCallback;
 import io.harness.logging.UnitProgress;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -122,6 +123,7 @@ public class EcsStepCommonHelperTest extends CategoryTest {
   @Mock private EcsRollingDeployStep ecsRollingDeployStep;
   @Mock private EngineExpressionService engineExpressionService;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
+  @Mock private LogCallback logCallback;
 
   @Spy @InjectMocks private EcsStepCommonHelper ecsStepCommonHelper;
 
@@ -147,6 +149,9 @@ public class EcsStepCommonHelperTest extends CategoryTest {
     ManifestsOutcome manifestsOutcome = new ManifestsOutcome(manifestOutcomeMap);
     List<ManifestOutcome> manifestOutcomes =
         Arrays.asList(manifestOutcome, serviceManifestOutcome, scalableManifestOutcome, scalingManifestOutcome);
+    doReturn(logCallback)
+        .when(ecsStepCommonHelper)
+        .getLogCallback(EcsCommandUnitConstants.fetchManifests.toString(), ambiance, true);
     doNothing().when(ecsStepCommonHelper).validateManifestsOutcome(ambiance, manifestsOutcome);
     OptionalOutcome optionalOutcome = OptionalOutcome.builder().found(true).outcome(manifestsOutcome).build();
     InfrastructureOutcome infrastructureOutcome = EcsInfrastructureOutcome.builder().build();
@@ -174,7 +179,7 @@ public class EcsStepCommonHelperTest extends CategoryTest {
         .thenReturn(TaskRequest.newBuilder().build());
 
     TaskChainResponse taskChainResponse =
-        ecsStepCommonHelper.startChainLink(ambiance, stepElementParameters, ecsStepHelper);
+        ecsStepCommonHelper.startChainLink(ecsStepExecutor, ambiance, stepElementParameters, ecsStepHelper);
 
     PowerMockito.verifyStatic(StepUtils.class, times(1));
     StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any());
@@ -289,19 +294,6 @@ public class EcsStepCommonHelperTest extends CategoryTest {
   @Test
   @Owner(developers = ALLU_VAMSI)
   @Category(UnitTests.class)
-  public void executeNextLinkRollingExceptionTest() throws Exception {
-    EcsGitFetchPassThroughData ecsGitFetchPassThroughData = EcsGitFetchPassThroughData.builder().build();
-    ResponseData responseData = EcsGitFetchResponse.builder().taskStatus(TaskStatus.SUCCESS).build();
-    TaskChainResponse taskChainResponse = ecsStepCommonHelper.executeNextLinkRolling(ecsStepExecutor, ambiance,
-        stepElementParameters, ecsGitFetchPassThroughData, () -> responseData, ecsStepHelper);
-
-    assertThat(taskChainResponse.isChainEnd()).isEqualTo(true);
-    assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(EcsStepExceptionPassThroughData.class);
-  }
-
-  @Test
-  @Owner(developers = ALLU_VAMSI)
-  @Category(UnitTests.class)
   public void executeNextLinkCanaryEcsGitFetchResponseTest() throws Exception {
     EcsGitFetchPassThroughData ecsGitFetchPassThroughData = EcsGitFetchPassThroughData.builder().build();
     GitFile gitFile = GitFile.builder().filePath("harness/path").fileContent("content").build();
@@ -331,19 +323,6 @@ public class EcsStepCommonHelperTest extends CategoryTest {
     assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(EcsPrepareRollbackDataPassThroughData.class);
     assertThat(taskChainResponse.getPassThroughData()).isEqualTo(ecsPrepareRollbackDataPassThroughData);
     assertThat(taskChainResponse.getTaskRequest()).isEqualTo(TaskRequest.newBuilder().build());
-  }
-
-  @Test
-  @Owner(developers = ALLU_VAMSI)
-  @Category(UnitTests.class)
-  public void executeNextLinkCanaryExceptionTest() throws Exception {
-    EcsGitFetchPassThroughData ecsGitFetchPassThroughData = EcsGitFetchPassThroughData.builder().build();
-    ResponseData responseData = EcsGitFetchResponse.builder().taskStatus(TaskStatus.SUCCESS).build();
-    TaskChainResponse taskChainResponse = ecsStepCommonHelper.executeNextLinkCanary(ecsStepExecutor, ambiance,
-        stepElementParameters, ecsGitFetchPassThroughData, () -> responseData, ecsStepHelper);
-
-    assertThat(taskChainResponse.isChainEnd()).isEqualTo(true);
-    assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(EcsStepExceptionPassThroughData.class);
   }
 
   @Test
