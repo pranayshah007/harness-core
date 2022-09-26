@@ -224,6 +224,7 @@ import io.harness.delegate.task.azure.exception.AzureARMRuntimeExceptionHandler;
 import io.harness.delegate.task.azure.exception.AzureAppServicesRuntimeExceptionHandler;
 import io.harness.delegate.task.azure.exception.AzureClientExceptionHandler;
 import io.harness.delegate.task.azure.resource.operation.AzureResourceProvider;
+import io.harness.delegate.task.azure.vmss.AzureVMSSTaskNG;
 import io.harness.delegate.task.cek8s.CEKubernetesTestConnectionDelegateTask;
 import io.harness.delegate.task.cek8s.CEKubernetesValidationHandler;
 import io.harness.delegate.task.cf.PcfCommandTask;
@@ -1887,6 +1888,7 @@ public class DelegateModule extends AbstractModule {
     bind(EcsV2Client.class).to(EcsV2ClientImpl.class);
     bind(ElbV2Client.class).to(ElbV2ClientImpl.class);
     mapBinder.addBinding(TaskType.AZURE_NG_ARM).toInstance(AzureResourceCreationTaskNG.class);
+    mapBinder.addBinding(TaskType.AZURE_VMSS_TASK_NG).toInstance(AzureVMSSTaskNG.class);
   }
 
   private void registerSecretManagementBindings() {

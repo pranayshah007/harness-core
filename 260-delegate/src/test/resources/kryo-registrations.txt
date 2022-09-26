@@ -1758,6 +1758,14 @@
 55423:io.harness.delegate.task.azure.arm.AzureFetchArmPreDeploymentDataTaskParameters
 55424:io.harness.delegate.task.azure.arm.AzureFetchArmPreDeploymentDataTaskResponse
 55425:io.harness.delegate.beans.executioncapability.WinrmConnectivityExecutionCapability
+55426:io.harness.delegate.task.azure.vmss.ng.request.AzureVMSSTaskRequest
+55427:io.harness.delegate.task.azure.vmss.ng.request.AzureVMSSRequestType
+55428:io.harness.delegate.task.azure.vmss.ng.AzureVMAuthentication
+55429:io.harness.delegate.task.azure.vmss.ng.AzureVMPublicKeyAuth
+55430:io.harness.delegate.task.azure.vmss.ng.AzureVMUsernamePasswordAuth
+55431:io.harness.delegate.task.azure.vmss.ng.AzureVMSSInfraDelegateConfig
+55432:io.harness.delegate.task.azure.vmss.ng.response.AzureVMSSTaskRequestResponse
+55433:io.harness.delegate.task.azure.vmss.ng.request.AzureVMSSSetupTaskRequest
 55470:io.harness.delegate.task.ssh.artifact.CustomArtifactDelegateConfig
 55501:io.harness.delegate.beans.instancesync.info.PdcServerInstanceInfo
 55502:io.harness.delegate.beans.instancesync.info.AzureSshWinrmServerInstanceInfo

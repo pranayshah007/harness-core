@@ -462,6 +462,14 @@ import io.harness.delegate.task.azure.response.AzureVMSSSetupTaskResponse;
 import io.harness.delegate.task.azure.response.AzureVMSSSwitchRoutesResponse;
 import io.harness.delegate.task.azure.response.AzureVMSSTaskExecutionResponse;
 import io.harness.delegate.task.azure.response.AzureVMSSTaskResponse;
+import io.harness.delegate.task.azure.vmss.ng.AzureVMAuthentication;
+import io.harness.delegate.task.azure.vmss.ng.AzureVMPublicKeyAuth;
+import io.harness.delegate.task.azure.vmss.ng.AzureVMSSInfraDelegateConfig;
+import io.harness.delegate.task.azure.vmss.ng.AzureVMUsernamePasswordAuth;
+import io.harness.delegate.task.azure.vmss.ng.request.AzureVMSSRequestType;
+import io.harness.delegate.task.azure.vmss.ng.request.AzureVMSSSetupTaskRequest;
+import io.harness.delegate.task.azure.vmss.ng.request.AzureVMSSTaskRequest;
+import io.harness.delegate.task.azure.vmss.ng.response.AzureVMSSTaskRequestResponse;
 import io.harness.delegate.task.ci.CIBuildPushParameters;
 import io.harness.delegate.task.ci.CIBuildPushParameters.CIBuildPushTaskType;
 import io.harness.delegate.task.ci.CIBuildStatusPushParameters;
@@ -1806,5 +1814,13 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AzureFetchArmPreDeploymentDataTaskResponse.class, 55424);
     kryo.register(AwsS3ArtifactDelegateConfig.class, 9800007);
     kryo.register(WinrmConnectivityExecutionCapability.class, 55425);
+    kryo.register(AzureVMSSTaskRequest.class, 55426);
+    kryo.register(AzureVMSSRequestType.class, 55427);
+    kryo.register(AzureVMAuthentication.class, 55428);
+    kryo.register(AzureVMPublicKeyAuth.class, 55429);
+    kryo.register(AzureVMUsernamePasswordAuth.class, 55430);
+    kryo.register(AzureVMSSInfraDelegateConfig.class, 55431);
+    kryo.register(AzureVMSSTaskRequestResponse.class, 55432);
+    kryo.register(AzureVMSSSetupTaskRequest.class, 55433);
   }
 }
