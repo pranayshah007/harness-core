@@ -33,6 +33,11 @@ import io.harness.cdng.artifact.bean.yaml.customartifact.CustomArtifactSpecVisit
 import io.harness.cdng.artifact.bean.yaml.customartifact.CustomScriptBaseSource;
 import io.harness.cdng.artifact.bean.yaml.customartifact.CustomScriptInlineSource;
 import io.harness.cdng.artifact.bean.yaml.customartifact.FetchAllArtifacts;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.Nexus2RegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryDockerConfig;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryMavenConfig;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryNpmConfig;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryNugetConfig;
 import io.harness.cdng.artifact.outcome.AcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
 import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
@@ -49,6 +54,12 @@ import io.harness.cdng.configfile.ConfigFile;
 import io.harness.cdng.configfile.ConfigFileAttributes;
 import io.harness.cdng.configfile.ConfigFileOutcome;
 import io.harness.cdng.configfile.ConfigFileWrapper;
+import io.harness.cdng.customdeployment.CustomDeploymentConnectorNGVariable;
+import io.harness.cdng.customdeployment.CustomDeploymentNGVariableType;
+import io.harness.cdng.customdeployment.CustomDeploymentNumberNGVariable;
+import io.harness.cdng.customdeployment.CustomDeploymentSecretNGVariable;
+import io.harness.cdng.customdeployment.CustomDeploymentStringNGVariable;
+import io.harness.cdng.infra.beans.CustomDeploymentInfrastructureOutcome;
 import io.harness.cdng.infra.beans.EcsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
@@ -266,6 +277,12 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(CustomArtifactScripts.class, 140018);
     kryo.register(CustomArtifactScriptSourceWrapper.class, 140019);
     kryo.register(CustomScriptBaseSource.class, 140020);
+    kryo.register(Nexus2RegistryArtifactConfig.class, 140012);
+    kryo.register(NexusRegistryNpmConfig.class, 140013);
+    kryo.register(NexusRegistryMavenConfig.class, 140014);
+    kryo.register(NexusRegistryNugetConfig.class, 140015);
+    kryo.register(NexusRegistryDockerConfig.class, 140016);
+    kryo.register(CustomDeploymentInfrastructureOutcome.class, 140022);
     kryo.register(GoogleArtifactRegistryConfig.class, 130021);
     kryo.register(GarArtifactOutcome.class, 130022);
     kryo.register(ArtifactSource.class, 130023);
@@ -274,5 +291,10 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(NGEnvironmentConfig.class, 130027);
     kryo.register(NGServiceOverrideInfoConfig.class, 130030);
     kryo.register(NGEnvironmentGlobalOverride.class, 130031);
+    kryo.register(CustomDeploymentConnectorNGVariable.class, 130032);
+    kryo.register(CustomDeploymentStringNGVariable.class, 130033);
+    kryo.register(CustomDeploymentNumberNGVariable.class, 130034);
+    kryo.register(CustomDeploymentSecretNGVariable.class, 130035);
+    kryo.register(CustomDeploymentNGVariableType.class, 130036);
   }
 }

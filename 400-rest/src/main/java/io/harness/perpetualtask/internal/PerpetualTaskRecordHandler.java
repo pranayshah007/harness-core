@@ -10,7 +10,6 @@ package io.harness.perpetualtask.internal;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.govern.IgnoreThrowable.ignoredOnPurpose;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
-import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.IRREGULAR_SKIP_MISSED;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.REGULAR;
 
 import static java.lang.String.format;
@@ -48,7 +47,7 @@ import io.harness.perpetualtask.PerpetualTaskState;
 import io.harness.perpetualtask.PerpetualTaskUnassignedReason;
 import io.harness.perpetualtask.internal.PerpetualTaskRecord.PerpetualTaskRecordKeys;
 import io.harness.serializer.KryoSerializer;
-import io.harness.workers.background.AccountLevelEntityProcessController;
+import io.harness.workers.background.CrossEnvironmentAccountLevelEntityProcessController;
 import io.harness.workers.background.CrossEnvironmentAccountStatusBasedEntityProcessController;
 
 import software.wings.beans.Account;
@@ -96,7 +95,7 @@ public class PerpetualTaskRecordHandler implements PerpetualTaskCrudObserver {
         PerpetualTaskRecordHandler.class,
         MongoPersistenceIterator.<PerpetualTaskRecord, MorphiaFilterExpander<PerpetualTaskRecord>>builder()
             .clazz(PerpetualTaskRecord.class)
-            .fieldName(PerpetualTaskRecordKeys.assignerIterations)
+            .fieldName(PerpetualTaskRecordKeys.assignIteration)
             .targetInterval(ofMinutes(PERPETUAL_TASK_ASSIGNMENT_INTERVAL_MINUTE))
             .acceptableNoAlertDelay(ofSeconds(45))
             .acceptableExecutionTime(ofSeconds(30))
@@ -106,8 +105,9 @@ public class PerpetualTaskRecordHandler implements PerpetualTaskCrudObserver {
                        .field(PerpetualTaskRecordKeys.assignAfterMs)
                        .lessThanOrEq(System.currentTimeMillis()))
             .entityProcessController(new CrossEnvironmentAccountStatusBasedEntityProcessController<>(accountService))
-            .schedulingType(IRREGULAR_SKIP_MISSED)
+            .schedulingType(REGULAR)
             .persistenceProvider(persistenceProvider)
+            .unsorted(true)
             .redistribute(true));
     rebalanceIterator = persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(
         PumpExecutorOptions.builder()
@@ -123,9 +123,10 @@ public class PerpetualTaskRecordHandler implements PerpetualTaskCrudObserver {
             .acceptableNoAlertDelay(ofSeconds(60))
             .acceptableExecutionTime(ofSeconds(60))
             .handler(this::rebalance)
-            .entityProcessController(new AccountLevelEntityProcessController(accountService))
+            .entityProcessController(new CrossEnvironmentAccountLevelEntityProcessController(accountService))
             .schedulingType(REGULAR)
             .persistenceProvider(persistenceProviderAccount)
+            .unsorted(true)
             .redistribute(true));
   }
 

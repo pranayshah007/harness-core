@@ -1,0 +1,48 @@
+{
+  "data" : {
+    "pairs" : [ {
+      "request" : {
+        "path" : [ {
+          "matcher" : "exact",
+          "value" : "/*/_search"
+        } ],
+        "method" : [ {
+          "matcher" : "exact",
+          "value" : "POST"
+        } ],
+        "destination" : [ {
+          "matcher" : "exact",
+          "value" : "elk6.dev.harness.io:9200"
+        } ],
+        "scheme" : [ {
+          "matcher" : "exact",
+          "value" : "http"
+        } ],
+        "body" : [ {
+          "matcher" : "exact",
+          "value" : "{\"size\":10,\"query\":{\"bool\":{\"filter\":[{\"query_string\":{\"query\":\"message: error\"}},{\"range\":{\"@timestamp\":{\"lte\":1663503238167,\"gt\":1663503178167}}}]}},\"from\":\"0\"}"
+        } ]
+      },
+      "response" : {
+        "status" : 200,
+        "body" : "H4sIAAAAAAAAAMRWW2/bNhT+KwaRBw+wCEtWfHuam7lNgK4tkmwBugwGTdESZ4nUSMq1G/i/75D0RW7kLFuB7cUQzzn8/PE7F/IJGSmXaDwadpDhBUtmsjJovCC5Zh000xlRiUbjJwgzJIe4QQfpilKm9aLar5e8LFmCxt0OWhCeu89tB2Xc1LeGHVSQ9UxTqRgEYIj2Eb89oRkXCVujMeLCsFQRw6UIDNMGAQmzKWEDmiWS2iUHeJTFm+kvNz+/UeSy+szflvHHm6V11tFnWlaKwtYnlEltBCksDJxIAPtAqCCpimITlLxkORcsSFiZy03BhAmG8eKSJvMRnQdULPVXgM7ZisGB0cPk9gMsC8AgqQX8g6wIzolI8W0lrIbTNWWlPcG45Xxc4puPNeNUKalaipGEi7RFRNL6orix30a2FqDfo3g0xLRO971jgoEwUuHUf7EaaLv2fQy0/z4O+z/s8YTmCcO37M8KlD0Qwol8x0z7mdnvjkb77Xa9xpqpVc4Mzowp8TX83O0M1sEpa9dtDqLfu/xeiEEc7SGkSjEpCc0YpgRKkguCbUXhSVnmHEyg+1ueG6auMsIFtgWlBMl/kt7aPhPnqEa98N/+T/Ia/LB/SEbtHEYWwBt/YXMt6RK0tVIyhR+0pwwJ2nE/WBzby/9GlHDU+x9EOU3unYE2gVH0oAiMGvUryVcMUruSS9Zu9PniHR2K92zZ7HdfSSiUtWlEPvE55FFTHg+USWUymCK2GqFdJ/XVG6IPxJ87HHb8Cr33rK9hrjVSPjq8Er3BSzlcWT01doPplpVSnYI+szvM4Yu9soOczLVRhJqJuzLey/SE7RmvHxv97t+W3V6GqUhhgDcKUXd52i8qQaUQjNq0XcmNNGySkNK24H66nVodYC9u7A+33Y3JMHSDMgw/KWlVAPD6sKzbHeBgNGw6uQfcS3bAes/TzODSQ7fPuHeKvgrWSCrzC6h5KwRM02tovRwkaPgLF4q9rN0m0rvRVhmeYwGT7QOXU5GUEqbyxZ0bdkdNEgn3Z7sW4YHDuFGOb5G/QXN9pgCvyb5rs/qthB1FyD6tlILexfeZvaA/SZlP14xWtiIA7kGqJdwhDU7PFcj+Q9QLD+m4noPtR3FD5uoKGMdW43uilx7lwo1KeFSAqILMc6/G0e/F7R96+PiK8ftrhHzoILYJviKVZklrvvmetw3GuBX1WwVc248C3lI/2leTNqQo4TkVdaMo6I6CcHgfRjC4xlGMocU+o+329+32LwAAAP//AwBYPUXdsAoAAA==",
+        "encodedBody" : true,
+        "templated" : false,
+        "headers" : {
+          "Content-Encoding" : [ "gzip" ],
+          "Content-Length" : [ "964" ],
+          "Content-Type" : [ "application/json; charset=UTF-8" ],
+          "Hoverfly" : [ "Was-Here" ]
+        }
+      }
+    } ],
+    "globalActions" : {
+      "delays" : [ ]
+    }
+  },
+  "meta" : {
+    "schemaVersion" : "v5",
+    "hoverflyVersion" : "v1.1.5",
+    "timeExported" : "2022-09-19T11:28:29Z"
+  }
+}

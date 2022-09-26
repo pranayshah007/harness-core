@@ -67,6 +67,8 @@ public class CustomDeploymentInstanceSyncHandler extends AbstractInstanceSyncHan
 
     return CustomDeploymentInstanceInfoDTO.builder()
         .hostname(customDeploymentServerInstanceInfo.getHostName())
+        .instanceFetchScriptHash(
+            ((CustomDeploymentServerInstanceInfo) serverInstanceInfo).getInstanceFetchScript().hashCode())
         .properties(customDeploymentServerInstanceInfo.getProperties())
         .build();
   }
@@ -85,12 +87,11 @@ public class CustomDeploymentInstanceSyncHandler extends AbstractInstanceSyncHan
       throw new InvalidArgumentsException(
           Pair.of("serverInstanceInfo", "Must be instance of CustomDeploymentServerInstanceInfo"));
     }
-
-    CustomDeploymentServerInstanceInfo customDeploymentServerInstanceInfo =
-        (CustomDeploymentServerInstanceInfo) serverInstanceInfoList.get(0);
-
     return CustomDeploymentNGDeploymentInfoDTO.builder()
-        .instanceFetchScript(customDeploymentServerInstanceInfo.getInstanceFetchScript())
+        .instanceFetchScript(
+            ((CustomDeploymentServerInstanceInfo) serverInstanceInfoList.get(0)).getInstanceFetchScript())
+        .instanceFetchScriptHash(
+            ((CustomDeploymentServerInstanceInfo) serverInstanceInfoList.get(0)).getInstanceFetchScript().hashCode())
         .build();
   }
 }

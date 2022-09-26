@@ -18,6 +18,8 @@ import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateResponse;
 import io.harness.nexus.NexusRequest;
 import io.harness.utils.FieldWithPlainTextOrSecretValueHelper;
 
+import software.wings.helpers.ext.jenkins.BuildDetails;
+
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -59,6 +61,18 @@ public class NexusRequestResponseMapper {
         .repositoryFormat(request.getRepositoryFormat())
         .tag(buildDetailsInternal.getNumber())
         .sourceType(ArtifactSourceType.NEXUS3_REGISTRY)
+        .build();
+  }
+
+  public NexusArtifactDelegateResponse toNexusResponse(
+      BuildDetails buildDetailsInternal, NexusArtifactDelegateRequest request) {
+    return NexusArtifactDelegateResponse.builder()
+        .buildDetails(ArtifactBuildDetailsMapper.toBuildDetailsNG(buildDetailsInternal))
+        .repositoryName(request.getRepositoryName())
+        .artifactPath(request.getArtifactPath())
+        .repositoryFormat(request.getRepositoryFormat())
+        .tag(buildDetailsInternal.getNumber())
+        .sourceType(request.getSourceType())
         .build();
   }
 }

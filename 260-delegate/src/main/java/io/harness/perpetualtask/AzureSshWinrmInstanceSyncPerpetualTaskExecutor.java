@@ -17,6 +17,7 @@ import static javax.servlet.http.HttpServletResponse.SC_OK;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.azure.model.AzureHostConnectionType;
 import io.harness.azure.model.AzureOSType;
 import io.harness.delegate.beans.azure.response.AzureHostResponse;
 import io.harness.delegate.beans.azure.response.AzureHostsResponse;
@@ -92,11 +93,11 @@ public class AzureSshWinrmInstanceSyncPerpetualTaskExecutor implements Perpetual
     AzureOSType azureOSType =
         ServiceSpecType.SSH.equals(taskParams.getServiceType()) ? AzureOSType.LINUX : AzureOSType.WINDOWS;
 
-    AzureHostsResponse azureHostsResponse =
-        azureAsyncTaskHelper.listHosts(infraConfig.getConnectorEncryptionDataDetails(),
-            infraConfig.getAzureConnectorDTO(), infraConfig.getSubscriptionId(), infraConfig.getResourceGroup(),
-            azureOSType, infraConfig.getTags(), infraConfig.isUsePublicDns());
-    return azureHostsResponse.getHosts().stream().map(AzureHostResponse::getPublicAddress).collect(Collectors.toSet());
+    AzureHostsResponse azureHostsResponse = azureAsyncTaskHelper.listHosts(
+        infraConfig.getConnectorEncryptionDataDetails(), infraConfig.getAzureConnectorDTO(),
+        infraConfig.getSubscriptionId(), infraConfig.getResourceGroup(), azureOSType, infraConfig.getTags(),
+        AzureHostConnectionType.fromString(infraConfig.getHostConnectionType()));
+    return azureHostsResponse.getHosts().stream().map(AzureHostResponse::getAddress).collect(Collectors.toSet());
   }
 
   private List<ServerInstanceInfo> getServerInstanceInfoList(

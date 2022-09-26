@@ -199,7 +199,9 @@ import com.google.inject.name.Named;
 import com.mongodb.DuplicateKeyException;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.net.MalformedURLException;
 import java.net.SocketTimeoutException;
+import java.net.URL;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -262,6 +264,8 @@ public class AccountServiceImpl implements AccountService {
   private static final String SAMPLE_DELEGATE_STATUS_ENDPOINT_FORMAT_STRING = "http://%s/account-%s.txt";
   private static final String DELIMITER = "####";
   private static final String DEFAULT_EXPERIENCE = "defaultExperience";
+  private static final String[] RESERVED_SUBDOMAIN_PREFIX_REGEXES = {
+      "^agent$", "^app(-?\\d+)?$", "^pr$", "^qa$", "^stress$", "^prod(-?\\d+)?$"};
 
   @Inject protected AuthService authService;
   @Inject protected HarnessCacheManager harnessCacheManager;
@@ -1705,7 +1709,11 @@ public class AccountServiceImpl implements AccountService {
     // Filter the valid domains after trimming trailing spaces
     Set<String> validDomains =
         whitelistedDomains.stream().filter(DomainValidator.getInstance()::isValid).collect(Collectors.toSet());
-
+    // Domain name sanitising
+    validDomains = validDomains.stream()
+                       .map(s -> s.replace("http://", "").replace("http:// www.", "").replace("www.", ""))
+                       .filter(EmptyPredicate::isNotEmpty)
+                       .collect(Collectors.toSet());
     if (whitelistedDomains.size() != validDomains.size()) {
       throw new WingsException("Invalid domain name");
     }
@@ -1845,12 +1853,51 @@ public class AccountServiceImpl implements AccountService {
    * @param subdomainUrl subdomain URL object
    * @return boolean
    */
-  @Override
   public boolean validateSubdomainUrl(SubdomainUrl subdomainUrl) {
     // Sanity check for subdomain URL
     String[] schemes = {"https"};
     UrlValidator urlValidator = new UrlValidator(schemes);
     return urlValidator.isValid(subdomainUrl.getUrl());
+  }
+
+  /**
+   * Checks whether the subdomain URL is reserved or not
+   *
+   * @param subdomainUrl Object of type SubdomainUrl
+   * @return true if subdomain URL is reserved otherwise false
+   */
+  public boolean checkReservedSubdomainUrl(SubdomainUrl subdomainUrl) throws InvalidArgumentsException {
+    String host = "";
+    try {
+      // parse the url to get host
+      URL url = new URL(subdomainUrl.getUrl());
+      host = url.getHost();
+    } catch (MalformedURLException e) {
+      log.warn("subdomain url '{}' is malformed: {}", subdomainUrl.getUrl(), e);
+      throw new InvalidArgumentsException("Subdomain URL is malformed", USER);
+    }
+
+    /**
+     * ASSUMPTION:
+     *   First segment is custom part - the rest is static for the environment.
+     *   For example https://[segment].harness.io
+     */
+    int i = host.indexOf('.');
+    if (i <= 0) {
+      // throw if there's no custom part, or it's empty (i == 0)
+      throw new InvalidArgumentsException("Subdomain URL is malformed", USER);
+    }
+
+    // get segment and run through all reserved prefix regexes
+    String segment = host.substring(0, i).toLowerCase();
+    for (String reservedRegex : RESERVED_SUBDOMAIN_PREFIX_REGEXES) {
+      if (segment.matches(reservedRegex)) {
+        return true;
+      }
+    }
+
+    // subdomain has a non-reserved prefix
+    return false;
   }
 
   /**
@@ -1886,14 +1933,19 @@ public class AccountServiceImpl implements AccountService {
       throw new UnauthorizedException("User is not authorized to add subdomain URL", USER);
     }
 
-    // Check if URL is not duplicate
+    // Check if URL is duplicate
     if (checkDuplicateSubdomainUrl(subDomainUrl)) {
       throw new InvalidArgumentsException("Subdomain URL is already taken", USER);
     }
 
     // Check if URL is valid
     if (!validateSubdomainUrl(subDomainUrl)) {
-      throw new InvalidArgumentsException("Subdomain URL provided is invalid", USER);
+      throw new InvalidArgumentsException("Subdomain URL is invalid", USER);
+    }
+
+    // Check if subdomain is reserved
+    if (checkReservedSubdomainUrl(subDomainUrl)) {
+      throw new InvalidArgumentsException("Subdomain URL is reserved", USER);
     }
 
     setSubdomainUrl(get(accountId), subDomainUrl);

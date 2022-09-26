@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.template.services;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -80,19 +87,23 @@ public class TemplateGitXServiceImpl implements TemplateGitXService {
         && GitAwareContextHelper.isNullOrDefault(gitEntityInfo.getParentEntityConnectorRef());
   }
 
-  public boolean isNewGitXEnabled(TemplateEntity templateToSave, GitEntityInfo gitEntityInfo) {
-    if (templateToSave.getProjectIdentifier() != null) {
-      return isGitSimplificationEnabledForAProject(templateToSave, gitEntityInfo);
+  public boolean isNewGitXEnabledAndIsRemoteEntity(TemplateEntity templateToSave, GitEntityInfo gitEntityInfo) {
+    return isNewGitXEnabled(templateToSave.getAccountIdentifier(), templateToSave.getOrgIdentifier(),
+               templateToSave.getProjectIdentifier())
+        && TemplateUtils.isRemoteEntity(gitEntityInfo);
+  }
+
+  @Override
+  public boolean isNewGitXEnabled(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    if (projectIdentifier != null) {
+      return isGitSimplificationEnabledForAProject(accountIdentifier, orgIdentifier, projectIdentifier);
     } else {
-      return ngTemplateFeatureFlagHelperService.isEnabled(
-                 templateToSave.getAccountId(), FeatureName.NG_TEMPLATE_GITX_ACCOUNT_ORG)
-          && TemplateUtils.isRemoteEntity(gitEntityInfo);
+      return ngTemplateFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.NG_TEMPLATE_GITX_ACCOUNT_ORG);
     }
   }
 
-  private boolean isGitSimplificationEnabledForAProject(TemplateEntity templateToSave, GitEntityInfo gitEntityInfo) {
-    return gitSyncSdkService.isGitSimplificationEnabled(templateToSave.getAccountIdentifier(),
-               templateToSave.getOrgIdentifier(), templateToSave.getProjectIdentifier())
-        && TemplateUtils.isRemoteEntity(gitEntityInfo);
+  private boolean isGitSimplificationEnabledForAProject(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    return gitSyncSdkService.isGitSimplificationEnabled(accountIdentifier, orgIdentifier, projectIdentifier);
   }
 }

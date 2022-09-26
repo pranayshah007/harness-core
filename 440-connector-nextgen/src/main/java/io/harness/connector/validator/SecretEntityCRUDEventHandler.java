@@ -113,7 +113,7 @@ public class SecretEntityCRUDEventHandler {
     List<SecretResponseWrapper> secretList = new ArrayList<>();
     do {
       pagedSecretList = secretCrudService.list(accountIdentifier, orgIdentifier, projectIdentifier, null, null, false,
-          null, pagedSecretList == null ? 0 : pagedSecretList.getNumber() + 1, 10, null);
+          null, pagedSecretList == null ? 0 : pagedSecretList.getNumber() + 1, 10, null, false);
       secretList.addAll(pagedSecretList.stream().collect(Collectors.toList()));
     } while (pagedSecretList.hasNext());
     return secretList;

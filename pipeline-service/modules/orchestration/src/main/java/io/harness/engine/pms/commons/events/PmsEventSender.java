@@ -19,8 +19,6 @@ import io.harness.OrchestrationModuleConfig;
 import io.harness.OrchestrationRedisEventsConfig;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
-import io.harness.events.PmsRedissonClientFactory;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.impl.noop.NoOpProducer;
 import io.harness.eventsframework.impl.redis.RedisProducerFactory;
@@ -36,6 +34,7 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.PmsSdkInstance;
 import io.harness.pms.sdk.PmsSdkInstance.PmsSdkInstanceKeys;
 import io.harness.redis.RedisConfig;
+import io.harness.redis.RedissonClientFactory;
 import io.harness.utils.RetryUtils;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -87,11 +86,10 @@ public class PmsEventSender {
                                                                .put(SERVICE_NAME, serviceName)
                                                                .putAll(AmbianceUtils.logContextMap(ambiance));
     Producer producer = obtainProducer(eventCategory, serviceName);
-
-    if (isMonitored
-        && pmsFeatureFlagService.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.PIPELINE_MONITORING)) {
+    if (isMonitored) {
       metadataBuilder.put(PIPELINE_MONITORING_ENABLED, "true");
     }
+
     String messageId =
         producer.send(Message.newBuilder().putAllMetadata(metadataBuilder.build()).setData(eventData).build());
     log.info("Successfully Sent {} event for {} to the producer. MessageId {}", eventCategory, serviceName, messageId);
@@ -160,19 +158,19 @@ public class PmsEventSender {
     switch (configCase) {
       case REDIS:
         Redis redis = consumerConfig.getRedis();
-        return buildRedisProducer(redis.getTopicName(), moduleConfig.getEventsFrameworkConfiguration().getRedisConfig(),
-            PIPELINE_SERVICE.getServiceId(), topicSize);
+        return buildRedisProducer(redis.getTopicName(), PIPELINE_SERVICE.getServiceId(), topicSize);
       case CONFIG_NOT_SET:
       default:
         throw new InvalidRequestException("No producer found for Config Case " + configCase.name());
     }
   }
 
-  private Producer buildRedisProducer(String topicName, RedisConfig redisConfig, String serviceId, int topicSize) {
+  private Producer buildRedisProducer(String topicName, String serviceId, int topicSize) {
+    RedisConfig redisConfig = moduleConfig.getEventsFrameworkConfiguration().getRedisConfig();
     return redisConfig.getRedisUrl().equals(DUMMY_REDIS_URL)
         ? NoOpProducer.of(topicName)
-        : redisProducerFactory.createRedisProducer(topicName, PmsRedissonClientFactory.getRedisClient(redisConfig),
-            topicSize, serviceId, redisConfig.getEnvNamespace());
+        : redisProducerFactory.createRedisProducer(topicName, RedissonClientFactory.getClient(redisConfig), topicSize,
+            serviceId, redisConfig.getEnvNamespace());
   }
 
   PmsSdkInstance getPmsSdkInstance(String serviceName) {

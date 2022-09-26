@@ -6,6 +6,8 @@
  */
 
 package io.harness.delegate.beans.connector.awsconnector;
+import io.harness.annotation.RecasterFieldName;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -29,7 +31,8 @@ import lombok.experimental.FieldDefaults;
 @Schema(name = "AwsCredential", description = "This contains details of the AWS connector credential")
 public class AwsCredentialDTO {
   @Valid CrossAccountAccessDTO crossAccountAccess;
-  @NotNull @JsonProperty("type") AwsCredentialType awsCredentialType;
+  @NotNull @RecasterFieldName(name = "type") @JsonProperty("type") AwsCredentialType awsCredentialType;
+  @RecasterFieldName(name = "spec")
   @JsonProperty("spec")
   @JsonTypeInfo(
       use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXTERNAL_PROPERTY, visible = true)

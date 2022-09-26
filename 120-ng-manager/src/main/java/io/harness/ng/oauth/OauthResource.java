@@ -22,6 +22,7 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.v3.oas.annotations.Parameter;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -53,8 +54,15 @@ public class OauthResource {
   public RestResponse<OauthAccessTokenResponseDTO> provisionCIResources(
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE, required = true) @NotBlank @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Parameter(description = "Secret Manager Identifier") @QueryParam("secretManagerIdentifier") @DefaultValue(
+          "harnessSecretManager") String secretManagerIdentifier,
       @Parameter(description = "scm provider", required = true) @NotBlank @QueryParam("provider") String scmProvider,
       @Parameter(description = "access token secret request", required = true) @Body OauthAccessTokenDTO accessToken) {
-    return new RestResponse<>(oauthSecretService.createSecrets(accountIdentifier, scmProvider, accessToken));
+    return new RestResponse<>(oauthSecretService.createSecrets(
+        accountIdentifier, orgIdentifier, projectIdentifier, scmProvider, accessToken, secretManagerIdentifier));
   }
 }

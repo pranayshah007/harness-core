@@ -52,13 +52,15 @@ public class LDAPSettings extends NGAuthSettings {
   @Schema(description = "This is the LDAP setting display name.") @NotNull private String displayName;
   @Schema(description = "This is the cron expression in LDAP Settings.") private String cronExpression;
   @Schema(description = "This is the list of iterations for next LDAP sync job.") private List<Long> nextIterations;
+  @Schema(description = "This tells if LDAP Settings is disabled or not, LDAP sync won't happen in disabled state.")
+  private boolean disabled;
 
   public LDAPSettings(@JsonProperty("connectionSettings") LdapConnectionSettings connectionSettings,
       @JsonProperty("identifier") String identifier,
       @JsonProperty("userSettingsList") List<LdapUserSettings> userSettingsList,
       @JsonProperty("groupSettingsList") List<LdapGroupSettings> groupSettingsList,
       @JsonProperty("displayName") String displayName, @JsonProperty("cronExpression") String cronExpression,
-      @JsonProperty("nextIterations") List<Long> nextIterations) {
+      @JsonProperty("nextIterations") List<Long> nextIterations, @JsonProperty("disabled") boolean disabled) {
     super(AuthenticationMechanism.LDAP);
     this.connectionSettings = connectionSettings;
     this.userSettingsList = userSettingsList;
@@ -67,6 +69,7 @@ public class LDAPSettings extends NGAuthSettings {
     this.displayName = displayName;
     this.cronExpression = cronExpression == null ? "" : cronExpression;
     this.nextIterations = nextIterations == null ? new ArrayList<>() : nextIterations;
+    this.disabled = disabled;
   }
 
   @Override

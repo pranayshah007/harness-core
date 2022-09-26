@@ -121,9 +121,9 @@ public class PrometheusCVConfig extends MetricCVConfig<MetricInfo> {
 
     public String getFilters() {
       if (isManualQuery) {
-        int firstIdx = query.indexOf('{');
-        int lastIdx = query.lastIndexOf('}');
-        return query.substring(firstIdx + 1, lastIdx);
+        int startingIndex = query.indexOf('{');
+        int closingIndex = query.indexOf('}');
+        return query.substring(startingIndex + 1, closingIndex);
       }
       String filters = getQueryFilterStringFromList(serviceFilter) + "," + getQueryFilterStringFromList(envFilter);
 

@@ -10,6 +10,13 @@ package io.harness.ci.integrationstage;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveOSType;
 import static io.harness.ci.commonconstants.CIExecutionConstants.ACCOUNT_ID_ATTR;
 import static io.harness.ci.commonconstants.CIExecutionConstants.BUILD_NUMBER_ATTR;
+import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_ACCOUNT_ID_VARIABLE;
+import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_BUILD_ID_VARIABLE;
+import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_EXECUTION_ID_VARIABLE;
+import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_ORG_ID_VARIABLE;
+import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_PIPELINE_ID_VARIABLE;
+import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_PROJECT_ID_VARIABLE;
+import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_STAGE_ID_VARIABLE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.ORG_ID_ATTR;
 import static io.harness.ci.commonconstants.CIExecutionConstants.OSX_STEP_MOUNT_PATH;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PIPELINE_EXECUTION_ID_ATTR;
@@ -20,6 +27,8 @@ import static io.harness.ci.commonconstants.CIExecutionConstants.STAGE_ID_ATTR;
 import static io.harness.ci.commonconstants.CIExecutionConstants.STAGE_RUNTIME_ID_ATTR;
 import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_MOUNT_PATH;
 import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_VOLUME;
+import static io.harness.common.STOExecutionConstants.STO_SERVICE_ENDPOINT_VARIABLE;
+import static io.harness.common.STOExecutionConstants.STO_SERVICE_TOKEN_VARIABLE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -49,6 +58,7 @@ import io.harness.plancreator.steps.StepGroupElementConfig;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.stoserviceclient.STOServiceUtils;
 
 import com.google.inject.Singleton;
 import java.util.HashMap;
@@ -142,6 +152,44 @@ public class VmInitializeUtils {
     if (baseImageConnectorRefs != null) {
       throw new CIStageExecutionException("Base image connector is not allowed for VM Infrastructure.");
     }
+  }
+
+  public Map<String, String> getSTOServiceEnvVariables(STOServiceUtils stoServiceUtils, String accountId) {
+    Map<String, String> envVars = new HashMap<>();
+    final String stoServiceBaseUrl = stoServiceUtils.getStoServiceConfig().getBaseUrl();
+
+    String stoServiceToken = "token";
+
+    // Make a call to the STO service and get back the token.
+    try {
+      stoServiceToken = stoServiceUtils.getSTOServiceToken(accountId);
+    } catch (Exception e) {
+      log.error("Could not call token endpoint for STO service", e);
+    }
+
+    envVars.put(STO_SERVICE_TOKEN_VARIABLE, stoServiceToken);
+    envVars.put(STO_SERVICE_ENDPOINT_VARIABLE, stoServiceBaseUrl);
+
+    return envVars;
+  }
+
+  public Map<String, String> getCommonStepEnvVariables(String stageID, Ambiance ambiance) {
+    Map<String, String> envVars = new HashMap<>();
+    final String accountID = AmbianceUtils.getAccountId(ambiance);
+    final String orgID = AmbianceUtils.getOrgIdentifier(ambiance);
+    final String projectID = AmbianceUtils.getProjectIdentifier(ambiance);
+    final String pipelineID = ambiance.getMetadata().getPipelineIdentifier();
+    final int buildNumber = ambiance.getMetadata().getRunSequence();
+    final String executionID = ambiance.getPlanExecutionId();
+
+    envVars.put(HARNESS_ACCOUNT_ID_VARIABLE, accountID);
+    envVars.put(HARNESS_PROJECT_ID_VARIABLE, projectID);
+    envVars.put(HARNESS_ORG_ID_VARIABLE, orgID);
+    envVars.put(HARNESS_PIPELINE_ID_VARIABLE, pipelineID);
+    envVars.put(HARNESS_BUILD_ID_VARIABLE, String.valueOf(buildNumber));
+    envVars.put(HARNESS_STAGE_ID_VARIABLE, stageID);
+    envVars.put(HARNESS_EXECUTION_ID_VARIABLE, executionID);
+    return envVars;
   }
 
   public Map<String, String> getVolumeToMountPath(ParameterField<List<String>> parameterSharedPaths, OSType os) {
