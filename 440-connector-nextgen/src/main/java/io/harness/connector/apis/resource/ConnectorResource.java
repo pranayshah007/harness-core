@@ -232,6 +232,8 @@ public class ConnectorResource {
   }
 
   @GET
+  @InternalApi
+  @Hidden
   @Path("decrypt/{identifier}")
   @ApiOperation(value = "Get Decrypted Connector", nickname = "getDecryptedConnector")
   @Operation(operationId = "getDecryptedConnector", summary = "Return Decrypted Connector details",
