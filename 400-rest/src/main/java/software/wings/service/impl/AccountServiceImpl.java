@@ -1709,7 +1709,11 @@ public class AccountServiceImpl implements AccountService {
     // Filter the valid domains after trimming trailing spaces
     Set<String> validDomains =
         whitelistedDomains.stream().filter(DomainValidator.getInstance()::isValid).collect(Collectors.toSet());
-
+    // Domain name sanitising
+    validDomains = validDomains.stream()
+                       .map(s -> s.replace("http://", "").replace("http:// www.", "").replace("www.", ""))
+                       .filter(EmptyPredicate::isNotEmpty)
+                       .collect(Collectors.toSet());
     if (whitelistedDomains.size() != validDomains.size()) {
       throw new WingsException("Invalid domain name");
     }

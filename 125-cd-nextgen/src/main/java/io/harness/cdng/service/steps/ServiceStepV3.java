@@ -111,6 +111,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
     validate(stepParameters);
     try {
       final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance, true);
+
       saveExecutionLog(logCallback, "Starting service step...");
 
       final ServicePartResponse servicePartResponse = executeServicePart(ambiance, stepParameters);

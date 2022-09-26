@@ -47,6 +47,7 @@ import io.harness.event.EventsModule;
 import io.harness.event.usagemetrics.EventsModuleHelper;
 import io.harness.eventframework.dms.DmsObserverEventProducer;
 import io.harness.eventframework.manager.ManagerObserverEventProducer;
+import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.exception.ConstraintViolationExceptionMapper;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagConfig;
@@ -81,7 +82,6 @@ import io.harness.persistence.Store;
 import io.harness.persistence.UserProvider;
 import io.harness.queue.QueueListenerController;
 import io.harness.queue.TimerScheduledExecutorService;
-import io.harness.redis.RedisConfig;
 import io.harness.serializer.AnnotationAwareJsonSubtypeResolver;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.service.DelegateServiceModule;
@@ -594,8 +594,8 @@ public class NGMigrationApplication extends Application<MigratorConfig> {
 
     modules.add(new AbstractPersistenceTracerModule() {
       @Override
-      protected RedisConfig redisConfigProvider() {
-        return configuration.getEventsFrameworkConfiguration().getRedisConfig();
+      protected EventsFrameworkConfiguration eventsFrameworkConfiguration() {
+        return configuration.getEventsFrameworkConfiguration();
       }
 
       @Override

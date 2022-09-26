@@ -10,6 +10,7 @@ package io.harness.ngmigration.connector;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import software.wings.beans.AzureConfig;
 import software.wings.beans.DockerConfig;
 import software.wings.beans.GcpConfig;
 import software.wings.beans.GitConfig;
@@ -22,6 +23,7 @@ public class ConnectorFactory {
   private static final BaseConnector kubernetesConnector = new KubernetesConnectorImpl();
   private static final BaseConnector gitConnector = new GitConnectorImpl();
   private static final BaseConnector gcpConnector = new GcpConnectorImpl();
+  private static final BaseConnector azureConnector = new AzureConnectorImpl();
   private static final BaseConnector unsupportedConnector = new UnsupportedConnectorImpl();
 
   public static BaseConnector getConnector(SettingAttribute settingAttribute) {
@@ -36,6 +38,9 @@ public class ConnectorFactory {
     }
     if (settingAttribute.getValue() instanceof GcpConfig) {
       return gcpConnector;
+    }
+    if (settingAttribute.getValue() instanceof AzureConfig) {
+      return azureConnector;
     }
     return unsupportedConnector;
   }
