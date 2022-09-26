@@ -7,7 +7,7 @@ load("//:tools/bazel/docker/docker-utils.bzl", "docker_layers", "docker_image", 
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 
 docker_layers(
-    name = "manager-onprem-run",
+    name = "dms-onprem-run",
     commands = [
         "curl -L https://harness.jfrog.io/artifactory/BuildsTools/docker/inspectit-ocelot-agent/inspectit-ocelot-agent-1.16.0.jar --output inspectit-ocelot-agent-1.16.0.jar",
         "chmod 711 inspectit-ocelot-agent-1.16.0.jar",
@@ -15,7 +15,7 @@ docker_layers(
 )
 
 docker_layers(
-    name = "manager-saas-run",
+    name = "dms-saas-run",
     commands = [
             "curl https://get.et.harness.io/releases/latest/nix/harness-et-agent.tar.gz --output harness-et-agent.tar.gz",
             "tar -xzf harness-et-agent.tar.gz -C /opt/harness",
@@ -37,25 +37,23 @@ docker_pkg(
     name = "files",
     srcs = [
         "//:protocol.info",
-        "//360-cg-manager:newrelic.yml",
-        "//360-cg-manager:keystore.jks",
-        "//360-cg-manager:config.yml",
-        "//400-rest/src/main/resources:redisson-jcache.yaml",
-        "//400-rest/src/main/resources:hazelcast.xml",
+        "//270-delegate-service-app:keystore.jks",
+        "//270-delegate-service-app:config.yml",
+        "//270-delegate-service-app/src/main/resources:redisson-jcache.yaml",
     ],
     files = {
-        "//360-cg-manager:module_deploy.jar": "rest-capsule.jar",
+        "//270-delegate-service-app/module_deploy.jar": "delegate-service-capsule.jar"
         },
 )
 
 docker_image(
-    name = "manager-saas-image",
+    name = "dms-saas-image",
     dockerlayers = [
-            ":manager-saas-run"
+            ":dms-saas-run"
             ],
     cmd = [
         "/bin/bash", "-c",
-        "java -jar rest-capsule.jar scan-classpath-metadata; ./run.sh",
+        "./run.sh",
         ],
     filestocopy = [
         ":files",
@@ -65,20 +63,20 @@ docker_image(
 
 #Pass the TAG from the bazel run command by passing --define=TAG=TagValue
 docker_push(
-        name = "manager-saas-push",
-        image = "manager-saas-image",
-        repository = "platform-205701/harness/harness-services-bazel/manager-saas-bazel-test",
+        name = "dms-saas-push",
+        image = "dms-saas-image",
+        repository = "platform-205701/harness/harness-services-bazel/dms-saas-bazel-test",
         imagetag = "$(TAG)",
 )
 
 docker_image(
-    name = "manager-onprem-image",
+    name = "dms-onprem-image",
     dockerlayers = [
-            ":manager-onprem-run"
+            ":dms-onprem-run"
             ],
     cmd = [
         "/bin/bash", "-c",
-        "java -jar rest-capsule.jar scan-classpath-metadata; ./run.sh",
+        "./run.sh",
         ],
     filestocopy = [
         ":files",
@@ -88,8 +86,8 @@ docker_image(
 
 #Pass the TAG from the bazel run command by passing --define=TAG=TagValue
 docker_push(
-        name = "manager-onprem-push",
-        image = "manager-onprem-image",
-        repository = "platform-205701/harness/harness-services-bazel/manager-onprem-bazel-test",
+        name = "dms-onprem-push",
+        image = "dms-onprem-image",
+        repository = "platform-205701/harness/harness-services-bazel/dms-onprem-bazel-test",
         imagetag = "$(TAG)",
 )
