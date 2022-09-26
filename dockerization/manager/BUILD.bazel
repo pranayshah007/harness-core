@@ -1,5 +1,4 @@
-load("@io_bazel_rules_docker//container:container.bzl", "container_image", "container_pull", "container_push")
-load("//:tools/bazel/docker/docker-utils.bzl", "docker_layers")
+load("//:tools/bazel/docker/docker-utils.bzl", "docker_layers", "docker_image", "docker_push", "docker_pkg")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 
 docker_layers(
@@ -22,22 +21,14 @@ docker_layers(
         ],
 )
 
-pkg_tar(
+docker_pkg(
     name = "scripts",
     srcs = glob([
         "scripts/*",
         ]),
-    mode = "0500",
-    owner = "65534.65534",
-    package_dir = "/opt/harness",
-    tags = [
-                "manual",
-                "no-cache",
-                "no-ide",
-            ],
 )
 
-pkg_tar(
+docker_pkg(
     name = "files",
     srcs = [
         "//:protocol.info",
@@ -50,91 +41,50 @@ pkg_tar(
     files = {
         "//360-cg-manager:module_deploy.jar": "rest-capsule.jar",
         },
-    mode = "0500",
-    owner = "65534.65534",
-    package_dir = "/opt/harness",
-    tags = [
-                "manual",
-                "no-cache",
-                "no-ide",
-            ],
 )
 
-container_image(
+docker_image(
     name = "manager-saas-image",
-    base = "@ubi-java-base//image",
-    layers = [
-        ":manager-saas-run"
-        ],
-    user = "65534",
-    workdir = "/opt/harness",
+    dockerlayers = [
+            ":manager-saas-run"
+            ],
     cmd = [
         "/bin/bash", "-c",
         "java -jar rest-capsule.jar scan-classpath-metadata; ./run.sh",
         ],
-    tars = [
+    filestocopy = [
         ":files",
         ":scripts",
     ],
-    env = {
-    },
-    tags = [
-            "manual",
-            "no-cache",
-            "no-ide",
-        ],
 )
 
 #Pass the TAG from the bazel run command by passing --define=TAG=TagValue
-container_push(
+docker_push(
         name = "manager-saas-push",
-        format = "Docker",
         image = "manager-saas-image",
-        registry = "us.gcr.io",
         repository = "platform-205701/harness/harness-services-bazel/manager-saas-bazel-test",
-        tag = "$(TAG)",
-        tags = [
-                "manual",
-                "no-cache",
-                "no-ide",
-            ],
+        imagetag = "$(TAG)",
 )
 
-container_image(
+docker_image(
     name = "manager-onprem-image",
-    base = "@ubi-java-base//image",
-    layers = [
-        ":manager-onprem-run"
-        ],
-    user = "65534",
-    workdir = "/opt/harness",
+    dockerlayers = [
+            ":manager-onprem-run"
+            ],
     cmd = [
-        "./run.sh",
+        "/bin/bash", "-c",
+        "java -jar rest-capsule.jar scan-classpath-metadata; ./run.sh",
         ],
-    tars = [
+    filestocopy = [
         ":files",
         ":scripts",
     ],
-    env = {
-    },
-    tags = [
-            "manual",
-            "no-cache",
-            "no-ide",
-        ],
 )
 
 #Pass the TAG from the bazel run command by passing --define=TAG=TagValue
-container_push(
+docker_push(
         name = "manager-onprem-push",
-        format = "Docker",
         image = "manager-onprem-image",
-        registry = "us.gcr.io",
         repository = "platform-205701/harness/harness-services-bazel/manager-onprem-bazel-test",
-        tag = "$(TAG)",
-        tags = [
-                "manual",
-                "no-cache",
-                "no-ide",
-            ],
+        imagetag = "$(TAG)",
 )
