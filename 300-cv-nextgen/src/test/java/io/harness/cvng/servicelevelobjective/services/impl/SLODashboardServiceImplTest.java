@@ -32,7 +32,7 @@ import io.harness.cvng.servicelevelobjective.beans.SLODashboardDetail;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget.Point;
 import io.harness.cvng.servicelevelobjective.beans.SLOHealthListView;
-import io.harness.cvng.servicelevelobjective.beans.SLOTarget;
+import io.harness.cvng.servicelevelobjective.beans.SLOTargetDTO;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDTO;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.CalenderSLOTargetSpec;
@@ -153,14 +153,14 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
                                                          .healthSourceRef(healthSource.getIdentifier())
                                                          .build();
 
-    SLOTarget calendarSloTarget = SLOTarget.builder()
-                                      .type(SLOTargetType.CALENDER)
-                                      .sloTargetPercentage(80.0)
-                                      .spec(CalenderSLOTargetSpec.builder()
-                                                .type(SLOCalenderType.QUARTERLY)
-                                                .spec(CalenderSLOTargetSpec.QuarterlyCalenderSpec.builder().build())
-                                                .build())
-                                      .build();
+    SLOTargetDTO calendarSloTarget = SLOTargetDTO.builder()
+                                         .type(SLOTargetType.CALENDER)
+                                         .sloTargetPercentage(80.0)
+                                         .spec(CalenderSLOTargetSpec.builder()
+                                                   .type(SLOCalenderType.QUARTERLY)
+                                                   .spec(CalenderSLOTargetSpec.QuarterlyCalenderSpec.builder().build())
+                                                   .build())
+                                         .build();
     serviceLevelObjective.setTarget(calendarSloTarget);
     serviceLevelObjectiveService.create(builderFactory.getProjectParams(), serviceLevelObjective);
     PageResponse<SLODashboardWidget> pageResponse =
@@ -375,14 +375,14 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
                                                          .healthSourceRef(healthSource.getIdentifier())
                                                          .build();
 
-    SLOTarget calendarSloTarget = SLOTarget.builder()
-                                      .type(SLOTargetType.CALENDER)
-                                      .sloTargetPercentage(80.0)
-                                      .spec(CalenderSLOTargetSpec.builder()
-                                                .type(SLOCalenderType.QUARTERLY)
-                                                .spec(CalenderSLOTargetSpec.QuarterlyCalenderSpec.builder().build())
-                                                .build())
-                                      .build();
+    SLOTargetDTO calendarSloTarget = SLOTargetDTO.builder()
+                                         .type(SLOTargetType.CALENDER)
+                                         .sloTargetPercentage(80.0)
+                                         .spec(CalenderSLOTargetSpec.builder()
+                                                   .type(SLOCalenderType.QUARTERLY)
+                                                   .spec(CalenderSLOTargetSpec.QuarterlyCalenderSpec.builder().build())
+                                                   .build())
+                                         .build();
     serviceLevelObjective.setTarget(calendarSloTarget);
     serviceLevelObjectiveService.create(builderFactory.getProjectParams(), serviceLevelObjective);
     PageResponse<SLOHealthListView> pageResponse =
