@@ -9,6 +9,7 @@ package io.harness.ng.core.outbox;
 
 import static io.harness.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.audit.beans.AuthenticationInfoDTO.fromSecurityPrincipal;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.core.utils.NGYamlUtils.getYamlString;
 import static io.harness.security.PrincipalContextData.PRINCIPAL_CONTEXT;
 
@@ -28,7 +29,9 @@ import io.harness.ng.core.events.ServiceCreateEvent;
 import io.harness.ng.core.events.ServiceDeleteEvent;
 import io.harness.ng.core.events.ServiceUpdateEvent;
 import io.harness.ng.core.events.ServiceUpsertEvent;
+import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceRequest;
+import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxEventHandler;
 import io.harness.security.PrincipalContextData;
@@ -46,9 +49,12 @@ public class ServiceOutBoxEventHandler implements OutboxEventHandler {
   private final ObjectMapper objectMapper;
   private final AuditClientService auditClientService;
 
+  private final ServiceEntityService serviceEntityService;
+
   @Inject
-  ServiceOutBoxEventHandler(AuditClientService auditClientService) {
+  ServiceOutBoxEventHandler(AuditClientService auditClientService, ServiceEntityService serviceEntityService) {
     this.auditClientService = auditClientService;
+    this.serviceEntityService = serviceEntityService;
     this.objectMapper = NG_DEFAULT_OBJECT_MAPPER;
   }
 
@@ -121,8 +127,19 @@ public class ServiceOutBoxEventHandler implements OutboxEventHandler {
     } else if (globalContext.get(PRINCIPAL_CONTEXT) != null) {
       principal = ((PrincipalContextData) globalContext.get(PRINCIPAL_CONTEXT)).getPrincipal();
     }
-    return auditClientService.publishAudit(auditEntry, fromSecurityPrincipal(principal), globalContext);
+    boolean audited = auditClientService.publishAudit(auditEntry, fromSecurityPrincipal(principal), globalContext);
+
+    if (inputsChanges(serviceUpdateEvent.getOldService(), serviceUpdateEvent.getNewService())) {
+      handleServiceInputsChanges(serviceUpdateEvent.getNewService());
+    }
+
+    return audited;
   }
+
+  private void handleServiceInputsChanges(ServiceEntity newService) {
+    // ToDo: (yogesh)
+  }
+
   private boolean handlerServiceDeleted(OutboxEvent outboxEvent) throws IOException {
     GlobalContext globalContext = outboxEvent.getGlobalContext();
     ServiceDeleteEvent serviceDeleteEvent =
@@ -166,5 +183,15 @@ public class ServiceOutBoxEventHandler implements OutboxEventHandler {
     } catch (IOException ex) {
       return false;
     }
+  }
+
+  private boolean inputsChanges(ServiceEntity oldService, ServiceEntity newService) {
+    String oldInputs = serviceEntityService.createServiceInputsYaml(oldService.getYaml(), oldService.getIdentifier());
+    String newInputs = serviceEntityService.createServiceInputsYaml(newService.getYaml(), newService.getIdentifier());
+    if (isNotEmpty(oldInputs) && isNotEmpty(newInputs)) {
+      // true if inputs do not match
+      return oldInputs.compareTo(newInputs) != 0;
+    } else
+      return isNotEmpty(oldInputs) || isNotEmpty(newInputs);
   }
 }

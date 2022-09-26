@@ -9,7 +9,6 @@ package io.harness.ng.core.outbox;
 
 import static io.harness.ng.core.utils.NGYamlUtils.getYamlString;
 import static io.harness.rule.OwnerRule.BRIJESH;
-
 import static io.serializer.HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
@@ -39,6 +38,7 @@ import io.harness.ng.core.events.ServiceUpdateEvent;
 import io.harness.ng.core.events.ServiceUpsertEvent;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceRequest;
+import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.outbox.OutboxEvent;
 import io.harness.rule.Owner;
 import io.harness.security.SourcePrincipalContextData;
@@ -56,13 +56,15 @@ import org.mockito.ArgumentCaptor;
 public class ServiceOutboxEventHandlerTest extends CategoryTest {
   private ObjectMapper objectMapper;
   private AuditClientService auditClientService;
+  private ServiceEntityService serviceEntityService;
+
   private ServiceOutBoxEventHandler serviceEventHandler;
 
   @Before
   public void setup() {
     this.objectMapper = NG_DEFAULT_OBJECT_MAPPER;
     auditClientService = mock(AuditClientService.class);
-    serviceEventHandler = spy(new ServiceOutBoxEventHandler(auditClientService));
+    serviceEventHandler = spy(new ServiceOutBoxEventHandler(auditClientService, serviceEntityService));
   }
 
   @Test
