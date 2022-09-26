@@ -297,8 +297,7 @@ public class IntegrationStageUtils {
     return treatWebhookAsManualExecution(connectorDetails, codeBase, parsedPayload, version);
   }
 
-  private static BaseNGAccess getBaseNGAccess(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+  public static BaseNGAccess getBaseNGAccess(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     return BaseNGAccess.builder()
         .accountIdentifier(accountIdentifier)
         .orgIdentifier(orgIdentifier)
