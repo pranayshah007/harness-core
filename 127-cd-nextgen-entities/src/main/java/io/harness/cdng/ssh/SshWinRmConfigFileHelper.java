@@ -56,6 +56,10 @@ public class SshWinRmConfigFileHelper {
   @Inject private CDExpressionResolver cdExpressionResolver;
 
   public String fetchFileContent(FileReference fileReference) {
+    return fetchFileContent(fileReference, true);
+  }
+
+  public String fetchFileContent(FileReference fileReference, boolean forceUnixLineEnding) {
     Optional<FileStoreNodeDTO> file = fileStoreService.getWithChildrenByPath(fileReference.getAccountIdentifier(),
         fileReference.getOrgIdentifier(), fileReference.getProjectIdentifier(), fileReference.getPath(), true);
 
@@ -71,7 +75,20 @@ public class SshWinRmConfigFileHelper {
           "Requested file is a folder, path [%s], scope: [%s]", fileReference.getPath(), fileReference.getScope()));
     }
 
-    return ((FileNodeDTO) fileStoreNodeDTO).getContent();
+    final String content = ((FileNodeDTO) fileStoreNodeDTO).getContent();
+
+    if (forceUnixLineEnding) {
+      return toUnixLineEnding(content);
+    } else {
+      return content;
+    }
+  }
+
+  private String toUnixLineEnding(String script) {
+    if (isEmpty(script)) {
+      return script;
+    }
+    return script.replace("\r", "");
   }
 
   public FileDelegateConfig getFileDelegateConfig(
