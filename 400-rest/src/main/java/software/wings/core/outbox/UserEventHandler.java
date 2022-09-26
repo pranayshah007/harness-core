@@ -76,7 +76,8 @@ public class UserEventHandler implements OutboxEventHandler {
                                 .build();
     AuthenticationInfoDTO authenticationInfoDTO = getAuthenticationInfoForLoginEvent(accountIdentifier, auditEntry);
     String userId = outboxEvent.getResource().getLabels().get(ResourceConstants.LABEL_KEY_USER_ID);
-
+    log.info("NG Login Event Audit: start publishing audit for account {} and user with userId {} ", accountIdentifier,
+        userId);
     try {
       if (isUserInScope(userId, accountIdentifier)) {
         log.info(
@@ -86,8 +87,9 @@ public class UserEventHandler implements OutboxEventHandler {
       }
     } catch (Exception ex) {
       log.warn("Skipping audit for account {} and userId {} due to exception: ", accountIdentifier, userId, ex);
+      return false;
     }
-    return false;
+    return true;
   }
 
   private boolean handleLogin2faEvent(OutboxEvent outboxEvent) {
