@@ -677,7 +677,6 @@ public class SignupServiceImpl implements SignupService {
     groupProperties.put("created_at", createdAt);
     groupProperties.put("created_at_week", createdAtWeek);
     groupProperties.put("created_at_month", createdAtMonth);
-    groupProperties.put("created_by_user_id", email);
   }
 
   private void sendCommunitySucceedTelemetry(String email, String accountId, UserInfo userInfo, String source) {

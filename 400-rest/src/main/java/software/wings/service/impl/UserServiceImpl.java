@@ -574,7 +574,27 @@ public class UserServiceImpl implements UserService {
                     .utmInfo(userInvite.getUtmInfo())
                     .build();
     completeUserInviteForSignup(userInvite, createdAccount.getUuid());
+
+    sendCreatedByUserInfo(createdAccount, user);
+
     return createNewUserAndSignIn(user, createdAccount.getUuid());
+  }
+
+  private void sendCreatedByUserInfo(Account createdAccount, User user) {
+    HashMap<String, Object> groupProperties = new HashMap<>();
+    groupProperties.put("group_id", createdAccount.getUuid());
+    groupProperties.put("group_type", "Account");
+    groupProperties.put("group_name", createdAccount.getAccountName());
+    groupProperties.put("created_by_user_id", user.getEmail());
+    if (user.getUtmInfo() != null) {
+      groupProperties.put("created_by_user_utm_source", user.getUtmInfo().getUtmSource());
+      groupProperties.put("created_by_user_utm_campaign", user.getUtmInfo().getUtmCampaign());
+      groupProperties.put("created_by_user_utm_medium", user.getUtmInfo().getUtmMedium());
+      groupProperties.put("created_by_user_utm_content", user.getUtmInfo().getUtmContent());
+    }
+
+    telemetryReporter.sendGroupEvent(createdAccount.getUuid(), user.getEmail(), groupProperties,
+        ImmutableMap.<Destination, Boolean>builder().build());
   }
 
   @Override
