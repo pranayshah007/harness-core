@@ -38,7 +38,7 @@ import retrofit.http.Body;
 @Consumes({"application/json", "text/yaml", "text/html", "text/plain"})
 @Slf4j
 @NextGenManagerAuth
-public class ChaosK8sResource {
+public class ChaosResource {
   ChaosService chaosService;
 
   @POST
