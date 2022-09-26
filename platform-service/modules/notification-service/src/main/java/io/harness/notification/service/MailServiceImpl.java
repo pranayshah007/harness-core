@@ -20,6 +20,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.delegate.beans.MailTaskParams;
 import io.harness.delegate.beans.NotificationProcessingResponse;
+import io.harness.delegate.beans.NotificationTaskResponse;
 import io.harness.exception.ExceptionUtils;
 import io.harness.notification.NotificationChannelType;
 import io.harness.notification.NotificationRequest;
@@ -27,6 +28,7 @@ import io.harness.notification.SmtpConfig;
 import io.harness.notification.Team;
 import io.harness.notification.exception.NotificationException;
 import io.harness.notification.remote.SmtpConfigResponse;
+import io.harness.notification.remote.dto.EmailDTO;
 import io.harness.notification.remote.dto.EmailSettingDTO;
 import io.harness.notification.remote.dto.NotificationSettingDTO;
 import io.harness.notification.senders.MailSenderImpl;
@@ -57,6 +59,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.validator.routines.EmailValidator;
 
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
@@ -126,12 +129,44 @@ public class MailServiceImpl implements ChannelService {
               + notificationSettingDTO.getNotificationId(),
           DEFAULT_ERROR_CODE, USER);
     }
-    NotificationProcessingResponse response = send(Collections.singletonList(email), DEFAULT_SUBJECT_BODY,
-        DEFAULT_SUBJECT_BODY, email, notificationSettingDTO.getAccountId());
-    if (response.getResult().isEmpty() || NotificationProcessingResponse.isNotificationRequestFailed(response)) {
-      throw new NotificationException("Failed to send email. Check SMTP configuration", DEFAULT_ERROR_CODE, USER);
+    NotificationTaskResponse response = sendInSync(Collections.singletonList(email), Collections.emptyList(),
+        DEFAULT_SUBJECT_BODY, DEFAULT_SUBJECT_BODY, email, notificationSettingDTO.getAccountId());
+    if (response.getProcessingResponse().getResult().isEmpty()
+        || NotificationProcessingResponse.isNotificationRequestFailed(response.getProcessingResponse())) {
+      throw new NotificationException(response.getErrorMessage(), DEFAULT_ERROR_CODE, USER);
     }
     return true;
+  }
+
+  public NotificationTaskResponse sendEmail(EmailDTO emailDTO) {
+    List<String> emails = emailDTO.getRecipients();
+    List<String> ccEmails = emailDTO.getCcRecipients();
+    List<String> invalidEmails = new ArrayList<>();
+    String errorMessage = null;
+    if (emails == null || emails.isEmpty()) {
+      throw new NotificationException(
+          "No email ids encountered for " + emailDTO.getNotificationId(), DEFAULT_ERROR_CODE, USER);
+    }
+    if (Objects.isNull(emailDTO.getAccountId())) {
+      throw new NotificationException(
+          "No account id encountered for " + emailDTO.getNotificationId(), DEFAULT_ERROR_CODE, USER);
+    }
+    invalidEmails.addAll(
+        emails.stream().filter(email -> !EmailValidator.getInstance().isValid(email)).collect(Collectors.toList()));
+    invalidEmails.addAll(
+        ccEmails.stream().filter(email -> !EmailValidator.getInstance().isValid(email)).collect(Collectors.toList()));
+    if (!invalidEmails.isEmpty()) {
+      emails.removeAll(invalidEmails);
+      errorMessage = "Emails " + StringUtils.join(invalidEmails, ", ") + "are invalid.";
+      // TODO: Richa
+      // also add check for emails not present in account: isEmailAddressRegistered
+    }
+    NotificationTaskResponse response = sendInSync(emails, ccEmails, emailDTO.getSubject(), emailDTO.getBody(),
+        emailDTO.getNotificationId(), emailDTO.getAccountId());
+    if (errorMessage != null) {
+      response.setErrorMessage(errorMessage);
+    }
+    return response;
   }
 
   private NotificationProcessingResponse send(
@@ -157,13 +192,51 @@ public class MailServiceImpl implements ChannelService {
       log.info("Async delegate task created with taskID {}", taskId);
       notificationProcessingResponse = NotificationProcessingResponse.allSent(emailIds.size());
     } else {
-      notificationProcessingResponse = mailSender.send(emailIds, subject, body, notificationId, smtpConfigDefault);
+      notificationProcessingResponse =
+          mailSender.send(emailIds, Collections.emptyList(), subject, body, notificationId, smtpConfigDefault);
     }
     log.info(NotificationProcessingResponse.isNotificationRequestFailed(notificationProcessingResponse)
             ? "Failed to send notification for request {}"
             : "Notification request {} sent",
         notificationId);
     return notificationProcessingResponse;
+  }
+
+  private NotificationTaskResponse sendInSync(List<String> emailIds, List<String> ccEmailIds, String subject,
+      String body, String notificationId, String accountId) {
+    NotificationTaskResponse notificationTaskResponse;
+    NotificationProcessingResponse notificationProcessingResponse;
+    SmtpConfigResponse smtpConfigResponse = notificationSettingsService.getSmtpConfigResponse(accountId);
+    if (Objects.nonNull(smtpConfigResponse)) {
+      DelegateTaskRequest delegateTaskRequest =
+          DelegateTaskRequest.builder()
+              .accountId(accountId)
+              .taskType("NOTIFY_MAIL")
+              .taskParameters(MailTaskParams.builder()
+                                  .notificationId(notificationId)
+                                  .subject(subject)
+                                  .body(body)
+                                  .emailIds(emailIds)
+                                  .ccEmailIds(ccEmailIds)
+                                  .smtpConfig(smtpConfigResponse.getSmtpConfig())
+                                  .encryptionDetails(smtpConfigResponse.getEncryptionDetails())
+                                  .build())
+              .executionTimeout(Duration.ofMinutes(1L))
+              .build();
+      notificationTaskResponse =
+          (NotificationTaskResponse) delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+    } else {
+      notificationProcessingResponse =
+          mailSender.send(emailIds, ccEmailIds, subject, body, notificationId, smtpConfigDefault);
+      notificationTaskResponse =
+          NotificationTaskResponse.builder().processingResponse(notificationProcessingResponse).build();
+    }
+    log.info(
+        NotificationProcessingResponse.isNotificationRequestFailed(notificationTaskResponse.getProcessingResponse())
+            ? "Failed to send notification for request {}"
+            : "Notification request {} sent",
+        notificationId);
+    return notificationTaskResponse;
   }
 
   private String processTemplate(String templateName, String templateStr, Map<String, String> templateData) {

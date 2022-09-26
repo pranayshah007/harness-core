@@ -140,7 +140,7 @@ public class MailServiceImplTest extends CategoryTest {
         .thenReturn(Optional.empty(), Optional.of("This is a test notification"));
     when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(false);
     when(notificationSettingsService.getSmtpConfig(eq(accountId))).thenReturn(Optional.of(smtpConfigDefault));
-    when(mailSender.send(any(), any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
+    when(mailSender.send(any(), any(), any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
     when(yamlUtils.read(any(), (TypeReference<EmailTemplate>) any())).thenReturn(emailTemplate);
     when(notificationSettingsService.getSmtpConfigResponse(eq(accountId))).thenReturn(new SmtpConfigResponse());
 
@@ -182,7 +182,7 @@ public class MailServiceImplTest extends CategoryTest {
         .thenReturn(Optional.empty(), Optional.of("This is a test notification"));
     when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(false);
     when(notificationSettingsService.getSmtpConfig(eq(accountId))).thenReturn(Optional.of(smtpConfigDefault));
-    when(mailSender.send(any(), any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
+    when(mailSender.send(any(), any(), any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
     when(yamlUtils.read(any(), (TypeReference<EmailTemplate>) any())).thenReturn(emailTemplate);
     when(notificationSettingsService.getSmtpConfigResponse(eq(accountId))).thenReturn(new SmtpConfigResponse());
 
@@ -226,7 +226,7 @@ public class MailServiceImplTest extends CategoryTest {
         EmailSettingDTO.builder().accountId(accountId).recipient("email@harness.io").build();
     NotificationProcessingResponse notificationExpectedResponse =
         NotificationProcessingResponse.builder().result(Arrays.asList(true)).shouldRetry(false).build();
-    when(mailSender.send(any(), any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
+    when(mailSender.send(any(), any(), any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
     when(notificationTemplateService.getTemplateAsString(any(), any()))
         .thenReturn(Optional.of("This is a test notification"));
     when(yamlUtils.read(any(), (TypeReference<EmailTemplate>) any())).thenReturn(emailTemplate);

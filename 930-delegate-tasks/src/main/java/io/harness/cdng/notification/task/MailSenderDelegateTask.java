@@ -63,7 +63,7 @@ public class MailSenderDelegateTask extends AbstractDelegateRunnableTask {
     notificationSmtpConfig.setPassword(restSmtpConfig.getPassword());
     try {
       NotificationProcessingResponse processingResponse =
-          mailSender.send(mailTaskParams.getEmailIds(), mailTaskParams.getSubject(), mailTaskParams.getBody(),
+          mailSender.send(mailTaskParams.getEmailIds(), mailTaskParams.getCcEmailIds(), mailTaskParams.getSubject(), mailTaskParams.getBody(),
               mailTaskParams.getNotificationId(), notificationSmtpConfig);
       return NotificationTaskResponse.builder().processingResponse(processingResponse).build();
     } catch (Exception e) {
