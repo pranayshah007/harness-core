@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.awsconnector.AwsCapabilityHelper;
 import io.harness.delegate.beans.connector.azureconnector.AzureCapabilityHelper;
 import io.harness.delegate.beans.connector.pdcconnector.PhysicalDataCenterConnectorCapabilityHelper;
+import io.harness.delegate.beans.connector.pdcconnector.WinrmCapabilityHelper;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
 import io.harness.delegate.task.ssh.AwsWinrmInfraDelegateConfig;
@@ -21,7 +22,9 @@ import io.harness.delegate.task.ssh.AzureWinrmInfraDelegateConfig;
 import io.harness.delegate.task.ssh.PdcWinRmInfraDelegateConfig;
 import io.harness.delegate.task.ssh.WinRmInfraDelegateConfig;
 import io.harness.expression.ExpressionEvaluator;
+import io.harness.security.encryption.SecretDecryptionService;
 
+import com.google.inject.Inject;
 import java.util.List;
 import lombok.Getter;
 import lombok.Value;
@@ -32,6 +35,7 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @OwnedBy(CDP)
 public class WinrmTaskParameters extends CommandTaskParameters {
+  @Inject SecretDecryptionService secretDecryptionService;
   String host;
   WinRmInfraDelegateConfig winRmInfraDelegateConfig;
   boolean disableWinRMCommandEncodingFFSet;
@@ -51,6 +55,13 @@ public class WinrmTaskParameters extends CommandTaskParameters {
             pdcSshInfraDelegateConfig.getPhysicalDataCenterConnectorDTO(), maskingEvaluator,
             getDefaultPort(pdcSshInfraDelegateConfig)));
       }
+
+      if (winRmInfraDelegateConfig.getWinRmCredentials() != null
+          && winRmInfraDelegateConfig.getWinRmCredentials().getAuth() != null) {
+        capabilities.addAll(WinrmCapabilityHelper.fetchRequiredExecutionCapabilities(
+            winRmInfraDelegateConfig, useWinRMKerberosUniqueCacheFile));
+      }
+
       capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
           pdcSshInfraDelegateConfig.getEncryptionDataDetails(), maskingEvaluator));
     } else if (winRmInfraDelegateConfig instanceof AzureWinrmInfraDelegateConfig) {

@@ -23,6 +23,7 @@ public class ServiceStepV3Parameters implements StepParameters {
   private ParameterField<Map<String, Object>> inputs;
   private ParameterField<String> envRef;
   private ParameterField<Map<String, Object>> envInputs;
+  private ParameterField<Map<String, Object>> serviceOverrideInputs;
   private List<String> childrenNodeIds;
   @Override
   public String toViewJson() {

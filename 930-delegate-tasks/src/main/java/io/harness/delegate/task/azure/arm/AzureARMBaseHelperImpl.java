@@ -27,6 +27,7 @@ import java.util.concurrent.TimeUnit;
 
 @OwnedBy(CDP)
 public class AzureARMBaseHelperImpl implements AzureResourceCreationBaseHelper {
+  protected static final String EMPTY_JSON = "{}";
   private static final Random rand = new Random();
 
   @Override
@@ -40,7 +41,7 @@ public class AzureARMBaseHelperImpl implements AzureResourceCreationBaseHelper {
         .templateJson(deploymentParameters.getTemplateBody().fetchFileContent())
         .parametersJson(deploymentParameters.getParametersBody() != null
                 ? deploymentParameters.getParametersBody().fetchFileContent()
-                : "{}")
+                : EMPTY_JSON)
         .logStreamingTaskClient(logCallback)
         .steadyStateTimeoutInMin((int) TimeUnit.MILLISECONDS.toMinutes(deploymentParameters.getTimeoutInMs()))
         .isRollback(deploymentParameters.isRollback()) // I still need to check this part
@@ -97,7 +98,6 @@ public class AzureARMBaseHelperImpl implements AzureResourceCreationBaseHelper {
     return AzureARMTaskNGResponse.builder()
         .outputs(outputs)
         .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-        .azureARMPreDeploymentData(AzureARMPreDeploymentData.builder().build())
         .build();
   }
 

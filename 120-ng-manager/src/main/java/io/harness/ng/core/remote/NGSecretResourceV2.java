@@ -177,6 +177,9 @@ public class NGSecretResourceV2 {
     secretPermissionValidator.checkForAccessOrThrow(
         ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier), Resource.of(SECRET_RESOURCE_TYPE, null),
         SECRET_EDIT_PERMISSION, privateSecret ? SecurityContextBuilder.getPrincipal() : null);
+
+    ngSecretService.validateSshWinRmSecretRef(accountIdentifier, orgIdentifier, projectIdentifier, dto.getSecret());
+
     if (privateSecret) {
       dto.getSecret().setOwner(SecurityContextBuilder.getPrincipal());
     }
@@ -244,7 +247,7 @@ public class NGSecretResourceV2 {
         ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier), Resource.of(SECRET_RESOURCE_TYPE, null),
         SECRET_EDIT_PERMISSION, privateSecret ? SecurityContextBuilder.getPrincipal() : null);
 
-    ngSecretService.validateSshWinRmPasswords(accountIdentifier, orgIdentifier, projectIdentifier, dto.getSecret());
+    ngSecretService.validateSshWinRmSecretRef(accountIdentifier, orgIdentifier, projectIdentifier, dto.getSecret());
     if (privateSecret) {
       dto.getSecret().setOwner(SecurityContextBuilder.getPrincipal());
     }
@@ -282,6 +285,10 @@ public class NGSecretResourceV2 {
       @QueryParam("source_category") ConnectorCategory sourceCategory,
       @Parameter(description = "Specify whether or not to include secrets from all the sub-scopes of the given Scope")
       @QueryParam(INCLUDE_SECRETS_FROM_EVERY_SUB_SCOPE) @DefaultValue("false") boolean includeSecretsFromEverySubScope,
+      @Parameter(description = "Specify whether or not to include all the Secrets"
+              + " accessible at the scope. For eg if set as true, at the Project scope we will get"
+              + " org and account Secrets also in the response") @QueryParam("includeAllSecretsAccessibleAtScope")
+      @DefaultValue("false") boolean includeAllSecretsAccessibleAtScope,
       @Parameter(description = "Page number of navigation. The default value is 0") @QueryParam(
           NGResourceFilterConstants.PAGE_KEY) @DefaultValue("0") int page,
       @Parameter(description = "Number of entries per page. The default value is 100 ") @QueryParam(
@@ -289,9 +296,9 @@ public class NGSecretResourceV2 {
     if (secretType != null) {
       secretTypes.add(secretType);
     }
-    return ResponseDTO.newResponse(
-        getNGPageResponse(ngSecretService.list(accountIdentifier, orgIdentifier, projectIdentifier, identifiers,
-            secretTypes, includeSecretsFromEverySubScope, searchTerm, page, size, sourceCategory)));
+    return ResponseDTO.newResponse(getNGPageResponse(ngSecretService.list(accountIdentifier, orgIdentifier,
+        projectIdentifier, identifiers, secretTypes, includeSecretsFromEverySubScope, searchTerm, page, size,
+        sourceCategory, includeAllSecretsAccessibleAtScope)));
   }
 
   @POST
@@ -317,7 +324,8 @@ public class NGSecretResourceV2 {
     return ResponseDTO.newResponse(getNGPageResponse(ngSecretService.list(accountIdentifier, orgIdentifier,
         projectIdentifier, secretResourceFilterDTO.getIdentifiers(), secretResourceFilterDTO.getSecretTypes(),
         secretResourceFilterDTO.isIncludeSecretsFromEverySubScope(), secretResourceFilterDTO.getSearchTerm(), page,
-        size, secretResourceFilterDTO.getSourceCategory())));
+        size, secretResourceFilterDTO.getSourceCategory(),
+        secretResourceFilterDTO.isIncludeAllSecretsAccessibleAtScope())));
   }
 
   @GET
@@ -399,6 +407,8 @@ public class NGSecretResourceV2 {
         Resource.of(SECRET_RESOURCE_TYPE, identifier), SECRET_EDIT_PERMISSION,
         secret != null ? secret.getSecret().getOwner() : null);
 
+    ngSecretService.validateSshWinRmSecretRef(accountIdentifier, orgIdentifier, projectIdentifier, dto.getSecret());
+
     return ResponseDTO.newResponse(
         ngSecretService.update(accountIdentifier, orgIdentifier, projectIdentifier, identifier, dto.getSecret()));
   }
@@ -429,7 +439,7 @@ public class NGSecretResourceV2 {
         Resource.of(SECRET_RESOURCE_TYPE, identifier), SECRET_EDIT_PERMISSION,
         secret != null ? secret.getSecret().getOwner() : null);
 
-    ngSecretService.validateSshWinRmPasswords(accountIdentifier, orgIdentifier, projectIdentifier, dto.getSecret());
+    ngSecretService.validateSshWinRmSecretRef(accountIdentifier, orgIdentifier, projectIdentifier, dto.getSecret());
 
     return ResponseDTO.newResponse(ngSecretService.updateViaYaml(
         accountIdentifier, orgIdentifier, projectIdentifier, identifier, dto.getSecret()));

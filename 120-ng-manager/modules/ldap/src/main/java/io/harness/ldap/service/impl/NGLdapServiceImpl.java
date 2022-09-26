@@ -10,7 +10,7 @@ package io.harness.ldap.service.impl;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.NgSetupFields.NG;
 import static io.harness.delegate.beans.NgSetupFields.OWNER;
-import static io.harness.remote.client.RestClientUtils.getResponse;
+import static io.harness.remote.client.CGRestUtils.getResponse;
 
 import static software.wings.beans.TaskType.NG_LDAP_GROUPS_SYNC;
 import static software.wings.beans.TaskType.NG_LDAP_SEARCH_GROUPS;
@@ -180,11 +180,19 @@ public class NGLdapServiceImpl implements NGLdapService {
 
   @Override
   public void syncUserGroupsJob(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
-    log.info("NGLDAP: Sync user group for NG LDAP starting for account: {}, organization: {}, project: {}",
-        accountIdentifier, orgIdentifier, projectIdentifier);
     LdapSettingsWithEncryptedDataDetail settingsWithEncryptedDataDetail =
         getLdapSettingsWithEncryptedDataInternal(accountIdentifier);
 
+    if (null != settingsWithEncryptedDataDetail && null != settingsWithEncryptedDataDetail.getLdapSettings()
+        && settingsWithEncryptedDataDetail.getLdapSettings().isDisabled()) {
+      log.info(
+          "NGLDAP: Sync user group is disabled for NG LDAP on account: {}, organization: {}, project: {}. Skipping user group sync",
+          accountIdentifier, orgIdentifier, projectIdentifier);
+      return;
+    }
+
+    log.info("NGLDAP: Sync user group for NG LDAP starting for account: {}, organization: {}, project: {}",
+        accountIdentifier, orgIdentifier, projectIdentifier);
     List<UserGroup> userGroupsToSync = userGroupService.getUserGroupsBySsoId(
         accountIdentifier, settingsWithEncryptedDataDetail.getLdapSettings().getUuid());
     Map<UserGroup, LdapGroupResponse> userGroupsToLdapGroupMap = new HashMap<>();

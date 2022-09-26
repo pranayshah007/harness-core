@@ -120,6 +120,8 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
   @Inject TemplateMergeServiceImpl templateMergeService;
   @Mock TemplateMergeServiceHelper templateMergeServiceHelper;
 
+  @Mock TemplateGitXService templateGitXService;
+
   private final String ACCOUNT_ID = RandomStringUtils.randomAlphanumeric(6);
   private final String ORG_IDENTIFIER = "orgId";
   private final String PROJ_IDENTIFIER = "projId";
@@ -146,7 +148,8 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     yaml = readFile(filename);
     on(templateServiceHelper).set("templateRepository", templateRepository);
     on(templateService).set("templateRepository", templateRepository);
-    on(templateService).set("gitSyncSdkService", gitSyncSdkService);
+    on(templateService).set("templateRepository", templateRepository);
+    on(templateService).set("templateGitXService", templateGitXService);
     on(templateService).set("transactionHelper", transactionHelper);
     on(templateService).set("templateServiceHelper", templateServiceHelper);
     on(templateService).set("enforcementClientService", enforcementClientService);

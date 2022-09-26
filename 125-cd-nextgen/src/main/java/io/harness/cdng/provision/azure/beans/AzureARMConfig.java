@@ -11,6 +11,7 @@ import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.task.azure.arm.AzureARMPreDeploymentData;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
@@ -51,6 +52,7 @@ public class AzureARMConfig implements PersistentEntity, CreatedAtAware {
                  .build())
         .build();
   }
+
   @org.springframework.data.annotation.Id @Id String uuid;
   @NotNull String accountId;
   @NotNull String orgId;
@@ -58,6 +60,7 @@ public class AzureARMConfig implements PersistentEntity, CreatedAtAware {
   @NotNull String stageExecutionId;
   @NotNull String provisionerIdentifier;
   @NotNull long createdAt;
-
-  private String connectorRef;
+  @NotNull AzureARMPreDeploymentData azureARMPreDeploymentData;
+  @NotNull String connectorRef;
+  @NotNull String scopeType;
 }

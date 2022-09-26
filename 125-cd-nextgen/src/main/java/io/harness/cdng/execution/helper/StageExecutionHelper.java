@@ -214,10 +214,12 @@ public class StageExecutionHelper {
     Optional<ArtifactDetails> artifactDetailsOptional = getArtifactDetails(ambiance);
     Set<String> hosts = isEmpty(infrastructureHosts) ? new HashSet<>() : infrastructureHosts;
     if (artifactDetailsOptional.isPresent()) {
+      // in case of parallel Stages we also need the IN_PROGRESS status updated by parallel Stage
+      InstanceDeploymentInfoStatus[] statuses = {
+          InstanceDeploymentInfoStatus.SUCCEEDED, InstanceDeploymentInfoStatus.IN_PROGRESS};
       List<String> hostsWithSameArtifactFromDB =
           instanceDeploymentInfoService
-              .getByHostsAndArtifact(executionInfoKey, new ArrayList<>(hosts), artifactDetailsOptional.get(),
-                  InstanceDeploymentInfoStatus.SUCCEEDED)
+              .getByHostsAndArtifact(executionInfoKey, new ArrayList<>(hosts), artifactDetailsOptional.get(), statuses)
               .stream()
               .map(InstanceDeploymentInfo::getInstanceInfo)
               .filter(instanceDeploymentInfo -> instanceDeploymentInfo instanceof SshWinrmInstanceInfo)
@@ -238,17 +240,16 @@ public class StageExecutionHelper {
       InfrastructureOutcome infrastructureOutcome, List<String> hosts, String serviceType) {
     Optional<ArtifactDetails> artifactDetailsOptional = getArtifactDetails(ambiance);
 
-    if (artifactDetailsOptional.isPresent()) {
-      List<InstanceInfo> instanceInfoList =
-          hosts.stream()
-              .map(host
-                  -> getSshWinRmInstanceInfo(
-                      infrastructureOutcome.getKind(), serviceType, infrastructureOutcome.getInfrastructureKey(), host))
-              .collect(Collectors.toList());
+    ArtifactDetails artifactDetails = artifactDetailsOptional.orElse(null);
 
-      instanceDeploymentInfoService.createAndUpdate(
-          executionInfoKey, instanceInfoList, artifactDetailsOptional.get(), ambiance.getStageExecutionId());
-    }
+    List<InstanceInfo> instanceInfoList = hosts.stream()
+                                              .map(host
+                                                  -> getSshWinRmInstanceInfo(infrastructureOutcome.getKind(),
+                                                      serviceType, infrastructureOutcome.getInfrastructureKey(), host))
+                                              .collect(Collectors.toList());
+
+    instanceDeploymentInfoService.createAndUpdate(
+        executionInfoKey, instanceInfoList, artifactDetails, ambiance.getStageExecutionId());
   }
 
   private void saveStageExecutionInfo(

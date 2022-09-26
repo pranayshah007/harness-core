@@ -309,11 +309,11 @@ public class K8sStepHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetPrunedResourcesIds() {
     doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), any());
-    List<KubernetesResourceId> prunedResourceIds = k8sStepHelper.getPrunedResourcesIds("accountId", null);
+    List<KubernetesResourceId> prunedResourceIds = k8sStepHelper.getPrunedResourcesIds(true, null);
     assertThat(prunedResourceIds).isEmpty();
     List<KubernetesResourceId> kubernetesResourceIds =
         Collections.singletonList(KubernetesResourceId.builder().kind("Deployment").build());
-    prunedResourceIds = k8sStepHelper.getPrunedResourcesIds("accountId", kubernetesResourceIds);
+    prunedResourceIds = k8sStepHelper.getPrunedResourcesIds(true, kubernetesResourceIds);
     assertThat(prunedResourceIds.get(0).getKind()).isEqualTo("Deployment");
   }
 

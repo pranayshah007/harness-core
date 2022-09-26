@@ -18,6 +18,7 @@ import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.ARTIFACTO
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.DOCKER_REGISTRY;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.ECR;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.GCR;
+import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.GITHUB_PACKAGES;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.GoogleArtifactRegistry;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.JENKINS;
 
@@ -48,7 +49,7 @@ public class GeneratorFactory {
   private final JenkinsPollingItemGenerator jenkinsPollingItemGenerator;
   private final GitPollingItemGenerator gitPollingItemGenerator;
   private final GARPollingItemGenerator garPollingItemGenerator;
-
+  private final GithubPackagesPollingItemGenerator githubPackagesPollingItemGenerator;
   public PollingItemGenerator retrievePollingItemGenerator(BuildTriggerOpsData buildTriggerOpsData) {
     NGTriggerEntity ngTriggerEntity = buildTriggerOpsData.getTriggerDetails().getNgTriggerEntity();
     if (ngTriggerEntity.getType() == MANIFEST) {
@@ -80,6 +81,8 @@ public class GeneratorFactory {
       return jenkinsPollingItemGenerator;
     } else if (GoogleArtifactRegistry.getValue().equals(buildType)) {
       return garPollingItemGenerator;
+    } else if (GITHUB_PACKAGES.getValue().equals(buildType)) {
+      return githubPackagesPollingItemGenerator;
     }
     return null;
   }

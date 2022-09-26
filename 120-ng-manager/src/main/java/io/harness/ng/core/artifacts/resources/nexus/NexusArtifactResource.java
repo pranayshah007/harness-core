@@ -16,6 +16,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryDockerConfig;
 import io.harness.cdng.artifact.resources.nexus.dtos.NexusBuildDetailsDTO;
 import io.harness.cdng.artifact.resources.nexus.dtos.NexusRequestDTO;
 import io.harness.cdng.artifact.resources.nexus.dtos.NexusResponseDTO;
@@ -66,7 +67,9 @@ public class NexusArtifactResource {
   public ResponseDTO<NexusResponseDTO> getBuildDetails(@QueryParam("repository") String repository,
       @QueryParam("repositoryPort") String repositoryPort, @QueryParam("repositoryFormat") String repositoryFormat,
       @QueryParam("repositoryUrl") String artifactRepositoryUrl, @QueryParam("artifactPath") String artifactPath,
-      @QueryParam("connectorRef") String nexusConnectorIdentifier,
+      @QueryParam("connectorRef") String nexusConnectorIdentifier, @QueryParam("groupId") String groupId,
+      @QueryParam("artifactId") String artifactId, @QueryParam("extension") String extension,
+      @QueryParam("classifier") String classifier, @QueryParam("packageName") String packageName,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
@@ -74,7 +77,8 @@ public class NexusArtifactResource {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(nexusConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     NexusResponseDTO buildDetails = nexusResourceService.getBuildDetails(connectorRef, repository, repositoryPort,
-        artifactPath, repositoryFormat, artifactRepositoryUrl, orgIdentifier, projectIdentifier);
+        artifactPath, repositoryFormat, artifactRepositoryUrl, orgIdentifier, projectIdentifier, groupId, artifactId,
+        extension, classifier, packageName);
     return ResponseDTO.newResponse(buildDetails);
   }
 
@@ -97,15 +101,17 @@ public class NexusArtifactResource {
       final ArtifactConfig artifactSpecFromService = artifactResourceUtils.locateArtifactInService(
           accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
       NexusRegistryArtifactConfig nexusRegistryArtifactConfig = (NexusRegistryArtifactConfig) artifactSpecFromService;
+      NexusRegistryDockerConfig nexusRegistryDockerConfig =
+          (NexusRegistryDockerConfig) nexusRegistryArtifactConfig.getNexusRegistryConfigSpec();
       if (isEmpty(repository)) {
         repository = (String) nexusRegistryArtifactConfig.getRepository().fetchFinalValue();
       }
       if (isEmpty(repositoryPort)) {
-        repositoryPort = (String) nexusRegistryArtifactConfig.getRepositoryPort().fetchFinalValue();
+        repositoryPort = (String) nexusRegistryDockerConfig.getRepositoryPort().fetchFinalValue();
       }
 
       if (isEmpty(artifactPath)) {
-        artifactPath = (String) nexusRegistryArtifactConfig.getArtifactPath().fetchFinalValue();
+        artifactPath = (String) nexusRegistryDockerConfig.getArtifactPath().fetchFinalValue();
       }
 
       if (isEmpty(repositoryFormat)) {
@@ -113,7 +119,7 @@ public class NexusArtifactResource {
       }
 
       if (isEmpty(artifactRepositoryUrl)) {
-        artifactRepositoryUrl = (String) nexusRegistryArtifactConfig.getRepositoryUrl().fetchFinalValue();
+        artifactRepositoryUrl = (String) nexusRegistryDockerConfig.getRepositoryUrl().fetchFinalValue();
       }
 
       if (isEmpty(nexusConnectorIdentifier)) {

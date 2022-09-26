@@ -122,7 +122,7 @@ public class InfrastructurePmsPlanCreator {
         .stepParameters(params)
         .facilitatorObtainment(
             FacilitatorObtainment.newBuilder()
-                .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.TASK).build())
+                .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.ASYNC).build())
                 .build())
         .adviserObtainments(adviserObtainments)
         .build();
