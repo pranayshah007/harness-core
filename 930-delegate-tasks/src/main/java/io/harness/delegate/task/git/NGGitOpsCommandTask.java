@@ -162,7 +162,6 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
           shellExecutorFactory.getExecutor(shellExecutorConfig, getLogStreamingTaskClient(), commandUnitsProgress);
       ExecuteCommandResponse executeCommandResponse = executor.executeCommandString(
           taskParams.getScript(), taskParams.getOutputVars(), taskParams.getSecretOutputVars(), null);
-      logCallback = new NGDelegateLogCallback(getLogStreamingTaskClient(), UpdateFiles, true, commandUnitsProgress);
       return NGGitOpsResponse.builder()
           .executeCommandResponse(executeCommandResponse)
           .taskStatus(TaskStatus.SUCCESS)
@@ -280,8 +279,10 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
     try {
       FetchFilesResult fetchFilesResult =
           getFetchFilesResult(gitOpsTaskParams.getGitFetchFilesConfig(), gitOpsTaskParams.getAccountId());
-      this.logCallback = markDoneAndStartNew(logCallback, UpdateFiles, commandUnitsProgress);
-      updateFiles(gitOpsTaskParams.getFilesToVariablesMap(), fetchFilesResult);
+      if (!gitOpsTaskParams.isOverrideConfig()) {
+        this.logCallback = markDoneAndStartNew(logCallback, UpdateFiles, commandUnitsProgress);
+        updateFiles(gitOpsTaskParams.getFilesToVariablesMap(), fetchFilesResult);
+      }
       return fetchFilesResult;
     } catch (Exception e) {
       if (e.getCause() instanceof NoSuchFileException) {
