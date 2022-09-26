@@ -392,8 +392,6 @@ public enum FeatureName {
   MULTI_SERVICE_INFRA("Enable multiple service/environment support in NG", HarnessTeam.CDP),
   TRIGGERS_REFACTOR("Enable NG Triggers UI refactoring", HarnessTeam.CDP),
   SORT_ARTIFACTS_IN_UPDATED_ORDER("Sort the collected artifacts by lastUpdatedAt", HarnessTeam.SPG),
-  NG_SERVICE_MANIFEST_OVERRIDE("Enable Service Manifests override from Environment", HarnessTeam.CDP),
-  NG_SERVICE_CONFIG_FILES_OVERRIDE("Enable Service Config Files override from Environment", HarnessTeam.CDP),
   ENABLE_CHECK_STATE_EXECUTION_STARTING(
       "Used to allow create retry state execution when event is status equals to STARTING", HarnessTeam.SPG),
   NG_DEFAULT_K8S_MANIFESTS("Sample k8s manifests at account level file store", HarnessTeam.CDP, Scope.GLOBAL),
