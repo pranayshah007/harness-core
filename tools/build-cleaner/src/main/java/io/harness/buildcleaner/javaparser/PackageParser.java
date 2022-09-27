@@ -9,6 +9,8 @@ package io.harness.buildcleaner.javaparser;
 
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParserConfiguration;
+import com.github.javaparser.ParserConfiguration.LanguageLevel;
+
 import java.io.IOException;
 import java.nio.file.Path;
 
@@ -21,7 +23,7 @@ public class PackageParser {
     KnownTypeSolvers solvers = new KnownTypeSolvers();
 
     // Configure java parser
-    ParserConfiguration config = new ParserConfiguration().setSymbolResolver(solvers.getTypeSolver());
+    ParserConfiguration config = new ParserConfiguration().setSymbolResolver(solvers.getTypeSolver()).setLanguageLevel(LanguageLevel.JAVA_11);
     javaParser = new JavaParser(config);
   }
 
