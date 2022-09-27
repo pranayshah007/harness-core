@@ -32,7 +32,7 @@ import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.beans.summary.SecretManagerSummary;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
-import io.harness.ngmigration.connector.SecretFactory;
+import io.harness.ngmigration.secrets.SecretFactory;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.remote.client.NGRestUtils;

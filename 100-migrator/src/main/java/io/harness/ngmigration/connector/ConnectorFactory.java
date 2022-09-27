@@ -17,11 +17,13 @@ import software.wings.beans.GitConfig;
 import software.wings.beans.KubernetesClusterConfig;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.config.ArtifactoryConfig;
+import software.wings.beans.config.NexusConfig;
 import software.wings.beans.settings.helm.HttpHelmRepoConfig;
 
 @OwnedBy(HarnessTeam.CDC)
 public class ConnectorFactory {
   private static final BaseConnector artifactoryConnector = new ArtifactoryConnectorImpl();
+  private static final BaseConnector nexusConnector = new NexusConnectorImpl();
   private static final BaseConnector dockerConnector = new DockerConnectorImpl();
   private static final BaseConnector kubernetesConnector = new KubernetesConnectorImpl();
   private static final BaseConnector gitConnector = new GitConnectorImpl();
@@ -31,6 +33,9 @@ public class ConnectorFactory {
   private static final BaseConnector unsupportedConnector = new UnsupportedConnectorImpl();
 
   public static BaseConnector getConnector(SettingAttribute settingAttribute) {
+    if (settingAttribute.getValue() instanceof NexusConfig) {
+      return nexusConnector;
+    }
     if (settingAttribute.getValue() instanceof ArtifactoryConfig) {
       return artifactoryConnector;
     }

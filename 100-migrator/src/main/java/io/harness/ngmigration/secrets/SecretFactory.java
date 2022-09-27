@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ngmigration.connector;
+package io.harness.ngmigration.secrets;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -17,9 +17,6 @@ import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.SecretSpecDTO;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
-import io.harness.ngmigration.secrets.HarnessSecretMigrator;
-import io.harness.ngmigration.secrets.SecretMigrator;
-import io.harness.ngmigration.secrets.VaultSecretMigrator;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.secretmanagerclient.SecretType;
 
