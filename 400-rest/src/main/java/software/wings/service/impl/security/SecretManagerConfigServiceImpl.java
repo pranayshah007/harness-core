@@ -219,6 +219,7 @@ public class SecretManagerConfigServiceImpl implements SecretManagerConfigServic
 
   @Override
   public SecretManagerConfig getSecretManager(String accountId, String kmsId, EncryptionType encryptionType) {
+    log.info("[SecretDebug]: accountId {}, kmsId {}, encryptionType {}", accountId, kmsId, encryptionType);
     if (encryptionType == LOCAL && isEmpty(kmsId)) {
       kmsId = accountId;
     }
@@ -361,6 +362,7 @@ public class SecretManagerConfigServiceImpl implements SecretManagerConfigServic
   // This method will decrypt the secret manager's encrypted fields
   public void decryptEncryptionConfigSecrets(
       String accountId, SecretManagerConfig secretManagerConfig, boolean maskSecrets) {
+    log.info("[SecretDebug] : accountId {}, secretManager {}", accountId, secretManagerConfig);
     EncryptionType encryptionType = secretManagerConfig.getEncryptionType();
     boolean isCertValidationRequired = accountService.isCertValidationRequired(accountId);
     switch (encryptionType) {

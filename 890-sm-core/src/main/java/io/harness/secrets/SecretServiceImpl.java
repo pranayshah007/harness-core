@@ -595,6 +595,7 @@ public class SecretServiceImpl implements SecretService {
 
   @Override
   public char[] fetchSecretValue(EncryptedData encryptedData) {
+    log.info("[SecretDebug] : accountId {}, secret {}", encryptedData.getAccountId(), encryptedData.getUuid());
     SecretManagerConfig secretManagerConfig = secretManagerConfigService.getSecretManager(
         encryptedData.getAccountId(), encryptedData.getKmsId(), encryptedData.getEncryptionType());
     return fetchSecretValue(encryptedData.getAccountId(), encryptedData, secretManagerConfig);
@@ -877,6 +878,7 @@ public class SecretServiceImpl implements SecretService {
     List<SecretScopeMetadata> secretScopeMetadataList =
         encryptedDataList.stream()
             .map(encryptedData -> {
+              log.info("[SecretDebug] : accountId {}, secretId {}", accountId, encryptedData.getUuid());
               SecretManagerConfig secretManagerConfig = secretManagerConfigService.getSecretManager(
                   accountId, encryptedData.getKmsId(), encryptedData.getEncryptionType());
               return SecretScopeMetadata.builder()
