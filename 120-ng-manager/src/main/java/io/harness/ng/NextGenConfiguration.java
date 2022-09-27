@@ -222,6 +222,7 @@ public class NextGenConfiguration extends Configuration {
   @JsonProperty(value = "gitlabConfig") private GitlabConfig gitlabConfig;
   @JsonProperty(value = "oauthRefreshFrequency") private long oauthRefreshFrequency;
   @JsonProperty(value = "oauthRefreshEnabled") private boolean oauthRefreshEnabled;
+  @JsonProperty(value = "opaConnectivityEnabled") private boolean opaConnectivityEnabled;
   @JsonProperty("hostname") String hostname = "localhost";
   @JsonProperty("basePathPrefix") String basePathPrefix = "";
   @JsonProperty("enforcementClientConfiguration") EnforcementClientConfiguration enforcementClientConfiguration;
