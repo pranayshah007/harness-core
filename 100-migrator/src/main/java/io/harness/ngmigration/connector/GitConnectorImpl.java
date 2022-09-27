@@ -61,20 +61,11 @@ public class GitConnectorImpl implements BaseConnector {
   private static GitAuthenticationDTO getGitAuth(
       GitConfig gitConfig, Set<CgEntityId> childEntities, Map<CgEntityId, NGYamlFile> migratedEntities) {
     if (gitConfig.getAuthenticationScheme() == AuthenticationScheme.HTTP_PASSWORD) {
-      CgEntityId passwordRefEntityId =
-          childEntities.stream()
-              .filter(childEntity -> childEntity.getId().equals(gitConfig.getEncryptedPassword()))
-              .findFirst()
-              .get();
-      String identifier =
-          MigratorUtility.getIdentifierWithScope(migratedEntities.get(passwordRefEntityId).getNgEntityDetail());
-
       return GitHTTPAuthenticationDTO.builder()
           .username(gitConfig.getUsername())
 
-          .passwordRef(
-              // TODO: scope will come from inputs
-              SecretRefData.builder().identifier(identifier).scope(Scope.PROJECT).build())
+          .passwordRef(MigratorUtility.getSecretRef(migratedEntities, gitConfig.getEncryptedPassword()))
+          // TODO: scope will come from inputs)
           .build();
     } else if (gitConfig.getAuthenticationScheme() == AuthenticationScheme.SSH_KEY) {
       return GitSSHAuthenticationDTO.builder()

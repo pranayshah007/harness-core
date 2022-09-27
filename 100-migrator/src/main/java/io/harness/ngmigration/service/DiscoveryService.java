@@ -382,7 +382,7 @@ public class DiscoveryService {
   private List<NGYamlFile> getAllYamlFiles(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities,
       Map<CgEntityId, Set<CgEntityId>> leafTracker) {
-    if (!leafTracker.containsKey(entityId) || isEmpty(leafTracker.get(entityId))) {
+    if (!leafTracker.containsKey(entityId)) {
       return new ArrayList<>();
     }
 

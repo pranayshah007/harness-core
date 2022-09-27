@@ -12,7 +12,6 @@ import static io.harness.delegate.beans.connector.docker.DockerAuthType.USER_PAS
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.docker.DockerAuthCredentialsDTO;
@@ -21,16 +20,13 @@ import io.harness.delegate.beans.connector.docker.DockerAuthenticationDTO;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.beans.connector.docker.DockerRegistryProviderType;
 import io.harness.delegate.beans.connector.docker.DockerUserNamePasswordDTO;
-import io.harness.encryption.Scope;
-import io.harness.encryption.SecretRefData;
 import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.service.MigratorUtility;
 
 import software.wings.beans.DockerConfig;
 import software.wings.beans.SettingAttribute;
 import software.wings.ngmigration.CgEntityId;
 
-import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
@@ -57,8 +53,7 @@ public class DockerConnectorImpl implements BaseConnector {
       credentialsDTO =
           DockerUserNamePasswordDTO.builder()
               .username(dockerConfig.getUsername())
-              .passwordRef(
-                  SecretRefData.builder().identifier(dockerConfig.getEncryptedPassword()).scope(Scope.PROJECT).build())
+              .passwordRef(MigratorUtility.getSecretRef(migratedEntities, dockerConfig.getEncryptedPassword()))
               .build();
     }
     return DockerConnectorDTO.builder()
@@ -67,12 +62,5 @@ public class DockerConnectorImpl implements BaseConnector {
         .providerType(DockerRegistryProviderType.OTHER)
         .auth(DockerAuthenticationDTO.builder().authType(dockerAuthType).credentials(credentialsDTO).build())
         .build();
-  }
-
-  private static Set<String> toSet(List<String> list) {
-    if (EmptyPredicate.isEmpty(list)) {
-      return new HashSet<>();
-    }
-    return new HashSet<>(list);
   }
 }
