@@ -265,7 +265,7 @@ public class OrchestrationStepsModuleRegistrars {
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
                                            .namespace(SchemaNamespaceConstants.PMS)
                                            .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS, ModuleType.CE,
-                                               ModuleType.CF, ModuleType.CI))
+                                               ModuleType.CF, ModuleType.CI, ModuleType.STO))
                                            .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
                                            .build())
                    .build())
