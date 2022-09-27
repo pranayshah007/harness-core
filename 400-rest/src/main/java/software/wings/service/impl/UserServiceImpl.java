@@ -575,12 +575,12 @@ public class UserServiceImpl implements UserService {
                     .build();
     completeUserInviteForSignup(userInvite, createdAccount.getUuid());
 
-    sendCreatedByUserInfo(createdAccount, user);
+    sendAccountCreatedByUserTelemetry(createdAccount, user);
 
     return createNewUserAndSignIn(user, createdAccount.getUuid());
   }
 
-  private void sendCreatedByUserInfo(Account createdAccount, User user) {
+  private void sendAccountCreatedByUserTelemetry(Account createdAccount, User user) {
     HashMap<String, Object> groupProperties = new HashMap<>();
     groupProperties.put("group_id", createdAccount.getUuid());
     groupProperties.put("group_type", "Account");
@@ -634,6 +634,7 @@ public class UserServiceImpl implements UserService {
                     .utmInfo(userInvite.getUtmInfo())
                     .build();
     completeUserInviteForSignup(userInvite, createdAccount.getUuid());
+    sendAccountCreatedByUserTelemetry(createdAccount, user);
     return createNewUserAndSignIn(user, createdAccount.getUuid());
   }
 
