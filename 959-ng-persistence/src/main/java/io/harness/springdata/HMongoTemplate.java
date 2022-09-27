@@ -28,6 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.mongodb.MongoDbFactory;
+import org.springframework.data.mongodb.UncategorizedMongoDbException;
 import org.springframework.data.mongodb.core.DocumentCallbackHandler;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.FindAndReplaceOptions;
@@ -104,67 +105,117 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
 
   @Override
   public <T> List<T> find(Query query, Class<T> entityClass, String collectionName) {
-    traceQuery(query, entityClass);
-    query.maxTime(Duration.ofMillis(MAX_TIME_IN_MILLIS_FOR_MONGO_OPERATIONS));
-    return super.find(query, entityClass, collectionName);
+    try {
+      traceQuery(query, entityClass);
+      query.maxTime(Duration.ofMillis(MAX_TIME_IN_MILLIS_FOR_MONGO_OPERATIONS));
+      return super.find(query, entityClass, collectionName);
+    } catch (UncategorizedMongoDbException ex) {
+      log.error("query {} exceeded max time limit.", query);
+      throw ex;
+    }
   }
 
   @Override
   public <T> T findOne(Query query, Class<T> entityClass, String collectionName) {
-    traceQuery(query, entityClass);
-    query.maxTime(Duration.ofMillis(MAX_TIME_IN_MILLIS_FOR_MONGO_OPERATIONS));
-    return super.findOne(query, entityClass, collectionName);
+    try {
+      traceQuery(query, entityClass);
+      query.maxTime(Duration.ofMillis(MAX_TIME_IN_MILLIS_FOR_MONGO_OPERATIONS));
+      return super.findOne(query, entityClass, collectionName);
+    } catch (UncategorizedMongoDbException ex) {
+      log.error("query {} exceeded max time limit.", query);
+      throw ex;
+    }
   }
 
   @Override
   public <T> List<T> findDistinct(
       Query query, String field, String collectionName, Class<?> entityClass, Class<T> resultClass) {
-    query.maxTime(Duration.ofMillis(MAX_TIME_IN_MILLIS_FOR_MONGO_OPERATIONS));
-    return super.findDistinct(query, field, collectionName, entityClass, resultClass);
+    try {
+      query.maxTime(Duration.ofMillis(MAX_TIME_IN_MILLIS_FOR_MONGO_OPERATIONS));
+      return super.findDistinct(query, field, collectionName, entityClass, resultClass);
+    } catch (UncategorizedMongoDbException ex) {
+      log.error("query {} exceeded max time limit.", query);
+      throw ex;
+    }
   }
 
   @Override
   public <S, T> T findAndReplace(Query query, S replacement, FindAndReplaceOptions options, Class<S> entityType,
       String collectionName, Class<T> resultType) {
-    query.maxTime(Duration.ofMillis(MAX_TIME_IN_MILLIS_FOR_MONGO_OPERATIONS));
-    return super.findAndReplace(query, replacement, options, entityType, collectionName, resultType);
+    try {
+      query.maxTime(Duration.ofMillis(MAX_TIME_IN_MILLIS_FOR_MONGO_OPERATIONS));
+      return super.findAndReplace(query, replacement, options, entityType, collectionName, resultType);
+    } catch (UncategorizedMongoDbException ex) {
+      log.error("query {} exceeded max time limit.", query);
+      throw ex;
+    }
   }
 
   @Override
   public <T> T findAndRemove(Query query, Class<T> entityClass, String collectionName) {
-    query.maxTime(Duration.ofMillis(MAX_TIME_IN_MILLIS_FOR_MONGO_OPERATIONS));
-    return super.findAndRemove(query, entityClass, collectionName);
+    try {
+      query.maxTime(Duration.ofMillis(MAX_TIME_IN_MILLIS_FOR_MONGO_OPERATIONS));
+      return super.findAndRemove(query, entityClass, collectionName);
+    } catch (UncategorizedMongoDbException ex) {
+      log.error("query {} exceeded max time limit.", query);
+      throw ex;
+    }
   }
 
   @Override
   public <T> List<T> findAllAndRemove(Query query, Class<T> entityClass, String collectionName) {
-    query.maxTime(Duration.ofMillis(MAX_TIME_IN_MILLIS_FOR_MONGO_OPERATIONS));
-    return super.findAllAndRemove(query, entityClass, collectionName);
+    try {
+      query.maxTime(Duration.ofMillis(MAX_TIME_IN_MILLIS_FOR_MONGO_OPERATIONS));
+      return super.findAllAndRemove(query, entityClass, collectionName);
+    } catch (UncategorizedMongoDbException ex) {
+      log.error("query {} exceeded max time limit.", query);
+      throw ex;
+    }
   }
 
   @Override
   public <T> MapReduceResults<T> mapReduce(Query query, String inputCollectionName, String mapFunction,
       String reduceFunction, @Nullable MapReduceOptions mapReduceOptions, Class<T> entityClass) {
-    query.maxTime(Duration.ofMillis(MAX_TIME_IN_MILLIS_FOR_MONGO_OPERATIONS));
-    return super.mapReduce(query, inputCollectionName, mapFunction, reduceFunction, mapReduceOptions, entityClass);
+    try {
+      query.maxTime(Duration.ofMillis(MAX_TIME_IN_MILLIS_FOR_MONGO_OPERATIONS));
+      return super.mapReduce(query, inputCollectionName, mapFunction, reduceFunction, mapReduceOptions, entityClass);
+    } catch (UncategorizedMongoDbException ex) {
+      log.error("query {} exceeded max time limit.", query);
+      throw ex;
+    }
   }
 
   @Override
   protected long doCount(String collectionName, Document filter, CountOptions options) {
-    options.maxTime(MAX_TIME_IN_MILLIS_FOR_MONGO_OPERATIONS, TimeUnit.MILLISECONDS);
-    return super.doCount(collectionName, filter, options);
+    try {
+      options.maxTime(MAX_TIME_IN_MILLIS_FOR_MONGO_OPERATIONS, TimeUnit.MILLISECONDS);
+      return super.doCount(collectionName, filter, options);
+    } catch (UncategorizedMongoDbException ex) {
+      log.error("count operation for collection {} exceeded max time limit.", collectionName);
+      throw ex;
+    }
   }
 
   @Override
   public <T> CloseableIterator<T> stream(Query query, Class<T> entityType, String collectionName) {
-    query.maxTime(Duration.ofMillis(MAX_TIME_IN_MILLIS_FOR_MONGO_OPERATIONS));
-    return super.stream(query, entityType, collectionName);
+    try {
+      query.maxTime(Duration.ofMillis(MAX_TIME_IN_MILLIS_FOR_MONGO_OPERATIONS));
+      return super.stream(query, entityType, collectionName);
+    } catch (UncategorizedMongoDbException ex) {
+      log.error("query {} exceeded max time limit.", query);
+      throw ex;
+    }
   }
 
   @Override
   public void executeQuery(Query query, String collectionName, DocumentCallbackHandler dch) {
-    query.maxTime(Duration.ofMillis(MAX_TIME_IN_MILLIS_FOR_MONGO_OPERATIONS));
-    super.executeQuery(query, collectionName, dch);
+    try {
+      query.maxTime(Duration.ofMillis(MAX_TIME_IN_MILLIS_FOR_MONGO_OPERATIONS));
+      super.executeQuery(query, collectionName, dch);
+    } catch (UncategorizedMongoDbException ex) {
+      log.error("query {} exceeded max time limit.", query);
+      throw ex;
+    }
   }
 
   private <T> void traceQuery(Query query, Class<T> entityClass) {
