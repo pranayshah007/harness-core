@@ -7,20 +7,19 @@
 
 package software.wings.service.impl.security;
 
-import static io.harness.NGConstants.HARNESS_SECRET_MANAGER_IDENTIFIER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.eraro.ErrorCode.SECRET_MANAGEMENT_ERROR;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.reflection.ReflectionUtils.getFieldByName;
 import static io.harness.security.SimpleEncryption.CHARSET;
-import static io.harness.security.encryption.EncryptionType.LOCAL;
+import static io.harness.security.encryption.SecretManagerType.KMS;
+import static io.harness.security.encryption.SecretManagerType.VAULT;
 
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
-import io.harness.beans.DecryptedSecretValue;
 import io.harness.data.encoding.EncodingUtils;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.encryption.SecretRefData;
@@ -32,14 +31,8 @@ import io.harness.encryptors.VaultEncryptor;
 import io.harness.encryptors.VaultEncryptorsRegistry;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.SecretManagementException;
-import io.harness.mappers.SecretManagerConfigMapper;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.api.NGEncryptedDataService;
-import io.harness.ng.core.api.NGSecretManagerService;
-import io.harness.ng.core.dto.ResponseDTO;
-import io.harness.ng.core.entities.NGEncryptedData;
-import io.harness.secretmanagerclient.dto.LocalConfigDTO;
-import io.harness.secretmanagerclient.dto.SecretManagerConfigDTO;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.EncryptionConfig;
@@ -59,20 +52,15 @@ public class NGEncryptorServiceImpl implements NGEncryptorService {
   private final VaultEncryptorsRegistry vaultEncryptorsRegistry;
 
   private final CustomEncryptorsRegistry customEncryptorsRegistry;
-  private final NGSecretManagerService ngSecretManagerService;
-  private final GlobalEncryptDecryptClient globalEncryptDecryptClient;
 
   @Inject
   public NGEncryptorServiceImpl(NGEncryptedDataService encryptedDataService,
       KmsEncryptorsRegistry kmsEncryptorsRegistry, VaultEncryptorsRegistry vaultEncryptorsRegistry,
-      CustomEncryptorsRegistry customEncryptorsRegistry, NGSecretManagerService ngSecretManagerService,
-      GlobalEncryptDecryptClient globalEncryptDecryptClient) {
+      CustomEncryptorsRegistry customEncryptorsRegistry) {
     this.encryptedDataService = encryptedDataService;
     this.kmsEncryptorsRegistry = kmsEncryptorsRegistry;
     this.vaultEncryptorsRegistry = vaultEncryptorsRegistry;
     this.customEncryptorsRegistry = customEncryptorsRegistry;
-    this.ngSecretManagerService = ngSecretManagerService;
-    this.globalEncryptDecryptClient = globalEncryptDecryptClient;
   }
 
   @Override
@@ -155,43 +143,5 @@ public class NGEncryptorServiceImpl implements NGEncryptorService {
       throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, message, USER);
     }
     return value;
-  }
-
-  @Override
-  public DecryptedSecretValue decryptSecret(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
-    NGEncryptedData encryptedData =
-        encryptedDataService.get(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
-    SecretManagerConfigDTO secretManager = ngSecretManagerService.getSecretManager(
-        accountIdentifier, orgIdentifier, projectIdentifier, encryptedData.getSecretManagerIdentifier(), false);
-    String decryptedValue = null;
-    if (secretManager != null) {
-      EncryptionConfig encryptionConfig = SecretManagerConfigMapper.fromDTO(secretManager);
-
-      EncryptedRecordData encryptedRecordData;
-      if (secretManager.isHarnessManaged()
-          || HARNESS_SECRET_MANAGER_IDENTIFIER.equals(encryptedData.getSecretManagerIdentifier())) {
-        encryptedRecordData = globalEncryptDecryptClient.convertEncryptedRecordToLocallyEncrypted(
-            encryptedData, accountIdentifier, encryptionConfig);
-        if (LOCAL.equals(encryptedRecordData.getEncryptionType())) {
-          encryptionConfig = SecretManagerConfigMapper.fromDTO(getLocalEncryptionConfig(accountIdentifier));
-          decryptedValue = String.valueOf(fetchSecretValue(accountIdentifier, encryptedRecordData, encryptionConfig));
-        } else {
-          log.error("Failed to decrypt secret {} with {} harness secret manager", encryptedData.getUuid(),
-              encryptionConfig.getEncryptionType());
-        }
-      }
-    }
-    return DecryptedSecretValue.builder()
-        .identifier(identifier)
-        .accountIdentifier(accountIdentifier)
-        .orgIdentifier(orgIdentifier)
-        .projectIdentifier(projectIdentifier)
-        .decryptedValue(decryptedValue)
-        .build();
-  }
-
-  private SecretManagerConfigDTO getLocalEncryptionConfig(String accountIdentifier) {
-    return LocalConfigDTO.builder().accountIdentifier(accountIdentifier).identifier(null).encryptionType(LOCAL).build();
   }
 }

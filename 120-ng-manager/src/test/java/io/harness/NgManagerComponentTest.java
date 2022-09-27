@@ -30,6 +30,7 @@ public class NgManagerComponentTest extends NgManagerTestBase {
   @Category(UnitTests.class)
   public void componentNgManagerTests() {
     for (Map.Entry<String, TestExecution> test : tests.entrySet()) {
+      log.info("hemlo"+test.getKey());
       assertThatCode(() -> test.getValue().run()).as(test.getKey()).doesNotThrowAnyException();
       log.info("{} passed", test.getKey());
     }

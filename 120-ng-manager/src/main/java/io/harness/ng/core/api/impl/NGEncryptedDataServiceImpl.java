@@ -31,6 +31,7 @@ import static io.harness.security.encryption.SecretManagerType.VAULT;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
+import io.harness.beans.DecryptedSecretValue;
 import io.harness.beans.FeatureName;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.connector.ConnectorDTO;
@@ -73,6 +74,7 @@ import software.wings.beans.BaseVaultConfig;
 import software.wings.beans.CustomSecretNGManagerConfig;
 import software.wings.beans.NameValuePairWithDefault;
 import software.wings.service.impl.security.GlobalEncryptDecryptClient;
+import software.wings.service.impl.security.NGEncryptorService;
 import software.wings.settings.SettingVariableTypes;
 
 import com.google.common.io.ByteStreams;
@@ -111,6 +113,7 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
   private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
   private final CustomEncryptorsRegistry customEncryptorsRegistry;
   private final CustomSecretManagerHelper customSecretManagerHelper;
+  private final NGEncryptorService ngEncryptorService;
 
   @Inject
   public NGEncryptedDataServiceImpl(NGEncryptedDataDao encryptedDataDao, KmsEncryptorsRegistry kmsEncryptorsRegistry,
@@ -118,7 +121,7 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
       SecretManagerClient secretManagerClient, GlobalEncryptDecryptClient globalEncryptDecryptClient,
       NGConnectorSecretManagerService ngConnectorSecretManagerService,
       NGFeatureFlagHelperService ngFeatureFlagHelperService, CustomEncryptorsRegistry customEncryptorsRegistry,
-      CustomSecretManagerHelper customSecretManagerHelper) {
+      CustomSecretManagerHelper customSecretManagerHelper, NGEncryptorService ngEncryptorService) {
     this.encryptedDataDao = encryptedDataDao;
     this.kmsEncryptorsRegistry = kmsEncryptorsRegistry;
     this.vaultEncryptorsRegistry = vaultEncryptorsRegistry;
@@ -128,6 +131,7 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
     this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;
     this.customEncryptorsRegistry = customEncryptorsRegistry;
     this.customSecretManagerHelper = customSecretManagerHelper;
+    this.ngEncryptorService = ngEncryptorService;
   }
 
   @Override
@@ -458,6 +462,40 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
       secretsFileService.deleteFile(existingFileId);
     }
     return updatedEncryptedData;
+  }
+
+  @Override
+  public DecryptedSecretValue decryptSecret(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
+    NGEncryptedData encryptedData = get(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    SecretManagerConfigDTO secretManager = ngConnectorSecretManagerService.getUsingIdentifier(
+        accountIdentifier, orgIdentifier, projectIdentifier, encryptedData.getSecretManagerIdentifier(), false);
+    String decryptedValue = null;
+    if (secretManager != null) {
+      EncryptionConfig encryptionConfig = SecretManagerConfigMapper.fromDTO(secretManager);
+
+      EncryptedRecordData encryptedRecordData;
+      if (secretManager.isHarnessManaged()
+          || HARNESS_SECRET_MANAGER_IDENTIFIER.equals(encryptedData.getSecretManagerIdentifier())) {
+        encryptedRecordData = globalEncryptDecryptClient.convertEncryptedRecordToLocallyEncrypted(
+            encryptedData, accountIdentifier, encryptionConfig);
+        if (LOCAL.equals(encryptedRecordData.getEncryptionType())) {
+          encryptionConfig = SecretManagerConfigMapper.fromDTO(getLocalEncryptionConfig(accountIdentifier));
+          decryptedValue = String.valueOf(
+              ngEncryptorService.fetchSecretValue(accountIdentifier, encryptedRecordData, encryptionConfig));
+        } else {
+          log.error("Failed to decrypt secret {} with {} harness secret manager", encryptedData.getUuid(),
+              encryptionConfig.getEncryptionType());
+        }
+      }
+    }
+    return DecryptedSecretValue.builder()
+        .identifier(identifier)
+        .accountIdentifier(accountIdentifier)
+        .orgIdentifier(orgIdentifier)
+        .projectIdentifier(projectIdentifier)
+        .decryptedValue(decryptedValue)
+        .build();
   }
 
   private byte[] getInputBytes(InputStream inputStream) {

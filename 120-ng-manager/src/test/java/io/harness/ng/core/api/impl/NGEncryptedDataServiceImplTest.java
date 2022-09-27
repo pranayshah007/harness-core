@@ -50,6 +50,7 @@ import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 import software.wings.beans.AzureVaultConfig;
 import software.wings.beans.BaseVaultConfig;
 import software.wings.service.impl.security.GlobalEncryptDecryptClient;
+import software.wings.service.impl.security.NGEncryptorService;
 import software.wings.settings.SettingVariableTypes;
 
 import org.junit.Before;
@@ -73,6 +74,7 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
   @Mock private VaultEncryptor vaultEncryptor;
   @Mock private CustomEncryptorsRegistry customEncryptorsRegistry;
   @Mock private CustomSecretManagerHelper customSecretManagerHelper;
+  @Mock private NGEncryptorService ngEncryptorService;
   public static final String HTTP_VAULT_URL = "http://vault.com";
 
   @Before
@@ -82,7 +84,7 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
     ngEncryptedDataService =
         spy(new NGEncryptedDataServiceImpl(encryptedDataDao, kmsEncryptorsRegistry, vaultEncryptorsRegistry,
             secretsFileService, secretManagerClient, globalEncryptDecryptClient, ngConnectorSecretManagerService,
-            ngFeatureFlagHelperService, customEncryptorsRegistry, customSecretManagerHelper));
+            ngFeatureFlagHelperService, customEncryptorsRegistry, customSecretManagerHelper, ngEncryptorService));
     when(vaultEncryptorsRegistry.getVaultEncryptor(any())).thenReturn(vaultEncryptor);
   }
 

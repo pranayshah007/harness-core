@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
-import io.harness.beans.DecryptedSecretValue;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptedRecordData;
@@ -29,7 +28,4 @@ public interface NGEncryptorService {
 
   char[] fetchSecretValue(
       String accountIdentifier, EncryptedRecordData encryptedData, EncryptionConfig secretManagerConfig);
-
-  DecryptedSecretValue decryptSecret(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier);
 }
