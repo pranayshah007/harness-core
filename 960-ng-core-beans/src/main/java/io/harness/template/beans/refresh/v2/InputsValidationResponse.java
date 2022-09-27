@@ -5,23 +5,27 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.template.beans.refresh;
+package io.harness.template.beans.refresh.v2;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.ng.core.template.TemplateEntityType;
 
+import java.util.ArrayList;
+import java.util.List;
 import lombok.Builder;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
+import lombok.Data;
 
 @OwnedBy(HarnessTeam.CDC)
-@Getter
+@Data
 @Builder
-@EqualsAndHashCode
-@Deprecated
-public class TemplateInfo {
-  private String templateIdentifier;
-  private String versionLabel;
-  private TemplateEntityType templateEntityType;
+public class InputsValidationResponse {
+  boolean isValid;
+  List<NodeErrorSummary> childrenErrorNodes;
+
+  public void addChildErrorNode(NodeErrorSummary nodeErrorSummary) {
+    if (childrenErrorNodes == null) {
+      childrenErrorNodes = new ArrayList<>();
+    }
+    childrenErrorNodes.add(nodeErrorSummary);
+  }
 }

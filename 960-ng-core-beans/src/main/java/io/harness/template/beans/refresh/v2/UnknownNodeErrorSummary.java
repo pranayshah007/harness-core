@@ -5,23 +5,24 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.template.beans.refresh;
+package io.harness.template.beans.refresh.v2;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.ng.core.template.TemplateEntityType;
+import io.harness.template.beans.refresh.NodeInfo;
 
+import java.util.List;
 import lombok.Builder;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
 
 @OwnedBy(HarnessTeam.CDC)
-@Getter
-@Builder
-@EqualsAndHashCode
-@Deprecated
-public class TemplateInfo {
-  private String templateIdentifier;
-  private String versionLabel;
-  private TemplateEntityType templateEntityType;
+public class UnknownNodeErrorSummary extends NodeErrorSummary {
+  @Builder
+  public UnknownNodeErrorSummary(NodeInfo nodeInfo, List<NodeErrorSummary> childrenErrorNodes) {
+    super(nodeInfo, childrenErrorNodes);
+  }
+
+  @Override
+  public ErrorNodeType getType() {
+    return ErrorNodeType.UNKNOWN;
+  }
 }
