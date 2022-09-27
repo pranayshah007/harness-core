@@ -37,7 +37,7 @@ public class CustomSecretManagerEntityToDTOTest extends CategoryTest {
     MockitoAnnotations.initMocks(this);
     defaultFieldNamesToValue = new HashMap<>();
     defaultFieldNamesToValue.put("isDefault", false);
-    defaultFieldNamesToValue.put("executeOnDelegate", true);
+    defaultFieldNamesToValue.put("onDelegate", false);
     defaultFieldNamesToValue.put("harnessManaged", false);
     // Default of connector ref is secret ref data object which has all fields as null.
     defaultFieldNamesToValue.put("connectorRef", new SecretRefData());
@@ -54,7 +54,7 @@ public class CustomSecretManagerEntityToDTOTest extends CategoryTest {
         customSecretManagerEntitytoDTO.createConnectorDTO(customSecretManagerConnector);
     // Check
     assertNotNull(customSecretManagerConnectorDTO);
-    assertThat(customSecretManagerConnectorDTO.getOnDelegate()).isEqualTo(true);
+    assertThat(customSecretManagerConnectorDTO.getOnDelegate()).isEqualTo(false);
   }
 
   @Test

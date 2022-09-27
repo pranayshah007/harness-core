@@ -2692,7 +2692,6 @@
         {
           "type": "object",
           "required": [
-            "onDelegate",
             "template"
           ],
           "properties": {
