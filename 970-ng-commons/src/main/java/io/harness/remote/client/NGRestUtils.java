@@ -71,13 +71,13 @@ public class NGRestUtils {
   }
 
   private static <T> T handleResponse(Response<ResponseDTO<T>> response, String defaultErrorMessage) {
-    if (response.isSuccessful()) {
-      return response.body().getData();
-    }
-
-    log.error("Error response received: {}", response);
     String errorMessage = "";
     try {
+      if (response.isSuccessful()) {
+        return response.body().getData();
+      }
+
+      log.error("Error response received: {}", response);
       ErrorDTO restResponse = JsonUtils.asObject(response.errorBody().string(), new TypeReference<ErrorDTO>() {});
       errorMessage = restResponse.getMessage();
       throw new InvalidRequestException(
@@ -88,7 +88,9 @@ public class NGRestUtils {
       log.error("Error while converting rest response to ErrorDTO", e);
       throw new InvalidRequestException(StringUtils.isEmpty(errorMessage) ? defaultErrorMessage : errorMessage);
     } finally {
-      if (!response.isSuccessful() && response.errorBody() != null) {
+      if (response.isSuccessful() && response.raw().body() != null) {
+        response.raw().body().close();
+      } else if (response.errorBody() != null) {
         response.errorBody().close();
       }
     }
