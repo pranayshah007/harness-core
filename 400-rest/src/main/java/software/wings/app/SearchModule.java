@@ -14,6 +14,7 @@ import io.harness.mongo.MongoConfig;
 import io.harness.mongo.changestreams.ChangeEventFactory;
 import io.harness.mongo.changestreams.ChangeStreamModule;
 import io.harness.mongo.changestreams.ChangeTracker;
+import io.harness.mongo.metrics.HarnessConnectionPoolListener;
 
 import software.wings.search.ElasticsearchServiceImpl;
 import software.wings.search.SearchService;
@@ -119,6 +120,7 @@ public class SearchModule extends AbstractModule {
       tags = new TagSet(new Tag(mainConfiguration.getElasticsearchConfig().getMongoTagKey(),
           mainConfiguration.getElasticsearchConfig().getMongoTagValue()));
     }
-    return new ChangeTracker(mongoConfig, changeEventFactory, tags);
+    return new ChangeTracker(
+        mongoConfig, injector.getInstance(HarnessConnectionPoolListener.class), changeEventFactory, tags);
   }
 }

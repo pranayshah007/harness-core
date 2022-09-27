@@ -64,8 +64,8 @@ public class NotificationChannelPersistenceConfig extends AbstractMongoConfigura
             .connectionsPerHost(mongoBackendConfiguration.getConnectionsPerHost())
             .readPreference(ReadPreference.primary())
             .addConnectionPoolListener(harnessConnectionPoolListener)
-            .applicationName("ng_manager_notification_channel_client")
-            .description("ng_manager_notification_channel_client")
+            .applicationName("ng_notification_channel_client")
+            .description("ng_notification_channel_client")
             .build();
     MongoClientURI uri =
         new MongoClientURI(mongoBackendConfiguration.getUri(), MongoClientOptions.builder(primaryMongoClientOptions));
