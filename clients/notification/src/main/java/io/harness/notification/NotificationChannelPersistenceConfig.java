@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotation.HarnessRepo;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.mongo.MongoConfig;
 import io.harness.mongo.metrics.HarnessConnectionPoolListener;
 import io.harness.springdata.HMongoTemplate;
 
@@ -44,6 +45,7 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
 public class NotificationChannelPersistenceConfig extends AbstractMongoConfiguration {
   private final MongoBackendConfiguration mongoBackendConfiguration;
   private final HarnessConnectionPoolListener harnessConnectionPoolListener;
+  private final MongoConfig mongoConfig;
 
   @Inject
   public NotificationChannelPersistenceConfig(Injector injector) {
@@ -51,6 +53,7 @@ public class NotificationChannelPersistenceConfig extends AbstractMongoConfigura
         (MongoBackendConfiguration) injector.getInstance(Key.get(NotificationClientConfiguration.class))
             .getNotificationClientBackendConfiguration();
     this.harnessConnectionPoolListener = injector.getInstance(HarnessConnectionPoolListener.class);
+    this.mongoConfig = injector.getInstance(MongoConfig.class);
   }
 
   @Override
@@ -96,6 +99,6 @@ public class NotificationChannelPersistenceConfig extends AbstractMongoConfigura
     MappingMongoConverter converter = new MappingMongoConverter(dbRefResolver, mappingContext);
     converter.setCodecRegistryProvider(mongoDbFactory);
     converter.afterPropertiesSet();
-    return new HMongoTemplate(mongoDbFactory, mappingMongoConverter());
+    return new HMongoTemplate(mongoDbFactory, mappingMongoConverter(), mongoConfig);
   }
 }
