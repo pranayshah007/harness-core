@@ -15,13 +15,12 @@ import static java.util.stream.Collectors.toSet;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.retention.AuditAccountSyncService;
 import io.harness.audit.retention.AuditRetentionIteratorHandler;
-import io.harness.controller.PrimaryVersionChangeScheduler;
 import io.harness.health.HealthService;
 import io.harness.ng.core.CorrelationFilter;
 import io.harness.persistence.HPersistence;
 import io.harness.platform.remote.AuditOpenApiResource;
+import io.harness.platform.remote.VersionInfoResource;
 import io.harness.remote.CharsetResponseFilter;
-import io.harness.resource.VersionInfoResource;
 
 import com.google.inject.Injector;
 import io.dropwizard.setup.Environment;
@@ -57,7 +56,6 @@ public class AuditServiceSetup {
     registerHealthCheck(environment, injector);
     registerManagedBeans(environment, injector);
     registerIterators(injector);
-    registerScheduledJobs(injector);
     registerOasResource(appConfig, environment, injector);
   }
 
@@ -90,10 +88,6 @@ public class AuditServiceSetup {
 
   private void registerIterators(Injector injector) {
     injector.getInstance(AuditRetentionIteratorHandler.class).registerIterators();
-  }
-
-  private void registerScheduledJobs(Injector injector) {
-    injector.getInstance(PrimaryVersionChangeScheduler.class).registerExecutors();
   }
 
   private void registerOasResource(AuditServiceConfiguration appConfig, Environment environment, Injector injector) {

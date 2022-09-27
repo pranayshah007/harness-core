@@ -14,7 +14,6 @@ import static java.util.stream.Collectors.toSet;
 
 import io.harness.Microservice;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.controller.PrimaryVersionChangeScheduler;
 import io.harness.enforcement.client.CustomRestrictionRegisterConfiguration;
 import io.harness.enforcement.client.RestrictionUsageRegisterConfiguration;
 import io.harness.enforcement.client.custom.CustomRestrictionInterface;
@@ -31,8 +30,8 @@ import io.harness.ng.core.CorrelationFilter;
 import io.harness.outbox.OutboxEventPollService;
 import io.harness.persistence.HPersistence;
 import io.harness.platform.remote.ResourceGroupOpenApiResource;
+import io.harness.platform.remote.VersionInfoResource;
 import io.harness.remote.CharsetResponseFilter;
-import io.harness.resource.VersionInfoResource;
 import io.harness.resourcegroup.ResourceGroupServiceConfig;
 import io.harness.resourcegroup.ResourceGroupsManagementJob;
 import io.harness.resourcegroup.migrations.ResourceGroupMigrationProvider;
@@ -74,7 +73,6 @@ public class ResourceGroupServiceSetup {
     registerCharsetResponseFilter(environment, injector);
     registerCorrelationFilter(environment, injector);
     registerIterators(injector);
-    registerScheduledJobs(injector);
     registerManagedBeans(environment, injector);
     registerMigrations(injector);
     registerHealthCheck(environment, injector);
@@ -100,10 +98,6 @@ public class ResourceGroupServiceSetup {
       injector.getInstance(MetricService.class).initializeMetrics();
       injector.getInstance(RecordMetricsJob.class).scheduleMetricsTasks();
     }
-  }
-
-  private void registerScheduledJobs(Injector injector) {
-    injector.getInstance(PrimaryVersionChangeScheduler.class).registerExecutors();
   }
 
   private void registerManagedBeans(Environment environment, Injector injector) {

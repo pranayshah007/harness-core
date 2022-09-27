@@ -39,6 +39,7 @@ import io.harness.accesscontrol.commons.iterators.AccessControlIteratorsConfig;
 import io.harness.accesscontrol.commons.notifications.NotificationConfig;
 import io.harness.accesscontrol.commons.outbox.AccessControlOutboxEventHandler;
 import io.harness.accesscontrol.commons.validation.HarnessActionValidator;
+import io.harness.accesscontrol.commons.version.MockQueueController;
 import io.harness.accesscontrol.health.HealthResource;
 import io.harness.accesscontrol.health.HealthResourceImpl;
 import io.harness.accesscontrol.permissions.api.PermissionResource;
@@ -92,7 +93,6 @@ import io.harness.aggregator.consumers.ChangeEventFailureHandler;
 import io.harness.aggregator.consumers.RoleAssignmentCRUDEventHandler;
 import io.harness.aggregator.consumers.UserGroupCRUDEventHandler;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.app.PrimaryVersionManagerModule;
 import io.harness.audit.client.remote.AuditClientModule;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.connector.ConnectorResourceClientModule;
@@ -111,6 +111,7 @@ import io.harness.organization.OrganizationClientModule;
 import io.harness.outbox.TransactionOutboxModule;
 import io.harness.outbox.api.OutboxEventHandler;
 import io.harness.project.ProjectClientModule;
+import io.harness.queue.QueueController;
 import io.harness.redis.RedisConfig;
 import io.harness.redis.RedissonClientFactory;
 import io.harness.remote.client.ClientMode;
@@ -235,7 +236,6 @@ public class AccessControlModule extends AbstractModule {
   @Override
   protected void configure() {
     install(VersionModule.getInstance());
-    install(PrimaryVersionManagerModule.getInstance());
     ExecutorModule.getInstance().setExecutorService(ThreadPool.create(
         5, 100, 500L, TimeUnit.MILLISECONDS, new ThreadFactoryBuilder().setNameFormat("main-app-pool-%d").build()));
     install(ExecutorModule.getInstance());
@@ -379,6 +379,8 @@ public class AccessControlModule extends AbstractModule {
     bind(PrivilegedRoleAssignmentDao.class).to(PrivilegedRoleAssignmentDaoImpl.class);
     bind(PrivilegedRoleAssignmentService.class).to(PrivilegedRoleAssignmentServiceImpl.class);
     bind(ResourceAttributeProvider.class).to(ResourceAttributeProviderImpl.class);
+
+    bind(QueueController.class).to(MockQueueController.class);
 
     bind(ACLResource.class).to(ACLResourceImpl.class);
     bind(AggregatorResource.class).to(AggregatorResourceImpl.class);
