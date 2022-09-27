@@ -29,6 +29,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.executionplan.CIExecutionTestBase;
+import io.harness.delegate.beans.ci.VmInfraInfo;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -57,6 +58,7 @@ public class HarnessImageUtilsTest extends CIExecutionTestBase {
   @Mock private ConnectorDetails connectorDetails;
   @Mock private CIExecutionServiceConfig ciExecutionServiceConfig;
   @Inject private HarnessImageUtils harnessImageUtils;
+  private VmInfraInfo vmInfraInfo = VmInfraInfo.builder().poolId("test").build();
 
   @Before
   public void setUp() {
@@ -130,7 +132,7 @@ public class HarnessImageUtilsTest extends CIExecutionTestBase {
   @Category(UnitTests.class)
   public void testGetHarnessImageConnectorForVM() {
     VmStageInfraDetails vmStageInfraDetails =
-        VmStageInfraDetails.builder().harnessImageConnectorRef(connectorRefValue).build();
+        VmStageInfraDetails.builder().infraInfo(vmInfraInfo).harnessImageConnectorRef(connectorRefValue).build();
     when(connectorUtils.getConnectorDetails(any(), matches(connectorRefValue))).thenReturn(connectorDetails);
     when(connectorDetails.getIdentifier()).thenReturn(connectorRefValue);
     ConnectorDetails harnessImageConnector = harnessImageUtils.getHarnessImageConnectorDetailsForVM(
@@ -143,7 +145,7 @@ public class HarnessImageUtilsTest extends CIExecutionTestBase {
   @Owner(developers = RAGHAV_GUPTA)
   @Category(UnitTests.class)
   public void testGetDefaultHarnessImageConnectorForVM() {
-    VmStageInfraDetails vmStageInfraDetails = VmStageInfraDetails.builder().build();
+    VmStageInfraDetails vmStageInfraDetails = VmStageInfraDetails.builder().infraInfo(vmInfraInfo).build();
     when(ciExecutionServiceConfig.getDefaultInternalImageConnector()).thenReturn(connectorRefValue);
     when(connectorUtils.getDefaultInternalConnector(any())).thenReturn(connectorDetails);
     when(connectorDetails.getIdentifier()).thenReturn(connectorRefValue);
@@ -158,7 +160,7 @@ public class HarnessImageUtilsTest extends CIExecutionTestBase {
   @Category(UnitTests.class)
   public void testGetHarnessImageConnectorForVMWithDefaultAlsoPresent() {
     VmStageInfraDetails vmStageInfraDetails =
-        VmStageInfraDetails.builder().harnessImageConnectorRef(connectorRefValue).build();
+        VmStageInfraDetails.builder().infraInfo(vmInfraInfo).harnessImageConnectorRef(connectorRefValue).build();
     when(ciExecutionServiceConfig.getDefaultInternalImageConnector()).thenReturn("default");
     when(connectorUtils.getConnectorDetails(any(), matches(connectorRefValue))).thenReturn(connectorDetails);
     when(connectorDetails.getIdentifier()).thenReturn(connectorRefValue);
@@ -172,7 +174,7 @@ public class HarnessImageUtilsTest extends CIExecutionTestBase {
   @Owner(developers = RAGHAV_GUPTA)
   @Category(UnitTests.class)
   public void testGetHarnessImageConnectorForVMWithoutConnectorRef() {
-    VmStageInfraDetails vmStageInfraDetails = VmStageInfraDetails.builder().build();
+    VmStageInfraDetails vmStageInfraDetails = VmStageInfraDetails.builder().infraInfo(vmInfraInfo).build();
     ConnectorDetails harnessImageConnector = harnessImageUtils.getHarnessImageConnectorDetailsForVM(
         AmbianceUtils.getNgAccess(ambiance), vmStageInfraDetails);
     assertNull(harnessImageConnector);

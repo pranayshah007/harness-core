@@ -90,6 +90,35 @@ public class MongoModule extends AbstractModule {
     return defaultMongoClientOptions;
   }
 
+  @Provides
+  @Named("primaryMongoClient")
+  @Singleton
+  public MongoClient primaryMongoClient(
+      MongoConfig mongoConfig, HarnessConnectionPoolListener harnessConnectionPoolListener) {
+    MongoClientOptions primaryMongoClientOptions;
+    MongoSSLConfig mongoSSLConfig = mongoConfig.getMongoSSLConfig();
+    if (mongoSSLConfig != null && mongoSSLConfig.isMongoSSLEnabled()) {
+      primaryMongoClientOptions = getMongoSslContextClientOptions(mongoConfig);
+    } else {
+      primaryMongoClientOptions = MongoClientOptions.builder()
+                                      .retryWrites(true)
+                                      .connectTimeout(mongoConfig.getConnectTimeout())
+                                      .serverSelectionTimeout(mongoConfig.getServerSelectionTimeout())
+                                      .maxConnectionIdleTime(mongoConfig.getMaxConnectionIdleTime())
+                                      .connectionsPerHost(mongoConfig.getConnectionsPerHost())
+                                      .readPreference(mongoConfig.getReadPreference())
+                                      .build();
+    }
+
+    MongoClientURI uri = new MongoClientURI(mongoConfig.getUri(),
+        MongoClientOptions.builder(primaryMongoClientOptions)
+            .readPreference(mongoConfig.getReadPreference())
+            .addConnectionPoolListener(harnessConnectionPoolListener)
+            .applicationName("primary_mongo_client")
+            .description("primary_mongo_client"));
+    return new MongoClient(uri);
+  }
+
   public static AdvancedDatastore createDatastore(
       Morphia morphia, String uri, String name, HarnessConnectionPoolListener harnessConnectionPoolListener) {
     MongoConfig mongoConfig = MongoConfig.builder().build();
@@ -97,8 +126,8 @@ public class MongoModule extends AbstractModule {
     MongoClientURI clientUri = new MongoClientURI(uri,
         MongoClientOptions.builder(getDefaultMongoClientOptions(mongoConfig))
             .addConnectionPoolListener(harnessConnectionPoolListener)
-            .applicationName("current_gen_" + name)
-            .description("current_gen_" + name));
+            .applicationName("mongo_client_" + name)
+            .description("mongo_client_" + name));
     MongoClient mongoClient = new MongoClient(clientUri);
 
     AdvancedDatastore datastore = (AdvancedDatastore) morphia.createDatastore(mongoClient, clientUri.getDatabase());
@@ -159,39 +188,18 @@ public class MongoModule extends AbstractModule {
   @Provides
   @Named("primaryDatastore")
   @Singleton
-  public AdvancedDatastore primaryDatastore(MongoConfig mongoConfig, @Named("morphiaClasses") Set<Class> classes,
+  public AdvancedDatastore primaryDatastore(@Named("primaryMongoClient") MongoClient mongoClient,
+      MongoConfig mongoConfig, @Named("morphiaClasses") Set<Class> classes,
       @Named("morphiaInterfaceImplementersClasses") Map<String, Class> morphiaInterfaceImplementers, Morphia morphia,
-      ObjectFactory objectFactory, IndexManager indexManager,
-      HarnessConnectionPoolListener harnessConnectionPoolListener) {
+      ObjectFactory objectFactory, IndexManager indexManager) {
     for (Class clazz : classes) {
       if (morphia.getMapper().getMCMap().get(clazz.getName()).getCollectionName().startsWith("!!!custom_")) {
         throw new UnexpectedException(format("The custom collection name for %s is not provided", clazz.getName()));
       }
     }
 
-    MongoClientOptions primaryMongoClientOptions;
-    MongoSSLConfig mongoSSLConfig = mongoConfig.getMongoSSLConfig();
-    if (mongoSSLConfig != null && mongoSSLConfig.isMongoSSLEnabled()) {
-      primaryMongoClientOptions = getMongoSslContextClientOptions(mongoConfig);
-    } else {
-      primaryMongoClientOptions = MongoClientOptions.builder()
-                                      .retryWrites(true)
-                                      .connectTimeout(mongoConfig.getConnectTimeout())
-                                      .serverSelectionTimeout(mongoConfig.getServerSelectionTimeout())
-                                      .maxConnectionIdleTime(mongoConfig.getMaxConnectionIdleTime())
-                                      .connectionsPerHost(mongoConfig.getConnectionsPerHost())
-                                      .readPreference(mongoConfig.getReadPreference())
-                                      .build();
-    }
-
-    MongoClientURI uri = new MongoClientURI(mongoConfig.getUri(),
-        MongoClientOptions.builder(primaryMongoClientOptions)
-            .readPreference(mongoConfig.getReadPreference())
-            .addConnectionPoolListener(harnessConnectionPoolListener)
-            .applicationName("current_gen_primary_datastore")
-            .description("current_gen_primary_datastore"));
-    MongoClient mongoClient = new MongoClient(uri);
-    AdvancedDatastore primaryDatastore = (AdvancedDatastore) morphia.createDatastore(mongoClient, uri.getDatabase());
+    AdvancedDatastore primaryDatastore = (AdvancedDatastore) morphia.createDatastore(
+        mongoClient, new MongoClientURI(mongoConfig.getUri()).getDatabase());
     primaryDatastore.setQueryFactory(new QueryFactory(mongoConfig.getTraceMode()));
 
     Store store = null;
@@ -201,10 +209,8 @@ public class MongoModule extends AbstractModule {
 
     indexManager.ensureIndexes(mongoConfig.getIndexManagerMode(), primaryDatastore, morphia, store);
 
-    HObjectFactory hObjectFactory = (HObjectFactory) objectFactory;
-
     ClassRefactoringManager.updateMovedClasses(primaryDatastore, morphiaInterfaceImplementers);
-    hObjectFactory.setDatastore(primaryDatastore);
+    ((HObjectFactory) objectFactory).setDatastore(primaryDatastore);
 
     return primaryDatastore;
   }
@@ -212,7 +218,8 @@ public class MongoModule extends AbstractModule {
   @Provides
   @Named("analyticsDatabase")
   @Singleton
-  public AdvancedDatastore getAnalyticsDatabase(MongoConfig mongoConfig, Morphia morphia) {
+  public AdvancedDatastore getAnalyticsDatabase(
+      MongoConfig mongoConfig, Morphia morphia, HarnessConnectionPoolListener harnessConnectionPoolListener) {
     TagSet tags = null;
     if (!mongoConfig.getAnalyticNodeConfig().getMongoTagKey().equals("none")) {
       tags = new TagSet(new Tag(mongoConfig.getAnalyticNodeConfig().getMongoTagKey(),
@@ -229,7 +236,10 @@ public class MongoModule extends AbstractModule {
     final String mongoClientUrl = mongoConfig.getUri();
     MongoClientURI uri = new MongoClientURI(mongoClientUrl,
         MongoClientOptions.builder(MongoModule.getDefaultMongoClientOptions(mongoConfig))
-            .readPreference(readPreference));
+            .readPreference(readPreference)
+            .addConnectionPoolListener(harnessConnectionPoolListener)
+            .applicationName("analytics_mongo_client")
+            .description("analytics_mongo_client"));
 
     MongoClient mongoClient = new MongoClient(uri);
     AdvancedDatastore analyticalDataStore = (AdvancedDatastore) morphia.createDatastore(mongoClient, uri.getDatabase());
@@ -240,14 +250,17 @@ public class MongoModule extends AbstractModule {
   @Provides
   @Named("locksMongoClient")
   @Singleton
-  public MongoClient getLocksMongoClient(MongoConfig mongoConfig) {
+  public MongoClient getLocksMongoClient(
+      MongoConfig mongoConfig, HarnessConnectionPoolListener harnessConnectionPoolListener) {
     MongoClientURI uri;
+    MongoClientOptions.Builder builder = MongoClientOptions.builder(getDefaultMongoClientOptions(mongoConfig))
+                                             .addConnectionPoolListener(harnessConnectionPoolListener)
+                                             .applicationName("locks_mongo_client")
+                                             .description("locks_mongo_client");
     if (isNotEmpty(mongoConfig.getLocksUri())) {
-      uri = new MongoClientURI(
-          mongoConfig.getLocksUri(), MongoClientOptions.builder(getDefaultMongoClientOptions(mongoConfig)));
+      uri = new MongoClientURI(mongoConfig.getLocksUri(), builder);
     } else {
-      uri = new MongoClientURI(
-          mongoConfig.getUri(), MongoClientOptions.builder(getDefaultMongoClientOptions(mongoConfig)));
+      uri = new MongoClientURI(mongoConfig.getUri(), builder);
     }
     return new MongoClient(uri);
   }

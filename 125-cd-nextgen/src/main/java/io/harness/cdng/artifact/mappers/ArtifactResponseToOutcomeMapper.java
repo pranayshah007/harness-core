@@ -8,6 +8,7 @@
 package io.harness.cdng.artifact.mappers;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifact.ArtifactMetadataKeys;
@@ -23,6 +24,7 @@ import io.harness.cdng.artifact.bean.yaml.GithubPackagesArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig;
 import io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.customartifact.CustomScriptInlineSource;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.Nexus2RegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryDockerConfig;
 import io.harness.cdng.artifact.outcome.AcrArtifactOutcome;
@@ -125,9 +127,17 @@ public class ArtifactResponseToOutcomeMapper {
       case CUSTOM_ARTIFACT:
         CustomArtifactConfig customArtifactConfig = (CustomArtifactConfig) artifactConfig;
         if (customArtifactConfig.getScripts() != null) {
-          CustomArtifactDelegateResponse customArtifactDelegateResponse =
-              (CustomArtifactDelegateResponse) artifactDelegateResponse;
-          return getCustomArtifactOutcome(customArtifactConfig, customArtifactDelegateResponse);
+          CustomScriptInlineSource customScriptInlineSource =
+              (CustomScriptInlineSource) customArtifactConfig.getScripts()
+                  .getFetchAllArtifacts()
+                  .getShellScriptBaseStepInfo()
+                  .getSource()
+                  .getSpec();
+          if (isNotEmpty(customScriptInlineSource.getScript().getValue())) {
+            CustomArtifactDelegateResponse customArtifactDelegateResponse =
+                (CustomArtifactDelegateResponse) artifactDelegateResponse;
+            return getCustomArtifactOutcome(customArtifactConfig, customArtifactDelegateResponse);
+          }
         }
         return getCustomArtifactOutcome(customArtifactConfig);
       case AMAZONS3:

@@ -164,6 +164,8 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     if (stripeCustomer == null) {
       createStripeCustomer(accountIdentifier, subscriptionDTO.getCustomer());
       stripeCustomer = stripeCustomerRepository.findByAccountIdentifier(accountIdentifier);
+    } else {
+      updateStripeCustomer(accountIdentifier, stripeCustomer.getCustomerId(), subscriptionDTO.getCustomer());
     }
 
     // Not allowed for creation if active subscriptionId exists

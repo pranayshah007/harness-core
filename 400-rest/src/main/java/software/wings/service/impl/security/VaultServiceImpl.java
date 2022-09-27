@@ -222,11 +222,6 @@ public class VaultServiceImpl extends BaseVaultServiceImpl implements VaultServi
     vaultConfig.setBasePath(basePath);
     vaultConfig.setAccountId(accountId);
 
-    if (vaultConfig.isReadOnly() && vaultConfig.isDefault()) {
-      throw new SecretManagementException(
-          SECRET_MANAGEMENT_ERROR, "A read only vault cannot be the default secret manager", USER);
-    }
-
     checkIfTemplatizedSecretManagerCanBeCreatedOrUpdated(vaultConfig);
 
     // App Role Token renew FF

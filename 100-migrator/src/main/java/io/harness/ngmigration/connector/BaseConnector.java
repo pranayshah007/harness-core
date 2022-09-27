@@ -9,13 +9,16 @@ package io.harness.ngmigration.connector;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
-import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.NGYamlFile;
 
 import software.wings.beans.SettingAttribute;
 import software.wings.ngmigration.CgEntityId;
 
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -29,6 +32,13 @@ public interface BaseConnector {
 
   ConnectorType getConnectorType(SettingAttribute settingAttribute);
 
-  ConnectorConfigDTO getConfigDTO(SettingAttribute settingAttribute, Set<CgEntityId> childEntities,
-      Map<CgEntityId, NgEntityDetail> migratedEntities);
+  ConnectorConfigDTO getConfigDTO(
+      SettingAttribute settingAttribute, Set<CgEntityId> childEntities, Map<CgEntityId, NGYamlFile> migratedEntities);
+
+  default Set<String> toSet(List<String> list) {
+    if (EmptyPredicate.isEmpty(list)) {
+      return new HashSet<>();
+    }
+    return new HashSet<>(list);
+  }
 }

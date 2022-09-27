@@ -14,6 +14,7 @@ import io.harness.mongo.MongoConfig;
 import io.harness.mongo.changestreams.ChangeEventFactory;
 import io.harness.mongo.changestreams.ChangeStreamModule;
 import io.harness.mongo.changestreams.ChangeTracker;
+import io.harness.mongo.metrics.HarnessConnectionPoolListener;
 
 import software.wings.search.ElasticsearchServiceImpl;
 import software.wings.search.SearchService;
@@ -23,6 +24,7 @@ import software.wings.search.entities.cloudprovider.CloudProviderTimeScaleEntity
 import software.wings.search.entities.deployment.DeploymentSearchEntity;
 import software.wings.search.entities.environment.EnvironmentSearchEntity;
 import software.wings.search.entities.environment.EnvironmentTimeScaleEntity;
+import software.wings.search.entities.infradefinition.InfrastructureDefinitionTimeScaleEntity;
 import software.wings.search.entities.pipeline.PipelineSearchEntity;
 import software.wings.search.entities.pipeline.PipelineTimeScaleEntity;
 import software.wings.search.entities.service.ServiceSearchEntity;
@@ -105,6 +107,7 @@ public class SearchModule extends AbstractModule {
     timeScaleEntityMultibinder.addBinding().to(PipelineTimeScaleEntity.class);
     timeScaleEntityMultibinder.addBinding().to(EnvironmentTimeScaleEntity.class);
     timeScaleEntityMultibinder.addBinding().to(CloudProviderTimeScaleEntity.class);
+    timeScaleEntityMultibinder.addBinding().to(InfrastructureDefinitionTimeScaleEntity.class);
     timeScaleEntityMultibinder.addBinding().to(UserTimeScaleEntity.class);
   }
 
@@ -119,6 +122,7 @@ public class SearchModule extends AbstractModule {
       tags = new TagSet(new Tag(mainConfiguration.getElasticsearchConfig().getMongoTagKey(),
           mainConfiguration.getElasticsearchConfig().getMongoTagValue()));
     }
-    return new ChangeTracker(mongoConfig, changeEventFactory, tags);
+    return new ChangeTracker(
+        mongoConfig, injector.getInstance(HarnessConnectionPoolListener.class), changeEventFactory, tags);
   }
 }

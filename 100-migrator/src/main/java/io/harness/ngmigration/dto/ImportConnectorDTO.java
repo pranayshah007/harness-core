@@ -10,10 +10,11 @@ package io.harness.ngmigration.dto;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ngmigration.beans.ImportMechanism;
-import io.harness.ngmigration.beans.MigrationInputDTO;
 
 import software.wings.settings.SettingVariableTypes;
 
+import com.fasterxml.jackson.annotation.JsonTypeName;
+import io.swagger.v3.oas.annotations.Parameter;
 import java.util.List;
 import java.util.Set;
 import javax.validation.constraints.NotNull;
@@ -23,12 +24,15 @@ import lombok.EqualsAndHashCode;
 @OwnedBy(HarnessTeam.CDC)
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class ImportConnectorDTO extends MigrationInputDTO {
-  // Do we want to import everything? Only a specific type of connectors e.g. just Docker, AWS? Or a specific set of
-  // connectors
-  @NotNull private ImportMechanism mechanism;
-  private String orgId;
-  private String projectId;
-  private List<String> ids;
-  private Set<SettingVariableTypes> types;
+@JsonTypeName("CONNECTOR")
+public class ImportConnectorDTO extends BaseImportDTO {
+  @Parameter(
+      description =
+          "ALL: To migrate all connectors. TYPE: To migrate only specific type of connectors(eg: Docker, AWS etc). ID: TO migrate only specific connectors")
+  @NotNull
+  private ImportMechanism mechanism;
+
+  @Parameter(description = "To be provided if mechanism is ID") private List<String> ids;
+
+  @Parameter(description = "To be provided if mechanism is TYPE") private Set<SettingVariableTypes> types;
 }

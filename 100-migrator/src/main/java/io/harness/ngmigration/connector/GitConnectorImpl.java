@@ -19,7 +19,7 @@ import io.harness.delegate.beans.connector.scm.genericgitconnector.GitSSHAuthent
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.UnsupportedOperationException;
-import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.shell.AuthenticationScheme;
 
@@ -43,8 +43,8 @@ public class GitConnectorImpl implements BaseConnector {
   }
 
   @Override
-  public ConnectorConfigDTO getConfigDTO(SettingAttribute settingAttribute, Set<CgEntityId> childEntities,
-      Map<CgEntityId, NgEntityDetail> migratedEntities) {
+  public ConnectorConfigDTO getConfigDTO(
+      SettingAttribute settingAttribute, Set<CgEntityId> childEntities, Map<CgEntityId, NGYamlFile> migratedEntities) {
     GitConfig gitConfig = (GitConfig) settingAttribute.getValue();
 
     return GitConfigDTO.builder()
@@ -59,21 +59,13 @@ public class GitConnectorImpl implements BaseConnector {
   }
 
   private static GitAuthenticationDTO getGitAuth(
-      GitConfig gitConfig, Set<CgEntityId> childEntities, Map<CgEntityId, NgEntityDetail> migratedEntities) {
+      GitConfig gitConfig, Set<CgEntityId> childEntities, Map<CgEntityId, NGYamlFile> migratedEntities) {
     if (gitConfig.getAuthenticationScheme() == AuthenticationScheme.HTTP_PASSWORD) {
-      CgEntityId passwordRefEntityId =
-          childEntities.stream()
-              .filter(childEntity -> childEntity.getId().equals(gitConfig.getEncryptedPassword()))
-              .findFirst()
-              .get();
-      String identifier = migratedEntities.get(passwordRefEntityId).getIdentifier();
-
       return GitHTTPAuthenticationDTO.builder()
           .username(gitConfig.getUsername())
 
-          .passwordRef(
-              // TODO: scope will come from inputs
-              SecretRefData.builder().identifier(identifier).scope(Scope.PROJECT).build())
+          .passwordRef(MigratorUtility.getSecretRef(migratedEntities, gitConfig.getEncryptedPassword()))
+          // TODO: scope will come from inputs)
           .build();
     } else if (gitConfig.getAuthenticationScheme() == AuthenticationScheme.SSH_KEY) {
       return GitSSHAuthenticationDTO.builder()

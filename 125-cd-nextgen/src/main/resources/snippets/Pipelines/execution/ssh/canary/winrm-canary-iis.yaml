@@ -48,14 +48,24 @@ spec:
                       value: "*"
                   outputVariables: []
                   commandUnits:
-                    - identifier: Copy_Artifact_<+phase>
-                      name: "Copy Artifact"
-                      type: Copy
+                    - identifier: Setup_Runtime_Paths_<+phase>
+                      name: "Setup Runtime Paths"
+                      type: Script
+                      spec:
+                        shell: PowerShell
+                        source:
+                          type: Inline
+                          spec:
+                            script: |-
+                              <+setup_runtime_paths_script_powershell>
+                    - identifier: Download_Artifact_<+phase>
+                      name: "Download Artifact"
+                      type: DownloadArtifact
                       spec:
                         sourceType: Artifact
                         destinationPath: "%USERPROFILE%\\<+service.name>\\<+env.name>"
-                    - identifier: Expend_Artifact_<+phase>
-                      name: "Expend Artifact"
+                    - identifier: Expand_Artifact_<+phase>
+                      name: "Expand Artifact"
                       type: Script
                       spec:
                         shell: PowerShell

@@ -44,23 +44,30 @@ public class CustomDeploymentEntityCRUDStreamEventListener implements MessageLis
   }
 
   private boolean processChangeEvent(Message message) {
-    EntityChangeDTO entityChangeDTO;
-    try {
-      entityChangeDTO = EntityChangeDTO.parseFrom(message.getMessage().getData());
-    } catch (InvalidProtocolBufferException e) {
-      throw new InvalidRequestException(
-          String.format("Exception in unpacking EntityChangeDTO for key %s", message.getId()), e);
-    }
-    String action = message.getMessage().getMetadataMap().get(ACTION);
-    if (action != null) {
-      switch (action) {
-        case CREATE_ACTION:
-          return processCreateEvent(entityChangeDTO);
-        case DELETE_ACTION:
-          return processDeleteEvent(entityChangeDTO);
-        case UPDATE_ACTION:
-          return processRestoreEvent(entityChangeDTO);
-        default:
+    if (message != null && message.hasMessage() && message.getMessage().getMetadataMap() != null
+        && message.getMessage().getMetadataMap().containsKey(ENTITY_TYPE)) {
+      final Map<String, String> metadata = message.getMessage().getMetadataMap();
+      final String entityType = metadata.get(ENTITY_TYPE);
+      if (Objects.equals(entityType, "TEMPLATE")) {
+        EntityChangeDTO entityChangeDTO;
+        try {
+          entityChangeDTO = EntityChangeDTO.parseFrom(message.getMessage().getData());
+        } catch (InvalidProtocolBufferException e) {
+          throw new InvalidRequestException(
+              String.format("Exception in unpacking EntityChangeDTO for key %s", message.getId()), e);
+        }
+        String action = message.getMessage().getMetadataMap().get(ACTION);
+        if (action != null) {
+          switch (action) {
+            case CREATE_ACTION:
+              return processCreateEvent(entityChangeDTO);
+            case DELETE_ACTION:
+              return processDeleteEvent(entityChangeDTO);
+            case UPDATE_ACTION:
+              return processRestoreEvent(entityChangeDTO);
+            default:
+          }
+        }
       }
     }
     return true;

@@ -17,4 +17,9 @@ public class AlwaysFalseFeatureFlagServiceImpl implements FeatureFlagService {
   public boolean isFeatureFlagEnabled(String accountId, String name) {
     return false;
   }
+
+  @Override
+  public boolean isGlobalFlagEnabled(String name) {
+    return false;
+  }
 }
