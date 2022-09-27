@@ -41,13 +41,13 @@ import javax.ws.rs.core.Response.ResponseBuilder;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.data.domain.Pageable;
 
-public class ProjectApiMapper {
+public class ProjectApiUtils {
   public static final int PAGE = 1;
 
   private final Validator validator;
 
   @Inject
-  public ProjectApiMapper(Validator validator) {
+  public ProjectApiUtils(Validator validator) {
     this.validator = validator;
   }
 

@@ -13,7 +13,6 @@ import static io.harness.rule.OwnerRule.ASHISHSANODIA;
 import static io.harness.utils.PageTestUtils.getPage;
 
 import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertNull;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -55,14 +54,13 @@ import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
 
 @OwnedBy(PL)
-public class ProjectApiImplTest extends CategoryTest {
+public class OrgProjectApiImplTest extends CategoryTest {
   private ProjectService projectService;
   private OrganizationService organizationService;
   private AccessControlClient accessControlClient;
-  private AccountProjectApiImpl accountProjectApi;
   private OrgProjectApiImpl orgProjectApi;
   private Validator validator;
-  private ProjectApiMapper projectApiMapper;
+  private ProjectApiUtils projectApiUtils;
 
   String account = randomAlphabetic(10);
   String org = randomAlphabetic(10);
@@ -79,40 +77,13 @@ public class ProjectApiImplTest extends CategoryTest {
 
     ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
     validator = factory.getValidator();
-    projectApiMapper = new ProjectApiMapper(validator);
+    projectApiUtils = new ProjectApiUtils(validator);
 
-    accountProjectApi = new AccountProjectApiImpl(projectService, projectApiMapper);
-    orgProjectApi = new OrgProjectApiImpl(projectService, projectApiMapper);
+    orgProjectApi = new OrgProjectApiImpl(projectService, projectApiUtils);
   }
 
   private ProjectDTO getProjectDTO(String orgIdentifier, String identifier, String name) {
     return ProjectDTO.builder().orgIdentifier(orgIdentifier).identifier(identifier).name(name).build();
-  }
-
-  @Test
-  @Owner(developers = ASHISHSANODIA)
-  @Category(UnitTests.class)
-  public void testAccountScopedProjectCreate() {
-    CreateProjectRequest request = new CreateProjectRequest();
-    io.harness.spec.server.ng.model.Project proj = new io.harness.spec.server.ng.model.Project();
-    proj.setSlug(slug);
-    proj.setName(name);
-    request.setProject(proj);
-
-    ProjectDTO projectDTO = projectApiMapper.getProjectDto(request);
-    Project project = toProject(projectDTO);
-    project.setVersion(0L);
-
-    when(projectService.create(account, null, projectDTO)).thenReturn(project);
-
-    Response response = accountProjectApi.createAccountScopedProject(request, account);
-    assertEquals(201, response.getStatus());
-
-    assertEquals(project.getVersion().toString(), response.getEntityTag().getValue());
-    ProjectResponse entity = (ProjectResponse) response.getEntity();
-
-    assertEquals(slug, entity.getProject().getSlug());
-    assertNull(entity.getProject().getOrg());
   }
 
   @Test
@@ -126,7 +97,7 @@ public class ProjectApiImplTest extends CategoryTest {
     proj.setOrg(org);
     request.setProject(proj);
 
-    ProjectDTO projectDTO = projectApiMapper.getProjectDto(request);
+    ProjectDTO projectDTO = projectApiUtils.getProjectDto(request);
     Project project = toProject(projectDTO);
     project.setVersion(0L);
 
@@ -145,30 +116,8 @@ public class ProjectApiImplTest extends CategoryTest {
   @Test(expected = NotFoundException.class)
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
-  public void testGetAccountScopedProjectNotFoundException() {
-    accountProjectApi.getAccountScopedProject(slug, account);
-  }
-
-  @Test(expected = NotFoundException.class)
-  @Owner(developers = ASHISHSANODIA)
-  @Category(UnitTests.class)
   public void testGetOrgScopedProjectNotFoundException() {
     orgProjectApi.getOrgScopedProject(org, slug, account);
-  }
-
-  @Test
-  @Owner(developers = ASHISHSANODIA)
-  @Category(UnitTests.class)
-  public void testGetAccountScopedProject() {
-    Project project = Project.builder().identifier(slug).name(name).version(0L).build();
-    when(projectService.get(account, null, slug)).thenReturn(Optional.of(project));
-
-    Response response = accountProjectApi.getAccountScopedProject(slug, account);
-
-    ProjectResponse entity = (ProjectResponse) response.getEntity();
-
-    assertEquals(slug, entity.getProject().getSlug());
-    assertEquals(project.getVersion().toString(), response.getEntityTag().getValue());
   }
 
   @Test
@@ -185,47 +134,6 @@ public class ProjectApiImplTest extends CategoryTest {
     assertEquals(slug, entity.getProject().getSlug());
     assertEquals(org, entity.getProject().getOrg());
     assertEquals(project.getVersion().toString(), response.getEntityTag().getValue());
-  }
-
-  @Test
-  @Owner(developers = ASHISHSANODIA)
-  @Category(UnitTests.class)
-  public void testGetAccountScopedProjectList() {
-    String searchTerm = randomAlphabetic(10);
-    ProjectDTO projectDTO = getProjectDTO(org, slug, name);
-    projectDTO.setModules(Collections.singletonList(ModuleType.CD));
-    Project project = toProject(projectDTO);
-    project.setVersion((long) 0);
-    ArgumentCaptor<ProjectFilterDTO> argumentCaptor = ArgumentCaptor.forClass(ProjectFilterDTO.class);
-
-    when(projectService.listPermittedProjects(eq(account), any(), any()))
-        .thenReturn(getPage(Collections.singletonList(project), 1));
-
-    when(accessControlClient.checkForAccess(anyList()))
-        .thenReturn(
-            AccessCheckResponseDTO.builder()
-                .accessControlList(Collections.singletonList(AccessControlDTO.builder()
-                                                                 .resourceIdentifier(null)
-                                                                 .resourceScope(ResourceScope.of(account, org, null))
-                                                                 .permitted(true)
-                                                                 .build()))
-                .build());
-
-    Response response = accountProjectApi.getAccountScopedProjects(account, Collections.singletonList(org),
-        Collections.singletonList(slug), true, io.harness.spec.server.ng.model.ModuleType.CD.name(), searchTerm, page,
-        limit);
-
-    verify(projectService, times(1)).listPermittedProjects(eq(account), any(), argumentCaptor.capture());
-    ProjectFilterDTO projectFilterDTO = argumentCaptor.getValue();
-
-    List<ProjectResponse> entity = (List<ProjectResponse>) response.getEntity();
-
-    assertEquals(searchTerm, projectFilterDTO.getSearchTerm());
-    assertEquals(ModuleType.CD, projectFilterDTO.getModuleType());
-    assertEquals(2, response.getLinks().size());
-    assertEquals(1, entity.size());
-    assertEquals(org, entity.get(0).getProject().getOrg());
-    assertEquals(slug, entity.get(0).getProject().getSlug());
   }
 
   @Test
@@ -271,31 +179,6 @@ public class ProjectApiImplTest extends CategoryTest {
   @Test
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
-  public void testUpdateAccountScopedProject() {
-    UpdateProjectRequest request = new UpdateProjectRequest();
-    io.harness.spec.server.ng.model.Project proj = new io.harness.spec.server.ng.model.Project();
-    proj.setSlug(slug);
-    proj.setName("updated_name");
-    request.setProject(proj);
-
-    ProjectDTO projectDTO = projectApiMapper.getProjectDto(request);
-    Project project = toProject(projectDTO);
-    project.setVersion(0L);
-
-    when(projectService.update(account, null, slug, projectDTO)).thenReturn(project);
-
-    Response response = accountProjectApi.updateAccountScopedProject(request, slug, account);
-
-    ProjectResponse entity = (ProjectResponse) response.getEntity();
-
-    assertEquals(project.getVersion().toString(), response.getEntityTag().getValue());
-    assertNull(entity.getProject().getOrg());
-    assertEquals(slug, entity.getProject().getSlug());
-  }
-
-  @Test
-  @Owner(developers = ASHISHSANODIA)
-  @Category(UnitTests.class)
   public void testUpdateOrgScopedProject() {
     UpdateProjectRequest request = new UpdateProjectRequest();
     io.harness.spec.server.ng.model.Project proj = new io.harness.spec.server.ng.model.Project();
@@ -304,7 +187,7 @@ public class ProjectApiImplTest extends CategoryTest {
     proj.setOrg(org);
     request.setProject(proj);
 
-    ProjectDTO projectDTO = projectApiMapper.getProjectDto(request);
+    ProjectDTO projectDTO = projectApiUtils.getProjectDto(request);
     Project project = toProject(projectDTO);
     project.setVersion(0L);
 
@@ -316,21 +199,6 @@ public class ProjectApiImplTest extends CategoryTest {
 
     assertEquals(project.getVersion().toString(), response.getEntityTag().getValue());
     assertEquals(org, entity.getProject().getOrg());
-    assertEquals(slug, entity.getProject().getSlug());
-  }
-
-  @Test
-  @Owner(developers = ASHISHSANODIA)
-  @Category(UnitTests.class)
-  public void testAccountScopedProjectDelete() {
-    when(projectService.delete(account, null, slug, null)).thenReturn(true);
-    Project project = Project.builder().identifier(slug).name(name).build();
-    when(projectService.get(account, null, slug)).thenReturn(Optional.of(project));
-
-    Response response = accountProjectApi.deleteAccountScopedProject(slug, account);
-
-    ProjectResponse entity = (ProjectResponse) response.getEntity();
-
     assertEquals(slug, entity.getProject().getSlug());
   }
 

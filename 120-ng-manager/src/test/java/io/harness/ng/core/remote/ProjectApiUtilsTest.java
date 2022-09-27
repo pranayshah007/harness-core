@@ -40,15 +40,13 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 @OwnedBy(HarnessTeam.DX)
-public class ProjectApiMapperTest extends CategoryTest {
+public class ProjectApiUtilsTest extends CategoryTest {
   private ObjectMapper objectMapper;
   private Validator validator;
 
   private String testFilesBasePath = "120-ng-manager/src/test/resources/server/stub/project/";
-  private SecretApiUtils secretApiUtils;
 
-  private ProjectApiMapper projectApiMapper;
-  private String account = "account";
+  private ProjectApiUtils projectApiUtils;
   private String slug = "project_slug";
   private String name = "name";
   private String org = "org";
@@ -62,9 +60,8 @@ public class ProjectApiMapperTest extends CategoryTest {
 
     ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
     validator = factory.getValidator();
-    secretApiUtils = new SecretApiUtils(validator);
 
-    projectApiMapper = new ProjectApiMapper(validator);
+    projectApiUtils = new ProjectApiUtils(validator);
   }
 
   private void testProjectDtoMappingFromCreateRequest(String from, String to) throws JsonProcessingException {
@@ -73,7 +70,7 @@ public class ProjectApiMapperTest extends CategoryTest {
     CreateProjectRequest projectRequest =
         objectMapper.readValue(readFileAsString(testFilesBasePath + from), CreateProjectRequest.class);
 
-    ProjectDTO projectDTO = projectApiMapper.getProjectDto(projectRequest);
+    ProjectDTO projectDTO = projectApiUtils.getProjectDto(projectRequest);
     Set<ConstraintViolation<Object>> violations = validator.validate(projectDTO);
     assertThat(violations.isEmpty()).as(violations.toString()).isTrue();
 
@@ -87,7 +84,7 @@ public class ProjectApiMapperTest extends CategoryTest {
 
     UpdateProjectRequest projectRequest = objectMapper.readValue(fromJson, UpdateProjectRequest.class);
 
-    ProjectDTO projectDTO = projectApiMapper.getProjectDto(projectRequest);
+    ProjectDTO projectDTO = projectApiUtils.getProjectDto(projectRequest);
     Set<ConstraintViolation<Object>> violations = validator.validate(projectDTO);
     assertThat(violations.isEmpty()).as(violations.toString()).isTrue();
 
@@ -113,7 +110,7 @@ public class ProjectApiMapperTest extends CategoryTest {
     assertThat(violations.isEmpty()).as(violations.toString()).isTrue();
 
     projectRequest.getProject().setSlug(null);
-    projectApiMapper.getProjectDto(projectRequest);
+    projectApiUtils.getProjectDto(projectRequest);
   }
 
   @Test(expected = JerseyViolationException.class)
@@ -126,7 +123,7 @@ public class ProjectApiMapperTest extends CategoryTest {
     assertThat(violations.isEmpty()).as(violations.toString()).isTrue();
 
     projectRequest.getProject().setName(null);
-    projectApiMapper.getProjectDto(projectRequest);
+    projectApiUtils.getProjectDto(projectRequest);
   }
 
   @Test
@@ -139,7 +136,7 @@ public class ProjectApiMapperTest extends CategoryTest {
     assertThat(violations.isEmpty()).as(violations.toString()).isTrue();
 
     projectRequest.getProject().setTags(null);
-    assertThat(projectApiMapper.getProjectDto(projectRequest).getTags()).isNull();
+    assertThat(projectApiUtils.getProjectDto(projectRequest).getTags()).isNull();
   }
 
   @Test
@@ -152,7 +149,7 @@ public class ProjectApiMapperTest extends CategoryTest {
     assertThat(violations.isEmpty()).as(violations.toString()).isTrue();
 
     projectRequest.getProject().setModules(null);
-    assertThat(projectApiMapper.getProjectDto(projectRequest).getModules()).isEmpty();
+    assertThat(projectApiUtils.getProjectDto(projectRequest).getModules()).isEmpty();
   }
 
   @Test
@@ -165,7 +162,7 @@ public class ProjectApiMapperTest extends CategoryTest {
     assertThat(violations.isEmpty()).as(violations.toString()).isTrue();
 
     projectRequest.getProject().setColor(null);
-    assertThat(projectApiMapper.getProjectDto(projectRequest).getColor()).isNull();
+    assertThat(projectApiUtils.getProjectDto(projectRequest).getColor()).isNull();
   }
 
   @Test
@@ -184,7 +181,7 @@ public class ProjectApiMapperTest extends CategoryTest {
                           .lastModifiedAt(1234567890L)
                           .build();
 
-    ProjectResponse projectResponse = projectApiMapper.getProjectResponse(project);
+    ProjectResponse projectResponse = projectApiUtils.getProjectResponse(project);
 
     assertThat(projectResponse.getProject()).isNotNull();
     assertThat(projectResponse.getProject().getSlug()).isEqualTo(slug);
