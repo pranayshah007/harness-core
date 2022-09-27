@@ -18,6 +18,7 @@ import io.harness.data.validator.NGEntityName;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -36,6 +37,7 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
+@Schema(name = "MonitoredService", description = "This is the Monitored Service entity defined in Harness")
 public class MonitoredServiceDTO {
   @ApiModelProperty(required = true) @NotNull @EntityIdentifier String orgIdentifier;
   @ApiModelProperty(required = true) @NotNull @EntityIdentifier String projectIdentifier;
