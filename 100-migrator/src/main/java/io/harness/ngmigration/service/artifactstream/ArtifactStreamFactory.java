@@ -11,15 +11,20 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
 import software.wings.beans.artifact.ArtifactStream;
+import software.wings.beans.artifact.ArtifactoryArtifactStream;
 import software.wings.beans.artifact.DockerArtifactStream;
 
 @OwnedBy(HarnessTeam.CDC)
 public class ArtifactStreamFactory {
   private static final ArtifactStreamMapper dockerMapper = new DockerArtifactStreamMapper();
+  private static final ArtifactStreamMapper artifactoryMapper = new ArtifactoryArtifactStreamMapper();
 
   public static ArtifactStreamMapper getArtifactStreamMapper(ArtifactStream artifactStream) {
     if (artifactStream instanceof DockerArtifactStream) {
       return dockerMapper;
+    }
+    if (artifactStream instanceof ArtifactoryArtifactStream) {
+      return artifactoryMapper;
     }
     throw new UnsupportedOperationException(
         String.format("Unsupported artifact stream of type %s", artifactStream.getArtifactStreamType()));
