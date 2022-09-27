@@ -32,7 +32,6 @@ import software.wings.ngmigration.NGMigrationEntityType;
 
 import com.google.inject.Inject;
 import java.util.Map;
-import java.util.Objects;
 
 @OwnedBy(HarnessTeam.CDC)
 public class SecretFactory {
@@ -61,7 +60,7 @@ public class SecretFactory {
     }
     // Handle special case for Harness Secret managers
     if (secretManagerConfig instanceof GcpKmsConfig
-        && Objects.equals(secretManagerConfig.getIdentifier(), "harnessSecretManager")) {
+        && secretManagerConfig.getName().trim().equals("Harness Secrets Manager")) {
       return harnessSecretMigrator;
     }
     throw new UnsupportedOperationException("Unsupported secret manager");
