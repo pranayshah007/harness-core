@@ -176,6 +176,7 @@ public class JenkinsImpl implements Jenkins {
             FolderJob folderJob = getFolderJob(jobPathDetails.getParentJobName(), jobPathDetails.getParentJobUrl());
             jobWithDetails = jenkinsServer.getJob(folderJob, jobPathDetails.getChildJobName());
             if (jobWithDetails == null) {
+              log.info(format("found no jobWithDetails for jobname: %s, trying as multibranch", jobname));
               jobPathDetails = constructJobPathDetails(jobname, true);
               folderJob = getFolderJob(jobPathDetails.getParentJobName(), jobPathDetails.getParentJobUrl());
               jobWithDetails = jenkinsServer.getJob(folderJob, jobPathDetails.getChildJobName());
@@ -825,6 +826,9 @@ public class JenkinsImpl implements Jenkins {
           childJobName = format("%s/%s", jobNameSplit[parts - 2], jobNameSplit[parts - 1]);
           parentJobName = jobNameSplit[parts - 3];
           parentJobUrl = constructParentJobPath(Arrays.copyOf(jobNameSplit, jobNameSplit.length - 1));
+          log.info(format(
+              "retrying as multibranch: childJobName: %s | parentJobName: %s | parentJobUrl: %s | decodedJobName: %s",
+              childJobName, parentJobName, parentJobUrl, decodedJobName));
         }
       } else {
         childJobName = decodedJobName;
