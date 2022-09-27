@@ -159,7 +159,7 @@ public class ConnectorMigrationService extends NgMigrationService {
 
   @Override
   public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NgEntityDetail> migratedEntities,
+      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities,
       NgEntityDetail ngEntityDetail) {
     SettingAttribute settingAttribute = (SettingAttribute) entities.get(entityId).getEntity();
     String name = settingAttribute.getName();
@@ -189,36 +189,37 @@ public class ConnectorMigrationService extends NgMigrationService {
     List<NGYamlFile> files = new ArrayList<>();
     Set<CgEntityId> childEntities = graph.get(entityId);
     BaseConnector connectorImpl = ConnectorFactory.getConnector(settingAttribute);
-    files.add(NGYamlFile.builder()
-                  .type(NGMigrationEntityType.CONNECTOR)
-                  .filename("connector/" + settingAttribute.getName() + ".yaml")
-                  .yaml(ConnectorDTO.builder()
-                            .connectorInfo(ConnectorInfoDTO.builder()
-                                               .name(name)
-                                               .identifier(identifier)
-                                               .description(null)
-                                               .tags(null)
-                                               .orgIdentifier(orgIdentifier)
-                                               .projectIdentifier(projectIdentifier)
-                                               .connectorType(connectorImpl.getConnectorType(settingAttribute))
-                                               .connectorConfig(connectorImpl.getConfigDTO(
-                                                   settingAttribute, childEntities, migratedEntities))
-                                               .build())
-                            .build())
-                  .type(NGMigrationEntityType.CONNECTOR)
-                  .cgBasicInfo(CgBasicInfo.builder()
-                                   .accountId(settingAttribute.getAccountId())
-                                   .appId(null)
-                                   .id(settingAttribute.getUuid())
-                                   .type(NGMigrationEntityType.CONNECTOR)
-                                   .build())
-                  .build());
-    migratedEntities.putIfAbsent(entityId,
-        NgEntityDetail.builder()
-            .identifier(identifier)
-            .orgIdentifier(orgIdentifier)
-            .projectIdentifier(projectIdentifier)
-            .build());
+    NGYamlFile ngYamlFile =
+        NGYamlFile.builder()
+            .type(NGMigrationEntityType.CONNECTOR)
+            .filename("connector/" + settingAttribute.getName() + ".yaml")
+            .yaml(ConnectorDTO.builder()
+                      .connectorInfo(ConnectorInfoDTO.builder()
+                                         .name(name)
+                                         .identifier(identifier)
+                                         .description(null)
+                                         .tags(null)
+                                         .orgIdentifier(orgIdentifier)
+                                         .projectIdentifier(projectIdentifier)
+                                         .connectorType(connectorImpl.getConnectorType(settingAttribute))
+                                         .connectorConfig(connectorImpl.getConfigDTO(
+                                             settingAttribute, childEntities, migratedEntities))
+                                         .build())
+                      .build())
+            .ngEntityDetail(NgEntityDetail.builder()
+                                .identifier(identifier)
+                                .orgIdentifier(orgIdentifier)
+                                .projectIdentifier(projectIdentifier)
+                                .build())
+            .cgBasicInfo(CgBasicInfo.builder()
+                             .accountId(settingAttribute.getAccountId())
+                             .appId(null)
+                             .id(settingAttribute.getUuid())
+                             .type(NGMigrationEntityType.CONNECTOR)
+                             .build())
+            .build();
+    files.add(ngYamlFile);
+    migratedEntities.putIfAbsent(entityId, ngYamlFile);
     return files;
   }
 

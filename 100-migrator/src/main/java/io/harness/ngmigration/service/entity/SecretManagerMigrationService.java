@@ -63,6 +63,7 @@ import org.apache.commons.lang3.StringUtils;
 public class SecretManagerMigrationService extends NgMigrationService {
   @Inject private SecretManager secretManager;
   @Inject private ConnectorResourceClient connectorResourceClient;
+  @Inject private SecretFactory secretFactory;
 
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {
@@ -114,7 +115,7 @@ public class SecretManagerMigrationService extends NgMigrationService {
 
   @Override
   public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NgEntityDetail> migratedEntities,
+      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities,
       NgEntityDetail ngEntityDetail) {
     SecretManagerConfig secretManagerConfig = (SecretManagerConfig) entities.get(entityId).getEntity();
     String name = secretManagerConfig.getName();
@@ -141,36 +142,38 @@ public class SecretManagerMigrationService extends NgMigrationService {
     }
 
     List<NGYamlFile> files = new ArrayList<>();
-    files.add(NGYamlFile.builder()
-                  .filename("connector/" + name + ".yaml")
-                  .yaml(ConnectorDTO.builder()
-                            .connectorInfo(
-                                ConnectorInfoDTO.builder()
-                                    .name(name)
-                                    .identifier(identifier)
-                                    .description(null)
-                                    .tags(null)
-                                    .orgIdentifier(orgIdentifier)
-                                    .projectIdentifier(projectIdentifier)
-                                    .connectorType(SecretFactory.getConnectorType(secretManagerConfig))
-                                    .connectorConfig(SecretFactory.getConfigDTO(secretManagerConfig, migratedEntities))
-                                    .build())
-                            .build())
-                  .type(NGMigrationEntityType.SECRET_MANAGER)
-                  .cgBasicInfo(CgBasicInfo.builder()
-                                   .accountId(secretManagerConfig.getAccountId())
-                                   .appId(null)
-                                   .id(secretManagerConfig.getUuid())
-                                   .type(NGMigrationEntityType.SECRET_MANAGER)
-                                   .build())
-                  .build());
+    NGYamlFile ngYamlFile =
+        NGYamlFile.builder()
+            .filename("connector/" + name + ".yaml")
+            .yaml(ConnectorDTO.builder()
+                      .connectorInfo(
+                          ConnectorInfoDTO.builder()
+                              .name(name)
+                              .identifier(identifier)
+                              .description(null)
+                              .tags(null)
+                              .orgIdentifier(orgIdentifier)
+                              .projectIdentifier(projectIdentifier)
+                              .connectorType(SecretFactory.getConnectorType(secretManagerConfig))
+                              .connectorConfig(secretFactory.getConfigDTO(secretManagerConfig, migratedEntities))
+                              .build())
+                      .build())
+            .ngEntityDetail(NgEntityDetail.builder()
+                                .identifier(identifier)
+                                .orgIdentifier(inputDTO.getOrgIdentifier())
+                                .projectIdentifier(inputDTO.getProjectIdentifier())
+                                .build())
+            .type(NGMigrationEntityType.SECRET_MANAGER)
+            .cgBasicInfo(CgBasicInfo.builder()
+                             .accountId(secretManagerConfig.getAccountId())
+                             .appId(null)
+                             .id(secretManagerConfig.getUuid())
+                             .type(NGMigrationEntityType.SECRET_MANAGER)
+                             .build())
+            .build();
+    files.add(ngYamlFile);
 
-    migratedEntities.putIfAbsent(entityId,
-        NgEntityDetail.builder()
-            .identifier(identifier)
-            .orgIdentifier(inputDTO.getOrgIdentifier())
-            .projectIdentifier(inputDTO.getProjectIdentifier())
-            .build());
+    migratedEntities.putIfAbsent(entityId, ngYamlFile);
 
     return files;
   }

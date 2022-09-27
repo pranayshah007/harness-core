@@ -26,7 +26,6 @@ java_binary(
         "//920-delegate-service-beans:module",
         "//930-delegate-tasks:module",
         "//930-ng-core-clients:module",
-        "//940-primary-version-manager:module",
         "//942-enforcement-sdk:module",
         "//950-delegate-tasks-beans:module",
         "//950-ng-project-n-orgs:module",

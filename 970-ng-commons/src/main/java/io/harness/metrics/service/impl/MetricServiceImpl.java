@@ -285,7 +285,7 @@ public class MetricServiceImpl implements MetricService {
       }
       recordTaggedStat(tagsMap, cvngMetric.getMeasure(), value);
     } catch (Exception ex) {
-      log.error("Exception occurred while registering a metric", ex);
+      log.debug("Exception occurred while registering a metric", ex);
     }
   }
 

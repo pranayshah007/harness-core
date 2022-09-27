@@ -15,15 +15,14 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
 import io.harness.mongo.MongoConfig;
-import io.harness.mongo.metrics.HarnessConnectionPoolListener;
 import io.harness.persistence.Store;
 import io.harness.reflection.HarnessReflections;
 
 import com.google.inject.Injector;
+import com.google.inject.Key;
+import com.google.inject.name.Names;
 import com.mongodb.MongoClient;
-import com.mongodb.MongoClientOptions;
 import com.mongodb.MongoClientURI;
-import com.mongodb.ReadPreference;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -56,30 +55,18 @@ public class SpringPersistenceConfig extends AbstractMongoConfiguration {
   protected final Injector injector;
   protected final List<Class<? extends Converter<?, ?>>> springConverters;
   protected final MongoConfig mongoConfig;
-  protected final HarnessConnectionPoolListener harnessConnectionPoolListener;
+  protected final MongoClient mongoClient;
 
   public SpringPersistenceConfig(Injector injector, List<Class<? extends Converter<?, ?>>> springConverters) {
     this.injector = injector;
     this.springConverters = springConverters;
+    this.mongoClient = injector.getInstance(Key.get(MongoClient.class, Names.named("primaryMongoClient")));
     this.mongoConfig = injector.getInstance(MongoConfig.class);
-    this.harnessConnectionPoolListener = injector.getInstance(HarnessConnectionPoolListener.class);
   }
 
   @Override
   public MongoClient mongoClient() {
-    MongoClientOptions options = MongoClientOptions.builder()
-                                     .retryWrites(true)
-                                     .connectTimeout(mongoConfig.getConnectTimeout())
-                                     .serverSelectionTimeout(mongoConfig.getServerSelectionTimeout())
-                                     .maxConnectionIdleTime(mongoConfig.getMaxConnectionIdleTime())
-                                     .connectionsPerHost(mongoConfig.getConnectionsPerHost())
-                                     .readPreference(ReadPreference.primary())
-                                     .addConnectionPoolListener(harnessConnectionPoolListener)
-                                     .applicationName("ng_manager_primary_client")
-                                     .description("ng_manager_primary_client")
-                                     .build();
-    MongoClientURI uri = new MongoClientURI(mongoConfig.getUri(), MongoClientOptions.builder(options));
-    return new MongoClient(uri);
+    return mongoClient;
   }
 
   @Override

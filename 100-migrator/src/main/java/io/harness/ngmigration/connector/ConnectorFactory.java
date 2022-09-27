@@ -16,6 +16,7 @@ import software.wings.beans.GcpConfig;
 import software.wings.beans.GitConfig;
 import software.wings.beans.KubernetesClusterConfig;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.settings.helm.HttpHelmRepoConfig;
 
 @OwnedBy(HarnessTeam.CDC)
 public class ConnectorFactory {
@@ -24,6 +25,7 @@ public class ConnectorFactory {
   private static final BaseConnector gitConnector = new GitConnectorImpl();
   private static final BaseConnector gcpConnector = new GcpConnectorImpl();
   private static final BaseConnector azureConnector = new AzureConnectorImpl();
+  private static final BaseConnector httpHelmConnector = new HttpHelmConnectorImpl();
   private static final BaseConnector unsupportedConnector = new UnsupportedConnectorImpl();
 
   public static BaseConnector getConnector(SettingAttribute settingAttribute) {
@@ -41,6 +43,9 @@ public class ConnectorFactory {
     }
     if (settingAttribute.getValue() instanceof AzureConfig) {
       return azureConnector;
+    }
+    if (settingAttribute.getValue() instanceof HttpHelmRepoConfig) {
+      return httpHelmConnector;
     }
     return unsupportedConnector;
   }

@@ -38,6 +38,7 @@ import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.beans.yaml.extended.CustomSecretVariable;
 import io.harness.beans.yaml.extended.CustomTextVariable;
 import io.harness.beans.yaml.extended.CustomVariable;
+import io.harness.beans.yaml.extended.infrastrucutre.DockerInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
@@ -47,6 +48,7 @@ import io.harness.beans.yaml.extended.infrastrucutre.VmInfraSpec;
 import io.harness.beans.yaml.extended.infrastrucutre.VmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml;
 import io.harness.beans.yaml.extended.runtime.CloudRuntime;
+import io.harness.beans.yaml.extended.runtime.DockerRuntime;
 import io.harness.beans.yaml.extended.runtime.Runtime;
 import io.harness.beans.yaml.extended.volumes.CIVolume;
 import io.harness.beans.yaml.extended.volumes.EmptyDirYaml;
@@ -100,6 +102,8 @@ public class CIContractsKryoRegistrar implements KryoRegistrar {
     kryo.register(HostedVmInfraYaml.class, 110112);
     kryo.register(Runtime.Type.class, 110113);
     kryo.register(CloudRuntime.class, 110114);
+    kryo.register(DockerRuntime.class, 110116);
+    kryo.register(DockerInfraYaml.class, 110117);
 
     kryo.register(CIVolume.class, 390005);
     kryo.register(EmptyDirYaml.class, 390006);

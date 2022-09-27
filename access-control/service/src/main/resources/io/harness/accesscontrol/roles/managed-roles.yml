@@ -70,6 +70,7 @@ roles:
         - ff_environment_view
         - ff_featureflag_toggle
         - core_template_access
+        - core_template_copy
         - core_template_delete
         - core_template_edit
         - core_template_view
@@ -239,6 +240,7 @@ roles:
         - core_resourcegroup_edit
         - core_resourcegroup_delete
         - core_template_access
+        - core_template_copy
         - core_template_delete
         - core_template_edit
         - core_template_view
@@ -439,6 +441,7 @@ roles:
         - core_dashboards_view
         - core_dashboards_edit
         - core_template_access
+        - core_template_copy
         - core_template_delete
         - core_template_edit
         - core_template_view
@@ -635,6 +638,7 @@ roles:
         - core_variable_view
         - core_template_view
         - core_template_access
+        - core_template_copy
         - core_setting_view
       allowedScopeLevels:
         - project

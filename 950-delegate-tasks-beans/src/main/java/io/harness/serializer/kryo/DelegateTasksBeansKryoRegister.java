@@ -93,8 +93,12 @@ import io.harness.delegate.beans.ccm.K8sClusterInfo;
 import io.harness.delegate.beans.ci.CIClusterType;
 import io.harness.delegate.beans.ci.CIInitializeTaskParams;
 import io.harness.delegate.beans.ci.CITaskExecutionResponse;
+import io.harness.delegate.beans.ci.DliteVmInfraInfo;
+import io.harness.delegate.beans.ci.DockerInfraInfo;
 import io.harness.delegate.beans.ci.ExecuteCommandTaskParams;
+import io.harness.delegate.beans.ci.InfraInfo;
 import io.harness.delegate.beans.ci.ShellScriptType;
+import io.harness.delegate.beans.ci.VmInfraInfo;
 import io.harness.delegate.beans.ci.k8s.CIContainerStatus;
 import io.harness.delegate.beans.ci.k8s.CIK8CleanupTaskParams;
 import io.harness.delegate.beans.ci.k8s.CIK8ExecuteStepTaskParams;
@@ -1182,6 +1186,10 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(ArtifactoryArtifactDelegateResponse.class, 19473);
     kryo.register(ArtifactoryGenericArtifactDelegateRequest.class, 19483);
     kryo.register(ArtifactoryGenericArtifactDelegateResponse.class, 19484);
+    kryo.register(InfraInfo.Type.class, 25001);
+    kryo.register(DockerInfraInfo.class, 25002);
+    kryo.register(VmInfraInfo.class, 25003);
+    kryo.register(DliteVmInfraInfo.class, 25004);
 
     kryo.register(DeploymentSlotData.class, 19457);
     kryo.register(ShellScriptTaskParametersNG.class, 19463);

@@ -28,7 +28,7 @@ type Junit struct {
 	Log   *zap.SugaredLogger
 }
 
-// getFiles resolves a regex and returns the result
+// getFiles resolves glob pattern for a given path and returns list of matching paths
 func getFiles(path string) ([]string, error) {
 	path, err := filesystem.ExpandTilde(path)
 	if err != nil {

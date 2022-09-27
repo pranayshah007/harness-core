@@ -14,10 +14,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.TaskGroup;
-import io.harness.delegate.beans.ci.docker.CIDockerCleanupStepRequest;
-import io.harness.delegate.beans.ci.docker.CIDockerExecuteStepRequest;
-import io.harness.delegate.beans.ci.docker.CIDockerInitializeTaskRequest;
-import io.harness.delegate.beans.ci.docker.DockerTaskExecutionResponse;
 import io.harness.delegate.beans.ci.vm.VmTaskExecutionResponse;
 import io.harness.delegate.beans.ci.vm.dlite.DliteVmCleanupTaskParams;
 import io.harness.delegate.beans.ci.vm.dlite.DliteVmExecuteStepTaskParams;
@@ -378,9 +374,6 @@ public enum TaskType {
   VALIDATE_CUSTOM_SECRET_MANAGER_SECRET_REFERENCE(TaskGroup.COMMAND_TASK_NG),
   FETCH_CUSTOM_SECRET(TaskGroup.COMMAND_TASK_NG),
   RESOLVE_CUSTOM_SM_CONFIG(TaskGroup.COMMAND_TASK_NG),
-  CI_DOCKER_INITIALIZE_TASK(TaskGroup.CI, CIDockerInitializeTaskRequest.class, DockerTaskExecutionResponse.class, true),
-  CI_DOCKER_EXECUTE_TASK(TaskGroup.CI, CIDockerExecuteStepRequest.class, DockerTaskExecutionResponse.class, true),
-  CI_DOCKER_CLEANUP_TASK(TaskGroup.CI, CIDockerCleanupStepRequest.class, DockerTaskExecutionResponse.class, true),
   NG_LDAP_TEST_USER_SETTINGS(TaskGroup.LDAP),
   NG_LDAP_TEST_GROUP_SETTINGS(TaskGroup.LDAP),
   DLITE_CI_VM_INITIALIZE_TASK(TaskGroup.CI, DliteVmInitializeTaskParams.class, VmTaskExecutionResponse.class, true),

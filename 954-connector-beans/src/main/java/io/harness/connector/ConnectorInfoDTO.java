@@ -13,7 +13,6 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.ConnectorConstants;
 import io.harness.NGCommonEntityConstants;
-import io.harness.annotation.RecasterFieldName;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.NGEntityName;
@@ -53,12 +52,10 @@ public class ConnectorInfoDTO {
   @Schema(description = NGCommonEntityConstants.TAGS) Map<String, String> tags;
 
   @NotNull
-  @RecasterFieldName(name = ConnectorConstants.CONNECTOR_TYPES)
   @JsonProperty(CONNECTOR_TYPES)
   @Schema(description = ConnectorConstants.CONNECTOR_TYPE)
   io.harness.delegate.beans.connector.ConnectorType connectorType;
 
-  @RecasterFieldName(name = "spec")
   @JsonProperty("spec")
   @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = CONNECTOR_TYPES, include = JsonTypeInfo.As.EXTERNAL_PROPERTY,
       visible = true)

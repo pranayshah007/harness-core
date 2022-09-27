@@ -65,12 +65,16 @@ public class CDNGPipelineExecutionStrategyHelper {
   private static String createWebsiteScriptPS;
   private static String createAppPoolScriptPS;
   private static String createVirtualDirectoryScriptPS;
+  private static String setupRuntimePathsScriptPS;
 
   // WinRm Canary
   private static String extendArtifactCanaryScriptPS;
   private static String createWebsiteCanaryScriptPS;
   private static String createAppPoolCanaryScriptPS;
   private static String createVirtualDirectoryCanaryScriptPS;
+
+  // WinRm Rolling
+  private static String setupRuntimePathsScriptRollingPS;
 
   static {
     try {
@@ -122,6 +126,12 @@ public class CDNGPipelineExecutionStrategyHelper {
           Objects.requireNonNull(
               classLoader.getResource("snippets/Pipelines/execution/ssh/script/port-listening-script-bash.yaml")),
           StandardCharsets.UTF_8);
+    }
+    if (isEmpty(setupRuntimePathsScriptPS)) {
+      setupRuntimePathsScriptPS =
+          Resources.toString(Objects.requireNonNull(classLoader.getResource(
+                                 "snippets/Pipelines/execution/ssh/script/setup-runtime-paths-script-powershell.yaml")),
+              StandardCharsets.UTF_8);
     }
 
     loadCanaryStaticScriptSnippets(classLoader);
@@ -267,6 +277,13 @@ public class CDNGPipelineExecutionStrategyHelper {
               "snippets/Pipelines/execution/ssh/script/create-virtual-directory-canary-script-powershell.yaml")),
           StandardCharsets.UTF_8);
     }
+
+    if (isEmpty(setupRuntimePathsScriptRollingPS)) {
+      setupRuntimePathsScriptRollingPS = Resources.toString(
+          Objects.requireNonNull(classLoader.getResource(
+              "snippets/Pipelines/execution/ssh/script/setup-runtime-paths-script-rolling-powershell.yaml")),
+          StandardCharsets.UTF_8);
+    }
   }
 
   private void validateStrategyParametersForCanary(StrategyParameters strategyParameters) {
@@ -333,6 +350,7 @@ public class CDNGPipelineExecutionStrategyHelper {
               .put("createAppPoolScriptPS", createAppPoolCanaryScriptPS)
               .put("createWebsiteScriptPS", createWebsiteCanaryScriptPS)
               .put("createVirtualDirectoryScriptPS", createVirtualDirectoryCanaryScriptPS)
+              .put("setupRuntimePathsScriptPS", setupRuntimePathsScriptPS)
               .build();
       try {
         ExecutionStrategyTemplates.getTemplate(SSH_WINRM_CANARY_SH_FTL).process(templateParams, stringWriter);
@@ -397,6 +415,7 @@ public class CDNGPipelineExecutionStrategyHelper {
               .put("createAppPoolScriptPS", createAppPoolCanaryScriptPS)
               .put("createWebsiteScriptPS", createWebsiteCanaryScriptPS)
               .put("createVirtualDirectoryScriptPS", createVirtualDirectoryCanaryScriptPS)
+              .put("setupRuntimePathsScriptRollingPS", setupRuntimePathsScriptRollingPS)
               .build();
       try {
         ExecutionStrategyTemplates.getTemplate(SSH_WINRM_ROLLING_SH_FTL).process(templateParams, stringWriter);
@@ -434,6 +453,7 @@ public class CDNGPipelineExecutionStrategyHelper {
                                                .put("createAppPoolScriptPS", createAppPoolScriptPS)
                                                .put("createWebsiteScriptPS", createWebsiteScriptPS)
                                                .put("createVirtualDirectoryScriptPS", createVirtualDirectoryScriptPS)
+                                               .put("setupRuntimePathsScriptPS", setupRuntimePathsScriptPS)
                                                .build();
       try {
         ExecutionStrategyTemplates.getTemplate(SSH_WINRM_BASIC_SH_FTL).process(templateParams, stringWriter);

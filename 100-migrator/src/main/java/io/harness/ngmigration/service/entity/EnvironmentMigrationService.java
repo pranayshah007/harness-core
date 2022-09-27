@@ -19,8 +19,11 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.environment.beans.EnvironmentType;
+import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
+import io.harness.ng.core.environment.yaml.NGEnvironmentInfoConfig;
 import io.harness.ngmigration.beans.BaseEntityInput;
 import io.harness.ngmigration.beans.BaseInputDefinition;
+import io.harness.ngmigration.beans.BaseProvidedInput;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.MigratorInputType;
 import io.harness.ngmigration.beans.NGYamlFile;
@@ -53,6 +56,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)
@@ -134,9 +138,67 @@ public class EnvironmentMigrationService extends NgMigrationService {
 
   @Override
   public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NgEntityDetail> migratedEntities,
+      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities,
       NgEntityDetail ngEntityDetail) {
-    return new ArrayList<>();
+    Environment environment = (Environment) entities.get(entityId).getEntity();
+    String name = environment.getName();
+    String identifier = MigratorUtility.generateIdentifier(name);
+    String projectIdentifier = null;
+    String orgIdentifier = null;
+    Scope scope =
+        MigratorUtility.getDefaultScope(inputDTO.getDefaults(), NGMigrationEntityType.ENVIRONMENT, Scope.PROJECT);
+    if (inputDTO.getInputs() != null && inputDTO.getInputs().containsKey(entityId)) {
+      // TODO: @deepakputhraya We should handle if the connector needs to be reused.
+      BaseProvidedInput input = inputDTO.getInputs().get(entityId);
+      identifier = StringUtils.isNotBlank(input.getIdentifier()) ? input.getIdentifier() : identifier;
+      name = StringUtils.isNotBlank(input.getIdentifier()) ? input.getName() : name;
+      if (input.getScope() != null) {
+        scope = input.getScope();
+      }
+    }
+    if (Scope.PROJECT.equals(scope)) {
+      projectIdentifier = inputDTO.getProjectIdentifier();
+      orgIdentifier = inputDTO.getOrgIdentifier();
+    }
+    if (Scope.ORG.equals(scope)) {
+      orgIdentifier = inputDTO.getOrgIdentifier();
+    }
+
+    List<NGYamlFile> files = new ArrayList<>();
+    NGYamlFile ngYamlFile = NGYamlFile.builder()
+                                .filename(String.format("environment/%s/%s.yaml", environment.getAppId(), name))
+                                .yaml(NGEnvironmentConfig.builder()
+                                          .ngEnvironmentInfoConfig(NGEnvironmentInfoConfig.builder()
+                                                                       .name(name)
+                                                                       .identifier(identifier)
+                                                                       .description(environment.getDescription())
+                                                                       .tags(null)
+                                                                       .orgIdentifier(orgIdentifier)
+                                                                       .projectIdentifier(projectIdentifier)
+                                                                       .type(io.harness.beans.EnvironmentType.PROD
+                                                                                   == environment.getEnvironmentType()
+                                                                               ? Production
+                                                                               : PreProduction)
+                                                                       .build())
+                                          .build())
+                                .ngEntityDetail(NgEntityDetail.builder()
+                                                    .identifier(identifier)
+                                                    .orgIdentifier(inputDTO.getOrgIdentifier())
+                                                    .projectIdentifier(inputDTO.getProjectIdentifier())
+                                                    .build())
+                                .type(NGMigrationEntityType.ENVIRONMENT)
+                                .cgBasicInfo(CgBasicInfo.builder()
+                                                 .accountId(environment.getAccountId())
+                                                 .appId(environment.getAppId())
+                                                 .id(environment.getUuid())
+                                                 .type(NGMigrationEntityType.ENVIRONMENT)
+                                                 .build())
+                                .build();
+    files.add(ngYamlFile);
+
+    migratedEntities.putIfAbsent(entityId, ngYamlFile);
+
+    return files;
   }
 
   @Override
@@ -146,7 +208,7 @@ public class EnvironmentMigrationService extends NgMigrationService {
 
   @Override
   protected boolean isNGEntityExists() {
-    return false;
+    return true;
   }
 
   @Override

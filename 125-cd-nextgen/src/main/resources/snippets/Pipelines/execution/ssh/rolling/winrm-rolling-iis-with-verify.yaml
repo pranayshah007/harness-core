@@ -55,14 +55,24 @@ spec:
                             value: "*"
                         outputVariables: []
                         commandUnits:
-                          - identifier: Copy_Artifact
-                            name: "Copy Artifact"
-                            type: Copy
+                          - identifier: Setup_Runtime_Paths
+                            name: "Setup Runtime Paths"
+                            type: Script
+                            spec:
+                              shell: PowerShell
+                              source:
+                                type: Inline
+                                spec:
+                                  script: |-
+                                    <+setup_runtime_paths_script_rolling_powershell>
+                          - identifier: Download_Artifact
+                            name: "Download Artifact"
+                            type: DownloadArtifact
                             spec:
                               sourceType: Artifact
                               destinationPath: "%USERPROFILE%\\<+service.name>\\<+env.name>"
-                          - identifier: Expend_Artifact
-                            name: "Expend Artifact"
+                          - identifier: Expand_Artifact
+                            name: "Expand Artifact"
                             type: Script
                             spec:
                               shell: PowerShell
@@ -158,14 +168,24 @@ spec:
                             value: "*"
                         outputVariables: []
                         commandUnits:
-                          - identifier: Copy_Artifact_Rollback
-                            name: "Copy Artifact Rollback"
-                            type: Copy
+                          - identifier: Setup_Runtime_Paths_Rollback
+                            name: "Setup Runtime Paths"
+                            type: Script
+                            spec:
+                              shell: PowerShell
+                              source:
+                                type: Inline
+                                spec:
+                                  script: |-
+                                    <+setup_runtime_paths_script_rolling_powershell>
+                          - identifier: Download_Artifact_Rollback
+                            name: "Download Artifact Rollback"
+                            type: DownloadArtifact
                             spec:
                               sourceType: Artifact
                               destinationPath: "%USERPROFILE%\\<+service.name>\\<+env.name>"
-                          - identifier: Expend_Artifact_Rollback
-                            name: "Expend Artifact Rollback"
+                          - identifier: Expand_Artifact_Rollback
+                            name: "Expand Artifact Rollback"
                             type: Script
                             spec:
                               shell: PowerShell
