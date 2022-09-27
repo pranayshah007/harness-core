@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: permissionsConfiguration
-version: 36
+version: 37
 permissions:
   - identifier: core_project_delete
     name: Delete Project
@@ -602,6 +602,14 @@ permissions:
       - organization
   - identifier: core_template_view
     name: View Templates
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: core_template_copy
+    name: Copy Templates
     status: ACTIVE
     includeInAllRoles: false
     allowedScopeLevels:
