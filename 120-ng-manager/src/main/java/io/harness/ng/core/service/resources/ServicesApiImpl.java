@@ -85,7 +85,10 @@ public class ServicesApiImpl implements ServicesApi {
         serviceEntity.getOrgIdentifier(), serviceEntity.getProjectIdentifier(), serviceEntity.getAccountId());
     ServiceEntity createdService = serviceEntityService.create(serviceEntity);
     ServiceResponse serviceResponse = serviceResourceApiUtils.mapToServiceResponse(createdService);
-    return Response.status(201).entity(serviceResponse).tag(createdService.getVersion().toString()).build();
+    return Response.status(Response.Status.CREATED)
+        .entity(serviceResponse)
+        .tag(createdService.getVersion().toString())
+        .build();
   }
 
   @NGAccessControlCheck(resourceType = NGResourceType.SERVICE, permission = "core_service_delete")
