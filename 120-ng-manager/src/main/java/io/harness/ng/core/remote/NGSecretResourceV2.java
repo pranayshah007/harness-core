@@ -601,7 +601,7 @@ public class NGSecretResourceV2 {
   }
 
   @GET
-  @Path("decrypt-secret/{identifier}")
+  @Path("{identifier}/decrypt")
   @InternalApi
   @ApiOperation(hidden = true, value = "Get Decrypted Secret", nickname = "getDecryptedSecret")
   @Operation(operationId = "getDecryptedSecret",
