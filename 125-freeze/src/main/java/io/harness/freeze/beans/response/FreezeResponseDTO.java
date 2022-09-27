@@ -5,21 +5,24 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.freeze.beans;
+package io.harness.freeze.beans.response;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.EmbeddedUser;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.EntityName;
 import io.harness.data.validator.Trimmed;
 import io.harness.encryption.Scope;
+import io.harness.freeze.beans.FreezeStatus;
+import io.harness.freeze.beans.FreezeType;
+import io.harness.freeze.beans.FreezeWindow;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.annotations.ApiModel;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.List;
 import java.util.Map;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
@@ -37,7 +40,7 @@ import lombok.With;
 @ApiModel("FreezeResponse")
 @Schema(name = "FreezeResponse", description = "This contains details of the Freeze Response")
 @EqualsAndHashCode
-public class FreezeResponseDTO implements FreezeResponse {
+public class FreezeResponseDTO {
   @NotEmpty String accountId;
 
   FreezeType type;
@@ -50,6 +53,8 @@ public class FreezeResponseDTO implements FreezeResponse {
   @With @Trimmed String orgIdentifier;
   @With @Trimmed String projectIdentifier;
 
+  List<FreezeWindow> freezeWindows;
+
   @With @NotEmpty @EntityIdentifier String identifier;
   @NotEmpty String yaml;
 
@@ -57,7 +62,4 @@ public class FreezeResponseDTO implements FreezeResponse {
   long lastUpdatedAt;
 
   Scope freezeScope;
-
-  private EmbeddedUser createdBy;
-  private EmbeddedUser lastUpdatedBy;
 }

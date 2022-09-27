@@ -7,8 +7,10 @@
 
 package io.harness.freeze.service;
 
-import io.harness.freeze.beans.FreezeResponse;
 import io.harness.freeze.beans.FreezeStatus;
+import io.harness.freeze.beans.response.FreezeResponseDTO;
+import io.harness.freeze.beans.response.FreezeResponseWrapperDTO;
+import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
 
 import java.util.List;
 import org.springframework.data.domain.Page;
@@ -16,19 +18,20 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 
 public interface FreezeCRUDService {
-  FreezeResponse createFreezeConfig(String deploymentFreezeYaml, String accountId, String orgId, String projectId);
+  FreezeResponseDTO createFreezeConfig(String deploymentFreezeYaml, String accountId, String orgId, String projectId);
 
-  FreezeResponse updateFreezeConfig(
+  FreezeResponseDTO updateFreezeConfig(
       String deploymentFreezeYaml, String accountId, String orgId, String projectId, String freezeIdentifier);
 
-  FreezeResponse deleteFreezeConfig(String freezeId, String accountId, String orgId, String projectId);
+  void deleteFreezeConfig(String freezeId, String accountId, String orgId, String projectId);
 
-  FreezeResponse getFreezeConfig(String freezeIdentifier, String accountId, String orgId, String projectId);
+  FreezeResponseDTO getFreezeConfig(String freezeIdentifier, String accountId, String orgId, String projectId);
 
-  Page<FreezeResponse> list(Criteria criteria, Pageable pageRequest);
+  Page<FreezeSummaryResponseDTO> list(Criteria criteria, Pageable pageRequest);
 
-  FreezeResponse deleteFreezeConfigs(String freezeIdentifiers, String accountId, String orgId, String projectId);
+  FreezeResponseWrapperDTO deleteFreezeConfigs(
+      List<String> freezeIdentifiers, String accountId, String orgId, String projectId);
 
-  FreezeResponse updateActiveStatus(
+  FreezeResponseWrapperDTO updateActiveStatus(
       FreezeStatus freezeStatus, String accountId, String orgId, String projectId, List<String> freezeIdentifiers);
 }

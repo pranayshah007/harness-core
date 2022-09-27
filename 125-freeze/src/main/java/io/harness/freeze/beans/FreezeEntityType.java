@@ -7,11 +7,12 @@
 
 package io.harness.freeze.beans;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public enum FreezeEntityType {
-  SERVICE,
-  PIPELINE,
-  PROJECT,
-  ORG,
-  ENVIRONMENT,
-  ENV_TYPE;
+  @JsonProperty("Service") SERVICE,
+  @JsonProperty("Project") PROJECT,
+  @JsonProperty("Org") ORG,
+  @JsonProperty("Environment") ENVIRONMENT,
+  @JsonProperty("EnvType") ENV_TYPE;
 }

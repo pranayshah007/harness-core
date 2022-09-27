@@ -645,7 +645,9 @@ public enum ErrorCode {
 
   AWS_ECS_CLIENT_ERROR,
 
-  AWS_STS_ERROR;
+  AWS_STS_ERROR,
+
+  FREEZE_EXCEPTION;
 
   private Status status = BAD_REQUEST;
   private String description;

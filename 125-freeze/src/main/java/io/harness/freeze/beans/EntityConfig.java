@@ -9,17 +9,14 @@ package io.harness.freeze.beans;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
+import javax.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
 public class EntityConfig {
-  @JsonProperty("type") FreezeEntityType freezeEntityType;
+  @NotNull @JsonProperty("type") FreezeEntityType freezeEntityType;
 
   @JsonProperty("entityRefs") List<String> entityReference;
 
-  List<String> tags;
-
-  String expression;
-
-  FilterType filterType;
+  @NotNull FilterType filterType;
 }
