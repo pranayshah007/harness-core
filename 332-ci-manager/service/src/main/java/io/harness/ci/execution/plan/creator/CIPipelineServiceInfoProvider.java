@@ -88,11 +88,7 @@ import java.util.Set;
 @Singleton
 @OwnedBy(HarnessTeam.CI)
 public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvider {
-  private static final String TEST = "Test";
-  private static final String PUBLISH_ARTIFACTS = "PublishArtifacts";
   private static final String LITE_ENGINE_TASK = "liteEngineTask";
-  private static final String SAVE_CACHE = "SaveCache";
-  private static final String CLEANUP = "Cleanup";
 
   @Inject InjectorUtils injectorUtils;
 
@@ -166,8 +162,7 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     variableCreators.add(new GitCloneStepVariableCreator());
     variableCreators.add(new StrategyVariableCreator());
     variableCreators.add(new EmptyAnyVariableCreator(Set.of(YAMLFieldNameConstants.PARALLEL, STEPS)));
-    variableCreators.add(
-        new EmptyVariableCreator(STEP, Set.of(CLEANUP, TEST, PUBLISH_ARTIFACTS, LITE_ENGINE_TASK, SAVE_CACHE)));
+    variableCreators.add(new EmptyVariableCreator(STEP, Set.of(LITE_ENGINE_TASK)));
 
     return variableCreators;
   }
