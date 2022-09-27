@@ -11,6 +11,8 @@ import static io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO.b
 import static io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType.INHERIT_FROM_DELEGATE;
 import static io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType.MANUAL_CREDENTIALS;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorCredentialDTO;
@@ -29,6 +31,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+@OwnedBy(HarnessTeam.CDP)
 public class GcpConnectorImpl implements BaseConnector {
   @Override
   public String getSecretId(SettingAttribute settingAttribute) {
@@ -53,13 +56,13 @@ public class GcpConnectorImpl implements BaseConnector {
     if (clusterConfig.isUseDelegateSelectors()) {
       credentialDTO = GcpConnectorCredentialDTO.builder().gcpCredentialType(INHERIT_FROM_DELEGATE).build();
     } else {
-      SecretRefData secretRefData = new SecretRefData(MigratorUtility.getIdentifierWithScope(
-          migratedEntities
-              .get(CgEntityId.builder()
-                       .type(NGMigrationEntityType.SECRET)
-                       .id(((GcpConfig) settingAttribute.getValue()).getEncryptedServiceAccountKeyFileContent())
-                       .build())
-              .getNgEntityDetail()));
+      SecretRefData secretRefData =
+          new SecretRefData(MigratorUtility.getIdentifierWithScope(migratedEntities
+                                                                       .get(CgEntityId.builder()
+                                                                                .type(NGMigrationEntityType.SECRET)
+                                                                                .id(this.getSecretId(settingAttribute))
+                                                                                .build())
+                                                                       .getNgEntityDetail()));
       credentialDTO = GcpConnectorCredentialDTO.builder()
                           .gcpCredentialType(MANUAL_CREDENTIALS)
                           .config(GcpManualDetailsDTO.builder().secretKeyRef(secretRefData).build())

@@ -9,6 +9,8 @@ package io.harness.ngmigration.connector;
 
 import static io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO.builder;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.azureconnector.AzureAuthDTO;
@@ -29,6 +31,7 @@ import software.wings.ngmigration.NGMigrationEntityType;
 import java.util.Map;
 import java.util.Set;
 
+@OwnedBy(HarnessTeam.CDP)
 public class AzureConnectorImpl implements BaseConnector {
   @Override
   public String getSecretId(SettingAttribute settingAttribute) {
