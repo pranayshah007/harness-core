@@ -75,24 +75,33 @@ public class CGRestUtils {
   }
 
   private static <T> T handleResponse(Response<RestResponse<T>> response, String defaultErrorMessage) {
-    if (response.isSuccessful()) {
-      return response.body().getResource();
-    } else {
-      String errorMessage = "";
-      try {
-        RestResponse<T> restResponse =
-            JsonUtils.asObject(response.errorBody().string(), new TypeReference<RestResponse<T>>() {});
-        if (restResponse != null && isNotEmpty(restResponse.getResponseMessages())) {
-          List<ResponseMessage> responseMessageList = restResponse.getResponseMessages();
-          errorMessage = responseMessageList.get(0).getMessage();
-          if (!StringUtils.isEmpty(errorMessage) && responseMessageList.get(0).getCode() == ErrorCode.INVALID_REQUEST) {
-            errorMessage = errorMessage.substring(17);
+    try {
+      if (response.isSuccessful()) {
+        return response.body().getResource();
+      } else {
+        String errorMessage = "";
+        try {
+          RestResponse<T> restResponse =
+              JsonUtils.asObject(response.errorBody().string(), new TypeReference<RestResponse<T>>() {});
+          if (restResponse != null && isNotEmpty(restResponse.getResponseMessages())) {
+            List<ResponseMessage> responseMessageList = restResponse.getResponseMessages();
+            errorMessage = responseMessageList.get(0).getMessage();
+            if (!StringUtils.isEmpty(errorMessage)
+                && responseMessageList.get(0).getCode() == ErrorCode.INVALID_REQUEST) {
+              errorMessage = errorMessage.substring(17);
+            }
           }
+        } catch (Exception e) {
+          log.debug("Error while converting error received from upstream systems", e);
         }
-      } catch (Exception e) {
-        log.debug("Error while converting error received from upstream systems", e);
+        throw new InvalidRequestException(StringUtils.isEmpty(errorMessage) ? defaultErrorMessage : errorMessage);
       }
-      throw new InvalidRequestException(StringUtils.isEmpty(errorMessage) ? defaultErrorMessage : errorMessage);
+    } finally {
+      if (response.isSuccessful() && response.raw().body() != null) {
+        response.raw().body().close();
+      } else if (response.errorBody() != null) {
+        response.errorBody().close();
+      }
     }
   }
 
