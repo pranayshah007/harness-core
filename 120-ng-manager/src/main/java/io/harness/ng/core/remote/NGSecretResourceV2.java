@@ -26,6 +26,7 @@ import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
+import io.harness.beans.DecryptedSecretValue;
 import io.harness.connector.ConnectorCategory;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.encryption.Scope;
@@ -597,6 +598,28 @@ public class NGSecretResourceV2 {
     }
     return ResponseDTO.newResponse(encryptedDataService.getEncryptionDetails(
         ngAccessWithEncryptionConsumer.getNgAccess(), ngAccessWithEncryptionConsumer.getDecryptableEntity()));
+  }
+
+  @GET
+  @Path("decrypt-secret/{identifier}")
+  @ApiOperation(hidden = true, value = "Get Decrypted Secret", nickname = "getDecryptedSecret")
+  @Operation(operationId = "getDecryptedSecret",
+      summary = "Gets the decrypted secret whose identifier and scope is passed in the request",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns decrypted secret")
+      })
+  public ResponseDTO<DecryptedSecretValue>
+  getDecryptedSecretValue(@Parameter(description = "Secret Identifier") @NotNull @PathParam(
+                              NGCommonEntityConstants.IDENTIFIER_KEY) @EntityIdentifier String identifier,
+      @Parameter(description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
+    return ResponseDTO.newResponse(
+        ngEncryptorService.decryptSecret(accountIdentifier, orgIdentifier, projectIdentifier, identifier));
   }
 
   private String getOrgIdentifier(String parentOrgIdentifier, @NotNull Scope scope) {
