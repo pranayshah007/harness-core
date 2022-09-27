@@ -108,11 +108,15 @@ public class GcrArtifactResource {
         gcrConnectorIdentifier = gcrArtifactConfig.getConnectorRef().getValue();
       }
     }
+
     // todo(hinger): resolve other expressions here?
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(gcrConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     imagePath = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
         pipelineIdentifier, runtimeInputYaml, imagePath, fqnPath, gitEntityBasicInfo, serviceRef);
+    if (EmptyPredicate.isEmpty(imagePath)) {
+      throw new InvalidRequestException("imagePath cannot be null");
+    }
     GcrResponseDTO buildDetails =
         gcrResourceService.getBuildDetails(connectorRef, imagePath, registryHostname, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(buildDetails);
