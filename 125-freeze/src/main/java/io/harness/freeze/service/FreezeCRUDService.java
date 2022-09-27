@@ -33,7 +33,7 @@ public interface FreezeCRUDService {
 
   Page<FreezeResponse> list(Criteria criteria, Pageable pageRequest);
 
-  FreezeResponse deleteFreezeConfigs(String freezeIdentifiers, String accountId, String orgId, String projectId);
+  FreezeResponse deleteFreezeConfigs(List<String> freezeIdentifiers, String accountId, String orgId, String projectId);
 
   FreezeResponse updateActiveStatus(
       FreezeStatus freezeStatus, String accountId, String orgId, String projectId, List<String> freezeIdentifiers);

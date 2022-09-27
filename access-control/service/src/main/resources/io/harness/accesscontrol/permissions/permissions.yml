@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: permissionsConfiguration
-version: 36
+version: 37
 permissions:
   - identifier: core_project_delete
     name: Delete Project
@@ -1215,37 +1215,37 @@ permissions:
       - account
   - identifier: ccm_overview_view
     name: View CCM Overview page
-    status: ACTIVE
+    status: EXPERIMENTAL
     includedInAllRoles: false
     allowedScopeLevels:
       - account
-  - identifier: core_deploymentfreeze_create
-    name: Create a deployment freeze
-    status: ACTIVE
+  - identifier: core_deploymentfreeze_manage
+    name: Manage deployment freeze
+    status: EXPERIMENTAL
     includedInAllRoles: false
     allowedScopeLevels:
       - account
       - organization
       - project
   - identifier: core_deploymentfreeze_view
-      name: View deployment freeze
-      status: ACTIVE
-      includedInAllRoles: false
-      allowedScopeLevels:
-        - account
-        - organization
-        - project
+    name: View deployment freeze
+    status: EXPERIMENTAL
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
   - identifier: core_deploymentfreeze_access
-      name: Access deployment freeze
-      status: ACTIVE
-      includedInAllRoles: false
-      allowedScopeLevels:
-        - account
-        - organization
-        - project
+    name: Access deployment freeze
+    status: EXPERIMENTAL
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
   - identifier: core_deploymentfreeze_override
     name: Override a deployment freeze
-    status: ACTIVE
+    status: EXPERIMENTAL
     includedInAllRoles: false
     allowedScopeLevels:
       - account
@@ -1253,7 +1253,7 @@ permissions:
       - project
   - identifier: core_deploymentfreeze_global
     name: Global deployment freeze
-    status: ACTIVE
+    status: EXPERIMENTAL
     includedInAllRoles: false
     allowedScopeLevels:
       - account

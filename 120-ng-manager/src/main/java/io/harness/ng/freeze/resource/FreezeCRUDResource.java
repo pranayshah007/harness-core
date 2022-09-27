@@ -18,6 +18,9 @@ import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ProjectIdentifier;
 import io.harness.accesscontrol.ResourceIdentifier;
+import io.harness.accesscontrol.acl.api.Resource;
+import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.freeze.beans.FreezeResponse;
 import io.harness.freeze.beans.FreezeStatus;
 import io.harness.freeze.beans.FreezeType;
@@ -43,6 +46,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import javax.validation.constraints.NotNull;
@@ -100,12 +104,13 @@ import org.springframework.data.mongodb.core.query.Criteria;
 @Slf4j
 public class FreezeCRUDResource {
   private final FreezeCRUDService freezeCRUDService;
-  // private static final String DEPLOYMENTFREEZE = "DEPLOYMENTFREEZE";
+  private final AccessControlClient accessControlClient;
+  private static final String DEPLOYMENTFREEZE = "DEPLOYMENTFREEZE";
 
   @POST
   @ApiOperation(value = "Creates a Freeze", nickname = "createFreeze")
-  //@NGAccessControlCheck(resourceType = DEPLOYMENTFREEZE, permission =
-  //PermissionTypes.DEPLOYMENT_FREEZE_CREATE_PERMISSION)
+  @NGAccessControlCheck(
+      resourceType = DEPLOYMENTFREEZE, permission = PermissionTypes.DEPLOYMENT_FREEZE_MANAGE_PERMISSION)
   @Operation(operationId = "createFreeze", summary = "Create a Freeze",
       responses =
       {
@@ -127,8 +132,8 @@ public class FreezeCRUDResource {
   @POST
   @Path("/manageGlobalFreeze")
   @ApiOperation(value = "Manage Global Freeze", nickname = "GlobalFreeze")
-  //@NGAccessControlCheck(resourceType = DEPLOYMENTFREEZE, permission =
-  //PermissionTypes.DEPLOYMENT_FREEZE_GLOBAL_PERMISSION)
+  @NGAccessControlCheck(
+      resourceType = DEPLOYMENTFREEZE, permission = PermissionTypes.DEPLOYMENT_FREEZE_GLOBAL_PERMISSION)
   @Operation(operationId = "createGlobalFreeze", summary = "Create Global Freeze",
       responses =
       {
@@ -150,6 +155,8 @@ public class FreezeCRUDResource {
   @PUT
   @Path("/{freezeIdentifier}")
   @ApiOperation(value = "Updates a Freeze", nickname = "updateFreeze")
+  @NGAccessControlCheck(
+      resourceType = DEPLOYMENTFREEZE, permission = PermissionTypes.DEPLOYMENT_FREEZE_MANAGE_PERMISSION)
   @Operation(operationId = "updateFreeze", summary = "Updates a Freeze",
       responses =
       {
@@ -166,7 +173,7 @@ public class FreezeCRUDResource {
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @Parameter(description = "Freeze Identifier.") @PathParam("freezeIdentifier")
-      @ProjectIdentifier String freezeIdentifier, @Parameter(description = "Freeze YAML") @NotNull String freezeYaml) {
+      @ResourceIdentifier String freezeIdentifier, @Parameter(description = "Freeze YAML") @NotNull String freezeYaml) {
     return ResponseDTO.newResponse(
         freezeCRUDService.updateFreezeConfig(freezeYaml, accountId, orgId, projectId, freezeIdentifier));
   }
@@ -190,6 +197,10 @@ public class FreezeCRUDResource {
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @Parameter(description = "Comma seperated List of Freeze Identifiers") List<String> freezeIdentifiers,
       @Parameter(description = "Freeze YAML") @NotNull @QueryParam("status") FreezeStatus freezeStatus) {
+    for (String identifier : freezeIdentifiers) {
+      accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
+          Resource.of(DEPLOYMENTFREEZE, identifier), PermissionTypes.DEPLOYMENT_FREEZE_ACCESS_PERMISSION);
+    }
     return ResponseDTO.newResponse(
         freezeCRUDService.updateActiveStatus(freezeStatus, accountId, orgId, projectId, freezeIdentifiers));
   }
@@ -197,6 +208,8 @@ public class FreezeCRUDResource {
   @DELETE
   @Path("/{freezeIdentifier}")
   @ApiOperation(value = "Delete a Freeze", nickname = "deleteFreeze")
+  @NGAccessControlCheck(
+      resourceType = DEPLOYMENTFREEZE, permission = PermissionTypes.DEPLOYMENT_FREEZE_MANAGE_PERMISSION)
   @Operation(operationId = "deleteFreeze", summary = "Delete a Freeze",
       responses =
       {
@@ -204,7 +217,7 @@ public class FreezeCRUDResource {
         ApiResponse(responseCode = "default", description = "Returns the created Freeze Config")
       })
   @Hidden
-  public ResponseDTO<String>
+  public ResponseDTO<FreezeResponse>
   delete(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
       @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
@@ -212,9 +225,8 @@ public class FreezeCRUDResource {
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @Parameter(description = "Freeze Identifier.") @PathParam(
-          "freezeIdentifier") @ProjectIdentifier String freezeIdentifier) {
-    freezeCRUDService.deleteFreezeConfig(freezeIdentifier, accountId, orgId, projectId);
-    return ResponseDTO.newResponse("Freeze Entity deleted");
+          "freezeIdentifier") @ResourceIdentifier String freezeIdentifier) {
+    return ResponseDTO.newResponse(freezeCRUDService.deleteFreezeConfig(freezeIdentifier, accountId, orgId, projectId));
   }
 
   @POST
@@ -235,13 +247,20 @@ public class FreezeCRUDResource {
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @Parameter(description = "Comma seperated List of Freeze Identifiers") String freezeIdentifiers) {
-    return ResponseDTO.newResponse(
-        freezeCRUDService.deleteFreezeConfigs(freezeIdentifiers, accountId, orgId, projectId));
+    List<String> identifiers = Arrays.asList(freezeIdentifiers.split(","));
+
+    for (String identifier : identifiers) {
+      accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
+          Resource.of("DEPLOYMENTFREEZE", identifier), PermissionTypes.DEPLOYMENT_FREEZE_MANAGE_PERMISSION);
+    }
+
+    return ResponseDTO.newResponse(freezeCRUDService.deleteFreezeConfigs(identifiers, accountId, orgId, projectId));
   }
 
   @GET
   @Path("{freezeIdentifier}")
   @ApiOperation(value = "Get a Freeze", nickname = "getFreeze")
+  @NGAccessControlCheck(resourceType = DEPLOYMENTFREEZE, permission = PermissionTypes.DEPLOYMENT_FREEZE_VIEW_PERMISSION)
   @Operation(operationId = "getFreeze", summary = "Get a Freeze",
       responses =
       {
@@ -257,7 +276,7 @@ public class FreezeCRUDResource {
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @Parameter(description = "Freeze Identifier.") @PathParam(
-          "freezeIdentifier") @ProjectIdentifier String freezeIdentifier) {
+          "freezeIdentifier") @ResourceIdentifier String freezeIdentifier) {
     return ResponseDTO.newResponse(freezeCRUDService.getFreezeConfig(freezeIdentifier, accountId, orgId, projectId));
   }
 
@@ -299,7 +318,7 @@ public class FreezeCRUDResource {
       @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.PROJECT_KEY) @ResourceIdentifier String projectIdentifier,
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
       @Parameter(description = "The word to be searched and included in the list response") @QueryParam(
           NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
       @Parameter(description = "List of freezeIdentifiers") @QueryParam(
@@ -309,6 +328,11 @@ public class FreezeCRUDResource {
               "Specifies the sorting criteria of the list. Like sorting based on the last updated entity, alphabetical sorting in an ascending or descending order")
       @QueryParam("sort") List<String> sort,
       @QueryParam("type") FreezeType type, @QueryParam("status") FreezeStatus freezeStatus) {
+    for (String identifier : freezeIdentifiers) {
+      accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
+          Resource.of(DEPLOYMENTFREEZE, identifier), PermissionTypes.DEPLOYMENT_FREEZE_VIEW_PERMISSION);
+    }
+
     Criteria criteria = FreezeFilterHelper.createCriteriaForGetList(
         accountId, orgIdentifier, projectIdentifier, searchTerm, FreezeType.MANUAL, freezeStatus);
     Pageable pageRequest;

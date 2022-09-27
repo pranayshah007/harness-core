@@ -7,7 +7,6 @@
 
 package io.harness.freeze.service.impl;
 
-import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.freeze.beans.FreezeErrorResponseDTO;
 import io.harness.freeze.beans.FreezeResponse;
 import io.harness.freeze.beans.FreezeResponseDTO;
@@ -34,7 +33,6 @@ import org.springframework.data.mongodb.core.query.Criteria;
 @Slf4j
 public class FreezeCRUDServiceImpl implements FreezeCRUDService {
   private final FreezeConfigRepository freezeConfigRepository;
-  private final AccessControlClient accessControlClient;
 
   static final String FREEZE_CONFIG_DOES_NOT_EXIST_ERROR_TEMPLATE = "Freeze Config for id: %s doesn't exist";
   static final String FREEZE_CONFIG_ALREADY_EXISTS_ERROR_TEMPLATE =
@@ -47,9 +45,8 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
   FreezeEntityType.SERVICE, NGResourceType.SERVICE);
    */
   @Inject
-  public FreezeCRUDServiceImpl(FreezeConfigRepository freezeConfigRepository, AccessControlClient accessControlClient) {
+  public FreezeCRUDServiceImpl(FreezeConfigRepository freezeConfigRepository) {
     this.freezeConfigRepository = freezeConfigRepository;
-    this.accessControlClient = accessControlClient;
   }
 
   @Override
@@ -171,8 +168,7 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
 
   @Override
   public FreezeResponse deleteFreezeConfigs(
-      String freezeIdentifiersString, String accountId, String orgId, String projectId) {
-    String[] freezeIdentifiers = freezeIdentifiersString.split(",");
+      List<String> freezeIdentifiers, String accountId, String orgId, String projectId) {
     int successful = 0;
     int failed = 0;
     List<FreezeErrorResponseDTO> freezeErrorResponseDTOList = new LinkedList<>();
