@@ -89,12 +89,7 @@ public class SpringPersistenceConfig extends AbstractMongoConfiguration {
 
   @Override
   protected Set<Class<?>> getInitialEntitySet() {
-    Set<Class<?>> classes =
-        HarnessReflections.get()
-            .getTypesAnnotatedWith(TypeAlias.class)
-            .stream()
-            .filter(aClass -> !aClass.getName().equals(aClass.getAnnotation(TypeAlias.class).value()))
-            .collect(Collectors.toSet());
+    Set<Class<?>> classes = HarnessReflections.get().getTypesAnnotatedWith(TypeAlias.class);
     Store store = null;
     if (Objects.nonNull(mongoConfig.getAliasDBName())) {
       store = Store.builder().name(mongoConfig.getAliasDBName()).build();
