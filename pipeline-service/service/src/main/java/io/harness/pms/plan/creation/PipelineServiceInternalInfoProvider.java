@@ -18,6 +18,7 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.STRATEGY;
 import static io.harness.steps.StepSpecTypeConstants.BARRIER;
 import static io.harness.steps.StepSpecTypeConstants.FLAG_CONFIGURATION;
 import static io.harness.steps.StepSpecTypeConstants.RESOURCE_CONSTRAINT;
+import static io.harness.steps.StepSpecTypeConstants.WAIT_STEP;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -185,7 +186,7 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     variableCreators.add(new EmptyAnyVariableCreator(ImmutableSet.of(PARALLEL, STEPS, SPEC, STAGES)));
     variableCreators.add(new EmptyVariableCreator(STAGE, ImmutableSet.of(FEATURE_FLAG_SUPPORTED_TYPE)));
     variableCreators.add(
-        new EmptyVariableCreator(STEP, ImmutableSet.of(FLAG_CONFIGURATION, BARRIER, RESOURCE_CONSTRAINT)));
+        new EmptyVariableCreator(STEP, ImmutableSet.of(FLAG_CONFIGURATION, BARRIER, RESOURCE_CONSTRAINT, WAIT_STEP)));
     injectorUtils.injectMembers(variableCreators);
     return variableCreators;
   }

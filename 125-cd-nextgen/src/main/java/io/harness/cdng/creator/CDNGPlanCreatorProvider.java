@@ -39,10 +39,13 @@ import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.CUSTOM_
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.DOCKER_REGISTRY_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.ECR_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.GCR_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.GITHUB_PACKAGES_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.GOOGLE_ARTIFACT_REGISTRY_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.JENKINS_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.NEXUS2_REGISTRY_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.NEXUS3_REGISTRY_NAME;
 import static io.harness.ng.core.k8s.ServiceSpecType.AZURE_WEBAPP;
+import static io.harness.ng.core.k8s.ServiceSpecType.CUSTOM_DEPLOYMENT;
 import static io.harness.ng.core.k8s.ServiceSpecType.KUBERNETES;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -210,21 +213,21 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
   private static final Set<String> EMPTY_FILTER_IDENTIFIERS = Sets.newHashSet(SIDECARS, SPEC, SERVICE_CONFIG,
       CONFIG_FILE, STARTUP_COMMAND, APPLICATION_SETTINGS, ARTIFACTS, ROLLBACK_STEPS, CONNECTION_STRINGS, STEPS,
       CONFIG_FILES, ENVIRONMENT_GROUP_YAML, SERVICE_ENTITY, MANIFEST_LIST_CONFIG, STRATEGY, STEP_GROUP);
-  private static final Set<String> EMPTY_SIDECAR_TYPES =
-      Sets.newHashSet(CUSTOM_ARTIFACT_NAME, JENKINS_NAME, DOCKER_REGISTRY_NAME, ACR_NAME, AMAZON_S3_NAME,
-          ARTIFACTORY_REGISTRY_NAME, ECR_NAME, GOOGLE_ARTIFACT_REGISTRY_NAME, GCR_NAME, NEXUS3_REGISTRY_NAME);
+  private static final Set<String> EMPTY_SIDECAR_TYPES = Sets.newHashSet(CUSTOM_ARTIFACT_NAME, JENKINS_NAME,
+      DOCKER_REGISTRY_NAME, ACR_NAME, AMAZON_S3_NAME, ARTIFACTORY_REGISTRY_NAME, ECR_NAME,
+      GOOGLE_ARTIFACT_REGISTRY_NAME, GCR_NAME, NEXUS3_REGISTRY_NAME, GITHUB_PACKAGES_NAME);
   private static final Set<String> EMPTY_MANIFEST_TYPES = Sets.newHashSet(EcsTaskDefinition, ServerlessAwsLambda,
       EcsScalingPolicyDefinition, K8S_MANIFEST, ManifestType.VALUES, ManifestType.KustomizePatches,
       ManifestType.EcsScalableTargetDefinition, ManifestType.Kustomize, ManifestType.EcsServiceDefinition, CONFIG_FILES,
       ManifestType.HelmChart, ManifestType.ReleaseRepo, ManifestType.OpenshiftTemplate, ManifestType.OpenshiftParam);
   private static final Set<String> EMPTY_ENVIRONMENT_TYPES =
       Sets.newHashSet(YamlTypes.ENV_PRODUCTION, YamlTypes.ENV_PRE_PRODUCTION);
-  private static final Set<String> EMPTY_PRIMARY_TYPES =
-      Sets.newHashSet(CUSTOM_ARTIFACT_NAME, JENKINS_NAME, DOCKER_REGISTRY_NAME, ACR_NAME, AMAZON_S3_NAME,
-          ARTIFACTORY_REGISTRY_NAME, ECR_NAME, GOOGLE_ARTIFACT_REGISTRY_NAME, GCR_NAME, NEXUS3_REGISTRY_NAME);
+  private static final Set<String> EMPTY_PRIMARY_TYPES = Sets.newHashSet(CUSTOM_ARTIFACT_NAME, JENKINS_NAME,
+      DOCKER_REGISTRY_NAME, ACR_NAME, AMAZON_S3_NAME, ARTIFACTORY_REGISTRY_NAME, ECR_NAME,
+      GOOGLE_ARTIFACT_REGISTRY_NAME, GCR_NAME, NEXUS3_REGISTRY_NAME, NEXUS2_REGISTRY_NAME, GITHUB_PACKAGES_NAME);
   private static final Set<String> EMPTY_SERVICE_DEFINITION_TYPES =
       Sets.newHashSet(ManifestType.ServerlessAwsLambda, DelegateType.ECS, ServiceSpecType.NATIVE_HELM,
-          ServiceSpecType.SSH, AZURE_WEBAPP, ServiceSpecType.WINRM, KUBERNETES);
+          ServiceSpecType.SSH, AZURE_WEBAPP, ServiceSpecType.WINRM, KUBERNETES, CUSTOM_DEPLOYMENT);
 
   @Inject InjectorUtils injectorUtils;
   @Inject DeploymentStageVariableCreator deploymentStageVariableCreator;
