@@ -136,14 +136,16 @@ public class AzureWebAppRollbackRequestHandler extends AzureWebAppRequestHandler
   private AzureAppServicePackageDeploymentContext toAzureAppServicePackageDeploymentContext(
       AzureWebAppRollbackRequest taskRequest, AzureWebClientContext azureWebClientContext,
       AzureLogCallbackProvider logCallbackProvider) {
-    AutoCloseableWorkingDirectory autoCloseableWorkingDirectory =
-        new AutoCloseableWorkingDirectory(REPOSITORY_DIR_PATH, AZURE_APP_SVC_ARTIFACT_DOWNLOAD_DIR_PATH);
-    AzurePackageArtifactConfig artifactConfig = (AzurePackageArtifactConfig) taskRequest.getArtifact();
-    AzureArtifactDownloadResponse artifactResponse = null;
-    if (artifactConfig != null) {
-      ArtifactDownloadContext downloadContext = azureAppServiceResourceUtilities.toArtifactNgDownloadContext(
-          artifactConfig, autoCloseableWorkingDirectory, logCallbackProvider);
-      artifactResponse = artifactDownloaderService.download(downloadContext);
+    AzureArtifactDownloadResponse artifactResponse;
+    try (AutoCloseableWorkingDirectory autoCloseableWorkingDirectory =
+             new AutoCloseableWorkingDirectory(REPOSITORY_DIR_PATH, AZURE_APP_SVC_ARTIFACT_DOWNLOAD_DIR_PATH)) {
+      AzurePackageArtifactConfig artifactConfig = (AzurePackageArtifactConfig) taskRequest.getArtifact();
+      artifactResponse = null;
+      if (artifactConfig != null) {
+        ArtifactDownloadContext downloadContext = azureAppServiceResourceUtilities.toArtifactNgDownloadContext(
+            artifactConfig, autoCloseableWorkingDirectory, logCallbackProvider);
+        artifactResponse = artifactDownloaderService.download(downloadContext);
+      }
     }
 
     AzureAppServicePreDeploymentData preDeploymentData = taskRequest.getPreDeploymentData();
