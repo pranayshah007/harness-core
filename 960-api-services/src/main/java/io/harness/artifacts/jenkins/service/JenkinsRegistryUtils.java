@@ -74,6 +74,7 @@ import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -269,13 +270,18 @@ public class JenkinsRegistryUtils {
             continue;
           }
 
-          JobPathDetails jobPathDetails = constructJobPathDetails(jobname);
+          JobPathDetails jobPathDetails = constructJobPathDetails(jobname, false);
           JobWithDetails jobWithDetails;
 
           try {
             JenkinsCustomServer jenkinsServer = JenkinsClient.getJenkinsServer(jenkinsInternalConfig);
             FolderJob folderJob = getFolderJob(jobPathDetails.getParentJobName(), jobPathDetails.getParentJobUrl());
             jobWithDetails = jenkinsServer.getJob(folderJob, jobPathDetails.getChildJobName());
+            if (jobWithDetails == null) {
+              jobPathDetails = constructJobPathDetails(jobname, false);
+              folderJob = getFolderJob(jobPathDetails.getParentJobName(), jobPathDetails.getParentJobUrl());
+              jobWithDetails = jenkinsServer.getJob(folderJob, jobPathDetails.getChildJobName());
+            }
 
           } catch (HttpResponseException e) {
             if (e.getStatusCode() == 500 || ExceptionUtils.getMessage(e).contains(SERVER_ERROR)) {
@@ -413,7 +419,7 @@ public class JenkinsRegistryUtils {
             continue;
           }
 
-          JobPathDetails jobPathDetails = constructJobPathDetails(jobname);
+          JobPathDetails jobPathDetails = constructJobPathDetails(jobname, false);
           Job job;
 
           try {
@@ -502,41 +508,39 @@ public class JenkinsRegistryUtils {
    * @param jobname        job name
    * @return job path details.
    */
-  private JobPathDetails constructJobPathDetails(String jobname) {
+  private JobPathDetails constructJobPathDetails(String jobname, boolean retryAsMultiBranch) {
     String parentJobName = null;
     String parentJobUrl = null;
     String childJobName;
-    String decodedJobName;
 
     try {
-      decodedJobName = URLDecoder.decode(jobname, "UTF-8");
+      String decodedJobName = URLDecoder.decode(jobname, "UTF-8");
+
+      String[] jobNameSplit = decodedJobName.split("/");
+      int parts = jobNameSplit.length;
+      if (parts > 1) {
+        parentJobUrl = constructParentJobPath(jobNameSplit);
+        parentJobName = jobNameSplit[parts - 2];
+        childJobName = jobNameSplit[parts - 1];
+        // when a job branch is named with slashes, e.g: "release/2" we need to retry with different logic"
+        if (retryAsMultiBranch) {
+          childJobName = format("%s/%s", jobNameSplit[parts - 2], jobNameSplit[parts - 1]);
+          parentJobName = jobNameSplit[parts - 3];
+          parentJobUrl = constructParentJobPath(Arrays.copyOf(jobNameSplit, jobNameSplit.length - 1));
+        }
+      } else {
+        childJobName = decodedJobName;
+      }
+
+      return new JobPathDetails(parentJobUrl, parentJobName, childJobName);
+
     } catch (UnsupportedEncodingException e) {
       throw NestedExceptionUtils.hintWithExplanationException("Failure in decoding job name",
           "Check if the Job name is correct",
           new ArtifactServerException("Failure in decoding job name: " + ExceptionUtils.getMessage(e), e, USER));
     }
-
-    String[] jobNameSplit = jobname.split("%2F");
-    if (jobNameSplit.length > 1) {
-      String[] parentNameSplit = jobNameSplit[0].split("/");
-      jobNameSplit = ArrayUtils.add(parentNameSplit, jobNameSplit[1]);
-    } else {
-      jobNameSplit = decodedJobName.split("/");
-    }
-
-    int parts = jobNameSplit.length;
-    if (parts > 1) {
-      parentJobUrl = constructParentJobPath(jobNameSplit);
-      parentJobName = jobNameSplit[parts - 2];
-      childJobName = jobNameSplit[parts - 1];
-    } else {
-      childJobName = decodedJobName;
-    }
-    //TODO: REMOVE THIS
-    log.info(format("parentJobUrl: [%s]\nparentJobName: [%s]\nchildJobName: [%s] - new delegate", parentJobUrl, parentJobName, childJobName));
-
-    return new JobPathDetails(parentJobUrl, parentJobName, childJobName);
   }
+
 
   /**
    * Returns folder instance
