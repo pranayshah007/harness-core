@@ -22,6 +22,7 @@ import io.harness.common.NGTaskType;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.connector.ConnectorType;
@@ -82,6 +83,9 @@ public class GcrResourceServiceImpl implements GcrResourceService {
   @Override
   public GcrResponseDTO getBuildDetails(IdentifierRef gcrConnectorRef, String imagePath, String registryHostname,
       String orgIdentifier, String projectIdentifier) {
+    if (EmptyPredicate.isEmpty(imagePath)) {
+      throw new InvalidRequestException("imagePath cannot be null");
+    }
     GcpConnectorDTO connector = getConnector(gcrConnectorRef);
     BaseNGAccess baseNGAccess =
         getBaseNGAccess(gcrConnectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
