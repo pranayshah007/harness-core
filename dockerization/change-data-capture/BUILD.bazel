@@ -7,12 +7,12 @@ load("//:tools/bazel/docker/docker-utils.bzl", "docker_layers", "docker_image", 
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 
 docker_layers(
-    name = "ng-manager-onprem-run",
+    name = "cdc-onprem-run",
     build_type = "onprem",
 )
 
 docker_layers(
-    name = "ng-manager-saas-run",
+    name = "cdc-saas-run",
     build_type = "saas",
 )
 
@@ -27,24 +27,21 @@ docker_pkg(
     name = "files",
     srcs = [
         "//:protocol.info",
-        "//120-ng-manager:keystore.jks",
-        "//120-ng-manager:config.yml",
-        "//120-ng-manager/src/main/resources:redisson-jcache.yaml",
-        "//120-ng-manager/src/main/resources:enterprise-redisson-jcache.yaml",
+        "//110-change-data-capture:config.yml",
     ],
     files = {
-        "//120-ng-manager:module_deploy.jar": "ng-manager-capsule.jar",
+        "//110-change-data-capture:module_deploy.jar": "change-data-capture.jar",
         },
 )
 
 docker_image(
-    name = "ng-manager-saas-image",
+    name = "cdc-saas-image",
     dockerlayers = [
-            ":ng-manager-saas-run"
+            ":cdc-saas-run"
             ],
     cmd = [
         "/bin/bash", "-c",
-        "java -jar ng-manager-capsule.jar scan-classpath-metadata; ./run.sh",
+        "./run.sh",
         ],
     filestocopy = [
         ":files",
@@ -54,20 +51,20 @@ docker_image(
 
 #Pass the TAG from the bazel run command by passing --define=TAG=TagValue
 docker_push(
-        name = "ng-manager-saas-push",
-        image = "ng-manager-saas-image",
-        repository = "platform-205701/harness/harness-services-bazel/ng-manager-saas-bazel-test",
+        name = "cdc-saas-push",
+        image = "cdc-saas-image",
+        repository = "platform-205701/harness/harness-services-bazel/cdc-saas-bazel-test",
         imagetag = "$(TAG)",
 )
 
 docker_image(
-    name = "ng-manager-onprem-image",
+    name = "cdc-onprem-image",
     dockerlayers = [
-            ":ng-manager-onprem-run"
+            ":cdc-onprem-run"
             ],
     cmd = [
         "/bin/bash", "-c",
-        "java -jar ng-manager-capsule.jar scan-classpath-metadata; ./run.sh",
+        "./run.sh",
         ],
     filestocopy = [
         ":files",
@@ -77,8 +74,8 @@ docker_image(
 
 #Pass the TAG from the bazel run command by passing --define=TAG=TagValue
 docker_push(
-        name = "ng-manager-onprem-push",
-        image = "ng-manager-onprem-image",
-        repository = "platform-205701/harness/harness-services-bazel/ng-manager-onprem-bazel-test",
+        name = "cdc-onprem-push",
+        image = "cdc-onprem-image",
+        repository = "platform-205701/harness/harness-services-bazel/cdc-onprem-bazel-test",
         imagetag = "$(TAG)",
 )

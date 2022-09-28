@@ -3,15 +3,27 @@
 # that can be found in the licenses directory at the root of this repository, also available at
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
+# NOTE: Migrator is not yet moved to use ubi base images. This is still on alpine.
+
 load("//:tools/bazel/docker/docker-utils.bzl", "docker_layers", "docker_image", "docker_push", "docker_pkg")
 
 docker_layers(
-    name = "manager-onprem-run",
+    name = "migrator-packages",
+    docker_run_flags = [
+        "--user=root",
+    ],
+    commands = [
+        "microdnf install fontconfig dejavu-sans-fonts",
+    ],
+)
+
+docker_layers(
+    name = "migrator-onprem-run",
     build_type = "onprem",
 )
 
 docker_layers(
-    name = "manager-saas-run",
+    name = "migrator-saas-run",
     build_type = "saas",
 )
 
@@ -26,25 +38,26 @@ docker_pkg(
     name = "files",
     srcs = [
         "//:protocol.info",
-        "//360-cg-manager:newrelic.yml",
-        "//360-cg-manager:keystore.jks",
-        "//360-cg-manager:config.yml",
+        "//100-migrator:newrelic.yml",
+        "//100-migrator:keystore.jks",
+        "//100-migrator:config.yml",
         "//400-rest/src/main/resources:redisson-jcache.yaml",
         "//400-rest/src/main/resources:hazelcast.xml",
     ],
     files = {
-        "//360-cg-manager:module_deploy.jar": "rest-capsule.jar",
+        "//100-migrator:module_deploy.jar": "migrator-capsule.jar",
         },
 )
 
 docker_image(
-    name = "manager-saas-image",
+    name = "migrator-saas-image",
     dockerlayers = [
-            ":manager-saas-run"
+            ":migrator-saas-run",
+            ":migrator-packages",
             ],
     cmd = [
         "/bin/bash", "-c",
-        "java -jar rest-capsule.jar scan-classpath-metadata; ./run.sh",
+        "java -jar migrator-capsule.jar scan-classpath-metadata; ./run.sh",
         ],
     filestocopy = [
         ":files",
@@ -54,20 +67,21 @@ docker_image(
 
 #Pass the TAG from the bazel run command by passing --define=TAG=TagValue
 docker_push(
-        name = "manager-saas-push",
-        image = "manager-saas-image",
-        repository = "platform-205701/harness/harness-services-bazel/manager-saas-bazel-test",
+        name = "migrator-saas-push",
+        image = "migrator-saas-image",
+        repository = "platform-205701/harness/harness-services-bazel/migrator-saas-bazel-test",
         imagetag = "$(TAG)",
 )
 
 docker_image(
-    name = "manager-onprem-image",
+    name = "migrator-onprem-image",
     dockerlayers = [
-            ":manager-onprem-run"
+            ":migrator-onprem-run",
+            ":migrator-packages",
             ],
     cmd = [
         "/bin/bash", "-c",
-        "java -jar rest-capsule.jar scan-classpath-metadata; ./run.sh",
+        "java -jar migrator-capsule.jar scan-classpath-metadata; ./run.sh",
         ],
     filestocopy = [
         ":files",
@@ -77,8 +91,8 @@ docker_image(
 
 #Pass the TAG from the bazel run command by passing --define=TAG=TagValue
 docker_push(
-        name = "manager-onprem-push",
-        image = "manager-onprem-image",
-        repository = "platform-205701/harness/harness-services-bazel/manager-onprem-bazel-test",
+        name = "migrator-onprem-push",
+        image = "migrator-onprem-image",
+        repository = "platform-205701/harness/harness-services-bazel/migrator-onprem-bazel-test",
         imagetag = "$(TAG)",
 )
