@@ -814,6 +814,7 @@ public class JenkinsImpl implements Jenkins {
 
     try {
       String decodedJobName = URLDecoder.decode(jobname, "UTF-8");
+      log.info("trying to get job path details: " + jobname);
 
       String[] jobNameSplit = decodedJobName.split("/");
       int parts = jobNameSplit.length;
@@ -826,6 +827,7 @@ public class JenkinsImpl implements Jenkins {
           childJobName = format("%s/%s", jobNameSplit[parts - 2], jobNameSplit[parts - 1]);
           parentJobName = jobNameSplit[parts - 3];
           parentJobUrl = constructParentJobPath(Arrays.copyOf(jobNameSplit, jobNameSplit.length - 1));
+          log.info("retrying as multibranch");
           log.info(format(
               "retrying as multibranch: childJobName: %s | parentJobName: %s | parentJobUrl: %s | decodedJobName: %s",
               childJobName, parentJobName, parentJobUrl, decodedJobName));

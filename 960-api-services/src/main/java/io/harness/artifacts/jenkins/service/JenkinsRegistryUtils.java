@@ -514,6 +514,7 @@ public class JenkinsRegistryUtils {
     String childJobName;
 
     try {
+      log.info("reached jenkinsregistryutils");
       String decodedJobName = URLDecoder.decode(jobname, "UTF-8");
 
       String[] jobNameSplit = decodedJobName.split("/");
