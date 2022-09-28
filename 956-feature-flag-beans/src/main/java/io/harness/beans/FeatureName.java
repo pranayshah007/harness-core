@@ -248,7 +248,6 @@ public enum FeatureName {
   FREEZE_DURING_MIGRATION,
   USE_ANALYTIC_MONGO_FOR_GRAPHQL_QUERY,
   DYNATRACE_APM_ENABLED,
-  CUSTOM_POLICY_STEP,
   CCM_AS_DRY_RUN("Dry Run functionality of the AutoStopping Rules", HarnessTeam.CE),
   CCM_COMMORCH("Commitment Orchestration", HarnessTeam.CE),
   DONT_RESTRICT_PARALLEL_STAGE_COUNT,
