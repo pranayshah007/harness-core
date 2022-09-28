@@ -17,6 +17,7 @@ import static io.harness.eraro.ErrorCode.INVALID_REQUEST;
 import static io.harness.eraro.ErrorCode.SECRET_MANAGEMENT_ERROR;
 import static io.harness.exception.WingsException.SRE;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.helpers.GlobalSecretManagerUtils.isNgHarnessSecretManager;
 import static io.harness.secretmanagerclient.SecretType.SecretFile;
 import static io.harness.secretmanagerclient.SecretType.SecretText;
 import static io.harness.secretmanagerclient.ValueType.CustomSecretManagerValues;
@@ -31,6 +32,7 @@ import static io.harness.security.encryption.SecretManagerType.VAULT;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
+import io.harness.beans.DecryptedSecretValue;
 import io.harness.beans.FeatureName;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.connector.ConnectorDTO;
@@ -73,6 +75,7 @@ import software.wings.beans.BaseVaultConfig;
 import software.wings.beans.CustomSecretNGManagerConfig;
 import software.wings.beans.NameValuePairWithDefault;
 import software.wings.service.impl.security.GlobalEncryptDecryptClient;
+import software.wings.service.impl.security.NGEncryptorService;
 import software.wings.settings.SettingVariableTypes;
 
 import com.google.common.io.ByteStreams;
@@ -111,6 +114,7 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
   private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
   private final CustomEncryptorsRegistry customEncryptorsRegistry;
   private final CustomSecretManagerHelper customSecretManagerHelper;
+  private final NGEncryptorService ngEncryptorService;
 
   @Inject
   public NGEncryptedDataServiceImpl(NGEncryptedDataDao encryptedDataDao, KmsEncryptorsRegistry kmsEncryptorsRegistry,
@@ -118,7 +122,7 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
       SecretManagerClient secretManagerClient, GlobalEncryptDecryptClient globalEncryptDecryptClient,
       NGConnectorSecretManagerService ngConnectorSecretManagerService,
       NGFeatureFlagHelperService ngFeatureFlagHelperService, CustomEncryptorsRegistry customEncryptorsRegistry,
-      CustomSecretManagerHelper customSecretManagerHelper) {
+      CustomSecretManagerHelper customSecretManagerHelper, NGEncryptorService ngEncryptorService) {
     this.encryptedDataDao = encryptedDataDao;
     this.kmsEncryptorsRegistry = kmsEncryptorsRegistry;
     this.vaultEncryptorsRegistry = vaultEncryptorsRegistry;
@@ -128,6 +132,7 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
     this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;
     this.customEncryptorsRegistry = customEncryptorsRegistry;
     this.customSecretManagerHelper = customSecretManagerHelper;
+    this.ngEncryptorService = ngEncryptorService;
   }
 
   @Override
@@ -458,6 +463,30 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
       secretsFileService.deleteFile(existingFileId);
     }
     return updatedEncryptedData;
+  }
+
+  @Override
+  public DecryptedSecretValue decryptSecret(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
+    NGEncryptedData encryptedData = get(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    SecretManagerConfigDTO secretManagerConfigDTO = getSecretManagerOrThrow(
+        accountIdentifier, orgIdentifier, projectIdentifier, encryptedData.getSecretManagerIdentifier(), false);
+    String decryptedValue = null;
+    SecretManagerConfig secretManagerConfig = SecretManagerConfigMapper.fromDTO(secretManagerConfigDTO);
+    if (isNgHarnessSecretManager(secretManagerConfig.getNgMetadata())) {
+      decryptedValue = String.valueOf(kmsEncryptorsRegistry.getKmsEncryptor(secretManagerConfig)
+                                          .fetchSecretValue(accountIdentifier, encryptedData, secretManagerConfig));
+    } else {
+      throw new InvalidRequestException(
+          "Decryption is supported only for secrets encrypted via harness managed secret managers");
+    }
+    return DecryptedSecretValue.builder()
+        .identifier(identifier)
+        .accountIdentifier(accountIdentifier)
+        .orgIdentifier(orgIdentifier)
+        .projectIdentifier(projectIdentifier)
+        .decryptedValue(decryptedValue)
+        .build();
   }
 
   private byte[] getInputBytes(InputStream inputStream) {
