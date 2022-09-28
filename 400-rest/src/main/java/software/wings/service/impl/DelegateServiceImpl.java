@@ -2762,6 +2762,7 @@ public class DelegateServiceImpl implements DelegateService {
 
     if (existingDelegate != null) {
       log.info("Removing delegate instance {} from delegate {}", request.getHostName(), request.getDelegateId());
+      subject.fireInform(DelegateObserver::onDisconnected, accountId, existingDelegate.getUuid());
       persistence.delete(existingDelegate);
       sendUnregisterDelegateAuditEvent(existingDelegate, accountId);
     } else {
