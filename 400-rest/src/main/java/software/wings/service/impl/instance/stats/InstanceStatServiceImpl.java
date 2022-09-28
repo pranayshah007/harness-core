@@ -18,7 +18,7 @@ import software.wings.beans.Account;
 import software.wings.beans.User;
 import software.wings.beans.infrastructure.instance.stats.InstanceStatsSnapshot;
 import software.wings.beans.infrastructure.instance.stats.InstanceStatsSnapshot.InstanceStatsSnapshotKeys;
-import software.wings.dl.WingsMongoPersistence;
+import software.wings.dl.WingsPersistence;
 import software.wings.resources.stats.model.InstanceTimeline;
 import software.wings.resources.stats.rbac.TimelineRbacFilters;
 import software.wings.security.UserThreadLocal;
@@ -55,7 +55,7 @@ import org.mongodb.morphia.query.Sort;
 @ParametersAreNonnullByDefault
 @Slf4j
 public class InstanceStatServiceImpl implements InstanceStatService {
-  @Inject private WingsMongoPersistence persistence;
+  @Inject private WingsPersistence persistence;
   @Inject private AppService appService;
   @Inject private UserService userService;
   @Inject private DashboardStatisticsService dashboardStatsService;
@@ -145,8 +145,7 @@ public class InstanceStatServiceImpl implements InstanceStatService {
 
     List<InstanceStatsSnapshot> timeline = new LinkedList<>();
 
-    try (HIterator<InstanceStatsSnapshot> iterator =
-             new HIterator<>(query.fetch(persistence.analyticNodePreferenceOptions()))) {
+    try (HIterator<InstanceStatsSnapshot> iterator = new HIterator<>(query.fetch())) {
       while (iterator.hasNext()) {
         timeline.add(iterator.next());
       }
@@ -158,7 +157,7 @@ public class InstanceStatServiceImpl implements InstanceStatService {
   @Override
   @Nullable
   public Instant getLastSnapshotTime(String accountId) {
-    FindOptions options = persistence.analyticNodePreferenceOptions();
+    FindOptions options = new FindOptions();
     options.limit(1);
 
     List<InstanceStatsSnapshot> snapshots = persistence.createQuery(InstanceStatsSnapshot.class)
@@ -176,7 +175,7 @@ public class InstanceStatServiceImpl implements InstanceStatService {
   @Override
   @Nullable
   public Instant getFirstSnapshotTime(String accountId) {
-    FindOptions options = persistence.analyticNodePreferenceOptions();
+    FindOptions options = new FindOptions();
     options.limit(1);
 
     List<InstanceStatsSnapshot> snapshots = persistence.createQuery(InstanceStatsSnapshot.class)
@@ -202,7 +201,7 @@ public class InstanceStatServiceImpl implements InstanceStatService {
                                                  .field("timestamp")
                                                  .lessThan(to)
                                                  .project("total", true)
-                                                 .asList(persistence.analyticNodePreferenceOptions())
+                                                 .asList()
                                                  .stream()
                                                  .sorted(Comparator.comparingInt(InstanceStatsSnapshot::getTotal))
                                                  .collect(Collectors.toList());
@@ -213,7 +212,7 @@ public class InstanceStatServiceImpl implements InstanceStatService {
 
   @Override
   public double currentCount(String accountId) {
-    FindOptions options = persistence.analyticNodePreferenceOptions();
+    FindOptions options = new FindOptions();
     options.limit(1);
 
     List<InstanceStatsSnapshot> snapshots = persistence.createQuery(InstanceStatsSnapshot.class)

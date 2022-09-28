@@ -230,7 +230,7 @@ public class MongoModule extends AbstractModule {
     if (Objects.isNull(tags)) {
       readPreference = ReadPreference.secondaryPreferred();
     } else {
-      readPreference = ReadPreference.secondaryPreferred(tags);
+      readPreference = ReadPreference.secondary(tags);
     }
 
     final String mongoClientUrl = mongoConfig.getUri();
