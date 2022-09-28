@@ -145,6 +145,7 @@ public class NextGenConfiguration extends Configuration {
   public static final String CHAOS_PACKAGE = "io.harness.ng.chaos";
   public static final String SETTINGS_RESOURCE_PACKAGE = "io.harness.ngsettings.remote";
   public static final String FREEZE_RESOURCE_PACKAGE = "io.harness.ng.freeze.resource";
+  private static final String REFRESH_RESOURCE_PACKAGE = "io.harness.ng.core.refresh";
   public static final Collection<Class<?>> HARNESS_RESOURCE_CLASSES = getResourceClasses();
 
   @JsonProperty("swagger") private SwaggerBundleConfiguration swaggerBundleConfiguration;
@@ -284,7 +285,8 @@ public class NextGenConfiguration extends Configuration {
                 NextGenConfiguration.AWS_PACKAGE, NextGenConfiguration.OAUTH_RESOURCE_PACKAGE,
                 NextGenConfiguration.LDAP_PACKAGE, NextGenConfiguration.CHAOS_PACKAGE,
                 NextGenConfiguration.SETTINGS_RESOURCE_PACKAGE, NextGenConfiguration.AGENT_PACKAGE,
-                NextGenConfiguration.CUSTOM_DEPLOYMENT_PACKAGE, NextGenConfiguration.FREEZE_RESOURCE_PACKAGE))
+                NextGenConfiguration.CUSTOM_DEPLOYMENT_PACKAGE, NextGenConfiguration.FREEZE_RESOURCE_PACKAGE,
+                NextGenConfiguration.REFRESH_RESOURCE_PACKAGE))
         .collect(Collectors.toSet());
   }
 
