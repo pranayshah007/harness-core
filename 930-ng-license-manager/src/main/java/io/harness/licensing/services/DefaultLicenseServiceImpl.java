@@ -65,6 +65,7 @@ import java.util.stream.Collectors;
 import javax.cache.Cache;
 import javax.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 
 @Slf4j
 public class DefaultLicenseServiceImpl implements LicenseService {
@@ -393,6 +394,7 @@ public class DefaultLicenseServiceImpl implements LicenseService {
           edition = Edition.ENTERPRISE;
         }
       }
+      MDC.put("trace_id", "abc");
       log.warn("Account {} has no highest edition license, fallback to {}", accountIdentifier, edition);
       return edition;
     }
