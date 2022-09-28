@@ -103,6 +103,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -143,6 +144,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
               schema = @Schema(implementation = ErrorDTO.class))
     })
 @OwnedBy(HarnessTeam.CDC)
+@Slf4j
 public class ServiceResourceV2 {
   private final ServiceEntityService serviceEntityService;
   private final AccessControlClient accessControlClient;
@@ -508,9 +510,13 @@ public class ServiceResourceV2 {
 
   private ServiceV2YamlMetadata createServiceV2YamlMetadata(ServiceEntity serviceEntity) {
     if (isBlank(serviceEntity.getYaml())) {
-      throw new InvalidRequestException(
-          format("Service with identifier %s is not configured with a Service definition. Service Yaml is empty",
-              serviceEntity.getIdentifier()));
+      log.info("Service with identifier {} is not configured with a Service definition. Service Yaml is empty",
+          serviceEntity.getIdentifier());
+      return ServiceV2YamlMetadata.builder()
+          .serviceIdentifier(serviceEntity.getIdentifier())
+          .serviceYaml("")
+          .inputSetTemplateYaml("")
+          .build();
     }
 
     final String serviceInputSetYaml =

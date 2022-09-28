@@ -33,4 +33,6 @@ public interface EnvironmentRepositoryCustom {
   List<String> fetchesNonDeletedEnvIdentifiersFromList(Criteria criteria);
 
   List<Environment> fetchesNonDeletedEnvironmentFromListOfIdentifiers(Criteria criteria);
+
+  List<Environment> findAll(Criteria criteria);
 }
