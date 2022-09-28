@@ -602,19 +602,12 @@ public class NGSecretResourceV2 {
 
   @GET
   @Path("{identifier}/decrypt")
-  @InternalApi
+  //  @InternalApi
   @ApiOperation(hidden = true, value = "Get Decrypted Secret", nickname = "getDecryptedSecret")
-  @Operation(operationId = "getDecryptedSecret",
-      summary = "Gets the decrypted secret whose identifier and scope is passed in the request",
-      responses =
-      {
-        @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Returns decrypted secret")
-      })
-  @Hidden
-  public ResponseDTO<DecryptedSecretValue>
-  getDecryptedSecretValue(@Parameter(description = "Secret Identifier") @NotNull @PathParam(
-                              NGCommonEntityConstants.IDENTIFIER_KEY) @EntityIdentifier String identifier,
+  //  @Hidden
+  public ResponseDTO<DecryptedSecretValue> getDecryptedSecretValue(
+      @Parameter(description = "Secret Identifier") @NotNull @PathParam(
+          NGCommonEntityConstants.IDENTIFIER_KEY) @EntityIdentifier String identifier,
       @Parameter(description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,

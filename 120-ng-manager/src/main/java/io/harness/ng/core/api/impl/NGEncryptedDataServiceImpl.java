@@ -17,6 +17,7 @@ import static io.harness.eraro.ErrorCode.INVALID_REQUEST;
 import static io.harness.eraro.ErrorCode.SECRET_MANAGEMENT_ERROR;
 import static io.harness.exception.WingsException.SRE;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.helpers.GlobalSecretManagerUtils.isNgHarnessSecretManager;
 import static io.harness.secretmanagerclient.SecretType.SecretFile;
 import static io.harness.secretmanagerclient.SecretType.SecretText;
 import static io.harness.secretmanagerclient.ValueType.CustomSecretManagerValues;
@@ -476,10 +477,7 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
           "Secret manager with the identifier {%s} does not exist", encryptedData.getSecretManagerIdentifier()));
     }
     SecretManagerConfig secretManagerConfig = SecretManagerConfigMapper.fromDTO(secretManagerConfigDTO);
-    Boolean isHarnessSM = secretManagerConfig.getNgMetadata() != null
-        && (Boolean.TRUE.equals(secretManagerConfig.getNgMetadata().getHarnessManaged())
-            || HARNESS_SECRET_MANAGER_IDENTIFIER.equals(secretManagerConfig.getNgMetadata().getIdentifier()));
-    if (isHarnessSM) {
+    if (isNgHarnessSecretManager(secretManagerConfig.getNgMetadata())) {
       decryptedValue = String.valueOf(kmsEncryptorsRegistry.getKmsEncryptor(secretManagerConfig)
                                           .fetchSecretValue(accountIdentifier, encryptedData, secretManagerConfig));
     } else {
