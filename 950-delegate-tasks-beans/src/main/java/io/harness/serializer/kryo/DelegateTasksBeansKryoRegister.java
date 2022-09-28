@@ -165,6 +165,11 @@ import io.harness.delegate.beans.connector.awsconnector.AwsListASGNamesTaskRespo
 import io.harness.delegate.beans.connector.awsconnector.AwsListClustersTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskParamsRequest;
 import io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskResponse;
+import io.harness.delegate.beans.connector.awsconnector.AwsListElbListenerRulesTaskParamsRequest;
+import io.harness.delegate.beans.connector.awsconnector.AwsListElbListenerRulesTaskResponse;
+import io.harness.delegate.beans.connector.awsconnector.AwsListElbListenersTaskParamsRequest;
+import io.harness.delegate.beans.connector.awsconnector.AwsListElbListenersTaskResponse;
+import io.harness.delegate.beans.connector.awsconnector.AwsListElbTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsListLoadBalancersTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsListTagsTaskParamsRequest;
 import io.harness.delegate.beans.connector.awsconnector.AwsListTagsTaskResponse;
@@ -1590,6 +1595,11 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AwsListLoadBalancersTaskResponse.class, 83078);
     kryo.register(AwsListASGNamesTaskResponse.class, 83079);
     kryo.register(AwsListClustersTaskResponse.class, 83080);
+    kryo.register(AwsListElbTaskResponse.class, 83081);
+    kryo.register(AwsListElbListenersTaskParamsRequest.class, 83082);
+    kryo.register(AwsListElbListenerRulesTaskParamsRequest.class, 83083);
+    kryo.register(AwsListElbListenerRulesTaskResponse.class, 83084);
+    kryo.register(AwsListElbListenersTaskResponse.class, 83085);
 
     // WinRm
     kryo.register(WinRmCredentialsSpecDTO.class, 600001);

@@ -1806,6 +1806,11 @@
 83078:io.harness.delegate.beans.connector.awsconnector.AwsListLoadBalancersTaskResponse
 83079:io.harness.delegate.beans.connector.awsconnector.AwsListASGNamesTaskResponse
 83080:io.harness.delegate.beans.connector.awsconnector.AwsListClustersTaskResponse
+83081:io.harness.delegate.beans.connector.awsconnector.AwsListElbTaskResponse
+83082:io.harness.delegate.beans.connector.awsconnector.AwsListElbListenersTaskParamsRequest
+83083:io.harness.delegate.beans.connector.awsconnector.AwsListElbListenerRulesTaskParamsRequest
+83084:io.harness.delegate.beans.connector.awsconnector.AwsListElbListenerRulesTaskResponse
+83085:io.harness.delegate.beans.connector.awsconnector.AwsListElbListenersTaskResponse
 90001:software.wings.service.impl.apm.AWSPrometheusInfo
 95001:io.harness.delegate.beans.logstreaming.UnitProgressData
 97001:io.harness.jira.JiraActionNG

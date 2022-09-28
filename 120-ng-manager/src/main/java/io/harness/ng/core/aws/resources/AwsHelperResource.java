@@ -17,6 +17,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.aws.service.AwsResourceServiceImpl;
 import io.harness.cdng.infra.mapper.InfrastructureEntityConfigMapper;
+import io.harness.cdng.infra.yaml.EcsInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.InfrastructureDefinitionConfig;
 import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
@@ -249,6 +250,90 @@ public class AwsHelperResource {
         IdentifierRefHelper.getIdentifierRef(awsConnectorRef, accountIdentifier, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(
         awsHelperService.getClusterNames(connectorRef, orgIdentifier, projectIdentifier, region));
+  }
+
+  @GET
+  @Path("elastic-load-balancers")
+  @ApiOperation(value = "Get elastic load balancers", nickname = "elastic load balancers")
+  public ResponseDTO<List<String>> getElasticLoadBalancers(@QueryParam("awsConnectorRef") String awsConnectorRef,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam("region") String region,
+      @Parameter(description = NGCommonEntityConstants.ENV_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ENVIRONMENT_KEY) String envId,
+      @Parameter(description = NGCommonEntityConstants.INFRADEF_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.INFRA_DEFINITION_KEY) String infraDefinitionId) {
+    if (isEmpty(awsConnectorRef)) {
+      InfrastructureDefinitionConfig infrastructureDefinitionConfig = getInfrastructureDefinitionConfig(
+          accountIdentifier, orgIdentifier, projectIdentifier, envId, infraDefinitionId);
+      if (infrastructureDefinitionConfig.getSpec() != null) {
+        EcsInfrastructure infrastructure = (EcsInfrastructure) infrastructureDefinitionConfig.getSpec();
+        awsConnectorRef = infrastructure.getConnectorRef().getValue();
+        region = infrastructure.getRegion().getValue();
+      }
+    }
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(awsConnectorRef, accountIdentifier, orgIdentifier, projectIdentifier);
+    return ResponseDTO.newResponse(
+        awsHelperService.getElasticLoadBalancerNames(connectorRef, orgIdentifier, projectIdentifier, region));
+  }
+
+  @GET
+  @Path("listeners")
+  @ApiOperation(value = "Get elastic load balancer listeners ", nickname = "listeners")
+  public ResponseDTO<Map<String, String>> getElasticLoadBalancerListenersArn(
+      @QueryParam("awsConnectorRef") String awsConnectorRef,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam("region") String region, @NotNull @QueryParam("elasticLoadBalancer") String elasticLoadBalancer,
+      @Parameter(description = NGCommonEntityConstants.ENV_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ENVIRONMENT_KEY) String envId,
+      @Parameter(description = NGCommonEntityConstants.INFRADEF_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.INFRA_DEFINITION_KEY) String infraDefinitionId) {
+    if (isEmpty(awsConnectorRef)) {
+      InfrastructureDefinitionConfig infrastructureDefinitionConfig = getInfrastructureDefinitionConfig(
+          accountIdentifier, orgIdentifier, projectIdentifier, envId, infraDefinitionId);
+      if (infrastructureDefinitionConfig.getSpec() != null) {
+        EcsInfrastructure infrastructure = (EcsInfrastructure) infrastructureDefinitionConfig.getSpec();
+        awsConnectorRef = infrastructure.getConnectorRef().getValue();
+        region = infrastructure.getRegion().getValue();
+      }
+    }
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(awsConnectorRef, accountIdentifier, orgIdentifier, projectIdentifier);
+    return ResponseDTO.newResponse(awsHelperService.getElasticLoadBalancerListenersArn(
+        connectorRef, orgIdentifier, projectIdentifier, region, elasticLoadBalancer));
+  }
+
+  @GET
+  @Path("listener-rules-arns")
+  @ApiOperation(value = "Get elastic load balancer listener rules", nickname = "listener rules")
+  public ResponseDTO<List<String>> getElasticLoadBalancerListenerRules(
+      @QueryParam("awsConnectorRef") String awsConnectorRef,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam("region") String region, @NotNull @QueryParam("elasticLoadBalancer") String elasticLoadBalancer,
+      @NotNull @QueryParam("listenerArn") String listenerArn,
+      @Parameter(description = NGCommonEntityConstants.ENV_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ENVIRONMENT_KEY) String envId,
+      @Parameter(description = NGCommonEntityConstants.INFRADEF_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.INFRA_DEFINITION_KEY) String infraDefinitionId) {
+    if (isEmpty(awsConnectorRef)) {
+      InfrastructureDefinitionConfig infrastructureDefinitionConfig = getInfrastructureDefinitionConfig(
+          accountIdentifier, orgIdentifier, projectIdentifier, envId, infraDefinitionId);
+      if (infrastructureDefinitionConfig.getSpec() != null) {
+        EcsInfrastructure infrastructure = (EcsInfrastructure) infrastructureDefinitionConfig.getSpec();
+        awsConnectorRef = infrastructure.getConnectorRef().getValue();
+        region = infrastructure.getRegion().getValue();
+      }
+    }
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(awsConnectorRef, accountIdentifier, orgIdentifier, projectIdentifier);
+    return ResponseDTO.newResponse(awsHelperService.getElasticLoadBalancerListenerRules(
+        connectorRef, orgIdentifier, projectIdentifier, region, elasticLoadBalancer, listenerArn));
   }
 
   private InfrastructureDefinitionConfig getInfrastructureDefinitionConfig(
