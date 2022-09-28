@@ -20,6 +20,7 @@ jobs:
       - name: Building expression service code
         run: |
           touch bazel-credentials.bzl
+          echo $HOME
           touch test-util.bzl
           echo "JFROG_USERNAME=\"foo\"" >> bazel-credentials.bzl
           echo "JFROG_PASSWORD=\"bar\"" >> bazel-credentials.bzl
