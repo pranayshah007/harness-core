@@ -60,10 +60,13 @@ public class MongoIndexesTest extends WingsBaseTest {
                                .collect(Collectors.toList());
 
     List<String> expectedIndexes;
+
     try (InputStream in = getClass().getResourceAsStream("/mongo/indexes.txt")) {
       expectedIndexes = IOUtils.readLines(in, "UTF-8");
     }
-
+    for (int i = 0; i < expectedIndexes.size(); i++) {
+      assertThat(expectedIndexes.get(i)).isEqualTo(indexes.get(i));
+    }
     assertThat(indexes).isEqualTo(expectedIndexes);
   }
 }
