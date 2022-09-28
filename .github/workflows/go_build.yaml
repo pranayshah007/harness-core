@@ -22,6 +22,16 @@ jobs:
           touch bazel-credentials.bzl
           echo $HOME
           id
+      
+      - run: printenv
+      
+      - name: Setup go
+        uses: actions/setup-go@v3
+        with:
+          go-version: '^1.13.1' # The Go version to download (if necessary) and use.
+      - run: |
+          printenv
+          go version
 
       - name: Building commons code
         run: |
