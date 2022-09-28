@@ -40,6 +40,7 @@ import io.harness.encryptors.VaultEncryptor;
 import io.harness.encryptors.VaultEncryptorsRegistry;
 import io.harness.encryptors.clients.LocalEncryptor;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.SecretManagementException;
 import io.harness.mappers.SecretManagerConfigMapper;
 import io.harness.ng.core.dao.NGEncryptedDataDao;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
@@ -395,7 +396,6 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testDecryptSecret_secretManagerNotFound() {
     String secretManagerIdentifier = randomAlphabetic(10);
-    char[] secretValue = randomAlphabetic(10).toCharArray();
     NGEncryptedData encryptedData = NGEncryptedData.builder().secretManagerIdentifier(secretManagerIdentifier).build();
 
     when(encryptedDataDao.get(accountIdentifier, orgIdentifier, projectIdentifier, identifier))
@@ -407,9 +407,10 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
       DecryptedSecretValue decryptedSecretValue =
           ngEncryptedDataService.decryptSecret(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
       fail("InvalidRequestException should be thrown as Secret Manager is not found");
-    } catch (InvalidRequestException ex) {
+    } catch (SecretManagementException ex) {
       assertEquals(ex.getMessage(),
-          String.format("Secret manager with the identifier {%s} does not exist", secretManagerIdentifier));
+          String.format("No such secret manager found with identifier %s in org: %s and project: %s",
+              secretManagerIdentifier, orgIdentifier, projectIdentifier));
     } catch (Exception ex) {
       fail("Unexpected exception occured");
     }

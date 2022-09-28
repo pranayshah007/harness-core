@@ -469,13 +469,9 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
   public DecryptedSecretValue decryptSecret(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
     NGEncryptedData encryptedData = get(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
-    SecretManagerConfigDTO secretManagerConfigDTO = ngConnectorSecretManagerService.getUsingIdentifier(
+    SecretManagerConfigDTO secretManagerConfigDTO = getSecretManagerOrThrow(
         accountIdentifier, orgIdentifier, projectIdentifier, encryptedData.getSecretManagerIdentifier(), false);
     String decryptedValue = null;
-    if (secretManagerConfigDTO == null) {
-      throw new InvalidRequestException(String.format(
-          "Secret manager with the identifier {%s} does not exist", encryptedData.getSecretManagerIdentifier()));
-    }
     SecretManagerConfig secretManagerConfig = SecretManagerConfigMapper.fromDTO(secretManagerConfigDTO);
     if (isNgHarnessSecretManager(secretManagerConfig.getNgMetadata())) {
       decryptedValue = String.valueOf(kmsEncryptorsRegistry.getKmsEncryptor(secretManagerConfig)
