@@ -86,7 +86,6 @@ public class ServiceInfoServiceImpl implements ServiceInfoService {
 
   @Override
   public List<ServiceInfo> getAllServices() {
-    Query query = new Query();
-    return mongoTemplate.find(query, ServiceInfo.class);
+    return mongoTemplate.findAll(ServiceInfo.class);
   }
 }
