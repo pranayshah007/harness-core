@@ -468,27 +468,23 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
   public DecryptedSecretValue decryptSecret(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
     NGEncryptedData encryptedData = get(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
-    SecretManagerConfigDTO secretManager = ngConnectorSecretManagerService.getUsingIdentifier(
+    SecretManagerConfigDTO secretManagerConfigDTO = ngConnectorSecretManagerService.getUsingIdentifier(
         accountIdentifier, orgIdentifier, projectIdentifier, encryptedData.getSecretManagerIdentifier(), false);
     String decryptedValue = null;
-    if (secretManager != null) {
-      EncryptionConfig encryptionConfig = SecretManagerConfigMapper.fromDTO(secretManager);
-
-      EncryptedRecordData encryptedRecordData;
-      if (secretManager.isHarnessManaged()
-          || HARNESS_SECRET_MANAGER_IDENTIFIER.equals(encryptedData.getSecretManagerIdentifier())) {
-        encryptedRecordData = globalEncryptDecryptClient.convertEncryptedRecordToLocallyEncrypted(
-            encryptedData, accountIdentifier, encryptionConfig);
-        encryptionConfig = SecretManagerConfigMapper.fromDTO(getLocalEncryptionConfig(accountIdentifier));
-        decryptedValue = String.valueOf(
-            ngEncryptorService.fetchSecretValue(accountIdentifier, encryptedRecordData, encryptionConfig));
-      } else {
-        throw new InvalidRequestException(
-            "Decryption is supported only for secrets encrypted via harness managed secret managers");
-      }
-    } else {
+    if (secretManagerConfigDTO == null) {
       throw new InvalidRequestException(String.format(
           "Secret manager with the identifier {%s} does not exist", encryptedData.getSecretManagerIdentifier()));
+    }
+    SecretManagerConfig secretManagerConfig = SecretManagerConfigMapper.fromDTO(secretManagerConfigDTO);
+    Boolean isHarnessSM = secretManagerConfig.getNgMetadata() != null
+        && (Boolean.TRUE.equals(secretManagerConfig.getNgMetadata().getHarnessManaged())
+            || HARNESS_SECRET_MANAGER_IDENTIFIER.equals(secretManagerConfig.getNgMetadata().getIdentifier()));
+    if (isHarnessSM) {
+      decryptedValue = String.valueOf(kmsEncryptorsRegistry.getKmsEncryptor(secretManagerConfig)
+                                          .fetchSecretValue(accountIdentifier, encryptedData, secretManagerConfig));
+    } else {
+      throw new InvalidRequestException(
+          "Decryption is supported only for secrets encrypted via harness managed secret managers");
     }
     return DecryptedSecretValue.builder()
         .identifier(identifier)

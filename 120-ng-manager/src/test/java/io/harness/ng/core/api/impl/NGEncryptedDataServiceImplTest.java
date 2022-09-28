@@ -38,6 +38,7 @@ import io.harness.encryptors.CustomEncryptorsRegistry;
 import io.harness.encryptors.KmsEncryptorsRegistry;
 import io.harness.encryptors.VaultEncryptor;
 import io.harness.encryptors.VaultEncryptorsRegistry;
+import io.harness.encryptors.clients.LocalEncryptor;
 import io.harness.exception.InvalidRequestException;
 import io.harness.mappers.SecretManagerConfigMapper;
 import io.harness.ng.core.dao.NGEncryptedDataDao;
@@ -85,6 +86,7 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
   @Mock private CustomEncryptorsRegistry customEncryptorsRegistry;
   @Mock private CustomSecretManagerHelper customSecretManagerHelper;
   @Mock private NGEncryptorService ngEncryptorService;
+  @Mock private LocalEncryptor localEncryptor;
   public static final String HTTP_VAULT_URL = "http://vault.com";
   private String accountIdentifier = randomAlphabetic(10);
   private String orgIdentifier = randomAlphabetic(10);
@@ -100,6 +102,7 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
             secretsFileService, secretManagerClient, globalEncryptDecryptClient, ngConnectorSecretManagerService,
             ngFeatureFlagHelperService, customEncryptorsRegistry, customSecretManagerHelper, ngEncryptorService));
     when(vaultEncryptorsRegistry.getVaultEncryptor(any())).thenReturn(vaultEncryptor);
+    when(kmsEncryptorsRegistry.getKmsEncryptor(any())).thenReturn(localEncryptor);
   }
 
   @Test
@@ -364,21 +367,21 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
   public void testDecryptSecret_Success() {
     String secretManagerIdentifier = randomAlphabetic(10);
     char[] secretValue = randomAlphabetic(10).toCharArray();
-    SecretManagerConfigDTO secretManager = LocalConfigDTO.builder().harnessManaged(true).encryptionType(LOCAL).build();
+    SecretManagerConfigDTO secretManagerConfigDTO =
+        LocalConfigDTO.builder().harnessManaged(true).encryptionType(LOCAL).build();
     NGEncryptedData encryptedData = NGEncryptedData.builder().secretManagerIdentifier(secretManagerIdentifier).build();
     EncryptedRecordData encryptedRecordData = EncryptedRecordData.builder().build();
-    EncryptionConfig encryptionConfig = SecretManagerConfigMapper.fromDTO(secretManager);
+    EncryptionConfig encryptionConfig = SecretManagerConfigMapper.fromDTO(secretManagerConfigDTO);
 
     when(encryptedDataDao.get(accountIdentifier, orgIdentifier, projectIdentifier, identifier))
         .thenReturn(encryptedData);
     when(ngConnectorSecretManagerService.getUsingIdentifier(
              accountIdentifier, orgIdentifier, projectIdentifier, secretManagerIdentifier, false))
-        .thenReturn(secretManager);
+        .thenReturn(secretManagerConfigDTO);
     when(globalEncryptDecryptClient.convertEncryptedRecordToLocallyEncrypted(
              encryptedData, accountIdentifier, encryptionConfig))
         .thenReturn(encryptedRecordData);
-    when(ngEncryptorService.fetchSecretValue(accountIdentifier, encryptedRecordData, encryptionConfig))
-        .thenReturn(secretValue);
+    when(localEncryptor.fetchSecretValue(accountIdentifier, encryptedData, encryptionConfig)).thenReturn(secretValue);
     DecryptedSecretValue decryptedSecretValue =
         ngEncryptedDataService.decryptSecret(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
     assertEquals(decryptedSecretValue.getDecryptedValue(), String.valueOf(secretValue));
