@@ -11,36 +11,42 @@ import io.harness.ngmigration.beans.DiscoverEntityInput;
 import io.harness.ngmigration.beans.DiscoveryInput;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.connector.ConnectorFactory;
 import io.harness.ngmigration.dto.ImportConnectorDTO;
 
 import software.wings.beans.SettingAttribute;
 import software.wings.ngmigration.DiscoveryResult;
 import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.service.intfc.SettingsService;
+import software.wings.settings.SettingVariableTypes;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class ConnectorImportService {
   @Inject private SettingsService settingsService;
   @Inject DiscoveryService discoveryService;
 
+  private List<String> getSettingIdsForType(String accountId, Set<SettingVariableTypes> types) {
+    return types.stream()
+        .flatMap(type -> settingsService.getGlobalSettingAttributesByType(accountId, type.name()).stream())
+        .map(SettingAttribute::getUuid)
+        .collect(Collectors.toList());
+  }
+
   public List<NGYamlFile> importConnectors(String authToken, ImportConnectorDTO importConnectorDTO) {
     String accountId = importConnectorDTO.getAccountIdentifier();
     List<String> settingIds;
     switch (importConnectorDTO.getMechanism()) {
       case ALL:
-        settingIds = settingsService.getSettingIdsForAccount(accountId);
+        // Note: All here means all the connectors we support today
+        settingIds = getSettingIdsForType(accountId, ConnectorFactory.CONNECTOR_FACTORY_MAP.keySet());
         break;
       case TYPE:
-        settingIds =
-            importConnectorDTO.getTypes()
-                .stream()
-                .flatMap(type -> settingsService.getGlobalSettingAttributesByType(accountId, type.name()).stream())
-                .map(SettingAttribute::getUuid)
-                .collect(Collectors.toList());
+        settingIds = getSettingIdsForType(accountId, importConnectorDTO.getTypes());
         break;
       case SPECIFIC:
         settingIds = importConnectorDTO.getIds();
@@ -66,6 +72,6 @@ public class ConnectorImportService {
             .projectIdentifier(importConnectorDTO.getProjectIdentifier())
             .migrateReferencedEntities(importConnectorDTO.isMigrateReferencedEntities())
             .build();
-    return discoveryService.migrateEntity(authToken, migrationInputDTO, discoveryResult, false);
+    return discoveryService.migrateEntity(authToken, migrationInputDTO, discoveryResult, true);
   }
 }

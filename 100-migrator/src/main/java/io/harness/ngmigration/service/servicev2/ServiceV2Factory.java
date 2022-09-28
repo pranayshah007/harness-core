@@ -9,6 +9,7 @@ package io.harness.ngmigration.service.servicev2;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.InvalidRequestException;
 
 import software.wings.api.DeploymentType;
 import software.wings.beans.Service;
@@ -21,7 +22,7 @@ public class ServiceV2Factory {
     if (DeploymentType.KUBERNETES.equals(service.getDeploymentType())) {
       return k8sServiceV2Mapper;
     }
-    throw new UnsupportedOperationException(
+    throw new InvalidRequestException(
         String.format("Service of deployment type %s supported", service.getDeploymentType()));
   }
 }

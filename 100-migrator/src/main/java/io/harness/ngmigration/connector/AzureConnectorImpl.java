@@ -26,7 +26,6 @@ import io.harness.ngmigration.service.MigratorUtility;
 import software.wings.beans.AzureConfig;
 import software.wings.beans.SettingAttribute;
 import software.wings.ngmigration.CgEntityId;
-import software.wings.ngmigration.NGMigrationEntityType;
 
 import java.util.Map;
 import java.util.Set;
@@ -46,9 +45,7 @@ public class AzureConnectorImpl implements BaseConnector {
   @Override
   public ConnectorConfigDTO getConfigDTO(
       SettingAttribute settingAttribute, Set<CgEntityId> childEntities, Map<CgEntityId, NGYamlFile> migratedEntities) {
-    NGYamlFile secret = migratedEntities.get(
-        CgEntityId.builder().type(NGMigrationEntityType.SECRET).id(this.getSecretId(settingAttribute)).build());
-    SecretRefData secretRefData = new SecretRefData(MigratorUtility.getIdentifierWithScope(secret.getNgEntityDetail()));
+    SecretRefData secretRefData = MigratorUtility.getSecretRef(migratedEntities, this.getSecretId(settingAttribute));
     AzureConfig clusterConfig = (AzureConfig) settingAttribute.getValue();
     return builder()
         .azureEnvironmentType(clusterConfig.getAzureEnvironmentType())

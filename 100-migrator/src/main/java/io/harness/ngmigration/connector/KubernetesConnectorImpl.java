@@ -22,7 +22,7 @@ import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesOpenIdConnectDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesServiceAccountDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesUserNamePasswordDTO;
-import io.harness.exception.UnsupportedOperationException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.k8s.model.KubernetesClusterAuthType;
 import io.harness.ngmigration.beans.NGYamlFile;
 
@@ -97,7 +97,7 @@ public class KubernetesConnectorImpl implements BaseConnector {
         credentialDTO = KubernetesCredentialDTO.builder().kubernetesCredentialType(INHERIT_FROM_DELEGATE).build();
         break;
       default:
-        throw new UnsupportedOperationException("K8s Auth type not supported");
+        throw new InvalidRequestException("K8s Auth type not supported");
     }
 
     return builder.credential(credentialDTO).build();

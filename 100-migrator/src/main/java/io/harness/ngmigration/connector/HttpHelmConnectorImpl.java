@@ -18,14 +18,12 @@ import io.harness.delegate.beans.connector.helm.HttpHelmAuthType;
 import io.harness.delegate.beans.connector.helm.HttpHelmAuthenticationDTO;
 import io.harness.delegate.beans.connector.helm.HttpHelmAuthenticationDTO.HttpHelmAuthenticationDTOBuilder;
 import io.harness.delegate.beans.connector.helm.HttpHelmUsernamePasswordDTO;
-import io.harness.encryption.SecretRefData;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.service.MigratorUtility;
 
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.settings.helm.HttpHelmRepoConfig;
 import software.wings.ngmigration.CgEntityId;
-import software.wings.ngmigration.NGMigrationEntityType;
 
 import java.util.Map;
 import java.util.Set;
@@ -53,12 +51,10 @@ public class HttpHelmConnectorImpl implements BaseConnector {
     String secretId = this.getSecretId(settingAttribute);
     if (isNotEmpty(username) && isNotEmpty(secretId)) {
       authBuilder.authType(HttpHelmAuthType.USER_PASSWORD);
-      NGYamlFile secret =
-          migratedEntities.get(CgEntityId.builder().type(NGMigrationEntityType.SECRET).id(secretId).build());
-      SecretRefData secretRefData =
-          new SecretRefData(MigratorUtility.getIdentifierWithScope(secret.getNgEntityDetail()));
-      authBuilder.credentials(
-          HttpHelmUsernamePasswordDTO.builder().username(username).passwordRef(secretRefData).build());
+      authBuilder.credentials(HttpHelmUsernamePasswordDTO.builder()
+                                  .username(username)
+                                  .passwordRef(MigratorUtility.getSecretRef(migratedEntities, secretId))
+                                  .build());
     }
     HttpHelmAuthenticationDTO authDTO = authBuilder.build();
 

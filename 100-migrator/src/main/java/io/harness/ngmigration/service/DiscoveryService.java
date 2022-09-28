@@ -262,8 +262,12 @@ public class DiscoveryService {
 
   public StreamingOutput exportYamlFilesAsZip(MigrationInputDTO inputDTO, DiscoveryResult discoveryResult) {
     List<NGYamlFile> ngYamlFiles = migrateEntity(inputDTO, discoveryResult);
+    return createZip(ngYamlFiles);
+  }
+
+  public StreamingOutput createZip(List<NGYamlFile> yamlFiles) {
     String folder = "/tmp/" + UUIDGenerator.generateUuid();
-    exportZip(ngYamlFiles, folder);
+    exportZip(yamlFiles, folder);
     return output -> {
       try {
         byte[] data = Files.readAllBytes(Paths.get(folder + NGMigrationConstants.ZIP_FILE_PATH));

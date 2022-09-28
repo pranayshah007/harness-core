@@ -25,7 +25,6 @@ import io.harness.ngmigration.service.MigratorUtility;
 import software.wings.beans.GcpConfig;
 import software.wings.beans.SettingAttribute;
 import software.wings.ngmigration.CgEntityId;
-import software.wings.ngmigration.NGMigrationEntityType;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -56,13 +55,7 @@ public class GcpConnectorImpl implements BaseConnector {
     if (clusterConfig.isUseDelegateSelectors()) {
       credentialDTO = GcpConnectorCredentialDTO.builder().gcpCredentialType(INHERIT_FROM_DELEGATE).build();
     } else {
-      SecretRefData secretRefData =
-          new SecretRefData(MigratorUtility.getIdentifierWithScope(migratedEntities
-                                                                       .get(CgEntityId.builder()
-                                                                                .type(NGMigrationEntityType.SECRET)
-                                                                                .id(this.getSecretId(settingAttribute))
-                                                                                .build())
-                                                                       .getNgEntityDetail()));
+      SecretRefData secretRefData = MigratorUtility.getSecretRef(migratedEntities, this.getSecretId(settingAttribute));
       credentialDTO = GcpConnectorCredentialDTO.builder()
                           .gcpCredentialType(MANUAL_CREDENTIALS)
                           .config(GcpManualDetailsDTO.builder().secretKeyRef(secretRefData).build())

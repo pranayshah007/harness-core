@@ -7,6 +7,8 @@
 
 package io.harness.ngmigration.service.manifestfactory;
 
+import io.harness.exception.InvalidRequestException;
+
 import software.wings.beans.appmanifest.AppManifestKind;
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.appmanifest.StoreType;
@@ -20,7 +22,7 @@ public class NgManifestFactory {
 
   public NgManifestService getNgManifestService(ApplicationManifest applicationManifest) {
     if (applicationManifest.getKind() == null) {
-      throw new UnsupportedOperationException("Empty appManifest kind is not supported for migration");
+      throw new InvalidRequestException("Empty appManifest kind is not supported for migration");
     }
     AppManifestKind appManifestKind = applicationManifest.getKind();
     StoreType storeType = applicationManifest.getStoreType();
@@ -33,7 +35,7 @@ public class NgManifestFactory {
           case HelmSourceRepo:
             return k8sManifestHelmSourceRepoStoreService;
           default:
-            throw new UnsupportedOperationException(String.format(
+            throw new InvalidRequestException(String.format(
                 "%s storetype is currently not supported for %s appManifestKind", storeType, appManifestKind));
         }
       case VALUES:
@@ -41,11 +43,11 @@ public class NgManifestFactory {
           case Remote:
             return valuesManifestRemoteStoreService;
           default:
-            throw new UnsupportedOperationException(String.format(
+            throw new InvalidRequestException(String.format(
                 "%s storetype is currently not supported for %s appManifestKind", storeType, appManifestKind));
         }
       default:
-        throw new UnsupportedOperationException(
+        throw new InvalidRequestException(
             String.format("%s appManifestKind is currently not supported", appManifestKind));
     }
   }

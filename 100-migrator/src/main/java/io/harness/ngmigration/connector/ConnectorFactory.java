@@ -7,18 +7,23 @@
 
 package io.harness.ngmigration.connector;
 
+import static software.wings.settings.SettingVariableTypes.ARTIFACTORY;
+import static software.wings.settings.SettingVariableTypes.AZURE;
+import static software.wings.settings.SettingVariableTypes.DOCKER;
+import static software.wings.settings.SettingVariableTypes.GCP;
+import static software.wings.settings.SettingVariableTypes.GIT;
+import static software.wings.settings.SettingVariableTypes.HTTP_HELM_REPO;
+import static software.wings.settings.SettingVariableTypes.KUBERNETES_CLUSTER;
+import static software.wings.settings.SettingVariableTypes.NEXUS;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
-import software.wings.beans.AzureConfig;
-import software.wings.beans.DockerConfig;
-import software.wings.beans.GcpConfig;
-import software.wings.beans.GitConfig;
-import software.wings.beans.KubernetesClusterConfig;
 import software.wings.beans.SettingAttribute;
-import software.wings.beans.config.ArtifactoryConfig;
-import software.wings.beans.config.NexusConfig;
-import software.wings.beans.settings.helm.HttpHelmRepoConfig;
+import software.wings.settings.SettingVariableTypes;
+
+import com.google.common.collect.ImmutableMap;
+import java.util.Map;
 
 @OwnedBy(HarnessTeam.CDC)
 public class ConnectorFactory {
@@ -32,30 +37,22 @@ public class ConnectorFactory {
   private static final BaseConnector httpHelmConnector = new HttpHelmConnectorImpl();
   private static final BaseConnector unsupportedConnector = new UnsupportedConnectorImpl();
 
+  public static final Map<SettingVariableTypes, BaseConnector> CONNECTOR_FACTORY_MAP =
+      ImmutableMap.<SettingVariableTypes, BaseConnector>builder()
+          .put(NEXUS, nexusConnector)
+          .put(ARTIFACTORY, artifactoryConnector)
+          .put(DOCKER, dockerConnector)
+          .put(KUBERNETES_CLUSTER, kubernetesConnector)
+          .put(GIT, gitConnector)
+          .put(GCP, gcpConnector)
+          .put(AZURE, azureConnector)
+          .put(HTTP_HELM_REPO, httpHelmConnector)
+          .build();
+
   public static BaseConnector getConnector(SettingAttribute settingAttribute) {
-    if (settingAttribute.getValue() instanceof NexusConfig) {
-      return nexusConnector;
-    }
-    if (settingAttribute.getValue() instanceof ArtifactoryConfig) {
-      return artifactoryConnector;
-    }
-    if (settingAttribute.getValue() instanceof DockerConfig) {
-      return dockerConnector;
-    }
-    if (settingAttribute.getValue() instanceof KubernetesClusterConfig) {
-      return kubernetesConnector;
-    }
-    if (settingAttribute.getValue() instanceof GitConfig) {
-      return gitConnector;
-    }
-    if (settingAttribute.getValue() instanceof GcpConfig) {
-      return gcpConnector;
-    }
-    if (settingAttribute.getValue() instanceof AzureConfig) {
-      return azureConnector;
-    }
-    if (settingAttribute.getValue() instanceof HttpHelmRepoConfig) {
-      return httpHelmConnector;
+    SettingVariableTypes settingVariableTypes = settingAttribute.getValue().getSettingType();
+    if (CONNECTOR_FACTORY_MAP.containsKey(settingVariableTypes)) {
+      return CONNECTOR_FACTORY_MAP.get(settingAttribute.getValue().getSettingType());
     }
     return unsupportedConnector;
   }

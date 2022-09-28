@@ -13,13 +13,11 @@ import io.harness.ngmigration.beans.ImportMechanism;
 import io.harness.ngmigration.beans.InputDefaults;
 
 import software.wings.ngmigration.NGMigrationEntityType;
-import software.wings.settings.SettingVariableTypes;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.v3.oas.annotations.Parameter;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -27,17 +25,15 @@ import lombok.EqualsAndHashCode;
 @OwnedBy(HarnessTeam.CDC)
 @Data
 @EqualsAndHashCode(callSuper = true)
-@JsonTypeName("CONNECTOR")
-public class ImportConnectorDTO extends BaseImportDTO {
+@JsonTypeName("SECRET")
+public class ImportSecretsDTO extends BaseImportDTO {
   @Parameter(
       description =
-          "ALL: To migrate all connectors. TYPE: To migrate only specific type of connectors(eg: Docker, AWS etc). ID: TO migrate only specific connectors")
+          "ALL: To migrate all secrets. ID: TO migrate only specific connectors. Specific type is current not supported")
   @NotNull
   private ImportMechanism mechanism;
 
   @Parameter(description = "To be provided if mechanism is ID") private List<String> ids;
-
-  @Parameter(description = "To be provided if mechanism is TYPE") private Set<SettingVariableTypes> types;
 
   @Parameter(description = "The defaults for every entity. By default every entity is scoped to project.")
   private Map<NGMigrationEntityType, InputDefaults> defaults;

@@ -8,6 +8,7 @@
 package io.harness.ngmigration.service.entity;
 
 import io.harness.beans.MigratedEntityMapping;
+import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ngmigration.beans.BaseEntityInput;
 import io.harness.ngmigration.beans.MigrationInputDTO;
@@ -41,7 +42,7 @@ public class TemplateMigrationService extends NgMigrationService {
 
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {
-    throw new UnsupportedOperationException("Generate mapping is not supported for templates");
+    throw new InvalidRequestException("Generate mapping is not supported for templates");
   }
 
   @Override
@@ -80,29 +81,29 @@ public class TemplateMigrationService extends NgMigrationService {
   @Override
   public void migrate(String auth, NGClient ngClient, PmsClient pmsClient, MigrationInputDTO inputDTO,
       NGYamlFile yamlFile) throws IOException {
-    throw new UnsupportedOperationException("Migrate is not supported for templates");
+    throw new InvalidRequestException("Migrate is not supported for templates");
   }
 
   @Override
   public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities,
       NgEntityDetail ngEntityDetail) {
-    throw new UnsupportedOperationException("Generate yaml is not supported for templates");
+    throw new InvalidRequestException("Generate yaml is not supported for templates");
   }
 
   @Override
   protected YamlDTO getNGEntity(NgEntityDetail ngEntityDetail, String accountIdentifier) {
-    throw new UnsupportedOperationException("getNGEntity is not supported for templates");
+    throw new InvalidRequestException("getNGEntity is not supported for templates");
   }
 
   @Override
   protected boolean isNGEntityExists() {
-    throw new UnsupportedOperationException("isNGEntityExists is not supported for templates");
+    throw new InvalidRequestException("isNGEntityExists is not supported for templates");
   }
 
   @Override
   public BaseEntityInput generateInput(
       Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId) {
-    throw new UnsupportedOperationException("generate input is not supported for templates");
+    throw new InvalidRequestException("generate input is not supported for templates");
   }
 }

@@ -9,24 +9,31 @@ package io.harness.ngmigration.service.artifactstream;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.InvalidRequestException;
 
 import software.wings.beans.artifact.ArtifactStream;
-import software.wings.beans.artifact.ArtifactoryArtifactStream;
-import software.wings.beans.artifact.DockerArtifactStream;
+import software.wings.beans.artifact.ArtifactStreamType;
+
+import com.google.common.collect.ImmutableMap;
+import java.util.Map;
 
 @OwnedBy(HarnessTeam.CDC)
 public class ArtifactStreamFactory {
   private static final ArtifactStreamMapper dockerMapper = new DockerArtifactStreamMapper();
   private static final ArtifactStreamMapper artifactoryMapper = new ArtifactoryArtifactStreamMapper();
 
+  private static final Map<ArtifactStreamType, ArtifactStreamMapper> ARTIFACT_STREAM_MAPPER_MAP =
+      ImmutableMap.<ArtifactStreamType, ArtifactStreamMapper>builder()
+          .put(ArtifactStreamType.ARTIFACTORY, artifactoryMapper)
+          .put(ArtifactStreamType.DOCKER, dockerMapper)
+          .build();
+
   public static ArtifactStreamMapper getArtifactStreamMapper(ArtifactStream artifactStream) {
-    if (artifactStream instanceof DockerArtifactStream) {
-      return dockerMapper;
+    ArtifactStreamType artifactStreamType = ArtifactStreamType.valueOf(artifactStream.getArtifactStreamType());
+    if (ARTIFACT_STREAM_MAPPER_MAP.containsKey(artifactStreamType)) {
+      return ARTIFACT_STREAM_MAPPER_MAP.get(artifactStreamType);
     }
-    if (artifactStream instanceof ArtifactoryArtifactStream) {
-      return artifactoryMapper;
-    }
-    throw new UnsupportedOperationException(
+    throw new InvalidRequestException(
         String.format("Unsupported artifact stream of type %s", artifactStream.getArtifactStreamType()));
   }
 }

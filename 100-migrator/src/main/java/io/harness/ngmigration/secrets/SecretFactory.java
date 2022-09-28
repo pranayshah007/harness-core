@@ -13,6 +13,7 @@ import io.harness.beans.EncryptedData;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.SecretSpecDTO;
 import io.harness.ngmigration.beans.MigrationInputDTO;
@@ -45,7 +46,7 @@ public class SecretFactory {
     if (secretManagerConfig instanceof VaultConfig) {
       return ConnectorType.VAULT;
     }
-    throw new UnsupportedOperationException("Unsupported secret manager");
+    throw new InvalidRequestException("Unsupported secret manager");
   }
 
   public SecretMigrator getSecretMigrator(SecretManagerConfig secretManagerConfig) {
@@ -57,10 +58,10 @@ public class SecretFactory {
     }
     // Handle special case for Harness Secret managers
     if (secretManagerConfig instanceof GcpKmsConfig
-        && secretManagerConfig.getName().trim().equals("Harness Secrets Manager")) {
+        && "Harness Secrets Manager".equals(secretManagerConfig.getName().trim())) {
       return harnessSecretMigrator;
     }
-    throw new UnsupportedOperationException("Unsupported secret manager");
+    throw new InvalidRequestException("Unsupported secret manager");
   }
 
   public SecretDTOV2 getSecret(MigrationInputDTO inputDTO, String identifier, EncryptedData encryptedData,

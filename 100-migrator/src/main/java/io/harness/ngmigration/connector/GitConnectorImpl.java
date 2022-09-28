@@ -18,7 +18,7 @@ import io.harness.delegate.beans.connector.scm.genericgitconnector.GitHTTPAuthen
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitSSHAuthenticationDTO;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
-import io.harness.exception.UnsupportedOperationException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.shell.AuthenticationScheme;
@@ -79,7 +79,7 @@ public class GitConnectorImpl implements BaseConnector {
                   .build())
           .build();
     } else {
-      throw new UnsupportedOperationException("Unsupported git auth type: " + gitConfig.getAuthenticationScheme());
+      throw new InvalidRequestException("Unsupported git auth type: " + gitConfig.getAuthenticationScheme());
     }
   }
 
@@ -94,7 +94,7 @@ public class GitConnectorImpl implements BaseConnector {
       case SSH_KEY:
         return GitAuthType.SSH;
       default:
-        throw new UnsupportedOperationException("Git auth Type not supported : " + authenticationScheme);
+        throw new InvalidRequestException("Git auth Type not supported : " + authenticationScheme);
     }
   }
 }

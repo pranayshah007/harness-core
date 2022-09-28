@@ -19,6 +19,7 @@ import io.harness.beans.MigratedEntityMapping;
 import io.harness.cdng.infra.InfrastructureDef;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.infrastructure.InfrastructureType;
 import io.harness.ngmigration.beans.BaseEntityInput;
@@ -168,10 +169,10 @@ public class InfraMigrationService extends NgMigrationService {
     migratorExpressionUtils.render(infrastructureDefinition);
 
     if (infrastructureDefinition.getCloudProviderType() != KUBERNETES_CLUSTER) {
-      throw new UnsupportedOperationException("Only support K8s deployment");
+      throw new InvalidRequestException("Only support K8s deployment");
     }
     if (!(infrastructureDefinition.getInfrastructure() instanceof DirectKubernetesInfrastructure)) {
-      throw new UnsupportedOperationException("Only support Direct Infra");
+      throw new InvalidRequestException("Only support Direct Infra");
     }
     DirectKubernetesInfrastructure k8sInfra =
         (DirectKubernetesInfrastructure) infrastructureDefinition.getInfrastructure();
