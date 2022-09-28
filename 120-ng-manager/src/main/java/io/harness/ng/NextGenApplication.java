@@ -98,6 +98,7 @@ import io.harness.migration.beans.NGMigrationConfiguration;
 import io.harness.migrations.InstanceMigrationProvider;
 import io.harness.ng.core.CorrelationFilter;
 import io.harness.ng.core.EtagFilter;
+import io.harness.ng.core.TraceFilter;
 import io.harness.ng.core.event.NGEventConsumerService;
 import io.harness.ng.core.exceptionmappers.GenericExceptionMapperV2;
 import io.harness.ng.core.exceptionmappers.JerseyViolationExceptionMapperV2;
@@ -437,6 +438,10 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     registerMigrations(injector);
     injector.getInstance(CDRetentionHandlerNG.class).configureRetentionPolicy();
 
+    if (appConfig.getEnableOpentelemetry()) {
+      registerTraceFilter(environment, injector);
+    }
+
     log.info("NextGenApplication DEPLOY_VERSION = " + System.getenv().get(DEPLOY_VERSION));
     if (DeployVariant.isCommunity(System.getenv().get(DEPLOY_VERSION))) {
       initializeNGMonitoring(appConfig, injector);
@@ -773,6 +778,10 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
 
   private void registerCorrelationFilter(Environment environment, Injector injector) {
     environment.jersey().register(injector.getInstance(CorrelationFilter.class));
+  }
+
+  private void registerTraceFilter(Environment environment, Injector injector) {
+    environment.jersey().register(injector.getInstance(TraceFilter.class));
   }
 
   private void registerEtagFilter(Environment environment, Injector injector) {
