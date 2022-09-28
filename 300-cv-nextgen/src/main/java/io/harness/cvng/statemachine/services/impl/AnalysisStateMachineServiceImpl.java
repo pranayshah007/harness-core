@@ -15,14 +15,17 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.cvng.analysis.beans.LogClusterLevel;
+import io.harness.cvng.analysis.beans.TimeSeriesRecordDTO;
 import io.harness.cvng.beans.job.VerificationJobType;
 import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.entities.CVConfig;
+import io.harness.cvng.core.entities.TimeSeriesRecord;
 import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.entities.VerificationTask.DeploymentInfo;
 import io.harness.cvng.core.entities.VerificationTask.TaskType;
 import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.ExecutionLogService;
+import io.harness.cvng.core.services.api.TimeSeriesRecordService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.metrics.CVNGMetricsUtils;
 import io.harness.cvng.metrics.services.impl.MetricContextBuilder;
@@ -36,6 +39,7 @@ import io.harness.cvng.statemachine.entities.AnalysisStateMachine;
 import io.harness.cvng.statemachine.entities.AnalysisStateMachine.AnalysisStateMachineKeys;
 import io.harness.cvng.statemachine.entities.CanaryTimeSeriesAnalysisState;
 import io.harness.cvng.statemachine.entities.DeploymentLogClusterState;
+import io.harness.cvng.statemachine.entities.HostSamplingState;
 import io.harness.cvng.statemachine.entities.PreDeploymentLogClusterState;
 import io.harness.cvng.statemachine.entities.SLIMetricAnalysisState;
 import io.harness.cvng.statemachine.entities.ServiceGuardLogClusterState;
@@ -53,6 +57,8 @@ import io.harness.persistence.HPersistence;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
+
+import java.sql.Time;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -77,6 +83,7 @@ public class AnalysisStateMachineServiceImpl implements AnalysisStateMachineServ
   @Inject private ExecutionLogService executionLogService;
   @Inject private MetricService metricService;
   @Inject private MetricContextBuilder metricContextBuilder;
+  @Inject private TimeSeriesRecordService timeSeriesRecordService;
 
   @Override
   public void initiateStateMachine(String verificationTaskId, AnalysisStateMachine stateMachine) {
@@ -379,6 +386,12 @@ public class AnalysisStateMachineServiceImpl implements AnalysisStateMachineServ
           canaryTimeSeriesAnalysisState.setStatus(AnalysisStatus.CREATED);
           canaryTimeSeriesAnalysisState.setInputs(inputForAnalysis);
           stateMachine.setCurrentState(canaryTimeSeriesAnalysisState);
+          // TODO: add feature gate
+          HostSamplingState hostSamplingState = new HostSamplingState();
+          hostSamplingState.setStatus(AnalysisStatus.CREATED);
+          hostSamplingState.setInputs(inputForAnalysis);
+          hostSamplingState.setVerificationJobInstance(verificationJobInstance);
+          stateMachine.setCurrentState(hostSamplingState);
         }
         break;
       case LOG:
