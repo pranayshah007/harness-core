@@ -17,6 +17,7 @@ import io.harness.ngmigration.beans.NGYamlFile;
 import software.wings.beans.SettingAttribute;
 import software.wings.ngmigration.CgEntityId;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -28,7 +29,7 @@ public class UnsupportedConnectorImpl implements BaseConnector {
   }
 
   @Override
-  public String getSecretId(SettingAttribute settingAttribute) {
+  public List<String> getSecretIds(SettingAttribute settingAttribute) {
     return null;
   }
 

@@ -26,15 +26,18 @@ import software.wings.beans.GcpConfig;
 import software.wings.beans.SettingAttribute;
 import software.wings.ngmigration.CgEntityId;
 
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDP)
 public class GcpConnectorImpl implements BaseConnector {
   @Override
-  public String getSecretId(SettingAttribute settingAttribute) {
-    return ((GcpConfig) settingAttribute.getValue()).getEncryptedServiceAccountKeyFileContent();
+  public List<String> getSecretIds(SettingAttribute settingAttribute) {
+    return Collections.singletonList(
+        ((GcpConfig) settingAttribute.getValue()).getEncryptedServiceAccountKeyFileContent());
   }
 
   @Override
@@ -55,7 +58,8 @@ public class GcpConnectorImpl implements BaseConnector {
     if (clusterConfig.isUseDelegateSelectors()) {
       credentialDTO = GcpConnectorCredentialDTO.builder().gcpCredentialType(INHERIT_FROM_DELEGATE).build();
     } else {
-      SecretRefData secretRefData = MigratorUtility.getSecretRef(migratedEntities, this.getSecretId(settingAttribute));
+      String secretId = ((GcpConfig) settingAttribute.getValue()).getEncryptedServiceAccountKeyFileContent();
+      SecretRefData secretRefData = MigratorUtility.getSecretRef(migratedEntities, secretId);
       credentialDTO = GcpConnectorCredentialDTO.builder()
                           .gcpCredentialType(MANUAL_CREDENTIALS)
                           .config(GcpManualDetailsDTO.builder().secretKeyRef(secretRefData).build())

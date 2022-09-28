@@ -26,6 +26,8 @@ import software.wings.beans.SettingAttribute;
 import software.wings.beans.config.ArtifactoryConfig;
 import software.wings.ngmigration.CgEntityId;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
@@ -33,8 +35,8 @@ import org.apache.commons.lang3.StringUtils;
 @OwnedBy(HarnessTeam.CDC)
 public class ArtifactoryConnectorImpl implements BaseConnector {
   @Override
-  public String getSecretId(SettingAttribute settingAttribute) {
-    return ((ArtifactoryConfig) settingAttribute.getValue()).getEncryptedPassword();
+  public List<String> getSecretIds(SettingAttribute settingAttribute) {
+    return Collections.singletonList(((ArtifactoryConfig) settingAttribute.getValue()).getEncryptedPassword());
   }
 
   @Override

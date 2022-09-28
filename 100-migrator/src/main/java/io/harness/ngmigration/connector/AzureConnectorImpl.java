@@ -27,14 +27,16 @@ import software.wings.beans.AzureConfig;
 import software.wings.beans.SettingAttribute;
 import software.wings.ngmigration.CgEntityId;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDP)
 public class AzureConnectorImpl implements BaseConnector {
   @Override
-  public String getSecretId(SettingAttribute settingAttribute) {
-    return ((AzureConfig) settingAttribute.getValue()).getEncryptedKey();
+  public List<String> getSecretIds(SettingAttribute settingAttribute) {
+    return Collections.singletonList(((AzureConfig) settingAttribute.getValue()).getEncryptedKey());
   }
 
   @Override
@@ -45,8 +47,8 @@ public class AzureConnectorImpl implements BaseConnector {
   @Override
   public ConnectorConfigDTO getConfigDTO(
       SettingAttribute settingAttribute, Set<CgEntityId> childEntities, Map<CgEntityId, NGYamlFile> migratedEntities) {
-    SecretRefData secretRefData = MigratorUtility.getSecretRef(migratedEntities, this.getSecretId(settingAttribute));
     AzureConfig clusterConfig = (AzureConfig) settingAttribute.getValue();
+    SecretRefData secretRefData = MigratorUtility.getSecretRef(migratedEntities, clusterConfig.getEncryptedKey());
     return builder()
         .azureEnvironmentType(clusterConfig.getAzureEnvironmentType())
         .executeOnDelegate(true)

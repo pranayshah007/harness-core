@@ -27,14 +27,16 @@ import software.wings.beans.GitConfig;
 import software.wings.beans.SettingAttribute;
 import software.wings.ngmigration.CgEntityId;
 
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 public class GitConnectorImpl implements BaseConnector {
   @Override
-  public String getSecretId(SettingAttribute settingAttribute) {
-    return ((GitConfig) settingAttribute.getValue()).getEncryptedPassword();
+  public List<String> getSecretIds(SettingAttribute settingAttribute) {
+    return Collections.singletonList(((GitConfig) settingAttribute.getValue()).getEncryptedPassword());
   }
 
   @Override

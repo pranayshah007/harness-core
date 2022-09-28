@@ -25,14 +25,16 @@ import software.wings.beans.SettingAttribute;
 import software.wings.beans.settings.helm.HttpHelmRepoConfig;
 import software.wings.ngmigration.CgEntityId;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDP)
 public class HttpHelmConnectorImpl implements BaseConnector {
   @Override
-  public String getSecretId(SettingAttribute settingAttribute) {
-    return ((HttpHelmRepoConfig) settingAttribute.getValue()).getEncryptedPassword();
+  public List<String> getSecretIds(SettingAttribute settingAttribute) {
+    return Collections.singletonList(((HttpHelmRepoConfig) settingAttribute.getValue()).getEncryptedPassword());
   }
 
   @Override
@@ -48,7 +50,7 @@ public class HttpHelmConnectorImpl implements BaseConnector {
     HttpHelmAuthenticationDTOBuilder authBuilder = HttpHelmAuthenticationDTO.builder();
     authBuilder.authType(HttpHelmAuthType.ANONYMOUS);
     String username = config.getUsername();
-    String secretId = this.getSecretId(settingAttribute);
+    String secretId = config.getEncryptedPassword();
     if (isNotEmpty(username) && isNotEmpty(secretId)) {
       authBuilder.authType(HttpHelmAuthType.USER_PASSWORD);
       authBuilder.credentials(HttpHelmUsernamePasswordDTO.builder()
