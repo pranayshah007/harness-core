@@ -321,6 +321,7 @@ gcsFileMetadata {"name": "accountId_1", "background": true} {"accountId": 1}
 gcsFileMetadata {"name": "appId_1", "background": true} {"appId": 1}
 gcsFileMetadata {"name": "createdAt_1", "background": true} {"createdAt": 1}
 gcsFileMetadata {"name": "entityId_1", "background": true} {"entityId": 1}
+gcsFileMetadata {"name": "entityId_fileBucket_createdAt", "background": true} {"entityId": 1, "fileBucket": 1, "createdAt": -1}
 gcsFileMetadata {"name": "fileId_1", "background": true} {"fileId": 1}
 gcsFileMetadata {"name": "gcsFileId_1", "background": true} {"gcsFileId": 1}
 genericEvent {"name": "earliestGet_1", "background": true, "expireAfterSeconds": 86400} {"earliestGet": 1}
