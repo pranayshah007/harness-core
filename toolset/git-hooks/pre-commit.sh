@@ -80,7 +80,7 @@ else
     do
         if [ -e "${file}" ]
         then
-            clang-format -i "${file}"
+            clang-format-11 -i "${file}"
             git diff --exit-code -- "${file}"
             if [ "$?" -ne "0" ]
             then
