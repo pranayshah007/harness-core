@@ -602,9 +602,9 @@ public class NGSecretResourceV2 {
 
   @GET
   @Path("{identifier}/decrypt")
-  //  @InternalApi
+  @InternalApi
   @ApiOperation(hidden = true, value = "Get Decrypted Secret", nickname = "getDecryptedSecret")
-  //  @Hidden
+  @Hidden
   public ResponseDTO<DecryptedSecretValue> getDecryptedSecretValue(
       @Parameter(description = "Secret Identifier") @NotNull @PathParam(
           NGCommonEntityConstants.IDENTIFIER_KEY) @EntityIdentifier String identifier,
