@@ -389,6 +389,7 @@ infrastructureDefinitions {"name": "infrastructure_cloudProviderId", "background
 infrastructureMapping {"name": "accountId_1", "background": true} {"accountId": 1}
 infrastructureMapping {"name": "appId_1", "background": true} {"appId": 1}
 infrastructureMapping {"name": "appId_createdAt", "background": true} {"appId": 1, "createdAt": -1}
+infrastructureMapping {"name": "appId_envId_serviceId_infrastructureDefinitionId", "background": true} {"appId": 1, "envId": 1, "serviceId": 1, "infrastructureDefinitionId": 1}
 infrastructureMapping {"name": "app_envId_serviceTemplateId", "background": true} {"appId": 1, "envId": 1, "serviceTemplateId": 1, "createdAt": -1}
 infrastructureMapping {"name": "app_infratype", "background": true} {"appId": 1, "infraMappingType": 1}
 infrastructureMapping {"name": "computeProviderSettingId_1", "background": true} {"computeProviderSettingId": 1}
