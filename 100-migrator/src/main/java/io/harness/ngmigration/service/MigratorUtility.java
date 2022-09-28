@@ -7,13 +7,17 @@
 
 package io.harness.ngmigration.service;
 
+import static software.wings.ngmigration.NGMigrationEntityType.SECRET;
+
 import io.harness.encryption.Scope;
+import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.ngmigration.beans.InputDefaults;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.pms.yaml.ParameterField;
 
+import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.NGMigrationEntityType;
 
 import java.util.Comparator;
@@ -64,6 +68,27 @@ public class MigratorUtility {
     }
     return inputDefaultsMap.get(entityType).getScope() != null ? inputDefaultsMap.get(entityType).getScope()
                                                                : defaultScope;
+  }
+
+  public static Scope getScope(NgEntityDetail entityDetail) {
+    String orgId = entityDetail.getOrgIdentifier();
+    String projectId = entityDetail.getProjectIdentifier();
+    if (StringUtils.isAllBlank(orgId, projectId)) {
+      return Scope.ACCOUNT;
+    }
+    if (StringUtils.isNotBlank(projectId)) {
+      return Scope.PROJECT;
+    }
+    return Scope.ORG;
+  }
+
+  public static SecretRefData getSecretRef(Map<CgEntityId, NGYamlFile> migratedEntities, String secretId) {
+    CgEntityId secretEntityId = CgEntityId.builder().id(secretId).type(SECRET).build();
+    NgEntityDetail migratedSecret = migratedEntities.get(secretEntityId).getNgEntityDetail();
+    return SecretRefData.builder()
+        .identifier(migratedSecret.getIdentifier())
+        .scope(MigratorUtility.getScope(migratedSecret))
+        .build();
   }
 
   public static String getIdentifierWithScope(NgEntityDetail entityDetail) {

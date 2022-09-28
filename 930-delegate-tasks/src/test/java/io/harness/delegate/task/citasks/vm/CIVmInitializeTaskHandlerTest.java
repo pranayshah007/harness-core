@@ -18,6 +18,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.delegate.beans.ci.VmInfraInfo;
 import io.harness.delegate.beans.ci.vm.CIVmInitializeTaskParams;
 import io.harness.delegate.beans.ci.vm.VmTaskExecutionResponse;
 import io.harness.delegate.beans.ci.vm.runner.SetupVmResponse;
@@ -43,6 +44,7 @@ public class CIVmInitializeTaskHandlerTest extends CategoryTest {
   @Mock private HttpHelper httpHelper;
   @Mock private ILogStreamingTaskClient logStreamingTaskClient;
   @InjectMocks private CIVmInitializeTaskHandler ciVmInitializeTaskHandler;
+  private VmInfraInfo vmInfraInfo = VmInfraInfo.builder().poolId("test").build();
 
   @Before
   public void setUp() {
@@ -53,7 +55,8 @@ public class CIVmInitializeTaskHandlerTest extends CategoryTest {
   @Owner(developers = SHUBHAM)
   @Category(UnitTests.class)
   public void executeTaskInternal() throws IOException {
-    CIVmInitializeTaskParams params = CIVmInitializeTaskParams.builder().stageRuntimeId("stage").build();
+    CIVmInitializeTaskParams params =
+        CIVmInitializeTaskParams.builder().stageRuntimeId("stage").infraInfo(vmInfraInfo).build();
     Response<SetupVmResponse> setupResponse =
         Response.success(SetupVmResponse.builder().instanceID("test").ipAddress("1.1.1.1").build());
     when(httpHelper.setupStageWithRetries(any())).thenReturn(setupResponse);
@@ -66,7 +69,8 @@ public class CIVmInitializeTaskHandlerTest extends CategoryTest {
   @Owner(developers = SHUBHAM)
   @Category(UnitTests.class)
   public void executeTaskInternalFailure() throws IOException {
-    CIVmInitializeTaskParams params = CIVmInitializeTaskParams.builder().stageRuntimeId("stage").build();
+    CIVmInitializeTaskParams params =
+        CIVmInitializeTaskParams.builder().stageRuntimeId("stage").infraInfo(vmInfraInfo).build();
     ResponseBody body = mock(ResponseBody.class);
     Response<SetupVmResponse> setupResponse = Response.error(400, body);
     when(httpHelper.setupStageWithRetries(any())).thenReturn(setupResponse);

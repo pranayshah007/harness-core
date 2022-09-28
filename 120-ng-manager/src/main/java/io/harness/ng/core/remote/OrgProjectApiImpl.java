@@ -52,7 +52,7 @@ import org.springframework.data.domain.Page;
 @NextGenManagerAuth
 public class OrgProjectApiImpl implements OrgProjectApi {
   private final ProjectService projectService;
-  private final ProjectApiMapper projectApiMapper;
+  private final ProjectApiUtils projectApiUtils;
 
   @NGAccessControlCheck(resourceType = PROJECT, permission = CREATE_PROJECT_PERMISSION)
   @Override
@@ -83,7 +83,7 @@ public class OrgProjectApiImpl implements OrgProjectApi {
 
     ResponseBuilder responseBuilder = Response.ok();
 
-    ResponseBuilder responseBuilderWithLinks = projectApiMapper.addLinksHeader(
+    ResponseBuilder responseBuilderWithLinks = projectApiUtils.addLinksHeader(
         responseBuilder, format("/v1/orgs/%s/projects", org), projects.size(), page, limit);
 
     return responseBuilderWithLinks.entity(projects).build();
@@ -105,8 +105,8 @@ public class OrgProjectApiImpl implements OrgProjectApi {
     if (!Objects.equals(org, createProjectRequest.getProject().getOrg())) {
       throw new InvalidRequestException("Org scoped request is having different org in payload and param", USER);
     }
-    Project createdProject = projectService.create(account, org, projectApiMapper.getProjectDto(createProjectRequest));
-    ProjectResponse projectResponse = projectApiMapper.getProjectResponse(createdProject);
+    Project createdProject = projectService.create(account, org, projectApiUtils.getProjectDto(createProjectRequest));
+    ProjectResponse projectResponse = projectApiUtils.getProjectResponse(createdProject);
 
     return Response.status(Response.Status.CREATED)
         .entity(projectResponse)
@@ -116,8 +116,8 @@ public class OrgProjectApiImpl implements OrgProjectApi {
 
   private Response updateProject(String id, UpdateProjectRequest updateProjectRequest, String account, String org) {
     Project updatedProject =
-        projectService.update(account, org, id, projectApiMapper.getProjectDto(updateProjectRequest));
-    ProjectResponse projectResponse = projectApiMapper.getProjectResponse(updatedProject);
+        projectService.update(account, org, id, projectApiUtils.getProjectDto(updateProjectRequest));
+    ProjectResponse projectResponse = projectApiUtils.getProjectResponse(updatedProject);
 
     return Response.ok().entity(projectResponse).tag(updatedProject.getVersion().toString()).build();
   }
@@ -127,7 +127,7 @@ public class OrgProjectApiImpl implements OrgProjectApi {
     if (!projectOptional.isPresent()) {
       throw new NotFoundException(format("Project with org [%s] and slug [%s] not found", org, id));
     }
-    ProjectResponse projectResponse = projectApiMapper.getProjectResponse(projectOptional.get());
+    ProjectResponse projectResponse = projectApiUtils.getProjectResponse(projectOptional.get());
 
     return Response.ok().entity(projectResponse).tag(projectOptional.get().getVersion().toString()).build();
   }
@@ -142,9 +142,9 @@ public class OrgProjectApiImpl implements OrgProjectApi {
                                             .identifiers(project)
                                             .build();
     Page<Project> projectPages =
-        projectService.listPermittedProjects(account, projectApiMapper.getPageRequest(page, limit), projectFilterDTO);
+        projectService.listPermittedProjects(account, projectApiUtils.getPageRequest(page, limit), projectFilterDTO);
 
-    Page<ProjectResponse> projectResponsePage = projectPages.map(projectApiMapper::getProjectResponse);
+    Page<ProjectResponse> projectResponsePage = projectPages.map(projectApiUtils::getProjectResponse);
 
     return new ArrayList<>(projectResponsePage.getContent());
   }
@@ -158,7 +158,7 @@ public class OrgProjectApiImpl implements OrgProjectApi {
     if (!deleted) {
       throw new NotFoundException(format("Project with orgIdentifier [%s] and identifier [%s] not found", org, id));
     }
-    ProjectResponse projectResponse = projectApiMapper.getProjectResponse(projectOptional.get());
+    ProjectResponse projectResponse = projectApiUtils.getProjectResponse(projectOptional.get());
 
     return Response.ok().entity(projectResponse).build();
   }

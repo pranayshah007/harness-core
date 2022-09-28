@@ -100,9 +100,11 @@ import io.harness.event.handler.impl.EventPublishHelper;
 import io.harness.eventframework.manager.ManagerObserverEventProducer;
 import io.harness.exception.CriticalExpressionEvaluationException;
 import io.harness.exception.DelegateNotAvailableException;
+import io.harness.exception.DelegateTaskExpiredException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.WingsException;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.expression.ExpressionReflectionUtils;
 import io.harness.ff.FeatureFlagService;
@@ -117,7 +119,6 @@ import io.harness.network.SafeHttpCall;
 import io.harness.observer.RemoteObserverInformer;
 import io.harness.observer.Subject;
 import io.harness.persistence.HPersistence;
-import io.harness.reflection.ReflectionUtils;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptionConfig;
@@ -126,7 +127,6 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.service.intfc.DelegateCache;
 import io.harness.service.intfc.DelegateCallbackRegistry;
 import io.harness.service.intfc.DelegateCallbackService;
-import io.harness.service.intfc.DelegateInsightsService;
 import io.harness.service.intfc.DelegateSetupService;
 import io.harness.service.intfc.DelegateSyncService;
 import io.harness.service.intfc.DelegateTaskResultsProvider;
@@ -272,7 +272,6 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   @Inject @Named("PRIVILEGED") private SecretManagerClientService ngSecretService;
   @Inject private DelegateCache delegateCache;
   @Inject private CapabilityService capabilityService;
-  @Inject private DelegateInsightsService delegateInsightsService;
   @Inject private DelegateSetupService delegateSetupService;
   @Inject private AuditHelper auditHelper;
   @Inject private DelegateMetricsService delegateMetricsService;
@@ -284,8 +283,6 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   private static final SecureRandom random = new SecureRandom();
   private HarnessCacheManager harnessCacheManager;
   private Supplier<Long> taskCountCache = Suppliers.memoizeWithExpiration(this::fetchTaskCount, 1, TimeUnit.MINUTES);
-  @Inject @Getter private Subject<DelegateTaskStatusObserver> delegateTaskStatusObserverSubject;
-  @Inject @Getter private Subject<DelegateTaskObserver> delegateTaskObserverSubject;
   @Inject private RemoteObserverInformer remoteObserverInformer;
   @Inject private ManagerObserverEventProducer managerObserverEventProducer;
 
@@ -536,7 +533,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
       } catch (Exception exception) {
         log.info("Task id {} failed with error {}", task.getUuid(), exception);
         printErrorMessageOnTaskFailure(task);
-        handleTaskFailureResponse(task, ExceptionUtils.getMessage(exception));
+        handleTaskFailureResponse(task, exception);
         if (!task.getData().isAsync()) {
           throw exception;
         }
@@ -556,12 +553,21 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     return eligibleListOfDelegates.get(random.nextInt(eligibleListOfDelegates.size()));
   }
 
-  private void handleTaskFailureResponse(DelegateTask task, String errorMessage) {
+  private void handleTaskFailureResponse(DelegateTask task, Exception exception) {
     Query<DelegateTask> taskQuery = persistence.createQuery(DelegateTask.class)
                                         .filter(DelegateTaskKeys.accountId, task.getAccountId())
                                         .filter(DelegateTaskKeys.uuid, task.getUuid());
+    WingsException ex = null;
+    if (exception instanceof WingsException) {
+      ex = (WingsException) exception;
+    } else {
+      log.error("Encountered unknown exception and failing task", exception);
+    }
     DelegateTaskResponse response = DelegateTaskResponse.builder()
-                                        .response(ErrorNotifyResponseData.builder().errorMessage(errorMessage).build())
+                                        .response(ErrorNotifyResponseData.builder()
+                                                      .errorMessage(ExceptionUtils.getMessage(exception))
+                                                      .exception(ex)
+                                                      .build())
                                         .responseCode(ResponseCode.FAILED)
                                         .accountId(task.getAccountId())
                                         .build();
@@ -1085,17 +1091,6 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
       task.getData().setParameters(delegateTask.getData().getParameters());
       delegateSelectionLogsService.logTaskAssigned(delegateId, task);
 
-      if (delegateTask.isEmitEvent()) {
-        Map<String, String> eventData = new HashMap<>();
-        String taskType = task.getData().getTaskType();
-
-        managerObserverEventProducer.sendEvent(
-            ReflectionUtils.getMethod(DelegateTaskObserver.class, "onTaskAssigned", String.class, String.class,
-                String.class, String.class, String.class),
-            DelegateTaskServiceClassicImpl.class, delegateTask.getAccountId(), taskId, delegateId,
-            delegateTask.getStageId(), taskType);
-      }
-
       delegateMetricsService.recordDelegateTaskMetrics(delegateTask, DELEGATE_TASK_ACQUIRE);
 
       return resolvePreAssignmentExpressions(task, SecretManagerMode.APPLY);
@@ -1151,7 +1146,11 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
 
           if (isNotBlank(delegateTask.getWaitId())) {
             waitNotifyEngine.doneWith(delegateTask.getWaitId(),
-                ErrorNotifyResponseData.builder().errorMessage(errorMessage).expired(true).build());
+                ErrorNotifyResponseData.builder()
+                    .errorMessage(errorMessage)
+                    .expired(true)
+                    .exception(new DelegateTaskExpiredException(delegateTaskId))
+                    .build());
           }
         }
       }

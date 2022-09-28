@@ -58,11 +58,15 @@ public interface YamlTypes {
   String ECS_ROLLING_ROLLBACK = StepSpecTypeConstants.ECS_ROLLING_ROLLBACK;
   String ECS_CANARY_DEPLOY = StepSpecTypeConstants.ECS_CANARY_DEPLOY;
   String ECS_CANARY_DELETE = StepSpecTypeConstants.ECS_CANARY_DELETE;
+  String ECS_BLUE_GREEN_CREATE_SERVICE = StepSpecTypeConstants.ECS_BLUE_GREEN_CREATE_SERVICE;
+  String ECS_BLUE_GREEN_SWAP_TARGET_GROUPS = StepSpecTypeConstants.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS;
+  String ECS_BLUE_GREEN_ROLLBACK = StepSpecTypeConstants.ECS_BLUE_GREEN_ROLLBACK;
 
   String AZURE_SLOT_DEPLOYMENT = StepSpecTypeConstants.AZURE_SLOT_DEPLOYMENT;
   String AZURE_TRAFFIC_SHIFT = StepSpecTypeConstants.AZURE_TRAFFIC_SHIFT;
   String AZURE_SWAP_SLOT = StepSpecTypeConstants.AZURE_SWAP_SLOT;
   String AZURE_WEBAPP_ROLLBACK = StepSpecTypeConstants.AZURE_WEBAPP_ROLLBACK;
+  String FETCH_INSTANCE_SCRIPT = StepSpecTypeConstants.CUSTOM_DEPLOYMENT_FETCH_INSTANCE_SCRIPT;
 
   String MANIFEST_LIST_CONFIG = "manifests";
   String MANIFEST_CONFIG = "manifest";
@@ -108,6 +112,14 @@ public interface YamlTypes {
   String CREDENTIALS_REF = "credentialsRef";
   String HOSTS = "hosts";
   String HOST_FILTER = "hostFilter";
+  String SIDECARS = "sidecars";
+  String SIDECAR = "sidecar";
+  String ARTIFACTS = "artifacts";
+  String ROLLBACK_STEPS = "rollbackSteps";
+  String STEPS = "steps";
+  String STRATEGY = "strategy";
+  String STEP_GROUP = "stepGroup";
+  String PRIMARY = "primary";
 
   String SUBSCRIPTION = "subscription";
   String RESOURCE_GROUP = "resourceGroup";
@@ -137,4 +149,7 @@ public interface YamlTypes {
   String APPLICATION_SETTINGS = "applicationSettings";
   String CONNECTION_STRINGS = "connectionStrings";
   String DEPLOYMENT_TYPE = "deploymentType";
+
+  String ENV_PRODUCTION = "Production";
+  String ENV_PRE_PRODUCTION = "PreProduction";
 }

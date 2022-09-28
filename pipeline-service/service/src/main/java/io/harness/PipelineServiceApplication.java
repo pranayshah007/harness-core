@@ -721,7 +721,7 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
         .deployMode(GitSyncSdkConfiguration.DeployMode.REMOTE)
         .microservice(Microservice.PMS)
         .scmConnectionConfig(gitSdkConfiguration.getScmConnectionConfig())
-        .eventsRedisConfig(config.getEventsFrameworkConfiguration().getRedisConfig())
+        .eventsFrameworkConfiguration(config.getEventsFrameworkConfiguration())
         .serviceHeader(PIPELINE_SERVICE)
         .gitSyncEntitiesConfiguration(gitSyncEntitiesConfigurations)
         .gitSyncEntitySortComparator(PMSGitEntityOrderComparator.class)
@@ -775,7 +775,7 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
   private void registerJerseyProviders(Environment environment, Injector injector) {
     environment.jersey().register(JerseyViolationExceptionMapperV2.class);
     environment.jersey().register(GenericExceptionMapperV2.class);
-    environment.jersey().register(JsonProcessingExceptionMapper.class);
+    environment.jersey().register(new JsonProcessingExceptionMapper(true));
     environment.jersey().register(EarlyEofExceptionMapper.class);
     environment.jersey().register(NGAccessDeniedExceptionMapper.class);
     environment.jersey().register(WingsExceptionMapperV2.class);

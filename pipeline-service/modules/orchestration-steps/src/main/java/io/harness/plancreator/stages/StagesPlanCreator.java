@@ -50,6 +50,8 @@ public class StagesPlanCreator extends ChildrenPlanCreator<StagesConfig> {
           PlanCreationResponse.builder()
               .dependencies(DependenciesUtils.toDependenciesProto(stageYamlFieldMap))
               .build());
+      PlanCreationResponse planForRollbackStage = RollbackStagePlanCreator.createPlanForRollbackStage(stageYamlField);
+      responseMap.put(stageYamlField.getNode().getUuid() + "_rollbackStage", planForRollbackStage);
     }
     return responseMap;
   }

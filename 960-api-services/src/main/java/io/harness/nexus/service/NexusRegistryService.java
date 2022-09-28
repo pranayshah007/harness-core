@@ -28,7 +28,8 @@ public interface NexusRegistryService {
    * @return the builds
    */
   List<BuildDetailsInternal> getBuilds(NexusRequest nexusConfig, String repositoryName, String port,
-      String artifactName, String repoFormat, int maxNumberOfBuilds);
+      String artifactName, String repoFormat, int maxNumberOfBuilds, String groupId, String artifactId,
+      String extension, String classifier, String packageName);
 
   /**
    * Gets the last successful build with input as tag regex.
@@ -38,7 +39,8 @@ public interface NexusRegistryService {
    * @return the last successful build
    */
   BuildDetailsInternal getLastSuccessfulBuildFromRegex(NexusRequest nexusConfig, String repository, String port,
-      String artifactName, String repositoryFormat, String tagRegex);
+      String artifactName, String repositoryFormat, String tagRegex, String groupId, String artifactId,
+      String extension, String classifier, String packageName);
 
   /**
    * Validates the Artifact Tag
@@ -46,7 +48,8 @@ public interface NexusRegistryService {
    * @param artifactName the artifact name
    */
   BuildDetailsInternal verifyBuildNumber(NexusRequest nexusConfig, String repository, String port, String artifactName,
-      String repositoryFormat, String tag);
+      String repositoryFormat, String tag, String groupId, String artifactId, String extension, String classifier,
+      String packageName);
 
   /**
    * Validate the credentials

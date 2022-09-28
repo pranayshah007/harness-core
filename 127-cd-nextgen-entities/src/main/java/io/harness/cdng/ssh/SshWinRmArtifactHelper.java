@@ -17,6 +17,7 @@ import static java.util.Collections.emptyList;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
+import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
@@ -24,19 +25,24 @@ import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
 import io.harness.cdng.artifact.outcome.CustomArtifactOutcome;
 import io.harness.cdng.artifact.outcome.JenkinsArtifactOutcome;
 import io.harness.cdng.artifact.outcome.NexusArtifactOutcome;
+import io.harness.cdng.artifact.outcome.S3ArtifactOutcome;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
+import io.harness.delegate.beans.aws.s3.S3FileDetailRequest;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
 import io.harness.delegate.task.ssh.artifact.ArtifactoryArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.ArtifactoryDockerArtifactDelegateConfig;
+import io.harness.delegate.task.ssh.artifact.AwsS3ArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.CustomArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.JenkinsArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.NexusDockerArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactDelegateConfig;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -56,6 +62,7 @@ import javax.annotation.Nonnull;
 public class SshWinRmArtifactHelper {
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
   @Named("PRIVILEGED") @Inject private SecretManagerClientService secretManagerClientService;
+  @Inject private FeatureFlagService featureFlagService;
 
   public SshWinRmArtifactDelegateConfig getArtifactDelegateConfigConfig(
       ArtifactOutcome artifactOutcome, Ambiance ambiance) {
@@ -117,6 +124,25 @@ public class SshWinRmArtifactHelper {
           .image(nexusArtifactOutcome.getImage())
           .encryptedDataDetails(getArtifactEncryptionDataDetails(connectorDTO, ngAccess))
           .build();
+    } else if (artifactOutcome instanceof S3ArtifactOutcome) {
+      S3ArtifactOutcome s3ArtifactOutcome = (S3ArtifactOutcome) artifactOutcome;
+      connectorDTO = getConnectorInfoDTO(s3ArtifactOutcome.getConnectorRef(), ngAccess);
+      AwsConnectorDTO awsConnectorDTO = (AwsConnectorDTO) connectorDTO.getConnectorConfig();
+      S3FileDetailRequest request = S3FileDetailRequest.builder()
+                                        .fileKey(s3ArtifactOutcome.getFilePath())
+                                        .bucketName(s3ArtifactOutcome.getBucketName())
+                                        .build();
+      return AwsS3ArtifactDelegateConfig.builder()
+          .identifier(s3ArtifactOutcome.getIdentifier())
+          .awsConnector(awsConnectorDTO)
+          .encryptionDetails(getArtifactEncryptionDataDetails(connectorDTO, ngAccess))
+          .region(s3ArtifactOutcome.getRegion())
+          .certValidationRequired(
+              featureFlagService.isEnabled(FeatureName.ENABLE_CERT_VALIDATION, ngAccess.getAccountIdentifier()))
+          .accountId(ngAccess.getAccountIdentifier())
+          .artifactPath(request.getFileKey())
+          .bucketName(request.getBucketName())
+          .build();
     } else {
       throw new UnsupportedOperationException(
           format("Unsupported Artifact type: [%s]", artifactOutcome.getArtifactType()));
@@ -150,6 +176,14 @@ public class SshWinRmArtifactHelper {
         if (isNotEmpty(nexusDecryptableEntities)) {
           return secretManagerClientService.getEncryptionDetails(
               ngAccess, nexusConnectorDTO.getAuth().getCredentials());
+        } else {
+          return emptyList();
+        }
+      case AWS:
+        AwsConnectorDTO awsConnectorDTO = (AwsConnectorDTO) connectorDTO.getConnectorConfig();
+        List<DecryptableEntity> awsDecryptableEntities = awsConnectorDTO.getDecryptableEntities();
+        if (isNotEmpty(awsDecryptableEntities)) {
+          return secretManagerClientService.getEncryptionDetails(ngAccess, awsConnectorDTO.getCredential().getConfig());
         } else {
           return emptyList();
         }

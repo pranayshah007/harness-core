@@ -7,13 +7,10 @@
 
 package io.harness.freeze.beans;
 
-import java.util.List;
 import lombok.Data;
 
 @Data
 public class RecurrenceSpec {
   String until;
   Integer count;
-  String expression;
-  List<String> dayRange;
 }

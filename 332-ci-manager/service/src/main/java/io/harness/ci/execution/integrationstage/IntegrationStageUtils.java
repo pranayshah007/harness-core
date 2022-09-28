@@ -57,6 +57,7 @@ import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.ci.buildstate.ConnectorUtils;
+import io.harness.ci.buildstate.InfraInfoUtils;
 import io.harness.ci.license.CILicenseService;
 import io.harness.ci.pipeline.executions.beans.CIImageDetails;
 import io.harness.ci.pipeline.executions.beans.CIInfraDetails;
@@ -297,8 +298,7 @@ public class IntegrationStageUtils {
     return treatWebhookAsManualExecution(connectorDetails, codeBase, parsedPayload, version);
   }
 
-  private static BaseNGAccess getBaseNGAccess(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+  public static BaseNGAccess getBaseNGAccess(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     return BaseNGAccess.builder()
         .accountIdentifier(accountIdentifier)
         .orgIdentifier(orgIdentifier)
@@ -750,11 +750,12 @@ public class IntegrationStageUtils {
     String infraOSType = null;
     String infraHostType = null;
 
-    if (infrastructure.getType() == KUBERNETES_DIRECT) {
+    Infrastructure.Type type = infrastructure.getType();
+    if (type == KUBERNETES_DIRECT) {
       infraOSType = getK8OS(infrastructure).toString();
       infraHostType = SELF_HOSTED;
-    } else if (infrastructure.getType() == VM) {
-      infraOSType = VmInitializeUtils.getOS(infrastructure).toString();
+    } else if (type == VM || type == Infrastructure.Type.DOCKER) {
+      infraOSType = InfraInfoUtils.getInfraOS(infrastructure).toString();
       infraHostType = SELF_HOSTED;
     } else if (infrastructure.getType() == KUBERNETES_HOSTED) {
       infraOSType = getK8OS(infrastructure).toString();

@@ -109,7 +109,7 @@ public class AlertServiceImpl implements AlertService {
 
   @Override
   public PageResponse<Alert> list(PageRequest<Alert> pageRequest) {
-    return wingsPersistence.query(Alert.class, pageRequest);
+    return wingsPersistence.querySecondary(Alert.class, pageRequest);
   }
 
   @Override

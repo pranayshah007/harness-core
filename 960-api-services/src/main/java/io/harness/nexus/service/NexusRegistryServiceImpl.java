@@ -38,19 +38,28 @@ public class NexusRegistryServiceImpl implements NexusRegistryService {
 
   @Override
   public List<BuildDetailsInternal> getBuilds(NexusRequest nexusConfig, String repositoryName, String port,
-      String artifactName, String repositoryFormat, int maxNumberOfBuilds) {
+      String artifactName, String repositoryFormat, int maxNumberOfBuilds, String groupId, String artifactId,
+      String extension, String classifier, String packageName) {
+    List<BuildDetailsInternal> buildDetails;
     if (RepositoryFormat.docker.name().equalsIgnoreCase(repositoryFormat)) {
-      List<BuildDetailsInternal> buildDetails;
       buildDetails =
           nexusClient.getArtifactsVersions(nexusConfig, repositoryName, port, artifactName, repositoryFormat);
       buildDetails.sort(new BuildDetailsInternalComparatorAscending());
       return buildDetails;
+    } else if (RepositoryFormat.maven.name().equalsIgnoreCase(repositoryFormat)) {
+      buildDetails =
+          nexusClient.getArtifactsVersions(nexusConfig, repositoryName, groupId, artifactId, extension, classifier);
+      return buildDetails;
+    } else if (RepositoryFormat.npm.name().equalsIgnoreCase(repositoryFormat)
+        || RepositoryFormat.nuget.name().equalsIgnoreCase(repositoryFormat)) {
+      buildDetails = nexusClient.getArtifactsVersions(nexusConfig, repositoryFormat, repositoryName, packageName);
+      return buildDetails;
+    } else {
+      throw NestedExceptionUtils.hintWithExplanationException("Please check your artifact YAML configuration.",
+          String.format("repositoryFormat [%s] is an invalid value.", repositoryFormat),
+          new NexusRegistryException(
+              "Invalid value for repositoryFormat field. Currently only 'docker' repository format is supported."));
     }
-
-    throw NestedExceptionUtils.hintWithExplanationException("Please check your artifact YAML configuration.",
-        String.format("repositoryFormat [%s] is an invalid value.", repositoryFormat),
-        new NexusRegistryException(
-            "Invalid value for repositoryFormat field. Currently only 'docker' repository format is supported."));
   }
 
   private List<BuildDetailsInternal> getBuildDetails(NexusRequest nexusConfig, String repository, String port,
@@ -61,7 +70,6 @@ public class NexusRegistryServiceImpl implements NexusRegistryService {
       buildDetails.sort(new BuildDetailsInternalComparatorAscending());
       return buildDetails;
     }
-
     throw NestedExceptionUtils.hintWithExplanationException("Please check your artifact YAML configuration.",
         String.format("repositoryFormat [%s] is an invalid value.", repositoryFormat),
         new NexusRegistryException(
@@ -70,7 +78,8 @@ public class NexusRegistryServiceImpl implements NexusRegistryService {
 
   @Override
   public BuildDetailsInternal getLastSuccessfulBuildFromRegex(NexusRequest nexusConfig, String repository, String port,
-      String artifactName, String repositoryFormat, String tagRegex) {
+      String artifactName, String repositoryFormat, String tagRegex, String groupId, String artifactId,
+      String extension, String classifier, String packageName) {
     try {
       Pattern.compile(tagRegex);
     } catch (PatternSyntaxException e) {
@@ -80,8 +89,8 @@ public class NexusRegistryServiceImpl implements NexusRegistryService {
           new NexusRegistryException(e.getMessage()));
     }
 
-    List<BuildDetailsInternal> builds =
-        getBuilds(nexusConfig, repository, port, artifactName, repositoryFormat, MAX_NUMBER_OF_BUILDS);
+    List<BuildDetailsInternal> builds = getBuilds(nexusConfig, repository, port, artifactName, repositoryFormat,
+        MAX_NUMBER_OF_BUILDS, groupId, artifactId, extension, classifier, packageName);
     builds = builds.stream()
                  .filter(build -> new RegexFunctor().match(tagRegex, build.getNumber()))
                  .sorted(new BuildDetailsInternalComparatorDescending())
@@ -101,13 +110,38 @@ public class NexusRegistryServiceImpl implements NexusRegistryService {
 
   @Override
   public BuildDetailsInternal verifyBuildNumber(NexusRequest nexusConfig, String repository, String port,
-      String artifactName, String repositoryFormat, String tag) {
-    return getBuildNumber(nexusConfig, repository, port, artifactName, repositoryFormat, tag);
+      String artifactName, String repositoryFormat, String tag, String groupId, String artifactId, String extension,
+      String classifier, String packageName) {
+    if (RepositoryFormat.docker.name().equalsIgnoreCase(repositoryFormat)) {
+      return getBuildNumber(nexusConfig, repository, port, artifactName, repositoryFormat, tag);
+    } else {
+      return getBuildNumber(nexusConfig, repository, port, artifactName, repositoryFormat, tag, groupId, artifactId,
+          extension, classifier, packageName);
+    }
   }
 
   @Override
   public boolean validateCredentials(NexusRequest nexusConfig) {
     return nexusClient.isRunning(nexusConfig);
+  }
+
+  private BuildDetailsInternal getBuildNumber(NexusRequest nexusConfig, String repository, String port,
+      String artifactName, String repositoryFormat, String tag, String groupId, String artifactId, String extension,
+      String classifier, String packageName) {
+    List<BuildDetailsInternal> builds = getBuilds(nexusConfig, repository, port, artifactName, repositoryFormat,
+        MAX_NUMBER_OF_BUILDS, groupId, artifactId, extension, classifier, packageName);
+    builds = builds.stream().filter(build -> build.getNumber().equals(tag)).collect(Collectors.toList());
+
+    if (builds.size() == 1) {
+      return builds.get(0);
+    }
+
+    throw NestedExceptionUtils.hintWithExplanationException(
+        "Please check your Nexus repository for artifacts with same tag.",
+        String.format(
+            "Found multiple artifacts for tag [%s] in Nexus repository [%s] for %s artifact [%s] in registry [%s].",
+            tag, repository, repositoryFormat, artifactName, nexusConfig.getNexusUrl()),
+        new NexusRegistryException(String.format("Found multiple artifact tags ('%s'), but expected only one.", tag)));
   }
 
   private BuildDetailsInternal getBuildNumber(NexusRequest nexusConfig, String repository, String port,

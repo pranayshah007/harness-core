@@ -40,8 +40,8 @@ public class ChronicleEventTailer extends AbstractScheduledService {
   private static final String READ_TAILER = "read-tailer";
 
   // Batching settings
-  private static final int MAX_BATCH_COUNT = 5000;
-  private static final int MAX_BATCH_BYTES = 1024 * 1024; // 1MiB
+  private static final int MAX_BATCH_COUNT = 500;
+  private static final int MAX_BATCH_BYTES = 1024 * 256; // 256KB
 
   private final ExcerptTailer readTailer;
 

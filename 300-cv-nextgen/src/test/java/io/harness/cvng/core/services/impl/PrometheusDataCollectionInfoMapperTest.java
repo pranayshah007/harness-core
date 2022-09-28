@@ -7,6 +7,7 @@
 
 package io.harness.cvng.core.services.impl;
 
+import static io.harness.rule.OwnerRule.ABHIJITH;
 import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
 import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.PRAVEEN;
@@ -20,6 +21,7 @@ import io.harness.cvng.beans.PrometheusDataCollectionInfo;
 import io.harness.cvng.beans.PrometheusDataCollectionInfo.MetricCollectionInfo;
 import io.harness.cvng.beans.TimeSeriesMetricType;
 import io.harness.cvng.core.beans.PrometheusMetricDefinition.PrometheusFilter;
+import io.harness.cvng.core.entities.AnalysisInfo;
 import io.harness.cvng.core.entities.MetricPack;
 import io.harness.cvng.core.entities.PrometheusCVConfig;
 import io.harness.cvng.core.entities.VerificationTask.TaskType;
@@ -129,6 +131,36 @@ public class PrometheusDataCollectionInfoMapperTest extends CvNextGenTestBase {
     PrometheusDataCollectionInfo dataCollectionInfo =
         mapper.toDataCollectionInfo(Collections.singletonList(cvConfig), serviceLevelIndicator);
     assertThat(dataCollectionInfo.getMetricCollectionInfoList().size()).isEqualTo(0);
+  }
+
+  @Test
+  @Owner(developers = ABHIJITH)
+  @Category(UnitTests.class)
+  public void testToDataCollectionInfoForFiltersInCaseOfManualQuery() {
+    MetricPack metricPack = MetricPack.builder().dataCollectionDsl("metric-pack-dsl").build();
+    PrometheusCVConfig cvConfig = builderFactory.prometheusCVConfigBuilder().groupName("mygroupName").build();
+    ServiceLevelIndicator serviceLevelIndicator =
+        ThresholdServiceLevelIndicator.builder().metric1("metricIdentifier2").build();
+
+    cvConfig.setMetricPack(metricPack);
+
+    PrometheusCVConfig.MetricInfo metricInfo =
+        PrometheusCVConfig.MetricInfo.builder()
+            .metricName("myMetric")
+            .identifier("metricIdentifier")
+            .metricType(TimeSeriesMetricType.RESP_TIME)
+            .prometheusMetricName("cpu_usage_total")
+            .deploymentVerification(AnalysisInfo.DeploymentVerification.builder().enabled(true).build())
+            .isManualQuery(true)
+            .query(
+                "100 * sum(rate(istio_requests_total{destination_service_namespace=\"dev1-harness\",app=\"loginservice\",response_code=~\"[45]..\"}[5m]))/sum(rate(istio_requests_total{destination_service_namespace=\"dev1-harness\",app=\"loginservice\"}[5m]))")
+            .build();
+
+    cvConfig.setMetricInfoList(Arrays.asList(metricInfo));
+    PrometheusDataCollectionInfo dataCollectionInfo = mapper.toDataCollectionInfo(cvConfig, TaskType.DEPLOYMENT);
+    assertThat(dataCollectionInfo.getDslEnvVariables(PrometheusConnectorDTO.builder().build()).get("filterList"))
+        .isEqualTo(Arrays.asList(
+            "destination_service_namespace=\"dev1-harness\",app=\"loginservice\",response_code=~\"[45]..\""));
   }
 
   @Test

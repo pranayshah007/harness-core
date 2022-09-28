@@ -79,9 +79,8 @@ public class GitlabServiceImpl implements GitlabService {
 
       return statusCreationResponseResponse.isSuccessful();
     } catch (Exception e) {
-      log.error("Failed to post commit status request to Gitlab with url {} and sha {} ", gitlabConfig.getGitlabUrl(),
-          sha, e);
-      return false;
+      throw new InvalidRequestException(
+          format("Failed to send status for Gitlab url %s and sha %s ", gitlabConfig.getGitlabUrl(), sha), e);
     }
   }
 

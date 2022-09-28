@@ -13,5 +13,6 @@ import lombok.Data;
 
 @Data
 public class FreezeEntityRule {
-  @JsonProperty("entityConfig") List<EntityConfig> entityConfigList;
+  @JsonProperty("entities") List<EntityConfig> entityConfigList;
+  String name;
 }

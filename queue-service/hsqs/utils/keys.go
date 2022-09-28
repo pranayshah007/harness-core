@@ -1,0 +1,28 @@
+// Copyright 2022 Harness Inc. All rights reserved.
+// Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+// that can be found in the licenses directory at the root of this repository, also available at
+// https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
+package utils
+
+import "fmt"
+
+// GetStoreAllQueuesTopicKey key, all subtopics list is stored having actual stream redis key
+func GetStoreAllSubTopicsFromTopicKey(requestTopicName string) string {
+	return fmt.Sprintf("hsqs:%s:subtopics", requestTopicName)
+}
+
+// GetSubTopicStreamQueueKey key is the actual redis stream key for a topic + subtopic
+func GetSubTopicStreamQueueKey(topic, subTopic string) string {
+	return fmt.Sprintf("hsqs:%s:%s:queue", topic, subTopic)
+}
+
+// GetTopicMetadataKey key, metadata for the topic is stored which is given in register topic
+func GetTopicMetadataKey(topic string) string {
+	return fmt.Sprintf("hsqs:%s:metadata", topic)
+}
+
+// GetConsumerGroupKeyForGivenTopic key is the fixed consumerGroup name for a given topic
+func GetConsumerGroupKeyForGivenTopic(topic string) string {
+	return fmt.Sprintf("hsqs:%s:consumerGroup", topic)
+}

@@ -12,9 +12,11 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 @OwnedBy(CDC)
 @RecasterAlias("io.harness.steps.approval.step.harness.beans.HarnessApprovalAction")
 public enum HarnessApprovalAction {
-  APPROVE,
-  REJECT
+  @JsonProperty("APPROVE") APPROVE,
+  @JsonProperty("REJECT") REJECT;
 }

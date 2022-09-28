@@ -1,8 +1,8 @@
 package io.harness.cvng.automation.resources;
 
 import io.harness.annotations.ExposeInternalException;
-import io.harness.cvng.cdng.services.api.CVNGStepTaskService;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
+import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.NextGenManagerAuth;
 
@@ -24,15 +24,15 @@ import javax.ws.rs.Produces;
 @ExposeInternalException
 @NextGenManagerAuth
 public class AutomationResource {
-  @Inject private CVNGStepTaskService stepTaskService;
+  @Inject private VerificationJobInstanceService verificationJobInstanceService;
 
   @GET
   @Path("/verification-job-instance/{verifyStepExecutionId}")
   @Timed
   @ExceptionMetered
-  @ApiOperation(value = "get verification job instance", nickname = "getVerificationJobInstance", hidden = true)
+  @ApiOperation(value = "get verification job instance", nickname = "getVerificationJobInstance")
   public RestResponse<VerificationJobInstance> getVerificationJobInstance(
       @NotBlank @NotNull @PathParam("verifyStepExecutionId") String verificationJobInstanceId) {
-    return new RestResponse(stepTaskService.getByVerificationJobInstanceId(verificationJobInstanceId));
+    return new RestResponse(verificationJobInstanceService.getVerificationJobInstance(verificationJobInstanceId));
   }
 }

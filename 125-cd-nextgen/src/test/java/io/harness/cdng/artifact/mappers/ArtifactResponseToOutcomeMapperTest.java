@@ -22,6 +22,7 @@ import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryDockerConfig;
 import io.harness.cdng.artifact.outcome.AcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
@@ -68,11 +69,16 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
   @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
   public void testToNexusArtifactOutcome() {
+    NexusRegistryDockerConfig nexusRegistryDockerConfig =
+        NexusRegistryDockerConfig.builder()
+            .artifactPath(ParameterField.createValueField("IMAGE"))
+            .repositoryPort(ParameterField.createValueField("TEST_REPO"))
+            .build();
     ArtifactConfig artifactConfig =
         NexusRegistryArtifactConfig.builder()
             .connectorRef(ParameterField.createValueField("connector"))
             .repository(ParameterField.createValueField("REPO_NAME"))
-            .artifactPath(ParameterField.createValueField("IMAGE"))
+            .nexusRegistryConfigSpec(nexusRegistryDockerConfig)
             .repositoryFormat(ParameterField.createValueField(RepositoryFormat.docker.name()))
             .build();
     ArtifactDelegateResponse artifactDelegateResponse = NexusArtifactDelegateResponse.builder().build();
