@@ -83,4 +83,10 @@ public class SshExceptionConstants {
       "Please provide a valid encrypted config file instead of %s";
   public final String UNDECRYPTABLE_CONFIG_FILE_PROVIDED_EXPLANATION =
       "Encrypted config file %s could not be decrypted";
+  public final String S3_ARTIFACT_DOWNLOAD_FAILED = "Failed while trying to download S3 artifact with path: %s "
+      + "from bucket: %s";
+  public final String S3_ARTIFACT_DOWNLOAD_HINT = "Please review the S3 Artifact Details and check the "
+      + "S3 artifact path and bucket.";
+  public final String S3_ARTIFACT_DOWNLOAD_EXPLANATION = "Failed to download S3 artifact with path: %s from"
+      + " %s bucket";
 }

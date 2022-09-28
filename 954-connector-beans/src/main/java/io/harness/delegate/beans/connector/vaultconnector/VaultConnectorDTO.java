@@ -28,6 +28,7 @@ import static com.fasterxml.jackson.annotation.JsonInclude.Include;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.SecretManagerDescriptionConstants;
+import io.harness.annotation.RecasterFieldName;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
@@ -97,6 +98,7 @@ public class VaultConnectorDTO extends ConnectorConfigDTO implements DelegateSel
   @SecretReference
   @ApiModelProperty(dataType = "string")
   @Schema(description = VAULT_AWS_IAM_HEADER)
+  @RecasterFieldName(name = "xvaultAwsIamServerId")
   @JsonProperty(value = "xvaultAwsIamServerId")
   private SecretRefData headerAwsIam;
   @Schema(description = USE_K8s_AUTH) private boolean useK8sAuth;
@@ -157,9 +159,6 @@ public class VaultConnectorDTO extends ConnectorConfigDTO implements DelegateSel
 
     if (renewalIntervalMinutes <= 0) {
       throw new InvalidRequestException(String.format("Invalid value for renewal interval"), INVALID_REQUEST, USER);
-    }
-    if (isReadOnly && isDefault) {
-      throw new InvalidRequestException("Read only secret manager cannot be set as default", INVALID_REQUEST, USER);
     }
     if (isUseVaultAgent() && isUseAwsIam()) {
       throw new InvalidRequestException(

@@ -51,6 +51,7 @@ public class TemplateInputsValidatorTest extends TemplateServiceTestBase {
   private static final String ACCOUNT_ID = "ACCOUNT_ID";
   private static final String ORG_ID = "orgId";
   private static final String PROJECT_ID = "projId";
+  @InjectMocks InputsValidator inputsValidator;
   @InjectMocks TemplateInputsValidator templateInputsValidator;
   @InjectMocks TemplateMergeServiceHelper templateMergeServiceHelper;
   @Mock NGTemplateServiceHelper templateServiceHelper;
@@ -58,7 +59,8 @@ public class TemplateInputsValidatorTest extends TemplateServiceTestBase {
   @Before
   public void setup() {
     on(templateMergeServiceHelper).set("templateServiceHelper", templateServiceHelper);
-    on(templateInputsValidator).set("templateMergeServiceHelper", templateMergeServiceHelper);
+    on(inputsValidator).set("templateMergeServiceHelper", templateMergeServiceHelper);
+    on(templateInputsValidator).set("inputsValidator", inputsValidator);
   }
 
   private String readFile(String filename) {

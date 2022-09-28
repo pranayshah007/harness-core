@@ -128,3 +128,4 @@ triggersNG {"name": "unique_accountId_organizationIdentifier_projectIdentifier_t
 waitInstances {"name": "correlationIds_1", "background": true} {"correlationIds": 1}
 waitInstances {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 waitInstances {"name": "waitingOnCorrelationIds_1", "background": true} {"waitingOnCorrelationIds": 1}
+waitStepInstance {"name": "nodeExecutionId_1", "unique": true} {"nodeExecutionId": 1}

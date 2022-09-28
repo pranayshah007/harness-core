@@ -7,8 +7,6 @@
 
 package io.harness.ng.core.environment.resources;
 
-import static io.harness.beans.FeatureName.NG_SERVICE_CONFIG_FILES_OVERRIDE;
-import static io.harness.beans.FeatureName.NG_SERVICE_MANIFEST_OVERRIDE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_PROJECT_PERMISSION;
@@ -228,11 +226,7 @@ public class EnvironmentResourceV2 {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, environmentRequestDTO.getOrgIdentifier(),
                                                   environmentRequestDTO.getProjectIdentifier()),
         Resource.of(ENVIRONMENT, null, environmentAttributes), ENVIRONMENT_CREATE_PERMISSION);
-    final boolean ngSvcManifestOverrideEnabled = cdFeatureFlagHelper.isEnabled(accountId, NG_SERVICE_MANIFEST_OVERRIDE);
-    final boolean ngSvcConfigFileOverrideEnabled =
-        cdFeatureFlagHelper.isEnabled(accountId, NG_SERVICE_CONFIG_FILES_OVERRIDE);
-    Environment environmentEntity = EnvironmentMapper.toEnvironmentEntity(
-        accountId, environmentRequestDTO, ngSvcManifestOverrideEnabled, ngSvcConfigFileOverrideEnabled);
+    Environment environmentEntity = EnvironmentMapper.toEnvironmentEntity(accountId, environmentRequestDTO);
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(environmentEntity.getOrgIdentifier(),
         environmentEntity.getProjectIdentifier(), environmentEntity.getAccountId());
     Environment createdEnvironment = environmentService.create(environmentEntity);
@@ -283,11 +277,7 @@ public class EnvironmentResourceV2 {
                                                   environmentRequestDTO.getProjectIdentifier()),
         Resource.of(ENVIRONMENT, environmentRequestDTO.getIdentifier()), ENVIRONMENT_UPDATE_PERMISSION);
 
-    final boolean ngSvcManifestOverrideEnabled = cdFeatureFlagHelper.isEnabled(accountId, NG_SERVICE_MANIFEST_OVERRIDE);
-    final boolean ngSvcConfigFileOverrideEnabled =
-        cdFeatureFlagHelper.isEnabled(accountId, NG_SERVICE_CONFIG_FILES_OVERRIDE);
-    Environment requestEnvironment = EnvironmentMapper.toEnvironmentEntity(
-        accountId, environmentRequestDTO, ngSvcManifestOverrideEnabled, ngSvcConfigFileOverrideEnabled);
+    Environment requestEnvironment = EnvironmentMapper.toEnvironmentEntity(accountId, environmentRequestDTO);
     requestEnvironment.setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     Environment updatedEnvironment = environmentService.update(requestEnvironment);
     return ResponseDTO.newResponse(
@@ -314,11 +304,7 @@ public class EnvironmentResourceV2 {
                                                   environmentRequestDTO.getProjectIdentifier()),
         Resource.of(ENVIRONMENT, environmentRequestDTO.getIdentifier()), ENVIRONMENT_UPDATE_PERMISSION);
 
-    final boolean ngSvcManifestOverrideEnabled = cdFeatureFlagHelper.isEnabled(accountId, NG_SERVICE_MANIFEST_OVERRIDE);
-    final boolean ngSvcConfigFileOverrideEnabled =
-        cdFeatureFlagHelper.isEnabled(accountId, NG_SERVICE_CONFIG_FILES_OVERRIDE);
-    Environment requestEnvironment = EnvironmentMapper.toEnvironmentEntity(
-        accountId, environmentRequestDTO, ngSvcManifestOverrideEnabled, ngSvcConfigFileOverrideEnabled);
+    Environment requestEnvironment = EnvironmentMapper.toEnvironmentEntity(accountId, environmentRequestDTO);
     requestEnvironment.setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(requestEnvironment.getOrgIdentifier(),
         requestEnvironment.getProjectIdentifier(), requestEnvironment.getAccountId());
@@ -515,28 +501,17 @@ public class EnvironmentResourceV2 {
     checkForServiceOverrideUpdateAccess(accountId, serviceOverridesEntity.getOrgIdentifier(),
         serviceOverridesEntity.getProjectIdentifier(), serviceOverridesEntity.getEnvironmentRef(),
         serviceOverridesEntity.getServiceRef());
-    final boolean ngManifestOverrideEnabled = cdFeatureFlagHelper.isEnabled(accountId, NG_SERVICE_MANIFEST_OVERRIDE);
-    final boolean ngConfigOverrideEnabled = cdFeatureFlagHelper.isEnabled(accountId, NG_SERVICE_CONFIG_FILES_OVERRIDE);
-    validateServiceOverrides(serviceOverridesEntity, ngManifestOverrideEnabled, ngConfigOverrideEnabled);
+    validateServiceOverrides(serviceOverridesEntity);
 
     NGServiceOverridesEntity createdServiceOverride = serviceOverrideService.upsert(serviceOverridesEntity);
     return ResponseDTO.newResponse(ServiceOverridesMapper.toResponseWrapper(createdServiceOverride));
   }
 
-  private void validateServiceOverrides(NGServiceOverridesEntity serviceOverridesEntity,
-      boolean ngManifestOverrideEnabled, boolean ngConfigOverrideEnabled) {
+  private void validateServiceOverrides(NGServiceOverridesEntity serviceOverridesEntity) {
     final NGServiceOverrideConfig serviceOverrideConfig = toNGServiceOverrideConfig(serviceOverridesEntity);
     if (serviceOverrideConfig.getServiceOverrideInfoConfig() != null) {
       final NGServiceOverrideInfoConfig serviceOverrideInfoConfig =
           serviceOverrideConfig.getServiceOverrideInfoConfig();
-      if (!ngManifestOverrideEnabled && isNotEmpty(serviceOverrideInfoConfig.getManifests())) {
-        throw new InvalidRequestException(
-            "Manifest Override is not supported with FF disabled NG_SERVICE_MANIFEST_OVERRIDE");
-      }
-      if (!ngConfigOverrideEnabled && isNotEmpty(serviceOverrideInfoConfig.getConfigFiles())) {
-        throw new InvalidRequestException(
-            "Config Files Override is not supported with FF disabled NG_SERVICE_CONFIG_FILES_OVERRIDE");
-      }
 
       if (isEmpty(serviceOverrideInfoConfig.getManifests()) && isEmpty(serviceOverrideInfoConfig.getConfigFiles())
           && isEmpty(serviceOverrideInfoConfig.getVariables())

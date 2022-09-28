@@ -403,7 +403,7 @@ public class TemplateMergeServiceHelper {
    * @return jsonNode of merged yaml
    */
   private JsonNode mergeTemplateInputsToTemplateSpecInTemplateYaml(JsonNode templateInputs, JsonNode templateVariables,
-                                                                   JsonNode templateSpec, List<NGVariable> variablesFromTemplate, String accountId) {
+      JsonNode templateSpec, List<NGVariable> variablesFromTemplate, String accountId) {
     Map<String, JsonNode> dummyTemplateSpecMap = new LinkedHashMap<>();
     dummyTemplateSpecMap.put(DUMMY_NODE, templateSpec);
     String dummyTemplateSpecYaml = YamlPipelineUtils.writeYamlString(dummyTemplateSpecMap);
@@ -418,15 +418,14 @@ public class TemplateMergeServiceHelper {
       mergedYaml = mergeInputSetFormatYamlToOriginYaml(dummyTemplateSpecYaml, dummyTemplateInputsYaml);
     }
 
-    if(TemplateYamlSchemaMergeHelper.isFeatureFlagEnabled(
-              FeatureName.NG_TEMPLATE_VARIABLES, accountId, accountClient)) {
+    if (TemplateYamlSchemaMergeHelper.isFeatureFlagEnabled(
+            FeatureName.NG_TEMPLATE_VARIABLES, accountId, accountClient)) {
       mergedYaml = applyTemplateVariablesInYaml(prepareVariableValueMap(templateVariables),
-              NGVariablesUtils.getStringMapVariables(variablesFromTemplate, 0L), mergedYaml);
+          NGVariablesUtils.getStringMapVariables(variablesFromTemplate, 0L), mergedYaml);
     }
 
     try {
-      String finalMergedYaml =
-          removeOmittedRuntimeInputsFromMergedYaml(mergedYaml, dummyTemplateInputsYaml);
+      String finalMergedYaml = removeOmittedRuntimeInputsFromMergedYaml(mergedYaml, dummyTemplateInputsYaml);
       return YamlUtils.readTree(finalMergedYaml).getNode().getCurrJsonNode().get(DUMMY_NODE);
     } catch (IOException e) {
       log.error("Could not convert merged yaml to JsonNode. Yaml:\n" + mergedYaml, e);

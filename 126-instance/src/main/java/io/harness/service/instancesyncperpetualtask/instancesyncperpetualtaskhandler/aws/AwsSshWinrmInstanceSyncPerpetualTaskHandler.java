@@ -100,6 +100,7 @@ public class AwsSshWinrmInstanceSyncPerpetualTaskHandler extends InstanceSyncPer
             .addAllHosts(hosts)
             .setInfrastructureKey(infrastructure.getInfrastructureKey())
             .setInfraDelegateConfig(ByteString.copyFrom(kryoSerializer.asBytes(awsInfraDelegateConfig)))
+            .setHostConnectionType(awsInfrastructureOutcome.getHostConnectionType())
             .build();
 
     Any perpetualTaskPack = Any.pack(awsSshWinrmPerpetualTaskParamsNg);

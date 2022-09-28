@@ -138,9 +138,9 @@ public class EmailNotificationServiceImpl implements EmailNotificationService {
 
     if (emailData.isSystem()) {
       defaultSMTPConfig = mainConfiguration.getSmtpConfig();
-      fallBackSMTPConfig = emailHelperUtils.getSmtpConfig(emailData.getAccountId());
+      fallBackSMTPConfig = emailHelperUtils.getSmtpConfig(emailData.getAccountId(), false);
     } else {
-      defaultSMTPConfig = emailHelperUtils.getSmtpConfig(emailData.getAccountId());
+      defaultSMTPConfig = emailHelperUtils.getSmtpConfig(emailData.getAccountId(), false);
       fallBackSMTPConfig = mainConfiguration.getSmtpConfig();
     }
 

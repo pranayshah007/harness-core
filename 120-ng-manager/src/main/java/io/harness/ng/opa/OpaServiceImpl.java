@@ -18,6 +18,7 @@ import io.harness.governance.GovernanceMetadata;
 import io.harness.governance.PolicyMetadata;
 import io.harness.governance.PolicySetMetadata;
 import io.harness.network.SafeHttpCall;
+import io.harness.ng.NextGenConfiguration;
 import io.harness.opaclient.OpaServiceClient;
 import io.harness.opaclient.model.OpaConstants;
 import io.harness.opaclient.model.OpaEvaluationResponseHolder;
@@ -44,20 +45,24 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class OpaServiceImpl implements OpaService {
   private final OpaServiceClient opaServiceClient;
+  private NextGenConfiguration nextGenConfiguration;
 
   public GovernanceMetadata evaluate(OpaEvaluationContext context, String accountId, String orgIdentifier,
       String projectIdentifier, String identifier, String action, String key) {
     OpaEvaluationResponseHolder response;
-    try {
-      String userIdentifier = getUserIdentifier();
-      String entityMetadata = getEntityMetadataString(identifier);
-      response = SafeHttpCall.executeWithExceptions(opaServiceClient.evaluateWithCredentials(key, accountId,
-          orgIdentifier, projectIdentifier, action, identifier, entityMetadata, userIdentifier, context));
-    } catch (Exception ex) {
-      log.error("Exception while evaluating OPA rules", ex);
-      throw new InvalidRequestException("Exception while evaluating OPA rules: " + ex.getMessage(), ex);
+    if (nextGenConfiguration.isOpaConnectivityEnabled()) {
+      try {
+        String userIdentifier = getUserIdentifier();
+        String entityMetadata = getEntityMetadataString(identifier);
+        response = SafeHttpCall.executeWithExceptions(opaServiceClient.evaluateWithCredentials(key, accountId,
+            orgIdentifier, projectIdentifier, action, identifier, entityMetadata, userIdentifier, context));
+      } catch (Exception ex) {
+        log.error("Exception while evaluating OPA rules", ex);
+        throw new InvalidRequestException("Exception while evaluating OPA rules: " + ex.getMessage(), ex);
+      }
+      return mapResponseToMetadata(response);
     }
-    return mapResponseToMetadata(response);
+    return null;
   }
 
   private GovernanceMetadata mapResponseToMetadata(OpaEvaluationResponseHolder response) {

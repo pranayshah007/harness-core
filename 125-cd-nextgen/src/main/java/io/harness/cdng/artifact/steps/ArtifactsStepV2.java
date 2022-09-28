@@ -14,6 +14,8 @@ import io.harness.beans.DelegateTaskRequest;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
+import io.harness.cdng.artifact.bean.yaml.ArtifactSource;
+import io.harness.cdng.artifact.bean.yaml.PrimaryArtifact;
 import io.harness.cdng.artifact.bean.yaml.SidecarArtifactWrapper;
 import io.harness.cdng.artifact.mappers.ArtifactResponseToOutcomeMapper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
@@ -26,6 +28,7 @@ import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.service.steps.ServiceStepsHelper;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.cdng.visitor.YamlTypes;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.task.artifacts.ArtifactSourceDelegateRequest;
@@ -53,6 +56,7 @@ import io.harness.pms.sdk.core.steps.executables.AsyncExecutable;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.tasks.ResponseData;
 
@@ -115,6 +119,8 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
 
     final ArtifactListConfig artifacts = service.getServiceDefinition().getServiceSpec().getArtifacts();
 
+    processArtifactSourcesIfPresent(artifacts);
+
     resolveExpressions(ambiance, artifacts);
 
     final Set<String> taskIds = new HashSet<>();
@@ -139,6 +145,30 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
     sweepingOutputService.consume(
         ambiance, ARTIFACTS_STEP_V_2, new ArtifactsStepV2SweepingOutput(primaryArtifactTaskId, artifactConfigMap), "");
     return AsyncExecutableResponse.newBuilder().addAllCallbackIds(taskIds).build();
+  }
+
+  private void processArtifactSourcesIfPresent(ArtifactListConfig artifacts) {
+    if (artifacts.getPrimary() == null) {
+      return;
+    }
+    PrimaryArtifact primary = artifacts.getPrimary();
+    if (artifacts.getPrimary().getSpec() == null && ParameterField.isNotNull(primary.getPrimaryArtifactRef())
+        && !primary.getPrimaryArtifactRef().isExpression() && isNotEmpty(primary.getSources())) {
+      Optional<ArtifactSource> primaryArtifact =
+          primary.getSources()
+              .stream()
+              .filter(s -> primary.getPrimaryArtifactRef().getValue().equals(s.getIdentifier()))
+              .findFirst();
+      primaryArtifact.ifPresent(p -> {
+        p.getSpec().setPrimaryArtifact(true);
+        p.getSpec().setIdentifier(YamlTypes.PRIMARY_ARTIFACT);
+        artifacts.setPrimary(PrimaryArtifact.builder()
+                                 .spec(p.getSpec())
+                                 .sourceType(p.getSourceType())
+                                 .metadata(p.getMetadata())
+                                 .build());
+      });
+    }
   }
 
   private void resolveExpressions(Ambiance ambiance, ArtifactListConfig artifacts) {

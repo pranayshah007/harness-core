@@ -11,13 +11,14 @@ import static io.harness.eventsframework.EventsFrameworkConstants.QUERY_ANALYSIS
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.eventsframework.EventsFrameworkConstants;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.impl.noop.NoOpProducer;
 import io.harness.eventsframework.impl.redis.RedisProducer;
 import io.harness.mongo.tracing.Tracer;
 import io.harness.mongo.tracing.TracerConstants;
-import io.harness.redis.RedisConfig;
+import io.harness.redis.RedissonClientFactory;
 import io.harness.threading.DiscardAndLogQueuePolicy;
 import io.harness.threading.ThreadPool;
 
@@ -55,12 +56,15 @@ class PersistenceTracerModule extends AbstractModule {
 
   @Provides
   @Named(PersistenceTracerConstants.QUERY_ANALYSIS_PRODUCER)
-  public Producer obtainProducer(RedisConfig redisConfig, @Named(TracerConstants.SERVICE_ID) String serviceId) {
-    if (redisConfig.getRedisUrl().equals("dummyRedisUrl")) {
+  public Producer obtainProducer(
+      EventsFrameworkConfiguration eventsFrameworkConfiguration, @Named(TracerConstants.SERVICE_ID) String serviceId) {
+    if (eventsFrameworkConfiguration.getRedisConfig().getRedisUrl().equals("dummyRedisUrl")) {
       return NoOpProducer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME);
     } else {
-      return RedisProducer.of(
-          QUERY_ANALYSIS_TOPIC, redisConfig, EventsFrameworkConstants.QUERY_ANALYSIS_TOPIC_SIZE, serviceId);
+      return RedisProducer.of(QUERY_ANALYSIS_TOPIC,
+          RedissonClientFactory.getClient(eventsFrameworkConfiguration.getRedisConfig()),
+          EventsFrameworkConstants.QUERY_ANALYSIS_TOPIC_SIZE, serviceId,
+          eventsFrameworkConfiguration.getRedisConfig().getEnvNamespace());
     }
   }
 }

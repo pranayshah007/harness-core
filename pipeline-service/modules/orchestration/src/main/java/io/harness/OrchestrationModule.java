@@ -72,8 +72,6 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.testing.TestExecution;
 import io.harness.threading.ThreadPool;
 import io.harness.version.VersionInfoManager;
-import io.harness.wait.WaitStepService;
-import io.harness.wait.WaitStepServiceImpl;
 import io.harness.waiter.AbstractWaiterModule;
 import io.harness.waiter.AsyncWaitEngineImpl;
 import io.harness.waiter.WaitNotifyEngine;
@@ -144,7 +142,6 @@ public class OrchestrationModule extends AbstractModule implements ServersModule
     bind(PlanExecutionMonitorService.class).to(PlanExecutionMonitorServiceImpl.class).in(Singleton.class);
     bind(PmsGraphStepDetailsService.class).to(PmsGraphStepDetailsServiceImpl.class);
     bind(ExecutionInputService.class).to(ExecutionInputServiceImpl.class);
-    bind(WaitStepService.class).to(WaitStepServiceImpl.class);
 
     bind(PlanService.class).to(PlanServiceImpl.class).in(Singleton.class);
     bind(InterruptService.class).to(InterruptServiceImpl.class).in(Singleton.class);

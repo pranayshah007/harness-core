@@ -93,8 +93,12 @@ import io.harness.delegate.beans.ccm.K8sClusterInfo;
 import io.harness.delegate.beans.ci.CIClusterType;
 import io.harness.delegate.beans.ci.CIInitializeTaskParams;
 import io.harness.delegate.beans.ci.CITaskExecutionResponse;
+import io.harness.delegate.beans.ci.DliteVmInfraInfo;
+import io.harness.delegate.beans.ci.DockerInfraInfo;
 import io.harness.delegate.beans.ci.ExecuteCommandTaskParams;
+import io.harness.delegate.beans.ci.InfraInfo;
 import io.harness.delegate.beans.ci.ShellScriptType;
+import io.harness.delegate.beans.ci.VmInfraInfo;
 import io.harness.delegate.beans.ci.k8s.CIContainerStatus;
 import io.harness.delegate.beans.ci.k8s.CIK8CleanupTaskParams;
 import io.harness.delegate.beans.ci.k8s.CIK8ExecuteStepTaskParams;
@@ -161,6 +165,11 @@ import io.harness.delegate.beans.connector.awsconnector.AwsListASGNamesTaskRespo
 import io.harness.delegate.beans.connector.awsconnector.AwsListClustersTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskParamsRequest;
 import io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskResponse;
+import io.harness.delegate.beans.connector.awsconnector.AwsListElbListenerRulesTaskParamsRequest;
+import io.harness.delegate.beans.connector.awsconnector.AwsListElbListenerRulesTaskResponse;
+import io.harness.delegate.beans.connector.awsconnector.AwsListElbListenersTaskParamsRequest;
+import io.harness.delegate.beans.connector.awsconnector.AwsListElbListenersTaskResponse;
+import io.harness.delegate.beans.connector.awsconnector.AwsListElbTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsListLoadBalancersTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsListTagsTaskParamsRequest;
 import io.harness.delegate.beans.connector.awsconnector.AwsListTagsTaskResponse;
@@ -187,6 +196,7 @@ import io.harness.delegate.beans.connector.docker.DockerTestConnectionTaskRespon
 import io.harness.delegate.beans.connector.docker.DockerValidationParams;
 import io.harness.delegate.beans.connector.gcp.GcpValidationParams;
 import io.harness.delegate.beans.connector.gcpkmsconnector.GcpKmsValidationParams;
+import io.harness.delegate.beans.connector.gcpsecretmanagerconnector.GcpSecretManagerValidationParams;
 import io.harness.delegate.beans.connector.helm.HttpHelmConnectivityTaskParams;
 import io.harness.delegate.beans.connector.helm.HttpHelmConnectivityTaskResponse;
 import io.harness.delegate.beans.connector.helm.HttpHelmValidationParams;
@@ -217,6 +227,10 @@ import io.harness.delegate.beans.connector.servicenow.connection.ServiceNowTestC
 import io.harness.delegate.beans.connector.splunkconnector.SplunkConnectionTaskParams;
 import io.harness.delegate.beans.connector.splunkconnector.SplunkConnectionTaskResponse;
 import io.harness.delegate.beans.connector.vaultconnector.VaultValidationParams;
+import io.harness.delegate.beans.ecs.EcsBlueGreenCreateServiceResult;
+import io.harness.delegate.beans.ecs.EcsBlueGreenPrepareRollbackDataResult;
+import io.harness.delegate.beans.ecs.EcsBlueGreenRollbackResult;
+import io.harness.delegate.beans.ecs.EcsBlueGreenSwapTargetGroupsResult;
 import io.harness.delegate.beans.ecs.EcsCanaryDeleteResult;
 import io.harness.delegate.beans.ecs.EcsCanaryDeployResult;
 import io.harness.delegate.beans.ecs.EcsContainer;
@@ -249,6 +263,7 @@ import io.harness.delegate.beans.executioncapability.SmtpCapability;
 import io.harness.delegate.beans.executioncapability.SocketConnectivityBulkOrExecutionCapability;
 import io.harness.delegate.beans.executioncapability.SocketConnectivityExecutionCapability;
 import io.harness.delegate.beans.executioncapability.SystemEnvCheckerCapability;
+import io.harness.delegate.beans.executioncapability.WinrmConnectivityExecutionCapability;
 import io.harness.delegate.beans.git.GitCommandExecutionResponse;
 import io.harness.delegate.beans.git.GitCommandExecutionResponse.GitCommandStatus;
 import io.harness.delegate.beans.git.GitCommandParams;
@@ -471,13 +486,22 @@ import io.harness.delegate.task.ecs.EcsCommandTypeNG;
 import io.harness.delegate.task.ecs.EcsGitFetchFileConfig;
 import io.harness.delegate.task.ecs.EcsInfraConfig;
 import io.harness.delegate.task.ecs.EcsInfraType;
+import io.harness.delegate.task.ecs.EcsLoadBalancerConfig;
 import io.harness.delegate.task.ecs.EcsRollingRollbackConfig;
+import io.harness.delegate.task.ecs.request.EcsBlueGreenCreateServiceRequest;
+import io.harness.delegate.task.ecs.request.EcsBlueGreenPrepareRollbackRequest;
+import io.harness.delegate.task.ecs.request.EcsBlueGreenRollbackRequest;
+import io.harness.delegate.task.ecs.request.EcsBlueGreenSwapTargetGroupsRequest;
 import io.harness.delegate.task.ecs.request.EcsCanaryDeleteRequest;
 import io.harness.delegate.task.ecs.request.EcsCanaryDeployRequest;
 import io.harness.delegate.task.ecs.request.EcsGitFetchRequest;
 import io.harness.delegate.task.ecs.request.EcsPrepareRollbackDataRequest;
 import io.harness.delegate.task.ecs.request.EcsRollingDeployRequest;
 import io.harness.delegate.task.ecs.request.EcsRollingRollbackRequest;
+import io.harness.delegate.task.ecs.response.EcsBlueGreenCreateServiceResponse;
+import io.harness.delegate.task.ecs.response.EcsBlueGreenPrepareRollbackDataResponse;
+import io.harness.delegate.task.ecs.response.EcsBlueGreenRollbackResponse;
+import io.harness.delegate.task.ecs.response.EcsBlueGreenSwapTargetGroupsResponse;
 import io.harness.delegate.task.ecs.response.EcsCanaryDeleteResponse;
 import io.harness.delegate.task.ecs.response.EcsCanaryDeployResponse;
 import io.harness.delegate.task.ecs.response.EcsGitFetchResponse;
@@ -667,6 +691,7 @@ import io.harness.delegate.task.ssh.PdcWinRmInfraDelegateConfig;
 import io.harness.delegate.task.ssh.ScriptCommandUnit;
 import io.harness.delegate.task.ssh.artifact.ArtifactoryArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.ArtifactoryDockerArtifactDelegateConfig;
+import io.harness.delegate.task.ssh.artifact.AwsS3ArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.CustomArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.JenkinsArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.NexusDockerArtifactDelegateConfig;
@@ -1167,6 +1192,10 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(ArtifactoryArtifactDelegateResponse.class, 19473);
     kryo.register(ArtifactoryGenericArtifactDelegateRequest.class, 19483);
     kryo.register(ArtifactoryGenericArtifactDelegateResponse.class, 19484);
+    kryo.register(InfraInfo.Type.class, 25001);
+    kryo.register(DockerInfraInfo.class, 25002);
+    kryo.register(VmInfraInfo.class, 25003);
+    kryo.register(DliteVmInfraInfo.class, 25004);
 
     kryo.register(DeploymentSlotData.class, 19457);
     kryo.register(ShellScriptTaskParametersNG.class, 19463);
@@ -1567,6 +1596,11 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AwsListLoadBalancersTaskResponse.class, 83078);
     kryo.register(AwsListASGNamesTaskResponse.class, 83079);
     kryo.register(AwsListClustersTaskResponse.class, 83080);
+    kryo.register(AwsListElbTaskResponse.class, 83081);
+    kryo.register(AwsListElbListenersTaskParamsRequest.class, 83082);
+    kryo.register(AwsListElbListenerRulesTaskParamsRequest.class, 83083);
+    kryo.register(AwsListElbListenerRulesTaskResponse.class, 83084);
+    kryo.register(AwsListElbListenersTaskResponse.class, 83085);
 
     // WinRm
     kryo.register(WinRmCredentialsSpecDTO.class, 600001);
@@ -1742,6 +1776,19 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(EcsCanaryDeleteRequest.class, 573523);
     kryo.register(EcsCanaryDeleteResponse.class, 573524);
     kryo.register(EcsCanaryDeleteResult.class, 573525);
+    kryo.register(EcsBlueGreenCreateServiceRequest.class, 573526);
+    kryo.register(EcsBlueGreenCreateServiceResult.class, 573527);
+    kryo.register(EcsBlueGreenCreateServiceResponse.class, 573528);
+    kryo.register(EcsBlueGreenPrepareRollbackDataResult.class, 573529);
+    kryo.register(EcsBlueGreenPrepareRollbackDataResponse.class, 573530);
+    kryo.register(EcsBlueGreenPrepareRollbackRequest.class, 573531);
+    kryo.register(EcsBlueGreenSwapTargetGroupsResult.class, 573532);
+    kryo.register(EcsBlueGreenSwapTargetGroupsRequest.class, 573533);
+    kryo.register(EcsBlueGreenSwapTargetGroupsResponse.class, 573534);
+    kryo.register(EcsBlueGreenRollbackRequest.class, 573535);
+    kryo.register(EcsBlueGreenRollbackResponse.class, 573536);
+    kryo.register(EcsBlueGreenRollbackResult.class, 573537);
+    kryo.register(EcsLoadBalancerConfig.class, 573538);
 
     kryo.register(AzurePackageArtifactConfig.class, 55410);
     kryo.register(AzureArtifactRequestDetails.class, 55411);
@@ -1776,5 +1823,8 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(GarDelegateResponse.class, 55421);
     kryo.register(AzureFetchArmPreDeploymentDataTaskParameters.class, 55423);
     kryo.register(AzureFetchArmPreDeploymentDataTaskResponse.class, 55424);
+    kryo.register(AwsS3ArtifactDelegateConfig.class, 9800007);
+    kryo.register(WinrmConnectivityExecutionCapability.class, 55425);
+    kryo.register(GcpSecretManagerValidationParams.class, 19879);
   }
 }

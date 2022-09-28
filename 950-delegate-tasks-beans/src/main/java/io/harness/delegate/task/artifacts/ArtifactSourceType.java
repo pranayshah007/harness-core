@@ -29,6 +29,8 @@ public enum ArtifactSourceType {
   @JsonProperty(ECR_NAME) ECR(ECR_NAME),
   @JsonProperty(ArtifactSourceConstants.NEXUS3_REGISTRY_NAME)
   NEXUS3_REGISTRY(ArtifactSourceConstants.NEXUS3_REGISTRY_NAME),
+  @JsonProperty(ArtifactSourceConstants.NEXUS2_REGISTRY_NAME)
+  NEXUS2_REGISTRY(ArtifactSourceConstants.NEXUS2_REGISTRY_NAME),
   @JsonProperty(ArtifactSourceConstants.ARTIFACTORY_REGISTRY_NAME)
   ARTIFACTORY_REGISTRY(ArtifactSourceConstants.ARTIFACTORY_REGISTRY_NAME),
   @JsonProperty(CUSTOM_ARTIFACT_NAME) CUSTOM_ARTIFACT(CUSTOM_ARTIFACT_NAME),

@@ -39,14 +39,24 @@ spec:
                       value: "$env:SYSTEMDRIVE"
                   outputVariables: []
                   commandUnits:
-                    - identifier: Copy_Artifact_Rollback_<+phase>
-                      name: "Copy Artifact Rollback"
-                      type: Copy
+                    - identifier: Setup_Runtime_Paths_Rollback_<+phase>
+                      name: "Setup Runtime Paths"
+                      type: Script
+                      spec:
+                        shell: PowerShell
+                        source:
+                          type: Inline
+                          spec:
+                            script: |-
+                              <+setup_runtime_paths_script_powershell>
+                    - identifier: Download_Artifact_Rollback_<+phase>
+                      name: "Download Artifact Rollback"
+                      type: DownloadArtifact
                       spec:
                         sourceType: Artifact
                         destinationPath: "%USERPROFILE%\\<+service.name>\\<+env.name>"
-                    - identifier: Expend_Artifact_Rollback_<+phase>
-                      name: "Expend Artifact Rollback"
+                    - identifier: Expand_Artifact_Rollback_<+phase>
+                      name: "Expand Artifact Rollback"
                       type: Script
                       spec:
                         shell: PowerShell

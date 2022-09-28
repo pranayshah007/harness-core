@@ -7,6 +7,8 @@
 
 package io.harness.ngmigration.service.workflow;
 
+import io.harness.exception.InvalidRequestException;
+
 import software.wings.beans.Workflow;
 
 import com.google.inject.Inject;
@@ -35,7 +37,7 @@ public class WorkflowHandlerFactory {
         return blueGreenWorkflowHandler;
       case CUSTOM:
       default:
-        throw new UnsupportedOperationException();
+        throw new InvalidRequestException("Unsupported WF type");
     }
   }
 }

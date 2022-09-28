@@ -87,19 +87,23 @@ public class TemplateGitXServiceImpl implements TemplateGitXService {
         && GitAwareContextHelper.isNullOrDefault(gitEntityInfo.getParentEntityConnectorRef());
   }
 
-  public boolean isNewGitXEnabled(TemplateEntity templateToSave, GitEntityInfo gitEntityInfo) {
-    if (templateToSave.getProjectIdentifier() != null) {
-      return isGitSimplificationEnabledForAProject(templateToSave, gitEntityInfo);
+  public boolean isNewGitXEnabledAndIsRemoteEntity(TemplateEntity templateToSave, GitEntityInfo gitEntityInfo) {
+    return isNewGitXEnabled(templateToSave.getAccountIdentifier(), templateToSave.getOrgIdentifier(),
+               templateToSave.getProjectIdentifier())
+        && TemplateUtils.isRemoteEntity(gitEntityInfo);
+  }
+
+  @Override
+  public boolean isNewGitXEnabled(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    if (projectIdentifier != null) {
+      return isGitSimplificationEnabledForAProject(accountIdentifier, orgIdentifier, projectIdentifier);
     } else {
-      return ngTemplateFeatureFlagHelperService.isEnabled(
-                 templateToSave.getAccountId(), FeatureName.NG_TEMPLATE_GITX_ACCOUNT_ORG)
-          && TemplateUtils.isRemoteEntity(gitEntityInfo);
+      return ngTemplateFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.NG_TEMPLATE_GITX_ACCOUNT_ORG);
     }
   }
 
-  private boolean isGitSimplificationEnabledForAProject(TemplateEntity templateToSave, GitEntityInfo gitEntityInfo) {
-    return gitSyncSdkService.isGitSimplificationEnabled(templateToSave.getAccountIdentifier(),
-               templateToSave.getOrgIdentifier(), templateToSave.getProjectIdentifier())
-        && TemplateUtils.isRemoteEntity(gitEntityInfo);
+  private boolean isGitSimplificationEnabledForAProject(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    return gitSyncSdkService.isGitSimplificationEnabled(accountIdentifier, orgIdentifier, projectIdentifier);
   }
 }

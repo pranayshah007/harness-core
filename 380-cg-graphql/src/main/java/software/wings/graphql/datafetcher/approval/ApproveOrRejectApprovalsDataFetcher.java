@@ -25,19 +25,25 @@ import software.wings.api.ApprovalStateExecutionData;
 import software.wings.beans.ApiKeyEntry;
 import software.wings.beans.ApprovalDetails;
 import software.wings.beans.NameValuePair;
+import software.wings.beans.User;
 import software.wings.beans.WorkflowExecution;
+import software.wings.beans.security.UserGroup;
 import software.wings.dl.WingsPersistence;
 import software.wings.graphql.datafetcher.BaseMutatorDataFetcher;
 import software.wings.graphql.datafetcher.MutationContext;
 import software.wings.graphql.schema.mutation.approval.input.QLApproveOrRejectApprovalsInput;
 import software.wings.graphql.schema.mutation.approval.payload.QLApproveOrRejectApprovalsPayload;
 import software.wings.security.annotations.AuthRule;
+import software.wings.service.impl.AuthServiceImpl;
 import software.wings.service.impl.security.auth.DeploymentAuthHandler;
+import software.wings.service.intfc.UserService;
 import software.wings.service.intfc.WorkflowExecutionService;
 import software.wings.sm.states.ApprovalState.ApprovalStateType;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import graphql.GraphQLContext;
+import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
@@ -50,15 +56,21 @@ public class ApproveOrRejectApprovalsDataFetcher
   private DeploymentAuthHandler deploymentAuthHandler;
   private FeatureFlagService featureFlagService;
 
+  private AuthServiceImpl authService;
+
+  private UserService userService;
+
   @Inject
   public ApproveOrRejectApprovalsDataFetcher(WorkflowExecutionService workflowExecutionService,
-      DeploymentAuthHandler deploymentAuthHandler, WingsPersistence persistence,
-      FeatureFlagService featureFlagService) {
+      DeploymentAuthHandler deploymentAuthHandler, WingsPersistence persistence, FeatureFlagService featureFlagService,
+      UserService userService, AuthServiceImpl authService) {
     super(QLApproveOrRejectApprovalsInput.class, QLApproveOrRejectApprovalsPayload.class);
     this.workflowExecutionService = workflowExecutionService;
     this.deploymentAuthHandler = deploymentAuthHandler;
     this.persistence = persistence;
     this.featureFlagService = featureFlagService;
+    this.userService = userService;
+    this.authService = authService;
   }
 
   @Override
@@ -72,14 +84,30 @@ public class ApproveOrRejectApprovalsDataFetcher
       throw new InvalidRequestException("Execution does not exist or access is denied", WingsException.USER);
     }
 
+    boolean hasEmailAndFFEnabled = (approveOrRejectApprovalsInput.getUserEmail() != null)
+        && featureFlagService.isEnabled(
+            FeatureName.SPG_ENABLE_EMAIL_TO_APPROVE_OR_REJECT_GRAPHQL, execution.getAccountId());
     GraphQLContext graphQLContext = mutationContext.getDataFetchingEnvironment().getContext();
     ApiKeyEntry apiKeyEntry = graphQLContext.get("apiKeyEntry");
+
+    if (hasEmailAndFFEnabled) {
+      if (!isUserPresentInApiKey(approveOrRejectApprovalsInput.getUserEmail(), apiKeyEntry)) {
+        throw new InvalidRequestException("User email is invalid or your user cannot access", WingsException.USER);
+      }
+    }
 
     ApprovalDetails approvalDetails = constructApprovalDetailsFromInput(approveOrRejectApprovalsInput, apiKeyEntry);
     final String appId = approveOrRejectApprovalsInput.getApplicationId();
     ApprovalStateExecutionData approvalStateExecutionData =
         workflowExecutionService.fetchApprovalStateExecutionDataFromWorkflowExecution(
             appId, executionId, null, approvalDetails);
+
+    if (hasEmailAndFFEnabled) {
+      if (!hasValidUserEmail(
+              approveOrRejectApprovalsInput.getUserEmail(), execution.getAccountId(), approvalStateExecutionData)) {
+        throw new InvalidRequestException("User email is invalid or your user cannot access", WingsException.USER);
+      }
+    }
 
     verifyApproveOrRejectApprovalsInput(approveOrRejectApprovalsInput, approvalStateExecutionData);
 
@@ -144,5 +172,43 @@ public class ApproveOrRejectApprovalsDataFetcher
     approvalDetails.setApprovalViaApiKey(isApprovedViaApiKey);
 
     return approvalDetails;
+  }
+
+  @VisibleForTesting
+  boolean isUserPresentInApiKey(String email, ApiKeyEntry apiKeyEntry) {
+    User user = userService.getUserByEmail(email);
+    if (user == null) {
+      return false;
+    }
+
+    List<UserGroup> listUserGroupByUser = authService.getUserGroups(apiKeyEntry.getAccountId(), user);
+    List<UserGroup> userGroupByApiKey = apiKeyEntry.getUserGroups();
+
+    for (UserGroup userGroup : listUserGroupByUser) {
+      if (userGroupByApiKey.contains(userGroup)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  @VisibleForTesting
+  boolean hasValidUserEmail(String email, String accountId, ApprovalStateExecutionData approvalStateExecutionData) {
+    User user = userService.getUserByEmail(email);
+    if (user == null) {
+      return false;
+    }
+
+    List<UserGroup> listUserGroupByUser = authService.getUserGroups(accountId, user);
+    List<String> userGroupApprovalStep = approvalStateExecutionData.getUserGroups();
+
+    for (UserGroup userGroup : listUserGroupByUser) {
+      if (userGroupApprovalStep.contains(userGroup.getUuid())) {
+        return true;
+      }
+    }
+
+    return false;
   }
 }

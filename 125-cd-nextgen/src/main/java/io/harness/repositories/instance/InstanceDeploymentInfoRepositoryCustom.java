@@ -34,5 +34,5 @@ public interface InstanceDeploymentInfoRepositoryCustom {
   List<InstanceDeploymentInfo> listByHosts(ExecutionInfoKey executionInfoKey, List<String> hosts);
 
   List<InstanceDeploymentInfo> listByHostsAndArtifact(ExecutionInfoKey executionInfoKey, List<String> hosts,
-      ArtifactDetails artifactDetails, InstanceDeploymentInfoStatus status);
+      ArtifactDetails artifactDetails, InstanceDeploymentInfoStatus... statuses);
 }

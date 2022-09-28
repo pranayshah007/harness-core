@@ -89,4 +89,10 @@ public class GenericPlanCreatorUtils {
             action.toString() + " Failure action doesn't have corresponding RepairAction Code.");
     }
   }
+
+  public static String getRollbackStageNodeId(YamlField currentField) {
+    String stageNodeId = getStageNodeId(currentField);
+    // todo: if the stage is in a parallel node then send that node's rollback stage
+    return stageNodeId + "_rollbackStage";
+  }
 }

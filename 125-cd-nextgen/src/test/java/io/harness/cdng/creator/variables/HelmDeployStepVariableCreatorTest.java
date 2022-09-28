@@ -52,6 +52,7 @@ public class HelmDeployStepVariableCreatorTest extends CategoryTest {
         "cdng/variables/pipelineWithHelmDeployStep.json", helmDeployStepVariableCreator, HelmDeployStepNode.class);
     assertThat(fqnPropertiesList)
         .containsOnly("pipeline.stages.Deployment.spec.execution.steps.helmDeployment.spec.delegateSelectors",
+            "pipeline.stages.Deployment.spec.execution.steps.helmDeployment.spec.ignoreReleaseHistFailStatus",
             "pipeline.stages.Deployment.spec.execution.steps.helmDeployment.description",
             "pipeline.stages.Deployment.spec.execution.steps.helmDeployment.timeout",
             "pipeline.stages.Deployment.spec.execution.steps.helmDeployment.name");

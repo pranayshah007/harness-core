@@ -1,0 +1,16 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "redis",
+    srcs = [
+        "redis-store.go",
+    ],
+    importpath = "github.com/harness/harness-core/queue-service/hsqs/store/redis",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//queue-service/hsqs/store",
+        "//queue-service/hsqs/utils",
+        "@com_github_go_redis_redis_v8//:redis",
+        "@com_github_rs_zerolog//:zerolog",
+    ],
+)

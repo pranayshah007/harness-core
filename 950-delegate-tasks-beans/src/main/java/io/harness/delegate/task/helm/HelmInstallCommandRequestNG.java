@@ -23,6 +23,7 @@ public class HelmInstallCommandRequestNG extends HelmCommandRequestNG {
   @Builder.Default private long timeoutInMillis = 600000;
   private Integer newReleaseVersion;
   private Integer prevReleaseVersion;
+  private boolean ignoreReleaseHistFailStatus;
   @Builder
   public HelmInstallCommandRequestNG(String releaseName, List<String> valuesYamlList,
       K8sInfraDelegateConfig k8sInfraDelegateConfig, ManifestDelegateConfig manifestDelegateConfig, String accountId,
@@ -30,12 +31,13 @@ public class HelmInstallCommandRequestNG extends HelmCommandRequestNG {
       CommandUnitsProgress commandUnitsProgress, LogCallback logCallback, String namespace, HelmVersion helmVersion,
       String commandFlags, String repoName, String workingDir, String kubeConfigLocation, String ocPath,
       String commandName, boolean useLatestKubectlVersion, Integer prevReleaseVersion, Integer newReleaseVersion,
-      String gcpKeyPath) {
+      String gcpKeyPath, boolean ignoreReleaseHistFailStatus) {
     super(releaseName, HelmCommandType.INSTALL, valuesYamlList, k8sInfraDelegateConfig, manifestDelegateConfig,
         accountId, k8SteadyStateCheckEnabled, shouldOpenFetchFilesLogStream, commandUnitsProgress, logCallback,
         namespace, helmVersion, commandFlags, repoName, workingDir, kubeConfigLocation, ocPath, commandName,
         useLatestKubectlVersion, gcpKeyPath);
     this.prevReleaseVersion = prevReleaseVersion;
     this.newReleaseVersion = newReleaseVersion;
+    this.ignoreReleaseHistFailStatus = ignoreReleaseHistFailStatus;
   }
 }

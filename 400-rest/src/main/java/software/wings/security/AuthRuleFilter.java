@@ -223,7 +223,7 @@ public class AuthRuleFilter implements ContainerRequestFilter {
       if (isEmpty(accountId)) {
         accountId = apiKeyService.getAccountIdFromApiKey(requestContext.getHeaderString("X-Api-Key"));
       }
-      if (isNotEmpty(accountId) && featureFlagService.isEnabled(FeatureName.AUDIT_TRAIL_ENHANCEMENT, accountId)) {
+      if (isNotEmpty(accountId)) {
         ApiKeyEntry apiKeyEntry = apiKeyService.getByKey(requestContext.getHeaderString("X-Api-Key"), accountId);
         auditServiceHelper.reportForAuditingUsingAccountId(accountId, null, apiKeyEntry, Event.Type.INVOKED);
       }
@@ -423,8 +423,7 @@ public class AuthRuleFilter implements ContainerRequestFilter {
     if (!isWhitelisted) {
       String msg = "Current IP Address (" + remoteHost + ") is not whitelisted.";
       log.warn(msg);
-      if (featureFlagService.isEnabled(FeatureName.AUDIT_TRAIL_ENHANCEMENT, accountId)
-          && requestContext.getUriInfo().getPath().contains("whitelist/isEnabled") && user != null) {
+      if (requestContext.getUriInfo().getPath().contains("whitelist/isEnabled") && user != null) {
         auditServiceHelper.reportForAuditingUsingAccountId(accountId, null, user, Event.Type.NON_WHITELISTED);
       }
 

@@ -61,6 +61,8 @@ public class ServicePlanCreatorHelper {
   @Inject private ServiceEntityService serviceEntityService;
   @Inject private ServicePlanCreator servicePlanCreator;
 
+  public static String SERVICE_IDENTIFIER_FIELD_IN_SPEC = "identifier";
+
   public YamlField getResolvedServiceField(
       YamlField parentSpecField, DeploymentStageNode stageNode, PlanCreationContext ctx) {
     YamlField serviceField = parentSpecField.getNode().getField(YamlTypes.SERVICE_CONFIG);
@@ -268,6 +270,10 @@ public class ServicePlanCreatorHelper {
         .getField(YamlTypes.SERVICE_SPEC)
         .getNode()
         .getUuid();
+  }
+
+  public String getServiceRef(YamlField serviceField) {
+    return serviceField.getNode().getField(SERVICE_IDENTIFIER_FIELD_IN_SPEC).getNode().getCurrJsonNode().asText();
   }
 
   private ServiceYamlV2 useServiceYamlFromStage(@NotNull ServiceUseFromStageV2 useFromStage, YamlField serviceField) {

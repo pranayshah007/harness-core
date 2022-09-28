@@ -450,6 +450,8 @@ opaClientConfig:
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 
+opaConnectivityEnabled: false
+
 secretsConfiguration:
   secretResolutionEnabled: false
   gcpSecretManagerProject: harness-playground

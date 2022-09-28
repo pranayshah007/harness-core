@@ -1,3 +1,4 @@
+io.harness.plancreator.customDeployment.StepTemplateRef
 io.harness.steps.approval.step.jira.JiraApprovalOutcome
 io.harness.steps.approval.step.custom.CustomApprovalOutcome
 io.harness.steps.section.chain.SectionChainStepParameters
@@ -145,3 +146,4 @@ io.harness.steps.wait.WaitStepParameters
 io.harness.steps.wait.WaitStepNode
 io.harness.steps.wait.WaitStepInfo
 io.harness.yaml.core.failurestrategy.rollback.PipelineRollbackFailureActionConfig
+io.harness.steps.wait.WaitStepDetailsInfo

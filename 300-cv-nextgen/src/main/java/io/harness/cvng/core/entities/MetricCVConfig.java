@@ -123,8 +123,10 @@ public abstract class MetricCVConfig<I extends AnalysisInfo> extends CVConfig {
     for (MetricPack.MetricDefinition metricDefinition : cvConfig.getMetricPack().getMetrics()) {
       if (metricDefinition.getName().equals(metricName)) {
         if (Objects.nonNull(metricDefinition.getThresholds())) {
-          metricDefinition.getThresholds().forEach(
-              threshold -> thresholdTypes.add(threshold.getCriteria().getThresholdType()));
+          metricDefinition.getThresholds()
+              .stream()
+              .filter(threshold -> threshold.getThresholdConfigType().equals(ThresholdConfigType.DEFAULT))
+              .forEach(threshold -> thresholdTypes.add(threshold.getCriteria().getThresholdType()));
         }
       }
     }

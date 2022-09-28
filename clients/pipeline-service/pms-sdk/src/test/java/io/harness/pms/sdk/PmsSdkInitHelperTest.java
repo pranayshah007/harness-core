@@ -10,9 +10,16 @@ package io.harness.pms.sdk;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.pms.contracts.plan.ExpansionRequestType.KEY;
 import static io.harness.pms.contracts.plan.ExpansionRequestType.LOCAL_FQN;
+import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.NAMAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.notNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.ModuleType;
@@ -26,9 +33,13 @@ import io.harness.pms.sdk.core.execution.expression.SdkFunctor;
 import io.harness.pms.sdk.core.governance.ExpansionResponse;
 import io.harness.pms.sdk.core.governance.JsonExpansionHandler;
 import io.harness.pms.sdk.core.governance.JsonExpansionHandlerInfo;
+import io.harness.pms.sdk.core.plan.creation.creators.PartialPlanCreator;
+import io.harness.pms.sdk.core.plan.creation.creators.PipelineServiceInfoProvider;
 import io.harness.rule.Owner;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -36,6 +47,7 @@ import java.util.List;
 import java.util.Map;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.MockedStatic;
 
 @OwnedBy(PIPELINE)
 public class PmsSdkInitHelperTest extends CategoryTest {
@@ -99,6 +111,20 @@ public class PmsSdkInitHelperTest extends CategoryTest {
     List<String> expandableFields = PmsSdkInitHelper.getSupportedSdkFunctorsList(sdkConfiguration);
     assertThat(expandableFields).hasSize(4);
     assertThat(expandableFields).contains("f1", "f2", "f3", "f4");
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldCalculateSupportedTypesValidateSupportedTypes() {
+    PipelineServiceInfoProvider provider = mock(PipelineServiceInfoProvider.class);
+    when(provider.getPlanCreators()).thenReturn(ImmutableList.of(mock(PartialPlanCreator.class)));
+
+    try (MockedStatic<PmsSdkInitValidator> validator = mockStatic(PmsSdkInitValidator.class)) {
+      validator.when(() -> PmsSdkInitValidator.supportedTypesPlanCreator(any())).thenReturn(ImmutableMap.of());
+      PmsSdkInitHelper.calculateSupportedTypes(provider);
+      validator.verify(() -> PmsSdkInitValidator.validatePlanCreators(notNull(), eq(provider)));
+    }
   }
 
   private static class Dummy1 implements JsonExpansionHandler {
