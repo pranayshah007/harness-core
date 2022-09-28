@@ -1453,10 +1453,12 @@ public class UserServiceImpl implements UserService {
     if (!isInviteAcceptanceRequired) {
       addUserToUserGroups(accountId, user, userGroups, false, true);
     }
-    if (!isInviteAcceptanceRequired && accountService.isSSOEnabled(account)) {
-      sendUserInvitationToOnlySsoAccountMail(account, user);
-    } else {
-      sendNewInvitationMail(userInvite, account, user);
+    if (!featureFlagService.isEnabled(FeatureName.PL_NO_EMAIL_FOR_SAML_ACCOUNT_INVITES, accountId)) {
+      if (!isInviteAcceptanceRequired && accountService.isSSOEnabled(account)) {
+        sendUserInvitationToOnlySsoAccountMail(account, user);
+      } else {
+        sendNewInvitationMail(userInvite, account, user);
+      }
     }
 
     auditServiceHelper.reportForAuditingUsingAccountId(

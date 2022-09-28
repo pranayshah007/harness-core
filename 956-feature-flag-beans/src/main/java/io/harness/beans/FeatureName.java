@@ -434,7 +434,8 @@ public enum FeatureName {
   NG_DEPLOYMENT_FREEZE("Enables Deployment freeze for NG", HarnessTeam.CDC),
   PL_ENABLE_SWITCH_ACCOUNT_PAGINATION("Enables new API for Switch Account which is paginated", HarnessTeam.PL),
   NEW_EXECUTION_LIST_VIEW(
-      "Enables the new UX for Executions list view for Pipelines and Projects", HarnessTeam.PIPELINE);
+      "Enables the new UX for Executions list view for Pipelines and Projects", HarnessTeam.PIPELINE),
+  PL_NO_EMAIL_FOR_SAML_ACCOUNT_INVITES("No email for users in account where SAML auth is enabled", HarnessTeam.PL);
   @Deprecated
   FeatureName() {
     scope = Scope.PER_ACCOUNT;
