@@ -479,15 +479,16 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
           || HARNESS_SECRET_MANAGER_IDENTIFIER.equals(encryptedData.getSecretManagerIdentifier())) {
         encryptedRecordData = globalEncryptDecryptClient.convertEncryptedRecordToLocallyEncrypted(
             encryptedData, accountIdentifier, encryptionConfig);
-        if (LOCAL.equals(encryptedRecordData.getEncryptionType())) {
-          encryptionConfig = SecretManagerConfigMapper.fromDTO(getLocalEncryptionConfig(accountIdentifier));
-          decryptedValue = String.valueOf(
-              ngEncryptorService.fetchSecretValue(accountIdentifier, encryptedRecordData, encryptionConfig));
-        } else {
-          log.error("Failed to decrypt secret {} with {} harness secret manager", encryptedData.getUuid(),
-              encryptionConfig.getEncryptionType());
-        }
+        encryptionConfig = SecretManagerConfigMapper.fromDTO(getLocalEncryptionConfig(accountIdentifier));
+        decryptedValue = String.valueOf(
+            ngEncryptorService.fetchSecretValue(accountIdentifier, encryptedRecordData, encryptionConfig));
+      } else {
+        throw new InvalidRequestException(
+            "Decryption is supported only for secrets encrypted via harness managed secret managers");
       }
+    } else {
+      throw new InvalidRequestException(String.format(
+          "Secret manager with the identifier {%s} does not exist", encryptedData.getSecretManagerIdentifier()));
     }
     return DecryptedSecretValue.builder()
         .identifier(identifier)
