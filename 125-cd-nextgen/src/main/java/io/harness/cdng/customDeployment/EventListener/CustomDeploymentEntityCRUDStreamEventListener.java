@@ -76,6 +76,11 @@ public class CustomDeploymentEntityCRUDStreamEventListener implements MessageLis
   private boolean processRestoreEvent(EntityChangeDTO entityChangeDTO) {
     if (Objects.equals(entityChangeDTO.getMetadataMap().get("templateType"),
             TemplateEntityType.CUSTOM_DEPLOYMENT_TEMPLATE.toString())) {
+      if (entityChangeDTO.getMetadataMap().get("isStable").equals("true")) {
+        deploymentTemplateEntityCRUDEventHandler.updateInfraAsObsolete(
+            entityChangeDTO.getAccountIdentifier().getValue(), entityChangeDTO.getOrgIdentifier().getValue(),
+            entityChangeDTO.getProjectIdentifier().getValue(), entityChangeDTO.getIdentifier().getValue(), null);
+      }
       return deploymentTemplateEntityCRUDEventHandler.updateInfraAsObsolete(
           entityChangeDTO.getAccountIdentifier().getValue(), entityChangeDTO.getOrgIdentifier().getValue(),
           entityChangeDTO.getProjectIdentifier().getValue(), entityChangeDTO.getIdentifier().getValue(),
