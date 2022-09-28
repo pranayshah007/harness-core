@@ -5,8 +5,8 @@ load("//:tools/bazel/macros.bzl", "run_analysis")
 shared_dependencies = [
     "@maven//:com_google_guava_guava",
 ] + [
-    "//:lombok",
     "//127-cd-nextgen-entities:module",
+    "//:lombok",
     "//400-rest:module",
     "//958-migration-sdk:module",
     "//980-commons:module",
