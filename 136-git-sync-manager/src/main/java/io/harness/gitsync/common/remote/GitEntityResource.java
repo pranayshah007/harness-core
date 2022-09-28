@@ -7,19 +7,7 @@
 
 package io.harness.gitsync.common.remote;
 
-import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
-import static io.harness.NGCommonEntityConstants.APPLICATION_JSON_MEDIA_TYPE;
-import static io.harness.NGCommonEntityConstants.APPLICATION_YAML_MEDIA_TYPE;
-import static io.harness.NGCommonEntityConstants.BAD_REQUEST_CODE;
-import static io.harness.NGCommonEntityConstants.BAD_REQUEST_PARAM_MESSAGE;
-import static io.harness.NGCommonEntityConstants.INTERNAL_SERVER_ERROR_CODE;
-import static io.harness.NGCommonEntityConstants.INTERNAL_SERVER_ERROR_MESSAGE;
-import static io.harness.NGCommonEntityConstants.ORG_PARAM_MESSAGE;
-import static io.harness.NGCommonEntityConstants.PAGE_PARAM_MESSAGE;
-import static io.harness.NGCommonEntityConstants.PROJECT_PARAM_MESSAGE;
-import static io.harness.NGCommonEntityConstants.SIZE_PARAM_MESSAGE;
-import static io.harness.annotations.dev.HarnessTeam.DX;
-
+import com.google.inject.Inject;
 import io.harness.EntityType;
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
@@ -34,8 +22,6 @@ import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
-
-import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.v3.oas.annotations.Operation;
@@ -43,7 +29,10 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
-import java.util.List;
+import lombok.AllArgsConstructor;
+import org.hibernate.validator.constraints.NotEmpty;
+import retrofit2.http.Body;
+
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -52,12 +41,24 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import lombok.AllArgsConstructor;
-import org.hibernate.validator.constraints.NotEmpty;
-import retrofit2.http.Body;
+import java.util.List;
+
+import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
+import static io.harness.NGCommonEntityConstants.APPLICATION_JSON_MEDIA_TYPE;
+import static io.harness.NGCommonEntityConstants.APPLICATION_YAML_MEDIA_TYPE;
+import static io.harness.NGCommonEntityConstants.BAD_REQUEST_CODE;
+import static io.harness.NGCommonEntityConstants.BAD_REQUEST_PARAM_MESSAGE;
+import static io.harness.NGCommonEntityConstants.INTERNAL_SERVER_ERROR_CODE;
+import static io.harness.NGCommonEntityConstants.INTERNAL_SERVER_ERROR_MESSAGE;
+import static io.harness.NGCommonEntityConstants.ORG_PARAM_MESSAGE;
+import static io.harness.NGCommonEntityConstants.PAGE_PARAM_MESSAGE;
+import static io.harness.NGCommonEntityConstants.PROJECT_PARAM_MESSAGE;
+import static io.harness.NGCommonEntityConstants.SIZE_PARAM_MESSAGE;
+import static io.harness.annotations.dev.HarnessTeam.DX;
 
 @Api("/git-sync-entities")
 @Path("/git-sync-entities")
+@Deprecated
 @Produces({"application/json", "text/yaml", "text/html"})
 @Consumes({"application/json", "text/yaml", "text/html"})
 @AllArgsConstructor(onConstructor = @__({ @Inject }))

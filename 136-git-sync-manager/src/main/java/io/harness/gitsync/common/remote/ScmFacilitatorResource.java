@@ -7,19 +7,7 @@
 
 package io.harness.gitsync.common.remote;
 
-import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
-import static io.harness.NGCommonEntityConstants.APPLICATION_JSON_MEDIA_TYPE;
-import static io.harness.NGCommonEntityConstants.APPLICATION_YAML_MEDIA_TYPE;
-import static io.harness.NGCommonEntityConstants.BAD_REQUEST_CODE;
-import static io.harness.NGCommonEntityConstants.BAD_REQUEST_PARAM_MESSAGE;
-import static io.harness.NGCommonEntityConstants.INTERNAL_SERVER_ERROR_CODE;
-import static io.harness.NGCommonEntityConstants.INTERNAL_SERVER_ERROR_MESSAGE;
-import static io.harness.NGCommonEntityConstants.ORG_PARAM_MESSAGE;
-import static io.harness.NGCommonEntityConstants.PAGE_PARAM_MESSAGE;
-import static io.harness.NGCommonEntityConstants.PROJECT_PARAM_MESSAGE;
-import static io.harness.NGCommonEntityConstants.SIZE_PARAM_MESSAGE;
-import static io.harness.annotations.dev.HarnessTeam.DX;
-
+import com.google.inject.Inject;
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
@@ -51,8 +39,6 @@ import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.utils.URLDecoderUtility;
 import io.harness.security.annotations.NextGenManagerAuth;
-
-import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -64,7 +50,8 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.util.List;
+import org.hibernate.validator.constraints.NotBlank;
+
 import javax.validation.Valid;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.NotNull;
@@ -75,10 +62,24 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import org.hibernate.validator.constraints.NotBlank;
+import java.util.List;
+
+import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
+import static io.harness.NGCommonEntityConstants.APPLICATION_JSON_MEDIA_TYPE;
+import static io.harness.NGCommonEntityConstants.APPLICATION_YAML_MEDIA_TYPE;
+import static io.harness.NGCommonEntityConstants.BAD_REQUEST_CODE;
+import static io.harness.NGCommonEntityConstants.BAD_REQUEST_PARAM_MESSAGE;
+import static io.harness.NGCommonEntityConstants.INTERNAL_SERVER_ERROR_CODE;
+import static io.harness.NGCommonEntityConstants.INTERNAL_SERVER_ERROR_MESSAGE;
+import static io.harness.NGCommonEntityConstants.ORG_PARAM_MESSAGE;
+import static io.harness.NGCommonEntityConstants.PAGE_PARAM_MESSAGE;
+import static io.harness.NGCommonEntityConstants.PROJECT_PARAM_MESSAGE;
+import static io.harness.NGCommonEntityConstants.SIZE_PARAM_MESSAGE;
+import static io.harness.annotations.dev.HarnessTeam.DX;
 
 @Api("/scm")
 @Path("/scm")
+@Deprecated
 @Produces({"application/json", "text/yaml", "text/html"})
 @Consumes({"application/json", "text/yaml", "text/html"})
 @ApiResponses(value =
