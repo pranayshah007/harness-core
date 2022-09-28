@@ -22,6 +22,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.core.beans.monitoredService.HealthSource;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
+import io.harness.cvng.core.beans.monitoredService.MonitoredServiceListItemDTO;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
@@ -318,9 +319,11 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     assertThat(sloDashboardWidget.getErrorBudgetRisk()).isEqualTo(ErrorBudgetRisk.HEALTHY);
     assertThat(sloDashboardWidget.getServiceIdentifier()).isEqualTo(monitoredServiceDTO.getServiceRef());
     assertThat(sloDashboardWidget.getEnvironmentIdentifier()).isEqualTo(monitoredServiceDTO.getEnvironmentRef());
+    assertThat(sloDashboardWidget.getNoOfActiveAlerts())
+        .isEqualTo(serviceLevelObjective.getNotificationRuleRefs().size());
     assertThat(sloDashboardWidget.getServiceName()).isEqualTo("Mocked service name");
     assertThat(sloDashboardWidget.getEnvironmentName()).isEqualTo("Mocked env name");
-    assertThat(sloDashboardWidget.getUserJourneyIdentifier()).isEqualTo("userJourney");
+    assertThat(sloDashboardWidget.getUserJourneyIdentifier()).isEqualTo(serviceLevelObjective.getUserJourneyRef());
   }
 
   @Test
@@ -359,6 +362,71 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     assertThat(sloDashboardWidget.getName()).isEqualTo(serviceLevelObjective3.getName());
     sloDashboardWidget = sloDashboardWidgets.get(1);
     assertThat(sloDashboardWidget.getName()).isEqualTo(serviceLevelObjective2.getName());
+
+    //    with special character
+    pageResponse = sloDashboardService.getSloHealthListView(builderFactory.getProjectParams(),
+        SLODashboardApiFilter.builder().build(), PageParams.builder().page(0).size(10).build(), "*");
+    assertThat(pageResponse.getPageItemCount()).isEqualTo(0);
+    assertThat(pageResponse.getTotalItems()).isEqualTo(0);
+    sloDashboardWidgets = pageResponse.getContent();
+    assertThat(sloDashboardWidgets).hasSize(0);
+
+    //    with no such SLO
+    pageResponse = sloDashboardService.getSloHealthListView(builderFactory.getProjectParams(),
+        SLODashboardApiFilter.builder().build(), PageParams.builder().page(0).size(10).build(), "random ");
+    assertThat(pageResponse.getPageItemCount()).isEqualTo(0);
+    assertThat(pageResponse.getTotalItems()).isEqualTo(0);
+    sloDashboardWidgets = pageResponse.getContent();
+    assertThat(sloDashboardWidgets).hasSize(0);
+  }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testGetSloHealthListViewWithFilterApplied() {
+    String monitoredServiceIdentifier = "monitoredServiceIdentifier";
+    MonitoredServiceDTO monitoredServiceDTO1 =
+        builderFactory.monitoredServiceDTOBuilder().identifier(monitoredServiceIdentifier).build();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO1);
+
+    MonitoredServiceDTO monitoredServiceDTO2 =
+        builderFactory.monitoredServiceDTOBuilder().identifier(monitoredServiceIdentifier + '1').build();
+    monitoredServiceDTO2.setServiceRef("new");
+    monitoredServiceDTO2.setEnvironmentRef("one");
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO2);
+
+    ServiceLevelObjectiveDTO serviceLevelObjective1 =
+        builderFactory.getServiceLevelObjectiveDTOBuilder().monitoredServiceRef(monitoredServiceIdentifier).build();
+    serviceLevelObjectiveService.create(builderFactory.getProjectParams(), serviceLevelObjective1);
+
+    ServiceLevelObjectiveDTO serviceLevelObjective2 =
+        builderFactory.getServiceLevelObjectiveDTOBuilder().monitoredServiceRef(monitoredServiceIdentifier).build();
+    serviceLevelObjective2.setName("new two");
+    serviceLevelObjective2.setIdentifier("new_two");
+    serviceLevelObjectiveService.create(builderFactory.getProjectParams(), serviceLevelObjective2);
+
+    ServiceLevelObjectiveDTO serviceLevelObjective3 = builderFactory.getServiceLevelObjectiveDTOBuilder()
+                                                          .monitoredServiceRef(monitoredServiceIdentifier + '1')
+                                                          .build();
+    serviceLevelObjective3.setName("new three");
+    serviceLevelObjective3.setIdentifier("new_three");
+    serviceLevelObjectiveService.create(builderFactory.getProjectParams(), serviceLevelObjective3);
+
+    PageResponse<MonitoredServiceListItemDTO> msPageResponse =
+        monitoredServiceService.list(builderFactory.getProjectParams(), null, 0, 10, null, false);
+    assertThat(msPageResponse.getPageItemCount()).isEqualTo(2);
+    assertThat(msPageResponse.getTotalItems()).isEqualTo(2);
+
+    PageResponse<SLOHealthListView> pageResponse =
+        sloDashboardService.getSloHealthListView(builderFactory.getProjectParams(),
+            SLODashboardApiFilter.builder().monitoredServiceIdentifier(monitoredServiceIdentifier + '1').build(),
+            PageParams.builder().page(0).size(10).build(), null);
+    assertThat(pageResponse.getPageItemCount()).isEqualTo(1);
+    assertThat(pageResponse.getTotalItems()).isEqualTo(1);
+    List<SLOHealthListView> sloDashboardWidgets = pageResponse.getContent();
+    assertThat(sloDashboardWidgets).hasSize(1);
+    SLOHealthListView sloDashboardWidget = sloDashboardWidgets.get(0);
+    assertThat(sloDashboardWidget.getName()).isEqualTo(serviceLevelObjective3.getName());
   }
 
   @Test
