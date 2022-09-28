@@ -767,6 +767,7 @@ public class NGTemplateResource {
             description = "Returns all Variables used that are valid to be used as expression in template.")
       })
   @ApiOperation(value = "Create variables for Template", nickname = "createVariablesV2")
+  @Hidden
   public ResponseDTO<VariableMergeServiceResponse>
   createVariablesV2(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE,
                         required = true) @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
