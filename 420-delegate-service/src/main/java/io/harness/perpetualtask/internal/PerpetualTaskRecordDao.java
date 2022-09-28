@@ -14,6 +14,7 @@ import static io.harness.perpetualtask.PerpetualTaskState.TASK_UNASSIGNED;
 import static java.lang.System.currentTimeMillis;
 import static java.util.Arrays.asList;
 
+import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.task.DelegateLogContext;
 import io.harness.network.FibonacciBackOff;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
@@ -212,12 +213,30 @@ public class PerpetualTaskRecordDao {
   }
 
   public List<PerpetualTaskRecord> listBatchOfPerpetualTasksToRebalanceForAccount(String accountId) {
+    markBatchOfPerpetualTasksWithNoHeartBeatToRebalanceForAccount(accountId);
+
     Query<PerpetualTaskRecord> query = persistence.createQuery(PerpetualTaskRecord.class)
                                            .filter(PerpetualTaskRecordKeys.accountId, accountId)
                                            .filter(PerpetualTaskRecordKeys.state, PerpetualTaskState.TASK_TO_REBALANCE);
 
     return query.asList(new FindOptions().limit(BATCH_SIZE_FOR_PERPETUAL_TASK_TO_REBALANCE));
   }
+
+  public void markBatchOfPerpetualTasksWithNoHeartBeatToRebalanceForAccount(String accountId) {
+
+    Query<PerpetualTaskRecord> queryToUpdate = persistence.createQuery(PerpetualTaskRecord.class)
+            .filter(PerpetualTaskRecordKeys.accountId, accountId)
+            .filter(PerpetualTaskRecordKeys.state, TASK_ASSIGNED)
+            .field(PerpetualTaskRecordKeys.lastHeartBeat)
+            .greaterThan(System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(15));
+
+    UpdateOperations<PerpetualTaskRecord> updateOperations =
+            persistence.createUpdateOperations(PerpetualTaskRecord.class).set(PerpetualTaskRecordKeys.state
+                    , PerpetualTaskState.TASK_TO_REBALANCE);
+
+    persistence.findAndModify(queryToUpdate, updateOperations, HPersistence.returnNewOptions);
+  }
+
 
   public PerpetualTaskRecord getTask(String taskId) {
     return persistence.createQuery(PerpetualTaskRecord.class).field(PerpetualTaskRecordKeys.uuid).equal(taskId).get();
