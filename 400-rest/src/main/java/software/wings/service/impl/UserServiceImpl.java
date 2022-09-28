@@ -207,6 +207,7 @@ import software.wings.service.intfc.SignupService;
 import software.wings.service.intfc.UserGroupService;
 import software.wings.service.intfc.UserService;
 import software.wings.service.intfc.signup.SignupSpamChecker;
+import software.wings.utils.SizeUtils;
 
 import com.amazonaws.services.codedeploy.model.InvalidOperationException;
 import com.auth0.jwt.JWT;
@@ -3144,6 +3145,8 @@ public class UserServiceImpl implements UserService {
       log.info("User [{}] not found in Cache. Load it from DB", userId);
       user = get(userId);
       try {
+        log.info("User Cache  , Key: {} , Size of value in bytes:{}", user.getUuid(),
+            SizeUtils.convertNonSeriaziableObjectToBytes(user));
         userCache.put(user.getUuid(), user);
       } catch (Exception ex) {
         log.error("Exception occurred while putting User from DB to cache", ex);

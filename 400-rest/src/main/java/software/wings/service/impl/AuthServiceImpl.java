@@ -103,6 +103,7 @@ import software.wings.service.intfc.HarnessUserGroupService;
 import software.wings.service.intfc.UsageRestrictionsService;
 import software.wings.service.intfc.UserGroupService;
 import software.wings.service.intfc.UserService;
+import software.wings.utils.SizeUtils;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTCreator;
@@ -565,6 +566,8 @@ public class AuthServiceImpl implements AuthService {
         }
 
         value = getUserPermissionInfoFromDB(accountId, user);
+        log.info("UserPermissionInfo Cache , Key: {} , Size of value in bytes:{}", key,
+            SizeUtils.convertNonSeriaziableObjectToBytes(value));
         userPermissionInfoCache.put(key, value);
       }
       return value;
@@ -597,11 +600,13 @@ public class AuthServiceImpl implements AuthService {
           return null;
         }
         value = getUserRestrictionInfoFromDB(accountId, user, userPermissionInfo);
+        log.info("UserRestrictionInfo Cache , Key: {} , Size of value in bytes: {}", key,
+            SizeUtils.convertNonSeriaziableObjectToBytes(value));
         userRestrictionInfoCache.put(key, value);
       }
       return value;
     } catch (Exception e) {
-      log.warn("Error in fetching user UserPermissionInfo from Cache for key:" + key, e);
+      log.warn("Error in fetching user UserRestrictionInfo from Cache for key:" + key, e);
     }
 
     // not found in cache. cache write through failed as well. rebuild anyway
