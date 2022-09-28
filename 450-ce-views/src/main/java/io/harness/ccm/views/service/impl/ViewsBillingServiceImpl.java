@@ -1517,6 +1517,14 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
         .build();
   }
 
+  public static QLCEViewFilter constructQLCEViewFilterFromViewIdCondition(ViewIdCondition viewIdCondition) {
+    return QLCEViewFilter.builder()
+        .values(viewIdCondition.getValues().toArray(new String[0]))
+        .field(getQLCEViewFieldInput(viewIdCondition.getViewField()))
+        .operator(mapViewIdOperatorToQLCEViewFilterOperator(viewIdCondition.getViewOperator()))
+        .build();
+  }
+
   private static ViewIdOperator mapQLCEViewFilterOperatorToViewIdOperator(QLCEViewFilterOperator operator) {
     try {
       return ViewIdOperator.valueOf(operator.name());
@@ -1526,8 +1534,26 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     }
   }
 
+  private static QLCEViewFilterOperator mapViewIdOperatorToQLCEViewFilterOperator(ViewIdOperator operator) {
+    try {
+      return QLCEViewFilterOperator.valueOf(operator.name());
+    } catch (IllegalArgumentException ex) {
+      log.warn("QLCEViewFilterOperator equivalent of ViewIdOperator=[{}] is not present.", operator.name(), ex);
+      return null;
+    }
+  }
+
   public static ViewField getViewField(QLCEViewFieldInput field) {
     return ViewField.builder()
+        .fieldId(field.getFieldId())
+        .fieldName(field.getFieldName())
+        .identifier(field.getIdentifier())
+        .identifierName(field.getIdentifier().getDisplayName())
+        .build();
+  }
+
+  private static QLCEViewFieldInput getQLCEViewFieldInput(ViewField field) {
+    return QLCEViewFieldInput.builder()
         .fieldId(field.getFieldId())
         .fieldName(field.getFieldName())
         .identifier(field.getIdentifier())
