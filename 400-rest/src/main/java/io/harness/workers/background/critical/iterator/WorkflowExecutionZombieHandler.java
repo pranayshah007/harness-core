@@ -66,6 +66,7 @@ public class WorkflowExecutionZombieHandler implements MongoPersistenceIterator.
     // THE MOST RECENTLY EXECUTION INSTANCE TO EVALUATE IF IT'S A ZOMBIE EXECUTION.
     List<StateExecutionInstance> stateExecutionInstances =
         CollectionUtils.emptyIfNull(wingsPersistence.createQuery(StateExecutionInstance.class)
+                                        .filter(StateExecutionInstanceKeys.appId, wfExecution.getAppId())
                                         .filter(StateExecutionInstanceKeys.workflowId, wfExecution.getWorkflowId())
                                         .filter(StateExecutionInstanceKeys.executionUuid, wfExecution.getUuid())
                                         .order(Sort.descending(StateExecutionInstanceKeys.createdAt))
