@@ -65,7 +65,7 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
   public HMongoTemplate(MongoDbFactory mongoDbFactory, MongoConverter mongoConverter, MongoConfig mongoConfig) {
     super(mongoDbFactory, mongoConverter);
     this.traceMode = mongoConfig.getTraceMode();
-    this.MAX_TIME_IN_MILLIS_FOR_MONGO_OPERATIONS = mongoConfig.getMaxProcessingTime();
+    this.MAX_TIME_IN_MILLIS_FOR_MONGO_OPERATIONS = mongoConfig.getMaxOperationTimeInMillis();
   }
 
   @Nullable
@@ -121,6 +121,12 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
       log.error("query {} exceeded max time limit.", query);
       throw ex;
     }
+  }
+
+  @Override
+  public <T> List<T> findAll(Class<T> entityClass, String collectionName) {
+    Query query = new Query();
+    return find(query, entityClass, collectionName);
   }
 
   @Override

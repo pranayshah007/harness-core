@@ -108,7 +108,7 @@ public class MongoConfig {
 
   private AnalyticNodeMongoConfig analyticNodeConfig = AnalyticNodeMongoConfig.builder().build();
 
-  @JsonProperty(defaultValue = "900000") @Default @NotEmpty private int maxProcessingTime = 900000;
+  @NotEmpty private int maxOperationTimeInMillis = 900000;
 
   @JsonIgnore
   public ReadPreference getReadPreference() {
