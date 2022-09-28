@@ -432,7 +432,9 @@ public enum FeatureName {
   SETTING_ATTRIBUTES_SERVICE_ACCOUNT_TOKEN_MIGRATION("Migrate erroneous service account tokens", HarnessTeam.PL),
   ARTIFACT_SOURCE_TEMPLATE("Flag to add support for artifact source templates", HarnessTeam.CDC),
   NG_DEPLOYMENT_FREEZE("Enables Deployment freeze for NG", HarnessTeam.CDC),
-  PL_ENABLE_SWITCH_ACCOUNT_PAGINATION("Enables new API for Switch Account which is paginated", HarnessTeam.PL);
+  PL_ENABLE_SWITCH_ACCOUNT_PAGINATION("Enables new API for Switch Account which is paginated", HarnessTeam.PL),
+  NEW_EXECUTION_LIST_VIEW(
+      "Enables the new UX for Executions list view for Pipelines and Projects", HarnessTeam.PIPELINE);
   @Deprecated
   FeatureName() {
     scope = Scope.PER_ACCOUNT;
