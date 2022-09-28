@@ -158,7 +158,11 @@ public class ApproveOrRejectApprovalsDataFetcher
     EmbeddedUser user = null;
     boolean isApprovedViaApiKey = false;
     if (apiKeyEntry != null) {
-      user = EmbeddedUser.builder().uuid(apiKeyEntry.getUuid()).name(apiKeyEntry.getName()).build();
+      user = EmbeddedUser.builder()
+                 .uuid(apiKeyEntry.getUuid())
+                 .name(apiKeyEntry.getName())
+                 .email(approveOrRejectApprovalsInput.getUserEmail())
+                 .build();
       isApprovedViaApiKey = true;
     }
 
