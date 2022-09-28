@@ -233,6 +233,7 @@ deploymentSummary {"name": "infraMappingId_1", "background": true} {"infraMappin
 deploymentSummary {"name": "infraMappingId_k8sDeploymentKeyReleaseNameAndNumber", "background": true} {"infraMappingId": 1, "k8sDeploymentKey.releaseName": 1, "k8sDeploymentKey.releaseNumber": 1, "createdAt": -1}
 deploymentSummary {"name": "inframappingId_awsAmiDeploymentKeyAsgName_createdAtDesc", "background": true} {"infraMappingId": 1, "awsAmiDeploymentKey.autoScalingGroupName": 1, "createdAt": -1}
 deploymentSummary {"name": "inframappingId_awsCodeDeployDeploymentKeyKey_createdAtDesc", "background": true} {"infraMappingId": 1, "awsCodeDeployDeploymentKey.key": 1, "createdAt": -1}
+deploymentSummary {"name": "inframappingId_awsLambdafunction_awsLambdaVersion_createdAtDesc", "background": true} {"infraMappingId": 1, "awsLambdaDeploymentKey.functionName": 1, "awsLambdaDeploymentKey.version": 1, "createdAt": -1}
 deploymentSummary {"name": "inframappingId_containerlabelsAndVersion", "background": true} {"infraMappingId": 1, "containerDeploymentKey.labels": 1, "containerDeploymentKey.newVersion": 1, "createdAt": -1}
 deploymentTimeSeriesEventQueue {"name": "earliestGet_1", "background": true, "expireAfterSeconds": 86400} {"earliestGet": 1}
 deploymentTimeSeriesEventQueue {"name": "next4", "background": true} {"topic": 1, "earliestGet": 1}
