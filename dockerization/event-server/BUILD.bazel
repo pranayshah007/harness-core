@@ -4,15 +4,27 @@
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
 load("//:tools/bazel/docker/docker-utils.bzl", "docker_layers", "docker_image", "docker_push", "docker_pkg")
-load("@rules_pkg//:pkg.bzl", "pkg_tar")
+
+GRPC_HEALTH_PROBE_VERSION = "v0.3.0"
 
 docker_layers(
-    name = "dms-onprem-run",
+    name = "event-server-packages",
+    docker_run_flags = [
+        "--user=root",
+    ],
+    commands = [
+        "curl -Lso /bin/grpc_health_probe https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/%s/grpc_health_probe-linux-amd64" % (GRPC_HEALTH_PROBE_VERSION),
+        "chmod +x /bin/grpc_health_probe",
+    ],
+)
+
+docker_layers(
+    name = "event-server-onprem-run",
     build_type = "onprem",
 )
 
 docker_layers(
-    name = "dms-saas-run",
+    name = "event-server-saas-run",
     build_type = "saas",
 )
 
@@ -27,19 +39,20 @@ docker_pkg(
     name = "files",
     srcs = [
         "//:protocol.info",
-        "//270-delegate-service-app:keystore.jks",
-        "//270-delegate-service-app:delegate-service-config.yml",
-        "//270-delegate-service-app/src/main/resources:redisson-jcache.yaml",
+        "//350-event-server:event-service-config.yml",
+        "//350-event-server:cert.pem",
+        "//350-event-server:key.pem",
     ],
     files = {
-        "//270-delegate-service-app:module_deploy.jar": "delegate-service-capsule.jar"
+        "//350-event-server:module_deploy.jar": "event-server-capsule.jar",
         },
 )
 
 docker_image(
-    name = "dms-saas-image",
+    name = "event-server-saas-image",
     dockerlayers = [
-            ":dms-saas-run"
+            ":event-server-saas-run",
+            ":event-server-packages",
             ],
     cmd = [
         "/bin/bash", "-c",
@@ -53,16 +66,17 @@ docker_image(
 
 #Pass the TAG from the bazel run command by passing --define=TAG=TagValue
 docker_push(
-        name = "dms-saas-push",
-        image = "dms-saas-image",
-        repository = "platform-205701/harness/harness-services-bazel/dms-saas-bazel-test",
+        name = "event-server-saas-push",
+        image = "event-server-saas-image",
+        repository = "platform-205701/harness/harness-services-bazel/event-server-saas-bazel-test",
         imagetag = "$(TAG)",
 )
 
 docker_image(
-    name = "dms-onprem-image",
+    name = "event-server-onprem-image",
     dockerlayers = [
-            ":dms-onprem-run"
+            ":event-server-onprem-run",
+            ":event-server-packages",
             ],
     cmd = [
         "/bin/bash", "-c",
@@ -76,8 +90,8 @@ docker_image(
 
 #Pass the TAG from the bazel run command by passing --define=TAG=TagValue
 docker_push(
-        name = "dms-onprem-push",
-        image = "dms-onprem-image",
-        repository = "platform-205701/harness/harness-services-bazel/dms-onprem-bazel-test",
+        name = "event-server-onprem-push",
+        image = "event-server-onprem-image",
+        repository = "platform-205701/harness/harness-services-bazel/event-server-onprem-bazel-test",
         imagetag = "$(TAG)",
 )

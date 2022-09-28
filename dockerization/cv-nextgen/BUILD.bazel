@@ -4,15 +4,14 @@
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
 load("//:tools/bazel/docker/docker-utils.bzl", "docker_layers", "docker_image", "docker_push", "docker_pkg")
-load("@rules_pkg//:pkg.bzl", "pkg_tar")
 
 docker_layers(
-    name = "ng-manager-onprem-run",
+    name = "cvng-onprem-run",
     build_type = "onprem",
 )
 
 docker_layers(
-    name = "ng-manager-saas-run",
+    name = "cvng-saas-run",
     build_type = "saas",
 )
 
@@ -27,24 +26,24 @@ docker_pkg(
     name = "files",
     srcs = [
         "//:protocol.info",
-        "//120-ng-manager:keystore.jks",
-        "//120-ng-manager:config.yml",
-        "//120-ng-manager/src/main/resources:redisson-jcache.yaml",
-        "//120-ng-manager/src/main/resources:enterprise-redisson-jcache.yaml",
+        "//300-cv-nextgen:keystore.jks",
+        "//300-cv-nextgen:cv-nextgen-config.yml",
+        "//300-cv-nextgen/src/main/resources:redisson-jcache.yaml",
+        "//300-cv-nextgen/src/main/resources:enterprise-redisson-jcache.yaml",
     ],
     files = {
-        "//120-ng-manager:module_deploy.jar": "ng-manager-capsule.jar",
+        "//300-cv-nextgen:module_deploy.jar": "cv-nextgen-capsule.jar",
         },
 )
 
 docker_image(
-    name = "ng-manager-saas-image",
+    name = "cvng-saas-image",
     dockerlayers = [
-            ":ng-manager-saas-run"
+            ":cvng-saas-run"
             ],
     cmd = [
         "/bin/bash", "-c",
-        "java -jar ng-manager-capsule.jar scan-classpath-metadata; ./run.sh",
+        "java -jar cv-nextgen-capsule.jar scan-classpath-metadata; ./run.sh",
         ],
     filestocopy = [
         ":files",
@@ -54,20 +53,20 @@ docker_image(
 
 #Pass the TAG from the bazel run command by passing --define=TAG=TagValue
 docker_push(
-        name = "ng-manager-saas-push",
-        image = "ng-manager-saas-image",
-        repository = "platform-205701/harness/harness-services-bazel/ng-manager-saas-bazel-test",
+        name = "cvng-saas-push",
+        image = "cvng-saas-image",
+        repository = "platform-205701/harness/harness-services-bazel/cvng-saas-bazel-test",
         imagetag = "$(TAG)",
 )
 
 docker_image(
-    name = "ng-manager-onprem-image",
+    name = "cvng-onprem-image",
     dockerlayers = [
-            ":ng-manager-onprem-run"
+            ":cvng-onprem-run"
             ],
     cmd = [
         "/bin/bash", "-c",
-        "java -jar ng-manager-capsule.jar scan-classpath-metadata; ./run.sh",
+        "java -jar cv-nextgen-capsule.jar scan-classpath-metadata; ./run.sh",
         ],
     filestocopy = [
         ":files",
@@ -77,8 +76,8 @@ docker_image(
 
 #Pass the TAG from the bazel run command by passing --define=TAG=TagValue
 docker_push(
-        name = "ng-manager-onprem-push",
-        image = "ng-manager-onprem-image",
-        repository = "platform-205701/harness/harness-services-bazel/ng-manager-onprem-bazel-test",
+        name = "cvng-onprem-push",
+        image = "cvng-onprem-image",
+        repository = "platform-205701/harness/harness-services-bazel/cvng-onprem-bazel-test",
         imagetag = "$(TAG)",
 )

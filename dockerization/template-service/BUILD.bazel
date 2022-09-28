@@ -7,15 +7,13 @@ load("//:tools/bazel/docker/docker-utils.bzl", "docker_layers", "docker_image", 
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 
 docker_layers(
-    name = "template-service-run",
-    commands = [
-        "curl https://get.et.harness.io/releases/latest/nix/harness-et-agent.tar.gz --output harness-et-agent.tar.gz",
-        "tar -xzf harness-et-agent.tar.gz -C /opt/harness",
-        "rm /opt/harness/harness-et-agent.tar.gz",
-        "curl https://harness.jfrog.io/artifactory/BuildsTools/docker/apm/appd/AppServerAgent-1.8-21.11.2.33305.zip --output AppServerAgent-1.8-21.11.2.33305.zip",
-        "curl https://harness.jfrog.io/artifactory/BuildsTools/docker/apm/opentelemetry/opentelemetry-javaagent.jar --output opentelemetry-javaagent.jar",
-        "chmod 711 /opt/harness/harness AppServerAgent-1.8-21.11.2.33305.zip opentelemetry-javaagent.jar",
-    ],
+    name = "template-onprem-run",
+    build_type = "onprem",
+)
+
+docker_layers(
+    name = "template-saas-run",
+    build_type = "saas",
 )
 
 docker_pkg(
@@ -38,9 +36,9 @@ docker_pkg(
 )
 
 docker_image(
-        name = "template-service-image",
+        name = "template-saas-image",
         dockerlayers = [
-            ":template-service-run"
+            ":template-saas-run"
             ],
         cmd = [
             "./run.sh",
@@ -53,8 +51,30 @@ docker_image(
 
 #Pass the TAG from the bazel run command by passing --define=TAG=TagValue
 docker_push(
-    name = "template-service-push",
-    image = "template-service-image",
-    repository = "platform-205701/harness/harness-services-bazel/template-service-bazel-test",
+    name = "template-saas-push",
+    image = "template-saas-image",
+    repository = "platform-205701/harness/harness-services-bazel/template-saas-bazel-test",
+    imagetag = "$(TAG)",
+)
+
+docker_image(
+        name = "template-onprem-image",
+        dockerlayers = [
+            ":template-onprem-run"
+            ],
+        cmd = [
+            "./run.sh",
+            ],
+        filestocopy = [
+            ":files",
+            ":scripts",
+        ],
+)
+
+#Pass the TAG from the bazel run command by passing --define=TAG=TagValue
+docker_push(
+    name = "template-onprem-push",
+    image = "template-onprem-image",
+    repository = "platform-205701/harness/harness-services-bazel/template-onprem-bazel-test",
     imagetag = "$(TAG)",
 )
