@@ -96,9 +96,14 @@ public class K8SWatchTaskExecutor implements PerpetualTaskExecutor {
   public PerpetualTaskResponse runOnce(
       PerpetualTaskId taskId, PerpetualTaskExecutionParams params, Instant heartbeatTime) {
     K8sWatchTaskParams watchTaskParams = AnyUtils.unpack(params.getCustomizedParams(), K8sWatchTaskParams.class);
+
+    log.info("params.getCustomizedParams() : {}", params.getCustomizedParams());
+    log.info("watchTaskParams : {}", watchTaskParams);
+
     try (AutoLogContext ignore1 = new PerpetualTaskLogContext(taskId.getId(), OVERRIDE_ERROR)) {
       try {
         KubernetesConfig kubernetesConfig = getKubernetesConfig(watchTaskParams);
+        log.info("kubernetesConfig: {}", kubernetesConfig);
 
         String watchId = k8sWatchServiceDelegate.create(watchTaskParams, kubernetesConfig);
         log.info("Ensured watch exists with id {}.", watchId);
@@ -121,19 +126,19 @@ public class K8SWatchTaskExecutor implements PerpetualTaskExecutor {
           clusterSyncLastPublished.put(taskId.getId(), now);
         }
 
-        metricCollectors
-            .computeIfAbsent(taskId.getId(),
-                key -> {
-                  ClusterDetails clusterDetails =
-                      ClusterDetails.builder()
-                          .clusterId(watchTaskParams.getClusterId())
-                          .cloudProviderId(watchTaskParams.getCloudProviderId())
-                          .clusterName(watchTaskParams.getClusterName())
-                          .kubeSystemUid(K8sWatchServiceDelegate.getKubeSystemUid(k8sMetricsClient))
-                          .build();
-                  return new K8sMetricCollector(eventPublisher, clusterDetails, heartbeatTime);
-                })
-            .collectAndPublishMetrics(k8sMetricsClient, now, new CoreV1Api(apiClient), controllerFetcher);
+        //        metricCollectors
+        //            .computeIfAbsent(taskId.getId(),
+        //                key -> {
+        //                  ClusterDetails clusterDetails =
+        //                      ClusterDetails.builder()
+        //                          .clusterId(watchTaskParams.getClusterId())
+        //                          .cloudProviderId(watchTaskParams.getCloudProviderId())
+        //                          .clusterName(watchTaskParams.getClusterName())
+        //                          .kubeSystemUid(K8sWatchServiceDelegate.getKubeSystemUid(k8sMetricsClient))
+        //                          .build();
+        //                  return new K8sMetricCollector(eventPublisher, clusterDetails, heartbeatTime);
+        //                })
+        //            .collectAndPublishMetrics(k8sMetricsClient, now, new CoreV1Api(apiClient), controllerFetcher);
 
       } catch (JsonSyntaxException ex) {
         ApiExceptionLogger.logErrorIfNotSeenRecently(

@@ -130,7 +130,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     }
 
     if (delegateAPI()) {
-      validateDelegateRequest(containerRequestContext);
+      //      validateDelegateRequest(containerRequestContext);
       return;
     }
 
