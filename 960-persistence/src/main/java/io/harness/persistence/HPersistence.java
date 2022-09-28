@@ -12,12 +12,16 @@ import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.exception.ExceptionUtils;
 import io.harness.health.HealthMonitor;
+import io.harness.ng.DbAliases;
 import io.harness.persistence.HQuery.QueryChecks;
 
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
 import com.mongodb.MongoSocketOpenException;
 import com.mongodb.MongoSocketReadException;
+import com.mongodb.ReadPreference;
+import com.mongodb.Tag;
+import com.mongodb.TagSet;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -26,6 +30,7 @@ import java.util.Set;
 import org.mongodb.morphia.AdvancedDatastore;
 import org.mongodb.morphia.FindAndModifyOptions;
 import org.mongodb.morphia.query.CountOptions;
+import org.mongodb.morphia.query.FindOptions;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.UpdateOperations;
 import org.mongodb.morphia.query.UpdateResults;
@@ -35,6 +40,7 @@ import org.slf4j.LoggerFactory;
 public interface HPersistence extends HealthMonitor {
   String ANALYTICS_STORE_NAME = "analytic";
   Store DEFAULT_STORE = Store.builder().name("default").build();
+  Store CG_HARNESS_STORE = Store.builder().name(DbAliases.HARNESS).build();
   Store ANALYTIC_STORE = Store.builder().name(ANALYTICS_STORE_NAME).build();
 
   static Logger logger() {
@@ -104,7 +110,7 @@ public interface HPersistence extends HealthMonitor {
                .orElseGet(() -> DEFAULT_STORE));
 
     // only if the request is for cg db, get from analytics node
-    if (DEFAULT_STORE.equals(classStore)) {
+    if (DEFAULT_STORE.equals(classStore) || CG_HARNESS_STORE.equals(classStore)) {
       return getDatastore(ANALYTIC_STORE);
     }
     return getDatastore(classStore);
@@ -428,5 +434,10 @@ public interface HPersistence extends HealthMonitor {
     }
     // one last try
     return executor.execute();
+  }
+
+  default FindOptions analyticNodePreferenceOptions() {
+    return new FindOptions().readPreference(
+        ReadPreference.secondaryPreferred(new TagSet(new Tag("nodeType", "ANALYTICS"))));
   }
 }
