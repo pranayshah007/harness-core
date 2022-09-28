@@ -9,6 +9,7 @@ package io.harness.ng.core.api.impl;
 
 import static io.harness.NGConstants.HARNESS_SECRET_MANAGER_IDENTIFIER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.data.encoding.EncodingUtils.decodeBase64ToString;
 import static io.harness.data.encoding.EncodingUtils.encodeBase64ToByteArray;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -469,6 +470,18 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
   public DecryptedSecretValue decryptSecret(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
     NGEncryptedData encryptedData = get(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    if (encryptedData == null) {
+      throw new InvalidRequestException(String.format(
+          "Encrypted record associated with identifier %s not found for account %s in org %s and project %s",
+          identifier, accountIdentifier, orgIdentifier, projectIdentifier));
+    }
+    boolean isSecretFile = encryptedData.getType() == SettingVariableTypes.CONFIG_FILE
+        && ENCRYPTION_TYPES_REQUIRING_FILE_DOWNLOAD.contains(encryptedData.getEncryptionType())
+        && Optional.ofNullable(encryptedData.getEncryptedValue()).isPresent();
+    if (isSecretFile) {
+      char[] fileContent = secretsFileService.getFileContents(String.valueOf(encryptedData.getEncryptedValue()));
+      encryptedData.setEncryptedValue(fileContent);
+    }
     SecretManagerConfigDTO secretManagerConfigDTO = getSecretManagerOrThrow(
         accountIdentifier, orgIdentifier, projectIdentifier, encryptedData.getSecretManagerIdentifier(), false);
     String decryptedValue = null;
@@ -476,6 +489,9 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
     if (isNgHarnessSecretManager(secretManagerConfig.getNgMetadata())) {
       decryptedValue = String.valueOf(kmsEncryptorsRegistry.getKmsEncryptor(secretManagerConfig)
                                           .fetchSecretValue(accountIdentifier, encryptedData, secretManagerConfig));
+      if (isSecretFile) {
+        decryptedValue = decodeBase64ToString(decryptedValue);
+      }
     } else {
       throw new InvalidRequestException(
           "Decryption is supported only for secrets encrypted via harness managed secret managers");
