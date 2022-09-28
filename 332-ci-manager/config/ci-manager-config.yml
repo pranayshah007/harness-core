@@ -220,7 +220,7 @@ pmsGrpcClientConfig:
 
 apiUrl: https://localhost:8181/#/
 
-shouldConfigureWithPMS: true
+shouldConfigureWithPMS: false
 
 enableDashboardTimescale: false
 

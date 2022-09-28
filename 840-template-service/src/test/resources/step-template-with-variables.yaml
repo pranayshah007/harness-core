@@ -29,7 +29,7 @@ template:
       source:
         type: Inline
         spec:
-          script: <+input>
+          script: echo <+var1> echo <+var2> echo <+secretVar>
       environmentVariables: []
       outputVariables: []
     timeout: <+input>

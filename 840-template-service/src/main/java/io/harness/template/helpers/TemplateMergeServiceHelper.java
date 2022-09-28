@@ -372,7 +372,7 @@ public class TemplateMergeServiceHelper {
   private JsonNode replaceTemplateOccurrenceWithTemplateSpecYaml(String accountId, String orgId, String projectId,
       JsonNode template, Map<String, TemplateEntity> templateCacheMap) {
     JsonNode templateInputs = template.get(TEMPLATE_INPUTS);
-    JsonNode templateVariablesFromPipeline = template.get(TEMPLATE_VARIABLES);
+    JsonNode templateVariablesFromPipeline = template.get(YAMLFieldNameConstants.VARIABLES);
 
     TemplateEntity templateEntity = getLinkedTemplateEntity(accountId, orgId, projectId, template, templateCacheMap);
     String templateYaml = templateEntity.getYaml();
@@ -389,7 +389,7 @@ public class TemplateMergeServiceHelper {
     }
 
     return mergeTemplateInputsToTemplateSpecInTemplateYaml(
-        templateInputs, templateVariablesFromPipeline, templateSpec, variablesFromTemplate);
+        templateInputs, templateVariablesFromPipeline, templateSpec, variablesFromTemplate, accountId);
   }
 
   /**
@@ -399,10 +399,11 @@ public class TemplateMergeServiceHelper {
    * @param templateVariables     - template variable info provided in pipeline yaml
    * @param templateSpec          - template spec present in template yaml
    * @param variablesFromTemplate
+   * @param accountId
    * @return jsonNode of merged yaml
    */
   private JsonNode mergeTemplateInputsToTemplateSpecInTemplateYaml(JsonNode templateInputs, JsonNode templateVariables,
-      JsonNode templateSpec, List<NGVariable> variablesFromTemplate) {
+                                                                   JsonNode templateSpec, List<NGVariable> variablesFromTemplate, String accountId) {
     Map<String, JsonNode> dummyTemplateSpecMap = new LinkedHashMap<>();
     dummyTemplateSpecMap.put(DUMMY_NODE, templateSpec);
     String dummyTemplateSpecYaml = YamlPipelineUtils.writeYamlString(dummyTemplateSpecMap);
@@ -417,12 +418,15 @@ public class TemplateMergeServiceHelper {
       mergedYaml = mergeInputSetFormatYamlToOriginYaml(dummyTemplateSpecYaml, dummyTemplateInputsYaml);
     }
 
-    String mergedYamlWithResolvedVariables = applyTemplateVariablesInYaml(prepareVariableValueMap(templateVariables),
-        NGVariablesUtils.getStringMapVariables(variablesFromTemplate, 0L), mergedYaml);
+    if(TemplateYamlSchemaMergeHelper.isFeatureFlagEnabled(
+              FeatureName.NG_TEMPLATE_VARIABLES, accountId, accountClient)) {
+      mergedYaml = applyTemplateVariablesInYaml(prepareVariableValueMap(templateVariables),
+              NGVariablesUtils.getStringMapVariables(variablesFromTemplate, 0L), mergedYaml);
+    }
 
     try {
       String finalMergedYaml =
-          removeOmittedRuntimeInputsFromMergedYaml(mergedYamlWithResolvedVariables, dummyTemplateInputsYaml);
+          removeOmittedRuntimeInputsFromMergedYaml(mergedYaml, dummyTemplateInputsYaml);
       return YamlUtils.readTree(finalMergedYaml).getNode().getCurrJsonNode().get(DUMMY_NODE);
     } catch (IOException e) {
       log.error("Could not convert merged yaml to JsonNode. Yaml:\n" + mergedYaml, e);

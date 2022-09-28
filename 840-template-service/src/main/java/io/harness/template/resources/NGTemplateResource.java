@@ -23,7 +23,9 @@ import io.harness.accesscontrol.ResourceIdentifier;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.customDeployment.remote.CustomDeploymentResourceClient;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
@@ -75,6 +77,7 @@ import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
 import io.harness.template.helpers.CustomDeploymentVariablesUtils;
 import io.harness.template.helpers.TemplateReferenceHelper;
 import io.harness.template.helpers.TemplateYamlConversionHelper;
+import io.harness.template.helpers.TemplateYamlSchemaMergeHelper;
 import io.harness.template.helpers.YamlVariablesUtils;
 import io.harness.template.mappers.NGTemplateDtoMapper;
 import io.harness.template.services.NGTemplateService;
@@ -83,8 +86,6 @@ import io.harness.template.services.TemplateMergeService;
 import io.harness.utils.PageUtils;
 import io.harness.yaml.utils.NGVariablesUtils;
 
-import com.codahale.metrics.annotation.ExceptionMetered;
-import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -169,6 +170,8 @@ public class NGTemplateResource {
   private final VariablesServiceBlockingStub variablesServiceBlockingStub;
   private final TemplateYamlConversionHelper templateYamlConversionHelper;
   private final TemplateReferenceHelper templateReferenceHelper;
+
+  private final AccountClient accountClient;
   @Inject CustomDeploymentResourceClient customDeploymentResourceClient;
 
   public static final String TEMPLATE_PARAM_MESSAGE = "Template Identifier for the entity";
@@ -785,6 +788,8 @@ public class NGTemplateResource {
     TemplateEntity templateEntity =
         NGTemplateDtoMapper.toTemplateEntity(accountId, orgId, projectId, appliedTemplateYaml);
     String entityYaml = templateYamlConversionHelper.convertTemplateYamlToEntityYaml(templateEntity);
+    boolean templateVariablesEnabled = TemplateYamlSchemaMergeHelper.isFeatureFlagEnabled(
+            FeatureName.NG_TEMPLATE_VARIABLES, accountId, accountClient);
     if (templateEntity.getTemplateEntityType().getOwnerTeam().equals(PIPELINE)) {
       VariablesServiceRequestV2.Builder requestBuilder = VariablesServiceRequestV2.newBuilder();
       requestBuilder.setAccountId(accountId);
@@ -798,9 +803,7 @@ public class NGTemplateResource {
       VariablesServiceRequestV2 request = requestBuilder.build();
       VariableMergeResponseProto variables = variablesServiceBlockingStub.getVariablesV2(request);
       VariableMergeServiceResponse variableMergeServiceResponse = VariablesResponseDtoMapper.toDto(variables);
-      variableMergeServiceResponse =
-          templateServiceHelper.addTemplateVariablesToVariablesApi(variableMergeServiceResponse, appliedTemplateYaml);
-      return ResponseDTO.newResponse(variableMergeServiceResponse);
+      return ResponseDTO.newResponse(templateVariablesEnabled? templateServiceHelper.addTemplateVariablesToVariablesApi(variableMergeServiceResponse, appliedTemplateYaml): variableMergeServiceResponse);
     } else if (templateEntity.getTemplateEntityType().equals(TemplateEntityType.CUSTOM_DEPLOYMENT_TEMPLATE)) {
       CustomDeploymentYamlRequestDTO requestDTO =
           CustomDeploymentYamlRequestDTO.builder().entityYaml(entityYaml).build();
@@ -809,8 +812,9 @@ public class NGTemplateResource {
       return ResponseDTO.newResponse(
           CustomDeploymentVariablesUtils.getVariablesFromResponse(customDeploymentVariableResponseDTO));
     } else {
-      return ResponseDTO.newResponse(
-          YamlVariablesUtils.getVariablesFromYaml(entityYaml, templateEntity.getTemplateEntityType()));
+      VariableMergeServiceResponse variableMergeServiceResponse = YamlVariablesUtils.getVariablesFromYaml(entityYaml, templateEntity.getTemplateEntityType());
+      return ResponseDTO.newResponse( templateVariablesEnabled? templateServiceHelper.addTemplateVariablesToVariablesApi(variableMergeServiceResponse, appliedTemplateYaml):
+          variableMergeServiceResponse);
     }
   }
 
