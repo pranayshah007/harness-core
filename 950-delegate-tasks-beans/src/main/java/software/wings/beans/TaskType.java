@@ -382,8 +382,8 @@ public enum TaskType {
   NG_LDAP_GROUPS_SYNC(TaskGroup.LDAP),
   AZURE_NG_ARM(TaskGroup.AZURE_NG_ARM_BLUEPRINT, "Azure ARM"),
   NG_LDAP_TEST_AUTHENTICATION(TaskGroup.LDAP),
-  ECS_GIT_FETCH_TASK_NG(TaskGroup.ECS),
-  ECS_COMMAND_TASK_NG(TaskGroup.ECS),
+  ECS_GIT_FETCH_TASK_NG(TaskGroup.ECS, "ECS Git Fetch Task"),
+  ECS_COMMAND_TASK_NG(TaskGroup.ECS, "ECS Command Task"),
   WIN_RM_SHELL_SCRIPT_TASK_NG(TaskGroup.SHELL_SCRIPT_NG, "Shell Script Task"),
   SHELL_SCRIPT_PROVISION(TaskGroup.SHELL_SCRIPT_PROVISION_NG, "Shell Script Provision Task");
 
