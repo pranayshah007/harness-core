@@ -62,7 +62,8 @@ public class RuntimeInputsValidator {
     return validateInputsAgainstSourceNode(dummyNodeToValidateYaml, sourceNodeInputSetFormatYaml);
   }
 
-  private boolean validateInputsAgainstSourceNode(String nodeToValidateYaml, String sourceNodeInputSetFormatYaml) {
+  // Assume both have same root node and structure
+  public boolean validateInputsAgainstSourceNode(String nodeToValidateYaml, String sourceNodeInputSetFormatYaml) {
     YamlConfig sourceNodeYamlConfig = new YamlConfig(sourceNodeInputSetFormatYaml);
     Map<FQN, Object> sourceNodeFqnToValueMap = sourceNodeYamlConfig.getFqnToValueMap();
 

@@ -34,7 +34,7 @@ public class CustomSecretManagerConfigDTOMapper {
             .isDefault(connectorDTO.isDefault())
             .harnessManaged(connectorDTO.isHarnessManaged())
             .delegateSelectors(connectorDTO.getDelegateSelectors())
-            .onDelegate(connectorDTO.getExecuteOnDelegate())
+            .onDelegate(connectorDTO.getOnDelegate())
             .connectorRef(SecretRefHelper.getSecretConfigString(connectorDTO.getConnectorRef()))
             .host(connectorDTO.getHost())
             .workingDirectory(connectorDTO.getWorkingDirectory())

@@ -128,6 +128,8 @@ public class NodeStartHelper {
         return Status.RESOURCE_WAITING;
       case APPROVAL:
         return Status.APPROVAL_WAITING;
+      case WAIT_STEP:
+        return Status.WAIT_STEP_RUNNING;
       case ASYNC:
         return Status.ASYNC_WAITING;
       default:

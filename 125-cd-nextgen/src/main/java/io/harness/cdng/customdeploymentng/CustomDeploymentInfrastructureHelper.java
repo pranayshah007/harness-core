@@ -74,12 +74,17 @@ public class CustomDeploymentInfrastructureHelper {
             connectorNGVariable.setConnector(
                 ParameterField.<ConnectorInfoDTO>builder().value(connectorInfoDTO).build());
             mapOfVariables.put(connectorNGVariable.getName(), connectorInfoDTO);
+          } else if (!isNull(connectorNGVariable.getValue().getExpressionValue())) {
+            mapOfVariables.put(connectorNGVariable.getName(), connectorNGVariable.getValue().getExpressionValue());
           }
-
         } else if (variable instanceof CustomDeploymentSecretNGVariable) {
           CustomDeploymentSecretNGVariable secretNGVariable = (CustomDeploymentSecretNGVariable) variable;
-          String secretIdentifier = secretNGVariable.getValue().getValue().getIdentifier();
-          mapOfVariables.put(secretNGVariable.getName(), NGVariablesUtils.fetchSecretExpression(secretIdentifier));
+          if (!isNull(secretNGVariable.getValue().getValue())) {
+            String secretIdentifier = secretNGVariable.getValue().getValue().getIdentifier();
+            mapOfVariables.put(secretNGVariable.getName(), NGVariablesUtils.fetchSecretExpression(secretIdentifier));
+          } else if (!isNull(secretNGVariable.getValue().getExpressionValue())) {
+            mapOfVariables.put(secretNGVariable.getName(), secretNGVariable.getValue().getExpressionValue());
+          }
         } else {
           mapOfVariables.put(variable.getName(), variable.getCurrentValue().getValue());
         }

@@ -20,7 +20,11 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
 import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.SidecarArtifact;
+import io.harness.cdng.artifact.bean.yaml.customartifact.CustomArtifactScriptInfo;
+import io.harness.cdng.artifact.bean.yaml.customartifact.CustomArtifactScriptSourceWrapper;
 import io.harness.cdng.artifact.bean.yaml.customartifact.CustomArtifactScripts;
+import io.harness.cdng.artifact.bean.yaml.customartifact.CustomScriptInlineSource;
+import io.harness.cdng.artifact.bean.yaml.customartifact.FetchAllArtifacts;
 import io.harness.cdng.artifact.steps.ArtifactStep;
 import io.harness.cdng.artifact.steps.ArtifactStepParameters;
 import io.harness.cdng.artifact.steps.ArtifactSyncStep;
@@ -157,12 +161,26 @@ public class SideCarPlanCreatorTest extends CDNGTestBase {
     HashMap<String, ByteString> metadataDependency = new HashMap<>();
     String uuid = UUIDGenerator.generateUuid();
     String identifier = "sidecar1";
-    ArtifactStepParameters artifactStepParameters =
-        ArtifactStepParameters.builder()
-            .identifier(identifier)
-            .type(ArtifactSourceType.CUSTOM_ARTIFACT)
-            .spec(CustomArtifactConfig.builder().scripts(new CustomArtifactScripts()).build())
+    CustomScriptInlineSource customScriptInlineSource =
+        CustomScriptInlineSource.builder()
+            .script(new ParameterField<>("echo test", null, true, null, null, true))
             .build();
+    CustomArtifactScriptSourceWrapper customArtifactScriptSourceWrapper =
+        CustomArtifactScriptSourceWrapper.builder().spec(customScriptInlineSource).build();
+    CustomArtifactScriptInfo customArtifactScriptInfo =
+        CustomArtifactScriptInfo.builder().source(customArtifactScriptSourceWrapper).build();
+    FetchAllArtifacts fetchAllArtifacts =
+        FetchAllArtifacts.builder().shellScriptBaseStepInfo(customArtifactScriptInfo).build();
+    CustomArtifactScripts customArtifactScripts =
+        CustomArtifactScripts.builder().fetchAllArtifacts(fetchAllArtifacts).build();
+    ArtifactStepParameters artifactStepParameters = ArtifactStepParameters.builder()
+                                                        .identifier(identifier)
+                                                        .type(ArtifactSourceType.CUSTOM_ARTIFACT)
+                                                        .spec(CustomArtifactConfig.builder()
+                                                                  .scripts(new CustomArtifactScripts())
+                                                                  .scripts(customArtifactScripts)
+                                                                  .build())
+                                                        .build();
 
     metadataDependency.put(YamlTypes.UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(uuid)));
     metadataDependency.put(
@@ -179,5 +197,78 @@ public class SideCarPlanCreatorTest extends CDNGTestBase {
     assertThat(sidecarPlanNode.getStepType()).isEqualTo(ArtifactStep.STEP_TYPE);
     assertThat(sidecarPlanNode.getFacilitatorObtainments().get(0).getType().getType())
         .isEqualTo(OrchestrationFacilitatorType.TASK);
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testGetParentNodeCustomArtifactWithNullScript() {
+    HashMap<String, ByteString> metadataDependency = new HashMap<>();
+    String uuid = UUIDGenerator.generateUuid();
+    String identifier = "sidecar1";
+    ArtifactStepParameters artifactStepParameters = ArtifactStepParameters.builder()
+                                                        .identifier(identifier)
+                                                        .type(ArtifactSourceType.CUSTOM_ARTIFACT)
+                                                        .spec(CustomArtifactConfig.builder().scripts(null).build())
+                                                        .build();
+
+    metadataDependency.put(YamlTypes.UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(uuid)));
+    metadataDependency.put(
+        PlanCreatorConstants.IDENTIFIER, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(identifier)));
+    metadataDependency.put(PlanCreatorConstants.SIDECAR_STEP_PARAMETERS,
+        ByteString.copyFrom(kryoSerializer.asDeflatedBytes(artifactStepParameters)));
+    Dependency dependency = Dependency.newBuilder().putAllMetadata(metadataDependency).build();
+    PlanCreationContext ctx = PlanCreationContext.builder().dependency(dependency).build();
+    PlanCreationResponse sidecarPlanCreationResponse = sidecarPlanCreator.createPlanForField(ctx, null);
+    PlanNode sidecarPlanNode = sidecarPlanCreationResponse.getPlanNode();
+    assertThat(sidecarPlanNode.getUuid()).isEqualTo(uuid);
+    assertThat(sidecarPlanNode.getIdentifier()).isEqualTo(identifier);
+    assertThat(sidecarPlanNode.getStepParameters()).isEqualTo(artifactStepParameters);
+    assertThat(sidecarPlanNode.getStepType()).isEqualTo(ArtifactSyncStep.STEP_TYPE);
+    assertThat(sidecarPlanNode.getFacilitatorObtainments().get(0).getType().getType())
+        .isEqualTo(OrchestrationFacilitatorType.SYNC);
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testGetParentNodeCustomArtifactWithEmptyScript() {
+    HashMap<String, ByteString> metadataDependency = new HashMap<>();
+    String uuid = UUIDGenerator.generateUuid();
+    String identifier = "sidecar1";
+    CustomScriptInlineSource customScriptInlineSource =
+        CustomScriptInlineSource.builder().script(new ParameterField<>("", null, true, null, null, true)).build();
+    CustomArtifactScriptSourceWrapper customArtifactScriptSourceWrapper =
+        CustomArtifactScriptSourceWrapper.builder().spec(customScriptInlineSource).build();
+    CustomArtifactScriptInfo customArtifactScriptInfo =
+        CustomArtifactScriptInfo.builder().source(customArtifactScriptSourceWrapper).build();
+    FetchAllArtifacts fetchAllArtifacts =
+        FetchAllArtifacts.builder().shellScriptBaseStepInfo(customArtifactScriptInfo).build();
+    CustomArtifactScripts customArtifactScripts =
+        CustomArtifactScripts.builder().fetchAllArtifacts(fetchAllArtifacts).build();
+    ArtifactStepParameters artifactStepParameters = ArtifactStepParameters.builder()
+                                                        .identifier(identifier)
+                                                        .type(ArtifactSourceType.CUSTOM_ARTIFACT)
+                                                        .spec(CustomArtifactConfig.builder()
+                                                                  .scripts(new CustomArtifactScripts())
+                                                                  .scripts(customArtifactScripts)
+                                                                  .build())
+                                                        .build();
+
+    metadataDependency.put(YamlTypes.UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(uuid)));
+    metadataDependency.put(
+        PlanCreatorConstants.IDENTIFIER, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(identifier)));
+    metadataDependency.put(PlanCreatorConstants.SIDECAR_STEP_PARAMETERS,
+        ByteString.copyFrom(kryoSerializer.asDeflatedBytes(artifactStepParameters)));
+    Dependency dependency = Dependency.newBuilder().putAllMetadata(metadataDependency).build();
+    PlanCreationContext ctx = PlanCreationContext.builder().dependency(dependency).build();
+    PlanCreationResponse sidecarPlanCreationResponse = sidecarPlanCreator.createPlanForField(ctx, null);
+    PlanNode sidecarPlanNode = sidecarPlanCreationResponse.getPlanNode();
+    assertThat(sidecarPlanNode.getUuid()).isEqualTo(uuid);
+    assertThat(sidecarPlanNode.getIdentifier()).isEqualTo(identifier);
+    assertThat(sidecarPlanNode.getStepParameters()).isEqualTo(artifactStepParameters);
+    assertThat(sidecarPlanNode.getStepType()).isEqualTo(ArtifactSyncStep.STEP_TYPE);
+    assertThat(sidecarPlanNode.getFacilitatorObtainments().get(0).getType().getType())
+        .isEqualTo(OrchestrationFacilitatorType.SYNC);
   }
 }

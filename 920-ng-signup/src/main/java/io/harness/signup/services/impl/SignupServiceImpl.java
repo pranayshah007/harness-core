@@ -613,7 +613,7 @@ public class SignupServiceImpl implements SignupService {
     groupProperties.put("group_id", accountId);
     groupProperties.put("group_type", "Account");
     groupProperties.put("group_name", accountName);
-    addCreatedInfoInGroupCall(groupProperties, email);
+    addCreatedInfoInGroupCall(groupProperties, email, utmInfo);
 
     if (referer != null) {
       groupProperties.put("refererURL", referer);
@@ -661,7 +661,7 @@ public class SignupServiceImpl implements SignupService {
     log.info("Signup telemetry sent");
   }
 
-  private void addCreatedInfoInGroupCall(HashMap<String, Object> groupProperties, String email) {
+  private void addCreatedInfoInGroupCall(HashMap<String, Object> groupProperties, String email, UtmInfo utmInfo) {
     ZonedDateTime now = ZonedDateTime.now();
 
     DateTimeFormatter monthDateFormatter = DateTimeFormatter.ofPattern("yyyyMMdd");
@@ -678,6 +678,15 @@ public class SignupServiceImpl implements SignupService {
     groupProperties.put("created_at_week", createdAtWeek);
     groupProperties.put("created_at_month", createdAtMonth);
     groupProperties.put("created_by_user_id", email);
+
+    if (utmInfo != null) {
+      groupProperties.put("created_by_user_utm_source", utmInfo.getUtmSource() == null ? "" : utmInfo.getUtmSource());
+      groupProperties.put(
+          "created_by_user_utm_campaign", utmInfo.getUtmCampaign() == null ? "" : utmInfo.getUtmCampaign());
+      groupProperties.put("created_by_user_utm_medium", utmInfo.getUtmMedium() == null ? "" : utmInfo.getUtmMedium());
+      groupProperties.put(
+          "created_by_user_utm_content", utmInfo.getUtmContent() == null ? "" : utmInfo.getUtmContent());
+    }
   }
 
   private void sendCommunitySucceedTelemetry(String email, String accountId, UserInfo userInfo, String source) {

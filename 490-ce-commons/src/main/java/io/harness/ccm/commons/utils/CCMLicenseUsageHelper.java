@@ -46,11 +46,11 @@ public class CCMLicenseUsageHelper {
         cost += getNumericValue(row, COST);
       }
     }
-    return Math.round(cost * 100L) / 100L;
+    return Math.round(cost.doubleValue() * 100L) / 100L;
   }
 
   private static long getNumericValue(FieldValueList row, String fieldName) {
     FieldValue value = row.get(fieldName);
-    return Math.round(value.getNumericValue().longValue() * 100L) / 100L;
+    return Math.round(value.getNumericValue().doubleValue() * 100L) / 100L;
   }
 }

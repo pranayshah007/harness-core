@@ -13,7 +13,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.infra.beans.EcsInfraMapping;
 import io.harness.cdng.infra.beans.InfraMapping;
-import io.harness.cdng.infra.beans.InfrastructureDetailsAbstract;
 import io.harness.filters.ConnectorRefExtractorHelper;
 import io.harness.filters.WithConnectorRef;
 import io.harness.ng.core.infrastructure.InfrastructureKind;

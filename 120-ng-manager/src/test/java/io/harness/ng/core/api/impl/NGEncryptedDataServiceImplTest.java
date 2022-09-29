@@ -8,14 +8,23 @@
 package io.harness.ng.core.api.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.rule.OwnerRule.NISHANT;
+import static io.harness.rule.OwnerRule.TEJAS;
 import static io.harness.rule.OwnerRule.VIKAS_M;
 import static io.harness.security.encryption.EncryptionType.AZURE_VAULT;
+import static io.harness.security.encryption.EncryptionType.LOCAL;
 import static io.harness.security.encryption.EncryptionType.VAULT;
 
+import static software.wings.settings.SettingVariableTypes.CONFIG_FILE;
+
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.fail;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -25,14 +34,25 @@ import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.DecryptedSecretValue;
+import io.harness.beans.FeatureName;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.helper.CustomSecretManagerHelper;
 import io.harness.connector.services.NGConnectorSecretManagerService;
+import io.harness.delegate.beans.ci.pod.SecretVariableDTO;
+import io.harness.encryption.Scope;
+import io.harness.encryption.SecretRefData;
 import io.harness.encryptors.CustomEncryptorsRegistry;
 import io.harness.encryptors.KmsEncryptorsRegistry;
 import io.harness.encryptors.VaultEncryptor;
 import io.harness.encryptors.VaultEncryptorsRegistry;
+import io.harness.encryptors.clients.LocalEncryptor;
+import io.harness.exception.InvalidRequestException;
+import io.harness.exception.SecretManagementException;
+import io.harness.mappers.SecretManagerConfigMapper;
+import io.harness.ng.core.BaseNGAccess;
+import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.dao.NGEncryptedDataDao;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
@@ -40,27 +60,41 @@ import io.harness.ng.core.entities.NGEncryptedData;
 import io.harness.rule.Owner;
 import io.harness.secretmanagerclient.SecretType;
 import io.harness.secretmanagerclient.ValueType;
+import io.harness.secretmanagerclient.dto.LocalConfigDTO;
 import io.harness.secretmanagerclient.dto.SecretManagerConfigDTO;
 import io.harness.secretmanagerclient.dto.VaultConfigDTO;
 import io.harness.secretmanagerclient.dto.azurekeyvault.AzureKeyVaultConfigDTO;
 import io.harness.secretmanagerclient.remote.SecretManagerClient;
 import io.harness.secrets.SecretsFileService;
+import io.harness.security.encryption.EncryptedRecordData;
+import io.harness.security.encryption.EncryptionConfig;
+import io.harness.security.encryption.EncryptionType;
 import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import software.wings.beans.AzureVaultConfig;
 import software.wings.beans.BaseVaultConfig;
 import software.wings.service.impl.security.GlobalEncryptDecryptClient;
+import software.wings.service.impl.security.NGEncryptorService;
 import software.wings.settings.SettingVariableTypes;
 
+import java.util.Arrays;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.mockito.Answers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 
 @OwnedBy(PL)
 public class NGEncryptedDataServiceImplTest extends CategoryTest {
+  public static final String FULLY_QUALIFIED_PATH_EXPRESSION_FORMAT_ERROR =
+      "Fully-qualified path expression [%s] has illegal format.";
+  public static final String HASHICORP_VAULT_ENCRYPTION_TYPE_PREFIX = "hashicorpvault://";
+  public static final String SECRET_RELATIVE_PATH = "/this/is/some/path#key";
   private NGEncryptedDataServiceImpl ngEncryptedDataService;
   @Mock(answer = Answers.RETURNS_DEEP_STUBS) private SecretManagerClient secretManagerClient;
   @Mock private NGEncryptedDataDao encryptedDataDao;
@@ -73,7 +107,15 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
   @Mock private VaultEncryptor vaultEncryptor;
   @Mock private CustomEncryptorsRegistry customEncryptorsRegistry;
   @Mock private CustomSecretManagerHelper customSecretManagerHelper;
+  @Mock private NGEncryptorService ngEncryptorService;
+  @Mock private LocalEncryptor localEncryptor;
   public static final String HTTP_VAULT_URL = "http://vault.com";
+  private String accountIdentifier = randomAlphabetic(10);
+  private String orgIdentifier = randomAlphabetic(10);
+  private String projectIdentifier = randomAlphabetic(10);
+  private String identifier = randomAlphabetic(10);
+
+  @Rule public ExpectedException exceptionRule = ExpectedException.none();
 
   @Before
   public void setup() {
@@ -82,8 +124,9 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
     ngEncryptedDataService =
         spy(new NGEncryptedDataServiceImpl(encryptedDataDao, kmsEncryptorsRegistry, vaultEncryptorsRegistry,
             secretsFileService, secretManagerClient, globalEncryptDecryptClient, ngConnectorSecretManagerService,
-            ngFeatureFlagHelperService, customEncryptorsRegistry, customSecretManagerHelper));
+            ngFeatureFlagHelperService, customEncryptorsRegistry, customSecretManagerHelper, ngEncryptorService));
     when(vaultEncryptorsRegistry.getVaultEncryptor(any())).thenReturn(vaultEncryptor);
+    when(kmsEncryptorsRegistry.getKmsEncryptor(any())).thenReturn(localEncryptor);
   }
 
   @Test
@@ -340,5 +383,277 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
     SecretManagerConfig secretManagerConfig = argumentCaptor.getValue();
     assertThat(secretManagerConfig instanceof AzureVaultConfig).isEqualTo(true);
     assertThat(deleted).isEqualTo(true);
+  }
+
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testGetFromReferenceExpression() {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    String secretManagerIdentifier = randomAlphabetic(16);
+    String identifier = HASHICORP_VAULT_ENCRYPTION_TYPE_PREFIX + secretManagerIdentifier + SECRET_RELATIVE_PATH;
+    NGEncryptedData ngEncryptedData = ngEncryptedDataService.getFromReferenceExpression(
+        accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    assertThat(ngEncryptedData.getAccountIdentifier()).isEqualTo(accountIdentifier);
+    assertThat(ngEncryptedData.getOrgIdentifier()).isEqualTo(orgIdentifier);
+    assertThat(ngEncryptedData.getProjectIdentifier()).isEqualTo(projectIdentifier);
+    assertThat(ngEncryptedData.getIdentifier()).isEqualTo(identifier);
+    assertThat(ngEncryptedData.getName()).isEqualTo(identifier);
+    assertThat(ngEncryptedData.getType()).isEqualTo(SettingVariableTypes.SECRET_TEXT);
+    assertThat(ngEncryptedData.getPath()).isEqualTo(SECRET_RELATIVE_PATH);
+    assertThat(ngEncryptedData.getSecretManagerIdentifier()).isEqualTo(secretManagerIdentifier);
+    assertThat(ngEncryptedData.getEncryptionType()).isEqualTo(EncryptionType.VAULT);
+  }
+
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testGetFromReferenceExpressionForInvalidFormat() {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    String secretManagerIdentifier = randomAlphabetic(16);
+    String identifier = "hashicorpvault//" + secretManagerIdentifier + SECRET_RELATIVE_PATH;
+    exceptionRule.expect(SecretManagementException.class);
+    exceptionRule.expectMessage(String.format(FULLY_QUALIFIED_PATH_EXPRESSION_FORMAT_ERROR, identifier));
+    ngEncryptedDataService.getFromReferenceExpression(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+  }
+
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testGetFromReferenceExpressionForUnsupportedEncryptionType() {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    String secretManagerIdentifier = randomAlphabetic(16);
+    String encryptionTypeName = randomAlphabetic(10);
+    String identifier = encryptionTypeName + "://" + secretManagerIdentifier + SECRET_RELATIVE_PATH;
+    exceptionRule.expect(SecretManagementException.class);
+    exceptionRule.expectMessage(
+        String.format("Encryption type [%s] is not supported in fully-qualified path expression.", encryptionTypeName));
+    ngEncryptedDataService.getFromReferenceExpression(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+  }
+
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testGetFromReferenceExpressionForInvalidFormatMissingRootPrefix() {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    String secretManagerIdentifier = randomAlphabetic(16);
+    String identifier = "hashicorpvault:/" + secretManagerIdentifier + SECRET_RELATIVE_PATH;
+    exceptionRule.expect(SecretManagementException.class);
+    exceptionRule.expectMessage(String.format(FULLY_QUALIFIED_PATH_EXPRESSION_FORMAT_ERROR, identifier));
+    ngEncryptedDataService.getFromReferenceExpression(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+  }
+
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testGetFromReferenceExpressionForInvalidFormatMissingSecretManagerIdentifier() {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    String identifier = HASHICORP_VAULT_ENCRYPTION_TYPE_PREFIX;
+    exceptionRule.expect(SecretManagementException.class);
+    exceptionRule.expectMessage(String.format(FULLY_QUALIFIED_PATH_EXPRESSION_FORMAT_ERROR, identifier));
+    ngEncryptedDataService.getFromReferenceExpression(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+  }
+
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testGetFromReferenceExpressionForInvalidFormatMissingSecretRelativePath() {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    String secretManagerIdentifier = randomAlphabetic(16);
+    String identifier = HASHICORP_VAULT_ENCRYPTION_TYPE_PREFIX + secretManagerIdentifier;
+    exceptionRule.expect(SecretManagementException.class);
+    exceptionRule.expectMessage(String.format(FULLY_QUALIFIED_PATH_EXPRESSION_FORMAT_ERROR, identifier));
+    ngEncryptedDataService.getFromReferenceExpression(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+  }
+
+  public Map<String, Boolean> getDataForTestGetEncryptionDetailsForGettingNGEncryptedData() {
+    return Arrays.stream(EncryptionType.values())
+        .collect(Collectors.toMap(EncryptionType::getYamlName, type -> type.equals(VAULT)));
+  }
+
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testGetEncryptionDetailsForGettingNGEncryptedData() {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    Map<String, Boolean> dataMap = getDataForTestGetEncryptionDetailsForGettingNGEncryptedData();
+    dataMap.forEach((encryptionTypeName, isAllowed) -> {
+      String secretIdentifier = encryptionTypeName + "://" + randomAlphabetic(10) + "/" + randomAlphabetic(5);
+      buildAndCheckEncryptedDataCall(
+          accountIdentifier, orgIdentifier, projectIdentifier, secretIdentifier, true, !isAllowed);
+    });
+  }
+
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testGetEncryptionDetailsForGettingNGEncryptedDataWhenFFDisabled() {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    Map<String, Boolean> dataMap = getDataForTestGetEncryptionDetailsForGettingNGEncryptedData();
+    dataMap.forEach((encryptionTypeName, isAllowed) -> {
+      String secretIdentifier = encryptionTypeName + "://" + randomAlphabetic(10) + "/" + randomAlphabetic(5);
+      buildAndCheckEncryptedDataCall(
+          accountIdentifier, orgIdentifier, projectIdentifier, secretIdentifier, false, true);
+    });
+  }
+
+  private void buildAndCheckEncryptedDataCall(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String secretIdentifier, boolean featureEnabled, boolean expectedDBCall) {
+    NGAccess ngAccess = BaseNGAccess.builder()
+                            .accountIdentifier(accountIdentifier)
+                            .orgIdentifier(orgIdentifier)
+                            .projectIdentifier(projectIdentifier)
+                            .build();
+    SecretVariableDTO secretVariableDTO =
+        SecretVariableDTO.builder()
+            .name(secretIdentifier)
+            .secret(SecretRefData.builder().identifier(secretIdentifier).scope(Scope.PROJECT).build())
+            .type(SecretVariableDTO.Type.TEXT)
+            .build();
+    when(ngFeatureFlagHelperService.isEnabled(anyString(), eq(FeatureName.PL_ACCESS_SECRET_DYNAMICALLY_BY_PATH)))
+        .thenReturn(featureEnabled);
+    ngEncryptedDataService.getEncryptionDetails(ngAccess, secretVariableDTO);
+    verify(ngEncryptedDataService, times(expectedDBCall ? 1 : 0))
+        .get(accountIdentifier, orgIdentifier, projectIdentifier, secretIdentifier);
+    verify(ngEncryptedDataService, times(expectedDBCall ? 0 : 1))
+        .getFromReferenceExpression(accountIdentifier, orgIdentifier, projectIdentifier, secretIdentifier);
+  }
+
+  @Test
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void testDecryptSecret_Success() {
+    String secretManagerIdentifier = randomAlphabetic(10);
+    char[] secretValue = randomAlphabetic(10).toCharArray();
+    SecretManagerConfigDTO secretManagerConfigDTO =
+        LocalConfigDTO.builder().harnessManaged(true).encryptionType(LOCAL).build();
+    NGEncryptedData encryptedData = NGEncryptedData.builder().secretManagerIdentifier(secretManagerIdentifier).build();
+    EncryptedRecordData encryptedRecordData = EncryptedRecordData.builder().build();
+    EncryptionConfig encryptionConfig = SecretManagerConfigMapper.fromDTO(secretManagerConfigDTO);
+
+    when(encryptedDataDao.get(accountIdentifier, orgIdentifier, projectIdentifier, identifier))
+        .thenReturn(encryptedData);
+    when(ngConnectorSecretManagerService.getUsingIdentifier(
+             accountIdentifier, orgIdentifier, projectIdentifier, secretManagerIdentifier, false))
+        .thenReturn(secretManagerConfigDTO);
+    when(globalEncryptDecryptClient.convertEncryptedRecordToLocallyEncrypted(
+             encryptedData, accountIdentifier, encryptionConfig))
+        .thenReturn(encryptedRecordData);
+    when(localEncryptor.fetchSecretValue(accountIdentifier, encryptedData, encryptionConfig)).thenReturn(secretValue);
+    DecryptedSecretValue decryptedSecretValue =
+        ngEncryptedDataService.decryptSecret(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    assertEquals(decryptedSecretValue.getDecryptedValue(), String.valueOf(secretValue));
+    assertEquals(decryptedSecretValue.getAccountIdentifier(), accountIdentifier);
+    assertEquals(decryptedSecretValue.getOrgIdentifier(), orgIdentifier);
+    assertEquals(decryptedSecretValue.getProjectIdentifier(), projectIdentifier);
+  }
+
+  @Test
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void testDecryptSecret_secretManagerNotFound() {
+    String secretManagerIdentifier = randomAlphabetic(10);
+    NGEncryptedData encryptedData = NGEncryptedData.builder().secretManagerIdentifier(secretManagerIdentifier).build();
+
+    when(encryptedDataDao.get(accountIdentifier, orgIdentifier, projectIdentifier, identifier))
+        .thenReturn(encryptedData);
+    when(ngConnectorSecretManagerService.getUsingIdentifier(
+             accountIdentifier, orgIdentifier, projectIdentifier, secretManagerIdentifier, false))
+        .thenReturn(null);
+    try {
+      DecryptedSecretValue decryptedSecretValue =
+          ngEncryptedDataService.decryptSecret(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+      fail("InvalidRequestException should be thrown as Secret Manager is not found");
+    } catch (SecretManagementException ex) {
+      assertEquals(ex.getMessage(),
+          String.format("No such secret manager found with identifier %s in org: %s and project: %s",
+              secretManagerIdentifier, orgIdentifier, projectIdentifier));
+    } catch (Exception ex) {
+      fail("Unexpected exception occured");
+    }
+  }
+
+  @Test
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void testDecryptSecret_secretManagerNotHarnessManaged() {
+    String secretManagerIdentifier = randomAlphabetic(10);
+    char[] secretValue = randomAlphabetic(10).toCharArray();
+    SecretManagerConfigDTO secretManager = VaultConfigDTO.builder()
+                                               .harnessManaged(false)
+                                               .encryptionType(VAULT)
+                                               .secretId(randomAlphabetic(10))
+                                               .accountIdentifier(accountIdentifier)
+                                               .authToken(randomAlphabetic(10))
+                                               .build();
+    NGEncryptedData encryptedData = NGEncryptedData.builder().secretManagerIdentifier(secretManagerIdentifier).build();
+    EncryptedRecordData encryptedRecordData = EncryptedRecordData.builder().build();
+    EncryptionConfig encryptionConfig = SecretManagerConfigMapper.fromDTO(secretManager);
+
+    when(encryptedDataDao.get(accountIdentifier, orgIdentifier, projectIdentifier, identifier))
+        .thenReturn(encryptedData);
+    when(ngConnectorSecretManagerService.getUsingIdentifier(
+             accountIdentifier, orgIdentifier, projectIdentifier, secretManagerIdentifier, false))
+        .thenReturn(secretManager);
+    try {
+      DecryptedSecretValue decryptedSecretValue =
+          ngEncryptedDataService.decryptSecret(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+      fail("InvalidRequestException should be thrown as Secret Manager is not Harness Managed");
+    } catch (InvalidRequestException ex) {
+      assertEquals(
+          ex.getMessage(), "Decryption is supported only for secrets encrypted via harness managed secret managers");
+    } catch (Exception ex) {
+      fail("Unexpected exception occured");
+    }
+  }
+
+  @Test
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void testDecryptSecretFile_Success() {
+    String secretManagerIdentifier = randomAlphabetic(10);
+    char[] secretValue = randomAlphabetic(10).toCharArray();
+    SecretManagerConfigDTO secretManagerConfigDTO =
+        LocalConfigDTO.builder().harnessManaged(true).encryptionType(LOCAL).build();
+    NGEncryptedData encryptedData = NGEncryptedData.builder()
+                                        .type(CONFIG_FILE)
+                                        .encryptionType(LOCAL)
+                                        .secretManagerIdentifier(secretManagerIdentifier)
+                                        .encryptedValue(secretValue)
+                                        .build();
+    EncryptedRecordData encryptedRecordData = EncryptedRecordData.builder().build();
+    EncryptionConfig encryptionConfig = SecretManagerConfigMapper.fromDTO(secretManagerConfigDTO);
+
+    when(encryptedDataDao.get(accountIdentifier, orgIdentifier, projectIdentifier, identifier))
+        .thenReturn(encryptedData);
+    when(ngConnectorSecretManagerService.getUsingIdentifier(
+             accountIdentifier, orgIdentifier, projectIdentifier, secretManagerIdentifier, false))
+        .thenReturn(secretManagerConfigDTO);
+    when(globalEncryptDecryptClient.convertEncryptedRecordToLocallyEncrypted(
+             encryptedData, accountIdentifier, encryptionConfig))
+        .thenReturn(encryptedRecordData);
+    when(localEncryptor.fetchSecretValue(accountIdentifier, encryptedData, encryptionConfig)).thenReturn(secretValue);
+    DecryptedSecretValue decryptedSecretValue =
+        ngEncryptedDataService.decryptSecret(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    assertEquals(decryptedSecretValue.getDecryptedValue(), String.valueOf(secretValue));
+    assertEquals(decryptedSecretValue.getAccountIdentifier(), accountIdentifier);
+    assertEquals(decryptedSecretValue.getOrgIdentifier(), orgIdentifier);
+    assertEquals(decryptedSecretValue.getProjectIdentifier(), projectIdentifier);
   }
 }

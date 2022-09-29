@@ -222,6 +222,7 @@ import io.harness.delegate.task.azure.artifact.AzureArtifactDownloadService;
 import io.harness.delegate.task.azure.artifact.AzureArtifactDownloadServiceImpl;
 import io.harness.delegate.task.azure.exception.AzureARMRuntimeExceptionHandler;
 import io.harness.delegate.task.azure.exception.AzureAppServicesRuntimeExceptionHandler;
+import io.harness.delegate.task.azure.exception.AzureBPRuntimeExceptionHandler;
 import io.harness.delegate.task.azure.exception.AzureClientExceptionHandler;
 import io.harness.delegate.task.azure.resource.operation.AzureResourceProvider;
 import io.harness.delegate.task.cek8s.CEKubernetesTestConnectionDelegateTask;
@@ -2071,5 +2072,7 @@ public class DelegateModule extends AbstractModule {
         exception -> exceptionHandlerMapBinder.addBinding(exception).to(AzureClientExceptionHandler.class));
     AzureARMRuntimeExceptionHandler.exceptions().forEach(
         exception -> exceptionHandlerMapBinder.addBinding(exception).to(AzureARMRuntimeExceptionHandler.class));
+    AzureBPRuntimeExceptionHandler.exceptions().forEach(
+        exception -> exceptionHandlerMapBinder.addBinding(exception).to(AzureBPRuntimeExceptionHandler.class));
   }
 }

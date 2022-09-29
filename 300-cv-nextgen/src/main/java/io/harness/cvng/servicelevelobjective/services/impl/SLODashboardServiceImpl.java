@@ -28,7 +28,7 @@ import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveResponse
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
-import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective.TimePeriod;
+import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
 import io.harness.cvng.servicelevelobjective.entities.UserJourney;
 import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
 import io.harness.cvng.servicelevelobjective.services.api.SLODashboardService;

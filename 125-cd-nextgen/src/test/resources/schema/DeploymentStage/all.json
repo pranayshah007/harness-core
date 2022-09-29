@@ -10002,8 +10002,7 @@
     "StepTemplateRef": {
       "type": "object",
       "required": [
-        "templateRef",
-        "versionLabel"
+        "templateRef"
       ],
       "properties": {
         "templateRef": {

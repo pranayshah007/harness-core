@@ -126,4 +126,10 @@ public class EnvironmentRepositoryCustomImpl implements EnvironmentRepositoryCus
   private RetryPolicy<Object> getRetryPolicy(String failedAttemptMessage, String failureMessage) {
     return PersistenceUtils.getRetryPolicy(failedAttemptMessage, failureMessage);
   }
+
+  @Override
+  public List<Environment> findAll(Criteria criteria) {
+    Query query = new Query(criteria);
+    return mongoTemplate.find(query, Environment.class);
+  }
 }

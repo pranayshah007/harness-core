@@ -259,6 +259,7 @@ import software.wings.service.impl.compliance.DeploymentFreezeActivationHandler;
 import software.wings.service.impl.compliance.DeploymentFreezeDeactivationHandler;
 import software.wings.service.impl.event.DeploymentTimeSeriesEventListener;
 import software.wings.service.impl.infrastructuredefinition.InfrastructureDefinitionServiceImpl;
+import software.wings.service.impl.instance.AuditCleanupJob;
 import software.wings.service.impl.instance.DeploymentEventListener;
 import software.wings.service.impl.instance.InstanceEventListener;
 import software.wings.service.impl.instance.InstanceSyncPerpetualTaskMigrationJob;
@@ -1153,6 +1154,7 @@ public class WingsApplication extends Application<MainConfiguration> {
     environment.lifecycle().manage(injector.getInstance(NotifierScheduledExecutorService.class));
     environment.lifecycle().manage((Managed) injector.getInstance(ExecutorService.class));
     environment.lifecycle().manage(injector.getInstance(MaintenanceController.class));
+    environment.lifecycle().manage(injector.getInstance(AuditCleanupJob.class));
   }
 
   private void registerManagedBeansManager(

@@ -113,6 +113,7 @@ public class ServerlessAwsCommandTaskHelper {
   private static String DEPLOY_TIMESTAMP_REGEX = ".*Timestamp:\\s([0-9])*";
   private static String SERVICE_NAME_REGEX = ".*service:\\s.*";
   private static String LOGICAL_ID_FOR_SERVERLESS_DEPLOYMENT_BUCKET_RESOURCE = "ServerlessDeploymentBucket";
+  private static String SERVERLESS_LOCAL_PLUGIN_SUFFIX = "@local";
 
   public ServerlessCliResponse configCredential(ServerlessClient serverlessClient,
       ServerlessAwsLambdaConfig serverlessAwsLambdaConfig, ServerlessDelegateTaskParams serverlessDelegateTaskParams,
@@ -169,7 +170,7 @@ public class ServerlessAwsCommandTaskHelper {
     CliResponse response = awsCliClient.setConfigure(configureOption, configureValue, envVariables,
         serverlessDelegateTaskParams.getWorkingDirectory(), executionLogCallback, timeoutInMillis, loggingCommand);
     if (response.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
-      awsConfigureCredsFailureLog(executionLogCallback, loggingCommand);
+      awsCommandFailure(executionLogCallback, loggingCommand, response);
     }
   }
 
@@ -185,10 +186,7 @@ public class ServerlessAwsCommandTaskHelper {
         convertBase64UuidToCanonicalForm(generateUuid()), crossAccountAccess.getExternalId(), envVariables,
         serverlessDelegateTaskParams.getWorkingDirectory(), executionLogCallback, timeoutInMillis, "");
     if (response.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
-      executionLogCallback.saveExecutionLog(
-          color(format("%n setting up AWS Cross-account access failed..%n"), LogColor.Red, LogWeight.Bold), ERROR,
-          CommandExecutionStatus.FAILURE);
-      handleAwsCommandExecutionFailure(command);
+      awsCommandFailure(executionLogCallback, command, response);
     }
 
     AwsCliStsAssumeRoleCommandOutputSchema responseOutput =
@@ -208,7 +206,7 @@ public class ServerlessAwsCommandTaskHelper {
     response = awsCliClient.setConfigure("aws_session_token", responseOutput.getCredentials().getSessionToken(),
         envVariables, serverlessDelegateTaskParams.getWorkingDirectory(), executionLogCallback, timeoutInMillis, "");
     if (response.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
-      awsConfigureCredsFailureLog(executionLogCallback, command);
+      awsCommandFailure(executionLogCallback, command, response);
     }
   }
 
@@ -301,8 +299,7 @@ public class ServerlessAwsCommandTaskHelper {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
       log.error("Failure in processing manifest file", sanitizedException);
       executionLogCallback.saveExecutionLog(
-          "Failed to process manifest file with error: " + ExceptionUtils.getMessage(sanitizedException), ERROR,
-          CommandExecutionStatus.FAILURE);
+          "Failed to process manifest file with error: " + ExceptionUtils.getMessage(sanitizedException), ERROR);
       throw NestedExceptionUtils.hintWithExplanationException(SERVERLESS_MANIFEST_PROCESSING_HINT,
           SERVERLESS_MANIFEST_PROCESSING_EXPLANATION,
           new ServerlessAwsLambdaRuntimeException(SERVERLESS_MANIFEST_PROCESSING_FAILED));
@@ -319,12 +316,24 @@ public class ServerlessAwsCommandTaskHelper {
       executionLogCallback.saveExecutionLog("Plugin Installation starting..\n");
       List<String> plugins = serverlessAwsLambdaManifestSchema.getPlugins();
       for (String plugin : plugins) {
+        if (isPluginLocal(plugin)) {
+          executionLogCallback.saveExecutionLog(
+              color(format("%nSkipping plugin installation for local plugin: %s %n", plugin), LogColor.White), INFO);
+          continue;
+        }
         response = serverlessTaskPluginHelper.installServerlessPlugin(serverlessDelegateTaskParams, serverlessClient,
             plugin, executionLogCallback, timeoutInMillis, serverlessAwsLambdaManifestConfig.getConfigOverridePath());
         if (response.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
           executionLogCallback.saveExecutionLog(
-              format("%nPlugin Installation failed.. "), ERROR, CommandExecutionStatus.FAILURE);
-          handleCommandExecutionFailure(response, serverlessClient.plugin());
+              color(
+                  serverlessCommandFailureMessage(" Plugin Install Command ", response), LogColor.Red, LogWeight.Bold),
+              ERROR);
+          String message = "serverless plugin install command failed for plugin: " + plugin;
+          Exception sanitizedException =
+              ExceptionMessageSanitizer.sanitizeException(new ServerlessAwsLambdaRuntimeException(message));
+          throw NestedExceptionUtils.hintWithExplanationException(
+              format(SERVERLESS_COMMAND_FAILURE_HINT, "serverless plugin install"),
+              format(SERVERLESS_COMMAND_FAILURE_EXPLANATION, "serverless plugin install"), sanitizedException);
         }
       }
       executionLogCallback.saveExecutionLog(
@@ -335,6 +344,13 @@ public class ServerlessAwsCommandTaskHelper {
               format("%nSkipping plugin installation, found no plugins in config..%n"), LogColor.White, LogWeight.Bold),
           INFO);
     }
+  }
+
+  private boolean isPluginLocal(String plugin) {
+    if (EmptyPredicate.isNotEmpty(plugin) && plugin.endsWith(SERVERLESS_LOCAL_PLUGIN_SUFFIX)) {
+      return true;
+    }
+    return false;
   }
 
   public void setUpConfigureCredential(ServerlessAwsLambdaConfig serverlessAwsLambdaConfig,
@@ -358,8 +374,9 @@ public class ServerlessAwsCommandTaskHelper {
           setupConfigureCredsSuccessLog(executionLogCallback);
         } else {
           executionLogCallback.saveExecutionLog(
-              color(format("%nConfig Credential command failed..%n"), LogColor.Red, LogWeight.Bold), ERROR,
-              CommandExecutionStatus.FAILURE);
+              color(serverlessCommandFailureMessage(" Config Credential Command ", response), LogColor.Red,
+                  LogWeight.Bold),
+              ERROR);
           handleCommandExecutionFailure(response, serverlessClient.configCredential());
         }
       } else if (crossAccountAccessFlag) {
@@ -367,13 +384,12 @@ public class ServerlessAwsCommandTaskHelper {
             serverlessDelegateTaskParams, serverlessAwsLambdaInfraConfig);
         setupConfigureCredsSuccessLog(executionLogCallback);
       } else {
-        executionLogCallback.saveExecutionLog(
-            format("skipping configure credentials command..%n%n"), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+        executionLogCallback.saveExecutionLog(format("skipping configure credentials command..%n%n"), LogLevel.INFO);
       }
     } catch (Exception ex) {
       executionLogCallback.saveExecutionLog(
-          color(format("%n configure credential failed."), LogColor.Red, LogWeight.Bold), LogLevel.ERROR,
-          CommandExecutionStatus.FAILURE);
+          color(format("%n configure credential failed with error: %s", ex.getMessage()), LogColor.Red, LogWeight.Bold),
+          LogLevel.ERROR);
       throw ex;
     }
   }
@@ -383,11 +399,31 @@ public class ServerlessAwsCommandTaskHelper {
         color(format("%nConfig Credential command executed successfully..%n"), LogColor.White, LogWeight.Bold), INFO);
   }
 
-  private void awsConfigureCredsFailureLog(LogCallback executionLogCallback, String command) {
-    executionLogCallback.saveExecutionLog(
-        color(format("%nConfig Credential command failed..%n"), LogColor.Red, LogWeight.Bold), ERROR,
-        CommandExecutionStatus.FAILURE);
+  private void awsCommandFailure(LogCallback executionLogCallback, String command, CliResponse cliResponse) {
+    StringBuilder message = new StringBuilder(1024);
+    message.append("\n following command failed");
+    if (EmptyPredicate.isNotEmpty(command)) {
+      message.append(command);
+    } else {
+      message.append(" aws command");
+    }
+    if (EmptyPredicate.isNotEmpty(cliResponse.getOutput())) {
+      message.append(" with output: \n ").append(cliResponse.getOutput());
+    }
+    if (EmptyPredicate.isNotEmpty(cliResponse.getError())) {
+      message.append(" with error: \n ").append(cliResponse.getError());
+    }
+    executionLogCallback.saveExecutionLog(color(message.toString(), LogColor.Red, LogWeight.Bold), ERROR);
     handleAwsCommandExecutionFailure(command);
+  }
+
+  public String serverlessCommandFailureMessage(String command, ServerlessCliResponse response) {
+    StringBuilder message = new StringBuilder(1024);
+    message.append("\n ").append(command).append("failed");
+    if (EmptyPredicate.isNotEmpty(response.getOutput())) {
+      message.append("with output: ").append(response.getOutput());
+    }
+    return message.toString();
   }
 
   public void handleCommandExecutionFailure(ServerlessCliResponse response, AbstractExecutable command) {

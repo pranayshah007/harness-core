@@ -37,5 +37,5 @@ public class StepTemplateRef {
   String uuid;
 
   @NotNull @NotEmpty String templateRef;
-  @NotNull @NotEmpty String versionLabel;
+  String versionLabel;
 }

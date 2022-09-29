@@ -28,6 +28,7 @@ import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.service.steps.ServiceStepsHelper;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.cdng.visitor.YamlTypes;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.task.artifacts.ArtifactSourceDelegateRequest;
@@ -160,7 +161,7 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
               .findFirst();
       primaryArtifact.ifPresent(p -> {
         p.getSpec().setPrimaryArtifact(true);
-        p.getSpec().setIdentifier(p.getIdentifier());
+        p.getSpec().setIdentifier(YamlTypes.PRIMARY_ARTIFACT);
         artifacts.setPrimary(PrimaryArtifact.builder()
                                  .spec(p.getSpec())
                                  .sourceType(p.getSourceType())

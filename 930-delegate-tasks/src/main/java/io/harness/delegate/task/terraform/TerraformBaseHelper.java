@@ -62,7 +62,7 @@ public interface TerraformBaseHelper {
 
   String fetchConfigFileAndPrepareScriptDir(GitBaseRequest gitBaseRequestForConfigFile, String accountId,
       String workspace, String currentStateFileId, GitStoreDelegateConfig confileFileGitStore, LogCallback logCallback,
-      String scriptPath, String workingDir) throws IOException;
+      String scriptPath, String workingDir);
 
   String fetchConfigFileAndPrepareScriptDir(ArtifactoryStoreDelegateConfig artifactoryStoreDelegateConfig,
       String accountId, String workspace, String currentStateFileId, LogCallback logCallback, String baseDir);

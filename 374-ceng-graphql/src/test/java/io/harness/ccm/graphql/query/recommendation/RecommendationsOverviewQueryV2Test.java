@@ -23,9 +23,11 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.commons.beans.recommendation.RecommendationOverviewStats;
 import io.harness.ccm.commons.beans.recommendation.ResourceType;
 import io.harness.ccm.commons.beans.recommendation.models.RecommendationResponse;
+import io.harness.ccm.commons.utils.BigQueryHelper;
 import io.harness.ccm.graphql.core.recommendation.RecommendationService;
 import io.harness.ccm.graphql.dto.recommendation.FilterStatsDTO;
 import io.harness.ccm.graphql.dto.recommendation.K8sRecommendationFilterDTO;
@@ -47,6 +49,8 @@ import io.harness.ccm.views.graphql.QLCEViewFilterOperator;
 import io.harness.ccm.views.graphql.QLCEViewFilterWrapper;
 import io.harness.ccm.views.graphql.QLCEViewMetadataFilter;
 import io.harness.ccm.views.graphql.QLCEViewRule;
+import io.harness.ccm.views.graphql.ViewsQueryBuilder;
+import io.harness.ccm.views.graphql.ViewsQueryHelper;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.rule.Owner;
@@ -88,6 +92,10 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
   @Mock private RecommendationService recommendationService;
   @Mock private RecommendationsDetailsQuery detailsQuery;
   @Mock private CEViewService viewService;
+  @Mock private ViewsQueryHelper viewsQueryHelper;
+  @Mock private ViewsQueryBuilder viewsQueryBuilder;
+  @Mock private BigQueryService bigQueryService;
+  @Mock private BigQueryHelper bigQueryHelper;
   @InjectMocks private RecommendationsOverviewQueryV2 overviewQuery;
 
   @Before

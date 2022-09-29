@@ -65,7 +65,6 @@ import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.runtime.serverless.ServerlessCommandExecutionException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.filesystem.FileIo;
-import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.serverless.model.AwsLambdaFunctionDetails;
@@ -157,8 +156,7 @@ public class ServerlessTaskHelperBase {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
       log.error("Failure in fetching files from git", sanitizedException);
       executionLogCallback.saveExecutionLog(
-          "Failed to download manifest files from git. " + ExceptionUtils.getMessage(sanitizedException), ERROR,
-          CommandExecutionStatus.FAILURE);
+          "Failed to download manifest files from git. " + ExceptionUtils.getMessage(sanitizedException), ERROR);
       throw NestedExceptionUtils.hintWithExplanationException(
           format(SERVERLESS_GIT_FILES_DOWNLOAD_HINT, gitStoreDelegateConfig.getManifestId()),
           format(SERVERLESS_GIT_FILES_DOWNLOAD_EXPLANATION, gitStoreDelegateConfig.getConnectorName(),
@@ -194,6 +192,11 @@ public class ServerlessTaskHelperBase {
     try (Stream<Path> paths = Files.walk(basePath)) {
       return generateTruncatedFileListForLogging(basePath, paths);
     }
+  }
+
+  public String getExceptionMessage(Exception e) {
+    Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
+    return ExceptionUtils.getMessage(sanitizedException);
   }
 
   public String generateTruncatedFileListForLogging(Path basePath, Stream<Path> paths) {
@@ -285,8 +288,7 @@ public class ServerlessTaskHelperBase {
   public void fetchArtifactoryArtifact(ServerlessArtifactoryArtifactConfig artifactoryArtifactConfig,
       LogCallback executionLogCallback, String artifactoryDirectory, String savedArtifactFileName) throws IOException {
     if (EmptyPredicate.isEmpty(artifactoryArtifactConfig.getArtifactPath())) {
-      executionLogCallback.saveExecutionLog(
-          "artifactPath or artifactPathFilter is blank", ERROR, CommandExecutionStatus.FAILURE);
+      executionLogCallback.saveExecutionLog("artifactPath or artifactPathFilter is blank", ERROR);
       throw NestedExceptionUtils.hintWithExplanationException(BLANK_ARTIFACT_PATH_HINT,
           String.format(BLANK_ARTIFACT_PATH_EXPLANATION, artifactoryArtifactConfig.getIdentifier()),
           new ServerlessCommandExecutionException(BLANK_ARTIFACT_PATH));
@@ -309,8 +311,7 @@ public class ServerlessTaskHelperBase {
     File artifactFile = new File(artifactFilePath);
     if (!artifactFile.createNewFile()) {
       log.error("Failed to create new file");
-      executionLogCallback.saveExecutionLog(
-          "Failed to create a file for artifactory", ERROR, CommandExecutionStatus.FAILURE);
+      executionLogCallback.saveExecutionLog("Failed to create a file for artifactory", ERROR);
       throw new FileCreationException("Failed to create file " + artifactFile.getCanonicalPath(), null,
           ErrorCode.FILE_CREATE_ERROR, Level.ERROR, USER, null);
     }
@@ -325,8 +326,7 @@ public class ServerlessTaskHelperBase {
          FileOutputStream outputStream = new FileOutputStream(artifactFile)) {
       if (artifactInputStream == null) {
         log.error("Failure in downloading artifact from artifactory");
-        executionLogCallback.saveExecutionLog(
-            "Failed to download artifact from artifactory.ø", ERROR, CommandExecutionStatus.FAILURE);
+        executionLogCallback.saveExecutionLog("Failed to download artifact from artifactory.ø", ERROR);
         throw NestedExceptionUtils.hintWithExplanationException(DOWNLOAD_FROM_ARTIFACTORY_HINT,
             String.format(
                 DOWNLOAD_FROM_ARTIFACTORY_EXPLANATION, artifactPath, artifactoryConfigRequest.getArtifactoryUrl()),
@@ -339,8 +339,7 @@ public class ServerlessTaskHelperBase {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
       log.error("Failure in downloading artifact from artifactory", sanitizedException);
       executionLogCallback.saveExecutionLog(
-          "Failed to download artifact from artifactory. " + ExceptionUtils.getMessage(sanitizedException), ERROR,
-          CommandExecutionStatus.FAILURE);
+          "Failed to download artifact from artifactory. " + ExceptionUtils.getMessage(sanitizedException), ERROR);
       throw NestedExceptionUtils.hintWithExplanationException(DOWNLOAD_FROM_ARTIFACTORY_HINT,
           String.format(
               DOWNLOAD_FROM_ARTIFACTORY_EXPLANATION, artifactPath, artifactoryConfigRequest.getArtifactoryUrl()),
@@ -352,8 +351,7 @@ public class ServerlessTaskHelperBase {
   public void fetchS3Artifact(ServerlessS3ArtifactConfig s3ArtifactConfig, LogCallback executionLogCallback,
       String s3Directory, String savedArtifactFileName) throws IOException {
     if (EmptyPredicate.isEmpty(s3ArtifactConfig.getFilePath())) {
-      executionLogCallback.saveExecutionLog(
-          "artifactPath or artifactPathFilter is blank", ERROR, CommandExecutionStatus.FAILURE);
+      executionLogCallback.saveExecutionLog("artifactPath or artifactPathFilter is blank", ERROR);
       throw NestedExceptionUtils.hintWithExplanationException(BLANK_ARTIFACT_PATH_HINT,
           String.format(BLANK_ARTIFACT_PATH_EXPLANATION, s3ArtifactConfig.getIdentifier()),
           new ServerlessCommandExecutionException(BLANK_ARTIFACT_PATH));
@@ -364,8 +362,7 @@ public class ServerlessTaskHelperBase {
     File artifactFile = new File(artifactFilePath);
     if (!artifactFile.createNewFile()) {
       log.error("Failed to create new file");
-      executionLogCallback.saveExecutionLog(
-          "Failed to create a file for s3 object", ERROR, CommandExecutionStatus.FAILURE);
+      executionLogCallback.saveExecutionLog("Failed to create a file for s3 object", ERROR);
       throw new FileCreationException("Failed to create file " + artifactFile.getCanonicalPath(), null,
           ErrorCode.FILE_CREATE_ERROR, Level.ERROR, USER, null);
     }
@@ -394,8 +391,7 @@ public class ServerlessTaskHelperBase {
          FileOutputStream outputStream = new FileOutputStream(artifactFile)) {
       if (artifactInputStream == null) {
         log.error("Failure in downloading artifact from S3");
-        executionLogCallback.saveExecutionLog(
-            "Failed to download artifact from S3.ø", ERROR, CommandExecutionStatus.FAILURE);
+        executionLogCallback.saveExecutionLog("Failed to download artifact from S3.ø", ERROR);
         throw NestedExceptionUtils.hintWithExplanationException(DOWNLOAD_FROM_S3_HINT,
             String.format(
                 DOWNLOAD_FROM_S3_EXPLANATION, s3ArtifactConfig.getBucketName(), s3ArtifactConfig.getFilePath()),
@@ -407,8 +403,7 @@ public class ServerlessTaskHelperBase {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
       log.error("Failure in downloading artifact from s3", sanitizedException);
       executionLogCallback.saveExecutionLog(
-          "Failed to download artifact from s3. " + ExceptionUtils.getMessage(sanitizedException), ERROR,
-          CommandExecutionStatus.FAILURE);
+          "Failed to download artifact from s3. " + ExceptionUtils.getMessage(sanitizedException), ERROR);
       throw NestedExceptionUtils.hintWithExplanationException(DOWNLOAD_FROM_S3_HINT,
           String.format(DOWNLOAD_FROM_S3_EXPLANATION, s3ArtifactConfig.getBucketName(), s3ArtifactConfig.getFilePath()),
           new ServerlessCommandExecutionException(

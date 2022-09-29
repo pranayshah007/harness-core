@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.platform.PlatformConfiguration.NOTIFICATION_SERVICE_RESOURCES;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.controller.PrimaryVersionChangeScheduler;
 import io.harness.health.HealthService;
 import io.harness.manage.ManagedScheduledExecutorService;
 import io.harness.ng.core.CorrelationFilter;
@@ -19,9 +18,9 @@ import io.harness.notification.SeedDataConfiguration;
 import io.harness.notification.eventbackbone.MongoMessageConsumer;
 import io.harness.notification.service.api.SeedDataPopulaterService;
 import io.harness.persistence.HPersistence;
+import io.harness.platform.remote.VersionInfoResource;
 import io.harness.queue.QueueListenerController;
 import io.harness.remote.CharsetResponseFilter;
-import io.harness.resource.VersionInfoResource;
 import io.harness.service.impl.DelegateSyncServiceImpl;
 
 import com.google.inject.Injector;
@@ -100,7 +99,6 @@ public class NotificationServiceSetup {
 
   private void registerScheduleJobs(Injector injector) {
     log.info("Initializing scheduled jobs...");
-    injector.getInstance(PrimaryVersionChangeScheduler.class).registerExecutors();
     injector.getInstance(Key.get(ManagedScheduledExecutorService.class, Names.named("delegate-response")))
         .scheduleWithFixedDelay(injector.getInstance(DelegateSyncServiceImpl.class), 0L, 2L, TimeUnit.SECONDS);
   }

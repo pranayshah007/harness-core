@@ -7,36 +7,37 @@
 
 package io.harness.ngmigration.connector;
 
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO.builder;
 import static io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType.INHERIT_FROM_DELEGATE;
 import static io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType.MANUAL_CREDENTIALS;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorCredentialDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO.GcpConnectorDTOBuilder;
 import io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO;
 import io.harness.encryption.SecretRefData;
-import io.harness.exception.UnsupportedOperationException;
-import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.service.MigratorUtility;
 
 import software.wings.beans.GcpConfig;
 import software.wings.beans.SettingAttribute;
 import software.wings.ngmigration.CgEntityId;
-import software.wings.ngmigration.NGMigrationEntityType;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
+@OwnedBy(HarnessTeam.CDP)
 public class GcpConnectorImpl implements BaseConnector {
   @Override
-  public String getSecretId(SettingAttribute settingAttribute) {
-    return ((GcpConfig) settingAttribute.getValue()).getEncryptedServiceAccountKeyFileContent();
+  public List<String> getSecretIds(SettingAttribute settingAttribute) {
+    return Collections.singletonList(
+        ((GcpConfig) settingAttribute.getValue()).getEncryptedServiceAccountKeyFileContent());
   }
 
   @Override
@@ -45,8 +46,8 @@ public class GcpConnectorImpl implements BaseConnector {
   }
 
   @Override
-  public ConnectorConfigDTO getConfigDTO(SettingAttribute settingAttribute, Set<CgEntityId> childEntities,
-      Map<CgEntityId, NgEntityDetail> migratedEntities) {
+  public ConnectorConfigDTO getConfigDTO(
+      SettingAttribute settingAttribute, Set<CgEntityId> childEntities, Map<CgEntityId, NGYamlFile> migratedEntities) {
     GcpConfig clusterConfig = (GcpConfig) settingAttribute.getValue();
     Set<String> delegateSelectors = new HashSet<>();
     if (clusterConfig.getDelegateSelectors() != null) {
@@ -57,15 +58,8 @@ public class GcpConnectorImpl implements BaseConnector {
     if (clusterConfig.isUseDelegateSelectors()) {
       credentialDTO = GcpConnectorCredentialDTO.builder().gcpCredentialType(INHERIT_FROM_DELEGATE).build();
     } else {
-      List<CgEntityId> cgEntityIdList =
-          childEntities.stream()
-              .filter(cgEntityId -> cgEntityId.getType().equals(NGMigrationEntityType.SECRET))
-              .collect(Collectors.toList());
-      if (isEmpty(cgEntityIdList)) {
-        throw new UnsupportedOperationException("Unsupported Operation: Secret not found in migration entities");
-      }
-      SecretRefData secretRefData = new SecretRefData(
-          MigratorUtility.getScope(migratedEntities.get(cgEntityIdList.get(0))) + this.getSecretId(settingAttribute));
+      String secretId = ((GcpConfig) settingAttribute.getValue()).getEncryptedServiceAccountKeyFileContent();
+      SecretRefData secretRefData = MigratorUtility.getSecretRef(migratedEntities, secretId);
       credentialDTO = GcpConnectorCredentialDTO.builder()
                           .gcpCredentialType(MANUAL_CREDENTIALS)
                           .config(GcpManualDetailsDTO.builder().secretKeyRef(secretRefData).build())

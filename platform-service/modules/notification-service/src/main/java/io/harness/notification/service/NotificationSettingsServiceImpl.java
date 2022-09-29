@@ -158,7 +158,8 @@ public class NotificationSettingsServiceImpl implements NotificationSettingsServ
           if (notificationSettingConfigDTO.getType().equals(notificationChannelType)) {
             if (NotificationChannelType.EMAIL.equals(notificationChannelType)) {
               notificationSettings.addAll(getEmailsForUserIds(userGroupDTO.getUsers(), accountId));
-            } else if (notificationSettingConfigDTO.getSetting().isPresent()) {
+            }
+            if (notificationSettingConfigDTO.getSetting().isPresent()) {
               notificationSettings.add(notificationSettingConfigDTO.getSetting().get());
             }
           }

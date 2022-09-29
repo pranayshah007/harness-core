@@ -25,7 +25,6 @@ import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -58,10 +57,7 @@ import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.filesystem.FileIo;
 import io.harness.git.GitClientHelper;
 import io.harness.git.GitClientV2;
-import io.harness.git.UsernamePasswordAuthRequest;
-import io.harness.git.model.DownloadFilesRequest;
 import io.harness.git.model.GitBaseRequest;
-import io.harness.git.model.GitRepositoryType;
 import io.harness.logging.LogCallback;
 import io.harness.logging.PlanJsonLogOutputStream;
 import io.harness.logging.PlanLogOutputStream;
@@ -339,30 +335,6 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
     File stateFile = new File("baseDir/script-repository/repoName/terraform.tfstate.d/workspace/terraform.tfstate");
     assertThat(configFile.exists()).isTrue();
     assertThat(stateFile.exists()).isTrue();
-  }
-
-  @Test
-  @Owner(developers = NAMAN_TALAYCHA)
-  @Category(UnitTests.class)
-  public void testFetchConfigFileAndPrepareScriptDirDownloadFiles() throws IOException {
-    GitBaseRequest gitBaseRequest =
-        GitBaseRequest.builder().repoUrl("testRepo").authRequest(UsernamePasswordAuthRequest.builder().build()).build();
-    GitStoreDelegateConfig gitStoreDelegateConfig = GitStoreDelegateConfig.builder().branch("master").build();
-    doNothing()
-        .when(spyTerraformBaseHelper)
-        .downloadTfStateFile("workspace", "accountId", null,
-            terraformBaseHelper.resolveScriptDirectory(terraformBaseHelper.getWorkingDir("baseDir"), "/terraform"));
-
-    terraformBaseHelper.fetchConfigFileAndPrepareScriptDir(
-        gitBaseRequest, "accountId", "workspace", null, gitStoreDelegateConfig, logCallback, "/terraform", "baseDir");
-
-    ArgumentCaptor<DownloadFilesRequest> downloadFilesRequestArgumentCaptor =
-        ArgumentCaptor.forClass(DownloadFilesRequest.class);
-    verify(gitClient, times(1)).downloadFiles(downloadFilesRequestArgumentCaptor.capture());
-    DownloadFilesRequest downloadFilesRequest = downloadFilesRequestArgumentCaptor.getValue();
-    assertThat(downloadFilesRequest.getFilePaths().size()).isEqualTo(1);
-    assertThat(downloadFilesRequest.getRepoType()).isEqualTo(GitRepositoryType.TERRAFORM);
-    assertThat(downloadFilesRequest.getDestinationDirectory()).isEqualTo(terraformBaseHelper.getWorkingDir("baseDir"));
   }
 
   @Test

@@ -71,35 +71,36 @@ public class CEAzureConnectorValidator extends io.harness.ccm.connectors.Abstrac
     String orgIdentifier = connectorResponseDTO.getConnector().getOrgIdentifier();
     String connectorIdentifier = connectorResponseDTO.getConnector().getIdentifier();
     long oneDayOld = Instant.now().toEpochMilli() - 24 * 60 * 60 * 1000;
-
-    BillingExportSpecDTO billingExportSpec = ceAzureConnectorDTO.getBillingExportSpec();
-    if (billingExportSpec == null) {
-      log.error("No billing export spec found for this connector {}", connectorIdentifier);
-      return ConnectorValidationResult.builder()
-          .status(ConnectivityStatus.FAILURE)
-          .errors(ImmutableList.of(
-              ErrorDetail.builder()
-                  .reason("No billing export spec found")
-                  .message(
-                      "Verify the billing export configuration in Harness and in your Azure account. For more information, refer to the documentation.")
-                  .build()))
-          .errorSummary("Invalid connector configuration")
-          .testedAt(Instant.now().toEpochMilli())
-          .build();
-    }
-
-    String storageAccountName = billingExportSpec.getStorageAccountName();
-    String containerName = billingExportSpec.getContainerName();
-    String directoryName = billingExportSpec.getDirectoryName();
-    String reportName = billingExportSpec.getReportName();
+    String storageAccountName;
+    String containerName;
+    String directoryName;
+    String reportName;
+    String prefix;
     String tenantId = ceAzureConnectorDTO.getTenantId();
     String subscriptionId = ceAzureConnectorDTO.getSubscriptionId();
-    String prefix = directoryName + "/" + reportName + "/" + ceConnectorsHelper.getReportMonth();
     final List<ErrorDetail> errorList = new ArrayList<>();
-
     try {
-      List<String> requiredRoles = new ArrayList<>();
       if (featuresEnabled.contains(CEFeatures.BILLING)) {
+        BillingExportSpecDTO billingExportSpec = ceAzureConnectorDTO.getBillingExportSpec();
+        if (billingExportSpec == null) {
+          log.error("No billing export spec found for this connector {}", connectorIdentifier);
+          return ConnectorValidationResult.builder()
+              .status(ConnectivityStatus.FAILURE)
+              .errors(ImmutableList.of(
+                  ErrorDetail.builder()
+                      .reason("No billing export spec found")
+                      .message(
+                          "Verify the billing export configuration in Harness and in your Azure account. For more information, refer to the documentation.")
+                      .build()))
+              .errorSummary("Invalid connector configuration")
+              .testedAt(Instant.now().toEpochMilli())
+              .build();
+        }
+        storageAccountName = billingExportSpec.getStorageAccountName();
+        containerName = billingExportSpec.getContainerName();
+        directoryName = billingExportSpec.getDirectoryName();
+        reportName = billingExportSpec.getReportName();
+        prefix = directoryName + "/" + reportName + "/" + ceConnectorsHelper.getReportMonth();
         String endpoint = String.format(AZURE_STORAGE_URL_FORMAT, storageAccountName, AZURE_STORAGE_SUFFIX);
         BlobContainerClient blobContainerClient = getBlobContainerClient(endpoint, containerName, tenantId);
         errorList.addAll(validateIfFileIsPresent(getBlobItems(blobContainerClient, prefix), prefix));
@@ -112,7 +113,7 @@ public class CEAzureConnectorValidator extends io.harness.ccm.connectors.Abstrac
               .build();
         }
       }
-
+      List<String> requiredRoles = new ArrayList<>();
       if (featuresEnabled.contains(CEFeatures.OPTIMIZATION)) {
         requiredRoles.add(AZURE_RBAC_CONTRIBUTOR_ROLE);
       } else if (featuresEnabled.contains(CEFeatures.VISIBILITY)) {

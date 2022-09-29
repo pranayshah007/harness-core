@@ -96,8 +96,8 @@ public class GithubServiceImpl implements GithubService {
       return githubStatusCreationResponseResponse.isSuccessful();
 
     } catch (Exception e) {
-      log.error("Failed to send status for github url {} and sha {} ", githubAppConfig.getGithubUrl(), sha, e);
-      return false;
+      throw new InvalidRequestException(
+          format("Failed to send status for Github url %s and sha %s ", githubAppConfig.getGithubUrl(), sha), e);
     }
   }
 

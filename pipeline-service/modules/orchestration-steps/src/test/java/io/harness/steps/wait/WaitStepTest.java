@@ -12,6 +12,8 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static junit.framework.TestCase.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import io.harness.OrchestrationStepsTestBase;
 import io.harness.annotations.dev.HarnessTeam;
@@ -22,6 +24,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.sdk.core.execution.SdkGraphVisualizationDataService;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
@@ -42,6 +45,7 @@ import org.mockito.Mock;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class WaitStepTest extends OrchestrationStepsTestBase {
   @Mock WaitStepService waitStepService;
+  @Mock SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
   @InjectMocks WaitStep waitStep;
   Ambiance ambiance;
   WaitStepParameters waitStepParameters;
@@ -60,19 +64,51 @@ public class WaitStepTest extends OrchestrationStepsTestBase {
   @Test
   @Owner(developers = OwnerRule.SHALINI)
   @Category(UnitTests.class)
-  public void testHandleAsyncResponse() {
+  public void testHandleAsyncResponseTimeout() {
     String correlationId = generateUuid();
     WaitStepInstance waitStepInstance = WaitStepInstance.builder().waitStepInstanceId(correlationId).build();
     doReturn(Optional.of(waitStepInstance)).when(waitStepService).findByNodeExecutionId(nodeExecutionId);
     Map<String, ResponseData> responseDataMap = new HashMap<>();
     StepResponse response = waitStep.handleAsyncResponse(ambiance, stepElementParameters, responseDataMap);
+    WaitStepDetailsInfo waitStepDetailsInfo =
+        WaitStepDetailsInfo.builder().actionTaken(WaitStepStatus.TIMED_OUT).build();
     assertEquals(response.getStatus(), Status.SUCCEEDED);
-    responseDataMap.put(correlationId, WaitStepResponseData.builder().action(WaitStepAction.MARK_AS_FAIL).build());
-    response = waitStep.handleAsyncResponse(ambiance, stepElementParameters, responseDataMap);
-    assertEquals(response.getStatus(), Status.FAILED);
+    verify(sdkGraphVisualizationDataService, times(1))
+        .publishStepDetailInformation(ambiance, waitStepDetailsInfo, "waitStepActionTaken");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.SHALINI)
+  @Category(UnitTests.class)
+  public void testHandleAsyncResponseMarkedAsSuccess() {
+    String correlationId = generateUuid();
+    WaitStepInstance waitStepInstance = WaitStepInstance.builder().waitStepInstanceId(correlationId).build();
+    doReturn(Optional.of(waitStepInstance)).when(waitStepService).findByNodeExecutionId(nodeExecutionId);
+    Map<String, ResponseData> responseDataMap = new HashMap<>();
     responseDataMap.put(correlationId, WaitStepResponseData.builder().action(WaitStepAction.MARK_AS_SUCCESS).build());
-    response = waitStep.handleAsyncResponse(ambiance, stepElementParameters, responseDataMap);
+    StepResponse response = waitStep.handleAsyncResponse(ambiance, stepElementParameters, responseDataMap);
+    WaitStepDetailsInfo waitStepDetailsInfo =
+        WaitStepDetailsInfo.builder().actionTaken(WaitStepStatus.MARKED_AS_SUCCESS).build();
     assertEquals(response.getStatus(), Status.SUCCEEDED);
+    verify(sdkGraphVisualizationDataService, times(1))
+        .publishStepDetailInformation(ambiance, waitStepDetailsInfo, "waitStepActionTaken");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.SHALINI)
+  @Category(UnitTests.class)
+  public void testHandleAsyncResponseMarkedAsFail() {
+    String correlationId = generateUuid();
+    WaitStepInstance waitStepInstance = WaitStepInstance.builder().waitStepInstanceId(correlationId).build();
+    doReturn(Optional.of(waitStepInstance)).when(waitStepService).findByNodeExecutionId(nodeExecutionId);
+    Map<String, ResponseData> responseDataMap = new HashMap<>();
+    responseDataMap.put(correlationId, WaitStepResponseData.builder().action(WaitStepAction.MARK_AS_FAIL).build());
+    StepResponse response = waitStep.handleAsyncResponse(ambiance, stepElementParameters, responseDataMap);
+    WaitStepDetailsInfo waitStepDetailsInfo =
+        WaitStepDetailsInfo.builder().actionTaken(WaitStepStatus.MARKED_AS_FAIL).build();
+    assertEquals(response.getStatus(), Status.FAILED);
+    verify(sdkGraphVisualizationDataService, times(1))
+        .publishStepDetailInformation(ambiance, waitStepDetailsInfo, "waitStepActionTaken");
   }
 
   @Test

@@ -721,6 +721,30 @@ if [[ "" != "$REDIS_URL" ]]; then
   export REDIS_URL; yq -i '.singleServerConfig.address=env(REDIS_URL)' $REDISSON_CACHE_FILE
 fi
 
+if [[ "" != "$REDIS_CONNECTION_POOL_SIZE" ]]; then
+  export REDIS_CONNECTION_POOL_SIZE; yq -i '.redisLockConfig.connectionPoolSize=env(REDIS_CONNECTION_POOL_SIZE)' $CONFIG_FILE
+  export REDIS_CONNECTION_POOL_SIZE; yq -i '.redisAtmosphereConfig.connectionPoolSize=env(REDIS_CONNECTION_POOL_SIZE)' $CONFIG_FILE
+  export REDIS_CONNECTION_POOL_SIZE; yq -i '.singleServerConfig.connectionPoolSize=env(REDIS_CONNECTION_POOL_SIZE)' $REDISSON_CACHE_FILE
+fi
+
+if [[ "" != "$REDIS_RETRY_INTERVAL" ]]; then
+  export REDIS_RETRY_INTERVAL; yq -i '.redisLockConfig.retryInterval=env(REDIS_RETRY_INTERVAL)' $CONFIG_FILE
+  export REDIS_RETRY_INTERVAL; yq -i '.redisAtmosphereConfig.retryInterval=env(REDIS_RETRY_INTERVAL)' $CONFIG_FILE
+  export REDIS_RETRY_INTERVAL; yq -i '.singleServerConfig.retryInterval=env(REDIS_RETRY_INTERVAL)' $REDISSON_CACHE_FILE
+fi
+
+if [[ "" != "$REDIS_RETRY_ATTEMPTS" ]]; then
+  export REDIS_RETRY_ATTEMPTS; yq -i '.redisLockConfig.retryAttempts=env(REDIS_RETRY_ATTEMPTS)' $CONFIG_FILE
+  export REDIS_RETRY_ATTEMPTS; yq -i '.redisAtmosphereConfig.retryAttempts=env(REDIS_RETRY_ATTEMPTS)' $CONFIG_FILE
+  export REDIS_RETRY_ATTEMPTS; yq -i '.singleServerConfig.retryAttempts=env(REDIS_RETRY_ATTEMPTS)' $REDISSON_CACHE_FILE
+fi
+
+if [[ "" != "$REDIS_TIMEOUT" ]]; then
+  export REDIS_TIMEOUT; yq -i '.redisLockConfig.timeout=env(REDIS_TIMEOUT)' $CONFIG_FILE
+  export REDIS_TIMEOUT; yq -i '.redisAtmosphereConfig.timeout=env(REDIS_TIMEOUT)' $CONFIG_FILE
+  export REDIS_TIMEOUT; yq -i '.singleServerConfig.timeout=env(REDIS_TIMEOUT)' $REDISSON_CACHE_FILE
+fi
+
 if [[ "$REDIS_SENTINEL" == "true" ]]; then
   yq -i '.redisLockConfig.sentinel=true' $CONFIG_FILE
   yq -i '.redisAtmosphereConfig.sentinel=true' $CONFIG_FILE
@@ -793,14 +817,6 @@ if [[ "" != "$MIGRATE_TO_JRE" ]]; then
   export MIGRATE_TO_JRE; yq -i '.migrateToJre=env(MIGRATE_TO_JRE)' $CONFIG_FILE
 fi
 
-if [[ "" != "$ORACLE_JRE_TAR_PATH" ]]; then
-  export ORACLE_JRE_TAR_PATH; yq -i '.jreConfigs.oracle8u191.jreTarPath=env(ORACLE_JRE_TAR_PATH)' $CONFIG_FILE
-fi
-
-if [[ "" != "$OPENJDK_JRE_TAR_PATH" ]]; then
-  export OPENJDK_JRE_TAR_PATH; yq -i '.jreConfigs.openjdk8u242.jreTarPath=env(OPENJDK_JRE_TAR_PATH)' $CONFIG_FILE
-fi
-
 if [[ "" != "$CDN_URL" ]]; then
   export CDN_URL; yq -i '.cdnConfig.url=env(CDN_URL)' $CONFIG_FILE
 fi
@@ -827,14 +843,6 @@ fi
 
 if [[ "" != "$CDN_WATCHER_METADATA_FILE_PATH" ]]; then
   export CDN_WATCHER_METADATA_FILE_PATH; yq -i '.cdnConfig.watcherMetaDataFilePath=env(CDN_WATCHER_METADATA_FILE_PATH)' $CONFIG_FILE
-fi
-
-if [[ "" != "$CDN_ORACLE_JRE_TAR_PATH" ]]; then
-  export CDN_ORACLE_JRE_TAR_PATH; yq -i '.cdnConfig.cdnJreTarPaths.oracle8u191=env(CDN_ORACLE_JRE_TAR_PATH)' $CONFIG_FILE
-fi
-
-if [[ "" != "$CDN_OPENJDK_JRE_TAR_PATH" ]]; then
-  export CDN_OPENJDK_JRE_TAR_PATH; yq -i '.cdnConfig.cdnJreTarPaths.openjdk8u242=env(CDN_OPENJDK_JRE_TAR_PATH)' $CONFIG_FILE
 fi
 
 if [[ "" != "$COMMAND_LIBRARY_SERVICE_BASE_URL" ]]; then
