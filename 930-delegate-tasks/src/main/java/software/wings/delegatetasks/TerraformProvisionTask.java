@@ -396,6 +396,10 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
               commandToLog = command;
               saveExecutionLog(commandToLog, CommandExecutionStatus.RUNNING, INFO, logCallback);
               code = executeShellCommand(command, scriptDirectory, parameters, envVars, activityLogOutputStream);
+              if (code != 0) {
+                saveExecutionLog(format("Unable to create the new Workspace %s", parameters.getWorkspace()),
+                    CommandExecutionStatus.RUNNING, WARN, logCallback);
+              }
             }
             if (code == 0 && !shouldSkipRefresh(parameters)) {
               command = format("terraform refresh -input=false %s %s ", targetArgs, varParams);
