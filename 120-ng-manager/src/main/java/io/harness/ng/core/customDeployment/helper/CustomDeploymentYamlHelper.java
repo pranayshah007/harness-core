@@ -77,17 +77,17 @@ public class CustomDeploymentYamlHelper {
     JsonNode yamlMap = yamlConfig.getYamlMap();
     JsonNode infraDef = yamlMap.get("infrastructureDefinition");
     try {
-      if (infraDef.isNull()) {
+      if (isNull(infraDef)) {
         log.error("Infra definition is null in yaml for account id :{}", accountId);
         throw new InvalidRequestException("Infra definition is null in yaml");
       }
       JsonNode spec = infraDef.get("spec");
-      if (spec.isNull()) {
+      if (isNull(spec)) {
         log.error("spec is null in yaml for account id :{}", accountId);
         throw new InvalidRequestException("Infra definition spec is null in yaml");
       }
       JsonNode customDeploymentRef = spec.get("customDeploymentRef");
-      if (customDeploymentRef.isNull()) {
+      if (isNull(customDeploymentRef)) {
         log.error("customDeploymentRef is null in yaml for account id :{}", accountId);
         throw new InvalidRequestException("customDeploymentRef is null in yaml");
       }
@@ -129,12 +129,12 @@ public class CustomDeploymentYamlHelper {
     JsonNode yamlMap = yamlConfig.getYamlMap();
     JsonNode infraDef = yamlMap.get("infrastructureDefinition");
     try {
-      if (infraDef.isNull()) {
+      if (isNull(infraDef)) {
         log.error("Infra definition is null in yaml for account id :{}", infraEntity.getAccountId());
         throw new InvalidRequestException("Infra definition is null in yaml");
       }
       JsonNode spec = infraDef.get("spec");
-      if (spec.isNull()) {
+      if (isNull(spec)) {
         log.error("spec is null in yaml for account id :{}", infraEntity.getAccountId());
         throw new InvalidRequestException("Infra definition spec is null in yaml");
       }
@@ -144,7 +144,7 @@ public class CustomDeploymentYamlHelper {
         return variables;
       }
       for (JsonNode variable : infraVariables) {
-        if (variable.isNull() || isEmpty(variable.get("name").toString()) || isEmpty(variable.get("type").toString())) {
+        if (isNull(variable) || isEmpty(variable.get("name").toString()) || isEmpty(variable.get("type").toString())) {
           throw new InvalidRequestException("Infrastructure yaml is not valid");
         }
         variables.put(variable.get("name").asText(), variable.get("type").asText());
@@ -280,29 +280,29 @@ public class CustomDeploymentYamlHelper {
     try {
       YamlConfig templateConfig = new YamlConfig(templateYaml);
       JsonNode templateNode = templateConfig.getYamlMap().get("template");
-      if (templateNode.isNull()) {
+      if (isNull(templateNode)) {
         log.info("Error encountered while updating infra, template node is null for accId :{}", accId);
         throw new InvalidRequestException("template yaml cannot be empty");
       }
       JsonNode templateSpecNode = templateNode.get("spec");
-      if (templateSpecNode.isNull()) {
+      if (isNull(templateSpecNode)) {
         log.info("Error encountered while updating infra, template spec node is null for accId :{}", accId);
         throw new InvalidRequestException("template yaml spec cannot be empty");
       }
       JsonNode templateInfraNode = templateSpecNode.get("infrastructure");
-      if (templateInfraNode.isNull()) {
+      if (isNull(templateInfraNode)) {
         log.info("Error encountered while updating infra, template infrastructure node is null for accId :{}", accId);
         throw new InvalidRequestException("template yaml infra cannot be empty");
       }
 
       YamlConfig infraYamlConfig = new YamlConfig(infraYaml);
       JsonNode infraNode = infraYamlConfig.getYamlMap().get("infrastructureDefinition");
-      if (infraNode.isNull()) {
+      if (isNull(infraNode)) {
         log.info("Error encountered while updating infra, infra node is null for accId :{}", accId);
         throw new InvalidRequestException("infra yaml cannot be empty");
       }
       JsonNode infraSpecNode = infraNode.get("spec");
-      if (infraSpecNode.isNull()) {
+      if (isNull(infraSpecNode)) {
         log.info("Error encountered while updating infra, infra spec node is null for accId :{}", accId);
         throw new InvalidRequestException("infra yaml spec cannot be empty");
       }
