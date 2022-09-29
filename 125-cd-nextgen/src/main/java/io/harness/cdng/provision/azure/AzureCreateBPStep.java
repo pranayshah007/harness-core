@@ -35,7 +35,9 @@ import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
+import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
+import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.azure.arm.AzureBlueprintTaskNGParameters;
 import io.harness.delegate.task.azure.arm.AzureBlueprintTaskNGResponse;
@@ -231,7 +233,7 @@ public class AzureCreateBPStep extends TaskChainExecutableWithRollbackAndRbac {
           ParameterField.createValueField(azureCreateBPStepConfigurationParameters.getConnectorRef().getValue()));
 
       AzureResourceCreationTaskNGParameters azureTaskNGParameters =
-          getAzureTaskNGParams(ambiance, stepParameters, azureConnectorDTO, passThroughData);
+          getAzureTaskNGParams(ambiance, stepParameters, azureConnectorDTO, passThroughData, null);
       return executeCreateTask(ambiance, stepParameters, azureTaskNGParameters, passThroughData);
     }
     throw new InvalidRequestException("Unsupported Store type");
@@ -251,11 +253,11 @@ public class AzureCreateBPStep extends TaskChainExecutableWithRollbackAndRbac {
             .timeout(StepUtils.getTimeoutMillis(stepParameters.getTimeout(), AzureCommonHelper.DEFAULT_TIMEOUT))
             .parameters(new Object[] {parameters})
             .build();
-    final TaskRequest taskRequest = StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-        getCommandUnits(false), TaskType.AZURE_NG_ARM.getDisplayName(),
-        TaskSelectorYaml.toTaskSelector(
-            ((AzureCreateBPStepParameters) stepParameters.getSpec()).getDelegateSelectors()),
-        stepHelper.getEnvironmentType(ambiance));
+    final TaskRequest taskRequest =
+        StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer, getCommandUnits(false), "Azure Blueprint",
+            TaskSelectorYaml.toTaskSelector(
+                ((AzureCreateBPStepParameters) stepParameters.getSpec()).getDelegateSelectors()),
+            stepHelper.getEnvironmentType(ambiance));
 
     return TaskChainResponse.builder().taskRequest(taskRequest).passThroughData(passThroughData).chainEnd(true).build();
   }
@@ -274,7 +276,8 @@ public class AzureCreateBPStep extends TaskChainExecutableWithRollbackAndRbac {
   }
 
   private AzureResourceCreationTaskNGParameters getAzureTaskNGParams(Ambiance ambiance,
-      StepElementParameters stepElementParameters, AzureConnectorDTO connectorConfig, PassThroughData passThroughData) {
+      StepElementParameters stepElementParameters, AzureConnectorDTO connectorConfig, PassThroughData passThroughData,
+      CommandUnitsProgress commandUnitProgress) {
     AzureCreateBPStepParameters azureCreateStepParameters =
         (AzureCreateBPStepParameters) stepElementParameters.getSpec();
     AzureCreateBPPassThroughData azureCreateBPPassThroughData = (AzureCreateBPPassThroughData) passThroughData;
@@ -290,6 +293,7 @@ public class AzureCreateBPStep extends TaskChainExecutableWithRollbackAndRbac {
         .assignmentName(azureCreateStepParameters.getConfiguration().getAssignmentName().getValue())
         .encryptedDataDetailList(azureCommonHelper.getAzureEncryptionDetails(ambiance, connectorConfig))
         .scope(azureCreateStepParameters.getConfiguration().getScope().toString())
+        .commandUnitsProgress(commandUnitProgress)
         .build();
   }
   private void populatePassThroughData(AzureCreateBPPassThroughData passThroughData, String blueprintBody,
@@ -327,7 +331,8 @@ public class AzureCreateBPStep extends TaskChainExecutableWithRollbackAndRbac {
         ambiance, ParameterField.createValueField(spec.getConfiguration().getConnectorRef().getValue()));
 
     AzureResourceCreationTaskNGParameters azureTaskNGParameters =
-        getAzureTaskNGParams(ambiance, stepElementParameters, connectorDTO, passThroughData);
+        getAzureTaskNGParams(ambiance, stepElementParameters, connectorDTO, passThroughData,
+            UnitProgressDataMapper.toCommandUnitsProgress(responseData.getUnitProgressData()));
     return executeCreateTask(ambiance, stepElementParameters, azureTaskNGParameters, passThroughData);
   }
 
