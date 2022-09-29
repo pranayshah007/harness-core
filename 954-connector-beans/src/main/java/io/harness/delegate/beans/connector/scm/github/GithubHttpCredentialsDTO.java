@@ -7,6 +7,8 @@
 
 package io.harness.delegate.beans.connector.scm.github;
 
+import io.harness.annotation.RecasterFieldName;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -30,6 +32,7 @@ import lombok.experimental.FieldDefaults;
 public class GithubHttpCredentialsDTO implements GithubCredentialsDTO {
   @NotNull GithubHttpAuthenticationType type;
 
+  @RecasterFieldName(name = "spec")
   @JsonProperty("spec")
   @JsonTypeInfo(
       use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXTERNAL_PROPERTY, visible = true)

@@ -14,6 +14,7 @@ import io.harness.ngsettings.entities.Setting;
 import io.harness.ngsettings.entities.Setting.SettingKeys;
 
 import com.google.inject.Inject;
+import com.mongodb.client.result.DeleteResult;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -46,5 +47,10 @@ public class SettingRepositoryCustomImpl implements SettingRepositoryCustom {
   public List<Setting> findAll(Criteria criteria) {
     Query query = new Query(criteria);
     return mongoTemplate.find(query, Setting.class);
+  }
+
+  public DeleteResult delete(Criteria criteria) {
+    Query query = new Query(criteria);
+    return mongoTemplate.remove(query, Setting.class);
   }
 }

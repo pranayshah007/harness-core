@@ -364,9 +364,9 @@ public class CDLandingDashboardServiceImpl implements CDLandingDashboardService 
     }
     Table<Record2<String, String>> orgProjectTable = getOrgProjectTable(orgProjectIdentifiers);
 
-    List<String> requiredStatuses =
-        new ArrayList<>(Arrays.asList(ExecutionStatus.APPROVAL_WAITING.name(), ExecutionStatus.APPROVALWAITING.name(),
-            ExecutionStatus.INTERVENTION_WAITING.name(), ExecutionStatus.INTERVENTIONWAITING.name()));
+    List<String> requiredStatuses = new ArrayList<>(Arrays.asList(ExecutionStatus.APPROVAL_WAITING.name(),
+        ExecutionStatus.APPROVALWAITING.name(), ExecutionStatus.WAITSTEPRUNNING.name(),
+        ExecutionStatus.INTERVENTION_WAITING.name(), ExecutionStatus.INTERVENTIONWAITING.name()));
     requiredStatuses.addAll(io.harness.ng.overview.service.CDOverviewDashboardServiceImpl.activeStatusList);
 
     List<PipelineExecutionSummaryCd> executionsList =

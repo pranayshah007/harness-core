@@ -10,6 +10,7 @@ package io.harness.ng.core.migration;
 import io.harness.migration.MigrationDetails;
 import io.harness.migration.NGMigration;
 import io.harness.migration.beans.MigrationType;
+import io.harness.ng.core.migration.tasks.CreateInfrastructureTimeScaleTable;
 import io.harness.ng.core.migration.tasks.CreateOrganizationTimeScaleTable;
 import io.harness.ng.core.migration.tasks.CreateTagsTimeScaleTable;
 
@@ -33,6 +34,7 @@ public class NGBeansTimeScaleMigrationDetails implements MigrationDetails {
     return new ImmutableList.Builder<Pair<Integer, Class<? extends NGMigration>>>()
         .add(Pair.of(1, CreateOrganizationTimeScaleTable.class))
         .add(Pair.of(2, CreateTagsTimeScaleTable.class))
+        .add(Pair.of(3, CreateInfrastructureTimeScaleTable.class))
         .build();
   }
 }

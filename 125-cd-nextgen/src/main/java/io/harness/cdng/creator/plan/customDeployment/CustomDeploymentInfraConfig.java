@@ -9,13 +9,13 @@ package io.harness.cdng.creator.plan.customDeployment;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.customdeployment.CustomDeploymentNGVariable;
 import io.harness.cdng.visitor.helpers.customDeployment.CustomDeploymentVisitorHelper;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.beans.VisitableChild;
 import io.harness.walktree.beans.VisitableChildren;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
-import io.harness.yaml.core.variables.NGVariable;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -47,7 +47,7 @@ public class CustomDeploymentInfraConfig implements Visitable {
   @ApiModelProperty(hidden = true)
   String uuid;
 
-  @Wither List<NGVariable> variables;
+  @Wither List<CustomDeploymentNGVariable> variables;
   @NotNull @NotEmpty @Wither List<CustomDeploymentInstanceAttributes> instanceAttributes;
   @NotNull @NotEmpty @Wither CustomDeploymentFetchInstancesScriptConfig fetchInstancesScript;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Harness Inc. All rights reserved.
+ * Copyright 2022 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
@@ -14,35 +14,68 @@ import io.harness.data.structure.UUIDGenerator;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.sdk.core.execution.SdkGraphVisualizationDataService;
 import io.harness.pms.sdk.core.steps.executables.AsyncExecutable;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.tasks.ResponseData;
+import io.harness.wait.WaitStepInstance;
 
+import com.google.inject.Inject;
 import java.util.Map;
 
-// TODO(Shalini): Adding basic skeleton. Implement the methods later.
 @OwnedBy(PIPELINE)
 public class WaitStep implements AsyncExecutable<StepElementParameters> {
-  public static final StepType STEP_TYPE = StepSpecTypeConstants.HARNESS_APPROVAL_STEP_TYPE;
+  public static final StepType STEP_TYPE = StepSpecTypeConstants.WAIT_STEP_TYPE;
+  @Inject WaitStepService waitStepService;
+  @Inject SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
 
   @Override
   public AsyncExecutableResponse executeAsync(Ambiance ambiance, StepElementParameters stepParameters,
       StepInputPackage inputPackage, PassThroughData passThroughData) {
     String correlationId = UUIDGenerator.generateUuid();
-    // Store correlationId and NodeExecutionId together in DB collection to retrieve correlationId from nodeExecutionId.
-    // get the duration from stepParameters.
-    return AsyncExecutableResponse.newBuilder().addCallbackIds(correlationId).setTimeout(3600).build();
+    WaitStepParameters waitStepParameters = (WaitStepParameters) stepParameters.getSpec();
+    int duration = (int) waitStepParameters.duration.getValue().getTimeoutInMillis();
+    waitStepService.save(WaitStepInstance.builder()
+                             .waitStepInstanceId(correlationId)
+                             .duration(duration)
+                             .createdAt(System.currentTimeMillis())
+                             .nodeExecutionId(AmbianceUtils.obtainCurrentRuntimeId(ambiance))
+                             .build());
+    return AsyncExecutableResponse.newBuilder().addCallbackIds(correlationId).setTimeout(duration).build();
   }
 
   @Override
   public StepResponse handleAsyncResponse(
       Ambiance ambiance, StepElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {
-    // Get status of wait from responseDataMap and create stepResponse based on that.
-    return null;
+    String nodeExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
+    String correlationId = waitStepService.findByNodeExecutionId(nodeExecutionId).get().getWaitStepInstanceId();
+    if (responseDataMap.get(correlationId) instanceof WaitStepResponseData) {
+      if (((WaitStepResponseData) responseDataMap.get(correlationId)).action == WaitStepAction.MARK_AS_FAIL) {
+        WaitStepDetailsInfo waitStepDetailsInfo =
+            WaitStepDetailsInfo.builder().actionTaken(WaitStepStatus.MARKED_AS_FAIL).build();
+        sdkGraphVisualizationDataService.publishStepDetailInformation(
+            ambiance, waitStepDetailsInfo, "waitStepActionTaken");
+        return StepResponse.builder().status(Status.FAILED).build();
+      } else {
+        WaitStepDetailsInfo waitStepDetailsInfo =
+            WaitStepDetailsInfo.builder().actionTaken(WaitStepStatus.MARKED_AS_SUCCESS).build();
+        sdkGraphVisualizationDataService.publishStepDetailInformation(
+            ambiance, waitStepDetailsInfo, "waitStepActionTaken");
+        return StepResponse.builder().status(Status.SUCCEEDED).build();
+      }
+    } else {
+      WaitStepDetailsInfo waitStepDetailsInfo =
+          WaitStepDetailsInfo.builder().actionTaken(WaitStepStatus.TIMED_OUT).build();
+      sdkGraphVisualizationDataService.publishStepDetailInformation(
+          ambiance, waitStepDetailsInfo, "waitStepActionTaken");
+      return StepResponse.builder().status(Status.SUCCEEDED).build();
+    }
   }
 
   @Override

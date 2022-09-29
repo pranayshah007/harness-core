@@ -1,0 +1,15 @@
+failureStrategies:
+  - onFailure:
+      errors:
+        - AllErrors
+      action:
+        type: StageRollback
+spec:
+  execution:
+    steps:
+      - step:
+          name: "Fetch Instances"
+          identifier: fetchInstances
+          type: FetchInstanceScript
+          timeout: 10m
+          spec: {}

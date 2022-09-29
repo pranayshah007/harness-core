@@ -8,6 +8,7 @@
 package io.harness.cdng.artifact.mappers;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifact.ArtifactMetadataKeys;
@@ -23,6 +24,9 @@ import io.harness.cdng.artifact.bean.yaml.GithubPackagesArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig;
 import io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.customartifact.CustomScriptInlineSource;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.Nexus2RegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryDockerConfig;
 import io.harness.cdng.artifact.outcome.AcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
@@ -87,6 +91,10 @@ public class ArtifactResponseToOutcomeMapper {
         NexusRegistryArtifactConfig nexusRegistryArtifactConfig = (NexusRegistryArtifactConfig) artifactConfig;
         NexusArtifactDelegateResponse nexusDelegateResponse = (NexusArtifactDelegateResponse) artifactDelegateResponse;
         return getNexusArtifactOutcome(nexusRegistryArtifactConfig, nexusDelegateResponse, useDelegateResponse);
+      case NEXUS2_REGISTRY:
+        Nexus2RegistryArtifactConfig nexus2RegistryArtifactConfig = (Nexus2RegistryArtifactConfig) artifactConfig;
+        NexusArtifactDelegateResponse nexus2DelegateResponse = (NexusArtifactDelegateResponse) artifactDelegateResponse;
+        return getNexus2ArtifactOutcome(nexus2RegistryArtifactConfig, nexus2DelegateResponse, useDelegateResponse);
       case ARTIFACTORY_REGISTRY:
         ArtifactOutcome artifactOutcome = null;
         ArtifactoryRegistryArtifactConfig artifactoryRegistryArtifactConfig =
@@ -119,9 +127,17 @@ public class ArtifactResponseToOutcomeMapper {
       case CUSTOM_ARTIFACT:
         CustomArtifactConfig customArtifactConfig = (CustomArtifactConfig) artifactConfig;
         if (customArtifactConfig.getScripts() != null) {
-          CustomArtifactDelegateResponse customArtifactDelegateResponse =
-              (CustomArtifactDelegateResponse) artifactDelegateResponse;
-          return getCustomArtifactOutcome(customArtifactConfig, customArtifactDelegateResponse);
+          CustomScriptInlineSource customScriptInlineSource =
+              (CustomScriptInlineSource) customArtifactConfig.getScripts()
+                  .getFetchAllArtifacts()
+                  .getShellScriptBaseStepInfo()
+                  .getSource()
+                  .getSpec();
+          if (isNotEmpty(customScriptInlineSource.getScript().getValue())) {
+            CustomArtifactDelegateResponse customArtifactDelegateResponse =
+                (CustomArtifactDelegateResponse) artifactDelegateResponse;
+            return getCustomArtifactOutcome(customArtifactConfig, customArtifactDelegateResponse);
+          }
         }
         return getCustomArtifactOutcome(customArtifactConfig);
       case AMAZONS3:
@@ -253,17 +269,43 @@ public class ArtifactResponseToOutcomeMapper {
 
   private NexusArtifactOutcome getNexusArtifactOutcome(NexusRegistryArtifactConfig artifactConfig,
       NexusArtifactDelegateResponse artifactDelegateResponse, boolean useDelegateResponse) {
+    String artifactPath = null;
+    if (artifactConfig.getRepositoryFormat().getValue().equalsIgnoreCase("docker")) {
+      NexusRegistryDockerConfig nexusRegistryDockerConfig =
+          (NexusRegistryDockerConfig) artifactConfig.getNexusRegistryConfigSpec();
+      artifactPath = nexusRegistryDockerConfig.getArtifactPath() != null
+          ? nexusRegistryDockerConfig.getArtifactPath().getValue()
+          : null;
+    }
     return NexusArtifactOutcome.builder()
         .repositoryName(artifactConfig.getRepository().getValue())
         .image(getImageValue(artifactDelegateResponse))
         .connectorRef(artifactConfig.getConnectorRef().getValue())
-        .artifactPath(artifactConfig.getArtifactPath().getValue())
+        .artifactPath(artifactPath)
         .repositoryFormat(artifactConfig.getRepositoryFormat().getValue())
         .tag(useDelegateResponse ? artifactDelegateResponse.getTag()
                                  : (artifactConfig.getTag() != null ? artifactConfig.getTag().getValue() : null))
         .tagRegex(artifactConfig.getTagRegex() != null ? artifactConfig.getTagRegex().getValue() : null)
         .identifier(artifactConfig.getIdentifier())
         .type(ArtifactSourceType.NEXUS3_REGISTRY.getDisplayName())
+        .primaryArtifact(artifactConfig.isPrimaryArtifact())
+        .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(artifactConfig)))
+        .registryHostname(getRegistryHostnameValue(artifactDelegateResponse))
+        .build();
+  }
+
+  private NexusArtifactOutcome getNexus2ArtifactOutcome(Nexus2RegistryArtifactConfig artifactConfig,
+      NexusArtifactDelegateResponse artifactDelegateResponse, boolean useDelegateResponse) {
+    return NexusArtifactOutcome.builder()
+        .repositoryName(artifactConfig.getRepository().getValue())
+        .image(getImageValue(artifactDelegateResponse))
+        .connectorRef(artifactConfig.getConnectorRef().getValue())
+        .repositoryFormat(artifactConfig.getRepositoryFormat().getValue())
+        .tag(useDelegateResponse ? artifactDelegateResponse.getTag()
+                                 : (artifactConfig.getTag() != null ? artifactConfig.getTag().getValue() : null))
+        .tagRegex(artifactConfig.getTagRegex() != null ? artifactConfig.getTagRegex().getValue() : null)
+        .identifier(artifactConfig.getIdentifier())
+        .type(ArtifactSourceType.NEXUS2_REGISTRY.getDisplayName())
         .primaryArtifact(artifactConfig.isPrimaryArtifact())
         .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(artifactConfig)))
         .registryHostname(getRegistryHostnameValue(artifactDelegateResponse))
@@ -318,6 +360,7 @@ public class ArtifactResponseToOutcomeMapper {
         .identifier(artifactConfig.getIdentifier())
         .type(ArtifactSourceType.ARTIFACTORY_REGISTRY.getDisplayName())
         .primaryArtifact(artifactConfig.isPrimaryArtifact())
+        .metadata(artifactDelegateResponse.getBuildDetails().getMetadata())
         .build();
   }
 
@@ -366,6 +409,7 @@ public class ArtifactResponseToOutcomeMapper {
         .type(ArtifactSourceType.JENKINS.getDisplayName())
         .identifier(jenkinsArtifactConfig.getIdentifier())
         .primaryArtifact(jenkinsArtifactConfig.isPrimaryArtifact())
+        .metadata(jenkinsArtifactDelegateResponse.getBuildDetails().getMetadata())
         .build();
   }
 

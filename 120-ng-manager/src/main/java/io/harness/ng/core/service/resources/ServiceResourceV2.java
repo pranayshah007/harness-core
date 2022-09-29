@@ -103,6 +103,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -143,6 +144,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
               schema = @Schema(implementation = ErrorDTO.class))
     })
 @OwnedBy(HarnessTeam.CDC)
+@Slf4j
 public class ServiceResourceV2 {
   private final ServiceEntityService serviceEntityService;
   private final AccessControlClient accessControlClient;
@@ -392,7 +394,9 @@ public class ServiceResourceV2 {
           description =
               "Specifies the sorting criteria of the list. Like sorting based on the last updated entity, alphabetical sorting in an ascending or descending order")
       @QueryParam("sort") List<String> sort,
-      @QueryParam("type") ServiceDefinitionType type, @QueryParam("gitOpsEnabled") Boolean gitOpsEnabled) {
+      @QueryParam("type") ServiceDefinitionType type, @QueryParam("gitOpsEnabled") Boolean gitOpsEnabled,
+      @QueryParam("deploymentTemplateIdentifier") String deploymentTemplateIdentifier,
+      @QueryParam("versionLabel") String versionLabel) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
         Resource.of(PROJECT, projectIdentifier), VIEW_PROJECT_PERMISSION, "Unauthorized to list services");
 
@@ -401,10 +405,20 @@ public class ServiceResourceV2 {
     if (isNotEmpty(serviceIdentifiers)) {
       criteria.and(ServiceEntityKeys.identifier).in(serviceIdentifiers);
     }
-    List<ServiceResponse> serviceList = serviceEntityService.listRunTimePermission(criteria)
-                                            .stream()
-                                            .map(ServiceElementMapper::toAccessListResponseWrapper)
-                                            .collect(Collectors.toList());
+    List<ServiceResponse> serviceList;
+    if (type == ServiceDefinitionType.CUSTOM_DEPLOYMENT && !isEmpty(deploymentTemplateIdentifier)
+        && !isEmpty(versionLabel)) {
+      serviceList = serviceEntityService.listRunTimePermission(criteria)
+                        .stream()
+                        .filter(serviceEntity -> isDTService(deploymentTemplateIdentifier, versionLabel, serviceEntity))
+                        .map(ServiceElementMapper::toAccessListResponseWrapper)
+                        .collect(Collectors.toList());
+    } else {
+      serviceList = serviceEntityService.listRunTimePermission(criteria)
+                        .stream()
+                        .map(ServiceElementMapper::toAccessListResponseWrapper)
+                        .collect(Collectors.toList());
+    }
     List<PermissionCheckDTO> permissionCheckDTOS =
         serviceList.stream().map(CDNGRbacUtility::serviceResponseToPermissionCheckDTO).collect(Collectors.toList());
     List<AccessControlDTO> accessControlList =
@@ -496,9 +510,13 @@ public class ServiceResourceV2 {
 
   private ServiceV2YamlMetadata createServiceV2YamlMetadata(ServiceEntity serviceEntity) {
     if (isBlank(serviceEntity.getYaml())) {
-      throw new InvalidRequestException(
-          format("Service with identifier %s is not configured with a Service definition. Service Yaml is empty",
-              serviceEntity.getIdentifier()));
+      log.info("Service with identifier {} is not configured with a Service definition. Service Yaml is empty",
+          serviceEntity.getIdentifier());
+      return ServiceV2YamlMetadata.builder()
+          .serviceIdentifier(serviceEntity.getIdentifier())
+          .serviceYaml("")
+          .inputSetTemplateYaml("")
+          .build();
     }
 
     final String serviceInputSetYaml =
@@ -588,7 +606,7 @@ public class ServiceResourceV2 {
         if (!isNull(serviceSpec)) {
           JsonNode customDeploymentRef = serviceSpec.get("customDeploymentRef");
           if (!isNull(customDeploymentRef)) {
-            JsonNode ref = customDeploymentRef.get("ref");
+            JsonNode ref = customDeploymentRef.get("templateRef");
             JsonNode versionLabelNode = customDeploymentRef.get("versionLabel");
             return ref.asText().equals(deploymentTemplateIdentifier) && versionLabelNode.asText().equals(versionLabel);
           }

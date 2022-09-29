@@ -14,6 +14,7 @@ spec:
           timeout: 10m
           spec:
             skipDryRun: false
+            pruningEnabled: false
       - step:
           type: Verify
           name: Verify
@@ -26,4 +27,5 @@ spec:
           identifier: rollbackRolloutDeployment
           type: K8sRollingRollback
           timeout: 10m
-          spec: {}
+          spec:
+            pruningEnabled: false

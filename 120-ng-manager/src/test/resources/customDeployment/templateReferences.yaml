@@ -1,0 +1,37 @@
+customDeployment:
+  infrastructure:
+    variables:
+      - name: clusterUrl
+        type: String
+        value: <+input>
+      - name: accountConnector
+        type: Connector
+        value: account.accountConnector
+        description: "accountConnector"
+      - name: orgConnector
+        type: Connector
+        value: org.orgConnector
+        description: "orgConnector"
+      - name: projectConnector
+        type: Connector
+        value: projectConnector
+        description: "projectConnector"
+    fetchInstancesScript:
+      store:
+        type: Harness
+        spec:
+          files:
+            - account:/manifest.yml
+    instancesListPath: instances
+    instanceAttributes:
+      - name: hostName
+        jsonPath: <+input>
+        description: "IP address of the host"
+  execution:
+    stepTemplateRefs:
+      - templateRef: account.accountTemplate
+        versionLabel: v1
+      - templateRef: org.orgTemplate
+        versionLabel: v2
+      - templateRef: projectTemplate
+        versionLabel: v3

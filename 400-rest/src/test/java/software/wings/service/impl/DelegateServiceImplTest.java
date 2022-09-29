@@ -31,7 +31,6 @@ import static io.harness.rule.OwnerRule.VLAD;
 import static io.harness.rule.OwnerRule.VUK;
 
 import static software.wings.utils.Utils.uuidToIdentifier;
-import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.DELEGATE_ID;
 import static software.wings.utils.WingsTestConstants.HOST_NAME;
 
@@ -39,7 +38,6 @@ import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.api.Assertions.fail;
 import static org.awaitility.Awaitility.await;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
@@ -224,6 +222,7 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   public void setUp() throws IllegalAccessException {
     when(broadcasterFactory.lookup(anyString(), anyBoolean())).thenReturn(broadcaster);
     FieldUtils.writeField(delegateTaskService, "retryObserverSubject", retryObserverSubject, true);
+    FieldUtils.writeField(delegateService, "subject", new Subject<>(), true);
   }
 
   private DelegateBuilder createDelegateBuilder() {
@@ -234,19 +233,6 @@ public class DelegateServiceImplTest extends WingsBaseTest {
         .version(VERSION)
         .status(DelegateInstanceStatus.ENABLED)
         .lastHeartBeat(System.currentTimeMillis());
-  }
-
-  @Test
-  @Owner(developers = MARKO)
-  @Category(UnitTests.class)
-  public void testRetrieveLogStreamingAccountToken() {
-    String accountId = generateUuid();
-
-    try {
-      delegateTaskServiceClassic.retrieveLogStreamingAccountToken(accountId);
-      fail("Should have failed while retrieving log streaming token");
-    } catch (Exception ignored) {
-    }
   }
 
   @Test

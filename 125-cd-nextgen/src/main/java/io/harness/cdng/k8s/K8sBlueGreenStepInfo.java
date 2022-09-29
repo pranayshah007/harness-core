@@ -52,9 +52,9 @@ public class K8sBlueGreenStepInfo extends K8sBlueGreenBaseStepInfo implements CD
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
   @Builder(builderMethodName = "infoBuilder")
-  public K8sBlueGreenStepInfo(
-      ParameterField<Boolean> skipDryRun, ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
-    super(skipDryRun, delegateSelectors);
+  public K8sBlueGreenStepInfo(ParameterField<Boolean> skipDryRun, ParameterField<Boolean> pruningEnabled,
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
+    super(skipDryRun, pruningEnabled, delegateSelectors);
   }
 
   @Override
@@ -69,7 +69,11 @@ public class K8sBlueGreenStepInfo extends K8sBlueGreenBaseStepInfo implements CD
 
   @Override
   public SpecParameters getSpecParameters() {
-    return K8sBlueGreenStepParameters.infoBuilder().skipDryRun(skipDryRun).delegateSelectors(delegateSelectors).build();
+    return K8sBlueGreenStepParameters.infoBuilder()
+        .skipDryRun(skipDryRun)
+        .pruningEnabled(pruningEnabled)
+        .delegateSelectors(delegateSelectors)
+        .build();
   }
 
   @Override

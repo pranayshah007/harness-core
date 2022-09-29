@@ -7,32 +7,38 @@
 
 package io.harness.ngmigration.secrets;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EncryptedData;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
-import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.secretmanagerclient.ValueType;
+import io.harness.secrets.SecretService;
 
 import software.wings.ngmigration.CgEntityId;
 
+import com.google.inject.Inject;
 import java.util.Map;
 
+@OwnedBy(HarnessTeam.CDC)
 public class HarnessSecretMigrator implements SecretMigrator {
+  @Inject private SecretService secretService;
+
   @Override
   public SecretTextSpecDTO getSecretSpec(
       EncryptedData encryptedData, SecretManagerConfig vaultConfig, String secretManagerIdentifier) {
     return SecretTextSpecDTO.builder()
         .valueType(ValueType.Inline)
-        .value("__ACTUAL_SECRET__")
-        // TODO: Use actual secret manager identifier
-        .secretManagerIdentifier("account.harnessSecretManager")
+        .value(String.valueOf(secretService.fetchSecretValue(encryptedData)))
+        .secretManagerIdentifier(secretManagerIdentifier)
         .build();
   }
 
   @Override
   public ConnectorConfigDTO getConfigDTO(
-      SecretManagerConfig secretManagerConfig, Map<CgEntityId, NgEntityDetail> migratedEntities) {
+      SecretManagerConfig secretManagerConfig, Map<CgEntityId, NGYamlFile> migratedEntities) {
     return null;
   }
 }

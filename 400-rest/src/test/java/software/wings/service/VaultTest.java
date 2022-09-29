@@ -330,22 +330,6 @@ public class VaultTest extends WingsBaseTest {
   @Test
   @Owner(developers = UTKARSH)
   @Category(UnitTests.class)
-  public void saveConfigShouldFail_DefaultTrue_ReadOnlyTrue() {
-    VaultConfig vaultConfig = secretManagementTestHelper.getVaultConfigWithAuthToken(VAULT_TOKEN);
-    vaultConfig.setReadOnly(true);
-    vaultConfig.setDefault(true);
-    try {
-      vaultService.saveOrUpdateVaultConfig(accountId, vaultConfig, true);
-      fail("Saved invalid vault config with both default and read only true");
-    } catch (SecretManagementException e) {
-      log.info("Error", e);
-      assertThat(e.getCode()).isEqualTo(ErrorCode.SECRET_MANAGEMENT_ERROR);
-    }
-  }
-
-  @Test
-  @Owner(developers = UTKARSH)
-  @Category(UnitTests.class)
   public void createEncryptedText_WithReadOnlyVault() {
     String secretName = UUID.randomUUID().toString();
     String secretValue = UUID.randomUUID().toString();

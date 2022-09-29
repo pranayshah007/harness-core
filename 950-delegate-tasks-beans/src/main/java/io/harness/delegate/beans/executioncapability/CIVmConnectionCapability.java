@@ -7,8 +7,12 @@
 
 package io.harness.delegate.beans.executioncapability;
 
+import io.harness.delegate.beans.ci.InfraInfo;
+
 import java.time.Duration;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
+import lombok.Getter;
 import lombok.Value;
 
 @Value
@@ -18,6 +22,7 @@ public class CIVmConnectionCapability implements ExecutionCapability {
 
   private String poolId;
   private String stageRuntimeId;
+  @NotNull @Getter private InfraInfo infraInfo;
 
   @Override
   public EvaluationMode evaluationMode() {
@@ -26,7 +31,7 @@ public class CIVmConnectionCapability implements ExecutionCapability {
 
   @Override
   public String fetchCapabilityBasis() {
-    return String.format("%s-%s", poolId, stageRuntimeId);
+    return infraInfo.fetchCapabilityBasis();
   }
 
   @Override

@@ -392,6 +392,12 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
                       ProceedWithDefaultAdviserParameters.builder().applicableFailureTypes(failureTypes).build())))
                   .build());
           break;
+        case PIPELINE_ROLLBACK:
+          rollbackParameters = getRollbackParameters(currentField, failureTypes, RollbackStrategy.PIPELINE_ROLLBACK);
+          adviserObtainmentList.add(adviserObtainmentBuilder.setType(OnFailRollbackAdviser.ADVISER_TYPE)
+                                        .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(rollbackParameters)))
+                                        .build());
+          break;
         default:
           Switch.unhandled(actionType);
       }
@@ -435,6 +441,8 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
         RollbackStrategy.STAGE_ROLLBACK, stageNodeId + NGCommonUtilPlanCreationConstants.COMBINED_ROLLBACK_ID_SUFFIX);
     rollbackStrategyStringMap.put(
         RollbackStrategy.STEP_GROUP_ROLLBACK, GenericPlanCreatorUtils.getStepGroupRollbackStepsNodeId(currentField));
+    rollbackStrategyStringMap.put(
+        RollbackStrategy.PIPELINE_ROLLBACK, GenericPlanCreatorUtils.getRollbackStageNodeId(currentField));
     return rollbackStrategyStringMap;
   }
 

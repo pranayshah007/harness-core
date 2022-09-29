@@ -27,6 +27,7 @@ import io.harness.cdng.artifact.bean.yaml.GithubPackagesArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig;
 import io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.Nexus2RegistryArtifactConfig;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.exception.InvalidRequestException;
@@ -136,11 +137,18 @@ public class ArtifactUtils {
             ecrArtifactConfig.getConnectorRef().getValue());
       case NEXUS3_REGISTRY:
         NexusRegistryArtifactConfig nexusRegistryArtifactConfig = (NexusRegistryArtifactConfig) artifactConfig;
-        return String.format(placeholder, sourceType, nexusRegistryArtifactConfig.getArtifactPath().getValue(),
+        return String.format(placeholder, sourceType, nexusRegistryArtifactConfig.getRepository().getValue(),
             ParameterField.isNull(nexusRegistryArtifactConfig.getTag())
                 ? nexusRegistryArtifactConfig.getTagRegex().getValue()
                 : nexusRegistryArtifactConfig.getTag().getValue(),
             nexusRegistryArtifactConfig.getConnectorRef().getValue());
+      case NEXUS2_REGISTRY:
+        Nexus2RegistryArtifactConfig nexus2RegistryArtifactConfig = (Nexus2RegistryArtifactConfig) artifactConfig;
+        return String.format(placeholder, sourceType, nexus2RegistryArtifactConfig.getRepository().getValue(),
+            ParameterField.isNull(nexus2RegistryArtifactConfig.getTag())
+                ? nexus2RegistryArtifactConfig.getTagRegex().getValue()
+                : nexus2RegistryArtifactConfig.getTag().getValue(),
+            nexus2RegistryArtifactConfig.getConnectorRef().getValue());
       case ARTIFACTORY_REGISTRY:
         ArtifactoryRegistryArtifactConfig artifactoryRegistryArtifactConfig =
             (ArtifactoryRegistryArtifactConfig) artifactConfig;

@@ -1,0 +1,159 @@
+{
+    "schemes": [
+        "http"
+    ],
+    "swagger": "2.0",
+    "info": {
+        "description": "This is a queuing client.",
+        "title": "Swagger Doc- hsqs",
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "name": "API Support",
+            "url": "http://www.swagger.io/support",
+            "email": "support@swagger.io"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
+        "version": "1.0"
+    },
+    "host": "localhost:9091",
+    "basePath": "/",
+    "paths": {
+        "/v1/dequeue": {
+            "post": {
+                "description": "Dequeue a request",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Dequeue in Redis",
+                "parameters": [
+                    {
+                        "description": "query params",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/store.DequeueRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/store.DequeueResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/queue": {
+            "post": {
+                "description": "Enqueue the request",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Enqueue",
+                "parameters": [
+                    {
+                        "description": "query params",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/store.EnqueueRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/store.EnqueueResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "store.DequeueItemMetadata": {
+            "type": "object",
+            "properties": {
+                "currentRetryCount": {
+                    "type": "integer"
+                },
+                "maxProcessingTime": {
+                    "type": "number"
+                }
+            }
+        },
+        "store.DequeueRequest": {
+            "type": "object",
+            "properties": {
+                "batchSize": {
+                    "type": "integer"
+                },
+                "consumerName": {
+                    "type": "string"
+                },
+                "topic": {
+                    "type": "string"
+                }
+            }
+        },
+        "store.DequeueResponse": {
+            "type": "object",
+            "properties": {
+                "itemId": {
+                    "type": "string"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/store.DequeueItemMetadata"
+                },
+                "payload": {},
+                "queueKey": {
+                    "type": "string"
+                },
+                "timeStamp": {
+                    "type": "integer"
+                }
+            }
+        },
+        "store.EnqueueRequest": {
+            "type": "object",
+            "properties": {
+                "payload": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "producerName": {
+                    "type": "string"
+                },
+                "subTopic": {
+                    "type": "string"
+                },
+                "topic": {
+                    "type": "string"
+                }
+            }
+        },
+        "store.EnqueueResponse": {
+            "type": "object",
+            "properties": {
+                "itemId": {
+                    "description": "ItemId is the identifier of the task in the Queue",
+                    "type": "string"
+                }
+            }
+        }
+    }
+}

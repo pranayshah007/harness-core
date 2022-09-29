@@ -99,6 +99,8 @@ import io.harness.cvng.core.entities.DatadogMetricCVConfig;
 import io.harness.cvng.core.entities.DatadogMetricCVConfig.DatadogMetricCVConfigBuilder;
 import io.harness.cvng.core.entities.DynatraceCVConfig;
 import io.harness.cvng.core.entities.DynatraceCVConfig.DynatraceCVConfigBuilder;
+import io.harness.cvng.core.entities.ELKCVConfig;
+import io.harness.cvng.core.entities.ELKCVConfig.ELKCVConfigBuilder;
 import io.harness.cvng.core.entities.ErrorTrackingCVConfig;
 import io.harness.cvng.core.entities.ErrorTrackingCVConfig.ErrorTrackingCVConfigBuilder;
 import io.harness.cvng.core.entities.MetricPack;
@@ -134,6 +136,7 @@ import io.harness.cvng.notification.beans.NotificationRuleCondition;
 import io.harness.cvng.notification.beans.NotificationRuleConditionType;
 import io.harness.cvng.notification.beans.NotificationRuleDTO;
 import io.harness.cvng.notification.beans.NotificationRuleDTO.NotificationRuleDTOBuilder;
+import io.harness.cvng.notification.beans.NotificationRuleRefDTO;
 import io.harness.cvng.notification.beans.NotificationRuleType;
 import io.harness.cvng.notification.channelDetails.CVNGEmailChannelSpec;
 import io.harness.cvng.notification.channelDetails.CVNGNotificationChannel;
@@ -526,6 +529,21 @@ public class BuilderFactory {
         .projectIdentifier(context.getProjectIdentifier())
         .identifier(context.getMonitoredServiceIdentifier() + "/" + generateUuid())
         .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier());
+  }
+
+  public ELKCVConfigBuilder elkCVConfigBuilder() {
+    return ELKCVConfig.builder()
+        .accountId(context.getAccountId())
+        .orgIdentifier(context.getOrgIdentifier())
+        .projectIdentifier(context.getProjectIdentifier())
+        .identifier(context.getMonitoredServiceIdentifier() + "/" + generateUuid())
+        .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
+        .index("*")
+        .timeStampFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+        .messageIdentifier("message")
+        .serviceInstanceIdentifier("hostname")
+        .timeStampIdentifier("@timestamp")
+        .connectorIdentifier("connectorRef");
   }
 
   public CustomHealthSourceMetricSpec customHealthMetricSourceSpecBuilder(String metricValueJSONPath,
@@ -944,7 +962,8 @@ public class BuilderFactory {
                     .spec(RollingSLOTargetSpec.builder().periodLength("30d").build())
                     .build())
         .serviceLevelIndicators(Collections.singletonList(getServiceLevelIndicatorDTOBuilder()))
-        .notificationRuleRefs(Collections.emptyList())
+        .notificationRuleRefs(
+            Arrays.asList(NotificationRuleRefDTO.builder().notificationRuleRef("demo").enabled(true).build()))
         .healthSourceRef("healthSourceIdentifier")
         .monitoredServiceRef(context.serviceIdentifier + "_" + context.getEnvIdentifier())
         .userJourneyRef("userJourney");

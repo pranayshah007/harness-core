@@ -76,16 +76,17 @@ public class AsyncStrategy extends ProgressableStrategy {
       Ambiance ambiance, ExecutionMode mode, StepParameters stepParameters, AsyncExecutableResponse response) {
     String nodeExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
     String stepParamString = RecastOrchestrationUtils.toJson(stepParameters);
+
+    // TODO : This is the last use of add executable response need to remove it as causing issues. Find a way to remove
+    // this
+    sdkNodeExecutionService.addExecutableResponse(ambiance, ExecutableResponse.newBuilder().setAsync(response).build());
+
     if (isEmpty(response.getCallbackIdsList())) {
       log.warn("StepResponse has no callbackIds - currentState : " + AmbianceUtils.obtainStepIdentifier(ambiance)
           + ", nodeExecutionId: " + nodeExecutionId);
       sdkNodeExecutionService.resumeNodeExecution(ambiance, Collections.emptyMap(), false);
       return;
     }
-    // TODO : This is the last use of add executable response need to remove it as causing issues. Find a way to remove
-    // this
-    sdkNodeExecutionService.addExecutableResponse(ambiance, ExecutableResponse.newBuilder().setAsync(response).build());
-
     queueCallbacks(ambiance, mode, response, stepParamString);
   }
 

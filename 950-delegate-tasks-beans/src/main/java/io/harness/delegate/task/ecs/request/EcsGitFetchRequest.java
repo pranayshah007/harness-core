@@ -57,8 +57,13 @@ public class EcsGitFetchRequest implements ActivityAccess, TaskParameters, Execu
 
     List<EcsGitFetchFileConfig> allEcsGitFetchFileConfigs = new ArrayList<>();
 
-    allEcsGitFetchFileConfigs.add(ecsTaskDefinitionGitFetchFileConfig);
-    allEcsGitFetchFileConfigs.add(ecsServiceDefinitionGitFetchFileConfig);
+    if (ecsTaskDefinitionGitFetchFileConfig != null) {
+      allEcsGitFetchFileConfigs.add(ecsTaskDefinitionGitFetchFileConfig);
+    }
+
+    if (ecsServiceDefinitionGitFetchFileConfig != null) {
+      allEcsGitFetchFileConfigs.add(ecsServiceDefinitionGitFetchFileConfig);
+    }
 
     if (CollectionUtils.isNotEmpty(ecsScalableTargetGitFetchFileConfigs)) {
       allEcsGitFetchFileConfigs.addAll(ecsScalableTargetGitFetchFileConfigs);

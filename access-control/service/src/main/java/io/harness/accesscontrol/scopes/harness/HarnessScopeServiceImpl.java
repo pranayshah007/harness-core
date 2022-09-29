@@ -8,7 +8,7 @@
 package io.harness.accesscontrol.scopes.harness;
 
 import static io.harness.accesscontrol.common.filter.ManagedFilter.ONLY_CUSTOM;
-import static io.harness.remote.client.NGRestUtils.getResponseWithRetry;
+import static io.harness.remote.client.NGRestUtils.getResponse;
 
 import io.harness.accesscontrol.roleassignments.RoleAssignmentFilter;
 import io.harness.accesscontrol.roleassignments.RoleAssignmentService;
@@ -25,7 +25,7 @@ import io.harness.ng.core.dto.OrganizationResponse;
 import io.harness.ng.core.dto.ProjectResponse;
 import io.harness.organization.remote.OrganizationClient;
 import io.harness.project.remote.ProjectClient;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.CGRestUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -62,7 +62,7 @@ public class HarnessScopeServiceImpl implements HarnessScopeService {
     boolean toBeDeleted = false;
     if (scope.getLevel() == HarnessScopeLevel.PROJECT) {
       try {
-        Optional<ProjectResponse> response = getResponseWithRetry(projectClient.getProject(
+        Optional<ProjectResponse> response = getResponse(projectClient.getProject(
             params.getProjectIdentifier(), params.getAccountIdentifier(), params.getOrgIdentifier()));
         scope.setInstanceName(response.isPresent() ? response.get().getProject().getName() : null);
       } catch (InvalidRequestException e) {
@@ -72,8 +72,8 @@ public class HarnessScopeServiceImpl implements HarnessScopeService {
       }
     } else if (scope.getLevel() == HarnessScopeLevel.ORGANIZATION) {
       try {
-        Optional<OrganizationResponse> response = getResponseWithRetry(
-            organizationClient.getOrganization(params.getOrgIdentifier(), params.getAccountIdentifier()));
+        Optional<OrganizationResponse> response =
+            getResponse(organizationClient.getOrganization(params.getOrgIdentifier(), params.getAccountIdentifier()));
         scope.setInstanceName(response.isPresent() ? response.get().getOrganization().getName() : null);
       } catch (InvalidRequestException e) {
         toBeDeleted =
@@ -81,7 +81,7 @@ public class HarnessScopeServiceImpl implements HarnessScopeService {
       }
     } else if (scope.getLevel() == HarnessScopeLevel.ACCOUNT) {
       try {
-        AccountDTO response = RestClientUtils.getResponse(accountClient.getAccountDTO(params.getAccountIdentifier()));
+        AccountDTO response = CGRestUtils.getResponse(accountClient.getAccountDTO(params.getAccountIdentifier()));
         scope.setInstanceName(response.getName());
 
       } catch (InvalidRequestException e) {

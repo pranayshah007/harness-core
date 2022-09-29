@@ -31,6 +31,7 @@ import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.perpetualtask.instancesync.AwsSshInstanceSyncPerpetualTaskParamsNg;
 import io.harness.serializer.KryoSerializer;
+import io.harness.yaml.infra.HostConnectionTypeKind;
 
 import software.wings.service.impl.aws.model.AwsEC2Instance;
 
@@ -71,7 +72,9 @@ public class AwsSshWinrmPerpetualTaskExecutorNg implements PerpetualTaskExecutor
   private PerpetualTaskResponse executeTask(
       PerpetualTaskId taskId, AwsSshInstanceSyncPerpetualTaskParamsNg taskParams) {
     List<AwsEC2Instance> awsEC2Instances = getAwsEC2Instance(taskParams);
-    Set<String> awsHosts = awsEC2Instances.stream().map(AwsEC2Instance::getPublicDnsName).collect(Collectors.toSet());
+    Set<String> awsHosts = awsEC2Instances.stream()
+                               .map(instance -> mapToAddress(instance, taskParams.getHostConnectionType()))
+                               .collect(Collectors.toSet());
     Set<String> instanceHosts =
         taskParams.getHostsList().stream().filter(awsHosts::contains).collect(Collectors.toSet());
 
@@ -85,6 +88,23 @@ public class AwsSshWinrmPerpetualTaskExecutorNg implements PerpetualTaskExecutor
         publishInstanceSyncResult(taskId, taskParams.getAccountId(), serverInstanceInfos, taskParams.getServiceType());
     return PerpetualTaskResponse.builder().responseCode(SC_OK).responseMessage(instanceSyncResponseMsg).build();
   }
+
+  private String mapToAddress(AwsEC2Instance awsEC2Instance, String hostConnectionType) {
+    if (EmptyPredicate.isEmpty(hostConnectionType)) {
+      return awsEC2Instance.getHostname(); // default
+    }
+
+    if (HostConnectionTypeKind.PUBLIC_IP.equals(hostConnectionType)
+        && EmptyPredicate.isNotEmpty(awsEC2Instance.getPublicIp())) {
+      return awsEC2Instance.getPublicIp();
+    } else if (HostConnectionTypeKind.PRIVATE_IP.equals(hostConnectionType)
+        && EmptyPredicate.isNotEmpty(awsEC2Instance.getPrivateIp())) {
+      return awsEC2Instance.getPrivateIp();
+    } else {
+      return awsEC2Instance.getHostname(); // default
+    }
+  }
+
   private List<AwsEC2Instance> getAwsEC2Instance(AwsSshInstanceSyncPerpetualTaskParamsNg taskParams) {
     AwsInfraDelegateConfig infraConfig =
         (AwsInfraDelegateConfig) kryoSerializer.asObject(taskParams.getInfraDelegateConfig().toByteArray());

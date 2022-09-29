@@ -124,7 +124,6 @@ public class CommonStepInfo {
   StepInfo policyStepInfo = StepInfo.newBuilder()
                                 .setName(PolicyStepConstants.POLICY_STEP_NAME)
                                 .setType(StepSpecTypeConstants.POLICY_STEP)
-                                .setFeatureFlag(FeatureName.CUSTOM_POLICY_STEP.name())
                                 .setStepMetaData(StepMetaData.newBuilder()
                                                      .addCategory(PolicyStepConstants.POLICY_STEP_CATEGORY)
                                                      .addFolderPaths(PolicyStepConstants.POLICY_STEP_FOLDER_PATH)
@@ -155,7 +154,7 @@ public class CommonStepInfo {
 
   StepInfo waitStepInfo =
       StepInfo.newBuilder()
-          .setName("Wait Step")
+          .setName(StepSpecTypeConstants.WAIT_STEP)
           .setType(StepSpecTypeConstants.WAIT_STEP)
           .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Utilities/Non-Scripted").build())
           .setFeatureFlag(FeatureName.WAIT_STEP.name())

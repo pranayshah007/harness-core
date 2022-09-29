@@ -242,7 +242,7 @@ public class GraphQLResource {
             user.getUuid(), TriggeredByType.USER, httpServletRequest, query, uploadedInputStream);
         executionResult = graphQL.execute(getExecutionInput(contextBuilder, graphQLQuery, dataLoaderRegistryHelper));
       } else {
-        ApiKeyEntry apiKeyEntry = apiKeyService.getByKey(apiKey, accountId, true);
+        ApiKeyEntry apiKeyEntry = apiKeyService.getByKey(apiKey, accountId);
         if (apiKeyEntry == null) {
           throw graphQLUtils.getInvalidApiKeyException();
         } else {

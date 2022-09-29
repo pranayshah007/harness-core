@@ -7,8 +7,6 @@
 
 package io.harness.ng.core.environment.resources;
 
-import static io.harness.beans.FeatureName.NG_SERVICE_CONFIG_FILES_OVERRIDE;
-import static io.harness.beans.FeatureName.NG_SERVICE_MANIFEST_OVERRIDE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_PROJECT_PERMISSION;
@@ -27,6 +25,7 @@ import static io.harness.utils.PageUtils.getNGPageResponse;
 
 import static java.lang.Long.parseLong;
 import static javax.ws.rs.core.HttpHeaders.IF_MATCH;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNumeric;
 
 import io.harness.NGCommonEntityConstants;
@@ -51,7 +50,13 @@ import io.harness.exception.WingsException;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.EnvironmentValidationHelper;
 import io.harness.ng.core.OrgAndProjectValidationHelper;
+import io.harness.ng.core.beans.EnvironmentYamlMetadata;
+import io.harness.ng.core.beans.EnvironmentYamlMetadataDTO;
+import io.harness.ng.core.beans.EnvironmentsYamlMetadataInput;
 import io.harness.ng.core.beans.NGEntityTemplateResponseDTO;
+import io.harness.ng.core.beans.ServiceOverridesInputYamlMetadata;
+import io.harness.ng.core.beans.ServiceOverridesInputYamlMetadataApiInput;
+import io.harness.ng.core.beans.ServiceOverridesInputYamlMetadataDTO;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -116,6 +121,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -156,7 +162,10 @@ import org.springframework.data.mongodb.core.query.Criteria;
               schema = @Schema(implementation = ErrorDTO.class))
     })
 @OwnedBy(HarnessTeam.CDC)
+@Slf4j
 public class EnvironmentResourceV2 {
+  public static final String SERVICE_OVERRIDES_INPUT_SET_YAML_METADATA_INPUT_PARAM_MESSAGE =
+      "List of service and env Identifiers for the entities";
   private final EnvironmentService environmentService;
   private final AccessControlClient accessControlClient;
   private final OrgAndProjectValidationHelper orgAndProjectValidationHelper;
@@ -165,6 +174,8 @@ public class EnvironmentResourceV2 {
   private final ServiceEntityValidationHelper serviceEntityValidationHelper;
   private final EnvironmentFilterHelper environmentFilterHelper;
   private final CDFeatureFlagHelper cdFeatureFlagHelper;
+  public static final String ENVIRONMENT_YAML_METADATA_INPUT_PARAM_MESSAGE =
+      "List of Environment Identifiers for the entities";
 
   public static final String ENVIRONMENT_PARAM_MESSAGE = "Environment Identifier for the entity";
 
@@ -228,11 +239,7 @@ public class EnvironmentResourceV2 {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, environmentRequestDTO.getOrgIdentifier(),
                                                   environmentRequestDTO.getProjectIdentifier()),
         Resource.of(ENVIRONMENT, null, environmentAttributes), ENVIRONMENT_CREATE_PERMISSION);
-    final boolean ngSvcManifestOverrideEnabled = cdFeatureFlagHelper.isEnabled(accountId, NG_SERVICE_MANIFEST_OVERRIDE);
-    final boolean ngSvcConfigFileOverrideEnabled =
-        cdFeatureFlagHelper.isEnabled(accountId, NG_SERVICE_CONFIG_FILES_OVERRIDE);
-    Environment environmentEntity = EnvironmentMapper.toEnvironmentEntity(
-        accountId, environmentRequestDTO, ngSvcManifestOverrideEnabled, ngSvcConfigFileOverrideEnabled);
+    Environment environmentEntity = EnvironmentMapper.toEnvironmentEntity(accountId, environmentRequestDTO);
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(environmentEntity.getOrgIdentifier(),
         environmentEntity.getProjectIdentifier(), environmentEntity.getAccountId());
     Environment createdEnvironment = environmentService.create(environmentEntity);
@@ -283,11 +290,7 @@ public class EnvironmentResourceV2 {
                                                   environmentRequestDTO.getProjectIdentifier()),
         Resource.of(ENVIRONMENT, environmentRequestDTO.getIdentifier()), ENVIRONMENT_UPDATE_PERMISSION);
 
-    final boolean ngSvcManifestOverrideEnabled = cdFeatureFlagHelper.isEnabled(accountId, NG_SERVICE_MANIFEST_OVERRIDE);
-    final boolean ngSvcConfigFileOverrideEnabled =
-        cdFeatureFlagHelper.isEnabled(accountId, NG_SERVICE_CONFIG_FILES_OVERRIDE);
-    Environment requestEnvironment = EnvironmentMapper.toEnvironmentEntity(
-        accountId, environmentRequestDTO, ngSvcManifestOverrideEnabled, ngSvcConfigFileOverrideEnabled);
+    Environment requestEnvironment = EnvironmentMapper.toEnvironmentEntity(accountId, environmentRequestDTO);
     requestEnvironment.setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     Environment updatedEnvironment = environmentService.update(requestEnvironment);
     return ResponseDTO.newResponse(
@@ -314,11 +317,7 @@ public class EnvironmentResourceV2 {
                                                   environmentRequestDTO.getProjectIdentifier()),
         Resource.of(ENVIRONMENT, environmentRequestDTO.getIdentifier()), ENVIRONMENT_UPDATE_PERMISSION);
 
-    final boolean ngSvcManifestOverrideEnabled = cdFeatureFlagHelper.isEnabled(accountId, NG_SERVICE_MANIFEST_OVERRIDE);
-    final boolean ngSvcConfigFileOverrideEnabled =
-        cdFeatureFlagHelper.isEnabled(accountId, NG_SERVICE_CONFIG_FILES_OVERRIDE);
-    Environment requestEnvironment = EnvironmentMapper.toEnvironmentEntity(
-        accountId, environmentRequestDTO, ngSvcManifestOverrideEnabled, ngSvcConfigFileOverrideEnabled);
+    Environment requestEnvironment = EnvironmentMapper.toEnvironmentEntity(accountId, environmentRequestDTO);
     requestEnvironment.setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(requestEnvironment.getOrgIdentifier(),
         requestEnvironment.getProjectIdentifier(), requestEnvironment.getAccountId());
@@ -515,28 +514,62 @@ public class EnvironmentResourceV2 {
     checkForServiceOverrideUpdateAccess(accountId, serviceOverridesEntity.getOrgIdentifier(),
         serviceOverridesEntity.getProjectIdentifier(), serviceOverridesEntity.getEnvironmentRef(),
         serviceOverridesEntity.getServiceRef());
-    final boolean ngManifestOverrideEnabled = cdFeatureFlagHelper.isEnabled(accountId, NG_SERVICE_MANIFEST_OVERRIDE);
-    final boolean ngConfigOverrideEnabled = cdFeatureFlagHelper.isEnabled(accountId, NG_SERVICE_CONFIG_FILES_OVERRIDE);
-    validateServiceOverrides(serviceOverridesEntity, ngManifestOverrideEnabled, ngConfigOverrideEnabled);
+    validateServiceOverrides(serviceOverridesEntity);
 
     NGServiceOverridesEntity createdServiceOverride = serviceOverrideService.upsert(serviceOverridesEntity);
     return ResponseDTO.newResponse(ServiceOverridesMapper.toResponseWrapper(createdServiceOverride));
   }
 
-  private void validateServiceOverrides(NGServiceOverridesEntity serviceOverridesEntity,
-      boolean ngManifestOverrideEnabled, boolean ngConfigOverrideEnabled) {
+  @POST
+  @Path("/environmentsYamlMetadata")
+  @ApiOperation(value = "This api returns environment YAML and runtime input YAML",
+      nickname = "getEnvironmentsYamlAndRuntimeInputs")
+  @Hidden
+  public ResponseDTO<EnvironmentYamlMetadataDTO>
+  getEnvironmentsYamlAndRuntimeInputs(@Parameter(description = ENVIRONMENT_YAML_METADATA_INPUT_PARAM_MESSAGE) @Valid
+                                      @NotNull EnvironmentsYamlMetadataInput environmentYamlMetadata,
+      @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier) {
+    List<Environment> environments = environmentService.getEnvironments(
+        accountId, orgIdentifier, projectIdentifier, environmentYamlMetadata.getEnvIdentifiers());
+
+    List<EnvironmentYamlMetadata> environmentsYamlMetadataList = new ArrayList<>();
+    environments.forEach(environment -> environmentsYamlMetadataList.add(createEnvironmentYamlMetadata(environment)));
+
+    return ResponseDTO.newResponse(
+        EnvironmentYamlMetadataDTO.builder().environmentYamlMetadataList(environmentsYamlMetadataList).build());
+  }
+
+  private EnvironmentYamlMetadata createEnvironmentYamlMetadata(Environment environment) {
+    if (isBlank(environment.getYaml())) {
+      log.info(
+          "Environment with identifier {} is not configured with an Environment definition. Environment Yaml is empty",
+          environment.getIdentifier());
+      return EnvironmentYamlMetadata.builder()
+          .environmentIdentifier(environment.getIdentifier())
+          .environmentYaml("")
+          .inputSetTemplateYaml("")
+          .build();
+    }
+
+    final String environmentInputSetYaml = environmentService.createEnvironmentInputsYaml(environment.getAccountId(),
+        environment.getOrgIdentifier(), environment.getProjectIdentifier(), environment.getIdentifier());
+    return EnvironmentYamlMetadata.builder()
+        .environmentIdentifier(environment.getIdentifier())
+        .environmentYaml(environment.getYaml())
+        .inputSetTemplateYaml(environmentInputSetYaml)
+        .build();
+  }
+
+  private void validateServiceOverrides(NGServiceOverridesEntity serviceOverridesEntity) {
     final NGServiceOverrideConfig serviceOverrideConfig = toNGServiceOverrideConfig(serviceOverridesEntity);
     if (serviceOverrideConfig.getServiceOverrideInfoConfig() != null) {
       final NGServiceOverrideInfoConfig serviceOverrideInfoConfig =
           serviceOverrideConfig.getServiceOverrideInfoConfig();
-      if (!ngManifestOverrideEnabled && isNotEmpty(serviceOverrideInfoConfig.getManifests())) {
-        throw new InvalidRequestException(
-            "Manifest Override is not supported with FF disabled NG_SERVICE_MANIFEST_OVERRIDE");
-      }
-      if (!ngConfigOverrideEnabled && isNotEmpty(serviceOverrideInfoConfig.getConfigFiles())) {
-        throw new InvalidRequestException(
-            "Config Files Override is not supported with FF disabled NG_SERVICE_CONFIG_FILES_OVERRIDE");
-      }
 
       if (isEmpty(serviceOverrideInfoConfig.getManifests()) && isEmpty(serviceOverrideInfoConfig.getConfigFiles())
           && isEmpty(serviceOverrideInfoConfig.getVariables())
@@ -653,6 +686,7 @@ public class EnvironmentResourceV2 {
     return ResponseDTO.newResponse(
         getNGPageResponse(serviceOverridesEntities.map(ServiceOverridesMapper::toResponseWrapper)));
   }
+
   @GET
   @Path("/runtimeInputs")
   @ApiOperation(value = "This api returns Environment inputs YAML", nickname = "getEnvironmentInputs")
@@ -667,7 +701,7 @@ public class EnvironmentResourceV2 {
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier) {
     String environmentInputsYaml = environmentService.createEnvironmentInputsYaml(
-        accountId, projectIdentifier, orgIdentifier, environmentIdentifier);
+        accountId, orgIdentifier, projectIdentifier, environmentIdentifier);
 
     return ResponseDTO.newResponse(
         NGEntityTemplateResponseDTO.builder().inputSetTemplateYaml(environmentInputsYaml).build());
@@ -689,9 +723,43 @@ public class EnvironmentResourceV2 {
       @Parameter(description = NGCommonEntityConstants.SERVICE_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.SERVICE_IDENTIFIER_KEY) @ResourceIdentifier String serviceIdentifier) {
     String serviceOverrideInputsYaml = serviceOverrideService.createServiceOverrideInputsYaml(
-        accountId, projectIdentifier, orgIdentifier, environmentIdentifier, serviceIdentifier);
+        accountId, orgIdentifier, projectIdentifier, environmentIdentifier, serviceIdentifier);
     return ResponseDTO.newResponse(
         NGEntityTemplateResponseDTO.builder().inputSetTemplateYaml(serviceOverrideInputsYaml).build());
+  }
+
+  @POST
+  @Path("/serviceOverridesInputYamlMetadata")
+  @ApiOperation(value = "This api returns service overrides input YAML", nickname = "getServiceOverridesInputYamls")
+  @Hidden
+  public ResponseDTO<ServiceOverridesInputYamlMetadataDTO> getServiceOverridesInputYamls(
+      @Parameter(description = SERVICE_OVERRIDES_INPUT_SET_YAML_METADATA_INPUT_PARAM_MESSAGE) @Valid
+      @NotNull ServiceOverridesInputYamlMetadataApiInput serviceOverridesInputYamlMetadataApiInput,
+      @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier) {
+    List<ServiceOverridesInputYamlMetadata> serviceOverridesInputYamlMetadataList = new ArrayList<>();
+    serviceOverridesInputYamlMetadataApiInput.getServiceOverridesInputs().forEach(serviceOverridesInput
+        -> serviceOverridesInputYamlMetadataList.add(
+            createServiceOverridesYamlMetadata(accountId, orgIdentifier, projectIdentifier,
+                serviceOverridesInput.getEnvIdentifier(), serviceOverridesInput.getServiceIdentifier())));
+    return ResponseDTO.newResponse(ServiceOverridesInputYamlMetadataDTO.builder()
+                                       .serviceOverridesInputYamlMetadataList(serviceOverridesInputYamlMetadataList)
+                                       .build());
+  }
+
+  private ServiceOverridesInputYamlMetadata createServiceOverridesYamlMetadata(
+      String accountId, String orgId, String projectId, String envId, String serviceId) {
+    final String serviceOverridesInputSetYaml =
+        serviceOverrideService.createServiceOverrideInputsYaml(accountId, orgId, projectId, envId, serviceId);
+    return ServiceOverridesInputYamlMetadata.builder()
+        .inputSetYaml(serviceOverridesInputSetYaml)
+        .serviceIdentifier(serviceId)
+        .envIdentifier(envId)
+        .build();
   }
 
   @GET
