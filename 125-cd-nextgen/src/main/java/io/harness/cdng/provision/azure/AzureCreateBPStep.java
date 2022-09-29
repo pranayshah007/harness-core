@@ -406,11 +406,15 @@ public class AzureCreateBPStep extends TaskChainExecutableWithRollbackAndRbac {
       if (f instanceof FileNodeDTO) {
         FileNodeDTO fileNodeDTO = (FileNodeDTO) f;
         if (f.getPath().contains(BLUEPRINT_JSON) || f.getPath().contains(ASSIGN_JSON)) {
-          fileMap.put(f.getName(),
-              engineExpressionService.renderExpression(ambiance, fileNodeDTO.getContent().replaceAll("\\r", "")));
+          if (fileNodeDTO.getContent() != null) {
+            fileMap.put(f.getName(),
+                engineExpressionService.renderExpression(ambiance, fileNodeDTO.getContent().replaceAll("\\r", "")));
+          }
         } else if (f.getPath().contains(ARTIFACTS)) {
-          fileMap.put(f.getName(),
-              engineExpressionService.renderExpression(ambiance, fileNodeDTO.getContent()).replaceAll("\\r", ""));
+          if (fileNodeDTO.getContent() != null) {
+            fileMap.put(f.getName(),
+                engineExpressionService.renderExpression(ambiance, fileNodeDTO.getContent()).replaceAll("\\r", ""));
+          }
         }
       } else if (f instanceof FolderNodeDTO) {
         FolderNodeDTO folderNodeDTO = (FolderNodeDTO) f;
