@@ -212,8 +212,7 @@ public class ConnectorServiceImpl implements ConnectorService {
         connectorHeartbeatTaskId = connectorHeartbeatService.createConnectorHeatbeatTask(accountIdentifier,
             connectorInfo.getOrgIdentifier(), connectorInfo.getProjectIdentifier(), connectorInfo.getIdentifier());
       }
-      if (isHarnessManagedSecretManager || !isDefaultBranchConnector
-          || !executeOnDelegate || ConnectorType.CUSTOM_SECRET_MANAGER.equals(connectorInfo.getConnectorType())) {
+      if (true) {
         if (gitChangeType != null) {
           connectorResponse = getConnectorService(connectorInfo.getConnectorType())
                                   .create(connectorDTO, accountIdentifier, gitChangeType);
