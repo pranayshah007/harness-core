@@ -66,7 +66,7 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
   }
 
   @Override
-  public FreezeResponse manageGlobalFreezeConfig(
+  public FreezeResponseDTO manageGlobalFreezeConfig(
       String deploymentFreezeYaml, String accountId, String orgId, String projectId) {
     FreezeConfigEntity freezeConfigEntity =
         NGFreezeDtoMapper.toFreezeConfigEntityGlobal(accountId, orgId, projectId, deploymentFreezeYaml);
@@ -81,14 +81,14 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
     if (accountId != null) {
       entity = freezeConfigRepository.findGlobalByAccountIdAndOrgIdentifierAndProjectIdentifier(accountId, null, null);
       if (entity.isPresent() && entity.get().getStatus() != null
-          && entity.get().getStatus().equals(FreezeStatus.ACTIVE)) {
+          && entity.get().getStatus().equals(FreezeStatus.ENABLED)) {
         result = true;
       }
     }
     if (!result && orgId != null) {
       entity = freezeConfigRepository.findGlobalByAccountIdAndOrgIdentifierAndProjectIdentifier(accountId, orgId, null);
       if (entity.isPresent() && entity.get().getStatus() != null
-          && entity.get().getStatus().equals(FreezeStatus.ACTIVE)) {
+          && entity.get().getStatus().equals(FreezeStatus.ENABLED)) {
         result = true;
       }
     }
@@ -96,7 +96,7 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
       entity =
           freezeConfigRepository.findGlobalByAccountIdAndOrgIdentifierAndProjectIdentifier(accountId, orgId, projectId);
       if (entity.isPresent() && entity.get().getStatus() != null
-          && entity.get().getStatus().equals(FreezeStatus.ACTIVE)) {
+          && entity.get().getStatus().equals(FreezeStatus.ENABLED)) {
         result = true;
       }
     }

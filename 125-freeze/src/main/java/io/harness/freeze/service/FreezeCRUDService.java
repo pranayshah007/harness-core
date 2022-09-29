@@ -21,7 +21,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 public interface FreezeCRUDService {
   FreezeResponseDTO createFreezeConfig(String deploymentFreezeYaml, String accountId, String orgId, String projectId);
 
-  FreezeResponse manageGlobalFreezeConfig(
+  FreezeResponseDTO manageGlobalFreezeConfig(
       String deploymentFreezeYaml, String accountId, String orgId, String projectId);
 
   Optional<Boolean> isGlobalDeploymentFreezeActive(String accountId, String orgId, String projectId);

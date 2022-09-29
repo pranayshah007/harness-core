@@ -20,7 +20,7 @@ import io.harness.accesscontrol.ResourceIdentifier;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
-import io.harness.freeze.beans.FreezeResponse;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.freeze.beans.FreezeStatus;
 import io.harness.freeze.beans.FreezeType;
 import io.harness.freeze.beans.PermissionTypes;
@@ -49,7 +49,6 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import javax.validation.constraints.NotNull;
@@ -144,7 +143,7 @@ public class FreezeCRUDResource {
         ApiResponse(responseCode = "default", description = "Returns the created Global Freeze Config")
       })
   @Hidden
-  public ResponseDTO<FreezeResponse>
+  public ResponseDTO<FreezeResponseDTO>
   manageGlobalFreeze(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
       @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
@@ -220,7 +219,7 @@ public class FreezeCRUDResource {
         ApiResponse(responseCode = "default", description = "Returns the created Freeze Config")
       })
   @Hidden
-  public ResponseDTO<FreezeResponse>
+  public void
   delete(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
       @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
@@ -229,7 +228,7 @@ public class FreezeCRUDResource {
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @Parameter(description = "Freeze Identifier.") @PathParam(
           "freezeIdentifier") @ResourceIdentifier String freezeIdentifier) {
-    return ResponseDTO.newResponse(freezeCRUDService.deleteFreezeConfig(freezeIdentifier, accountId, orgId, projectId));
+    freezeCRUDService.deleteFreezeConfig(freezeIdentifier, accountId, orgId, projectId);
   }
 
   @POST
@@ -250,13 +249,13 @@ public class FreezeCRUDResource {
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @Parameter(description = "List of Freeze Identifiers") List<String> freezeIdentifiers) {
-
     for (String identifier : freezeIdentifiers) {
       accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
           Resource.of("DEPLOYMENTFREEZE", identifier), PermissionTypes.DEPLOYMENT_FREEZE_MANAGE_PERMISSION);
     }
 
-    return ResponseDTO.newResponse(freezeCRUDService.deleteFreezeConfigs(freezeIdentifiers, accountId, orgId, projectId));
+    return ResponseDTO.newResponse(
+        freezeCRUDService.deleteFreezeConfigs(freezeIdentifiers, accountId, orgId, projectId));
   }
 
   @GET
@@ -324,13 +323,15 @@ public class FreezeCRUDResource {
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
       @Parameter(description = "This contains details of Freeze filters")
       FreezeFilterPropertiesDTO freezeFilterPropertiesDTO) {
-    List<String> freezeIdentifiers = freezeFilterPropertiesDTO == null ? null : freezeFilterPropertiesDTO.getFreezeIdentifiers();
+    List<String> freezeIdentifiers =
+        freezeFilterPropertiesDTO == null ? null : freezeFilterPropertiesDTO.getFreezeIdentifiers();
     if (EmptyPredicate.isEmpty(freezeIdentifiers)) {
-      accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier), Resource.of(DEPLOYMENTFREEZE, null), PermissionTypes.DEPLOYMENT_FREEZE_VIEW_PERMISSION);
+      accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
+          Resource.of(DEPLOYMENTFREEZE, null), PermissionTypes.DEPLOYMENT_FREEZE_VIEW_PERMISSION);
     } else {
       for (String identifier : freezeIdentifiers) {
         accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
-                Resource.of(DEPLOYMENTFREEZE, identifier), PermissionTypes.DEPLOYMENT_FREEZE_VIEW_PERMISSION);
+            Resource.of(DEPLOYMENTFREEZE, identifier), PermissionTypes.DEPLOYMENT_FREEZE_VIEW_PERMISSION);
       }
     }
     String searchTerm = freezeFilterPropertiesDTO == null ? null : freezeFilterPropertiesDTO.getSearchTerm();
