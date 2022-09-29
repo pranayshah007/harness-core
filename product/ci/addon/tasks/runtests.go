@@ -566,15 +566,7 @@ func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile stri
 	// TMPDIR needs to be set for some build tools like bazel
 	// TODO: (Vistaar) These commands need to be handled for Windows as well. We should move this out to the tool
 	// implementations and check for OS there.
-	command := fmt.Sprintf("set -xe\nexport TMPDIR=%s\nexport HARNESS_JAVA_AGENT=%s\n", r.tmpFilePath, agentArg)
-	if r.preCommand != "" && r.preCommand != "null" {
-		command += fmt.Sprintf("%s\n", r.preCommand)
-	}
-	command += fmt.Sprintf("%s\n", testCmd)
-	if r.postCommand != "" && r.postCommand != "null" {
-		command += fmt.Sprintf("%s\n", r.postCommand)
-	}
-	command += outputVarCmd
+	command := fmt.Sprintf("set -xe\nexport TMPDIR=%s\nexport HARNESS_JAVA_AGENT=%s\n%s\n%s\n%s%s", r.tmpFilePath, agentArg, r.preCommand, testCmd, r.postCommand, outputVarCmd)
 	resolvedCmd, err := resolveExprInCmd(command)
 	if err != nil {
 		return "", err
