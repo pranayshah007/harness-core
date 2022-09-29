@@ -1,0 +1,11 @@
+package(default_visibility = ["//visibility:public"])
+
+load("//:tools/bazel/macros.bzl", "resources")
+
+resources()
+
+filegroup(
+    name = "resource",
+    srcs = glob(["**/*"]),
+    visibility = ["//visibility:public"],
+)

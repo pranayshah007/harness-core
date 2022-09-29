@@ -1,0 +1,3 @@
+taskFilePath: "./taskfile"
+delegateConfigurationPath: "./delegate_config.yml"
+resultFilePath: "result.yml"
