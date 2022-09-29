@@ -45,7 +45,9 @@ public class NGTemplateReference implements EntityReference {
       fqnList.add(projectIdentifier);
     }
     fqnList.add(identifier);
-    fqnList.add(versionLabel);
+    if (EmptyPredicate.isNotEmpty(versionLabel)) {
+      fqnList.add(versionLabel);
+    }
 
     return EntityReferenceHelper.createFQN(fqnList);
   }

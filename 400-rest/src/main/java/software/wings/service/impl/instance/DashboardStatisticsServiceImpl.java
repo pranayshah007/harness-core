@@ -96,7 +96,7 @@ import software.wings.beans.instance.dashboard.ServiceSummary.ServiceSummaryBuil
 import software.wings.beans.instance.dashboard.service.CurrentActiveInstances;
 import software.wings.beans.instance.dashboard.service.DeploymentHistory;
 import software.wings.beans.instance.dashboard.service.ServiceInstanceDashboard;
-import software.wings.dl.WingsPersistence;
+import software.wings.dl.WingsMongoPersistence;
 import software.wings.features.DeploymentHistoryFeature;
 import software.wings.features.api.RestrictedFeature;
 import software.wings.security.UserRequestContext;
@@ -128,7 +128,6 @@ import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
-import com.mongodb.AggregationOptions;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
 import com.mongodb.ReadPreference;
@@ -140,7 +139,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
@@ -161,7 +159,7 @@ import org.mongodb.morphia.query.Sort;
 @Slf4j
 @OwnedBy(DX)
 public class DashboardStatisticsServiceImpl implements DashboardStatisticsService {
-  @Inject private WingsPersistence wingsPersistence;
+  @Inject private WingsMongoPersistence wingsPersistence;
   @Inject private InstanceService instanceService;
   @Inject private AppService appService;
   @Inject private UserService userService;
@@ -256,7 +254,7 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
   private List<EntitySummaryStats> getEntitySummaryStats(
       String entityIdColumn, String entityNameColumn, String groupByEntityType, Query<Instance> query) {
     List<EntitySummaryStats> entitySummaryStatsList = new ArrayList<>();
-    wingsPersistence.getDatastore(query.getEntityClass())
+    wingsPersistence.getDefaultAnalyticsDatastore(query.getEntityClass())
         .createAggregation(Instance.class)
         .match(query)
         .group(Group.id(grouping(entityIdColumn)), grouping("count", accumulator("$sum", 1)),
@@ -274,7 +272,7 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
 
   private long getInstanceCount(Query<Instance> query) {
     AtomicLong totalCount = new AtomicLong();
-    wingsPersistence.getDatastore(query.getEntityClass())
+    wingsPersistence.getDefaultAnalyticsDatastore(query.getEntityClass())
         .createAggregation(Instance.class)
         .match(query)
         .group("_id", grouping("count", accumulator("$sum", 1)))
@@ -285,7 +283,7 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
 
   private List<EntitySummaryStats> getEnvironmentTypeSummaryStats(Query<Instance> query) {
     List<EntitySummaryStats> entitySummaryStatsList = Lists.newArrayList();
-    wingsPersistence.getDatastore(query.getEntityClass())
+    wingsPersistence.getDefaultAnalyticsDatastore(query.getEntityClass())
         .createAggregation(Instance.class)
         .match(query)
         .group(Group.id(grouping("envType")), grouping("count", accumulator("$sum", 1)))
@@ -400,10 +398,10 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
       Query<Instance> clonedQuery_2 = query.cloneQuery();
       clonedQuery_1.field("isDeleted").equal(false);
       clonedQuery_2.field("deletedAt").greaterThanOrEq(timestamp);
-      instanceSet.addAll(clonedQuery_1.asList());
-      instanceSet.addAll(clonedQuery_2.asList());
+      instanceSet.addAll(clonedQuery_1.asList(wingsPersistence.analyticNodePreferenceOptions()));
+      instanceSet.addAll(clonedQuery_2.asList(wingsPersistence.analyticNodePreferenceOptions()));
     } else {
-      instanceSet.addAll(query.filter("isDeleted", false).asList());
+      instanceSet.addAll(query.filter("isDeleted", false).asList(wingsPersistence.analyticNodePreferenceOptions()));
     }
 
     int counter = instanceSet.size();
@@ -428,7 +426,7 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
       query.order(Sort.descending(CREATED_AT_KEY));
     }
 
-    FindOptions findOptions = new FindOptions();
+    FindOptions findOptions = wingsPersistence.analyticNodePreferenceOptions();
     findOptions.modifier("$hint", "instance_index7");
     Instance instance = query.get(findOptions);
     if (instance == null) {
@@ -456,7 +454,7 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
     }
 
     List<AggregationInfo> instanceInfoList = new ArrayList<>();
-    wingsPersistence.getDatastore(query.getEntityClass())
+    wingsPersistence.getDefaultAnalyticsDatastore(query.getEntityClass())
         .createAggregation(Instance.class)
         .match(query)
         .group(Group.id(grouping("serviceId"), grouping("envId"), grouping("lastArtifactId")),
@@ -494,7 +492,7 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
     }
 
     List<ServiceAggregationInfo> serviceAggregationInfoList = new ArrayList<>();
-    wingsPersistence.getDatastore(query.getEntityClass())
+    wingsPersistence.getDefaultAnalyticsDatastore(query.getEntityClass())
         .createAggregation(Instance.class)
         .match(query)
         .group(Group.id(grouping("envId"), grouping("lastArtifactId")), grouping("count", accumulator("$sum", 1)),
@@ -530,7 +528,7 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
 
     List<ServiceInstanceCount> instanceInfoList = new ArrayList<>();
     AggregationPipeline aggregationPipeline =
-        wingsPersistence.getDatastore(query.getEntityClass())
+        wingsPersistence.getDefaultAnalyticsDatastore(query.getEntityClass())
             .createAggregation(Instance.class)
             .match(query)
             .group(Group.id(grouping("serviceId")), grouping("count", accumulator("$sum", 1)),
@@ -848,7 +846,7 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
     }
 
     List<AggregationInfo> instanceInfoList = new ArrayList<>();
-    wingsPersistence.getDatastore(query.getEntityClass())
+    wingsPersistence.getDefaultAnalyticsDatastore(query.getEntityClass())
         .createAggregation(Instance.class)
         .match(query)
         .group(Group.id(grouping("envId"), grouping("infraMappingId"), grouping("lastArtifactId")),
@@ -1313,12 +1311,6 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
   @Override
   public PageResponse<CompareEnvironmentAggregationResponseInfo> getCompareServicesByEnvironment(
       String accountId, String appId, String envId1, String envId2, int offset, int limit) {
-    ReadPreference readPreference;
-    if (Objects.isNull(mongoTagSet)) {
-      readPreference = ReadPreference.secondaryPreferred();
-    } else {
-      readPreference = ReadPreference.secondary(mongoTagSet);
-    }
     Query<Instance> query;
     try {
       query = getQueryForCompareServicesByEnvironment(appId, envId1, envId2);
@@ -1328,7 +1320,7 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
 
     List<CompareEnvironmentAggregationInfo> instanceInfoList = new ArrayList<>();
     AggregationPipeline aggregationPipeline =
-        wingsPersistence.getDatastore(query.getEntityClass())
+        wingsPersistence.getDefaultAnalyticsDatastore(query.getEntityClass())
             .createAggregation(Instance.class)
             .match(query)
             .group(Group.id(grouping(InstanceKeys.serviceId), grouping(InstanceKeys.envId),
@@ -1359,9 +1351,7 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
     aggregationPipeline.limit(limit);
 
     final Iterator<CompareEnvironmentAggregationInfo> aggregate =
-        HPersistence.retry(()
-                               -> aggregationPipeline.aggregate(CompareEnvironmentAggregationInfo.class,
-                                   AggregationOptions.builder().build(), readPreference));
+        HPersistence.retry(() -> aggregationPipeline.aggregate(CompareEnvironmentAggregationInfo.class));
     aggregate.forEachRemaining(instanceInfoList::add);
 
     List<CompareEnvironmentAggregationResponseInfo> responseList = new ArrayList<>();
@@ -1387,7 +1377,7 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
         .collect(toList());
 
     List<String> serviceList = new ArrayList<>();
-    AggregationPipeline aggregationPipelineCount = wingsPersistence.getDatastore(query.getEntityClass())
+    AggregationPipeline aggregationPipelineCount = wingsPersistence.getDefaultAnalyticsDatastore(query.getEntityClass())
                                                        .createAggregation(Instance.class)
                                                        .match(query)
                                                        .group(Group.id(grouping(InstanceKeys.serviceId)));

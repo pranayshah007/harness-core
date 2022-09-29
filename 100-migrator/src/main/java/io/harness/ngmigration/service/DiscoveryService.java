@@ -19,14 +19,12 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.network.Http;
-import io.harness.ng.core.utils.NGYamlUtils;
 import io.harness.ngmigration.beans.BaseEntityInput;
 import io.harness.ngmigration.beans.DiscoverEntityInput;
 import io.harness.ngmigration.beans.DiscoveryInput;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.MigrationInputResult;
 import io.harness.ngmigration.beans.NGYamlFile;
-import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
@@ -264,8 +262,12 @@ public class DiscoveryService {
 
   public StreamingOutput exportYamlFilesAsZip(MigrationInputDTO inputDTO, DiscoveryResult discoveryResult) {
     List<NGYamlFile> ngYamlFiles = migrateEntity(inputDTO, discoveryResult);
+    return createZip(ngYamlFiles);
+  }
+
+  public StreamingOutput createZip(List<NGYamlFile> yamlFiles) {
     String folder = "/tmp/" + UUIDGenerator.generateUuid();
-    exportZip(ngYamlFiles, folder);
+    exportZip(yamlFiles, folder);
     return output -> {
       try {
         byte[] data = Files.readAllBytes(Paths.get(folder + NGMigrationConstants.ZIP_FILE_PATH));
@@ -278,7 +280,7 @@ public class DiscoveryService {
   }
 
   private List<NGYamlFile> migrateEntity(MigrationInputDTO inputDTO, DiscoveryResult discoveryResult) {
-    Map<CgEntityId, NgEntityDetail> migratedEntities = new HashMap<>();
+    Map<CgEntityId, NGYamlFile> migratedEntities = new HashMap<>();
     Map<CgEntityId, Set<CgEntityId>> leafTracker = discoveryResult.getLinks().entrySet().stream().collect(
         Collectors.toMap(Entry::getKey, e -> Sets.newHashSet(e.getValue())));
     return getAllYamlFiles(inputDTO, discoveryResult.getEntities(), discoveryResult.getLinks(),
@@ -345,7 +347,7 @@ public class DiscoveryService {
         }
         ZipEntry e = new ZipEntry(file.getFilename());
         out.putNextEntry(e);
-        byte[] data = NGYamlUtils.getYamlString(file.getYaml()).getBytes();
+        byte[] data = migrationFactory.getMethod(file.getType()).getYamlString(file).getBytes();
         out.write(data, 0, data.length);
         out.closeEntry();
       }
@@ -382,9 +384,9 @@ public class DiscoveryService {
   }
 
   private List<NGYamlFile> getAllYamlFiles(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NgEntityDetail> migratedEntities,
+      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities,
       Map<CgEntityId, Set<CgEntityId>> leafTracker) {
-    if (!leafTracker.containsKey(entityId) || isEmpty(leafTracker.get(entityId))) {
+    if (!leafTracker.containsKey(entityId)) {
       return new ArrayList<>();
     }
 
@@ -392,8 +394,8 @@ public class DiscoveryService {
     while (isNotEmpty(leafTracker)) {
       List<CgEntityId> leafNodes = getLeafNodes(leafTracker);
       for (CgEntityId entry : leafNodes) {
-        List<NGYamlFile> currentEntity =
-            migrationFactory.getMethod(entry.getType()).getYaml(inputDTO, entities, graph, entry, migratedEntities);
+        List<NGYamlFile> currentEntity = migrationFactory.getMethod(entry.getType())
+                                             .getYaml(inputDTO, entityId, entities, graph, entry, migratedEntities);
         if (isNotEmpty(currentEntity)) {
           files.addAll(currentEntity);
         }

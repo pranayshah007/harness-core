@@ -578,7 +578,7 @@ public class SecretSpecBuilder {
                 .build());
 
       } else if (gitHTTPAuthenticationDTO.getType() == GitlabHttpAuthenticationType.OAUTH) {
-        GitlabOauthDTO gitlabOauthDTO = (GitlabOauthDTO) gitHTTPAuthenticationDTO.getHttpCredentialsSpec();
+        GitlabOauthDTO gitlabOauthDTO = (GitlabOauthDTO) decryptableEntity;
 
         String username = GitlabOauthDTO.userName;
 

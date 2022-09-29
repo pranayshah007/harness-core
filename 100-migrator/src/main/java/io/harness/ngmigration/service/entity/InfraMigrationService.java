@@ -19,6 +19,7 @@ import io.harness.beans.MigratedEntityMapping;
 import io.harness.cdng.infra.InfrastructureDef;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.infrastructure.InfrastructureType;
 import io.harness.ngmigration.beans.BaseEntityInput;
@@ -135,7 +136,7 @@ public class InfraMigrationService extends NgMigrationService {
 
   @Override
   public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NgEntityDetail> migratedEntities,
+      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities,
       NgEntityDetail ngEntityDetail) {
     return new ArrayList<>();
   }
@@ -163,24 +164,25 @@ public class InfraMigrationService extends NgMigrationService {
   }
 
   public InfrastructureDef getInfraDef(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NgEntityDetail> migratedEntities) {
+      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
     InfrastructureDefinition infrastructureDefinition = (InfrastructureDefinition) entities.get(entityId).getEntity();
     migratorExpressionUtils.render(infrastructureDefinition);
 
     if (infrastructureDefinition.getCloudProviderType() != KUBERNETES_CLUSTER) {
-      throw new UnsupportedOperationException("Only support K8s deployment");
+      throw new InvalidRequestException("Only support K8s deployment");
     }
     if (!(infrastructureDefinition.getInfrastructure() instanceof DirectKubernetesInfrastructure)) {
-      throw new UnsupportedOperationException("Only support Direct Infra");
+      throw new InvalidRequestException("Only support Direct Infra");
     }
     DirectKubernetesInfrastructure k8sInfra =
         (DirectKubernetesInfrastructure) infrastructureDefinition.getInfrastructure();
 
-    NgEntityDetail connector =
-        migratedEntities.get(CgEntityId.builder()
-                                 .type(CONNECTOR)
-                                 .id(infrastructureDefinition.getInfrastructure().getCloudProviderId())
-                                 .build());
+    NgEntityDetail connector = migratedEntities
+                                   .get(CgEntityId.builder()
+                                            .type(CONNECTOR)
+                                            .id(infrastructureDefinition.getInfrastructure().getCloudProviderId())
+                                            .build())
+                                   .getNgEntityDetail();
     // TODO: Fix Release Name. release-${infra.kubernetes.infraId} -> release-<+INFRA_KEY>
     return InfrastructureDef.builder()
         .type(InfrastructureType.KUBERNETES_DIRECT)
@@ -190,5 +192,10 @@ public class InfraMigrationService extends NgMigrationService {
                   .releaseName(ParameterField.createValueField(k8sInfra.getReleaseName()))
                   .build())
         .build();
+  }
+
+  @Override
+  public boolean canMigrate(CgEntityId id, CgEntityId root, boolean migrateAll) {
+    return migrateAll || root.getType().equals(NGMigrationEntityType.ENVIRONMENT);
   }
 }

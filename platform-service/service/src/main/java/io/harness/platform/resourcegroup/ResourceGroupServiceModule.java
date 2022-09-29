@@ -14,7 +14,6 @@ import static io.harness.outbox.OutboxSDKConstants.DEFAULT_OUTBOX_POLL_CONFIGURA
 
 import io.harness.AccessControlClientModule;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.app.PrimaryVersionManagerModule;
 import io.harness.audit.client.remote.AuditClientModule;
 import io.harness.delegate.beans.DelegateAsyncTaskResponse;
 import io.harness.delegate.beans.DelegateSyncTaskResponse;
@@ -41,13 +40,13 @@ import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
 import io.harness.platform.PlatformConfiguration;
+import io.harness.queue.QueueController;
 import io.harness.redis.RedisConfig;
 import io.harness.redis.RedissonClientFactory;
 import io.harness.resourcegroup.ResourceGroupModule;
 import io.harness.resourcegroup.framework.v2.service.ResourceGroupValidator;
 import io.harness.resourcegroup.framework.v2.service.impl.ResourceGroupValidatorImpl;
 import io.harness.serializer.KryoRegistrar;
-import io.harness.serializer.PrimaryVersionManagerRegistrars;
 import io.harness.serializer.morphia.ResourceGroupSerializer;
 import io.harness.threading.ExecutorModule;
 import io.harness.time.TimeModule;
@@ -97,7 +96,6 @@ public class ResourceGroupServiceModule extends AbstractModule {
       Set<Class<? extends MorphiaRegistrar>> morphiaRegistrars() {
         return ImmutableSet.<Class<? extends MorphiaRegistrar>>builder()
             .addAll(ResourceGroupSerializer.morphiaRegistrars)
-            .addAll(PrimaryVersionManagerRegistrars.morphiaRegistrars)
             .build();
       }
 
@@ -125,7 +123,17 @@ public class ResourceGroupServiceModule extends AbstractModule {
     bind(HPersistence.class).to(MongoPersistence.class);
     bind(ResourceGroupValidator.class).to(ResourceGroupValidatorImpl.class);
     install(VersionModule.getInstance());
-    install(PrimaryVersionManagerModule.getInstance());
+    bind(QueueController.class).toInstance(new QueueController() {
+      @Override
+      public boolean isPrimary() {
+        return true;
+      }
+
+      @Override
+      public boolean isNotPrimary() {
+        return false;
+      }
+    });
     install(new ValidationModule(getValidatorFactory()));
     install(new ResourceGroupPersistenceModule());
     install(PersistentLockModule.getInstance());

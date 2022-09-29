@@ -10,8 +10,9 @@ package io.harness.freeze.mappers;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
-import io.harness.freeze.beans.FreezeResponseDTO;
 import io.harness.freeze.beans.FreezeType;
+import io.harness.freeze.beans.response.FreezeResponseDTO;
+import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
 import io.harness.freeze.beans.yaml.FreezeConfig;
 import io.harness.freeze.beans.yaml.FreezeInfoConfig;
 import io.harness.freeze.entity.FreezeConfigEntity;
@@ -25,12 +26,8 @@ import lombok.experimental.UtilityClass;
 public class NGFreezeDtoMapper {
   public FreezeConfigEntity toFreezeConfigEntity(
       String accountId, String orgId, String projectId, String freezeConfigYaml) {
-    try {
-      FreezeConfig templateConfig = YamlPipelineUtils.read(freezeConfigYaml, FreezeConfig.class);
-      return toFreezeConfigEntityResponse(accountId, templateConfig, freezeConfigYaml);
-    } catch (IOException e) {
-      throw new InvalidRequestException("Cannot create template entity due to " + e.getMessage());
-    }
+    FreezeConfig freezeConfig = toFreezeConfig(freezeConfigYaml);
+    return toFreezeConfigEntityResponse(accountId, freezeConfig, freezeConfigYaml);
   }
 
   public FreezeConfig toFreezeConfig(String freezeConfigYaml) {
@@ -56,9 +53,29 @@ public class NGFreezeDtoMapper {
         .lastUpdatedAt(freezeConfigEntity.getLastUpdatedAt())
         .createdAt(freezeConfigEntity.getCreatedAt())
         .type(freezeConfigEntity.getType())
-        .createdBy(freezeConfigEntity.getCreatedBy())
+        //        .createdBy(freezeConfigEntity.getCreatedBy())
         .lastUpdatedAt(freezeConfigEntity.getLastUpdatedAt())
-        .lastUpdatedBy(freezeConfigEntity.getLastUpdatedBy())
+        //        .lastUpdatedBy(freezeConfigEntity.getLastUpdatedBy())
+        .build();
+  }
+
+  public FreezeSummaryResponseDTO prepareFreezeResponseSummaryDto(FreezeConfigEntity freezeConfigEntity) {
+    FreezeConfig freezeConfig = toFreezeConfig(freezeConfigEntity.getYaml());
+    return FreezeSummaryResponseDTO.builder()
+        .accountId(freezeConfigEntity.getAccountId())
+        .orgIdentifier(freezeConfigEntity.getOrgIdentifier())
+        .projectIdentifier(freezeConfigEntity.getProjectIdentifier())
+        .freezeWindows(freezeConfig.getFreezeInfoConfig().getWindows())
+        .identifier(freezeConfigEntity.getIdentifier())
+        .description(freezeConfigEntity.getDescription())
+        .name(freezeConfigEntity.getName())
+        .status(freezeConfigEntity.getStatus())
+        .freezeScope(freezeConfigEntity.getFreezeScope())
+        .tags(TagMapper.convertToMap(freezeConfigEntity.getTags()))
+        .lastUpdatedAt(freezeConfigEntity.getLastUpdatedAt())
+        .createdAt(freezeConfigEntity.getCreatedAt())
+        .type(freezeConfigEntity.getType())
+        .lastUpdatedAt(freezeConfigEntity.getLastUpdatedAt())
         .build();
   }
 
@@ -78,7 +95,7 @@ public class NGFreezeDtoMapper {
         .orgIdentifier(freezeConfig.getFreezeInfoConfig().getOrgIdentifier())
         .projectIdentifier(freezeConfig.getFreezeInfoConfig().getProjectIdentifier())
         .name(freezeConfig.getFreezeInfoConfig().getName())
-        .status(freezeConfig.getFreezeInfoConfig().getActive())
+        .status(freezeConfig.getFreezeInfoConfig().getStatus())
         .description(description)
         .tags(TagMapper.convertToList(freezeConfig.getFreezeInfoConfig().getTags()))
         .type(FreezeType.MANUAL)

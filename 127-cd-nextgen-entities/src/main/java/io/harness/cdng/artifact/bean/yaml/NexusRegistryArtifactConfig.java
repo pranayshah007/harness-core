@@ -74,7 +74,7 @@ public class NexusRegistryArtifactConfig implements ArtifactConfig, Visitable, W
   /**
    * Artifacts in repos need to be referenced via a path.
    */
-  @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> artifactPath;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> artifactPath;
 
   /**
    * Repo port.

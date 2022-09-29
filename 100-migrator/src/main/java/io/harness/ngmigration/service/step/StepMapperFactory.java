@@ -7,6 +7,8 @@
 
 package io.harness.ngmigration.service.step;
 
+import io.harness.exception.InvalidRequestException;
+
 import com.google.inject.Inject;
 
 public class StepMapperFactory {
@@ -20,7 +22,7 @@ public class StepMapperFactory {
       case "K8S_DEPLOYMENT_ROLLING":
         return k8sRollingStepMapper;
       default:
-        throw new UnsupportedOperationException();
+        throw new InvalidRequestException("Unsupported step");
     }
   }
 }

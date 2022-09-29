@@ -435,6 +435,12 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   }
 
   @Override
+  public boolean isServiceField(String fieldName, JsonNode serviceValue) {
+    return YamlTypes.SERVICE_ENTITY.equals(fieldName) && serviceValue.isObject()
+        && serviceValue.get(YamlTypes.SERVICE_REF) != null;
+  }
+
+  @Override
   public Integer findActiveServicesCountAtGivenTimestamp(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, long timestampInMs) {
     if (timestampInMs <= 0) {

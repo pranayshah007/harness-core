@@ -20,8 +20,6 @@ import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.persistence.HPersistence;
 
 import software.wings.beans.Application;
-import software.wings.beans.Pipeline;
-import software.wings.beans.Pipeline.PipelineKeys;
 import software.wings.beans.Service;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
@@ -63,16 +61,17 @@ public class AppMigrationService extends NgMigrationService {
 
     Set<CgEntityId> children = new HashSet<>();
 
-    List<Pipeline> pipelines = hPersistence.createQuery(Pipeline.class)
-                                   .filter(PipelineKeys.accountId, application.getAccountId())
-                                   .filter(PipelineKeys.appId, appId)
-                                   .project(PipelineKeys.uuid, true)
-                                   .asList();
-    children.addAll(pipelines.stream()
-                        .map(Pipeline::getUuid)
-                        .distinct()
-                        .map(id -> CgEntityId.builder().id(id).type(NGMigrationEntityType.PIPELINE).build())
-                        .collect(Collectors.toSet()));
+    // For now we will not discover pipelines.
+    //    List<Pipeline> pipelines = hPersistence.createQuery(Pipeline.class)
+    //                                   .filter(PipelineKeys.accountId, application.getAccountId())
+    //                                   .filter(PipelineKeys.appId, appId)
+    //                                   .project(PipelineKeys.uuid, true)
+    //                                   .asList();
+    //    children.addAll(pipelines.stream()
+    //                        .map(Pipeline::getUuid)
+    //                        .distinct()
+    //                        .map(id -> CgEntityId.builder().id(id).type(NGMigrationEntityType.PIPELINE).build())
+    //                        .collect(Collectors.toSet()));
 
     List<Service> services = serviceResourceService.findServicesByAppInternal(appId);
     if (EmptyPredicate.isNotEmpty(services)) {
@@ -121,7 +120,7 @@ public class AppMigrationService extends NgMigrationService {
 
   @Override
   public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NgEntityDetail> migratedEntities,
+      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities,
       NgEntityDetail ngEntityDetail) {
     return new ArrayList<>();
   }

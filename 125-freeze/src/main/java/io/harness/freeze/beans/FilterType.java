@@ -7,9 +7,11 @@
 
 package io.harness.freeze.beans;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public enum FilterType {
-  ALL,
-  EQUALS,
-  NOT_EQUALS,
-  CUSTOM;
+  @JsonProperty("All") ALL,
+  @JsonProperty("Equals") EQUALS,
+  @JsonProperty("NOT_EQUALS") @JsonIgnore NOT_EQUALS,
 }

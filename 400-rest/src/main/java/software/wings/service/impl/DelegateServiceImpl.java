@@ -148,7 +148,6 @@ import io.harness.exception.UnexpectedException;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.ff.FeatureFlagService;
 import io.harness.globalcontex.DelegateTokenGlobalContextData;
-import io.harness.grpc.DelegateServiceClassicGrpcClient;
 import io.harness.k8s.model.response.CEK8sDelegatePrerequisite;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
@@ -407,7 +406,6 @@ public class DelegateServiceImpl implements DelegateService {
   @Inject @Getter private Subject<DelegateObserver> subject = new Subject<>();
   @Getter private final Subject<DelegateProfileObserver> delegateProfileSubject = new Subject<>();
   @Inject private OutboxService outboxService;
-  @Inject private DelegateServiceClassicGrpcClient delegateServiceClassicGrpcClient;
   @Inject private DelegateNgTokenService delegateNgTokenService;
   @Inject private RemoteObserverInformer remoteObserverInformer;
   @Inject private DelegateMetricsService delegateMetricsService;
@@ -3987,9 +3985,6 @@ public class DelegateServiceImpl implements DelegateService {
       task.setUuid(generateUuid());
     }
     log.debug("Task id [{}] has wait Id [{}], task Object: [{}]", task.getUuid(), task.getWaitId(), task);
-    if (mainConfiguration.isDisableDelegateMgmtInManager()) {
-      return delegateServiceClassicGrpcClient.queueTask(task);
-    }
     return delegateTaskServiceClassic.queueTask(task);
   }
 
@@ -4002,9 +3997,6 @@ public class DelegateServiceImpl implements DelegateService {
   public <T extends DelegateResponseData> T executeTask(DelegateTask task) throws InterruptedException {
     if (task.getUuid() == null) {
       task.setUuid(generateUuid());
-    }
-    if (mainConfiguration.isDisableDelegateMgmtInManager()) {
-      return delegateServiceClassicGrpcClient.executeTask(task);
     }
     return delegateTaskServiceClassic.executeTask(task);
   }
@@ -4044,17 +4036,11 @@ public class DelegateServiceImpl implements DelegateService {
 
   @Override
   public DelegateTask abortTask(String accountId, String delegateTaskId) {
-    if (mainConfiguration.isDisableDelegateMgmtInManager()) {
-      return delegateServiceClassicGrpcClient.abortTask(accountId, delegateTaskId);
-    }
     return delegateTaskServiceClassic.abortTask(accountId, delegateTaskId);
   }
 
   @Override
   public String expireTask(String accountId, String delegateTaskId) {
-    if (mainConfiguration.isDisableDelegateMgmtInManager()) {
-      return delegateServiceClassicGrpcClient.expireTask(accountId, delegateTaskId);
-    }
     return delegateTaskServiceClassic.expireTask(accountId, delegateTaskId);
   }
 

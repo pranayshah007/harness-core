@@ -96,10 +96,6 @@ public class CustomDeploymentYamlHelper {
         log.error("templateRef is empty in yaml for account id :{}", accountId);
         throw new InvalidRequestException("templateRef is null in yaml");
       }
-      if (isEmpty(stepTemplateRef.getVersionLabel())) {
-        log.error("versionLabel is null in yaml for account id :{}", accountId);
-        throw new InvalidRequestException("versionLabel is null in yaml");
-      }
       return stepTemplateRef;
     } catch (Exception e) {
       log.error("Could not fetch the template reference from yaml for acc :{}: {}", accountId, e);
@@ -316,7 +312,7 @@ public class CustomDeploymentYamlHelper {
       ArrayNode updatedVariableNode = mapper.createArrayNode();
       Map<String, JsonNode> infraVariables = new HashMap<>();
       for (JsonNode variable : infraVariableNode) {
-        infraVariables.put(variable.get("name").asText(), variable.get("value"));
+        infraVariables.put(variable.get("name").asText(), variable);
       }
       List<JsonNode> updateVariablesList = new ArrayList<>();
       JsonNode templateVariableNode = templateInfraNode.get("variables");

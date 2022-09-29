@@ -43,6 +43,10 @@ import org.zeroturnaround.exec.stream.LogOutputStream;
 @OwnedBy(DEL)
 public class InstallUtils {
   private static final Table<ClientTool, ClientToolVersion, Path> toolPaths = HashBasedTable.create();
+  private static final String x86_64 = "x86_64";
+  private static final String aarch64 = "aarch64";
+  private static final String amd64 = "amd64";
+  private static final String arm64 = "arm64";
 
   public static String getPath(final ClientTool tool, final ClientToolVersion version) {
     final Path toolPath = toolPaths.get(tool, version);
@@ -196,11 +200,11 @@ public class InstallUtils {
   private static String getDownloadUrl(
       final ClientTool tool, final ClientToolVersion toolVersion, final DelegateConfiguration configuration) {
     if (configuration.isUseCdn()) {
-      return join(
-          "/", configuration.getCdnUrl(), String.format(tool.getCdnPath(), toolVersion.getVersion(), getOsPath()));
+      return join("/", configuration.getCdnUrl(),
+          String.format(tool.getCdnPath(), toolVersion.getVersion(), getOsPath(), getArchPath()));
     }
     return getManagerBaseUrl(configuration.getManagerUrl())
-        + String.format(tool.getOnPremPath(), toolVersion.getVersion(), getOsPath());
+        + String.format(tool.getOnPremPath(), toolVersion.getVersion(), getOsPath(), getArchPath());
   }
 
   private static String getCustomPath(
@@ -301,5 +305,16 @@ public class InstallUtils {
       return "darwin";
     }
     return "linux";
+  }
+
+  private static String getArchPath() {
+    if (SystemUtils.OS_ARCH != null) {
+      if (x86_64.equals(SystemUtils.OS_ARCH)) {
+        return amd64;
+      } else if (aarch64.equals(SystemUtils.OS_ARCH)) {
+        return arm64;
+      }
+    }
+    throw new UnsupportedOperationException("Unsupported arch");
   }
 }
