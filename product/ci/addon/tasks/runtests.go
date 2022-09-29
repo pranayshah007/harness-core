@@ -492,6 +492,8 @@ func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile stri
 
 	// Runner selection
 	var runner testintelligence.TestRunner
+	r.log.Infow(r.language)
+	r.log.Infow(r.buildTool)
 	switch r.language {
 	case "scala":
 		fallthrough
