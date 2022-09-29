@@ -124,4 +124,5 @@ public interface EntityTypeConstants {
   String ECS_BLUE_GREEN_ROLLBACK = "EcsBlueGreenRollback";
   String WAIT_STEP = "Wait";
   String ARTIFACT_SOURCE_TEMPLATE = "ArtifactSource";
+  String SHELL_SCRIPT_PROVISION_STEP = "ShellScriptProvision";
 }

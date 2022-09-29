@@ -504,4 +504,8 @@ io.harness.cdng.ecs.EcsBlueGreenRollbackOutcome
 io.harness.cdng.ecs.EcsBlueGreenSwapTargetGroupsOutcome
 io.harness.cdng.ecs.EcsBlueGreenRollbackStepNode
 io.harness.cdng.artifact.bean.yaml.Nexus2RegistryArtifactConfig
+io.harness.cdng.provision.azure.ShellScriptProvisionOutcome
+io.harness.cdng.provision.shellscript.ShellScriptProvisionStepInfo
+io.harness.cdng.provision.shellscript.ShellScriptProvisionStepNode
+io.harness.cdng.provision.shellscript.ShellScriptProvisionStepParameters
 

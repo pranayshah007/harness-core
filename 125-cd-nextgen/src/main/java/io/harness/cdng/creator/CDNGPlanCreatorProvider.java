@@ -46,6 +46,7 @@ import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.NEXUS2_
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.NEXUS3_REGISTRY_NAME;
 import static io.harness.ng.core.k8s.ServiceSpecType.AZURE_WEBAPP;
 import static io.harness.ng.core.k8s.ServiceSpecType.CUSTOM_DEPLOYMENT;
+import static io.harness.ng.core.k8s.ServiceSpecType.ECS;
 import static io.harness.ng.core.k8s.ServiceSpecType.KUBERNETES;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -101,6 +102,7 @@ import io.harness.cdng.creator.plan.steps.K8sDeleteStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.K8sRollingRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.K8sRollingStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.K8sScaleStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.ShellScriptProvisionStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TerraformApplyStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TerraformDestroyStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TerraformPlanStepPlanCreator;
@@ -152,6 +154,7 @@ import io.harness.cdng.provision.azure.variablecreator.AzureCreateBPStepVariable
 import io.harness.cdng.provision.cloudformation.variablecreator.CloudformationCreateStepVariableCreator;
 import io.harness.cdng.provision.cloudformation.variablecreator.CloudformationDeleteStepVariableCreator;
 import io.harness.cdng.provision.cloudformation.variablecreator.CloudformationRollbackStepVariableCreator;
+import io.harness.cdng.provision.shellscript.ShellScriptProvisionStepVariableCreator;
 import io.harness.cdng.provision.terraform.variablecreator.TerraformApplyStepVariableCreator;
 import io.harness.cdng.provision.terraform.variablecreator.TerraformDestroyStepVariableCreator;
 import io.harness.cdng.provision.terraform.variablecreator.TerraformPlanStepVariableCreator;
@@ -200,6 +203,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
   private static final String AZURE = "Azure";
   private static final String HELM = "Helm";
   private static final String PROVISIONER = "Provisioner";
+  private static final String SHELL_SCRIPT_PROVISIONER_STEM_METADATA = "Shell Script Provisioner";
 
   private static final List<String> CLOUDFORMATION_CATEGORY =
       Arrays.asList(KUBERNETES, PROVISIONER, CLOUDFORMATION_STEP_METADATA, HELM);
@@ -209,6 +213,9 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
   private static final List<String> AZURE_RESOURCE_CATEGORY =
       Arrays.asList(KUBERNETES, PROVISIONER, AZURE, HELM, AZURE_WEBAPP);
   private static final String AZURE_RESOURCE_STEP_METADATA = "Azure Provisioner";
+
+  private static final List<String> SHELL_SCRIPT_PROVISIONER_CATEGORY =
+      Arrays.asList(KUBERNETES, PROVISIONER, HELM, AZURE_WEBAPP, ECS);
 
   private static final Set<String> EMPTY_FILTER_IDENTIFIERS = Sets.newHashSet(SIDECARS, SPEC, SERVICE_CONFIG,
       CONFIG_FILE, STARTUP_COMMAND, APPLICATION_SETTINGS, ARTIFACTS, ROLLBACK_STEPS, CONNECTION_STRINGS, STEPS,
@@ -301,6 +308,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new AzureCreateBPResourceStepPlanCreator());
 
     planCreators.add(new AzureARMRollbackResourceStepPlanCreator());
+    planCreators.add(new ShellScriptProvisionStepPlanCreator());
     injectorUtils.injectMembers(planCreators);
     return planCreators;
   }
@@ -382,6 +390,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new AzureCreateARMResourceStepVariableCreator());
     variableCreators.add(new AzureCreateBPStepVariableCreator());
     variableCreators.add(new AzureARMRollbackStepVariableCreator());
+    variableCreators.add(new ShellScriptProvisionStepVariableCreator());
     return variableCreators;
   }
 
@@ -722,6 +731,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                  .build())
             .setFeatureFlag(FeatureName.AZURE_ARM_BP_NG.name())
             .build();
+
     StepInfo fetchInstanceScript =
         StepInfo.newBuilder()
             .setName("Fetch Instance Script")
@@ -730,6 +740,17 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                 StepMetaData.newBuilder().addCategory("CustomDeployment").addFolderPaths("CustomDeployment").build())
             .setFeatureFlag(FeatureName.NG_DEPLOYMENT_TEMPLATE.name())
             .build();
+
+    StepInfo shellScriptProvision = StepInfo.newBuilder()
+                                        .setName("Shell Script Provision")
+                                        .setType(StepSpecTypeConstants.SHELL_SCRIPT_PROVISION)
+                                        .setFeatureRestrictionName(FeatureRestrictionName.SHELL_SCRIPT_PROVISION.name())
+                                        .setStepMetaData(StepMetaData.newBuilder()
+                                                             .addAllCategory(SHELL_SCRIPT_PROVISIONER_CATEGORY)
+                                                             .addFolderPaths(SHELL_SCRIPT_PROVISIONER_STEM_METADATA)
+                                                             .build())
+                                        .setFeatureFlag(FeatureName.SHELL_SCRIPT_PROVISION_NG.name())
+                                        .build();
 
     List<StepInfo> stepInfos = new ArrayList<>();
 
@@ -772,6 +793,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(ecsBlueGreenCreateService);
     stepInfos.add(ecsBlueGreenSwapTargetGroups);
     stepInfos.add(ecsBlueGreenRollback);
+    stepInfos.add(shellScriptProvision);
     return stepInfos;
   }
 }
