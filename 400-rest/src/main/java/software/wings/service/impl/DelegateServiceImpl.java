@@ -295,6 +295,7 @@ import org.jetbrains.annotations.NotNull;
 import org.mongodb.morphia.Key;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.UpdateOperations;
+import org.springframework.util.CollectionUtils;
 
 @Singleton
 @ValidateOnExecution
@@ -700,6 +701,11 @@ public class DelegateServiceImpl implements DelegateService {
     checkUniquenessOfDelegateName(accountId, delegateSetupDetails.getName(), true);
     if (delegateSetupDetails.getSize() == null) {
       throw new InvalidRequestException("Delegate Size must be provided.", USER);
+    }
+
+    if (Boolean.TRUE.equals(delegateSetupDetails.getCeEnabled())
+        && CollectionUtils.isEmpty(delegateSetupDetails.getCcmFeaturesEnabled())) {
+      throw new InvalidRequestException("List of features enabled in CCM must be provided.", USER);
     }
 
     K8sConfigDetails k8sConfigDetails = delegateSetupDetails.getK8sConfigDetails();

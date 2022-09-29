@@ -10,9 +10,12 @@ package io.harness.delegate.beans;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.EntityIdentifier;
+import io.harness.delegate.beans.connector.CEFeatures;
 import io.harness.gitsync.beans.YamlDTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+import java.util.List;
 import java.util.Set;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -38,6 +41,7 @@ public class DelegateSetupDetails implements YamlDTO {
 
   private K8sConfigDetails k8sConfigDetails;
   private Boolean ceEnabled;
+  private List<CEFeatures> ccmFeaturesEnabled;
 
   private Set<String> tags;
 
