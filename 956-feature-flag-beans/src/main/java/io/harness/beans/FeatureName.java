@@ -439,7 +439,8 @@ public enum FeatureName {
       "For NG, it enables to read secrets from HashiCorp Vault directly using an fully qualified path expression without the need of creating secret in Harness.",
       HarnessTeam.PL),
   PL_NO_EMAIL_FOR_SAML_ACCOUNT_INVITES("No email for users in account where SAML auth is enabled", HarnessTeam.PL),
-  PL_ENABLE_GOOGLE_SECRET_MANAGER_IN_NG("Enable Google Secret Manager in NG", HarnessTeam.PL);
+  PL_ENABLE_GOOGLE_SECRET_MANAGER_IN_NG("Enable Google Secret Manager in NG", HarnessTeam.PL),
+  SPG_DISABLE_SEARCH_DEPLOYMENTS_PAGE("Disable search on deployment page in CG.", HarnessTeam.SPG);
   @Deprecated
   FeatureName() {
     scope = Scope.PER_ACCOUNT;
