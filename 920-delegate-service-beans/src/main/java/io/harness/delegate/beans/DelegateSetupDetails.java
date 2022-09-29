@@ -37,6 +37,7 @@ public class DelegateSetupDetails implements YamlDTO {
   @EntityIdentifier(allowBlank = true) private String identifier;
 
   private K8sConfigDetails k8sConfigDetails;
+  private Boolean ceEnabled;
 
   private Set<String> tags;
 

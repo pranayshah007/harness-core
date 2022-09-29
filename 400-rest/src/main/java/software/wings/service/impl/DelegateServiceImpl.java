@@ -4168,6 +4168,7 @@ public class DelegateServiceImpl implements DelegateService {
                   .verificationHost(verificationServiceUrl)
                   .delegateName(delegateSetupDetails.getName())
                   .delegateType(KUBERNETES)
+                  .ceEnabled(Boolean.TRUE.equals(delegateSetupDetails.getCeEnabled()))
                   .ciEnabled(isCiEnabled)
                   .delegateDescription(delegateSetupDetails.getDescription())
                   .delegateSize(sizeDetails.getSize().name())
