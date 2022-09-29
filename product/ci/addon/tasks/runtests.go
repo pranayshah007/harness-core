@@ -494,9 +494,6 @@ func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile stri
 	var runner testintelligence.TestRunner
 	switch r.language {
 	case "scala":
-		if r.buildTool == "sbt" {
-			runner = java.NewSBTRunner(r.log, r.fs, r.cmdContextFactory)
-		}
 		fallthrough
 	case "java":
 		fallthrough
@@ -508,6 +505,10 @@ func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile stri
 			runner = java.NewGradleRunner(r.log, r.fs, r.cmdContextFactory)
 		case "bazel":
 			runner = java.NewBazelRunner(r.log, r.fs, r.cmdContextFactory)
+		case "sbt":
+			if r.buildTool == "sbt" {
+				runner = java.NewSBTRunner(r.log, r.fs, r.cmdContextFactory)
+			}
 		default:
 			return "", fmt.Errorf("build tool: %s is not supported for Java", r.buildTool)
 		}
