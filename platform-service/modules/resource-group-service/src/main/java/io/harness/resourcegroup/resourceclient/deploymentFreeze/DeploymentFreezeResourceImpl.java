@@ -1,8 +1,9 @@
 package io.harness.resourcegroup.resourceclient.deploymentFreeze;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.resourcegroup.beans.ValidatorType.*;
+import static io.harness.resourcegroup.beans.ValidatorType.BY_RESOURCE_IDENTIFIER;
 import static io.harness.resourcegroup.beans.ValidatorType.BY_RESOURCE_TYPE;
+import static io.harness.resourcegroup.beans.ValidatorType.BY_RESOURCE_TYPE_INCLUDING_CHILD_SCOPES;
 
 import static org.apache.commons.lang3.StringUtils.stripToNull;
 
@@ -19,7 +20,12 @@ import io.harness.resourcegroup.v2.model.AttributeFilter;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.InvalidProtocolBufferException;
-import java.util.*;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
