@@ -3,18 +3,18 @@
 # that can be found in the licenses directory at the root of this repository, also available at
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
-load("//:tools/bazel/docker/docker-utils.bzl", "docker_layers", "docker_image", "docker_push", "docker_pkg")
+load("//:tools/bazel/docker/docker-utils.bzl", "docker_image", "docker_layers", "docker_pkg", "docker_push")
 
 GRPC_HEALTH_PROBE_VERSION = "v0.3.0"
 
 docker_layers(
     name = "event-server-packages",
+    commands = [
+        "curl -Lso /bin/grpc_health_probe https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/%s/grpc_health_probe-linux-amd64" % GRPC_HEALTH_PROBE_VERSION,
+        "chmod +x /bin/grpc_health_probe",
+    ],
     docker_run_flags = [
         "--user=root",
-    ],
-    commands = [
-        "curl -Lso /bin/grpc_health_probe https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/%s/grpc_health_probe-linux-amd64" % (GRPC_HEALTH_PROBE_VERSION),
-        "chmod +x /bin/grpc_health_probe",
     ],
 )
 
@@ -32,32 +32,33 @@ docker_pkg(
     name = "scripts",
     srcs = glob([
         "scripts/*",
-        ]),
+    ]),
 )
 
 docker_pkg(
     name = "files",
     srcs = [
         "//:protocol.info",
-        "//350-event-server:event-service-config.yml",
         "//350-event-server:cert.pem",
+        "//350-event-server:event-service-config.yml",
         "//350-event-server:key.pem",
     ],
     files = {
         "//350-event-server:module_deploy.jar": "event-server-capsule.jar",
-        },
+    },
 )
 
 docker_image(
     name = "event-server-saas-image",
-    dockerlayers = [
-            ":event-server-saas-run",
-            ":event-server-packages",
-            ],
     cmd = [
-        "/bin/bash", "-c",
+        "/bin/bash",
+        "-c",
         "./run.sh",
-        ],
+    ],
+    dockerlayers = [
+        ":event-server-saas-run",
+        ":event-server-packages",
+    ],
     filestocopy = [
         ":files",
         ":scripts",
@@ -66,22 +67,23 @@ docker_image(
 
 #Pass the TAG from the bazel run command by passing --define=TAG=TagValue
 docker_push(
-        name = "event-server-saas-push",
-        image = "event-server-saas-image",
-        repository = "platform-205701/harness/harness-services-bazel/event-server-saas-bazel-test",
-        imagetag = "$(TAG)",
+    name = "event-server-saas-push",
+    image = "event-server-saas-image",
+    imagetag = "$(TAG)",
+    repository = "platform-205701/harness/harness-services-bazel/event-server-saas-bazel-test",
 )
 
 docker_image(
     name = "event-server-onprem-image",
-    dockerlayers = [
-            ":event-server-onprem-run",
-            ":event-server-packages",
-            ],
     cmd = [
-        "/bin/bash", "-c",
+        "/bin/bash",
+        "-c",
         "./run.sh",
-        ],
+    ],
+    dockerlayers = [
+        ":event-server-onprem-run",
+        ":event-server-packages",
+    ],
     filestocopy = [
         ":files",
         ":scripts",
@@ -90,8 +92,8 @@ docker_image(
 
 #Pass the TAG from the bazel run command by passing --define=TAG=TagValue
 docker_push(
-        name = "event-server-onprem-push",
-        image = "event-server-onprem-image",
-        repository = "platform-205701/harness/harness-services-bazel/event-server-onprem-bazel-test",
-        imagetag = "$(TAG)",
+    name = "event-server-onprem-push",
+    image = "event-server-onprem-image",
+    imagetag = "$(TAG)",
+    repository = "platform-205701/harness/harness-services-bazel/event-server-onprem-bazel-test",
 )

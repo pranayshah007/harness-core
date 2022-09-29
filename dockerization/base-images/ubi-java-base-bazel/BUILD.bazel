@@ -3,7 +3,6 @@ load("@io_bazel_rules_docker//docker/util:run.bzl", "container_run_and_commit_la
 
 container_run_and_commit_layer(
     name = "ubi-java-base-run",
-    image = "@ubi-minimal-base//image",
     commands = [
         "curl -OL https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.15%2B10/OpenJDK11U-jdk_x64_linux_hotspot_11.0.15_10.tar.gz",
         "mkdir -p /opt/harness/OpenJDK11",
@@ -12,6 +11,7 @@ container_run_and_commit_layer(
         "/opt/harness/OpenJDK11/jdk-11.0.15+10/bin/java -version",
         "rm -rf OpenJDK11U-jdk_x64_linux_hotspot_11.0.15_10.tar.gz",
     ],
+    image = "@ubi-minimal-base//image",
     tags = [
         "manual",
         "no-cache",
@@ -22,21 +22,21 @@ container_run_and_commit_layer(
 container_image(
     name = "ubi-java-base-image",
     base = "@ubi-minimal-base//image",
-    layers = [
-        ":ubi-java-base-run"
-        ],
-    user = "65534",
-    workdir = "/opt/harness",
     env = {
         "JAVA_HOME": "/opt/harness/OpenJDK11/jdk-11.0.15+10",
         "PATH": "/opt/harness/OpenJDK11/jdk-11.0.15+10/bin:$$PATH",
         "CLASSPATH_LIMIT": "400000",
     },
+    layers = [
+        ":ubi-java-base-run",
+    ],
     tags = [
         "manual",
         "no-cache",
         "no-ide",
     ],
+    user = "65534",
+    workdir = "/opt/harness",
 )
 
 #If "registry or "repository" or "tag" is changed then corresponding container_pull macro in WORKSPACE file also has be to modified.

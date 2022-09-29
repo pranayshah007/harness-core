@@ -3,7 +3,7 @@
 # that can be found in the licenses directory at the root of this repository, also available at
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
-load("//:tools/bazel/docker/docker-utils.bzl", "docker_layers", "docker_image", "docker_push", "docker_pkg")
+load("//:tools/bazel/docker/docker-utils.bzl", "docker_image", "docker_layers", "docker_pkg", "docker_push")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 
 docker_layers(
@@ -20,31 +20,32 @@ docker_pkg(
     name = "scripts",
     srcs = glob([
         "scripts/*",
-        ]),
+    ]),
 )
 
 docker_pkg(
     name = "files",
     srcs = [
         "//:protocol.info",
-        "//270-delegate-service-app:keystore.jks",
         "//270-delegate-service-app:delegate-service-config.yml",
+        "//270-delegate-service-app:keystore.jks",
         "//270-delegate-service-app/src/main/resources:redisson-jcache.yaml",
     ],
     files = {
-        "//270-delegate-service-app:module_deploy.jar": "delegate-service-capsule.jar"
-        },
+        "//270-delegate-service-app:module_deploy.jar": "delegate-service-capsule.jar",
+    },
 )
 
 docker_image(
     name = "dms-saas-image",
-    dockerlayers = [
-            ":dms-saas-run"
-            ],
     cmd = [
-        "/bin/bash", "-c",
+        "/bin/bash",
+        "-c",
         "./run.sh",
-        ],
+    ],
+    dockerlayers = [
+        ":dms-saas-run",
+    ],
     filestocopy = [
         ":files",
         ":scripts",
@@ -53,21 +54,22 @@ docker_image(
 
 #Pass the TAG from the bazel run command by passing --define=TAG=TagValue
 docker_push(
-        name = "dms-saas-push",
-        image = "dms-saas-image",
-        repository = "platform-205701/harness/harness-services-bazel/dms-saas-bazel-test",
-        imagetag = "$(TAG)",
+    name = "dms-saas-push",
+    image = "dms-saas-image",
+    imagetag = "$(TAG)",
+    repository = "platform-205701/harness/harness-services-bazel/dms-saas-bazel-test",
 )
 
 docker_image(
     name = "dms-onprem-image",
-    dockerlayers = [
-            ":dms-onprem-run"
-            ],
     cmd = [
-        "/bin/bash", "-c",
+        "/bin/bash",
+        "-c",
         "./run.sh",
-        ],
+    ],
+    dockerlayers = [
+        ":dms-onprem-run",
+    ],
     filestocopy = [
         ":files",
         ":scripts",
@@ -76,8 +78,8 @@ docker_image(
 
 #Pass the TAG from the bazel run command by passing --define=TAG=TagValue
 docker_push(
-        name = "dms-onprem-push",
-        image = "dms-onprem-image",
-        repository = "platform-205701/harness/harness-services-bazel/dms-onprem-bazel-test",
-        imagetag = "$(TAG)",
+    name = "dms-onprem-push",
+    image = "dms-onprem-image",
+    imagetag = "$(TAG)",
+    repository = "platform-205701/harness/harness-services-bazel/dms-onprem-bazel-test",
 )

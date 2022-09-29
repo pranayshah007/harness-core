@@ -3,7 +3,7 @@
 # that can be found in the licenses directory at the root of this repository, also available at
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
-load("//:tools/bazel/docker/docker-utils.bzl", "docker_layers", "docker_image", "docker_push", "docker_pkg")
+load("//:tools/bazel/docker/docker-utils.bzl", "docker_image", "docker_layers", "docker_pkg", "docker_push")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 
 docker_layers(
@@ -20,32 +20,33 @@ docker_pkg(
     name = "scripts",
     srcs = glob([
         "scripts/*",
-        ]),
+    ]),
 )
 
 docker_pkg(
     name = "files",
     srcs = [
         "//:protocol.info",
-        "//120-ng-manager:keystore.jks",
         "//120-ng-manager:config.yml",
-        "//120-ng-manager/src/main/resources:redisson-jcache.yaml",
+        "//120-ng-manager:keystore.jks",
         "//120-ng-manager/src/main/resources:enterprise-redisson-jcache.yaml",
+        "//120-ng-manager/src/main/resources:redisson-jcache.yaml",
     ],
     files = {
         "//120-ng-manager:module_deploy.jar": "ng-manager-capsule.jar",
-        },
+    },
 )
 
 docker_image(
     name = "ng-manager-saas-image",
-    dockerlayers = [
-            ":ng-manager-saas-run"
-            ],
     cmd = [
-        "/bin/bash", "-c",
+        "/bin/bash",
+        "-c",
         "java -jar ng-manager-capsule.jar scan-classpath-metadata; ./run.sh",
-        ],
+    ],
+    dockerlayers = [
+        ":ng-manager-saas-run",
+    ],
     filestocopy = [
         ":files",
         ":scripts",
@@ -54,21 +55,22 @@ docker_image(
 
 #Pass the TAG from the bazel run command by passing --define=TAG=TagValue
 docker_push(
-        name = "ng-manager-saas-push",
-        image = "ng-manager-saas-image",
-        repository = "platform-205701/harness/harness-services-bazel/ng-manager-saas-bazel-test",
-        imagetag = "$(TAG)",
+    name = "ng-manager-saas-push",
+    image = "ng-manager-saas-image",
+    imagetag = "$(TAG)",
+    repository = "platform-205701/harness/harness-services-bazel/ng-manager-saas-bazel-test",
 )
 
 docker_image(
     name = "ng-manager-onprem-image",
-    dockerlayers = [
-            ":ng-manager-onprem-run"
-            ],
     cmd = [
-        "/bin/bash", "-c",
+        "/bin/bash",
+        "-c",
         "java -jar ng-manager-capsule.jar scan-classpath-metadata; ./run.sh",
-        ],
+    ],
+    dockerlayers = [
+        ":ng-manager-onprem-run",
+    ],
     filestocopy = [
         ":files",
         ":scripts",
@@ -77,8 +79,8 @@ docker_image(
 
 #Pass the TAG from the bazel run command by passing --define=TAG=TagValue
 docker_push(
-        name = "ng-manager-onprem-push",
-        image = "ng-manager-onprem-image",
-        repository = "platform-205701/harness/harness-services-bazel/ng-manager-onprem-bazel-test",
-        imagetag = "$(TAG)",
+    name = "ng-manager-onprem-push",
+    image = "ng-manager-onprem-image",
+    imagetag = "$(TAG)",
+    repository = "platform-205701/harness/harness-services-bazel/ng-manager-onprem-bazel-test",
 )

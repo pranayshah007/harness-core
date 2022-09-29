@@ -3,7 +3,6 @@ load("@io_bazel_rules_docker//docker/util:run.bzl", "container_run_and_commit_la
 
 container_run_and_commit_layer(
     name = "ubi-minimal-run",
-    image = "@ubi-minimal//image",
     commands = [
         "microdnf install curl libstdc++.i686 make bash unzip hostname tar gzip",
         "curl -L https://github.com/mikefarah/yq/releases/download/3.3.2/yq_linux_amd64 -o /usr/bin/yq",
@@ -14,6 +13,7 @@ container_run_and_commit_layer(
         "chown -R 65534:65534 /opt/harness /tmp",
         "chmod -R 700 /opt/harness /tmp",
     ],
+    image = "@ubi-minimal//image",
     tags = [
         "manual",
         "no-cache",
@@ -26,16 +26,16 @@ container_image(
     base = "@ubi-minimal//image",
     cmd = ["/bin/sh"],
     layers = [
-        ":ubi-minimal-run"
-        ],
+        ":ubi-minimal-run",
+    ],
     tags = [
         "manual",
         "no-cache",
         "no-ide",
     ],
     user = "65534",
-    workdir = "/opt/harness",
     visibility = ["//visibility:public"],
+    workdir = "/opt/harness",
 )
 
 #If "registry or "repository" or "tag" is changed then corresponding container_pull macro in WORKSPACE file also has be to modified.
@@ -49,6 +49,6 @@ container_push(
     tags = [
         "manual",
         "no-cache",
-        "no-ide"
+        "no-ide",
     ],
 )

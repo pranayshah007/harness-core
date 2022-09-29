@@ -3,7 +3,7 @@
 # that can be found in the licenses directory at the root of this repository, also available at
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
-load("//:tools/bazel/docker/docker-utils.bzl", "docker_layers", "docker_image", "docker_push", "docker_pkg")
+load("//:tools/bazel/docker/docker-utils.bzl", "docker_image", "docker_layers", "docker_pkg", "docker_push")
 
 docker_layers(
     name = "manager-onprem-run",
@@ -19,33 +19,34 @@ docker_pkg(
     name = "scripts",
     srcs = glob([
         "scripts/*",
-        ]),
+    ]),
 )
 
 docker_pkg(
     name = "files",
     srcs = [
         "//:protocol.info",
-        "//360-cg-manager:newrelic.yml",
-        "//360-cg-manager:keystore.jks",
         "//360-cg-manager:config.yml",
-        "//400-rest/src/main/resources:redisson-jcache.yaml",
+        "//360-cg-manager:keystore.jks",
+        "//360-cg-manager:newrelic.yml",
         "//400-rest/src/main/resources:hazelcast.xml",
+        "//400-rest/src/main/resources:redisson-jcache.yaml",
     ],
     files = {
         "//360-cg-manager:module_deploy.jar": "rest-capsule.jar",
-        },
+    },
 )
 
 docker_image(
     name = "manager-saas-image",
-    dockerlayers = [
-            ":manager-saas-run"
-            ],
     cmd = [
-        "/bin/bash", "-c",
+        "/bin/bash",
+        "-c",
         "java -jar rest-capsule.jar scan-classpath-metadata; ./run.sh",
-        ],
+    ],
+    dockerlayers = [
+        ":manager-saas-run",
+    ],
     filestocopy = [
         ":files",
         ":scripts",
@@ -54,21 +55,22 @@ docker_image(
 
 #Pass the TAG from the bazel run command by passing --define=TAG=TagValue
 docker_push(
-        name = "manager-saas-push",
-        image = "manager-saas-image",
-        repository = "platform-205701/harness/harness-services-bazel/manager-saas-bazel-test",
-        imagetag = "$(TAG)",
+    name = "manager-saas-push",
+    image = "manager-saas-image",
+    imagetag = "$(TAG)",
+    repository = "platform-205701/harness/harness-services-bazel/manager-saas-bazel-test",
 )
 
 docker_image(
     name = "manager-onprem-image",
-    dockerlayers = [
-            ":manager-onprem-run"
-            ],
     cmd = [
-        "/bin/bash", "-c",
+        "/bin/bash",
+        "-c",
         "java -jar rest-capsule.jar scan-classpath-metadata; ./run.sh",
-        ],
+    ],
+    dockerlayers = [
+        ":manager-onprem-run",
+    ],
     filestocopy = [
         ":files",
         ":scripts",
@@ -77,8 +79,8 @@ docker_image(
 
 #Pass the TAG from the bazel run command by passing --define=TAG=TagValue
 docker_push(
-        name = "manager-onprem-push",
-        image = "manager-onprem-image",
-        repository = "platform-205701/harness/harness-services-bazel/manager-onprem-bazel-test",
-        imagetag = "$(TAG)",
+    name = "manager-onprem-push",
+    image = "manager-onprem-image",
+    imagetag = "$(TAG)",
+    repository = "platform-205701/harness/harness-services-bazel/manager-onprem-bazel-test",
 )

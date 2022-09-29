@@ -3,7 +3,7 @@
 # that can be found in the licenses directory at the root of this repository, also available at
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
-load("//:tools/bazel/docker/docker-utils.bzl", "docker_layers", "docker_image", "docker_push", "docker_pkg")
+load("//:tools/bazel/docker/docker-utils.bzl", "docker_image", "docker_layers", "docker_pkg", "docker_push")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 
 docker_layers(
@@ -20,7 +20,7 @@ docker_pkg(
     name = "scripts",
     srcs = glob([
         "scripts/*",
-        ]),
+    ]),
 )
 
 docker_pkg(
@@ -28,53 +28,53 @@ docker_pkg(
     srcs = [
         "//:protocol.info",
         "//840-template-service:config.yml",
-        "//840-template-service/src/main/resources:redisson-jcache.yaml"
+        "//840-template-service/src/main/resources:redisson-jcache.yaml",
     ],
     files = {
         "//840-template-service:module_deploy.jar": "template-service-capsule.jar",
-        },
+    },
 )
 
 docker_image(
-        name = "template-saas-image",
-        dockerlayers = [
-            ":template-saas-run"
-            ],
-        cmd = [
-            "./run.sh",
-            ],
-        filestocopy = [
-            ":files",
-            ":scripts",
-        ],
+    name = "template-saas-image",
+    cmd = [
+        "./run.sh",
+    ],
+    dockerlayers = [
+        ":template-saas-run",
+    ],
+    filestocopy = [
+        ":files",
+        ":scripts",
+    ],
 )
 
 #Pass the TAG from the bazel run command by passing --define=TAG=TagValue
 docker_push(
     name = "template-saas-push",
     image = "template-saas-image",
-    repository = "platform-205701/harness/harness-services-bazel/template-saas-bazel-test",
     imagetag = "$(TAG)",
+    repository = "platform-205701/harness/harness-services-bazel/template-saas-bazel-test",
 )
 
 docker_image(
-        name = "template-onprem-image",
-        dockerlayers = [
-            ":template-onprem-run"
-            ],
-        cmd = [
-            "./run.sh",
-            ],
-        filestocopy = [
-            ":files",
-            ":scripts",
-        ],
+    name = "template-onprem-image",
+    cmd = [
+        "./run.sh",
+    ],
+    dockerlayers = [
+        ":template-onprem-run",
+    ],
+    filestocopy = [
+        ":files",
+        ":scripts",
+    ],
 )
 
 #Pass the TAG from the bazel run command by passing --define=TAG=TagValue
 docker_push(
     name = "template-onprem-push",
     image = "template-onprem-image",
-    repository = "platform-205701/harness/harness-services-bazel/template-onprem-bazel-test",
     imagetag = "$(TAG)",
+    repository = "platform-205701/harness/harness-services-bazel/template-onprem-bazel-test",
 )

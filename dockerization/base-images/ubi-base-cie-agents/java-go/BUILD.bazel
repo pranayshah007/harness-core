@@ -3,15 +3,13 @@ load("@io_bazel_rules_docker//docker/util:run.bzl", "container_run_and_commit_la
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 
 KUBECTL_VERSION = "v1.13.2"
+
 PLATFORM = "linux"
+
 HELM_VERSION = "2.17.0"
 
 container_run_and_commit_layer(
     name = "java-go-run",
-    image = "@ubi-java-base//image",
-    docker_run_flags = [
-        "--user=root",
-        ],
     commands = [
         "microdnf install yum python3",
         "ln -s /usr/bin/python3 /usr/bin/python",
@@ -31,18 +29,22 @@ container_run_and_commit_layer(
         "curl  -s -L -o kubectl https://app.harness.io/storage/harness-download/kubernetes-release/release/%s/bin/%s/amd64/kubectl" % (KUBECTL_VERSION, PLATFORM),
         "chmod +x kubectl",
         "mv kubectl /usr/bin",
-        "wget -q https://get.helm.sh/helm-v%s-linux-amd64.tar.gz -O - | tar -xzO linux-amd64/helm > /usr/local/bin/helm" % (HELM_VERSION),
+        "wget -q https://get.helm.sh/helm-v%s-linux-amd64.tar.gz -O - | tar -xzO linux-amd64/helm > /usr/local/bin/helm" % HELM_VERSION,
         "chmod +x /usr/local/bin/helm",
         "curl -O https://dl.google.com/go/go1.18.linux-amd64.tar.gz",
         "tar -xvf go1.18.linux-amd64.tar.gz",
         "mv go/ /usr/local/",
         "rm -rf go1.18.linux-amd64.tar.gz",
     ],
+    docker_run_flags = [
+        "--user=root",
+    ],
+    image = "@ubi-java-base//image",
     tags = [
-            "manual",
-            "no-cache",
-            "no-ide",
-        ],
+        "manual",
+        "no-cache",
+        "no-ide",
+    ],
 )
 
 pkg_tar(
@@ -54,10 +56,10 @@ pkg_tar(
     owner = "65534.65534",
     package_dir = "/deployments",
     tags = [
-                "manual",
-                "no-cache",
-                "no-ide",
-            ],
+        "manual",
+        "no-cache",
+        "no-ide",
+    ],
 )
 
 pkg_tar(
@@ -70,26 +72,17 @@ pkg_tar(
     owner = "0.0",
     package_dir = "/etc/yum.repos.d/",
     tags = [
-                "manual",
-                "no-cache",
-                "no-ide",
-            ],
+        "manual",
+        "no-cache",
+        "no-ide",
+    ],
 )
 
 container_image(
     name = "java-go-image",
     base = "@ubi-java-base//image",
-    layers = [
-        ":java-go-run"
-        ],
-    user = "0",
-    workdir = "/opt/harness",
     cmd = [
         "/deployments/run-java.sh",
-        ],
-    tars = [
-        ":files",
-        ":repos",
     ],
     env = {
         "JAVA_APP_DIR": "/deployments",
@@ -101,11 +94,20 @@ container_image(
         "GOROOT": "/usr/local/go",
         "GOPATH": "/usr/local",
     },
+    layers = [
+        ":java-go-run",
+    ],
     tags = [
-            "manual",
-            "no-cache",
-            "no-ide",
-        ],
+        "manual",
+        "no-cache",
+        "no-ide",
+    ],
+    tars = [
+        ":files",
+        ":repos",
+    ],
+    user = "0",
+    workdir = "/opt/harness",
 )
 
 #If "registry or "repository" or "tag" is changed then corresponding container_pull macro in WORKSPACE file also has be to modified.
@@ -117,8 +119,8 @@ container_push(
     repository = "platform-205701/harness/java-go-bazel-test",
     tag = "latest-test",
     tags = [
-            "manual",
-            "no-cache",
-            "no-ide",
-        ],
+        "manual",
+        "no-cache",
+        "no-ide",
+    ],
 )

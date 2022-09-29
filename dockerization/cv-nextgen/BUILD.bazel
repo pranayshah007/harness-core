@@ -3,7 +3,7 @@
 # that can be found in the licenses directory at the root of this repository, also available at
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
-load("//:tools/bazel/docker/docker-utils.bzl", "docker_layers", "docker_image", "docker_push", "docker_pkg")
+load("//:tools/bazel/docker/docker-utils.bzl", "docker_image", "docker_layers", "docker_pkg", "docker_push")
 
 docker_layers(
     name = "cvng-onprem-run",
@@ -19,32 +19,33 @@ docker_pkg(
     name = "scripts",
     srcs = glob([
         "scripts/*",
-        ]),
+    ]),
 )
 
 docker_pkg(
     name = "files",
     srcs = [
         "//:protocol.info",
-        "//300-cv-nextgen:keystore.jks",
         "//300-cv-nextgen:cv-nextgen-config.yml",
-        "//300-cv-nextgen/src/main/resources:redisson-jcache.yaml",
+        "//300-cv-nextgen:keystore.jks",
         "//300-cv-nextgen/src/main/resources:enterprise-redisson-jcache.yaml",
+        "//300-cv-nextgen/src/main/resources:redisson-jcache.yaml",
     ],
     files = {
         "//300-cv-nextgen:module_deploy.jar": "cv-nextgen-capsule.jar",
-        },
+    },
 )
 
 docker_image(
     name = "cvng-saas-image",
-    dockerlayers = [
-            ":cvng-saas-run"
-            ],
     cmd = [
-        "/bin/bash", "-c",
+        "/bin/bash",
+        "-c",
         "java -jar cv-nextgen-capsule.jar scan-classpath-metadata; ./run.sh",
-        ],
+    ],
+    dockerlayers = [
+        ":cvng-saas-run",
+    ],
     filestocopy = [
         ":files",
         ":scripts",
@@ -53,21 +54,22 @@ docker_image(
 
 #Pass the TAG from the bazel run command by passing --define=TAG=TagValue
 docker_push(
-        name = "cvng-saas-push",
-        image = "cvng-saas-image",
-        repository = "platform-205701/harness/harness-services-bazel/cvng-saas-bazel-test",
-        imagetag = "$(TAG)",
+    name = "cvng-saas-push",
+    image = "cvng-saas-image",
+    imagetag = "$(TAG)",
+    repository = "platform-205701/harness/harness-services-bazel/cvng-saas-bazel-test",
 )
 
 docker_image(
     name = "cvng-onprem-image",
-    dockerlayers = [
-            ":cvng-onprem-run"
-            ],
     cmd = [
-        "/bin/bash", "-c",
+        "/bin/bash",
+        "-c",
         "java -jar cv-nextgen-capsule.jar scan-classpath-metadata; ./run.sh",
-        ],
+    ],
+    dockerlayers = [
+        ":cvng-onprem-run",
+    ],
     filestocopy = [
         ":files",
         ":scripts",
@@ -76,8 +78,8 @@ docker_image(
 
 #Pass the TAG from the bazel run command by passing --define=TAG=TagValue
 docker_push(
-        name = "cvng-onprem-push",
-        image = "cvng-onprem-image",
-        repository = "platform-205701/harness/harness-services-bazel/cvng-onprem-bazel-test",
-        imagetag = "$(TAG)",
+    name = "cvng-onprem-push",
+    image = "cvng-onprem-image",
+    imagetag = "$(TAG)",
+    repository = "platform-205701/harness/harness-services-bazel/cvng-onprem-bazel-test",
 )

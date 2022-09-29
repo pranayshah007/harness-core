@@ -5,15 +5,15 @@
 
 # NOTE: Migrator is not yet moved to use ubi base images. This is still on alpine.
 
-load("//:tools/bazel/docker/docker-utils.bzl", "docker_layers", "docker_image", "docker_push", "docker_pkg")
+load("//:tools/bazel/docker/docker-utils.bzl", "docker_image", "docker_layers", "docker_pkg", "docker_push")
 
 docker_layers(
     name = "migrator-packages",
-    docker_run_flags = [
-        "--user=root",
-    ],
     commands = [
         "microdnf install fontconfig dejavu-sans-fonts",
+    ],
+    docker_run_flags = [
+        "--user=root",
     ],
 )
 
@@ -31,34 +31,35 @@ docker_pkg(
     name = "scripts",
     srcs = glob([
         "scripts/*",
-        ]),
+    ]),
 )
 
 docker_pkg(
     name = "files",
     srcs = [
         "//:protocol.info",
-        "//100-migrator:newrelic.yml",
-        "//100-migrator:keystore.jks",
         "//100-migrator:config.yml",
-        "//400-rest/src/main/resources:redisson-jcache.yaml",
+        "//100-migrator:keystore.jks",
+        "//100-migrator:newrelic.yml",
         "//400-rest/src/main/resources:hazelcast.xml",
+        "//400-rest/src/main/resources:redisson-jcache.yaml",
     ],
     files = {
         "//100-migrator:module_deploy.jar": "migrator-capsule.jar",
-        },
+    },
 )
 
 docker_image(
     name = "migrator-saas-image",
-    dockerlayers = [
-            ":migrator-saas-run",
-            ":migrator-packages",
-            ],
     cmd = [
-        "/bin/bash", "-c",
+        "/bin/bash",
+        "-c",
         "java -jar migrator-capsule.jar scan-classpath-metadata; ./run.sh",
-        ],
+    ],
+    dockerlayers = [
+        ":migrator-saas-run",
+        ":migrator-packages",
+    ],
     filestocopy = [
         ":files",
         ":scripts",
@@ -67,22 +68,23 @@ docker_image(
 
 #Pass the TAG from the bazel run command by passing --define=TAG=TagValue
 docker_push(
-        name = "migrator-saas-push",
-        image = "migrator-saas-image",
-        repository = "platform-205701/harness/harness-services-bazel/migrator-saas-bazel-test",
-        imagetag = "$(TAG)",
+    name = "migrator-saas-push",
+    image = "migrator-saas-image",
+    imagetag = "$(TAG)",
+    repository = "platform-205701/harness/harness-services-bazel/migrator-saas-bazel-test",
 )
 
 docker_image(
     name = "migrator-onprem-image",
-    dockerlayers = [
-            ":migrator-onprem-run",
-            ":migrator-packages",
-            ],
     cmd = [
-        "/bin/bash", "-c",
+        "/bin/bash",
+        "-c",
         "java -jar migrator-capsule.jar scan-classpath-metadata; ./run.sh",
-        ],
+    ],
+    dockerlayers = [
+        ":migrator-onprem-run",
+        ":migrator-packages",
+    ],
     filestocopy = [
         ":files",
         ":scripts",
@@ -91,8 +93,8 @@ docker_image(
 
 #Pass the TAG from the bazel run command by passing --define=TAG=TagValue
 docker_push(
-        name = "migrator-onprem-push",
-        image = "migrator-onprem-image",
-        repository = "platform-205701/harness/harness-services-bazel/migrator-onprem-bazel-test",
-        imagetag = "$(TAG)",
+    name = "migrator-onprem-push",
+    image = "migrator-onprem-image",
+    imagetag = "$(TAG)",
+    repository = "platform-205701/harness/harness-services-bazel/migrator-onprem-bazel-test",
 )

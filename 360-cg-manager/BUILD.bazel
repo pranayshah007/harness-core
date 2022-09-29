@@ -125,10 +125,11 @@ run_tests()
 
 run_analysis()
 
-exports_files([
-    "keystore.jks",
-    "newrelic.yml",
-    "config.yml",
+exports_files(
+    [
+        "keystore.jks",
+        "newrelic.yml",
+        "config.yml",
     ],
     visibility = ["//dockerization/manager:__subpackages__"],
 )

@@ -3,7 +3,7 @@
 # that can be found in the licenses directory at the root of this repository, also available at
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
-load("//:tools/bazel/docker/docker-utils.bzl", "docker_layers", "docker_image", "docker_push", "docker_pkg")
+load("//:tools/bazel/docker/docker-utils.bzl", "docker_image", "docker_layers", "docker_pkg", "docker_push")
 
 docker_layers(
     name = "cls-onprem-run",
@@ -19,7 +19,7 @@ docker_pkg(
     name = "scripts",
     srcs = glob([
         "scripts/*",
-        ]),
+    ]),
 )
 
 docker_pkg(
@@ -31,18 +31,19 @@ docker_pkg(
     ],
     files = {
         "//210-command-library-server:module_deploy.jar": "command-library-app-capsule.jar",
-        },
+    },
 )
 
 docker_image(
     name = "cls-saas-image",
-    dockerlayers = [
-            ":cls-saas-run"
-            ],
     cmd = [
-        "/bin/bash", "-c",
+        "/bin/bash",
+        "-c",
         "./run.sh",
-        ],
+    ],
+    dockerlayers = [
+        ":cls-saas-run",
+    ],
     filestocopy = [
         ":files",
         ":scripts",
@@ -51,21 +52,22 @@ docker_image(
 
 #Pass the TAG from the bazel run command by passing --define=TAG=TagValue
 docker_push(
-        name = "cls-saas-push",
-        image = "cls-saas-image",
-        repository = "platform-205701/harness/harness-services-bazel/cls-saas-bazel-test",
-        imagetag = "$(TAG)",
+    name = "cls-saas-push",
+    image = "cls-saas-image",
+    imagetag = "$(TAG)",
+    repository = "platform-205701/harness/harness-services-bazel/cls-saas-bazel-test",
 )
 
 docker_image(
     name = "cls-onprem-image",
-    dockerlayers = [
-            ":cls-onprem-run"
-            ],
     cmd = [
-        "/bin/bash", "-c",
+        "/bin/bash",
+        "-c",
         "./run.sh",
-        ],
+    ],
+    dockerlayers = [
+        ":cls-onprem-run",
+    ],
     filestocopy = [
         ":files",
         ":scripts",
@@ -74,8 +76,8 @@ docker_image(
 
 #Pass the TAG from the bazel run command by passing --define=TAG=TagValue
 docker_push(
-        name = "cls-onprem-push",
-        image = "cls-onprem-image",
-        repository = "platform-205701/harness/harness-services-bazel/cls-onprem-bazel-test",
-        imagetag = "$(TAG)",
+    name = "cls-onprem-push",
+    image = "cls-onprem-image",
+    imagetag = "$(TAG)",
+    repository = "platform-205701/harness/harness-services-bazel/cls-onprem-bazel-test",
 )

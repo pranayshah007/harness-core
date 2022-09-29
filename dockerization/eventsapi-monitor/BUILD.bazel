@@ -3,7 +3,7 @@
 # that can be found in the licenses directory at the root of this repository, also available at
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
-load("//:tools/bazel/docker/docker-utils.bzl", "docker_layers", "docker_image", "docker_push", "docker_pkg")
+load("//:tools/bazel/docker/docker-utils.bzl", "docker_image", "docker_layers", "docker_pkg", "docker_push")
 
 docker_layers(
     name = "eventsapi-monitor-onprem-run",
@@ -19,31 +19,32 @@ docker_pkg(
     name = "scripts",
     srcs = glob([
         "scripts/*",
-        ]),
+    ]),
 )
 
 docker_pkg(
     name = "files",
     srcs = [
         "//:protocol.info",
-        "//950-events-framework-monitor:redis/redislabs_ca.pem",
-        "//950-events-framework-monitor:redis/install_redis.sh",
         "//950-events-framework-monitor:config.yml",
+        "//950-events-framework-monitor:redis/install_redis.sh",
+        "//950-events-framework-monitor:redis/redislabs_ca.pem",
     ],
     files = {
         "//950-events-framework-monitor:module_deploy.jar": "eventsapi-monitor-capsule.jar",
-        },
+    },
 )
 
 docker_image(
     name = "eventsapi-monitor-saas-image",
-    dockerlayers = [
-            ":eventsapi-monitor-saas-run"
-            ],
     cmd = [
-        "/bin/bash", "-c",
+        "/bin/bash",
+        "-c",
         "./run.sh",
-        ],
+    ],
+    dockerlayers = [
+        ":eventsapi-monitor-saas-run",
+    ],
     filestocopy = [
         ":files",
         ":scripts",
@@ -52,21 +53,22 @@ docker_image(
 
 #Pass the TAG from the bazel run command by passing --define=TAG=TagValue
 docker_push(
-        name = "eventsapi-monitor-saas-push",
-        image = "eventsapi-monitor-saas-image",
-        repository = "platform-205701/harness/harness-services-bazel/eventsapi-monitor-saas-bazel-test",
-        imagetag = "$(TAG)",
+    name = "eventsapi-monitor-saas-push",
+    image = "eventsapi-monitor-saas-image",
+    imagetag = "$(TAG)",
+    repository = "platform-205701/harness/harness-services-bazel/eventsapi-monitor-saas-bazel-test",
 )
 
 docker_image(
     name = "eventsapi-monitor-onprem-image",
-    dockerlayers = [
-            ":eventsapi-monitor-onprem-run"
-            ],
     cmd = [
-        "/bin/bash", "-c",
+        "/bin/bash",
+        "-c",
         "./run.sh",
-        ],
+    ],
+    dockerlayers = [
+        ":eventsapi-monitor-onprem-run",
+    ],
     filestocopy = [
         ":files",
         ":scripts",
@@ -75,8 +77,8 @@ docker_image(
 
 #Pass the TAG from the bazel run command by passing --define=TAG=TagValue
 docker_push(
-        name = "eventsapi-monitor-onprem-push",
-        image = "eventsapi-monitor-onprem-image",
-        repository = "platform-205701/harness/harness-services-bazel/eventsapi-monitor-onprem-bazel-test",
-        imagetag = "$(TAG)",
+    name = "eventsapi-monitor-onprem-push",
+    image = "eventsapi-monitor-onprem-image",
+    imagetag = "$(TAG)",
+    repository = "platform-205701/harness/harness-services-bazel/eventsapi-monitor-onprem-bazel-test",
 )
