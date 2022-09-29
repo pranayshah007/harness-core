@@ -468,25 +468,27 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
   @Override
   public DecryptedSecretValue decryptSecret(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
-    NGEncryptedData encryptedData = get(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    NGEncryptedData encryptedData =
+        getWithFileContentOrThrow(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
     SecretManagerConfigDTO secretManagerConfigDTO = getSecretManagerOrThrow(
         accountIdentifier, orgIdentifier, projectIdentifier, encryptedData.getSecretManagerIdentifier(), false);
-    String decryptedValue = null;
+
     SecretManagerConfig secretManagerConfig = SecretManagerConfigMapper.fromDTO(secretManagerConfigDTO);
     if (isNgHarnessSecretManager(secretManagerConfig.getNgMetadata())) {
-      decryptedValue = String.valueOf(kmsEncryptorsRegistry.getKmsEncryptor(secretManagerConfig)
-                                          .fetchSecretValue(accountIdentifier, encryptedData, secretManagerConfig));
+      String decryptedValue =
+          String.valueOf(kmsEncryptorsRegistry.getKmsEncryptor(secretManagerConfig)
+                             .fetchSecretValue(accountIdentifier, encryptedData, secretManagerConfig));
+      return DecryptedSecretValue.builder()
+          .identifier(identifier)
+          .accountIdentifier(accountIdentifier)
+          .orgIdentifier(orgIdentifier)
+          .projectIdentifier(projectIdentifier)
+          .decryptedValue(decryptedValue)
+          .build();
     } else {
       throw new InvalidRequestException(
           "Decryption is supported only for secrets encrypted via harness managed secret managers");
     }
-    return DecryptedSecretValue.builder()
-        .identifier(identifier)
-        .accountIdentifier(accountIdentifier)
-        .orgIdentifier(orgIdentifier)
-        .projectIdentifier(projectIdentifier)
-        .decryptedValue(decryptedValue)
-        .build();
   }
 
   private byte[] getInputBytes(InputStream inputStream) {

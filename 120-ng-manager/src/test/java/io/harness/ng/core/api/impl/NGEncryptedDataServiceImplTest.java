@@ -14,6 +14,8 @@ import static io.harness.security.encryption.EncryptionType.AZURE_VAULT;
 import static io.harness.security.encryption.EncryptionType.LOCAL;
 import static io.harness.security.encryption.EncryptionType.VAULT;
 
+import static software.wings.settings.SettingVariableTypes.CONFIG_FILE;
+
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.fail;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
@@ -448,5 +450,39 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
     } catch (Exception ex) {
       fail("Unexpected exception occured");
     }
+  }
+
+  @Test
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void testDecryptSecretFile_Success() {
+    String secretManagerIdentifier = randomAlphabetic(10);
+    char[] secretValue = randomAlphabetic(10).toCharArray();
+    SecretManagerConfigDTO secretManagerConfigDTO =
+        LocalConfigDTO.builder().harnessManaged(true).encryptionType(LOCAL).build();
+    NGEncryptedData encryptedData = NGEncryptedData.builder()
+                                        .type(CONFIG_FILE)
+                                        .encryptionType(LOCAL)
+                                        .secretManagerIdentifier(secretManagerIdentifier)
+                                        .encryptedValue(secretValue)
+                                        .build();
+    EncryptedRecordData encryptedRecordData = EncryptedRecordData.builder().build();
+    EncryptionConfig encryptionConfig = SecretManagerConfigMapper.fromDTO(secretManagerConfigDTO);
+
+    when(encryptedDataDao.get(accountIdentifier, orgIdentifier, projectIdentifier, identifier))
+        .thenReturn(encryptedData);
+    when(ngConnectorSecretManagerService.getUsingIdentifier(
+             accountIdentifier, orgIdentifier, projectIdentifier, secretManagerIdentifier, false))
+        .thenReturn(secretManagerConfigDTO);
+    when(globalEncryptDecryptClient.convertEncryptedRecordToLocallyEncrypted(
+             encryptedData, accountIdentifier, encryptionConfig))
+        .thenReturn(encryptedRecordData);
+    when(localEncryptor.fetchSecretValue(accountIdentifier, encryptedData, encryptionConfig)).thenReturn(secretValue);
+    DecryptedSecretValue decryptedSecretValue =
+        ngEncryptedDataService.decryptSecret(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    assertEquals(decryptedSecretValue.getDecryptedValue(), String.valueOf(secretValue));
+    assertEquals(decryptedSecretValue.getAccountIdentifier(), accountIdentifier);
+    assertEquals(decryptedSecretValue.getOrgIdentifier(), orgIdentifier);
+    assertEquals(decryptedSecretValue.getProjectIdentifier(), projectIdentifier);
   }
 }
