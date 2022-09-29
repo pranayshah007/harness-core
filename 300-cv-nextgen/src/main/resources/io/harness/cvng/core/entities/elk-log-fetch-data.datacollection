@@ -19,7 +19,7 @@ Var range = {}
 Var rangeLimit = {}
 Var:rangeLimit.put("gt",Env:startTimeMillis)
 Var:rangeLimit.put("lte",Env:endTimeMillis)
-Var:range.put(Env:timeStampIdentifier,Var:rangeLimit)
+Var:range.put(Env:timeStampField,Var:rangeLimit)
 Var:timeRangeQuery.put("range",Var:range)
 
 Var:filter.append(Var:userQuery)
@@ -35,13 +35,13 @@ logsData = extract(Var:logsData, $.hits)
 print Var:logsData
 Var logs = []
 foreach logData in Var:logsData {
-    Var messagePath = concat("$._source.", Env:messageIdentifier)
+    Var messagePath = concat("$.", Env:messageIdentifier)
     Var message = extract(Var:logData, Var:messagePath)
 
-    Var hostPath = concat("$._source.", Env:serviceInstanceIdentifier)
+    Var hostPath = concat("$.", Env:serviceInstanceIdentifier)
     Var host = extract(Var:logData, Var:hostPath)
 
-    Var timeStampPath = concat("$._source.", Env:timeStampIdentifier)
+    Var timeStampPath = concat("$.", Env:timeStampIdentifier)
     Var timeStamp = extract(Var:logData,Var:timeStampPath)
 
     Var logToReturn = new LogDataRecord(log=Var:message, timestamp=Var:timeStamp, timestampFormat=Env:timeStampFormat, host=Var:host)

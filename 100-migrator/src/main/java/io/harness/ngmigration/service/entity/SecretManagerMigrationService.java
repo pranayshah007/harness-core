@@ -119,7 +119,10 @@ public class SecretManagerMigrationService extends NgMigrationService {
       NgEntityDetail ngEntityDetail) {
     SecretManagerConfig secretManagerConfig = (SecretManagerConfig) entities.get(entityId).getEntity();
     String name = secretManagerConfig.getName();
-    String identifier = MigratorUtility.generateIdentifier(secretManagerConfig.getName());
+    // Handle Harness secret manager
+    String identifier = "Harness Secrets Manager".equals(name.trim())
+        ? "harnessSecretManager"
+        : MigratorUtility.generateIdentifier(secretManagerConfig.getName());
     String projectIdentifier = null;
     String orgIdentifier = null;
     Scope scope =

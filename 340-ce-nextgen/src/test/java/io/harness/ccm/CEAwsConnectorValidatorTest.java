@@ -274,9 +274,8 @@ public class CEAwsConnectorValidatorTest extends CategoryTest {
     assertThat(result.getStatus()).isEqualTo(ConnectivityStatus.FAILURE);
     assertThat(result.getErrors().get(0).getMessage())
         .contains(
-            "Review the Cost and Usage report settings in your AWS account. For more information, refer to the documentation.");
+            "Please allow arn:aws:iam::890436954479:role/harnessCERole to perform 'iam:SimulatePrincipalPolicy' on itself");
     assertThat(result.getErrors()).hasSize(1);
-    assertThat(result.getErrors().get(0).getReason())
-        .isEqualTo("Can't access cost and usage report: report_name_utsav");
+    assertThat(result.getErrors().get(0).getReason()).isEqualTo(MESSAGE);
   }
 }

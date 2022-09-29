@@ -25,7 +25,7 @@ import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
 import org.mongodb.morphia.query.UpdateOperations;
 
-@JsonTypeName("ELKLog")
+@JsonTypeName("ELK_LOG")
 @Data
 @SuperBuilder
 @FieldNameConstants(innerTypeName = "ELKCVConfigKeys")

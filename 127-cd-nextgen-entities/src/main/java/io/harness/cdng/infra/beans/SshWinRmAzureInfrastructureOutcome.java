@@ -26,7 +26,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("cdng.infra.beans.SshWinRmAzureInfrastructureOutcome")
 @OwnedBy(HarnessTeam.CDP)
 @RecasterAlias("io.harness.cdng.infra.beans.SshWinRmAzureInfrastructureOutcome")
-public class SshWinRmAzureInfrastructureOutcome extends InfrastructureDetailsAbstract implements InfrastructureOutcome {
+public class SshWinRmAzureInfrastructureOutcome extends InfrastructureOutcomeAbstract {
   String connectorRef;
   String subscriptionId;
   String resourceGroup;

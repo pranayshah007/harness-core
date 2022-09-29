@@ -64,7 +64,7 @@ import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 import io.harness.cvng.servicelevelobjective.beans.SLOCalenderType;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardApiFilter;
-import io.harness.cvng.servicelevelobjective.beans.SLOTarget;
+import io.harness.cvng.servicelevelobjective.beans.SLOTargetDTO;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorSpec;
@@ -86,6 +86,7 @@ import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator.SLOHeal
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective.ServiceLevelObjectiveKeys;
+import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
 import io.harness.cvng.servicelevelobjective.services.api.SLOErrorBudgetResetService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
@@ -147,9 +148,9 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
   String identifier;
   String name;
   List<ServiceLevelIndicatorDTO> serviceLevelIndicators;
-  SLOTarget sloTarget;
-  SLOTarget calendarSloTarget;
-  SLOTarget updatedSloTarget;
+  SLOTargetDTO sloTarget;
+  SLOTargetDTO calendarSloTarget;
+  SLOTargetDTO updatedSloTarget;
   String userJourneyIdentifier;
   String description;
   String monitoredServiceIdentifier;
@@ -189,13 +190,13 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
                                                                      .build())
                                                            .build());
 
-    sloTarget = SLOTarget.builder()
+    sloTarget = SLOTargetDTO.builder()
                     .type(SLOTargetType.ROLLING)
                     .sloTargetPercentage(80.0)
                     .spec(RollingSLOTargetSpec.builder().periodLength("30d").build())
                     .build();
 
-    calendarSloTarget = SLOTarget.builder()
+    calendarSloTarget = SLOTargetDTO.builder()
                             .type(SLOTargetType.CALENDER)
                             .sloTargetPercentage(80.0)
                             .spec(CalenderSLOTargetSpec.builder()
@@ -204,7 +205,7 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
 
                                       .build())
                             .build();
-    updatedSloTarget = SLOTarget.builder()
+    updatedSloTarget = SLOTargetDTO.builder()
                            .type(SLOTargetType.ROLLING)
                            .sloTargetPercentage(80.0)
                            .spec(RollingSLOTargetSpec.builder().periodLength("60d").build())
@@ -572,7 +573,7 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
         serviceLevelObjectiveService.getEntity(projectParams, sloDTO.getIdentifier());
     assertThat(analysisOrchestrator.getAnalysisStateMachineQueue().size()).isEqualTo(14);
     LocalDateTime currentLocalDate = LocalDateTime.ofInstant(clock.instant(), serviceLevelObjective.getZoneOffset());
-    ServiceLevelObjective.TimePeriod timePeriod = serviceLevelObjective.getCurrentTimeRange(currentLocalDate);
+    TimePeriod timePeriod = serviceLevelObjective.getCurrentTimeRange(currentLocalDate);
     Instant startTime = timePeriod.getStartTime(serviceLevelObjective.getZoneOffset());
     assertThat(analysisOrchestrator.getAnalysisStateMachineQueue().get(0).getAnalysisStartTime()).isBefore(startTime);
   }
@@ -861,7 +862,7 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
                  .identifier("id2")
                  .userJourneyRef("uj1")
                  .type(ServiceLevelIndicatorType.AVAILABILITY)
-                 .target(SLOTarget.builder()
+                 .target(SLOTargetDTO.builder()
                              .type(SLOTargetType.CALENDER)
                              .sloTargetPercentage(80.0)
                              .spec(CalenderSLOTargetSpec.builder()

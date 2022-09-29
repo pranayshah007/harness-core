@@ -250,7 +250,8 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
     List<String> infraFqnPropertiesList =
         infraOutputProperties.stream().map(YamlProperties::getLocalName).collect(Collectors.toList());
     assertThat(infraFqnPropertiesList)
-        .containsExactly("infra.connectorRef", "infra.namespace", "infra.releaseName", "infra.infrastructureKey");
+        .containsExactly(
+            "infra.connectorRef", "infra.namespace", "infra.releaseName", "infra.infrastructureKey", "infra.connector");
 
     // service
     List<YamlProperties> serviceOutputProperties =

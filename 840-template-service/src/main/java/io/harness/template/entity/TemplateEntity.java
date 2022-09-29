@@ -33,6 +33,7 @@ import io.harness.persistence.UuidAware;
 import io.harness.persistence.gitaware.GitAware;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.common.collect.ImmutableList;
 import java.util.Arrays;
@@ -85,7 +86,7 @@ public class TemplateEntity
   @Wither @Builder.Default Boolean deleted = Boolean.FALSE;
 
   @Wither String versionLabel;
-  @Wither boolean isStableTemplate;
+  @JsonProperty("isStableTemplate") @Wither boolean isStableTemplate;
   @Wither boolean isLastUpdatedTemplate;
   @Wither TemplateEntityType templateEntityType;
   @Wither String childType;

@@ -19,6 +19,8 @@ import java.util.Map;
 
 @OwnedBy(HarnessTeam.CDC)
 public class ArtifactStreamFactory {
+  private static final ArtifactStreamMapper gcrArtifactStreamMapper = new GCRArtifactStreamMapper();
+  private static final ArtifactStreamMapper ecrArtifactStreamMapper = new ECRArtifactStreamMapper();
   private static final ArtifactStreamMapper dockerMapper = new DockerArtifactStreamMapper();
   private static final ArtifactStreamMapper artifactoryMapper = new ArtifactoryArtifactStreamMapper();
 
@@ -26,6 +28,8 @@ public class ArtifactStreamFactory {
       ImmutableMap.<ArtifactStreamType, ArtifactStreamMapper>builder()
           .put(ArtifactStreamType.ARTIFACTORY, artifactoryMapper)
           .put(ArtifactStreamType.DOCKER, dockerMapper)
+          .put(ArtifactStreamType.GCR, gcrArtifactStreamMapper)
+          .put(ArtifactStreamType.ECR, ecrArtifactStreamMapper)
           .build();
 
   public static ArtifactStreamMapper getArtifactStreamMapper(ArtifactStream artifactStream) {

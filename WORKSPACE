@@ -4796,8 +4796,8 @@ plain_artifacts = [
     "io.harness.cv:data-collection-dsl:0.41-RELEASE",
     "io.harness:ff-java-server-sdk:1.0.5.1",
     "io.harness:access-control-server-spec:1.0.7",
-    "io.harness:ng-manager-server-spec:1.0.16",
-    "io.harness:platform-server-spec:1.0.9",
+    "io.harness:ng-manager-server-spec:0.0.24",
+    "io.harness:platform-server-spec:1.0.10",
     "io.jsonwebtoken:jjwt:0.9.1",
     "io.kubernetes:client-java-api:16.0.0",
     "io.kubernetes:client-java-extended:16.0.0",
@@ -5157,6 +5157,7 @@ plain_artifacts = [
     "io.swagger.core.v3:swagger-annotations:2.2.0",
     "io.swagger.core.v3:swagger-models:2.2.0",
     "io.swagger.core.v3:swagger-integration:2.2.0",
+    "io.opentelemetry:opentelemetry-api:1.18.0",
 ]
 
 amazon_artifacts = [

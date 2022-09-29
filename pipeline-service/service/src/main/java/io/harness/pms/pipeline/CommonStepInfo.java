@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.contracts.steps.StepMetaData;
@@ -22,8 +23,12 @@ import io.harness.steps.policy.PolicyStepConstants;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.protobuf.ProtocolStringList;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(PIPELINE)
@@ -177,6 +182,18 @@ public class CommonStepInfo {
     stepInfos.add(serviceNowUpdateStepInfo);
     stepInfos.add(emailStepInfo);
     stepInfos.add(waitStepInfo);
-    return stepInfos;
+
+    return stepInfos.stream().filter(getStepInfoPredicate(category)).collect(Collectors.toList());
+  }
+
+  @NotNull
+  private Predicate<StepInfo> getStepInfoPredicate(String category) {
+    return stepInfo -> {
+      if (EmptyPredicate.isEmpty(category)) {
+        return true;
+      }
+      ProtocolStringList folderPathsList = stepInfo.getStepMetaData().getFolderPathsList();
+      return folderPathsList.stream().anyMatch(path -> path.contains(category));
+    };
   }
 }

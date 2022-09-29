@@ -336,15 +336,15 @@ public class WatcherServiceImplTest {
             .build();
 
     HTimeLimiterMocker.mockCallInterruptible(timeLimiter, ofSeconds(30))
+        .thenReturn(null)
         .thenReturn(restResponse)
-        .thenReturn(selfDestructRestResponse)
-        .thenReturn(null);
+        .thenReturn(selfDestructRestResponse);
 
     List<String> expectedDelegateVersions = watcherService.findExpectedDelegateVersions();
-    assertThat(expectedDelegateVersions).containsExactlyInAnyOrder("1", "2");
+    assertThat(expectedDelegateVersions).isNull();
 
     expectedDelegateVersions = watcherService.findExpectedDelegateVersions();
-    assertThat(expectedDelegateVersions).isNull();
+    assertThat(expectedDelegateVersions).containsExactlyInAnyOrder("1", "2");
   }
 
   private File getFileFromResources(String fileName) {
