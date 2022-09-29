@@ -36,7 +36,7 @@ java_library(
 )
 
 java_binary(
-name = "dagger-rick-test",
+name = "dagger-test-app",
 # srcs = glob(["*.java"]),
 main_class = "io.harness.delegate.app.modules.testdagger.DelegateTestApp",
 runtime_deps = [

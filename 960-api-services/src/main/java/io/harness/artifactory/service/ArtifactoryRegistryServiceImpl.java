@@ -20,7 +20,7 @@ import io.harness.expression.RegexFunctor;
 
 import software.wings.utils.RepositoryFormat;
 
-import com.google.inject.Inject;
+//import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -28,11 +28,18 @@ import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
+import javax.inject.Inject;
+
 @OwnedBy(CDP)
 @Singleton
 @Slf4j
 public class ArtifactoryRegistryServiceImpl implements ArtifactoryRegistryService {
-  @Inject ArtifactoryClientImpl artifactoryClient;
+  ArtifactoryClientImpl artifactoryClient;
+
+  @Inject
+  public ArtifactoryRegistryServiceImpl(ArtifactoryClientImpl artifactoryClient) {
+    this.artifactoryClient = artifactoryClient;
+  }
 
   @Override
   public List<BuildDetailsInternal> getBuilds(ArtifactoryConfigRequest artifactoryConfig, String repositoryName,
