@@ -292,6 +292,7 @@ import org.atmosphere.cpr.BroadcasterFactory;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.hibernate.validator.internal.engine.path.PathImpl;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.mongodb.morphia.Key;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.UpdateOperations;
@@ -520,6 +521,7 @@ public class DelegateServiceImpl implements DelegateService {
             .notEqual(DelegateInstanceStatus.DELETED)
             .project(DelegateKeys.accountId, true)
             .project(DelegateKeys.tags, true)
+            .project(DelegateKeys.tagsFromYaml, true)
             .project(DelegateKeys.delegateName, true)
             .project(DelegateKeys.hostName, true)
             .project(DelegateKeys.delegateProfileId, true)
@@ -621,7 +623,7 @@ public class DelegateServiceImpl implements DelegateService {
 
   @Override
   public Set<String> retrieveDelegateSelectors(Delegate delegate, boolean fetchFromCache) {
-    Set<String> selectors = delegate.getTags() == null ? new HashSet<>() : new HashSet<>(delegate.getTags());
+    Set<String> selectors = new HashSet<>(getUnionOfTags(delegate));
     if (delegate.isNg()) {
       DelegateGroup delegateGroup = fetchFromCache
           ? delegateCache.getDelegateGroup(delegate.getAccountId(), delegate.getDelegateGroupId())
@@ -897,7 +899,7 @@ public class DelegateServiceImpl implements DelegateService {
     delegates.stream()
         .filter(delegate -> !filterInactiveDelegates || perDelegateConnections.containsKey(delegate.getUuid()))
         .forEach(delegate -> delegateTokensNameList.add(delegate.getDelegateTokenName()));
-    // TODO: Arpit fetch the tokenStatus from cache instead of db.
+
     Map<String, Boolean> delegateTokenStatusMap =
         delegateNgTokenService.isDelegateTokenActive(accountId, delegateTokensNameList);
 
@@ -926,7 +928,7 @@ public class DelegateServiceImpl implements DelegateService {
                   .ceEnabled(delegate.isCeEnabled())
                   .excludeScopes(delegate.getExcludeScopes())
                   .includeScopes(delegate.getIncludeScopes())
-                  .tags(delegate.getTags())
+                  .tags(getUnionOfTags(delegate))
                   .profileExecutedAt(delegate.getProfileExecutedAt())
                   .profileError(delegate.isProfileError())
                   .grpcActive(connections.stream().allMatch(connection
@@ -946,6 +948,17 @@ public class DelegateServiceImpl implements DelegateService {
           return delegateInnerBuilder.build();
         })
         .collect(toList());
+  }
+
+  private List<String> getUnionOfTags(Delegate delegate) {
+    Set<String> delegateTags = new HashSet<>();
+    if (isNotEmpty(delegate.getTagsFromYaml())) {
+      delegateTags.addAll(delegate.getTagsFromYaml());
+    }
+    if (isNotEmpty(delegate.getTags())) {
+      delegateTags.addAll(delegate.getTags());
+    }
+    return new ArrayList<>(delegateTags);
   }
 
   @Override
@@ -1192,6 +1205,41 @@ public class DelegateServiceImpl implements DelegateService {
       log.info("Updating tags for all delegates in a group {}", delegate.getDelegateGroupName());
       updatedDelegate = updateAllCgDelegatesInGroup(delegate, updateOperations, "TAGS");
     } else {
+      updatedDelegate = updateDelegate(delegate, updateOperations);
+    }
+
+    auditServiceHelper.reportForAuditingUsingAccountId(
+        delegate.getAccountId(), delegate, updatedDelegate, Type.UPDATE_TAG);
+    log.info("Auditing updation of Tags for delegate={} in account={}", delegate.getUuid(), delegate.getAccountId());
+
+    return updatedDelegate;
+  }
+
+  // UI will send a list of yaml+ui tags, so first separate out the respective tags and then update in db.
+  public Delegate updateTagsFromUI(final Delegate delegate, @NotNull DelegateTags delegateTags) {
+    List<String> tagsFromYaml = Optional.ofNullable(delegate.getTagsFromYaml()).orElseGet(Collections::emptyList);
+
+    List<String> tagsFromUI = delegateTags.getTags();
+
+    // keep those tags which are in
+    List<String> updatedListOfTagsFromYaml =
+        tagsFromYaml.stream().filter(tag -> tagsFromUI.contains(tag)).collect(toList());
+
+    // remove yaml tags from UI List
+    List<String> updatedListOfTagsFromUI =
+        tagsFromUI.stream().filter(tag -> !tagsFromYaml.contains(tag)).collect(toList());
+
+    UpdateOperations<Delegate> updateOperations = persistence.createUpdateOperations(Delegate.class);
+    setUnset(updateOperations, DelegateKeys.tags, updatedListOfTagsFromUI);
+    log.info("Updating delegate tags : Delegate:{} tags:{}", delegate.getUuid(), delegateTags.getTags());
+
+    Delegate updatedDelegate = null;
+    if (isGroupedCgDelegate(delegate)) {
+      // update for delegateGroup here
+      log.info("Updating tags for all delegates in a group {}", delegate.getDelegateGroupName());
+      updatedDelegate = updateAllCgDelegatesInGroup(delegate, updateOperations, "TAGS");
+    } else {
+      setUnset(updateOperations, DelegateKeys.tagsFromYaml, updatedListOfTagsFromYaml);
       updatedDelegate = updateDelegate(delegate, updateOperations);
     }
 
@@ -2691,7 +2739,7 @@ public class DelegateServiceImpl implements DelegateService {
             .delegateRandomToken(delegateParams.getDelegateRandomToken())
             .keepAlivePacket(delegateParams.isKeepAlivePacket())
             // if delegate is ng then save tags only in delegate group.
-            .tags(delegateParams.isNg() ? null : delegateParams.getTags())
+            .tagsFromYaml(delegateParams.isNg() ? null : delegateParams.getTags())
             .polllingModeEnabled(delegateParams.isPollingModeEnabled())
             .proxy(delegateParams.isProxy())
             .sampleDelegate(delegateParams.isSampleDelegate())
@@ -2718,7 +2766,10 @@ public class DelegateServiceImpl implements DelegateService {
       }
       return delegateRegisterResponse;
     } else {
-      return registerResponseFromDelegate(upsertDelegateOperation(existingDelegate, delegate, delegateSetupDetails));
+      Delegate registeredDelegate = upsertDelegateOperation(existingDelegate, delegate, delegateSetupDetails);
+      updateDelegateYamlTagsAfterReRegistering(
+          registeredDelegate.getAccountId(), registeredDelegate.getUuid(), delegate.getTagsFromYaml());
+      return registerResponseFromDelegate(registeredDelegate);
     }
   }
 
@@ -2832,6 +2883,18 @@ public class DelegateServiceImpl implements DelegateService {
       }
     }
     return registeredDelegate;
+  }
+
+  private void updateDelegateYamlTagsAfterReRegistering(
+      @NotBlank String accountId, @NotBlank String delegateId, @Nullable List<String> yamlTags) {
+    Query<Delegate> delegateQuery = persistence.createQuery(Delegate.class)
+                                        .filter(DelegateKeys.accountId, accountId)
+                                        .filter(DelegateKeys.uuid, delegateId);
+
+    UpdateOperations<Delegate> updateOperations = persistence.createUpdateOperations(Delegate.class);
+    setUnset(updateOperations, DelegateKeys.tagsFromYaml, yamlTags);
+
+    persistence.update(delegateQuery, updateOperations);
   }
 
   private void broadcastDelegateHeartBeatResponse(Delegate delegate, Delegate registeredDelegate) {
