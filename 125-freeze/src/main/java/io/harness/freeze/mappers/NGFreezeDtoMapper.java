@@ -26,10 +26,9 @@ import lombok.experimental.UtilityClass;
 public class NGFreezeDtoMapper {
   public FreezeConfigEntity toFreezeConfigEntity(
       String accountId, String orgId, String projectId, String freezeConfigYaml, FreezeType type) {
-      FreezeConfig freezeConfig = toFreezeConfig(freezeConfigYaml);
-      return toFreezeConfigEntityResponse(accountId, freezeConfig, freezeConfigYaml, type);
+    FreezeConfig freezeConfig = toFreezeConfig(freezeConfigYaml);
+    return toFreezeConfigEntityResponse(accountId, freezeConfig, freezeConfigYaml, type);
   }
- 
 
   public FreezeConfigEntity toFreezeConfigEntityGlobal(
       String accountId, String orgId, String projectId, String freezeConfigYaml) {
