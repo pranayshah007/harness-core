@@ -69,6 +69,7 @@ import io.harness.mongo.QueryFactory;
 import io.harness.mongo.tracing.TraceMode;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.core.CorrelationFilter;
+import io.harness.ng.core.TraceFilter;
 import io.harness.ngmigration.api.NgMigrationResource;
 import io.harness.ngmigration.serializer.CurrentGenRegistrars;
 import io.harness.observer.NoOpRemoteObserverInformerImpl;
@@ -385,6 +386,10 @@ public class NGMigrationApplication extends Application<MigratorConfig> {
     // Authentication/Authorization filters
     registerAuthFilters(configuration, environment, injector);
     registerCorrelationFilter(environment, injector);
+
+    if (configuration.getEnableOpentelemetry()) {
+      registerTraceFilter(environment, injector);
+    }
 
     environment.lifecycle().addServerLifecycleListener(server -> {
       for (Connector connector : server.getConnectors()) {
@@ -720,6 +725,10 @@ public class NGMigrationApplication extends Application<MigratorConfig> {
 
   private void registerCorrelationFilter(Environment environment, Injector injector) {
     environment.jersey().register(injector.getInstance(CorrelationFilter.class));
+  }
+
+  private void registerTraceFilter(Environment environment, Injector injector) {
+    environment.jersey().register(injector.getInstance(TraceFilter.class));
   }
 
   /**
