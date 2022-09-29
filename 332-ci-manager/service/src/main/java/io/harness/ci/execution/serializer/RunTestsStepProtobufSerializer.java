@@ -59,12 +59,12 @@ public class RunTestsStepProtobufSerializer implements ProtobufStepSerializer<Ru
     String preTestCommand = gitSafeCMD
         + RunTimeInputHandler.resolveStringParameter(
             "Command", "RunTests", identifier, runTestsStepInfo.getPreCommand(), false);
-    if (StringUtils.isNotEmpty(preTestCommand) && !preTestCommand.equals("null")) {
+    if (StringUtils.isNotEmpty(preTestCommand)) {
       runTestsStepBuilder.setPreTestCommand(preTestCommand);
     }
     String postTestCommand = RunTimeInputHandler.resolveStringParameter(
         "Command", "RunTests", identifier, runTestsStepInfo.getPostCommand(), false);
-    if (StringUtils.isNotEmpty(postTestCommand) && !postTestCommand.equals("null")) {
+    if (StringUtils.isNotEmpty(postTestCommand)) {
       runTestsStepBuilder.setPostTestCommand(postTestCommand);
     }
     runTestsStepBuilder.setArgs(
