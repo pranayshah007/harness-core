@@ -53,12 +53,10 @@ public class SMPLicenseResource {
   }
 
   @POST
-  @Path("validate/{accountIdentifier}")
+  @Path("validate")
   @InternalApi
   @ApiOperation(value = "Validate License Under Account", nickname = "validateSMPLicense", hidden = true)
-  public ResponseDTO<SMPValidationResultDTO> validateSMPLicense(
-      @PathParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
-      @NotNull @Valid SMPEncLicenseDTO licenseDTO) {
+  public ResponseDTO<SMPValidationResultDTO> validateSMPLicense(@NotNull @Valid SMPEncLicenseDTO licenseDTO) {
     SMPValidationResultDTO decryptedLicense = licenseService.validateSMPLicense(licenseDTO);
     return ResponseDTO.newResponse(decryptedLicense);
   }

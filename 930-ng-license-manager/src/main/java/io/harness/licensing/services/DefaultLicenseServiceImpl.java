@@ -7,10 +7,14 @@
 
 package io.harness.licensing.services;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Sets;
-import com.google.inject.Inject;
-import com.google.inject.name.Named;
+import static io.harness.configuration.DeployMode.DEPLOY_MODE;
+import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
+import static io.harness.licensing.LicenseModule.LICENSE_CACHE_NAMESPACE;
+import static io.harness.licensing.interfaces.ModuleLicenseImpl.TRIAL_DURATION;
+import static io.harness.remote.client.CGRestUtils.getResponse;
+
+import static java.lang.String.format;
+
 import io.harness.ModuleType;
 import io.harness.account.services.AccountService;
 import io.harness.beans.EmbeddedUser;
@@ -56,11 +60,11 @@ import io.harness.smp.license.v1.LicenseValidator;
 import io.harness.telemetry.Category;
 import io.harness.telemetry.Destination;
 import io.harness.telemetry.TelemetryReporter;
-import lombok.extern.slf4j.Slf4j;
 
-import javax.cache.Cache;
-import javax.ws.rs.NotFoundException;
-import java.security.NoSuchAlgorithmException;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Sets;
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Collection;
@@ -72,13 +76,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import static io.harness.configuration.DeployMode.DEPLOY_MODE;
-import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
-import static io.harness.licensing.LicenseModule.LICENSE_CACHE_NAMESPACE;
-import static io.harness.licensing.interfaces.ModuleLicenseImpl.TRIAL_DURATION;
-import static io.harness.remote.client.CGRestUtils.getResponse;
-import static java.lang.String.format;
+import javax.cache.Cache;
+import javax.ws.rs.NotFoundException;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class DefaultLicenseServiceImpl implements LicenseService {
@@ -459,12 +459,7 @@ public class DefaultLicenseServiceImpl implements LicenseService {
   @Override
   public SMPValidationResultDTO validateSMPLicense(SMPEncLicenseDTO licenseDTO) {
     SMPLicenseEnc smpLicenseEnc = smpLicenseMapper.toSMPLicenseEnc(licenseDTO);
-    SMPLicenseValidationResult validationResult = null;
-    try {
-      validationResult = licenseValidator.validate(smpLicenseEnc, licenseDTO.isDecrypt());
-    } catch (NoSuchAlgorithmException e) {
-      throw new InvalidRequestException("Invalid license provided for validation");
-    }
+    SMPLicenseValidationResult validationResult = licenseValidator.validate(smpLicenseEnc, licenseDTO.isDecrypt());
     return smpLicenseMapper.toSMPValidationResultDTO(validationResult);
   }
 
