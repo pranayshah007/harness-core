@@ -38,12 +38,6 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
   static final String FREEZE_CONFIG_ALREADY_EXISTS_ERROR_TEMPLATE =
       "Freeze Config for freezeIdentifier: %s , ogrIdentifier: %s , projIdentifier: %s already exist";
 
-  /*
-  public final Map<FreezeEntityType, String> coreEntityTypeToPermissionEntityName =
-  Maps.of(FreezeEntityType.ENVIRONMENT, NGResourceType.ENVIRONMENT,FreezeEntityType.ORG,
-          PlatformResourceTypes.ORGANIZATION, FreezeEntityType.PIPELINE, NGResourceType.PIPELINE,
-  FreezeEntityType.SERVICE, NGResourceType.SERVICE);
-   */
   @Inject
   public FreezeCRUDServiceImpl(FreezeConfigRepository freezeConfigRepository) {
     this.freezeConfigRepository = freezeConfigRepository;
