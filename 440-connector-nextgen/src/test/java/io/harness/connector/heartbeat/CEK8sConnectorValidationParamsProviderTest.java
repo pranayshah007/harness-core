@@ -66,7 +66,7 @@ public class CEK8sConnectorValidationParamsProviderTest extends CategoryTest {
             connectorInfoDTO, CONNECTOR_NAME, ACCOUNT_ID, null, null);
 
     assertThat(connectorValidationParams).isNotNull();
-    assertThat(connectorValidationParams.getConnectorType()).isEqualTo(ConnectorType.KUBERNETES_CLUSTER);
+    assertThat(connectorValidationParams.getConnectorType()).isEqualTo(ConnectorType.CE_KUBERNETES_CLUSTER);
     assertThat(connectorValidationParams.getConnectorName()).isEqualTo(CONNECTOR_NAME);
   }
 
@@ -88,7 +88,7 @@ public class CEK8sConnectorValidationParamsProviderTest extends CategoryTest {
             connectorInfoDTO, CONNECTOR_NAME, ACCOUNT_ID, null, null);
 
     assertThat(connectorValidationParams).isNotNull();
-    assertThat(connectorValidationParams.getConnectorType()).isEqualTo(ConnectorType.KUBERNETES_CLUSTER);
+    assertThat(connectorValidationParams.getConnectorType()).isEqualTo(ConnectorType.CE_KUBERNETES_CLUSTER);
     assertThat(connectorValidationParams.getConnectorName()).isEqualTo(CONNECTOR_NAME);
   }
 
