@@ -492,8 +492,11 @@ public class EnvironmentResourceV2 {
   @Path("/serviceOverrides")
   @ApiOperation(value = "upsert a Service Override", nickname = "upsertServiceOverride")
   @Operation(operationId = "upsertServiceOverride", summary = "Upsert",
-      responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Upserts a Service Override") },
-      hidden = true)
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "Upsert ( Create/Update )  a Service Override in an Environment.")
+      })
   public ResponseDTO<io.harness.ng.core.serviceoverride.beans.ServiceOverrideResponseDTO>
   upsertServiceOverride(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                             NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
@@ -597,8 +600,7 @@ public class EnvironmentResourceV2 {
       {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(description = "Returns true if the Service Override is deleted")
-      },
-      hidden = true)
+      })
   public ResponseDTO<Boolean>
   deleteServiceOverride(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                             NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
@@ -639,9 +641,9 @@ public class EnvironmentResourceV2 {
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(description = "Returns the list of Service Overrides for an Environment and optionally Service")
-      },
-      hidden = true)
+        ApiResponse(description = "Returns the list of Service Overrides for an Environment."
+                + "serviceIdentifier, if passed, can be used to get the overrides for that particular Service in the Environment")
+      })
   public ResponseDTO<PageResponse<ServiceOverrideResponseDTO>>
   listServiceOverrides(@Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
                            NGCommonEntityConstants.PAGE) @DefaultValue("0") int page,
