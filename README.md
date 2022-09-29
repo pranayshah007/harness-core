@@ -22,8 +22,8 @@ https://harness.atlassian.net/wiki/spaces/BT/pages/21101969665/How+to+setup+loca
 
    To setup the recommended version, download the OpenJDK 1.8-242 (jdk8u242-b08) JRE .pkg from [AdoptOpenJDK](https://github.com/AdoptOpenJDK/openjdk8-binaries/releases/tag/jdk8u242-b08) and install it. Make sure to update `JAVA_HOME` and `PATH` accordingly (see step 5).~~
 
-2. Install JDK11 locally - 11.0.15 Temurin build 
-   
+2. Install JDK11 locally - 11.0.15 Temurin build
+
 Download JDK 11 for MAC
 `curl -OL https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.15%2B10/OpenJDK11U-jdk_x64_mac_hotspot_11.0.15_10.tar.gz`
 
@@ -113,22 +113,22 @@ Official steps to install docker on mac: [docker.com](https://docs.docker.com/de
 
    (Optional) Follow https://help.github.com/articles/adding-a-new-ssh-key-to-your-github-account/
    to setup your SSH keys. You can then use SSH to interact with git
-   
+
     NOTE: If you have regular bazel installed, please uninstall bazel and install bazelisk. It allows us to use the git repo to synchronize everyone's installation of bazel.
 
 2. Setup the build purpose
-   
+
    You need to set environment variable BUILD_PURPOSE with one of the following values:
    *   DEVELOPMENT - set this when you building for development purposes
    *   PR_CHECK    - set this when you building for executing check for the pr
    *   FEATURE     - set this when you building for internal feature testing
    *   RELEASE     - set this when you building for release
-   
-   if you seting up the project to build locally, you should simply add to your .bash_profile file: 
+
+   if you seting up the project to build locally, you should simply add to your .bash_profile file:
    ```
    export BUILD_PURPOSE=DEVELOPMENT
    ```
-   
+
 3. Go to `harness-core` directory and run
 
     ```
@@ -240,7 +240,7 @@ run_ui ()
     fi;
     sudo docker pull harness/ui$tag;
     sudo docker run -it -p 8000:8080 --rm -e API_URL=https://localhost:9090 harness/ui$tag
-}  
+}
 
 alias runui='run_ui'
 ```
@@ -279,9 +279,9 @@ helper shell scripts:
 ### IntelliJ Setup
 
 1. Install IntelliJ
-  
+
    NOTE: Download IntelliJ as per your macOS architecture i.e. x86_64 (intel) or arm64 (Apple silicon). You can check your architecture by command “uname -m“.
-  
+
    It's recommended to install the latest version of IntelliJ that's supported by the Bazel Plugin. To find the latest supported version, please refer to the [bazel github project](https://github.com/bazelbuild/intellij/blob/master/intellij_platform_sdk/build_defs.bzl#L11).
    As of June, 2022 recommended version of IntelliJ is 2021.3.3
    After identifying the desired version of IntelliJ, you can download it from [jetbrains.com](https://www.jetbrains.com/idea/download/other.html).
@@ -291,7 +291,7 @@ helper shell scripts:
 3. Import `harness-core` as a Bazel project
    a. Open `File > Import Bazel Project...`.
    b. Enter `/path/to/repo/harness-core` for Workspace, click Next.
-   c. Select `Import project view file` and enter `project/bazelproject` as the Project view. 
+   c. Select `Import project view file` and enter `project/bazelproject` as the Project view.
    NOTE: If you do not see this file `project/bazelproject` in the list then select option `Create from scratch` and paste the content of `project/bazelproject` in the text area.
 4. Install ClangFormatIJ Plugin: https://plugins.jetbrains.com/plugin/8396-clangformatij
    (use `Ctrl/Cmd-Alt-K` to format current statement or the selection)
@@ -307,16 +307,16 @@ helper shell scripts:
    assign whatever key combination you would like it to be triggered on.
 
 5. Install Lombok Plugin: https://projectlombok.org/setup/intellij
-   
+
    *Not required for IntelliJ 2020.3 and later versions - the Lombok Plugin comes pre-bundled with IntelliJ*
 
 6. Install SonarLint plugin:
    - This plugin is really helpful to analyze your code for issues as you code.
    - Go to `Preferences -> Plugins` ->  type SonarLint -> Install plugin. (Will need to restart Intellij)
    - Go to `Preferences -> Tools -> SonarLint`.
-   
+
       Check "Automatically trigger analysis".
-   
+
       Add a SonarQube connection to `https://sonar.harness.io` (requires VPN connection). As part of the connection-setup you'll be directed to sonar.harness.io to create a custom security token.
    - Go to `Preferences -> Tools -> SonarLint -> Project Settings`. Check "Bind project to sonarqube", and select the connection, and set project as `portal_bazel`. This is so that we use the same rules locally instead of the default rules.
     ![config image](img/sonar-config.png).
@@ -352,7 +352,7 @@ While running an app from pre checked in configs, Add JAVA_HOME as an environmen
 ### Show current git branch in command prompt
 
 If you are using zsh (which is default on MacOS Catalina and later), basic git integration comes out of the box.
-  
+
 
 If you are using bash, add the following to your `~/.bash_profile` to display the current git branch in the command prompt:
 
@@ -661,7 +661,7 @@ AWS SDK library internal logging is done using SLF4J. SLF4J serves as a simple f
 
 We are already using logback framework in our application, so it is simple to enable logging as it is already supported in SLF4J.
 * Delegate - To enable AWS SDK logging in delegate, update root logger level to TRACE in logback.xml file in 260-delegate module resources folder and restart delegate.
-* Manager - To enable AWS SDK logging in manager, update root logger level to TRACE in logback.xml file in 360-cg-manager module resources folder and restart manager. 
+* Manager - To enable AWS SDK logging in manager, update root logger level to TRACE in logback.xml file in 360-cg-manager module resources folder and restart manager.a
 
 ### Hotfix instructions
 
