@@ -103,6 +103,16 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
       final AWSCredentialsProvider credentialsProvider = getCredentialProvider(
           crossAccountAccessDTO, Boolean.TRUE.equals(ceAwsConnectorDTO.getIsAWSGovCloudAccount()));
 
+      verifyPoliciesPerFeature(featuresEnabled, credentialsProvider, ceAwsConnectorDTO, errorList, createdAt);
+      if (!errorList.isEmpty()) {
+        return ConnectorValidationResult.builder()
+            .status(ConnectivityStatus.FAILURE)
+            .errors(errorList)
+            .errorSummary("Missing AWS access permissions")
+            .testedAt(Instant.now().toEpochMilli())
+            .build();
+      }
+
       if (featuresEnabled.contains(CEFeatures.BILLING)) {
         Optional<ReportDefinition> report =
             validateReportResourceExists(credentialsProvider, awsCurAttributesDTO, errorList);
@@ -139,16 +149,6 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
               .testedAt(Instant.now().toEpochMilli())
               .build();
         }
-      }
-
-      verifyPoliciesPerFeature(featuresEnabled, credentialsProvider, ceAwsConnectorDTO, errorList, createdAt);
-      if (!errorList.isEmpty()) {
-        return ConnectorValidationResult.builder()
-            .status(ConnectivityStatus.FAILURE)
-            .errors(errorList)
-            .errorSummary("Missing AWS access permissions")
-            .testedAt(Instant.now().toEpochMilli())
-            .build();
       }
 
     } catch (AWSSecurityTokenServiceException ex) {
