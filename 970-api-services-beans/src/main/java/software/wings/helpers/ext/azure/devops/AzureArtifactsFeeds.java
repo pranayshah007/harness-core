@@ -21,7 +21,7 @@ import lombok.Data;
 @TargetModule(_960_API_SERVICES)
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
-class AzureArtifactsFeeds {
+public class AzureArtifactsFeeds {
   private int count;
   private List<AzureArtifactsFeed> value;
 }

@@ -829,8 +829,6 @@ public class DelegateTasksKryoRegistrar implements KryoRegistrar {
     kryo.register(AwsCloudWatchMetricDataResponse.class, 7272);
     kryo.register(ElkDataCollectionInfoV2.class, 7283);
     kryo.register(AzureArtifactsPATConfig.class, 7284);
-    kryo.register(AzureArtifactsFeed.class, 7286);
-    kryo.register(AzureArtifactsPackageVersion.class, 7288);
     kryo.register(AzureArtifactsCollectionTaskParameters.class, 7289);
     kryo.register(InstanaConfig.class, 7293);
     kryo.register(InstanaInfraMetricMetadata.class, 7294);

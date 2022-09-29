@@ -21,7 +21,7 @@ import lombok.Data;
 @TargetModule(_960_API_SERVICES)
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
-class AzureDevopsProjects {
+public class AzureDevopsProjects {
   private int count;
   private List<AzureDevopsProject> value;
 }

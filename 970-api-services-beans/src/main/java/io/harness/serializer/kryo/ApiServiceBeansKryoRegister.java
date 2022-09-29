@@ -139,8 +139,7 @@ import software.wings.beans.ExecutionCredential;
 import software.wings.beans.GcpKubernetesCluster;
 import software.wings.beans.command.CodeDeployCommandExecutionData;
 import software.wings.beans.command.ResizeCommandUnitExecutionData;
-import software.wings.helpers.ext.azure.devops.AzureArtifactsPackage;
-import software.wings.helpers.ext.azure.devops.AzureDevopsProject;
+import software.wings.helpers.ext.azure.devops.*;
 import software.wings.helpers.ext.gcb.models.BuildOptions;
 import software.wings.helpers.ext.gcb.models.BuiltImage;
 import software.wings.helpers.ext.gcb.models.GcbArtifactObjects;
@@ -439,5 +438,15 @@ public class ApiServiceBeansKryoRegister implements KryoRegistrar {
     kryo.register(HelmCommandType.class, 98400);
     kryo.register(GitPollingWebhookData.class, 73001);
     kryo.register(MultivaluedHashMap.class, 73002);
+    kryo.register(AzureArtifactsFeed.class, 80301);
+    kryo.register(AzureArtifactsFeeds.class, 80302);
+    kryo.register(AzureArtifactsPackageFile.class, 80303);
+    kryo.register(AzureArtifactsPackageFileInfo.class, 80304);
+    kryo.register(AzureArtifactsPackages.class, 80305);
+    kryo.register(AzureArtifactsPackageVersion.class, 80306);
+    kryo.register(AzureArtifactsPackageVersions.class, 80307);
+    kryo.register(AzureArtifactsProtocolMetadata.class, 80308);
+    kryo.register(AzureArtifactsProtocolMetadataData.class, 80309);
+    kryo.register(AzureDevopsProjects.class, 80310);
   }
 }
