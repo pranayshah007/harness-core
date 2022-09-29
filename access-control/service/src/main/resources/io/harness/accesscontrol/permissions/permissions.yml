@@ -1215,7 +1215,7 @@ permissions:
       - account
   - identifier: ccm_overview_view
     name: View CCM Overview page
-    status: EXPERIMENTAL
+    status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account
