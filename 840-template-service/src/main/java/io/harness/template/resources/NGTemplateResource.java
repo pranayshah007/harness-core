@@ -890,7 +890,7 @@ public class NGTemplateResource {
       @NotNull CopyTemplateVariableRequestDTO copyTemplateVariableRequestDTO) {
     return ResponseDTO.newResponse(templateService.copyTemplateWithVariables(accountIdentifier, orgIdentifier,
         projectIdentifier, copyTemplateVariableRequestDTO.getTemplateYaml(),
-        NGVariablesUtils.getStringMapVariables(copyTemplateVariableRequestDTO.getVariables(), 0L)));
+        NGVariablesUtils.getStringMapVariables(copyTemplateVariableRequestDTO.getVariables(), null)));
   }
 
   @POST

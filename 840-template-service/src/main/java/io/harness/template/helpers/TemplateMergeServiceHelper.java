@@ -25,6 +25,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.NGTemplateException;
 import io.harness.exception.ngexception.beans.templateservice.TemplateInputsErrorDTO;
 import io.harness.exception.ngexception.beans.templateservice.TemplateInputsErrorMetadataDTO;
+import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.ExpressionMode;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
@@ -42,6 +43,7 @@ import io.harness.template.services.NGTemplateServiceHelper;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.YamlPipelineUtils;
 import io.harness.yaml.core.variables.NGVariable;
+import io.harness.yaml.core.variables.NGVariableType;
 import io.harness.yaml.utils.NGVariablesUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -421,7 +423,7 @@ public class TemplateMergeServiceHelper {
     if (TemplateYamlSchemaMergeHelper.isFeatureFlagEnabled(
             FeatureName.NG_TEMPLATE_VARIABLES, accountId, accountClient)) {
       mergedYaml = applyTemplateVariablesInYaml(prepareVariableValueMap(templateVariables),
-          NGVariablesUtils.getStringMapVariables(variablesFromTemplate, 0L), mergedYaml);
+          NGVariablesUtils.getStringMapVariables(variablesFromTemplate, null), mergedYaml);
     }
 
     try {
@@ -438,8 +440,10 @@ public class TemplateMergeServiceHelper {
     if (templateVariables != null && templateVariables.getNodeType() == JsonNodeType.ARRAY) {
       ArrayNode templateVariablesArray = (ArrayNode) templateVariables;
       for (JsonNode templateVariable : templateVariablesArray) {
+        String type = templateVariable.get(YAMLFieldNameConstants.TYPE).asText();
+        String value = NGVariableType.SECRET.getYamlProperty().equals(type)? NGVariablesUtils.fetchSecretExpression(templateVariable.get(YAMLFieldNameConstants.VALUE).asText()): templateVariable.get(YAMLFieldNameConstants.VALUE).asText();
         variableValues.put(templateVariable.get(YAMLFieldNameConstants.NAME).asText(),
-            templateVariable.get(YAMLFieldNameConstants.VALUE).asText());
+            value);
       }
     }
     return variableValues;
@@ -457,10 +461,12 @@ public class TemplateMergeServiceHelper {
     if (isNotEmpty(templateVariablesFromPipeline)) {
       variableValues.putAll(templateVariablesFromPipeline);
     }
+
+    variableValues.replaceAll((key,value) -> value.replace("\"", "\\\""));
     TemplateVariableEvaluator variableEvaluator = new TemplateVariableEvaluator(variableValues);
-    String result =
-        variableEvaluator.renderExpression(mergedYaml, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
-    return isEmpty(result) ? mergedYaml : result;
+    EngineExpressionEvaluator.PartialEvaluateResult result =
+        variableEvaluator.partialRenderExpression(mergedYaml);
+    return result==null || isEmpty(result.getExpressionValue()) ? mergedYaml : result.getExpressionValue();
   }
 
   private String removeOmittedRuntimeInputsFromMergedYaml(String mergedYaml, String templateInputsYaml)

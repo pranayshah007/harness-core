@@ -186,8 +186,8 @@ public class NGVariablesUtils {
     return originalVariablesMap;
   }
 
-  public Map<String, String> getStringMapVariables(List<NGVariable> variables, long expressionFunctorToken) {
-    Map<String, Object> inputVariables = getMapOfVariables(variables, expressionFunctorToken);
+  public Map<String, String> getStringMapVariables(List<NGVariable> variables, Long expressionFunctorToken) {
+    Map<String, Object> inputVariables = expressionFunctorToken == null? getMapOfVariables(variables): getMapOfVariables(variables, expressionFunctorToken);
     if (EmptyPredicate.isEmpty(inputVariables)) {
       return new HashMap<>();
     }
