@@ -5157,6 +5157,7 @@ plain_artifacts = [
     "io.swagger.core.v3:swagger-annotations:2.2.0",
     "io.swagger.core.v3:swagger-models:2.2.0",
     "io.swagger.core.v3:swagger-integration:2.2.0",
+    "io.opentelemetry:opentelemetry-api:1.18.0",
 ]
 
 amazon_artifacts = [
