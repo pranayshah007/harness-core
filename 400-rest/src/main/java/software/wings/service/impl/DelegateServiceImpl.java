@@ -222,7 +222,6 @@ import software.wings.service.intfc.security.SecretManager;
 
 import com.github.zafarkhaja.semver.Version;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Preconditions;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -339,10 +338,6 @@ public class DelegateServiceImpl implements DelegateService {
   private static final String README = "README";
   private static final String README_TXT = "/README.txt";
   private static final String EMPTY_VERSION = "0.0.0";
-  private static final String JRE_DIRECTORY = "jreDirectory";
-  private static final String JRE_MAC_DIRECTORY = "jreMacDirectory";
-  private static final String JRE_TAR_PATH = "jreTarPath";
-  private static final String ALPN_JAR_PATH = "alpnJarPath";
   private static final String JRE_VERSION_KEY = "jreVersion";
   private static final String ENV_ENV_VAR = "ENV";
   private static final String SAMPLE_DELEGATE_NAME = "harness-sample-k8s-delegate";
@@ -1178,7 +1173,7 @@ public class DelegateServiceImpl implements DelegateService {
     }
 
     existingDelegate.setUseCdn(mainConfiguration.useCdnForDelegateStorage());
-    existingDelegate.setUseJreVersion(getTargetJreVersion(delegate.getAccountId()));
+    existingDelegate.setUseJreVersion(getTargetJreVersion());
     return existingDelegate;
   }
 
@@ -1576,19 +1571,8 @@ public class DelegateServiceImpl implements DelegateService {
       }
     }
 
-    JreConfig jreConfig = getJreConfig(templateParameters.getAccountId(), templateParameters.isWatcher());
+    params.put(JRE_VERSION_KEY, getTargetJreVersion());
 
-    Preconditions.checkNotNull(jreConfig, "jreConfig cannot be null");
-
-    params.put(JRE_VERSION_KEY, jreConfig.getVersion());
-    params.put(JRE_DIRECTORY, jreConfig.getJreDirectory());
-    params.put(JRE_MAC_DIRECTORY, jreConfig.getJreMacDirectory());
-    params.put(JRE_TAR_PATH, jreConfig.getJreTarPath());
-    params.put("isJdk11Watcher", String.valueOf(isJdk11Watcher(templateParameters.getAccountId())));
-
-    if (jreConfig.getAlpnJarPath() != null) {
-      params.put(ALPN_JAR_PATH, jreConfig.getAlpnJarPath());
-    }
     params.put("enableCE", String.valueOf(templateParameters.isCeEnabled()));
 
     if (isNotBlank(templateParameters.getDelegateTags())) {
@@ -1771,56 +1755,14 @@ public class DelegateServiceImpl implements DelegateService {
   }
 
   /**
-   * Returns JreConfig for a given account Id on the basis of UPGRADE_JRE and USE_CDN_FOR_STORAGE_FILES FeatureFlags.
+   * Returns delegate's JRE version
    *
    * @return
    */
-  private JreConfig getJreConfig(final String accountId, final boolean isWatcher) {
-    final boolean enabled = !isWatcher || isJdk11Watcher(accountId);
-    final String jreVersion = enabled ? mainConfiguration.getMigrateToJre() : mainConfiguration.getCurrentJre();
+  private String getTargetJreVersion() {
+    final String jreVersion = mainConfiguration.getMigrateToJre();
     JreConfig jreConfig = mainConfiguration.getJreConfigs().get(jreVersion);
-    final CdnConfig cdnConfig = mainConfiguration.getCdnConfig();
-
-    if (mainConfiguration.useCdnForDelegateStorage() && cdnConfig != null) {
-      final String tarPath = cdnConfig.getCdnJreTarPaths().get(jreVersion);
-      final String alpnJarPath = cdnConfig.getAlpnJarPath();
-      jreConfig = JreConfig.builder()
-                      .version(jreConfig.getVersion())
-                      .jreDirectory(jreConfig.getJreDirectory())
-                      .jreMacDirectory(jreConfig.getJreMacDirectory())
-                      .jreTarPath(tarPath)
-                      .alpnJarPath(enabled ? null : alpnJarPath)
-                      .build();
-    }
-    return jreConfig;
-  }
-
-  private boolean isJdk11Watcher(final String accountId) {
-    if (DeployMode.isOnPrem(mainConfiguration.getDeployMode().name())) {
-      return true;
-    }
-    final String watcherVersion =
-        substringBefore(delegateVersionService.getWatcherJarVersions(accountId), "-").trim().split("\\.")[2];
-    try {
-      final int jdk11_base_watcher_version = 75276;
-      if (Integer.parseInt(watcherVersion) < jdk11_base_watcher_version) {
-        return false;
-      }
-      return true;
-    } catch (Exception e) {
-      log.error("Unable to get watcher version, will start watcher with jdk8 ", e);
-      return false;
-    }
-  }
-
-  /**
-   * Returns delegate's JRE version for a given account Id
-   *
-   * @param accountId
-   * @return
-   */
-  private String getTargetJreVersion(final String accountId) {
-    return getJreConfig(accountId, false).getVersion();
+    return jreConfig.getVersion();
   }
 
   private String getDelegateBuildVersion(String delegateVersion) {
@@ -3195,7 +3137,7 @@ public class DelegateServiceImpl implements DelegateService {
     final Delegate registeredDelegate = handleEcsDelegateRegistration(delegate);
     updateExistingDelegateWithSequenceConfigData(registeredDelegate);
     registeredDelegate.setUseCdn(mainConfiguration.useCdnForDelegateStorage());
-    registeredDelegate.setUseJreVersion(getTargetJreVersion(delegate.getAccountId()));
+    registeredDelegate.setUseJreVersion(getTargetJreVersion());
 
     return registeredDelegate;
   }

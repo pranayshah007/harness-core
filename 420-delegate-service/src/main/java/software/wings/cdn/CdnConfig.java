@@ -9,7 +9,6 @@ package software.wings.cdn;
 
 import io.harness.secret.ConfigSecret;
 
-import java.util.Map;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
@@ -24,6 +23,4 @@ public class CdnConfig {
   String watcherJarBasePath;
   String watcherJarPath;
   String watcherMetaDataFilePath;
-  Map<String, String> cdnJreTarPaths;
-  String alpnJarPath;
 }

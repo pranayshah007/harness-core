@@ -573,22 +573,10 @@ pipelineConfig:
   envStateTimeout: -1
   approvalStateTimeout: -1
 
-currentJre: openjdk8u242
+currentJre: openjdk11014_9
 migrateToJre: openjdk11014_9
 
 jreConfigs:
-  oracle8u191:
-    version: 1.8.0_191
-    jreDirectory: jre1.8.0_191
-    jreMacDirectory: jre1.8.0_191.jre
-    jreTarPath: jre/8u191/jre-8u191-${OS}-x64.tar.gz
-    alpnJarPath: tools/alpn/release/8.1.13.v20181017/alpn-boot-8.1.13.v20181017.jar
-  openjdk8u242:
-    version: 1.8.0_242
-    jreDirectory: jdk8u242-b08-jre
-    jreMacDirectory: jdk8u242-b08-jre
-    jreTarPath: jre/openjdk-8u242/jre_x64_${OS}_8u242b08.tar.gz
-    alpnJarPath: tools/alpn/release/8.1.13.v20181017/alpn-boot-8.1.13.v20181017.jar
   openjdk11014_9:
     version: 11.0.14
     jreDirectory: jdk-11.0.14+9-jre
@@ -603,11 +591,6 @@ cdnConfig:
   watcherJarBasePath: public/shared/watchers/builds
   watcherJarPath: oracle-8u191/%s/watcher.jar
   watcherMetaDataFilePath: public/%s/%s/watchers/current.version
-  alpnJarPath: public/shared/tools/alpn/release/8.1.13.v20181017/alpn-boot-8.1.13.v20181017.jar
-  cdnJreTarPaths:
-    oracle8u191: public/shared/jre/oracle-8u191/jre-8u191-${OS}-x64.tar.gz
-    openjdk8u242: public/shared/jre/openjdk-8u242/jre_x64_${OS}_8u242b08.tar.gz
-    openjdk11014_9: public/shared/jre/openjdk-11.0.14_9/OpenJDK11U-jre_x64_${OS}_hotspot_11.0.14_9.tar.gz
 
 commandLibraryServiceConfig:
   baseUrl: https://localhost:5050/command-library-service/

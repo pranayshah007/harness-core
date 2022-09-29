@@ -813,14 +813,6 @@ if [[ "" != "$MIGRATE_TO_JRE" ]]; then
   export MIGRATE_TO_JRE; yq -i '.migrateToJre=env(MIGRATE_TO_JRE)' $CONFIG_FILE
 fi
 
-if [[ "" != "$ORACLE_JRE_TAR_PATH" ]]; then
-  export ORACLE_JRE_TAR_PATH; yq -i '.jreConfigs.oracle8u191.jreTarPath=env(ORACLE_JRE_TAR_PATH)' $CONFIG_FILE
-fi
-
-if [[ "" != "$OPENJDK_JRE_TAR_PATH" ]]; then
-  export OPENJDK_JRE_TAR_PATH; yq -i '.jreConfigs.openjdk8u242.jreTarPath=env(OPENJDK_JRE_TAR_PATH)' $CONFIG_FILE
-fi
-
 if [[ "" != "$CDN_URL" ]]; then
   export CDN_URL; yq -i '.cdnConfig.url=env(CDN_URL)' $CONFIG_FILE
 fi
@@ -847,14 +839,6 @@ fi
 
 if [[ "" != "$CDN_WATCHER_METADATA_FILE_PATH" ]]; then
   export CDN_WATCHER_METADATA_FILE_PATH; yq -i '.cdnConfig.watcherMetaDataFilePath=env(CDN_WATCHER_METADATA_FILE_PATH)' $CONFIG_FILE
-fi
-
-if [[ "" != "$CDN_ORACLE_JRE_TAR_PATH" ]]; then
-  export CDN_ORACLE_JRE_TAR_PATH; yq -i '.cdnConfig.cdnJreTarPaths.oracle8u191=env(CDN_ORACLE_JRE_TAR_PATH)' $CONFIG_FILE
-fi
-
-if [[ "" != "$CDN_OPENJDK_JRE_TAR_PATH" ]]; then
-  export CDN_OPENJDK_JRE_TAR_PATH; yq -i '.cdnConfig.cdnJreTarPaths.openjdk8u242=env(CDN_OPENJDK_JRE_TAR_PATH)' $CONFIG_FILE
 fi
 
 if [[ "" != "$COMMAND_LIBRARY_SERVICE_BASE_URL" ]]; then

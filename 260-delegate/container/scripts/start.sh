@@ -55,13 +55,13 @@ if [[ $DEPLOY_MODE == "KUBERNETES" ]]; then
   JVM_URL_BASE_PATH=$JVM_URL_BASE_PATH/public/shared
 fi
 
-if [ "$JRE_VERSION" != "" ] && [ "$JRE_VERSION" != "1.8.0_242" ]; then
-  echo Unsupported JRE version $JRE_VERSION - using 1.8.0_242 instead
+if [ "$JRE_VERSION" != "" ] && [ "$JRE_VERSION" != "11.0.14" ]; then
+  echo Unsupported JRE version $JRE_VERSION - using 11.0.14 instead
 fi
 
-JRE_TAR_FILE=jre_x64_linux_8u242b08.tar.gz
-JRE_DIR=jdk8u242-b08-jre
-JVM_URL=$JVM_URL_BASE_PATH/jre/openjdk-8u242/$JRE_TAR_FILE
+JRE_TAR_FILE=OpenJDK11U-jre_x64_linux_hotspot_11.0.14_9.tar.gz
+JRE_DIR=jdk-11.0.14+9-jre
+JVM_URL=$JVM_URL_BASE_PATH/jre/openjdk-11.0.14_9/$JRE_TAR_FILE
 
 JRE_BINARY=$JRE_DIR/bin/java
 
