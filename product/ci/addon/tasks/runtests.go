@@ -502,10 +502,11 @@ func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile stri
 		case "bazel":
 			runner = java.NewBazelRunner(r.log, r.fs, r.cmdContextFactory)
 		case "sbt":
-			if r.language == "scala" {
+			{
+				if r.language != "scala" {
+					return "", fmt.Errorf("build tool: SBT is not supported for non-Scala languages")
+				}
 				runner = java.NewSBTRunner(r.log, r.fs, r.cmdContextFactory)
-			} else {
-				return "", fmt.Errorf("build tool: SBT is not supported for non-Scala languages")
 			}
 		default:
 			return "", fmt.Errorf("build tool: %s is not supported for Java", r.buildTool)
