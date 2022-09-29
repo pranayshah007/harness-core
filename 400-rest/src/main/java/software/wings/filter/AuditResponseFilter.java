@@ -48,6 +48,7 @@ public class AuditResponseFilter implements Filter {
   public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
       throws ServletException, IOException {
     AuditHeader header = auditHelper.get();
+    log.info("remote Ip Address is : {}", request.getRemoteAddr());
     if (header != null) {
       String path = ((HttpServletRequest) request).getPathInfo();
       if (log.isDebugEnabled()) {
