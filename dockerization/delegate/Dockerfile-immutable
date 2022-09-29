@@ -23,11 +23,11 @@ RUN whoami
 USER root
 ARG disable_client_tools=true
 ARG TARGETARCH
-RUN ./client_tools.sh $disable_client_tools $TARGETARCH\
-    && chmod -R 755 /opt/harness-delegate \
-    && chgrp -R 0 /opt/harness-delegate  \
-    && chmod -R g=u /opt/harness-delegate \
-    && chown -R 1001 /opt/harness-delegate
+RUN ./client_tools.sh $disable_client_tools $TARGETARCH
+RUN chmod -R 755 /opt/harness-delegate
+RUN chgrp -R 0 /opt/harness-delegate
+RUN chmod -R g=u /opt/harness-delegate
+RUN chown -R 1001 /opt/harness-delegate
 
 RUN rm /opt/harness-delegate/client_tools.sh
 
