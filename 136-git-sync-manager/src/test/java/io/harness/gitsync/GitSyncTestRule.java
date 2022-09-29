@@ -72,6 +72,7 @@ import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.grpc.client.GrpcClientConfig;
 import io.harness.impl.scm.SCMServiceGitClientImpl;
 import io.harness.lock.PersistentLocker;
+import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.core.NGCoreModule;
@@ -244,6 +245,12 @@ public class GitSyncTestRule implements InjectorRuleMixin, MethodRule, MongoRule
         return ImmutableList.<Class<? extends Converter<?, ?>>>builder()
             .addAll(ManagerRegistrars.springConverters)
             .build();
+      }
+
+      @Provides
+      @Singleton
+      MongoConfig mongoConfig() {
+        return MongoConfig.builder().build();
       }
 
       @Provides
