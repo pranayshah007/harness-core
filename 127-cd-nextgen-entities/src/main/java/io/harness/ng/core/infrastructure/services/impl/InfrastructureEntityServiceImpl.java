@@ -16,6 +16,7 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.IDENTIFIER;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.customdeployment.helper.CustomDeploymentEntitySetupHelper;
@@ -27,6 +28,7 @@ import io.harness.exception.UnexpectedException;
 import io.harness.ng.DuplicateKeyExceptionParser;
 import io.harness.ng.core.events.EnvironmentUpdatedEvent;
 import io.harness.ng.core.infrastructure.InfrastructureType;
+import io.harness.ng.core.infrastructure.dto.InfrastructureYamlMetadata;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity.InfrastructureEntityKeys;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
@@ -49,6 +51,7 @@ import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -347,7 +350,7 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
         accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier);
   }
   @Override
-  public String createInfrastructureInputsFromYaml(String accountId, String projectIdentifier, String orgIdentifier,
+  public String createInfrastructureInputsFromYaml(String accountId, String orgIdentifier, String projectIdentifier,
       String environmentIdentifier, List<String> infraIdentifiers, boolean deployToAll) {
     Map<String, Object> yamlInputs = createInfrastructureInputsYamlInternal(
         accountId, orgIdentifier, projectIdentifier, environmentIdentifier, deployToAll, infraIdentifiers);
@@ -493,5 +496,39 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
         .is(orgIdentifier)
         .and(InfrastructureEntityKeys.projectIdentifier)
         .is(projectIdentifier);
+  }
+
+  public List<InfrastructureYamlMetadata> createInfrastructureYamlMetadata(String accountId, String orgIdentifier,
+      String projectIdentifier, String environmentIdentifier, List<String> infraIds) {
+    List<InfrastructureEntity> infrastructureEntities = getAllInfrastructureFromIdentifierList(
+        accountId, orgIdentifier, projectIdentifier, environmentIdentifier, infraIds);
+    List<InfrastructureYamlMetadata> infrastructureYamlMetadataList = new ArrayList<>();
+    infrastructureEntities.forEach(infrastructureEntity
+        -> infrastructureYamlMetadataList.add(createInfrastructureYamlMetadataInternal(infrastructureEntity)));
+    return infrastructureYamlMetadataList;
+  }
+
+  private InfrastructureYamlMetadata createInfrastructureYamlMetadataInternal(
+      InfrastructureEntity infrastructureEntity) {
+    if (isBlank(infrastructureEntity.getYaml())) {
+      log.info(
+          "Infrastructure with identifier {} is not configured with an Infrastructure definition. Infrastructure Yaml is empty",
+          infrastructureEntity.getIdentifier());
+      return InfrastructureYamlMetadata.builder()
+          .infrastructureIdentifier(infrastructureEntity.getIdentifier())
+          .infrastructureYaml("")
+          .inputSetTemplateYaml("")
+          .build();
+    }
+
+    final String infrastructureInputSetYaml =
+        createInfrastructureInputsFromYaml(infrastructureEntity.getAccountId(), infrastructureEntity.getOrgIdentifier(),
+            infrastructureEntity.getProjectIdentifier(), infrastructureEntity.getEnvIdentifier(),
+            Collections.singletonList(infrastructureEntity.getIdentifier()), false);
+    return InfrastructureYamlMetadata.builder()
+        .infrastructureIdentifier(infrastructureEntity.getIdentifier())
+        .infrastructureYaml(infrastructureEntity.getYaml())
+        .inputSetTemplateYaml(infrastructureInputSetYaml)
+        .build();
   }
 }
