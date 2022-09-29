@@ -28,7 +28,7 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @JsonTypeName("CONNECTOR")
-public class ImportConnectorDTO extends BaseImportDTO {
+public class ConnectorFilter extends Filter {
   @Parameter(
       description =
           "ALL: To migrate all connectors. TYPE: To migrate only specific type of connectors(eg: Docker, AWS etc). ID: TO migrate only specific connectors")

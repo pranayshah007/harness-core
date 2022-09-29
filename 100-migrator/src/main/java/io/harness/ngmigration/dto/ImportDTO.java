@@ -7,6 +7,9 @@
 
 package io.harness.ngmigration.dto;
 
+import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY;
+import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
@@ -23,17 +26,15 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-public abstract class BaseImportDTO {
+public class ImportDTO {
   @Parameter(description = "The type of the entity that we wish to migrate")
   @NotNull
   private NGMigrationEntityType type;
 
-  @Parameter(description = "Provide the orgId if you wish to migrate the entity to either org or project")
-  private String orgIdentifier;
+  private DestinationDetails destinationDetails;
 
-  @Parameter(description = "Provide the projectId if you wish to migrate the entity to project")
-  private String projectIdentifier;
+  @JsonTypeInfo(use = NAME, property = "entityType", include = EXTERNAL_PROPERTY, visible = true) private Filter filter;
+  private BaseInputDTO inputs;
 
   @Parameter(
       description =

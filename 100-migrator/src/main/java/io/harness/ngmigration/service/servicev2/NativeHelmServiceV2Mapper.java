@@ -12,8 +12,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
 import io.harness.cdng.artifact.bean.yaml.PrimaryArtifact;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
-import io.harness.cdng.service.beans.KubernetesServiceSpec;
-import io.harness.cdng.service.beans.KubernetesServiceSpec.KubernetesServiceSpecBuilder;
+import io.harness.cdng.service.beans.NativeHelmServiceSpec;
+import io.harness.cdng.service.beans.NativeHelmServiceSpec.NativeHelmServiceSpecBuilder;
 import io.harness.cdng.service.beans.ServiceDefinition;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.data.structure.EmptyPredicate;
@@ -33,7 +33,7 @@ import java.util.Map;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDC)
-public class K8sServiceV2Mapper implements ServiceV2Mapper {
+public class NativeHelmServiceV2Mapper implements ServiceV2Mapper {
   @Override
   public ServiceDefinition getServiceDefinition(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, Service service, Map<CgEntityId, NGYamlFile> migratedEntities,
@@ -46,16 +46,16 @@ public class K8sServiceV2Mapper implements ServiceV2Mapper {
       primaryArtifact = ArtifactStreamFactory.getArtifactStreamMapper(artifactStream)
                             .getArtifactDetails(inputDTO, entities, graph, artifactStream, migratedEntities);
     }
-    KubernetesServiceSpecBuilder kubernetesServiceSpec = KubernetesServiceSpec.builder();
+    NativeHelmServiceSpecBuilder helmServiceSpecBuilder = NativeHelmServiceSpec.builder();
     List<NGVariable> variables = MigratorUtility.getVariables(service.getServiceVariables(), migratedEntities);
     if (primaryArtifact != null) {
-      kubernetesServiceSpec.artifacts(ArtifactListConfig.builder().primary(primaryArtifact).build());
+      helmServiceSpecBuilder.artifacts(ArtifactListConfig.builder().primary(primaryArtifact).build());
     }
-    kubernetesServiceSpec.manifests(manifests);
-    kubernetesServiceSpec.variables(variables);
+    helmServiceSpecBuilder.manifests(manifests);
+    helmServiceSpecBuilder.variables(variables);
     return ServiceDefinition.builder()
-        .type(ServiceDefinitionType.KUBERNETES)
-        .serviceSpec(kubernetesServiceSpec.build())
+        .type(ServiceDefinitionType.NATIVE_HELM)
+        .serviceSpec(helmServiceSpecBuilder.build())
         .build();
   }
 }
