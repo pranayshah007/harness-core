@@ -360,6 +360,8 @@ public class InfrastructureResource {
           NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
       @Parameter(description = "List of InfrastructureIds") @QueryParam("infraIdentifiers")
       List<String> infraIdentifiers, @QueryParam("deploymentType") ServiceDefinitionType deploymentType,
+      @QueryParam("deploymentTemplateIdentifier") String deploymentTemplateIdentifier,
+      @QueryParam("versionLabel") String versionLabel,
       @Parameter(
           description =
               "Specifies the sorting criteria of the list. Like sorting based on the last updated entity, alphabetical sorting in an ascending or descending order")
@@ -378,7 +380,11 @@ public class InfrastructureResource {
       pageRequest = PageUtils.getPageRequest(page, size, sort);
     }
     Page<InfrastructureEntity> infraEntities = infrastructureEntityService.list(criteria, pageRequest);
-
+    if (ServiceDefinitionType.CUSTOM_DEPLOYMENT == deploymentType && !isEmpty(deploymentTemplateIdentifier)
+        && !isEmpty(versionLabel)) {
+      infraEntities = customDeploymentYamlHelper.getFilteredInfraEntities(
+          page, size, sort, deploymentTemplateIdentifier, versionLabel, infraEntities);
+    }
     return ResponseDTO.newResponse(getNGPageResponse(infraEntities.map(InfrastructureMapper::toResponseWrapper)));
   }
 

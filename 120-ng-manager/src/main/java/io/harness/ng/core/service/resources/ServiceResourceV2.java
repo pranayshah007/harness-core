@@ -20,7 +20,6 @@ import static software.wings.beans.Service.ServiceKeys;
 
 import static java.lang.Long.parseLong;
 import static java.lang.String.format;
-import static java.util.Objects.isNull;
 import static javax.ws.rs.core.HttpHeaders.IF_MATCH;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNumeric;
@@ -50,6 +49,7 @@ import io.harness.ng.core.beans.NGEntityTemplateResponseDTO;
 import io.harness.ng.core.beans.ServiceV2YamlMetadata;
 import io.harness.ng.core.beans.ServicesV2YamlMetadataDTO;
 import io.harness.ng.core.beans.ServicesYamlMetadataApiInput;
+import io.harness.ng.core.customDeployment.helper.CustomDeploymentYamlHelper;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -64,14 +64,12 @@ import io.harness.ng.core.service.mappers.ServiceFilterHelper;
 import io.harness.ng.core.service.services.ServiceEntityManagementService;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
-import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.rbac.NGResourceType;
 import io.harness.rbac.CDNGRbacUtility;
 import io.harness.repositories.UpsertOptions;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.utils.PageUtils;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -105,7 +103,6 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -150,7 +147,7 @@ public class ServiceResourceV2 {
   private final AccessControlClient accessControlClient;
   private final ServiceEntityManagementService serviceEntityManagementService;
   private final OrgAndProjectValidationHelper orgAndProjectValidationHelper;
-
+  @Inject CustomDeploymentYamlHelper customDeploymentYamlHelper;
   public static final String SERVICE_PARAM_MESSAGE = "Service Identifier for the entity";
   public static final String SERVICE_YAML_METADATA_INPUT_PARAM_MESSAGE = "List of Service Identifiers for the entities";
 
@@ -355,8 +352,8 @@ public class ServiceResourceV2 {
     Page<ServiceEntity> serviceEntities = serviceEntityService.list(criteria, pageRequest);
     if (ServiceDefinitionType.CUSTOM_DEPLOYMENT == type && !isEmpty(deploymentTemplateIdentifier)
         && !isEmpty(versionLabel)) {
-      serviceEntities =
-          getFilteredServiceEntities(page, size, sort, deploymentTemplateIdentifier, versionLabel, serviceEntities);
+      serviceEntities = customDeploymentYamlHelper.getFilteredServiceEntities(
+          page, size, sort, deploymentTemplateIdentifier, versionLabel, serviceEntities);
     }
     serviceEntities.forEach(serviceEntity -> {
       if (EmptyPredicate.isEmpty(serviceEntity.getYaml())) {
@@ -410,7 +407,9 @@ public class ServiceResourceV2 {
         && !isEmpty(versionLabel)) {
       serviceList = serviceEntityService.listRunTimePermission(criteria)
                         .stream()
-                        .filter(serviceEntity -> isDTService(deploymentTemplateIdentifier, versionLabel, serviceEntity))
+                        .filter(serviceEntity
+                            -> customDeploymentYamlHelper.isDeploymentTemplateService(
+                                deploymentTemplateIdentifier, versionLabel, serviceEntity))
                         .map(ServiceElementMapper::toAccessListResponseWrapper)
                         .collect(Collectors.toList());
     } else {
@@ -593,36 +592,5 @@ public class ServiceResourceV2 {
       throw new InvalidRequestException(
           "No request body sent in the API. Following field is required: identifier. Other optional fields: name, orgIdentifier, projectIdentifier, tags, description, version");
     }
-  }
-
-  private boolean isDTService(String deploymentTemplateIdentifier, String versionLabel, ServiceEntity serviceEntity) {
-    String yaml = serviceEntity.getYaml();
-    YamlConfig yamlConfig = new YamlConfig(yaml);
-    JsonNode service = yamlConfig.getYamlMap().get("service");
-    if (!isNull(service)) {
-      JsonNode serviceDef = service.get("serviceDefinition");
-      if (!isNull(serviceDef)) {
-        JsonNode serviceSpec = serviceDef.get("spec");
-        if (!isNull(serviceSpec)) {
-          JsonNode customDeploymentRef = serviceSpec.get("customDeploymentRef");
-          if (!isNull(customDeploymentRef)) {
-            JsonNode ref = customDeploymentRef.get("templateRef");
-            JsonNode versionLabelNode = customDeploymentRef.get("versionLabel");
-            return ref.asText().equals(deploymentTemplateIdentifier) && versionLabelNode.asText().equals(versionLabel);
-          }
-        }
-      }
-    }
-    return false;
-  }
-
-  @NotNull
-  private Page<ServiceEntity> getFilteredServiceEntities(int page, int size, List<String> sort,
-      String deploymentTemplateIdentifier, String versionLabel, Page<ServiceEntity> serviceEntities) {
-    List<ServiceEntity> entities = serviceEntities.getContent()
-                                       .stream()
-                                       .filter(s -> isDTService(deploymentTemplateIdentifier, versionLabel, s))
-                                       .collect(Collectors.toList());
-    return new PageImpl<>(entities, PageUtils.getPageRequest(page, size, sort), entities.size());
   }
 }
