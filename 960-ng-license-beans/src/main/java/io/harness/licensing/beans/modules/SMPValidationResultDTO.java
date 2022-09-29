@@ -9,7 +9,6 @@ package io.harness.licensing.beans.modules;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Data;
@@ -19,10 +18,7 @@ import lombok.Data;
 @Builder
 @Schema(name = "SMPValidationResult", description = "This contains details of the SMP License validation result")
 public class SMPValidationResultDTO {
-    @JsonUnwrapped
-    private SMPDecLicenseDTO licenseDTO;
-    @JsonProperty("is_valid")
-    private boolean isValid;
-    @JsonProperty("message")
-    private String message;
+  @JsonProperty("license") private SMPDecLicenseDTO licenseDTO;
+  @JsonProperty("is_valid") private boolean isValid;
+  @JsonProperty("message") private String message;
 }
