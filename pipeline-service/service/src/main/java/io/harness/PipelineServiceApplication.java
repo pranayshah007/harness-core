@@ -74,6 +74,7 @@ import io.harness.migration.NGMigrationSdkModule;
 import io.harness.migration.beans.NGMigrationConfiguration;
 import io.harness.ng.DbAliases;
 import io.harness.ng.core.CorrelationFilter;
+import io.harness.ng.core.TraceFilter;
 import io.harness.ng.core.exceptionmappers.GenericExceptionMapperV2;
 import io.harness.ng.core.exceptionmappers.JerseyViolationExceptionMapperV2;
 import io.harness.ng.core.exceptionmappers.NotAllowedExceptionMapper;
@@ -381,6 +382,10 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
     registerPmsSdk(appConfig, injector);
     registerMigrations(injector);
 
+    if (appConfig.getEnableOpentelemetry()) {
+      registerTraceFilter(environment, injector);
+    }
+
     log.info("PipelineServiceApplication DEPLOY_VERSION = " + System.getenv().get(DEPLOY_VERSION));
     if (DeployVariant.isCommunity(System.getenv().get(DEPLOY_VERSION))) {
       initializePipelineMonitoring(appConfig, injector);
@@ -517,6 +522,10 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
 
   private void registerCorrelationFilter(Environment environment, Injector injector) {
     environment.jersey().register(injector.getInstance(CorrelationFilter.class));
+  }
+
+  private void registerTraceFilter(Environment environment, Injector injector) {
+    environment.jersey().register(injector.getInstance(TraceFilter.class));
   }
 
   private void registerAuthFilters(PipelineServiceConfiguration config, Environment environment, Injector injector) {
