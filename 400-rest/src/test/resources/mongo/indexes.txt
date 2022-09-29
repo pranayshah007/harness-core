@@ -695,6 +695,7 @@ stateMachines {"name": "appId_1", "background": true} {"appId": 1}
 stateMachines {"name": "appId_origin", "background": true} {"appId": 1, "originId": 1, "originVersion": 1}
 stateMachines {"name": "createdAt_1", "background": true} {"createdAt": 1}
 stateMachines {"name": "originId_1", "background": true} {"originId": 1}
+sweepingOutput2 {"name": "appIdStateExecutionId", "background": true} {"appId": 1, "stateExecutionId": 1}
 sweepingOutput2 {"name": "phaseExecutionIdNamePrefix", "background": true} {"appId": 1, "phaseExecutionId": 1, "name": 1, "createdAt": -1}
 sweepingOutput2 {"name": "pipelineExecutionIdNamePrefix", "background": true} {"appId": 1, "pipelineExecutionId": 1, "createdAt": 1, "name": 1}
 sweepingOutput2 {"name": "pipelineStateExecution", "background": true} {"appId": 1, "pipelineExecutionId": 1, "stateExecutionId": 1}
