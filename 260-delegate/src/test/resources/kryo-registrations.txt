@@ -854,9 +854,7 @@
 7283:software.wings.service.impl.elk.ElkDataCollectionInfoV2
 7284:software.wings.beans.settings.azureartifacts.AzureArtifactsPATConfig
 7285:software.wings.helpers.ext.azure.devops.AzureDevopsProject
-7286:software.wings.helpers.ext.azure.devops.AzureArtifactsFeed
 7287:software.wings.helpers.ext.azure.devops.AzureArtifactsPackage
-7288:software.wings.helpers.ext.azure.devops.AzureArtifactsPackageVersion
 7289:software.wings.delegatetasks.collect.artifacts.AzureArtifactsCollectionTaskParameters
 7290:software.wings.beans.GcpKmsConfig
 7293:software.wings.beans.InstanaConfig
@@ -1798,6 +1796,16 @@
 73985:io.harness.delegate.beans.DelegateEntityOwner
 73986:io.harness.delegate.beans.DelegateSizeDetails
 73987:io.harness.delegate.beans.DelegateSize
+80301:software.wings.helpers.ext.azure.devops.AzureArtifactsFeed
+80302:software.wings.helpers.ext.azure.devops.AzureArtifactsFeeds
+80303:software.wings.helpers.ext.azure.devops.AzureArtifactsPackageFile
+80304:software.wings.helpers.ext.azure.devops.AzureArtifactsPackageFileInfo
+80305:software.wings.helpers.ext.azure.devops.AzureArtifactsPackages
+80306:software.wings.helpers.ext.azure.devops.AzureArtifactsPackageVersion
+80307:software.wings.helpers.ext.azure.devops.AzureArtifactsPackageVersions
+80308:software.wings.helpers.ext.azure.devops.AzureArtifactsProtocolMetadata
+80309:software.wings.helpers.ext.azure.devops.AzureArtifactsProtocolMetadataData
+80310:software.wings.helpers.ext.azure.devops.AzureDevopsProjects
 83071:io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskParamsRequest
 83072:io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskResponse
 83073:software.wings.service.impl.aws.model.AwsEC2Instance

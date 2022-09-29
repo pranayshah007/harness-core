@@ -227,8 +227,6 @@ import software.wings.delegatetasks.validation.capabilities.HelmCommandCapabilit
 import software.wings.delegatetasks.validation.capabilities.SSHHostValidationCapability;
 import software.wings.delegatetasks.validation.capabilities.ShellConnectionCapability;
 import software.wings.delegatetasks.validation.capabilities.WinrmHostValidationCapability;
-import software.wings.helpers.ext.azure.devops.AzureArtifactsFeed;
-import software.wings.helpers.ext.azure.devops.AzureArtifactsPackageVersion;
 import software.wings.helpers.ext.ecs.request.EcsBGRoute53DNSWeightUpdateRequest;
 import software.wings.helpers.ext.ecs.request.EcsBGRoute53ServiceSetupRequest;
 import software.wings.helpers.ext.ecs.request.EcsBGServiceSetupRequest;
