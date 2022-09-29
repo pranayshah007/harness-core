@@ -106,7 +106,7 @@ public class AuditRequestFilter implements ContainerRequestFilter {
 
     String forwardedFor = servletRequest.getHeader(X_FORWARDED_FOR);
     String remoteHost = isNotBlank(forwardedFor) ? forwardedFor : servletRequest.getRemoteHost();
-    log.info("Audit is getting build using the request.");
+    log.info("Audit is getting build using the request. RemoteHost is {} and forwardFor is {}", remoteHost, forwardedFor);
     header.setRemoteIpAddress(remoteHost != null ? remoteHost : request.getRemoteAddr());
 
     header.setRemoteHostPort(request.getRemotePort());
