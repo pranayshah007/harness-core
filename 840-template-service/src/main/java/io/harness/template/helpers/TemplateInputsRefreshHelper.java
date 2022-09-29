@@ -132,7 +132,7 @@ public class TemplateInputsRefreshHelper {
       Map<String, TemplateEntity> templateCacheMap) {
     // Template Inputs linked to the YAML
     JsonNode templateInputs = TemplateNodeValue.get(TEMPLATE_INPUTS);
-    JsonNode templateVariablesFromPipeline = TemplateNodeValue.get(TEMPLATE_VARIABLES);
+    JsonNode templateVariablesFromPipeline = TemplateNodeValue.get(YAMLFieldNameConstants.VARIABLES);
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode templateVariablesFromPipelineWithRoot = null;
     if (templateVariablesFromPipeline != null) {
