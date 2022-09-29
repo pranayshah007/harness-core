@@ -4305,9 +4305,6 @@
     },
     "SecurityStageConfigImpl": {
       "type": "object",
-      "required": [
-        "infrastructure"
-      ],
       "properties": {
         "cloneCodebase": {
           "oneOf": [
