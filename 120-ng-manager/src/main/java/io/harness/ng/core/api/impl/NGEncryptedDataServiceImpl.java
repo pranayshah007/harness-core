@@ -9,12 +9,17 @@ package io.harness.ng.core.api.impl;
 
 import static io.harness.NGConstants.HARNESS_SECRET_MANAGER_IDENTIFIER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.beans.FeatureName.PL_ACCESS_SECRET_DYNAMICALLY_BY_PATH;
 import static io.harness.data.encoding.EncodingUtils.encodeBase64ToByteArray;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.encryption.SecretRefParsedData.SECRET_REFERENCE_DATA_ROOT_PREFIX;
+import static io.harness.encryption.SecretRefParsedData.SECRET_REFERENCE_EXPRESSION_DELIMITER;
 import static io.harness.eraro.ErrorCode.ENCRYPT_DECRYPT_ERROR;
+import static io.harness.eraro.ErrorCode.INVALID_FORMAT;
 import static io.harness.eraro.ErrorCode.INVALID_REQUEST;
 import static io.harness.eraro.ErrorCode.SECRET_MANAGEMENT_ERROR;
+import static io.harness.eraro.ErrorCode.UNSUPPORTED_OPERATION_EXCEPTION;
 import static io.harness.exception.WingsException.SRE;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.helpers.GlobalSecretManagerUtils.isNgHarnessSecretManager;
@@ -30,6 +35,8 @@ import static io.harness.security.encryption.EncryptionType.LOCAL;
 import static io.harness.security.encryption.SecretManagerType.KMS;
 import static io.harness.security.encryption.SecretManagerType.VAULT;
 
+import static software.wings.beans.VaultConfig.PATH_SEPARATOR;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.beans.DecryptedSecretValue;
@@ -41,6 +48,8 @@ import io.harness.connector.services.NGConnectorSecretManagerService;
 import io.harness.delegate.beans.connector.customsecretmanager.CustomSecretManagerConnectorDTO;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
+import io.harness.encryption.SecretRefParsedData;
+import io.harness.encryption.SecretRefParsedData.SecretRefParsedDataBuilder;
 import io.harness.encryptors.CustomEncryptorsRegistry;
 import io.harness.encryptors.KmsEncryptorsRegistry;
 import io.harness.encryptors.VaultEncryptorsRegistry;
@@ -93,6 +102,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -103,6 +114,8 @@ import org.apache.commons.lang3.StringUtils;
 public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
   private static final Set<EncryptionType> ENCRYPTION_TYPES_REQUIRING_FILE_DOWNLOAD =
       EnumSet.of(LOCAL, GCP_KMS, EncryptionType.KMS);
+  private static final Set<EncryptionType> ENCRYPTION_TYPES_ALLOWED_FOR_DIRECT_SECRET_REFERENCE =
+      EnumSet.of(EncryptionType.VAULT);
   private static final String READ_ONLY_SECRET_MANAGER_ERROR =
       "Cannot create an Inline secret in read only secret manager";
   private final NGEncryptedDataDao encryptedDataDao;
@@ -344,6 +357,65 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
   }
 
   @Override
+  public NGEncryptedData getFromReferenceExpression(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String secretIdentifier) {
+    SecretRefParsedData secretRefParsedData = validateAndGetSecretRefParsedData(secretIdentifier);
+    return NGEncryptedData.builder()
+        .accountIdentifier(accountIdentifier)
+        .orgIdentifier(orgIdentifier)
+        .projectIdentifier(projectIdentifier)
+        .identifier(secretIdentifier)
+        .name(secretIdentifier)
+        .type(SettingVariableTypes.SECRET_TEXT)
+        .path(secretRefParsedData.getRelativePath())
+        .secretManagerIdentifier(secretRefParsedData.getSecretManagerIdentifier())
+        .encryptionType(secretRefParsedData.getEncryptionType())
+        .build();
+  }
+
+  private SecretRefParsedData validateAndGetSecretRefParsedData(String secretIdentifier) {
+    String[] secretDetails = secretIdentifier.split(SECRET_REFERENCE_EXPRESSION_DELIMITER);
+    String encryptionTypeName;
+    String dataRef;
+    String illegalFormatError =
+        String.format("Fully-qualified path expression [%s] has illegal format.", secretIdentifier);
+    try {
+      encryptionTypeName = secretDetails[0];
+      dataRef = secretDetails[1];
+    } catch (ArrayIndexOutOfBoundsException exception) {
+      log.error(illegalFormatError, exception);
+      throw new SecretManagementException(INVALID_FORMAT, illegalFormatError, USER);
+    }
+    Map<String, EncryptionType> validEncryptionTypeMap =
+        ENCRYPTION_TYPES_ALLOWED_FOR_DIRECT_SECRET_REFERENCE.stream().collect(
+            Collectors.toMap(EncryptionType::getYamlName, Function.identity()));
+    SecretRefParsedDataBuilder secretRefParsedDataBuilder = SecretRefParsedData.builder();
+    if (isNotEmpty(encryptionTypeName) && validEncryptionTypeMap.containsKey(encryptionTypeName)) {
+      secretRefParsedDataBuilder.encryptionType(validEncryptionTypeMap.get(encryptionTypeName));
+    } else {
+      throw new SecretManagementException(UNSUPPORTED_OPERATION_EXCEPTION,
+          String.format(
+              "Encryption type [%s] is not supported in fully-qualified path expression.", encryptionTypeName),
+          USER);
+    }
+    if (!dataRef.startsWith(SECRET_REFERENCE_DATA_ROOT_PREFIX)) {
+      throw new SecretManagementException(INVALID_FORMAT, illegalFormatError, USER);
+    }
+    try {
+      String secretManagerIdentifierAndPath = dataRef.substring(2);
+      int indexOfFirstPathSeparator = secretManagerIdentifierAndPath.indexOf(PATH_SEPARATOR);
+      String secretManagerIdentifier = secretManagerIdentifierAndPath.substring(0, indexOfFirstPathSeparator);
+      String relativePath = secretManagerIdentifierAndPath.substring(indexOfFirstPathSeparator);
+      return secretRefParsedDataBuilder.secretManagerIdentifier(secretManagerIdentifier)
+          .relativePath(relativePath)
+          .build();
+    } catch (StringIndexOutOfBoundsException exception) {
+      log.error(illegalFormatError, exception);
+      throw new SecretManagementException(INVALID_FORMAT, illegalFormatError, USER);
+    }
+  }
+
+  @Override
   public NGEncryptedData updateSecretText(String accountIdentifier, SecretDTOV2 dto) {
     SecretTextSpecDTO secret = (SecretTextSpecDTO) dto.getSpec();
 
@@ -576,8 +648,15 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
           String orgIdentifier = getOrgIdentifier(ngAccess.getOrgIdentifier(), secretScope);
           String projectIdentifier = getProjectIdentifier(ngAccess.getProjectIdentifier(), secretScope);
 
-          // get encrypted data from DB
-          NGEncryptedData encryptedData = get(accountIdentifier, orgIdentifier, projectIdentifier, secretIdentifier);
+          NGEncryptedData encryptedData = null;
+          if (ngFeatureFlagHelperService.isEnabled(accountIdentifier, PL_ACCESS_SECRET_DYNAMICALLY_BY_PATH)
+              && isSecretIdentifierAPathReference(secretIdentifier)) {
+            encryptedData =
+                getFromReferenceExpression(accountIdentifier, orgIdentifier, projectIdentifier, secretIdentifier);
+          } else {
+            // get encrypted data from DB
+            encryptedData = get(accountIdentifier, orgIdentifier, projectIdentifier, secretIdentifier);
+          }
           if (encryptedData != null) {
             // if type is file and file is saved elsewhere, download and save contents in encryptedValue
             if (encryptedData.getType() == SettingVariableTypes.CONFIG_FILE
@@ -627,6 +706,18 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
       }
     }
     return encryptedDataDetails;
+  }
+
+  private boolean isSecretIdentifierAPathReference(String secretIdentifier) {
+    for (EncryptionType allowedType : ENCRYPTION_TYPES_ALLOWED_FOR_DIRECT_SECRET_REFERENCE) {
+      StringBuilder stringBuilder = new StringBuilder(allowedType.getYamlName())
+                                        .append(SECRET_REFERENCE_EXPRESSION_DELIMITER)
+                                        .append(SECRET_REFERENCE_DATA_ROOT_PREFIX);
+      if (secretIdentifier.startsWith(stringBuilder.toString())) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private LocalConfigDTO getLocalEncryptionConfig(String accountIdentifier) {
