@@ -537,6 +537,10 @@ func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile stri
 	var iniFilePath, agentArg string
 	switch r.language {
 	case "java":
+		fallthrough
+	case "scala":
+		fallthrough
+	case "kotlin":
 		{
 			// Create the java agent config file
 			iniFilePath, err = r.createJavaAgentConfigFile(runner)
