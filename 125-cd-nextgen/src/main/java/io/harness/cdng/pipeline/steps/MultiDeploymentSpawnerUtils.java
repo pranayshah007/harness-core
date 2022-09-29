@@ -87,7 +87,7 @@ public class MultiDeploymentSpawnerUtils {
     if (config.getEnvironments() != null) {
       return config.getEnvironments().getUuid();
     }
-    if (config.getEnvironmentGroup() != null) {
+    if (config.getEnvironmentGroup() != null && !config.getGitOpsEnabled()) {
       return config.getEnvironmentGroup().getUuid();
     }
     return node.getUuid();
