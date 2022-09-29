@@ -119,6 +119,7 @@ import io.harness.network.SafeHttpCall;
 import io.harness.observer.RemoteObserverInformer;
 import io.harness.observer.Subject;
 import io.harness.persistence.HPersistence;
+import io.harness.reflection.ReflectionUtils;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptionConfig;
@@ -1090,6 +1091,17 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
       }
       task.getData().setParameters(delegateTask.getData().getParameters());
       delegateSelectionLogsService.logTaskAssigned(delegateId, task);
+
+      if (delegateTask.isEmitEvent()) {
+        Map<String, String> eventData = new HashMap<>();
+        String taskType = task.getData().getTaskType();
+
+        managerObserverEventProducer.sendEvent(
+            ReflectionUtils.getMethod(CIDelegateTaskObserver.class, "onTaskAssigned", String.class, String.class,
+                String.class, String.class, String.class),
+            DelegateTaskServiceClassicImpl.class, delegateTask.getAccountId(), taskId, delegateId,
+            delegateTask.getStageId(), taskType);
+      }
 
       delegateMetricsService.recordDelegateTaskMetrics(delegateTask, DELEGATE_TASK_ACQUIRE);
 
