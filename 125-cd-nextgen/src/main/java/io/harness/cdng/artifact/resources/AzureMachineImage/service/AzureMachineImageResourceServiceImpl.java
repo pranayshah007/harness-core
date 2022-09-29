@@ -162,13 +162,20 @@ public class AzureMachineImageResourceServiceImpl implements AzureMachineImageRe
   }
   private List<AzureMachineImageResourceGroupDto> getResourceGroups(
       ArtifactTaskExecutionResponse artifactTaskExecutionResponse) {
-    List<AzureMachineImageDelegateResponse> azureMachineImageDelegateResponse =
+    List<AzureMachineImageDelegateResponse> azureMachineImageDelegateResponses =
         artifactTaskExecutionResponse.getArtifactDelegateResponses()
             .stream()
             .map(delegateResponse -> (AzureMachineImageDelegateResponse) delegateResponse)
             .collect(Collectors.toList());
-
-    return null;
+    List<AzureMachineImageResourceGroupDto> resourceGroupDtos =
+        azureMachineImageDelegateResponses.stream()
+            .map(response
+                -> AzureMachineImageResourceGroupDto.builder()
+                       .name(response.getName())
+                       .subscriptionId(response.getSubscriptionId())
+                       .build())
+            .collect(Collectors.toList());
+    return resourceGroupDtos;
   }
   private DelegateResponseData getResponseData(
       BaseNGAccess ngAccess, AzureMachineImageDelegateRequest delegateRequest, ArtifactTaskType artifactTaskType) {

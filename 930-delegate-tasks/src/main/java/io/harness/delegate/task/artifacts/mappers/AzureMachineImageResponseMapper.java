@@ -14,8 +14,11 @@ import io.harness.delegate.beans.connector.azureconnector.AzureMSIAuthUADTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureManualDetailsDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureUserAssignedMSIAuthDTO;
 import io.harness.delegate.task.artifacts.azuremachineimage.AzureMachineImageDelegateRequest;
+import io.harness.delegate.task.artifacts.azuremachineimage.AzureMachineImageDelegateResponse;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
+
+import software.wings.beans.AzureResourceGroup;
 
 import java.util.List;
 import lombok.experimental.UtilityClass;
@@ -83,5 +86,19 @@ public class AzureMachineImageResponseMapper {
         throw new IllegalStateException("Unexpected azure credential type : " + azureCredentialType);
     }
     return azureConfig;
+  }
+  public software.wings.beans.AzureConfig configMapper(AzureConfig azureConfig) {
+    software.wings.beans.AzureConfig wingsAzureConfig = software.wings.beans.AzureConfig.builder()
+                                                            .clientId(azureConfig.getClientId())
+                                                            .tenantId(azureConfig.getTenantId())
+                                                            .key(azureConfig.getKey())
+                                                            .build();
+    return wingsAzureConfig;
+  }
+  public static AzureMachineImageDelegateResponse toAzureMachineImageResponse(AzureResourceGroup azureResourceGroup) {
+    return AzureMachineImageDelegateResponse.builder()
+        .name(azureResourceGroup.getName())
+        .subscriptionId(azureResourceGroup.getSubscriptionId())
+        .build();
   }
 }
